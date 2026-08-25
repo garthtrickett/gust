@@ -101,7 +101,7 @@ do
   do
     rg -n -F "$operation" "$case_dir/capture.bundle" >/dev/null
   done
-  rg -n -F 'argument_0_kind: StringLiteral' \
+  rg -n -F 'argument_0_kind: StringLiteralUtf8Hex' \
     "$case_dir/capture.bundle" >/dev/null
   rg -n -F 'import_0_link_symbol: os_LogInt' \
     "$case_dir/capture.bundle" >/dev/null
@@ -119,10 +119,31 @@ do
   echo "✅ Patch 21.9 differential passed: $case_id"
 done < <(python3 scripts/phase21_collection_string_native_source.py case-lines)
 
-while IFS=$'\t' read -r rejected_id rejected_source rejected_stage
+while IFS=$'\t' read -r rejected_id rejected_source rejected_stage oracle_stdout_hex oracle_exit
 do
   rejected_dir="$build_root/$rejected_id"
   mkdir -p "$rejected_dir"
+
+  ./gust "$rejected_source" >"$rejected_dir/default.c" \
+    2>"$rejected_dir/default.compile.stderr"
+  ./gust --backend mir-to-c "$rejected_source" \
+    >"$rejected_dir/explicit.c" \
+    2>"$rejected_dir/explicit.compile.stderr"
+  test ! -s "$rejected_dir/default.compile.stderr"
+  test ! -s "$rejected_dir/explicit.compile.stderr"
+  cmp -s "$rejected_dir/default.c" "$rejected_dir/explicit.c"
+  cat src/runtime.c "$rejected_dir/explicit.c" \
+    >"$rejected_dir/oracle.final.c"
+  "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
+    "$rejected_dir/oracle.final.c" -o "$rejected_dir/oracle"
+  execute_and_capture "$rejected_dir/oracle" "$rejected_dir/oracle"
+  printf '%s\n' "$oracle_exit" >"$rejected_dir/oracle.expected.status"
+  python3 -c 'import sys; sys.stdout.buffer.write(bytes.fromhex(sys.argv[1]))' \
+    "$oracle_stdout_hex" >"$rejected_dir/oracle.expected.stdout"
+  cmp -s "$rejected_dir/oracle.expected.status" "$rejected_dir/oracle.status"
+  cmp -s "$rejected_dir/oracle.expected.stdout" "$rejected_dir/oracle.stdout"
+  test ! -s "$rejected_dir/oracle.stderr"
+
   set +e
   REAL_DRIVER="$real_driver" CAPTURE_PREFIX="$rejected_dir/capture" \
   GUST_NATIVE_BACKEND_DRIVER="$capture_driver" \

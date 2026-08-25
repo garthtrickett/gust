@@ -1597,7 +1597,7 @@
       },
       "phase21_collection_string_native_source": {
         "const": {
-          "contract_version": "phase21_collection_string_native_source_v1",
+          "contract_version": "phase21_collection_string_native_source_v2",
           "status": "patch21_9_complete",
           "next_patch": "21.10",
           "review_view": "compiler/CRANELIFT_PHASE21_COLLECTION_STRING_NATIVE_SOURCE.md",
@@ -1615,11 +1615,14 @@
             {"id":"collections_primary","source_fixture":"compiler/phase20_component_collections_source.gst","expected_stdout":"20\n","expected_stderr":"","expected_exit":0},
             {"id":"collections_renamed_variant","source_fixture":"compiler/phase21_collection_native_source_variant.gst","expected_stdout":"42\n","expected_stderr":"","expected_exit":0},
             {"id":"strings_primary","source_fixture":"compiler/phase20_component_strings_source.gst","expected_stdout":"Hello\n1\n87\n","expected_stderr":"","expected_exit":0},
-            {"id":"strings_renamed_variant","source_fixture":"compiler/phase21_string_native_source_variant.gst","expected_stdout":"Native\n7\n82\n","expected_stderr":"","expected_exit":0}
+            {"id":"strings_renamed_variant","source_fixture":"compiler/phase21_string_native_source_variant.gst","expected_stdout":"Native\n7\n82\n","expected_stderr":"","expected_exit":0},
+            {"id":"strings_embedded_newline","source_fixture":"compiler/phase21_string_native_embedded_newline.gst","expected_stdout":"Native\nRoute\n7\n82\n","expected_stderr":"","expected_exit":0}
           ],
           "rejected_source_cases": [
-            {"id":"collections_extra_effect","source_fixture":"compiler/phase21_collection_native_source_outside_cohort.gst","expected_failure_stage":"before_driver_discovery"},
-            {"id":"strings_extra_effect","source_fixture":"compiler/phase21_string_native_source_outside_cohort.gst","expected_failure_stage":"before_driver_discovery"}
+            {"id":"collections_extra_effect","source_fixture":"compiler/phase21_collection_native_source_outside_cohort.gst","expected_failure_stage":"before_driver_discovery","oracle_stdout":"20\n999\n","oracle_stderr":"","oracle_exit":0},
+            {"id":"strings_extra_effect","source_fixture":"compiler/phase21_string_native_source_outside_cohort.gst","expected_failure_stage":"before_driver_discovery","oracle_stdout":"Hello\n1\n87\n999\n","oracle_stderr":"","oracle_exit":0},
+            {"id":"collections_unrepresented_log_expression","source_fixture":"compiler/phase21_collection_native_unrepresented_log_expression.gst","expected_failure_stage":"before_driver_discovery","oracle_stdout":"43\n","oracle_stderr":"","oracle_exit":0},
+            {"id":"strings_unrepresented_log_expression","source_fixture":"compiler/phase21_string_native_unrepresented_log_expression.gst","expected_failure_stage":"before_driver_discovery","oracle_stdout":"Native!\n7\n82\n","oracle_stderr":"","oracle_exit":0}
           ],
           "canonical_contract": {
             "format": "gust.compiler_mir_ingestion.v2",
@@ -1638,7 +1641,7 @@
           },
           "worker_contract": {
             "source_recognition": false,
-            "string_literal_transport": "compiler_declared_data_symbol_pointer_and_length",
+            "string_literal_transport": "compiler_hex_encoded_bytes_to_declared_data_symbol_pointer_and_length",
             "void_import_calls": "compiler_declared_signature_and_native_boundary_metadata",
             "runtime_archive_link": "compiler_request_absolute_path_after_objects",
             "generated_C": false

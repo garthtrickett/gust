@@ -289,18 +289,28 @@ compiler-owned collection and string sources. Use canonical MIR, not source
 recognizers, and prove representative source differentials with no fallback.
 
 The implemented boundary is the bounded typed-AST cohort recorded by
-`phase21_collection_string_native_source_v1`. Renamed semantic variants prove
+`phase21_collection_string_native_source_v2`. Renamed semantic variants prove
 that neither source paths nor fixture names select lowering; unrepresented
 collection or string shapes continue to reject before driver discovery. The
 worker consumes only canonical CFG, imported void calls, string data symbols,
 and the compiler-selected retained runtime archive.
 
-**Exit Gate:** all four registered source cases agree with MIR-to-C on stdout,
+**Exit Gate:** all five registered source cases agree with MIR-to-C on stdout,
 stderr, and exit status; captured requests and bundles contain canonical MIR
 with no generated C or fallback; the retained archive adds no runtime symbol;
 both extra-effect probes reject before driver discovery rather than silently
 dropping behavior; and filesystem/allocation/resources/synchronization remain
 in their later roadmap patches.
+
+Post-merge correction (2026-08-25): constant evaluators now carry explicit
+represented state, so unhandled integer or string log expressions reject before
+driver discovery instead of manufacturing `0` or an empty string. Canonical
+string call arguments use byte-preserving hexadecimal transport, so embedded
+line breaks cannot corrupt the line-oriented MIR bundle. The two rejection
+witnesses retain their measured MIR-to-C behavior, the embedded-newline witness
+agrees with MIR-to-C through explicit Cranelift, and the correction adds no
+fallback, ABI/layout authority, runtime symbol, bootstrap seed, or Stdlib
+change.
 
 ## Patch 21.10 — Filesystem and Allocation Native Source Migration
 
