@@ -123,7 +123,13 @@ def validate() -> dict:
     workflow = WORKFLOW.read_text(encoding="utf-8")
     require(f"just {GUARD_L1}" in workflow and f"just {GUARD_L2}" in workflow,
             "dedicated Patch 21.4 workflow does not own both guards")
-    return record
+    successor = registry.get("phase21_per_root_obligations")
+    if successor is not None:
+        require(successor.get("status") == "patch21_5_complete",
+                "join/nested enforcement exists without complete Patch 21.5 authority")
+    projected = dict(record)
+    projected["_per_root_successor_complete"] = successor is not None
+    return projected
 
 
 def render(record: dict) -> str:
@@ -148,9 +154,13 @@ def render(record: dict) -> str:
     for row in record["nonforgeability_fixtures"]:
         lines.append(f"- `{row['kind']}` — `{row['source_fixture']}` — `{row['diagnostic_class']}`")
     lines += ["", "The intrinsic is compile-time-only and is never emitted to either backend.",
-              "Trusted request-context establishment is outside this guarantee. Join",
-              "roots, nested queries, and cross-tenant capabilities remain explicitly",
-              "unenforced for Patches 21.5 and 21.6.", ""]
+              "Trusted request-context establishment is outside this guarantee."]
+    if record.get("_per_root_successor_complete"):
+        lines += ["Successor Patch 21.5 now enforces independent join-root and nested-query",
+                  "obligations. Cross-tenant capability enforcement remains Patch 21.6.", ""]
+    else:
+        lines += ["Join roots, nested queries, and cross-tenant capabilities remain explicitly",
+                  "unenforced for Patches 21.5 and 21.6.", ""]
     return "\n".join(lines)
 
 

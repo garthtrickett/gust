@@ -318,6 +318,8 @@
     "guard-cranelift-phase21-typed-query-noop-surface-evidence": 2,
     "guard-cranelift-phase21-trusted-scope-provenance-contract": 1,
     "guard-cranelift-phase21-trusted-scope-provenance-evidence": 2,
+    "guard-cranelift-phase21-per-root-obligations-contract": 1,
+    "guard-cranelift-phase21-per-root-obligations-evidence": 2,
     "guard-cranelift-phase20-resource-scope-cleanup-parity": 2,
     "guard-cranelift-phase20-seed-convergence": 1,
     "guard-cranelift-phase20-nested-brand-annotation-contract": 1,

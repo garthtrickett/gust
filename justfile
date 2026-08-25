@@ -17012,6 +17012,24 @@ guard-cranelift-phase21-trusted-scope-provenance-evidence:
     just guard-cranelift-phase21-trusted-scope-provenance-contract
     bash scripts/phase21_trusted_scope_provenance.sh
 
+guard-cranelift-phase21-per-root-obligations-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🪢 Checking Phase 21 per-root join and nested-query obligations..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-per-root-obligations-contract | grep -F $'guard-cranelift-phase21-per-root-obligations-contract\t1\t' >/dev/null
+    just guard-cranelift-phase21-trusted-scope-provenance-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase21_per_root_obligations.py validate
+    python3 scripts/phase21_per_root_obligations.py check-review
+
+guard-cranelift-phase21-per-root-obligations-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Replaying Phase 21 per-root join, nesting, and query-value evidence..."
+    just guard-cranelift-phase21-per-root-obligations-contract
+    bash scripts/phase21_per_root_obligations.sh
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

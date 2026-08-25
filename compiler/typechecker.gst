@@ -27,6 +27,19 @@ type ExpressionProvenance[ctx] struct {
     trusted_scope_origin_kind: str
 }
 
+// A scoped root owns one independent compile-time obligation. Query values
+// may project their terminal only after every record in their complete local
+// set is discharged; unresolved sets never flow through ordinary values.
+type QueryScopeObligation[ctx] struct {
+    entity_identity: str,
+    binding_identity: str,
+    scope_identity: str,
+    root_kind: str,
+    source_order: int,
+    discharged: int,
+    query_span: token.Span
+}
+
 func init_address_origin_unknown(origin: *AddressOriginMetadata) {
     unsafe {
         (*origin).is_safe_arena = 0;
@@ -2355,71 +2368,197 @@ func typechecker_query_predicate_discharges_root(
     }
 }
 
+func typechecker_query_make_scope_obligation(
+    entity_identity: str,
+    binding_identity: str,
+    scope_identity: str,
+    root_kind: str,
+    source_order: int,
+    discharged: int,
+    query_span: token.Span,
+    ctx: &Arena
+) QueryScopeObligation[ctx] {
+    mut obligation_phase21_5: QueryScopeObligation[ctx];
+    obligation_phase21_5.entity_identity =
+        std.Clone(ctx, entity_identity);
+    obligation_phase21_5.binding_identity =
+        std.Clone(ctx, binding_identity);
+    obligation_phase21_5.scope_identity =
+        std.Clone(ctx, scope_identity);
+    obligation_phase21_5.root_kind = std.Clone(ctx, root_kind);
+    obligation_phase21_5.source_order = source_order;
+    obligation_phase21_5.discharged = discharged;
+    obligation_phase21_5.query_span = query_span;
+    return obligation_phase21_5;
+}
+
+func typechecker_build_query_scope_obligations(
+    expr: ast.Expression[ctx],
+    env: *TypeEnvironment[ctx],
+    scope: Index[Scope[ctx], ctx],
+    ctx: &Arena
+) std.Vector[QueryScopeObligation[ctx], ctx] {
+    mut obligations_phase21_5: std.Vector[QueryScopeObligation[ctx], ctx] :=
+        std.VectorNew(ctx);
+    unsafe {
+        mut roots_phase21_5: std.Vector[ast.QueryRoot[ctx], ctx] :=
+            ctx[expr.Query.roots];
+        mut predicates_phase21_5: std.Vector[ast.Expression[ctx], ctx] :=
+            ctx[expr.Query.predicates];
+        mut root_index_phase21_5 := 0;
+        while root_index_phase21_5 < len(roots_phase21_5) {
+            mut root_phase21_5 := roots_phase21_5[root_index_phase21_5];
+            mut resolved_entity_phase21_5 := env_resolve_namespaced_ident(
+                env, root_phase21_5.entity_name, ctx
+            );
+            mut scoped_lookup_phase21_5 := (*env).struct_scoped_entity.Get(
+                resolved_entity_phase21_5
+            );
+            if scoped_lookup_phase21_5.Ok {
+                if scoped_lookup_phase21_5.Val == 1 {
+                    mut field_lookup_phase21_5 := (*env).struct_scope_field.Get(
+                        resolved_entity_phase21_5
+                    );
+                    mut discharged_phase21_5 := 0;
+                    if field_lookup_phase21_5.Ok {
+                        mut predicate_index_phase21_5 := 0;
+                        while predicate_index_phase21_5 < len(predicates_phase21_5) {
+                            mut predicate_idx_phase21_5:
+                                Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                            ctx.Set(
+                                predicate_idx_phase21_5,
+                                predicates_phase21_5[predicate_index_phase21_5]
+                            );
+                            if typechecker_query_predicate_discharges_root(
+                                predicate_idx_phase21_5,
+                                root_phase21_5.binding_name,
+                                field_lookup_phase21_5.Val,
+                                env,
+                                scope,
+                                ctx
+                            ) == 1 {
+                                discharged_phase21_5 = 1;
+                            }
+                            predicate_index_phase21_5 =
+                                predicate_index_phase21_5 + 1;
+                        }
+                        obligations_phase21_5.Push(
+                            typechecker_query_make_scope_obligation(
+                                root_phase21_5.entity_name,
+                                root_phase21_5.binding_name,
+                                field_lookup_phase21_5.Val,
+                                "primary",
+                                root_index_phase21_5,
+                                discharged_phase21_5,
+                                expr.Query.span,
+                                ctx
+                            )
+                        );
+                    }
+                }
+            }
+            root_index_phase21_5 = root_index_phase21_5 + 1;
+        }
+
+        mut joins_phase21_5: std.Vector[ast.QueryJoin[ctx], ctx] :=
+            ctx[expr.Query.joins];
+        mut join_index_phase21_5 := 0;
+        while join_index_phase21_5 < len(joins_phase21_5) {
+            mut join_phase21_5 := joins_phase21_5[join_index_phase21_5];
+            mut resolved_join_entity_phase21_5 := env_resolve_namespaced_ident(
+                env, join_phase21_5.entity_name, ctx
+            );
+            mut join_scoped_lookup_phase21_5 := (*env).struct_scoped_entity.Get(
+                resolved_join_entity_phase21_5
+            );
+            if join_scoped_lookup_phase21_5.Ok {
+                if join_scoped_lookup_phase21_5.Val == 1 {
+                    mut join_field_lookup_phase21_5 :=
+                        (*env).struct_scope_field.Get(
+                            resolved_join_entity_phase21_5
+                        );
+                    if join_field_lookup_phase21_5.Ok {
+                        mut join_discharged_phase21_5 :=
+                            typechecker_query_predicate_discharges_root(
+                                join_phase21_5.predicate,
+                                join_phase21_5.binding_name,
+                                join_field_lookup_phase21_5.Val,
+                                env,
+                                scope,
+                                ctx
+                            );
+                        obligations_phase21_5.Push(
+                            typechecker_query_make_scope_obligation(
+                                join_phase21_5.entity_name,
+                                join_phase21_5.binding_name,
+                                join_field_lookup_phase21_5.Val,
+                                "join",
+                                join_index_phase21_5,
+                                join_discharged_phase21_5,
+                                expr.Query.span,
+                                ctx
+                            )
+                        );
+                    }
+                }
+            }
+            join_index_phase21_5 = join_index_phase21_5 + 1;
+        }
+    }
+    return obligations_phase21_5;
+}
+
 func typechecker_check_query_scope_obligations(
     expr: ast.Expression[ctx],
     env: *TypeEnvironment[ctx],
     scope: Index[Scope[ctx], ctx],
     ctx: &Arena
 ) {
+    mut obligations_phase21_5 := typechecker_build_query_scope_obligations(
+        expr, env, scope, ctx
+    );
+    mut obligation_index_phase21_5 := 0;
+    while obligation_index_phase21_5 < len(obligations_phase21_5) {
+        mut obligation_phase21_5 :=
+            obligations_phase21_5[obligation_index_phase21_5];
+        if obligation_phase21_5.discharged == 0 {
+            mut message_phase21_5 :=
+                "Semantic Error: [TenantScopeProvenance] error: query lacks trusted tenant-scope provenance for scoped root '";
+            message_phase21_5 = std.Concat(
+                message_phase21_5, obligation_phase21_5.entity_identity
+            );
+            message_phase21_5 = std.Concat(message_phase21_5, "' (");
+            message_phase21_5 = std.Concat(
+                message_phase21_5, obligation_phase21_5.root_kind
+            );
+            message_phase21_5 = std.Concat(message_phase21_5, " binding '");
+            message_phase21_5 = std.Concat(
+                message_phase21_5, obligation_phase21_5.binding_identity
+            );
+            message_phase21_5 = std.Concat(message_phase21_5, "')");
+            report_error(
+                2, message_phase21_5,
+                obligation_phase21_5.query_span, env, ctx
+            );
+        }
+        obligation_index_phase21_5 = obligation_index_phase21_5 + 1;
+    }
+
+    // A nested query is a fresh obligation boundary. Checking each node here
+    // prevents outer, sibling, or earlier discharge from clearing its roots.
     unsafe {
-        mut roots_phase21_4: std.Vector[ast.QueryRoot[ctx], ctx] :=
-            ctx[expr.Query.roots];
-        mut predicates_phase21_4: std.Vector[ast.Expression[ctx], ctx] :=
-            ctx[expr.Query.predicates];
-        mut root_index_phase21_4 := 0;
-        while root_index_phase21_4 < len(roots_phase21_4) {
-            mut root_phase21_4 := roots_phase21_4[root_index_phase21_4];
-            mut resolved_entity_phase21_4 := env_resolve_namespaced_ident(
-                env, root_phase21_4.entity_name, ctx
+        mut nested_phase21_5: std.Vector[ast.Expression[ctx], ctx] :=
+            ctx[expr.Query.nested_queries];
+        mut nested_index_phase21_5 := 0;
+        while nested_index_phase21_5 < len(nested_phase21_5) {
+            mut nested_expr_idx_phase21_5:
+                Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+            ctx.Set(
+                nested_expr_idx_phase21_5,
+                nested_phase21_5[nested_index_phase21_5]
             );
-            mut scoped_lookup_phase21_4 := (*env).struct_scoped_entity.Get(
-                resolved_entity_phase21_4
-            );
-            if scoped_lookup_phase21_4.Ok {
-                if scoped_lookup_phase21_4.Val == 1 {
-                    mut field_lookup_phase21_4 := (*env).struct_scope_field.Get(
-                        resolved_entity_phase21_4
-                    );
-                    mut discharged_phase21_4 := 0;
-                    if field_lookup_phase21_4.Ok {
-                        mut predicate_index_phase21_4 := 0;
-                        while predicate_index_phase21_4 < len(predicates_phase21_4) {
-                            mut predicate_idx_phase21_4:
-                                Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
-                            ctx.Set(
-                                predicate_idx_phase21_4,
-                                predicates_phase21_4[predicate_index_phase21_4]
-                            );
-                            if typechecker_query_predicate_discharges_root(
-                                predicate_idx_phase21_4,
-                                root_phase21_4.binding_name,
-                                field_lookup_phase21_4.Val,
-                                env,
-                                scope,
-                                ctx
-                            ) == 1 {
-                                discharged_phase21_4 = 1;
-                            }
-                            predicate_index_phase21_4 =
-                                predicate_index_phase21_4 + 1;
-                        }
-                    }
-                    if discharged_phase21_4 == 0 {
-                        mut message_phase21_4 :=
-                            "Semantic Error: [TenantScopeProvenance] error: query lacks trusted tenant-scope provenance for scoped root '";
-                        message_phase21_4 = std.Concat(
-                            message_phase21_4, root_phase21_4.entity_name
-                        );
-                        message_phase21_4 = std.Concat(
-                            message_phase21_4, "'"
-                        );
-                        report_error(
-                            2, message_phase21_4, expr.Query.span, env, ctx
-                        );
-                    }
-                }
-            }
-            root_index_phase21_4 = root_index_phase21_4 + 1;
+            check_expression(nested_expr_idx_phase21_5, env, scope, ctx);
+            nested_index_phase21_5 = nested_index_phase21_5 + 1;
         }
     }
 }
@@ -2433,7 +2572,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
         }
         mut expr := ctx[expr_idx];
 
-        if expr.tag == 14 { // Query (Phase 21.4 primary-root enforcement)
+        if expr.tag == 14 { // Query (Phase 21.5 complete local obligation set)
             typechecker_check_query_scope_obligations(
                 expr, env, scope, ctx
             );
