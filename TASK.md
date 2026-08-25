@@ -85,7 +85,7 @@ Out of scope:
 - [x] Patch 21.2 — Inert Scoped-Query Semantic Records — DONE
 - [x] Patch 21.3 — Typed-Query Surface Under the No-op — DONE
 - [x] Patch 21.4 — Trusted Scope Provenance Enforcement — DONE
-- [ ] Patch 21.5 — Per-Root Join and Nested-Query Obligations
+- [x] Patch 21.5 — Per-Root Join and Nested-Query Obligations — DONE
 - [ ] Patch 21.6 — Explicit Cross-Tenant Capability Boundary
 - [ ] Patch 21.7 — OD-8 Adversarial Soundness Verdict
 - [ ] Patch 21.7a — Tenant-Scope Bootstrap Seed Reconvergence

@@ -28,6 +28,6 @@ predicate spelling do not carry the provenance category.
 - `reserved_intrinsic_redefinition` — `compiler/phase21_trusted_scope_reserved_intrinsic_invalid.gst` — `ReservedCompilerIntrinsic`
 
 The intrinsic is compile-time-only and is never emitted to either backend.
-Trusted request-context establishment is outside this guarantee. Join
-roots, nested queries, and cross-tenant capabilities remain explicitly
-unenforced for Patches 21.5 and 21.6.
+Trusted request-context establishment is outside this guarantee.
+Successor Patch 21.5 now enforces independent join-root and nested-query
+obligations. Cross-tenant capability enforcement remains Patch 21.6.

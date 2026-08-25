@@ -2095,6 +2095,52 @@
       "edits_stdlib": false
     }
   },
+  "phase21_per_root_obligations": {
+    "contract_version": "phase21_per_root_obligations_v1",
+    "status": "patch21_5_complete",
+    "next_patch": "21.6",
+    "review_view": "compiler/CRANELIFT_PHASE21_PER_ROOT_OBLIGATIONS.md",
+    "obligation_carrier": [
+      "QueryScopeObligation.entity_identity",
+      "QueryScopeObligation.binding_identity",
+      "QueryScopeObligation.scope_identity",
+      "QueryScopeObligation.root_kind",
+      "QueryScopeObligation.source_order",
+      "QueryScopeObligation.discharged"
+    ],
+    "deterministic_order": "primary_roots_in_source_order_then_join_roots_in_source_order_with_nested_queries_checked_recursively_in_source_order",
+    "join_policy": "each_scoped_join_root_owns_an_independent_obligation_discharged_only_by_its_own_join_predicate_unscoped_joins_create_none",
+    "nested_policy": "every_nested_query_is_a_fresh_obligation_boundary_outer_sibling_and_earlier_discharge_never_clear_it",
+    "query_value_policy": "every_query_must_discharge_its_complete_local_obligation_set_before_terminal_value_projection_so_unresolved_sets_cannot_flow_through_aliases_returns_branches_or_aggregate_shaped_nested_queries",
+    "diagnostic_class": "TenantScopeProvenance",
+    "diagnostic": "error: query lacks trusted tenant-scope provenance",
+    "positive_fixtures": [
+      {"kind":"scoped_joins_and_nested","source_fixture":"compiler/phase21_per_root_obligations_positive.gst","mir_to_c_exit":51,"cranelift_exit":51},
+      {"kind":"unscoped_join","source_fixture":"compiler/phase21_unscoped_join_positive.gst","mir_to_c_exit":54},
+      {"kind":"nested_aggregate_shape","source_fixture":"compiler/phase21_nested_aggregate_positive.gst","mir_to_c_exit":55,"cranelift_exit":55},
+      {"kind":"branch_return_alias_flow","source_fixture":"compiler/phase21_query_value_flow_positive.gst","mir_to_c_exit":52}
+    ],
+    "negative_fixtures": [
+      {"kind":"join_missing","source_fixture":"compiler/phase21_join_obligation_missing_invalid.gst","root_kind":"join","binding":"member"},
+      {"kind":"sibling_discharge","source_fixture":"compiler/phase21_join_sibling_isolation_invalid.gst","root_kind":"join","binding":"second_member"},
+      {"kind":"nested_missing","source_fixture":"compiler/phase21_nested_obligation_missing_invalid.gst","root_kind":"primary","binding":"inner_workspace"},
+      {"kind":"query_value_unresolved","source_fixture":"compiler/phase21_query_value_unresolved_invalid.gst","root_kind":"primary","binding":"workspace"},
+      {"kind":"branch_unresolved","source_fixture":"compiler/phase21_query_value_branch_invalid.gst","root_kind":"primary","binding":"second_workspace"}
+    ],
+    "boundary": {
+      "primary_scoped_roots_enforced": true,
+      "join_roots_enforced": true,
+      "nested_queries_enforced": true,
+      "unscoped_joins_create_obligations": false,
+      "partial_query_obligation_sets_flow_as_values": false,
+      "cross_tenant_capability_enforced": false,
+      "trusted_request_context_establishment_claimed": false,
+      "adds_or_changes_MIR_operations": false,
+      "changes_ABI_layout_or_runtime_symbols": false,
+      "changes_bootstrap_seed": false,
+      "edits_stdlib": false
+    }
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",
