@@ -16976,6 +16976,24 @@ guard-cranelift-phase21-inert-scoped-query-records-evidence:
     just guard-cranelift-phase21-inert-scoped-query-records-contract
     bash scripts/phase21_inert_scoped_query_records.sh
 
+guard-cranelift-phase21-typed-query-noop-surface-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧩 Checking Phase 21 typed-query no-op surface authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-typed-query-noop-surface-contract | grep -F $'guard-cranelift-phase21-typed-query-noop-surface-contract\t1\t' >/dev/null
+    just guard-cranelift-phase21-inert-scoped-query-records-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase21_typed_query_noop_surface.py validate
+    python3 scripts/phase21_typed_query_noop_surface.py check-review
+
+guard-cranelift-phase21-typed-query-noop-surface-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Replaying Phase 21 typed-query syntax and no-op backend observations..."
+    just guard-cranelift-phase21-typed-query-noop-surface-contract
+    bash scripts/phase21_typed_query_noop_surface.sh
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

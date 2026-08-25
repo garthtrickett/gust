@@ -212,6 +212,9 @@ func codegen_expr_calls_func(expr_idx: Index[ast.Expression[ctx], ctx], func_nam
         if tag == 13 { // Empty
             return 0;
         }
+        if tag == 14 { // Query (Phase 21.3 semantic no-op)
+            return codegen_expr_calls_func(expr.Query.terminal, func_name, ctx);
+        }
     }
     return 0;
 }
@@ -1028,6 +1031,7 @@ func codegen_get_expression_span(expr_idx: Index[ast.Expression[ctx], ctx], ctx:
         if expr.tag == 11 { s = expr.Selector.span; }
         if expr.tag == 12 { s = expr.Call.span; }
         if expr.tag == 13 { s = expr.Empty.span; }
+        if expr.tag == 14 { s = expr.Query.span; }
     } 
     return s;
 }
@@ -3414,6 +3418,11 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
             mut t_empty := ctx[ctx[expr_idx].Empty.target_type];
             mut resolved_t := typechecker.env_resolve_type(env, t_empty, ctx);
             return std.Clone(ctx, codegen_gen_type_aware_initializer(resolved_t, env, ctx));
+        }
+        if tag == 14 { // Query (Phase 21.3 semantic no-op)
+            return codegen_generate_expression(
+                ctx[expr_idx].Query.terminal, env, ctx
+            );
         }
     }
     return "0";

@@ -47,11 +47,7 @@ static int gust_user_exit_status = 0;
 
 int gust_user_main_impl(void* _gust_arg) {
     int trusted_scope_shape = 7;
-    int row_workspace_shape = 7;
-    if ((row_workspace_shape == trusted_scope_shape)) {
     return 21;
-    }
-    return 1;
 }
 
 void gust_user_main(void* _gust_arg) {

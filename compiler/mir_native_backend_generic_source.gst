@@ -340,6 +340,11 @@ func mir_native_generic_const_eval(
             result.value = folded.value;
             return result;
         }
+        if expression.tag == 14 { // Query (Phase 21.3 semantic no-op)
+            return mir_native_generic_const_eval(
+                ctx[expression.Query.terminal], env, ctx
+            );
+        }
         return result;
     }
 }

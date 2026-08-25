@@ -40,6 +40,7 @@
     "phase21_roadmap",
     "phase21_opening",
     "phase21_inert_scoped_query_records",
+    "phase21_typed_query_noop_surface",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -1319,6 +1320,29 @@
             {"kind":"unchanged_source_and_exact_diagnostic","source_fixture":"compiler/phase20_resource_empty_forge_invalid.gst","compile_exit":1,"diagnostic_class":"OpaqueConstruction","diagnostic":"Opaque type 'phase20_resource_enforcement_module__Handle' can be constructed only inside its defining module"}
           ],
           "boundary": {"reachable_from_normal_source_typechecking_or_lowering":false,"enforcement_enabled":false,"adds_source_syntax":false,"changes_MIR_or_backends":false,"changes_ABI_layout_or_runtime_symbols":false,"changes_bootstrap_seed":false,"edits_stdlib":false}
+        }
+      },
+      "phase21_typed_query_noop_surface": {
+        "const": {
+          "contract_version": "phase21_typed_query_noop_surface_v1",
+          "status": "patch21_3_complete",
+          "next_patch": "21.4",
+          "review_view": "compiler/CRANELIFT_PHASE21_TYPED_QUERY_NOOP_SURFACE.md",
+          "declaration_syntax": "#[scoped(field)] type Entity struct",
+          "query_clauses": ["root Entity as binding","predicate expression","join Entity as binding predicate expression","nested query expression","cross_tenant capability_expression","terminal expression"],
+          "contextual_keyword_policy": "query_is_an_ordinary_identifier_unless_immediately_followed_by_a_left_brace",
+          "ast_carriers": ["StructDecl.is_scoped_entity","StructDecl.scope_field","Expression.Query","QueryRoot","QueryJoin"],
+          "evaluation_policy": "query_clauses_are_inert_and_the_query_value_type_codegen_and_constant_evaluation_delegate_only_to_the_terminal_expression",
+          "parser_fixture": "compiler/parser_phase21_typed_query_noop_surface_test_entry.gst",
+          "complete_surface_fixture": "compiler/phase21_typed_query_noop_surface.gst",
+          "complete_surface_exit": 37,
+          "migrated_witnesses": [
+            {"source_fixture":"compiler/phase21_query_shape_trusted_baseline.gst","mir_to_c_exit":21,"cranelift_exit":21},
+            {"source_fixture":"compiler/phase21_query_shape_untrusted_baseline.gst","mir_to_c_exit":99,"cranelift_exit":99}
+          ],
+          "compiler_owned_consumers": ["compiler/ast.gst","compiler/parser.gst","compiler/typechecker.gst","compiler/codegen.gst","compiler/mir_native_backend_generic_source.gst"],
+          "enforcement_policy": "no_scope_obligation_is_created_or_discharged_and_no_query_rejection_is_enabled_until_patch21_4",
+          "boundary": {"adds_source_syntax":true,"changes_existing_program_meaning":false,"enforcement_enabled":false,"adds_or_changes_MIR_operations":false,"changes_backend_observables":false,"changes_ABI_layout_or_runtime_symbols":false,"changes_bootstrap_seed":false,"edits_stdlib":false}
         }
       },
       "phase19_brand_authority": {
