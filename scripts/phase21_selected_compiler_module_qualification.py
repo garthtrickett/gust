@@ -197,8 +197,8 @@ def validate() -> dict:
     )
     lowerer = LOWERER.read_text(encoding="utf-8")
     require(
-        "statement.tag == 1 || statement.tag == 2" in lowerer
-        and "any function that uses one still has to pass the generic" in lowerer,
+        "if len(programs) > 1 {" in lowerer
+        and "else if statement.tag != 1 && statement.tag != 2 {" in lowerer,
         "generic declaration admission is missing from the module lowerer",
     )
     require(

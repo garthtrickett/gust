@@ -1573,7 +1573,13 @@ func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx
         std.VectorNew(ctx);
     mut hosts: std.Vector[MirNativeModuleImportHost[ctx], ctx] :=
         std.VectorNew(ctx);
+    // Resolved multi-module input establishes this route before declarations
+    // are inspected. Struct and enum declarations are admissible metadata,
+    // but must not make this lowerer claim an otherwise single-module cohort.
     mut has_module_import_surface := 0;
+    if len(programs) > 1 {
+        has_module_import_surface = 1;
+    }
     mut module_index := 0;
     while module_index < len(programs) {
         mut program := programs[module_index];
@@ -1584,12 +1590,6 @@ func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx
             mut statement := top_level[statement_index];
             unsafe {
                 if statement.tag == 0 {
-                    has_module_import_surface = 1;
-                } else if statement.tag == 1 || statement.tag == 2 {
-                    // Struct and enum declarations are compile-time type
-                    // metadata. They require no executable MIR of their own;
-                    // any function that uses one still has to pass the generic
-                    // signature and body lowerers below.
                     has_module_import_surface = 1;
                 } else if statement.tag == 3 {
                     if statement.FunctionDecl.is_extern == 1 {
@@ -1644,7 +1644,7 @@ func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx
                         }
                         functions.Push(function);
                     }
-                } else {
+                } else if statement.tag != 1 && statement.tag != 2 {
                     if has_module_import_surface == 1 || len(programs) > 1 {
                         model.represented = 1;
                         return mir_native_module_import_invalid(
@@ -1661,9 +1661,6 @@ func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx
         module_index = module_index + 1;
     }
 
-    if len(programs) > 1 {
-        has_module_import_surface = 1;
-    }
     if has_module_import_surface == 0 {
         return model;
     }
