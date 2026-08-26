@@ -53,7 +53,7 @@ status, stdout, stderr, canonical request/bundle, and filesystem evidence.
 The six exclusions above remain the frozen Patch 20.13 snapshot.
 Completed successor migrations are no longer re-probed as exclusions
 by this historical guard.
-Completed successor-owned categories: `collections,strings`.
+Completed successor-owned categories: `collections,strings,filesystem,allocation`.
 
 Phase 17 request witnesses continue to prove runtime-operation contract
 agreement, but a scalar marker plus a request witness is not counted as

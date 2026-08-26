@@ -103,13 +103,24 @@ def validate() -> dict:
         require(row.get("decision") in {"deferred", "source_or_type_failure"},
                 f"Patch 20.13 exclusion decision drifted: {row.get('category')}")
 
-    successor = registry.get("phase21_collection_string_native_source", {})
     migrated_categories = []
-    if successor.get("status") == "patch21_9_complete":
-        require(successor.get("predecessor_authority") ==
-                registry["phase21_residue_migration_authority"]["contract_version"],
-                "Patch 21.9 successor authority is not linked to Patch 21.8")
-        migrated_categories = ["collections", "strings"]
+    for successor_id, completed_status, predecessor_id in (
+        ("phase21_collection_string_native_source", "patch21_9_complete",
+         "phase21_residue_migration_authority"),
+        ("phase21_filesystem_allocation_native_source", "patch21_10_complete",
+         "phase21_collection_string_native_source"),
+    ):
+        successor = registry.get(successor_id, {})
+        if successor.get("status") == completed_status:
+            require(successor.get("predecessor_authority") ==
+                    registry[predecessor_id]["contract_version"],
+                    f"{completed_status} successor authority is not linked to "
+                    f"{predecessor_id}")
+            migrated_categories.extend(
+                case["id"].split("_", 1)[0]
+                for case in successor.get("source_cases", [])
+                if case["id"].endswith("_primary")
+            )
 
     require("- [x] Patch 20.13 — Stdlib and Runtime Component Differential — DONE"
             in TASK.read_text(encoding="utf-8"),
