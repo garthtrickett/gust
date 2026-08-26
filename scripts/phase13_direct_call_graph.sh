@@ -104,7 +104,7 @@ expect_invalid_fixture \
 expect_invalid_fixture \
   invalid-signature \
   "$invalid_signature_fixture" \
-  'canonical compiler MIR defined function phase13_graph_leaf must use only int/bool parameters and one int/bool return'
+  'canonical compiler MIR defined function phase13_graph_leaf must use int/bool/rawptr parameters and an int/bool/void return'
 expect_invalid_fixture \
   invalid-result-use \
   "$invalid_result_fixture" \

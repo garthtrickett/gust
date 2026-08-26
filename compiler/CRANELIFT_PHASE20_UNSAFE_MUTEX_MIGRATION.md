@@ -7,13 +7,13 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - Status: `patch20_16c_complete`
 - Next patch: `20.16d`
 - Scope: `every_git_tracked_gust_source_file`
-- Current classified calls: `28` (`14` Lock, `14` Unlock)
+- Current classified calls: `30` (`15` Lock, `15` Unlock)
 - Patch 20.16c frozen baseline: `24`
 
 ## Complete classified inventory
 
 - `compiler/e2e_complex_bootstrap_target.gst` — `bootstrap_target`; Lock `4`, Unlock `4`
-- `compiler/phase20_component_threading_source.gst` — `compiler_threading_compile_only_fixture`; Lock `1`, Unlock `1`
+- `compiler/phase20_component_threading_source.gst` — `compiler_threading_runtime_fixture`; Lock `2`, Unlock `2`
 - `compiler/phase20_mutex_lock_safe_invalid.gst` — `patch20_16d_enforcement_negative`; Lock `1`, Unlock `0`
 - `compiler/phase20_mutex_unlock_safe_invalid.gst` — `patch20_16d_enforcement_negative`; Lock `0`, Unlock `1`
 - `compiler/phase20_protected_access_module.gst` — `patch20_16d_explicit_unsafe_lifecycle_fixture`; Lock `1`, Unlock `1`

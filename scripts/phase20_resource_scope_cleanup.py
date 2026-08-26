@@ -100,11 +100,28 @@ def validate() -> dict:
     justfile = JUSTFILE.read_text(encoding="utf-8")
     require(f"{GUARD_L1}:" in justfile and f"{GUARD_L2}:" in justfile,
             "Patch 20.10 just guards are missing")
-    return authority
+
+    successor = registry.get("phase21_resource_sync_native_source", {})
+    successor_case = None
+    if successor.get("status") == "patch21_11_complete":
+        require(successor.get("predecessor_authority") ==
+                registry["phase21_filesystem_allocation_native_source"]
+                ["contract_version"],
+                "Patch 21.11 successor authority is not linked")
+        successor_case = next((case for case in successor.get("source_cases", [])
+                               if case.get("source_fixture") ==
+                               authority["source_fixture"]), None)
+        require(successor_case is not None and
+                successor_case.get("expected_exit") == 0 and
+                successor_case.get("expected_stderr") == "",
+                "Patch 21.11 lacks native success authority for the cleanup source")
+    projected = dict(authority)
+    projected["completed_successor_native_case"] = successor_case
+    return projected
 
 
 def render(authority: dict) -> str:
-    return "\n".join([
+    lines = [
         "# Cranelift Phase 20 Generic Resource Scope Cleanup",
         "",
         "Generated from `scripts/cranelift_feature_registry.json` by",
@@ -132,16 +149,30 @@ def render(authority: dict) -> str:
         "Directory resources use the same plan. `open_directories` remains only",
         "write-only compatibility storage and has no semantic enforcement read.",
         "Phase 15 canonical cleanup parity remains the MIR-to-C/Cranelift consumer",
-        "agreement authority; generic source cohorts still preserve explicit",
-        "Cranelift no-fallback deferrals where their unrelated source lowering is",
-        "not yet selected.",
+        "agreement authority.",
         "",
-    ])
+    ]
+    successor_case = authority["completed_successor_native_case"]
+    if successor_case is not None:
+        lines += [
+            "## Successor transition",
+            "",
+            "Patch 21.11 now owns native source admission for this exact resource",
+            "cleanup fixture. This historical guard therefore retires its",
+            "superseded pre-driver rejection probe. Patch 21.11's dedicated",
+            "parity guard owns the native build and observable result.",
+            f"- Source: `{successor_case['source_fixture']}`",
+            f"- Expected stdout hex: `{successor_case['expected_stdout'].encode().hex()}`",
+            "",
+        ]
+    return "\n".join(lines)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=("validate", "project", "check-review"))
+    parser.add_argument("command", choices=(
+        "validate", "project", "check-review", "successor-native-case",
+    ))
     args = parser.parse_args()
     try:
         authority = validate()
@@ -150,6 +181,10 @@ def main() -> int:
         elif args.command == "check-review":
             require(REVIEW.read_text(encoding="utf-8") == render(authority),
                     "generated Patch 20.10 review is stale; run project")
+        elif args.command == "successor-native-case":
+            case = authority["completed_successor_native_case"]
+            if case is not None:
+                print(case["source_fixture"])
     except (Error, KeyError) as error:
         print(f"{GUARD_L1}: {error}", file=sys.stderr)
         return 1

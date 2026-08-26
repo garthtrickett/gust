@@ -294,6 +294,8 @@ enum TinyMirType {
     Bool,
     StringSlice,
     ArenaPointer,
+    RawPointer,
+    FunctionPointer,
     USize,
     Void,
 }
@@ -1402,6 +1404,18 @@ enum CompilerMirLoweringCallArgument<'a> {
     StringLiteralUtf8Hex(&'a str),
     LocalString(&'a str),
     ArenaAddress(&'a str),
+    ArenaAllocationAddress {
+        arena: &'a str,
+        index_local: &'a str,
+        byte_offset: i32,
+        byte_length: u64,
+    },
+    FunctionAddress(&'a str),
+    LocalRawPointer(&'a str),
+    LocalRawPointerOffset {
+        local: &'a str,
+        byte_offset: i32,
+    },
     FunctionParamI32(usize),
     LocalI32(&'a str),
     BlockParamI32(&'a str),
@@ -1508,6 +1522,25 @@ enum CompilerMirLoweringStatement<'a> {
         target: CompilerMirLoweringCallTarget<'a>,
         arguments: Vec<CompilerMirLoweringCallArgument<'a>>,
     },
+    LocalRawPointerSetParam {
+        name: &'a str,
+        param: usize,
+    },
+    LocalRawPointerSetCall {
+        name: &'a str,
+        target: CompilerMirLoweringCallTarget<'a>,
+        arguments: Vec<CompilerMirLoweringCallArgument<'a>>,
+    },
+    LocalI32SetRawPointerLoad {
+        name: &'a str,
+        pointer_local: &'a str,
+        byte_offset: i32,
+    },
+    RawPointerStoreLocalI32 {
+        pointer_local: &'a str,
+        byte_offset: i32,
+        value_local: &'a str,
+    },
     LocalStringSetCall {
         name: &'a str,
         target: CompilerMirLoweringCallTarget<'a>,
@@ -1522,6 +1555,12 @@ enum CompilerMirLoweringStatement<'a> {
         index_local: &'a str,
         byte_offset: i32,
         value: i32,
+    },
+    ArenaStoreLocalI32 {
+        arena: &'a str,
+        index_local: &'a str,
+        byte_offset: i32,
+        value_local: &'a str,
     },
     LocalI32SetArenaLoad {
         name: &'a str,
@@ -12312,6 +12351,8 @@ fn phase10_tiny_mir_type_name(ty: TinyMirType) -> &'static str {
         TinyMirType::Bool => "bool",
         TinyMirType::StringSlice => "str",
         TinyMirType::ArenaPointer => "arena",
+        TinyMirType::RawPointer => "rawptr",
+        TinyMirType::FunctionPointer => "fnptr",
         TinyMirType::USize => "usize",
         TinyMirType::Void => "void",
     }
@@ -15463,6 +15504,52 @@ fn phase11_import_registry_classification(
             [TinyMirType::ArenaPointer, TinyMirType::StringSlice],
             TinyMirType::StringSlice,
         ) => Some("RuntimeCall"),
+        (
+            "std_Mutex_Alloc",
+            "std_Mutex_Alloc",
+            [],
+            TinyMirType::I32,
+        ) => Some("RuntimeCall"),
+        (
+            "std_Mutex_Lock_impl",
+            "std_Mutex_Lock_impl",
+            [TinyMirType::I32, TinyMirType::RawPointer],
+            TinyMirType::RawPointer,
+        ) => Some("RuntimeCall"),
+        (
+            "std_Mutex_Unlock_impl",
+            "std_Mutex_Unlock_impl",
+            [TinyMirType::I32],
+            TinyMirType::Void,
+        ) => Some("RuntimeCall"),
+        (
+            "gust_scheduler_init",
+            "gust_scheduler_init",
+            [TinyMirType::I32],
+            TinyMirType::Void,
+        ) => Some("RuntimeCall"),
+        (
+            "gust_scheduler_spawn",
+            "gust_scheduler_spawn",
+            [
+                TinyMirType::USize,
+                TinyMirType::FunctionPointer,
+                TinyMirType::RawPointer,
+            ],
+            TinyMirType::Void,
+        ) => Some("RuntimeCall"),
+        (
+            "gust_yield",
+            "gust_yield",
+            [],
+            TinyMirType::Void,
+        ) => Some("RuntimeCall"),
+        (
+            "gust_scheduler_destroy",
+            "gust_scheduler_destroy",
+            [],
+            TinyMirType::Void,
+        ) => Some("RuntimeCall"),
         _ => None,
     }
 }
@@ -16410,7 +16497,7 @@ const PHASE10_CANONICAL_MIR_FORMATS: [&str; 2] = [
     "gust.compiler_mir_ingestion.v1",
     "gust.compiler_mir_ingestion.v2",
 ];
-const PHASE10_DRIVER_OPERATIONS: [&str; 20] = [
+const PHASE10_DRIVER_OPERATIONS: [&str; 28] = [
     "ReturnI32",
     "LocalI32Set",
     "LocalI32Read",
@@ -16428,22 +16515,37 @@ const PHASE10_DRIVER_OPERATIONS: [&str; 20] = [
     "LocalStringSetCall",
     "ArenaInit",
     "ArenaStoreI32",
+    "ArenaStoreLocalI32",
     "LocalI32SetArenaLoad",
+    "FunctionAddress",
+    "ArenaAllocationAddress",
+    "LocalRawPointerSetParam",
+    "LocalRawPointerSetCall",
+    "LocalI32SetRawPointerLoad",
+    "RawPointerStoreLocalI32",
+    "LocalRawPointerOffset",
     "ImportedPredicateI32",
     "ImportedMaterializeI32",
 ];
-const PHASE10_DRIVER_TYPES_AND_ABIS: [&str; 9] = [
+const PHASE10_DRIVER_TYPES_AND_ABIS: [&str; 16] = [
     "int",
     "bool",
     "str",
     "arena",
     "usize",
+    "rawptr",
+    "fnptr",
     "()->int",
     "(int)->int",
     "(int,int)->int",
+    "()->void",
+    "(rawptr)->void",
+    "(int)->void",
+    "(int,rawptr)->rawptr",
+    "(usize,fnptr,rawptr)->void",
     "direct_scalar_abi",
 ];
-const PHASE10_DRIVER_RUNTIME_IMPORTS: [&str; 12] = [
+const PHASE10_DRIVER_RUNTIME_IMPORTS: [&str; 19] = [
     "tiny_host_add_one_i32",
     "tiny_host_add_i32",
     "tiny_host_is_positive_i32",
@@ -16456,6 +16558,13 @@ const PHASE10_DRIVER_RUNTIME_IMPORTS: [&str; 12] = [
     "os_ArenaAlloc",
     "os_WriteFile",
     "os_ReadFile",
+    "std_Mutex_Alloc",
+    "std_Mutex_Lock_impl",
+    "std_Mutex_Unlock_impl",
+    "gust_scheduler_init",
+    "gust_scheduler_spawn",
+    "gust_yield",
+    "gust_scheduler_destroy",
 ];
 const PHASE10_DRIVER_TARGET_REQUIREMENTS: [&str; 3] = [
     "native_host",
@@ -18691,6 +18800,22 @@ fn parse_compiler_mir_fixture_field_map<'a>(
                         )?,
                     }
                 }
+                "LocalRawPointerSetParam" => {
+                    let local_key = format!("{prefix}_local");
+                    let param_key = format!("{prefix}_param");
+                    CompilerMirLoweringStatement::LocalRawPointerSetParam {
+                        name: required_canonical_compiler_mir_fixture_field(
+                            &fields,
+                            &mut consumed,
+                            &local_key,
+                        )?,
+                        param: parse_canonical_compiler_mir_usize_field(
+                            &fields,
+                            &mut consumed,
+                            &param_key,
+                        )?,
+                    }
+                }
                 "LocalI32SetBlockParam" => {
                     let local_key = format!("{prefix}_local");
                     let block_param_key = format!("{prefix}_block_param");
@@ -18823,6 +18948,100 @@ fn parse_compiler_mir_fixture_field_map<'a>(
                         )?,
                     }
                 }
+                "LocalRawPointerSetCall" => {
+                    if !allow_calls {
+                        return Err(IoError::new(
+                            ErrorKind::InvalidInput,
+                            "gust.compiler_mir_ingestion.v1 remains call/import-free",
+                        )
+                        .into());
+                    }
+                    let local_key = format!("{prefix}_local");
+                    let callee_kind_key = format!("{prefix}_callee_kind");
+                    let callee_key = format!("{prefix}_callee");
+                    let callee_kind = required_canonical_compiler_mir_fixture_field(
+                        &fields,
+                        &mut consumed,
+                        &callee_kind_key,
+                    )?;
+                    let callee = required_canonical_compiler_mir_fixture_field(
+                        &fields,
+                        &mut consumed,
+                        &callee_key,
+                    )?;
+                    let target = match callee_kind {
+                        "LocalFunction" => CompilerMirLoweringCallTarget::LocalFunction(callee),
+                        "ImportedFunction" => {
+                            CompilerMirLoweringCallTarget::ImportedFunction(callee)
+                        }
+                        other => {
+                            return Err(IoError::new(
+                                ErrorKind::InvalidInput,
+                                format!(
+                                    "unsupported canonical compiler MIR call target kind at {callee_kind_key}: {other}"
+                                ),
+                            )
+                            .into());
+                        }
+                    };
+                    CompilerMirLoweringStatement::LocalRawPointerSetCall {
+                        name: required_canonical_compiler_mir_fixture_field(
+                            &fields,
+                            &mut consumed,
+                            &local_key,
+                        )?,
+                        target,
+                        arguments: parse_canonical_compiler_mir_call_arguments(
+                            &fields,
+                            &mut consumed,
+                            &prefix,
+                        )?,
+                    }
+                }
+                "LocalI32SetRawPointerLoad" => {
+                    let local_key = format!("{prefix}_local");
+                    let pointer_key = format!("{prefix}_pointer_local");
+                    let offset_key = format!("{prefix}_byte_offset");
+                    CompilerMirLoweringStatement::LocalI32SetRawPointerLoad {
+                        name: required_canonical_compiler_mir_fixture_field(
+                            &fields,
+                            &mut consumed,
+                            &local_key,
+                        )?,
+                        pointer_local: required_canonical_compiler_mir_fixture_field(
+                            &fields,
+                            &mut consumed,
+                            &pointer_key,
+                        )?,
+                        byte_offset: parse_canonical_compiler_mir_i32_field(
+                            &fields,
+                            &mut consumed,
+                            &offset_key,
+                        )?,
+                    }
+                }
+                "RawPointerStoreLocalI32" => {
+                    let pointer_key = format!("{prefix}_pointer_local");
+                    let offset_key = format!("{prefix}_byte_offset");
+                    let value_key = format!("{prefix}_value_local");
+                    CompilerMirLoweringStatement::RawPointerStoreLocalI32 {
+                        pointer_local: required_canonical_compiler_mir_fixture_field(
+                            &fields,
+                            &mut consumed,
+                            &pointer_key,
+                        )?,
+                        byte_offset: parse_canonical_compiler_mir_i32_field(
+                            &fields,
+                            &mut consumed,
+                            &offset_key,
+                        )?,
+                        value_local: required_canonical_compiler_mir_fixture_field(
+                            &fields,
+                            &mut consumed,
+                            &value_key,
+                        )?,
+                    }
+                }
                 "LocalStringSetCall" => {
                     if !allow_calls {
                         return Err(IoError::new(
@@ -18932,6 +19151,34 @@ fn parse_compiler_mir_fixture_field_map<'a>(
                             &offset_key,
                         )?,
                         value: parse_canonical_compiler_mir_i32_field(
+                            &fields,
+                            &mut consumed,
+                            &value_key,
+                        )?,
+                    }
+                }
+                "ArenaStoreLocalI32" => {
+                    let arena_key = format!("{prefix}_arena");
+                    let index_key = format!("{prefix}_index_local");
+                    let offset_key = format!("{prefix}_byte_offset");
+                    let value_key = format!("{prefix}_value_local");
+                    CompilerMirLoweringStatement::ArenaStoreLocalI32 {
+                        arena: required_canonical_compiler_mir_fixture_field(
+                            &fields,
+                            &mut consumed,
+                            &arena_key,
+                        )?,
+                        index_local: required_canonical_compiler_mir_fixture_field(
+                            &fields,
+                            &mut consumed,
+                            &index_key,
+                        )?,
+                        byte_offset: parse_canonical_compiler_mir_i32_field(
+                            &fields,
+                            &mut consumed,
+                            &offset_key,
+                        )?,
+                        value_local: required_canonical_compiler_mir_fixture_field(
                             &fields,
                             &mut consumed,
                             &value_key,
@@ -19594,7 +19841,10 @@ fn validate_compiler_mir_function_fixture(
     if function
         .params
         .iter()
-        .any(|ty| !matches!(*ty, TinyMirType::I32 | TinyMirType::Bool))
+        .any(|ty| {
+            !matches!(*ty, TinyMirType::I32 | TinyMirType::Bool)
+                && !(allow_calls && matches!(*ty, TinyMirType::RawPointer))
+        })
     {
         return Err(IoError::new(
             ErrorKind::InvalidInput,
@@ -19634,7 +19884,10 @@ fn validate_compiler_mir_function_fixture(
             )
             .into());
         }
-        TinyMirType::ArenaPointer | TinyMirType::USize => {
+        TinyMirType::ArenaPointer
+        | TinyMirType::RawPointer
+        | TinyMirType::FunctionPointer
+        | TinyMirType::USize => {
             return Err(IoError::new(
                 ErrorKind::InvalidInput,
                 "canonical compiler MIR defined functions do not support arena or usize results",
@@ -19649,7 +19902,12 @@ fn validate_compiler_mir_function_fixture(
         validate_canonical_compiler_mir_name(local.name, "local")?;
         if !matches!(local.ty, TinyMirType::I32 | TinyMirType::Bool)
             && !(allow_calls
-                && matches!(local.ty, TinyMirType::StringSlice | TinyMirType::ArenaPointer))
+                && matches!(
+                    local.ty,
+                    TinyMirType::StringSlice
+                        | TinyMirType::ArenaPointer
+                        | TinyMirType::RawPointer
+                ))
         {
             return Err(IoError::new(
                 ErrorKind::InvalidInput,
@@ -19822,6 +20080,36 @@ fn validate_compiler_mir_function_fixture(
                         .into());
                     }
                 }
+                CompilerMirLoweringStatement::LocalRawPointerSetParam { name, param } => {
+                    validate_canonical_compiler_mir_local_reference(
+                        &local_names,
+                        name,
+                        block.label,
+                        statement_index,
+                    )?;
+                    let Some(parameter_type) = function.params.get(param).copied() else {
+                        return Err(IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!(
+                                "unknown canonical compiler MIR raw-pointer parameter {param} at block {} statement {statement_index}",
+                                block.label
+                            ),
+                        )
+                        .into());
+                    };
+                    if local_types.get(name).copied() != Some(TinyMirType::RawPointer)
+                        || parameter_type != TinyMirType::RawPointer
+                    {
+                        return Err(IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!(
+                                "canonical compiler MIR raw-pointer parameter assignment requires rawptr local and parameter at block {} statement {statement_index}",
+                                block.label
+                            ),
+                        )
+                        .into());
+                    }
+                }
                 CompilerMirLoweringStatement::LocalI32AddParam { name, param } => {
                     validate_canonical_compiler_mir_local_reference(
                         &local_names,
@@ -19953,6 +20241,91 @@ fn validate_compiler_mir_function_fixture(
                         )?;
                     }
                 }
+                CompilerMirLoweringStatement::LocalRawPointerSetCall {
+                    name,
+                    ref arguments,
+                    ..
+                } => {
+                    if !allow_calls
+                        || local_types.get(name).copied() != Some(TinyMirType::RawPointer)
+                    {
+                        return Err(IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!(
+                                "canonical compiler MIR raw-pointer call result requires rawptr local {name} at block {} statement {statement_index}",
+                                block.label
+                            ),
+                        )
+                        .into());
+                    }
+                    for (argument_index, argument) in arguments.iter().enumerate() {
+                        if !matches!(
+                            argument,
+                            CompilerMirLoweringCallArgument::LocalI32(_)
+                                | CompilerMirLoweringCallArgument::LocalRawPointer(_)
+                                | CompilerMirLoweringCallArgument::LocalRawPointerOffset { .. }
+                        ) {
+                            return Err(IoError::new(
+                                ErrorKind::InvalidInput,
+                                format!(
+                                    "canonical compiler MIR raw-pointer call admits only int/rawptr locals and rawptr offsets at block {} statement {statement_index} argument {argument_index}",
+                                    block.label
+                                ),
+                            )
+                            .into());
+                        }
+                        validate_canonical_compiler_mir_call_argument(
+                            function,
+                            &local_types,
+                            current_block_parameters,
+                            &block_parameter_owners,
+                            block.label,
+                            statement_index,
+                            argument_index,
+                            argument,
+                        )?;
+                    }
+                }
+                CompilerMirLoweringStatement::LocalI32SetRawPointerLoad {
+                    name,
+                    pointer_local,
+                    byte_offset,
+                } => {
+                    if byte_offset < 0
+                        || local_types.get(name).copied() != Some(TinyMirType::I32)
+                        || local_types.get(pointer_local).copied()
+                            != Some(TinyMirType::RawPointer)
+                    {
+                        return Err(IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!(
+                                "canonical compiler MIR raw-pointer i32 load requires a non-negative offset, int result local, and rawptr source local at block {} statement {statement_index}",
+                                block.label
+                            ),
+                        )
+                        .into());
+                    }
+                }
+                CompilerMirLoweringStatement::RawPointerStoreLocalI32 {
+                    pointer_local,
+                    byte_offset,
+                    value_local,
+                } => {
+                    if byte_offset < 0
+                        || local_types.get(pointer_local).copied()
+                            != Some(TinyMirType::RawPointer)
+                        || local_types.get(value_local).copied() != Some(TinyMirType::I32)
+                    {
+                        return Err(IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!(
+                                "canonical compiler MIR raw-pointer i32 store requires a non-negative offset, rawptr destination local, and int value local at block {} statement {statement_index}",
+                                block.label
+                            ),
+                        )
+                        .into());
+                    }
+                }
                 CompilerMirLoweringStatement::ArenaInit { name, .. } => {
                     if !allow_calls
                         || local_types.get(name).copied() != Some(TinyMirType::ArenaPointer)
@@ -19998,6 +20371,27 @@ fn validate_compiler_mir_function_fixture(
                             ErrorKind::InvalidInput,
                             format!(
                                 "canonical compiler MIR arena load requires int result local {name} at block {} statement {statement_index}",
+                                block.label
+                            ),
+                        )
+                        .into());
+                    }
+                }
+                CompilerMirLoweringStatement::ArenaStoreLocalI32 {
+                    arena,
+                    index_local,
+                    value_local,
+                    ..
+                } => {
+                    if !allow_calls
+                        || local_types.get(arena).copied() != Some(TinyMirType::ArenaPointer)
+                        || local_types.get(index_local).copied() != Some(TinyMirType::I32)
+                        || local_types.get(value_local).copied() != Some(TinyMirType::I32)
+                    {
+                        return Err(IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!(
+                                "canonical compiler MIR arena local store requires arena, int-index, and int-value locals at block {} statement {statement_index}",
                                 block.label
                             ),
                         )
@@ -20296,6 +20690,8 @@ fn validate_compiler_mir_module(
                     | TinyMirType::Bool
                     | TinyMirType::StringSlice
                     | TinyMirType::ArenaPointer
+                    | TinyMirType::RawPointer
+                    | TinyMirType::FunctionPointer
                     | TinyMirType::USize
             ))
             && matches!(
@@ -20304,6 +20700,7 @@ fn validate_compiler_mir_module(
                     | TinyMirType::Bool
                     | TinyMirType::StringSlice
                     | TinyMirType::ArenaPointer
+                    | TinyMirType::RawPointer
                     | TinyMirType::Void
             );
         if !import_uses_supported_abi {
@@ -20358,16 +20755,21 @@ fn validate_compiler_mir_module(
         if function
             .params
             .iter()
-            .any(|ty| !matches!(*ty, TinyMirType::I32 | TinyMirType::Bool))
+            .any(|ty| {
+                !matches!(
+                    *ty,
+                    TinyMirType::I32 | TinyMirType::Bool | TinyMirType::RawPointer
+                )
+            })
             || !matches!(
                 function.return_type,
-                TinyMirType::I32 | TinyMirType::Bool
+                TinyMirType::I32 | TinyMirType::Bool | TinyMirType::Void
             )
         {
             return Err(IoError::new(
                 ErrorKind::InvalidInput,
                 format!(
-                    "canonical compiler MIR defined function {} must use only int/bool parameters and one int/bool return",
+                    "canonical compiler MIR defined function {} must use int/bool/rawptr parameters and an int/bool/void return",
                     function.object_name
                 ),
             )
@@ -20489,6 +20891,11 @@ fn validate_compiler_mir_module(
                         target,
                         arguments,
                     } => (Some(*name), target, arguments),
+                    CompilerMirLoweringStatement::LocalRawPointerSetCall {
+                        name,
+                        target,
+                        arguments,
+                    } => (Some(*name), target, arguments),
                     CompilerMirLoweringStatement::CallVoid {
                         target,
                         arguments,
@@ -20589,6 +20996,29 @@ fn validate_compiler_mir_module(
                     .zip(callee_params.iter().copied())
                     .enumerate()
                 {
+                    if let CompilerMirLoweringCallArgument::FunctionAddress(name) = argument {
+                        let addressed = function_names.get(name).copied().ok_or_else(|| {
+                            IoError::new(
+                                ErrorKind::InvalidInput,
+                                format!(
+                                    "unknown canonical compiler MIR function address {name} in function {} at block {} statement {statement_index} argument {argument_index}",
+                                    caller.object_name, block.label
+                                ),
+                            )
+                        })?;
+                        if addressed.fixture.function.params.as_slice()
+                            != [TinyMirType::RawPointer]
+                            || addressed.fixture.function.return_type != TinyMirType::Void
+                        {
+                            return Err(IoError::new(
+                                ErrorKind::InvalidInput,
+                                format!(
+                                    "canonical compiler MIR function address {name} must have ABI (rawptr)->void"
+                                ),
+                            )
+                            .into());
+                        }
+                    }
                     let argument_type =
                         validate_canonical_compiler_mir_call_argument(
                             caller,
@@ -20657,6 +21087,7 @@ fn validate_canonical_compiler_mir_arena_access(
     arena: &str,
     index_local: &str,
     byte_offset: i32,
+    access_width: u64,
     function: &str,
     block: &str,
     statement_index: usize,
@@ -20687,8 +21118,17 @@ fn validate_canonical_compiler_mir_arena_access(
             ),
         )
     })?;
+    if access_width == 0 {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "canonical compiler MIR arena access width must be non-zero in function {function} at block {block} statement {statement_index}"
+            ),
+        )
+        .into());
+    }
     let access_end = byte_offset
-        .checked_add(COMPILER_MIR_ARENA_I32_ACCESS_WIDTH)
+        .checked_add(access_width)
         .ok_or_else(|| {
             IoError::new(
                 ErrorKind::InvalidInput,
@@ -20786,6 +21226,24 @@ fn validate_canonical_compiler_mir_arena_accesses<'a>(
                         arena,
                         index_local,
                         *byte_offset,
+                        COMPILER_MIR_ARENA_I32_ACCESS_WIDTH,
+                        function.object_name,
+                        block.label,
+                        statement_index,
+                    )?;
+                }
+                CompilerMirLoweringStatement::ArenaStoreLocalI32 {
+                    arena,
+                    index_local,
+                    byte_offset,
+                    ..
+                } => {
+                    validate_canonical_compiler_mir_arena_access(
+                        &provenance,
+                        arena,
+                        index_local,
+                        *byte_offset,
+                        COMPILER_MIR_ARENA_I32_ACCESS_WIDTH,
                         function.object_name,
                         block.label,
                         statement_index,
@@ -20802,6 +21260,7 @@ fn validate_canonical_compiler_mir_arena_accesses<'a>(
                         arena,
                         index_local,
                         *byte_offset,
+                        COMPILER_MIR_ARENA_I32_ACCESS_WIDTH,
                         function.object_name,
                         block.label,
                         statement_index,
@@ -20815,6 +21274,26 @@ fn validate_canonical_compiler_mir_arena_accesses<'a>(
                     target,
                     arguments,
                 } => {
+                    for argument in arguments {
+                        if let CompilerMirLoweringCallArgument::ArenaAllocationAddress {
+                            arena,
+                            index_local,
+                            byte_offset,
+                            byte_length,
+                        } = argument
+                        {
+                            validate_canonical_compiler_mir_arena_access(
+                                &provenance,
+                                arena,
+                                index_local,
+                                *byte_offset,
+                                *byte_length,
+                                function.object_name,
+                                block.label,
+                                statement_index,
+                            )?;
+                        }
+                    }
                     let CompilerMirLoweringCallTarget::ImportedFunction(import_name) = target
                     else {
                         continue;
@@ -20832,7 +21311,35 @@ fn validate_canonical_compiler_mir_arena_accesses<'a>(
                     };
                     provenance.retain(|_, allocation| allocation.arena != *arena);
                 }
-                CompilerMirLoweringStatement::LocalStringSetCall { .. } => {}
+                CompilerMirLoweringStatement::LocalStringSetCall {
+                    arguments,
+                    ..
+                } => {
+                    for argument in arguments {
+                        if let CompilerMirLoweringCallArgument::ArenaAllocationAddress {
+                            arena,
+                            index_local,
+                            byte_offset,
+                            byte_length,
+                        } = argument
+                        {
+                            validate_canonical_compiler_mir_arena_access(
+                                &provenance,
+                                arena,
+                                index_local,
+                                *byte_offset,
+                                *byte_length,
+                                function.object_name,
+                                block.label,
+                                statement_index,
+                            )?;
+                        }
+                    }
+                }
+                CompilerMirLoweringStatement::LocalRawPointerSetParam { .. }
+                | CompilerMirLoweringStatement::LocalRawPointerSetCall { .. }
+                | CompilerMirLoweringStatement::LocalI32SetRawPointerLoad { .. }
+                | CompilerMirLoweringStatement::RawPointerStoreLocalI32 { .. } => {}
             }
         }
     }
@@ -20934,6 +21441,42 @@ fn validate_canonical_compiler_mir_call_argument<'a>(
                 )
                 .into()
             }),
+        CompilerMirLoweringCallArgument::LocalRawPointer(name) => {
+            match local_types.get(name).copied() {
+                Some(TinyMirType::RawPointer) => Ok(TinyMirType::RawPointer),
+                _ => Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "unknown canonical compiler MIR raw-pointer local {name} at block {source_block} statement {statement_index} call argument {argument_index}"
+                    ),
+                )
+                .into()),
+            }
+        }
+        CompilerMirLoweringCallArgument::LocalRawPointerOffset {
+            local,
+            byte_offset,
+        } => {
+            if byte_offset < 0 {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "canonical compiler MIR raw-pointer offset must be non-negative at block {source_block} statement {statement_index} call argument {argument_index}"
+                    ),
+                )
+                .into());
+            }
+            match local_types.get(local).copied() {
+                Some(TinyMirType::RawPointer) => Ok(TinyMirType::RawPointer),
+                _ => Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "unknown canonical compiler MIR raw-pointer local {local} at block {source_block} statement {statement_index} call argument {argument_index}"
+                    ),
+                )
+                .into()),
+            }
+        }
         CompilerMirLoweringCallArgument::LocalString(name) => {
             match local_types.get(name).copied() {
                 Some(TinyMirType::StringSlice) => Ok(TinyMirType::StringSlice),
@@ -20957,6 +21500,27 @@ fn validate_canonical_compiler_mir_call_argument<'a>(
                 )
                 .into()),
             }
+        }
+        CompilerMirLoweringCallArgument::ArenaAllocationAddress {
+            arena,
+            index_local,
+            ..
+        } => {
+            if local_types.get(arena).copied() != Some(TinyMirType::ArenaPointer)
+                || local_types.get(index_local).copied() != Some(TinyMirType::I32)
+            {
+                return Err(IoError::new(
+                    ErrorKind::InvalidInput,
+                    format!(
+                        "canonical compiler MIR arena-allocation address requires arena and int-index locals at block {source_block} statement {statement_index} call argument {argument_index}"
+                    ),
+                )
+                .into());
+            }
+            Ok(TinyMirType::RawPointer)
+        }
+        CompilerMirLoweringCallArgument::FunctionAddress(_) => {
+            Ok(TinyMirType::FunctionPointer)
         }
         CompilerMirLoweringCallArgument::BlockParamI32(name)
         | CompilerMirLoweringCallArgument::BlockParamI32AddI32Literal {
@@ -21360,6 +21924,70 @@ fn parse_canonical_compiler_mir_call_arguments<'a>(
                     )?,
                 )
             }
+            "ArenaAllocationAddress" => {
+                let arena_key = format!("{argument_prefix}_arena");
+                let index_key = format!("{argument_prefix}_index_local");
+                let offset_key = format!("{argument_prefix}_byte_offset");
+                let length_key = format!("{argument_prefix}_byte_length");
+                CompilerMirLoweringCallArgument::ArenaAllocationAddress {
+                    arena: required_canonical_compiler_mir_fixture_field(
+                        fields,
+                        consumed,
+                        &arena_key,
+                    )?,
+                    index_local: required_canonical_compiler_mir_fixture_field(
+                        fields,
+                        consumed,
+                        &index_key,
+                    )?,
+                    byte_offset: parse_canonical_compiler_mir_i32_field(
+                        fields,
+                        consumed,
+                        &offset_key,
+                    )?,
+                    byte_length: parse_canonical_compiler_mir_usize_field(
+                        fields,
+                        consumed,
+                        &length_key,
+                    )? as u64,
+                }
+            }
+            "FunctionAddress" => {
+                let function_key = format!("{argument_prefix}_function");
+                CompilerMirLoweringCallArgument::FunctionAddress(
+                    required_canonical_compiler_mir_fixture_field(
+                        fields,
+                        consumed,
+                        &function_key,
+                    )?,
+                )
+            }
+            "LocalRawPointer" => {
+                let local_key = format!("{argument_prefix}_local");
+                CompilerMirLoweringCallArgument::LocalRawPointer(
+                    required_canonical_compiler_mir_fixture_field(
+                        fields,
+                        consumed,
+                        &local_key,
+                    )?,
+                )
+            }
+            "LocalRawPointerOffset" => {
+                let local_key = format!("{argument_prefix}_local");
+                let offset_key = format!("{argument_prefix}_byte_offset");
+                CompilerMirLoweringCallArgument::LocalRawPointerOffset {
+                    local: required_canonical_compiler_mir_fixture_field(
+                        fields,
+                        consumed,
+                        &local_key,
+                    )?,
+                    byte_offset: parse_canonical_compiler_mir_i32_field(
+                        fields,
+                        consumed,
+                        &offset_key,
+                    )?,
+                }
+            }
             "BlockParamI32" => {
                 let block_param_key = format!("{argument_prefix}_block_param");
                 CompilerMirLoweringCallArgument::BlockParamI32(
@@ -21504,6 +22132,8 @@ fn parse_canonical_compiler_mir_type(
         "bool" => Ok(TinyMirType::Bool),
         "str" => Ok(TinyMirType::StringSlice),
         "arena" => Ok(TinyMirType::ArenaPointer),
+        "rawptr" => Ok(TinyMirType::RawPointer),
+        "fnptr" => Ok(TinyMirType::FunctionPointer),
         "usize" => Ok(TinyMirType::USize),
         "void" => Ok(TinyMirType::Void),
         other => Err(IoError::new(
@@ -31094,7 +31724,10 @@ fn emit_extern_predicate_branch_i32_object(output_path: &Path) -> Result<(), Box
 fn tiny_mir_type_to_cranelift_type(mir_type: TinyMirType) -> Type {
     match mir_type {
         TinyMirType::I32 | TinyMirType::Bool => types::I32,
-        TinyMirType::ArenaPointer | TinyMirType::USize => types::I64,
+        TinyMirType::ArenaPointer
+        | TinyMirType::RawPointer
+        | TinyMirType::FunctionPointer
+        | TinyMirType::USize => types::I64,
         TinyMirType::StringSlice => {
             panic!("str tiny MIR type has an aggregate ABI representation")
         }
@@ -32929,9 +33562,13 @@ fn compiler_mir_ingestion_signature(
 ) -> cranelift_codegen::ir::Signature {
     let mut signature = module.make_signature();
     for param in &mir_function.params {
-        signature
-            .params
-            .push(AbiParam::new(tiny_mir_type_to_cranelift_type(*param)));
+        let parameter_type = match param {
+            TinyMirType::RawPointer | TinyMirType::FunctionPointer => {
+                module.target_config().pointer_type()
+            }
+            _ => tiny_mir_type_to_cranelift_type(*param),
+        };
+        signature.params.push(AbiParam::new(parameter_type));
     }
     if matches!(
         mir_function.return_type,
@@ -32964,7 +33601,10 @@ fn compiler_mir_ingestion_import_signature(
             TinyMirType::I32 | TinyMirType::Bool => signature
                 .params
                 .push(AbiParam::new(tiny_mir_type_to_cranelift_type(*param))),
-            TinyMirType::ArenaPointer | TinyMirType::USize => signature.params.push(
+            TinyMirType::ArenaPointer
+            | TinyMirType::RawPointer
+            | TinyMirType::FunctionPointer
+            | TinyMirType::USize => signature.params.push(
                 AbiParam::new(module.target_config().pointer_type()),
             ),
             TinyMirType::Void => {
@@ -32982,9 +33622,12 @@ fn compiler_mir_ingestion_import_signature(
                 .push(AbiParam::new(module.target_config().pointer_type()));
             signature.returns.push(AbiParam::new(types::I32));
         }
-        TinyMirType::USize => signature
+        TinyMirType::RawPointer | TinyMirType::USize => signature
             .returns
             .push(AbiParam::new(module.target_config().pointer_type())),
+        TinyMirType::FunctionPointer => {
+            panic!("canonical MIR imports cannot return a function pointer")
+        }
         TinyMirType::ArenaPointer | TinyMirType::Void => {}
     }
     signature
@@ -33035,6 +33678,10 @@ fn lower_compiler_mir_ingestion_module_to_object(
                         ..
                     }
                     | CompilerMirLoweringStatement::LocalStringSetCall {
+                        arguments,
+                        ..
+                    }
+                    | CompilerMirLoweringStatement::LocalRawPointerSetCall {
                         arguments,
                         ..
                     }
@@ -33393,6 +34040,8 @@ fn build_compiler_mir_ingestion_body_with_calls(
                 TinyMirType::Bool
                 | TinyMirType::StringSlice
                 | TinyMirType::ArenaPointer
+                | TinyMirType::RawPointer
+                | TinyMirType::FunctionPointer
                 | TinyMirType::USize
                 | TinyMirType::Void => {
                     return Err(IoError::new(
@@ -33428,8 +34077,13 @@ fn build_compiler_mir_ingestion_body_with_calls(
     let mut arena_slots = HashMap::new();
     for local in &mir_function.locals {
         match local.ty {
-            TinyMirType::I32 | TinyMirType::Bool => {
-                let slot = builder.declare_var(types::I32);
+            TinyMirType::I32 | TinyMirType::Bool | TinyMirType::RawPointer => {
+                let slot_type = if local.ty == TinyMirType::RawPointer {
+                    pointer_type
+                } else {
+                    types::I32
+                };
+                let slot = builder.declare_var(slot_type);
                 if local_slots.insert(local.name, slot).is_some() {
                     return Err(IoError::new(
                         ErrorKind::InvalidInput,
@@ -33467,7 +34121,9 @@ fn build_compiler_mir_ingestion_body_with_calls(
                     .into());
                 }
             }
-            TinyMirType::USize | TinyMirType::Void => {
+            TinyMirType::FunctionPointer
+            | TinyMirType::USize
+            | TinyMirType::Void => {
                 return Err(IoError::new(
                     ErrorKind::InvalidInput,
                     format!(
@@ -33568,6 +34224,21 @@ fn build_compiler_mir_ingestion_body_with_calls(
                         IoError::new(
                             ErrorKind::InvalidInput,
                             format!("unknown compiler MIR lowering function parameter: {param}"),
+                        )
+                    })?;
+                    builder.def_var(slot, param_value);
+                }
+                CompilerMirLoweringStatement::LocalRawPointerSetParam { name, param } => {
+                    let slot = *local_slots.get(name).ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown compiler MIR lowering raw-pointer local: {name}"),
+                        )
+                    })?;
+                    let param_value = function_params.get(param).copied().ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown compiler MIR lowering raw-pointer parameter: {param}"),
                         )
                     })?;
                     builder.def_var(slot, param_value);
@@ -33775,6 +34446,34 @@ fn build_compiler_mir_ingestion_body_with_calls(
                                 })?;
                                 builder.use_var(argument_slot)
                             }
+                            CompilerMirLoweringCallArgument::LocalRawPointer(local) => {
+                                let argument_slot = *local_slots.get(local).ok_or_else(|| {
+                                    IoError::new(
+                                        ErrorKind::InvalidInput,
+                                        format!(
+                                            "unknown compiler MIR lowering raw-pointer call local {local} at block {}",
+                                            block.label
+                                        ),
+                                    )
+                                })?;
+                                builder.use_var(argument_slot)
+                            }
+                            CompilerMirLoweringCallArgument::LocalRawPointerOffset {
+                                local,
+                                byte_offset,
+                            } => {
+                                let argument_slot = *local_slots.get(local).ok_or_else(|| {
+                                    IoError::new(
+                                        ErrorKind::InvalidInput,
+                                        format!(
+                                            "unknown compiler MIR lowering raw-pointer offset local {local} at block {}",
+                                            block.label
+                                        ),
+                                    )
+                                })?;
+                                let pointer = builder.use_var(argument_slot);
+                                builder.ins().iadd_imm(pointer, i64::from(byte_offset))
+                            }
                             CompilerMirLoweringCallArgument::BlockParamI32(block_param) => {
                                 *block_parameter_values.get(block_param).ok_or_else(|| {
                                     IoError::new(
@@ -33805,7 +34504,9 @@ fn build_compiler_mir_ingestion_body_with_calls(
                             CompilerMirLoweringCallArgument::StringLiteral(_)
                             | CompilerMirLoweringCallArgument::StringLiteralUtf8Hex(_)
                             | CompilerMirLoweringCallArgument::LocalString(_)
-                            | CompilerMirLoweringCallArgument::ArenaAddress(_) => unreachable!(
+                            | CompilerMirLoweringCallArgument::ArenaAddress(_)
+                            | CompilerMirLoweringCallArgument::ArenaAllocationAddress { .. }
+                            | CompilerMirLoweringCallArgument::FunctionAddress(_) => unreachable!(
                                 "aggregate/address argument handled before scalar lowering"
                             ),
                         };
@@ -33821,6 +34522,95 @@ fn build_compiler_mir_ingestion_body_with_calls(
                                 ErrorKind::InvalidInput,
                                 format!(
                                     "canonical compiler MIR call at block {} produced no i32 result",
+                                    block.label
+                                ),
+                            )
+                        })?;
+                    builder.def_var(slot, return_value);
+                }
+                CompilerMirLoweringStatement::LocalRawPointerSetCall {
+                    name,
+                    target,
+                    arguments,
+                } => {
+                    let slot = *local_slots.get(name).ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown compiler MIR lowering raw-pointer call result local: {name}"),
+                        )
+                    })?;
+                    let function_ref = match target {
+                        CompilerMirLoweringCallTarget::LocalFunction(callee) => {
+                            *local_function_refs.get(callee).ok_or_else(|| {
+                                IoError::new(
+                                    ErrorKind::InvalidInput,
+                                    format!(
+                                        "unknown compiler MIR lowering local raw-pointer callee {callee} at block {}",
+                                        block.label
+                                    ),
+                                )
+                            })?
+                        }
+                        CompilerMirLoweringCallTarget::ImportedFunction(callee) => {
+                            *imported_function_refs.get(callee).ok_or_else(|| {
+                                IoError::new(
+                                    ErrorKind::InvalidInput,
+                                    format!(
+                                        "unknown compiler MIR lowering imported raw-pointer callee {callee} at block {}",
+                                        block.label
+                                    ),
+                                )
+                            })?
+                        }
+                    };
+                    let mut lowered_arguments = Vec::with_capacity(arguments.len());
+                    for argument in arguments {
+                        let value = match argument {
+                            CompilerMirLoweringCallArgument::LocalI32(local)
+                            | CompilerMirLoweringCallArgument::LocalRawPointer(local) => {
+                                let argument_slot = *local_slots.get(local).ok_or_else(|| {
+                                    IoError::new(
+                                        ErrorKind::InvalidInput,
+                                        format!(
+                                            "unknown compiler MIR lowering raw-pointer call local {local} at block {}",
+                                            block.label
+                                        ),
+                                    )
+                                })?;
+                                builder.use_var(argument_slot)
+                            }
+                            CompilerMirLoweringCallArgument::LocalRawPointerOffset {
+                                local,
+                                byte_offset,
+                            } => {
+                                let argument_slot = *local_slots.get(local).ok_or_else(|| {
+                                    IoError::new(
+                                        ErrorKind::InvalidInput,
+                                        format!(
+                                            "unknown compiler MIR lowering raw-pointer offset local {local} at block {}",
+                                            block.label
+                                        ),
+                                    )
+                                })?;
+                                let pointer = builder.use_var(argument_slot);
+                                builder.ins().iadd_imm(pointer, i64::from(byte_offset))
+                            }
+                            _ => unreachable!(
+                                "raw-pointer call validation admits only int/rawptr locals and rawptr offsets"
+                            ),
+                        };
+                        lowered_arguments.push(value);
+                    }
+                    let call_inst = builder.ins().call(function_ref, &lowered_arguments);
+                    let return_value = builder
+                        .inst_results(call_inst)
+                        .first()
+                        .copied()
+                        .ok_or_else(|| {
+                            IoError::new(
+                                ErrorKind::InvalidInput,
+                                format!(
+                                    "canonical compiler MIR raw-pointer call at block {} produced no result",
                                     block.label
                                 ),
                             )
@@ -33906,6 +34696,64 @@ fn build_compiler_mir_ingestion_body_with_calls(
                                     builder.ins().stack_addr(pointer_type, arena_slot, 0),
                                 );
                             }
+                            CompilerMirLoweringCallArgument::ArenaAllocationAddress {
+                                arena,
+                                index_local,
+                                byte_offset,
+                                ..
+                            } => {
+                                let arena_slot = *arena_slots.get(arena).ok_or_else(|| {
+                                    IoError::new(
+                                        ErrorKind::InvalidInput,
+                                        format!(
+                                            "unknown compiler MIR lowering arena-allocation address arena {arena} at block {}",
+                                            block.label
+                                        ),
+                                    )
+                                })?;
+                                let index_slot = *local_slots.get(index_local).ok_or_else(|| {
+                                    IoError::new(
+                                        ErrorKind::InvalidInput,
+                                        format!(
+                                            "unknown compiler MIR lowering arena-allocation address index {index_local} at block {}",
+                                            block.label
+                                        ),
+                                    )
+                                })?;
+                                let arena_address = builder.ins().stack_addr(
+                                    pointer_type,
+                                    arena_slot,
+                                    0,
+                                );
+                                let base = builder.ins().load(
+                                    pointer_type,
+                                    MemFlags::new(),
+                                    arena_address,
+                                    0,
+                                );
+                                let index = builder.use_var(index_slot);
+                                let index = builder.ins().uextend(pointer_type, index);
+                                let address = builder.ins().iadd(base, index);
+                                let address = builder.ins().iadd_imm(
+                                    address,
+                                    i64::from(byte_offset),
+                                );
+                                lowered_arguments.push(address);
+                            }
+                            CompilerMirLoweringCallArgument::FunctionAddress(name) => {
+                                let function_ref = *local_function_refs.get(name).ok_or_else(|| {
+                                    IoError::new(
+                                        ErrorKind::InvalidInput,
+                                        format!(
+                                            "unknown compiler MIR lowering function address {name} at block {}",
+                                            block.label
+                                        ),
+                                    )
+                                })?;
+                                lowered_arguments.push(
+                                    builder.ins().func_addr(pointer_type, function_ref),
+                                );
+                            }
                             CompilerMirLoweringCallArgument::LocalString(local) => {
                                 let (argument_pointer, argument_length) =
                                     *local_string_slots.get(local).ok_or_else(|| {
@@ -33947,6 +34795,36 @@ fn build_compiler_mir_ingestion_body_with_calls(
                                     )
                                 })?;
                                 lowered_arguments.push(builder.use_var(argument_slot));
+                            }
+                            CompilerMirLoweringCallArgument::LocalRawPointer(local) => {
+                                let argument_slot = *local_slots.get(local).ok_or_else(|| {
+                                    IoError::new(
+                                        ErrorKind::InvalidInput,
+                                        format!(
+                                            "unknown compiler MIR lowering raw-pointer call local {local} at block {}",
+                                            block.label
+                                        ),
+                                    )
+                                })?;
+                                lowered_arguments.push(builder.use_var(argument_slot));
+                            }
+                            CompilerMirLoweringCallArgument::LocalRawPointerOffset {
+                                local,
+                                byte_offset,
+                            } => {
+                                let argument_slot = *local_slots.get(local).ok_or_else(|| {
+                                    IoError::new(
+                                        ErrorKind::InvalidInput,
+                                        format!(
+                                            "unknown compiler MIR lowering raw-pointer offset local {local} at block {}",
+                                            block.label
+                                        ),
+                                    )
+                                })?;
+                                let pointer = builder.use_var(argument_slot);
+                                lowered_arguments.push(
+                                    builder.ins().iadd_imm(pointer, i64::from(byte_offset)),
+                                );
                             }
                             CompilerMirLoweringCallArgument::FunctionParamI32(param) => {
                                 lowered_arguments.push(
@@ -34072,6 +34950,42 @@ fn build_compiler_mir_ingestion_body_with_calls(
                         .ins()
                         .store(MemFlags::new(), literal, address, byte_offset);
                 }
+                CompilerMirLoweringStatement::ArenaStoreLocalI32 {
+                    arena,
+                    index_local,
+                    byte_offset,
+                    value_local,
+                } => {
+                    let arena_slot = *arena_slots.get(arena).ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown compiler MIR lowering arena local: {arena}"),
+                        )
+                    })?;
+                    let index_slot = *local_slots.get(index_local).ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown compiler MIR lowering arena index local: {index_local}"),
+                        )
+                    })?;
+                    let value_slot = *local_slots.get(value_local).ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown compiler MIR lowering arena value local: {value_local}"),
+                        )
+                    })?;
+                    let arena_address = builder.ins().stack_addr(pointer_type, arena_slot, 0);
+                    let base = builder
+                        .ins()
+                        .load(pointer_type, MemFlags::new(), arena_address, 0);
+                    let index = builder.use_var(index_slot);
+                    let index = builder.ins().uextend(pointer_type, index);
+                    let address = builder.ins().iadd(base, index);
+                    let value = builder.use_var(value_slot);
+                    builder
+                        .ins()
+                        .store(MemFlags::new(), value, address, byte_offset);
+                }
                 CompilerMirLoweringStatement::LocalI32SetArenaLoad {
                     name,
                     arena,
@@ -34107,6 +35021,58 @@ fn build_compiler_mir_ingestion_body_with_calls(
                         .ins()
                         .load(types::I32, MemFlags::new(), address, byte_offset);
                     builder.def_var(result_slot, value);
+                }
+                CompilerMirLoweringStatement::LocalI32SetRawPointerLoad {
+                    name,
+                    pointer_local,
+                    byte_offset,
+                } => {
+                    let result_slot = *local_slots.get(name).ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown compiler MIR lowering raw-pointer load result: {name}"),
+                        )
+                    })?;
+                    let pointer_slot = *local_slots.get(pointer_local).ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown compiler MIR lowering raw-pointer local: {pointer_local}"),
+                        )
+                    })?;
+                    let pointer = builder.use_var(pointer_slot);
+                    let value = builder.ins().load(
+                        types::I32,
+                        MemFlags::new(),
+                        pointer,
+                        byte_offset,
+                    );
+                    builder.def_var(result_slot, value);
+                }
+                CompilerMirLoweringStatement::RawPointerStoreLocalI32 {
+                    pointer_local,
+                    byte_offset,
+                    value_local,
+                } => {
+                    let pointer_slot = *local_slots.get(pointer_local).ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown compiler MIR lowering raw-pointer local: {pointer_local}"),
+                        )
+                    })?;
+                    let value_slot = *local_slots.get(value_local).ok_or_else(|| {
+                        IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!("unknown compiler MIR lowering raw-pointer store value: {value_local}"),
+                        )
+                    })?;
+                    let pointer = builder.use_var(pointer_slot);
+                    let value = builder.use_var(value_slot);
+                    builder.ins().store(
+                        MemFlags::new(),
+                        value,
+                        pointer,
+                        byte_offset,
+                    );
                 }
                 CompilerMirLoweringStatement::CallVoid {
                     target,
@@ -34218,6 +35184,64 @@ fn build_compiler_mir_ingestion_body_with_calls(
                                     builder.ins().stack_addr(pointer_type, arena_slot, 0),
                                 );
                             }
+                            CompilerMirLoweringCallArgument::ArenaAllocationAddress {
+                                arena,
+                                index_local,
+                                byte_offset,
+                                ..
+                            } => {
+                                let arena_slot = *arena_slots.get(arena).ok_or_else(|| {
+                                    IoError::new(
+                                        ErrorKind::InvalidInput,
+                                        format!(
+                                            "unknown compiler MIR lowering arena-allocation address arena {arena} at block {}",
+                                            block.label
+                                        ),
+                                    )
+                                })?;
+                                let index_slot = *local_slots.get(index_local).ok_or_else(|| {
+                                    IoError::new(
+                                        ErrorKind::InvalidInput,
+                                        format!(
+                                            "unknown compiler MIR lowering arena-allocation address index {index_local} at block {}",
+                                            block.label
+                                        ),
+                                    )
+                                })?;
+                                let arena_address = builder.ins().stack_addr(
+                                    pointer_type,
+                                    arena_slot,
+                                    0,
+                                );
+                                let base = builder.ins().load(
+                                    pointer_type,
+                                    MemFlags::new(),
+                                    arena_address,
+                                    0,
+                                );
+                                let index = builder.use_var(index_slot);
+                                let index = builder.ins().uextend(pointer_type, index);
+                                let address = builder.ins().iadd(base, index);
+                                let address = builder.ins().iadd_imm(
+                                    address,
+                                    i64::from(byte_offset),
+                                );
+                                lowered_arguments.push(address);
+                            }
+                            CompilerMirLoweringCallArgument::FunctionAddress(name) => {
+                                let addressed = *local_function_refs.get(name).ok_or_else(|| {
+                                    IoError::new(
+                                        ErrorKind::InvalidInput,
+                                        format!(
+                                            "unknown compiler MIR lowering function address {name} at block {}",
+                                            block.label
+                                        ),
+                                    )
+                                })?;
+                                lowered_arguments.push(
+                                    builder.ins().func_addr(pointer_type, addressed),
+                                );
+                            }
                             CompilerMirLoweringCallArgument::FunctionParamI32(param) => {
                                 lowered_arguments.push(
                                     function_params.get(param).copied().ok_or_else(|| {
@@ -34242,6 +35266,36 @@ fn build_compiler_mir_ingestion_body_with_calls(
                                     )
                                 })?;
                                 lowered_arguments.push(builder.use_var(slot));
+                            }
+                            CompilerMirLoweringCallArgument::LocalRawPointer(local) => {
+                                let slot = *local_slots.get(local).ok_or_else(|| {
+                                    IoError::new(
+                                        ErrorKind::InvalidInput,
+                                        format!(
+                                            "unknown compiler MIR lowering raw-pointer call local {local} at block {}",
+                                            block.label
+                                        ),
+                                    )
+                                })?;
+                                lowered_arguments.push(builder.use_var(slot));
+                            }
+                            CompilerMirLoweringCallArgument::LocalRawPointerOffset {
+                                local,
+                                byte_offset,
+                            } => {
+                                let slot = *local_slots.get(local).ok_or_else(|| {
+                                    IoError::new(
+                                        ErrorKind::InvalidInput,
+                                        format!(
+                                            "unknown compiler MIR lowering raw-pointer offset local {local} at block {}",
+                                            block.label
+                                        ),
+                                    )
+                                })?;
+                                let pointer = builder.use_var(slot);
+                                lowered_arguments.push(
+                                    builder.ins().iadd_imm(pointer, i64::from(byte_offset)),
+                                );
                             }
                             CompilerMirLoweringCallArgument::BlockParamI32(block_param) => {
                                 lowered_arguments.push(
@@ -34568,7 +35622,10 @@ fn lower_tiny_mir_function_to_object(
         TinyMirType::StringSlice => {
             panic!("tiny MIR functions do not support str returns")
         }
-        TinyMirType::ArenaPointer | TinyMirType::USize => {
+        TinyMirType::ArenaPointer
+        | TinyMirType::RawPointer
+        | TinyMirType::FunctionPointer
+        | TinyMirType::USize => {
             panic!("tiny MIR functions do not support arena or usize returns")
         }
     }
@@ -34611,7 +35668,10 @@ fn define_tiny_mir_exported_function(
         TinyMirType::StringSlice => {
             panic!("tiny MIR functions do not support str returns")
         }
-        TinyMirType::ArenaPointer | TinyMirType::USize => {
+        TinyMirType::ArenaPointer
+        | TinyMirType::RawPointer
+        | TinyMirType::FunctionPointer
+        | TinyMirType::USize => {
             panic!("tiny MIR functions do not support arena or usize returns")
         }
     }

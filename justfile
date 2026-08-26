@@ -17133,6 +17133,24 @@ guard-cranelift-phase21-filesystem-allocation-native-source-parity:
     just guard-cranelift-phase21-filesystem-allocation-native-source-contract
     bash scripts/phase21_filesystem_allocation_native_source.sh
 
+guard-cranelift-phase21-resource-sync-native-source-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 21 resource/synchronization canonical-MIR source authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-resource-sync-native-source-contract | grep -F $'guard-cranelift-phase21-resource-sync-native-source-contract\t1\t' >/dev/null
+    just guard-cranelift-phase21-filesystem-allocation-native-source-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase21_resource_sync_native_source.py validate
+    python3 scripts/phase21_resource_sync_native_source.py check-review
+
+guard-cranelift-phase21-resource-sync-native-source-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Proving Phase 21 resource/synchronization source differentials..."
+    just guard-cranelift-phase21-resource-sync-native-source-contract
+    bash scripts/phase21_resource_sync_native_source.sh
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -19125,7 +19143,7 @@ guard-cranelift-phase13-direct-call-graph-parity:
       'duplicate canonical compiler MIR local function name'
       'unknown canonical compiler MIR local callee'
       'duplicate canonical compiler MIR emitted backend symbol'
-      'must use only int/bool parameters and one int/bool return'
+      'must use int/bool/rawptr parameters and an int/bool/void return'
       'canonical compiler MIR call result type mismatch'
       'canonical compiler MIR local call graph must not contain recursion or mutual recursion'
       'let mut local_function_ids: HashMap<&str, FuncId>'

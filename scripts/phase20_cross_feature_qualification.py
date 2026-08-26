@@ -108,11 +108,17 @@ def validate() -> dict:
                 f"missing residue fixture: {row['source_fixture']}")
 
     migrated_categories = []
-    for successor_id, completed_status, predecessor_id in (
+    for successor_id, completed_status, predecessor_id, category_evidence in (
         ("phase21_collection_string_native_source", "patch21_9_complete",
-         "phase21_residue_migration_authority"),
+         "phase21_residue_migration_authority",
+         (("collections", "collections"), ("strings", "strings"))),
         ("phase21_filesystem_allocation_native_source", "patch21_10_complete",
-         "phase21_collection_string_native_source"),
+         "phase21_collection_string_native_source",
+         (("filesystem", "filesystem"), ("allocation", "allocation"))),
+        ("phase21_resource_sync_native_source", "patch21_11_complete",
+         "phase21_filesystem_allocation_native_source",
+         (("resources", "resource"),
+          ("threading_synchronization", "threading"))),
     ):
         successor = registry.get(successor_id, {})
         if successor.get("status") == completed_status:
@@ -120,11 +126,12 @@ def validate() -> dict:
                     registry[predecessor_id]["contract_version"],
                     f"{completed_status} successor authority is not linked to "
                     f"{predecessor_id}")
-            migrated_categories.extend(
-                case["id"].split("_", 1)[0]
-                for case in successor.get("source_cases", [])
-                if case["id"].endswith("_primary")
-            )
+            require(all(any(case["id"] == evidence_prefix + "_primary"
+                            for case in successor.get("source_cases", []))
+                        for _, evidence_prefix in category_evidence),
+                    f"{completed_status} lacks source evidence for a migrated category")
+            migrated_categories.extend(category
+                                         for category, _ in category_evidence)
 
     refinements = registry["phase20_long_lived_concurrent"][
         "explicit_exclusions"]
@@ -253,7 +260,9 @@ def main() -> None:
                 REVIEW.read_text(encoding="utf-8") == render(record),
                 "generated review is stale; run project")
     elif args.command == "residue-cases":
-        print(residue_cases(record))
+        rows = residue_cases(record)
+        if rows:
+            print(rows)
         return
     print(f"{GUARD_L1}: ok")
 

@@ -224,11 +224,11 @@ def validate() -> tuple[dict, list[MethodCall]]:
             authority.get("baseline_unlock_calls") == 12 and
             authority.get("baseline_calls") == 24,
             "Patch 20.16c frozen 24-call baseline drifted")
-    require(lock_calls == authority.get("total_lock_calls") == 14,
+    require(lock_calls == authority.get("total_lock_calls") == 15,
             "raw Mutex Lock inventory drifted")
-    require(unlock_calls == authority.get("total_unlock_calls") == 14,
+    require(unlock_calls == authority.get("total_unlock_calls") == 15,
             "raw Mutex Unlock inventory drifted")
-    require(len(calls) == authority.get("total_calls") == 28,
+    require(len(calls) == authority.get("total_calls") == 30,
             "raw Mutex total call inventory drifted")
     require(authority.get("transitional_test_coverage") == [
         "tests/e2e_mutex_concurrency.gst",

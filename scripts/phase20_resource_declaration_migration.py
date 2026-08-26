@@ -54,6 +54,10 @@ PROTECTED_ACCESS_LINEAR_FIXTURES = [
     "compiler/phase20_protected_access_module.gst",
 ]
 
+PHASE21_RESOURCE_SYNC_LINEAR_FIXTURES = [
+    "compiler/phase21_resource_sync_renamed_module.gst",
+]
+
 SOURCE_DESTRUCTORS = {
     SOURCE_DECLARATIONS[0]: (
         "Phase13CompositionResourceMetadata",
@@ -217,7 +221,8 @@ def validate() -> dict:
     expected_linear = sorted(SOURCE_DECLARATIONS + ENFORCEMENT_LINEAR_FIXTURES +
                              GENERIC_GUARD_LINEAR_FIXTURES +
                              CROSS_FEATURE_LINEAR_FIXTURES +
-                             PROTECTED_ACCESS_LINEAR_FIXTURES)
+                             PROTECTED_ACCESS_LINEAR_FIXTURES +
+                             PHASE21_RESOURCE_SYNC_LINEAR_FIXTURES)
     require(actual_linear == expected_linear,
             "compiler-owned #[linear] declaration inventory drifted: " +
             repr(actual_linear))
@@ -247,6 +252,13 @@ def validate() -> dict:
     require(protected_access.get("module_fixture") in
             PROTECTED_ACCESS_LINEAR_FIXTURES,
             "Patch 20.16d linear fixture is not classified by its authority")
+
+    phase21_resource_sync = registry.get(
+        "phase21_resource_sync_native_source", {})
+    require(phase21_resource_sync.get("status") == "patch21_11_complete" and
+            phase21_resource_sync.get("linear_module_fixtures") ==
+            PHASE21_RESOURCE_SYNC_LINEAR_FIXTURES,
+            "Patch 21.11 linear fixture is not classified by its authority")
 
     for source_path, (type_name, destructor_name) in SOURCE_DESTRUCTORS.items():
         source = (ROOT / source_path).read_text(encoding="utf-8")

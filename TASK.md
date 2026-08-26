@@ -93,7 +93,7 @@ Out of scope:
 - [x] Patch 21.8 — Phase 20 Residue Migration Authority — DONE
 - [x] Patch 21.9 — Collections and Strings Native Source Migration — DONE
 - [x] Patch 21.10 — Filesystem and Allocation Native Source Migration — DONE
-- [ ] Patch 21.11 — Resources and Synchronization Native Source Migration
+- [x] Patch 21.11 — Resources and Synchronization Native Source Migration — DONE
 - [ ] Patch 21.12 — Compiler Support-Library Native Qualification
 - [ ] Patch 21.13 — Selected Compiler-Module Native Qualification
 - [ ] Patch 21.13a — Native-Feature Bootstrap Seed Reconvergence
@@ -359,6 +359,17 @@ Carry Phase 15/20 resource state, automatic cleanup, approved runtime imports,
 and selected Mutex/Channel ABI through generic source-to-MIR and Cranelift
 lowering. Preserve protected-access liveness and unsafe raw boundaries; no
 Stdlib-specific backend path.
+
+**Exit Gate:** the registered resource cleanup cases and deterministic,
+arena-live Mutex/scheduler case agree with MIR-to-C on stdout, stderr, and exit
+status; the computed resource-token case still rejects before driver discovery;
+generic raw-pointer parameter/result, validated i32 load/store, pointer-offset,
+function-address, and arena-allocation-address MIR operations reject malformed
+types, offsets, locals, and ranges; every approved runtime call carries
+registry-validated native-boundary metadata; the retained archive adds only the
+existing scratch/fiber components and changes no runtime symbol; generated C,
+fallback, Stdlib edits, ABI/layout changes, CR-15, and Patch 21.12 remain out of
+scope.
 
 ## Patch 21.12 — Compiler Support-Library Native Qualification
 

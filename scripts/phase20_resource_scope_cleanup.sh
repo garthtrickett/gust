@@ -39,18 +39,23 @@ test ! -s "$build_root/callee.stderr"
 rg -F 'phase20_resource_enforcement_module__destroy_handle(handle);' \
   "$build_root/callee.c" >/dev/null
 
-set +e
-./gust --backend cranelift -o "$build_root/native" "$source_fixture" \
-  >"$build_root/native.stdout" 2>"$build_root/native.stderr"
-native_status="$?"
-set -e
-test "$native_status" -ne 0
-test ! -e "$build_root/native"
-rg -F 'decision=source_or_type_failure capability=phase13_generic_source_to_mir' \
-  "$build_root/native.stdout" >/dev/null
-rg -F 'expected_failure_stage=before_driver_discovery' \
-  "$build_root/native.stdout" >/dev/null
-rg -F 'unsupported top-level statement in module/import cohort' \
-  "$build_root/native.stderr" >/dev/null
+successor_source="$(python3 scripts/phase20_resource_scope_cleanup.py successor-native-case)"
+if test -n "$successor_source"; then
+  test "$successor_source" = "$source_fixture"
+else
+  set +e
+  ./gust --backend cranelift -o "$build_root/native" "$source_fixture" \
+    >"$build_root/native.stdout" 2>"$build_root/native.stderr"
+  native_status="$?"
+  set -e
+  test "$native_status" -ne 0
+  test ! -e "$build_root/native"
+  rg -F 'decision=source_or_type_failure capability=phase13_generic_source_to_mir' \
+    "$build_root/native.stdout" >/dev/null
+  rg -F 'expected_failure_stage=before_driver_discovery' \
+    "$build_root/native.stdout" >/dev/null
+  rg -F 'unsupported top-level statement in module/import cohort' \
+    "$build_root/native.stderr" >/dev/null
+fi
 
 echo "✅ Phase 20 generic resource scope cleanup parity passed"

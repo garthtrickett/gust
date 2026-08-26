@@ -331,6 +331,8 @@
     "guard-cranelift-phase21-collection-string-native-source-parity": 2,
     "guard-cranelift-phase21-filesystem-allocation-native-source-contract": 1,
     "guard-cranelift-phase21-filesystem-allocation-native-source-parity": 2,
+    "guard-cranelift-phase21-resource-sync-native-source-contract": 1,
+    "guard-cranelift-phase21-resource-sync-native-source-parity": 2,
     "guard-cranelift-phase20-resource-scope-cleanup-parity": 2,
     "guard-cranelift-phase20-seed-convergence": 1,
     "guard-cranelift-phase20-nested-brand-annotation-contract": 1,
