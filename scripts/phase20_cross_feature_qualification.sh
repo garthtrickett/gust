@@ -121,7 +121,10 @@ rg -F 'decision=source_or_type_failure' "$build_root/excluded.stdout" >/dev/null
 rg -F 'reason_code=source_or_type_failure' "$build_root/excluded.stdout" >/dev/null
 rg -F 'expected_failure_stage=before_driver_discovery' \
   "$build_root/excluded.stdout" >/dev/null
-rg -F 'unsupported top-level statement in module/import cohort' \
+active_module_import_diagnostic="$(
+  python3 scripts/phase21_opening.py active-module-import-diagnostic
+)"
+rg -F "$active_module_import_diagnostic" \
   "$build_root/excluded.stderr" >/dev/null
 
 echo "✅ Phase 20.16 profile=$profile cycles=$cycles cross-feature qualification passed"

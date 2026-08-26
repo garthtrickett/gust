@@ -109,7 +109,7 @@ rg -F 'source=compiler/test_runner_entry.gst line=238 column=1' \
   "$full_root/stdout" >/dev/null
 rg -F 'class=canonical_mir_verification_error' "$full_root/stdout" >/dev/null
 active_full_compiler_diagnostic="$(
-  python3 scripts/phase21_opening.py active-full-compiler-diagnostic
+  python3 scripts/phase21_opening.py active-module-import-diagnostic
 )"
 rg -F "$active_full_compiler_diagnostic" \
   "$full_root/stderr" >/dev/null

@@ -248,7 +248,7 @@ def main() -> None:
     parser.add_argument("command", choices=(
         "validate", "project", "check-review", "witness-cases",
         "residue-cases", "active-residue-cases",
-        "active-full-compiler-diagnostic",
+        "active-module-import-diagnostic",
     ))
     args = parser.parse_args()
     record = validate()
@@ -291,7 +291,7 @@ def main() -> None:
                 diagnostics[row["category"]], row["failure_stage"],
             )))
         return
-    elif args.command == "active-full-compiler-diagnostic":
+    elif args.command == "active-module-import-diagnostic":
         registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
         progression = registry.get(
             "phase21_selected_compiler_module_qualification", {}
@@ -305,6 +305,16 @@ def main() -> None:
                 == record["full_compiler_baseline"]["failure_stage"]
                 and progression.get("current_artifact")
                 == record["full_compiler_baseline"]["artifact"]
+                and progression.get("support_authority")
+                == registry["phase21_compiler_support_native_qualification"][
+                    "contract_version"
+                ]
+                and progression.get("support_record_preserved") is True
+                and progression.get("cross_feature_authority")
+                == registry["phase20_cross_feature_qualification"][
+                    "contract_version"
+                ]
+                and progression.get("cross_feature_record_preserved") is True
                 and progression.get("driver_invoked") is False
                 and progression.get("current_diagnostic"),
                 "successor full-compiler progression authority drifted",
