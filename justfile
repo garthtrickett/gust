@@ -17151,6 +17151,24 @@ guard-cranelift-phase21-resource-sync-native-source-parity:
     just guard-cranelift-phase21-resource-sync-native-source-contract
     bash scripts/phase21_resource_sync_native_source.sh
 
+guard-cranelift-phase21-compiler-support-native-qualification-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📚 Checking Phase 21 compiler support-library qualification authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-compiler-support-native-qualification-contract | grep -F $'guard-cranelift-phase21-compiler-support-native-qualification-contract\t1\t' >/dev/null
+    just guard-cranelift-phase21-resource-sync-native-source-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase21_compiler_support_native_qualification.py validate
+    python3 scripts/phase21_compiler_support_native_qualification.py check-review
+
+guard-cranelift-phase21-compiler-support-native-qualification-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Probing Phase 21 compiler support-library slices through both routes..."
+    just guard-cranelift-phase21-compiler-support-native-qualification-contract
+    python3 scripts/phase21_compiler_support_native_qualification.py run-evidence --output build/guards/phase21_compiler_support_native_qualification
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

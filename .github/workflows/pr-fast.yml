@@ -443,6 +443,9 @@ jobs:
       - name: Phase 21 resource and synchronization native source migration
         run: just guard-cranelift-phase21-resource-sync-native-source-contract
 
+      - name: Phase 21 compiler support-library native qualification
+        run: just guard-cranelift-phase21-compiler-support-native-qualification-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 
