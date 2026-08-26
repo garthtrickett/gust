@@ -94,7 +94,7 @@ Out of scope:
 - [x] Patch 21.9 — Collections and Strings Native Source Migration — DONE
 - [x] Patch 21.10 — Filesystem and Allocation Native Source Migration — DONE
 - [x] Patch 21.11 — Resources and Synchronization Native Source Migration — DONE
-- [ ] Patch 21.12 — Compiler Support-Library Native Qualification
+- [x] Patch 21.12 — Compiler Support-Library Native Qualification — DONE
 - [ ] Patch 21.13 — Selected Compiler-Module Native Qualification
 - [ ] Patch 21.13a — Native-Feature Bootstrap Seed Reconvergence
 - [ ] Patch 21.14 — Full Compiler Canonical-MIR and Native Object Qualification
@@ -377,6 +377,32 @@ Compile the compiler's dependency modules through explicit Cranelift in
 topological slices. Each slice records canonical MIR, diagnostics, output or
 library artifact properties, resource state, and memory/time budgets while
 MIR-to-C remains the oracle.
+
+The implemented qualification starts from the 38-module/116-edge Patch 21.8
+graph authority, reconciles the three successor lowering modules and nine edges
+added by Patches 21.9–21.11, and derives 34 support modules with 87 dependency
+edges from the resulting live 41-module/125-edge graph. It excludes only the six
+representative compiler modules named by Patch 21.13 and the full compiler entry
+reserved for Patch 21.14, then probes the four remaining nonempty graph slices
+in their existing topological order. Every support root is accepted by
+MIR-to-C, links, and exits zero with empty output. Explicit Cranelift currently
+rejects every slice before driver discovery at the generic unsupported
+top-level-statement boundary, so canonical MIR and native artifacts are
+recorded as absent rather than manufactured. Fixed elapsed/RSS budgets and the
+no-driver/no-artifact resource state are registry-owned. The remaining generic
+capability is assigned to Patch 21.13 with an explicit ban on module-specific
+exceptions.
+
+**Exit Gate:** all 34 support modules and all 87 of their live graph dependency
+edges are present in exactly one registry-derived topological qualification
+slice; every slice's MIR-to-C C output links and runs with the recorded empty
+stdout/stderr and zero exit; every explicit-Cranelift attempt reproduces the
+registered source/type classification before driver discovery with canonical
+MIR absent and no artifact; elapsed time and peak RSS remain within fixed
+registry budgets; the selected lexer/parser/resolver/typechecker/MIR/codegen
+modules, full compiler entry, generic capability implementation, source
+semantics, MIR operations, ABI/layout/runtime symbols, bootstrap seed, default
+backend, fallback, Stdlib, CR-15, and Patch 21.13 remain unchanged.
 
 ## Patch 21.13 — Selected Compiler-Module Native Qualification
 

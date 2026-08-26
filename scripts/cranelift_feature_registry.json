@@ -2558,6 +2558,106 @@
       "edits_stdlib": false
     }
   },
+  "phase21_compiler_support_native_qualification": {
+    "contract_version": "phase21_compiler_support_native_qualification_v1",
+    "status": "patch21_12_complete",
+    "next_patch": "21.13",
+    "review_view": "compiler/CRANELIFT_PHASE21_COMPILER_SUPPORT_NATIVE_QUALIFICATION.md",
+    "observed_main_sha": "302c902e69112a510543ff6c5d720d39872f02ea",
+    "predecessor_authority": "phase21_resource_sync_native_source_v1",
+    "compiler_graph_authority": "phase21_residue_migration_authority_v1",
+    "compiler_graph_module_count": 38,
+    "compiler_graph_import_edge_count": 116,
+    "current_compiler_graph_module_count": 41,
+    "current_compiler_graph_import_edge_count": 125,
+    "successor_migration_modules": ["mir_native_backend_collection_string_source.gst","mir_native_backend_filesystem_allocation_source.gst","mir_native_backend_resource_sync_source.gst"],
+    "support_module_count": 34,
+    "support_dependency_edge_count": 87,
+    "support_induced_edge_count": 72,
+    "selected_modules_deferred_to_patch21_13": ["lexer.gst","parser.gst","resolver.gst","typechecker.gst","mir.gst","codegen.gst"],
+    "entry_module_deferred_to_patch21_14": "test_runner_entry.gst",
+    "measurement_policy": {
+      "protocol": "fresh_child_process_monotonic_elapsed_and_wait4_maxrss",
+      "sample_count": 1,
+      "elapsed_statistic": "single_focused_qualification_observation",
+      "memory_statistic": "maximum_resident_set_size",
+      "threshold_policy": "fixed_registry_values_reviewed_with_the_patch_no_runtime_rebasing"
+    },
+    "slices": [
+      {
+        "order": 1,
+        "id": "lexical_ast_foundations",
+        "module_count": 3,
+        "dependency_edge_count": 2,
+        "modules": ["token.gst","errors.gst","ast.gst"],
+        "source_fixture": "compiler/phase21_support_lexical_ast_slice.gst",
+        "oracle": {"compile_exit":0,"run_exit":0,"stdout":"","stderr":"","artifact":"nonempty_generated_C_and_linked_executable"},
+        "cranelift": {"compile_exit":1,"decision":"source_or_type_failure","reason_code":"source_or_type_failure","diagnostic_class":"canonical_mir_verification_error","diagnostic":"Native backend canonical MIR verification failed: unsupported top-level statement in module/import cohort","line":9,"failure_stage":"before_driver_discovery","canonical_mir":"absent_before_driver_discovery","artifact":"absent"},
+        "measurement": {
+          "mir_to_c": {"baseline_elapsed_ms":40,"baseline_peak_rss_kib":21376,"max_elapsed_ms":120000,"max_peak_rss_kib":4194304},
+          "cranelift": {"baseline_elapsed_ms":30,"baseline_peak_rss_kib":17024,"max_elapsed_ms":120000,"max_peak_rss_kib":4194304}
+        }
+      },
+      {
+        "order": 2,
+        "id": "canonical_mir_authorities",
+        "module_count": 14,
+        "dependency_edge_count": 22,
+        "modules": ["mir_layout.gst","mir_resource_authority.gst","mir_function_abi_authority.gst","mir_function_call.gst","mir_integer_conversion.gst","mir_pointer.gst","mir_stack_slot.gst","mir_memory_access.gst","mir_string_view.gst","mir_array_slice.gst","mir_struct_layout.gst","mir_enum.gst","mir_aggregate_transport.gst","mir_resource_value.gst"],
+        "source_fixture": "compiler/phase21_support_canonical_mir_slice.gst",
+        "oracle": {"compile_exit":0,"run_exit":0,"stdout":"","stderr":"","artifact":"nonempty_generated_C_and_linked_executable"},
+        "cranelift": {"compile_exit":1,"decision":"source_or_type_failure","reason_code":"source_or_type_failure","diagnostic_class":"canonical_mir_verification_error","diagnostic":"Native backend canonical MIR verification failed: unsupported top-level statement in module/import cohort","line":20,"failure_stage":"before_driver_discovery","canonical_mir":"absent_before_driver_discovery","artifact":"absent"},
+        "measurement": {
+          "mir_to_c": {"baseline_elapsed_ms":2340,"baseline_peak_rss_kib":464128,"max_elapsed_ms":120000,"max_peak_rss_kib":4194304},
+          "cranelift": {"baseline_elapsed_ms":1610,"baseline_peak_rss_kib":381056,"max_elapsed_ms":120000,"max_peak_rss_kib":4194304}
+        }
+      },
+      {
+        "order": 3,
+        "id": "native_source_lowering",
+        "module_count": 14,
+        "dependency_edge_count": 44,
+        "modules": ["mir_native_backend_capability.gst","mir_native_backend_driver.gst","mir_native_backend_block_parameter_loop_source.gst","mir_native_backend_metadata_source.gst","mir_native_backend_direct_call_source.gst","mir_native_backend_local_state_source.gst","mir_native_backend_module_import_source.gst","mir_native_backend_parameter_argument_source.gst","mir_native_backend_structured_cfg_source.gst","mir_native_backend_scalar_expression_source.gst","mir_native_backend_collection_string_source.gst","mir_native_backend_filesystem_allocation_source.gst","mir_native_backend_resource_sync_source.gst","mir_native_backend_generic_source.gst"],
+        "source_fixture": "compiler/phase21_support_native_source_slice.gst",
+        "oracle": {"compile_exit":0,"run_exit":0,"stdout":"","stderr":"","artifact":"nonempty_generated_C_and_linked_executable"},
+        "cranelift": {"compile_exit":1,"decision":"source_or_type_failure","reason_code":"source_or_type_failure","diagnostic_class":"canonical_mir_verification_error","diagnostic":"Native backend canonical MIR verification failed: unsupported top-level statement in module/import cohort","line":21,"failure_stage":"before_driver_discovery","canonical_mir":"absent_before_driver_discovery","artifact":"absent"},
+        "measurement": {
+          "mir_to_c": {"baseline_elapsed_ms":11310,"baseline_peak_rss_kib":1702144,"max_elapsed_ms":120000,"max_peak_rss_kib":4194304},
+          "cranelift": {"baseline_elapsed_ms":7300,"baseline_peak_rss_kib":1375488,"max_elapsed_ms":120000,"max_peak_rss_kib":4194304}
+        }
+      },
+      {
+        "order": 4,
+        "id": "native_request_route_and_entry",
+        "module_count": 3,
+        "dependency_edge_count": 19,
+        "modules": ["mir_primitive_layout.gst","mir_native_backend_request.gst","mir_native_backend_source_route.gst"],
+        "source_fixture": "compiler/phase21_support_native_request_slice.gst",
+        "oracle": {"compile_exit":0,"run_exit":0,"stdout":"","stderr":"","artifact":"nonempty_generated_C_and_linked_executable"},
+        "cranelift": {"compile_exit":1,"decision":"source_or_type_failure","reason_code":"source_or_type_failure","diagnostic_class":"canonical_mir_verification_error","diagnostic":"Native backend canonical MIR verification failed: unsupported top-level statement in module/import cohort","line":10,"failure_stage":"before_driver_discovery","canonical_mir":"absent_before_driver_discovery","artifact":"absent"},
+        "measurement": {
+          "mir_to_c": {"baseline_elapsed_ms":12590,"baseline_peak_rss_kib":1760128,"max_elapsed_ms":120000,"max_peak_rss_kib":4194304},
+          "cranelift": {"baseline_elapsed_ms":7490,"baseline_peak_rss_kib":1419520,"max_elapsed_ms":120000,"max_peak_rss_kib":4194304}
+        }
+      }
+    ],
+    "resource_state": "compiler_process_only_no_native_program_or_runtime_resource_acquisition",
+    "capability_disposition": {
+      "id": "generic_compiler_module_top_level_declaration_lowering",
+      "decision": "source_or_type_failure",
+      "destination_patch": "21.13",
+      "policy": "generic_capability_row_required_no_module_specific_exception"
+    },
+    "boundary": {
+      "changes_accepted_Gust_program_meaning": false,
+      "changes_canonical_MIR_or_backend_capability": false,
+      "changes_ABI_layout_or_runtime_symbols": false,
+      "changes_bootstrap_seed": false,
+      "changes_default_backend_or_fallback": false,
+      "edits_stdlib_or_CR15": false,
+      "begins_patch21_13": false
+    }
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",
