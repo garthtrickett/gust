@@ -129,6 +129,43 @@ function_0_block_0_statement_2_value: 0' \
 assert_arena_fixture_rejected arena-index-reassigned \
   'canonical compiler MIR arena access requires same-block os_ArenaAlloc provenance'
 
+sed \
+  -e 's/function_0_block_0_statement_count: 6/function_0_block_0_statement_count: 7/' \
+  -e 's/function_0_block_0_statement_5_/function_0_block_0_statement_6_/g' \
+  -e 's/function_0_block_0_statement_4_/function_0_block_0_statement_5_/g' \
+  -e 's/function_0_block_0_statement_3_/function_0_block_0_statement_4_/g' \
+  -e 's/function_0_block_0_statement_2_/function_0_block_0_statement_3_/g' \
+  -e '/function_0_block_0_statement_1_argument_1_value: 4/a\
+function_0_block_0_statement_2_kind: CallVoid\
+function_0_block_0_statement_2_callee_kind: ImportedFunction\
+function_0_block_0_statement_2_callee: os_Arena_Free\
+function_0_block_0_statement_2_argument_count: 1\
+function_0_block_0_statement_2_argument_0_kind: ArenaAddress\
+function_0_block_0_statement_2_argument_0_local: ctx' \
+  "$allocation_fixture" >"$build_root/arena-access-after-free.mir"
+assert_arena_fixture_rejected arena-access-after-free \
+  'canonical compiler MIR arena access requires same-block os_ArenaAlloc provenance'
+
+sed \
+  -e 's/function_0_block_0_statement_count: 6/function_0_block_0_statement_count: 7/' \
+  -e 's/function_0_block_0_statement_5_/function_0_block_0_statement_6_/g' \
+  -e 's/function_0_block_0_statement_4_/function_0_block_0_statement_5_/g' \
+  -e 's/function_0_block_0_statement_3_/function_0_block_0_statement_4_/g' \
+  -e 's/function_0_block_0_statement_2_/function_0_block_0_statement_3_/g' \
+  -e '/function_0_block_0_statement_1_argument_1_value: 4/a\
+function_0_block_0_statement_2_kind: ArenaInit\
+function_0_block_0_statement_2_local: ctx\
+function_0_block_0_statement_2_callee_kind: ImportedFunction\
+function_0_block_0_statement_2_callee: os_Arena_New' \
+  "$allocation_fixture" >"$build_root/arena-access-after-reinit.mir"
+assert_arena_fixture_rejected arena-access-after-reinit \
+  'canonical compiler MIR arena access requires same-block os_ArenaAlloc provenance'
+
+sed 's/function_0_block_0_statement_1_argument_1_value: 4/function_0_block_0_statement_1_argument_1_value: 18446744073709551615/' \
+  "$allocation_fixture" >"$build_root/arena-allocation-alignment-overflow.mir"
+assert_arena_fixture_rejected arena-allocation-alignment-overflow \
+  'canonical compiler MIR os_ArenaAlloc size overflows runtime alignment'
+
 while IFS=$'\t' read -r case_id source_fixture expected_stdout_hex expected_exit expected_file expected_file_hex
 do
   case_dir="$build_root/$case_id"

@@ -337,6 +337,13 @@ must have a non-negative offset and fit the recorded allocation. Malformed MIR
 therefore rejects before native lowering; the admitted source cohort,
 MIR-to-C oracle, lowering, ABI/layout, and runtime symbols are unchanged.
 
+Second post-merge correction (2026-08-26): allocation provenance is now
+invalidated when its arena is freed or reinitialized, and literal allocation
+sizes must fit the native `size_t` while leaving room for the runtime's
+seven-byte alignment addition. Malformed canonical MIR covers both lifetime
+reset forms and alignment overflow; lowering and the admitted source cohort are
+unchanged.
+
 **Exit Gate:** all four registered source cases agree with MIR-to-C on stdout,
 stderr, exit status, and filesystem effects where applicable; the two
 unrepresented expression cases retain measured MIR-to-C behavior while

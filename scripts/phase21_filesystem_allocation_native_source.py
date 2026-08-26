@@ -108,6 +108,10 @@ def validate() -> dict:
         "access_range":
         "non_negative_byte_offset_plus_four_byte_i32_width_within_allocation_size",
         "index_reassignment": "clears_allocation_provenance",
+        "arena_lifetime_reset":
+        "os_Arena_Free_or_later_ArenaInit_clears_allocation_provenance_for_that_arena",
+        "allocation_size":
+        "must_fit_native_size_t_and_size_plus_7_must_not_overflow_runtime_alignment",
     }, "canonical arena-access validation contract drifted")
     runtime = record.get("runtime_package", {})
     require(runtime.get("retained_components") == [
@@ -170,9 +174,12 @@ def validate() -> dict:
     for marker in (
         "arena-negative-offset", "arena-out-of-range",
         "arena-missing-provenance", "arena-index-reassigned",
+        "arena-access-after-free", "arena-access-after-reinit",
+        "arena-allocation-alignment-overflow",
         "arena access byte offset must be non-negative",
         "arena access range 4..8 exceeds allocation size 4",
         "arena access requires same-block os_ArenaAlloc provenance",
+        "os_ArenaAlloc size overflows runtime alignment",
     ):
         require(marker in parity_script,
                 f"malformed arena-MIR evidence lacks {marker}")
@@ -239,6 +246,10 @@ def render(record: dict) -> str:
               "- Arena access range: non-negative byte offset plus the four-byte "
               "`i32` width must fit the recorded allocation",
               "- Arena index reassignment clears allocation provenance",
+              "- Arena free or reinitialization clears allocation provenance "
+              "for that arena",
+              "- Allocation size must fit native `size_t`; adding the runtime's "
+              "seven alignment bytes must not overflow",
               f"- Runtime archive: `{runtime['path']}` from "
               f"`{', '.join(runtime['retained_components'])}`",
               "- New or changed runtime symbols: none",

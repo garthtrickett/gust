@@ -1697,7 +1697,9 @@
             "arena_access_validation": {
               "allocation_provenance": "earlier_same_block_import_whose_link_symbol_is_os_ArenaAlloc_with_same_arena_and_literal_size",
               "access_range": "non_negative_byte_offset_plus_four_byte_i32_width_within_allocation_size",
-              "index_reassignment": "clears_allocation_provenance"
+              "index_reassignment": "clears_allocation_provenance",
+              "arena_lifetime_reset": "os_Arena_Free_or_later_ArenaInit_clears_allocation_provenance_for_that_arena",
+              "allocation_size": "must_fit_native_size_t_and_size_plus_7_must_not_overflow_runtime_alignment"
             },
             "fallback": "forbidden"
           },

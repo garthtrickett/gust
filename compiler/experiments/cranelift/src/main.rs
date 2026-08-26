@@ -1541,6 +1541,7 @@ struct CompilerMirArenaAllocationProvenance<'a> {
     size: u64,
 }
 const COMPILER_MIR_ARENA_I32_ACCESS_WIDTH: u64 = 4;
+const COMPILER_MIR_ARENA_RUNTIME_ALIGNMENT_SLACK: usize = 7;
 
 #[derive(Clone, Copy)]
 struct CompilerMirLoweringBlockParameter<'a> {
@@ -20742,6 +20743,24 @@ fn validate_canonical_compiler_mir_arena_accesses<'a>(
                     else {
                         continue;
                     };
+                    if usize::try_from(*size)
+                        .ok()
+                        .and_then(|runtime_size| {
+                            runtime_size.checked_add(
+                                COMPILER_MIR_ARENA_RUNTIME_ALIGNMENT_SLACK,
+                            )
+                        })
+                        .is_none()
+                    {
+                        return Err(IoError::new(
+                            ErrorKind::InvalidInput,
+                            format!(
+                                "canonical compiler MIR os_ArenaAlloc size overflows runtime alignment in function {} at block {} statement {statement_index}",
+                                function.object_name, block.label
+                            ),
+                        )
+                        .into());
+                    }
                     provenance.insert(
                         name,
                         CompilerMirArenaAllocationProvenance { arena, size: *size },
@@ -20789,9 +20808,31 @@ fn validate_canonical_compiler_mir_arena_accesses<'a>(
                     )?;
                     provenance.remove(name);
                 }
-                CompilerMirLoweringStatement::LocalStringSetCall { .. }
-                | CompilerMirLoweringStatement::ArenaInit { .. }
-                | CompilerMirLoweringStatement::CallVoid { .. } => {}
+                CompilerMirLoweringStatement::ArenaInit { name, .. } => {
+                    provenance.retain(|_, allocation| allocation.arena != *name);
+                }
+                CompilerMirLoweringStatement::CallVoid {
+                    target,
+                    arguments,
+                } => {
+                    let CompilerMirLoweringCallTarget::ImportedFunction(import_name) = target
+                    else {
+                        continue;
+                    };
+                    let Some(imported) = import_names.get(import_name).copied() else {
+                        continue;
+                    };
+                    if imported.link_symbol != "os_Arena_Free" {
+                        continue;
+                    }
+                    let [CompilerMirLoweringCallArgument::ArenaAddress(arena)] =
+                        arguments.as_slice()
+                    else {
+                        continue;
+                    };
+                    provenance.retain(|_, allocation| allocation.arena != *arena);
+                }
+                CompilerMirLoweringStatement::LocalStringSetCall { .. } => {}
             }
         }
     }

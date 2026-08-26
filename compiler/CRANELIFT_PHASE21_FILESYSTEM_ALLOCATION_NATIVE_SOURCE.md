@@ -57,6 +57,8 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - Arena allocation provenance: earlier same-block imported `os_ArenaAlloc` link symbol, same arena, literal size
 - Arena access range: non-negative byte offset plus the four-byte `i32` width must fit the recorded allocation
 - Arena index reassignment clears allocation provenance
+- Arena free or reinitialization clears allocation provenance for that arena
+- Allocation size must fit native `size_t`; adding the runtime's seven alignment bytes must not overflow
 - Runtime archive: `build/gust-runtime-package.a` from `src/runtime/arena.c, src/runtime/host_io.c, src/runtime/file_io.c`
 - New or changed runtime symbols: none
 - Generated C or fallback in the qualified route: none
