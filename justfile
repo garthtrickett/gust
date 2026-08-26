@@ -19143,7 +19143,7 @@ guard-cranelift-phase13-direct-call-graph-parity:
       'duplicate canonical compiler MIR local function name'
       'unknown canonical compiler MIR local callee'
       'duplicate canonical compiler MIR emitted backend symbol'
-      'must use only int/bool parameters and one int/bool return'
+      'must use int/bool/rawptr parameters and an int/bool/void return'
       'canonical compiler MIR call result type mismatch'
       'canonical compiler MIR local call graph must not contain recursion or mutual recursion'
       'let mut local_function_ids: HashMap<&str, FuncId>'
