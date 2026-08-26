@@ -95,7 +95,7 @@ Out of scope:
 - [x] Patch 21.10 — Filesystem and Allocation Native Source Migration — DONE
 - [x] Patch 21.11 — Resources and Synchronization Native Source Migration — DONE
 - [x] Patch 21.12 — Compiler Support-Library Native Qualification — DONE
-- [ ] Patch 21.13 — Selected Compiler-Module Native Qualification
+- [x] Patch 21.13 — Selected Compiler-Module Native Qualification — DONE
 - [ ] Patch 21.13a — Native-Feature Bootstrap Seed Reconvergence
 - [ ] Patch 21.14 — Full Compiler Canonical-MIR and Native Object Qualification
 - [ ] Patch 21.15 — Cranelift-Built Compiler Program Compilation
@@ -410,6 +410,37 @@ Compile representative lexer, parser, resolver, typechecker, MIR, and codegen
 modules through the native path, expanding only after the prior slice is fully
 classified. Large-function or registry failures receive generic capability rows
 rather than per-module exceptions.
+
+The implemented qualification admits ordinary imported struct and enum
+declarations as compile-time metadata that owns no executable MIR. A generic
+positive witness containing both declaration kinds still sends every function
+through the existing signature and body lowerers and exits 42 with empty output
+through MIR-to-C and explicit Cranelift. This is module-generic admission, not a
+selected-module exception.
+
+The lexer, parser, resolver, typechecker, MIR, and codegen representatives were
+then expanded in that order, only after the preceding slice was fully
+classified. All six MIR-to-C oracle programs emit nonempty C, link, and exit
+zero with empty output. Each explicit-Cranelift attempt rejects before driver
+discovery at the same generic unsupported non-scalar-signature boundary, with
+canonical MIR and artifacts absent. The registry owns the reachable graph
+counts, diagnostics, artifact/resource state, and fixed elapsed/RSS budgets.
+One generic capability row assigns non-scalar compiler-module signature
+lowering to Patch 21.14; no module-specific exception is admitted. Large-
+function and registry behavior is recorded as unobservable until that earlier
+generic boundary advances.
+
+**Exit Gate:** all six selected modules appear exactly once in the registered
+lexer/parser/resolver/typechecker/MIR/codegen order with live reachable graph
+counts; every slice's MIR-to-C C output links and runs with empty stdout/stderr
+and zero exit; every explicit-Cranelift attempt reproduces the registered
+generic pre-driver diagnostic with canonical MIR and native artifact absent;
+the generic declaration witness exits 42 with empty output through both
+backends; elapsed time and peak RSS remain within fixed registry budgets; all
+remaining capability failures have one generic destination and no per-module
+exception; source semantics, canonical MIR operations, ABI/layout/runtime
+symbols, bootstrap seed, default backend, fallback, Stdlib, CR-15, and Patch
+21.13a remain unchanged.
 
 ## Patch 21.13a — Native-Feature Bootstrap Seed Reconvergence
 

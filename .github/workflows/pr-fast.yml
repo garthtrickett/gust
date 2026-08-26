@@ -446,6 +446,9 @@ jobs:
       - name: Phase 21 compiler support-library native qualification
         run: just guard-cranelift-phase21-compiler-support-native-qualification-contract
 
+      - name: Phase 21 selected compiler-module native qualification
+        run: just guard-cranelift-phase21-selected-compiler-module-qualification-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 

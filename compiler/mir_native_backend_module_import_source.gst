@@ -1585,6 +1585,12 @@ func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx
             unsafe {
                 if statement.tag == 0 {
                     has_module_import_surface = 1;
+                } else if statement.tag == 1 || statement.tag == 2 {
+                    // Struct and enum declarations are compile-time type
+                    // metadata. They require no executable MIR of their own;
+                    // any function that uses one still has to pass the generic
+                    // signature and body lowerers below.
+                    has_module_import_surface = 1;
                 } else if statement.tag == 3 {
                     if statement.FunctionDecl.is_extern == 1 {
                         has_module_import_surface = 1;

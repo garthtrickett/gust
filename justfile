@@ -17169,6 +17169,24 @@ guard-cranelift-phase21-compiler-support-native-qualification-evidence:
     just guard-cranelift-phase21-compiler-support-native-qualification-contract
     python3 scripts/phase21_compiler_support_native_qualification.py run-evidence --output build/guards/phase21_compiler_support_native_qualification
 
+guard-cranelift-phase21-selected-compiler-module-qualification-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📚 Checking Phase 21 selected compiler-module qualification authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-selected-compiler-module-qualification-contract | grep -F $'guard-cranelift-phase21-selected-compiler-module-qualification-contract\t1\t' >/dev/null
+    just guard-cranelift-phase21-compiler-support-native-qualification-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase21_selected_compiler_module_qualification.py validate
+    python3 scripts/phase21_selected_compiler_module_qualification.py check-review
+
+guard-cranelift-phase21-selected-compiler-module-qualification-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Probing Phase 21 selected compiler modules through both routes..."
+    just guard-cranelift-phase21-selected-compiler-module-qualification-contract
+    python3 scripts/phase21_selected_compiler_module_qualification.py run-evidence --output build/guards/phase21_selected_compiler_module_qualification
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

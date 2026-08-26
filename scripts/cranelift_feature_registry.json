@@ -2658,6 +2658,107 @@
       "begins_patch21_13": false
     }
   },
+  "phase21_selected_compiler_module_qualification": {
+    "contract_version": "phase21_selected_compiler_module_qualification_v1",
+    "status": "patch21_13_complete",
+    "next_patch": "21.13a",
+    "review_view": "compiler/CRANELIFT_PHASE21_SELECTED_COMPILER_MODULE_QUALIFICATION.md",
+    "observed_main_sha": "45a635c1acbf294997d952701d8ad12c934686c9",
+    "predecessor_authority": "phase21_compiler_support_native_qualification_v1",
+    "selected_module_order": ["lexer.gst","parser.gst","resolver.gst","typechecker.gst","mir.gst","codegen.gst"],
+    "declaration_admission": {
+      "id": "generic_compiler_module_top_level_declaration_lowering",
+      "status": "implemented",
+      "policy": "ordinary_struct_and_enum_declarations_own_no_executable_MIR_while_every_function_use_remains_subject_to_generic_signature_and_body_lowering",
+      "source_fixture": "compiler/phase21_selected_declaration_source.gst",
+      "dependency_fixture": "compiler/phase21_selected_declaration_module.gst",
+      "oracle": {"compile_exit":0,"run_exit":42,"stdout":"","stderr":"","artifact":"nonempty_generated_C_and_linked_executable"},
+      "cranelift": {"compile_exit":0,"run_exit":42,"stdout":"","stderr":"","artifact":"linked_native_executable","transient_request_artifacts":"removed"}
+    },
+    "slices": [
+      {
+        "order": 1,
+        "id": "lexer",
+        "selected_module": "lexer.gst",
+        "source_fixture": "compiler/phase21_selected_lexer_slice.gst",
+        "reachable_module_count": 2,
+        "reachable_import_edge_count": 1,
+        "oracle": {"compile_exit":0,"run_exit":0,"stdout":"","stderr":"","generated_c_bytes":32882,"artifact":"nonempty_generated_C_and_linked_executable"},
+        "cranelift": {"compile_exit":1,"decision":"source_or_type_failure","reason_code":"source_or_type_failure","diagnostic_class":"canonical_mir_verification_error","diagnostic":"Native backend canonical MIR verification failed: module function uses an unsupported scalar signature","line":8,"failure_stage":"before_driver_discovery","canonical_mir":"absent_before_driver_discovery","artifact":"absent"},
+        "measurement": {"mir_to_c":{"baseline_elapsed_ms":60,"baseline_peak_rss_kib":9088,"max_elapsed_ms":120000,"max_peak_rss_kib":4194304},"cranelift":{"baseline_elapsed_ms":80,"baseline_peak_rss_kib":7808,"max_elapsed_ms":120000,"max_peak_rss_kib":4194304}}
+      },
+      {
+        "order": 2,
+        "id": "parser",
+        "selected_module": "parser.gst",
+        "source_fixture": "compiler/phase21_selected_parser_slice.gst",
+        "reachable_module_count": 5,
+        "reachable_import_edge_count": 7,
+        "oracle": {"compile_exit":0,"run_exit":0,"stdout":"","stderr":"","generated_c_bytes":290133,"artifact":"nonempty_generated_C_and_linked_executable"},
+        "cranelift": {"compile_exit":1,"decision":"source_or_type_failure","reason_code":"source_or_type_failure","diagnostic_class":"canonical_mir_verification_error","diagnostic":"Native backend canonical MIR verification failed: module function uses an unsupported scalar signature","line":5,"failure_stage":"before_driver_discovery","canonical_mir":"absent_before_driver_discovery","artifact":"absent"},
+        "measurement": {"mir_to_c":{"baseline_elapsed_ms":420,"baseline_peak_rss_kib":92288,"max_elapsed_ms":120000,"max_peak_rss_kib":4194304},"cranelift":{"baseline_elapsed_ms":190,"baseline_peak_rss_kib":68096,"max_elapsed_ms":120000,"max_peak_rss_kib":4194304}}
+      },
+      {
+        "order": 3,
+        "id": "resolver",
+        "selected_module": "resolver.gst",
+        "source_fixture": "compiler/phase21_selected_resolver_slice.gst",
+        "reachable_module_count": 3,
+        "reachable_import_edge_count": 3,
+        "oracle": {"compile_exit":0,"run_exit":0,"stdout":"","stderr":"","generated_c_bytes":46521,"artifact":"nonempty_generated_C_and_linked_executable"},
+        "cranelift": {"compile_exit":1,"decision":"source_or_type_failure","reason_code":"source_or_type_failure","diagnostic_class":"canonical_mir_verification_error","diagnostic":"Native backend canonical MIR verification failed: module function uses an unsupported scalar signature","line":5,"failure_stage":"before_driver_discovery","canonical_mir":"absent_before_driver_discovery","artifact":"absent"},
+        "measurement": {"mir_to_c":{"baseline_elapsed_ms":20,"baseline_peak_rss_kib":12416,"max_elapsed_ms":120000,"max_peak_rss_kib":4194304},"cranelift":{"baseline_elapsed_ms":10,"baseline_peak_rss_kib":9600,"max_elapsed_ms":120000,"max_peak_rss_kib":4194304}}
+      },
+      {
+        "order": 4,
+        "id": "typechecker",
+        "selected_module": "typechecker.gst",
+        "source_fixture": "compiler/phase21_selected_typechecker_slice.gst",
+        "reachable_module_count": 4,
+        "reachable_import_edge_count": 5,
+        "oracle": {"compile_exit":0,"run_exit":0,"stdout":"","stderr":"","generated_c_bytes":1397142,"artifact":"nonempty_generated_C_and_linked_executable"},
+        "cranelift": {"compile_exit":1,"decision":"source_or_type_failure","reason_code":"source_or_type_failure","diagnostic_class":"canonical_mir_verification_error","diagnostic":"Native backend canonical MIR verification failed: module function uses an unsupported scalar signature","line":6,"failure_stage":"before_driver_discovery","canonical_mir":"absent_before_driver_discovery","artifact":"absent"},
+        "measurement": {"mir_to_c":{"baseline_elapsed_ms":4340,"baseline_peak_rss_kib":1253120,"max_elapsed_ms":120000,"max_peak_rss_kib":4194304},"cranelift":{"baseline_elapsed_ms":1610,"baseline_peak_rss_kib":1139072,"max_elapsed_ms":120000,"max_peak_rss_kib":4194304}}
+      },
+      {
+        "order": 5,
+        "id": "mir",
+        "selected_module": "mir.gst",
+        "source_fixture": "compiler/phase21_selected_mir_slice.gst",
+        "reachable_module_count": 16,
+        "reachable_import_edge_count": 35,
+        "oracle": {"compile_exit":0,"run_exit":0,"stdout":"","stderr":"","generated_c_bytes":3133238,"artifact":"nonempty_generated_C_and_linked_executable"},
+        "cranelift": {"compile_exit":1,"decision":"source_or_type_failure","reason_code":"source_or_type_failure","diagnostic_class":"canonical_mir_verification_error","diagnostic":"Native backend canonical MIR verification failed: module function uses an unsupported scalar signature","line":5,"failure_stage":"before_driver_discovery","canonical_mir":"absent_before_driver_discovery","artifact":"absent"},
+        "measurement": {"mir_to_c":{"baseline_elapsed_ms":5520,"baseline_peak_rss_kib":912512,"max_elapsed_ms":120000,"max_peak_rss_kib":4194304},"cranelift":{"baseline_elapsed_ms":3230,"baseline_peak_rss_kib":768896,"max_elapsed_ms":120000,"max_peak_rss_kib":4194304}}
+      },
+      {
+        "order": 6,
+        "id": "codegen",
+        "selected_module": "codegen.gst",
+        "source_fixture": "compiler/phase21_selected_codegen_slice.gst",
+        "reachable_module_count": 9,
+        "reachable_import_edge_count": 15,
+        "oracle": {"compile_exit":0,"run_exit":0,"stdout":"","stderr":"","generated_c_bytes":2423333,"artifact":"nonempty_generated_C_and_linked_executable"},
+        "cranelift": {"compile_exit":1,"decision":"source_or_type_failure","reason_code":"source_or_type_failure","diagnostic_class":"canonical_mir_verification_error","diagnostic":"Native backend canonical MIR verification failed: module function uses an unsupported scalar signature","line":6,"failure_stage":"before_driver_discovery","canonical_mir":"absent_before_driver_discovery","artifact":"absent"},
+        "measurement": {"mir_to_c":{"baseline_elapsed_ms":7990,"baseline_peak_rss_kib":1682816,"max_elapsed_ms":120000,"max_peak_rss_kib":4194304},"cranelift":{"baseline_elapsed_ms":4030,"baseline_peak_rss_kib":1492992,"max_elapsed_ms":120000,"max_peak_rss_kib":4194304}}
+      }
+    ],
+    "generic_capability_rows": [
+      {"id":"generic_compiler_module_top_level_declaration_lowering","status":"implemented","destination_patch":"21.13","policy":"no_module_specific_exception"},
+      {"id":"compiler_module_non_scalar_signature_lowering","status":"required","current_decision":"source_or_type_failure","failure_stage":"before_driver_discovery","destination_patch":"21.14","policy":"one_generic_capability_for_all_selected_modules_no_module_specific_exception"}
+    ],
+    "large_function_registry_observation": "not_observable_until_generic_non_scalar_signature_lowering_advances_the_selected_modules",
+    "resource_state": "oracle_executables_exit_cleanly_and_rejecting_native_routes_never_reach_driver_or_publish_artifacts",
+    "boundary": {
+      "changes_accepted_Gust_program_meaning": false,
+      "changes_canonical_MIR_operations": false,
+      "changes_ABI_layout_or_runtime_symbols": false,
+      "changes_bootstrap_seed": false,
+      "changes_default_backend_or_fallback": false,
+      "edits_stdlib_or_CR15": false,
+      "begins_patch21_13a": false
+    }
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",
