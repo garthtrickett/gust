@@ -12,19 +12,28 @@ real_driver="$PWD/build/gust-native-backend"
 runtime_package="$PWD/build/gust-runtime-package.a"
 test -x "$real_driver"
 test -f "$runtime_package"
-test "$(ar t "$runtime_package" | tr '\n' ' ')" = "arena.o host_io.o file_io.o "
+test "$(ar t "$runtime_package" | tr '\n' ' ')" = \
+  "arena.o host_io.o file_io.o scratch.o fiber.o "
 nm -g --defined-only "$runtime_package" >"$build_root/runtime-symbols.txt"
 rg -n ' T os_LogInt$' "$build_root/runtime-symbols.txt" >/dev/null
 rg -n ' T os_LogStr$' "$build_root/runtime-symbols.txt" >/dev/null
 actual_runtime_symbols="$(awk 'NF == 3 && ($2 == "T" || $2 == "B") {print $3}' \
   "$build_root/runtime-symbols.txt" | sort)"
 expected_runtime_symbols="$(printf '%s\n' \
+  get_num_threads_to_use gust_context_switch gust_fiber_create \
+  gust_fiber_entry_wrapper gust_fiber_exit gust_fiber_free gust_fiber_switch \
+  gust_scheduler_destroy gust_scheduler_init gust_scheduler_spawn \
+  gust_shard_loop gust_yield \
   os_ArenaAlloc os_Arena_Free os_Arena_New os_Arena_Validate os_Args \
   os_CloseDir os_ExecutablePath os_FileExecutable os_FileExists os_GetEnv \
-  os_LogError os_LogInt os_LogStr os_MockPayload os_NativeObjectFormat \
+  os_GetThreadScratch_raw os_LogError os_LogInt os_LogStr os_MockPayload \
+  os_NativeObjectFormat \
   os_NativeTargetTriple os_OpenDir os_PathAbsolute os_PathDir os_ReadDir \
-  os_ReadFile os_RemoveFile os_RunProcess os_System os_WriteFile os_argc \
-  os_argv os_path_join std_GenerationalSwap | sort)"
+  os_ReadFile os_RemoveFile os_RunProcess os_ScratchAlloc os_ScratchReset \
+  os_SetThreadScratch os_System os_WriteFile os_argc os_argv os_path_join \
+  std_Channel_Alloc std_Channel_Recv_impl std_Channel_Send_impl \
+  std_GenerationalSwap std_Mutex_Alloc std_Mutex_Lock_impl \
+  std_Mutex_Unlock_impl | sort)"
 test "$actual_runtime_symbols" = "$expected_runtime_symbols"
 
 capture_driver="$build_root/capture-driver"
