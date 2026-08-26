@@ -30,8 +30,8 @@ agreement authority.
 ## Successor transition
 
 Patch 21.11 now owns native source admission for this exact resource
-cleanup fixture. This historical guard therefore verifies its native
-observable result instead of retaining the superseded pre-driver
-rejection expectation.
+cleanup fixture. This historical guard therefore retires its
+superseded pre-driver rejection probe. Patch 21.11's dedicated
+parity guard owns the native build and observable result.
 - Source: `compiler/phase20_resource_scope_cleanup_source.gst`
 - Expected stdout hex: `320a310a340a330a350a390a360a370a380a31300a`
