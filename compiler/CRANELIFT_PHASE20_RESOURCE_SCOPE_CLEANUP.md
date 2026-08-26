@@ -25,6 +25,13 @@ Stored fallible acquisitions clean their payload only when `.Ok`.
 Directory resources use the same plan. `open_directories` remains only
 write-only compatibility storage and has no semantic enforcement read.
 Phase 15 canonical cleanup parity remains the MIR-to-C/Cranelift consumer
-agreement authority; generic source cohorts still preserve explicit
-Cranelift no-fallback deferrals where their unrelated source lowering is
-not yet selected.
+agreement authority.
+
+## Successor transition
+
+Patch 21.11 now owns native source admission for this exact resource
+cleanup fixture. This historical guard therefore verifies its native
+observable result instead of retaining the superseded pre-driver
+rejection expectation.
+- Source: `compiler/phase20_resource_scope_cleanup_source.gst`
+- Expected stdout hex: `320a310a340a330a350a390a360a370a380a31300a`
