@@ -60,6 +60,7 @@ Do not edit by hand.
 - Top-level struct/enum declaration admission: implemented in Patch 21.13.
 - Non-scalar compiler-module signatures: one generic required capability assigned to Patch 21.14.
 - Large-function/registry behavior is not yet observable because signature admission rejects first.
+- The historical Phase 21 opening baseline remains recorded; its live full-compiler guard now follows this successor diagnostic.
 
 Patch 21.13 changes no Gust source meaning, canonical MIR operation,
 ABI/layout/runtime symbol, bootstrap seed, default backend, fallback,

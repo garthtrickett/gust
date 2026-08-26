@@ -248,6 +248,7 @@ def main() -> None:
     parser.add_argument("command", choices=(
         "validate", "project", "check-review", "witness-cases",
         "residue-cases", "active-residue-cases",
+        "active-full-compiler-diagnostic",
     ))
     args = parser.parse_args()
     record = validate()
@@ -289,6 +290,28 @@ def main() -> None:
                 row["current_decision"], row["reason_code"],
                 diagnostics[row["category"]], row["failure_stage"],
             )))
+        return
+    elif args.command == "active-full-compiler-diagnostic":
+        registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+        progression = registry.get(
+            "phase21_selected_compiler_module_qualification", {}
+        ).get("full_compiler_progression", {})
+        if progression:
+            require(
+                progression.get("historical_authority")
+                == record["contract_version"]
+                and progression.get("historical_record_preserved") is True
+                and progression.get("current_failure_stage")
+                == record["full_compiler_baseline"]["failure_stage"]
+                and progression.get("current_artifact")
+                == record["full_compiler_baseline"]["artifact"]
+                and progression.get("driver_invoked") is False
+                and progression.get("current_diagnostic"),
+                "successor full-compiler progression authority drifted",
+            )
+            print(progression["current_diagnostic"])
+        else:
+            print(record["full_compiler_baseline"]["diagnostic"])
         return
     print(f"{GUARD_L1}: ok")
 

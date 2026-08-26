@@ -225,6 +225,24 @@ def validate() -> dict:
         == "not_observable_until_generic_non_scalar_signature_lowering_advances_the_selected_modules",
         "large-function/registry evidence boundary drifted",
     )
+    progression = record.get("full_compiler_progression", {})
+    require(
+        progression
+        == {
+            "historical_authority": "phase21_opening_evidence_v1",
+            "historical_record_preserved": True,
+            "current_diagnostic": "Native backend canonical MIR verification failed: module function uses an unsupported scalar signature",
+            "current_failure_stage": "before_driver_discovery",
+            "current_artifact": "absent",
+            "driver_invoked": False,
+        }
+        and all(
+            row["cranelift"]["diagnostic"]
+            == progression["current_diagnostic"]
+            for row in slices
+        ),
+        "full-compiler progression authority drifted",
+    )
     boundary = record.get("boundary", {})
     require(
         boundary and all(value is False for value in boundary.values()),
@@ -307,6 +325,7 @@ def render(record: dict) -> str:
             "- Top-level struct/enum declaration admission: implemented in Patch 21.13.",
             "- Non-scalar compiler-module signatures: one generic required capability assigned to Patch 21.14.",
             "- Large-function/registry behavior is not yet observable because signature admission rejects first.",
+            "- The historical Phase 21 opening baseline remains recorded; its live full-compiler guard now follows this successor diagnostic.",
             "",
             "Patch 21.13 changes no Gust source meaning, canonical MIR operation,",
             "ABI/layout/runtime symbol, bootstrap seed, default backend, fallback,",

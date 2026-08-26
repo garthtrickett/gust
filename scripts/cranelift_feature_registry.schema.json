@@ -1976,6 +1976,14 @@
             {"id":"compiler_module_non_scalar_signature_lowering","status":"required","current_decision":"source_or_type_failure","failure_stage":"before_driver_discovery","destination_patch":"21.14","policy":"one_generic_capability_for_all_selected_modules_no_module_specific_exception"}
           ],
           "large_function_registry_observation": "not_observable_until_generic_non_scalar_signature_lowering_advances_the_selected_modules",
+          "full_compiler_progression": {
+            "historical_authority": "phase21_opening_evidence_v1",
+            "historical_record_preserved": true,
+            "current_diagnostic": "Native backend canonical MIR verification failed: module function uses an unsupported scalar signature",
+            "current_failure_stage": "before_driver_discovery",
+            "current_artifact": "absent",
+            "driver_invoked": false
+          },
           "resource_state": "oracle_executables_exit_cleanly_and_rejecting_native_routes_never_reach_driver_or_publish_artifacts",
           "boundary": {
             "changes_accepted_Gust_program_meaning": false,
