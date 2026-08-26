@@ -1979,6 +1979,8 @@
           "full_compiler_progression": {
             "historical_authority": "phase21_opening_evidence_v1",
             "historical_record_preserved": true,
+            "support_authority": "phase21_compiler_support_native_qualification_v1",
+            "support_record_preserved": true,
             "current_diagnostic": "Native backend canonical MIR verification failed: module function uses an unsupported scalar signature",
             "current_failure_stage": "before_driver_discovery",
             "current_artifact": "absent",

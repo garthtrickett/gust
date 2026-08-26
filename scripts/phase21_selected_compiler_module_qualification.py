@@ -231,6 +231,8 @@ def validate() -> dict:
         == {
             "historical_authority": "phase21_opening_evidence_v1",
             "historical_record_preserved": True,
+            "support_authority": "phase21_compiler_support_native_qualification_v1",
+            "support_record_preserved": True,
             "current_diagnostic": "Native backend canonical MIR verification failed: module function uses an unsupported scalar signature",
             "current_failure_stage": "before_driver_discovery",
             "current_artifact": "absent",
@@ -325,7 +327,7 @@ def render(record: dict) -> str:
             "- Top-level struct/enum declaration admission: implemented in Patch 21.13.",
             "- Non-scalar compiler-module signatures: one generic required capability assigned to Patch 21.14.",
             "- Large-function/registry behavior is not yet observable because signature admission rejects first.",
-            "- The historical Phase 21 opening baseline remains recorded; its live full-compiler guard now follows this successor diagnostic.",
+            "- The historical Phase 21 opening and Patch 21.12 support records remain recorded; their live guards now follow this successor diagnostic.",
             "",
             "Patch 21.13 changes no Gust source meaning, canonical MIR operation,",
             "ABI/layout/runtime symbol, bootstrap seed, default backend, fallback,",
