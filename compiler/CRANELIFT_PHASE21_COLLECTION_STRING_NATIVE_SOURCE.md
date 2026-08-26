@@ -66,8 +66,8 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - Operations: `LocalI32Set, BranchLocalI32Positive, CallVoid, Jump, ReturnI32`
 - Types: `int, str, void`
 - Runtime imports: `os_LogInt, os_LogStr`
-- Runtime archive: `build/gust-runtime-package.a` from `src/runtime/arena.c, src/runtime/host_io.c`
-- Archive-provided symbols: `os_ArenaAlloc, os_Arena_Free, os_Arena_New, os_Arena_Validate, os_Args, os_LogError, os_LogInt, os_LogStr, os_MockPayload, os_argc, os_argv, std_GenerationalSwap`
+- Runtime archive: `build/gust-runtime-package.a` from `src/runtime/arena.c, src/runtime/host_io.c, src/runtime/file_io.c`
+- Archive-provided symbols: `os_ArenaAlloc, os_Arena_Free, os_Arena_New, os_Arena_Validate, os_Args, os_CloseDir, os_ExecutablePath, os_FileExecutable, os_FileExists, os_GetEnv, os_LogError, os_LogInt, os_LogStr, os_MockPayload, os_NativeObjectFormat, os_NativeTargetTriple, os_OpenDir, os_PathAbsolute, os_PathDir, os_ReadDir, os_ReadFile, os_RemoveFile, os_RunProcess, os_System, os_WriteFile, os_argc, os_argv, os_path_join, std_GenerationalSwap`
 - New or changed runtime symbols: none
 - Generated C or fallback in the qualified route: none
 

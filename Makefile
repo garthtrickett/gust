@@ -11,7 +11,7 @@ PHASE10_NATIVE_BACKEND_SOURCE = compiler/experiments/cranelift/src/main.rs
 PHASE10_NATIVE_BACKEND_TARGET_DIR = build/phase10-native-backend-cargo
 PHASE10_NATIVE_BACKEND_BUILT_BIN = $(PHASE10_NATIVE_BACKEND_TARGET_DIR)/release/gust-cranelift-experiment
 PHASE21_RUNTIME_PACKAGE = build/gust-runtime-package.a
-PHASE21_RUNTIME_OBJECTS = build/phase21-runtime/arena.o build/phase21-runtime/host_io.o
+PHASE21_RUNTIME_OBJECTS = build/phase21-runtime/arena.o build/phase21-runtime/host_io.o build/phase21-runtime/file_io.o
 
 PHASE10_DIAG_CC ?= clang
 PHASE10_DIAG_CFLAGS ?= -O0 -g3 -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address,undefined -fsanitize-address-use-after-scope -fno-sanitize-recover=all -pthread
@@ -188,6 +188,10 @@ build/phase21-runtime/arena.o: src/runtime/arena.c src/runtime/core_headers.h
 build/phase21-runtime/host_io.o: src/runtime/host_io.c src/runtime/core_headers.h
 	mkdir -p build/phase21-runtime
 	$(CC) $(CFLAGS) -Isrc/runtime -c src/runtime/host_io.c -o $@
+
+build/phase21-runtime/file_io.o: src/runtime/file_io.c src/runtime/core_headers.h
+	mkdir -p build/phase21-runtime
+	$(CC) $(CFLAGS) -Isrc/runtime -c src/runtime/file_io.c -o $@
 
 $(PHASE21_RUNTIME_PACKAGE): $(PHASE21_RUNTIME_OBJECTS)
 	@rm -f build/.gust-runtime-package.a.tmp

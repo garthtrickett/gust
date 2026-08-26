@@ -269,14 +269,19 @@ def main() -> None:
         diagnostics = {row["category"]: row["diagnostic"] for row in phase20}
         migrated: set[str] = set()
         if args.command == "active-residue-cases":
-            transition = registry.get(
-                "phase21_collection_string_native_source", {})
-            if transition.get("status") == "patch21_9_complete":
-                migrated = {
-                    case["id"].split("_", 1)[0]
-                    for case in transition.get("source_cases", [])
-                    if case["id"].endswith("_primary")
-                }
+            for transition_id, completed_status in (
+                ("phase21_collection_string_native_source",
+                 "patch21_9_complete"),
+                ("phase21_filesystem_allocation_native_source",
+                 "patch21_10_complete"),
+            ):
+                transition = registry.get(transition_id, {})
+                if transition.get("status") == completed_status:
+                    migrated.update(
+                        case["id"].split("_", 1)[0]
+                        for case in transition.get("source_cases", [])
+                        if case["id"].endswith("_primary")
+                    )
         for row in record["inherited_residues"]:
             if row["category"] in migrated:
                 continue

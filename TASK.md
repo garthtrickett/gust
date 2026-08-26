@@ -92,7 +92,7 @@ Out of scope:
 - [x] Patch 21.7b — Cross-Tenant Predicate Validation Reconciliation — DONE
 - [x] Patch 21.8 — Phase 20 Residue Migration Authority — DONE
 - [x] Patch 21.9 — Collections and Strings Native Source Migration — DONE
-- [ ] Patch 21.10 — Filesystem and Allocation Native Source Migration
+- [x] Patch 21.10 — Filesystem and Allocation Native Source Migration — DONE
 - [ ] Patch 21.11 — Resources and Synchronization Native Source Migration
 - [ ] Patch 21.12 — Compiler Support-Library Native Qualification
 - [ ] Patch 21.13 — Selected Compiler-Module Native Qualification
@@ -318,6 +318,25 @@ Add generic canonical-MIR representation and lowering for the exact filesystem
 and arena allocation/write operations required by compiler support code. Reuse
 Phase 14 layout and Phase 17 runtime authorities; add or change a runtime symbol
 only in an explicitly separated authority patch if evidence requires it.
+
+The implemented boundary is the bounded typed-AST cohort recorded by
+`phase21_filesystem_allocation_native_source_v1`. Filesystem lowering represents
+paired arena lifetime, literal-path WriteFile/ReadFile calls, integer/string
+results, and observable effect order. Allocation lowering represents the
+one-int-field aggregate cohort through arena allocation, write, indexed read,
+and field projection. Renamed sources prove that paths, fixture names, local
+names, and declared type names do not select lowering. Computed write contents
+and computed stored values remain conservatively rejected before driver
+discovery.
+
+**Exit Gate:** all four registered source cases agree with MIR-to-C on stdout,
+stderr, exit status, and filesystem effects where applicable; the two
+unrepresented expression cases retain measured MIR-to-C behavior while
+rejecting before driver discovery with no artifact; captured requests contain
+canonical MIR and registry-validated runtime-boundary metadata with no generated
+C or fallback; the retained runtime archive adds only the existing `file_io.c`
+component and no new or changed symbol; Phase 21.9 hexadecimal string transport
+is preserved; and resources/synchronization remain Patch 21.11.
 
 ## Patch 21.11 — Resources and Synchronization Native Source Migration
 

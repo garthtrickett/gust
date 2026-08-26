@@ -67,7 +67,7 @@ Generated from `scripts/cranelift_feature_registry.json` by
 The six residues above remain the frozen Patch 20.16 snapshot.
 Completed successor migrations are no longer re-probed as residues
 by this historical guard.
-Completed successor-owned categories: `collections,strings`.
+Completed successor-owned categories: `collections,strings,filesystem,allocation`.
 
 The resource and threading rows subsume Patch 20.15's narrower direct
 source exclusions; they are not additional residue categories. The

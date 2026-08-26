@@ -105,12 +105,18 @@ def validate() -> dict:
             "canonical MIR contract drifted")
     runtime = record.get("runtime_package", {})
     require(runtime.get("retained_components") ==
-            ["src/runtime/arena.c", "src/runtime/host_io.c"] and
+            ["src/runtime/arena.c", "src/runtime/host_io.c",
+             "src/runtime/file_io.c"] and
             runtime.get("provided_symbols") == [
                 "os_ArenaAlloc", "os_Arena_Free", "os_Arena_New",
-                "os_Arena_Validate", "os_Args", "os_LogError", "os_LogInt",
-                "os_LogStr", "os_MockPayload", "os_argc", "os_argv",
-                "std_GenerationalSwap",
+                "os_Arena_Validate", "os_Args", "os_CloseDir",
+                "os_ExecutablePath", "os_FileExecutable", "os_FileExists",
+                "os_GetEnv", "os_LogError", "os_LogInt", "os_LogStr",
+                "os_MockPayload", "os_NativeObjectFormat",
+                "os_NativeTargetTriple", "os_OpenDir", "os_PathAbsolute",
+                "os_PathDir", "os_ReadDir", "os_ReadFile", "os_RemoveFile",
+                "os_RunProcess", "os_System", "os_WriteFile", "os_argc",
+                "os_argv", "os_path_join", "std_GenerationalSwap",
             ] and runtime.get("selected_imports") ==
             ["os_LogInt", "os_LogStr"] and
             runtime.get("new_or_changed_runtime_symbols") == [],
@@ -169,7 +175,7 @@ def validate() -> dict:
         require(marker in worker, f"worker lacks {marker} transport")
     makefile = MAKEFILE.read_text(encoding="utf-8")
     for marker in ("build/gust-runtime-package.a", "src/runtime/arena.c",
-                   "src/runtime/host_io.c", "ar rcs"):
+                   "src/runtime/host_io.c", "src/runtime/file_io.c", "ar rcs"):
         require(marker in makefile, f"runtime archive build lacks {marker}")
 
     task = TASK.read_text(encoding="utf-8")

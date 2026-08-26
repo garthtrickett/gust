@@ -170,6 +170,11 @@ def validate() -> dict:
     successor = registry.get("phase21_collection_string_native_source", {})
     if successor.get("status") == "patch21_9_complete":
         successor_modules.add("mir_native_backend_collection_string_source.gst")
+    filesystem_allocation_successor = registry.get(
+        "phase21_filesystem_allocation_native_source", {})
+    if filesystem_allocation_successor.get("status") == "patch21_10_complete":
+        successor_modules.add(
+            "mir_native_backend_filesystem_allocation_source.gst")
     historical_reachable = reachable - successor_modules
     historical_edge_count = sum(
         1 for module, imports in edges.items()

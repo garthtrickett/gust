@@ -48,6 +48,7 @@
     "phase21_tenant_scope_seed_convergence",
     "phase21_residue_migration_authority",
     "phase21_collection_string_native_source",
+    "phase21_filesystem_allocation_native_source",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -1634,8 +1635,8 @@
           },
           "runtime_package": {
             "path": "build/gust-runtime-package.a",
-            "retained_components": ["src/runtime/arena.c","src/runtime/host_io.c"],
-            "provided_symbols": ["os_ArenaAlloc","os_Arena_Free","os_Arena_New","os_Arena_Validate","os_Args","os_LogError","os_LogInt","os_LogStr","os_MockPayload","os_argc","os_argv","std_GenerationalSwap"],
+            "retained_components": ["src/runtime/arena.c","src/runtime/host_io.c","src/runtime/file_io.c"],
+            "provided_symbols": ["os_ArenaAlloc","os_Arena_Free","os_Arena_New","os_Arena_Validate","os_Args","os_CloseDir","os_ExecutablePath","os_FileExecutable","os_FileExists","os_GetEnv","os_LogError","os_LogInt","os_LogStr","os_MockPayload","os_NativeObjectFormat","os_NativeTargetTriple","os_OpenDir","os_PathAbsolute","os_PathDir","os_ReadDir","os_ReadFile","os_RemoveFile","os_RunProcess","os_System","os_WriteFile","os_argc","os_argv","os_path_join","std_GenerationalSwap"],
             "selected_imports": ["os_LogInt","os_LogStr"],
             "new_or_changed_runtime_symbols": []
           },
@@ -1649,6 +1650,67 @@
           "remaining_residues": [
             {"category":"filesystem","destination_patch":"21.10","decision":"deferred"},
             {"category":"allocation","destination_patch":"21.10","decision":"deferred"},
+            {"category":"resources","destination_patch":"21.11","decision":"source_or_type_failure"},
+            {"category":"threading_synchronization","destination_patch":"21.11","decision":"deferred"}
+          ],
+          "boundary": {
+            "changes_Gust_program_meaning": false,
+            "changes_explicit_Cranelift_capability": true,
+            "changes_canonical_MIR_transport": true,
+            "changes_ABI_or_layout_authority": false,
+            "adds_or_changes_runtime_symbols": false,
+            "changes_bootstrap_seed": false,
+            "edits_stdlib": false
+          }
+        }
+      },
+      "phase21_filesystem_allocation_native_source": {
+        "const": {
+          "contract_version": "phase21_filesystem_allocation_native_source_v1",
+          "status": "patch21_10_complete",
+          "next_patch": "21.11",
+          "review_view": "compiler/CRANELIFT_PHASE21_FILESYSTEM_ALLOCATION_NATIVE_SOURCE.md",
+          "predecessor_authority": "phase21_collection_string_native_source_v2",
+          "source_route_policy": "typed_AST_operations_lower_to_canonical_MIR_without_source_path_fixture_name_type_name_or_generated_C_recognition",
+          "scope": "bounded_compiler_owned_filesystem_and_branded_arena_allocation_source_cohort_with_conservative_pre_driver_rejection_outside_the_represented_shapes",
+          "capabilities": [
+            {"id":"scheduled_defer_call_edges","state":"reused_for_paired_arena_acquisition_and_scope_exit","canonical_evidence":"ArenaInit_precedes_observable_work_and_os_Arena_Free_is_the_terminal_call"},
+            {"id":"approved_filesystem_runtime_calls","state":"implemented_for_WriteFile_and_ReadFile","canonical_evidence":"typed_string_and_arena_arguments_plus_int_and_string_results_are_explicit_canonical_calls"},
+            {"id":"branded_arena_allocation_write_and_index","state":"implemented_for_one_int_field_aggregate","canonical_evidence":"ArenaInit_LocalI32SetCall_ArenaStoreI32_LocalI32SetArenaLoad"}
+          ],
+          "source_cases": [
+            {"id":"filesystem_primary","source_fixture":"compiler/phase20_component_filesystem_source.gst","expected_stdout":"1\nphase20\n","expected_stderr":"","expected_exit":0,"expected_file":"phase20-component-file.txt","expected_file_contents":"phase20"},
+            {"id":"filesystem_renamed_variant","source_fixture":"compiler/phase21_filesystem_native_source_variant.gst","expected_stdout":"1\nphase21\n","expected_stderr":"","expected_exit":0,"expected_file":"phase21-filesystem-variant.txt","expected_file_contents":"phase21"},
+            {"id":"allocation_primary","source_fixture":"compiler/phase20_component_allocation_source.gst","expected_stdout":"49\n","expected_stderr":"","expected_exit":0},
+            {"id":"allocation_renamed_variant","source_fixture":"compiler/phase21_allocation_native_source_variant.gst","expected_stdout":"73\n","expected_stderr":"","expected_exit":0}
+          ],
+          "rejected_source_cases": [
+            {"id":"filesystem_computed_write_contents","source_fixture":"compiler/phase21_filesystem_native_source_outside_cohort.gst","expected_failure_stage":"before_driver_discovery","oracle_stdout":"1\nphase20\n","oracle_stderr":"","oracle_exit":0,"oracle_file":"phase21-filesystem-outside.txt","oracle_file_contents":"phase20"},
+            {"id":"allocation_computed_field_value","source_fixture":"compiler/phase21_allocation_native_source_outside_cohort.gst","expected_failure_stage":"before_driver_discovery","oracle_stdout":"49\n","oracle_stderr":"","oracle_exit":0}
+          ],
+          "canonical_contract": {
+            "format": "gust.compiler_mir_ingestion.v2",
+            "operations": ["ArenaInit","LocalI32SetCall","LocalStringSetCall","ArenaStoreI32","LocalI32SetArenaLoad","CallVoid","ReturnI32"],
+            "types": ["arena","usize","int","str","void"],
+            "runtime_imports": ["os_Arena_New","os_Arena_Free","os_ArenaAlloc","os_WriteFile","os_ReadFile","os_LogInt","os_LogStr"],
+            "native_boundary_metadata": "ignored_with_proof_codegen_none_registry_validated",
+            "fallback": "forbidden"
+          },
+          "runtime_package": {
+            "path": "build/gust-runtime-package.a",
+            "retained_components": ["src/runtime/arena.c","src/runtime/host_io.c","src/runtime/file_io.c"],
+            "selected_imports": ["os_Arena_New","os_Arena_Free","os_ArenaAlloc","os_WriteFile","os_ReadFile","os_LogInt","os_LogStr"],
+            "new_or_changed_runtime_symbols": []
+          },
+          "worker_contract": {
+            "source_recognition": false,
+            "string_literal_transport": "phase21_9_StringLiteralUtf8Hex_preserved",
+            "arena_representation": "existing_Phase14_os_Arena_layout_stack_slot_and_BaseAddress_authority",
+            "canonical_fixtures": ["compiler/fixtures/native_backend_phase21_filesystem_source.mir","compiler/fixtures/native_backend_phase21_allocation_source.mir"],
+            "runtime_archive_link": "compiler_request_absolute_path_after_objects",
+            "generated_C": false
+          },
+          "remaining_residues": [
             {"category":"resources","destination_patch":"21.11","decision":"source_or_type_failure"},
             {"category":"threading_synchronization","destination_patch":"21.11","decision":"deferred"}
           ],
