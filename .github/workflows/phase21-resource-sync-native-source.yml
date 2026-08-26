@@ -1,0 +1,83 @@
+name: Cranelift Phase 21 Resource Synchronization Native Source
+
+on:
+  pull_request:
+    paths:
+      - 'TASK.md'
+      - 'Makefile'
+      - 'compiler/*.gst'
+      - 'compiler/experiments/cranelift/**'
+      - 'src/runtime/arena.c'
+      - 'src/runtime/host_io.c'
+      - 'src/runtime/file_io.c'
+      - 'src/runtime/scratch.c'
+      - 'src/runtime/fiber.c'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase21_collection_string_native_source.py'
+      - 'scripts/phase21_collection_string_native_source.sh'
+      - 'scripts/phase21_filesystem_allocation_native_source.py'
+      - 'scripts/phase21_filesystem_allocation_native_source.sh'
+      - 'scripts/phase21_resource_sync_native_source.py'
+      - 'scripts/phase21_resource_sync_native_source.sh'
+      - '.github/workflows/phase21-resource-sync-native-source.yml'
+      - '.github/workflows/pr-fast.yml'
+      - 'justfile'
+  push:
+    branches: [main]
+    paths:
+      - 'TASK.md'
+      - 'Makefile'
+      - 'compiler/*.gst'
+      - 'compiler/experiments/cranelift/**'
+      - 'src/runtime/arena.c'
+      - 'src/runtime/host_io.c'
+      - 'src/runtime/file_io.c'
+      - 'src/runtime/scratch.c'
+      - 'src/runtime/fiber.c'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase21_collection_string_native_source.py'
+      - 'scripts/phase21_collection_string_native_source.sh'
+      - 'scripts/phase21_filesystem_allocation_native_source.py'
+      - 'scripts/phase21_filesystem_allocation_native_source.sh'
+      - 'scripts/phase21_resource_sync_native_source.py'
+      - 'scripts/phase21_resource_sync_native_source.sh'
+      - '.github/workflows/phase21-resource-sync-native-source.yml'
+      - '.github/workflows/pr-fast.yml'
+      - 'justfile'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-cranelift-phase21-resource-sync-native-source-contract
+        run: just guard-cranelift-phase21-resource-sync-native-source-contract
+
+  parity:
+    needs: contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: make gust
+      - name: guard-cranelift-phase21-resource-sync-native-source-parity
+        run: just guard-cranelift-phase21-resource-sync-native-source-parity

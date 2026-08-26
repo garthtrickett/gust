@@ -49,6 +49,7 @@
     "phase21_residue_migration_authority",
     "phase21_collection_string_native_source",
     "phase21_filesystem_allocation_native_source",
+    "phase21_resource_sync_native_source",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -1721,6 +1722,53 @@
             {"category":"resources","destination_patch":"21.11","decision":"source_or_type_failure"},
             {"category":"threading_synchronization","destination_patch":"21.11","decision":"deferred"}
           ],
+          "boundary": {
+            "changes_Gust_program_meaning": false,
+            "changes_explicit_Cranelift_capability": true,
+            "changes_canonical_MIR_transport": true,
+            "changes_ABI_or_layout_authority": false,
+            "adds_or_changes_runtime_symbols": false,
+            "changes_bootstrap_seed": false,
+            "edits_stdlib": false
+          }
+        }
+      },
+      "phase21_resource_sync_native_source": {
+        "const": {
+          "contract_version": "phase21_resource_sync_native_source_v1",
+          "status": "patch21_11_complete",
+          "next_patch": "21.12",
+          "review_view": "compiler/CRANELIFT_PHASE21_RESOURCE_SYNC_NATIVE_SOURCE.md",
+          "predecessor_authority": "phase21_filesystem_allocation_native_source_v1",
+          "source_route_policy": "typed_AST_resource_and_synchronization_operations_lower_to_canonical_MIR_without_source_path_fixture_name_type_name_or_generated_C_recognition",
+          "scope": "bounded_compiler_owned_resource_cleanup_and_deterministic_arena_live_mutex_scheduler_source_cohort_with_conservative_pre_driver_rejection_elsewhere",
+          "source_cases": [
+            {"id":"resource_primary","source_fixture":"compiler/phase20_resource_scope_cleanup_source.gst","expected_stdout":"2\n1\n4\n3\n5\n9\n6\n7\n8\n10\n","expected_stderr":"","expected_exit":0},
+            {"id":"resource_renamed","source_fixture":"compiler/phase21_resource_sync_renamed_source.gst","expected_stdout":"12\n11\n14\n13\n15\n19\n16\n17\n19\n20\n","expected_stderr":"","expected_exit":0},
+            {"id":"threading_primary","source_fixture":"compiler/phase20_component_threading_source.gst","expected_stdout":"1\n","expected_stderr":"","expected_exit":0}
+          ],
+          "rejected_source_cases": [
+            {"id":"resource_computed_token","source_fixture":"compiler/phase21_resource_sync_computed_token_source.gst","expected_failure_stage":"before_driver_discovery","oracle_stdout":"23\n22\n25\n24\n26\n29\n27\n28\n30\n32\n","oracle_stderr":"","oracle_exit":0}
+          ],
+          "canonical_contract": {
+            "format": "gust.compiler_mir_ingestion.v2",
+            "operations": ["LocalRawPointerSetParam","LocalRawPointerSetCall","LocalI32SetRawPointerLoad","RawPointerStoreLocalI32","LocalRawPointerOffset","ArenaStoreLocalI32","FunctionAddress","ArenaAllocationAddress"],
+            "types": ["int","arena","usize","rawptr","fnptr","void"],
+            "runtime_imports": ["os_Arena_New","os_Arena_Free","os_ArenaAlloc","os_LogInt","std_Mutex_Alloc","std_Mutex_Lock_impl","std_Mutex_Unlock_impl","gust_scheduler_init","gust_scheduler_spawn","gust_yield","gust_scheduler_destroy"],
+            "raw_pointer_validation": "declared_typed_locals_non_negative_offsets_exact_call_signatures_and_arena_allocation_range_provenance",
+            "fallback": "forbidden"
+          },
+          "runtime_package": {
+            "path": "build/gust-runtime-package.a",
+            "retained_components": ["src/runtime/arena.c","src/runtime/host_io.c","src/runtime/file_io.c","src/runtime/scratch.c","src/runtime/fiber.c"],
+            "new_or_changed_runtime_symbols": []
+          },
+          "worker_contract": {
+            "source_recognition": false,
+            "canonical_fixtures": ["compiler/fixtures/native_backend_phase21_threading_source.mir"],
+            "native_boundary_metadata_count": 11,
+            "generated_C": false
+          },
           "boundary": {
             "changes_Gust_program_meaning": false,
             "changes_explicit_Cranelift_capability": true,

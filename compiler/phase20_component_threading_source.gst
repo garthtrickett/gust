@@ -20,6 +20,22 @@ func main() {
     mut mutex: std.Mutex[Phase20Counter, ctx] := std.MutexNew(ctx);
     mut arg: Phase20ThreadArg[ctx];
     arg.mutex = mutex;
-    std.Spawn(phase20_increment, &arg);
-    std.Yield();
+    mut arg_idx: Index[Phase20ThreadArg[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(arg_idx, arg);
+    unsafe {
+        std.Spawn(phase20_increment, &ctx[arg_idx]);
+    }
+
+    mut completed := 0;
+    while completed == 0 {
+        unsafe {
+            mut value := ctx[arg_idx].mutex.Lock();
+            completed = (*value).value;
+            ctx[arg_idx].mutex.Unlock();
+        }
+        if completed == 0 {
+            std.Yield();
+        }
+    }
+    os.LogInt(completed);
 }

@@ -3,6 +3,7 @@ import "mir.gst" as mir;
 import "mir_native_backend_capability.gst" as capability;
 import "mir_native_backend_collection_string_source.gst" as collection_string;
 import "mir_native_backend_filesystem_allocation_source.gst" as filesystem_allocation;
+import "mir_native_backend_resource_sync_source.gst" as resource_sync;
 import "mir_native_backend_block_parameter_loop_source.gst" as block_parameter_loop;
 import "mir_native_backend_capability.gst" as capability;
 import "mir_native_backend_direct_call_source.gst" as direct_call;
@@ -2480,16 +2481,31 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
     mut has_local_string_set_call := 0;
     mut has_arena_init := 0;
     mut has_arena_store_i32 := 0;
+    mut has_arena_store_local_i32 := 0;
     mut has_arena_load_i32 := 0;
+    mut has_function_address := 0;
+    mut has_arena_allocation_address := 0;
+    mut has_local_raw_pointer_set_param := 0;
+    mut has_local_raw_pointer_set_call := 0;
+    mut has_raw_pointer_load_i32 := 0;
+    mut has_raw_pointer_store_i32 := 0;
+    mut has_local_raw_pointer_offset := 0;
     mut has_return := 0;
     mut has_int := 0;
     mut has_bool := 0;
     mut has_str := 0;
     mut has_arena := 0;
     mut has_usize := 0;
+    mut has_rawptr := 0;
+    mut has_fnptr := 0;
     mut has_zero_int_abi := 0;
     mut has_one_int_abi := 0;
     mut has_two_int_abi := 0;
+    mut has_zero_void_abi := 0;
+    mut has_rawptr_void_abi := 0;
+    mut has_int_void_abi := 0;
+    mut has_int_rawptr_rawptr_abi := 0;
+    mut has_scheduler_spawn_abi := 0;
     mut has_direct_scalar_abi := 0;
 
     mut module_index := 0;
@@ -2603,8 +2619,32 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
         if mir_native_generic_contains(canonical, "kind: ArenaStoreI32") == 1 {
             has_arena_store_i32 = 1;
         }
+        if mir_native_generic_contains(canonical, "kind: ArenaStoreLocalI32") == 1 {
+            has_arena_store_local_i32 = 1;
+        }
         if mir_native_generic_contains(canonical, "kind: LocalI32SetArenaLoad") == 1 {
             has_arena_load_i32 = 1;
+        }
+        if mir_native_generic_contains(canonical, "kind: FunctionAddress") == 1 {
+            has_function_address = 1;
+        }
+        if mir_native_generic_contains(canonical, "kind: ArenaAllocationAddress") == 1 {
+            has_arena_allocation_address = 1;
+        }
+        if mir_native_generic_contains(canonical, "kind: LocalRawPointerSetParam") == 1 {
+            has_local_raw_pointer_set_param = 1;
+        }
+        if mir_native_generic_contains(canonical, "kind: LocalRawPointerSetCall") == 1 {
+            has_local_raw_pointer_set_call = 1;
+        }
+        if mir_native_generic_contains(canonical, "kind: LocalI32SetRawPointerLoad") == 1 {
+            has_raw_pointer_load_i32 = 1;
+        }
+        if mir_native_generic_contains(canonical, "kind: RawPointerStoreLocalI32") == 1 {
+            has_raw_pointer_store_i32 = 1;
+        }
+        if mir_native_generic_contains(canonical, "kind: LocalRawPointerOffset") == 1 {
+            has_local_raw_pointer_offset = 1;
         }
         if mir_native_generic_contains(canonical, "ReturnI32") == 1 ||
            mir_native_generic_contains(canonical, "ReturnLocalI32") == 1 ||
@@ -2650,6 +2690,14 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
            mir_native_generic_contains(canonical, "return_type: usize") == 1 {
             has_usize = 1;
         }
+        if mir_native_generic_contains(canonical, "type: rawptr") == 1 ||
+           mir_native_generic_contains(canonical, "return_type: rawptr") == 1 {
+            has_rawptr = 1;
+        }
+        if mir_native_generic_contains(canonical, "type: fnptr") == 1 ||
+           mir_native_generic_contains(canonical, "return_type: fnptr") == 1 {
+            has_fnptr = 1;
+        }
 
         mut symbols: std.Vector[mir.MirProgramBundleSymbol[ctx], ctx] :=
             ctx[module.symbols];
@@ -2664,6 +2712,21 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
             }
             if std.str_eq(symbol.signature, "(int,int)->int") == 1 {
                 has_two_int_abi = 1;
+            }
+            if std.str_eq(symbol.signature, "()->void") == 1 {
+                has_zero_void_abi = 1;
+            }
+            if std.str_eq(symbol.signature, "(rawptr)->void") == 1 {
+                has_rawptr_void_abi = 1;
+            }
+            if std.str_eq(symbol.signature, "(int)->void") == 1 {
+                has_int_void_abi = 1;
+            }
+            if std.str_eq(symbol.signature, "(int,rawptr)->rawptr") == 1 {
+                has_int_rawptr_rawptr_abi = 1;
+            }
+            if std.str_eq(symbol.signature, "(usize,fnptr,rawptr)->void") == 1 {
+                has_scheduler_spawn_abi = 1;
             }
             symbol_index = symbol_index + 1;
         }
@@ -2837,6 +2900,12 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
         );
         ordinal = ordinal + 1;
     }
+    if has_arena_store_local_i32 == 1 {
+        plan = mir_native_generic_plan_add(
+            plan, 0, module_path, ordinal, "ArenaStoreLocalI32", ctx
+        );
+        ordinal = ordinal + 1;
+    }
     if has_arena_load_i32 == 1 {
         plan = mir_native_generic_plan_add(
             plan,
@@ -2845,6 +2914,48 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
             ordinal,
             "LocalI32SetArenaLoad",
             ctx
+        );
+        ordinal = ordinal + 1;
+    }
+    if has_function_address == 1 {
+        plan = mir_native_generic_plan_add(
+            plan, 0, module_path, ordinal, "FunctionAddress", ctx
+        );
+        ordinal = ordinal + 1;
+    }
+    if has_arena_allocation_address == 1 {
+        plan = mir_native_generic_plan_add(
+            plan, 0, module_path, ordinal, "ArenaAllocationAddress", ctx
+        );
+        ordinal = ordinal + 1;
+    }
+    if has_local_raw_pointer_set_param == 1 {
+        plan = mir_native_generic_plan_add(
+            plan, 0, module_path, ordinal, "LocalRawPointerSetParam", ctx
+        );
+        ordinal = ordinal + 1;
+    }
+    if has_local_raw_pointer_set_call == 1 {
+        plan = mir_native_generic_plan_add(
+            plan, 0, module_path, ordinal, "LocalRawPointerSetCall", ctx
+        );
+        ordinal = ordinal + 1;
+    }
+    if has_raw_pointer_load_i32 == 1 {
+        plan = mir_native_generic_plan_add(
+            plan, 0, module_path, ordinal, "LocalI32SetRawPointerLoad", ctx
+        );
+        ordinal = ordinal + 1;
+    }
+    if has_raw_pointer_store_i32 == 1 {
+        plan = mir_native_generic_plan_add(
+            plan, 0, module_path, ordinal, "RawPointerStoreLocalI32", ctx
+        );
+        ordinal = ordinal + 1;
+    }
+    if has_local_raw_pointer_offset == 1 {
+        plan = mir_native_generic_plan_add(
+            plan, 0, module_path, ordinal, "LocalRawPointerOffset", ctx
         );
         ordinal = ordinal + 1;
     }
@@ -2914,6 +3025,18 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
         );
         ordinal = ordinal + 1;
     }
+    if has_rawptr == 1 {
+        plan = mir_native_generic_plan_add(
+            plan, 1, module_path, ordinal, "rawptr", ctx
+        );
+        ordinal = ordinal + 1;
+    }
+    if has_fnptr == 1 {
+        plan = mir_native_generic_plan_add(
+            plan, 1, module_path, ordinal, "fnptr", ctx
+        );
+        ordinal = ordinal + 1;
+    }
     if has_zero_int_abi == 1 {
         plan = mir_native_generic_plan_add(
             plan,
@@ -2944,6 +3067,36 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
             ordinal,
             "(int,int)->int",
             ctx
+        );
+        ordinal = ordinal + 1;
+    }
+    if has_zero_void_abi == 1 {
+        plan = mir_native_generic_plan_add(
+            plan, 1, module_path, ordinal, "()->void", ctx
+        );
+        ordinal = ordinal + 1;
+    }
+    if has_rawptr_void_abi == 1 {
+        plan = mir_native_generic_plan_add(
+            plan, 1, module_path, ordinal, "(rawptr)->void", ctx
+        );
+        ordinal = ordinal + 1;
+    }
+    if has_int_void_abi == 1 {
+        plan = mir_native_generic_plan_add(
+            plan, 1, module_path, ordinal, "(int)->void", ctx
+        );
+        ordinal = ordinal + 1;
+    }
+    if has_int_rawptr_rawptr_abi == 1 {
+        plan = mir_native_generic_plan_add(
+            plan, 1, module_path, ordinal, "(int,rawptr)->rawptr", ctx
+        );
+        ordinal = ordinal + 1;
+    }
+    if has_scheduler_spawn_abi == 1 {
+        plan = mir_native_generic_plan_add(
+            plan, 1, module_path, ordinal, "(usize,fnptr,rawptr)->void", ctx
         );
         ordinal = ordinal + 1;
     }
@@ -3064,6 +3217,16 @@ func mir_native_generic_source_lower(programs: std.Vector[ast.Program[ctx], ctx]
         if scalar_expression_result.represented == 1 {
             bundle = scalar_expression_result.bundle;
         } else {
+            mut resource_sync_result :=
+                resource_sync.mir_native_resource_sync_source_lower(
+                    programs,
+                    module_paths,
+                    module_prefixes,
+                    ctx
+                );
+            if resource_sync_result.represented == 1 {
+                bundle = resource_sync_result.bundle;
+            } else {
             mut parameter_argument_result :=
                 parameter_argument.mir_native_parameter_argument_source_lower(
                     programs,
@@ -3235,6 +3398,7 @@ func mir_native_generic_source_lower(programs: std.Vector[ast.Program[ctx], ctx]
                 }
             }
         }
+    }
     }
     }
     }

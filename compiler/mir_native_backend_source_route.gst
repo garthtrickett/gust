@@ -330,7 +330,47 @@ func mir_native_scalar_source_capabilities(ctx: &Arena) capability.MirNativeBack
     );
     capabilities = capability.mir_native_backend_capability_set_with_operation(
         capabilities,
+        "ArenaStoreLocalI32",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_operation(
+        capabilities,
         "LocalI32SetArenaLoad",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_operation(
+        capabilities,
+        "FunctionAddress",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_operation(
+        capabilities,
+        "ArenaAllocationAddress",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_operation(
+        capabilities,
+        "LocalRawPointerSetParam",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_operation(
+        capabilities,
+        "LocalRawPointerSetCall",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_operation(
+        capabilities,
+        "LocalI32SetRawPointerLoad",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_operation(
+        capabilities,
+        "RawPointerStoreLocalI32",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_operation(
+        capabilities,
+        "LocalRawPointerOffset",
         ctx
     );
     capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
@@ -360,6 +400,16 @@ func mir_native_scalar_source_capabilities(ctx: &Arena) capability.MirNativeBack
     );
     capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
         capabilities,
+        "rawptr",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
+        capabilities,
+        "fnptr",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
+        capabilities,
         "()->int",
         ctx
     );
@@ -371,6 +421,31 @@ func mir_native_scalar_source_capabilities(ctx: &Arena) capability.MirNativeBack
     capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
         capabilities,
         "(int,int)->int",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
+        capabilities,
+        "()->void",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
+        capabilities,
+        "(rawptr)->void",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
+        capabilities,
+        "(int)->void",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
+        capabilities,
+        "(int,rawptr)->rawptr",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
+        capabilities,
+        "(usize,fnptr,rawptr)->void",
         ctx
     );
     capabilities = capability.mir_native_backend_capability_set_with_type_or_abi(
@@ -438,6 +513,41 @@ func mir_native_scalar_source_capabilities(ctx: &Arena) capability.MirNativeBack
         "os_ReadFile",
         ctx
     );
+    capabilities = capability.mir_native_backend_capability_set_with_runtime_import(
+        capabilities,
+        "std_Mutex_Alloc",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_runtime_import(
+        capabilities,
+        "std_Mutex_Lock_impl",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_runtime_import(
+        capabilities,
+        "std_Mutex_Unlock_impl",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_runtime_import(
+        capabilities,
+        "gust_scheduler_init",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_runtime_import(
+        capabilities,
+        "gust_scheduler_spawn",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_runtime_import(
+        capabilities,
+        "gust_yield",
+        ctx
+    );
+    capabilities = capability.mir_native_backend_capability_set_with_runtime_import(
+        capabilities,
+        "gust_scheduler_destroy",
+        ctx
+    );
     capabilities = capability.mir_native_backend_capability_set_with_target_requirement(
         capabilities,
         "native_host",
@@ -482,7 +592,14 @@ func mir_native_scalar_source_requires_retained_runtime_package(
             std.str_eq(requirement.feature, "os_Arena_Free") == 1 ||
             std.str_eq(requirement.feature, "os_ArenaAlloc") == 1 ||
             std.str_eq(requirement.feature, "os_WriteFile") == 1 ||
-            std.str_eq(requirement.feature, "os_ReadFile") == 1)
+            std.str_eq(requirement.feature, "os_ReadFile") == 1 ||
+            std.str_eq(requirement.feature, "std_Mutex_Alloc") == 1 ||
+            std.str_eq(requirement.feature, "std_Mutex_Lock_impl") == 1 ||
+            std.str_eq(requirement.feature, "std_Mutex_Unlock_impl") == 1 ||
+            std.str_eq(requirement.feature, "gust_scheduler_init") == 1 ||
+            std.str_eq(requirement.feature, "gust_scheduler_spawn") == 1 ||
+            std.str_eq(requirement.feature, "gust_yield") == 1 ||
+            std.str_eq(requirement.feature, "gust_scheduler_destroy") == 1)
         {
             return 1;
         }
