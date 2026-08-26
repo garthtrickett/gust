@@ -82,6 +82,53 @@ do
   echo "✅ Patch 21.10 canonical worker fixture passed: $worker_case"
 done
 
+allocation_fixture="compiler/fixtures/native_backend_phase21_allocation_source.mir"
+assert_arena_fixture_rejected() {
+  local case_id="$1"
+  local diagnostic="$2"
+  local fixture_path="$build_root/$case_id.mir"
+  local stdout_path="$build_root/$case_id.stdout"
+  local stderr_path="$build_root/$case_id.stderr"
+  set +e
+  "$real_driver" compiler-mir-validate-fixture "$fixture_path" \
+    >"$stdout_path" 2>"$stderr_path"
+  local status=$?
+  set -e
+  test "$status" -ne 0
+  test ! -s "$stdout_path"
+  rg -n -F "$diagnostic" "$stderr_path" >/dev/null
+  echo "✅ Patch 21.10 malformed arena MIR rejected: $case_id"
+}
+
+sed 's/function_0_block_0_statement_2_byte_offset: 0/function_0_block_0_statement_2_byte_offset: -4/' \
+  "$allocation_fixture" >"$build_root/arena-negative-offset.mir"
+assert_arena_fixture_rejected arena-negative-offset \
+  'canonical compiler MIR arena access byte offset must be non-negative'
+
+sed 's/function_0_block_0_statement_3_byte_offset: 0/function_0_block_0_statement_3_byte_offset: 4/' \
+  "$allocation_fixture" >"$build_root/arena-out-of-range.mir"
+assert_arena_fixture_rejected arena-out-of-range \
+  'canonical compiler MIR arena access range 4..8 exceeds allocation size 4'
+
+sed 's/os_ArenaAlloc/not_an_allocator/g' "$allocation_fixture" \
+  >"$build_root/arena-missing-provenance.mir"
+assert_arena_fixture_rejected arena-missing-provenance \
+  'canonical compiler MIR arena access requires same-block os_ArenaAlloc provenance'
+
+sed \
+  -e 's/function_0_block_0_statement_count: 6/function_0_block_0_statement_count: 7/' \
+  -e 's/function_0_block_0_statement_5_/function_0_block_0_statement_6_/g' \
+  -e 's/function_0_block_0_statement_4_/function_0_block_0_statement_5_/g' \
+  -e 's/function_0_block_0_statement_3_/function_0_block_0_statement_4_/g' \
+  -e 's/function_0_block_0_statement_2_/function_0_block_0_statement_3_/g' \
+  -e '/function_0_block_0_statement_1_argument_1_value: 4/a\
+function_0_block_0_statement_2_kind: LocalI32Set\
+function_0_block_0_statement_2_local: node\
+function_0_block_0_statement_2_value: 0' \
+  "$allocation_fixture" >"$build_root/arena-index-reassigned.mir"
+assert_arena_fixture_rejected arena-index-reassigned \
+  'canonical compiler MIR arena access requires same-block os_ArenaAlloc provenance'
+
 while IFS=$'\t' read -r case_id source_fixture expected_stdout_hex expected_exit expected_file expected_file_hex
 do
   case_dir="$build_root/$case_id"

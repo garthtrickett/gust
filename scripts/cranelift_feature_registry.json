@@ -2475,6 +2475,11 @@
       "types": ["arena","usize","int","str","void"],
       "runtime_imports": ["os_Arena_New","os_Arena_Free","os_ArenaAlloc","os_WriteFile","os_ReadFile","os_LogInt","os_LogStr"],
       "native_boundary_metadata": "ignored_with_proof_codegen_none_registry_validated",
+      "arena_access_validation": {
+        "allocation_provenance": "earlier_same_block_import_whose_link_symbol_is_os_ArenaAlloc_with_same_arena_and_literal_size",
+        "access_range": "non_negative_byte_offset_plus_four_byte_i32_width_within_allocation_size",
+        "index_reassignment": "clears_allocation_provenance"
+      },
       "fallback": "forbidden"
     },
     "runtime_package": {
