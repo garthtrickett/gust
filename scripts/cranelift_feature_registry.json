@@ -2771,6 +2771,42 @@
       "begins_patch21_13a": false
     }
   },
+  "phase21_native_feature_seed_convergence": {
+    "contract_version": "phase21_native_feature_seed_convergence_v1",
+    "status": "patch21_13a_complete",
+    "next_patch": "21.14",
+    "review_view": "compiler/CRANELIFT_PHASE21_NATIVE_FEATURE_SEED_CONVERGENCE.md",
+    "seed_path": "gust_v4.c",
+    "predecessor_seed_authority": "phase21_tenant_scope_seed_convergence_v1",
+    "accounted_authority": "phase21_selected_compiler_module_qualification_v1",
+    "previous_seed_commit": "3c4028e04629a4af1b5010b7b0977b188f0afb6c",
+    "fixed_point_policy": "make_bootstrap_stage2_stage3_byte_identity",
+    "seed_only_policy": "generated_seed_and_seed_specific_authority_only",
+    "accounted_patches": [
+      {"patch":"21.7b","scope":"cross_tenant_predicate_validation_reconciliation"},
+      {"patch":"21.8","scope":"phase20_residue_migration_authority_and_compiler_graph_fixtures"},
+      {"patch":"21.9","scope":"collection_string_native_source_migration_and_transport_corrections"},
+      {"patch":"21.10","scope":"filesystem_allocation_native_source_migration_and_arena_access_corrections"},
+      {"patch":"21.11","scope":"resource_synchronization_native_source_migration"},
+      {"patch":"21.12","scope":"compiler_support_library_native_qualification_fixtures_and_authority"},
+      {"patch":"21.13","scope":"selected_compiler_module_native_qualification_and_generic_declaration_admission"}
+    ],
+    "generated_seed_diff": {
+      "previous_lines": 60470,
+      "current_lines": 62917,
+      "insertions": 2501,
+      "deletions": 54,
+      "line_delta": 2447
+    },
+    "boundary": {
+      "adds_semantics": false,
+      "changes_MIR_or_backends": false,
+      "changes_ABI_layout_or_runtime_symbols": false,
+      "changes_default_backend_or_fallback": false,
+      "edits_stdlib_or_CR15": false,
+      "begins_patch21_14": false
+    }
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",

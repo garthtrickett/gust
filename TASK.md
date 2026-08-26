@@ -96,7 +96,7 @@ Out of scope:
 - [x] Patch 21.11 — Resources and Synchronization Native Source Migration — DONE
 - [x] Patch 21.12 — Compiler Support-Library Native Qualification — DONE
 - [x] Patch 21.13 — Selected Compiler-Module Native Qualification — DONE
-- [ ] Patch 21.13a — Native-Feature Bootstrap Seed Reconvergence
+- [x] Patch 21.13a — Native-Feature Bootstrap Seed Reconvergence — DONE
 - [ ] Patch 21.14 — Full Compiler Canonical-MIR and Native Object Qualification
 - [ ] Patch 21.15 — Cranelift-Built Compiler Program Compilation
 - [ ] Patch 21.16 — Native Rebuild Reproducibility Authority

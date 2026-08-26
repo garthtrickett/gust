@@ -101,6 +101,17 @@ def validate() -> dict:
                 require(isinstance(phase21_diff, dict),
                         "Patch 21.7a seed authority omits generated diff accounting")
                 live_seed_lines = phase21_diff.get("current_lines")
+                native_feature_seed = registry.get(
+                    "phase21_native_feature_seed_convergence"
+                )
+                if native_feature_seed is not None:
+                    require(native_feature_seed.get("predecessor_seed_authority") ==
+                            phase21_seed.get("contract_version"),
+                            "Patch 21.13a seed authority does not name Patch 21.7a")
+                    native_feature_diff = native_feature_seed.get("generated_seed_diff")
+                    require(isinstance(native_feature_diff, dict),
+                            "Patch 21.13a seed authority omits generated diff accounting")
+                    live_seed_lines = native_feature_diff.get("current_lines")
     seed_text = SEED.read_text(encoding="utf-8")
     require(len(seed_text.splitlines()) == live_seed_lines,
             "committed seed line count drifted")

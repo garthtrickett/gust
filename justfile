@@ -17187,6 +17187,18 @@ guard-cranelift-phase21-selected-compiler-module-qualification-evidence:
     just guard-cranelift-phase21-selected-compiler-module-qualification-contract
     python3 scripts/phase21_selected_compiler_module_qualification.py run-evidence --output build/guards/phase21_selected_compiler_module_qualification
 
+guard-cranelift-phase21-native-feature-seed-convergence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🌱 Checking Phase 21 native-feature seed convergence authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-native-feature-seed-convergence | grep -F $'guard-cranelift-phase21-native-feature-seed-convergence\t1\t' >/dev/null
+    just guard-cranelift-phase21-tenant-scope-seed-convergence
+    just guard-cranelift-phase21-selected-compiler-module-qualification-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase21_native_feature_seed_convergence.py validate
+    python3 scripts/phase21_native_feature_seed_convergence.py check-review
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

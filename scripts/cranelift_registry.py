@@ -55,6 +55,7 @@ TOP_FIELDS = {
     "phase21_resource_sync_native_source",
     "phase21_compiler_support_native_qualification",
     "phase21_selected_compiler_module_qualification",
+    "phase21_native_feature_seed_convergence",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming", "phase19_classification", "phase19_representation",

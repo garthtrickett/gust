@@ -337,6 +337,7 @@
     "guard-cranelift-phase21-compiler-support-native-qualification-evidence": 2,
     "guard-cranelift-phase21-selected-compiler-module-qualification-contract": 1,
     "guard-cranelift-phase21-selected-compiler-module-qualification-evidence": 2,
+    "guard-cranelift-phase21-native-feature-seed-convergence": 1,
     "guard-cranelift-phase20-resource-scope-cleanup-parity": 2,
     "guard-cranelift-phase20-seed-convergence": 1,
     "guard-cranelift-phase20-nested-brand-annotation-contract": 1,
