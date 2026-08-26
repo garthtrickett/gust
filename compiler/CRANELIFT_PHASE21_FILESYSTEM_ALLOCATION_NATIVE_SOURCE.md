@@ -54,6 +54,9 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - Operations: `ArenaInit, LocalI32SetCall, LocalStringSetCall, ArenaStoreI32, LocalI32SetArenaLoad, CallVoid, ReturnI32`
 - Types: `arena, usize, int, str, void`
 - Runtime imports: `os_Arena_New, os_Arena_Free, os_ArenaAlloc, os_WriteFile, os_ReadFile, os_LogInt, os_LogStr`
+- Arena allocation provenance: earlier same-block imported `os_ArenaAlloc` link symbol, same arena, literal size
+- Arena access range: non-negative byte offset plus the four-byte `i32` width must fit the recorded allocation
+- Arena index reassignment clears allocation provenance
 - Runtime archive: `build/gust-runtime-package.a` from `src/runtime/arena.c, src/runtime/host_io.c, src/runtime/file_io.c`
 - New or changed runtime symbols: none
 - Generated C or fallback in the qualified route: none

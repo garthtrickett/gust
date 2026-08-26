@@ -1536,6 +1536,13 @@ enum CompilerMirLoweringStatement<'a> {
 }
 
 #[derive(Clone, Copy)]
+struct CompilerMirArenaAllocationProvenance<'a> {
+    arena: &'a str,
+    size: u64,
+}
+const COMPILER_MIR_ARENA_I32_ACCESS_WIDTH: u64 = 4;
+
+#[derive(Clone, Copy)]
 struct CompilerMirLoweringBlockParameter<'a> {
     name: &'a str,
     ty: TinyMirType,
@@ -20635,9 +20642,160 @@ fn validate_compiler_mir_module(
         }
     }
 
+    for defined in &module.functions {
+        validate_canonical_compiler_mir_arena_accesses(defined, &import_names)?;
+    }
+
     validate_canonical_compiler_mir_local_call_graph_acyclic(
         &local_call_edges,
     )
+}
+
+fn validate_canonical_compiler_mir_arena_access(
+    provenance: &HashMap<&str, CompilerMirArenaAllocationProvenance<'_>>,
+    arena: &str,
+    index_local: &str,
+    byte_offset: i32,
+    function: &str,
+    block: &str,
+    statement_index: usize,
+) -> Result<(), Box<dyn Error>> {
+    let allocation = provenance.get(index_local).ok_or_else(|| {
+        IoError::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "canonical compiler MIR arena access requires same-block os_ArenaAlloc provenance for index local {index_local} in function {function} at block {block} statement {statement_index}"
+            ),
+        )
+    })?;
+    if allocation.arena != arena {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "canonical compiler MIR arena access index local {index_local} belongs to arena {}, not {arena}, in function {function} at block {block} statement {statement_index}",
+                allocation.arena
+            ),
+        )
+        .into());
+    }
+    let byte_offset = u64::try_from(byte_offset).map_err(|_| {
+        IoError::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "canonical compiler MIR arena access byte offset must be non-negative in function {function} at block {block} statement {statement_index}"
+            ),
+        )
+    })?;
+    let access_end = byte_offset
+        .checked_add(COMPILER_MIR_ARENA_I32_ACCESS_WIDTH)
+        .ok_or_else(|| {
+            IoError::new(
+                ErrorKind::InvalidInput,
+                format!(
+                    "canonical compiler MIR arena access range overflowed in function {function} at block {block} statement {statement_index}"
+                ),
+            )
+        })?;
+    if access_end > allocation.size {
+        return Err(IoError::new(
+            ErrorKind::InvalidInput,
+            format!(
+                "canonical compiler MIR arena access range {byte_offset}..{access_end} exceeds allocation size {} in function {function} at block {block} statement {statement_index}",
+                allocation.size
+            ),
+        )
+        .into());
+    }
+    Ok(())
+}
+
+fn validate_canonical_compiler_mir_arena_accesses<'a>(
+    defined: &CompilerMirLoweringDefinedFunction<'a>,
+    import_names: &HashMap<&'a str, &CompilerMirLoweringImportedFunction<'a>>,
+) -> Result<(), Box<dyn Error>> {
+    let function = &defined.fixture.function;
+    for block in &function.blocks {
+        let mut provenance: HashMap<&'a str, CompilerMirArenaAllocationProvenance<'a>> =
+            HashMap::new();
+        for (statement_index, statement) in block.statements.iter().enumerate() {
+            match statement {
+                CompilerMirLoweringStatement::LocalI32SetCall {
+                    name,
+                    target,
+                    arguments,
+                } => {
+                    provenance.remove(name);
+                    let CompilerMirLoweringCallTarget::ImportedFunction(import_name) = target
+                    else {
+                        continue;
+                    };
+                    let Some(imported) = import_names.get(import_name).copied() else {
+                        continue;
+                    };
+                    if imported.link_symbol != "os_ArenaAlloc" {
+                        continue;
+                    }
+                    let [
+                        CompilerMirLoweringCallArgument::ArenaAddress(arena),
+                        CompilerMirLoweringCallArgument::USizeLiteral(size),
+                    ] = arguments.as_slice()
+                    else {
+                        continue;
+                    };
+                    provenance.insert(
+                        name,
+                        CompilerMirArenaAllocationProvenance { arena, size: *size },
+                    );
+                }
+                CompilerMirLoweringStatement::LocalI32Set { name, .. }
+                | CompilerMirLoweringStatement::LocalI32SetParam { name, .. }
+                | CompilerMirLoweringStatement::LocalI32SetBlockParam { name, .. }
+                | CompilerMirLoweringStatement::LocalI32AddI32Literal { name, .. }
+                | CompilerMirLoweringStatement::LocalI32SubI32Literal { name, .. }
+                | CompilerMirLoweringStatement::LocalI32MulI32Literal { name, .. }
+                | CompilerMirLoweringStatement::LocalI32AddParam { name, .. } => {
+                    provenance.remove(name);
+                }
+                CompilerMirLoweringStatement::ArenaStoreI32 {
+                    arena,
+                    index_local,
+                    byte_offset,
+                    ..
+                } => {
+                    validate_canonical_compiler_mir_arena_access(
+                        &provenance,
+                        arena,
+                        index_local,
+                        *byte_offset,
+                        function.object_name,
+                        block.label,
+                        statement_index,
+                    )?;
+                }
+                CompilerMirLoweringStatement::LocalI32SetArenaLoad {
+                    name,
+                    arena,
+                    index_local,
+                    byte_offset,
+                } => {
+                    validate_canonical_compiler_mir_arena_access(
+                        &provenance,
+                        arena,
+                        index_local,
+                        *byte_offset,
+                        function.object_name,
+                        block.label,
+                        statement_index,
+                    )?;
+                    provenance.remove(name);
+                }
+                CompilerMirLoweringStatement::LocalStringSetCall { .. }
+                | CompilerMirLoweringStatement::ArenaInit { .. }
+                | CompilerMirLoweringStatement::CallVoid { .. } => {}
+            }
+        }
+    }
+    Ok(())
 }
 
 fn validate_canonical_compiler_mir_local_call_graph_acyclic(

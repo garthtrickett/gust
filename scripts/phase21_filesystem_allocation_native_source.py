@@ -20,6 +20,7 @@ LOWERER = ROOT / "compiler/mir_native_backend_filesystem_allocation_source.gst"
 GENERIC = ROOT / "compiler/mir_native_backend_generic_source.gst"
 ROUTE = ROOT / "compiler/mir_native_backend_source_route.gst"
 WORKER = ROOT / "compiler/experiments/cranelift/src/main.rs"
+PARITY_SCRIPT = ROOT / "scripts/phase21_filesystem_allocation_native_source.sh"
 MAKEFILE = ROOT / "Makefile"
 GUARD_L1 = "guard-cranelift-phase21-filesystem-allocation-native-source-contract"
 GUARD_L2 = "guard-cranelift-phase21-filesystem-allocation-native-source-parity"
@@ -101,6 +102,13 @@ def validate() -> dict:
                 "os_WriteFile", "os_ReadFile", "os_LogInt", "os_LogStr",
             ] and canonical.get("fallback") == "forbidden",
             "canonical MIR contract drifted")
+    require(canonical.get("arena_access_validation") == {
+        "allocation_provenance":
+        "earlier_same_block_import_whose_link_symbol_is_os_ArenaAlloc_with_same_arena_and_literal_size",
+        "access_range":
+        "non_negative_byte_offset_plus_four_byte_i32_width_within_allocation_size",
+        "index_reassignment": "clears_allocation_provenance",
+    }, "canonical arena-access validation contract drifted")
     runtime = record.get("runtime_package", {})
     require(runtime.get("retained_components") == [
         "src/runtime/arena.c", "src/runtime/host_io.c",
@@ -158,6 +166,16 @@ def validate() -> dict:
                    "ArenaStoreI32", "LocalI32SetArenaLoad",
                    "StringLiteralUtf8Hex"):
         require(marker in worker, f"worker lacks {marker}")
+    parity_script = PARITY_SCRIPT.read_text(encoding="utf-8")
+    for marker in (
+        "arena-negative-offset", "arena-out-of-range",
+        "arena-missing-provenance", "arena-index-reassigned",
+        "arena access byte offset must be non-negative",
+        "arena access range 4..8 exceeds allocation size 4",
+        "arena access requires same-block os_ArenaAlloc provenance",
+    ):
+        require(marker in parity_script,
+                f"malformed arena-MIR evidence lacks {marker}")
     makefile = MAKEFILE.read_text(encoding="utf-8")
     for marker in ("src/runtime/arena.c", "src/runtime/host_io.c",
                    "src/runtime/file_io.c", "build/gust-runtime-package.a"):
@@ -216,6 +234,11 @@ def render(record: dict) -> str:
               f"- Operations: `{', '.join(canonical['operations'])}`",
               f"- Types: `{', '.join(canonical['types'])}`",
               f"- Runtime imports: `{', '.join(canonical['runtime_imports'])}`",
+              "- Arena allocation provenance: earlier same-block imported "
+              "`os_ArenaAlloc` link symbol, same arena, literal size",
+              "- Arena access range: non-negative byte offset plus the four-byte "
+              "`i32` width must fit the recorded allocation",
+              "- Arena index reassignment clears allocation provenance",
               f"- Runtime archive: `{runtime['path']}` from "
               f"`{', '.join(runtime['retained_components'])}`",
               "- New or changed runtime symbols: none",

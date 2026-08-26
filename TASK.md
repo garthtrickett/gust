@@ -329,6 +329,14 @@ names, and declared type names do not select lowering. Computed write contents
 and computed stored values remain conservatively rejected before driver
 discovery.
 
+Post-merge correction (2026-08-26): canonical arena load/store validation now
+requires the index local to come from an earlier same-block imported
+`os_ArenaAlloc` call for the same arena with a literal size. Integer-local
+reassignment clears that provenance, and the complete four-byte `i32` access
+must have a non-negative offset and fit the recorded allocation. Malformed MIR
+therefore rejects before native lowering; the admitted source cohort,
+MIR-to-C oracle, lowering, ABI/layout, and runtime symbols are unchanged.
+
 **Exit Gate:** all four registered source cases agree with MIR-to-C on stdout,
 stderr, exit status, and filesystem effects where applicable; the two
 unrepresented expression cases retain measured MIR-to-C behavior while
