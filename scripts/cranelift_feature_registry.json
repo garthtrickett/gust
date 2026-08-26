@@ -1496,9 +1496,9 @@
       },
       {
         "path": "compiler/phase20_component_threading_source.gst",
-        "role": "compiler_threading_compile_only_fixture",
-        "lock_calls": 1,
-        "unlock_calls": 1
+        "role": "compiler_threading_runtime_fixture",
+        "lock_calls": 2,
+        "unlock_calls": 2
       },
       {
         "path": "compiler/phase20_mutex_lock_safe_invalid.gst",
@@ -1534,9 +1534,9 @@
     "baseline_lock_calls": 12,
     "baseline_unlock_calls": 12,
     "baseline_calls": 24,
-    "total_lock_calls": 14,
-    "total_unlock_calls": 14,
-    "total_calls": 28,
+    "total_lock_calls": 15,
+    "total_unlock_calls": 15,
+    "total_calls": 30,
     "enforcement_negative_fixtures": [
       "compiler/phase20_mutex_lock_safe_invalid.gst",
       "compiler/phase20_mutex_unlock_safe_invalid.gst"

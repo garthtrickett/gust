@@ -1051,7 +1051,7 @@
           "call_sites": {
             "const": [
               {"path": "compiler/e2e_complex_bootstrap_target.gst", "role": "bootstrap_target", "lock_calls": 4, "unlock_calls": 4},
-              {"path": "compiler/phase20_component_threading_source.gst", "role": "compiler_threading_compile_only_fixture", "lock_calls": 1, "unlock_calls": 1},
+              {"path": "compiler/phase20_component_threading_source.gst", "role": "compiler_threading_runtime_fixture", "lock_calls": 2, "unlock_calls": 2},
               {"path": "compiler/phase20_mutex_lock_safe_invalid.gst", "role": "patch20_16d_enforcement_negative", "lock_calls": 1, "unlock_calls": 0},
               {"path": "compiler/phase20_mutex_unlock_safe_invalid.gst", "role": "patch20_16d_enforcement_negative", "lock_calls": 0, "unlock_calls": 1},
               {"path": "compiler/phase20_protected_access_module.gst", "role": "patch20_16d_explicit_unsafe_lifecycle_fixture", "lock_calls": 1, "unlock_calls": 1},
@@ -1062,9 +1062,9 @@
           "baseline_lock_calls": {"const": 12},
           "baseline_unlock_calls": {"const": 12},
           "baseline_calls": {"const": 24},
-          "total_lock_calls": {"const": 14},
-          "total_unlock_calls": {"const": 14},
-          "total_calls": {"const": 28},
+          "total_lock_calls": {"const": 15},
+          "total_unlock_calls": {"const": 15},
+          "total_calls": {"const": 30},
           "enforcement_negative_fixtures": {"const": ["compiler/phase20_mutex_lock_safe_invalid.gst", "compiler/phase20_mutex_unlock_safe_invalid.gst"]},
           "transitional_test_coverage": {"const": ["tests/e2e_mutex_concurrency.gst", "tests/e2e_sync_primitives.gst"]},
           "migration_policy": {"const": "patch20_16c_freezes_the_24_call_explicit_unsafe_noop_baseline_while_patch20_16d_adds_two_explicit_unsafe_lifecycle_calls_and_two_exact_classified_enforcement_negatives"},
