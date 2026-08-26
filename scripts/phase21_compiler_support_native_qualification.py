@@ -294,6 +294,7 @@ def run_evidence(output: Path) -> None:
     output.mkdir(parents=True, exist_ok=True)
     driver_marker = output / "driver-invoked"
     capture_driver = output / "capture-driver"
+    # This sentinel proves pre-driver rejection; it is never a fallback route.
     capture_driver.write_text(
         "#!/usr/bin/env bash\nset -euo pipefail\ntouch \"$DRIVER_MARKER\"\nexit 99\n",
         encoding="utf-8",
