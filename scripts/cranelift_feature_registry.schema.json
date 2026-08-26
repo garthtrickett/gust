@@ -1742,6 +1742,7 @@
           "predecessor_authority": "phase21_filesystem_allocation_native_source_v1",
           "source_route_policy": "typed_AST_resource_and_synchronization_operations_lower_to_canonical_MIR_without_source_path_fixture_name_type_name_or_generated_C_recognition",
           "scope": "bounded_compiler_owned_resource_cleanup_and_deterministic_arena_live_mutex_scheduler_source_cohort_with_conservative_pre_driver_rejection_elsewhere",
+          "linear_module_fixtures": ["compiler/phase21_resource_sync_renamed_module.gst"],
           "source_cases": [
             {"id":"resource_primary","source_fixture":"compiler/phase20_resource_scope_cleanup_source.gst","expected_stdout":"2\n1\n4\n3\n5\n9\n6\n7\n8\n10\n","expected_stderr":"","expected_exit":0},
             {"id":"resource_renamed","source_fixture":"compiler/phase21_resource_sync_renamed_source.gst","expected_stdout":"12\n11\n14\n13\n15\n19\n16\n17\n19\n20\n","expected_stderr":"","expected_exit":0},

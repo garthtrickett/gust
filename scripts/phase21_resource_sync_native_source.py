@@ -29,13 +29,27 @@ def validate() -> dict:
             ["contract_version"], "predecessor drifted")
     cases = record.get("source_cases", [])
     rejected = record.get("rejected_source_cases", [])
+    linear_modules = record.get("linear_module_fixtures", [])
     require([case["id"] for case in cases] ==
             ["resource_primary", "resource_renamed", "threading_primary"],
             "source case population drifted")
     require([case["id"] for case in rejected] ==
             ["resource_computed_token"], "rejection population drifted")
+    require(linear_modules ==
+            ["compiler/phase21_resource_sync_renamed_module.gst"],
+            "linear module fixture population drifted")
     require(all((ROOT / case["source_fixture"]).is_file()
                 for case in cases + rejected), "source fixture is missing")
+    require(all((ROOT / path).is_file() for path in linear_modules),
+            "linear module fixture is missing")
+    imported_modules = {
+        f"compiler/{line.split(chr(34))[1]}"
+        for case in cases
+        for line in (ROOT / case["source_fixture"]).read_text().splitlines()
+        if line.startswith("import \"")
+    }
+    require(set(linear_modules).issubset(imported_modules),
+            "linear module fixture is not imported by a qualified source case")
     canonical = record.get("canonical_contract", {})
     for operation in ("LocalRawPointerSetParam", "LocalRawPointerSetCall",
                       "LocalI32SetRawPointerLoad", "RawPointerStoreLocalI32",
@@ -81,6 +95,9 @@ def render(record: dict) -> str:
     ]
     for case in record["source_cases"]:
         lines.append(f"- `{case['id']}` — `{case['source_fixture']}` — stdout hex `{case['expected_stdout'].encode().hex()}`")
+    lines += ["", "## Linear module inventory", ""]
+    for path in record["linear_module_fixtures"]:
+        lines.append(f"- `{path}`")
     lines += ["", "## Canonical boundary", "",
               f"- Operations: `{', '.join(record['canonical_contract']['operations'])}`",
               f"- Runtime imports: `{', '.join(record['canonical_contract']['runtime_imports'])}`",

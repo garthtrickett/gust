@@ -13,6 +13,10 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - `resource_renamed` — `compiler/phase21_resource_sync_renamed_source.gst` — stdout hex `31320a31310a31340a31330a31350a31390a31360a31370a31390a32300a`
 - `threading_primary` — `compiler/phase20_component_threading_source.gst` — stdout hex `310a`
 
+## Linear module inventory
+
+- `compiler/phase21_resource_sync_renamed_module.gst`
+
 ## Canonical boundary
 
 - Operations: `LocalRawPointerSetParam, LocalRawPointerSetCall, LocalI32SetRawPointerLoad, RawPointerStoreLocalI32, LocalRawPointerOffset, ArenaStoreLocalI32, FunctionAddress, ArenaAllocationAddress`
