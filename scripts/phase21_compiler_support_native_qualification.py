@@ -211,6 +211,10 @@ def validate() -> dict:
     workflow = WORKFLOW.read_text(encoding="utf-8")
     require(f"just {GUARD_L1}" in workflow and f"just {GUARD_L2}" in workflow,
             "dedicated Patch 21.12 workflow does not own both guards")
+    for runtime_path in ("'src/runtime.c'", "'src/runtime/**'"):
+        require(workflow.count(f"- {runtime_path}") == 2,
+                f"dedicated Patch 21.12 workflow does not cover {runtime_path} "
+                "for pull requests and main pushes")
     return record
 
 

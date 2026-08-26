@@ -5,6 +5,8 @@ on:
     paths:
       - 'TASK.md'
       - 'compiler/*.gst'
+      - 'src/runtime.c'
+      - 'src/runtime/**'
       - 'scripts/cranelift_feature_registry.json'
       - 'scripts/cranelift_feature_registry.schema.json'
       - 'scripts/cranelift_registry.py'
@@ -18,6 +20,8 @@ on:
     paths:
       - 'TASK.md'
       - 'compiler/*.gst'
+      - 'src/runtime.c'
+      - 'src/runtime/**'
       - 'scripts/cranelift_feature_registry.json'
       - 'scripts/cranelift_feature_registry.schema.json'
       - 'scripts/cranelift_registry.py'
