@@ -108,7 +108,10 @@ rg -F 'expected_failure_stage=before_driver_discovery' "$full_root/stdout" >/dev
 rg -F 'source=compiler/test_runner_entry.gst line=238 column=1' \
   "$full_root/stdout" >/dev/null
 rg -F 'class=canonical_mir_verification_error' "$full_root/stdout" >/dev/null
-rg -F 'Native backend canonical MIR verification failed: unsupported top-level statement in module/import cohort' \
+active_full_compiler_diagnostic="$(
+  python3 scripts/phase21_opening.py active-module-import-diagnostic
+)"
+rg -F "$active_full_compiler_diagnostic" \
   "$full_root/stderr" >/dev/null
 
 echo "✅ Phase 21 opening evidence passed: 2 executable query shapes, the active inherited residues, and 1 classified full-compiler baseline; completed successor migrations remain owned by their transition records"

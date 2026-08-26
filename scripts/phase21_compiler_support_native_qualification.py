@@ -291,6 +291,29 @@ def measure(command: list[str], prefix: Path,
     return json.loads(result.read_text(encoding="utf-8"))
 
 
+def active_cranelift_classification(record: dict, row: dict) -> dict:
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    progression = registry.get(
+        "phase21_selected_compiler_module_qualification", {}
+    ).get("full_compiler_progression", {})
+    if not progression:
+        return row["cranelift"]
+    require(
+        progression.get("support_authority") == record["contract_version"]
+        and progression.get("support_record_preserved") is True
+        and progression.get("current_failure_stage")
+        == row["cranelift"]["failure_stage"]
+        and progression.get("current_artifact")
+        == row["cranelift"]["artifact"]
+        and progression.get("driver_invoked") is False
+        and progression.get("current_diagnostic"),
+        "successor support-slice progression authority drifted",
+    )
+    active = dict(row["cranelift"])
+    active["diagnostic"] = progression["current_diagnostic"]
+    return active
+
+
 def run_evidence(output: Path) -> None:
     record = validate()
     require((ROOT / "gust").is_file() and os.access(ROOT / "gust", os.X_OK),
@@ -346,11 +369,11 @@ def run_evidence(output: Path) -> None:
             ["./gust", "--backend", "cranelift", "-o", str(native), source],
             case_root / "cranelift", env,
         )
-        require(observed_native["status"] == row["cranelift"]["compile_exit"],
+        diagnostic = active_cranelift_classification(record, row)
+        require(observed_native["status"] == diagnostic["compile_exit"],
                 f"{row['id']}: explicit-Cranelift status drifted")
         native_stdout = (case_root / "cranelift.stdout").read_text(encoding="utf-8")
         native_stderr = (case_root / "cranelift.stderr").read_text(encoding="utf-8")
-        diagnostic = row["cranelift"]
         for marker in (
             f"decision={diagnostic['decision']}",
             f"reason_code={diagnostic['reason_code']}",
