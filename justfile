@@ -17217,6 +17217,24 @@ guard-cranelift-phase21-full-compiler-native-qualification-evidence:
     just guard-cranelift-phase21-full-compiler-native-qualification-contract
     python3 scripts/phase21_full_compiler_native_qualification.py evidence
 
+guard-cranelift-phase21-cranelift-built-compiler-programs-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🏗️ Checking Phase 21 Cranelift-built compiler program authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-cranelift-built-compiler-programs-contract | grep -F $'guard-cranelift-phase21-cranelift-built-compiler-programs-contract\t1\t' >/dev/null
+    just guard-cranelift-phase21-full-compiler-native-qualification-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase21_cranelift_built_compiler_programs.py validate
+    python3 scripts/phase21_cranelift_built_compiler_programs.py check-review
+
+guard-cranelift-phase21-cranelift-built-compiler-programs-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Compiling selected programs with the Cranelift-built compiler..."
+    just guard-cranelift-phase21-cranelift-built-compiler-programs-contract
+    python3 scripts/phase21_cranelift_built_compiler_programs.py evidence
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
