@@ -95,6 +95,7 @@ record = json.load(open("scripts/cranelift_feature_registry.json"))
 print(1 if record.get("phase21_full_compiler_native_qualification", {}).get("status") == "patch21_14_complete" else 0)
 ')"
 if [ "$full_compiler_live" = 1 ]; then
+  make build/gust-runtime-package.a
   GUST_NATIVE_BACKEND_DRIVER="$worker_abs" \
     ./gust --backend cranelift -o "$full_root/native-compiler" \
       compiler/test_runner_entry.gst >"$full_root/stdout" \
