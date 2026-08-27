@@ -96,6 +96,18 @@ def validate() -> dict:
         "runtime package authority drifted",
     )
     require(
+        record.get("resource_cleanup_transport") == {
+            "source_authority": "typechecker_resource_cleanup_plans",
+            "operations": [
+                "ResourceStorage", "ConditionalCleanup", "ScopeCleanup",
+            ],
+            "normal_exit_order": "source_defers_then_scope_cleanup_plan",
+            "return_order": "all_active_source_defers_then_return_cleanup_plan",
+            "backend_inference": False,
+        },
+        "resource cleanup transport authority drifted",
+    )
+    require(
         record.get("artifact") == {
             "kind": "linked_native_executable",
             "elf_class": "ELF64",
@@ -125,6 +137,9 @@ def validate() -> dict:
             "authorities": [
                 "phase21_opening_evidence_v1",
                 "phase21_residue_migration_authority_v1",
+                "phase21_collection_string_native_source_v1",
+                "phase21_filesystem_allocation_native_source_v1",
+                "phase21_resource_sync_native_source_v1",
                 "phase21_compiler_support_native_qualification_v1",
                 "phase21_selected_compiler_module_qualification_v1",
             ],
@@ -230,6 +245,7 @@ def validate() -> dict:
 def render(record: dict) -> str:
     inventory = record["canonical_inventory"]
     artifact = record["artifact"]
+    cleanup = record["resource_cleanup_transport"]
     return "\n".join([
         "# Cranelift Phase 21 Full Compiler Native Qualification",
         "",
@@ -261,7 +277,9 @@ def render(record: dict) -> str:
         "- The existing runtime archive supplies all eight registered object members; no runtime symbol is added.",
         f"- Malformed MIR exits {record['failure_contract']['exit_status']} with byte-identical diagnostics and no object.",
         "- The native artifact's help output is byte-identical to the MIR-to-C-built compiler.",
-        "- Frozen Patch 21.12/21.13 records remain historical; their live replay now requires supported native parity.",
+        "- Frozen predecessor records remain historical; their live replay now requires supported native parity.",
+        f"- Resource cleanup is transported from `{cleanup['source_authority']}` with no backend inference.",
+        f"- Normal exit ordering: `{cleanup['normal_exit_order']}`; return ordering: `{cleanup['return_order']}`.",
         "",
         "Patch 21.14 adds generic executable canonical-MIR production and native",
         "lowering for the full compiler under existing Phase 14–16 authorities.",

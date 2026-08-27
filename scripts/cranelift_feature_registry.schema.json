@@ -2069,6 +2069,13 @@
             "members": ["arena.o","host_io.o","file_io.o","scratch.o","fiber.o","collections.o","strings.o","approved_scalar_imports.o"],
             "symbol_policy": "existing_registered_runtime_symbols_only"
           },
+          "resource_cleanup_transport": {
+            "source_authority": "typechecker_resource_cleanup_plans",
+            "operations": ["ResourceStorage","ConditionalCleanup","ScopeCleanup"],
+            "normal_exit_order": "source_defers_then_scope_cleanup_plan",
+            "return_order": "all_active_source_defers_then_return_cleanup_plan",
+            "backend_inference": false
+          },
           "artifact": {
             "kind": "linked_native_executable",
             "elf_class": "ELF64",
@@ -2089,7 +2096,7 @@
             "transient_request_bundle_and_object_absent_after_success": true
           },
           "predecessor_replay": {
-            "authorities": ["phase21_opening_evidence_v1","phase21_residue_migration_authority_v1","phase21_compiler_support_native_qualification_v1","phase21_selected_compiler_module_qualification_v1"],
+            "authorities": ["phase21_opening_evidence_v1","phase21_residue_migration_authority_v1","phase21_collection_string_native_source_v1","phase21_filesystem_allocation_native_source_v1","phase21_resource_sync_native_source_v1","phase21_compiler_support_native_qualification_v1","phase21_selected_compiler_module_qualification_v1"],
             "historical_records_preserved": true,
             "live_decision": "supported",
             "canonical_format": "gust.compiler_executable_mir.v1",

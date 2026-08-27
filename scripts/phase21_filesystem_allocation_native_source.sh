@@ -12,8 +12,30 @@ real_driver="$PWD/build/gust-native-backend"
 runtime_package="$PWD/build/gust-runtime-package.a"
 test -x "$real_driver"
 test -f "$runtime_package"
-test "$(ar t "$runtime_package" | tr '\n' ' ')" = \
-  "arena.o host_io.o file_io.o scratch.o fiber.o "
+full_compiler_live="$(python3 -c '
+import json
+record = json.load(open("scripts/cranelift_feature_registry.json"))
+print(1 if record.get("phase21_full_compiler_native_qualification", {}).get("status") == "patch21_14_complete" else 0)
+')"
+expected_runtime_members="arena.o host_io.o file_io.o scratch.o fiber.o "
+successor_runtime_symbols=()
+if test "$full_compiler_live" = 1; then
+  expected_runtime_members="$(python3 -c '
+import json
+record = json.load(open("scripts/cranelift_feature_registry.json"))
+members = record["phase21_full_compiler_native_qualification"]["runtime_package"]["members"]
+print(" ".join(members), end=" ")
+')"
+  successor_runtime_symbols=(
+    os_HashMapClear_impl os_HashMapContains_impl os_HashMapRef_impl
+    os_HashMapRemove_impl std_Clone_str std_PoolAlloc_impl std_PoolFree_impl
+    std_is_alpha std_is_digit std_is_whitespace std_parse_int
+    std_str_byte_at std_str_eq std_str_find std_str_slice std_str_split
+    std_str_trim tiny_host_add_i32 tiny_host_add_one_i32
+    tiny_host_is_positive_i32
+  )
+fi
+test "$(ar t "$runtime_package" | tr '\n' ' ')" = "$expected_runtime_members"
 nm -g --defined-only "$runtime_package" >"$build_root/runtime-symbols.txt"
 actual_runtime_symbols="$(awk 'NF == 3 && ($2 == "T" || $2 == "B") {print $3}' \
   "$build_root/runtime-symbols.txt" | sort)"
@@ -31,7 +53,7 @@ expected_runtime_symbols="$(printf '%s\n' \
   os_SetThreadScratch os_System os_WriteFile os_argc os_argv os_path_join \
   std_Channel_Alloc std_Channel_Recv_impl std_Channel_Send_impl \
   std_GenerationalSwap std_Mutex_Alloc std_Mutex_Lock_impl \
-  std_Mutex_Unlock_impl | sort)"
+  std_Mutex_Unlock_impl "${successor_runtime_symbols[@]}" | sort)"
 test "$actual_runtime_symbols" = "$expected_runtime_symbols"
 
 capture_driver="$build_root/capture-driver"

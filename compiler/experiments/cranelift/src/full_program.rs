@@ -858,6 +858,9 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
         "FieldOrMethodSelect",
         "Call",
         "ZeroInitialize",
+        "ResourceStorage",
+        "ConditionalCleanup",
+        "ScopeCleanup",
         "TypedQueryValue",
         "Block",
         "LocalDeclare",
@@ -904,7 +907,7 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
         }
         let expected_arity = match kind.as_str() {
             "LocalRead" | "IntegerLiteral" | "StringLiteral" | "BooleanLiteral"
-            | "ZeroInitialize" | "EnumPayloadBinding" => Some(0),
+            | "ZeroInitialize" | "ResourceStorage" | "EnumPayloadBinding" => Some(0),
             "MoveValue"
             | "TakeValue"
             | "AddressOf"
@@ -914,16 +917,19 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             | "UnsafeScope"
             | "ScheduleDefer"
             | "Evaluate" => Some(1),
-            "IndexRead" | "Assign" | "Loop" | "GuardUnwrap" => Some(2),
+            "IndexRead" | "Assign" | "Loop" | "GuardUnwrap" | "ConditionalCleanup" => {
+                Some(2)
+            }
             "Return" | "LocalDeclare" => None,
             _ => None,
         };
         if expected_arity.is_some_and(|arity| child_count != arity)
-            || matches!(kind.as_str(), "Return" | "LocalDeclare") && child_count > 1
+            || kind == "LocalDeclare" && child_count > 1
             || kind == "Call" && child_count == 0
             || kind == "Branch" && !(2..=3).contains(&child_count)
             || kind == "EnumMatch" && child_count < 2
             || kind == "EnumMatchArm" && child_count == 0
+            || kind == "ScopeCleanup" && child_count == 0
             || kind == "TypedQueryValue" && child_count == 0
         {
             return Err(invalid(format!(
@@ -2105,6 +2111,8 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
                     ))
                 }
             }
+            "ResourceStorage" => self.lower_resource_storage(builder, node),
+            "ConditionalCleanup" => self.lower_conditional_cleanup(builder, node),
             "Call" => self.lower_call(builder, node, expected_type),
             "TypedQueryValue" => Err(invalid(
                 "typed query unexpectedly reached the compiler executable cohort",
@@ -2135,6 +2143,65 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
             .ins()
             .store(MemFlags::trusted(), length, place.address, 8);
         Ok(Evaluated::Aggregate(place))
+    }
+
+    fn lower_resource_storage(
+        &mut self,
+        builder: &mut FunctionBuilder<'_>,
+        node: &Node,
+    ) -> Result<Evaluated, Box<dyn Error>> {
+        let mut components = node.text.split('.');
+        let root = components
+            .next()
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| invalid("full-program resource storage lacks a root"))?;
+        let mut place = self.local(root)?.place;
+        let mut receiver_type = node.second_text.clone();
+        for field in components {
+            if field.is_empty() || field.contains('[') {
+                return Err(invalid(
+                    "full-program resource storage path is not a field chain",
+                ));
+            }
+            let selected = self.field_place(builder, place, &receiver_type, field)?;
+            place = selected.0;
+            receiver_type = selected.1;
+        }
+        if receiver_type != node.ty {
+            return Err(invalid(format!(
+                "full-program resource storage type {} disagrees with {}",
+                receiver_type, node.ty
+            )));
+        }
+        if is_scalar_type(&node.ty) {
+            Ok(Evaluated::Scalar(load_scalar(
+                builder,
+                place.address,
+                &node.ty,
+                self.pointer_type(),
+            )?))
+        } else {
+            Ok(Evaluated::Aggregate(place))
+        }
+    }
+
+    fn lower_conditional_cleanup(
+        &mut self,
+        builder: &mut FunctionBuilder<'_>,
+        node: &Node,
+    ) -> Result<Evaluated, Box<dyn Error>> {
+        let condition_node = &self.program.nodes[node.children[0]];
+        let condition_eval = self.lower_expression(builder, node.children[0], None)?;
+        let condition = self.scalar(builder, condition_eval, &condition_node.ty)?;
+        let execute = builder.create_block();
+        let done = builder.create_block();
+        let condition = as_condition(builder, condition);
+        builder.ins().brif(condition, execute, &[], done, &[]);
+        builder.switch_to_block(execute);
+        self.lower_expression(builder, node.children[1], None)?;
+        builder.ins().jump(done, &[]);
+        builder.switch_to_block(done);
+        Ok(Evaluated::Void)
     }
 
     fn lower_cast(
@@ -3510,7 +3577,17 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         self.scopes.push(HashMap::new());
         self.defers.push(Vec::new());
         let mut terminated = false;
-        for child in node.children.clone() {
+        let mut scope_cleanup = None;
+        for (child_index, child) in node.children.clone().into_iter().enumerate() {
+            if self.program.nodes[child].kind == "ScopeCleanup" {
+                if child_index + 1 != node.children.len() || scope_cleanup.is_some() {
+                    return Err(invalid(
+                        "full-program scope cleanup must be the final unique block operation",
+                    ));
+                }
+                scope_cleanup = Some(child);
+                continue;
+            }
             if terminated {
                 return Err(invalid(
                     "full-program canonical block contains execution after termination",
@@ -3520,6 +3597,9 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         }
         if !terminated {
             self.emit_scope_defers(builder, self.defers.len() - 1)?;
+            if let Some(cleanup) = scope_cleanup {
+                self.lower_scope_cleanup(builder, cleanup)?;
+            }
         }
         self.defers.pop();
         self.scopes.pop();
@@ -3609,6 +3689,21 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         Ok(())
     }
 
+    fn lower_scope_cleanup(
+        &mut self,
+        builder: &mut FunctionBuilder<'_>,
+        node_index: usize,
+    ) -> Result<(), Box<dyn Error>> {
+        let node = self.program.nodes[node_index].clone();
+        if node.kind != "ScopeCleanup" || node.children.is_empty() {
+            return Err(invalid("full-program scope cleanup is malformed"));
+        }
+        for cleanup in node.children {
+            self.lower_expression(builder, cleanup, None)?;
+        }
+        Ok(())
+    }
+
     fn emit_all_defers(&mut self, builder: &mut FunctionBuilder<'_>) -> Result<(), Box<dyn Error>> {
         for scope in (0..self.defers.len()).rev() {
             self.emit_scope_defers(builder, scope)?;
@@ -3621,12 +3716,27 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         builder: &mut FunctionBuilder<'_>,
         node: &Node,
     ) -> Result<(), Box<dyn Error>> {
-        let result = if let Some(value) = node.children.first() {
-            Some(self.lower_expression(
-                builder,
-                *value,
-                Some(&self.function.result_type.clone()),
-            )?)
+        if !matches!(node.integer, 0 | 1) || node.integer as usize > node.children.len() {
+            return Err(invalid(
+                "full-program return value marker disagrees with its children",
+            ));
+        }
+        // Canonical v1 rows produced before resource-cleanup transport have a
+        // zero marker and use their sole child as the scalar return value.
+        // Keep accepting that representation while new rows use the marker to
+        // separate an optional value from following cleanup expressions.
+        let value_count = if node.integer == 1
+            || node.integer == 0
+                && self.function.result_type != "Void"
+                && node.children.len() == 1
+        {
+            1
+        } else {
+            0
+        };
+        let result = if value_count == 1 {
+            let value = node.children[0];
+            Some(self.lower_expression(builder, value, Some(&self.function.result_type.clone()))?)
         } else {
             None
         };
@@ -3649,6 +3759,9 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
             None
         };
         self.emit_all_defers(builder)?;
+        for cleanup in node.children.iter().skip(value_count) {
+            self.lower_expression(builder, *cleanup, None)?;
+        }
         match self.abi.result {
             AbiShape::Void => builder.ins().return_(&[]),
             AbiShape::Scalar(result_type) => {

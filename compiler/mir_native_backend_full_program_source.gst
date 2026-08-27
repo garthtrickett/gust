@@ -410,6 +410,155 @@ func mir_native_full_program_flatten_expression(expression_index: Index[ast.Expr
     return mir_native_full_program_push_node(nodes_index, node, ctx);
 }
 
+func mir_native_full_program_storage_root(storage_name: str, ctx: &Arena) str {
+    mut end := len(storage_name);
+    mut index := 0;
+    while index < len(storage_name) {
+        mut character := std.str_slice(storage_name, index, index + 1);
+        if std.str_eq(character, ".") == 1 ||
+           std.str_eq(character, "[") == 1 {
+            end = index;
+            index = len(storage_name);
+        } else {
+            index = index + 1;
+        }
+    }
+    return std.Clone(ctx, std.str_slice(storage_name, 0, end));
+}
+
+func mir_native_full_program_resource_storage_node(
+    storage_name: str,
+    source_line: int,
+    source_column: int,
+    source_start_offset: int,
+    source_end_offset: int,
+    nodes_index: Index[std.Vector[MirNativeFullProgramNode[ctx], ctx], ctx],
+    env: &typechecker.TypeEnvironment[ctx],
+    ctx: &Arena
+) int {
+    mut root := mir_native_full_program_storage_root(storage_name, ctx);
+    unsafe {
+        guard root_type_lookup := (*env).variable_types.Get(root) else {
+            return 0 - 1;
+        };
+        mut root_type := mir_native_full_program_type_identity(
+            root_type_lookup, env, ctx
+        );
+        if len(root_type) == 0 || std.str_eq(root_type, "Unknown") == 1 {
+            return 0 - 1;
+        }
+        mut storage_type := root_type_lookup;
+        mut cursor := len(root);
+        while cursor < len(storage_name) {
+            if std.str_eq(
+                std.str_slice(storage_name, cursor, cursor + 1), "."
+            ) == 0 {
+                return 0 - 1;
+            }
+            mut field_start := cursor + 1;
+            mut field_end := field_start;
+            while field_end < len(storage_name) &&
+                  std.str_eq(
+                      std.str_slice(storage_name, field_end, field_end + 1),
+                      "."
+                  ) == 0 {
+                field_end = field_end + 1;
+            }
+            if field_end == field_start { return 0 - 1; }
+            mut resolved_storage_type := typechecker.env_resolve_type(
+                env, storage_type, ctx
+            );
+            if resolved_storage_type.tag != 8 { return 0 - 1; }
+            guard layout_lookup := (*env).struct_registry.Get(
+                resolved_storage_type.Struct.struct_name
+            ) else {
+                return 0 - 1;
+            };
+            mut field_name := std.str_slice(
+                storage_name, field_start, field_end
+            );
+            guard field_lookup := layout_lookup.fields.Get(field_name) else {
+                return 0 - 1;
+            };
+            storage_type = field_lookup;
+            cursor = field_end;
+        }
+        mut value_type := mir_native_full_program_type_identity(
+            storage_type, env, ctx
+        );
+        if len(value_type) == 0 || std.str_eq(value_type, "Unknown") == 1 {
+            return 0 - 1;
+        }
+        mut storage := mir_native_full_program_make_node(
+            "ResourceStorage", value_type, storage_name, root_type,
+            0, 0, source_line, source_column, source_start_offset,
+            source_end_offset, ctx
+        );
+        return mir_native_full_program_push_node(
+            nodes_index, storage, ctx
+        );
+    }
+}
+
+func mir_native_full_program_resource_cleanup_expression(
+    action: typechecker.ResourceCleanupAction[ctx],
+    source_line: int,
+    source_column: int,
+    source_start_offset: int,
+    source_end_offset: int,
+    nodes_index: Index[std.Vector[MirNativeFullProgramNode[ctx], ctx], ctx],
+    env: &typechecker.TypeEnvironment[ctx],
+    ctx: &Arena
+) int {
+    mut storage := mir_native_full_program_resource_storage_node(
+        action.storage_name, source_line, source_column,
+        source_start_offset, source_end_offset, nodes_index, env, ctx
+    );
+    if storage < 0 { return 0 - 1; }
+    mut destructor := codegen.codegen_resource_cleanup_c_function_name(
+        action.destructor_name, env, ctx
+    );
+    if len(destructor) == 0 { return 0 - 1; }
+    mut function_value := mir_native_full_program_make_node(
+        "LocalRead", "Void", destructor, "", 0, 0, source_line,
+        source_column, source_start_offset, source_end_offset, ctx
+    );
+    mut function_node := mir_native_full_program_push_node(
+        nodes_index, function_value, ctx
+    );
+    mut call := mir_native_full_program_make_node(
+        "Call", "Void", destructor, destructor, 0, 0, source_line,
+        source_column, source_start_offset, source_end_offset, ctx
+    );
+    call = mir_native_full_program_node_with_child(
+        call, function_node, ctx
+    );
+    call = mir_native_full_program_node_with_child(call, storage, ctx);
+    mut call_node := mir_native_full_program_push_node(
+        nodes_index, call, ctx
+    );
+    if len(action.cleanup_condition) == 0 { return call_node; }
+
+    mut condition := mir_native_full_program_resource_storage_node(
+        action.cleanup_condition, source_line, source_column,
+        source_start_offset, source_end_offset, nodes_index, env, ctx
+    );
+    if condition < 0 { return 0 - 1; }
+    mut conditional := mir_native_full_program_make_node(
+        "ConditionalCleanup", "Void", "", "", 0, 0, source_line,
+        source_column, source_start_offset, source_end_offset, ctx
+    );
+    conditional = mir_native_full_program_node_with_child(
+        conditional, condition, ctx
+    );
+    conditional = mir_native_full_program_node_with_child(
+        conditional, call_node, ctx
+    );
+    return mir_native_full_program_push_node(
+        nodes_index, conditional, ctx
+    );
+}
+
 func mir_native_full_program_flatten_block(block_index: Index[ast.BlockStatement[ctx], ctx], nodes_index: Index[std.Vector[MirNativeFullProgramNode[ctx], ctx], ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
     if block_index == empty[Index[ast.BlockStatement[ctx], ctx]] {
         return 0 - 1;
@@ -430,6 +579,44 @@ func mir_native_full_program_flatten_block(block_index: Index[ast.BlockStatement
     );
     mut statements: std.Vector[ast.Statement[ctx], ctx] :=
         ctx[block.statements];
+    mut scope_cleanup_node := 0 - 1;
+    unsafe {
+        mut cleanup_key := typechecker.resource_cleanup_plan_key(
+            env as *typechecker.TypeEnvironment[ctx],
+            "block",
+            block.span,
+            ctx
+        );
+        mut cleanup_lookup := (*env).resource_cleanup_plans.Get(cleanup_key);
+        if cleanup_lookup.Ok {
+            mut actions: std.Vector[typechecker.ResourceCleanupAction[ctx], ctx] :=
+                ctx[cleanup_lookup.Val];
+            mut scope_cleanup := mir_native_full_program_make_node(
+                "ScopeCleanup", "Void", "", "", 0, 0,
+                block.span.start.line, block.span.start.column,
+                block.span.start.offset, block.span.end.offset, ctx
+            );
+            mut action_index := 0;
+            while action_index < len(actions) {
+                mut cleanup :=
+                    mir_native_full_program_resource_cleanup_expression(
+                        actions[action_index], block.span.start.line,
+                        block.span.start.column, block.span.start.offset,
+                        block.span.end.offset, nodes_index, env, ctx
+                    );
+                if cleanup < 0 { return 0 - 1; }
+                scope_cleanup = mir_native_full_program_node_with_child(
+                    scope_cleanup, cleanup, ctx
+                );
+                action_index = action_index + 1;
+            }
+            if len(actions) > 0 {
+                scope_cleanup_node = mir_native_full_program_push_node(
+                    nodes_index, scope_cleanup, ctx
+                );
+            }
+        }
+    }
     mut statement_index := 0;
     while statement_index < len(statements) {
         mut child := mir_native_full_program_flatten_statement(
@@ -441,6 +628,11 @@ func mir_native_full_program_flatten_block(block_index: Index[ast.BlockStatement
         if child < 0 { return 0 - 1; }
         node = mir_native_full_program_node_with_child(node, child, ctx);
         statement_index = statement_index + 1;
+    }
+    if scope_cleanup_node >= 0 {
+        node = mir_native_full_program_node_with_child(
+            node, scope_cleanup_node, ctx
+        );
     }
     return mir_native_full_program_push_node(nodes_index, node, ctx);
 }
@@ -523,6 +715,9 @@ func mir_native_full_program_flatten_statement(statement: ast.Statement[ctx], no
             source_end_offset = statement.Defer.span.end.offset;
         } else if statement.tag == 12 {
             kind = "Return";
+            if statement.Return.expr != empty[Index[ast.Expression[ctx], ctx]] {
+                integer_operand = 1;
+            }
             source_line = statement.Return.span.start.line;
             source_column = statement.Return.span.start.column;
             source_start_offset = statement.Return.span.start.offset;
@@ -688,6 +883,33 @@ func mir_native_full_program_flatten_statement(statement: ast.Statement[ctx], no
                 );
                 if value < 0 { return 0 - 1; }
                 node = mir_native_full_program_node_with_child(node, value, ctx);
+            }
+            mut cleanup_key := typechecker.resource_cleanup_plan_key(
+                env as *typechecker.TypeEnvironment[ctx],
+                "return",
+                statement.Return.span,
+                ctx
+            );
+            mut cleanup_lookup := (*env).resource_cleanup_plans.Get(
+                cleanup_key
+            );
+            if cleanup_lookup.Ok {
+                mut actions: std.Vector[typechecker.ResourceCleanupAction[ctx], ctx] :=
+                    ctx[cleanup_lookup.Val];
+                mut action_index := 0;
+                while action_index < len(actions) {
+                    mut cleanup :=
+                        mir_native_full_program_resource_cleanup_expression(
+                            actions[action_index], source_line,
+                            source_column, source_start_offset,
+                            source_end_offset, nodes_index, env, ctx
+                        );
+                    if cleanup < 0 { return 0 - 1; }
+                    node = mir_native_full_program_node_with_child(
+                        node, cleanup, ctx
+                    );
+                    action_index = action_index + 1;
+                }
             }
         } else if statement.tag == 13 {
             mut value := mir_native_full_program_flatten_expression(

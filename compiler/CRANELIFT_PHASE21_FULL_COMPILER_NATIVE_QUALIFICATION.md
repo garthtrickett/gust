@@ -28,7 +28,9 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - The existing runtime archive supplies all eight registered object members; no runtime symbol is added.
 - Malformed MIR exits 2 with byte-identical diagnostics and no object.
 - The native artifact's help output is byte-identical to the MIR-to-C-built compiler.
-- Frozen Patch 21.12/21.13 records remain historical; their live replay now requires supported native parity.
+- Frozen predecessor records remain historical; their live replay now requires supported native parity.
+- Resource cleanup is transported from `typechecker_resource_cleanup_plans` with no backend inference.
+- Normal exit ordering: `source_defers_then_scope_cleanup_plan`; return ordering: `all_active_source_defers_then_return_cleanup_plan`.
 
 Patch 21.14 adds generic executable canonical-MIR production and native
 lowering for the full compiler under existing Phase 14–16 authorities.
