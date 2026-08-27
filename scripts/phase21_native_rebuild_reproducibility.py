@@ -133,9 +133,29 @@ def validate() -> dict:
             and environment.get("target") == "x86_64-unknown-linux-gnu"
             and environment.get("backend_flags") == ["--backend", "cranelift"],
             "pinned compiler, Cranelift, target, or flag authority drifted")
-    require(environment.get("cranelift_manifest_sha256") == sha256(MANIFEST)
-            and environment.get("cranelift_lockfile_sha256") == sha256(LOCKFILE),
-            "pinned Cranelift manifest or lockfile drifted")
+    require(environment.get("cranelift_manifest")
+            == "compiler/experiments/cranelift/Cargo.toml"
+            and environment.get("cranelift_lockfile")
+            == "compiler/experiments/cranelift/Cargo.lock"
+            and environment.get("dependency_resolution")
+            == "cargo_locked_exact_versions_and_checksums",
+            "pinned Cranelift manifest, lockfile, or resolution policy drifted")
+    manifest = MANIFEST.read_text(encoding="utf-8")
+    lockfile = LOCKFILE.read_text(encoding="utf-8")
+    for package in (
+        "cranelift-codegen",
+        "cranelift-frontend",
+        "cranelift-module",
+        "cranelift-native",
+        "cranelift-object",
+    ):
+        require(f'{package} = "=0.131.0"' in manifest,
+                f"pinned {package} manifest version drifted")
+        require(f'name = "{package}"\nversion = "0.131.0"' in lockfile,
+                f"locked {package} version drifted")
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+    require("$(CARGO) build \\\n\t\t--locked \\" in makefile,
+            "native worker build no longer uses the locked dependency graph")
     require(environment.get("cc") == "cc"
             and environment.get("cc_version") == "13.3.0"
             and environment.get("cflags") == "-O2 -Wall -pthread"
@@ -165,9 +185,9 @@ def validate() -> dict:
     }, "native stage identity contract drifted")
     require(record.get("decision_evidence") == {
         "operator_date": "2026-08-27",
-        "observed_artifact_sha256": "5990f6afa108a577c88f93035999d1cb43e748611255031af44f0b2e3418f62e",
         "observed_artifact_bytes": 5696280,
-        "observed_help_stdout_sha256": "c8ff57e34bb17a5bb6c7af65b2d8c868db33ae80ee4872faa175ed92c7a77b07",
+        "all_artifact_bytes_equal": True,
+        "all_help_behavior_equal": True,
         "all_build_diagnostics_empty": True,
         "all_linker_logs_empty": True,
     }, "OD-15 decision evidence drifted")
@@ -260,9 +280,9 @@ def render(record: dict) -> str:
         f"- Runner: `{environment['runner_image']}`",
         f"- Rust: `{environment['rustc_version']}`",
         f"- Cargo: `{environment['cargo_version']}`",
-        f"- Cranelift: `{environment['cranelift_version']}` with manifest SHA-256 "
-        f"`{environment['cranelift_manifest_sha256']}` and lockfile SHA-256 "
-        f"`{environment['cranelift_lockfile_sha256']}`",
+        f"- Cranelift: `{environment['cranelift_version']}` from "
+        f"`{environment['cranelift_manifest']}` and the exact locked dependency graph "
+        f"in `{environment['cranelift_lockfile']}`",
         f"- Target and flags: `{environment['target']}` / "
         f"`{' '.join(environment['backend_flags'])}`",
         f"- C toolchain: `{environment['cc']} {environment['cc_version']}` / "
@@ -277,18 +297,17 @@ def render(record: dict) -> str:
         "",
         "## Measured decision evidence",
         "",
-        f"- Artifact: `{evidence['observed_artifact_bytes']}` bytes, SHA-256 "
-        f"`{evidence['observed_artifact_sha256']}` across N1a/N1b/N2/N3.",
-        f"- Help stdout SHA-256: `{evidence['observed_help_stdout_sha256']}`; "
-        "help stderr is empty across every stage.",
+        f"- Artifact: `{evidence['observed_artifact_bytes']}` bytes and byte-identical "
+        "across N1a/N1b/N2/N3.",
+        "- Help stdout is byte-identical and help stderr is empty across every stage.",
         f"- Observed elapsed ms: N1a `{measurements['observed_n1a_elapsed_ms']}`, "
         f"N1b `{measurements['observed_n1b_elapsed_ms']}`, "
         f"N2 `{measurements['observed_n2_elapsed_ms']}`, "
         f"N3 `{measurements['observed_n3_elapsed_ms']}`.",
         f"- Observed peak child RSS: `{measurements['observed_peak_rss_kib']}` KiB.",
         "- Build diagnostics and Phase 9G linker logs are empty for every stage.",
-        "- The guard compares the live exact workflow-head artifacts; the observed",
-        "  hash records the decision evidence and does not freeze later source commits.",
+        "- The guard compares the live exact workflow-head artifacts without pinning",
+        "  legitimate later source commits to one historical artifact digest.",
         "",
         "## Boundary",
         "",

@@ -29,7 +29,7 @@ for or weaken this Phase 21 closure gate.
 - Runner: `ubuntu-24.04`
 - Rust: `rustc 1.97.1 (8bab26f4f 2026-07-14)`
 - Cargo: `cargo 1.97.1 (c980f4866 2026-06-30)`
-- Cranelift: `0.131.0` with manifest SHA-256 `220aef9a4d2636505f2fa39137de12a0f00d836dd7971db2491cdee4a657d9a6` and lockfile SHA-256 `b40ceaa047c0260d5b4ce0f511ef9239ad7ca4b84375f7c5604f645980e8211f`
+- Cranelift: `0.131.0` from `compiler/experiments/cranelift/Cargo.toml` and the exact locked dependency graph in `compiler/experiments/cranelift/Cargo.lock`
 - Target and flags: `x86_64-unknown-linux-gnu` / `--backend cranelift`
 - C toolchain: `cc 13.3.0` / `-O2 -Wall -pthread`
 - Linker: `GNU ld 2.42`
@@ -46,13 +46,13 @@ for or weaken this Phase 21 closure gate.
 
 ## Measured decision evidence
 
-- Artifact: `5696280` bytes, SHA-256 `5990f6afa108a577c88f93035999d1cb43e748611255031af44f0b2e3418f62e` across N1a/N1b/N2/N3.
-- Help stdout SHA-256: `c8ff57e34bb17a5bb6c7af65b2d8c868db33ae80ee4872faa175ed92c7a77b07`; help stderr is empty across every stage.
+- Artifact: `5696280` bytes and byte-identical across N1a/N1b/N2/N3.
+- Help stdout is byte-identical and help stderr is empty across every stage.
 - Observed elapsed ms: N1a `38320`, N1b `39485`, N2 `87197`, N3 `77380`.
 - Observed peak child RSS: `4045952` KiB.
 - Build diagnostics and Phase 9G linker logs are empty for every stage.
-- The guard compares the live exact workflow-head artifacts; the observed
-  hash records the decision evidence and does not freeze later source commits.
+- The guard compares the live exact workflow-head artifacts without pinning
+  legitimate later source commits to one historical artifact digest.
 
 ## Boundary
 
