@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 import resource
+import signal
 import subprocess
 import tempfile
 import time
@@ -28,6 +29,10 @@ GUARD_L1 = "guard-cranelift-phase21-cranelift-built-compiler-programs-contract"
 GUARD_L2 = "guard-cranelift-phase21-cranelift-built-compiler-programs-evidence"
 
 
+class SuiteDeadlineExceeded(RuntimeError):
+    """A child process exhausted the registered Patch 21.15 suite deadline."""
+
+
 def require(condition: bool, message: str) -> None:
     if not condition:
         raise SystemExit(f"{GUARD_L1}: {message}")
@@ -39,15 +44,42 @@ def run(
     env: dict[str, str] | None = None,
     timeout: float | None = None,
 ) -> subprocess.CompletedProcess[bytes]:
-    return subprocess.run(
+    process = subprocess.Popen(
         command,
         cwd=ROOT,
         env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        check=False,
-        timeout=timeout,
+        start_new_session=True,
     )
+    try:
+        stdout, stderr = process.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired as error:
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        process.communicate()
+        raise SuiteDeadlineExceeded(
+            f"subprocess exceeded remaining suite deadline: {' '.join(command)}"
+        ) from error
+    return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
+
+
+def remaining_timeout(deadline: float) -> float:
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise SuiteDeadlineExceeded("registered suite deadline was exhausted")
+    return remaining
+
+
+def run_before(
+    deadline: float,
+    command: list[str],
+    *,
+    env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[bytes]:
+    return run(command, env=env, timeout=remaining_timeout(deadline))
 
 
 def validate() -> dict:
@@ -211,6 +243,10 @@ def validate() -> dict:
     for runtime_path in ("- 'src/runtime.c'", "- 'src/runtime/**'"):
         require(workflow.count(runtime_path) == 2,
                 f"dedicated workflow does not cover {runtime_path} twice")
+    require(workflow.count("- 'gust_v4.c'") == 2,
+            "dedicated workflow does not cover gust_v4.c twice")
+    require("python3 scripts/phase21_cranelift_built_compiler_programs.py deadline-regression"
+            in justfile, "Patch 21.15 deadline regression is not guarded")
     return record
 
 
@@ -259,14 +295,18 @@ def render(record: dict) -> str:
     return "\n".join(lines)
 
 
-def compile_oracle(source: str, root: Path) -> tuple[Path, subprocess.CompletedProcess[bytes]]:
+def compile_oracle(
+    source: str,
+    root: Path,
+    deadline: float,
+) -> tuple[Path, subprocess.CompletedProcess[bytes]]:
     generated_c = root / "oracle.c"
-    compiled = run([str(ROOT / "gust"), "--backend", "mir-to-c", source])
+    compiled = run_before(deadline, [str(ROOT / "gust"), "--backend", "mir-to-c", source])
     generated_c.write_bytes(compiled.stdout)
     require(compiled.returncode == 0 and compiled.stderr == b"" and generated_c.stat().st_size > 0,
             f"{source}: MIR-to-C oracle compilation failed")
     artifact = root / "oracle"
-    linked = run([
+    linked = run_before(deadline, [
         os.environ.get("CC", "cc"), "-O0", "-w", "-pthread", "-Isrc",
         "-include", "src/runtime.c", str(generated_c), "-o", str(artifact),
     ])
@@ -275,8 +315,8 @@ def compile_oracle(source: str, root: Path) -> tuple[Path, subprocess.CompletedP
     return artifact, compiled
 
 
-def assert_elf(path: Path) -> None:
-    header = run(["readelf", "-h", str(path)])
+def assert_elf(path: Path, deadline: float) -> None:
+    header = run_before(deadline, ["readelf", "-h", str(path)])
     require(
         header.returncode == 0
         and b"ELF64" in header.stdout
@@ -289,6 +329,7 @@ def evidence(record: dict) -> None:
     for path in (ROOT / "gust", WORKER, PACKAGED_GUST, RUNTIME_PACKAGE):
         require(path.is_file(), f"evidence prerequisite is missing: {path.relative_to(ROOT)}")
     started = time.monotonic()
+    deadline = started + record["measurements"]["max_suite_elapsed_ms"] / 1000
     with tempfile.TemporaryDirectory(prefix="phase21-15-", dir=ROOT / "build") as raw_tmp:
         tmp = Path(raw_tmp)
         native_compiler = tmp / "gust-native"
@@ -296,7 +337,10 @@ def evidence(record: dict) -> None:
         built = run([
             str(PACKAGED_GUST), "--backend", "cranelift", "-o", str(native_compiler),
             record["compiler_source"],
-        ], timeout=record["measurements"]["max_compiler_build_elapsed_ms"] / 1000)
+        ], timeout=min(
+            remaining_timeout(deadline),
+            record["measurements"]["max_compiler_build_elapsed_ms"] / 1000,
+        ))
         build_elapsed_ms = int((time.monotonic() - build_started) * 1000)
         artifact = record["compiler_artifact"]
         require(
@@ -305,7 +349,7 @@ def evidence(record: dict) -> None:
             and artifact["minimum_bytes"] <= native_compiler.stat().st_size <= artifact["maximum_bytes"],
             "Cranelift-built compiler publication failed or left its artifact budget",
         )
-        assert_elf(native_compiler)
+        assert_elf(native_compiler, deadline)
 
         real_env = os.environ.copy()
         real_env["GUST_NATIVE_BACKEND_DRIVER"] = str(WORKER.resolve())
@@ -313,14 +357,14 @@ def evidence(record: dict) -> None:
             case_root = tmp / case["id"]
             case_root.mkdir()
             source = case["source_fixture"]
-            oracle_artifact, _ = compile_oracle(source, case_root)
+            oracle_artifact, _ = compile_oracle(source, case_root, deadline)
             reference_artifact = case_root / "reference-native"
-            reference = run([
+            reference = run_before(deadline, [
                 str(ROOT / "gust"), "--backend", "cranelift", "-o",
                 str(reference_artifact), source,
             ], env=real_env)
             subject_artifact = case_root / "subject-native"
-            subject = run([
+            subject = run_before(deadline, [
                 str(native_compiler), "--backend", "cranelift", "-o",
                 str(subject_artifact), source,
             ], env=real_env)
@@ -344,9 +388,9 @@ def evidence(record: dict) -> None:
                 == [path.read_bytes() for path in subject_logs],
                 f"{case['id']}: Phase 9G linker side effects diverged",
             )
-            assert_elf(reference_artifact)
-            assert_elf(subject_artifact)
-            executions = [run([str(path)]) for path in
+            assert_elf(reference_artifact, deadline)
+            assert_elf(subject_artifact, deadline)
+            executions = [run_before(deadline, [str(path)]) for path in
                           (oracle_artifact, reference_artifact, subject_artifact)]
             expected_stdout = case["stdout"].encode()
             expected_stderr = case["stderr"].encode()
@@ -375,11 +419,11 @@ def evidence(record: dict) -> None:
             source = case["source_fixture"]
             reference_artifact = tmp / f"{case['id']}-reference"
             subject_artifact = tmp / f"{case['id']}-subject"
-            reference = run([
+            reference = run_before(deadline, [
                 str(ROOT / "gust"), "--backend", "cranelift", "-o",
                 str(reference_artifact), source,
             ], env=reject_env)
-            subject = run([
+            subject = run_before(deadline, [
                 str(native_compiler), "--backend", "cranelift", "-o",
                 str(subject_artifact), source,
             ], env=reject_env)
@@ -413,9 +457,31 @@ def evidence(record: dict) -> None:
         )
 
 
+def deadline_regression() -> None:
+    try:
+        remaining_timeout(time.monotonic() - 1)
+    except SuiteDeadlineExceeded:
+        pass
+    else:
+        require(False, "expired suite deadline was accepted")
+
+    started = time.monotonic()
+    try:
+        run(["sh", "-c", "sleep 5"], timeout=0.02)
+    except SuiteDeadlineExceeded:
+        pass
+    else:
+        require(False, "hung subprocess did not trip the suite deadline")
+    require(time.monotonic() - started < 1,
+            "deadline regression did not terminate the child process group promptly")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=("validate", "project", "check-review", "evidence"))
+    parser.add_argument(
+        "command",
+        choices=("validate", "project", "check-review", "deadline-regression", "evidence"),
+    )
     args = parser.parse_args()
     record = validate()
     if args.command == "project":
@@ -423,8 +489,13 @@ def main() -> None:
     elif args.command == "check-review":
         require(REVIEW.is_file() and REVIEW.read_text(encoding="utf-8") == render(record),
                 "generated review is stale; run project")
+    elif args.command == "deadline-regression":
+        deadline_regression()
     elif args.command == "evidence":
-        evidence(record)
+        try:
+            evidence(record)
+        except SuiteDeadlineExceeded as error:
+            raise SystemExit(f"{GUARD_L2}: {error}") from None
     print(f"{GUARD_L1}: ok")
 
 
