@@ -17227,6 +17227,7 @@ guard-cranelift-phase21-cranelift-built-compiler-programs-contract:
     python3 scripts/cranelift_registry.py validate
     python3 scripts/phase21_cranelift_built_compiler_programs.py validate
     python3 scripts/phase21_cranelift_built_compiler_programs.py check-review
+    python3 scripts/phase21_cranelift_built_compiler_programs.py deadline-regression
 
 guard-cranelift-phase21-cranelift-built-compiler-programs-evidence:
     #!/usr/bin/env bash
