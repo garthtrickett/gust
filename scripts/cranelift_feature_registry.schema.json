@@ -2089,7 +2089,7 @@
             "transient_request_bundle_and_object_absent_after_success": true
           },
           "predecessor_replay": {
-            "authorities": ["phase21_compiler_support_native_qualification_v1","phase21_selected_compiler_module_qualification_v1"],
+            "authorities": ["phase21_opening_evidence_v1","phase21_residue_migration_authority_v1","phase21_compiler_support_native_qualification_v1","phase21_selected_compiler_module_qualification_v1"],
             "historical_records_preserved": true,
             "live_decision": "supported",
             "canonical_format": "gust.compiler_executable_mir.v1",

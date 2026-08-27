@@ -89,29 +89,52 @@ done < <(python3 scripts/phase21_opening.py active-residue-cases)
 
 full_root="$build_root/full-compiler"
 mkdir -p "$full_root"
-set +e
-GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
-GUST_PHASE21_POISON_MARKER="$poison_marker" \
-GUST_NATIVE_BACKEND_DRIVER="$poison_abs" \
-  ./gust --backend cranelift -o "$full_root/native-compiler" \
-    compiler/test_runner_entry.gst >"$full_root/stdout" \
-    2>"$full_root/stderr"
-full_status="$?"
-set -e
-test "$full_status" = 1
-test ! -e "$poison_marker"
-test ! -e "$full_root/native-compiler"
-rg -F 'decision=source_or_type_failure' "$full_root/stdout" >/dev/null
-rg -F 'capability=phase13_generic_source_to_mir' "$full_root/stdout" >/dev/null
-rg -F 'reason_code=source_or_type_failure' "$full_root/stdout" >/dev/null
-rg -F 'expected_failure_stage=before_driver_discovery' "$full_root/stdout" >/dev/null
-rg -F 'source=compiler/test_runner_entry.gst line=238 column=1' \
-  "$full_root/stdout" >/dev/null
-rg -F 'class=canonical_mir_verification_error' "$full_root/stdout" >/dev/null
-active_full_compiler_diagnostic="$(
-  python3 scripts/phase21_opening.py active-module-import-diagnostic
-)"
-rg -F "$active_full_compiler_diagnostic" \
-  "$full_root/stderr" >/dev/null
+full_compiler_live="$(python3 -c '
+import json
+record = json.load(open("scripts/cranelift_feature_registry.json"))
+print(1 if record.get("phase21_full_compiler_native_qualification", {}).get("status") == "patch21_14_complete" else 0)
+')"
+if [ "$full_compiler_live" = 1 ]; then
+  GUST_NATIVE_BACKEND_DRIVER="$worker_abs" \
+    ./gust --backend cranelift -o "$full_root/native-compiler" \
+      compiler/test_runner_entry.gst >"$full_root/stdout" \
+      2>"$full_root/stderr"
+  test ! -s "$full_root/stdout"
+  test ! -s "$full_root/stderr"
+  test -x "$full_root/native-compiler"
+  ./gust --help >"$full_root/oracle-help.stdout" \
+    2>"$full_root/oracle-help.stderr"
+  "$full_root/native-compiler" --help >"$full_root/native-help.stdout" \
+    2>"$full_root/native-help.stderr"
+  cmp -s "$full_root/oracle-help.stdout" "$full_root/native-help.stdout"
+  cmp -s "$full_root/oracle-help.stderr" "$full_root/native-help.stderr"
+  test ! -e "$full_root/native-compiler.phase10.bundle"
+  test ! -e "$full_root/native-compiler.phase10.request"
+else
+  set +e
+  GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
+  GUST_PHASE21_POISON_MARKER="$poison_marker" \
+  GUST_NATIVE_BACKEND_DRIVER="$poison_abs" \
+    ./gust --backend cranelift -o "$full_root/native-compiler" \
+      compiler/test_runner_entry.gst >"$full_root/stdout" \
+      2>"$full_root/stderr"
+  full_status="$?"
+  set -e
+  test "$full_status" = 1
+  test ! -e "$poison_marker"
+  test ! -e "$full_root/native-compiler"
+  rg -F 'decision=source_or_type_failure' "$full_root/stdout" >/dev/null
+  rg -F 'capability=phase13_generic_source_to_mir' "$full_root/stdout" >/dev/null
+  rg -F 'reason_code=source_or_type_failure' "$full_root/stdout" >/dev/null
+  rg -F 'expected_failure_stage=before_driver_discovery' "$full_root/stdout" >/dev/null
+  rg -F 'source=compiler/test_runner_entry.gst line=238 column=1' \
+    "$full_root/stdout" >/dev/null
+  rg -F 'class=canonical_mir_verification_error' "$full_root/stdout" >/dev/null
+  active_full_compiler_diagnostic="$(
+    python3 scripts/phase21_opening.py active-module-import-diagnostic
+  )"
+  rg -F "$active_full_compiler_diagnostic" \
+    "$full_root/stderr" >/dev/null
+fi
 
-echo "✅ Phase 21 opening evidence passed: 2 executable query shapes, the active inherited residues, and 1 classified full-compiler baseline; completed successor migrations remain owned by their transition records"
+echo "✅ Phase 21 opening evidence passed: 2 executable query shapes, the active inherited residues, and the registry-selected historical or Patch 21.14 full-compiler state; completed successor migrations remain owned by their transition records"

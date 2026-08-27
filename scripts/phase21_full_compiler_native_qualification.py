@@ -123,6 +123,8 @@ def validate() -> dict:
     require(
         record.get("predecessor_replay") == {
             "authorities": [
+                "phase21_opening_evidence_v1",
+                "phase21_residue_migration_authority_v1",
                 "phase21_compiler_support_native_qualification_v1",
                 "phase21_selected_compiler_module_qualification_v1",
             ],
