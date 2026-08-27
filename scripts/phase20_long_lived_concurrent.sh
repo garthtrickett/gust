@@ -87,12 +87,22 @@ set -euo pipefail
 exit 97
 POISON
 chmod +x "$poison"
-for excluded_source in "$runtime_source" "$resource_source"; do
+full_compiler_live="$(python3 -c '
+import json
+record = json.load(open("scripts/cranelift_feature_registry.json"))
+print(1 if record.get("phase21_full_compiler_native_qualification", {}).get("status") == "patch21_14_complete" else 0)
+')"
+if test "$full_compiler_live" = 1; then
+  excluded_sources=("$runtime_source")
+else
+  excluded_sources=("$runtime_source" "$resource_source")
+fi
+for excluded_source in "${excluded_sources[@]}"; do
   rm -f "$poison_marker"
   set +e
   GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
   GUST_PHASE20_POISON_MARKER="$poison_marker" \
-  GUST_NATIVE_BACKEND_DRIVER="$poison" \
+  GUST_NATIVE_BACKEND_DRIVER="$PWD/$poison" \
     ./gust --backend cranelift -o "$build_root/excluded-native" \
       "$excluded_source" >"$build_root/excluded.stdout" \
       2>"$build_root/excluded.stderr"
@@ -104,5 +114,25 @@ for excluded_source in "$runtime_source" "$resource_source"; do
   rg -F 'expected_failure_stage=before_driver_discovery' \
     "$build_root/excluded.stdout" >/dev/null
 done
+
+if test "$full_compiler_live" = 1; then
+  make build/gust-runtime-package.a
+  GUST_NATIVE_BACKEND_DRIVER="$PWD/$worker" \
+    ./gust --backend cranelift -o "$build_root/resource-native" \
+      "$resource_source" >"$build_root/resource-native.compile.stdout" \
+      2>"$build_root/resource-native.compile.stderr"
+  test ! -s "$build_root/resource-native.compile.stdout"
+  test ! -s "$build_root/resource-native.compile.stderr"
+  for run in $(seq 1 "$resource_runs"); do
+    timeout 30s "$build_root/resource-native" \
+      >"$build_root/resource-native.$run.stdout" \
+      2>"$build_root/resource-native.$run.stderr"
+    cmp -s "$build_root/resource.expected" \
+      "$build_root/resource-native.$run.stdout"
+    cmp -s "$build_root/resource.$run.stdout" \
+      "$build_root/resource-native.$run.stdout"
+    test ! -s "$build_root/resource-native.$run.stderr"
+  done
+fi
 
 echo "✅ Phase 20.15 profile=$profile cycles=$cycles resource-runs=$resource_runs passed"

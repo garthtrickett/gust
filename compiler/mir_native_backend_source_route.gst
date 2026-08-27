@@ -4,6 +4,7 @@ import "mir_native_backend_capability.gst" as capability;
 import "mir_native_backend_driver.gst" as driver;
 import "mir_native_backend_generic_source.gst" as generic_source;
 import "mir_native_backend_request.gst" as request;
+import "typechecker.gst" as typechecker;
 
 // Compiler-owned native source route.
 //
@@ -608,13 +609,14 @@ func mir_native_scalar_source_requires_retained_runtime_package(
     return 0;
 }
 
-func mir_native_scalar_source_compile_inner(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], output_path: str, ctx: &Arena) MirNativeScalarSourceRouteResult[ctx] {
+func mir_native_scalar_source_compile_inner(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], output_path: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) MirNativeScalarSourceRouteResult[ctx] {
     mut static_capabilities := mir_native_scalar_source_capabilities(ctx);
     mut generic_result := generic_source.mir_native_generic_source_lower(
         programs,
         module_paths,
         module_prefixes,
         static_capabilities,
+        env,
         ctx
     );
 
@@ -810,10 +812,22 @@ func mir_native_scalar_source_compile_inner(programs: std.Vector[ast.Program[ctx
         generic_result.bundle,
         ctx
     );
-    if mir_native_scalar_source_requires_retained_runtime_package(
-        generic_result.plan,
-        ctx
-    ) == 1 {
+    mut requires_retained_runtime :=
+        mir_native_scalar_source_requires_retained_runtime_package(
+            generic_result.plan,
+            ctx
+        );
+    mut request_modules: std.Vector[mir.MirProgramBundleModule[ctx], ctx] :=
+        ctx[generic_result.bundle.modules];
+    if len(request_modules) == 1 &&
+       std.str_eq(
+           request_modules[0].canonical_format,
+           "gust.compiler_executable_mir.v1"
+       ) == 1
+    {
+        requires_retained_runtime = 1;
+    }
+    if requires_retained_runtime == 1 {
         mut runtime_package_path := os.path_join(
             os.PathDir(ctx, discovery.path),
             "gust-runtime-package.a",
@@ -934,12 +948,13 @@ func mir_native_scalar_source_entry_location(programs: std.Vector[ast.Program[ct
     return location;
 }
 
-func mir_native_scalar_source_compile(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], output_path: str, ctx: &Arena) MirNativeScalarSourceRouteResult[ctx] {
+func mir_native_scalar_source_compile(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], output_path: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) MirNativeScalarSourceRouteResult[ctx] {
     mut result := mir_native_scalar_source_compile_inner(
         programs,
         module_paths,
         module_prefixes,
         output_path,
+        env,
         ctx
     );
     mut location := mir_native_scalar_source_entry_location(

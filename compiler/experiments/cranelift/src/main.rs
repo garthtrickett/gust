@@ -30,6 +30,7 @@ mod composition;
 mod target_authority;
 mod scope_exit_cleanup;
 mod specialized_resource;
+mod full_program;
 
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::env;
@@ -12830,6 +12831,51 @@ fn parse_phase10_program_mir_bundle(
             ));
         }
 
+        if canonical_format == full_program::FORMAT {
+            full_program::validate_contents(canonical_mir).map_err(|error| {
+                phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    format!("{module_key} full-program canonical MIR validation failed: {error}"),
+                )
+            })?;
+            if resource_metadata_count != 0
+                || provenance_metadata_count != 0
+                || native_boundary_metadata_count != 0
+                || !bundle_block_parameters.is_empty()
+            {
+                return Err(phase10_backend_request_error(
+                    stage,
+                    kind,
+                    format!(
+                        "{module_key} full-program canonical MIR must not duplicate legacy metadata or block-parameter indexes"
+                    ),
+                ));
+            }
+            for (link_name, (signature, linkage)) in &bundle_symbols {
+                if !signature.starts_with("full_program_signature:") {
+                    return Err(phase10_backend_request_error(
+                        stage,
+                        kind,
+                        format!(
+                            "{module_key} full-program symbol {link_name} lacks its canonical signature ordinal"
+                        ),
+                    ));
+                }
+                if linkage != "imported_host" && linkage != "imported_bundle" {
+                    canonical_defined_symbols.insert(link_name.clone());
+                }
+            }
+            modules.push(Phase10ProgramMirBundleModule {
+                module_path,
+                object_name,
+                canonical_format,
+                canonical_mir: canonical_mir.to_string(),
+                metadata: Vec::new(),
+            });
+            continue;
+        }
+
         let parsed = parse_compiler_mir_input(canonical_mir).map_err(
             |error| {
                 phase10_backend_request_error(
@@ -16254,6 +16300,42 @@ fn compile_phase10_scalar_metadata_request_path(
                 ));
             }
         }
+        let object_suffix = if bundle.module_count == 1 {
+            ".phase10-source-route.o".to_string()
+        } else {
+            format!(".phase10-source-route-{module_index}.o")
+        };
+        let object_path = compiler_mir_link_sibling_path(
+            &request.output_path,
+            &object_suffix,
+        )?;
+
+        if module_record.canonical_format == full_program::FORMAT {
+            if bundle.module_count != 1 {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::ProgramMirBundleValidation,
+                    Phase10BackendRequestFailureKind::InvalidBundle,
+                    "full-program canonical MIR requires exactly one bundle module",
+                ));
+            }
+            full_program::lower_contents(
+                &module_record.canonical_mir,
+                &object_path,
+            )
+            .map_err(|error| {
+                phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    format!("full-program canonical MIR lowering failed: {error}"),
+                )
+            })?;
+            object_paths.push(object_path);
+            source_route = "phase21_full_program";
+            reported_module_path = &module_record.module_path;
+            reported_object_name = &module_record.object_name;
+            continue;
+        }
+
         let parsed =
             parse_compiler_mir_input(&module_record.canonical_mir).map_err(
                 |error| {
@@ -16266,16 +16348,6 @@ fn compile_phase10_scalar_metadata_request_path(
                     )
                 },
             )?;
-
-        let object_suffix = if bundle.module_count == 1 {
-            ".phase10-source-route.o".to_string()
-        } else {
-            format!(".phase10-source-route-{module_index}.o")
-        };
-        let object_path = compiler_mir_link_sibling_path(
-            &request.output_path,
-            &object_suffix,
-        )?;
 
         match parsed {
             ParsedCompilerMirInput::V1(fixture) => {
@@ -16493,9 +16565,10 @@ fn compile_phase10_scalar_metadata_request_path(
 const PHASE10_DRIVER_PROTOCOL: &str = "gust.native_backend.driver.v1";
 const PHASE10_PROGRAM_MIR_BUNDLE_FORMAT: &str = "gust.compiler_program_mir_bundle.v1";
 const PHASE10_PIPELINE_TAXONOMY: &str = "gust.phase9g.pipeline.v1";
-const PHASE10_CANONICAL_MIR_FORMATS: [&str; 2] = [
+const PHASE10_CANONICAL_MIR_FORMATS: [&str; 3] = [
     "gust.compiler_mir_ingestion.v1",
     "gust.compiler_mir_ingestion.v2",
+    full_program::FORMAT,
 ];
 const PHASE10_DRIVER_OPERATIONS: [&str; 28] = [
     "ReturnI32",
@@ -16668,6 +16741,32 @@ fn run() -> Result<(), Box<dyn Error>> {
     };
 
     match command.as_str() {
+        "phase21-full-program-validate" => {
+            let Some(canonical_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            print!("{}", full_program::validate_path(Path::new(&canonical_path))?);
+            Ok(())
+        }
+        "phase21-full-program-object" => {
+            let Some(canonical_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            let Some(object_path) = args.next() else {
+                return Err(usage_error().into());
+            };
+            if args.next().is_some() {
+                return Err(usage_error().into());
+            }
+            print!(
+                "{}",
+                full_program::lower_path(Path::new(&canonical_path), Path::new(&object_path))?
+            );
+            Ok(())
+        }
         "phase16-abi-composition-witness" => {
             let Some(request_path) = args.next() else { return Err(usage_error().into()); };
             if args.next().is_some() { return Err(usage_error().into()); }

@@ -407,6 +407,7 @@ func main() {
                 order,
                 module_prefixes,
                 invocation.output_path,
+                &env,
                 ctx
             );
         if native_result.status == 0 {

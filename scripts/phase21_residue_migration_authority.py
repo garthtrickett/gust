@@ -179,11 +179,22 @@ def validate() -> dict:
         "phase21_resource_sync_native_source", {})
     if resource_sync_successor.get("status") == "patch21_11_complete":
         successor_modules.add("mir_native_backend_resource_sync_source.gst")
+    full_compiler_successor = registry.get(
+        "phase21_full_compiler_native_qualification", {})
+    full_compiler_edges: set[tuple[str, str]] = set()
+    if full_compiler_successor.get("status") == "patch21_14_complete":
+        successor_modules.add("mir_native_backend_full_program_source.gst")
+        full_compiler_edges = {
+            ("mir_native_backend_generic_source.gst", "typechecker.gst"),
+            ("mir_native_backend_source_route.gst", "typechecker.gst"),
+        }
     historical_reachable = reachable - successor_modules
     historical_edge_count = sum(
         1 for module, imports in edges.items()
         if module in historical_reachable
-        for dependency in imports if dependency in historical_reachable
+        for dependency in imports
+        if dependency in historical_reachable
+        and (module, dependency) not in full_compiler_edges
     )
     require(set(declared_modules) == historical_reachable and
             graph.get("module_count") == len(historical_reachable) == 38,

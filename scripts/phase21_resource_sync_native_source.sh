@@ -8,7 +8,21 @@ mkdir -p "$build_root"
 make phase10-native-package
 driver="$PWD/build/gust-native-backend"
 runtime="$PWD/build/gust-runtime-package.a"
-test "$(ar t "$runtime" | tr '\n' ' ')" = "arena.o host_io.o file_io.o scratch.o fiber.o "
+expected_runtime_members="arena.o host_io.o file_io.o scratch.o fiber.o "
+full_compiler_live="$(python3 -c '
+import json
+record = json.load(open("scripts/cranelift_feature_registry.json"))
+print(1 if record.get("phase21_full_compiler_native_qualification", {}).get("status") == "patch21_14_complete" else 0)
+')"
+if test "$full_compiler_live" = 1; then
+  expected_runtime_members="$(python3 -c '
+import json
+record = json.load(open("scripts/cranelift_feature_registry.json"))
+members = record["phase21_full_compiler_native_qualification"]["runtime_package"]["members"]
+print(" ".join(members), end=" ")
+')"
+fi
+test "$(ar t "$runtime" | tr '\n' ' ')" = "$expected_runtime_members"
 
 fixture="compiler/fixtures/native_backend_phase21_threading_source.mir"
 "$driver" compiler-mir-validate-fixture "$fixture" >"$build_root/fixture.validate"
@@ -121,16 +135,31 @@ while IFS=$'\t' read -r id source stage stdout_hex expected_exit; do
     "$stdout_hex" >"$dir/expected.stdout"
   cmp -s "$dir/expected.stdout" "$dir/oracle.stdout"
   test ! -s "$dir/oracle.stderr"
-  set +e
-  REAL_DRIVER="$driver" CAPTURE_PREFIX="$PWD/$dir/capture" \
-    GUST_NATIVE_BACKEND_DRIVER="$capture" \
-    ./gust --backend cranelift -o "$dir/native" "$source" \
-      >"$dir/native.stdout" 2>"$dir/native.stderr"
-  status=$?
-  set -e
-  test "$status" -ne 0
-  test ! -e "$dir/capture.request"
-  rg -F "expected_failure_stage=$stage" "$dir/native.stdout" >/dev/null
+  if test "$full_compiler_live" = 1; then
+    REAL_DRIVER="$driver" CAPTURE_PREFIX="$PWD/$dir/capture" \
+      GUST_NATIVE_BACKEND_DRIVER="$capture" \
+      ./gust --backend cranelift -o "$dir/native" "$source" \
+        >"$dir/native.compile.stdout" 2>"$dir/native.compile.stderr"
+    test ! -s "$dir/native.compile.stdout"
+    test ! -s "$dir/native.compile.stderr"
+    "$dir/native" >"$dir/native.stdout" 2>"$dir/native.stderr"
+    cmp -s "$dir/expected.stdout" "$dir/native.stdout"
+    test ! -s "$dir/native.stderr"
+    test -s "$dir/capture.request"
+    test -s "$dir/capture.bundle"
+    ! rg -F 'c_source' "$dir/capture.request" "$dir/capture.bundle" >/dev/null
+  else
+    set +e
+    REAL_DRIVER="$driver" CAPTURE_PREFIX="$PWD/$dir/capture" \
+      GUST_NATIVE_BACKEND_DRIVER="$capture" \
+      ./gust --backend cranelift -o "$dir/native" "$source" \
+        >"$dir/native.stdout" 2>"$dir/native.stderr"
+    status=$?
+    set -e
+    test "$status" -ne 0
+    test ! -e "$dir/capture.request"
+    rg -F "expected_failure_stage=$stage" "$dir/native.stdout" >/dev/null
+  fi
   test "$expected_exit" = 0
 done < <(python3 scripts/phase21_resource_sync_native_source.py rejection-lines)
 

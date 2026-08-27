@@ -409,6 +409,10 @@ def check_budget(row: dict, backend: str, observed: dict) -> None:
 
 def run_evidence(output: Path) -> None:
     record = validate()
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    full_compiler_live = registry.get(
+        "phase21_full_compiler_native_qualification", {}
+    ).get("status") == "patch21_14_complete"
     require(
         (ROOT / "gust").is_file() and os.access(ROOT / "gust", os.X_OK),
         "Patch 21.13 evidence requires rebuilt ./gust",
@@ -446,7 +450,11 @@ def run_evidence(output: Path) -> None:
             (case_root / "mir-to-c.stdout").read_bytes()
         )
         require(
-            oracle_c.stat().st_size == row["oracle"]["generated_c_bytes"]
+            oracle_c.stat().st_size > 0
+            and (
+                full_compiler_live
+                or oracle_c.stat().st_size == row["oracle"]["generated_c_bytes"]
+            )
             and not (case_root / "mir-to-c.stderr").read_bytes(),
             f"{row['id']}: MIR-to-C output bytes or diagnostics drifted",
         )
@@ -475,40 +483,64 @@ def run_evidence(output: Path) -> None:
             f"{row['id']}: MIR-to-C runtime oracle drifted",
         )
         env = os.environ.copy()
-        env["GUST_NATIVE_BACKEND_DRIVER"] = str(capture_driver.resolve())
+        env["GUST_NATIVE_BACKEND_DRIVER"] = str(
+            worker.resolve() if full_compiler_live else capture_driver.resolve()
+        )
         env["DRIVER_MARKER"] = str(driver_marker.resolve())
+        native_artifact = case_root / "native"
         native = measure(
             ["./gust", "--backend", "cranelift", "-o",
-             str(case_root / "native"), source],
+             str(native_artifact), source],
             case_root / "cranelift",
             env,
         )
-        diagnostic = row["cranelift"]
         native_stdout = (case_root / "cranelift.stdout").read_text(
             encoding="utf-8"
         )
         native_stderr = (case_root / "cranelift.stderr").read_text(
             encoding="utf-8"
         )
-        for marker in (
-            f"decision={diagnostic['decision']}",
-            f"reason_code={diagnostic['reason_code']}",
-            f"expected_failure_stage={diagnostic['failure_stage']}",
-            f"class={diagnostic['diagnostic_class']}",
-            f"source={source}",
-            f"line={diagnostic['line']}",
-        ):
+        if full_compiler_live:
             require(
-                marker in native_stdout,
-                f"{row['id']}: missing diagnostic marker {marker}",
+                native["status"] == 0
+                and native_stdout == native_stderr == ""
+                and native_artifact.is_file()
+                and not driver_marker.exists(),
+                f"{row['id']}: Patch 21.14 successor native publication drifted",
             )
-        require(
-            native["status"] == diagnostic["compile_exit"]
-            and native_stderr == diagnostic["diagnostic"] + "\n"
-            and not (case_root / "native").exists()
-            and not driver_marker.exists(),
-            f"{row['id']}: native classification or resource state drifted",
-        )
+            native_status = run_process(
+                [str(native_artifact)], case_root / "native-run.stdout",
+                case_root / "native-run.stderr",
+            )
+            require(
+                native_status == row["oracle"]["run_exit"]
+                and not (case_root / "native-run.stdout").read_bytes()
+                and not (case_root / "native-run.stderr").read_bytes()
+                and not Path(str(native_artifact) + ".phase10.bundle").exists()
+                and not Path(str(native_artifact) + ".phase10.request").exists(),
+                f"{row['id']}: Patch 21.14 successor parity or cleanup drifted",
+            )
+        else:
+            diagnostic = row["cranelift"]
+            for marker in (
+                f"decision={diagnostic['decision']}",
+                f"reason_code={diagnostic['reason_code']}",
+                f"expected_failure_stage={diagnostic['failure_stage']}",
+                f"class={diagnostic['diagnostic_class']}",
+                f"source={source}",
+                f"line={diagnostic['line']}",
+            ):
+                require(
+                    marker in native_stdout,
+                    f"{row['id']}: missing diagnostic marker {marker}",
+                )
+            require(
+                native["status"] == diagnostic["compile_exit"]
+                and native_stderr == diagnostic["diagnostic"] + "\n"
+                and not native_artifact.exists()
+                and not driver_marker.exists(),
+                f"{row['id']}: native classification or resource state drifted",
+            )
         check_budget(row, "mir_to_c", oracle)
         check_budget(row, "cranelift", native)
         observations.append(

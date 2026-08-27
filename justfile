@@ -17199,6 +17199,24 @@ guard-cranelift-phase21-native-feature-seed-convergence:
     python3 scripts/phase21_native_feature_seed_convergence.py validate
     python3 scripts/phase21_native_feature_seed_convergence.py check-review
 
+guard-cranelift-phase21-full-compiler-native-qualification-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🏗️ Checking Phase 21 full-compiler native qualification authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-full-compiler-native-qualification-contract | grep -F $'guard-cranelift-phase21-full-compiler-native-qualification-contract\t1\t' >/dev/null
+    just guard-cranelift-phase21-native-feature-seed-convergence
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase21_full_compiler_native_qualification.py validate
+    python3 scripts/phase21_full_compiler_native_qualification.py check-review
+
+guard-cranelift-phase21-full-compiler-native-qualification-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Qualifying the full compiler through the explicit native route..."
+    just guard-cranelift-phase21-full-compiler-native-qualification-contract
+    python3 scripts/phase21_full_compiler_native_qualification.py evidence
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

@@ -1,33 +1,49 @@
-name: Cranelift Phase 21 Residue Migration Authority
+name: Cranelift Phase 21 Full Compiler Native Qualification
 
 on:
   pull_request:
     paths:
       - 'TASK.md'
+      - 'Makefile'
       - 'compiler/*.gst'
+      - 'compiler/CRANELIFT_PHASE21_FULL_COMPILER_NATIVE_QUALIFICATION.md'
+      - 'compiler/fixtures/native_backend_phase21_full_program_minimal.mir'
+      - 'compiler/experiments/cranelift/**'
+      - 'src/runtime.c'
+      - 'src/runtime/**'
       - 'scripts/cranelift_feature_registry.json'
       - 'scripts/cranelift_feature_registry.schema.json'
       - 'scripts/cranelift_registry.py'
       - 'scripts/cranelift_test_levels.json'
-      - 'scripts/phase21_opening.py'
-      - 'scripts/phase21_opening.sh'
+      - 'scripts/phase21_full_compiler_native_qualification.py'
+      - 'scripts/phase21_compiler_support_native_qualification.py'
       - 'scripts/phase21_residue_migration_authority.py'
+      - 'scripts/phase21_opening.sh'
       - '.github/workflows/phase21-residue-migration-authority.yml'
+      - '.github/workflows/phase21-full-compiler-native-qualification.yml'
       - '.github/workflows/pr-fast.yml'
       - 'justfile'
   push:
     branches: [main]
     paths:
       - 'TASK.md'
+      - 'Makefile'
       - 'compiler/*.gst'
+      - 'compiler/CRANELIFT_PHASE21_FULL_COMPILER_NATIVE_QUALIFICATION.md'
+      - 'compiler/fixtures/native_backend_phase21_full_program_minimal.mir'
+      - 'compiler/experiments/cranelift/**'
+      - 'src/runtime.c'
+      - 'src/runtime/**'
       - 'scripts/cranelift_feature_registry.json'
       - 'scripts/cranelift_feature_registry.schema.json'
       - 'scripts/cranelift_registry.py'
       - 'scripts/cranelift_test_levels.json'
-      - 'scripts/phase21_opening.py'
-      - 'scripts/phase21_opening.sh'
+      - 'scripts/phase21_full_compiler_native_qualification.py'
+      - 'scripts/phase21_compiler_support_native_qualification.py'
       - 'scripts/phase21_residue_migration_authority.py'
+      - 'scripts/phase21_opening.sh'
       - '.github/workflows/phase21-residue-migration-authority.yml'
+      - '.github/workflows/phase21-full-compiler-native-qualification.yml'
       - '.github/workflows/pr-fast.yml'
       - 'justfile'
   workflow_dispatch:
@@ -47,17 +63,17 @@ jobs:
       - uses: actions/checkout@v4
       - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
       - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - name: guard-cranelift-phase21-residue-migration-authority-contract
-        run: just guard-cranelift-phase21-residue-migration-authority-contract
+      - name: guard-cranelift-phase21-full-compiler-native-qualification-contract
+        run: just guard-cranelift-phase21-full-compiler-native-qualification-contract
 
   evidence:
     needs: contract
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
       - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
       - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: make gust phase10-native-package
-      - name: guard-cranelift-phase21-residue-migration-authority-evidence
-        run: just guard-cranelift-phase21-residue-migration-authority-evidence
+      - name: guard-cranelift-phase21-full-compiler-native-qualification-evidence
+        run: just guard-cranelift-phase21-full-compiler-native-qualification-evidence

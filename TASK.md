@@ -97,7 +97,7 @@ Out of scope:
 - [x] Patch 21.12 — Compiler Support-Library Native Qualification — DONE
 - [x] Patch 21.13 — Selected Compiler-Module Native Qualification — DONE
 - [x] Patch 21.13a — Native-Feature Bootstrap Seed Reconvergence — DONE
-- [ ] Patch 21.14 — Full Compiler Canonical-MIR and Native Object Qualification
+- [x] Patch 21.14 — Full Compiler Canonical-MIR and Native Object Qualification — DONE
 - [ ] Patch 21.15 — Cranelift-Built Compiler Program Compilation
 - [ ] Patch 21.16 — Native Rebuild Reproducibility Authority
 - [ ] Patch 21.17 — Complete Guard Suite and Resource Budgets
@@ -454,6 +454,36 @@ Produce canonical MIR and a linked native compiler object for the full compiler
 with no generated C in the qualified native route. Verify target/layout/ABI,
 runtime package, linker, object publication, failure cleanup, and deterministic
 diagnostics under the existing authorities.
+
+The implemented generic source projection serializes the typed full-program
+graph as strict `gust.compiler_executable_mir.v1`: module identities, retained-C
+layout and enum authority, function signatures, post-order executable nodes,
+target/object policy, and one entry identity. The worker independently parses
+and validates that payload before using the existing Phase 14–16 layout,
+aggregate-transport, function-ABI, native-boundary, object, runtime-package,
+and linker authorities. The compact outer program bundle publishes only
+`main`; it does not duplicate the payload-owned symbol index. No selected
+compiler module receives an exception and explicit Cranelift never falls back.
+
+The qualified full compiler reaches the driver, emits and links an ELF64 PIE,
+exports `main`, and produces byte-identical help output to the MIR-to-C-built
+compiler. The runtime package contains the eight existing registered object
+members, with no symbol or ABI change. A minimal strict full-program fixture
+proves relocatable-object publication; its generic unknown-operation mutation
+proves byte-identical diagnostics across repeated attempts and leaves no failed
+object. The production route leaves no generated C, request, bundle, or
+intermediate object. Registry-owned elapsed/RSS and artifact-size budgets bound
+the authoritative environment.
+
+**Exit Gate:** the full compiler is represented by one strict generic canonical
+payload and reaches the explicit native driver without fallback or generated C;
+the worker revalidates target, object, layout, enum, function, operation, and
+entry authority before emission; the linked compiler satisfies the registered
+ELF, symbol, runtime-package, linker-log, cleanup, deterministic-diagnostic,
+artifact-size, elapsed-time, and peak-memory contracts; the minimal positive and
+malformed canonical-MIR witnesses pass; MIR-to-C remains the oracle; accepted
+Gust meaning, module-specific behavior, ABI/layout/runtime symbols, bootstrap
+seed, default backend, Stdlib, CR-15, Patch 21.15, and OD-15 remain unchanged.
 
 ## Patch 21.15 — Cranelift-Built Compiler Program Compilation
 

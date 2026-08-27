@@ -76,21 +76,44 @@ printf '%s\n' "$*" >"$GUST_PHASE20_POISON_MARKER"
 exit 97
 POISON
 chmod +x "$poison"
-set +e
-GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
-GUST_PHASE20_POISON_MARKER="$poison_marker" \
-GUST_NATIVE_BACKEND_DRIVER="$poison" \
-  ./gust --backend cranelift -o "$build_root/direct-native" "$positive" \
-  >"$build_root/direct.stdout" 2>"$build_root/direct.stderr"
-direct_status="$?"
-set -e
-test "$direct_status" -ne 0
-test ! -e "$poison_marker"
-rg -F 'decision=source_or_type_failure capability=phase13_generic_source_to_mir' \
-  "$build_root/direct.stdout" >/dev/null
-rg -F 'expected_failure_stage=before_driver_discovery' \
-  "$build_root/direct.stdout" >/dev/null
-rg -F 'class=canonical_mir_verification_error' "$build_root/direct.stdout" >/dev/null
-test ! -e "$build_root/direct-native"
+full_compiler_live="$(python3 -c '
+import json
+record = json.load(open("scripts/cranelift_feature_registry.json"))
+print(1 if record.get("phase21_full_compiler_native_qualification", {}).get("status") == "patch21_14_complete" else 0)
+')"
+if test "$full_compiler_live" = 1; then
+  make build/gust-runtime-package.a
+  GUST_NATIVE_BACKEND_DRIVER="$PWD/$worker" \
+    ./gust --backend cranelift -o "$build_root/direct-native" "$positive" \
+      >"$build_root/direct.compile.stdout" \
+      2>"$build_root/direct.compile.stderr"
+  test ! -s "$build_root/direct.compile.stdout"
+  test ! -s "$build_root/direct.compile.stderr"
+  set +e
+  "$build_root/direct-native" >"$build_root/direct.stdout" \
+    2>"$build_root/direct.stderr"
+  direct_status="$?"
+  set -e
+  test "$direct_status" = "$mir_status"
+  cmp -s "$build_root/mir-to-c.stdout" "$build_root/direct.stdout"
+  cmp -s "$build_root/mir-to-c.stderr" "$build_root/direct.stderr"
+else
+  set +e
+  GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
+  GUST_PHASE20_POISON_MARKER="$poison_marker" \
+  GUST_NATIVE_BACKEND_DRIVER="$poison" \
+    ./gust --backend cranelift -o "$build_root/direct-native" "$positive" \
+    >"$build_root/direct.stdout" 2>"$build_root/direct.stderr"
+  direct_status="$?"
+  set -e
+  test "$direct_status" -ne 0
+  test ! -e "$poison_marker"
+  rg -F 'decision=source_or_type_failure capability=phase13_generic_source_to_mir' \
+    "$build_root/direct.stdout" >/dev/null
+  rg -F 'expected_failure_stage=before_driver_discovery' \
+    "$build_root/direct.stdout" >/dev/null
+  rg -F 'class=canonical_mir_verification_error' "$build_root/direct.stdout" >/dev/null
+  test ! -e "$build_root/direct-native"
+fi
 
 echo "✅ Phase 20 exact branded boundary parity passed"

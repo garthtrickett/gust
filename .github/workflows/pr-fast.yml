@@ -452,6 +452,9 @@ jobs:
       - name: Phase 21 native-feature bootstrap seed convergence
         run: just guard-cranelift-phase21-native-feature-seed-convergence
 
+      - name: Phase 21 full-compiler native qualification
+        run: just guard-cranelift-phase21-full-compiler-native-qualification-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 

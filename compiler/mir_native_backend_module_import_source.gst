@@ -1569,6 +1569,55 @@ func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx
         module_identity_index = module_identity_index + 1;
     }
 
+    // Host-import authority applies before selecting a specialized or generic
+    // executable body lowerer. A broader body must not bypass the approved
+    // import/runtime registry merely because this compatibility profile later
+    // declines to represent it.
+    mut preflight_hosts: std.Vector[MirNativeModuleImportHost[ctx], ctx] :=
+        std.VectorNew(ctx);
+    mut preflight_module_index := 0;
+    while preflight_module_index < len(programs) {
+        mut preflight_program := programs[preflight_module_index];
+        mut preflight_statements: std.Vector[ast.Statement[ctx], ctx] :=
+            ctx[preflight_program.statements];
+        mut preflight_statement_index := 0;
+        while preflight_statement_index < len(preflight_statements) {
+            mut preflight_statement :=
+                preflight_statements[preflight_statement_index];
+            unsafe {
+                if preflight_statement.tag == 3 &&
+                   preflight_statement.FunctionDecl.is_extern == 1
+                {
+                    mut preflight_host := mir_native_module_import_make_host(
+                        preflight_statement,
+                        preflight_module_index,
+                        ctx
+                    );
+                    if len(preflight_host.name) == 0 {
+                        model.represented = 1;
+                        return mir_native_module_import_invalid(
+                            model,
+                            "Native backend canonical MIR verification failed: unsupported external declaration shape",
+                            ctx
+                        );
+                    }
+                    preflight_hosts.Push(preflight_host);
+                }
+            }
+            preflight_statement_index = preflight_statement_index + 1;
+        }
+        preflight_module_index = preflight_module_index + 1;
+    }
+    if len(preflight_hosts) > 0 {
+        model.represented = 1;
+        ctx.Set(model.hosts, preflight_hosts);
+        model = mir_native_module_import_validate_host_registry(model, ctx);
+        if model.invalid == 1 {
+            return model;
+        }
+        model = mir_native_module_import_empty_model(ctx);
+    }
+
     mut functions: std.Vector[MirNativeModuleImportFunction[ctx], ctx] :=
         std.VectorNew(ctx);
     mut hosts: std.Vector[MirNativeModuleImportHost[ctx], ctx] :=
@@ -1621,12 +1670,12 @@ func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx
                             if has_module_import_surface == 1 ||
                                len(programs) > 1
                             {
-                                model.represented = 1;
-                                return mir_native_module_import_invalid(
-                                    model,
-                                    "Native backend canonical MIR verification failed: module function uses an unsupported scalar signature",
-                                    ctx
-                                );
+                                // Patch 21.14 lets the generic full-program
+                                // lowerer classify non-scalar signatures after
+                                // every earlier specialized cohort declines.
+                                // This scalar compatibility lowerer must not
+                                // claim or reject that broader program.
+                                return mir_native_module_import_empty_model(ctx);
                             }
                             return model;
                         }
@@ -1712,11 +1761,13 @@ func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx
                             ctx
                         );
                     if analyzed.profile < 0 {
-                        return mir_native_module_import_invalid(
-                            model,
-                            "Native backend canonical MIR verification failed: module/import function body is outside the initial direct scalar profile",
-                            ctx
-                        );
+                        // A valid but broader body belongs to the generic
+                        // Patch 21.14 full-program lowerer. Preserve hard
+                        // rejection for malformed scalar MIR elsewhere, but
+                        // do not let this compatibility profile shadow the
+                        // production route. Host authority was preflighted
+                        // before body-profile selection above.
+                        return mir_native_module_import_empty_model(ctx);
                     }
                     functions.Set(function_index, analyzed);
                 }

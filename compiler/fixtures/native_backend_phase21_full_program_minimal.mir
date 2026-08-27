@@ -1,0 +1,14 @@
+format: gust.compiler_executable_mir.v1
+target_triple_utf8_hex: 7838365f36342d756e6b6e6f776e2d6c696e75782d676e75
+object_format_utf8_hex: 456c66
+module_count: 1
+module: 0|636f6d70696c65722f706861736532315f66756c6c5f70726f6772616d5f6d696e696d616c2e677374|
+layout_count: 0
+enum_count: 0
+function_count: 1
+function: 0|0|6d61696e|6d61696e|0||496e74|2|0
+node_count: 3
+node: 0|496e74656765724c69746572616c|496e74|||0|0|1|1|0|1|0
+node: 1|52657475726e|566f6964|||0|0|1|1|0|1|1|0
+node: 2|426c6f636b|566f6964|||0|0|1|1|0|1|1|1
+entry_function_index: 0

@@ -53,6 +53,7 @@
     "phase21_compiler_support_native_qualification",
     "phase21_selected_compiler_module_qualification",
     "phase21_native_feature_seed_convergence",
+    "phase21_full_compiler_native_qualification",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -2036,6 +2037,92 @@
             "changes_default_backend_or_fallback": false,
             "edits_stdlib_or_CR15": false,
             "begins_patch21_14": false
+          }
+        }
+      },
+      "phase21_full_compiler_native_qualification": {
+        "const": {
+          "contract_version": "phase21_full_compiler_native_qualification_v1",
+          "status": "patch21_14_complete",
+          "next_patch": "21.15",
+          "review_view": "compiler/CRANELIFT_PHASE21_FULL_COMPILER_NATIVE_QUALIFICATION.md",
+          "observed_main_sha": "649236a673888d4b1da1f1d33c3ffe376fa1cf8a",
+          "predecessor_authority": "phase21_native_feature_seed_convergence_v1",
+          "source_entry": "compiler/test_runner_entry.gst",
+          "canonical_format": "gust.compiler_executable_mir.v1",
+          "program_bundle_format": "gust.compiler_program_mir_bundle.v1",
+          "target_triple": "x86_64-unknown-linux-gnu",
+          "object_format": "Elf",
+          "semantic_oracle": "mir_to_c",
+          "fallback_policy": "explicit_cranelift_no_fallback",
+          "canonical_inventory": {
+            "module_count": 42,
+            "minimum_layout_count": 788,
+            "minimum_enum_count": 40,
+            "minimum_function_count": 1803,
+            "minimum_node_count": 247483,
+            "entry_function": "main",
+            "symbol_authority": "strict_payload_worker_rederived_outer_bundle_exports_main_only"
+          },
+          "runtime_package": {
+            "format": "static_archive",
+            "members": ["arena.o","host_io.o","file_io.o","scratch.o","fiber.o","collections.o","strings.o","approved_scalar_imports.o"],
+            "symbol_policy": "existing_registered_runtime_symbols_only"
+          },
+          "resource_cleanup_transport": {
+            "source_authority": "typechecker_resource_cleanup_plans",
+            "operations": ["ResourceStorage","ConditionalCleanup","ScopeCleanup"],
+            "normal_exit_order": "source_defers_then_scope_cleanup_plan",
+            "return_order": "all_active_source_defers_then_return_cleanup_plan",
+            "backend_inference": false
+          },
+          "entry_exit_status_transport": {
+            "source_authority": "mir_to_c_gust_user_exit_status",
+            "callback_policy": "store_scalar_user_main_result",
+            "process_entry_policy": "load_after_scheduler_destroy",
+            "void_main_exit_status": 0
+          },
+          "artifact": {
+            "kind": "linked_native_executable",
+            "elf_class": "ELF64",
+            "elf_type": "DYN",
+            "machine": "Advanced Micro Devices X86-64",
+            "minimum_bytes": 1048576,
+            "maximum_bytes": 20971520,
+            "exports_main": true,
+            "generated_C_in_qualified_route": false
+          },
+          "failure_contract": {
+            "fixture": "compiler/fixtures/native_backend_phase21_full_program_minimal.mir",
+            "malformation": "unknown_full_program_operation",
+            "exit_status": 2,
+            "diagnostic": "gust Cranelift experiment failed: unknown full-program operation BogusOperation\n",
+            "diagnostic_runs_byte_identical": true,
+            "failed_object_absent": true,
+            "transient_request_bundle_and_object_absent_after_success": true
+          },
+          "predecessor_replay": {
+            "authorities": ["phase20_nested_brand_annotation_correction_v1","phase20_exact_brand_boundary_v1","phase20_long_lived_concurrent_v1","phase20_cross_feature_qualification_v1","phase21_opening_evidence_v1","phase21_residue_migration_authority_v1","phase21_collection_string_native_source_v1","phase21_filesystem_allocation_native_source_v1","phase21_resource_sync_native_source_v1","phase21_compiler_support_native_qualification_v1","phase21_selected_compiler_module_qualification_v1"],
+            "historical_records_preserved": true,
+            "live_decision": "supported",
+            "canonical_format": "gust.compiler_executable_mir.v1",
+            "artifact": "linked_native_executable",
+            "execution_policy": "exit_stdout_and_stderr_match_each_slice_MIR_to_C_oracle"
+          },
+          "measurements": {
+            "observed_compile_elapsed_ms": 52921,
+            "observed_peak_rss_kib": 4029696,
+            "max_compile_elapsed_ms": 600000,
+            "max_peak_rss_kib": 6291456
+          },
+          "boundary": {
+            "changes_accepted_Gust_program_meaning": false,
+            "adds_module_specific_exceptions": false,
+            "changes_ABI_layout_or_runtime_symbols": false,
+            "changes_bootstrap_seed": false,
+            "changes_default_backend_or_fallback": false,
+            "edits_stdlib_or_CR15": false,
+            "begins_patch21_15": false
           }
         }
       },
