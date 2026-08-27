@@ -388,10 +388,10 @@ func mir_native_backend_validate_driver_handshake(handshake: MirNativeBackendDri
     }
 
     mut canonical_formats: std.Vector[str, ctx] := ctx[handshake.canonical_mir_formats];
-    if len(canonical_formats) != 2 {
+    if len(canonical_formats) != 3 {
         return mir_native_backend_make_driver_handshake_result(
             4,
-            "native backend driver must advertise exactly the frozen v1 and v2 canonical MIR formats",
+            "native backend driver must advertise exactly the frozen v1, v2, and full-program canonical MIR formats",
             ctx
         );
     }
@@ -406,6 +406,13 @@ func mir_native_backend_validate_driver_handshake(handshake: MirNativeBackendDri
         return mir_native_backend_make_driver_handshake_result(
             4,
             "native backend driver canonical MIR v2 capability is missing or reordered",
+            ctx
+        );
+    }
+    if std.str_eq(canonical_formats[2], "gust.compiler_executable_mir.v1") == 0 {
+        return mir_native_backend_make_driver_handshake_result(
+            4,
+            "native backend driver full-program canonical MIR capability is missing or reordered",
             ctx
         );
     }

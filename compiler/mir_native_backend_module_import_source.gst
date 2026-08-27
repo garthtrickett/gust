@@ -1621,12 +1621,12 @@ func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx
                             if has_module_import_surface == 1 ||
                                len(programs) > 1
                             {
-                                model.represented = 1;
-                                return mir_native_module_import_invalid(
-                                    model,
-                                    "Native backend canonical MIR verification failed: module function uses an unsupported scalar signature",
-                                    ctx
-                                );
+                                // Patch 21.14 lets the generic full-program
+                                // lowerer classify non-scalar signatures after
+                                // every earlier specialized cohort declines.
+                                // This scalar compatibility lowerer must not
+                                // claim or reject that broader program.
+                                return mir_native_module_import_empty_model(ctx);
                             }
                             return model;
                         }
@@ -1712,11 +1712,12 @@ func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx
                             ctx
                         );
                     if analyzed.profile < 0 {
-                        return mir_native_module_import_invalid(
-                            model,
-                            "Native backend canonical MIR verification failed: module/import function body is outside the initial direct scalar profile",
-                            ctx
-                        );
+                        // A valid but broader body belongs to the generic
+                        // Patch 21.14 full-program lowerer. Preserve hard
+                        // rejection for malformed scalar MIR elsewhere, but
+                        // do not let this compatibility profile shadow the
+                        // production route.
+                        return mir_native_module_import_empty_model(ctx);
                     }
                     functions.Set(function_index, analyzed);
                 }

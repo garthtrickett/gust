@@ -75,6 +75,21 @@ def validate() -> dict:
             "qualification base drifted")
 
     current_reachable, current_edges = import_graph(graph.get("root", ""))
+    later_modules: set[str] = set()
+    full_compiler = registry.get("phase21_full_compiler_native_qualification", {})
+    if full_compiler.get("status") == "patch21_14_complete":
+        later_modules.add("mir_native_backend_full_program_source.gst")
+    later_edges = {
+        ("mir_native_backend_generic_source.gst", "typechecker.gst"),
+        ("mir_native_backend_source_route.gst", "typechecker.gst"),
+    } if later_modules else set()
+    current_reachable -= later_modules
+    current_edges = [
+        edge for edge in current_edges
+        if edge[0] not in later_modules
+        and edge[1] not in later_modules
+        and edge not in later_edges
+    ]
     authority_reachable = {module for row in graph.get("slices", [])
                            for module in row.get("modules", [])}
     authority_edges = [(source, dependency) for source, dependency in current_edges

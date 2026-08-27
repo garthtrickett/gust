@@ -2501,6 +2501,9 @@ func mir_program_bundle_format_is_supported(format_name: str) int {
     if std.str_eq(format_name, "gust.compiler_mir_ingestion.v2") == 1 {
         return 1;
     }
+    if std.str_eq(format_name, "gust.compiler_executable_mir.v1") == 1 {
+        return 1;
+    }
     return 0;
 }
 

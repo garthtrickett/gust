@@ -3,6 +3,7 @@ import "mir.gst" as mir;
 import "mir_native_backend_capability.gst" as capability;
 import "mir_native_backend_collection_string_source.gst" as collection_string;
 import "mir_native_backend_filesystem_allocation_source.gst" as filesystem_allocation;
+import "mir_native_backend_full_program_source.gst" as full_program;
 import "mir_native_backend_resource_sync_source.gst" as resource_sync;
 import "mir_native_backend_block_parameter_loop_source.gst" as block_parameter_loop;
 import "mir_native_backend_capability.gst" as capability;
@@ -13,6 +14,7 @@ import "mir_native_backend_module_import_source.gst" as module_import;
 import "mir_native_backend_parameter_argument_source.gst" as parameter_argument;
 import "mir_native_backend_structured_cfg_source.gst" as structured_cfg;
 import "mir_native_backend_scalar_expression_source.gst" as scalar_expression;
+import "typechecker.gst" as typechecker;
 
 // Compiler-owned generic source-to-canonical-MIR route.
 //
@@ -2465,6 +2467,29 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
         return plan;
     }
 
+    if std.str_eq(
+        modules[0].canonical_format,
+        "gust.compiler_executable_mir.v1"
+    ) == 1 {
+        // The full-program format owns strict operation/type/ABI validation in
+        // its worker parser. Keep the shared capability plan limited to the
+        // existing target and link requirements instead of substring-scanning
+        // the embedded compiler data as legacy scalar MIR operations.
+        mut full_module_path := modules[0].module_path;
+        plan = mir_native_generic_plan_add(
+            plan, 3, full_module_path, 0, "native_host", ctx
+        );
+        plan = mir_native_generic_plan_add(
+            plan, 3, full_module_path, 1,
+            "position_independent_code", ctx
+        );
+        plan = mir_native_generic_plan_add(
+            plan, 3, full_module_path, 2,
+            "native_executable_link", ctx
+        );
+        return plan;
+    }
+
     mut module_path := modules[0].module_path;
     mut has_local_set := 0;
     mut has_local_read := 0;
@@ -3165,7 +3190,7 @@ func mir_native_generic_plan_from_bundle(bundle: mir.MirProgramBundle[ctx], ctx:
     return plan;
 }
 
-func mir_native_generic_source_lower(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], static_capabilities: capability.MirNativeBackendCapabilitySet[ctx], ctx: &Arena) MirNativeGenericSourceResult[ctx] {
+func mir_native_generic_source_lower(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], static_capabilities: capability.MirNativeBackendCapabilitySet[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) MirNativeGenericSourceResult[ctx] {
     mut model := mir_native_generic_analyze(
         programs,
         module_paths,
@@ -3389,9 +3414,28 @@ func mir_native_generic_source_lower(programs: std.Vector[ast.Program[ctx], ctx]
                                 );
                             }
                             if local_state_result.represented == 0 {
-                                return mir_native_generic_empty_result(1, "", ctx);
+                                mut full_program_result :=
+                                    full_program.mir_native_full_program_source_lower(
+                                        programs,
+                                        module_paths,
+                                        module_prefixes,
+                                        env,
+                                        ctx
+                                    );
+                                if full_program_result.invalid == 1 {
+                                    return mir_native_generic_empty_result(
+                                        3,
+                                        full_program_result.diagnostic,
+                                        ctx
+                                    );
+                                }
+                                if full_program_result.represented == 0 {
+                                    return mir_native_generic_empty_result(1, "", ctx);
+                                }
+                                bundle = full_program_result.bundle;
+                            } else {
+                                bundle = local_state_result.bundle;
                             }
-                            bundle = local_state_result.bundle;
                         }
                         }
                     }
