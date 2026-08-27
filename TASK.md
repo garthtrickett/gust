@@ -98,7 +98,7 @@ Out of scope:
 - [x] Patch 21.13 — Selected Compiler-Module Native Qualification — DONE
 - [x] Patch 21.13a — Native-Feature Bootstrap Seed Reconvergence — DONE
 - [x] Patch 21.14 — Full Compiler Canonical-MIR and Native Object Qualification — DONE
-- [ ] Patch 21.15 — Cranelift-Built Compiler Program Compilation
+- [x] Patch 21.15 — Cranelift-Built Compiler Program Compilation — DONE
 - [ ] Patch 21.16 — Native Rebuild Reproducibility Authority
 - [ ] Patch 21.17 — Complete Guard Suite and Resource Budgets
 - [ ] Patch 21.18 — Phase 21 Closure

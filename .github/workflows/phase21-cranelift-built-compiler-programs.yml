@@ -1,0 +1,73 @@
+name: Cranelift Phase 21 Cranelift-Built Compiler Programs
+
+on:
+  pull_request:
+    paths:
+      - 'TASK.md'
+      - 'Makefile'
+      - 'compiler/*.gst'
+      - 'compiler/CRANELIFT_PHASE21_CRANELIFT_BUILT_COMPILER_PROGRAMS.md'
+      - 'compiler/experiments/cranelift/**'
+      - 'src/runtime.c'
+      - 'src/runtime/**'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase21_cranelift_built_compiler_programs.py'
+      - 'scripts/phase21_full_compiler_native_qualification.py'
+      - '.github/workflows/phase21-full-compiler-native-qualification.yml'
+      - '.github/workflows/phase21-cranelift-built-compiler-programs.yml'
+      - '.github/workflows/pr-fast.yml'
+      - 'justfile'
+  push:
+    branches: [main]
+    paths:
+      - 'TASK.md'
+      - 'Makefile'
+      - 'compiler/*.gst'
+      - 'compiler/CRANELIFT_PHASE21_CRANELIFT_BUILT_COMPILER_PROGRAMS.md'
+      - 'compiler/experiments/cranelift/**'
+      - 'src/runtime.c'
+      - 'src/runtime/**'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase21_cranelift_built_compiler_programs.py'
+      - 'scripts/phase21_full_compiler_native_qualification.py'
+      - '.github/workflows/phase21-full-compiler-native-qualification.yml'
+      - '.github/workflows/phase21-cranelift-built-compiler-programs.yml'
+      - '.github/workflows/pr-fast.yml'
+      - 'justfile'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-cranelift-phase21-cranelift-built-compiler-programs-contract
+        run: just guard-cranelift-phase21-cranelift-built-compiler-programs-contract
+
+  evidence:
+    needs: contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: make gust phase10-native-package
+      - name: guard-cranelift-phase21-cranelift-built-compiler-programs-evidence
+        run: just guard-cranelift-phase21-cranelift-built-compiler-programs-evidence

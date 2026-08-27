@@ -455,6 +455,9 @@ jobs:
       - name: Phase 21 full-compiler native qualification
         run: just guard-cranelift-phase21-full-compiler-native-qualification-contract
 
+      - name: Phase 21 Cranelift-built compiler program compilation
+        run: just guard-cranelift-phase21-cranelift-built-compiler-programs-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 

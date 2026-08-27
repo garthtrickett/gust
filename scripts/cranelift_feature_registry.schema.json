@@ -54,6 +54,7 @@
     "phase21_selected_compiler_module_qualification",
     "phase21_native_feature_seed_convergence",
     "phase21_full_compiler_native_qualification",
+    "phase21_cranelift_built_compiler_programs",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -2123,6 +2124,66 @@
             "changes_default_backend_or_fallback": false,
             "edits_stdlib_or_CR15": false,
             "begins_patch21_15": false
+          }
+        }
+      },
+      "phase21_cranelift_built_compiler_programs": {
+        "const": {
+          "contract_version": "phase21_cranelift_built_compiler_programs_v1",
+          "status": "patch21_15_complete",
+          "next_patch": "21.16",
+          "review_view": "compiler/CRANELIFT_PHASE21_CRANELIFT_BUILT_COMPILER_PROGRAMS.md",
+          "observed_main_sha": "4c62f7482c972f5019d112b48589fd4529edb692",
+          "predecessor_authority": "phase21_full_compiler_native_qualification_v1",
+          "compiler_source": "compiler/test_runner_entry.gst",
+          "compiler_build_backend": "cranelift",
+          "target_backend": "cranelift",
+          "semantic_oracle": "mir_to_c_compiled_program_execution",
+          "fallback_policy": "explicit_cranelift_no_fallback",
+          "compiler_artifact": {
+            "kind": "linked_native_executable",
+            "elf_class": "ELF64",
+            "machine": "Advanced Micro Devices X86-64",
+            "minimum_bytes": 4194304,
+            "maximum_bytes": 10485760,
+            "generated_C": false
+          },
+          "accepted_cases": [
+            {"id":"scalar_positive","cohort":"positive","source_fixture":"compiler/phase11_scalar_unsupported_multiply_source.gst","run_exit":12,"stdout":"","stderr":""},
+            {"id":"resource_cleanup","cohort":"resource","source_fixture":"compiler/phase20_resource_scope_cleanup_source.gst","run_exit":0,"stdout":"2\n1\n4\n3\n5\n9\n6\n7\n8\n10\n","stderr":""},
+            {"id":"imported_module","cohort":"module","source_fixture":"compiler/phase21_selected_declaration_source.gst","run_exit":42,"stdout":"","stderr":""},
+            {"id":"trusted_typed_query","cohort":"typed_query","source_fixture":"compiler/phase21_trusted_scope_positive.gst","run_exit":41,"stdout":"","stderr":""}
+          ],
+          "rejected_cases": [
+            {"id":"scalar_type_error","cohort":"negative","source_fixture":"compiler/phase13_scalar_invalid_operand_source.gst","compile_exit":1,"diagnostic_class":"TypeMismatch"},
+            {"id":"typed_query_provenance_error","cohort":"typed_query_negative","source_fixture":"compiler/phase21_trusted_scope_absent_invalid.gst","compile_exit":1,"diagnostic_class":"TenantScopeProvenance"}
+          ],
+          "comparison_contract": {
+            "accepted_compile_diagnostics": "empty_for_both_compiler_origins",
+            "accepted_execution": "exit_stdout_and_stderr_byte_identical_to_MIR_to_C_oracle",
+            "accepted_native_artifacts": "C_built_and_Cranelift_built_compilers_emit_byte_identical_ELF_executables",
+            "rejected_diagnostics": "stdout_and_stderr_byte_identical_between_compiler_origins",
+            "rejected_driver_policy": "rejection_precedes_native_driver_discovery",
+            "side_effect_policy": "program_output_and_phase9g_link_logs_byte_identical_between_compiler_origins",
+            "failure_cleanup": "no_output_request_bundle_object_or_generated_C"
+          },
+          "measurements": {
+            "observed_compiler_build_elapsed_ms": 39658,
+            "observed_suite_elapsed_ms": 41556,
+            "observed_peak_rss_kib": 4041984,
+            "observed_compiler_bytes": 5696280,
+            "max_compiler_build_elapsed_ms": 600000,
+            "max_suite_elapsed_ms": 180000,
+            "max_peak_rss_kib": 6291456
+          },
+          "boundary": {
+            "changes_accepted_Gust_program_meaning": false,
+            "adds_or_changes_MIR_operations": false,
+            "changes_ABI_layout_or_runtime_symbols": false,
+            "changes_bootstrap_seed": false,
+            "changes_default_backend_or_fallback": false,
+            "edits_stdlib_or_CR15": false,
+            "begins_patch21_16_or_OD15": false
           }
         }
       },
