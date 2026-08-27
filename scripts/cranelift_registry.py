@@ -58,6 +58,7 @@ TOP_FIELDS = {
     "phase21_native_feature_seed_convergence",
     "phase21_full_compiler_native_qualification",
     "phase21_cranelift_built_compiler_programs",
+    "phase21_native_rebuild_reproducibility",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming", "phase19_classification", "phase19_representation",

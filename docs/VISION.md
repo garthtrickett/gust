@@ -452,7 +452,7 @@ second, drifting copy of it.
 | OD-12 | ~~**Mobile execution boundary** — should mobile apps remain Gust-only above compiler-owned Swift/Kotlin hosts, or may application authors mix Swift/Kotlin into the normal source model?~~ | **RESOLVED 2026-08-21** — AOT Gust core plus generated, pinned Swift/Kotlin hosts; application-authored native code is only an explicit in-process escape hatch and forfeits the named process-integrity guarantee | — | `docs/MOBILE_NATIVE_DEPLOYMENT.md` §10; client consequences in Part IX; guarantee boundary in §93 and §98 |
 | OD-13 | ~~**Mutex protected-access contract** — does lock acquisition return a linear guard carrying context-branded protected access, another compiler-owned access token, or retain raw-pointer access plus explicit unlock?~~ | **RESOLVED 2026-08-24** — safe lock acquisition returns one move-only linear guard carrying context-branded protected access; the guard owns automatic exactly-once unlock | — | §26.1; compiler evidence in `docs/SHARED_SEMANTIC_ZONE.md` D-4; implementation sequencing in `TASK.md` Patches 20.16a–20.16e |
 | OD-14 | **Gust mascot** — should Gust's mascot be a donkey, and what visual treatment should carry the identity? | **OPEN** — provisional direction recorded 2026-08-24: a donkey | Brand and demo presentation | §0.15.1 |
-| OD-15 | **Native self-host reproducibility criterion** — must independent Cranelift compiler stages be byte-identical, or is a bounded semantic reproducibility contract sufficient? | **OPEN** — registered 2026-08-24; no criterion is implied by starting Phase 21 | Phase 21 closure | `TASK.md` Patch 21.16; Phase 21 shape in `docs/ROADMAP_TAIL.md` |
+| OD-15 | ~~**Native self-host reproducibility criterion** — must independent Cranelift compiler stages be byte-identical, or is a bounded semantic reproducibility contract sufficient?~~ | **RESOLVED 2026-08-27 — STRICT BINARY IDENTITY** — under an identical pinned authoritative environment (exact source commit, Cranelift/toolchain versions, target, flags, runtime, linker, and normalized environment), independently produced native stages must be byte-identical; a separately bounded cross-machine or cross-toolchain semantic contract cannot weaken the Phase 21 closure gate | — | §111.1; `TASK.md` Patch 21.16; generated evidence in `compiler/CRANELIFT_PHASE21_NATIVE_REBUILD_REPRODUCIBILITY.md` |
 
 There is no OD-7. The number is unused and nothing in the repository references it; it is recorded here so a reader who notices the gap does not go looking.
 
@@ -2510,6 +2510,20 @@ Content-addressed builds, no install-time execution (§15), virtualized time and
 > **One of those four holds; a stronger property is enforced elsewhere.** Verified 2026-08-20 at `b47d0049`. No install-time execution is real (no macros, build scripts, or compile-time execution). Content-addressed builds, virtualized time and randomness, and deterministic scheduling are all absent.
 >
 > What *is* enforced is byte-identical self-compilation: `make bootstrap` fails unless stage 2 and stage 3 are identical, and the converged output becomes the committed seed (`Makefile:199-202`). Object reproducibility has its own guard. That is a demanding determinism property checked on every bootstrap — it is about the compiler's output rather than a program's run. `docs/ONE_WAY_LEDGER.md` E24.
+
+### 111.1 Native self-host reproducibility (OD-15)
+
+**Resolved by the operator on 2026-08-27: strict binary identity under the
+pinned authoritative environment.** Independent Cranelift-built compiler
+stages produced from the identical authoritative source commit must be
+byte-identical when the Cranelift and toolchain versions, target, flags, runtime
+package, linker, and normalized environment are identical. Phase 21 closure
+depends on this stronger criterion.
+
+Cross-machine or cross-toolchain builds may later use a separately registered,
+precisely bounded semantic-reproducibility contract. Such a contract describes
+a different comparison population and does not weaken or substitute for Phase
+21's authoritative byte-identity gate.
 
 A nondeterministic run is not a weaker signal; it is a contaminated one, and must be discarded rather than averaged.
 
