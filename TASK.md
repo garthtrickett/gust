@@ -99,7 +99,7 @@ Out of scope:
 - [x] Patch 21.13a — Native-Feature Bootstrap Seed Reconvergence — DONE
 - [x] Patch 21.14 — Full Compiler Canonical-MIR and Native Object Qualification — DONE
 - [x] Patch 21.15 — Cranelift-Built Compiler Program Compilation — DONE
-- [ ] Patch 21.16 — Native Rebuild Reproducibility Authority
+- [x] Patch 21.16 — Native Rebuild Reproducibility Authority — DONE
 - [ ] Patch 21.17 — Complete Guard Suite and Resource Budgets
 - [ ] Patch 21.18 — Phase 21 Closure
 
@@ -498,6 +498,30 @@ Resolve the registered native-stage reproducibility decision with measured
 evidence, then use the Cranelift-built compiler to rebuild the compiler again.
 Require the selected criterion—binary identity or a precisely bounded semantic
 reproducibility contract—across independently produced native stages.
+
+**Resolved criterion (operator, 2026-08-27):** under an identical pinned
+authoritative environment—exact source commit, Cranelift and toolchain
+versions, target, flags, runtime package, linker, and normalized environment—
+independently produced native compiler stages must be byte-identical. A
+separately registered bounded semantic-reproducibility contract may govern
+cross-machine or cross-toolchain comparisons, but it cannot weaken this Phase
+21 closure gate.
+
+The registered N1a/N1b/N2/N3 evidence uses two independent publications by the
+MIR-to-C-built compiler followed by successive rebuilds through N1a and N2.
+Every stage uses explicit Cranelift with no fallback, emits the same ELF
+artifact bytes, produces the same `--help` behaviour, and leaves only the
+registered empty Phase 9G linker logs. The dedicated guard checks the live exact
+workflow-head commit rather than pinning legitimate future source revisions to
+one historical compiler hash.
+
+**Exit Gate:** OD-15 is resolved in `docs/VISION.md` and registry authority;
+the exact-head authoritative workflow pins and validates every environment
+input named above; N1a, N1b, N2, and N3 are byte-identical; help output and
+linker side effects agree; no generated C, request, bundle, object, or fallback
+appears; measured elapsed, memory, and artifact bounds hold; Patch 21.17,
+Stdlib, CR-15, accepted Gust meaning, MIR, ABI/layout/runtime symbols, default
+backend, and bootstrap seed remain unchanged.
 
 ## Patch 21.17 — Complete Guard Suite and Resource Budgets
 

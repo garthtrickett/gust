@@ -55,6 +55,7 @@
     "phase21_native_feature_seed_convergence",
     "phase21_full_compiler_native_qualification",
     "phase21_cranelift_built_compiler_programs",
+    "phase21_native_rebuild_reproducibility",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -1257,10 +1258,13 @@
             "negative_resolution_gate": "one_in_scope_compiling_leak_counterexample"
           }},
           "od15": {"const": {
-            "status": "open",
+            "status": "resolved_2026_08_27_strict_binary_identity",
             "question": "native_stage_binary_identity_or_bounded_semantic_reproducibility",
+            "criterion": "independently_produced_native_stages_are_byte_identical_under_the_pinned_authoritative_environment",
+            "authoritative_environment": ["exact_source_commit","cranelift_and_toolchain_versions","target","flags","runtime_package","linker","normalized_environment"],
+            "cross_environment_policy": "a_separately_bounded_semantic_reproducibility_contract_may_cover_cross_machine_or_cross_toolchain_builds_but_cannot_weaken_phase21_closure",
             "decision_patch": "21.16",
-            "blocks": "21.18"
+            "blocks": "none"
           }},
           "phase_boundary": {"const": {
             "roadmap_patch_changes_compiler_semantics": false,
@@ -2184,6 +2188,90 @@
             "changes_default_backend_or_fallback": false,
             "edits_stdlib_or_CR15": false,
             "begins_patch21_16_or_OD15": false
+          }
+        }
+      },
+      "phase21_native_rebuild_reproducibility": {
+        "const": {
+          "contract_version": "phase21_native_rebuild_reproducibility_v1",
+          "status": "patch21_16_complete",
+          "next_patch": "21.17",
+          "review_view": "compiler/CRANELIFT_PHASE21_NATIVE_REBUILD_REPRODUCIBILITY.md",
+          "observed_main_sha": "378c7067eb87a55874cdad80ed71159ccd211146",
+          "predecessor_authority": "phase21_cranelift_built_compiler_programs_v1",
+          "od15_resolution": "resolved_2026_08_27_strict_binary_identity",
+          "compiler_source": "compiler/test_runner_entry.gst",
+          "stage_graph": [
+            "N1a=packaged_MIR_to_C_built_compiler_to_Cranelift_native_compiler",
+            "N1b=independent_packaged_MIR_to_C_built_compiler_to_Cranelift_native_compiler",
+            "N2=N1a_to_Cranelift_native_compiler",
+            "N3=N2_to_Cranelift_native_compiler"
+          ],
+          "authoritative_environment": {
+            "source_commit_policy": "exact_clean_checked_out_workflow_head_for_every_stage",
+            "runner_image": "ubuntu-24.04",
+            "rustc_version": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+            "cargo_version": "cargo 1.97.1 (c980f4866 2026-06-30)",
+            "cranelift_version": "0.131.0",
+            "cranelift_manifest": "compiler/experiments/cranelift/Cargo.toml",
+            "cranelift_lockfile": "compiler/experiments/cranelift/Cargo.lock",
+            "dependency_resolution": "cargo_locked_exact_versions_and_checksums",
+            "target": "x86_64-unknown-linux-gnu",
+            "backend_flags": ["--backend", "cranelift"],
+            "cc": "cc",
+            "cc_version": "13.3.0",
+            "cflags": "-O2 -Wall -pthread",
+            "linker": "GNU ld",
+            "linker_version": "2.42",
+            "runtime_package": "build/phase10-package/bin/gust-runtime-package.a",
+            "normalized_environment": {
+              "LANG": "C.UTF-8",
+              "LC_ALL": "C.UTF-8",
+              "TZ": "UTC",
+              "SOURCE_DATE_EPOCH": "0",
+              "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+              "CC": "cc",
+              "CFLAGS": "-O2 -Wall -pthread",
+              "RUSTUP_TOOLCHAIN": "1.97.1"
+            }
+          },
+          "identity_contract": {
+            "criterion": "N1a_N1b_N2_and_N3_artifacts_are_byte_identical",
+            "help_behavior": "exit_stdout_and_stderr_are_byte_identical_across_all_stages",
+            "linker_side_effects": "every_stage_has_byte_identical_empty_phase9g_stdout_and_stderr_logs",
+            "fallback_policy": "explicit_cranelift_no_fallback",
+            "failure_cleanup": "no_generated_C_request_bundle_or_intermediate_object",
+            "cross_environment_policy": "separately_bounded_semantic_reproducibility_cannot_substitute_for_this_phase21_gate"
+          },
+          "decision_evidence": {
+            "operator_date": "2026-08-27",
+            "observed_artifact_bytes": 5696280,
+            "all_artifact_bytes_equal": true,
+            "all_help_behavior_equal": true,
+            "all_build_diagnostics_empty": true,
+            "all_linker_logs_empty": true
+          },
+          "measurements": {
+            "observed_n1a_elapsed_ms": 38320,
+            "observed_n1b_elapsed_ms": 39485,
+            "observed_n2_elapsed_ms": 87197,
+            "observed_n3_elapsed_ms": 77380,
+            "observed_suite_elapsed_ms": 242410,
+            "observed_peak_rss_kib": 4045952,
+            "max_stage_elapsed_ms": 180000,
+            "max_suite_elapsed_ms": 600000,
+            "max_peak_rss_kib": 6291456,
+            "minimum_artifact_bytes": 4194304,
+            "maximum_artifact_bytes": 10485760
+          },
+          "boundary": {
+            "changes_accepted_Gust_program_meaning": false,
+            "adds_or_changes_MIR_operations": false,
+            "changes_ABI_layout_or_runtime_symbols": false,
+            "changes_bootstrap_seed": false,
+            "changes_default_backend_or_fallback": false,
+            "edits_stdlib_or_CR15": false,
+            "begins_patch21_17": false
           }
         }
       },

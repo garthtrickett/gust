@@ -47,10 +47,20 @@ Generated from `scripts/cranelift_feature_registry.json` by
 
 ## OD-15
 
-- Status: `open`
+- Status: `resolved_2026_08_27_strict_binary_identity`
 - Question: `native_stage_binary_identity_or_bounded_semantic_reproducibility`
+- Criterion: `independently_produced_native_stages_are_byte_identical_under_the_pinned_authoritative_environment`
+- Pinned authoritative environment:
+  - `exact_source_commit`
+  - `cranelift_and_toolchain_versions`
+  - `target`
+  - `flags`
+  - `runtime_package`
+  - `linker`
+  - `normalized_environment`
+- Cross-environment policy: `a_separately_bounded_semantic_reproducibility_contract_may_cover_cross_machine_or_cross_toolchain_builds_but_cannot_weaken_phase21_closure`
 - Decision patch: `21.16`
-- Blocks: `21.18`
+- Blocks: `none`
 
 ## Roadmap-patch boundary
 

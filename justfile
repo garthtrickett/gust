@@ -17236,6 +17236,27 @@ guard-cranelift-phase21-cranelift-built-compiler-programs-evidence:
     just guard-cranelift-phase21-cranelift-built-compiler-programs-contract
     python3 scripts/phase21_cranelift_built_compiler_programs.py evidence
 
+guard-cranelift-phase21-native-rebuild-reproducibility-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔁 Checking Phase 21 native rebuild reproducibility authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-native-rebuild-reproducibility-contract | grep -F $'guard-cranelift-phase21-native-rebuild-reproducibility-contract\t1\t' >/dev/null
+    just guard-cranelift-phase21-cranelift-built-compiler-programs-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase21_roadmap.py validate
+    python3 scripts/phase21_roadmap.py check-review
+    python3 scripts/phase21_native_rebuild_reproducibility.py validate
+    python3 scripts/phase21_native_rebuild_reproducibility.py check-review
+    python3 scripts/phase21_native_rebuild_reproducibility.py deadline-regression
+
+guard-cranelift-phase21-native-rebuild-reproducibility-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Rebuilding the native compiler through independent Cranelift stages..."
+    just guard-cranelift-phase21-native-rebuild-reproducibility-contract
+    python3 scripts/phase21_native_rebuild_reproducibility.py evidence
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

@@ -94,6 +94,12 @@ def render(authority: dict) -> str:
         "", "## OD-15", "",
         f"- Status: `{od15['status']}`",
         f"- Question: `{od15['question']}`",
+        f"- Criterion: `{od15['criterion']}`",
+        "- Pinned authoritative environment:",
+    ]
+    lines += [f"  - `{field}`" for field in od15["authoritative_environment"]]
+    lines += [
+        f"- Cross-environment policy: `{od15['cross_environment_policy']}`",
         f"- Decision patch: `{od15['decision_patch']}`",
         f"- Blocks: `{od15['blocks']}`",
         "",
@@ -198,9 +204,27 @@ def validate() -> dict:
         "trusted request context",
     ):
         require(evidence in vision, f"VISION OD-8 authority is missing: {evidence}")
-    require("| OD-15 | **Native self-host reproducibility criterion**" in vision and
-            "**OPEN** — registered 2026-08-24" in vision,
-            "OD-15 is not registered as open")
+    require(authority.get("od15") == {
+        "status": "resolved_2026_08_27_strict_binary_identity",
+        "question": "native_stage_binary_identity_or_bounded_semantic_reproducibility",
+        "criterion": "independently_produced_native_stages_are_byte_identical_under_the_pinned_authoritative_environment",
+        "authoritative_environment": [
+            "exact_source_commit",
+            "cranelift_and_toolchain_versions",
+            "target",
+            "flags",
+            "runtime_package",
+            "linker",
+            "normalized_environment",
+        ],
+        "cross_environment_policy": "a_separately_bounded_semantic_reproducibility_contract_may_cover_cross_machine_or_cross_toolchain_builds_but_cannot_weaken_phase21_closure",
+        "decision_patch": "21.16",
+        "blocks": "none",
+    }, "OD-15 resolution authority drifted")
+    require("| OD-15 | ~~**Native self-host reproducibility criterion**" in vision and
+            "**RESOLVED 2026-08-27 — STRICT BINARY IDENTITY**" in vision and
+            "### 111.1 Native self-host reproducibility (OD-15)" in vision,
+            "VISION does not record the resolved OD-15 authority")
 
     shared = SHARED.read_text(encoding="utf-8")
     shared_flat = " ".join(shared.split())
