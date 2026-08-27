@@ -1124,6 +1124,7 @@ struct FullProgramCompiler<'a> {
     strings: HashMap<String, DataId>,
     user_main: Option<FuncId>,
     entry: Option<FuncId>,
+    user_exit_status: Option<DataId>,
     os_argc: Option<DataId>,
     os_argv: Option<DataId>,
 }
@@ -1141,6 +1142,7 @@ impl<'a> FullProgramCompiler<'a> {
             strings: HashMap::new(),
             user_main: None,
             entry: None,
+            user_exit_status: None,
             os_argc: None,
             os_argv: None,
         })
@@ -1322,6 +1324,18 @@ impl<'a> FullProgramCompiler<'a> {
             Linkage::Export,
             &entry_signature,
         )?);
+        if matches!(self.functions["main"].abi.result, AbiShape::Scalar(_)) {
+            let status = self.module.declare_data(
+                "gust_user_exit_status",
+                Linkage::Local,
+                true,
+                false,
+            )?;
+            let mut description = DataDescription::new();
+            description.define_zeroinit(4);
+            self.module.define_data(status, &description)?;
+            self.user_exit_status = Some(status);
+        }
         self.os_argc = Some(
             self.module
                 .declare_data("os_argc", Linkage::Import, true, false)?,
@@ -1528,7 +1542,25 @@ impl<'a> FullProgramCompiler<'a> {
         builder.append_block_params_for_function_params(block);
         builder.switch_to_block(block);
         let program_ref = self.module.declare_func_in_func(program_main, builder.func);
-        builder.ins().call(program_ref, &[]);
+        let program_call = builder.ins().call(program_ref, &[]);
+        if let Some(status) = self.user_exit_status {
+            let mut value = builder.inst_results(program_call)[0];
+            let value_type = builder.func.dfg.value_type(value);
+            value = if value_type.bits() < types::I32.bits() {
+                builder.ins().uextend(types::I32, value)
+            } else if value_type.bits() > types::I32.bits() {
+                builder.ins().ireduce(types::I32, value)
+            } else {
+                value
+            };
+            let status_ref = self.module.declare_data_in_func(status, builder.func);
+            let status_address = builder
+                .ins()
+                .symbol_value(self.module.target_config().pointer_type(), status_ref);
+            builder
+                .ins()
+                .store(MemFlags::trusted(), value, status_address, 0);
+        }
         builder.ins().return_(&[]);
         builder.seal_all_blocks();
         builder.finalize();
@@ -1589,8 +1621,18 @@ impl<'a> FullProgramCompiler<'a> {
         let destroy = self.runtime["gust_scheduler_destroy"].clone();
         let destroy_ref = self.module.declare_func_in_func(destroy.id, builder.func);
         builder.ins().call(destroy_ref, &[]);
-        let zero = builder.ins().iconst(types::I32, 0);
-        builder.ins().return_(&[zero]);
+        let status = if let Some(status) = self.user_exit_status {
+            let status_ref = self.module.declare_data_in_func(status, builder.func);
+            let status_address = builder
+                .ins()
+                .symbol_value(self.module.target_config().pointer_type(), status_ref);
+            builder
+                .ins()
+                .load(types::I32, MemFlags::trusted(), status_address, 0)
+        } else {
+            builder.ins().iconst(types::I32, 0)
+        };
+        builder.ins().return_(&[status]);
         builder.seal_all_blocks();
         builder.finalize();
         self.module.define_function(entry, &mut context)?;

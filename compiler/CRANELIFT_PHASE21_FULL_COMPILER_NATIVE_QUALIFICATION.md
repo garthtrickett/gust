@@ -31,6 +31,7 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - Frozen predecessor records remain historical; their live replay now requires supported native parity.
 - Resource cleanup is transported from `typechecker_resource_cleanup_plans` with no backend inference.
 - Normal exit ordering: `source_defers_then_scope_cleanup_plan`; return ordering: `all_active_source_defers_then_return_cleanup_plan`.
+- Scalar user-main exit status follows `mir_to_c_gust_user_exit_status` and is returned after scheduler destruction; void main returns 0.
 
 Patch 21.14 adds generic executable canonical-MIR production and native
 lowering for the full compiler under existing Phase 14–16 authorities.

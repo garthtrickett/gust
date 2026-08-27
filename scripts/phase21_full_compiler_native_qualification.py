@@ -108,6 +108,15 @@ def validate() -> dict:
         "resource cleanup transport authority drifted",
     )
     require(
+        record.get("entry_exit_status_transport") == {
+            "source_authority": "mir_to_c_gust_user_exit_status",
+            "callback_policy": "store_scalar_user_main_result",
+            "process_entry_policy": "load_after_scheduler_destroy",
+            "void_main_exit_status": 0,
+        },
+        "entry exit-status transport authority drifted",
+    )
+    require(
         record.get("artifact") == {
             "kind": "linked_native_executable",
             "elf_class": "ELF64",
@@ -135,6 +144,7 @@ def validate() -> dict:
     require(
         record.get("predecessor_replay") == {
             "authorities": [
+                "phase20_nested_brand_annotation_correction_v1",
                 "phase21_opening_evidence_v1",
                 "phase21_residue_migration_authority_v1",
                 "phase21_collection_string_native_source_v1",
@@ -246,6 +256,7 @@ def render(record: dict) -> str:
     inventory = record["canonical_inventory"]
     artifact = record["artifact"]
     cleanup = record["resource_cleanup_transport"]
+    entry_status = record["entry_exit_status_transport"]
     return "\n".join([
         "# Cranelift Phase 21 Full Compiler Native Qualification",
         "",
@@ -280,6 +291,7 @@ def render(record: dict) -> str:
         "- Frozen predecessor records remain historical; their live replay now requires supported native parity.",
         f"- Resource cleanup is transported from `{cleanup['source_authority']}` with no backend inference.",
         f"- Normal exit ordering: `{cleanup['normal_exit_order']}`; return ordering: `{cleanup['return_order']}`.",
+        f"- Scalar user-main exit status follows `{entry_status['source_authority']}` and is returned after scheduler destruction; void main returns 0.",
         "",
         "Patch 21.14 adds generic executable canonical-MIR production and native",
         "lowering for the full compiler under existing Phase 14–16 authorities.",
