@@ -120,6 +120,20 @@ def validate() -> dict:
         },
         "failure cleanup or diagnostic authority drifted",
     )
+    require(
+        record.get("predecessor_replay") == {
+            "authorities": [
+                "phase21_compiler_support_native_qualification_v1",
+                "phase21_selected_compiler_module_qualification_v1",
+            ],
+            "historical_records_preserved": True,
+            "live_decision": "supported",
+            "canonical_format": "gust.compiler_executable_mir.v1",
+            "artifact": "linked_native_executable",
+            "execution_policy": "exit_stdout_and_stderr_match_each_slice_MIR_to_C_oracle",
+        },
+        "predecessor live-replay authority drifted",
+    )
     measurements = record.get("measurements", {})
     require(
         measurements.get("max_compile_elapsed_ms") == 600000
@@ -245,6 +259,7 @@ def render(record: dict) -> str:
         "- The existing runtime archive supplies all eight registered object members; no runtime symbol is added.",
         f"- Malformed MIR exits {record['failure_contract']['exit_status']} with byte-identical diagnostics and no object.",
         "- The native artifact's help output is byte-identical to the MIR-to-C-built compiler.",
+        "- Frozen Patch 21.12/21.13 records remain historical; their live replay now requires supported native parity.",
         "",
         "Patch 21.14 adds generic executable canonical-MIR production and native",
         "lowering for the full compiler under existing Phase 14–16 authorities.",

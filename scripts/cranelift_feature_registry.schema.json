@@ -2088,6 +2088,14 @@
             "failed_object_absent": true,
             "transient_request_bundle_and_object_absent_after_success": true
           },
+          "predecessor_replay": {
+            "authorities": ["phase21_compiler_support_native_qualification_v1","phase21_selected_compiler_module_qualification_v1"],
+            "historical_records_preserved": true,
+            "live_decision": "supported",
+            "canonical_format": "gust.compiler_executable_mir.v1",
+            "artifact": "linked_native_executable",
+            "execution_policy": "exit_stdout_and_stderr_match_each_slice_MIR_to_C_oracle"
+          },
           "measurements": {
             "observed_compile_elapsed_ms": 52921,
             "observed_peak_rss_kib": 4029696,

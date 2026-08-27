@@ -333,6 +333,14 @@ def run_evidence(output: Path) -> None:
     record = validate()
     require((ROOT / "gust").is_file() and os.access(ROOT / "gust", os.X_OK),
             "Patch 21.12 evidence requires rebuilt ./gust")
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    full_compiler_live = registry.get(
+        "phase21_full_compiler_native_qualification", {}
+    ).get("status") == "patch21_14_complete"
+    worker = ROOT / "build/gust-native-backend"
+    if full_compiler_live:
+        require(worker.is_file() and os.access(worker, os.X_OK),
+                "successor replay requires the rebuilt native worker")
     output.mkdir(parents=True, exist_ok=True)
     driver_marker = output / "driver-invoked"
     capture_driver = output / "capture-driver"
@@ -378,30 +386,58 @@ def run_evidence(output: Path) -> None:
 
         native = case_root / "native"
         env = os.environ.copy()
-        env["GUST_NATIVE_BACKEND_DRIVER"] = str(capture_driver.resolve())
+        env["GUST_NATIVE_BACKEND_DRIVER"] = str(
+            worker.resolve() if full_compiler_live else capture_driver.resolve()
+        )
         env["DRIVER_MARKER"] = str(driver_marker.resolve())
         observed_native = measure(
             ["./gust", "--backend", "cranelift", "-o", str(native), source],
             case_root / "cranelift", env,
         )
-        diagnostic = active_cranelift_classification(record, row)
-        require(observed_native["status"] == diagnostic["compile_exit"],
-                f"{row['id']}: explicit-Cranelift status drifted")
         native_stdout = (case_root / "cranelift.stdout").read_text(encoding="utf-8")
         native_stderr = (case_root / "cranelift.stderr").read_text(encoding="utf-8")
-        for marker in (
-            f"decision={diagnostic['decision']}",
-            f"reason_code={diagnostic['reason_code']}",
-            f"expected_failure_stage={diagnostic['failure_stage']}",
-            f"class={diagnostic['diagnostic_class']}",
-            f"source={source}", f"line={diagnostic['line']}",
-        ):
-            require(marker in native_stdout,
-                    f"{row['id']}: missing diagnostic marker {marker}")
-        require(native_stderr == diagnostic["diagnostic"] + "\n" and
-                not native.exists() and
-                not driver_marker.exists(),
-                f"{row['id']}: rejection reached the driver or produced an artifact")
+        if full_compiler_live:
+            require(
+                observed_native["status"] == 0
+                and native_stdout == native_stderr == ""
+                and native.is_file()
+                and not driver_marker.exists(),
+                f"{row['id']}: Patch 21.14 successor native publication drifted",
+            )
+            native_status = run_process(
+                [str(native)], case_root / "native-run.stdout",
+                case_root / "native-run.stderr",
+            )
+            require(
+                native_status == row["oracle"]["run_exit"]
+                and (case_root / "native-run.stdout").read_text(encoding="utf-8")
+                == row["oracle"]["stdout"]
+                and (case_root / "native-run.stderr").read_text(encoding="utf-8")
+                == row["oracle"]["stderr"]
+                and not Path(str(native) + ".phase10.bundle").exists()
+                and not Path(str(native) + ".phase10.request").exists(),
+                f"{row['id']}: Patch 21.14 successor parity or cleanup drifted",
+            )
+            canonical_mir = "gust.compiler_executable_mir.v1"
+            native_artifact = "linked_native_executable"
+        else:
+            diagnostic = active_cranelift_classification(record, row)
+            require(observed_native["status"] == diagnostic["compile_exit"],
+                    f"{row['id']}: explicit-Cranelift status drifted")
+            for marker in (
+                f"decision={diagnostic['decision']}",
+                f"reason_code={diagnostic['reason_code']}",
+                f"expected_failure_stage={diagnostic['failure_stage']}",
+                f"class={diagnostic['diagnostic_class']}",
+                f"source={source}", f"line={diagnostic['line']}",
+            ):
+                require(marker in native_stdout,
+                        f"{row['id']}: missing diagnostic marker {marker}")
+            require(native_stderr == diagnostic["diagnostic"] + "\n" and
+                    not native.exists() and not driver_marker.exists(),
+                    f"{row['id']}: rejection reached the driver or produced an artifact")
+            canonical_mir = diagnostic["canonical_mir"]
+            native_artifact = diagnostic["artifact"]
         for backend, observed in (("mir_to_c", oracle),
                                   ("cranelift", observed_native)):
             budget = row["measurement"][backend]
@@ -412,8 +448,8 @@ def run_evidence(output: Path) -> None:
         observations.append({
             "id": row["id"], "mir_to_c": oracle,
             "cranelift": observed_native,
-            "canonical_mir": diagnostic["canonical_mir"],
-            "native_artifact": diagnostic["artifact"],
+            "canonical_mir": canonical_mir,
+            "native_artifact": native_artifact,
             "resource_state": record["resource_state"],
         })
     (output / "measurements.json").write_text(
