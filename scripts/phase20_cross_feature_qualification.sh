@@ -121,9 +121,18 @@ rg -F 'decision=source_or_type_failure' "$build_root/excluded.stdout" >/dev/null
 rg -F 'reason_code=source_or_type_failure' "$build_root/excluded.stdout" >/dev/null
 rg -F 'expected_failure_stage=before_driver_discovery' \
   "$build_root/excluded.stdout" >/dev/null
-active_module_import_diagnostic="$(
-  python3 scripts/phase21_opening.py active-module-import-diagnostic
-)"
+full_compiler_live="$(python3 -c '
+import json
+record = json.load(open("scripts/cranelift_feature_registry.json"))
+print(1 if record.get("phase21_full_compiler_native_qualification", {}).get("status") == "patch21_14_complete" else 0)
+')"
+if test "$full_compiler_live" = 1; then
+  active_module_import_diagnostic='Native backend canonical MIR verification failed: external declaration is not present in the approved import/runtime registry'
+else
+  active_module_import_diagnostic="$(
+    python3 scripts/phase21_opening.py active-module-import-diagnostic
+  )"
+fi
 rg -F "$active_module_import_diagnostic" \
   "$build_root/excluded.stderr" >/dev/null
 

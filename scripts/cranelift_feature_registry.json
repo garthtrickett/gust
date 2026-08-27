@@ -2868,7 +2868,7 @@
       "transient_request_bundle_and_object_absent_after_success": true
     },
     "predecessor_replay": {
-      "authorities": ["phase20_nested_brand_annotation_correction_v1","phase20_exact_brand_boundary_v1","phase21_opening_evidence_v1","phase21_residue_migration_authority_v1","phase21_collection_string_native_source_v1","phase21_filesystem_allocation_native_source_v1","phase21_resource_sync_native_source_v1","phase21_compiler_support_native_qualification_v1","phase21_selected_compiler_module_qualification_v1"],
+      "authorities": ["phase20_nested_brand_annotation_correction_v1","phase20_exact_brand_boundary_v1","phase20_long_lived_concurrent_v1","phase20_cross_feature_qualification_v1","phase21_opening_evidence_v1","phase21_residue_migration_authority_v1","phase21_collection_string_native_source_v1","phase21_filesystem_allocation_native_source_v1","phase21_resource_sync_native_source_v1","phase21_compiler_support_native_qualification_v1","phase21_selected_compiler_module_qualification_v1"],
       "historical_records_preserved": true,
       "live_decision": "supported",
       "canonical_format": "gust.compiler_executable_mir.v1",

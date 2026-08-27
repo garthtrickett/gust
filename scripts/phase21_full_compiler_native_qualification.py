@@ -146,6 +146,8 @@ def validate() -> dict:
             "authorities": [
                 "phase20_nested_brand_annotation_correction_v1",
                 "phase20_exact_brand_boundary_v1",
+                "phase20_long_lived_concurrent_v1",
+                "phase20_cross_feature_qualification_v1",
                 "phase21_opening_evidence_v1",
                 "phase21_residue_migration_authority_v1",
                 "phase21_collection_string_native_source_v1",
