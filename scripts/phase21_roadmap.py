@@ -26,7 +26,7 @@ EXPECTED_PATCHES = [
     "21.0", "21.1", "21.2", "21.3", "21.4", "21.5", "21.6", "21.7",
     "21.7a", "21.7b", "21.8", "21.9", "21.10", "21.11", "21.12",
     "21.13", "21.13a", "21.14", "21.15", "21.16", "21.16a", "21.16b",
-    "21.17a", "21.17", "21.17b", "21.18",
+    "21.17a", "21.17", "21.17b", "21.17c", "21.18",
 ]
 
 EXPECTED_AMENDMENTS = [
@@ -90,6 +90,19 @@ EXPECTED_AMENDMENTS = [
         "changes_compiler_semantics": False,
         "falsifier": "the_focused_beachhead_guard_and_replacement_phase9_core_Historical_Full_shard_pass_while_production_source_remains_scanned",
         "boundary": "guard_population_classification_only_no_gate_weakening_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change",
+    },
+    {
+        "patch": "21.17c",
+        "status": "complete",
+        "capability": "historical_driver_handshake_fixture_reconciliation",
+        "trigger_run_id": 33177003376,
+        "failed_guard": "guard-cranelift-phase10-driver-handshake-contract",
+        "failure_class": "positive_fixture_omitted_existing_full_program_canonical_format",
+        "existing_authority": "patch21_14_exact_three_format_driver_handshake_contract",
+        "correction": "positive_and_protocol_mismatch_fixture_handshakes_advertise_v1_v2_and_gust_compiler_executable_mir_v1",
+        "changes_compiler_semantics": False,
+        "falsifier": "the_focused_phase10_handshake_guard_and_replacement_phase10_Historical_Full_shard_pass_without_validator_or_worker_change",
+        "boundary": "fixture_reconciliation_only_no_validator_worker_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change",
     },
 ]
 
