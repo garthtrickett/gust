@@ -5803,9 +5803,9 @@ guard-cranelift-phase9f-call-import-schema-validator:
     sed 's/function_0_block_0_statement_0_callee_kind: LocalFunction/function_0_block_0_statement_0_callee_kind: IndirectFunction/' "$valid_fixture" >"$indirect_call"
     expect_reject indirect-call "$indirect_call" 'unsupported canonical compiler MIR call target kind'
 
-    void_import="$build_dir/void-import.mir"
-    sed 's/import_1_return_type: int/import_1_return_type: void/' "$valid_fixture" >"$void_import"
-    expect_reject void-import "$void_import" 'uses an unsupported scalar ABI'
+    unsupported_return_import="$build_dir/unsupported-return-import.mir"
+    sed 's/import_1_return_type: int/import_1_return_type: usize/' "$valid_fixture" >"$unsupported_return_import"
+    expect_reject unsupported-return-import "$unsupported_return_import" 'uses an unsupported scalar ABI'
 
     multiple_exported_entries="$build_dir/multiple-exported-entries.mir"
     sed 's/function_1_linkage: module_local/function_1_linkage: exported_entry/' "$valid_fixture" >"$multiple_exported_entries"
@@ -6351,7 +6351,7 @@ guard-cranelift-phase9f-call-import-completeness-rejection:
     expect_preoutput_reject v1-import-record "$v1_import_record" 'unknown canonical compiler MIR fixture field(s):'
 
     schema_guard_body="$(sed -n '/^guard-cranelift-phase9f-call-import-schema-validator:/,/^guard-cranelift-phase9f-module-emitter-local-call-cohort:/p' justfile)"
-    for inherited_case in duplicate-import-name conflicting-link-signature duplicate-function-name duplicate-backend-symbol import-function-collision backend-import-collision unknown-callee wrong-argument-count undeclared-destination cyclic-local-calls invalid-linkage indirect-call void-import v1-call; do
+    for inherited_case in duplicate-import-name conflicting-link-signature duplicate-function-name duplicate-backend-symbol import-function-collision backend-import-collision unknown-callee wrong-argument-count undeclared-destination cyclic-local-calls invalid-linkage indirect-call unsupported-return-import v1-call; do
       printf '%s\n' "$schema_guard_body" | rg -n -F "expect_reject $inherited_case " >/dev/null
     done
 

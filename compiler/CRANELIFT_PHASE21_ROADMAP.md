@@ -98,6 +98,19 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - Falsifier: `the_focused_phase10_handshake_guard_and_replacement_phase10_Historical_Full_shard_pass_without_validator_or_worker_change`
 - Boundary: `fixture_reconciliation_only_no_validator_worker_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change`
 
+### Patch 21.17d
+
+- Status: `complete`
+- Capability: `historical_phase9f_import_ABI_fixture_reconciliation`
+- Trigger Run Id: `33177003376`
+- Failed Guard: `guard-cranelift-phase9f-call-import-schema-validator`
+- Failure Class: `negative_fixture_used_admitted_void_return_ABI_and_reached_call_result_validation`
+- Existing Authority: `phase9f_import_scalar_ABI_allowlist_and_patch21_9_call_result_type_validation`
+- Correction: `replace_obsolete_void_import_witness_with_unsupported_usize_return_import_witness`
+- Changes Compiler Semantics: `false`
+- Falsifier: `the_focused_phase9f_schema_guard_and_replacement_phase9_core_Historical_Full_shard_pass_without_validator_or_compiler_change`
+- Boundary: `negative_fixture_and_guard_expectation_only_no_validator_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change`
+
 ## OD-8
 
 - Status: `design_set_evidence_open`

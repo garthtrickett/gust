@@ -106,6 +106,7 @@ Out of scope:
 - [x] Patch 21.17 — Complete Guard Suite and Resource Budgets — DONE
 - [x] Patch 21.17b — Historical Beachhead Prose-Scope Correction — DONE
 - [x] Patch 21.17c — Historical Driver-Handshake Fixture Reconciliation — DONE
+- [x] Patch 21.17d — Historical Phase 9F ABI Fixture Reconciliation — DONE
 - [ ] Patch 21.18 — Phase 21 Closure
 
 Status rows are machine-parsed. Keep each row as
@@ -685,6 +686,23 @@ positive fixture classifies compatible, the negative fixture remains a protocol
 mismatch rather than failing an unrelated precondition, and replacement
 authoritative Historical Full evidence owns final qualification.
 
+## Patch 21.17d — Historical Phase 9F ABI Fixture Reconciliation
+
+**Purpose**
+
+Reconcile the Phase 9F unsupported-import-ABI negative witness with the live
+canonical-MIR import allowlist and the existing Patch 21.9 call-result type
+validation. `void` is an admitted imported return ABI, so mutate the fixture to
+the genuinely unsupported `usize` return ABI and keep the diagnostic assertion
+on `uses an unsupported scalar ABI`. Change no validator, compiler, MIR,
+backend, ABI/layout policy, runtime symbol, bootstrap seed, default backend,
+Stdlib, or CR-15 behavior.
+
+**Exit Gate:** the focused Phase 9F schema validator rejects the renamed
+unsupported-return fixture at import ABI validation, every other Phase 9F
+positive and negative case remains unchanged, and replacement authoritative
+Historical Full evidence owns final qualification.
+
 ## Patch 21.18 — Phase 21 Closure
 
 Require every Phase 21 row DONE, the OD-8 verdict recorded exactly as evidence
@@ -719,6 +737,7 @@ state. Do not begin Phase 22 from a running or merely available Level 3 suite.
 → 21.17 guard suite/budgets
 → 21.17b historical beachhead prose-scope correction
 → 21.17c historical driver-handshake fixture reconciliation
+→ 21.17d historical Phase 9F ABI fixture reconciliation
 → 21.18 closure.
 
 ## Phase 21 Success Criteria
