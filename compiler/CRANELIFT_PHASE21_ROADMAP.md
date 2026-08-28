@@ -72,6 +72,19 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - Falsifier: `every_focused_MIR_to_C_and_Cranelift_replay_returns_47_with_identical_empty_streams_and_the_patch21_17_full_inherited_replay_passes`
 - Boundary: `generic_scheduler_completion_only_no_gate_weakening_fixture_exception_other_runtime_semantics_stdlib_CR15_or_patch21_18`
 
+### Patch 21.17b
+
+- Status: `complete`
+- Capability: `historical_dependency_beachhead_prose_scope_correction`
+- Trigger Run Id: `33171071194`
+- Failed Guard: `guard-cranelift-dependency-beachhead`
+- Failure Class: `generated_compiler_review_prose_false_positive`
+- Correction: `compiler_CRANELIFT_review_markdown_is_excluded_from_the_production_reference_scan`
+- Production Scan Scope: `compiler_src_tests_root_manifests_and_Makefile_unchanged`
+- Changes Compiler Semantics: `false`
+- Falsifier: `the_focused_beachhead_guard_and_replacement_phase9_core_Historical_Full_shard_pass_while_production_source_remains_scanned`
+- Boundary: `guard_population_classification_only_no_gate_weakening_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change`
+
 ## OD-8
 
 - Status: `design_set_evidence_open`

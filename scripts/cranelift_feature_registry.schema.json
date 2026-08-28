@@ -1286,6 +1286,19 @@
               "changes_accepted_gust_meaning": false,
               "falsifier": "every_focused_MIR_to_C_and_Cranelift_replay_returns_47_with_identical_empty_streams_and_the_patch21_17_full_inherited_replay_passes",
               "boundary": "generic_scheduler_completion_only_no_gate_weakening_fixture_exception_other_runtime_semantics_stdlib_CR15_or_patch21_18"
+            },
+            {
+              "patch": "21.17b",
+              "status": "complete",
+              "capability": "historical_dependency_beachhead_prose_scope_correction",
+              "trigger_run_id": 33171071194,
+              "failed_guard": "guard-cranelift-dependency-beachhead",
+              "failure_class": "generated_compiler_review_prose_false_positive",
+              "correction": "compiler_CRANELIFT_review_markdown_is_excluded_from_the_production_reference_scan",
+              "production_scan_scope": "compiler_src_tests_root_manifests_and_Makefile_unchanged",
+              "changes_compiler_semantics": false,
+              "falsifier": "the_focused_beachhead_guard_and_replacement_phase9_core_Historical_Full_shard_pass_while_production_source_remains_scanned",
+              "boundary": "guard_population_classification_only_no_gate_weakening_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change"
             }
           ]},
           "serial_tracks": {"const": [

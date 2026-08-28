@@ -26,7 +26,7 @@ EXPECTED_PATCHES = [
     "21.0", "21.1", "21.2", "21.3", "21.4", "21.5", "21.6", "21.7",
     "21.7a", "21.7b", "21.8", "21.9", "21.10", "21.11", "21.12",
     "21.13", "21.13a", "21.14", "21.15", "21.16", "21.16a", "21.16b",
-    "21.17a", "21.17", "21.18",
+    "21.17a", "21.17", "21.17b", "21.18",
 ]
 
 EXPECTED_AMENDMENTS = [
@@ -77,6 +77,19 @@ EXPECTED_AMENDMENTS = [
         "changes_accepted_gust_meaning": False,
         "falsifier": "every_focused_MIR_to_C_and_Cranelift_replay_returns_47_with_identical_empty_streams_and_the_patch21_17_full_inherited_replay_passes",
         "boundary": "generic_scheduler_completion_only_no_gate_weakening_fixture_exception_other_runtime_semantics_stdlib_CR15_or_patch21_18",
+    },
+    {
+        "patch": "21.17b",
+        "status": "complete",
+        "capability": "historical_dependency_beachhead_prose_scope_correction",
+        "trigger_run_id": 33171071194,
+        "failed_guard": "guard-cranelift-dependency-beachhead",
+        "failure_class": "generated_compiler_review_prose_false_positive",
+        "correction": "compiler_CRANELIFT_review_markdown_is_excluded_from_the_production_reference_scan",
+        "production_scan_scope": "compiler_src_tests_root_manifests_and_Makefile_unchanged",
+        "changes_compiler_semantics": False,
+        "falsifier": "the_focused_beachhead_guard_and_replacement_phase9_core_Historical_Full_shard_pass_while_production_source_remains_scanned",
+        "boundary": "guard_population_classification_only_no_gate_weakening_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change",
     },
 ]
 
