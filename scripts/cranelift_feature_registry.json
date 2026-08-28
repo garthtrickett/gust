@@ -3092,6 +3092,100 @@
       "begins_patch21_17": false
     }
   },
+  "phase21_complete_guard_suite": {
+    "contract_version": "phase21_complete_guard_suite_v1",
+    "status": "patch21_17_complete",
+    "next_patch": "21.18",
+    "review_view": "compiler/CRANELIFT_PHASE21_COMPLETE_GUARD_SUITE.md",
+    "observed_main_sha": "47f81fdfb20e49023de83f675e9a46a53f031f07",
+    "predecessor_authority": "phase21_native_rebuild_reproducibility_v1",
+    "compiler_origin": "Cranelift_built_full_compiler",
+    "target_backend": "explicit_cranelift_no_fallback",
+    "semantic_oracle": "same_Cranelift_built_compiler_explicit_mir_to_c",
+    "inventory_source": "tests/test_runner.gst",
+    "inventory": {
+      "total": 326,
+      "positive": 216,
+      "compile_fail": 104,
+      "runtime_failure": 6
+    },
+    "execution_shards": {
+      "count": 2,
+      "isolation": "detached_git_worktree_per_serial_shard",
+      "assignment": "runner_index_modulo_shard_count",
+      "memory_measurement": "aggregate_live_proc_tree_rss"
+    },
+    "classification": {
+      "required_native_case_count": 192,
+      "total_classified_deferral_count": 134,
+      "compile_deferral_reason_counts": {
+        "source_feature_not_represented": 74,
+        "deferred_p13_parameter_argument_target_dependent_abi": 25,
+        "deferred_p13_structured_cfg_condition_shape": 7,
+        "deferred_p13_structured_cfg_loop_or_backedge": 5,
+        "deferred_p13_parameter_argument_aggregate_parameter": 3,
+        "deferred_p13_structured_cfg_condition_operator": 3,
+        "deferred_p13_structured_cfg_non_reducible_shape": 2,
+        "source_or_type_failure": 1,
+        "inconsistent_abi_equivalent_import_signature": 1
+      },
+      "oracle_precondition_failure_count": 10,
+      "oracle_precondition_failures": [
+        {"fixture":"compiler/codegen_initializer_test_entry.gst","reason_code":"oracle_positive_fixture_rejects_current_signature","owner":"self_hosted_test_runner_fixture","destination":"phase22_pre_default_guard_cleanup","falsifier":"the_same_Cranelift_built_compiler_accepts_the_fixture_through_MIR_to_C"},
+        {"fixture":"tests/e2e_generational_arena_wrapper_migration.gst","reason_code":"oracle_positive_fixture_rejects_current_arena_identity","owner":"self_hosted_test_runner_fixture","destination":"phase22_pre_default_guard_cleanup","falsifier":"the_same_Cranelift_built_compiler_accepts_the_fixture_through_MIR_to_C"},
+        {"fixture":"tests/e2e_parallel_zero_copy_parsing.gst","reason_code":"oracle_positive_fixture_rejects_current_spawn_argument","owner":"self_hosted_test_runner_fixture","destination":"phase22_pre_default_guard_cleanup","falsifier":"the_same_Cranelift_built_compiler_accepts_the_fixture_through_MIR_to_C"},
+        {"fixture":"tests/e2e_fiber_channel_pipeline.gst","reason_code":"oracle_positive_fixture_rejects_current_spawn_argument","owner":"self_hosted_test_runner_fixture","destination":"phase22_pre_default_guard_cleanup","falsifier":"the_same_Cranelift_built_compiler_accepts_the_fixture_through_MIR_to_C"},
+        {"fixture":"tests/e2e_unsafe_nested_selector_subscript_field_write.gst","reason_code":"oracle_positive_fixture_rejects_current_arena_identity","owner":"self_hosted_test_runner_fixture","destination":"phase22_pre_default_guard_cleanup","falsifier":"the_same_Cranelift_built_compiler_accepts_the_fixture_through_MIR_to_C"},
+        {"fixture":"compiler/test_directory_leak_violation.gst","reason_code":"oracle_negative_expectation_preempted_by_opaque_construction","owner":"self_hosted_test_runner_fixture","destination":"phase22_pre_default_guard_cleanup","falsifier":"the_runner_expected_diagnostic_matches_the_oracle_rejection"},
+        {"fixture":"tests/test_brand_nesting_violation_rejected.gst","reason_code":"oracle_negative_expectation_uses_retired_diagnostic","owner":"self_hosted_test_runner_fixture","destination":"phase22_pre_default_guard_cleanup","falsifier":"the_runner_expected_diagnostic_matches_the_oracle_rejection"},
+        {"fixture":"tests/test_branded_struct_mismatch_rejected.gst","reason_code":"oracle_negative_expectation_uses_retired_diagnostic","owner":"self_hosted_test_runner_fixture","destination":"phase22_pre_default_guard_cleanup","falsifier":"the_runner_expected_diagnostic_matches_the_oracle_rejection"},
+        {"fixture":"tests/test_nested_different_brands_rejected.gst","reason_code":"oracle_negative_expectation_uses_retired_diagnostic","owner":"self_hosted_test_runner_fixture","destination":"phase22_pre_default_guard_cleanup","falsifier":"the_runner_expected_diagnostic_matches_the_oracle_rejection"},
+        {"fixture":"tests/test_ctx_reassignment_rejected.gst","reason_code":"oracle_negative_expectation_uses_retired_diagnostic","owner":"self_hosted_test_runner_fixture","destination":"phase22_pre_default_guard_cleanup","falsifier":"the_runner_expected_diagnostic_matches_the_oracle_rejection"}
+      ],
+      "runtime_divergence_count": 3,
+      "runtime_divergences": [
+        {"fixture":"compiler/typechecker_scope_test_entry.gst","reason_code":"native_observable_divergence","owner":"phase14_generic_full_program_lowering","destination":"phase22_pre_default_native_parity","falsifier":"native_exit_stdout_and_stderr_match_the_MIR_to_C_oracle"},
+        {"fixture":"compiler/parser_reference_access_test_entry.gst","reason_code":"native_observable_divergence","owner":"phase14_generic_full_program_lowering","destination":"phase22_pre_default_native_parity","falsifier":"native_exit_stdout_and_stderr_match_the_MIR_to_C_oracle"},
+        {"fixture":"compiler/typechecker_expression_provenance_test_entry.gst","reason_code":"native_observable_divergence","owner":"phase14_generic_full_program_lowering","destination":"phase22_pre_default_native_parity","falsifier":"native_exit_stdout_and_stderr_match_the_MIR_to_C_oracle"}
+      ],
+      "policy": "every_inventory_case_is_a_required_native_pass_or_an_owned_reason_coded_deferral_with_a_falsifier_and_zero_unexplained_failure"
+    },
+    "budget_replays": [
+      "phase20_generated_mir_scale_full",
+      "phase20_long_lived_concurrent_full",
+      "phase20_cross_feature_qualification_full"
+    ],
+    "resolved_scaling_predecessor": {
+      "authority": "phase21_roadmap_patch21_16b",
+      "status": "complete",
+      "required_operation_count": 1024,
+      "passing_case_count": 34,
+      "observed_large_function_peak_rss_kib": 83456,
+      "falsifier": "the_Cranelift_built_compiler_completes_the_unchanged_1024_operation_cohort_with_MIR_to_C_parity_inside_registered_budgets"
+    },
+    "budgets": {
+      "measurement_protocol": "two_isolated_serial_shards_monotonic_elapsed_and_aggregate_proc_tree_peak_rss",
+      "observed_native_compiler_build_ms": 36000,
+      "observed_corpus_suite_ms": 1110000,
+      "observed_complete_suite_ms": 1200000,
+      "observed_peak_rss_kib": 4050000,
+      "max_native_compiler_build_ms": 180000,
+      "max_corpus_suite_ms": 3600000,
+      "max_complete_suite_ms": 4200000,
+      "max_peak_rss_kib": 6291456
+    },
+    "diagnostic_policy": "compile_fail_cases_are_byte_identical_across_explicit_MIR_to_C_and_Cranelift_and_every_native_deferral_has_a_registered_reason_and_failure_stage",
+    "failure_cleanup": "failed_native_cases_leave_no_output_request_bundle_object_or_generated_C_and_the_target_route_never_falls_back",
+    "boundary": {
+      "changes_accepted_Gust_program_meaning": false,
+      "adds_or_changes_MIR_operations": false,
+      "changes_ABI_layout_or_runtime_symbols": false,
+      "changes_bootstrap_seed": false,
+      "changes_default_backend_or_fallback": false,
+      "edits_stdlib_or_CR15": false,
+      "begins_patch21_18": false
+    }
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",

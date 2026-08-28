@@ -56,6 +56,7 @@
     "phase21_full_compiler_native_qualification",
     "phase21_cranelift_built_compiler_programs",
     "phase21_native_rebuild_reproducibility",
+    "phase21_complete_guard_suite",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -2322,6 +2323,82 @@
             "changes_default_backend_or_fallback": false,
             "edits_stdlib_or_CR15": false,
             "begins_patch21_17": false
+          }
+        }
+      },
+      "phase21_complete_guard_suite": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version", "status", "next_patch", "review_view",
+                     "observed_main_sha", "predecessor_authority",
+                     "compiler_origin", "target_backend", "semantic_oracle",
+                     "inventory_source", "inventory", "execution_shards", "classification",
+                     "budget_replays", "resolved_scaling_predecessor", "budgets", "diagnostic_policy",
+                     "failure_cleanup", "boundary"],
+        "properties": {
+          "contract_version": {"const": "phase21_complete_guard_suite_v1"},
+          "status": {"const": "patch21_17_complete"},
+          "next_patch": {"const": "21.18"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE21_COMPLETE_GUARD_SUITE.md"},
+          "observed_main_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+          "predecessor_authority": {"const": "phase21_native_rebuild_reproducibility_v1"},
+          "compiler_origin": {"const": "Cranelift_built_full_compiler"},
+          "target_backend": {"const": "explicit_cranelift_no_fallback"},
+          "semantic_oracle": {"const": "same_Cranelift_built_compiler_explicit_mir_to_c"},
+          "inventory_source": {"const": "tests/test_runner.gst"},
+          "inventory": {
+            "const": {"total":326,"positive":216,"compile_fail":104,"runtime_failure":6}
+          },
+          "execution_shards": {
+            "const": {
+              "count": 2,
+              "isolation": "detached_git_worktree_per_serial_shard",
+              "assignment": "runner_index_modulo_shard_count",
+              "memory_measurement": "aggregate_live_proc_tree_rss"
+            }
+          },
+          "classification": {
+            "type": "object",
+            "required": ["required_native_case_count", "total_classified_deferral_count",
+                         "compile_deferral_reason_counts", "oracle_precondition_failure_count",
+                         "oracle_precondition_failures", "runtime_divergence_count",
+                         "runtime_divergences", "policy"]
+          },
+          "budget_replays": {
+            "const": ["phase20_generated_mir_scale_full",
+                      "phase20_long_lived_concurrent_full",
+                      "phase20_cross_feature_qualification_full"]
+          },
+          "resolved_scaling_predecessor": {
+            "const": {
+              "authority": "phase21_roadmap_patch21_16b",
+              "status": "complete",
+              "required_operation_count": 1024,
+              "passing_case_count": 34,
+              "observed_large_function_peak_rss_kib": 83456,
+              "falsifier": "the_Cranelift_built_compiler_completes_the_unchanged_1024_operation_cohort_with_MIR_to_C_parity_inside_registered_budgets"
+            }
+          },
+          "budgets": {
+            "type": "object",
+            "required": ["measurement_protocol", "observed_native_compiler_build_ms",
+                         "observed_corpus_suite_ms", "observed_complete_suite_ms",
+                         "observed_peak_rss_kib", "max_native_compiler_build_ms",
+                         "max_corpus_suite_ms", "max_complete_suite_ms",
+                         "max_peak_rss_kib"]
+          },
+          "diagnostic_policy": {"const": "compile_fail_cases_are_byte_identical_across_explicit_MIR_to_C_and_Cranelift_and_every_native_deferral_has_a_registered_reason_and_failure_stage"},
+          "failure_cleanup": {"const": "failed_native_cases_leave_no_output_request_bundle_object_or_generated_C_and_the_target_route_never_falls_back"},
+          "boundary": {
+            "const": {
+              "changes_accepted_Gust_program_meaning": false,
+              "adds_or_changes_MIR_operations": false,
+              "changes_ABI_layout_or_runtime_symbols": false,
+              "changes_bootstrap_seed": false,
+              "changes_default_backend_or_fallback": false,
+              "edits_stdlib_or_CR15": false,
+              "begins_patch21_18": false
+            }
           }
         }
       },

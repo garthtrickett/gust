@@ -1,0 +1,99 @@
+name: Cranelift Phase 21 Complete Guard Suite
+
+on:
+  pull_request:
+    paths:
+      - 'TASK.md'
+      - 'Makefile'
+      - 'gust_v4.c'
+      - 'compiler/*.gst'
+      - 'compiler/CRANELIFT_PHASE21_COMPLETE_GUARD_SUITE.md'
+      - 'compiler/experiments/cranelift/**'
+      - 'tests/**'
+      - 'src/runtime.c'
+      - 'src/runtime/**'
+      - 'tools/normalize_generated_arena_offsets.py'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase20_generated_mir_scale.py'
+      - 'scripts/phase20_long_lived_concurrent.py'
+      - 'scripts/phase20_long_lived_concurrent.sh'
+      - 'scripts/phase20_cross_feature_qualification.py'
+      - 'scripts/phase20_cross_feature_qualification.sh'
+      - 'scripts/phase21_complete_guard_suite.py'
+      - '.github/workflows/phase21-complete-guard-suite.yml'
+      - '.github/workflows/pr-fast.yml'
+      - 'justfile'
+  push:
+    branches: [main]
+    paths:
+      - 'TASK.md'
+      - 'Makefile'
+      - 'gust_v4.c'
+      - 'compiler/*.gst'
+      - 'compiler/CRANELIFT_PHASE21_COMPLETE_GUARD_SUITE.md'
+      - 'compiler/experiments/cranelift/**'
+      - 'tests/**'
+      - 'src/runtime.c'
+      - 'src/runtime/**'
+      - 'tools/normalize_generated_arena_offsets.py'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase20_generated_mir_scale.py'
+      - 'scripts/phase20_long_lived_concurrent.py'
+      - 'scripts/phase20_long_lived_concurrent.sh'
+      - 'scripts/phase20_cross_feature_qualification.py'
+      - 'scripts/phase20_cross_feature_qualification.sh'
+      - 'scripts/phase21_complete_guard_suite.py'
+      - '.github/workflows/phase21-complete-guard-suite.yml'
+      - '.github/workflows/pr-fast.yml'
+      - 'justfile'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  RUSTUP_TOOLCHAIN: "1.97.1"
+  LANG: C.UTF-8
+  LC_ALL: C.UTF-8
+  TZ: UTC
+  SOURCE_DATE_EPOCH: "0"
+  CC: cc
+  CFLAGS: -O2 -Wall -pthread
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-cranelift-phase21-complete-guard-suite-contract
+        run: just guard-cranelift-phase21-complete-guard-suite-contract
+
+  evidence:
+    needs: contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: rustup toolchain install 1.97.1 --profile minimal --no-self-update
+      - run: make gust phase10-native-package
+      - name: guard-cranelift-phase21-complete-guard-suite-evidence
+        run: just guard-cranelift-phase21-complete-guard-suite-evidence
