@@ -30,6 +30,13 @@ PACKAGED_GUST = ROOT / "build/phase10-package/bin/gust"
 RUNTIME_PACKAGE = ROOT / "build/phase10-package/bin/gust-runtime-package.a"
 GUARD_L1 = "guard-cranelift-phase21-complete-guard-suite-contract"
 GUARD_L2 = "guard-cranelift-phase21-complete-guard-suite-evidence"
+ASAN_FIBER_EXIT_WARNING = re.compile(
+    rb"==\d+==WARNING: ASan is ignoring requested "
+    rb"__asan_handle_no_return: stack type: default top: 0x[0-9a-fA-F]+; "
+    rb"bottom 0x[0-9a-fA-F]+; size: 0x[0-9a-fA-F]+ \(\d+\)\n"
+    rb"False positive error reports may follow\n"
+    rb"For details see https://github\.com/google/sanitizers/issues/189\n?"
+)
 
 
 class DeadlineExceeded(RuntimeError):
@@ -318,7 +325,12 @@ def render(record: dict) -> str:
     return "\n".join(lines)
 
 
+def clean_sanitizer_fiber_exit_warning(value: bytes) -> bytes:
+    return ASAN_FIBER_EXIT_WARNING.sub(b"", value)
+
+
 def clean_output(value: bytes) -> bytes:
+    value = clean_sanitizer_fiber_exit_warning(value)
     lines = value.split(b"\n")
     return b"\n".join(line for line in lines
                        if not line.startswith((bytes([226]), bytes([240]),
@@ -559,7 +571,8 @@ def qualify_case(deadline: float, native_compiler: Path, env: dict[str, str],
     require(expected_execution(case, native_run) and
             native_run.returncode == oracle_run.returncode and
             native_run.stdout == oracle_run.stdout and
-            native_run.stderr == oracle_run.stderr,
+            clean_sanitizer_fiber_exit_warning(native_run.stderr) ==
+            clean_sanitizer_fiber_exit_warning(oracle_run.stderr),
             f"unexplained native observable divergence: {case['path']}; "
             f"{observable_mismatch_detail(oracle_run, native_run)}")
     return "required", ""
@@ -703,6 +716,19 @@ def observable_diagnostic_regression() -> None:
     )
     require(observed == expected,
             "observable mismatch diagnostic regression drifted")
+    scheduler_warning = (
+        b"==123==WARNING: ASan is ignoring requested "
+        b"__asan_handle_no_return: stack type: default top: 0x7fff0000; "
+        b"bottom 0x7f000000; size: 0x00ff0000 (16711680)\n"
+        b"False positive error reports may follow\n"
+        b"For details see https://github.com/google/sanitizers/issues/189\n"
+    )
+    actual_report = b"ERROR: AddressSanitizer: heap-use-after-free\n"
+    require(clean_sanitizer_fiber_exit_warning(
+                scheduler_warning + actual_report) == actual_report,
+            "ASan scheduler warning normalization drifted")
+    require(clean_sanitizer_fiber_exit_warning(scheduler_warning[:-10]) != b"",
+            "partial ASan scheduler warning was hidden")
     print(f"{GUARD_L1}: observable diagnostic regression ok")
 
 
