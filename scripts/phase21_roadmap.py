@@ -26,7 +26,7 @@ EXPECTED_PATCHES = [
     "21.0", "21.1", "21.2", "21.3", "21.4", "21.5", "21.6", "21.7",
     "21.7a", "21.7b", "21.8", "21.9", "21.10", "21.11", "21.12",
     "21.13", "21.13a", "21.14", "21.15", "21.16", "21.16a", "21.16b",
-    "21.17a", "21.17", "21.17b", "21.17c", "21.18",
+    "21.17a", "21.17", "21.17b", "21.17c", "21.17d", "21.18",
 ]
 
 EXPECTED_AMENDMENTS = [
@@ -103,6 +103,19 @@ EXPECTED_AMENDMENTS = [
         "changes_compiler_semantics": False,
         "falsifier": "the_focused_phase10_handshake_guard_and_replacement_phase10_Historical_Full_shard_pass_without_validator_or_worker_change",
         "boundary": "fixture_reconciliation_only_no_validator_worker_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change",
+    },
+    {
+        "patch": "21.17d",
+        "status": "complete",
+        "capability": "historical_phase9f_import_ABI_fixture_reconciliation",
+        "trigger_run_id": 33177003376,
+        "failed_guard": "guard-cranelift-phase9f-call-import-schema-validator",
+        "failure_class": "negative_fixture_used_admitted_void_return_ABI_and_reached_call_result_validation",
+        "existing_authority": "phase9f_import_scalar_ABI_allowlist_and_patch21_9_call_result_type_validation",
+        "correction": "replace_obsolete_void_import_witness_with_unsupported_usize_return_import_witness",
+        "changes_compiler_semantics": False,
+        "falsifier": "the_focused_phase9f_schema_guard_and_replacement_phase9_core_Historical_Full_shard_pass_without_validator_or_compiler_change",
+        "boundary": "negative_fixture_and_guard_expectation_only_no_validator_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change",
     },
 ]
 
