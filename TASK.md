@@ -108,6 +108,7 @@ Out of scope:
 - [x] Patch 21.17c — Historical Driver-Handshake Fixture Reconciliation — DONE
 - [x] Patch 21.17d — Historical Phase 9F ABI Fixture Reconciliation — DONE
 - [x] Patch 21.17e — Historical Driver-Handshake Inventory Reconciliation — DONE
+- [x] Patch 21.17f — Historical Driver-Handshake Manifest Freeze — DONE
 - [ ] Patch 21.18 — Phase 21 Closure
 
 Status rows are machine-parsed. Keep each row as
@@ -721,6 +722,24 @@ CR-15 behavior.
 Patch 21.14 worker inventory, still rejects any count drift, and replacement
 authoritative Historical Full evidence owns final qualification.
 
+## Patch 21.17f — Historical Driver-Handshake Manifest Freeze
+
+**Purpose**
+
+Correct the Phase 10 handshake guard after post-merge review of Patch 21.17e
+proved that category counts alone do not freeze the existing Patch 21.14 worker
+manifest. Compare the complete ordered canonical-format, operation, type/ABI,
+runtime-import, and target-requirement lines against an explicit expected
+manifest, and prove that one-for-one same-count substitutions in every category
+reject. Change no worker, validator, compiler, MIR, backend, ABI/layout, runtime
+symbol, bootstrap seed, default backend, Stdlib, CR-15, or accepted Gust
+meaning.
+
+**Exit Gate:** the focused Phase 10 driver-handshake contract accepts the exact
+Patch 21.14 worker manifest and rejects same-count substitutions in every
+advertised category; replacement authoritative Historical Full evidence owns
+final qualification.
+
 ## Patch 21.18 — Phase 21 Closure
 
 Require every Phase 21 row DONE, the OD-8 verdict recorded exactly as evidence
@@ -757,6 +776,7 @@ state. Do not begin Phase 22 from a running or merely available Level 3 suite.
 → 21.17c historical driver-handshake fixture reconciliation
 → 21.17d historical Phase 9F ABI fixture reconciliation
 → 21.17e historical driver-handshake inventory reconciliation
+→ 21.17f historical driver-handshake manifest freeze
 → 21.18 closure.
 
 ## Phase 21 Success Criteria

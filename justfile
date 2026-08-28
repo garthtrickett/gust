@@ -9667,24 +9667,128 @@ guard-cranelift-phase10-driver-handshake-contract:
     rg -n -F 'link_capability: native_executable' "$handshake_a" >/dev/null
     rg -n -F 'pipeline_taxonomy: gust.phase9g.pipeline.v1' "$handshake_a" >/dev/null
 
-    canonical_format_count="$(rg -c '^canonical_mir_format: ' "$handshake_a" || true)"
-    operation_count="$(rg -c '^operation: ' "$handshake_a" || true)"
-    type_abi_count="$(rg -c '^type_or_abi: ' "$handshake_a" || true)"
-    runtime_import_count="$(rg -c '^runtime_import: ' "$handshake_a" || true)"
-    target_requirement_count="$(rg -c '^target_requirement: ' "$handshake_a" || true)"
-    canonical_format_count="${canonical_format_count:-0}"
-    operation_count="${operation_count:-0}"
-    type_abi_count="${type_abi_count:-0}"
-    runtime_import_count="${runtime_import_count:-0}"
-    target_requirement_count="${target_requirement_count:-0}"
-    if [ "$canonical_format_count" != "3" ] ||
-       [ "$operation_count" != "28" ] ||
-       [ "$type_abi_count" != "16" ] ||
-       [ "$runtime_import_count" != "19" ] ||
-       [ "$target_requirement_count" != "3" ]; then
-      echo "Phase 10 handshake inventory drifted: canonical=$canonical_format_count operations=$operation_count type_abi=$type_abi_count runtime_imports=$runtime_import_count target_requirements=$target_requirement_count."
+    expected_manifest="$build_dir/handshake-manifest-expected.txt"
+    actual_manifest="$build_dir/handshake-manifest-actual.txt"
+    printf '%s\n' \
+      'canonical_mir_format: gust.compiler_mir_ingestion.v1' \
+      'canonical_mir_format: gust.compiler_mir_ingestion.v2' \
+      'canonical_mir_format: gust.compiler_executable_mir.v1' \
+      'operation: ReturnI32' \
+      'operation: LocalI32Set' \
+      'operation: LocalI32Read' \
+      'operation: AddI32' \
+      'operation: SubI32' \
+      'operation: MulI32' \
+      'operation: EqI32' \
+      'operation: SgtI32' \
+      'operation: Jump' \
+      'operation: Branch' \
+      'operation: BlockParam' \
+      'operation: LocalCallI32' \
+      'operation: ImportedCallI32' \
+      'operation: ImportedCallVoid' \
+      'operation: LocalStringSetCall' \
+      'operation: ArenaInit' \
+      'operation: ArenaStoreI32' \
+      'operation: ArenaStoreLocalI32' \
+      'operation: LocalI32SetArenaLoad' \
+      'operation: FunctionAddress' \
+      'operation: ArenaAllocationAddress' \
+      'operation: LocalRawPointerSetParam' \
+      'operation: LocalRawPointerSetCall' \
+      'operation: LocalI32SetRawPointerLoad' \
+      'operation: RawPointerStoreLocalI32' \
+      'operation: LocalRawPointerOffset' \
+      'operation: ImportedPredicateI32' \
+      'operation: ImportedMaterializeI32' \
+      'type_or_abi: int' \
+      'type_or_abi: bool' \
+      'type_or_abi: str' \
+      'type_or_abi: arena' \
+      'type_or_abi: usize' \
+      'type_or_abi: rawptr' \
+      'type_or_abi: fnptr' \
+      'type_or_abi: ()->int' \
+      'type_or_abi: (int)->int' \
+      'type_or_abi: (int,int)->int' \
+      'type_or_abi: ()->void' \
+      'type_or_abi: (rawptr)->void' \
+      'type_or_abi: (int)->void' \
+      'type_or_abi: (int,rawptr)->rawptr' \
+      'type_or_abi: (usize,fnptr,rawptr)->void' \
+      'type_or_abi: direct_scalar_abi' \
+      'runtime_import: tiny_host_add_one_i32' \
+      'runtime_import: tiny_host_add_i32' \
+      'runtime_import: tiny_host_is_positive_i32' \
+      'runtime_import: abs' \
+      'runtime_import: toupper' \
+      'runtime_import: os_LogInt' \
+      'runtime_import: os_LogStr' \
+      'runtime_import: os_Arena_New' \
+      'runtime_import: os_Arena_Free' \
+      'runtime_import: os_ArenaAlloc' \
+      'runtime_import: os_WriteFile' \
+      'runtime_import: os_ReadFile' \
+      'runtime_import: std_Mutex_Alloc' \
+      'runtime_import: std_Mutex_Lock_impl' \
+      'runtime_import: std_Mutex_Unlock_impl' \
+      'runtime_import: gust_scheduler_init' \
+      'runtime_import: gust_scheduler_spawn' \
+      'runtime_import: gust_yield' \
+      'runtime_import: gust_scheduler_destroy' \
+      'target_requirement: native_host' \
+      'target_requirement: position_independent_code' \
+      'target_requirement: native_executable_link' \
+      >"$expected_manifest"
+    rg '^(canonical_mir_format|operation|type_or_abi|runtime_import|target_requirement): ' \
+      "$handshake_a" >"$actual_manifest"
+    if ! cmp -s "$expected_manifest" "$actual_manifest"; then
+      echo "Phase 10 handshake manifest drifted from the exact Patch 21.14 inventory."
+      diff -u "$expected_manifest" "$actual_manifest" || true
       exit 1
     fi
+
+    assert_same_count_substitution_rejected() {
+      local category="$1"
+      local source="$2"
+      local replacement="$3"
+      local mutant="$build_dir/handshake-manifest-mutant-$category.txt"
+      awk -v source="$source" -v replacement="$replacement" '
+        BEGIN { changed = 0 }
+        {
+          if ($0 == source) {
+            $0 = replacement
+            changed = changed + 1
+          }
+          print
+        }
+        END { if (changed != 1) exit 2 }
+      ' "$actual_manifest" >"$mutant"
+      if cmp -s "$expected_manifest" "$mutant"; then
+        echo "Phase 10 exact handshake manifest accepted a same-count $category substitution."
+        exit 1
+      fi
+    }
+    assert_same_count_substitution_rejected \
+      canonical-format \
+      'canonical_mir_format: gust.compiler_mir_ingestion.v1' \
+      'canonical_mir_format: gust.compiler_mir_ingestion.substituted'
+    assert_same_count_substitution_rejected \
+      operation \
+      'operation: ReturnI32' \
+      'operation: ReturnI64'
+    assert_same_count_substitution_rejected \
+      type-abi \
+      'type_or_abi: int' \
+      'type_or_abi: i64'
+    assert_same_count_substitution_rejected \
+      runtime-import \
+      'runtime_import: tiny_host_add_one_i32' \
+      'runtime_import: tiny_host_add_one_i64'
+    assert_same_count_substitution_rejected \
+      target-requirement \
+      'target_requirement: native_host' \
+      'target_requirement: substituted_host'
 
     handshake_target="$(sed -n 's/^target_triple: //p' "$handshake_a")"
     contract_target="$(sed -n 's/^target_triple: //p' "$target_contract")"

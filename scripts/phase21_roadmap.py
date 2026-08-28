@@ -26,7 +26,7 @@ EXPECTED_PATCHES = [
     "21.0", "21.1", "21.2", "21.3", "21.4", "21.5", "21.6", "21.7",
     "21.7a", "21.7b", "21.8", "21.9", "21.10", "21.11", "21.12",
     "21.13", "21.13a", "21.14", "21.15", "21.16", "21.16a", "21.16b",
-    "21.17a", "21.17", "21.17b", "21.17c", "21.17d", "21.17e", "21.18",
+    "21.17a", "21.17", "21.17b", "21.17c", "21.17d", "21.17e", "21.17f", "21.18",
 ]
 
 EXPECTED_AMENDMENTS = [
@@ -129,6 +129,19 @@ EXPECTED_AMENDMENTS = [
         "changes_compiler_semantics": False,
         "falsifier": "the_focused_phase10_handshake_guard_and_replacement_phase10_Historical_Full_shard_pass_without_worker_validator_or_compiler_change",
         "boundary": "guard_inventory_expectation_only_no_worker_validator_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change",
+    },
+    {
+        "patch": "21.17f",
+        "status": "complete",
+        "capability": "historical_driver_handshake_manifest_freeze",
+        "trigger_run_id": 33205727452,
+        "failed_guard": "guard-cranelift-phase10-driver-handshake-contract",
+        "failure_class": "guard_compared_only_inventory_counts_and_missed_same_count_substitutions",
+        "existing_authority": "patch21_14_exact_ordered_worker_capability_manifest",
+        "correction": "compare_complete_ordered_handshake_manifest_and_reject_same_count_substitutions_in_every_category",
+        "changes_compiler_semantics": False,
+        "falsifier": "the_focused_phase10_guard_rejects_same_count_substitutions_for_canonical_format_operation_type_ABI_runtime_import_and_target_requirement",
+        "boundary": "guard_manifest_expectation_and_negative_falsifiers_only_no_worker_validator_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change",
     },
 ]
 
