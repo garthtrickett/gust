@@ -107,6 +107,7 @@ Out of scope:
 - [x] Patch 21.17b — Historical Beachhead Prose-Scope Correction — DONE
 - [x] Patch 21.17c — Historical Driver-Handshake Fixture Reconciliation — DONE
 - [x] Patch 21.17d — Historical Phase 9F ABI Fixture Reconciliation — DONE
+- [x] Patch 21.17e — Historical Driver-Handshake Inventory Reconciliation — DONE
 - [ ] Patch 21.18 — Phase 21 Closure
 
 Status rows are machine-parsed. Keep each row as
@@ -703,6 +704,23 @@ unsupported-return fixture at import ABI validation, every other Phase 9F
 positive and negative case remains unchanged, and replacement authoritative
 Historical Full evidence owns final qualification.
 
+## Patch 21.17e — Historical Driver-Handshake Inventory Reconciliation
+
+**Purpose**
+
+Reconcile the Phase 10 worker-handshake inventory guard with the existing Patch
+21.14 full-program canonical-MIR authority. The worker already advertises the
+authoritative `3/28/16/19/3` canonical-format, operation, type/ABI,
+runtime-import, and target-requirement inventory; update the stale pre-21.14
+`2/15/6/5/3` guard expectation and explicitly require
+`gust.compiler_executable_mir.v1`. Change no worker, validator, compiler, MIR,
+backend, ABI/layout, runtime symbol, bootstrap seed, default backend, Stdlib, or
+CR-15 behavior.
+
+**Exit Gate:** the focused Phase 10 driver-handshake contract accepts the exact
+Patch 21.14 worker inventory, still rejects any count drift, and replacement
+authoritative Historical Full evidence owns final qualification.
+
 ## Patch 21.18 — Phase 21 Closure
 
 Require every Phase 21 row DONE, the OD-8 verdict recorded exactly as evidence
@@ -738,6 +756,7 @@ state. Do not begin Phase 22 from a running or merely available Level 3 suite.
 → 21.17b historical beachhead prose-scope correction
 → 21.17c historical driver-handshake fixture reconciliation
 → 21.17d historical Phase 9F ABI fixture reconciliation
+→ 21.17e historical driver-handshake inventory reconciliation
 → 21.18 closure.
 
 ## Phase 21 Success Criteria
