@@ -167,7 +167,12 @@ def validate() -> dict:
         "status": "complete",
         "required_operation_count": 1024,
         "passing_case_count": 34,
-        "observed_large_function_peak_rss_kib": 83456,
+        "observed_large_function_peak_rss_kib": 95488,
+        "post_merge_correction": "compiler_origin_selection_and_local_state_linear_canonical_transport",
+        "compiler_origin_policy": "GUST_COMPILER_is_consumed_by_the_inherited_scale_harness_and_names_the_Cranelift_built_compiler_under_test",
+        "corrected_emitter": "compiler/mir_native_backend_local_state_source.gst",
+        "byte_identity_operation_count": 256,
+        "changes_compiler_semantics": False,
         "falsifier": "the_Cranelift_built_compiler_completes_the_unchanged_1024_operation_cohort_with_MIR_to_C_parity_inside_registered_budgets",
     }, "native-compiler allocation-scaling predecessor drifted")
     roadmap = registry.get("phase21_roadmap", {})
@@ -178,6 +183,13 @@ def validate() -> dict:
         "passing_case_count": row.get("passing_case_count"),
         "observed_large_function_peak_rss_kib": row.get(
             "observed_large_function_peak_rss_kib"),
+        "post_merge_correction": row.get("post_merge_correction"),
+        "compiler_origin_policy": row.get("compiler_origin_policy"),
+        "corrected_emitter": row.get("corrected_emitter"),
+        "byte_identity_operation_count": row.get(
+            "byte_identity_operation_count"),
+        "changes_compiler_semantics": row.get(
+            "changes_compiler_semantics"),
         "falsifier": row.get("falsifier"),
     } for row in roadmap.get("amendments", []) if row.get("patch") == "21.16b"],
             "Patch 21.16b registry authority does not support completion")
@@ -293,6 +305,10 @@ def render(record: dict) -> str:
               f"- Passing cases: `{scaling['passing_case_count']}`",
               f"- Observed large-function peak RSS: "
               f"`{scaling['observed_large_function_peak_rss_kib']}` KiB",
+              f"- Compiler origin policy: `{scaling['compiler_origin_policy']}`",
+              f"- Corrected emitter: `{scaling['corrected_emitter']}`",
+              f"- Byte-identity operation count: "
+              f"`{scaling['byte_identity_operation_count']}`",
               f"- Falsifier: `{scaling['falsifier']}`"]
     lines += ["", "Every case in the self-hosted runner inventory is either a",
               "required native pass or an owned, reason-coded deferral with a",

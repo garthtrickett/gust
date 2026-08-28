@@ -73,7 +73,10 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - Status: `complete`
 - Required operation count: `1024`
 - Passing cases: `34`
-- Observed large-function peak RSS: `83456` KiB
+- Observed large-function peak RSS: `95488` KiB
+- Compiler origin policy: `GUST_COMPILER_is_consumed_by_the_inherited_scale_harness_and_names_the_Cranelift_built_compiler_under_test`
+- Corrected emitter: `compiler/mir_native_backend_local_state_source.gst`
+- Byte-identity operation count: `256`
 - Falsifier: `the_Cranelift_built_compiler_completes_the_unchanged_1024_operation_cohort_with_MIR_to_C_parity_inside_registered_budgets`
 
 Every case in the self-hosted runner inventory is either a

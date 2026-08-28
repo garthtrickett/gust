@@ -3097,7 +3097,7 @@
     "status": "patch21_17_complete",
     "next_patch": "21.18",
     "review_view": "compiler/CRANELIFT_PHASE21_COMPLETE_GUARD_SUITE.md",
-    "observed_main_sha": "47f81fdfb20e49023de83f675e9a46a53f031f07",
+    "observed_main_sha": "069f90a591b557b08556d96e5ba8446b7e6de9ce",
     "predecessor_authority": "phase21_native_rebuild_reproducibility_v1",
     "compiler_origin": "Cranelift_built_full_compiler",
     "target_backend": "explicit_cranelift_no_fallback",
@@ -3160,7 +3160,12 @@
       "status": "complete",
       "required_operation_count": 1024,
       "passing_case_count": 34,
-      "observed_large_function_peak_rss_kib": 83456,
+      "observed_large_function_peak_rss_kib": 95488,
+      "post_merge_correction": "compiler_origin_selection_and_local_state_linear_canonical_transport",
+      "compiler_origin_policy": "GUST_COMPILER_is_consumed_by_the_inherited_scale_harness_and_names_the_Cranelift_built_compiler_under_test",
+      "corrected_emitter": "compiler/mir_native_backend_local_state_source.gst",
+      "byte_identity_operation_count": 256,
+      "changes_compiler_semantics": false,
       "falsifier": "the_Cranelift_built_compiler_completes_the_unchanged_1024_operation_cohort_with_MIR_to_C_parity_inside_registered_budgets"
     },
     "budgets": {

@@ -632,10 +632,12 @@ implementation.
 Patch 21.16b resolved the inherited generated-scale blocker generically. Its
 unchanged full 34-case profile now passes through the Cranelift-built compiler,
 including the required 1,024-operation large function at an observed peak of
-83,456 KiB instead of aborting near 4.2 GiB. Patch 21.17 retains the complete
-cohort and fixed budgets and replays that authority from the same compiler
-origin; it does not weaken the cohort or alter runtime, layout, MIR, or accepted
-Gust meaning.
+95,488 KiB instead of aborting near 4.2 GiB. Its post-merge correction makes
+the inherited harness consume the requested compiler origin and applies linear
+canonical transport to the actual local-state emitter. Patch 21.17 retains the
+complete cohort and fixed budgets and replays that corrected authority from the
+same compiler origin; it does not weaken the cohort or alter runtime, layout,
+MIR, or accepted Gust meaning.
 
 **Exit Gate:** all 326 runner cases are derived and classified exactly once;
 all 192 required native cases match the MIR-to-C oracle and runner
