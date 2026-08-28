@@ -9663,6 +9663,7 @@ guard-cranelift-phase10-driver-handshake-contract:
     rg -n -F 'program_mir_bundle_format: gust.compiler_program_mir_bundle.v1' "$handshake_a" >/dev/null
     rg -n -F 'canonical_mir_format: gust.compiler_mir_ingestion.v1' "$handshake_a" >/dev/null
     rg -n -F 'canonical_mir_format: gust.compiler_mir_ingestion.v2' "$handshake_a" >/dev/null
+    rg -n -F 'canonical_mir_format: gust.compiler_executable_mir.v1' "$handshake_a" >/dev/null
     rg -n -F 'link_capability: native_executable' "$handshake_a" >/dev/null
     rg -n -F 'pipeline_taxonomy: gust.phase9g.pipeline.v1' "$handshake_a" >/dev/null
 
@@ -9676,10 +9677,10 @@ guard-cranelift-phase10-driver-handshake-contract:
     type_abi_count="${type_abi_count:-0}"
     runtime_import_count="${runtime_import_count:-0}"
     target_requirement_count="${target_requirement_count:-0}"
-    if [ "$canonical_format_count" != "2" ] ||
-       [ "$operation_count" != "15" ] ||
-       [ "$type_abi_count" != "6" ] ||
-       [ "$runtime_import_count" != "5" ] ||
+    if [ "$canonical_format_count" != "3" ] ||
+       [ "$operation_count" != "28" ] ||
+       [ "$type_abi_count" != "16" ] ||
+       [ "$runtime_import_count" != "19" ] ||
        [ "$target_requirement_count" != "3" ]; then
       echo "Phase 10 handshake inventory drifted: canonical=$canonical_format_count operations=$operation_count type_abi=$type_abi_count runtime_imports=$runtime_import_count target_requirements=$target_requirement_count."
       exit 1

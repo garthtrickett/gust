@@ -111,6 +111,19 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - Falsifier: `the_focused_phase9f_schema_guard_and_replacement_phase9_core_Historical_Full_shard_pass_without_validator_or_compiler_change`
 - Boundary: `negative_fixture_and_guard_expectation_only_no_validator_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change`
 
+### Patch 21.17e
+
+- Status: `complete`
+- Capability: `historical_driver_handshake_inventory_reconciliation`
+- Trigger Run Id: `33194593462`
+- Failed Guard: `guard-cranelift-phase10-driver-handshake-contract`
+- Failure Class: `guard_froze_pre_patch21_14_worker_capability_inventory`
+- Existing Authority: `patch21_14_full_program_canonical_MIR_worker_inventory`
+- Correction: `require_gust_compiler_executable_mir_v1_and_exact_3_28_16_19_3_worker_inventory`
+- Changes Compiler Semantics: `false`
+- Falsifier: `the_focused_phase10_handshake_guard_and_replacement_phase10_Historical_Full_shard_pass_without_worker_validator_or_compiler_change`
+- Boundary: `guard_inventory_expectation_only_no_worker_validator_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change`
+
 ## OD-8
 
 - Status: `design_set_evidence_open`
