@@ -25,7 +25,33 @@ GUARD = "guard-cranelift-phase21-roadmap"
 EXPECTED_PATCHES = [
     "21.0", "21.1", "21.2", "21.3", "21.4", "21.5", "21.6", "21.7",
     "21.7a", "21.7b", "21.8", "21.9", "21.10", "21.11", "21.12",
-    "21.13", "21.13a", "21.14", "21.15", "21.16", "21.17", "21.18",
+    "21.13", "21.13a", "21.14", "21.15", "21.16", "21.16a", "21.16b",
+    "21.17", "21.18",
+]
+
+EXPECTED_AMENDMENTS = [
+    {
+        "patch": "21.16a",
+        "status": "complete",
+        "capability": "native_rebuild_workflow_dependency_correction",
+        "reason": "post_merge_review_proved_the_generated_arena_offset_normalizer_was_a_compiler_input_missing_from_native_rebuild_workflow_paths",
+        "merge_sha": "df8a7861b3f78e604e4f64519e785245ea801125",
+        "exact_head_pull_request_successes": 5,
+        "changes_compiler_semantics": False,
+    },
+    {
+        "patch": "21.16b",
+        "status": "scheduled",
+        "capability": "generic_native_compiler_large_function_allocation_scaling",
+        "trigger": "patch21_17_inherited_phase20_generated_large_function_replay",
+        "passing_operation_counts": [64, 128, 256],
+        "aborting_operation_counts": [512, 768, 1024],
+        "abort_signal": 6,
+        "abort_peak_rss_kib": 4198784,
+        "required_operation_count": 1024,
+        "falsifier": "the_Cranelift_built_compiler_completes_the_unchanged_1024_operation_cohort_with_MIR_to_C_parity_inside_registered_budgets",
+        "boundary": "existing_Gust_MIR_ABI_layout_and_runtime_symbol_authority_only_no_cohort_reduction_budget_weakening_arena_capacity_bypass_module_exception_or_fallback",
+    },
 ]
 
 
@@ -64,8 +90,26 @@ def render(authority: dict) -> str:
         "",
     ]
     lines += [f"- `{track}`" for track in authority["serial_tracks"]]
+    lines += ["", "## Roadmap amendments", ""]
+    for amendment in authority["amendments"]:
+        lines += [
+            f"### Patch {amendment['patch']}",
+            "",
+            f"- Status: `{amendment['status']}`",
+            f"- Capability: `{amendment['capability']}`",
+        ]
+        for key, value in amendment.items():
+            if key in {"patch", "status", "capability"}:
+                continue
+            if isinstance(value, list):
+                rendered = ",".join(str(item) for item in value)
+            elif isinstance(value, bool):
+                rendered = str(value).lower()
+            else:
+                rendered = str(value)
+            lines.append(f"- {key.replace('_', ' ').title()}: `{rendered}`")
+        lines.append("")
     lines += [
-        "",
         "## OD-8",
         "",
         f"- Status: `{od8['status']}`",
@@ -144,6 +188,8 @@ def validate() -> dict:
         "condition_satisfied": True,
         "completion_loop_through": "21.18",
     }, "operator activation drifted")
+    require(authority.get("amendments") == EXPECTED_AMENDMENTS,
+            "Phase 21 roadmap amendments drifted")
 
     task = TASK.read_text(encoding="utf-8")
     require(task.startswith(

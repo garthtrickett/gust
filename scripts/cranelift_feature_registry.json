@@ -1668,6 +1668,30 @@
       "condition_satisfied": true,
       "completion_loop_through": "21.18"
     },
+    "amendments": [
+      {
+        "patch": "21.16a",
+        "status": "complete",
+        "capability": "native_rebuild_workflow_dependency_correction",
+        "reason": "post_merge_review_proved_the_generated_arena_offset_normalizer_was_a_compiler_input_missing_from_native_rebuild_workflow_paths",
+        "merge_sha": "df8a7861b3f78e604e4f64519e785245ea801125",
+        "exact_head_pull_request_successes": 5,
+        "changes_compiler_semantics": false
+      },
+      {
+        "patch": "21.16b",
+        "status": "scheduled",
+        "capability": "generic_native_compiler_large_function_allocation_scaling",
+        "trigger": "patch21_17_inherited_phase20_generated_large_function_replay",
+        "passing_operation_counts": [64, 128, 256],
+        "aborting_operation_counts": [512, 768, 1024],
+        "abort_signal": 6,
+        "abort_peak_rss_kib": 4198784,
+        "required_operation_count": 1024,
+        "falsifier": "the_Cranelift_built_compiler_completes_the_unchanged_1024_operation_cohort_with_MIR_to_C_parity_inside_registered_budgets",
+        "boundary": "existing_Gust_MIR_ABI_layout_and_runtime_symbol_authority_only_no_cohort_reduction_budget_weakening_arena_capacity_bypass_module_exception_or_fallback"
+      }
+    ],
     "serial_tracks": [
       "typed_query_scope_analysis_and_adversarial_verdict",
       "cranelift_self_hosting_qualification"

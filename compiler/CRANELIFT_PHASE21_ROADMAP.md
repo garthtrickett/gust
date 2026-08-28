@@ -22,6 +22,30 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - `typed_query_scope_analysis_and_adversarial_verdict`
 - `cranelift_self_hosting_qualification`
 
+## Roadmap amendments
+
+### Patch 21.16a
+
+- Status: `complete`
+- Capability: `native_rebuild_workflow_dependency_correction`
+- Reason: `post_merge_review_proved_the_generated_arena_offset_normalizer_was_a_compiler_input_missing_from_native_rebuild_workflow_paths`
+- Merge Sha: `df8a7861b3f78e604e4f64519e785245ea801125`
+- Exact Head Pull Request Successes: `5`
+- Changes Compiler Semantics: `false`
+
+### Patch 21.16b
+
+- Status: `scheduled`
+- Capability: `generic_native_compiler_large_function_allocation_scaling`
+- Trigger: `patch21_17_inherited_phase20_generated_large_function_replay`
+- Passing Operation Counts: `64,128,256`
+- Aborting Operation Counts: `512,768,1024`
+- Abort Signal: `6`
+- Abort Peak Rss Kib: `4198784`
+- Required Operation Count: `1024`
+- Falsifier: `the_Cranelift_built_compiler_completes_the_unchanged_1024_operation_cohort_with_MIR_to_C_parity_inside_registered_budgets`
+- Boundary: `existing_Gust_MIR_ABI_layout_and_runtime_symbol_authority_only_no_cohort_reduction_budget_weakening_arena_capacity_bypass_module_exception_or_fallback`
+
 ## OD-8
 
 - Status: `design_set_evidence_open`
