@@ -16969,7 +16969,7 @@ guard-cranelift-phase21-scheduler-main-result-contract:
     set -euo pipefail
     echo "🧵 Checking Patch 21.17a scheduler main-result completion..."
     just guard-cranelift-phase21-roadmap
-    just guard-cranelift-phase20-long-lived-concurrent-contract
+    python3 scripts/phase20_long_lived_concurrent.py validate
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-scheduler-main-result-contract | grep -F $'guard-cranelift-phase21-scheduler-main-result-contract\t1\t' >/dev/null
     python3 scripts/phase21_scheduler_main_result.py validate
 
