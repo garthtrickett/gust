@@ -16,6 +16,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent.parent
+GUST = os.environ.get("GUST_COMPILER", "./gust")
 REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 TASK = ROOT / "TASK.md"
 REVIEW = ROOT / "compiler/CRANELIFT_PHASE20_GENERATED_MIR_SCALE.md"
@@ -503,7 +504,7 @@ def compile_and_compare(case: dict, worker: Path, output: Path) -> None:
     mir = Path(case["mir"])
     c_path = case_dir / "program.c"
     c_stderr = case_dir / "mir-to-c.compiler.stderr"
-    status = run_process(["./gust", "--backend", "mir-to-c", str(source)],
+    status = run_process([GUST, "--backend", "mir-to-c", str(source)],
                          c_path, c_stderr)
     require(status == 0 and not c_stderr.read_bytes(),
             f"{case['id']}: MIR-to-C compilation failed")
@@ -522,7 +523,7 @@ def compile_and_compare(case: dict, worker: Path, output: Path) -> None:
         env["GUST_TEST_MIR_TO_C_UNAVAILABLE"] = "1"
         env["GUST_NATIVE_BACKEND_DRIVER"] = str(worker.resolve())
         status = run_process([
-            "./gust", "--backend", "cranelift", "-o", str(native_binary),
+            GUST, "--backend", "cranelift", "-o", str(native_binary),
             str(source),
         ], case_dir / "native.compiler.stdout",
            case_dir / "native.compiler.stderr", env)
@@ -613,7 +614,7 @@ def measure_scale(cases: list[dict], worker: Path, output: Path, value: dict) ->
             continue
         source = case["source"]
         cranelift_command = [
-            *env_prefix, "./gust", "--backend", "cranelift", "-o",
+            *env_prefix, GUST, "--backend", "cranelift", "-o",
             str((output / case["id"] / "measured-native").resolve()), source,
         ]
         if case["kind"] == "large_module":
@@ -623,7 +624,7 @@ def measure_scale(cases: list[dict], worker: Path, output: Path, value: dict) ->
                 str((output / case["id"] / "measured-native.o").resolve()),
             ]
         commands = {
-            "mir-to-c": ["./gust", "--backend", "mir-to-c", source],
+            "mir-to-c": [GUST, "--backend", "mir-to-c", source],
             "cranelift": cranelift_command,
         }
         for backend, command in commands.items():
@@ -645,8 +646,11 @@ def measure_scale(cases: list[dict], worker: Path, output: Path, value: dict) ->
 
 def run(profile: str, output: Path) -> None:
     value = validate()
-    require((ROOT / "gust").is_file() and os.access(ROOT / "gust", os.X_OK),
-            "Patch 20.14 requires rebuilt ./gust")
+    gust_path = Path(GUST)
+    if not gust_path.is_absolute():
+        gust_path = ROOT / gust_path
+    require(gust_path.is_file() and os.access(gust_path, os.X_OK),
+            f"Patch 20.14 requires executable compiler {GUST}")
     worker = ROOT / "build/gust-native-backend"
     if not worker.is_file():
         subprocess.run(["make", "build/gust-native-backend"], cwd=ROOT,

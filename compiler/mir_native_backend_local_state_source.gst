@@ -73,14 +73,92 @@ type MirNativeLocalStateSourceResult[ctx] struct {
     bundle: mir.MirProgramBundle[ctx]
 }
 
-func mir_native_local_state_append(output: str, value: str, ctx: &Arena) str {
-    return std.Clone(ctx, std.Concat(output, value));
+type MirNativeLocalStateStringHeader struct {
+    data: *byte,
+    len: int
 }
 
-func mir_native_local_state_append_int(output: str, value: int, ctx: &Arena) str {
-    mut formatted := std.FormatInt(value);
-    mut updated := std.Concat(output, formatted);
-    return std.Clone(ctx, updated);
+type MirNativeLocalStateBuilder struct {
+    data: *byte,
+    length: int,
+    capacity: int,
+    valid: int
+}
+
+func mir_native_local_state_builder_with_capacity(
+    capacity: int
+) MirNativeLocalStateBuilder {
+    mut builder: MirNativeLocalStateBuilder;
+    builder.length = 0;
+    builder.capacity = capacity;
+    builder.valid = 1;
+    unsafe {
+        mut storage := os.ScratchAlloc(builder.capacity + 1);
+        builder.data = (storage + 0) as *byte;
+    }
+    return builder;
+}
+
+func mir_native_local_state_builder_new(
+    model: MirNativeLocalStateModel[ctx],
+    ctx: &Arena
+) MirNativeLocalStateBuilder {
+    mut write_count := len(model.entry_writes) +
+        len(model.then_writes) + len(model.else_writes) +
+        len(model.merge_writes);
+    return mir_native_local_state_builder_with_capacity(
+        8192 + len(model.local_names) * 256 +
+            write_count * 1024 + len(model.provenance) * 1024
+    );
+}
+
+func mir_native_local_state_builder_append(
+    builder: *MirNativeLocalStateBuilder,
+    value: str
+) {
+    unsafe {
+        if (*builder).valid == 0 { return; }
+        if (*builder).length + len(value) > (*builder).capacity {
+            (*builder).valid = 0;
+            return;
+        }
+        mut index := 0;
+        while index < len(value) {
+            *((*builder).data + (*builder).length) =
+                std.str_byte_at(value, index);
+            (*builder).length = (*builder).length + 1;
+            index = index + 1;
+        }
+    }
+}
+
+func mir_native_local_state_builder_append_int(
+    builder: *MirNativeLocalStateBuilder,
+    value: int
+) {
+    mir_native_local_state_builder_append(
+        builder,
+        std.FormatInt(value)
+    );
+}
+
+func mir_native_local_state_builder_finish(
+    builder: MirNativeLocalStateBuilder,
+    ctx: &Arena
+) str {
+    if builder.valid == 0 { return std.Clone(ctx, ""); }
+    unsafe {
+        *(builder.data + builder.length) = 0;
+        mut header_alloc := os.ScratchAlloc(16);
+        mut header_ptr :=
+            (header_alloc + 0) as *MirNativeLocalStateStringHeader;
+        if 0 == 1 {
+            header_ptr = builder.data as *MirNativeLocalStateStringHeader;
+        }
+        (*header_ptr).data = builder.data;
+        (*header_ptr).len = builder.length;
+        return *(((header_ptr as *str) + 0) as *str);
+    }
 }
 
 func mir_native_local_state_empty_expression() MirNativeLocalStateExpression {
@@ -957,91 +1035,126 @@ func mir_native_local_state_block_label(
 }
 
 func mir_native_local_state_emit_write(
-    canonical: str,
+    builder: *MirNativeLocalStateBuilder,
     block_index: int,
     statement_index: int,
     write: MirNativeLocalStateWrite,
-    names: std.Vector[str, ctx],
-    ctx: &Arena
-) str {
-    mut output := canonical;
-    output = mir_native_local_state_append(output, "block_", ctx);
-    output = mir_native_local_state_append_int(
-        output,
-        block_index,
-        ctx
+    names: std.Vector[str, ctx]
+) {
+    mir_native_local_state_builder_append(builder, "block_");
+    mir_native_local_state_builder_append_int(
+        builder,
+        block_index
     );
-    output = mir_native_local_state_append(output, "_statement_", ctx);
-    output = mir_native_local_state_append_int(
-        output,
-        statement_index,
-        ctx
+    mir_native_local_state_builder_append(builder, "_statement_");
+    mir_native_local_state_builder_append_int(
+        builder,
+        statement_index
     );
-    output = mir_native_local_state_append(output, "_kind: ", ctx);
+    mir_native_local_state_builder_append(builder, "_kind: ");
     if write.kind == 1 {
-        output = mir_native_local_state_append(
-            output,
-            "LocalI32AddI32Literal\n",
-            ctx
+        mir_native_local_state_builder_append(
+            builder,
+            "LocalI32AddI32Literal\n"
         );
     } else if write.kind == 2 {
-        output = mir_native_local_state_append(
-            output,
-            "LocalI32SubI32Literal\n",
-            ctx
+        mir_native_local_state_builder_append(
+            builder,
+            "LocalI32SubI32Literal\n"
         );
     } else if write.kind == 3 {
-        output = mir_native_local_state_append(
-            output,
-            "LocalI32MulI32Literal\n",
-            ctx
+        mir_native_local_state_builder_append(
+            builder,
+            "LocalI32MulI32Literal\n"
         );
     } else {
-        output = mir_native_local_state_append(
-            output,
-            "LocalI32Set\n",
-            ctx
+        mir_native_local_state_builder_append(
+            builder,
+            "LocalI32Set\n"
         );
     }
 
-    output = mir_native_local_state_append(output, "block_", ctx);
-    output = mir_native_local_state_append_int(
-        output,
-        block_index,
-        ctx
+    mir_native_local_state_builder_append(builder, "block_");
+    mir_native_local_state_builder_append_int(
+        builder,
+        block_index
     );
-    output = mir_native_local_state_append(output, "_statement_", ctx);
-    output = mir_native_local_state_append_int(
-        output,
-        statement_index,
-        ctx
+    mir_native_local_state_builder_append(builder, "_statement_");
+    mir_native_local_state_builder_append_int(
+        builder,
+        statement_index
     );
-    output = mir_native_local_state_append(output, "_local: ", ctx);
-    output = mir_native_local_state_append(
-        output,
-        names[write.target_index],
-        ctx
+    mir_native_local_state_builder_append(builder, "_local: ");
+    mir_native_local_state_builder_append(
+        builder,
+        names[write.target_index]
     );
-    output = mir_native_local_state_append(output, "\nblock_", ctx);
-    output = mir_native_local_state_append_int(
-        output,
-        block_index,
-        ctx
+    mir_native_local_state_builder_append(builder, "\nblock_");
+    mir_native_local_state_builder_append_int(
+        builder,
+        block_index
     );
-    output = mir_native_local_state_append(output, "_statement_", ctx);
-    output = mir_native_local_state_append_int(
-        output,
-        statement_index,
-        ctx
+    mir_native_local_state_builder_append(builder, "_statement_");
+    mir_native_local_state_builder_append_int(
+        builder,
+        statement_index
     );
-    output = mir_native_local_state_append(output, "_value: ", ctx);
-    output = mir_native_local_state_append_int(
-        output,
-        write.value,
-        ctx
+    mir_native_local_state_builder_append(builder, "_value: ");
+    mir_native_local_state_builder_append_int(
+        builder,
+        write.value
     );
-    output = mir_native_local_state_append(output, "\n", ctx);
-    return std.Clone(ctx, output);
+    mir_native_local_state_builder_append(builder, "\n");
+}
+
+func mir_native_local_state_emit_block_header_and_writes_into_builder(
+    builder: *MirNativeLocalStateBuilder,
+    block_index: int,
+    label: str,
+    writes: std.Vector[MirNativeLocalStateWrite, ctx],
+    names: std.Vector[str, ctx]
+) {
+    mir_native_local_state_builder_append(builder, "block_");
+    mir_native_local_state_builder_append_int(
+        builder,
+        block_index
+    );
+    mir_native_local_state_builder_append(builder, "_label: ");
+    mir_native_local_state_builder_append(builder, label);
+    mir_native_local_state_builder_append(builder, "\nblock_");
+    mir_native_local_state_builder_append_int(
+        builder,
+        block_index
+    );
+    mir_native_local_state_builder_append(
+        builder,
+        "_parameter_count: 0\nblock_"
+    );
+    mir_native_local_state_builder_append_int(
+        builder,
+        block_index
+    );
+    mir_native_local_state_builder_append(
+        builder,
+        "_statement_count: "
+    );
+    mir_native_local_state_builder_append_int(
+        builder,
+        len(writes)
+    );
+    mir_native_local_state_builder_append(builder, "\n");
+
+    mut statement_index := 0;
+    while statement_index < len(writes) {
+        mir_native_local_state_emit_write(
+            builder,
+            block_index,
+            statement_index,
+            writes[statement_index],
+            names
+        );
+        statement_index = statement_index + 1;
+    }
 }
 
 func mir_native_local_state_emit_block_header_and_writes(
@@ -1052,435 +1165,340 @@ func mir_native_local_state_emit_block_header_and_writes(
     names: std.Vector[str, ctx],
     ctx: &Arena
 ) str {
-    mut output := canonical;
-    output = mir_native_local_state_append(output, "block_", ctx);
-    output = mir_native_local_state_append_int(
-        output,
+    mut builder := mir_native_local_state_builder_with_capacity(
+        len(canonical) + 4096 + len(writes) * 1024
+    );
+    mir_native_local_state_builder_append(&builder, canonical);
+    mir_native_local_state_emit_block_header_and_writes_into_builder(
+        &builder,
         block_index,
-        ctx
+        label,
+        writes,
+        names
     );
-    output = mir_native_local_state_append(output, "_label: ", ctx);
-    output = mir_native_local_state_append(output, label, ctx);
-    output = mir_native_local_state_append(output, "\nblock_", ctx);
-    output = mir_native_local_state_append_int(
-        output,
-        block_index,
-        ctx
-    );
-    output = mir_native_local_state_append(
-        output,
-        "_parameter_count: 0\nblock_",
-        ctx
-    );
-    output = mir_native_local_state_append_int(
-        output,
-        block_index,
-        ctx
-    );
-    output = mir_native_local_state_append(
-        output,
-        "_statement_count: ",
-        ctx
-    );
-    output = mir_native_local_state_append_int(
-        output,
-        len(writes),
-        ctx
-    );
-    output = mir_native_local_state_append(output, "\n", ctx);
-
-    mut statement_index := 0;
-    while statement_index < len(writes) {
-        output = mir_native_local_state_emit_write(
-            output,
-            block_index,
-            statement_index,
-            writes[statement_index],
-            names,
-            ctx
-        );
-        statement_index = statement_index + 1;
-    }
-    return std.Clone(ctx, output);
+    mut completed := mir_native_local_state_builder_finish(builder, ctx);
+    return std.Clone(ctx, completed);
 }
 
 func mir_native_local_state_emit_return(
-    canonical: str,
+    builder: *MirNativeLocalStateBuilder,
     block_index: int,
     return_local_index: int,
-    names: std.Vector[str, ctx],
-    ctx: &Arena
-) str {
-    mut output := canonical;
-    output = mir_native_local_state_append(output, "block_", ctx);
-    output = mir_native_local_state_append_int(
-        output,
-        block_index,
-        ctx
+    names: std.Vector[str, ctx]
+) {
+    mir_native_local_state_builder_append(builder, "block_");
+    mir_native_local_state_builder_append_int(
+        builder,
+        block_index
     );
-    output = mir_native_local_state_append(
-        output,
-        "_terminator_kind: ReturnLocalI32\nblock_",
-        ctx
+    mir_native_local_state_builder_append(
+        builder,
+        "_terminator_kind: ReturnLocalI32\nblock_"
     );
-    output = mir_native_local_state_append_int(
-        output,
-        block_index,
-        ctx
+    mir_native_local_state_builder_append_int(
+        builder,
+        block_index
     );
-    output = mir_native_local_state_append(
-        output,
-        "_terminator_local: ",
-        ctx
+    mir_native_local_state_builder_append(
+        builder,
+        "_terminator_local: "
     );
-    output = mir_native_local_state_append(
-        output,
-        names[return_local_index],
-        ctx
+    mir_native_local_state_builder_append(
+        builder,
+        names[return_local_index]
     );
-    output = mir_native_local_state_append(output, "\n", ctx);
-    return std.Clone(ctx, output);
+    mir_native_local_state_builder_append(builder, "\n");
 }
 
 func mir_native_local_state_emit_metadata(
-    canonical: str,
+    builder: *MirNativeLocalStateBuilder,
     model: MirNativeLocalStateModel[ctx],
     ctx: &Arena
-) str {
-    mut output := canonical;
-    output = mir_native_local_state_append(
-        output,
-        "metadata_count: ",
-        ctx
+) {
+    mir_native_local_state_builder_append(
+        builder,
+        "metadata_count: "
     );
-    output = mir_native_local_state_append_int(
-        output,
-        len(model.provenance),
-        ctx
+    mir_native_local_state_builder_append_int(
+        builder,
+        len(model.provenance)
     );
-    output = mir_native_local_state_append(output, "\n", ctx);
+    mir_native_local_state_builder_append(builder, "\n");
 
     mut metadata_index := 0;
     while metadata_index < len(model.provenance) {
         mut event := model.provenance[metadata_index];
-        output = mir_native_local_state_append(output, "metadata_", ctx);
-        output = mir_native_local_state_append_int(
-            output,
-            metadata_index,
-            ctx
+        mir_native_local_state_builder_append(builder, "metadata_");
+        mir_native_local_state_builder_append_int(
+            builder,
+            metadata_index
         );
-        output = mir_native_local_state_append(
-            output,
-            "_kind: provenance\nmetadata_",
-            ctx
+        mir_native_local_state_builder_append(
+            builder,
+            "_kind: provenance\nmetadata_"
         );
-        output = mir_native_local_state_append_int(
-            output,
-            metadata_index,
-            ctx
+        mir_native_local_state_builder_append_int(
+            builder,
+            metadata_index
         );
-        output = mir_native_local_state_append(
-            output,
-            "_attachment: ",
-            ctx
+        mir_native_local_state_builder_append(
+            builder,
+            "_attachment: "
         );
         if event.event_kind == 0 {
-            output = mir_native_local_state_append(
-                output,
-                "local:",
-                ctx
+            mir_native_local_state_builder_append(
+                builder,
+                "local:"
             );
-            output = mir_native_local_state_append_int(
-                output,
-                event.local_index,
-                ctx
+            mir_native_local_state_builder_append_int(
+                builder,
+                event.local_index
             );
         } else {
-            output = mir_native_local_state_append(
-                output,
-                "statement:",
-                ctx
+            mir_native_local_state_builder_append(
+                builder,
+                "statement:"
             );
-            output = mir_native_local_state_append(
-                output,
+            mir_native_local_state_builder_append(
+                builder,
                 mir_native_local_state_block_label(
                     event.block_index,
                     ctx
-                ),
-                ctx
+                )
             );
-            output = mir_native_local_state_append(output, ":", ctx);
-            output = mir_native_local_state_append_int(
-                output,
-                event.statement_index,
-                ctx
+            mir_native_local_state_builder_append(builder, ":");
+            mir_native_local_state_builder_append_int(
+                builder,
+                event.statement_index
             );
         }
 
-        output = mir_native_local_state_append(
-            output,
-            "\nmetadata_",
-            ctx
+        mir_native_local_state_builder_append(
+            builder,
+            "\nmetadata_"
         );
-        output = mir_native_local_state_append_int(
-            output,
-            metadata_index,
-            ctx
+        mir_native_local_state_builder_append_int(
+            builder,
+            metadata_index
         );
-        output = mir_native_local_state_append(
-            output,
-            "_policy: recognized_preserved\nmetadata_",
-            ctx
+        mir_native_local_state_builder_append(
+            builder,
+            "_policy: recognized_preserved\nmetadata_"
         );
-        output = mir_native_local_state_append_int(
-            output,
-            metadata_index,
-            ctx
+        mir_native_local_state_builder_append_int(
+            builder,
+            metadata_index
         );
-        output = mir_native_local_state_append(
-            output,
-            "_payload: kind=",
-            ctx
+        mir_native_local_state_builder_append(
+            builder,
+            "_payload: kind="
         );
         if event.event_kind == 0 {
-            output = mir_native_local_state_append(
-                output,
-                "LocalDeclaration",
-                ctx
+            mir_native_local_state_builder_append(
+                builder,
+                "LocalDeclaration"
             );
         } else {
-            output = mir_native_local_state_append(
-                output,
-                "LocalAssignment",
-                ctx
+            mir_native_local_state_builder_append(
+                builder,
+                "LocalAssignment"
             );
         }
-        output = mir_native_local_state_append(
-            output,
-            ";local=",
-            ctx
+        mir_native_local_state_builder_append(
+            builder,
+            ";local="
         );
-        output = mir_native_local_state_append(
-            output,
-            model.local_names[event.local_index],
-            ctx
+        mir_native_local_state_builder_append(
+            builder,
+            model.local_names[event.local_index]
         );
-        output = mir_native_local_state_append(
-            output,
-            ";index=",
-            ctx
+        mir_native_local_state_builder_append(
+            builder,
+            ";index="
         );
-        output = mir_native_local_state_append_int(
-            output,
-            event.local_index,
-            ctx
+        mir_native_local_state_builder_append_int(
+            builder,
+            event.local_index
         );
-        output = mir_native_local_state_append(
-            output,
-            ";origin=",
-            ctx
+        mir_native_local_state_builder_append(
+            builder,
+            ";origin="
         );
-        output = mir_native_local_state_append(
-            output,
-            model.source_path,
-            ctx
+        mir_native_local_state_builder_append(
+            builder,
+            model.source_path
         );
-        output = mir_native_local_state_append(
-            output,
-            ";line=",
-            ctx
+        mir_native_local_state_builder_append(
+            builder,
+            ";line="
         );
-        output = mir_native_local_state_append_int(
-            output,
-            event.line,
-            ctx
+        mir_native_local_state_builder_append_int(
+            builder,
+            event.line
         );
-        output = mir_native_local_state_append(
-            output,
-            ";column=",
-            ctx
+        mir_native_local_state_builder_append(
+            builder,
+            ";column="
         );
-        output = mir_native_local_state_append_int(
-            output,
-            event.column,
-            ctx
+        mir_native_local_state_builder_append_int(
+            builder,
+            event.column
         );
-        output = mir_native_local_state_append(output, "\n", ctx);
+        mir_native_local_state_builder_append(builder, "\n");
         metadata_index = metadata_index + 1;
     }
-    return std.Clone(ctx, output);
 }
 
 func mir_native_local_state_emit_bundle(
     model: MirNativeLocalStateModel[ctx],
     ctx: &Arena
 ) mir.MirProgramBundle[ctx] {
-    mut canonical :=
-        "format: gust.compiler_mir_ingestion.v1\nfunction: main\nbackend_symbol: main\nparameter_count: 0\nreturn_type: int\nlocal_count: ";
-    canonical = mir_native_local_state_append_int(
-        canonical,
-        len(model.local_names),
-        ctx
+    mut builder := mir_native_local_state_builder_new(model, ctx);
+    mir_native_local_state_builder_append(
+        &builder,
+        "format: gust.compiler_mir_ingestion.v1\nfunction: main\nbackend_symbol: main\nparameter_count: 0\nreturn_type: int\nlocal_count: "
     );
-    canonical = mir_native_local_state_append(canonical, "\n", ctx);
+    mir_native_local_state_builder_append_int(
+        &builder,
+        len(model.local_names)
+    );
+    mir_native_local_state_builder_append(&builder, "\n");
 
     mut local_index := 0;
     while local_index < len(model.local_names) {
-        canonical = mir_native_local_state_append(
-            canonical,
-            "local_",
-            ctx
+        mir_native_local_state_builder_append(
+            &builder,
+            "local_"
         );
-        canonical = mir_native_local_state_append_int(
-            canonical,
-            local_index,
-            ctx
+        mir_native_local_state_builder_append_int(
+            &builder,
+            local_index
         );
-        canonical = mir_native_local_state_append(
-            canonical,
-            "_name: ",
-            ctx
+        mir_native_local_state_builder_append(
+            &builder,
+            "_name: "
         );
-        canonical = mir_native_local_state_append(
-            canonical,
-            model.local_names[local_index],
-            ctx
+        mir_native_local_state_builder_append(
+            &builder,
+            model.local_names[local_index]
         );
-        canonical = mir_native_local_state_append(
-            canonical,
-            "\nlocal_",
-            ctx
+        mir_native_local_state_builder_append(
+            &builder,
+            "\nlocal_"
         );
-        canonical = mir_native_local_state_append_int(
-            canonical,
-            local_index,
-            ctx
+        mir_native_local_state_builder_append_int(
+            &builder,
+            local_index
         );
-        canonical = mir_native_local_state_append(
-            canonical,
-            "_type: int\n",
-            ctx
+        mir_native_local_state_builder_append(
+            &builder,
+            "_type: int\n"
         );
         local_index = local_index + 1;
     }
 
-    canonical = mir_native_local_state_append(
-        canonical,
-        "entry_block: entry\nblock_count: ",
-        ctx
+    mir_native_local_state_builder_append(
+        &builder,
+        "entry_block: entry\nblock_count: "
     );
     if model.has_branch == 1 {
-        canonical = mir_native_local_state_append(
-            canonical,
-            "4\n",
-            ctx
+        mir_native_local_state_builder_append(
+            &builder,
+            "4\n"
         );
     } else {
-        canonical = mir_native_local_state_append(
-            canonical,
-            "1\n",
-            ctx
+        mir_native_local_state_builder_append(
+            &builder,
+            "1\n"
         );
     }
 
-    canonical = mir_native_local_state_emit_block_header_and_writes(
-        canonical,
+    mir_native_local_state_emit_block_header_and_writes_into_builder(
+        &builder,
         0,
         "entry",
         model.entry_writes,
-        model.local_names,
-        ctx
+        model.local_names
     );
 
     if model.has_branch == 1 {
-        canonical = mir_native_local_state_append(
-            canonical,
-            "block_0_terminator_kind: BranchLocalI32Positive\nblock_0_terminator_local: ",
-            ctx
+        mir_native_local_state_builder_append(
+            &builder,
+            "block_0_terminator_kind: BranchLocalI32Positive\nblock_0_terminator_local: "
         );
-        canonical = mir_native_local_state_append(
-            canonical,
-            model.local_names[model.condition_local_index],
-            ctx
+        mir_native_local_state_builder_append(
+            &builder,
+            model.local_names[model.condition_local_index]
         );
-        canonical = mir_native_local_state_append(
-            canonical,
-            "\nblock_0_terminator_then: then\nblock_0_terminator_then_argument_count: 0\nblock_0_terminator_else: else\nblock_0_terminator_else_argument_count: 0\n",
-            ctx
+        mir_native_local_state_builder_append(
+            &builder,
+            "\nblock_0_terminator_then: then\nblock_0_terminator_then_argument_count: 0\nblock_0_terminator_else: else\nblock_0_terminator_else_argument_count: 0\n"
         );
 
-        canonical =
-            mir_native_local_state_emit_block_header_and_writes(
-                canonical,
-                1,
-                "then",
-                model.then_writes,
-                model.local_names,
-                ctx
-            );
-        canonical = mir_native_local_state_append(
-            canonical,
-            "block_1_terminator_kind: Jump\nblock_1_terminator_target: merge\nblock_1_terminator_argument_count: 0\n",
-            ctx
+        mir_native_local_state_emit_block_header_and_writes_into_builder(
+            &builder,
+            1,
+            "then",
+            model.then_writes,
+            model.local_names
+        );
+        mir_native_local_state_builder_append(
+            &builder,
+            "block_1_terminator_kind: Jump\nblock_1_terminator_target: merge\nblock_1_terminator_argument_count: 0\n"
         );
 
-        canonical =
-            mir_native_local_state_emit_block_header_and_writes(
-                canonical,
-                2,
-                "else",
-                model.else_writes,
-                model.local_names,
-                ctx
-            );
-        canonical = mir_native_local_state_append(
-            canonical,
-            "block_2_terminator_kind: Jump\nblock_2_terminator_target: merge\nblock_2_terminator_argument_count: 0\n",
-            ctx
+        mir_native_local_state_emit_block_header_and_writes_into_builder(
+            &builder,
+            2,
+            "else",
+            model.else_writes,
+            model.local_names
+        );
+        mir_native_local_state_builder_append(
+            &builder,
+            "block_2_terminator_kind: Jump\nblock_2_terminator_target: merge\nblock_2_terminator_argument_count: 0\n"
         );
 
-        canonical =
-            mir_native_local_state_emit_block_header_and_writes(
-                canonical,
-                3,
-                "merge",
-                model.merge_writes,
-                model.local_names,
-                ctx
-            );
-        canonical = mir_native_local_state_emit_return(
-            canonical,
+        mir_native_local_state_emit_block_header_and_writes_into_builder(
+            &builder,
+            3,
+            "merge",
+            model.merge_writes,
+            model.local_names
+        );
+        mir_native_local_state_emit_return(
+            &builder,
             3,
             model.return_local_index,
-            model.local_names,
-            ctx
+            model.local_names
         );
     } else {
-        canonical = mir_native_local_state_emit_return(
-            canonical,
+        mir_native_local_state_emit_return(
+            &builder,
             0,
             model.return_local_index,
-            model.local_names,
-            ctx
+            model.local_names
         );
     }
 
-    canonical = mir_native_local_state_emit_metadata(
-        canonical,
+    mir_native_local_state_emit_metadata(
+        &builder,
         model,
         ctx
     );
-    canonical = mir_native_local_state_append(
-        canonical,
-        "expected_exit: ",
+    mir_native_local_state_builder_append(
+        &builder,
+        "expected_exit: "
+    );
+    mir_native_local_state_builder_append_int(
+        &builder,
+        model.expected_exit
+    );
+    mir_native_local_state_builder_append(&builder, "\n");
+    mut canonical := mir_native_local_state_builder_finish(
+        builder,
         ctx
     );
-    canonical = mir_native_local_state_append_int(
-        canonical,
-        model.expected_exit,
-        ctx
-    );
-    canonical = mir_native_local_state_append(canonical, "\n", ctx);
 
     mut bundle := mir.mir_make_program_bundle("main", ctx);
     mut bundle_module := mir.mir_make_program_bundle_module(
