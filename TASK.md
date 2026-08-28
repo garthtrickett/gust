@@ -100,6 +100,8 @@ Out of scope:
 - [x] Patch 21.14 — Full Compiler Canonical-MIR and Native Object Qualification — DONE
 - [x] Patch 21.15 — Cranelift-Built Compiler Program Compilation — DONE
 - [x] Patch 21.16 — Native Rebuild Reproducibility Authority — DONE
+- [x] Patch 21.16a — Native Rebuild Workflow Dependency Correction — DONE
+- [ ] Patch 21.16b — Native Compiler Large-Function Allocation Scaling
 - [ ] Patch 21.17 — Complete Guard Suite and Resource Budgets
 - [ ] Patch 21.18 — Phase 21 Closure
 
@@ -523,6 +525,44 @@ appears; measured elapsed, memory, and artifact bounds hold; Patch 21.17,
 Stdlib, CR-15, accepted Gust meaning, MIR, ABI/layout/runtime symbols, default
 backend, and bootstrap seed remain unchanged.
 
+## Patch 21.16a — Native Rebuild Workflow Dependency Correction
+
+Correct the Patch 21.16 workflow dependency surface after post-merge review
+proved that `tools/normalize_generated_arena_offsets.py` participates in
+compiler production but did not trigger native-rebuild requalification. PR
+#234 added the tool to both workflow path filters and to the authoritative
+clean-source set, then merged from exact head
+`6191dfe77dd3c827be2da5908af40534f3cd9acd` as
+`df8a7861b3f78e604e4f64519e785245ea801125` after 5/5 exact-head
+`pull_request` workflows succeeded and all review threads were resolved.
+
+## Patch 21.16b — Native Compiler Large-Function Allocation Scaling
+
+Correct the generic Cranelift-built compiler allocation growth exposed by the
+unchanged Phase 20 generated large-function authority. The Patch 21.17 entry
+point completed and classified all 326 derived corpus cases, then the inherited
+large-function replay passed at 64, 128, and 256 operations with peak RSS of
+224,768, 638,208, and 2,289,536 KiB before aborting by signal 6 at 512, 768,
+and 1,024 operations near 4.2 GiB without an artifact or diagnostic. Partial
+Patch 21.17 artifacts are not evidence.
+
+The correction must be generic compiler implementation work using existing
+Gust, MIR, ABI/layout, and runtime-symbol authority. It must not reduce the
+1,024-operation cohort, raise the fixed arena capacity as an evidence bypass,
+weaken a budget, add a compiler-module exception, or route through MIR-to-C.
+If the smallest faithful correction requires a MIR meaning change, ABI/layout
+change, runtime-symbol change, or bootstrap seed update, stop and register that
+separate boundary before implementation.
+
+**Exit Gate:** the Cranelift-built compiler completes the unchanged inherited
+1,024-operation generated large-function cohort through explicit Cranelift
+with MIR-to-C parity, no fallback, bounded allocation growth, and no failed
+artifact residue; focused scale evidence covers the observed pass/fail
+threshold; Patch 21.17 remains the owner of the complete 326-case and inherited
+budget replay; accepted Gust meaning, MIR operations, ABI/layout/runtime
+symbols, bootstrap seed, default backend, Stdlib, CR-15, and Patch 21.18 remain
+unchanged.
+
 ## Patch 21.17 — Complete Guard Suite and Resource Budgets
 
 Run the Cranelift-built compiler through the complete required guard suite and
@@ -558,6 +598,8 @@ state. Do not begin Phase 22 from a running or merely available Level 3 suite.
 → 21.14 full compiler native artifact
 → 21.15 native compiler compiles programs
 → 21.16 native rebuild criterion
+→ 21.16a native-rebuild workflow dependency correction
+→ 21.16b native compiler large-function allocation scaling
 → 21.17 guard suite/budgets
 → 21.18 closure.
 
