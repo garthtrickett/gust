@@ -101,7 +101,7 @@ Out of scope:
 - [x] Patch 21.15 — Cranelift-Built Compiler Program Compilation — DONE
 - [x] Patch 21.16 — Native Rebuild Reproducibility Authority — DONE
 - [x] Patch 21.16a — Native Rebuild Workflow Dependency Correction — DONE
-- [ ] Patch 21.16b — Native Compiler Large-Function Allocation Scaling
+- [x] Patch 21.16b — Native Compiler Large-Function Allocation Scaling — DONE
 - [ ] Patch 21.17 — Complete Guard Suite and Resource Budgets
 - [ ] Patch 21.18 — Phase 21 Closure
 
@@ -562,6 +562,14 @@ threshold; Patch 21.17 remains the owner of the complete 326-case and inherited
 budget replay; accepted Gust meaning, MIR operations, ABI/layout/runtime
 symbols, bootstrap seed, default backend, Stdlib, CR-15, and Patch 21.18 remain
 unchanged.
+
+The bounded scalar canonical-transport builder replaces retained prefix chains
+with one capacity-checked linear buffer while preserving the exact canonical
+MIR bytes. The unchanged full Phase 20 profile passes all 34 cases through the
+Cranelift-built compiler, including the 1,024-operation large function, with
+the large-function Cranelift replay peaking at 83,456 KiB instead of aborting
+near 4.2 GiB. MIR-to-C parity, no-fallback, failure cleanup, and the existing
+time/memory budgets remain enforced by the inherited profile.
 
 ## Patch 21.17 — Complete Guard Suite and Resource Budgets
 

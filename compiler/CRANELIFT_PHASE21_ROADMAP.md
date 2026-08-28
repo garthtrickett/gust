@@ -35,7 +35,7 @@ Generated from `scripts/cranelift_feature_registry.json` by
 
 ### Patch 21.16b
 
-- Status: `scheduled`
+- Status: `complete`
 - Capability: `generic_native_compiler_large_function_allocation_scaling`
 - Trigger: `patch21_17_inherited_phase20_generated_large_function_replay`
 - Passing Operation Counts: `64,128,256`
@@ -43,6 +43,8 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - Abort Signal: `6`
 - Abort Peak Rss Kib: `4198784`
 - Required Operation Count: `1024`
+- Passing Case Count: `34`
+- Observed Large Function Peak Rss Kib: `83456`
 - Falsifier: `the_Cranelift_built_compiler_completes_the_unchanged_1024_operation_cohort_with_MIR_to_C_parity_inside_registered_budgets`
 - Boundary: `existing_Gust_MIR_ABI_layout_and_runtime_symbol_authority_only_no_cohort_reduction_budget_weakening_arena_capacity_bypass_module_exception_or_fallback`
 
