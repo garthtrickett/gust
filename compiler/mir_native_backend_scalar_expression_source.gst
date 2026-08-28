@@ -386,6 +386,82 @@ func mir_native_scalar_expression_analyze(
     return model;
 }
 
+type MirNativeScalarExpressionStringHeader struct {
+    data: *byte,
+    len: int
+}
+
+type MirNativeScalarExpressionBuilder struct {
+    data: *byte,
+    length: int,
+    capacity: int,
+    valid: int
+}
+
+func mir_native_scalar_expression_builder_new(
+    step_count: int,
+    ctx: &Arena
+) MirNativeScalarExpressionBuilder {
+    mut builder: MirNativeScalarExpressionBuilder;
+    builder.length = 0;
+    builder.capacity = 8192 + step_count * 512;
+    builder.valid = 1;
+    unsafe {
+        mut storage := os.ScratchAlloc(builder.capacity + 1);
+        builder.data = (storage + 0) as *byte;
+    }
+    return builder;
+}
+
+func mir_native_scalar_expression_builder_append(
+    builder: *MirNativeScalarExpressionBuilder,
+    value: str
+) {
+    unsafe {
+        if (*builder).valid == 0 { return; }
+        if (*builder).length + len(value) > (*builder).capacity {
+            (*builder).valid = 0;
+            return;
+        }
+        mut index := 0;
+        while index < len(value) {
+            *((*builder).data + (*builder).length) =
+                std.str_byte_at(value, index);
+            (*builder).length = (*builder).length + 1;
+            index = index + 1;
+        }
+    }
+}
+
+func mir_native_scalar_expression_builder_append_int(
+    builder: *MirNativeScalarExpressionBuilder,
+    value: int
+) {
+    mir_native_scalar_expression_builder_append(
+        builder,
+        std.FormatInt(value)
+    );
+}
+
+func mir_native_scalar_expression_builder_finish(
+    builder: MirNativeScalarExpressionBuilder,
+    ctx: &Arena
+) str {
+    if builder.valid == 0 { return std.Clone(ctx, ""); }
+    unsafe {
+        *(builder.data + builder.length) = 0;
+        mut header_alloc := os.ScratchAlloc(16);
+        mut header_ptr :=
+            (header_alloc + 0) as *MirNativeScalarExpressionStringHeader;
+        if 0 == 1 {
+            header_ptr = builder.data as *MirNativeScalarExpressionStringHeader;
+        }
+        (*header_ptr).data = builder.data;
+        (*header_ptr).len = builder.length;
+        return *(((header_ptr as *str) + 0) as *str);
+    }
+}
+
 func mir_native_scalar_expression_append(
     output: str,
     value: str,
@@ -420,108 +496,99 @@ func mir_native_scalar_expression_emit(
     ctx: &Arena
 ) mir.MirProgramBundle[ctx] {
     mut statement_count := len(model.plan.steps) + 1;
-    mut canonical :=
-        "format: gust.compiler_mir_ingestion.v1\nfunction: main\nbackend_symbol: main\nparameter_count: 0\nreturn_type: int\nlocal_count: 1\nlocal_0_name: __gust_phase13_scalar_tmp\nlocal_0_type: int\nentry_block: entry\n";
+    mut builder := mir_native_scalar_expression_builder_new(
+        len(model.plan.steps), ctx
+    );
+    mir_native_scalar_expression_builder_append(
+        &builder,
+        "format: gust.compiler_mir_ingestion.v1\nfunction: main\nbackend_symbol: main\nparameter_count: 0\nreturn_type: int\nlocal_count: 1\nlocal_0_name: __gust_phase13_scalar_tmp\nlocal_0_type: int\nentry_block: entry\n"
+    );
     if model.is_comparison_branch == 1 {
-        canonical = mir_native_scalar_expression_append(
-            canonical,
-            "block_count: 3\n",
-            ctx
+        mir_native_scalar_expression_builder_append(
+            &builder,
+            "block_count: 3\n"
         );
     } else {
-        canonical = mir_native_scalar_expression_append(
-            canonical,
-            "block_count: 1\n",
-            ctx
+        mir_native_scalar_expression_builder_append(
+            &builder,
+            "block_count: 1\n"
         );
     }
-    canonical = mir_native_scalar_expression_append(
-        canonical,
-        "block_0_label: entry\nblock_0_parameter_count: 0\nblock_0_statement_count: ",
-        ctx
+    mir_native_scalar_expression_builder_append(
+        &builder,
+        "block_0_label: entry\nblock_0_parameter_count: 0\nblock_0_statement_count: "
     );
-    canonical = mir_native_scalar_expression_append_int(
-        canonical,
-        statement_count,
-        ctx
+    mir_native_scalar_expression_builder_append_int(
+        &builder,
+        statement_count
     );
-    canonical = mir_native_scalar_expression_append(
-        canonical,
-        "\nblock_0_statement_0_kind: LocalI32Set\nblock_0_statement_0_local: __gust_phase13_scalar_tmp\nblock_0_statement_0_value: ",
-        ctx
+    mir_native_scalar_expression_builder_append(
+        &builder,
+        "\nblock_0_statement_0_kind: LocalI32Set\nblock_0_statement_0_local: __gust_phase13_scalar_tmp\nblock_0_statement_0_value: "
     );
-    canonical = mir_native_scalar_expression_append_int(
-        canonical,
-        model.plan.initial_value,
-        ctx
+    mir_native_scalar_expression_builder_append_int(
+        &builder,
+        model.plan.initial_value
     );
-    canonical = mir_native_scalar_expression_append(
-        canonical,
-        "\n",
-        ctx
+    mir_native_scalar_expression_builder_append(
+        &builder,
+        "\n"
     );
 
     mut step_index := 0;
     while step_index < len(model.plan.steps) {
         mut statement_index := step_index + 1;
         mut step := model.plan.steps[step_index];
-        canonical = mir_native_scalar_expression_append(
-            canonical,
-            "block_0_statement_",
-            ctx
+        mir_native_scalar_expression_builder_append(
+            &builder,
+            "block_0_statement_"
         );
-        canonical = mir_native_scalar_expression_append_int(
-            canonical,
-            statement_index,
-            ctx
+        mir_native_scalar_expression_builder_append_int(
+            &builder,
+            statement_index
         );
-        canonical = mir_native_scalar_expression_append(
-            canonical,
-            "_kind: ",
-            ctx
+        mir_native_scalar_expression_builder_append(
+            &builder,
+            "_kind: "
         );
-        canonical = mir_native_scalar_expression_append(
-            canonical,
-            mir_native_scalar_expression_step_kind_name(step),
-            ctx
+        mir_native_scalar_expression_builder_append(
+            &builder,
+            mir_native_scalar_expression_step_kind_name(step)
         );
-        canonical = mir_native_scalar_expression_append(
-            canonical,
-            "\nblock_0_statement_",
-            ctx
+        mir_native_scalar_expression_builder_append(
+            &builder,
+            "\nblock_0_statement_"
         );
-        canonical = mir_native_scalar_expression_append_int(
-            canonical,
-            statement_index,
-            ctx
+        mir_native_scalar_expression_builder_append_int(
+            &builder,
+            statement_index
         );
-        canonical = mir_native_scalar_expression_append(
-            canonical,
-            "_local: __gust_phase13_scalar_tmp\nblock_0_statement_",
-            ctx
+        mir_native_scalar_expression_builder_append(
+            &builder,
+            "_local: __gust_phase13_scalar_tmp\nblock_0_statement_"
         );
-        canonical = mir_native_scalar_expression_append_int(
-            canonical,
-            statement_index,
-            ctx
+        mir_native_scalar_expression_builder_append_int(
+            &builder,
+            statement_index
         );
-        canonical = mir_native_scalar_expression_append(
-            canonical,
-            "_value: ",
-            ctx
+        mir_native_scalar_expression_builder_append(
+            &builder,
+            "_value: "
         );
-        canonical = mir_native_scalar_expression_append_int(
-            canonical,
-            step.value,
-            ctx
+        mir_native_scalar_expression_builder_append_int(
+            &builder,
+            step.value
         );
-        canonical = mir_native_scalar_expression_append(
-            canonical,
-            "\n",
-            ctx
+        mir_native_scalar_expression_builder_append(
+            &builder,
+            "\n"
         );
         step_index = step_index + 1;
     }
+
+    mut canonical := mir_native_scalar_expression_builder_finish(
+        builder, ctx
+    );
 
     mut expected_exit := model.plan.expected_value;
     if model.is_comparison_branch == 1 {

@@ -460,6 +460,8 @@ jobs:
 
       - name: Phase 21 native rebuild reproducibility authority
         run: just guard-cranelift-phase21-native-rebuild-reproducibility-contract
+      - name: Phase 21 native compiler allocation scaling authority
+        run: just guard-cranelift-phase21-native-compiler-allocation-scaling-contract
 
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract

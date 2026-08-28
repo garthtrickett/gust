@@ -16939,6 +16939,26 @@ guard-cranelift-phase21-roadmap:
     python3 scripts/phase21_roadmap.py validate
     python3 scripts/phase21_roadmap.py check-review
 
+guard-cranelift-phase21-native-compiler-allocation-scaling-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📏 Checking Patch 21.16b native-compiler allocation scaling..."
+    just guard-cranelift-phase21-roadmap
+    just guard-cranelift-phase20-generated-mir-scale-contract
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-native-compiler-allocation-scaling-contract | grep -F $'guard-cranelift-phase21-native-compiler-allocation-scaling-contract\t1\t' >/dev/null
+    rg -F 'type MirNativeScalarExpressionBuilder struct' compiler/mir_native_backend_scalar_expression_source.gst >/dev/null
+    rg -F 'builder.capacity = 8192 + step_count * 512;' compiler/mir_native_backend_scalar_expression_source.gst >/dev/null
+    rg -F 'mir_native_scalar_expression_builder_finish(' compiler/mir_native_backend_scalar_expression_source.gst >/dev/null
+
+guard-cranelift-phase21-native-compiler-allocation-scaling-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just guard-cranelift-phase21-native-compiler-allocation-scaling-contract
+    evidence_dir=$(mktemp -d build/phase21-16b-evidence.XXXXXX)
+    trap 'rm -rf "$evidence_dir"' EXIT
+    build/phase10-package/bin/gust --backend cranelift -o "$evidence_dir/gust-native" compiler/test_runner_entry.gst
+    GUST_COMPILER="$evidence_dir/gust-native" python3 scripts/phase20_generated_mir_scale.py run --profile full --output "$evidence_dir/full-scale"
+
 guard-cranelift-phase21-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
