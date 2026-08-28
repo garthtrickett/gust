@@ -104,6 +104,7 @@ Out of scope:
 - [x] Patch 21.16b — Native Compiler Large-Function Allocation Scaling — DONE
 - [x] Patch 21.17a — Scheduler Main-Result Completion — DONE
 - [x] Patch 21.17 — Complete Guard Suite and Resource Budgets — DONE
+- [x] Patch 21.17b — Historical Beachhead Prose-Scope Correction — DONE
 - [ ] Patch 21.18 — Phase 21 Closure
 
 Status rows are machine-parsed. Keep each row as
@@ -649,6 +650,23 @@ hold; accepted Gust meaning, MIR operations, ABI/layout/runtime symbols,
 bootstrap seed, default backend/fallback, Stdlib, CR-15, and Patch 21.18 remain
 unchanged.
 
+## Patch 21.17b — Historical Beachhead Prose-Scope Correction
+
+**Purpose**
+
+Correct the Phase 9 dependency-beachhead guard after authoritative Historical
+Full run 33171071194 proved that it classified generated compiler review
+Markdown as production code. Preserve the production scan over compiler source,
+runtime source, tests, root manifests, and the Makefile; exclude only
+`compiler/CRANELIFT_*.md` review authority from that production-reference
+population. Make no compiler, MIR, backend, ABI/layout, runtime-symbol,
+bootstrap-seed, default-backend, Stdlib, or CR-15 change.
+
+**Exit Gate:** the focused dependency-beachhead guard passes with generated
+Phase 21 review authority present, its production-source population remains
+unchanged, and replacement authoritative Historical Full evidence owns final
+qualification.
+
 ## Patch 21.18 — Phase 21 Closure
 
 Require every Phase 21 row DONE, the OD-8 verdict recorded exactly as evidence
@@ -681,6 +699,7 @@ state. Do not begin Phase 22 from a running or merely available Level 3 suite.
 → 21.16b native compiler large-function allocation scaling
 → 21.17a scheduler main-result completion
 → 21.17 guard suite/budgets
+→ 21.17b historical beachhead prose-scope correction
 → 21.18 closure.
 
 ## Phase 21 Success Criteria
