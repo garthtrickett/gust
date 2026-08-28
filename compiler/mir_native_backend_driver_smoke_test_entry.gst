@@ -88,6 +88,7 @@ func main() {
     handshake_text = std.Concat(handshake_text, "program_mir_bundle_format: gust.compiler_program_mir_bundle.v1\n");
     handshake_text = std.Concat(handshake_text, "canonical_mir_format: gust.compiler_mir_ingestion.v1\n");
     handshake_text = std.Concat(handshake_text, "canonical_mir_format: gust.compiler_mir_ingestion.v2\n");
+    handshake_text = std.Concat(handshake_text, "canonical_mir_format: gust.compiler_executable_mir.v1\n");
     handshake_text = std.Concat(handshake_text, "target_triple: x86_64-unknown-linux-gnu\n");
     handshake_text = std.Concat(handshake_text, "object_format: Elf\n");
     handshake_text = std.Concat(handshake_text, "link_capability: native_executable\n");
@@ -185,6 +186,7 @@ func main() {
     bad_protocol_text = std.Concat(bad_protocol_text, "program_mir_bundle_format: gust.compiler_program_mir_bundle.v1\n");
     bad_protocol_text = std.Concat(bad_protocol_text, "canonical_mir_format: gust.compiler_mir_ingestion.v1\n");
     bad_protocol_text = std.Concat(bad_protocol_text, "canonical_mir_format: gust.compiler_mir_ingestion.v2\n");
+    bad_protocol_text = std.Concat(bad_protocol_text, "canonical_mir_format: gust.compiler_executable_mir.v1\n");
     bad_protocol_text = std.Concat(bad_protocol_text, "target_triple: x86_64-unknown-linux-gnu\n");
     bad_protocol_text = std.Concat(bad_protocol_text, "object_format: Elf\n");
     bad_protocol_text = std.Concat(bad_protocol_text, "link_capability: native_executable\n");

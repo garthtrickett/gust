@@ -85,6 +85,19 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - Falsifier: `the_focused_beachhead_guard_and_replacement_phase9_core_Historical_Full_shard_pass_while_production_source_remains_scanned`
 - Boundary: `guard_population_classification_only_no_gate_weakening_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change`
 
+### Patch 21.17c
+
+- Status: `complete`
+- Capability: `historical_driver_handshake_fixture_reconciliation`
+- Trigger Run Id: `33177003376`
+- Failed Guard: `guard-cranelift-phase10-driver-handshake-contract`
+- Failure Class: `positive_fixture_omitted_existing_full_program_canonical_format`
+- Existing Authority: `patch21_14_exact_three_format_driver_handshake_contract`
+- Correction: `positive_and_protocol_mismatch_fixture_handshakes_advertise_v1_v2_and_gust_compiler_executable_mir_v1`
+- Changes Compiler Semantics: `false`
+- Falsifier: `the_focused_phase10_handshake_guard_and_replacement_phase10_Historical_Full_shard_pass_without_validator_or_worker_change`
+- Boundary: `fixture_reconciliation_only_no_validator_worker_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change`
+
 ## OD-8
 
 - Status: `design_set_evidence_open`

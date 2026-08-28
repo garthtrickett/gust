@@ -105,6 +105,7 @@ Out of scope:
 - [x] Patch 21.17a — Scheduler Main-Result Completion — DONE
 - [x] Patch 21.17 — Complete Guard Suite and Resource Budgets — DONE
 - [x] Patch 21.17b — Historical Beachhead Prose-Scope Correction — DONE
+- [x] Patch 21.17c — Historical Driver-Handshake Fixture Reconciliation — DONE
 - [ ] Patch 21.18 — Phase 21 Closure
 
 Status rows are machine-parsed. Keep each row as
@@ -667,6 +668,23 @@ Phase 21 review authority present, its production-source population remains
 unchanged, and replacement authoritative Historical Full evidence owns final
 qualification.
 
+## Patch 21.17c — Historical Driver-Handshake Fixture Reconciliation
+
+**Purpose**
+
+Reconcile the Phase 10 positive driver-handshake smoke with the existing Patch
+21.14 full-program canonical-MIR format authority. The worker and validator
+already require exactly v1, v2, and `gust.compiler_executable_mir.v1`; update
+the stale positive and protocol-mismatch fixture handshakes to advertise that
+same three-format contract. Change no parser, validator, worker, compiler, MIR,
+backend, ABI/layout, runtime symbol, bootstrap seed, default backend, Stdlib, or
+CR-15 behavior.
+
+**Exit Gate:** the focused Phase 10 driver-handshake contract passes; the
+positive fixture classifies compatible, the negative fixture remains a protocol
+mismatch rather than failing an unrelated precondition, and replacement
+authoritative Historical Full evidence owns final qualification.
+
 ## Patch 21.18 — Phase 21 Closure
 
 Require every Phase 21 row DONE, the OD-8 verdict recorded exactly as evidence
@@ -700,6 +718,7 @@ state. Do not begin Phase 22 from a running or merely available Level 3 suite.
 → 21.17a scheduler main-result completion
 → 21.17 guard suite/budgets
 → 21.17b historical beachhead prose-scope correction
+→ 21.17c historical driver-handshake fixture reconciliation
 → 21.18 closure.
 
 ## Phase 21 Success Criteria
