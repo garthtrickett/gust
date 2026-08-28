@@ -1,0 +1,81 @@
+name: Cranelift Phase 21 Scheduler Main-Result Completion
+
+on:
+  pull_request:
+    paths:
+      - 'TASK.md'
+      - 'Makefile'
+      - 'gust_v4.c'
+      - 'compiler/phase20_long_lived_concurrent_source.gst'
+      - 'compiler/phase20_long_lived_resource_source.gst'
+      - 'compiler/fixtures/native_backend_phase20_long_lived_concurrent.mir'
+      - 'compiler/fixtures/phase20_long_lived_concurrent_probe.c'
+      - 'compiler/CRANELIFT_PHASE21_ROADMAP.md'
+      - 'compiler/experiments/cranelift/**'
+      - 'src/runtime.c'
+      - 'src/runtime/**'
+      - 'tools/normalize_generated_arena_offsets.py'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase20_long_lived_concurrent.py'
+      - 'scripts/phase20_long_lived_concurrent.sh'
+      - 'scripts/phase21_roadmap.py'
+      - 'scripts/phase21_scheduler_main_result.py'
+      - '.github/workflows/phase21-scheduler-main-result.yml'
+      - '.github/workflows/pr-fast.yml'
+      - 'justfile'
+  push:
+    branches: [main]
+    paths:
+      - 'TASK.md'
+      - 'Makefile'
+      - 'gust_v4.c'
+      - 'compiler/phase20_long_lived_concurrent_source.gst'
+      - 'compiler/phase20_long_lived_resource_source.gst'
+      - 'compiler/fixtures/native_backend_phase20_long_lived_concurrent.mir'
+      - 'compiler/fixtures/phase20_long_lived_concurrent_probe.c'
+      - 'compiler/CRANELIFT_PHASE21_ROADMAP.md'
+      - 'compiler/experiments/cranelift/**'
+      - 'src/runtime.c'
+      - 'src/runtime/**'
+      - 'tools/normalize_generated_arena_offsets.py'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase20_long_lived_concurrent.py'
+      - 'scripts/phase20_long_lived_concurrent.sh'
+      - 'scripts/phase21_roadmap.py'
+      - 'scripts/phase21_scheduler_main_result.py'
+      - '.github/workflows/phase21-scheduler-main-result.yml'
+      - '.github/workflows/pr-fast.yml'
+      - 'justfile'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: just guard-cranelift-phase21-scheduler-main-result-contract
+
+  evidence:
+    needs: contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: make gust phase10-native-package
+      - run: just guard-cranelift-phase21-scheduler-main-result-evidence

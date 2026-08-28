@@ -42,6 +42,11 @@ static GUST_THREAD_LOCAL gust_SchedulerShard* active_shard = NULL;
 static int gust_num_shards = 0;
 static gust_SchedulerShard* gust_shards = NULL;
 static volatile int gust_scheduler_running = 1;
+// Counts every successfully queued fiber until its terminal context switch has
+// returned to the scheduler. The __sync operations are full barriers, so a
+// host thread that observes zero after scheduler completion also observes the
+// fiber's published result and other terminal writes.
+static int gust_pending_fibers = 0;
 
 void gust_context_switch(void** from_rsp, void* to_rsp);
 void gust_fiber_entry_wrapper(void);
@@ -318,6 +323,7 @@ void* gust_shard_loop(void* arg) {
             pthread_mutex_unlock(&shard->lock);
 
             if (next->state == GUST_FIBER_DEAD) {
+                __sync_sub_and_fetch(&gust_pending_fibers, 1);
                 gust_fiber_free(next);
             }
         } else {
@@ -364,6 +370,7 @@ void gust_scheduler_spawn(size_t stack_size, void (*entry_fn)(void*), void* arg)
     if (target) {
         fiber->shard = target;
         pthread_mutex_lock(&target->lock);
+        __sync_add_and_fetch(&gust_pending_fibers, 1);
         fiber->state = GUST_FIBER_READY;
         if (target->run_queue_tail) {
             target->run_queue_tail->next = fiber;
@@ -424,7 +431,7 @@ void gust_scheduler_init(int num_shards) {
 void gust_scheduler_destroy() {
     int work_remaining = 1;
     while (work_remaining) {
-        work_remaining = 0;
+        work_remaining = __sync_fetch_and_add(&gust_pending_fibers, 0) > 0;
         for (int i = 0; i < gust_num_shards; i++) {
             pthread_mutex_lock(&gust_shards[i].lock);
             if (gust_shards[i].run_queue_head != NULL || gust_shards[i].active_fiber != NULL) {

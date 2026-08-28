@@ -54,6 +54,24 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - Falsifier: `the_Cranelift_built_compiler_completes_the_unchanged_1024_operation_cohort_with_MIR_to_C_parity_inside_registered_budgets`
 - Boundary: `existing_Gust_MIR_ABI_layout_and_runtime_symbol_authority_only_no_cohort_reduction_budget_weakening_arena_capacity_bypass_module_exception_or_fallback`
 
+### Patch 21.17a
+
+- Status: `complete`
+- Capability: `generic_scheduler_main_result_completion`
+- Trigger: `patch21_17_inherited_phase20_long_lived_concurrent_replay`
+- Operator Date: `2026-08-28`
+- Expected Exit Status: `47`
+- Observed Mir To C Statuses Before: `0,47`
+- Observed Native Status Before: `47`
+- Focused Replays Per Backend: `32`
+- Synchronization Authority: `scheduler_owned_pending_fiber_count_with_full_barrier_result_publication`
+- Runtime Implementation: `src/runtime/fiber.c`
+- Changes Runtime Symbols: `false`
+- Changes Abi Or Layout: `false`
+- Changes Accepted Gust Meaning: `false`
+- Falsifier: `every_focused_MIR_to_C_and_Cranelift_replay_returns_47_with_identical_empty_streams_and_the_patch21_17_full_inherited_replay_passes`
+- Boundary: `generic_scheduler_completion_only_no_gate_weakening_fixture_exception_other_runtime_semantics_stdlib_CR15_or_patch21_18`
+
 ## OD-8
 
 - Status: `design_set_evidence_open`

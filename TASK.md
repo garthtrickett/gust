@@ -102,6 +102,7 @@ Out of scope:
 - [x] Patch 21.16 — Native Rebuild Reproducibility Authority — DONE
 - [x] Patch 21.16a — Native Rebuild Workflow Dependency Correction — DONE
 - [x] Patch 21.16b — Native Compiler Large-Function Allocation Scaling — DONE
+- [x] Patch 21.17a — Scheduler Main-Result Completion — DONE
 - [ ] Patch 21.17 — Complete Guard Suite and Resource Budgets
 - [ ] Patch 21.18 — Phase 21 Closure
 
@@ -581,6 +582,23 @@ inherited profile. The pre-correction and corrected Cranelift-built compilers
 also emit byte-identical canonical bundles and native artifacts for the largest
 previously passing 256-operation threshold witness.
 
+## Patch 21.17a — Scheduler Main-Result Completion
+
+Operator-authorized on 2026-08-28 after the unchanged Patch 21.17 inherited
+long-lived/concurrent replay exposed nondeterministic host-main completion. The
+MIR-to-C program sometimes returned `0` while the same canonical MIR through
+Cranelift reliably returned the user main result `47`, with identical empty
+streams. Correct the generic scheduler completion contract so every successfully
+queued fiber remains scheduler-owned until its terminal context switch has
+returned and its writes are published to host main.
+
+Exit gate: the existing Phase 20 full long-lived/concurrent replay passes without
+normalization or fallback, and repeated MIR-to-C and Cranelift executions both
+return `47` with byte-identical stdout/stderr. The correction adds no runtime
+symbol, ABI/layout change, fixture exception, gate weakening, or other runtime
+semantic expansion; Stdlib, CR-15, and Patch 21.18 remain untouched. After this
+atomic correction merges, rebase and resume Patch 21.17 from exact main.
+
 ## Patch 21.17 — Complete Guard Suite and Resource Budgets
 
 Run the Cranelift-built compiler through the complete required guard suite and
@@ -618,6 +636,7 @@ state. Do not begin Phase 22 from a running or merely available Level 3 suite.
 → 21.16 native rebuild criterion
 → 21.16a native-rebuild workflow dependency correction
 → 21.16b native compiler large-function allocation scaling
+→ 21.17a scheduler main-result completion
 → 21.17 guard suite/budgets
 → 21.18 closure.
 

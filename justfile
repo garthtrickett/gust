@@ -16964,6 +16964,23 @@ guard-cranelift-phase21-native-compiler-allocation-scaling-evidence:
     build/phase10-package/bin/gust --backend cranelift -o "$evidence_dir/gust-native" compiler/test_runner_entry.gst
     GUST_COMPILER="$evidence_dir/gust-native" python3 scripts/phase20_generated_mir_scale.py run --profile full --output "$evidence_dir/full-scale"
 
+guard-cranelift-phase21-scheduler-main-result-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧵 Checking Patch 21.17a scheduler main-result completion..."
+    just guard-cranelift-phase21-roadmap
+    just guard-cranelift-phase20-long-lived-concurrent-contract
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-scheduler-main-result-contract | grep -F $'guard-cranelift-phase21-scheduler-main-result-contract\t1\t' >/dev/null
+    python3 scripts/phase21_scheduler_main_result.py validate
+
+guard-cranelift-phase21-scheduler-main-result-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Replaying Patch 21.17a scheduler main-result parity..."
+    just guard-cranelift-phase21-scheduler-main-result-contract
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-scheduler-main-result-evidence | grep -F $'guard-cranelift-phase21-scheduler-main-result-evidence\t2\t' >/dev/null
+    python3 scripts/phase21_scheduler_main_result.py replay
+
 guard-cranelift-phase21-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
