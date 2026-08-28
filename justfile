@@ -17310,6 +17310,7 @@ guard-cranelift-phase21-complete-guard-suite-contract:
     python3 scripts/phase21_complete_guard_suite.py validate
     python3 scripts/phase21_complete_guard_suite.py check-review
     python3 scripts/phase21_complete_guard_suite.py deadline-regression
+    python3 scripts/phase21_complete_guard_suite.py observable-diagnostic-regression
 
 guard-cranelift-phase21-complete-guard-suite-evidence:
     #!/usr/bin/env bash

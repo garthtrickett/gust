@@ -333,6 +333,24 @@ def write_logs(case_dir: Path, prefix: str,
         f"{completed.returncode}\n", encoding="utf-8")
 
 
+def observable_mismatch_detail(
+        oracle: subprocess.CompletedProcess[bytes],
+        native: subprocess.CompletedProcess[bytes]) -> str:
+    def detail(label: str,
+               completed: subprocess.CompletedProcess[bytes]) -> str:
+        stdout_tail = completed.stdout[-256:]
+        stderr_tail = completed.stderr[-256:]
+        return (
+            f"{label}(status={completed.returncode}, "
+            f"stdout_len={len(completed.stdout)}, "
+            f"stdout_tail={stdout_tail!r}, "
+            f"stderr_len={len(completed.stderr)}, "
+            f"stderr_tail={stderr_tail!r})"
+        )
+
+    return f"{detail('oracle', oracle)}; {detail('native', native)}"
+
+
 def compile_case(deadline: float, compiler: Path, case: dict, backend: str,
                  output: Path, env: dict[str, str],
                  cwd: Path) -> subprocess.CompletedProcess[bytes]:
@@ -542,7 +560,8 @@ def qualify_case(deadline: float, native_compiler: Path, env: dict[str, str],
             native_run.returncode == oracle_run.returncode and
             native_run.stdout == oracle_run.stdout and
             native_run.stderr == oracle_run.stderr,
-            f"unexplained native observable divergence: {case['path']}")
+            f"unexplained native observable divergence: {case['path']}; "
+            f"{observable_mismatch_detail(oracle_run, native_run)}")
     return "required", ""
 
 
@@ -670,11 +689,28 @@ def deadline_regression() -> None:
     require(False, "deadline regression did not stop the child process group")
 
 
+def observable_diagnostic_regression() -> None:
+    oracle = subprocess.CompletedProcess(
+        ["oracle"], 1, b"expected\n", b"")
+    native = subprocess.CompletedProcess(
+        ["native"], 0, b"unexpected\n", b"native diagnostic\n")
+    observed = observable_mismatch_detail(oracle, native)
+    expected = (
+        "oracle(status=1, stdout_len=9, stdout_tail=b'expected\\n', "
+        "stderr_len=0, stderr_tail=b''); "
+        "native(status=0, stdout_len=11, stdout_tail=b'unexpected\\n', "
+        "stderr_len=18, stderr_tail=b'native diagnostic\\n')"
+    )
+    require(observed == expected,
+            "observable mismatch diagnostic regression drifted")
+    print(f"{GUARD_L1}: observable diagnostic regression ok")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("command", choices=(
         "validate", "project", "check-review", "evidence",
-        "deadline-regression",
+        "deadline-regression", "observable-diagnostic-regression",
     ))
     args = parser.parse_args()
     record = validate()
@@ -689,6 +725,9 @@ def main() -> None:
         return
     elif args.command == "deadline-regression":
         deadline_regression()
+        return
+    elif args.command == "observable-diagnostic-regression":
+        observable_diagnostic_regression()
         return
     print(f"{GUARD_L1}: ok")
 
