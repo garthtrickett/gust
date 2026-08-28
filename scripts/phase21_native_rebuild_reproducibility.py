@@ -239,6 +239,7 @@ def validate() -> dict:
         "- 'compiler/experiments/cranelift/**'",
         "- 'src/runtime.c'",
         "- 'src/runtime/**'",
+        "- 'tools/normalize_generated_arena_offsets.py'",
     ):
         require(workflow.count(path) == 2,
                 f"dedicated workflow does not cover {path} twice")
@@ -336,6 +337,7 @@ def source_paths() -> list[str]:
         "src/runtime",
         "gust_v4.c",
         "Makefile",
+        "tools/normalize_generated_arena_offsets.py",
     ]
     return paths
 
