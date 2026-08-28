@@ -346,6 +346,8 @@
     "guard-cranelift-phase21-native-rebuild-reproducibility-evidence": 2,
     "guard-cranelift-phase21-native-compiler-allocation-scaling-contract": 1,
     "guard-cranelift-phase21-native-compiler-allocation-scaling-evidence": 2,
+    "guard-cranelift-phase21-scheduler-main-result-contract": 1,
+    "guard-cranelift-phase21-scheduler-main-result-evidence": 2,
     "guard-cranelift-phase20-resource-scope-cleanup-parity": 2,
     "guard-cranelift-phase20-seed-convergence": 1,
     "guard-cranelift-phase20-nested-brand-annotation-contract": 1,
