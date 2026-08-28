@@ -44,7 +44,13 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - Abort Peak Rss Kib: `4198784`
 - Required Operation Count: `1024`
 - Passing Case Count: `34`
-- Observed Large Function Peak Rss Kib: `83456`
+- Observed Large Function Peak Rss Kib: `95488`
+- Post Merge Correction: `compiler_origin_selection_and_local_state_linear_canonical_transport`
+- Compiler Origin Policy: `GUST_COMPILER_is_consumed_by_the_inherited_scale_harness_and_names_the_Cranelift_built_compiler_under_test`
+- Corrected Emitter: `compiler/mir_native_backend_local_state_source.gst`
+- Byte Identity Operation Count: `256`
+- Byte Identity Policy: `pre_correction_and_corrected_Cranelift_built_compilers_emit_cmp_identical_canonical_bundles_and_native_artifacts`
+- Changes Compiler Semantics: `false`
 - Falsifier: `the_Cranelift_built_compiler_completes_the_unchanged_1024_operation_cohort_with_MIR_to_C_parity_inside_registered_budgets`
 - Boundary: `existing_Gust_MIR_ABI_layout_and_runtime_symbol_authority_only_no_cohort_reduction_budget_weakening_arena_capacity_bypass_module_exception_or_fallback`
 

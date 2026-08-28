@@ -16949,6 +16949,11 @@ guard-cranelift-phase21-native-compiler-allocation-scaling-contract:
     rg -F 'type MirNativeScalarExpressionBuilder struct' compiler/mir_native_backend_scalar_expression_source.gst >/dev/null
     rg -F 'builder.capacity = 8192 + step_count * 512;' compiler/mir_native_backend_scalar_expression_source.gst >/dev/null
     rg -F 'mir_native_scalar_expression_builder_finish(' compiler/mir_native_backend_scalar_expression_source.gst >/dev/null
+    rg -F 'GUST = os.environ.get("GUST_COMPILER", "./gust")' scripts/phase20_generated_mir_scale.py >/dev/null
+    rg -F 'type MirNativeLocalStateBuilder struct' compiler/mir_native_backend_local_state_source.gst >/dev/null
+    rg -F 'mir_native_local_state_builder_with_capacity(' compiler/mir_native_backend_local_state_source.gst >/dev/null
+    rg -F 'mir_native_local_state_emit_block_header_and_writes_into_builder(' compiler/mir_native_backend_local_state_source.gst >/dev/null
+    rg -F 'mir_native_local_state_builder_finish(' compiler/mir_native_backend_local_state_source.gst >/dev/null
 
 guard-cranelift-phase21-native-compiler-allocation-scaling-evidence:
     #!/usr/bin/env bash

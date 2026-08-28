@@ -563,13 +563,23 @@ budget replay; accepted Gust meaning, MIR operations, ABI/layout/runtime
 symbols, bootstrap seed, default backend, Stdlib, CR-15, and Patch 21.18 remain
 unchanged.
 
-The bounded scalar canonical-transport builder replaces retained prefix chains
-with one capacity-checked linear buffer while preserving the exact canonical
-MIR bytes. The unchanged full Phase 20 profile passes all 34 cases through the
-Cranelift-built compiler, including the 1,024-operation large function, with
-the large-function Cranelift replay peaking at 83,456 KiB instead of aborting
-near 4.2 GiB. MIR-to-C parity, no-fallback, failure cleanup, and the existing
-time/memory budgets remain enforced by the inherited profile.
+Post-merge correction (2026-08-28): the first evidence recipe exported the
+Cranelift-built compiler path, but the inherited scale harness ignored it and
+silently invoked `./gust`; it therefore exercised the C-built compiler. Once
+the harness was corrected to consume `GUST_COMPILER`, the unchanged 1,024
+operation case reproduced the signal-6 abort near 4.2 GiB in the local-state
+canonical emitter rather than the scalar emitter changed by the first patch.
+
+The bounded local-state canonical-transport builder replaces retained prefix
+chains with one capacity-checked linear buffer while preserving the exact
+canonical MIR bytes and the structured-CFG helper contract. The corrected
+compiler-origin guard now passes all 34 unchanged Phase 20 cases through the
+actual Cranelift-built compiler, including the 1,024-operation large function,
+whose Cranelift replay peaks at 95,488 KiB. MIR-to-C parity, no-fallback,
+failure cleanup, and the existing time/memory budgets remain enforced by the
+inherited profile. The pre-correction and corrected Cranelift-built compilers
+also emit byte-identical canonical bundles and native artifacts for the largest
+previously passing 256-operation threshold witness.
 
 ## Patch 21.17 — Complete Guard Suite and Resource Budgets
 
