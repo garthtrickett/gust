@@ -2,6 +2,7 @@
 set -euo pipefail
 
 profile="${1:-small}"
+gust_compiler="${GUST_COMPILER:-./gust}"
 case "$profile" in
   small) cycles=8 ;;
   full) cycles=128 ;;
@@ -18,7 +19,7 @@ worker="build/gust-native-backend"
 rm -rf "$build_root"
 mkdir -p "$build_root"
 
-./gust --backend mir-to-c "$source_fixture" \
+"$gust_compiler" --backend mir-to-c "$source_fixture" \
   >"$build_root/source.c" 2>"$build_root/source.compiler.stderr"
 test ! -s "$build_root/source.compiler.stderr"
 rg -F 'tiny_host_add_i32(value, 12)' "$build_root/source.c" >/dev/null
@@ -77,14 +78,14 @@ while IFS=$'\t' read -r category residue_source decision reason_code \
 do
   case_root="$build_root/residue-$category"
   mkdir -p "$case_root"
-  ./gust --backend mir-to-c "$residue_source" \
+  "$gust_compiler" --backend mir-to-c "$residue_source" \
     >"$case_root/mir-to-c.c" 2>"$case_root/mir-to-c.stderr"
   test ! -s "$case_root/mir-to-c.stderr"
   set +e
   GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
   GUST_PHASE20_POISON_MARKER="$poison_marker" \
   GUST_NATIVE_BACKEND_DRIVER="$poison_abs" \
-    ./gust --backend cranelift -o "$case_root/native" \
+    "$gust_compiler" --backend cranelift -o "$case_root/native" \
       "$residue_source" >"$case_root/native.stdout" \
       2>"$case_root/native.stderr"
   residue_status="$?"
@@ -109,7 +110,7 @@ set +e
 GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
 GUST_PHASE20_POISON_MARKER="$poison_marker" \
 GUST_NATIVE_BACKEND_DRIVER="$poison_abs" \
-  ./gust --backend cranelift -o "$build_root/excluded-native" \
+  "$gust_compiler" --backend cranelift -o "$build_root/excluded-native" \
     "$source_fixture" >"$build_root/excluded.stdout" \
     2>"$build_root/excluded.stderr"
 excluded_status="$?"

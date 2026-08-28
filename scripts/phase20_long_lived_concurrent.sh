@@ -2,6 +2,7 @@
 set -euo pipefail
 
 profile="${1:-small}"
+gust_compiler="${GUST_COMPILER:-./gust}"
 case "$profile" in
   small) cycles=8; resource_runs=1 ;;
   full) cycles=128; resource_runs=4 ;;
@@ -18,7 +19,7 @@ worker="build/gust-native-backend"
 rm -rf "$build_root"
 mkdir -p "$build_root"
 
-./gust --backend mir-to-c "$runtime_source" \
+"$gust_compiler" --backend mir-to-c "$runtime_source" \
   >"$build_root/runtime.c" 2>"$build_root/runtime.compiler.stderr"
 test ! -s "$build_root/runtime.compiler.stderr"
 cat src/runtime.c "$probe" "$build_root/runtime.c" \
@@ -56,7 +57,7 @@ cmp -s "$build_root/mir-to-c.stderr" "$build_root/native.stderr"
 test ! -s "$build_root/mir-to-c.stdout"
 test ! -s "$build_root/mir-to-c.stderr"
 
-./gust --backend mir-to-c "$resource_source" \
+"$gust_compiler" --backend mir-to-c "$resource_source" \
   >"$build_root/resource.c" 2>"$build_root/resource.compiler.stderr"
 test ! -s "$build_root/resource.compiler.stderr"
 cat src/runtime.c "$build_root/resource.c" >"$build_root/resource.final.c"
@@ -103,7 +104,7 @@ for excluded_source in "${excluded_sources[@]}"; do
   GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
   GUST_PHASE20_POISON_MARKER="$poison_marker" \
   GUST_NATIVE_BACKEND_DRIVER="$PWD/$poison" \
-    ./gust --backend cranelift -o "$build_root/excluded-native" \
+    "$gust_compiler" --backend cranelift -o "$build_root/excluded-native" \
       "$excluded_source" >"$build_root/excluded.stdout" \
       2>"$build_root/excluded.stderr"
   excluded_status="$?"
@@ -118,7 +119,7 @@ done
 if test "$full_compiler_live" = 1; then
   make build/gust-runtime-package.a
   GUST_NATIVE_BACKEND_DRIVER="$PWD/$worker" \
-    ./gust --backend cranelift -o "$build_root/resource-native" \
+    "$gust_compiler" --backend cranelift -o "$build_root/resource-native" \
       "$resource_source" >"$build_root/resource-native.compile.stdout" \
       2>"$build_root/resource-native.compile.stderr"
   test ! -s "$build_root/resource-native.compile.stdout"

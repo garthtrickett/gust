@@ -103,7 +103,7 @@ Out of scope:
 - [x] Patch 21.16a — Native Rebuild Workflow Dependency Correction — DONE
 - [x] Patch 21.16b — Native Compiler Large-Function Allocation Scaling — DONE
 - [x] Patch 21.17a — Scheduler Main-Result Completion — DONE
-- [ ] Patch 21.17 — Complete Guard Suite and Resource Budgets
+- [x] Patch 21.17 — Complete Guard Suite and Resource Budgets — DONE
 - [ ] Patch 21.18 — Phase 21 Closure
 
 Status rows are machine-parsed. Keep each row as
@@ -605,6 +605,49 @@ Run the Cranelift-built compiler through the complete required guard suite and
 registered long-lived, concurrency, large-function, compile-time, peak-memory,
 diagnostic, and failure-cleanup budgets. Classify every skip or deferral; zero
 unexplained failure is permitted.
+
+The self-hosted runner is the source authority for 326 cases: 216 positive,
+104 compile-fail, and six expected runtime-failure cases. The registered
+qualification derives that inventory rather than copying a partial list. A
+Cranelift-built full compiler drives both the explicit Cranelift target leg and
+the explicit MIR-to-C oracle leg. Of those cases, 192 are required native
+passes and 134 are owned, reason-coded deferrals with falsifiers: 121 compiler-
+reported native capability or validation limitations, ten fixtures whose
+positive or diagnostic premise is stale against the oracle, and three admitted
+native executables whose observables still diverge. No case is omitted or left
+in an unnamed bucket.
+
+The same compiler origin replays the full registered generated-MIR/large-
+function and large-module budgets, long-lived/concurrent resource profile, and
+cross-feature profile. Corpus cases run across two serial, detached-worktree
+shards so root volatiles and relative fixture paths remain isolated while the
+two-CPU authoritative runner is used fully; no shared fixed-`/tmp` guard family
+runs inside the sharded corpus. Every child is bounded by the
+remaining suite deadline; compile time is monotonic and peak RSS is the sampled
+aggregate live process-tree total. Failed native cases leave no output,
+request, bundle, object, or generated C, and the target route never falls back.
+These classifications do not resolve the deferrals or authorize Phase 22
+implementation.
+
+Patch 21.16b resolved the inherited generated-scale blocker generically. Its
+unchanged full 34-case profile now passes through the Cranelift-built compiler,
+including the required 1,024-operation large function at an observed peak of
+95,488 KiB instead of aborting near 4.2 GiB. Its post-merge correction makes
+the inherited harness consume the requested compiler origin and applies linear
+canonical transport to the actual local-state emitter. Patch 21.17 retains the
+complete cohort and fixed budgets and replays that corrected authority from the
+same compiler origin; it does not weaken the cohort or alter runtime, layout,
+MIR, or accepted Gust meaning.
+
+**Exit Gate:** all 326 runner cases are derived and classified exactly once;
+all 192 required native cases match the MIR-to-C oracle and runner
+expectations; all 134 deferrals retain an owner, reason, destination, and
+falsifier; compile-fail diagnostics and failed-artifact cleanup pass; the full
+generated scale, long-lived/concurrent, and cross-feature budget replays pass
+through the Cranelift-built compiler origin; elapsed and peak-memory bounds
+hold; accepted Gust meaning, MIR operations, ABI/layout/runtime symbols,
+bootstrap seed, default backend/fallback, Stdlib, CR-15, and Patch 21.18 remain
+unchanged.
 
 ## Patch 21.18 — Phase 21 Closure
 

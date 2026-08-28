@@ -17299,6 +17299,26 @@ guard-cranelift-phase21-native-rebuild-reproducibility-evidence:
     just guard-cranelift-phase21-native-rebuild-reproducibility-contract
     python3 scripts/phase21_native_rebuild_reproducibility.py evidence
 
+guard-cranelift-phase21-complete-guard-suite-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Checking Phase 21 complete native guard-suite authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-complete-guard-suite-contract | grep -F $'guard-cranelift-phase21-complete-guard-suite-contract\t1\t' >/dev/null
+    just guard-cranelift-phase21-native-rebuild-reproducibility-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase21_complete_guard_suite.py validate
+    python3 scripts/phase21_complete_guard_suite.py check-review
+    python3 scripts/phase21_complete_guard_suite.py deadline-regression
+    python3 scripts/phase21_complete_guard_suite.py observable-diagnostic-regression
+
+guard-cranelift-phase21-complete-guard-suite-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running the complete native guard suite and resource budgets..."
+    just guard-cranelift-phase21-complete-guard-suite-contract
+    python3 scripts/phase21_complete_guard_suite.py evidence
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
