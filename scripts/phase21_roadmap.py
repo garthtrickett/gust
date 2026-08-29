@@ -283,10 +283,18 @@ def validate() -> dict:
             "Phase 21 roadmap amendments drifted")
 
     task = TASK.read_text(encoding="utf-8")
-    require(task.startswith(
-        "# Phase 21 — Tenant-Scoped Typed Queries and Cranelift Self-Hosting Qualification"),
-        "TASK.md does not open Phase 21")
-    status = task.split("## Status", 1)[1].split("## Immutable Contracts", 1)[0]
+    require(task.startswith("# Phase 22 — Cranelift Default Backend Transition"),
+            "TASK.md does not open the active Phase 22 roadmap")
+    immutable_marker = (
+        "# Immutable Phase 21 Completion Record — Tenant-Scoped Typed Queries "
+        "and Cranelift Self-Hosting Qualification"
+    )
+    require(immutable_marker in task,
+            "TASK.md does not preserve the immutable Phase 21 record")
+    phase21 = task.split(immutable_marker, 1)[1].split(
+        "# Immutable Phase 20 Completion Record", 1)[0]
+    status = phase21.split("## Status", 1)[1].split(
+        "## Immutable Contracts", 1)[0]
     rows = re.findall(r"^- \[([ x])\] Patch (21\.\d+[a-z]?) — .+$",
                       status, re.MULTILINE)
     require([patch for _, patch in rows] == EXPECTED_PATCHES,
@@ -296,11 +304,11 @@ def validate() -> dict:
     if " " in marks:
         require("x" not in marks[marks.index(" "):],
                 "Phase 21 DONE rows must form one contiguous prefix")
-    require("On 2026-08-24 the operator conditionally authorized Phase 21" in task and
-            "That condition is satisfied" in task,
+    require("On 2026-08-24 the operator conditionally authorized Phase 21" in phase21 and
+            "That condition is satisfied" in phase21,
             "TASK.md does not record operator activation")
     for patch in EXPECTED_PATCHES:
-        require(f"## Patch {patch} —" in task,
+        require(f"## Patch {patch} —" in phase21,
                 f"TASK.md lacks Patch {patch} boundary")
     require("# Immutable Phase 20 Completion Record" in task and
             "## Phase 20 Closure Record" in task,
