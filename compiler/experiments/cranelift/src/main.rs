@@ -16512,26 +16512,36 @@ fn compile_phase10_scalar_metadata_request_path(
             })?;
         }
     }
+    let mut object_cleanup_error = None;
+    for object_path in &object_paths {
+        if object_path.exists() {
+            if let Err(error) = fs::remove_file(object_path) {
+                if object_cleanup_error.is_none() {
+                    object_cleanup_error = Some(format!(
+                        "could not remove hidden source-route object {}: {error}",
+                        object_path.display()
+                    ));
+                }
+            }
+        }
+    }
+
+    // Preserve a linker failure as the primary diagnostic after making a
+    // best-effort cleanup pass over every worker-owned source-route object.
     let report = link_result?;
+    if let Some(error) = object_cleanup_error {
+        return Err(phase10_backend_request_error(
+            Phase10BackendRequestStage::RequestValidation,
+            Phase10BackendRequestFailureKind::InvalidRequest,
+            error,
+        ));
+    }
     if !report.published {
         return Err(phase10_backend_request_error(
             Phase10BackendRequestStage::RequestValidation,
             Phase10BackendRequestFailureKind::InvalidRequest,
             "Phase 9G link pipeline did not publish the requested executable",
         ));
-    }
-
-    for object_path in &object_paths {
-        fs::remove_file(object_path).map_err(|error| {
-            phase10_backend_request_error(
-                Phase10BackendRequestStage::RequestValidation,
-                Phase10BackendRequestFailureKind::InvalidRequest,
-                format!(
-                    "could not remove successful hidden source-route object {}: {error}",
-                    object_path.display()
-                ),
-            )
-        })?;
     }
 
     println!("request_protocol: {PHASE10_BACKEND_REQUEST_FORMAT}");

@@ -480,6 +480,9 @@ jobs:
       - name: Phase 22 native implicit-output authority
         run: just guard-cranelift-phase22-native-implicit-output-contract
 
+      - name: Phase 22 default-native package authority
+        run: just guard-cranelift-phase22-default-native-package-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 
