@@ -31,7 +31,7 @@ python3 scripts/phase20_arena_free.py validate
 rm -rf "$build_root"
 mkdir -p "$build_root"
 
-./gust "$positive" >"$build_root/default.c" 2>"$build_root/default.compiler.stderr"
+./gust --backend mir-to-c "$positive" >"$build_root/default.c" 2>"$build_root/default.compiler.stderr"
 ./gust --backend mir-to-c "$positive" \
   >"$build_root/explicit.c" 2>"$build_root/explicit.compiler.stderr"
 test ! -s "$build_root/default.compiler.stderr"
@@ -54,7 +54,7 @@ i=0
 for negative in "${negatives[@]}"; do
   name="$(basename "$negative" .gst)"
   set +e
-  ./gust "$negative" >"$build_root/$name.default.log" 2>&1
+  ./gust --backend mir-to-c "$negative" >"$build_root/$name.default.log" 2>&1
   default_status="$?"
   ./gust --backend mir-to-c "$negative" >"$build_root/$name.mir-to-c.log" 2>&1
   explicit_status="$?"

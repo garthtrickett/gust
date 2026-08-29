@@ -47,7 +47,7 @@ for arm in brand renamed; do
     brand)   source_path="$brand_source" ;;
     renamed) source_path="$renamed_source" ;;
   esac
-  if ! ./gust "$source_path" >"$build_dir/$arm.c" 2>"$build_dir/$arm.compiler.stderr"; then
+  if ! ./gust --backend mir-to-c "$source_path" >"$build_dir/$arm.c" 2>"$build_dir/$arm.compiler.stderr"; then
     echo "MIR-to-C rejected $arm arm $source_path."
     cat "$build_dir/$arm.compiler.stderr"
     exit 1

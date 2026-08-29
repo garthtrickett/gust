@@ -94,7 +94,7 @@ do
   case_dir="$build_root/$case_id"
   mkdir -p "$case_dir"
 
-  ./gust "$source_fixture" >"$case_dir/default.c" \
+  ./gust --backend mir-to-c "$source_fixture" >"$case_dir/default.c" \
     2>"$case_dir/default.compile.stderr"
   ./gust --backend mir-to-c "$source_fixture" >"$case_dir/explicit.c" \
     2>"$case_dir/explicit.compile.stderr"
@@ -158,7 +158,7 @@ do
   rejected_dir="$build_root/$rejected_id"
   mkdir -p "$rejected_dir"
 
-  ./gust "$rejected_source" >"$rejected_dir/default.c" \
+  ./gust --backend mir-to-c "$rejected_source" >"$rejected_dir/default.c" \
     2>"$rejected_dir/default.compile.stderr"
   ./gust --backend mir-to-c "$rejected_source" \
     >"$rejected_dir/explicit.c" \

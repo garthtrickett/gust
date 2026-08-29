@@ -20,7 +20,7 @@ mkdir -p "$build_dir"
 compile_gust() {
   local label="$1"
   local source_path="$2"
-  if ! ./gust "$source_path" >"$build_dir/$label.c" 2>"$build_dir/$label.compiler.stderr"; then
+  if ! ./gust --backend mir-to-c "$source_path" >"$build_dir/$label.c" 2>"$build_dir/$label.compiler.stderr"; then
     echo "MIR-to-C rejected Phase 19 classification input $source_path."
     cat "$build_dir/$label.compiler.stderr"
     exit 1

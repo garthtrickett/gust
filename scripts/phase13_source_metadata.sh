@@ -93,7 +93,7 @@ run_positive_case() {
   local case_dir="$build_root/$name"
   mkdir -p "$case_dir"
 
-  ./gust "$source" >"$case_dir/default.c" 2>"$case_dir/default.stderr"
+  ./gust --backend mir-to-c "$source" >"$case_dir/default.c" 2>"$case_dir/default.stderr"
   ./gust --backend mir-to-c "$source" >"$case_dir/explicit.c" 2>"$case_dir/explicit.stderr"
   test ! -s "$case_dir/default.stderr"
   test ! -s "$case_dir/explicit.stderr"

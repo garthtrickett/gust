@@ -10,7 +10,7 @@ mkdir -p "$build_dir"
 
 XDG_RUNTIME_DIR=/tmp TMPDIR=/tmp bash scripts/run-gust-file.sh compiler/future/p15_complete_resource_differential_source.gst
 grep -F 'SUCCESS: Phase 15.13 composed resource source passed' to.log >/dev/null
-./gust compiler/future/p15_complete_resource_differential_source.gst >"$build_dir/default.c"
+./gust --backend mir-to-c compiler/future/p15_complete_resource_differential_source.gst >"$build_dir/default.c"
 ./gust --backend mir-to-c compiler/future/p15_complete_resource_differential_source.gst >"$build_dir/explicit.c"
 cmp "$build_dir/default.c" "$build_dir/explicit.c"
 

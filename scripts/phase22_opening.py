@@ -114,7 +114,16 @@ def classify(path: Path, line_no: int, command: str, recipe: str,
         expected_artifact = "generated_C"
         transition = "22.2_explicit_C_selection"
         falsifier = "default_flip_sends_generated_C_pipeline_to_native_output"
-    elif relative == "scripts/phase22_opening.sh":
+    elif relative in (
+            "scripts/phase13_registry_differential.sh",
+            "scripts/phase22_opening.sh",
+    ):
+        consumer_class = "intentional_default_selection_probe"
+        owner = "cranelift"
+        expected_artifact = "current_default_route_observation"
+        transition = "22.6_flip_expectation_only"
+        falsifier = "probe_is_migrated_before_the_default_route_changes"
+    elif relative == "scripts/phase22_explicit_c_migration.sh":
         consumer_class = "intentional_default_selection_probe"
         owner = "cranelift"
         expected_artifact = "current_default_route_observation"
@@ -290,7 +299,13 @@ def validate() -> dict:
 
     rows = scan_invocations()
     summary = scan_summary(rows)
-    require(summary == record.get("invocation_inventory"),
+    migration = registry.get("phase22_explicit_c_migration")
+    expected_inventory = (
+        migration.get("current_invocation_inventory")
+        if isinstance(migration, dict)
+        else record.get("invocation_inventory")
+    )
+    require(summary == expected_inventory,
             f"executable compiler invocation inventory drifted: {summary!r}")
     require(summary["unclassified_count"] == 0,
             "an executable compiler invocation is unclassified")
@@ -344,6 +359,21 @@ def validate() -> dict:
     workflow = WORKFLOW.read_text(encoding="utf-8")
     require(f"just {GUARD_L1}" in workflow and f"just {GUARD_L2}" in workflow,
             "dedicated workflow does not own both opening guards")
+    require(REVIEW.is_file(), "generated opening review is missing")
+    review = REVIEW.read_text(encoding="utf-8")
+    inventory = record["invocation_inventory"]
+    stable_markers = (
+        f"- Contract: `{record['contract_version']}`",
+        f"- Observed main: `{record['observed_main_sha']}`",
+        f"- Executable compiler invocations: `{inventory['total']}`",
+        f"- Unclassified invocations: `{inventory['unclassified_count']}`",
+        "## Stability qualification",
+        "- Required successful runs: `1`",
+        "- Required head: `exact_merged_final_post_flip_implementation_main`",
+        "- Maximum unresolved material review findings: `0`",
+    )
+    require(all(marker in review for marker in stable_markers),
+            "frozen generated opening review semantic markers drifted")
     return record
 
 
@@ -445,11 +475,15 @@ def main() -> None:
         return
     record = validate()
     if args.command == "project":
+        registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+        require("phase22_explicit_c_migration" not in registry,
+                "opening review is frozen after Patch 22.2 begins")
         REVIEW.write_text(render(record, rows), encoding="utf-8")
     elif args.command == "check-review":
-        require(REVIEW.is_file() and
-                REVIEW.read_text(encoding="utf-8") == render(record, rows),
-                "generated opening review is stale; run project")
+        registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+        if "phase22_explicit_c_migration" not in registry:
+            require(REVIEW.read_text(encoding="utf-8") == render(record, rows),
+                    "generated opening review is stale; run project")
     else:
         print(f"{GUARD_L1}: ok")
 

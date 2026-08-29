@@ -29,7 +29,7 @@ for arm in a b; do
   source_path="$a_source"
   local_name="a"
   if [ "$arm" = "b" ]; then source_path="$b_source"; local_name="b"; fi
-  ./gust "$source_path" >"$build_dir/$arm.c" 2>"$build_dir/$arm.compiler.stderr"
+  ./gust --backend mir-to-c "$source_path" >"$build_dir/$arm.c" 2>"$build_dir/$arm.compiler.stderr"
   test ! -s "$build_dir/$arm.compiler.stderr"
   sed "s/\\b$local_name\\b/LOCAL/g" "$build_dir/$arm.c" >"$build_dir/$arm.normalized.c"
   cat src/runtime.c "$build_dir/$arm.c" >"$build_dir/$arm.final.c"

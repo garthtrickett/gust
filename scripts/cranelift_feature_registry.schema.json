@@ -59,6 +59,7 @@
     "phase21_complete_guard_suite",
     "phase21_closure",
     "phase22_opening",
+    "phase22_explicit_c_migration",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -2596,6 +2597,22 @@
           },
           "unclassified_failures": [],
           "boundary": {"changes_compiler_route_or_CLI_behavior":false,"changes_accepted_Gust_program_meaning":false,"adds_or_changes_MIR_operations":false,"changes_ABI_layout_or_runtime_symbols":false,"changes_bootstrap_seed":false,"edits_stdlib_or_CR15":false,"begins_patch22_2":false}
+        }
+      },
+      "phase22_explicit_c_migration": {
+        "const": {
+          "contract_version": "phase22_explicit_c_migration_v1",
+          "status": "cranelift_owned_migration_complete_cross_lane_pending",
+          "next_action": "stdlib_owned_consumer_relay",
+          "review_view": "compiler/CRANELIFT_PHASE22_EXPLICIT_C_MIGRATION.md",
+          "observed_main_sha": "831a125263961943e81dc4888c3f83458325af4f",
+          "opening_authority": "phase22_opening_v2",
+          "route_contract": {"default_backend":"mir_to_c_unchanged","explicit_mir_to_c":"mir_to_c","explicit_c":"exact_alias_of_mir_to_c","explicit_cranelift":"unchanged","backend_selection_stage":"after_shared_resolver_parser_and_typechecker","fallback_policy":"forbidden"},
+          "migration": {"opening_implicit_count":83,"current_implicit_count":25,"cranelift_owned_migrated_count":60,"patch22_evidence_invocation_count":7,"patch22_evidence_implicit_count":2,"bootstrap_migrated_count":5,"repository_guard_migrated_count":15,"script_guard_migrated_count":39,"developer_pipeline_migrated_count":1,"explicit_bootstrap_spelling":"mir-to-c","explicit_non_bootstrap_spelling":"mir-to-c"},
+          "current_invocation_inventory": {"total":276,"selection_counts":{"explicit_c":144,"explicit_cranelift":104,"explicit_invalid_or_parser_probe":3,"implicit_default":25},"consumer_class_counts":{"already_explicit_or_parser_probe":251,"help_surface_probe":2,"intentional_default_selection_probe":6,"invocation_parser_probe":2,"stdlib_owned_C_or_diagnostic_guard":15},"owner_counts":{"cranelift":253,"stdlib":23},"unclassified_count":0},
+          "preserved_implicit_classes": {"help_surface_probe":2,"intentional_default_selection_probe":6,"invocation_parser_probe":2,"stdlib_owned_C_or_diagnostic_guard":15},
+          "cross_lane_relay": {"status":"pending_owning_lane_correction","owner":"stdlib","consumer_count":15,"paths":["justfile","scripts/stdlib_s1_branded_collections_parity.sh","scripts/stdlib_s1_clone_destination_parity.sh","scripts/stdlib_s1_composition_parity.sh"],"required_before":"patch22_2_done_and_any_later_default_flip_patch"},
+          "boundary": {"changes_default_backend":false,"changes_accepted_Gust_program_meaning":false,"changes_MIR_or_native_lowering":false,"changes_ABI_layout_or_runtime_symbols":false,"changes_bootstrap_seed":false,"edits_stdlib_or_CR15":false,"begins_patch22_3":false}
         }
       },
       "phase19_brand_authority": {

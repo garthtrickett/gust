@@ -10673,7 +10673,7 @@ guard-cranelift-phase11-scalar-expression-parity:
       local case_dir="$build_dir/$case_name"
       mkdir -p "$case_dir"
 
-      ./gust "$source_path" \
+      ./gust --backend mir-to-c "$source_path" \
         >"$case_dir/default.c" 2>"$case_dir/default.compiler.stderr"
       ./gust --backend mir-to-c "$source_path" \
         >"$case_dir/explicit.c" 2>"$case_dir/explicit.compiler.stderr"
@@ -10745,7 +10745,7 @@ guard-cranelift-phase11-scalar-expression-parity:
 
     negative_dir="$build_dir/unsupported-division"
     mkdir -p "$negative_dir"
-    ./gust "$negative_source" \
+    ./gust --backend mir-to-c "$negative_source" \
       >"$negative_dir/default.c" 2>"$negative_dir/default.compiler.stderr"
     if [ -s "$negative_dir/default.compiler.stderr" ]; then
       echo "MIR-to-C rejected the current unselected division source."
@@ -10964,7 +10964,7 @@ guard-cranelift-phase11-local-state-parity:
       mkdir -p "$case_dir"
 
       set +e
-      ./gust "$source_path" \
+      ./gust --backend mir-to-c "$source_path" \
         >"$case_dir/default.c" 2>"$case_dir/default.compiler.stderr"
       default_compile_status="$?"
       ./gust --backend mir-to-c "$source_path" \
@@ -11291,7 +11291,7 @@ guard-cranelift-phase11-structured-cfg-parity:
       mkdir -p "$case_dir"
 
       set +e
-      ./gust "$source_path" \
+      ./gust --backend mir-to-c "$source_path" \
         >"$case_dir/default.c" 2>"$case_dir/default.compiler.stderr"
       default_compile_status="$?"
       ./gust --backend mir-to-c "$source_path" \
@@ -11751,7 +11751,7 @@ guard-cranelift-phase11-block-parameter-loop-parity:
       echo "▶ Phase 11 block-parameter case: $case_name"
 
       set +e
-      ./gust "$source_path" \
+      ./gust --backend mir-to-c "$source_path" \
         >"$case_dir/default.c" \
         2>"$case_dir/default.compiler.stderr"
       local default_compile_status="$?"
@@ -12193,7 +12193,7 @@ guard-cranelift-phase11-direct-call-abi-parity:
 
     case_dir="$build_dir/nested-direct-call"
     mkdir -p "$case_dir"
-    ./gust "$positive_source" >"$case_dir/default.c" 2>"$case_dir/default.compiler.stderr"
+    ./gust --backend mir-to-c "$positive_source" >"$case_dir/default.c" 2>"$case_dir/default.compiler.stderr"
     ./gust --backend mir-to-c "$positive_source" >"$case_dir/explicit.c" 2>"$case_dir/explicit.compiler.stderr"
     test ! -s "$case_dir/default.compiler.stderr"
     test ! -s "$case_dir/explicit.compiler.stderr"
@@ -12523,7 +12523,7 @@ guard-cranelift-phase11-module-import-runtime-parity:
       echo "▶ Phase 11 module/import/runtime case: $name"
 
       set +e
-      ./gust "$source_path" \
+      ./gust --backend mir-to-c "$source_path" \
         >"$case_dir/default.c" \
         2>"$case_dir/default.compiler.stderr"
       local default_compile_status="$?"
@@ -13120,7 +13120,7 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
     # location rather than prose.
     echo "▶ Phase 11 diagnostic case: source-type-error"
     set +e
-    ./gust "$type_error_source" >"$build_dir/type.default.stdout" 2>"$build_dir/type.default.stderr"
+    ./gust --backend mir-to-c "$type_error_source" >"$build_dir/type.default.stdout" 2>"$build_dir/type.default.stderr"
     default_status="$?"
     ./gust --backend cranelift -o "$build_dir/type.native.output" "$type_error_source" >"$build_dir/type.native.stdout" 2>"$build_dir/type.native.stderr"
     native_status="$?"
@@ -13503,7 +13503,7 @@ guard-cranelift-phase13-close:
       "$capability_evidence" >/dev/null
     rg -n -F 'if [ -e "$deferred_marker" ]; then' \
       "$capability_evidence" >/dev/null
-    rg -n -F 'os.LogStr("  mir-to-c   Emit C source to stdout (default).");' \
+    rg -n -F 'os.LogStr("  mir-to-c, c  Emit C source to stdout (default).");' \
       "$compiler_entry" >/dev/null
 
     if rg -n \
@@ -22057,7 +22057,7 @@ guard-mir-feature-return-int-preservation:
     rg -n -F 'return 1;' "$feature_fixture" >/dev/null
     rg -n -F 'os.Exit(result);' "$feature_fixture" >/dev/null
     echo "  ↳ old AST-to-C native behavior"
-    ./gust "$feature_fixture" | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > "$old_c"
+    ./gust --backend mir-to-c "$feature_fixture" | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > "$old_c"
     cat src/runtime.c "$old_c" > "$old_final_c"
     CC_BIN="${CC:-cc}"
     CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
@@ -22096,7 +22096,7 @@ guard-mir-feature-local-binding-read-preservation:
     rg -n -F 'return value;' "$feature_fixture" >/dev/null
     rg -n -F 'os.Exit(result);' "$feature_fixture" >/dev/null
     echo "  ↳ old AST-to-C native behavior"
-    ./gust "$feature_fixture" | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > "$old_c"
+    ./gust --backend mir-to-c "$feature_fixture" | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > "$old_c"
     cat src/runtime.c "$old_c" > "$old_final_c"
     CC_BIN="${CC:-cc}"
     CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
@@ -22136,7 +22136,7 @@ guard-mir-feature-if-else-return-int-preservation:
     rg -n -F 'return 2;' "$feature_fixture" >/dev/null
     rg -n -F 'os.Exit(result);' "$feature_fixture" >/dev/null
     echo "  ↳ old AST-to-C native behavior"
-    ./gust "$feature_fixture" | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > "$old_c"
+    ./gust --backend mir-to-c "$feature_fixture" | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > "$old_c"
     cat src/runtime.c "$old_c" > "$old_final_c"
     CC_BIN="${CC:-cc}"
     CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
@@ -22175,7 +22175,7 @@ guard-mir-feature-local-binding-read-provenance-metadata-preservation:
     rg -n -F 'return value;' "$feature_fixture" >/dev/null
     rg -n -F 'os.Exit(result);' "$feature_fixture" >/dev/null
     echo "  ↳ old AST-to-C native behavior"
-    ./gust "$feature_fixture" | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > "$old_c"
+    ./gust --backend mir-to-c "$feature_fixture" | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > "$old_c"
     cat src/runtime.c "$old_c" > "$old_final_c"
     CC_BIN="${CC:-cc}"
     CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
@@ -22731,7 +22731,7 @@ run-step52-positive-batch:
     rg -n -F 'compiler/typechecker_resource_scope_exit_mixed_scheduled_terminal_states_test_entry.gst' tests/test_runner.gst >/dev/null
     mkdir -p build
     echo "⚙️  Compiling native batched Step 5.2 positive runner from tests/test_runner.gst..."
-    ./gust tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner_step52_positive.c
+    ./gust --backend mir-to-c tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner_step52_positive.c
     rg -n -F 'compiler/typechecker_resource_declaration_auto_registration_test_entry.gst' build/test_runner_step52_positive.c >/dev/null
     rg -n -F 'compiler/typechecker_resource_assignment_auto_registration_test_entry.gst' build/test_runner_step52_positive.c >/dev/null
     rg -n -F 'compiler/typechecker_resource_move_assignment_transfer_test_entry.gst' build/test_runner_step52_positive.c >/dev/null
@@ -22804,7 +22804,7 @@ make-test-suite:
     just make-test-guards
     mkdir -p build
     echo "⚙️  Compiling native Gust test runner..."
-    ./gust tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
+    ./gust --backend mir-to-c tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
     cat src/runtime.c build/test_runner.c > build/test_runner_final.c
     CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_final.c -o build/test_runner_bin
     echo "🏃 Running native Gust test runner..."
@@ -22844,7 +22844,7 @@ make-test-suite-parallel:
     just make-test-guards-parallel
     mkdir -p build
     echo "⚙️  Compiling native Gust test runner..."
-    ./gust tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
+    ./gust --backend mir-to-c tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
     cat src/runtime.c build/test_runner.c > build/test_runner_final.c
     CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_final.c -o build/test_runner_bin
     echo "🏃 Running native Gust test runner..."
@@ -23496,3 +23496,24 @@ guard-stdlib-s1-clone-destination:
     mkdir -p build
     make gust >build/stdlib-s1-clone-destination.build.log 2>&1
     bash scripts/stdlib_s1_clone_destination_parity.sh
+
+# Cranelift lane, Phase 22. Appended so prior recipe-body extraction and the
+# inventoried Stdlib consumer line numbers remain stable.
+guard-cranelift-phase22-explicit-c-migration-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🚦 Checking Phase 22 explicit C no-op migration authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase22-explicit-c-migration-contract | grep -F $'guard-cranelift-phase22-explicit-c-migration-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase22_opening.py validate
+    python3 scripts/phase22_opening.py check-review
+    python3 scripts/phase22_explicit_c_migration.py validate
+    python3 scripts/phase22_explicit_c_migration.py check-review
+
+guard-cranelift-phase22-explicit-c-migration-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Replaying Phase 22 explicit C no-op migration evidence..."
+    just guard-cranelift-phase22-explicit-c-migration-contract
+    bash scripts/phase22_explicit_c_migration.sh

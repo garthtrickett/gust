@@ -37,14 +37,15 @@ func compiler_print_help() {
     os.LogStr("Usage:");
     os.LogStr("  gust <source.gst>");
     os.LogStr("  gust --backend mir-to-c <source.gst>");
+    os.LogStr("  gust --backend c <source.gst>");
     os.LogStr("  gust --backend cranelift -o <output> <source.gst>");
     os.LogStr("");
     os.LogStr("Backends:");
-    os.LogStr("  mir-to-c   Emit C source to stdout (default).");
+    os.LogStr("  mir-to-c, c  Emit C source to stdout (default).");
     os.LogStr("  cranelift  Compile a supported source cohort to one native executable (experimental).");
     os.LogStr("");
     os.LogStr("Options:");
-    os.LogStr("  --backend <mir-to-c|cranelift>  Select the backend explicitly.");
+    os.LogStr("  --backend <mir-to-c|c|cranelift>  Select the backend explicitly.");
     os.LogStr("  -o <output>                     Required only by the cranelift backend.");
     os.LogStr("  -h, --help                      Show this help and exit.");
     os.LogStr("");
@@ -95,7 +96,9 @@ func compiler_parse_invocation(args: std.Vector[str, ctx], ctx: &Arena) Compiler
             }
 
             mut backend_name := args[i + 1];
-            if std.str_eq(backend_name, "mir-to-c") == 1 {
+            if std.str_eq(backend_name, "mir-to-c") == 1 ||
+               std.str_eq(backend_name, "c") == 1
+            {
                 unsafe {
                     invocation.backend.tag = 0; // MirToC
                 }

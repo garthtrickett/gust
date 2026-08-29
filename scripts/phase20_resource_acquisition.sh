@@ -29,7 +29,7 @@ run_mir_to_c_positive() {
   local stem="$2"
   local expected_status="$3"
 
-  ./gust "$source" >"$build_root/$stem.default.c" \
+  ./gust --backend mir-to-c "$source" >"$build_root/$stem.default.c" \
     2>"$build_root/$stem.default.stderr"
   ./gust --backend mir-to-c "$source" >"$build_root/$stem.explicit.c" \
     2>"$build_root/$stem.explicit.stderr"
@@ -59,7 +59,7 @@ index=0
 for negative in "${negatives[@]}"; do
   stem="$(basename "$negative" .gst)"
   set +e
-  ./gust "$negative" >"$build_root/$stem.default.log" 2>&1
+  ./gust --backend mir-to-c "$negative" >"$build_root/$stem.default.log" 2>&1
   default_status="$?"
   ./gust --backend mir-to-c "$negative" \
     >"$build_root/$stem.mir-to-c.log" 2>&1

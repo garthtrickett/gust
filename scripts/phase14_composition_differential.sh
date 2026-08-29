@@ -125,7 +125,7 @@ do
   case_dir="$build_root/$safe_case_id"
   mkdir -p "$case_dir"
 
-  if ! ./gust "$source_fixture" \
+  if ! ./gust --backend mir-to-c "$source_fixture" \
       >"$case_dir/default.c" \
       2>"$case_dir/default.compiler.stderr"; then
     cat "$case_dir/default.compiler.stderr" >&2

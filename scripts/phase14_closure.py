@@ -362,7 +362,7 @@ def validate_static_architecture(registry: dict) -> None:
         "explicit Cranelift can fall back to MIR-to-C",
     )
     require(
-        'os.LogStr("  mir-to-c   Emit C source to stdout (default).");'
+        'os.LogStr("  mir-to-c, c  Emit C source to stdout (default).");'
         in compiler_entry,
         "MIR-to-C is no longer documented as the default oracle",
     )

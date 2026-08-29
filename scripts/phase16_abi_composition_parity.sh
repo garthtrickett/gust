@@ -9,7 +9,7 @@ mkdir -p "$build_dir"
 rm -f "$request" "$expected"
 XDG_RUNTIME_DIR=/tmp TMPDIR=/tmp bash scripts/run-gust-file.sh compiler/future/p16_complete_abi_differential_source.gst
 test -s to.log
-./gust compiler/future/p16_complete_abi_differential_source.gst >"$build_dir/default.c"
+./gust --backend mir-to-c compiler/future/p16_complete_abi_differential_source.gst >"$build_dir/default.c"
 ./gust --backend mir-to-c compiler/future/p16_complete_abi_differential_source.gst >"$build_dir/explicit.c"
 cmp -s "$build_dir/default.c" "$build_dir/explicit.c"
 XDG_RUNTIME_DIR=/tmp TMPDIR=/tmp bash scripts/run-gust-file.sh compiler/mir_abi_composition_parity_smoke_test_entry.gst

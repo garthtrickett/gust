@@ -91,7 +91,7 @@ run_positive_case() {
   local case_dir="$build_root/$case_name"
   mkdir -p "$case_dir"
 
-  if ! ./gust "$source_path" \
+  if ! ./gust --backend mir-to-c "$source_path" \
       >"$case_dir/default.c" \
       2>"$case_dir/default.compiler.stderr"; then
     cat "$case_dir/default.compiler.stderr" >&2

@@ -47,7 +47,7 @@ build/gust_stage1_compiler.c: gust_bootstrap $(COMPILER_SRCS) tools/normalize_ge
 		build/gust_stage1_compiler.filtered \
 		build/gust_stage1_compiler.tmp
 	@set +e; \
-	./gust_bootstrap compiler/test_runner_bootstrap_bridge_entry.gst > build/gust_stage1_compiler.raw 2>&1; \
+	./gust_bootstrap --backend mir-to-c compiler/test_runner_bootstrap_bridge_entry.gst > build/gust_stage1_compiler.raw 2>&1; \
 	status=$$?; \
 	set -e; \
 	if [ "$$status" -ne 0 ]; then \
@@ -104,6 +104,7 @@ diagnose-phase10-stage1: build/gust_stage1_compiler.c $(RUNTIME_SRCS)
 	ASAN_OPTIONS='abort_on_error=1:detect_leaks=0:disable_coredump=0:fast_unwind_on_malloc=0:malloc_context_size=40:print_summary=1:symbolize=1:strict_string_checks=1:check_initialization_order=1:detect_stack_use_after_return=1' \
 	UBSAN_OPTIONS='halt_on_error=1:print_stacktrace=1:report_error_type=1' \
 		./build/diagnostics/phase10-stage1/gust_stage1_sanitized \
+		--backend mir-to-c \
 		compiler/test_runner_entry.gst \
 		> build/diagnostics/phase10-stage1/stdout.log \
 		2> build/diagnostics/phase10-stage1/stderr.log; \
@@ -134,7 +135,7 @@ build/gust_compiler.c: build/gust_stage1_bin $(COMPILER_SRCS)
 	mkdir -p build
 	@rm -f build/gust_compiler.raw build/gust_compiler.tmp
 	@set +e; \
-	./build/gust_stage1_bin compiler/test_runner_entry.gst > build/gust_compiler.raw 2>&1; \
+	./build/gust_stage1_bin --backend mir-to-c compiler/test_runner_entry.gst > build/gust_compiler.raw 2>&1; \
 	status=$$?; \
 	set -e; \
 	if [ "$$status" -ne 0 ]; then \
@@ -232,11 +233,11 @@ phase10-native-package: gust build/gust-native-backend $(PHASE21_RUNTIME_PACKAGE
 bootstrap: gust
 	@echo "⚙️  Beginning fixed-point bootstrap verification..."
 	@# Stage 2: Use the new 'gust' binary to compile the compiler again
-	./gust compiler/test_runner_entry.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_stage2.c && sync
+	./gust --backend mir-to-c compiler/test_runner_entry.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_stage2.c && sync
 	@cat src/runtime.c build/gust_stage2.c > build/gust_stage2_final.c
 	@${CC} ${CFLAGS} ${INCLUDES} build/gust_stage2_final.c -o build/gust_stage2_bin
 	@# Stage 3: Use the Stage 2 binary to compile the compiler a third time
-	./build/gust_stage2_bin compiler/test_runner_entry.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_stage3.c && sync
+	./build/gust_stage2_bin --backend mir-to-c compiler/test_runner_entry.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_stage3.c && sync
 	@# Stage 4: Assert byte-by-byte identity between Stage 2 and Stage 3 C files
 	@diff -u build/gust_stage2.c build/gust_stage3.c && echo "✅ Fixed-point bootstrap convergence achieved!"
 	cp build/gust_stage3.c gust_v4.c

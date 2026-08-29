@@ -172,7 +172,7 @@ run_positive_case() {
   echo "▶ Phase 13.9 approved scalar runtime case: $name"
 
   set +e
-  ./gust "$source_path" \
+  ./gust --backend mir-to-c "$source_path" \
     >"$case_dir/default.c" \
     2>"$case_dir/default.compiler.stderr"
   local default_status="$?"

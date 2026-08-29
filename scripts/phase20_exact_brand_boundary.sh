@@ -19,7 +19,7 @@ python3 scripts/phase20_exact_brand_boundary.py validate
 rm -rf "$build_root"
 mkdir -p "$build_root"
 
-./gust "$positive" >"$build_root/default.c" 2>"$build_root/default.compiler.stderr"
+./gust --backend mir-to-c "$positive" >"$build_root/default.c" 2>"$build_root/default.compiler.stderr"
 ./gust --backend mir-to-c "$positive" \
   >"$build_root/explicit.c" 2>"$build_root/explicit.compiler.stderr"
 test ! -s "$build_root/default.compiler.stderr"
@@ -39,7 +39,7 @@ test "$mir_status" = 23
 for negative in "${negatives[@]}"; do
   name="$(basename "$negative" .gst)"
   set +e
-  ./gust "$negative" >"$build_root/$name.log" 2>&1
+  ./gust --backend mir-to-c "$negative" >"$build_root/$name.log" 2>&1
   status="$?"
   set -e
   test "$status" -ne 0
