@@ -1,0 +1,7 @@
+kind	requirement	evidence	level
+closure	every Phase 21 status row is DONE	TASK.md Status rows 21.0 through 21.18	1
+tenant_scope	the bounded OD-8 verdict preserves every named exclusion	phase21_od8_adversarial_verdict and closure projection	1
+native_rebuild	the strict native rebuild identity criterion is satisfied	phase21_native_rebuild_reproducibility identity evidence	1
+qualification	all 326 complete-suite cases are required-native or owned deferrals	192 required native plus 134 owner/reason/destination/falsifier rows	1
+phase_gate	Phase 21 authoritative Historical Full gate is satisfied	run 33216889936 completed success with 18/18 jobs on exact merged Phase 21 head acd9e13841215d3c1aaf6e56589d6bacd45c6d4e	1
+non_claim	the closure view is generated from registry authority	view regenerated and compared byte for byte	1

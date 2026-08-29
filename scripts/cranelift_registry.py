@@ -60,6 +60,7 @@ TOP_FIELDS = {
     "phase21_cranelift_built_compiler_programs",
     "phase21_native_rebuild_reproducibility",
     "phase21_complete_guard_suite",
+    "phase21_closure",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming", "phase19_classification", "phase19_representation",

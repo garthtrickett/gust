@@ -17424,6 +17424,20 @@ guard-cranelift-phase21-complete-guard-suite-evidence:
     just guard-cranelift-phase21-complete-guard-suite-contract
     python3 scripts/phase21_complete_guard_suite.py evidence
 
+guard-cranelift-phase21-close:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Closing Phase 21 tenant-scope and Cranelift self-hosting qualification..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase21-close | grep -F $'guard-cranelift-phase21-close\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase21_od8_adversarial_verdict.py validate
+    python3 scripts/phase21_tenant_scope_seed_convergence.py validate
+    python3 scripts/phase21_native_feature_seed_convergence.py validate
+    python3 scripts/phase21_native_rebuild_reproducibility.py validate
+    python3 scripts/phase21_complete_guard_suite.py validate
+    python3 scripts/phase21_closure.py --check
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail

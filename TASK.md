@@ -109,7 +109,7 @@ Out of scope:
 - [x] Patch 21.17d — Historical Phase 9F ABI Fixture Reconciliation — DONE
 - [x] Patch 21.17e — Historical Driver-Handshake Inventory Reconciliation — DONE
 - [x] Patch 21.17f — Historical Driver-Handshake Manifest Freeze — DONE
-- [ ] Patch 21.18 — Phase 21 Closure
+- [x] Patch 21.18 — Phase 21 Closure — DONE
 
 Status rows are machine-parsed. Keep each row as
 `- [ ] Patch 21.N — <Title>` or `- [x] Patch 21.N — <Title> — DONE`; an
@@ -806,6 +806,27 @@ Phase 21 succeeds when:
 Phase 21 does not flip the default backend, retire MIR-to-C, establish a native
 bootstrap seed, implement a database/runtime platform, or claim isolation
 outside compiler-owned typed queries.
+
+## Phase 21 Closure Record
+
+Phase 21 closed on 2026-08-29 after `Cranelift Historical Full` run
+**33216889936** completed successfully for event `workflow_dispatch` on exact
+merged Phase 21 `main` **acd9e13841215d3c1aaf6e56589d6bacd45c6d4e**.
+The complete job population was **18/18** jobs completed successfully, with zero
+unfinished and zero non-success jobs. The authoritative Phase 21 complete-suite
+run **33166864658** also completed successfully with **2/2** jobs on exact
+pull-request head **8037c0091cdb389f19c1fcda7e5e156a78b82029**.
+`scripts/cranelift_feature_registry.json` is the source authority for this
+record and generates `docs/PHASE21_CLOSURE.md`.
+
+OD-8 closes only with the evidence-supported bounded positive verdict for the
+compiler-owned typed-query path and retains every named exclusion. OD-15 closes
+under strict binary identity in its pinned authoritative environment. The
+complete Cranelift-built-compiler suite accounts for all 326 cases as 192
+required native passes and 134 owned, reason-coded deferrals. Phase 21 does not
+flip the default backend, retire MIR-to-C, establish the trusted request
+context, broaden the typed-query claim, implement Stdlib/CR-15, or begin Phase
+22.
 
 ---
 

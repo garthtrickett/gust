@@ -468,6 +468,9 @@ jobs:
       - name: Phase 21 complete native guard suite authority
         run: just guard-cranelift-phase21-complete-guard-suite-contract
 
+      - name: Phase 21 tenant-scope and Cranelift self-hosting closure
+        run: just guard-cranelift-phase21-close
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 
