@@ -63,6 +63,7 @@ TOP_FIELDS = {
     "phase21_closure",
     "phase22_opening",
     "phase22_explicit_c_migration",
+    "phase22_native_implicit_output",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming", "phase19_classification", "phase19_representation",

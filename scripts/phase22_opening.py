@@ -117,6 +117,7 @@ def classify(path: Path, line_no: int, command: str, recipe: str,
     elif relative in (
             "scripts/phase13_registry_differential.sh",
             "scripts/phase22_opening.sh",
+            "scripts/phase22_native_implicit_output.sh",
     ):
         consumer_class = "intentional_default_selection_probe"
         owner = "cranelift"

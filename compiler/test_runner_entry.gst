@@ -38,7 +38,7 @@ func compiler_print_help() {
     os.LogStr("  gust <source.gst>");
     os.LogStr("  gust --backend mir-to-c <source.gst>");
     os.LogStr("  gust --backend c <source.gst>");
-    os.LogStr("  gust --backend cranelift -o <output> <source.gst>");
+    os.LogStr("  gust --backend cranelift [-o <output>] <source.gst>");
     os.LogStr("");
     os.LogStr("Backends:");
     os.LogStr("  mir-to-c, c  Emit C source to stdout (default).");
@@ -46,7 +46,7 @@ func compiler_print_help() {
     os.LogStr("");
     os.LogStr("Options:");
     os.LogStr("  --backend <mir-to-c|c|cranelift>  Select the backend explicitly.");
-    os.LogStr("  -o <output>                     Required only by the cranelift backend.");
+    os.LogStr("  -o <output>                     Optional Cranelift output; defaults to the source stem.");
     os.LogStr("  -h, --help                      Show this help and exit.");
     os.LogStr("");
     os.LogStr("Native backend driver:");
@@ -150,7 +150,7 @@ func compiler_parse_invocation(args: std.Vector[str, ctx], ctx: &Arena) Compiler
     }
 
     if invocation.backend.tag == 1 && invocation.output_was_explicit == 0 {
-        compiler_invocation_fail("the experimental backend requires exactly one -o <output> value");
+        invocation.output_path = compiler_native_implicit_output_path(invocation.source_path, ctx);
     }
 
     return invocation;
@@ -451,4 +451,46 @@ func main() {
     // Default and explicit MIR-to-C selections share this exact codegen path.
     mut c_code := codegen.codegen_generate(programs, module_prefixes, &env, ctx);
     os.LogStr(c_code);
+}
+
+func compiler_string_ends_with(value: str, suffix: str) int {
+    mut value_len := len(value);
+    mut suffix_len := len(suffix);
+    if value_len < suffix_len {
+        return 0;
+    }
+    return std.str_eq(
+        std.str_slice(value, value_len - suffix_len, value_len),
+        suffix
+    );
+}
+
+func compiler_native_implicit_output_path(source_path: str, ctx: &Arena) str {
+    if compiler_string_ends_with(source_path, ".gst") == 0 {
+        compiler_invocation_fail("implicit Cranelift output requires a source path ending in .gst");
+    }
+
+    mut last_separator := 0 - 1;
+    mut i := 0;
+    while i < len(source_path) {
+        if std.str_byte_at(source_path, i) == 47 { // '/'
+            last_separator = i;
+        }
+        i = i + 1;
+    }
+
+    mut stem_start := last_separator + 1;
+    mut stem_end := len(source_path) - len(".gst");
+    if stem_end <= stem_start {
+        compiler_invocation_fail("implicit Cranelift output requires a non-empty portable source stem");
+    }
+    mut stem := std.str_slice(source_path, stem_start, stem_end);
+    if std.str_eq(stem, ".") == 1 || std.str_eq(stem, "..") == 1 {
+        compiler_invocation_fail("implicit Cranelift output requires a non-empty portable source stem");
+    }
+    if compiler_string_ends_with(stem, ".gst") == 1 {
+        compiler_invocation_fail("implicit Cranelift output would collide with a Gust source path");
+    }
+
+    return os.path_join(os.PathDir(ctx, source_path), stem, ctx);
 }

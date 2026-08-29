@@ -71,14 +71,19 @@ def validate() -> tuple[dict, list[dict[str, object]]]:
     require(summary == record.get("current_invocation_inventory"),
             f"current invocation inventory drifted: {summary!r}")
     migration = record.get("migration", {})
+    has_implicit_output_successor = "phase22_native_implicit_output" in registry
+    expected_patch22_invocations = 17 if has_implicit_output_successor else 7
+    expected_patch22_implicit = 3 if has_implicit_output_successor else 2
     require(migration.get("opening_implicit_count") ==
             opening.get("invocation_inventory", {}).get("selection_counts", {}).get(
                 "implicit_default") and
             migration.get("current_implicit_count") ==
             summary["selection_counts"]["implicit_default"] and
             migration.get("cranelift_owned_migrated_count") == 60 and
-            migration.get("patch22_evidence_invocation_count") == 7 and
-            migration.get("patch22_evidence_implicit_count") == 2 and
+            migration.get("patch22_evidence_invocation_count") ==
+            expected_patch22_invocations and
+            migration.get("patch22_evidence_implicit_count") ==
+            expected_patch22_implicit and
             migration.get("opening_implicit_count") +
             migration.get("patch22_evidence_implicit_count") -
             migration.get("current_implicit_count") == 60,
