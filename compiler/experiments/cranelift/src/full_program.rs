@@ -2142,11 +2142,15 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
             "BinaryOperation" => self.lower_binary(builder, node),
             "ZeroInitialize" => {
                 if is_scalar_type(&node.ty) {
-                    Ok(Evaluated::Scalar(
-                        builder
-                            .ins()
-                            .iconst(scalar_ir_type(&node.ty, self.pointer_type())?, 0),
-                    ))
+                    let value = if index_element_layout_type(&node.ty).is_ok() {
+                        -1
+                    } else {
+                        0
+                    };
+                    Ok(Evaluated::Scalar(builder.ins().iconst(
+                        scalar_ir_type(&node.ty, self.pointer_type())?,
+                        value,
+                    )))
                 } else {
                     Ok(Evaluated::Aggregate(
                         self.place_for_type(builder, &node.ty)?,

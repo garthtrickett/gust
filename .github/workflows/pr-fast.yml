@@ -483,6 +483,9 @@ jobs:
       - name: Phase 22 default-native package authority
         run: just guard-cranelift-phase22-default-native-package-contract
 
+      - name: Phase 22 pre-flip default cohort authority
+        run: just guard-cranelift-phase22-preflip-default-cohort-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 

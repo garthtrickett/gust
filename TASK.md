@@ -87,7 +87,7 @@ Out of scope:
 - [x] Patch 22.2a — Cross-Lane Explicit-C Relay Publication Authority — DONE
 - [ ] Patch 22.3 — Native Implicit-Output Contract
 - [ ] Patch 22.4 — Default-Native Package and Install Qualification
-- [ ] Patch 22.5 — Pre-flip Default-Cohort Qualification
+- [x] Patch 22.5 — Pre-flip Default-Cohort Qualification — DONE
 - [ ] Patch 22.6 — Cranelift Default Route Flip
 - [ ] Patch 22.6a — Default-Route Bootstrap Seed Reconvergence
 - [ ] Patch 22.7 — Post-flip CI, Documentation, and Rollback Qualification

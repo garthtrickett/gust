@@ -3681,6 +3681,82 @@
       "begins_patch22_5": false
     }
   },
+  "phase22_preflip_default_cohort": {
+    "contract_version": "phase22_preflip_default_cohort_v1",
+    "status": "qualification_complete_default_flip_blocked_on_explicit_c_relay",
+    "next_action": "patch22_6_after_stdlib_relay_merge",
+    "review_view": "compiler/CRANELIFT_PHASE22_PREFLIP_DEFAULT_COHORT.md",
+    "observed_main_sha": "76192f27c73b9caf7ec5a610624996a9337d09f2",
+    "predecessor_authority": "phase22_default_native_package_v1",
+    "compiler_origin": "Cranelift_built_full_compiler",
+    "candidate_route": "explicit_cranelift_no_fallback",
+    "semantic_oracle": "same_Cranelift_built_compiler_explicit_mir_to_c",
+    "package_origin": "build_phase10_package_three_artifact_sibling_directory",
+    "cohort_authorities": [
+      "phase21_cranelift_built_compiler_programs_v1",
+      "phase21_full_compiler_native_qualification_v1",
+      "phase21_complete_guard_suite_v1"
+    ],
+    "release_representative_cohorts": [
+      "positive",
+      "negative",
+      "resource",
+      "module",
+      "typed_query_positive",
+      "typed_query_negative",
+      "full_compiler",
+      "complete_326_case_guard"
+    ],
+    "resolved_phase21_runtime_divergences": {
+      "count": 3,
+      "fixtures": [
+        "compiler/typechecker_scope_test_entry.gst",
+        "compiler/parser_reference_access_test_entry.gst",
+        "compiler/typechecker_expression_provenance_test_entry.gst"
+      ],
+      "root_cause": "generic_ZeroInitialize_lowering_used_zero_for_empty_Index",
+      "oracle_contract": "empty_Index_is_the_0xFFFFFFFF_absence_sentinel",
+      "native_correction": "Index_typed_ZeroInitialize_emits_i32_minus_one",
+      "other_zero_initialization": "unchanged_zero",
+      "parity": "exit_stdout_and_stderr_byte_identical_to_explicit_MIR_to_C"
+    },
+    "complete_guard_overlay": {
+      "inventory_total": 326,
+      "required_native_case_count": 195,
+      "classified_nondefault_native_deferral_count": 121,
+      "oracle_precondition_parity_rejection_count": 10,
+      "required_native_deferral_count": 0,
+      "unclassified_result_count": 0,
+      "runtime_divergence_count": 0
+    },
+    "evidence_owners": {
+      "release_programs": "Cranelift Phase 21 Cranelift-Built Compiler Programs",
+      "complete_guard": "Cranelift Phase 21 Complete Guard Suite",
+      "focused_reconciliation": "Cranelift Phase 22 Pre-flip Default Cohort"
+    },
+    "budgets": {
+      "native_compiler_build_ms": 180000,
+      "corpus_suite_ms": 3600000,
+      "complete_suite_ms": 4200000,
+      "peak_rss_kib": 6291456
+    },
+    "failure_contract": {
+      "fallback": "forbidden",
+      "failed_artifacts": "absent",
+      "existing_output": "preserved_byte_for_byte",
+      "owned_intermediates": "removed"
+    },
+    "boundary": {
+      "changes_existing_cranelift_lowering": true,
+      "changes_accepted_Gust_program_meaning": false,
+      "adds_or_changes_MIR_operations": false,
+      "changes_ABI_layout_runtime_symbols_target_or_linker": false,
+      "changes_default_backend": false,
+      "changes_bootstrap_seed": false,
+      "edits_stdlib_or_CR15": false,
+      "begins_patch22_6": false
+    }
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",
