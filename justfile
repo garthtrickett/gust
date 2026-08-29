@@ -19595,7 +19595,7 @@ guard-cranelift-phase12-5-close:
     fi
     rg -n -x -F '        run: just guard-cranelift-phase12-5-close' "$pr_workflow" >/dev/null
 
-    rg -n -F './gust "$source_fixture"' "$differential_harness" >/dev/null
+    rg -n -F './gust --backend c "$source_fixture"' "$differential_harness" >/dev/null
     rg -n -F './gust --backend mir-to-c "$source_fixture"' "$differential_harness" >/dev/null
     rg -n -F 'cmp -s "$case_dir/default.c" "$case_dir/explicit.c"' "$differential_harness" >/dev/null
 
