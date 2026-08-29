@@ -22,13 +22,21 @@ test ! -x "$package_dir/gust-runtime-package.a" || fail "runtime archive must no
 rm -rf "$build_dir"
 mkdir -p "$build_dir"
 
-./gust "$fixture" > "$build_dir/bare.c" 2> "$build_dir/bare.stderr"
 ./gust --backend mir-to-c "$fixture" > "$build_dir/explicit.c" 2> "$build_dir/explicit.stderr"
-test -s "$build_dir/bare.c" || fail "bare route emitted no C"
-test ! -s "$build_dir/bare.stderr" || fail "bare route emitted stderr"
 test ! -s "$build_dir/explicit.stderr" || fail "explicit MIR-to-C emitted stderr"
-cmp -s "$build_dir/bare.c" "$build_dir/explicit.c" ||
-  fail "bare and explicit MIR-to-C output differ"
+if rg -F '"phase22_default_route_flip"' scripts/cranelift_feature_registry.json >/dev/null; then
+  GUST_NATIVE_BACKEND_DRIVER="$PWD/$package_dir/gust-native-backend" \
+    ./gust -o "$build_dir/bare-program" "$fixture" > "$build_dir/bare.stdout" 2> "$build_dir/bare.stderr"
+  GUST_NATIVE_BACKEND_DRIVER="$PWD/$package_dir/gust-native-backend" \
+    ./gust --backend cranelift -o "$build_dir/explicit-program" "$fixture" > "$build_dir/native-explicit.stdout" 2> "$build_dir/native-explicit.stderr"
+  cmp -s "$build_dir/bare-program" "$build_dir/explicit-program" || fail "bare and explicit native output differ"
+  test ! -s "$build_dir/bare.stderr" || fail "bare native route emitted stderr"
+else
+  ./gust "$fixture" > "$build_dir/bare.c" 2> "$build_dir/bare.stderr"
+  test -s "$build_dir/bare.c" || fail "bare route emitted no C"
+  test ! -s "$build_dir/bare.stderr" || fail "bare route emitted stderr"
+  cmp -s "$build_dir/bare.c" "$build_dir/explicit.c" || fail "bare and explicit MIR-to-C output differ"
+fi
 
 set +e
 ./gust --backend c "$fixture" > "$build_dir/c-alias.stdout" 2> "$build_dir/c-alias.stderr"
@@ -37,7 +45,7 @@ set -e
 if rg -F '"phase22_explicit_c_migration"' scripts/cranelift_feature_registry.json >/dev/null; then
   test "$c_alias_status" -eq 0 || fail "the registered C alias failed"
   test ! -s "$build_dir/c-alias.stderr" || fail "the C alias emitted stderr"
-  cmp -s "$build_dir/bare.c" "$build_dir/c-alias.stdout" ||
+  cmp -s "$build_dir/explicit.c" "$build_dir/c-alias.stdout" ||
     fail "the registered C alias differs from MIR-to-C"
 else
   test "$c_alias_status" -ne 0 || fail "the not-yet-introduced C alias unexpectedly succeeded"
@@ -65,8 +73,13 @@ fi
 ./build/phase10-package/bin/gust --help > "$build_dir/help.stdout" 2> "$build_dir/help.stderr"
 test ! -s "$build_dir/help.stderr" || fail "help emitted stderr"
 rg -F 'gust <source.gst>' "$build_dir/help.stdout" >/dev/null || fail "bare help route is missing"
-rg -F 'Emit C source to stdout (default).' "$build_dir/help.stdout" >/dev/null ||
-  fail "help no longer identifies the current default"
+if rg -F '"phase22_default_route_flip"' scripts/cranelift_feature_registry.json >/dev/null; then
+  rg -F 'Compile to one native executable (default).' "$build_dir/help.stdout" >/dev/null ||
+    fail "help no longer identifies the successor default"
+else
+  rg -F 'Emit C source to stdout (default).' "$build_dir/help.stdout" >/dev/null ||
+    fail "help no longer identifies the current default"
+fi
 if rg -F '"phase22_native_implicit_output"' scripts/cranelift_feature_registry.json >/dev/null; then
   rg -F 'Optional Cranelift output; defaults to the source stem.' "$build_dir/help.stdout" >/dev/null ||
     fail "help no longer records the successor implicit-output contract"

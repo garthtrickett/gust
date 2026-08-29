@@ -145,11 +145,19 @@ test "$missing_status" -ne 0 || fail "missing inferred source unexpectedly succe
 test ! -e "$build_dir/missing" || fail "inference created a missing source/output directory"
 test ! -e "$reject_marker" || fail "missing source reached native-driver discovery"
 
-# Bare selection remains the unchanged C route.
-./gust "$build_dir/implicit.gst" >"$build_dir/bare.c" 2>"$build_dir/bare.stderr"
 ./gust --backend c "$build_dir/implicit.gst" >"$build_dir/explicit-c.c" 2>"$build_dir/explicit-c.stderr"
-cmp -s "$build_dir/bare.c" "$build_dir/explicit-c.c" || fail "bare selection no longer matches explicit C"
-test ! -s "$build_dir/bare.stderr" || fail "bare C emitted diagnostics"
+if rg -F '"phase22_default_route_flip"' scripts/cranelift_feature_registry.json >/dev/null; then
+  rm -f "$build_dir/implicit"
+  GUST_NATIVE_BACKEND_DRIVER="$driver_abs" \
+    ./gust "$build_dir/implicit.gst" >"$build_dir/bare.stdout" 2>"$build_dir/bare.stderr"
+  cmp -s "$build_dir/inferred.reference" "$build_dir/implicit" || fail "bare selection differs from explicit native"
+  test ! -s "$build_dir/bare.stdout" || fail "bare native emitted stdout"
+  test ! -s "$build_dir/bare.stderr" || fail "bare native emitted diagnostics"
+else
+  ./gust "$build_dir/implicit.gst" >"$build_dir/bare.c" 2>"$build_dir/bare.stderr"
+  cmp -s "$build_dir/bare.c" "$build_dir/explicit-c.c" || fail "bare selection no longer matches explicit C"
+  test ! -s "$build_dir/bare.stderr" || fail "bare C emitted diagnostics"
+fi
 test ! -s "$build_dir/explicit-c.stderr" || fail "explicit C emitted diagnostics"
 
 owned_residue="$(find "$build_dir" -type f \( -name '*.phase10.bundle' -o -name '*.phase10.request' -o -name '*.partial' -o -name '*.tmp' -o -name '*.o' \) -print)"

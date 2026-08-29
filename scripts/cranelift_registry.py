@@ -66,6 +66,7 @@ TOP_FIELDS = {
     "phase22_native_implicit_output",
     "phase22_default_native_package",
     "phase22_preflip_default_cohort",
+    "phase22_default_route_flip",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming", "phase19_classification", "phase19_representation",

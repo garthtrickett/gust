@@ -10,7 +10,7 @@ import "mir_native_backend_source_route.gst" as native_source_route;
 
 type CompilerBackendSelection enum {
     MirToC,
-    CraneliftExperimental
+    Cranelift
 }
 
 type CompilerInvocation[ctx] struct {
@@ -41,8 +41,8 @@ func compiler_print_help() {
     os.LogStr("  gust --backend cranelift [-o <output>] <source.gst>");
     os.LogStr("");
     os.LogStr("Backends:");
-    os.LogStr("  mir-to-c, c  Emit C source to stdout (default).");
-    os.LogStr("  cranelift  Compile a supported source cohort to one native executable (experimental).");
+    os.LogStr("  cranelift  Compile to one native executable (default).");
+    os.LogStr("  mir-to-c, c  Emit C source to stdout (retained semantic oracle).");
     os.LogStr("");
     os.LogStr("Options:");
     os.LogStr("  --backend <mir-to-c|c|cranelift>  Select the backend explicitly.");
@@ -76,7 +76,7 @@ func compiler_invocation_fail(message: str) {
 func compiler_parse_invocation(args: std.Vector[str, ctx], ctx: &Arena) CompilerInvocation[ctx] {
     mut invocation: CompilerInvocation[ctx];
     unsafe {
-        invocation.backend.tag = 0; // MirToC
+        invocation.backend.tag = 1; // Cranelift
     }
     invocation.source_path = "";
     invocation.output_path = "";
@@ -104,7 +104,7 @@ func compiler_parse_invocation(args: std.Vector[str, ctx], ctx: &Arena) Compiler
                 }
             } else if std.str_eq(backend_name, "cranelift") == 1 {
                 unsafe {
-                    invocation.backend.tag = 1; // CraneliftExperimental
+                    invocation.backend.tag = 1; // Cranelift
                 }
             } else {
                 compiler_invocation_fail(std.Concat("unknown backend: ", backend_name));
@@ -401,7 +401,7 @@ func main() {
     env.current_prefix = "";
 
     // 7. Select the backend only after the shared resolver, parser, and
-    // typechecker pipeline has completed. The experimental route accepts only
+    // typechecker pipeline has completed. The native route accepts only
     // registry-owned generic canonical-MIR entries and never falls back.
     if invocation.backend.tag == 1 {
         mut native_result :=
@@ -429,7 +429,7 @@ func main() {
             )
         );
         if native_result.status == 2 {
-            os.LogStr("Experimental Cranelift backend selection is valid, but the source-level route is not connected yet.");
+            os.LogStr("Cranelift backend selection is valid, but the source-level route is not connected yet.");
             os.Exit(1);
         }
         os.LogError(native_result.diagnostic);
@@ -448,7 +448,7 @@ func main() {
         os.Exit(1);
     }
 
-    // Default and explicit MIR-to-C selections share this exact codegen path.
+    // Both explicit C spellings share this exact retained oracle path.
     mut c_code := codegen.codegen_generate(programs, module_prefixes, &env, ctx);
     os.LogStr(c_code);
 }

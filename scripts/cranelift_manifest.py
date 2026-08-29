@@ -151,8 +151,8 @@ def verify_phase12_5_closure() -> None:
 def validate_compiler_and_package_surface() -> None:
     test_runner = read(TEST_RUNNER)
     require(
-        'os.LogStr("  mir-to-c, c  Emit C source to stdout (default).");' in test_runner,
-        "compiler help must keep mir-to-c as the default backend",
+        'os.LogStr("  cranelift  Compile to one native executable (default).");' in test_runner,
+        "compiler help must identify Cranelift as the default backend",
     )
     require(
         'os.LogStr("  --backend <mir-to-c|c|cranelift>  Select the backend explicitly.");'
@@ -160,9 +160,9 @@ def validate_compiler_and_package_surface() -> None:
         "compiler help must expose the retained C aliases and Cranelift selector",
     )
     require(
-        'os.LogStr("  cranelift  Compile a supported source cohort to one native executable (experimental).");'
+        'os.LogStr("  mir-to-c, c  Emit C source to stdout (retained semantic oracle).");'
         in test_runner,
-        "compiler help must keep Cranelift explicitly experimental",
+        "compiler help must identify the retained explicit C oracle",
     )
     for token in (
         "GUST_NATIVE_BACKEND_DRIVER",

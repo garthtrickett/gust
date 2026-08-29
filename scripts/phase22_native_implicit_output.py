@@ -78,8 +78,11 @@ def validate() -> dict:
 
     scanner = opening_module()
     summary = scanner.scan_summary(scanner.scan_invocations())
-    require(summary ==
-            predecessor.get("authorized_post_relay_invocation_inventory"),
+    expected_live_inventory = registry.get(
+        "phase22_default_route_flip", {}).get(
+            "post_flip_invocation_inventory",
+            predecessor.get("authorized_post_relay_invocation_inventory"))
+    require(summary == expected_live_inventory,
             f"successor merged invocation inventory drifted: {summary!r}")
     migration = predecessor.get("migration", {})
     require(migration.get("opening_implicit_count") +
@@ -124,7 +127,7 @@ def validate() -> dict:
             "- [x] Patch 22.2b — Post-Relay Prerequisite Reconciliation — DONE"
             in task and
             "- [x] Patch 22.3 — Native Implicit-Output Contract — DONE" in task and
-            "- [ ] Patch 22.6 — Cranelift Default Route Flip" in task,
+            "- [x] Patch 22.6 — Cranelift Default Route Flip — DONE" in task,
             "22.2/22.3 completion or the 22.6 boundary drifted")
 
     levels = json.loads(LEVELS.read_text(encoding="utf-8"))["guards"]

@@ -43,7 +43,7 @@ def logical_commands(path: Path) -> list[tuple[int, str, str]]:
     pending_line = 0
     recipe = ""
     for line_no, raw in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
-        if path.name == "justfile" and raw and not raw[0].isspace():
+        if path.name.startswith("justfile") and raw and not raw[0].isspace():
             match = RECIPE.match(raw)
             if match:
                 recipe = match.group(1)
@@ -142,20 +142,20 @@ def classify(path: Path, line_no: int, command: str, recipe: str,
         expected_artifact = "generated_C_or_diagnostic"
         transition = "checked_cross_lane_relay_before_22.6"
         falsifier = "default_flip_lands_before_the_owning_lane_classifies_the_consumer"
-    elif relative == "justfile" and "expect_invocation_failure" in command:
+    elif relative.startswith("justfile") and "expect_invocation_failure" in command:
         consumer_class = "invocation_parser_probe"
         owner = "cranelift"
         expected_artifact = "pre_backend_invocation_diagnostic"
         transition = "preserve_shared_parser_diagnostic"
         falsifier = "backend_migration_changes_a_pre_backend_parser_diagnostic"
-    elif relative == "justfile" and recipe.startswith(
+    elif relative.startswith("justfile") and recipe.startswith(
             "guard-cranelift-phase10-backend-selection"):
         consumer_class = "intentional_default_selection_probe"
         owner = "cranelift"
         expected_artifact = "current_default_route_observation"
         transition = "22.6_flip_expectation_only"
         falsifier = "probe_is_migrated_before_the_default_route_changes"
-    elif relative == "justfile":
+    elif relative.startswith("justfile"):
         consumer_class = "repository_C_or_diagnostic_guard"
         owner = "cranelift"
         expected_artifact = "generated_C_or_diagnostic"
@@ -213,7 +213,8 @@ def python_compiler_lists(path: Path) -> list[tuple[int, str, str]]:
 
 
 def scan_invocations() -> list[dict[str, object]]:
-    files = [ROOT / "Makefile", ROOT / "justfile"]
+    files = [ROOT / "Makefile"]
+    files.extend(sorted(ROOT.glob("justfile*")))
     files.extend(sorted((ROOT / "scripts").glob("*.sh")))
     rows: list[dict[str, object]] = []
     for path in files:
@@ -305,6 +306,8 @@ def validate() -> dict:
         (
             migration.get("current_invocation_inventory"),
             migration.get("authorized_post_relay_invocation_inventory"),
+            registry.get("phase22_default_route_flip", {}).get(
+                "post_flip_invocation_inventory"),
         )
         if isinstance(migration, dict)
         else (record.get("invocation_inventory"),)

@@ -126,12 +126,12 @@ def validate() -> dict:
     require("- [x] Patch 22.5 — Pre-flip Default-Cohort Qualification — DONE" in task and
             "- [x] Patch 22.2b — Post-Relay Prerequisite Reconciliation — DONE"
             in task and
-            "- [ ] Patch 22.6 — Cranelift Default Route Flip" in task,
+            "- [x] Patch 22.6 — Cranelift Default Route Flip — DONE" in task,
             "22.5/22.6 roadmap boundary drifted")
     compiler_entry = (ROOT / "compiler/test_runner_entry.gst").read_text(
         encoding="utf-8")
-    require("invocation.backend.tag = 0; // MirToC" in compiler_entry,
-            "compiler default changed before Patch 22.6")
+    require("invocation.backend.tag = 1; // Cranelift" in compiler_entry,
+            "Patch 22.6 successor default is absent")
     levels = json.loads(LEVELS.read_text(encoding="utf-8"))["guards"]
     require(levels.get(GUARD_L1) == 1 and levels.get(GUARD_L2) == 2,
             "guard levels drifted")

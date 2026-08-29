@@ -71,7 +71,10 @@ def validate() -> tuple[dict, list[dict[str, object]]]:
     post_relay_inventory = record.get(
         "authorized_post_relay_invocation_inventory"
     )
-    require(summary == post_relay_inventory,
+    expected_live_inventory = registry.get(
+        "phase22_default_route_flip", {}).get(
+            "post_flip_invocation_inventory", post_relay_inventory)
+    require(summary == expected_live_inventory,
             f"merged post-relay invocation inventory drifted: {summary!r}")
     migration = record.get("migration", {})
     has_implicit_output_successor = "phase22_native_implicit_output" in registry
@@ -107,6 +110,8 @@ def validate() -> tuple[dict, list[dict[str, object]]]:
         "help_surface_probe", "intentional_default_selection_probe",
         "invocation_parser_probe",
     }
+    if "phase22_default_route_flip" in registry:
+        allowed_cranelift.add("cranelift_C_or_diagnostic_guard")
     require(all(row["consumer_class"] in allowed_cranelift
                 for row in implicit if row["owner"] == "cranelift"),
             "a Cranelift-owned C dependency still omits backend selection")
@@ -204,7 +209,7 @@ def validate() -> tuple[dict, list[dict[str, object]]]:
             "TASK.md does not record the relay-publication authority correction")
     require("- [x] Patch 22.2b — Post-Relay Prerequisite Reconciliation — DONE"
             in task and
-            "- [ ] Patch 22.6 — Cranelift Default Route Flip" in task,
+            "- [x] Patch 22.6 — Cranelift Default Route Flip — DONE" in task,
             "TASK.md does not preserve the post-relay/default-flip boundary")
     levels = json.loads(LEVELS.read_text(encoding="utf-8"))["guards"]
     require(levels.get(GUARD_L1) == 1 and levels.get(GUARD_L2) == 2,

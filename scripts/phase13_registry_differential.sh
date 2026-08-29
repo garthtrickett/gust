@@ -122,11 +122,11 @@ do
   case_dir="$build_root/$safe_case_id"
   mkdir -p "$case_dir"
 
-  if ! ./gust "$source_fixture" \
+  if ! ./gust --backend c "$source_fixture" \
       >"$case_dir/default.c" \
       2>"$case_dir/default.compiler.stderr"; then
     cat "$case_dir/default.compiler.stderr" >&2
-    fail_case "default MIR-to-C compilation failed"
+    fail_case "C-alias MIR-to-C compilation failed"
   fi
   if ! ./gust --backend mir-to-c "$source_fixture" \
       >"$case_dir/explicit.c" \
@@ -142,7 +142,7 @@ do
   fi
   if ! cmp -s "$case_dir/default.c" "$case_dir/explicit.c"; then
     diff -u "$case_dir/default.c" "$case_dir/explicit.c" >&2 || true
-    fail_case "default and explicit MIR-to-C output are not byte-identical"
+    fail_case "both explicit MIR-to-C spellings are not byte-identical"
   fi
 
   cat src/runtime.c "$case_dir/default.c" >"$case_dir/mir-to-c.final.c"

@@ -15,7 +15,7 @@ guard-positive file label:
     final_file="$guard_dir/${stem}_final.c"
     bin_file="$guard_dir/${stem}_bin"
     echo "Checking $test_path accepts and runs..."
-    ./gust "$test_path" > "$log" 2>&1
+    ./gust --backend mir-to-c "$test_path" > "$log" 2>&1
     grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" "$log" > "$c_file"
     cat src/runtime.c "$c_file" > "$final_file"
     CC_BIN="${CC:-cc}"
@@ -33,7 +33,7 @@ guard-compile-pass file label:
     mkdir -p "$guard_dir"
     log="$guard_dir/compiler.log"
     echo "Checking $test_path accepts..."
-    ./gust "$test_path" > "$log" 2>&1
+    ./gust --backend mir-to-c "$test_path" > "$log" 2>&1
 
 guard-compile-fail file diagnostic label:
     #!/usr/bin/env bash
@@ -45,7 +45,7 @@ guard-compile-fail file diagnostic label:
     mkdir -p "$guard_dir"
     log="$guard_dir/compiler.log"
     echo "Checking $test_path rejects..."
-    if ./gust "$test_path" > "$log" 2>&1; then
+    if ./gust --backend mir-to-c "$test_path" > "$log" 2>&1; then
     echo "❌ Expected $test_path to fail compilation, but it succeeded."
     cat "$log"
     exit 1
