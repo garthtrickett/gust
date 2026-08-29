@@ -3859,6 +3859,69 @@
       "begins_patch22_7": false
     }
   },
+  "phase22_postflip_qualification": {
+    "contract_version": "phase22_postflip_qualification_v1",
+    "status": "qualification_complete",
+    "next_patch": "22.8",
+    "review_view": "compiler/CRANELIFT_PHASE22_POSTFLIP_QUALIFICATION.md",
+    "observed_main_sha": "ea0d8111fec4160ec5718241a5e15cb418e519b6",
+    "predecessor_authority": "phase22_default_route_seed_convergence_v1",
+    "delivery_contract": {
+      "make_default_goal": "phase10-native-package",
+      "default_backend": "cranelift",
+      "package_artifacts": [
+        "gust",
+        "gust-native-backend",
+        "gust-runtime-package.a"
+      ],
+      "install_and_relocation_unit": "three_artifact_sibling_directory",
+      "explicit_c_spellings": [
+        "c",
+        "mir-to-c"
+      ],
+      "explicit_c_role": "semantic_oracle_bootstrap_and_operator_selected_rollback",
+      "fallback": "forbidden",
+      "bootstrap_route": "explicit_mir_to_c"
+    },
+    "qualification": {
+      "repository_package_bare_default": "qualified",
+      "installed_package_bare_default": "qualified",
+      "relocated_package_bare_default": "qualified",
+      "bare_and_explicit_native": "artifact_and_behavior_identical",
+      "explicit_c_spellings": "byte_identical_and_executable",
+      "missing_native_worker": "bare_default_fails_without_fallback_and_explicit_c_succeeds",
+      "documentation_and_help": "cranelift_default_explicit_c_oracle_no_fallback",
+      "release_shape": "exact_three_artifact_sibling_package"
+    },
+    "native_workflow_inputs": [
+      "gust_v4.c",
+      "compiler/*.gst",
+      "compiler/experiments/cranelift/**",
+      "src/runtime.c",
+      "src/runtime/**",
+      "tools/normalize_generated_arena_offsets.py"
+    ],
+    "owning_workflows": [
+      ".github/workflows/phase22-opening.yml",
+      ".github/workflows/phase22-native-implicit-output.yml",
+      ".github/workflows/phase22-default-native-package.yml",
+      ".github/workflows/phase22-preflip-default-cohort.yml",
+      ".github/workflows/phase22-default-route-flip.yml",
+      ".github/workflows/phase22-postflip-qualification.yml"
+    ],
+    "path_filter_policy": "every_native_input_is_present_in_pull_request_and_push_filters_of_every_owning_workflow",
+    "boundary": {
+      "changes_build_delivery_default": true,
+      "changes_documentation_and_CI": true,
+      "changes_accepted_Gust_program_meaning": false,
+      "adds_or_changes_MIR_or_native_lowering": false,
+      "changes_ABI_layout_runtime_symbols_target_or_linker": false,
+      "changes_default_compiler_backend": false,
+      "changes_bootstrap_route_or_seed": false,
+      "edits_stdlib_or_CR15": false,
+      "begins_patch22_8": false
+    }
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",

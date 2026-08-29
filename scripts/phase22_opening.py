@@ -285,6 +285,12 @@ def validate() -> dict:
         "auto_build_or_download": False,
     }, "package baseline drifted")
 
+    postflip = registry.get("phase22_postflip_qualification", {})
+    postflip_complete = (
+        postflip.get("contract_version") ==
+        "phase22_postflip_qualification_v1" and
+        postflip.get("status") == "qualification_complete"
+    )
     for surface_name in ("documentation_surfaces", "workflow_surfaces"):
         surfaces = record.get(surface_name)
         require(isinstance(surfaces, list) and surfaces,
@@ -295,8 +301,13 @@ def validate() -> dict:
                 "expected_transition",
             )), f"{surface_name} row is unclassified: {row!r}")
             path = ROOT / row["path"]
-            require(path.is_file() and
-                    row["marker"] in path.read_text(encoding="utf-8"),
+            marker_present = (path.is_file() and
+                              row["marker"] in path.read_text(encoding="utf-8"))
+            transitioned_by_postflip = (
+                postflip_complete and
+                "22.7" in row["expected_transition"]
+            )
+            require(marker_present or transitioned_by_postflip,
                     f"{surface_name} marker drifted: {row['id']}")
 
     rows = scan_invocations()

@@ -5,6 +5,11 @@ PREFIX = /usr/local
 DESTDIR ?=
 CARGO ?= cargo
 
+# The supported default distribution is the executable-relative Cranelift
+# package. Bootstrap and oracle targets below continue to select MIR-to-C
+# explicitly.
+.DEFAULT_GOAL := phase10-native-package
+
 PHASE10_NATIVE_BACKEND_MANIFEST = compiler/experiments/cranelift/Cargo.toml
 PHASE10_NATIVE_BACKEND_LOCK = compiler/experiments/cranelift/Cargo.lock
 PHASE10_NATIVE_BACKEND_SOURCES = $(wildcard compiler/experiments/cranelift/src/*.rs)
@@ -33,7 +38,7 @@ require_just:
 COMPILER_SRCS = $(wildcard compiler/*.gst)
 RUNTIME_SRCS  = src/runtime.c $(wildcard src/runtime/*.c) $(wildcard src/runtime/*.h)
 
-all: gust
+all: phase10-native-package
 
 gust_bootstrap: gust_v4.c $(RUNTIME_SRCS)
 	mkdir -p build

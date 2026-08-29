@@ -364,6 +364,8 @@
     "guard-cranelift-phase22-default-route-flip-contract": 1,
     "guard-cranelift-phase22-default-route-flip-evidence": 2,
     "guard-cranelift-phase22-default-route-seed-convergence": 1,
+    "guard-cranelift-phase22-postflip-qualification-contract": 1,
+    "guard-cranelift-phase22-postflip-qualification-evidence": 2,
     "guard-cranelift-phase20-resource-scope-cleanup-parity": 2,
     "guard-cranelift-phase20-seed-convergence": 1,
     "guard-cranelift-phase20-nested-brand-annotation-contract": 1,

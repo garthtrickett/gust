@@ -44,26 +44,32 @@ That framing is deliberate and it is the one that survives. `docs/VISION.md` §0
 
 ## Two backends, and why
 
-Gust transpiles to clean C99, which is why it builds anywhere a C compiler exists and needs no Rust or LLVM toolchain.
+Gust compiles to native executables through Cranelift by default. The retained
+C99 backend is selected explicitly with `--backend c` or
+`--backend mir-to-c`; it remains the semantic oracle, portability route, and
+self-hosting bootstrap route.
 
 That portability has a semantic cost worth stating plainly. Transpiling to C means inheriting **C's abstract machine**, not just its syntax: pointer provenance, effective-type rules, and signed-overflow latitude included. An arena-and-index model carves differently-typed objects out of one allocation and reconstructs pointers from a base and an offset, which is precisely the pattern those rules punish. Code that is provably correct under Gust's model can still be miscompiled at `-O2` by a C compiler applying rules Gust never agreed to.
 
 The native Cranelift backend exists to close that gap. It is **not** a performance play. It is what makes "the compiler carries the danger" actually true, by expressing Gust's memory model in a backend that honours it rather than laundering it through C's. Cranelift's memory model is deliberately concrete — loads and stores with alias information the compiler supplies — rather than an abstract machine with undefined-behaviour-driven optimisation latitude.
 
-The C backend remains the portability path and the bootstrap seed. A differential test suite keeps the two backends honest against each other.
+The C backend remains the portability path and the bootstrap seed. A differential test suite keeps the two backends honest against each other. Cranelift never silently falls back to C: an unavailable or rejected native backend is a compilation failure, and choosing C is always explicit.
 
 ---
 
 ## The Non-Rust Bootstrap Chain
 
-To build, run, and test Gust, **you do not need Rust or Cargo installed on your system.**
+The self-hosting bootstrap chain remains C-only. Building the default
+three-artifact native distribution from source also builds the Cranelift worker
+and therefore requires the pinned Rust toolchain and Cargo. Users of an
+installed Gust distribution do not need Rust or Cargo.
 
 Gust is fully self-hosted, meaning the compiler is written in Gust itself. To break the traditional "chicken-and-egg" bootstrap loop without forcing a Rust dependency on end-users, Gust utilizes a C-based bootstrap pipeline:
 
 The deprecated root Rust prototype compiler has been removed. Rust remains in
 two deliberately separate components: the active Cranelift backend under
 `compiler/experiments/cranelift/` and the Phase 17 runtime crate under
-`src/runtime/rust/`. Neither participates in the default C bootstrap chain.
+`src/runtime/rust/`. Neither participates in the explicit C bootstrap chain.
 
 ```
 [Seed Compiler Source] (gust_v4.c)
@@ -91,6 +97,7 @@ two deliberately separate components: the active Cranelift backend under
 *   A standard-compliant C compiler (such as `gcc` or `clang`).
 *   The `make` utility.
 *   POSIX threads (`pthread`) support.
+*   Rust 1.97.1 and Cargo when building the default native distribution from source.
 
 ### Building the Compiler
 To clean old artifacts and perform the full multi-stage bootstrap build, execute:
@@ -100,7 +107,21 @@ make clean
 make
 ```
 
-This produces the production-ready `gust` compiler binary in your root directory.
+This produces the production-ready sibling package under
+`build/phase10-package/bin/`: `gust`, `gust-native-backend`, and
+`gust-runtime-package.a`. The three files are one relocatable unit; keep them
+together. The root `gust` binary is also produced as the self-hosted compiler.
+
+Compile a program through the default Cranelift route with:
+
+```bash
+build/phase10-package/bin/gust program.gst
+```
+
+The executable defaults to the source path with the final `.gst` removed. Use
+`-o <path>` to choose another path. For the retained C oracle or an explicit
+rollback, use `--backend c` or `--backend mir-to-c`; C is emitted to standard
+output. There is no automatic fallback between the native and C routes.
 
 ### Running the Test Suite
 To verify the compiler's typechecker, code generator, and FFI standard library runtime, execute:
@@ -117,7 +138,8 @@ This compiles, links, and runs the end-to-end verification suites, printing a su
 ```
 
 ### Installation
-To install the compiled `gust` binary into your system's binary path (defaults to `/usr/local/bin`), run:
+To install the complete three-artifact sibling package into your system's
+binary path (defaults to `/usr/local/bin`), run:
 
 ```bash
 make install

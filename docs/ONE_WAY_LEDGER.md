@@ -801,30 +801,28 @@ resolver — so the rule is neither held nor broken. `docs/VISION_RECONCILIATION
 §5 describes what it should become, and the lockfile-diff artifact there is
 `docs/VISION.md` §72, marked DEFERRED.
 
-### E17 — the C backend is being retired, and that closes some rows for free (row 27)
+### E17 — Cranelift is the default; C remains the named oracle (row 27)
 
-The active direction is replacing generated C with Cranelift. `TASK.md` is
-executing Phase 18 of the arc `mir-to-cranelift.md` lays out: target and linker
-hardening, whole-program differential qualification, self-hosting through
-Cranelift, the default flip, then deprecating and deleting MIR-to-C, and finally
-the bootstrap seed. Phase 18 stood at 13 of 20 patches at `b47d0049`.
+The active direction is replacing generated C with Cranelift. Phase 22 has made
+Cranelift the production default while retaining MIR-to-C as the semantic oracle
+and bootstrap route.
 
 `PARTIAL` because both backends exist, and this now rests on the driver rather
 than on a roadmap's status line. `compiler/test_runner_entry.gst` exposes the
 choice to users directly:
 
 ```
-gust --backend mir-to-c <source.gst>
-gust --backend cranelift -o <output> <source.gst>
-  --backend <mir-to-c|cranelift>  Select the backend explicitly.
-  -o <output>                     Required only by the cranelift backend.
+gust <source.gst>
+gust --backend cranelift [-o <output>] <source.gst>
+gust --backend <mir-to-c|c> <source.gst>
+  --backend <cranelift|mir-to-c|c>  Select the backend explicitly.
+  -o <output>                       Optional Cranelift output path.
 ```
 
-The driver also carries `backend_was_explicit` alongside the selection (`:17,20`),
-which is the field the no-silent-fallback rule in `docs/SHARED_SEMANTIC_ZONE.md`
-needs: an explicitly requested Cranelift build must fail rather than quietly
-retry through C, and distinguishing explicit from defaulted is what makes that
-expressible. MIR-to-C remains the default and the differential oracle.
+Bare and explicit Cranelift invocations share one route. A native failure never
+retries through C; rollback is an explicit `--backend c` or
+`--backend mir-to-c` choice. MIR-to-C remains the differential oracle and the
+bootstrap Make targets name it explicitly.
 
 **Row 29 closes when it does, without anyone working on it directly**, and
 `GEMINI.md` §C is the same shape although it is not a row here.
