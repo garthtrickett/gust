@@ -3,8 +3,8 @@
 Generated from `scripts/cranelift_feature_registry.json`. Do not edit by hand.
 
 - Contract: `phase22_native_implicit_output_v1`
-- Status: `implementation_complete_patch22_2_relay_pending`
-- Next action: `merge_stdlib_owned_patch22_2_relay_then_mark_22_2_and_22_3_done`
+- Status: `implementation_complete`
+- Next action: `patch22_6_default_route_flip`
 - Observed main: `f648de3fb200f83735b0a86ca1d843500c6401aa`
 - Predecessor: `phase22_explicit_c_migration_v2`
 
@@ -33,5 +33,6 @@ Generated from `scripts/cranelift_feature_registry.json`. Do not edit by hand.
 Patch 22.3 changes only explicit Cranelift output inference. Bare Gust
 remains MIR-to-C, the explicit output path remains opaque, and the existing
 native source route and Phase 9G transaction retain artifact ownership.
-Patch 22.2 and 22.3 remain roadmap-open until the owning Stdlib consumer
-relay lands; no later default-flip patch is thereby authorized.
+The owning Stdlib relay has merged and Patch 22.3 is complete. The
+compiler default remains MIR-to-C; Patch 22.6 is still unchecked and
+this reconciliation does not itself authorize a partial route flip.

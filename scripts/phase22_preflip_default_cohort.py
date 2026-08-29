@@ -50,14 +50,20 @@ def validate() -> dict:
             "phase22_preflip_default_cohort_v1",
             "contract version drifted")
     require(record.get("status") ==
-            "qualification_complete_default_flip_blocked_on_explicit_c_relay" and
-            record.get("next_action") ==
-            "patch22_6_after_stdlib_relay_merge",
+            "qualification_complete_default_flip_prerequisites_satisfied" and
+            record.get("next_action") == "patch22_6_default_route_flip",
             "status or next action drifted")
     require(record.get("predecessor_authority") ==
             registry.get("phase22_default_native_package", {}).get(
                 "contract_version") == "phase22_default_native_package_v1",
             "predecessor authority drifted")
+    require(registry.get("phase22_default_native_package", {}).get("status") ==
+            "qualification_complete" and
+            registry.get("phase22_explicit_c_migration", {}).get("status") ==
+            "complete_post_relay" and
+            registry.get("phase22_explicit_c_migration", {}).get(
+                "cross_lane_relay", {}).get("status") == "merged_on_main",
+            "default-flip prerequisite status drifted")
     require(record.get("compiler_origin") == "Cranelift_built_full_compiler" and
             record.get("candidate_route") ==
             "explicit_cranelift_no_fallback" and
@@ -118,6 +124,8 @@ def validate() -> dict:
         require(marker in suite, "complete-suite successor accounting is missing")
     task = TASK.read_text(encoding="utf-8")
     require("- [x] Patch 22.5 — Pre-flip Default-Cohort Qualification — DONE" in task and
+            "- [x] Patch 22.2b — Post-Relay Prerequisite Reconciliation — DONE"
+            in task and
             "- [ ] Patch 22.6 — Cranelift Default Route Flip" in task,
             "22.5/22.6 roadmap boundary drifted")
     compiler_entry = (ROOT / "compiler/test_runner_entry.gst").read_text(
@@ -189,8 +197,10 @@ def render(record: dict) -> str:
         "The Phase 21 record remains historical. This successor authority resolves",
         "its three runtime-divergence rows without changing the 121 explicitly owned",
         "non-default native capability deferrals or the ten identical oracle/native",
-        "precondition rejections. The compiler default remains MIR-to-C. Patch 22.6",
-        "is still blocked until the owning Stdlib explicit-C relay merges.",
+        "precondition rejections. The owning Stdlib explicit-C relay has merged,",
+        "all pre-flip prerequisites are complete, and the compiler default remains",
+        "MIR-to-C. Patch 22.6 is still unchecked and is not folded into this",
+        "reconciliation.",
         "",
     ]
     return "\n".join(lines)

@@ -4,19 +4,23 @@ Generated from `scripts/cranelift_feature_registry.json` and the live
 repository invocation scan. Do not edit by hand.
 
 - Contract: `phase22_explicit_c_migration_v2`
-- Status: `cranelift_owned_migration_complete_relay_publication_authorized`
-- Next action: `stdlib_owned_consumer_relay_publication`
+- Status: `complete_post_relay`
+- Next action: `patch22_6_default_route_flip`
 - Observed main: `d7c0a733c211a202bda417fb7d5b8ceb12ced415`
 - Default backend: `mir_to_c_unchanged`
 - Explicit `c`: `exact_alias_of_mir_to_c`
 - Cranelift-owned migrations: `60`
 - Pre-relay implicit consumers: `26`
-- Authorized post-relay implicit consumers: `11`
+- Merged post-relay implicit consumers: `11`
 - Pre-relay explicit C consumers: `146`
-- Authorized post-relay explicit C consumers: `161`
+- Merged post-relay explicit C consumers: `161`
 - Pre-relay implicit Stdlib-owned consumers: `15`
-- Authorized post-relay implicit Stdlib-owned consumers: `0`
-- Relay status: `authorized_for_owning_lane_publication`
+- Merged post-relay implicit Stdlib-owned consumers: `0`
+- Relay status: `merged_on_main`
+- Relay PR: `#256` at `884cb57aee466da24410ade1a9bc7ddc9e592dd7`
+- Relay merged main: `8045704ca5632e3ad096d1cd25eac12c57a4b28b`
+- Relay PR workflows: `73` successful
+- Relay unresolved review threads: `0`
 
 ## Migration classes
 
@@ -32,7 +36,7 @@ repository invocation scan. Do not edit by hand.
 - `invocation_parser_probe`: `2`
 - `stdlib_owned_C_or_diagnostic_guard`: `15`
 
-## Authorized post-relay preserved implicit consumers
+## Merged post-relay preserved implicit consumers
 
 - `help_surface_probe`: `2`
 - `intentional_default_selection_probe`: `7`
@@ -58,9 +62,9 @@ repository invocation scan. Do not edit by hand.
 | `scripts/stdlib_s1_clone_destination_parity.sh` | 128 | `none` | `./gust` |
 | `scripts/stdlib_s1_composition_parity.sh` | 30 | `none` | `./gust` |
 
-Patch 22.2 remains open. This authority accepts only the exact pre-relay
-inventory or the exact checked 15-site post-relay inventory, allowing
-the owning Stdlib correction to publish without treating partial or
-unrelated invocation drift as completion. The default flip remains
-forbidden until that owning PR actually merges. This authority patch
-does not edit Stdlib or change the MIR-to-C default.
+Patch 22.2 is complete. The owning Stdlib relay merged with its complete
+exact-head pull-request population successful and zero review threads.
+This authority now accepts only the exact merged 15-site post-relay
+inventory; the earlier pre-relay inventory is historical and no longer
+admitted as repository state. Patch 22.6 remains unchecked, and this
+reconciliation does not edit Stdlib or change the MIR-to-C default.

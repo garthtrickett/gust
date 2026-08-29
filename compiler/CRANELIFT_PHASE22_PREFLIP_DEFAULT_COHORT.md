@@ -3,8 +3,8 @@
 Generated from `scripts/cranelift_feature_registry.json`. Do not edit by hand.
 
 - Contract: `phase22_preflip_default_cohort_v1`
-- Status: `qualification_complete_default_flip_blocked_on_explicit_c_relay`
-- Next action: `patch22_6_after_stdlib_relay_merge`
+- Status: `qualification_complete_default_flip_prerequisites_satisfied`
+- Next action: `patch22_6_default_route_flip`
 - Observed main: `76192f27c73b9caf7ec5a610624996a9337d09f2`
 - Compiler origin: `Cranelift_built_full_compiler`
 - Candidate route: `explicit_cranelift_no_fallback`
@@ -34,5 +34,7 @@ Generated from `scripts/cranelift_feature_registry.json`. Do not edit by hand.
 The Phase 21 record remains historical. This successor authority resolves
 its three runtime-divergence rows without changing the 121 explicitly owned
 non-default native capability deferrals or the ten identical oracle/native
-precondition rejections. The compiler default remains MIR-to-C. Patch 22.6
-is still blocked until the owning Stdlib explicit-C relay merges.
+precondition rejections. The owning Stdlib explicit-C relay has merged,
+all pre-flip prerequisites are complete, and the compiler default remains
+MIR-to-C. Patch 22.6 is still unchecked and is not folded into this
+reconciliation.
