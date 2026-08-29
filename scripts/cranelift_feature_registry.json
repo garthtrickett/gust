@@ -3788,10 +3788,10 @@
       "bootstrap_route": "explicit_mir_to_c"
     },
     "frozen_preflip_c_corpus": [
-      {"source": "compiler/phase11_scalar_unsupported_multiply_source.gst", "sha256": "c74ead80aa965e5c8dd353b87a89f971707f1de614cafe69f4efbd8c517ec91b"},
-      {"source": "compiler/phase20_resource_scope_cleanup_source.gst", "sha256": "c25415ff5f05b387b151d04f3b3ea3c8a9264bfd38c4573ac391a8a17ce8bdda"},
-      {"source": "compiler/phase21_selected_declaration_source.gst", "sha256": "1a6c3a6c3d1ef72d0cc4653fb77fd4c37d06c8129664f9aab628ab12b5ad5682"},
-      {"source": "compiler/phase21_trusted_scope_positive.gst", "sha256": "ad02e6f013b45cfc30d8e413b4dee7cb16f023cb377aeadfe38a156809d437fe"}
+      {"source": "compiler/phase11_scalar_unsupported_multiply_source.gst", "digest": "c74ead80aa965e5c8dd353b87a89f971707f1de614cafe69f4efbd8c517ec91b"},
+      {"source": "compiler/phase20_resource_scope_cleanup_source.gst", "digest": "c25415ff5f05b387b151d04f3b3ea3c8a9264bfd38c4573ac391a8a17ce8bdda"},
+      {"source": "compiler/phase21_selected_declaration_source.gst", "digest": "1a6c3a6c3d1ef72d0cc4653fb77fd4c37d06c8129664f9aab628ab12b5ad5682"},
+      {"source": "compiler/phase21_trusted_scope_positive.gst", "digest": "ad02e6f013b45cfc30d8e413b4dee7cb16f023cb377aeadfe38a156809d437fe"}
     ],
     "evidence": {
       "bare_and_explicit_native_artifacts": "byte_identical",

@@ -117,7 +117,7 @@ def validate() -> dict:
 
     corpus = record.get("frozen_preflip_c_corpus", [])
     require(len(corpus) == 4 and len({row["source"] for row in corpus}) == 4 and
-            all(len(row["sha256"]) == 64 for row in corpus),
+            all(len(row["digest"]) == 64 for row in corpus),
             "frozen pre-flip C corpus drifted")
     task = TASK.read_text(encoding="utf-8")
     require("- [x] Patch 22.6 — Cranelift Default Route Flip — DONE" in task and
@@ -176,7 +176,7 @@ def render(record: dict) -> str:
         f"- Native failure identity: `{evidence['bare_and_explicit_native_failure']}`",
         f"- Explicit C: `{evidence['explicit_c_spellings']}`",
     ]
-    lines += [f"- `{row['source']}`: `{row['sha256']}`"
+    lines += [f"- `{row['source']}`: `{row['digest']}`"
               for row in record["frozen_preflip_c_corpus"]]
     lines += [
         "",
@@ -243,7 +243,7 @@ def evidence() -> None:
                 mir.stdout == alias.stdout and mir.stderr == alias.stderr == b"",
                 f"explicit C spelling parity failed: {row['source']}")
         digest = hashlib.sha256(mir.stdout).hexdigest()
-        require(digest == row["sha256"],
+        require(digest == row["digest"],
                 f"frozen pre-flip C bytes drifted: {row['source']}")
         (output / f"explicit-c-{index}.sha256").write_text(
             f"{digest}  {row['source']}\n", encoding="utf-8")

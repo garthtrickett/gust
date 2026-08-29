@@ -766,10 +766,7 @@ def validate() -> dict:
 
     searchable = "\n".join(
         (
-            json.dumps({
-                key: value for key, value in registry.items()
-                if key.startswith("phase14_") or key == "residual_snapshots"
-            }, sort_keys=True),
+            json.dumps(registry, sort_keys=True),
             read_text(REVIEW) if REVIEW.is_file() else "",
             read_text(ROOT / "compiler/CRANELIFT_PHASE14_FINAL_REVIEW.md"),
         )
