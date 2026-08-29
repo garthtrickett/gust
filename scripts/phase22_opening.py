@@ -305,6 +305,8 @@ def validate() -> dict:
         (
             migration.get("current_invocation_inventory"),
             migration.get("authorized_post_relay_invocation_inventory"),
+            registry.get("phase22_default_route_flip", {}).get(
+                "post_flip_invocation_inventory"),
         )
         if isinstance(migration, dict)
         else (record.get("invocation_inventory"),)

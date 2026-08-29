@@ -19,15 +19,19 @@ mkdir -p "$build_dir"
 seed_before="$(sha256sum gust_v4.c | awk '{print $1}')"
 
 ./gust_bootstrap --backend mir-to-c "$fixture" >"$build_dir/prepatch.c" 2>"$build_dir/prepatch.stderr"
-./gust "$fixture" >"$build_dir/bare.c" 2>"$build_dir/bare.stderr"
 ./gust --backend mir-to-c "$fixture" >"$build_dir/mir-to-c.c" 2>"$build_dir/mir-to-c.stderr"
 ./gust --backend c "$fixture" >"$build_dir/c.c" 2>"$build_dir/c.stderr"
+if ! rg -F '"phase22_default_route_flip"' scripts/cranelift_feature_registry.json >/dev/null; then
+  ./gust "$fixture" >"$build_dir/bare.c" 2>"$build_dir/bare.stderr"
+fi
 for stderr in "$build_dir"/*.stderr; do
   test ! -s "$stderr" || fail "an accepted C spelling emitted diagnostics: $stderr"
 done
-cmp -s "$build_dir/prepatch.c" "$build_dir/bare.c" || fail "bare C bytes changed from the checked-in-seed compiler"
-cmp -s "$build_dir/bare.c" "$build_dir/mir-to-c.c" || fail "bare and explicit mir-to-c bytes differ"
-cmp -s "$build_dir/bare.c" "$build_dir/c.c" || fail "the c alias differs from mir-to-c"
+cmp -s "$build_dir/prepatch.c" "$build_dir/mir-to-c.c" || fail "explicit C bytes changed from the checked-in-seed compiler"
+cmp -s "$build_dir/mir-to-c.c" "$build_dir/c.c" || fail "the c alias differs from mir-to-c"
+if [ -f "$build_dir/bare.c" ]; then
+  cmp -s "$build_dir/bare.c" "$build_dir/mir-to-c.c" || fail "bare and explicit mir-to-c bytes differ before the flip"
+fi
 
 set +e
 ./gust --backend C "$fixture" >"$build_dir/invalid.stdout" 2>"$build_dir/invalid.stderr"
@@ -42,7 +46,11 @@ test ! -s "$build_dir/invalid.stderr" || fail "unknown backend emitted stderr"
 test ! -s "$build_dir/help.stderr" || fail "help emitted stderr"
 rg -F 'gust --backend c <source.gst>' "$build_dir/help.stdout" >/dev/null || fail "c alias is absent from help"
 rg -F -- '--backend <mir-to-c|c|cranelift>' "$build_dir/help.stdout" >/dev/null || fail "backend option help drifted"
-rg -F 'Emit C source to stdout (default).' "$build_dir/help.stdout" >/dev/null || fail "default changed during no-op migration"
+if rg -F '"phase22_default_route_flip"' scripts/cranelift_feature_registry.json >/dev/null; then
+  rg -F 'Compile to one native executable (default).' "$build_dir/help.stdout" >/dev/null || fail "successor default route is absent"
+else
+  rg -F 'Emit C source to stdout (default).' "$build_dir/help.stdout" >/dev/null || fail "default changed during no-op migration"
+fi
 
 ./gust --backend c "$compiler_source" |
   grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" >"$build_dir/stage2.c"

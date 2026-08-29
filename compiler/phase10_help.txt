@@ -5,8 +5,8 @@ Usage:
   gust --backend cranelift [-o <output>] <source.gst>
 
 Backends:
-  mir-to-c, c  Emit C source to stdout (default).
-  cranelift  Compile a supported source cohort to one native executable (experimental).
+  cranelift  Compile to one native executable (default).
+  mir-to-c, c  Emit C source to stdout (retained semantic oracle).
 
 Options:
   --backend <mir-to-c|c|cranelift>  Select the backend explicitly.

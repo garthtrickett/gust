@@ -338,7 +338,7 @@ if rg -n -F "$poison_driver_abs" "$unsupported_dir/compiler.combined" >/dev/null
   exit 1
 fi
 rg -n -F \
-  'Experimental Cranelift backend selection is valid, but the source-level route is not connected yet.' \
+  'Cranelift backend selection is valid, but the source-level route is not connected yet.' \
   "$unsupported_dir/compiler.combined" >/dev/null
 
 echo "✅ Route architecture behavioural evidence passed: novel and renamed sources use generic canonical MIR, MIR-to-C fallback is poisoned, worker input is isolated, and unsupported input defers before driver/request/object/output access."

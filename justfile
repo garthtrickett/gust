@@ -10489,7 +10489,7 @@ guard-cranelift-route-architecture-contract:
 
     native_branch="$(
       sed -n \
-        '/if invocation.backend.tag == 1 {/,/Default and explicit MIR-to-C selections/p' \
+        '/if invocation.backend.tag == 1 {/,/Both explicit C spellings/p' \
         "$invocation_source"
     )"
     if printf '%s\n' "$native_branch" |
@@ -13500,7 +13500,7 @@ guard-cranelift-phase13-close:
       exit 1
     fi
 
-    rg -n -F './gust "$source_fixture"' "$differential_harness" >/dev/null
+    rg -n -F './gust --backend c "$source_fixture"' "$differential_harness" >/dev/null
     rg -n -F './gust --backend mir-to-c "$source_fixture"' \
       "$differential_harness" >/dev/null
     rg -n -F 'cmp -s "$case_dir/default.c" "$case_dir/explicit.c"' \
@@ -13511,7 +13511,7 @@ guard-cranelift-phase13-close:
       "$capability_evidence" >/dev/null
     rg -n -F 'if [ -e "$deferred_marker" ]; then' \
       "$capability_evidence" >/dev/null
-    rg -n -F 'os.LogStr("  mir-to-c, c  Emit C source to stdout (default).");' \
+    rg -n -F 'os.LogStr("  cranelift  Compile to one native executable (default).");' \
       "$compiler_entry" >/dev/null
 
     if rg -n \
@@ -23594,3 +23594,26 @@ guard-cranelift-phase22-preflip-default-cohort-evidence:
     echo "🧪 Replaying Phase 22 pre-flip focused parity evidence..."
     just guard-cranelift-phase22-preflip-default-cohort-contract
     python3 scripts/phase22_preflip_default_cohort.py evidence
+
+# Cranelift lane, Phase 22.6. The default and explicit native forms share the
+# existing post-semantic-pipeline route; explicit C remains the frozen oracle.
+guard-cranelift-phase22-default-route-flip-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🚦 Checking Phase 22 default Cranelift route authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase22-default-route-flip-contract | grep -F $'guard-cranelift-phase22-default-route-flip-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase22_explicit_c_migration.py validate
+    python3 scripts/phase22_native_implicit_output.py validate
+    python3 scripts/phase22_default_native_package.py validate
+    python3 scripts/phase22_preflip_default_cohort.py validate
+    python3 scripts/phase22_default_route_flip.py validate
+    python3 scripts/phase22_default_route_flip.py check-review
+
+guard-cranelift-phase22-default-route-flip-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Replaying Phase 22 default Cranelift route evidence..."
+    just guard-cranelift-phase22-default-route-flip-contract
+    python3 scripts/phase22_default_route_flip.py evidence

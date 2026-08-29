@@ -141,7 +141,7 @@ def validate() -> dict:
         "- [x] Patch 22.2b — Post-Relay Prerequisite Reconciliation — DONE",
         "- [x] Patch 22.3 — Native Implicit-Output Contract — DONE",
         "- [x] Patch 22.4 — Default-Native Package and Install Qualification — DONE",
-        "- [ ] Patch 22.6 — Cranelift Default Route Flip",
+        "- [x] Patch 22.6 — Cranelift Default Route Flip — DONE",
     ):
         require(row in task, "post-relay roadmap boundary drifted")
     levels = json.loads(LEVELS.read_text(encoding="utf-8"))["guards"]

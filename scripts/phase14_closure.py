@@ -352,7 +352,7 @@ def validate_static_architecture(registry: dict) -> None:
 
     native_branch_match = re.search(
         r"if invocation\.backend\.tag == 1 \{(.*?)"
-        r"Default and explicit MIR-to-C selections",
+        r"Both explicit C spellings",
         compiler_entry,
         re.DOTALL,
     )
@@ -362,9 +362,9 @@ def validate_static_architecture(registry: dict) -> None:
         "explicit Cranelift can fall back to MIR-to-C",
     )
     require(
-        'os.LogStr("  mir-to-c, c  Emit C source to stdout (default).");'
+        'os.LogStr("  cranelift  Compile to one native executable (default).");'
         in compiler_entry,
-        "MIR-to-C is no longer documented as the default oracle",
+        "Cranelift is not documented as the default backend",
     )
     require(
         "mir_native_backend_deferred_route_decision" in route_source
@@ -373,13 +373,13 @@ def validate_static_architecture(registry: dict) -> None:
         "unsupported native cases no longer stop at the early deferral boundary",
     )
     for token in (
-        './gust "$source_fixture"',
+        './gust --backend c "$source_fixture"',
         './gust --backend mir-to-c "$source_fixture"',
         'cmp -s "$case_dir/default.c" "$case_dir/explicit.c"',
     ):
         require(
             token in differential_harness,
-            f"MIR-to-C default/explicit differential witness is missing {token}",
+            f"MIR-to-C explicit-alias differential witness is missing {token}",
         )
     for token in (
         'assert_preserved_output "$deferred_output" "$deferred_output.expected"',
@@ -766,7 +766,10 @@ def validate() -> dict:
 
     searchable = "\n".join(
         (
-            json.dumps(registry, sort_keys=True),
+            json.dumps({
+                key: value for key, value in registry.items()
+                if key.startswith("phase14_") or key == "residual_snapshots"
+            }, sort_keys=True),
             read_text(REVIEW) if REVIEW.is_file() else "",
             read_text(ROOT / "compiler/CRANELIFT_PHASE14_FINAL_REVIEW.md"),
         )
