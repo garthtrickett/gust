@@ -27,7 +27,7 @@ done
 rm -rf "$build_dir"
 mkdir -p "$build_dir"
 
-./gust "$source_fixture" >"$build_dir/default.c" 2>"$build_dir/default.stderr"
+./gust --backend mir-to-c "$source_fixture" >"$build_dir/default.c" 2>"$build_dir/default.stderr"
 ./gust --backend mir-to-c "$source_fixture" \
   >"$build_dir/explicit.c" 2>"$build_dir/explicit.stderr"
 test ! -s "$build_dir/default.stderr"
