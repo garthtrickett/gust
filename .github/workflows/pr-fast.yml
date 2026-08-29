@@ -471,6 +471,9 @@ jobs:
       - name: Phase 21 tenant-scope and Cranelift self-hosting closure
         run: just guard-cranelift-phase21-close
 
+      - name: Phase 22 default-route opening authority
+        run: just guard-cranelift-phase22-opening-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 

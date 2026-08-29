@@ -3313,6 +3313,148 @@
     ],
     "view_derivation": "the_closure_view_is_generated_from_this_registry_block_and_the_named_phase21_authorities"
   },
+  "phase22_opening": {
+    "contract_version": "phase22_opening_v1",
+    "status": "patch22_1_complete",
+    "next_patch": "22.2",
+    "review_view": "compiler/CRANELIFT_PHASE22_OPENING.md",
+    "observed_main_sha": "c157c86674624fd298c2f65e98ed8f4df85cb175",
+    "phase21_closure_authority": "phase21_closure_v1",
+    "current_cli": {
+      "bare_route": "mir_to_c",
+      "bare_artifact": "C_source_on_stdout",
+      "explicit_mir_to_c_route": "mir_to_c",
+      "explicit_c_alias": "rejected_unknown_backend",
+      "explicit_cranelift_requires_output": true,
+      "backend_selection_stage": "after_shared_resolver_parser_and_typechecker",
+      "fallback_policy": "forbidden"
+    },
+    "current_package": {
+      "make_target": "phase10-native-package",
+      "install_target": "install",
+      "artifacts": ["gust", "gust-native-backend", "gust-runtime-package.a"],
+      "driver_discovery": "absolute_GUST_NATIVE_BACKEND_DRIVER_then_executable_sibling",
+      "path_search": false,
+      "auto_build_or_download": false
+    },
+    "documentation_surfaces": [
+      {
+        "id": "native_backend_readme",
+        "path": "compiler/experiments/cranelift/README.md",
+        "current_state": "MIR_to_C_default_Cranelift_explicit_experimental_and_requires_o",
+        "marker": "MIR-to-C remains the default and primary backend",
+        "owner": "cranelift",
+        "expected_transition": "22.6_and_22.7"
+      },
+      {
+        "id": "one_way_ledger",
+        "path": "docs/ONE_WAY_LEDGER.md",
+        "current_state": "records_mir_to_c_and_explicit_cranelift_cli",
+        "marker": "gust --backend cranelift -o <output> <source.gst>",
+        "owner": "cranelift",
+        "expected_transition": "22.7"
+      },
+      {
+        "id": "roadmap_tail",
+        "path": "docs/ROADMAP_TAIL.md",
+        "current_state": "declares_phase22_default_native_and_retained_backend_c",
+        "marker": "gust --backend c source.gst",
+        "owner": "roadmap_authority",
+        "expected_transition": "22.2_through_22.9"
+      },
+      {
+        "id": "root_readme",
+        "path": "README.md",
+        "current_state": "documents_C_bootstrap_chain_without_a_default_backend_user_contract",
+        "marker": "The Non-Rust Bootstrap Chain",
+        "owner": "cranelift",
+        "expected_transition": "22.7_preserve_bootstrap_claim_and_add_user_default"
+      }
+    ],
+    "workflow_surfaces": [
+      {
+        "id": "pr_fast",
+        "path": ".github/workflows/pr-fast.yml",
+        "current_state": "parallel_focused_guards_with_no_phase22_default_contract",
+        "marker": "name: PR Fast",
+        "owner": "cranelift",
+        "expected_transition": "22.1_contract_then_22.7_default_release_smoke"
+      },
+      {
+        "id": "heavy_guards",
+        "path": ".github/workflows/heavy-guards.yml",
+        "current_state": "parallel_heavy_guards_built_from_current_default_C_compiler",
+        "marker": "name: Heavy Guards",
+        "owner": "cranelift",
+        "expected_transition": "22.7_default_and_explicit_C_qualification"
+      },
+      {
+        "id": "historical_full",
+        "path": ".github/workflows/cranelift-historical-full.yml",
+        "current_state": "daily_registry_derived_level3_owner_at_03_23_UTC",
+        "marker": "- cron: \"23 3 * * *\"",
+        "owner": "cranelift",
+        "expected_transition": "22.8_three_consecutive_scheduled_successes"
+      }
+    ],
+    "invocation_inventory": {
+      "total": 269,
+      "selection_counts": {
+        "explicit_c": 80,
+        "explicit_cranelift": 104,
+        "explicit_invalid_or_parser_probe": 2,
+        "implicit_default": 83
+      },
+      "consumer_class_counts": {
+        "already_explicit_or_parser_probe": 186,
+        "bootstrap_and_final_compiler_C_generation": 5,
+        "cranelift_C_or_diagnostic_guard": 40,
+        "developer_generated_C_pipeline": 1,
+        "help_surface_probe": 2,
+        "intentional_default_selection_probe": 3,
+        "invocation_parser_probe": 2,
+        "repository_C_or_diagnostic_guard": 15,
+        "stdlib_owned_C_or_diagnostic_guard": 15
+      },
+      "owner_counts": {
+        "cranelift": 246,
+        "stdlib": 23
+      },
+      "unclassified_count": 0
+    },
+    "native_capability_handoff": {
+      "authority": "phase21_complete_guard_suite_v1",
+      "inventory_total": 326,
+      "required_native_case_count": 192,
+      "compile_deferral_count": 121,
+      "oracle_precondition_failure_count": 10,
+      "runtime_divergence_count": 3,
+      "default_policy": "unsupported_native_features_fail_clearly_without_C_fallback",
+      "cleanup_destination": "22.5_pre_flip_default_cohort_qualification"
+    },
+    "stability_window": {
+      "scheduled_consecutive_successes": 3,
+      "manual_exact_head_successes": 1,
+      "workflow": "Cranelift Historical Full",
+      "scheduled_cron_utc": "23 3 * * *",
+      "reset_on": [
+        "critical_native_regression",
+        "incomplete_job_population",
+        "superseding_default_route_correction",
+        "unresolved_P1_or_P2_review_finding"
+      ]
+    },
+    "unclassified_failures": [],
+    "boundary": {
+      "changes_compiler_route_or_CLI_behavior": false,
+      "changes_accepted_Gust_program_meaning": false,
+      "adds_or_changes_MIR_operations": false,
+      "changes_ABI_layout_or_runtime_symbols": false,
+      "changes_bootstrap_seed": false,
+      "edits_stdlib_or_CR15": false,
+      "begins_patch22_2": false
+    }
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",

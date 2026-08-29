@@ -17438,6 +17438,25 @@ guard-cranelift-phase21-close:
     python3 scripts/phase21_complete_guard_suite.py validate
     python3 scripts/phase21_closure.py --check
 
+guard-cranelift-phase22-opening-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🚦 Checking Phase 22 default-route opening authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase22-opening-contract | grep -F $'guard-cranelift-phase22-opening-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase21_closure.py --check
+    python3 scripts/phase22_opening.py validate
+    python3 scripts/phase22_opening.py check-review
+
+guard-cranelift-phase22-opening-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Replaying Phase 22 default-route opening evidence..."
+    just guard-cranelift-phase22-opening-contract
+    python3 scripts/phase22_opening.py validate
+    bash scripts/phase22_opening.sh
+
 guard-cranelift-phase18-opening-contract:
     #!/usr/bin/env bash
     set -euo pipefail
