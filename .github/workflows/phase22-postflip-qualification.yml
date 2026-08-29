@@ -1,4 +1,4 @@
-name: Cranelift Phase 22 Opening
+name: Cranelift Phase 22 Post-flip Qualification
 
 on:
   pull_request:
@@ -8,23 +8,24 @@ on:
       - 'README.md'
       - 'gust_v4.c'
       - 'compiler/*.gst'
-      - 'compiler/CRANELIFT_PHASE22_OPENING.md'
+      - 'compiler/CRANELIFT_PHASE22_POSTFLIP_QUALIFICATION.md'
       - 'compiler/experiments/cranelift/**'
       - 'docs/ONE_WAY_LEDGER.md'
-      - 'docs/ROADMAP_TAIL.md'
       - 'src/runtime.c'
       - 'src/runtime/**'
       - 'tools/normalize_generated_arena_offsets.py'
+      - 'scripts/*.py'
       - 'scripts/*.sh'
       - 'scripts/cranelift_feature_registry.json'
       - 'scripts/cranelift_feature_registry.schema.json'
       - 'scripts/cranelift_registry.py'
       - 'scripts/cranelift_test_levels.json'
-      - 'scripts/phase21_closure.py'
-      - 'scripts/phase22_opening.py'
-      - '.github/workflows/cranelift-historical-full.yml'
-      - '.github/workflows/heavy-guards.yml'
       - '.github/workflows/phase22-opening.yml'
+      - '.github/workflows/phase22-native-implicit-output.yml'
+      - '.github/workflows/phase22-default-native-package.yml'
+      - '.github/workflows/phase22-preflip-default-cohort.yml'
+      - '.github/workflows/phase22-default-route-flip.yml'
+      - '.github/workflows/phase22-postflip-qualification.yml'
       - '.github/workflows/pr-fast.yml'
       - 'justfile'
   push:
@@ -35,23 +36,24 @@ on:
       - 'README.md'
       - 'gust_v4.c'
       - 'compiler/*.gst'
-      - 'compiler/CRANELIFT_PHASE22_OPENING.md'
+      - 'compiler/CRANELIFT_PHASE22_POSTFLIP_QUALIFICATION.md'
       - 'compiler/experiments/cranelift/**'
       - 'docs/ONE_WAY_LEDGER.md'
-      - 'docs/ROADMAP_TAIL.md'
       - 'src/runtime.c'
       - 'src/runtime/**'
       - 'tools/normalize_generated_arena_offsets.py'
+      - 'scripts/*.py'
       - 'scripts/*.sh'
       - 'scripts/cranelift_feature_registry.json'
       - 'scripts/cranelift_feature_registry.schema.json'
       - 'scripts/cranelift_registry.py'
       - 'scripts/cranelift_test_levels.json'
-      - 'scripts/phase21_closure.py'
-      - 'scripts/phase22_opening.py'
-      - '.github/workflows/cranelift-historical-full.yml'
-      - '.github/workflows/heavy-guards.yml'
       - '.github/workflows/phase22-opening.yml'
+      - '.github/workflows/phase22-native-implicit-output.yml'
+      - '.github/workflows/phase22-default-native-package.yml'
+      - '.github/workflows/phase22-preflip-default-cohort.yml'
+      - '.github/workflows/phase22-default-route-flip.yml'
+      - '.github/workflows/phase22-postflip-qualification.yml'
       - '.github/workflows/pr-fast.yml'
       - 'justfile'
   workflow_dispatch:
@@ -71,8 +73,8 @@ jobs:
       - uses: actions/checkout@v4
       - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
       - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - name: guard-cranelift-phase22-opening-contract
-        run: just guard-cranelift-phase22-opening-contract
+      - name: guard-cranelift-phase22-postflip-qualification-contract
+        run: just guard-cranelift-phase22-postflip-qualification-contract
 
   evidence:
     needs: contract
@@ -82,6 +84,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
       - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - run: make phase10-native-package
-      - name: guard-cranelift-phase22-opening-evidence
-        run: just guard-cranelift-phase22-opening-evidence
+      - run: rustup toolchain install 1.97.1 --profile minimal --no-self-update
+      - run: make
+      - name: guard-cranelift-phase22-postflip-qualification-evidence
+        run: just guard-cranelift-phase22-postflip-qualification-evidence

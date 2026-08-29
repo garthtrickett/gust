@@ -23630,3 +23630,23 @@ guard-cranelift-phase22-default-route-seed-convergence:
     python3 scripts/cranelift_registry.py validate
     python3 scripts/phase22_default_route_seed_convergence.py validate
     python3 scripts/phase22_default_route_seed_convergence.py check-review
+
+# Cranelift lane, Phase 22.7. Synchronize the supported package, docs, CI, and
+# named explicit-C rollback after the compiler default flip.
+guard-cranelift-phase22-postflip-qualification-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📦 Checking Phase 22 post-flip delivery and rollback authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase22-postflip-qualification-contract | grep -F $'guard-cranelift-phase22-postflip-qualification-contract\t1\t' >/dev/null
+    just guard-cranelift-phase22-default-route-seed-convergence
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase22_postflip_qualification.py validate
+    python3 scripts/phase22_postflip_qualification.py check-review
+
+guard-cranelift-phase22-postflip-qualification-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Replaying Phase 22 post-flip package and rollback evidence..."
+    just guard-cranelift-phase22-postflip-qualification-contract
+    python3 scripts/phase22_postflip_qualification.py evidence

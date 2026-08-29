@@ -492,6 +492,9 @@ jobs:
       - name: Phase 22 default-route bootstrap seed convergence
         run: just guard-cranelift-phase22-default-route-seed-convergence
 
+      - name: Phase 22 post-flip delivery and rollback qualification
+        run: just guard-cranelift-phase22-postflip-qualification-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 
