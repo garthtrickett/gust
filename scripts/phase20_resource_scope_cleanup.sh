@@ -8,7 +8,7 @@ python3 scripts/phase20_resource_scope_cleanup.py validate
 rm -rf "$build_root"
 mkdir -p "$build_root"
 
-./gust "$source_fixture" >"$build_root/default.c" 2>"$build_root/default.stderr"
+./gust --backend mir-to-c "$source_fixture" >"$build_root/default.c" 2>"$build_root/default.stderr"
 ./gust --backend mir-to-c "$source_fixture" >"$build_root/explicit.c" 2>"$build_root/explicit.stderr"
 test ! -s "$build_root/default.stderr"
 test ! -s "$build_root/explicit.stderr"

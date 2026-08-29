@@ -29,7 +29,7 @@ diff <(normalise_source "$ctx_source" ctx) \
 for arm in ctx region; do
   source_path="$ctx_source"
   if [ "$arm" = region ]; then source_path="$region_source"; fi
-  ./gust "$source_path" >"$build_dir/$arm.c" 2>"$build_dir/$arm.compiler.stderr"
+  ./gust --backend mir-to-c "$source_path" >"$build_dir/$arm.c" 2>"$build_dir/$arm.compiler.stderr"
   test ! -s "$build_dir/$arm.compiler.stderr"
   cat src/runtime.c "$build_dir/$arm.c" >"$build_dir/$arm.final.c"
   "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \

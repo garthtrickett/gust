@@ -32,7 +32,7 @@ TEMP_OUTPUT="build/${TEST_STEM}.compile.log"
 
 echo "=== [1/3] COMPILING GUST TO C ===" > to.log
 
-./gust "$TEST_PATH" > "$TEMP_OUTPUT" 2>&1
+./gust --backend mir-to-c "$TEST_PATH" > "$TEMP_OUTPUT" 2>&1
 COMP_STATUS=$?
 cat "$TEMP_OUTPUT" >> to.log
 

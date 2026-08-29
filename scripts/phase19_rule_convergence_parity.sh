@@ -22,7 +22,7 @@ rm -rf "$build_dir"
 mkdir -p "$build_dir"
 
 python3 scripts/phase19_rule_convergence.py emit-fixture >"$source_path"
-./gust "$source_path" >"$build_dir/cases.c" 2>"$build_dir/compiler.stderr"
+./gust --backend mir-to-c "$source_path" >"$build_dir/cases.c" 2>"$build_dir/compiler.stderr"
 test ! -s "$build_dir/compiler.stderr"
 cat src/runtime.c "$build_dir/cases.c" >"$build_dir/cases.final.c"
 "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc "$build_dir/cases.final.c" -o "$build_dir/cases.program"

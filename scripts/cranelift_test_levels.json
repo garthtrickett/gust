@@ -353,6 +353,8 @@
     "guard-cranelift-phase21-close": 1,
     "guard-cranelift-phase22-opening-contract": 1,
     "guard-cranelift-phase22-opening-evidence": 2,
+    "guard-cranelift-phase22-explicit-c-migration-contract": 1,
+    "guard-cranelift-phase22-explicit-c-migration-evidence": 2,
     "guard-cranelift-phase20-resource-scope-cleanup-parity": 2,
     "guard-cranelift-phase20-seed-convergence": 1,
     "guard-cranelift-phase20-nested-brand-annotation-contract": 1,

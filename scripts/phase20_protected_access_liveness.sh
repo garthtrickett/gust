@@ -11,7 +11,7 @@ python3 scripts/phase20_protected_access_liveness.py validate
 rm -rf "$build_root"
 mkdir -p "$build_root"
 
-./gust "$positive" >"$build_root/default.c" 2>"$build_root/default.compiler.stderr"
+./gust --backend mir-to-c "$positive" >"$build_root/default.c" 2>"$build_root/default.compiler.stderr"
 ./gust --backend mir-to-c "$positive" \
   >"$build_root/explicit.c" 2>"$build_root/explicit.compiler.stderr"
 test ! -s "$build_root/default.compiler.stderr"

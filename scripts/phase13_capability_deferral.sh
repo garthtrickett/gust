@@ -84,7 +84,7 @@ default_c="$build_root/default.c"
 explicit_c="$build_root/explicit.c"
 default_stderr="$build_root/default.stderr"
 explicit_stderr="$build_root/explicit.stderr"
-./gust "$supported_source" >"$default_c" 2>"$default_stderr"
+./gust --backend mir-to-c "$supported_source" >"$default_c" 2>"$default_stderr"
 ./gust --backend mir-to-c "$supported_source" \
   >"$explicit_c" 2>"$explicit_stderr"
 if [ -s "$default_stderr" ] || [ -s "$explicit_stderr" ]; then

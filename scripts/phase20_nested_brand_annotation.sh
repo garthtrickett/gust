@@ -12,7 +12,7 @@ python3 scripts/phase20_nested_brand_annotation.py validate
 rm -rf "$build_root"
 mkdir -p "$build_root"
 
-./gust "$positive" >"$build_root/default.c" 2>"$build_root/default.compiler.stderr"
+./gust --backend mir-to-c "$positive" >"$build_root/default.c" 2>"$build_root/default.compiler.stderr"
 ./gust --backend mir-to-c "$positive" \
   >"$build_root/explicit.c" 2>"$build_root/explicit.compiler.stderr"
 test ! -s "$build_root/default.compiler.stderr"
@@ -29,7 +29,7 @@ mir_status="$?"
 set -e
 test "$mir_status" = 20
 
-./gust "$issue" >"$build_root/issue.c" 2>"$build_root/issue.stderr"
+./gust --backend mir-to-c "$issue" >"$build_root/issue.c" 2>"$build_root/issue.stderr"
 test ! -s "$build_root/issue.stderr"
 if rg -n 'Brand Nesting|Declared Void|TypeMismatch' "$build_root/issue.c" >/dev/null; then
   echo "CR-11 accepted fixture retained a semantic diagnostic" >&2
@@ -37,7 +37,7 @@ if rg -n 'Brand Nesting|Declared Void|TypeMismatch' "$build_root/issue.c" >/dev/
 fi
 
 set +e
-./gust "$negative" >"$build_root/negative.log" 2>&1
+./gust --backend mir-to-c "$negative" >"$build_root/negative.log" 2>&1
 negative_status="$?"
 set -e
 test "$negative_status" -ne 0

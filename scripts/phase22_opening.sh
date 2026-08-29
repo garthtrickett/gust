@@ -34,10 +34,17 @@ set +e
 ./gust --backend c "$fixture" > "$build_dir/c-alias.stdout" 2> "$build_dir/c-alias.stderr"
 c_alias_status="$?"
 set -e
-test "$c_alias_status" -ne 0 || fail "the not-yet-introduced C alias unexpectedly succeeded"
-rg -F 'Compiler invocation error: unknown backend: c' "$build_dir/c-alias.stdout" >/dev/null ||
-  fail "the current C-alias rejection diagnostic drifted"
-test ! -s "$build_dir/c-alias.stderr" || fail "rejected C alias emitted stderr"
+if rg -F '"phase22_explicit_c_migration"' scripts/cranelift_feature_registry.json >/dev/null; then
+  test "$c_alias_status" -eq 0 || fail "the registered C alias failed"
+  test ! -s "$build_dir/c-alias.stderr" || fail "the C alias emitted stderr"
+  cmp -s "$build_dir/bare.c" "$build_dir/c-alias.stdout" ||
+    fail "the registered C alias differs from MIR-to-C"
+else
+  test "$c_alias_status" -ne 0 || fail "the not-yet-introduced C alias unexpectedly succeeded"
+  rg -F 'Compiler invocation error: unknown backend: c' "$build_dir/c-alias.stdout" >/dev/null ||
+    fail "the current C-alias rejection diagnostic drifted"
+  test ! -s "$build_dir/c-alias.stderr" || fail "rejected C alias emitted stderr"
+fi
 
 set +e
 ./gust --backend cranelift "$fixture" > "$build_dir/missing-output.stdout" 2> "$build_dir/missing-output.stderr"

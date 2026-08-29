@@ -1,14 +1,15 @@
 Usage:
   gust <source.gst>
   gust --backend mir-to-c <source.gst>
+  gust --backend c <source.gst>
   gust --backend cranelift -o <output> <source.gst>
 
 Backends:
-  mir-to-c   Emit C source to stdout (default).
+  mir-to-c, c  Emit C source to stdout (default).
   cranelift  Compile a supported source cohort to one native executable (experimental).
 
 Options:
-  --backend <mir-to-c|cranelift>  Select the backend explicitly.
+  --backend <mir-to-c|c|cranelift>  Select the backend explicitly.
   -o <output>                     Required only by the cranelift backend.
   -h, --help                      Show this help and exit.
 

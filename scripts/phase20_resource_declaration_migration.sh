@@ -17,7 +17,7 @@ for fixture_entry in "${fixtures[@]}"; do
   fixture="${fixture_entry%%:*}"
   expected="${fixture_entry##*:}"
   stem="$(basename "$fixture" .gst)"
-  ./gust "$fixture" >"$build_root/$stem.default.c" \
+  ./gust --backend mir-to-c "$fixture" >"$build_root/$stem.default.c" \
     2>"$build_root/$stem.default.stderr"
   ./gust --backend mir-to-c "$fixture" \
     >"$build_root/$stem.explicit.c" \

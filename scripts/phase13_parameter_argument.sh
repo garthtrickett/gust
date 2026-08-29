@@ -150,7 +150,7 @@ run_positive_case() {
   local native_driver="$driver_abs"
   mkdir -p "$case_dir"
 
-  ./gust "$source_path" \
+  ./gust --backend mir-to-c "$source_path" \
     >"$case_dir/default.c" \
     2>"$case_dir/default.compiler.stderr"
   ./gust --backend mir-to-c "$source_path" \

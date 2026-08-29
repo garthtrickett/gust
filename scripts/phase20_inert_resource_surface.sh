@@ -11,7 +11,7 @@ just guard-positive "$metadata_fixture" phase20_inert_resource_surface_metadata
 rm -rf "$build_root"
 mkdir -p "$build_root"
 set +e
-./gust "$transition_fixture" >"$build_root/default.log" 2>&1
+./gust --backend mir-to-c "$transition_fixture" >"$build_root/default.log" 2>&1
 default_status="$?"
 ./gust --backend mir-to-c "$transition_fixture" \
   >"$build_root/explicit.log" 2>&1

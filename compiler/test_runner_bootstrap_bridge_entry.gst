@@ -95,11 +95,19 @@ func main() {
     os.SetThreadScratch(ctx);
 
     mut args := os.Args(ctx);
-    if len(args) < 2 {
-        os.LogStr("Usage: gust-bootstrap-bridge <file.gst>");
+    mut file_path := "";
+    if len(args) == 2 {
+        file_path = args[1];
+    } else if len(args) == 4 &&
+              std.str_eq(args[1], "--backend") == 1 &&
+              (std.str_eq(args[2], "mir-to-c") == 1 ||
+               std.str_eq(args[2], "c") == 1)
+    {
+        file_path = args[3];
+    } else {
+        os.LogStr("Usage: gust-bootstrap-bridge [--backend <mir-to-c|c>] <file.gst>");
         os.Exit(1);
     }
-    mut file_path := args[1];
 
     // 1. Initialize Dependency Graph & Resolve Imports
     mut graph: std.Graph[str, ctx] := std.GraphNew(ctx);

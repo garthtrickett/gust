@@ -31,7 +31,7 @@ for arm in explicit inferred; do
   if [ "$arm" = "inferred" ]; then
     source_path="$inferred_source"
   fi
-  if ! ./gust "$source_path" >"$build_dir/$arm.c" 2>"$build_dir/$arm.compiler.stderr"; then
+  if ! ./gust --backend mir-to-c "$source_path" >"$build_dir/$arm.c" 2>"$build_dir/$arm.compiler.stderr"; then
     echo "MIR-to-C rejected the $arm type-naming arm."
     cat "$build_dir/$arm.compiler.stderr"
     exit 1

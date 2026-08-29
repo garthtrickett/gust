@@ -15,7 +15,7 @@ python3 scripts/phase20_contextual_generic_constructor.py validate
 rm -rf "$build_root"
 mkdir -p "$build_root"
 
-./gust "$inferred" >"$build_root/inferred.c" 2>"$build_root/inferred.stderr"
+./gust --backend mir-to-c "$inferred" >"$build_root/inferred.c" 2>"$build_root/inferred.stderr"
 ./gust --backend mir-to-c "$explicit" \
   >"$build_root/explicit.c" 2>"$build_root/explicit.stderr"
 test ! -s "$build_root/inferred.stderr"
@@ -44,7 +44,7 @@ test "$mir_status" = 31
 for negative in "${negatives[@]}"; do
   name="$(basename "$negative" .gst)"
   set +e
-  ./gust "$negative" >"$build_root/$name.log" 2>&1
+  ./gust --backend mir-to-c "$negative" >"$build_root/$name.log" 2>&1
   status="$?"
   set -e
   test "$status" -ne 0
