@@ -23143,8 +23143,8 @@ guard-stdlib-s1-str-equality-diagnostic:
         echo "Missing str equality compile-fail fixture: $fixture"
         exit 1
       fi
-      output="$(./gust "$fixture" 2>&1 || true)"
-      if ./gust "$fixture" >/dev/null 2>&1; then
+      output="$(./gust --backend mir-to-c "$fixture" 2>&1 || true)"
+      if ./gust --backend mir-to-c "$fixture" >/dev/null 2>&1; then
         echo "$fixture must be rejected, but it compiled."
         exit 1
       fi
@@ -23158,7 +23158,7 @@ guard-stdlib-s1-str-equality-diagnostic:
     # The recommended replacement must keep working, or the diagnostic sends
     # users somewhere broken.
     printf 'func main() {\n    mut a: str := "PING";\n    if std.str_eq(a, "PING") == 1 { os.LogStr("pong"); }\n}\n' >build/stdlib-s1-str-eq-ok.gst
-    ./gust build/stdlib-s1-str-eq-ok.gst >build/stdlib-s1-str-eq-ok.c 2>&1
+    ./gust --backend mir-to-c build/stdlib-s1-str-eq-ok.gst >build/stdlib-s1-str-eq-ok.c 2>&1
     rg -n -F 'std_str_eq' build/stdlib-s1-str-eq-ok.c >/dev/null
 
     echo "✅ str equality rejected by the self-hosted compiler with one diagnostic; std.str_eq unchanged."
@@ -23190,19 +23190,19 @@ guard-stdlib-s1-collection-receivers:
     rg -n -F '5' to.log >/dev/null
 
     # Move tracking must not weaken just because the use is behind a reference.
-    if ./gust "$negative" >/dev/null 2>&1; then
+    if ./gust --backend mir-to-c "$negative" >/dev/null 2>&1; then
       echo "$negative must be rejected, but it compiled."
       exit 1
     fi
-    negative_output="$(./gust "$negative" 2>&1 || true)"
+    negative_output="$(./gust --backend mir-to-c "$negative" 2>&1 || true)"
     printf '%s\n' "$negative_output" | rg -n -F 'Use of moved variable' >/dev/null
 
     # A reference receiver must lower to the same runtime operations as a value
     # receiver. Only the C access differs: `m.len` becomes `m->len`.
     printf 'func main() {\n    mut arena := os.Arena.New();\n    defer arena.Free();\n    mut m: std.HashMap[str, int, arena] := std.HashMapNew(arena);\n    m.Insert("k", 7);\n    mut r := m.Get("k");\n    if r.Ok { os.LogInt(r.Val); }\n    os.LogInt(len(m));\n}\n' >build/stdlib-s1-byval.gst
     printf 'func work(m: &std.HashMap[str, int, ctx]) {\n    mut r := m.Get("k");\n    if r.Ok { os.LogInt(r.Val); }\n    os.LogInt(len(m));\n}\nfunc main() {\n    mut arena := os.Arena.New();\n    defer arena.Free();\n    mut m: std.HashMap[str, int, arena] := std.HashMapNew(arena);\n    m.Insert("k", 7);\n    work(&m);\n}\n' >build/stdlib-s1-byref.gst
-    ./gust build/stdlib-s1-byval.gst >build/stdlib-s1-byval.c 2>&1
-    ./gust build/stdlib-s1-byref.gst >build/stdlib-s1-byref.c 2>&1
+    ./gust --backend mir-to-c build/stdlib-s1-byval.gst >build/stdlib-s1-byval.c 2>&1
+    ./gust --backend mir-to-c build/stdlib-s1-byref.gst >build/stdlib-s1-byref.c 2>&1
     byval_ops="$(rg -o -N 'os_HashMap[A-Za-z_]*' build/stdlib-s1-byval.c | sort | uniq -c)"
     byref_ops="$(rg -o -N 'os_HashMap[A-Za-z_]*' build/stdlib-s1-byref.c | sort | uniq -c)"
     if [ "$byval_ops" != "$byref_ops" ]; then
@@ -23284,7 +23284,7 @@ guard-stdlib-s1-resource-prerequisites:
     mkdir -p build/guards/stdlib_s1_resource_prerequisites
     make gust >build/guards/stdlib_s1_resource_prerequisites/build.log 2>&1
     output="build/guards/stdlib_s1_resource_prerequisites/generic-derivation.output"
-    if ./gust "$witness" >"$output" 2>&1; then
+    if ./gust --backend mir-to-c "$witness" >"$output" 2>&1; then
       echo "$witness unexpectedly compiled; re-derive CR-15 before resuming S1.8."
       exit 1
     fi

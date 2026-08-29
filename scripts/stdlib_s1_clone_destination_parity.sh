@@ -60,11 +60,11 @@ fi
 rm -rf "$build_dir"
 mkdir -p "$build_dir"
 
-./gust "$inferred_fixture" \
+./gust --backend mir-to-c "$inferred_fixture" \
   >"$build_dir/inferred-default.c" 2>"$build_dir/inferred-default.stderr"
 ./gust --backend mir-to-c "$inferred_fixture" \
   >"$build_dir/inferred-explicit-backend.c" 2>"$build_dir/inferred-explicit-backend.stderr"
-./gust "$explicit_fixture" \
+./gust --backend mir-to-c "$explicit_fixture" \
   >"$build_dir/explicit-default.c" 2>"$build_dir/explicit-default.stderr"
 ./gust --backend mir-to-c "$explicit_fixture" \
   >"$build_dir/explicit-explicit-backend.c" 2>"$build_dir/explicit-explicit-backend.stderr"
@@ -125,7 +125,7 @@ assert_rejected() {
   local name
   name="$(basename "$fixture" .gst)"
   local output="$build_dir/$name.output"
-  if ./gust "$fixture" >"$output" 2>&1; then
+  if ./gust --backend mir-to-c "$fixture" >"$output" 2>&1; then
     echo "$fixture must be rejected, but it compiled." >&2
     exit 1
   fi
