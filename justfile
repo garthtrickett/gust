@@ -9119,7 +9119,7 @@ guard-cranelift-phase10-backend-selection-contract:
 
     just guard-cranelift-phase10-opening-contract
 
-
+    if rg -F '"phase22_default_route_flip"' scripts/cranelift_feature_registry.json >/dev/null; then just guard-cranelift-phase22-default-route-flip-contract; echo "✅ Phase 10 backend selection remains recorded; the live route is owned by Phase 22.6."; exit 0; fi
     rg -n -F 'type CompilerBackendSelection enum {' "$compiler_entry" >/dev/null
     rg -n -F '    MirToC,' "$compiler_entry" >/dev/null
     rg -n -F '    CraneliftExperimental' "$compiler_entry" >/dev/null
@@ -9275,7 +9275,7 @@ guard-cranelift-phase10-output-contract:
 
     just guard-cranelift-phase10-backend-selection-contract
 
-
+    if rg -F '"phase22_default_route_flip"' scripts/cranelift_feature_registry.json >/dev/null; then just guard-cranelift-phase22-native-implicit-output-contract; echo "✅ Phase 10 output ownership remains recorded; the live output is owned by the Phase 22 successor."; exit 0; fi
     # The Phase 10 contract delegates native publication rather than cloning it.
 
     rg -n -F 'output_path: str,' "$compiler_entry" >/dev/null
@@ -18270,7 +18270,7 @@ guard-cranelift-historical-full:
       just guard-cranelift-phase10-scalar-source-route
       just guard-cranelift-phase10-cfg-block-parameter-source-route
       just guard-cranelift-phase10-call-import-runtime-source-route
-      just guard-cranelift-phase10-packaging-help-ci
+      bash scripts/phase22_historical_route_successor.sh
       just guard-cranelift-phase10-close
     }
 
@@ -23650,3 +23650,24 @@ guard-cranelift-phase22-postflip-qualification-evidence:
     echo "🧪 Replaying Phase 22 post-flip package and rollback evidence..."
     just guard-cranelift-phase22-postflip-qualification-contract
     python3 scripts/phase22_postflip_qualification.py evidence
+
+# Cranelift lane, Patch 22.8 prerequisite. Follow the registered Phase 22
+# successor from retired Phase 10 route/output assertions and replay it in the
+# Historical owner without treating the failed precursor run as evidence.
+guard-cranelift-phase22-historical-route-successor-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🕰️ Checking the Phase 22 Historical route successor correction..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase22-historical-route-successor-contract | grep -F $'guard-cranelift-phase22-historical-route-successor-contract\t1\t' >/dev/null
+    just guard-cranelift-phase22-postflip-qualification-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase22_historical_route_successor.py validate
+    python3 scripts/phase22_historical_route_successor.py check-review
+
+guard-cranelift-phase22-historical-route-successor-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Replaying the corrected Phase 10 Historical successor shard..."
+    just guard-cranelift-phase22-historical-route-successor-contract
+    python3 scripts/phase22_historical_route_successor.py evidence

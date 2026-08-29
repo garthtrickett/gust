@@ -315,6 +315,13 @@ Record the run ID, full SHA, event, job population, conclusion, and elapsed
 budgets in generated authority. Preserve the explicit-C oracle and rollback,
 package/install, bootstrap, PR-CI, exact-SHA, and no-fallback gates.
 
+Historical Full run `33274538693` is retained as failed diagnostic evidence,
+not stability evidence: on exact post-flip main it completed 16/18 jobs
+successfully, while the Phase 10 shard still asserted the retired pre-flip
+selection/output state and the final aggregation was consequently skipped.
+The narrow successor correction must merge and a replacement run must succeed
+on exact corrected main before this patch may be marked DONE.
+
 **Exit Gate:** the single exact-final-main Historical Full run is a complete
 success, zero material review findings remain unresolved, and explicit-C
 rollback/oracle evidence remains green.
