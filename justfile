@@ -23548,3 +23548,26 @@ guard-cranelift-phase22-native-implicit-output-evidence:
     echo "🧪 Replaying Phase 22 native implicit-output evidence..."
     just guard-cranelift-phase22-native-implicit-output-contract
     bash scripts/phase22_native_implicit_output.sh
+
+# Cranelift lane, Phase 22.4. This qualifies the existing package without
+# changing its contents, install layout, compiler default, or publication path.
+guard-cranelift-phase22-default-native-package-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📦 Checking Phase 22 default-native package authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase22-default-native-package-contract | grep -F $'guard-cranelift-phase22-default-native-package-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase17_runtime_package.py --check
+    python3 scripts/phase18_target_package.py --check
+    python3 scripts/phase22_native_implicit_output.py validate
+    python3 scripts/phase22_native_implicit_output.py check-review
+    python3 scripts/phase22_default_native_package.py validate
+    python3 scripts/phase22_default_native_package.py check-review
+
+guard-cranelift-phase22-default-native-package-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Replaying Phase 22 default-native package evidence..."
+    just guard-cranelift-phase22-default-native-package-contract
+    bash scripts/phase22_default_native_package.sh

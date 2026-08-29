@@ -61,6 +61,7 @@
     "phase22_opening",
     "phase22_explicit_c_migration",
     "phase22_native_implicit_output",
+    "phase22_default_native_package",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -2628,6 +2629,20 @@
           "diagnostics": {"source_suffix":"Compiler invocation error: implicit Cranelift output requires a source path ending in .gst","portable_stem":"Compiler invocation error: implicit Cranelift output requires a non-empty portable source stem","source_collision":"Compiler invocation error: implicit Cranelift output would collide with a Gust source path"},
           "evidence": {"inferred_explicit_executable_bytes":"identical","observable_semantics":"match_mir_to_c_oracle","malformed_intent_cases":4,"poisoned_driver_rejection":true,"driver_failure_preserves_existing_output":true,"bare_backend":"mir_to_c_unchanged"},
           "boundary": {"changes_explicit_cranelift_output_inference":true,"changes_default_backend":false,"changes_accepted_Gust_program_meaning":false,"adds_or_changes_MIR_operations":false,"changes_target_linker_or_phase9g_publication":false,"changes_ABI_layout_or_runtime_symbols":false,"changes_bootstrap_seed":false,"edits_stdlib_or_CR15":false,"begins_patch22_4":false}
+        }
+      },
+      "phase22_default_native_package": {
+        "const": {
+          "contract_version":"phase22_default_native_package_v1",
+          "status":"qualification_complete_patch22_2_relay_pending",
+          "next_action":"patch22_5_explicit_preflip_default_cohort_qualification",
+          "review_view":"compiler/CRANELIFT_PHASE22_DEFAULT_NATIVE_PACKAGE.md",
+          "observed_main_sha":"db4b58bdd78dde41226f9a1e110d555a3c7f5d5d",
+          "predecessor_authority":"phase22_native_implicit_output_v1",
+          "inherited_authorities":["phase17_runtime_package_authority_v1","phase18_target_package_selection_v1","phase9g_transactional_link_publication"],
+          "package_contract":{"build_target":"make_phase10_native_package","install_target":"make_install_DESTDIR_PREFIX","artifacts":[{"name":"gust","mode":"0755","role":"self_hosted_compiler"},{"name":"gust-native-backend","mode":"0755","role":"executable_relative_native_worker"},{"name":"gust-runtime-package.a","mode":"0644","role":"worker_relative_retained_runtime_archive"}],"worker_discovery":"absolute_environment_override_or_executable_relative_sibling_only","runtime_discovery":"worker_relative_sibling_only","path_search":"forbidden","auto_build_download_or_fallback":"forbidden","relocation_unit":"three_artifact_sibling_directory","directory_creation":"install_target_creates_only_requested_prefix_parent"},
+          "qualification":{"compiler_default":"mir_to_c_unchanged","default_candidate_route":"explicit_cranelift_with_implicit_output","ambient_worker_override":"unset","repository_package":"qualified","clean_temporary_prefix_install":"qualified","relocated_install":"qualified","selected_native_cohort":[{"source":"compiler/phase10_scalar_return_source.gst","expected_exit":7,"requires_runtime_archive":false},{"source":"compiler/phase20_component_allocation_source.gst","expected_exit":0,"requires_runtime_archive":true}],"explicit_c_without_native_components":"byte_identical_and_usable","failure_cases":["missing_sibling_worker","missing_runtime_archive","incompatible_sibling_worker"],"failure_output_policy":"existing_output_preserved_and_owned_intermediates_removed","oracle":"explicit_mir_to_c"},
+          "boundary":{"changes_package_contents_or_install_layout":false,"changes_default_backend":false,"changes_accepted_Gust_program_meaning":false,"adds_or_changes_MIR_operations":false,"changes_ABI_layout_runtime_symbols_target_or_linker":false,"changes_phase9g_publication":false,"changes_bootstrap_seed":false,"edits_stdlib_or_CR15":false,"begins_patch22_5":false}
         }
       },
       "phase19_brand_authority": {
