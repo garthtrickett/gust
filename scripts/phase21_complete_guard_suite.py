@@ -129,6 +129,31 @@ def authority() -> dict:
     return record
 
 
+def resolved_runtime_divergences(registry: dict, record: dict) -> set[str]:
+    """Return exact successor-owned resolutions without rewriting Phase 21 history."""
+    successor = registry.get("phase22_preflip_default_cohort", {})
+    require(successor.get("contract_version") ==
+            "phase22_preflip_default_cohort_v1",
+            "Patch 22.5 successor authority is missing")
+    resolution = successor.get("resolved_phase21_runtime_divergences", {})
+    historical = {
+        row["fixture"] for row in record["classification"]["runtime_divergences"]
+    }
+    resolved = set(resolution.get("fixtures", []))
+    require(resolution.get("count") == len(resolved) == 3 and
+            resolved == historical,
+            "Patch 22.5 runtime-divergence resolution drifted")
+    require(resolution.get("root_cause") ==
+            "generic_ZeroInitialize_lowering_used_zero_for_empty_Index" and
+            resolution.get("oracle_contract") ==
+            "empty_Index_is_the_0xFFFFFFFF_absence_sentinel" and
+            resolution.get("native_correction") ==
+            "Index_typed_ZeroInitialize_emits_i32_minus_one" and
+            resolution.get("other_zero_initialization") == "unchanged_zero",
+            "Patch 22.5 generic sentinel correction drifted")
+    return resolved
+
+
 def validate() -> dict:
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     predecessor = registry.get("phase21_native_rebuild_reproducibility", {})
@@ -149,6 +174,7 @@ def validate() -> dict:
     }
     for key, value in expected.items():
         require(record.get(key) == value, f"{key} drifted")
+    resolved_runtime_divergences(registry, record)
 
     cases = runner_cases()
     inventory = record.get("inventory", {})
@@ -613,8 +639,11 @@ def evidence() -> None:
     classification = record["classification"]
     oracle_rows = {row["fixture"]: row for row in
                    classification["oracle_precondition_failures"]}
+    resolved_runtime = resolved_runtime_divergences(
+        json.loads(REGISTRY.read_text(encoding="utf-8")), record)
     runtime_rows = {row["fixture"]: row for row in
-                    classification["runtime_divergences"]}
+                    classification["runtime_divergences"]
+                    if row["fixture"] not in resolved_runtime}
     reason_counts: dict[str, int] = {}
     required_count = 0
     deferral_count = 0
@@ -651,8 +680,10 @@ def evidence() -> None:
 
     require(reason_counts == classification["compile_deferral_reason_counts"],
             f"compile deferral population drifted: {reason_counts}")
-    require(required_count == classification["required_native_case_count"] and
-            deferral_count == classification["total_classified_deferral_count"],
+    require(required_count ==
+            classification["required_native_case_count"] + len(resolved_runtime) and
+            deferral_count ==
+            classification["total_classified_deferral_count"] - len(resolved_runtime),
             "complete classified population count drifted")
     corpus_ms = int((time.monotonic() - corpus_started) * 1000)
     require(corpus_ms <= budgets["max_corpus_suite_ms"],

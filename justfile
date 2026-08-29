@@ -23571,3 +23571,26 @@ guard-cranelift-phase22-default-native-package-evidence:
     echo "🧪 Replaying Phase 22 default-native package evidence..."
     just guard-cranelift-phase22-default-native-package-contract
     bash scripts/phase22_default_native_package.sh
+
+# Cranelift lane, Phase 22.5. The inherited Phase 21 workflows own the full
+# release-program and 326-case populations; this guard owns their successor
+# accounting and the generic empty-Index reconciliation.
+guard-cranelift-phase22-preflip-default-cohort-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🛫 Checking Phase 22 pre-flip default-cohort authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase22-preflip-default-cohort-contract | grep -F $'guard-cranelift-phase22-preflip-default-cohort-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase21_complete_guard_suite.py validate
+    python3 scripts/phase22_default_native_package.py validate
+    python3 scripts/phase22_default_native_package.py check-review
+    python3 scripts/phase22_preflip_default_cohort.py validate
+    python3 scripts/phase22_preflip_default_cohort.py check-review
+
+guard-cranelift-phase22-preflip-default-cohort-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Replaying Phase 22 pre-flip focused parity evidence..."
+    just guard-cranelift-phase22-preflip-default-cohort-contract
+    python3 scripts/phase22_preflip_default_cohort.py evidence
