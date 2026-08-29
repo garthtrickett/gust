@@ -489,6 +489,9 @@ jobs:
       - name: Phase 22 default Cranelift route authority
         run: just guard-cranelift-phase22-default-route-flip-contract
 
+      - name: Phase 22 default-route bootstrap seed convergence
+        run: just guard-cranelift-phase22-default-route-seed-convergence
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 

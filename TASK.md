@@ -91,7 +91,7 @@ Out of scope:
 - [x] Patch 22.4 — Default-Native Package and Install Qualification — DONE
 - [x] Patch 22.5 — Pre-flip Default-Cohort Qualification — DONE
 - [x] Patch 22.6 — Cranelift Default Route Flip — DONE
-- [ ] Patch 22.6a — Default-Route Bootstrap Seed Reconvergence
+- [x] Patch 22.6a — Default-Route Bootstrap Seed Reconvergence — DONE
 - [ ] Patch 22.7 — Post-flip CI, Documentation, and Rollback Qualification
 - [ ] Patch 22.8 — One-Time Default-Native Stability Qualification
 - [ ] Patch 22.9 — Phase 22 Closure

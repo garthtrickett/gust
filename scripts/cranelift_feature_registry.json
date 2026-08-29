@@ -3814,6 +3814,43 @@
       "begins_patch22_6a": false
     }
   },
+  "phase22_default_route_seed_convergence": {
+    "contract_version": "phase22_default_route_seed_convergence_v1",
+    "status": "patch22_6a_complete",
+    "next_patch": "22.7",
+    "review_view": "compiler/CRANELIFT_PHASE22_DEFAULT_ROUTE_SEED_CONVERGENCE.md",
+    "observed_main_sha": "e521f4f660acf59aff7e07f79a9567c73ffb0b2b",
+    "seed_path": "gust_v4.c",
+    "predecessor_seed_authority": "phase21_native_feature_seed_convergence_v1",
+    "accounted_authority": "phase22_default_route_flip_v1",
+    "previous_seed_commit": "ec60ea2b496681b5c60d702d1f1cb46fdab8982c",
+    "previous_seed_digest": "58006d413edcf55bf0c89e04a2cd7cadb547c1325000cdb07bc117d45822e9e1",
+    "converged_seed_digest": "c2e2cd6d5043af87aacc007d92b105d673bbeea7e8f484a61e18126f39a32383",
+    "fixed_point_policy": "make_bootstrap_stage2_stage3_byte_identity",
+    "seed_only_policy": "generated_seed_and_seed_specific_authority_only",
+    "bootstrap_route": "explicit_mir_to_c",
+    "seed_help_contract": {
+      "default_backend": "cranelift",
+      "explicit_c_role": "retained_semantic_oracle",
+      "fallback": "forbidden"
+    },
+    "generated_seed_diff": {
+      "previous_lines": 62917,
+      "current_lines": 64825,
+      "insertions": 2094,
+      "deletions": 186,
+      "line_delta": 1908
+    },
+    "boundary": {
+      "adds_or_changes_Gust_semantics": false,
+      "adds_or_changes_MIR_or_native_lowering": false,
+      "changes_ABI_layout_runtime_symbols_target_or_linker": false,
+      "changes_default_backend_or_bootstrap_route": false,
+      "changes_bootstrap_seed": true,
+      "edits_stdlib_or_CR15": false,
+      "begins_patch22_7": false
+    }
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",
