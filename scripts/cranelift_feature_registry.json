@@ -3922,6 +3922,45 @@
       "begins_patch22_8": false
     }
   },
+  "phase22_historical_route_successor": {
+    "contract_version": "phase22_historical_route_successor_v1",
+    "status": "corrective_prerequisite_complete",
+    "next_action": "replacement_exact_main_historical_full_for_patch22_8",
+    "review_view": "compiler/CRANELIFT_PHASE22_HISTORICAL_ROUTE_SUCCESSOR.md",
+    "predecessor_authority": "phase22_postflip_qualification_v1",
+    "failed_qualification": {
+      "workflow": "Cranelift Historical Full",
+      "run_id": 33274538693,
+      "event": "workflow_dispatch",
+      "head_branch": "main",
+      "head_sha": "e995b2a1eef5895c05858d8adfe359e77d24ee21",
+      "status": "completed",
+      "conclusion": "failure",
+      "successful_jobs": 16,
+      "total_jobs": 18,
+      "owning_failure": "Level 3 history / phase10",
+      "dependent_non_success": "Level 3 declared-target completion:skipped"
+    },
+    "root_cause": "phase10_route_and_output_guards_did_not_follow_registered_phase22_default_successor",
+    "successor_replay": [
+      "guard-cranelift-phase22-default-route-flip-contract",
+      "guard-cranelift-phase22-native-implicit-output-contract",
+      "guard-cranelift-phase22-default-route-flip-evidence",
+      "guard-cranelift-phase22-postflip-qualification-evidence"
+    ],
+    "replacement_policy": "failed_run_is_diagnostic_only_and_patch22_8_requires_one_successful_exact_corrected_main_run",
+    "boundary": {
+      "changes_historical_successor_routing": true,
+      "changes_accepted_Gust_program_meaning": false,
+      "adds_or_changes_MIR_or_native_lowering": false,
+      "changes_ABI_layout_runtime_symbols_target_or_linker": false,
+      "changes_default_backend_or_fallback": false,
+      "changes_bootstrap_route_or_seed": false,
+      "edits_stdlib_or_CR15": false,
+      "completes_patch22_8": false,
+      "begins_patch22_9": false
+    }
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",

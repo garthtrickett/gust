@@ -66,6 +66,7 @@
     "phase22_default_route_flip",
     "phase22_default_route_seed_convergence",
     "phase22_postflip_qualification",
+    "phase22_historical_route_successor",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -2724,6 +2725,20 @@
           "owning_workflows":[".github/workflows/phase22-opening.yml",".github/workflows/phase22-native-implicit-output.yml",".github/workflows/phase22-default-native-package.yml",".github/workflows/phase22-preflip-default-cohort.yml",".github/workflows/phase22-default-route-flip.yml",".github/workflows/phase22-postflip-qualification.yml"],
           "path_filter_policy":"every_native_input_is_present_in_pull_request_and_push_filters_of_every_owning_workflow",
           "boundary":{"changes_build_delivery_default":true,"changes_documentation_and_CI":true,"changes_accepted_Gust_program_meaning":false,"adds_or_changes_MIR_or_native_lowering":false,"changes_ABI_layout_runtime_symbols_target_or_linker":false,"changes_default_compiler_backend":false,"changes_bootstrap_route_or_seed":false,"edits_stdlib_or_CR15":false,"begins_patch22_8":false}
+        }
+      },
+      "phase22_historical_route_successor": {
+        "const": {
+          "contract_version":"phase22_historical_route_successor_v1",
+          "status":"corrective_prerequisite_complete",
+          "next_action":"replacement_exact_main_historical_full_for_patch22_8",
+          "review_view":"compiler/CRANELIFT_PHASE22_HISTORICAL_ROUTE_SUCCESSOR.md",
+          "predecessor_authority":"phase22_postflip_qualification_v1",
+          "failed_qualification":{"workflow":"Cranelift Historical Full","run_id":33274538693,"event":"workflow_dispatch","head_branch":"main","head_sha":"e995b2a1eef5895c05858d8adfe359e77d24ee21","status":"completed","conclusion":"failure","successful_jobs":16,"total_jobs":18,"owning_failure":"Level 3 history / phase10","dependent_non_success":"Level 3 declared-target completion:skipped"},
+          "root_cause":"phase10_route_and_output_guards_did_not_follow_registered_phase22_default_successor",
+          "successor_replay":["guard-cranelift-phase22-default-route-flip-contract","guard-cranelift-phase22-native-implicit-output-contract","guard-cranelift-phase22-default-route-flip-evidence","guard-cranelift-phase22-postflip-qualification-evidence"],
+          "replacement_policy":"failed_run_is_diagnostic_only_and_patch22_8_requires_one_successful_exact_corrected_main_run",
+          "boundary":{"changes_historical_successor_routing":true,"changes_accepted_Gust_program_meaning":false,"adds_or_changes_MIR_or_native_lowering":false,"changes_ABI_layout_runtime_symbols_target_or_linker":false,"changes_default_backend_or_fallback":false,"changes_bootstrap_route_or_seed":false,"edits_stdlib_or_CR15":false,"completes_patch22_8":false,"begins_patch22_9":false}
         }
       },
       "phase19_brand_authority": {

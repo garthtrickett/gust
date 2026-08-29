@@ -69,6 +69,7 @@ TOP_FIELDS = {
     "phase22_default_route_flip",
     "phase22_default_route_seed_convergence",
     "phase22_postflip_qualification",
+    "phase22_historical_route_successor",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming", "phase19_classification", "phase19_representation",
