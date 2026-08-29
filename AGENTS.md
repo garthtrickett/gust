@@ -53,6 +53,41 @@ publication policy.
 Complete one explicitly requested roadmap patch at a time. Make the smallest
 coherent, bootstrap-safe change that satisfies the selected patch.
 
+## Issue intake and roadmap coverage
+
+`docs/ISSUE_ROADMAP.md` is the repository-wide routing index for open GitHub
+issues. It is not an implementation authority and does not activate work, but
+an issue is not fully filed until it has a row there.
+
+When creating a GitHub issue:
+
+1. file the issue with the evidence and ownership boundary required by this
+   document;
+2. immediately add its number, owner, destination roadmap or milestone,
+   dependencies, and closure condition to `docs/ISSUE_ROADMAP.md`;
+3. link the roadmap row from the issue body or a follow-up comment; and
+4. do not end the filing task while the issue exists only in GitHub, VISION,
+   the one-way ledger, a coordination request, or an agent transcript.
+
+An issue may be routed to an active patch, a later named phase, a coordination
+request, an operator decision, or an explicitly ordered post-tail milestone.
+"Unscheduled" by itself is not a destination. If ownership or sequencing is
+unknown, record `decision required`, name the authority that must decide, and
+place the decision before the first phase that would make the issue harder or
+impossible to resolve.
+
+The issue index is neutral routing metadata. Either lane may add or update an
+issue row without taking ownership of the other lane's roadmap. Such an edit
+must not change an active patch boundary, resolve a shared-zone decision, or
+authorize implementation. Actual work still has to be promoted into the
+owning lane's active roadmap under its normal activation rules.
+
+Before closing an issue, verify the closure against current `main`, record the
+PR or commit and relevant evidence on the issue, and move its row to the closed
+ledger in `docs/ISSUE_ROADMAP.md`. A partial fix narrows the open row; it does
+not close the issue. Each registrar audit compares the complete open GitHub
+issue set with the open rows and files a routing correction for any mismatch.
+
 ## Ownership boundaries
 
 The Cranelift lane owns canonical MIR, MIR validation, native lowering,
