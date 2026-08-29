@@ -34,6 +34,13 @@ that exact main and directed the lane to qualify and merge the atomic roadmap
 PR before continuing through the activated Phase Completion Loop. This roadmap
 records that activation through Patch 22.9.
 
+On 2026-08-29 the operator replaced Patch 22.8's repeated daily stability
+window with one authoritative `Cranelift Historical Full` qualification on the
+exact merged final post-flip implementation main. The complete registry-derived
+job population must succeed and zero material review findings may remain
+unresolved. This amendment changes only the stability evidence cardinality and
+calendar policy; Patch 22.2 remains the active implementation boundary.
+
 Activation is Cranelift-only. It does not authorize Phase 23, MIR-to-C
 deprecation or removal, edits to `TASK_STDLIB.md`, Stdlib implementation, or
 compiler-owned CR-15 work.
@@ -53,8 +60,8 @@ In scope:
   diagnostics, cleanup, and atomic output preservation for the default route;
 - default-versus-explicit Cranelift identity and pre-flip-versus-explicit-C
   byte identity;
-- CI and release qualification, an exact post-flip stability window, and a
-  generated closure record backed by successful Level 3 evidence;
+- CI and release qualification, an exact post-flip stability qualification,
+  and a generated closure record backed by successful Level 3 evidence;
 - one isolated bootstrap-seed reconvergence after the compiler entry source has
   reached its final Phase 22 form.
 
@@ -83,7 +90,7 @@ Out of scope:
 - [ ] Patch 22.6 — Cranelift Default Route Flip
 - [ ] Patch 22.6a — Default-Route Bootstrap Seed Reconvergence
 - [ ] Patch 22.7 — Post-flip CI, Documentation, and Rollback Qualification
-- [ ] Patch 22.8 — Default-Native Stability Window
+- [ ] Patch 22.8 — One-Time Default-Native Stability Qualification
 - [ ] Patch 22.9 — Phase 22 Closure
 
 Status rows are machine-parsed. Keep each row as
@@ -155,7 +162,7 @@ package/install contents; bootstrap stages; CI workflows; documentation; and
 every executable repository invocation that omits `--backend`. Each invocation
 records its owner, whether it expects C source, a native executable, diagnostics
 only, or intentionally exercises the user default, the patch that may migrate
-it, and a falsifier. Record the exact three-run scheduled stability criterion
+it, and a falsifier. Record the exact one-run stability qualification
 used by Patch 22.8. Add a generated review and focused Level 1 guard. Change no
 route or observable behavior.
 
@@ -267,38 +274,36 @@ and release-shaped smokes agree that Cranelift is default; explicit C remains a
 working named oracle; and dependency/path-filter falsifiers trigger every
 owning qualification workflow.
 
-## Patch 22.8 — Default-Native Stability Window
+## Patch 22.8 — One-Time Default-Native Stability Qualification
 
-Observe the merged default in the authoritative GitHub environment for three
-consecutive scheduled daily `Cranelift Historical Full` runs. Each run must be
-on a `main` commit containing the complete default flip and seed reconvergence,
-must expose the complete registry-derived job population, and must finish with
-every job successful. Also run one manual Historical Full on the exact final
-pre-closure implementation head. Any critical native regression, incomplete
-population, superseding correction, default-route change, or unresolved P1/P2
-review finding resets the three-run window. Record run IDs, full SHAs, events,
-job populations, conclusions, and elapsed budgets in generated authority.
+Run one authoritative `Cranelift Historical Full` qualification on the exact
+merged final post-flip implementation main. The run must expose the complete
+registry-derived job population and every job must complete successfully. The
+qualification is valid only with zero unresolved material review findings.
+Record the run ID, full SHA, event, job population, conclusion, and elapsed
+budgets in generated authority. Preserve the explicit-C oracle and rollback,
+package/install, bootstrap, PR-CI, exact-SHA, and no-fallback gates.
 
-**Exit Gate:** three consecutive scheduled runs and the exact-head manual run
-are complete successes, no critical native regression or unresolved review
-finding remains, and explicit-C rollback/oracle evidence remains green.
+**Exit Gate:** the single exact-final-main Historical Full run is a complete
+success, zero material review findings remain unresolved, and explicit-C
+rollback/oracle evidence remains green.
 
 ## Patch 22.9 — Phase 22 Closure
 
 Re-run the opening inventory, default-route identity, explicit-C byte identity,
 package/install, complete-corpus, bootstrap, documentation/CI, and stability
 guards from their authoritative entry points. Dispatch a final Historical Full
-on exact merged implementation main if the Patch 22.8 exact-head run is no
-longer current. Generate the closure record from registry authority, replace
-all placeholders with checked evidence, mark every row DONE, and write the
-terminal lane state only after the closure PR merges.
+on exact merged implementation main if the Patch 22.8 exact-head evidence does
+not name that exact final implementation main. Generate the closure record from
+registry authority, replace all placeholders with checked evidence, mark every
+row DONE, and write the terminal lane state only after the closure PR merges.
 
 **Exit Gate:** every Phase 22 row is DONE; bare Gust uses Cranelift; explicit
 Cranelift is identical; explicit C is retained and byte-identical to the
 pre-flip default; no silent fallback exists; package/install and bootstrap gates
-pass; the stability window and latest exact-main Historical Full are green;
-all exact-head pull-request workflows succeed; and no review conversation is
-unresolved. Phase 23 remains inactive.
+pass; the one-time stability qualification and latest exact-main Historical
+Full are green; all exact-head pull-request workflows succeed; and no review
+conversation is unresolved. Phase 23 remains inactive.
 
 ---
 

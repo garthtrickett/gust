@@ -241,7 +241,7 @@ def validate() -> dict:
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     record = registry.get("phase22_opening")
     require(isinstance(record, dict), "Patch 22.1 authority is missing")
-    require(record.get("contract_version") == "phase22_opening_v1",
+    require(record.get("contract_version") == "phase22_opening_v2",
             "contract version drifted")
     require(record.get("status") == "patch22_1_complete" and
             record.get("next_patch") == "22.2",
@@ -314,19 +314,15 @@ def validate() -> dict:
         "cleanup_destination": "22.5_pre_flip_default_cohort_qualification",
     }, "Phase 21 native-capability handoff drifted")
 
-    stability = record.get("stability_window")
+    stability = record.get("stability_qualification")
     require(stability == {
-        "scheduled_consecutive_successes": 3,
-        "manual_exact_head_successes": 1,
+        "operator_decision": "2026-08-29_one_time_exact_final_main",
+        "required_successful_runs": 1,
         "workflow": "Cranelift Historical Full",
-        "scheduled_cron_utc": "23 3 * * *",
-        "reset_on": [
-            "critical_native_regression",
-            "incomplete_job_population",
-            "superseding_default_route_correction",
-            "unresolved_P1_or_P2_review_finding",
-        ],
-    }, "stability-window authority drifted")
+        "required_head": "exact_merged_final_post_flip_implementation_main",
+        "required_job_population": "complete_registry_derived_population_all_success",
+        "maximum_unresolved_material_review_findings": 0,
+    }, "stability-qualification authority drifted")
 
     require(record.get("unclassified_failures") == [],
             "Patch 22.1 leaves an unclassified failure")
@@ -354,7 +350,7 @@ def validate() -> dict:
 def render(record: dict, rows: list[dict[str, object]]) -> str:
     inventory = record["invocation_inventory"]
     handoff = record["native_capability_handoff"]
-    stability = record["stability_window"]
+    stability = record["stability_qualification"]
     lines = [
         "# Cranelift Phase 22 Opening — Default Route and Consumer Inventory",
         "",
@@ -419,14 +415,14 @@ def render(record: dict, rows: list[dict[str, object]]) -> str:
         f"- Runtime divergences: `{handoff['runtime_divergence_count']}`",
         f"- Default policy: `{handoff['default_policy']}`",
         f"- Cleanup destination: `{handoff['cleanup_destination']}`",
-        "", "## Stability window", "",
-        f"- Scheduled consecutive successes: `{stability['scheduled_consecutive_successes']}`",
-        f"- Manual exact-head successes: `{stability['manual_exact_head_successes']}`",
+        "", "## Stability qualification", "",
+        f"- Operator decision: `{stability['operator_decision']}`",
+        f"- Required successful runs: `{stability['required_successful_runs']}`",
         f"- Workflow: `{stability['workflow']}`",
-        f"- Cron (UTC): `{stability['scheduled_cron_utc']}`",
-        "- Reset conditions: " + ", ".join(
-            f"`{value}`" for value in stability["reset_on"]
-        ),
+        f"- Required head: `{stability['required_head']}`",
+        f"- Required job population: `{stability['required_job_population']}`",
+        "- Maximum unresolved material review findings: "
+        f"`{stability['maximum_unresolved_material_review_findings']}`",
         "",
         "Patch 22.1 changes no route. The invocation inventory is a transition",
         "checklist: Patch 22.2 makes C-dependent consumers explicit while bare",
