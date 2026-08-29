@@ -75,7 +75,7 @@ Out of scope:
 ## Status
 
 - [x] Patch 22.0 — Phase 22 Roadmap Activation — DONE
-- [ ] Patch 22.1 — Opening Default-Route and Consumer Inventory
+- [x] Patch 22.1 — Opening Default-Route and Consumer Inventory — DONE
 - [ ] Patch 22.2 — Explicit C Route and No-op Consumer Migration
 - [ ] Patch 22.3 — Native Implicit-Output Contract
 - [ ] Patch 22.4 — Default-Native Package and Install Qualification
