@@ -3471,7 +3471,7 @@
       "current_implicit_count": 26,
       "authorized_post_relay_implicit_count": 11,
       "cranelift_owned_migrated_count": 60,
-      "patch22_evidence_invocation_count": 17,
+      "patch22_evidence_invocation_count": 18,
       "patch22_evidence_implicit_count": 3,
       "bootstrap_migrated_count": 5,
       "repository_guard_migrated_count": 15,
@@ -3481,42 +3481,42 @@
       "explicit_non_bootstrap_spelling": "mir-to-c"
     },
     "current_invocation_inventory": {
-      "total": 286,
+      "total": 287,
       "selection_counts": {
         "explicit_c": 146,
-        "explicit_cranelift": 111,
+        "explicit_cranelift": 112,
         "explicit_invalid_or_parser_probe": 3,
         "implicit_default": 26
       },
       "consumer_class_counts": {
-        "already_explicit_or_parser_probe": 260,
+        "already_explicit_or_parser_probe": 261,
         "help_surface_probe": 2,
         "intentional_default_selection_probe": 7,
         "invocation_parser_probe": 2,
         "stdlib_owned_C_or_diagnostic_guard": 15
       },
       "owner_counts": {
-        "cranelift": 263,
+        "cranelift": 264,
         "stdlib": 23
       },
       "unclassified_count": 0
     },
     "authorized_post_relay_invocation_inventory": {
-      "total": 286,
+      "total": 287,
       "selection_counts": {
         "explicit_c": 161,
-        "explicit_cranelift": 111,
+        "explicit_cranelift": 112,
         "explicit_invalid_or_parser_probe": 3,
         "implicit_default": 11
       },
       "consumer_class_counts": {
-        "already_explicit_or_parser_probe": 275,
+        "already_explicit_or_parser_probe": 276,
         "help_surface_probe": 2,
         "intentional_default_selection_probe": 7,
         "invocation_parser_probe": 2
       },
       "owner_counts": {
-        "cranelift": 263,
+        "cranelift": 264,
         "stdlib": 23
       },
       "unclassified_count": 0

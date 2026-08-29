@@ -78,7 +78,11 @@ def validate() -> tuple[dict, list[dict[str, object]], bool]:
     relay_applied = summary == post_relay_inventory
     migration = record.get("migration", {})
     has_implicit_output_successor = "phase22_native_implicit_output" in registry
-    expected_patch22_invocations = 17 if has_implicit_output_successor else 7
+    has_preflip_successor = "phase22_preflip_default_cohort" in registry
+    expected_patch22_invocations = (
+        18 if has_preflip_successor else
+        17 if has_implicit_output_successor else 7
+    )
     expected_patch22_implicit = 3 if has_implicit_output_successor else 2
     require(migration.get("opening_implicit_count") ==
             opening.get("invocation_inventory", {}).get("selection_counts", {}).get(
