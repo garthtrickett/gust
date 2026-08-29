@@ -2535,7 +2535,7 @@
       },
       "phase22_opening": {
         "const": {
-          "contract_version": "phase22_opening_v1",
+          "contract_version": "phase22_opening_v2",
           "status": "patch22_1_complete",
           "next_patch": "22.2",
           "review_view": "compiler/CRANELIFT_PHASE22_OPENING.md",
@@ -2567,7 +2567,7 @@
           "workflow_surfaces": [
             {"id":"pr_fast","path":".github/workflows/pr-fast.yml","current_state":"parallel_focused_guards_with_no_phase22_default_contract","marker":"name: PR Fast","owner":"cranelift","expected_transition":"22.1_contract_then_22.7_default_release_smoke"},
             {"id":"heavy_guards","path":".github/workflows/heavy-guards.yml","current_state":"parallel_heavy_guards_built_from_current_default_C_compiler","marker":"name: Heavy Guards","owner":"cranelift","expected_transition":"22.7_default_and_explicit_C_qualification"},
-            {"id":"historical_full","path":".github/workflows/cranelift-historical-full.yml","current_state":"daily_registry_derived_level3_owner_at_03_23_UTC","marker":"- cron: \"23 3 * * *\"","owner":"cranelift","expected_transition":"22.8_three_consecutive_scheduled_successes"}
+            {"id":"historical_full","path":".github/workflows/cranelift-historical-full.yml","current_state":"daily_registry_derived_level3_owner_at_03_23_UTC","marker":"- cron: \"23 3 * * *\"","owner":"cranelift","expected_transition":"22.8_one_exact_final_main_success"}
           ],
           "invocation_inventory": {
             "total": 269,
@@ -2586,12 +2586,13 @@
             "default_policy": "unsupported_native_features_fail_clearly_without_C_fallback",
             "cleanup_destination": "22.5_pre_flip_default_cohort_qualification"
           },
-          "stability_window": {
-            "scheduled_consecutive_successes": 3,
-            "manual_exact_head_successes": 1,
+          "stability_qualification": {
+            "operator_decision": "2026-08-29_one_time_exact_final_main",
+            "required_successful_runs": 1,
             "workflow": "Cranelift Historical Full",
-            "scheduled_cron_utc": "23 3 * * *",
-            "reset_on": ["critical_native_regression","incomplete_job_population","superseding_default_route_correction","unresolved_P1_or_P2_review_finding"]
+            "required_head": "exact_merged_final_post_flip_implementation_main",
+            "required_job_population": "complete_registry_derived_population_all_success",
+            "maximum_unresolved_material_review_findings": 0
           },
           "unclassified_failures": [],
           "boundary": {"changes_compiler_route_or_CLI_behavior":false,"changes_accepted_Gust_program_meaning":false,"adds_or_changes_MIR_operations":false,"changes_ABI_layout_or_runtime_symbols":false,"changes_bootstrap_seed":false,"edits_stdlib_or_CR15":false,"begins_patch22_2":false}

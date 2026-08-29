@@ -4,7 +4,7 @@ Generated from `scripts/cranelift_feature_registry.json` and the live
 repository invocation scan by `scripts/phase22_opening.py project`.
 Do not edit by hand.
 
-- Contract: `phase22_opening_v1`
+- Contract: `phase22_opening_v2`
 - Status: `patch22_1_complete`
 - Next patch: `22.2`
 - Observed main: `c157c86674624fd298c2f65e98ed8f4df85cb175`
@@ -28,7 +28,7 @@ Do not edit by hand.
 - `root_readme` — `documents_C_bootstrap_chain_without_a_default_backend_user_contract`; transition `22.7_preserve_bootstrap_claim_and_add_user_default`
 - `pr_fast` — `parallel_focused_guards_with_no_phase22_default_contract`; transition `22.1_contract_then_22.7_default_release_smoke`
 - `heavy_guards` — `parallel_heavy_guards_built_from_current_default_C_compiler`; transition `22.7_default_and_explicit_C_qualification`
-- `historical_full` — `daily_registry_derived_level3_owner_at_03_23_UTC`; transition `22.8_three_consecutive_scheduled_successes`
+- `historical_full` — `daily_registry_derived_level3_owner_at_03_23_UTC`; transition `22.8_one_exact_final_main_success`
 
 ## Invocation summary
 
@@ -330,13 +330,14 @@ Do not edit by hand.
 - Default policy: `unsupported_native_features_fail_clearly_without_C_fallback`
 - Cleanup destination: `22.5_pre_flip_default_cohort_qualification`
 
-## Stability window
+## Stability qualification
 
-- Scheduled consecutive successes: `3`
-- Manual exact-head successes: `1`
+- Operator decision: `2026-08-29_one_time_exact_final_main`
+- Required successful runs: `1`
 - Workflow: `Cranelift Historical Full`
-- Cron (UTC): `23 3 * * *`
-- Reset conditions: `critical_native_regression`, `incomplete_job_population`, `superseding_default_route_correction`, `unresolved_P1_or_P2_review_finding`
+- Required head: `exact_merged_final_post_flip_implementation_main`
+- Required job population: `complete_registry_derived_population_all_success`
+- Maximum unresolved material review findings: `0`
 
 Patch 22.1 changes no route. The invocation inventory is a transition
 checklist: Patch 22.2 makes C-dependent consumers explicit while bare

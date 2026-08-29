@@ -86,8 +86,9 @@ requires explicit backend selection rather than hidden recovery; packaging
 includes the native worker and runtime; help, docs, CI and install flows reflect
 the new default; telemetry, if used, distinguishes native failures clearly.
 
-**Exit gate:** multiple release cycles, or an agreed stability window, complete
-with Cranelift as default and no critical unresolved native regressions.
+**Exit gate:** one authoritative `Cranelift Historical Full` run on the exact
+merged final post-flip implementation main completes its full registry-derived
+job population successfully, with no unresolved material review findings.
 
 ## Phase 23 — MIR-to-C deprecation
 
