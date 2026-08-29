@@ -110,18 +110,35 @@ def validate() -> dict:
         "./build/gust_stage2_bin --backend mir-to-c compiler/test_runner_entry.gst",
     ):
         require(marker in makefile, f"bootstrap route is not explicit C: {marker}")
-    require("gust_v4.c" not in subprocess.run(
+    seed_changed = "gust_v4.c" in subprocess.run(
         ["git", "diff", "--name-only"], cwd=ROOT, text=True,
-        stdout=subprocess.PIPE, check=True).stdout.splitlines(),
-        "Patch 22.6 modified the bootstrap seed")
+        stdout=subprocess.PIPE, check=True).stdout.splitlines()
+    successor = registry.get("phase22_default_route_seed_convergence", {})
+    successor_complete = (
+        successor.get("contract_version") ==
+        "phase22_default_route_seed_convergence_v1" and
+        successor.get("status") == "patch22_6a_complete" and
+        successor.get("accounted_authority") ==
+        "phase22_default_route_flip_v1"
+    )
+    require(not seed_changed or successor_complete,
+            "Patch 22.6 modified the bootstrap seed without Patch 22.6a authority")
 
     corpus = record.get("frozen_preflip_c_corpus", [])
     require(len(corpus) == 4 and len({row["source"] for row in corpus}) == 4 and
             all(len(row["digest"]) == 64 for row in corpus),
             "frozen pre-flip C corpus drifted")
     task = TASK.read_text(encoding="utf-8")
+    pending_successor = (
+        "- [ ] Patch 22.6a — Default-Route Bootstrap Seed Reconvergence" in task
+    )
+    completed_successor = (
+        "- [x] Patch 22.6a — Default-Route Bootstrap Seed Reconvergence — DONE"
+        in task
+    )
     require("- [x] Patch 22.6 — Cranelift Default Route Flip — DONE" in task and
-            "- [ ] Patch 22.6a — Default-Route Bootstrap Seed Reconvergence" in task,
+            ((pending_successor and not successor_complete) or
+             (completed_successor and successor_complete)),
             "22.6/22.6a roadmap boundary drifted")
     levels = json.loads(LEVELS.read_text(encoding="utf-8"))["guards"]
     require(levels.get(GUARD_L1) == 1 and levels.get(GUARD_L2) == 2,

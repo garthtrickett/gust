@@ -23617,3 +23617,16 @@ guard-cranelift-phase22-default-route-flip-evidence:
     echo "🧪 Replaying Phase 22 default Cranelift route evidence..."
     just guard-cranelift-phase22-default-route-flip-contract
     python3 scripts/phase22_default_route_flip.py evidence
+
+# Cranelift lane, Phase 22.6a. Regenerated-seed authority only; all bootstrap
+# generation remains explicit MIR-to-C and the default route is not redefined.
+guard-cranelift-phase22-default-route-seed-convergence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🌱 Checking Phase 22 default-route seed convergence authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase22-default-route-seed-convergence | grep -F $'guard-cranelift-phase22-default-route-seed-convergence\t1\t' >/dev/null
+    just guard-cranelift-phase22-default-route-flip-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase22_default_route_seed_convergence.py validate
+    python3 scripts/phase22_default_route_seed_convergence.py check-review
