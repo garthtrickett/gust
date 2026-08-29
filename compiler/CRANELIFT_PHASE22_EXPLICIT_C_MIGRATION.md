@@ -3,15 +3,20 @@
 Generated from `scripts/cranelift_feature_registry.json` and the live
 repository invocation scan. Do not edit by hand.
 
-- Contract: `phase22_explicit_c_migration_v1`
-- Status: `cranelift_owned_migration_complete_cross_lane_pending`
-- Next action: `stdlib_owned_consumer_relay`
-- Observed main: `831a125263961943e81dc4888c3f83458325af4f`
+- Contract: `phase22_explicit_c_migration_v2`
+- Status: `cranelift_owned_migration_complete_relay_publication_authorized`
+- Next action: `stdlib_owned_consumer_relay_publication`
+- Observed main: `d7c0a733c211a202bda417fb7d5b8ceb12ced415`
 - Default backend: `mir_to_c_unchanged`
 - Explicit `c`: `exact_alias_of_mir_to_c`
 - Cranelift-owned migrations: `60`
-- Remaining implicit consumers: `26`
-- Pending Stdlib-owned consumers: `15`
+- Pre-relay implicit consumers: `26`
+- Authorized post-relay implicit consumers: `11`
+- Pre-relay explicit C consumers: `146`
+- Authorized post-relay explicit C consumers: `161`
+- Pre-relay implicit Stdlib-owned consumers: `15`
+- Authorized post-relay implicit Stdlib-owned consumers: `0`
+- Relay status: `authorized_for_owning_lane_publication`
 
 ## Migration classes
 
@@ -20,34 +25,42 @@ repository invocation scan. Do not edit by hand.
 - Script guards: `39`
 - Developer C pipeline: `1`
 
-## Preserved implicit consumers
+## Pre-relay preserved implicit consumers
 
 - `help_surface_probe`: `2`
 - `intentional_default_selection_probe`: `7`
 - `invocation_parser_probe`: `2`
 - `stdlib_owned_C_or_diagnostic_guard`: `15`
 
+## Authorized post-relay preserved implicit consumers
+
+- `help_surface_probe`: `2`
+- `intentional_default_selection_probe`: `7`
+- `invocation_parser_probe`: `2`
+
 ## Cross-lane relay
 
-| Path | Line | Expected artifact | Falsifier |
+| Path | Line | Recipe | Compiler |
 | --- | ---: | --- | --- |
-| `justfile` | 23146 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
-| `justfile` | 23147 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
-| `justfile` | 23161 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
-| `justfile` | 23193 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
-| `justfile` | 23197 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
-| `justfile` | 23204 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
-| `justfile` | 23205 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
-| `justfile` | 23287 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
-| `scripts/stdlib_s1_branded_collections_parity.sh` | 60 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
-| `scripts/stdlib_s1_branded_collections_parity.sh` | 64 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
-| `scripts/stdlib_s1_branded_collections_parity.sh` | 130 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
-| `scripts/stdlib_s1_clone_destination_parity.sh` | 63 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
-| `scripts/stdlib_s1_clone_destination_parity.sh` | 67 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
-| `scripts/stdlib_s1_clone_destination_parity.sh` | 128 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
-| `scripts/stdlib_s1_composition_parity.sh` | 30 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
+| `justfile` | 23146 | `guard-stdlib-s1-str-equality-diagnostic` | `./gust` |
+| `justfile` | 23147 | `guard-stdlib-s1-str-equality-diagnostic` | `./gust` |
+| `justfile` | 23161 | `guard-stdlib-s1-str-equality-diagnostic` | `./gust` |
+| `justfile` | 23193 | `guard-stdlib-s1-collection-receivers` | `./gust` |
+| `justfile` | 23197 | `guard-stdlib-s1-collection-receivers` | `./gust` |
+| `justfile` | 23204 | `guard-stdlib-s1-collection-receivers` | `./gust` |
+| `justfile` | 23205 | `guard-stdlib-s1-collection-receivers` | `./gust` |
+| `justfile` | 23287 | `guard-stdlib-s1-resource-prerequisites` | `./gust` |
+| `scripts/stdlib_s1_branded_collections_parity.sh` | 60 | `none` | `./gust` |
+| `scripts/stdlib_s1_branded_collections_parity.sh` | 64 | `none` | `./gust` |
+| `scripts/stdlib_s1_branded_collections_parity.sh` | 130 | `none` | `./gust` |
+| `scripts/stdlib_s1_clone_destination_parity.sh` | 63 | `none` | `./gust` |
+| `scripts/stdlib_s1_clone_destination_parity.sh` | 67 | `none` | `./gust` |
+| `scripts/stdlib_s1_clone_destination_parity.sh` | 128 | `none` | `./gust` |
+| `scripts/stdlib_s1_composition_parity.sh` | 30 | `none` | `./gust` |
 
-Patch 22.2 remains open: the Cranelift-owned no-op migration is
-complete, but the roadmap exit gate forbids DONE status or a later
-default flip until these owning Stdlib corrections merge. This patch
+Patch 22.2 remains open. This authority accepts only the exact pre-relay
+inventory or the exact checked 15-site post-relay inventory, allowing
+the owning Stdlib correction to publish without treating partial or
+unrelated invocation drift as completion. The default flip remains
+forbidden until that owning PR actually merges. This authority patch
 does not edit Stdlib or change the MIR-to-C default.

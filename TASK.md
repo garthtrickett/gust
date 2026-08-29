@@ -84,6 +84,7 @@ Out of scope:
 - [x] Patch 22.0 — Phase 22 Roadmap Activation — DONE
 - [x] Patch 22.1 — Opening Default-Route and Consumer Inventory — DONE
 - [ ] Patch 22.2 — Explicit C Route and No-op Consumer Migration
+- [x] Patch 22.2a — Cross-Lane Explicit-C Relay Publication Authority — DONE
 - [ ] Patch 22.3 — Native Implicit-Output Contract
 - [ ] Patch 22.4 — Default-Native Package and Install Qualification
 - [ ] Patch 22.5 — Pre-flip Default-Cohort Qualification
@@ -185,6 +186,21 @@ is merged. Add a guard that rejects a new unclassified implicit dependency.
 C spellings emit byte-identical bytes; bootstrap stage 2/stage 3 C identity
 passes; every required repository consumer is explicit or deliberately
 default-observing; and zero cross-lane consumer remains unresolved.
+
+## Patch 22.2a — Cross-Lane Explicit-C Relay Publication Authority
+
+Record the checked owning-lane 15-site routing correction without editing its
+Stdlib surfaces or pretending that an unmerged worktree is already repository
+state. The Cranelift-owned invocation authority admits exactly two transition
+states: the current pre-relay inventory and the exact post-relay inventory in
+which those 15 calls select explicit MIR-to-C. Any partial relay, additional
+implicit dependency, path-set change, or unrelated invocation drift rejects.
+
+**Exit Gate:** the unchanged Cranelift branch validates against the exact
+pre-relay inventory, the checked owning-lane correction is authorized to
+validate against the exact post-relay inventory after rebase, generated
+authority distinguishes authorization from merge completion, and Patch 22.2
+and the default flip remain open until the owning Stdlib PR actually merges.
 
 ## Patch 22.3 — Native Implicit-Output Contract
 

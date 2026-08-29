@@ -38,21 +38,22 @@ def opening_module():
     return module
 
 
-def validate() -> tuple[dict, list[dict[str, object]]]:
+def validate() -> tuple[dict, list[dict[str, object]], bool]:
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     opening = registry.get("phase22_opening", {})
     require(opening.get("contract_version") == "phase22_opening_v2",
             "opening authority drifted")
     record = registry.get("phase22_explicit_c_migration")
     require(isinstance(record, dict), "Patch 22.2 authority is missing")
-    require(record.get("contract_version") == "phase22_explicit_c_migration_v1",
+    require(record.get("contract_version") == "phase22_explicit_c_migration_v2",
             "contract version drifted")
     require(record.get("status") ==
-            "cranelift_owned_migration_complete_cross_lane_pending" and
-            record.get("next_action") == "stdlib_owned_consumer_relay",
+            "cranelift_owned_migration_complete_relay_publication_authorized" and
+            record.get("next_action") ==
+            "stdlib_owned_consumer_relay_publication",
             "status or next action drifted")
     require(record.get("observed_main_sha") ==
-            "831a125263961943e81dc4888c3f83458325af4f",
+            "d7c0a733c211a202bda417fb7d5b8ceb12ced415",
             "observed main drifted")
     require(record.get("opening_authority") == opening.get("contract_version"),
             "opening authority link drifted")
@@ -68,8 +69,13 @@ def validate() -> tuple[dict, list[dict[str, object]]]:
     scanner = opening_module()
     rows = scanner.scan_invocations()
     summary = scanner.scan_summary(rows)
-    require(summary == record.get("current_invocation_inventory"),
+    pre_relay_inventory = record.get("current_invocation_inventory")
+    post_relay_inventory = record.get(
+        "authorized_post_relay_invocation_inventory"
+    )
+    require(summary in (pre_relay_inventory, post_relay_inventory),
             f"current invocation inventory drifted: {summary!r}")
+    relay_applied = summary == post_relay_inventory
     migration = record.get("migration", {})
     has_implicit_output_successor = "phase22_native_implicit_output" in registry
     expected_patch22_invocations = 17 if has_implicit_output_successor else 7
@@ -78,7 +84,9 @@ def validate() -> tuple[dict, list[dict[str, object]]]:
             opening.get("invocation_inventory", {}).get("selection_counts", {}).get(
                 "implicit_default") and
             migration.get("current_implicit_count") ==
-            summary["selection_counts"]["implicit_default"] and
+            pre_relay_inventory["selection_counts"]["implicit_default"] and
+            migration.get("authorized_post_relay_implicit_count") ==
+            post_relay_inventory["selection_counts"]["implicit_default"] and
             migration.get("cranelift_owned_migrated_count") == 60 and
             migration.get("patch22_evidence_invocation_count") ==
             expected_patch22_invocations and
@@ -102,15 +110,74 @@ def validate() -> tuple[dict, list[dict[str, object]]]:
                 for row in implicit if row["owner"] == "cranelift"),
             "a Cranelift-owned C dependency still omits backend selection")
     relay_rows = [row for row in implicit if row["owner"] == "stdlib"]
+    stdlib_rows = [row for row in rows if row["owner"] == "stdlib"]
     relay = record.get("cross_lane_relay", {})
-    require(len(relay_rows) == relay.get("consumer_count") == 15,
-            "cross-lane relay count drifted")
-    require(sorted({str(row["path"]) for row in relay_rows}) ==
+    expected_relay_count = (
+        relay.get("authorized_post_relay_consumer_count")
+        if relay_applied else relay.get("consumer_count")
+    )
+    require(len(relay_rows) == expected_relay_count and
+            relay.get("consumer_count") == 15 and
+            relay.get("authorized_post_relay_consumer_count") == 0,
+            "cross-lane relay transition count drifted")
+    require(sorted({str(row["path"]) for row in stdlib_rows}) ==
             sorted(relay.get("paths", [])),
             "cross-lane relay path set drifted")
-    require(relay.get("status") == "pending_owning_lane_correction" and
-            relay.get("owner") == "stdlib",
+    site_fields = ("path", "line", "recipe", "compiler_token")
+    site_manifest = relay.get("authorized_site_manifest", [])
+    live_sites = {
+        tuple(row[field] for field in site_fields): row
+        for row in stdlib_rows
+    }
+    expected_sites = {
+        tuple(row[field] for field in site_fields)
+        for row in site_manifest
+    }
+    require(len(site_manifest) == len(expected_sites) == 15 and
+            expected_sites.issubset(live_sites),
+            "cross-lane relay site manifest drifted")
+    require(all(live_sites[site]["selection"] ==
+                ("explicit_c" if relay_applied else "implicit_default")
+                for site in expected_sites),
+            "an authorized relay site did not make the exact route transition")
+    require(relay.get("status") ==
+            "authorized_for_owning_lane_publication" and
+            relay.get("owner") == "stdlib" and
+            relay.get("expected_selection") == "explicit_mir_to_c" and
+            relay.get("evidence") ==
+            "checked_15_site_line_only_owning_lane_diff",
             "cross-lane relay status drifted")
+    pre_selections = pre_relay_inventory["selection_counts"]
+    post_selections = post_relay_inventory["selection_counts"]
+    pre_classes = pre_relay_inventory["consumer_class_counts"]
+    post_classes = post_relay_inventory["consumer_class_counts"]
+    require(post_relay_inventory["total"] == pre_relay_inventory["total"] and
+            post_relay_inventory["owner_counts"] ==
+            pre_relay_inventory["owner_counts"] and
+            post_relay_inventory["unclassified_count"] ==
+            pre_relay_inventory["unclassified_count"] == 0 and
+            post_selections["explicit_c"] - pre_selections["explicit_c"] ==
+            relay["consumer_count"] and
+            pre_selections["implicit_default"] -
+            post_selections["implicit_default"] == relay["consumer_count"] and
+            post_selections["explicit_cranelift"] ==
+            pre_selections["explicit_cranelift"] and
+            post_selections["explicit_invalid_or_parser_probe"] ==
+            pre_selections["explicit_invalid_or_parser_probe"] and
+            post_classes["already_explicit_or_parser_probe"] -
+            pre_classes["already_explicit_or_parser_probe"] ==
+            relay["consumer_count"] and
+            "stdlib_owned_C_or_diagnostic_guard" not in post_classes,
+            "authorized post-relay inventory is not the exact 15-site delta")
+    if relay_applied:
+        owner_selections = relay.get("authorized_post_relay_owner_selections", {})
+        require(len(stdlib_rows) == 23 and
+                sum(row["selection"] == "explicit_c" for row in stdlib_rows) ==
+                owner_selections.get("explicit_c") == 20 and
+                sum(row["selection"] == "explicit_cranelift"
+                    for row in stdlib_rows) ==
+                owner_selections.get("explicit_cranelift") == 3,
+                "authorized post-relay Stdlib selection set drifted")
 
     entry = ENTRY.read_text(encoding="utf-8")
     for marker in (
@@ -129,6 +196,9 @@ def validate() -> tuple[dict, list[dict[str, object]]]:
     task = TASK.read_text(encoding="utf-8")
     require("- [ ] Patch 22.2 — Explicit C Route and No-op Consumer Migration" in task,
             "Patch 22.2 must remain open while the owning Stdlib relay is pending")
+    require("- [x] Patch 22.2a — Cross-Lane Explicit-C Relay Publication Authority — DONE"
+            in task,
+            "TASK.md does not record the relay-publication authority correction")
     levels = json.loads(LEVELS.read_text(encoding="utf-8"))["guards"]
     require(levels.get(GUARD_L1) == 1 and levels.get(GUARD_L2) == 2,
             "guard levels drifted")
@@ -143,12 +213,14 @@ def validate() -> tuple[dict, list[dict[str, object]]]:
     boundary = record.get("boundary", {})
     require(boundary and all(value is False for value in boundary.values()),
             "Patch 22.2 widened beyond the recorded boundary")
-    return record, relay_rows
+    return record, relay_rows, relay_applied
 
 
-def render(record: dict, relay_rows: list[dict[str, object]]) -> str:
+def render(record: dict) -> str:
     migration = record["migration"]
-    inventory = record["current_invocation_inventory"]
+    pre_inventory = record["current_invocation_inventory"]
+    post_inventory = record["authorized_post_relay_invocation_inventory"]
+    relay = record["cross_lane_relay"]
     lines = [
         "# Cranelift Phase 22.2 — Explicit C Route and No-op Consumer Migration",
         "",
@@ -162,8 +234,13 @@ def render(record: dict, relay_rows: list[dict[str, object]]) -> str:
         f"- Default backend: `{record['route_contract']['default_backend']}`",
         f"- Explicit `c`: `{record['route_contract']['explicit_c']}`",
         f"- Cranelift-owned migrations: `{migration['cranelift_owned_migrated_count']}`",
-        f"- Remaining implicit consumers: `{inventory['selection_counts']['implicit_default']}`",
-        f"- Pending Stdlib-owned consumers: `{len(relay_rows)}`",
+        f"- Pre-relay implicit consumers: `{pre_inventory['selection_counts']['implicit_default']}`",
+        f"- Authorized post-relay implicit consumers: `{migration['authorized_post_relay_implicit_count']}`",
+        f"- Pre-relay explicit C consumers: `{pre_inventory['selection_counts']['explicit_c']}`",
+        f"- Authorized post-relay explicit C consumers: `{post_inventory['selection_counts']['explicit_c']}`",
+        f"- Pre-relay implicit Stdlib-owned consumers: `{relay['consumer_count']}`",
+        f"- Authorized post-relay implicit Stdlib-owned consumers: `{relay['authorized_post_relay_consumer_count']}`",
+        f"- Relay status: `{relay['status']}`",
         "",
         "## Migration classes",
         "",
@@ -172,26 +249,34 @@ def render(record: dict, relay_rows: list[dict[str, object]]) -> str:
         f"- Script guards: `{migration['script_guard_migrated_count']}`",
         f"- Developer C pipeline: `{migration['developer_pipeline_migrated_count']}`",
         "",
-        "## Preserved implicit consumers",
+        "## Pre-relay preserved implicit consumers",
         "",
     ]
-    for key, value in record["preserved_implicit_classes"].items():
+    for key, value in record["pre_relay_preserved_implicit_classes"].items():
+        lines.append(f"- `{key}`: `{value}`")
+    lines += [
+        "", "## Authorized post-relay preserved implicit consumers", "",
+    ]
+    for key, value in record[
+            "authorized_post_relay_preserved_implicit_classes"].items():
         lines.append(f"- `{key}`: `{value}`")
     lines += [
         "", "## Cross-lane relay", "",
-        "| Path | Line | Expected artifact | Falsifier |",
+        "| Path | Line | Recipe | Compiler |",
         "| --- | ---: | --- | --- |",
     ]
-    for row in relay_rows:
+    for row in relay["authorized_site_manifest"]:
         lines.append(
-            f"| `{row['path']}` | {row['line']} | `{row['expected_artifact']}` | "
-            f"`{row['falsifier']}` |"
+            f"| `{row['path']}` | {row['line']} | `{row['recipe']}` | "
+            f"`{row['compiler_token']}` |"
         )
     lines += [
         "",
-        "Patch 22.2 remains open: the Cranelift-owned no-op migration is",
-        "complete, but the roadmap exit gate forbids DONE status or a later",
-        "default flip until these owning Stdlib corrections merge. This patch",
+        "Patch 22.2 remains open. This authority accepts only the exact pre-relay",
+        "inventory or the exact checked 15-site post-relay inventory, allowing",
+        "the owning Stdlib correction to publish without treating partial or",
+        "unrelated invocation drift as completion. The default flip remains",
+        "forbidden until that owning PR actually merges. This authority patch",
         "does not edit Stdlib or change the MIR-to-C default.",
         "",
     ]
@@ -202,15 +287,18 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("command", choices=("validate", "project", "check-review"))
     args = parser.parse_args()
-    record, relay_rows = validate()
-    expected = render(record, relay_rows)
+    record, _, relay_applied = validate()
+    expected = render(record)
     if args.command == "project":
         REVIEW.write_text(expected, encoding="utf-8")
     elif args.command == "check-review":
         require(REVIEW.is_file() and REVIEW.read_text(encoding="utf-8") == expected,
                 "generated migration review is stale; run project")
     else:
-        print(f"{GUARD_L1}: ok (60 migrated, 15 Stdlib relay rows pending)")
+        print(
+            f"{GUARD_L1}: ok (60 migrated, relay state="
+            f"{'authorized_post_relay' if relay_applied else 'pre_relay'})"
+        )
 
 
 if __name__ == "__main__":

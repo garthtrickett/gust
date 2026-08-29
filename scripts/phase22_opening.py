@@ -301,12 +301,15 @@ def validate() -> dict:
     rows = scan_invocations()
     summary = scan_summary(rows)
     migration = registry.get("phase22_explicit_c_migration")
-    expected_inventory = (
-        migration.get("current_invocation_inventory")
+    expected_inventories = (
+        (
+            migration.get("current_invocation_inventory"),
+            migration.get("authorized_post_relay_invocation_inventory"),
+        )
         if isinstance(migration, dict)
-        else record.get("invocation_inventory")
+        else (record.get("invocation_inventory"),)
     )
-    require(summary == expected_inventory,
+    require(summary in expected_inventories,
             f"executable compiler invocation inventory drifted: {summary!r}")
     require(summary["unclassified_count"] == 0,
             "an executable compiler invocation is unclassified")

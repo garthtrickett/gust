@@ -56,7 +56,7 @@ def validate() -> dict:
             "observed main drifted")
     require(record.get("predecessor_authority") ==
             predecessor.get("contract_version") ==
-            "phase22_explicit_c_migration_v1",
+            "phase22_explicit_c_migration_v2",
             "predecessor authority drifted")
     require(record.get("route_contract") == {
         "default_backend": "mir_to_c_unchanged",
@@ -80,7 +80,10 @@ def validate() -> dict:
 
     scanner = opening_module()
     summary = scanner.scan_summary(scanner.scan_invocations())
-    require(summary == predecessor.get("current_invocation_inventory"),
+    require(summary in (
+                predecessor.get("current_invocation_inventory"),
+                predecessor.get("authorized_post_relay_invocation_inventory"),
+            ),
             f"successor invocation inventory drifted: {summary!r}")
     migration = predecessor.get("migration", {})
     require(migration.get("opening_implicit_count") +
