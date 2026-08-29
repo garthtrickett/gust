@@ -2041,7 +2041,7 @@
       "reason_code": "source_or_type_failure",
       "diagnostic_class": "canonical_mir_verification_error",
       "diagnostic": "Native backend canonical MIR verification failed: unsupported top-level statement in module/import cohort",
-      "source_line": 238,
+      "source_line": 241,
       "source_column": 1,
       "failure_stage": "before_driver_discovery",
       "artifact": "absent",

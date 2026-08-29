@@ -122,7 +122,7 @@ Generated from `scripts/cranelift_feature_registry.json` by
 
 ## Full compiler explicit-Cranelift baseline
 
-- Source: `compiler/test_runner_entry.gst:238:1`
+- Source: `compiler/test_runner_entry.gst:241:1`
 - Exit: `1`; artifact: `absent`
 - Decision: `source_or_type_failure` / `source_or_type_failure`
 - Diagnostic class: `canonical_mir_verification_error`
