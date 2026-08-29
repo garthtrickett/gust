@@ -34,10 +34,8 @@ def validate() -> dict:
     require(isinstance(record, dict), "Patch 22.4 authority is missing")
     require(record.get("contract_version") == "phase22_default_native_package_v1",
             "contract version drifted")
-    require(record.get("status") ==
-            "qualification_complete_patch22_2_relay_pending" and
-            record.get("next_action") ==
-            "patch22_5_explicit_preflip_default_cohort_qualification",
+    require(record.get("status") == "qualification_complete" and
+            record.get("next_action") == "patch22_6_default_route_flip",
             "status or next action drifted")
     require(record.get("observed_main_sha") ==
             "db4b58bdd78dde41226f9a1e110d555a3c7f5d5d",
@@ -46,6 +44,11 @@ def validate() -> dict:
             registry.get("phase22_native_implicit_output", {}).get("contract_version") ==
             "phase22_native_implicit_output_v1",
             "predecessor authority drifted")
+    require(registry.get("phase22_native_implicit_output", {}).get("status") ==
+            "implementation_complete" and
+            registry.get("phase22_explicit_c_migration", {}).get("status") ==
+            "complete_post_relay",
+            "post-relay predecessor status drifted")
     require(registry.get("phase17_runtime_package_authority", {}).get("version") ==
             "phase17_runtime_package_authority_v1",
             "Phase 17 runtime-package authority drifted")
@@ -134,11 +137,13 @@ def validate() -> dict:
 
     task = TASK.read_text(encoding="utf-8")
     for row in (
-        "- [ ] Patch 22.2 — Explicit C Route and No-op Consumer Migration",
-        "- [ ] Patch 22.3 — Native Implicit-Output Contract",
-        "- [ ] Patch 22.4 — Default-Native Package and Install Qualification",
+        "- [x] Patch 22.2 — Explicit C Route and No-op Consumer Migration — DONE",
+        "- [x] Patch 22.2b — Post-Relay Prerequisite Reconciliation — DONE",
+        "- [x] Patch 22.3 — Native Implicit-Output Contract — DONE",
+        "- [x] Patch 22.4 — Default-Native Package and Install Qualification — DONE",
+        "- [ ] Patch 22.6 — Cranelift Default Route Flip",
     ):
-        require(row in task, "roadmap rows must remain open while the owning relay is pending")
+        require(row in task, "post-relay roadmap boundary drifted")
     levels = json.loads(LEVELS.read_text(encoding="utf-8"))["guards"]
     require(levels.get(GUARD_L1) == 1 and levels.get(GUARD_L2) == 2,
             "guard levels drifted")
@@ -206,9 +211,9 @@ def render(record: dict) -> str:
         f"- Oracle: `{qualification['oracle']}`",
         "",
         "This is a qualification of the existing three-artifact package, not a",
-        "package-layout or default-route change. Patch 22.2–22.4 remain roadmap-open",
-        "until the owning Stdlib explicit-C relay lands. Patch 22.5 may continue",
-        "through explicit routes; Patch 22.6 remains blocked.",
+        "package-layout or default-route change. The owning Stdlib explicit-C",
+        "relay has merged and Patches 22.2–22.4 are complete. Patch 22.6 remains",
+        "unchecked; this reconciliation does not change the default route.",
         "",
     ]
     return "\n".join(lines)

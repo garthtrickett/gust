@@ -38,7 +38,7 @@ def opening_module():
     return module
 
 
-def validate() -> tuple[dict, list[dict[str, object]], bool]:
+def validate() -> tuple[dict, list[dict[str, object]]]:
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     opening = registry.get("phase22_opening", {})
     require(opening.get("contract_version") == "phase22_opening_v2",
@@ -47,10 +47,8 @@ def validate() -> tuple[dict, list[dict[str, object]], bool]:
     require(isinstance(record, dict), "Patch 22.2 authority is missing")
     require(record.get("contract_version") == "phase22_explicit_c_migration_v2",
             "contract version drifted")
-    require(record.get("status") ==
-            "cranelift_owned_migration_complete_relay_publication_authorized" and
-            record.get("next_action") ==
-            "stdlib_owned_consumer_relay_publication",
+    require(record.get("status") == "complete_post_relay" and
+            record.get("next_action") == "patch22_6_default_route_flip",
             "status or next action drifted")
     require(record.get("observed_main_sha") ==
             "d7c0a733c211a202bda417fb7d5b8ceb12ced415",
@@ -73,9 +71,8 @@ def validate() -> tuple[dict, list[dict[str, object]], bool]:
     post_relay_inventory = record.get(
         "authorized_post_relay_invocation_inventory"
     )
-    require(summary in (pre_relay_inventory, post_relay_inventory),
-            f"current invocation inventory drifted: {summary!r}")
-    relay_applied = summary == post_relay_inventory
+    require(summary == post_relay_inventory,
+            f"merged post-relay invocation inventory drifted: {summary!r}")
     migration = record.get("migration", {})
     has_implicit_output_successor = "phase22_native_implicit_output" in registry
     has_preflip_successor = "phase22_preflip_default_cohort" in registry
@@ -116,10 +113,7 @@ def validate() -> tuple[dict, list[dict[str, object]], bool]:
     relay_rows = [row for row in implicit if row["owner"] == "stdlib"]
     stdlib_rows = [row for row in rows if row["owner"] == "stdlib"]
     relay = record.get("cross_lane_relay", {})
-    expected_relay_count = (
-        relay.get("authorized_post_relay_consumer_count")
-        if relay_applied else relay.get("consumer_count")
-    )
+    expected_relay_count = relay.get("authorized_post_relay_consumer_count")
     require(len(relay_rows) == expected_relay_count and
             relay.get("consumer_count") == 15 and
             relay.get("authorized_post_relay_consumer_count") == 0,
@@ -140,16 +134,21 @@ def validate() -> tuple[dict, list[dict[str, object]], bool]:
     require(len(site_manifest) == len(expected_sites) == 15 and
             expected_sites.issubset(live_sites),
             "cross-lane relay site manifest drifted")
-    require(all(live_sites[site]["selection"] ==
-                ("explicit_c" if relay_applied else "implicit_default")
+    require(all(live_sites[site]["selection"] == "explicit_c"
                 for site in expected_sites),
             "an authorized relay site did not make the exact route transition")
-    require(relay.get("status") ==
-            "authorized_for_owning_lane_publication" and
+    require(relay.get("status") == "merged_on_main" and
             relay.get("owner") == "stdlib" and
+            relay.get("pull_request") == 256 and
+            relay.get("exact_head_sha") ==
+            "884cb57aee466da24410ade1a9bc7ddc9e592dd7" and
+            relay.get("merged_main_sha") ==
+            "8045704ca5632e3ad096d1cd25eac12c57a4b28b" and
+            relay.get("pull_request_success_count") == 73 and
+            relay.get("unresolved_review_thread_count") == 0 and
             relay.get("expected_selection") == "explicit_mir_to_c" and
             relay.get("evidence") ==
-            "checked_15_site_line_only_owning_lane_diff",
+            "owning_pr_exact_head_complete_pull_request_population",
             "cross-lane relay status drifted")
     pre_selections = pre_relay_inventory["selection_counts"]
     post_selections = post_relay_inventory["selection_counts"]
@@ -173,15 +172,14 @@ def validate() -> tuple[dict, list[dict[str, object]], bool]:
             relay["consumer_count"] and
             "stdlib_owned_C_or_diagnostic_guard" not in post_classes,
             "authorized post-relay inventory is not the exact 15-site delta")
-    if relay_applied:
-        owner_selections = relay.get("authorized_post_relay_owner_selections", {})
-        require(len(stdlib_rows) == 23 and
-                sum(row["selection"] == "explicit_c" for row in stdlib_rows) ==
-                owner_selections.get("explicit_c") == 20 and
-                sum(row["selection"] == "explicit_cranelift"
-                    for row in stdlib_rows) ==
-                owner_selections.get("explicit_cranelift") == 3,
-                "authorized post-relay Stdlib selection set drifted")
+    owner_selections = relay.get("authorized_post_relay_owner_selections", {})
+    require(len(stdlib_rows) == 23 and
+            sum(row["selection"] == "explicit_c" for row in stdlib_rows) ==
+            owner_selections.get("explicit_c") == 20 and
+            sum(row["selection"] == "explicit_cranelift"
+                for row in stdlib_rows) ==
+            owner_selections.get("explicit_cranelift") == 3,
+            "merged post-relay Stdlib selection set drifted")
 
     entry = ENTRY.read_text(encoding="utf-8")
     for marker in (
@@ -198,11 +196,16 @@ def validate() -> tuple[dict, list[dict[str, object]], bool]:
             "bootstrap bridge does not admit both explicit C spellings")
 
     task = TASK.read_text(encoding="utf-8")
-    require("- [ ] Patch 22.2 — Explicit C Route and No-op Consumer Migration" in task,
-            "Patch 22.2 must remain open while the owning Stdlib relay is pending")
+    require("- [x] Patch 22.2 — Explicit C Route and No-op Consumer Migration — DONE"
+            in task,
+            "TASK.md does not record Patch 22.2 completion")
     require("- [x] Patch 22.2a — Cross-Lane Explicit-C Relay Publication Authority — DONE"
             in task,
             "TASK.md does not record the relay-publication authority correction")
+    require("- [x] Patch 22.2b — Post-Relay Prerequisite Reconciliation — DONE"
+            in task and
+            "- [ ] Patch 22.6 — Cranelift Default Route Flip" in task,
+            "TASK.md does not preserve the post-relay/default-flip boundary")
     levels = json.loads(LEVELS.read_text(encoding="utf-8"))["guards"]
     require(levels.get(GUARD_L1) == 1 and levels.get(GUARD_L2) == 2,
             "guard levels drifted")
@@ -217,7 +220,7 @@ def validate() -> tuple[dict, list[dict[str, object]], bool]:
     boundary = record.get("boundary", {})
     require(boundary and all(value is False for value in boundary.values()),
             "Patch 22.2 widened beyond the recorded boundary")
-    return record, relay_rows, relay_applied
+    return record, relay_rows
 
 
 def render(record: dict) -> str:
@@ -239,12 +242,16 @@ def render(record: dict) -> str:
         f"- Explicit `c`: `{record['route_contract']['explicit_c']}`",
         f"- Cranelift-owned migrations: `{migration['cranelift_owned_migrated_count']}`",
         f"- Pre-relay implicit consumers: `{pre_inventory['selection_counts']['implicit_default']}`",
-        f"- Authorized post-relay implicit consumers: `{migration['authorized_post_relay_implicit_count']}`",
+        f"- Merged post-relay implicit consumers: `{migration['authorized_post_relay_implicit_count']}`",
         f"- Pre-relay explicit C consumers: `{pre_inventory['selection_counts']['explicit_c']}`",
-        f"- Authorized post-relay explicit C consumers: `{post_inventory['selection_counts']['explicit_c']}`",
+        f"- Merged post-relay explicit C consumers: `{post_inventory['selection_counts']['explicit_c']}`",
         f"- Pre-relay implicit Stdlib-owned consumers: `{relay['consumer_count']}`",
-        f"- Authorized post-relay implicit Stdlib-owned consumers: `{relay['authorized_post_relay_consumer_count']}`",
+        f"- Merged post-relay implicit Stdlib-owned consumers: `{relay['authorized_post_relay_consumer_count']}`",
         f"- Relay status: `{relay['status']}`",
+        f"- Relay PR: `#{relay['pull_request']}` at `{relay['exact_head_sha']}`",
+        f"- Relay merged main: `{relay['merged_main_sha']}`",
+        f"- Relay PR workflows: `{relay['pull_request_success_count']}` successful",
+        f"- Relay unresolved review threads: `{relay['unresolved_review_thread_count']}`",
         "",
         "## Migration classes",
         "",
@@ -259,7 +266,7 @@ def render(record: dict) -> str:
     for key, value in record["pre_relay_preserved_implicit_classes"].items():
         lines.append(f"- `{key}`: `{value}`")
     lines += [
-        "", "## Authorized post-relay preserved implicit consumers", "",
+        "", "## Merged post-relay preserved implicit consumers", "",
     ]
     for key, value in record[
             "authorized_post_relay_preserved_implicit_classes"].items():
@@ -276,12 +283,12 @@ def render(record: dict) -> str:
         )
     lines += [
         "",
-        "Patch 22.2 remains open. This authority accepts only the exact pre-relay",
-        "inventory or the exact checked 15-site post-relay inventory, allowing",
-        "the owning Stdlib correction to publish without treating partial or",
-        "unrelated invocation drift as completion. The default flip remains",
-        "forbidden until that owning PR actually merges. This authority patch",
-        "does not edit Stdlib or change the MIR-to-C default.",
+        "Patch 22.2 is complete. The owning Stdlib relay merged with its complete",
+        "exact-head pull-request population successful and zero review threads.",
+        "This authority now accepts only the exact merged 15-site post-relay",
+        "inventory; the earlier pre-relay inventory is historical and no longer",
+        "admitted as repository state. Patch 22.6 remains unchecked, and this",
+        "reconciliation does not edit Stdlib or change the MIR-to-C default.",
         "",
     ]
     return "\n".join(lines)
@@ -291,7 +298,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("command", choices=("validate", "project", "check-review"))
     args = parser.parse_args()
-    record, _, relay_applied = validate()
+    record, _ = validate()
     expected = render(record)
     if args.command == "project":
         REVIEW.write_text(expected, encoding="utf-8")
@@ -300,8 +307,7 @@ def main() -> None:
                 "generated migration review is stale; run project")
     else:
         print(
-            f"{GUARD_L1}: ok (60 migrated, relay state="
-            f"{'authorized_post_relay' if relay_applied else 'pre_relay'})"
+            f"{GUARD_L1}: ok (60 migrated, relay state=merged_post_relay)"
         )
 
 

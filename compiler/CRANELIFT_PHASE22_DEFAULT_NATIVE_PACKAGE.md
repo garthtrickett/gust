@@ -3,8 +3,8 @@
 Generated from `scripts/cranelift_feature_registry.json`. Do not edit by hand.
 
 - Contract: `phase22_default_native_package_v1`
-- Status: `qualification_complete_patch22_2_relay_pending`
-- Next action: `patch22_5_explicit_preflip_default_cohort_qualification`
+- Status: `qualification_complete`
+- Next action: `patch22_6_default_route_flip`
 - Observed main: `db4b58bdd78dde41226f9a1e110d555a3c7f5d5d`
 - Predecessor: `phase22_native_implicit_output_v1`
 
@@ -35,6 +35,6 @@ Generated from `scripts/cranelift_feature_registry.json`. Do not edit by hand.
 - Oracle: `explicit_mir_to_c`
 
 This is a qualification of the existing three-artifact package, not a
-package-layout or default-route change. Patch 22.2–22.4 remain roadmap-open
-until the owning Stdlib explicit-C relay lands. Patch 22.5 may continue
-through explicit routes; Patch 22.6 remains blocked.
+package-layout or default-route change. The owning Stdlib explicit-C
+relay has merged and Patches 22.2–22.4 are complete. Patch 22.6 remains
+unchecked; this reconciliation does not change the default route.

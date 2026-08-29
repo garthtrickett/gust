@@ -39,7 +39,8 @@ window with one authoritative `Cranelift Historical Full` qualification on the
 exact merged final post-flip implementation main. The complete registry-derived
 job population must succeed and zero material review findings may remain
 unresolved. This amendment changes only the stability evidence cardinality and
-calendar policy; Patch 22.2 remains the active implementation boundary.
+calendar policy. Patch 22.2 was the active implementation boundary when the
+amendment was recorded; subsequent completion is governed by the live Status.
 
 Activation is Cranelift-only. It does not authorize Phase 23, MIR-to-C
 deprecation or removal, edits to `TASK_STDLIB.md`, Stdlib implementation, or
@@ -83,10 +84,11 @@ Out of scope:
 
 - [x] Patch 22.0 — Phase 22 Roadmap Activation — DONE
 - [x] Patch 22.1 — Opening Default-Route and Consumer Inventory — DONE
-- [ ] Patch 22.2 — Explicit C Route and No-op Consumer Migration
+- [x] Patch 22.2 — Explicit C Route and No-op Consumer Migration — DONE
 - [x] Patch 22.2a — Cross-Lane Explicit-C Relay Publication Authority — DONE
-- [ ] Patch 22.3 — Native Implicit-Output Contract
-- [ ] Patch 22.4 — Default-Native Package and Install Qualification
+- [x] Patch 22.2b — Post-Relay Prerequisite Reconciliation — DONE
+- [x] Patch 22.3 — Native Implicit-Output Contract — DONE
+- [x] Patch 22.4 — Default-Native Package and Install Qualification — DONE
 - [x] Patch 22.5 — Pre-flip Default-Cohort Qualification — DONE
 - [ ] Patch 22.6 — Cranelift Default Route Flip
 - [ ] Patch 22.6a — Default-Route Bootstrap Seed Reconvergence
@@ -201,6 +203,19 @@ pre-relay inventory, the checked owning-lane correction is authorized to
 validate against the exact post-relay inventory after rebase, generated
 authority distinguishes authorization from merge completion, and Patch 22.2
 and the default flip remain open until the owning Stdlib PR actually merges.
+
+## Patch 22.2b — Post-Relay Prerequisite Reconciliation
+
+After the owning Stdlib relay merges, replace the transition authority's
+two-state acceptance with the exact merged post-relay inventory. Record the
+owning PR head, merged-main commit, complete pull-request workflow population,
+and review-thread result. Reconcile the generated Patch 22.2–22.5 authorities
+and roadmap status without changing compiler routing or beginning the flip.
+
+**Exit Gate:** the live invocation scan equals the exact authorized post-relay
+inventory; zero Stdlib-owned C-dependent consumer remains implicit; the owning
+relay evidence is recorded; Patches 22.2–22.5 are complete; Patch 22.6 remains
+unchecked; and every affected generated projection is current.
 
 ## Patch 22.3 — Native Implicit-Output Contract
 

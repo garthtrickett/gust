@@ -3453,8 +3453,8 @@
   },
   "phase22_explicit_c_migration": {
     "contract_version": "phase22_explicit_c_migration_v2",
-    "status": "cranelift_owned_migration_complete_relay_publication_authorized",
-    "next_action": "stdlib_owned_consumer_relay_publication",
+    "status": "complete_post_relay",
+    "next_action": "patch22_6_default_route_flip",
     "review_view": "compiler/CRANELIFT_PHASE22_EXPLICIT_C_MIGRATION.md",
     "observed_main_sha": "d7c0a733c211a202bda417fb7d5b8ceb12ced415",
     "opening_authority": "phase22_opening_v2",
@@ -3533,8 +3533,13 @@
       "invocation_parser_probe": 2
     },
     "cross_lane_relay": {
-      "status": "authorized_for_owning_lane_publication",
+      "status": "merged_on_main",
       "owner": "stdlib",
+      "pull_request": 256,
+      "exact_head_sha": "884cb57aee466da24410ade1a9bc7ddc9e592dd7",
+      "merged_main_sha": "8045704ca5632e3ad096d1cd25eac12c57a4b28b",
+      "pull_request_success_count": 73,
+      "unresolved_review_thread_count": 0,
       "consumer_count": 15,
       "authorized_post_relay_consumer_count": 0,
       "authorized_post_relay_owner_selections": {
@@ -3565,7 +3570,7 @@
         {"path": "scripts/stdlib_s1_composition_parity.sh", "line": 30, "recipe": "none", "compiler_token": "./gust"}
       ],
       "expected_selection": "explicit_mir_to_c",
-      "evidence": "checked_15_site_line_only_owning_lane_diff",
+      "evidence": "owning_pr_exact_head_complete_pull_request_population",
       "required_before": "patch22_2_done_and_any_later_default_flip_patch"
     },
     "boundary": {
@@ -3580,8 +3585,8 @@
   },
   "phase22_native_implicit_output": {
     "contract_version": "phase22_native_implicit_output_v1",
-    "status": "implementation_complete_patch22_2_relay_pending",
-    "next_action": "merge_stdlib_owned_patch22_2_relay_then_mark_22_2_and_22_3_done",
+    "status": "implementation_complete",
+    "next_action": "patch22_6_default_route_flip",
     "review_view": "compiler/CRANELIFT_PHASE22_NATIVE_IMPLICIT_OUTPUT.md",
     "observed_main_sha": "f648de3fb200f83735b0a86ca1d843500c6401aa",
     "predecessor_authority": "phase22_explicit_c_migration_v2",
@@ -3628,8 +3633,8 @@
   },
   "phase22_default_native_package": {
     "contract_version": "phase22_default_native_package_v1",
-    "status": "qualification_complete_patch22_2_relay_pending",
-    "next_action": "patch22_5_explicit_preflip_default_cohort_qualification",
+    "status": "qualification_complete",
+    "next_action": "patch22_6_default_route_flip",
     "review_view": "compiler/CRANELIFT_PHASE22_DEFAULT_NATIVE_PACKAGE.md",
     "observed_main_sha": "db4b58bdd78dde41226f9a1e110d555a3c7f5d5d",
     "predecessor_authority": "phase22_native_implicit_output_v1",
@@ -3683,8 +3688,8 @@
   },
   "phase22_preflip_default_cohort": {
     "contract_version": "phase22_preflip_default_cohort_v1",
-    "status": "qualification_complete_default_flip_blocked_on_explicit_c_relay",
-    "next_action": "patch22_6_after_stdlib_relay_merge",
+    "status": "qualification_complete_default_flip_prerequisites_satisfied",
+    "next_action": "patch22_6_default_route_flip",
     "review_view": "compiler/CRANELIFT_PHASE22_PREFLIP_DEFAULT_COHORT.md",
     "observed_main_sha": "76192f27c73b9caf7ec5a610624996a9337d09f2",
     "predecessor_authority": "phase22_default_native_package_v1",

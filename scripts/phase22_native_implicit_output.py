@@ -46,10 +46,8 @@ def validate() -> dict:
     require(isinstance(record, dict), "Patch 22.3 authority is missing")
     require(record.get("contract_version") == "phase22_native_implicit_output_v1",
             "contract version drifted")
-    require(record.get("status") ==
-            "implementation_complete_patch22_2_relay_pending" and
-            record.get("next_action") ==
-            "merge_stdlib_owned_patch22_2_relay_then_mark_22_2_and_22_3_done",
+    require(record.get("status") == "implementation_complete" and
+            record.get("next_action") == "patch22_6_default_route_flip",
             "status or next action drifted")
     require(record.get("observed_main_sha") ==
             "f648de3fb200f83735b0a86ca1d843500c6401aa",
@@ -80,19 +78,21 @@ def validate() -> dict:
 
     scanner = opening_module()
     summary = scanner.scan_summary(scanner.scan_invocations())
-    require(summary in (
-                predecessor.get("current_invocation_inventory"),
-                predecessor.get("authorized_post_relay_invocation_inventory"),
-            ),
-            f"successor invocation inventory drifted: {summary!r}")
+    require(summary ==
+            predecessor.get("authorized_post_relay_invocation_inventory"),
+            f"successor merged invocation inventory drifted: {summary!r}")
     migration = predecessor.get("migration", {})
     require(migration.get("opening_implicit_count") +
             migration.get("patch22_evidence_implicit_count") -
             migration.get("current_implicit_count") ==
             migration.get("cranelift_owned_migrated_count") == 60,
             "predecessor migration accounting drifted")
-    require(predecessor.get("cross_lane_relay", {}).get("consumer_count") == 15,
-            "the pending Stdlib-owned relay drifted")
+    require(predecessor.get("status") == "complete_post_relay" and
+            predecessor.get("cross_lane_relay", {}).get("status") ==
+            "merged_on_main" and
+            predecessor.get("cross_lane_relay", {}).get(
+                "authorized_post_relay_consumer_count") == 0,
+            "the merged Stdlib-owned relay drifted")
 
     entry = ENTRY.read_text(encoding="utf-8")
     for marker in (
@@ -118,11 +118,14 @@ def validate() -> dict:
     for marker in (".phase10.bundle", ".phase10.request",
                    "mir_native_scalar_source_compile("):
         require(marker in source_route, f"inherited native source-route marker is missing: {marker}")
-    require("- [ ] Patch 22.2 — Explicit C Route and No-op Consumer Migration" in
-            TASK.read_text(encoding="utf-8") and
-            "- [ ] Patch 22.3 — Native Implicit-Output Contract" in
-            TASK.read_text(encoding="utf-8"),
-            "22.2 and 22.3 must remain open while the owning relay is pending")
+    task = TASK.read_text(encoding="utf-8")
+    require("- [x] Patch 22.2 — Explicit C Route and No-op Consumer Migration — DONE"
+            in task and
+            "- [x] Patch 22.2b — Post-Relay Prerequisite Reconciliation — DONE"
+            in task and
+            "- [x] Patch 22.3 — Native Implicit-Output Contract — DONE" in task and
+            "- [ ] Patch 22.6 — Cranelift Default Route Flip" in task,
+            "22.2/22.3 completion or the 22.6 boundary drifted")
 
     levels = json.loads(LEVELS.read_text(encoding="utf-8"))["guards"]
     require(levels.get(GUARD_L1) == 1 and levels.get(GUARD_L2) == 2,
@@ -188,8 +191,9 @@ def render(record: dict) -> str:
         "Patch 22.3 changes only explicit Cranelift output inference. Bare Gust",
         "remains MIR-to-C, the explicit output path remains opaque, and the existing",
         "native source route and Phase 9G transaction retain artifact ownership.",
-        "Patch 22.2 and 22.3 remain roadmap-open until the owning Stdlib consumer",
-        "relay lands; no later default-flip patch is thereby authorized.",
+        "The owning Stdlib relay has merged and Patch 22.3 is complete. The",
+        "compiler default remains MIR-to-C; Patch 22.6 is still unchecked and",
+        "this reconciliation does not itself authorize a partial route flip.",
         "",
     ]
     return "\n".join(lines)
