@@ -159,8 +159,15 @@ def check() -> None:
     }, "authoritative complete-suite evidence drifted or is incomplete")
 
     task = TASK.read_text(encoding="utf-8")
-    phase21 = task.split("## Status", 1)[1].split(
+    immutable_marker = (
+        "# Immutable Phase 21 Completion Record — Tenant-Scoped Typed Queries "
+        "and Cranelift Self-Hosting Qualification"
+    )
+    require(immutable_marker in task,
+            "TASK.md does not preserve the immutable Phase 21 record")
+    phase21_record = task.split(immutable_marker, 1)[1].split(
         "# Immutable Phase 20 Completion Record", 1)[0]
+    phase21 = phase21_record.split("## Status", 1)[1]
     rows = re.findall(r"^- \[([ x])\] Patch (21\.\d+[a-z]?) — .+$",
                       phase21, re.MULTILINE)
     require([patch for _, patch in rows] == EXPECTED_PATCHES,

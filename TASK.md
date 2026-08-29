@@ -1,4 +1,4 @@
-# Phase 21 — Tenant-Scoped Typed Queries and Cranelift Self-Hosting Qualification
+# Phase 22 — Cranelift Default Backend Transition
 
 **Lane:** Cranelift. Branches follow the existing
 `codex/phase<N>-<patch>-<slug>` pattern.
@@ -6,6 +6,311 @@
 Workflow, Monitoring, Merge, Phase Completion, Runner, and Git Authorization
 policies are defined in `AGENTS.md`. Shared semantic ownership is defined in
 `docs/SHARED_SEMANTIC_ZONE.md`. This document is the active Cranelift roadmap.
+
+Phase 22 changes the compiler's default route from MIR-to-C to Cranelift while
+retaining MIR-to-C as the semantic oracle and an explicit supported backend.
+The transition is deliberately staged: first inventory every implicit backend
+consumer, then make C-dependent repository callers explicit while the default
+is still C, then establish native output and package contracts, and only then
+flip the default. The phase does not delete, deprecate, or weaken MIR-to-C.
+
+The phase adds no Gust source semantics, canonical-MIR operation, ABI/layout
+rule, runtime symbol, target, linker, or native capability. If the live default
+cohort exposes such a requirement, that work is outside this phase and must be
+reported under the shared-zone stop conditions rather than hidden in routing.
+
+## Roadmap Activation
+
+Phase 21 formally closed on 2026-08-29. `Cranelift Historical Full` run
+`33216889936`, event `workflow_dispatch`, completed `success` with 18/18 jobs on
+exact corrected implementation main
+`acd9e13841215d3c1aaf6e56589d6bacd45c6d4e`. The generated closure PR #247
+then completed 103/103 strict exact-head `pull_request` workflows with zero
+unresolved non-outdated review threads and merged as exact main
+`e0951f1fbe1bcb8720b948c0aa97639068f35d95`.
+
+On 2026-08-29 the operator explicitly activated Phase 22 roadmap authoring from
+that exact main and directed the lane to qualify and merge the atomic roadmap
+PR before continuing through the activated Phase Completion Loop. This roadmap
+records that activation through Patch 22.9.
+
+Activation is Cranelift-only. It does not authorize Phase 23, MIR-to-C
+deprecation or removal, edits to `TASK_STDLIB.md`, Stdlib implementation, or
+compiler-owned CR-15 work.
+
+## Phase Boundary
+
+In scope:
+
+- the backend-selection default and its CLI/help/documentation contract;
+- the retained `mir-to-c` spelling plus an additive `c` alias for the retained
+  oracle route described by `docs/ROADMAP_TAIL.md`;
+- a deterministic compiler-owned executable-output intent when Cranelift is
+  selected without `-o`, with explicit `-o` remaining authoritative;
+- complete classification and migration of repository callers that currently
+  depend on an implicit C-emission default;
+- native worker/runtime packaging, installation, discovery, failure
+  diagnostics, cleanup, and atomic output preservation for the default route;
+- default-versus-explicit Cranelift identity and pre-flip-versus-explicit-C
+  byte identity;
+- CI and release qualification, an exact post-flip stability window, and a
+  generated closure record backed by successful Level 3 evidence;
+- one isolated bootstrap-seed reconvergence after the compiler entry source has
+  reached its final Phase 22 form.
+
+Out of scope:
+
+- deleting, freezing, or deprecating MIR-to-C, or reducing its focused
+  differential coverage;
+- changing accepted Gust-program meaning, diagnostics from the shared semantic
+  pipeline, canonical MIR, Cranelift lowering, ABI/layout, runtime symbols,
+  target policy, linker policy, or Phase 9G artifact ownership;
+- adding fallback, retry-through-C, environment-selected backend routing,
+  worker PATH search, auto-build, download, or shell-command execution;
+- making the native compiler the bootstrap seed or claiming that Gust no longer
+  requires C to build itself; those are later roadmap phases;
+- editing Stdlib-owned roadmaps, guards, workflows, registries, APIs, or CR-15;
+- beginning Phase 23.
+
+## Status
+
+- [x] Patch 22.0 — Phase 22 Roadmap Activation — DONE
+- [ ] Patch 22.1 — Opening Default-Route and Consumer Inventory
+- [ ] Patch 22.2 — Explicit C Route and No-op Consumer Migration
+- [ ] Patch 22.3 — Native Implicit-Output Contract
+- [ ] Patch 22.4 — Default-Native Package and Install Qualification
+- [ ] Patch 22.5 — Pre-flip Default-Cohort Qualification
+- [ ] Patch 22.6 — Cranelift Default Route Flip
+- [ ] Patch 22.6a — Default-Route Bootstrap Seed Reconvergence
+- [ ] Patch 22.7 — Post-flip CI, Documentation, and Rollback Qualification
+- [ ] Patch 22.8 — Default-Native Stability Window
+- [ ] Patch 22.9 — Phase 22 Closure
+
+Status rows are machine-parsed. Keep each row as
+`- [ ] Patch 22.N — <Title>` or `- [x] Patch 22.N — <Title> — DONE`; an
+inserted amendment may append one lowercase letter to `N`.
+
+## Immutable Contracts
+
+- MIR-to-C remains the semantic oracle throughout Phase 22. Explicit
+  `--backend mir-to-c` and `--backend c` select the same retained code-generation
+  path and remain byte-identical for accepted source.
+- Cranelift never falls back to MIR-to-C. Default-native and explicit-native
+  failure have the same classification, diagnostic, cleanup, and output
+  preservation behavior.
+- Bare default-native and explicit `--backend cranelift` use the same shared
+  resolver, parser, typechecker, canonical-MIR, worker, runtime-package, target,
+  linker, and Phase 9G publication route.
+- The backend is selected only after the shared semantic pipeline. The default
+  flip changes routing policy, not the meaning or validity of a Gust program.
+- A pre-existing output survives every rejection or failed native build
+  byte-for-byte. Transient requests, bundles, objects, and temporary executables
+  are cleaned under existing Phase 9G authority.
+- The repository's C-dependent bootstrap and oracle callers become explicit
+  while C is still the default. No compiler-owned consumer is migrated in the
+  same patch that changes the default.
+- A consumer owned by the Stdlib lane is classified and relayed, not edited by
+  the Cranelift lane. The default flip cannot land with an unclassified or
+  unmigrated required consumer.
+- `make gust` and `make bootstrap` retain their C bootstrap chain. Phase 22 does
+  not claim the Phase 25 native bootstrap-seed outcome.
+- `gust_v4.c` is generated only in the isolated 22.6a patch after stage-2 and
+  stage-3 C are byte-identical.
+- No compiler-module, fixture-name, source-spelling, or stdlib-type exception is
+  permitted.
+
+## Patch 22.0 — Phase 22 Roadmap Activation
+
+**Purpose**
+
+Activate a bootstrap-safe, evidence-gated default-backend transition from the
+exact Phase 21 closure without changing compiler behavior.
+
+**Steps**
+
+- Replace the active Phase 21 roadmap with this Phase 22 roadmap while
+  preserving Phase 21 as an immutable completion record.
+- Record the exact predecessor Historical Full, closure PR head, strict
+  pull-request population, review state, and merge commit.
+- Preserve prior-phase roadmap and closure guards by retargeting only their
+  `TASK.md` lookup to the immutable Phase 21 section.
+- Make no compiler, MIR, backend, ABI/layout, runtime-symbol, target, linker,
+  package, default-route, seed, Stdlib, or CR-15 change.
+
+**Test Level:** Level 1 roadmap and predecessor-closure compatibility.
+
+**Exit Gate**
+
+The active roadmap begins with Phase 22, every Phase 21 status and closure fact
+remains mechanically valid in its immutable record, the exact Phase 22 patch
+order and exclusions are reviewable, and all exact-head pull-request workflows
+for the roadmap PR succeed with no unresolved review conversation.
+
+## Patch 22.1 — Opening Default-Route and Consumer Inventory
+
+Build a registry-owned opening inventory from the live compiler and repository.
+Classify the CLI parser and help text; bare, explicit C, and explicit Cranelift
+routes; `-o` handling; Phase 9G output ownership; worker/runtime discovery;
+package/install contents; bootstrap stages; CI workflows; documentation; and
+every executable repository invocation that omits `--backend`. Each invocation
+records its owner, whether it expects C source, a native executable, diagnostics
+only, or intentionally exercises the user default, the patch that may migrate
+it, and a falsifier. Record the exact three-run scheduled stability criterion
+used by Patch 22.8. Add a generated review and focused Level 1 guard. Change no
+route or observable behavior.
+
+**Exit Gate:** every implicit backend consumer is classified with zero unknown
+owner or expected artifact, the current default/explicit behavior is reproduced
+from the lane's own evidence, and all Phase 22 transitions have one registry
+owner and falsifier.
+
+## Patch 22.2 — Explicit C Route and No-op Consumer Migration
+
+While MIR-to-C is still the default, add `--backend c` as an exact alias of the
+retained `--backend mir-to-c` path. Migrate every Cranelift-owned bootstrap,
+generated-C, oracle, and differential consumer that requires C output to an
+explicit C selection. Preserve invocations whose purpose is to observe the
+user default and mark them as such. Relay rather than edit any Stdlib-owned
+consumer; no later flip patch may begin until every required owning correction
+is merged. Add a guard that rejects a new unclassified implicit dependency.
+
+**Exit Gate:** bare invocation still emits the pre-patch C bytes; both explicit
+C spellings emit byte-identical bytes; bootstrap stage 2/stage 3 C identity
+passes; every required repository consumer is explicit or deliberately
+default-observing; and zero cross-lane consumer remains unresolved.
+
+## Patch 22.3 — Native Implicit-Output Contract
+
+Under the still-unchanged MIR-to-C default, define and implement one
+deterministic source-derived final-executable intent for explicit Cranelift when
+`-o` is omitted. Freeze suffix, directory, collision, invalid-source-name,
+target-executable-suffix, and existing-output rules in compiler-owned authority.
+An explicit `-o` remains opaque and authoritative. Both forms must enter the
+same native source route; neither may create directories or publish partial
+output. Do not change target/linker or Phase 9G publication semantics.
+
+**Exit Gate:** omitted-output and equivalent explicit-output invocations produce
+byte-identical executables and behavior; malformed or colliding intents reject
+before driver/artifact access; every failure preserves an existing output; and
+bare invocation still emits C.
+
+## Patch 22.4 — Default-Native Package and Install Qualification
+
+Qualify the existing three-artifact package (`gust`, `gust-native-backend`, and
+`gust-runtime-package.a`) as the minimum default-native installation. Exercise
+repository package output and a clean temporary-prefix install without ambient
+worker overrides. Prove executable-relative worker/runtime discovery, file
+modes, relocation behavior, missing/incompatible component diagnostics,
+cleanup, and explicit-C independence. Update package authority and focused CI;
+do not add a dependency, runtime symbol, PATH search, auto-build, download, or
+fallback.
+
+**Exit Gate:** a clean installed package compiles and runs the selected native
+cohort with no environment override, explicit C remains usable if native
+components are absent, and default-candidate native failures are deterministic
+and preserve output.
+
+## Patch 22.5 — Pre-flip Default-Cohort Qualification
+
+Run the release-representative positive, negative, resource, module,
+typed-query, full-compiler, and complete 326-case guard cohorts through explicit
+Cranelift and the explicit MIR-to-C oracle before the default changes. Record
+accepted behavior, rejected diagnostics, resource and filesystem effects,
+artifacts, cleanup, compile memory/time, and package origin. Reconcile every
+required default-program deferral generically or stop under the shared-zone
+rules; do not shrink the cohort, add an exception, or weaken a gate.
+
+**Exit Gate:** the registered default cohort has zero unclassified result,
+zero required native deferral, exact oracle parity for observable behavior, and
+all inherited budgets pass with explicit no-fallback.
+
+## Patch 22.6 — Cranelift Default Route Flip
+
+Change the compiler invocation default to Cranelift only after Patches 22.1–22.5
+are complete. Remove experimental wording from the active native route and make
+help identify Cranelift as default, explicit C as the retained oracle, the
+implicit-output rule, and the package requirement. Keep backend selection after
+the shared semantic pipeline. Default-native and explicit-native calls must
+construct one identical invocation and reach one identical route. Explicit C
+must bypass native discovery and emit the exact frozen pre-flip C bytes.
+
+**Exit Gate:** bare and explicit Cranelift compile to byte-identical native
+artifacts with identical execution and failure behavior; both explicit C
+spellings reproduce the frozen pre-flip C corpus byte-for-byte; unsupported or
+unavailable native builds fail clearly without C output or fallback; and the
+compiler still builds itself through the explicitly selected bootstrap route.
+
+## Patch 22.6a — Default-Route Bootstrap Seed Reconvergence
+
+Regenerate `gust_v4.c` alone from the final Patch 22.6 compiler sources. Keep
+all seed-producing compiler invocations explicitly on MIR-to-C, require
+stage-2/stage-3 C byte identity, and prove the rebuilt seed exposes the new
+default/native help while explicit C still drives the C bootstrap fixed point.
+Publish only the generated seed and seed-specific authority.
+
+**Exit Gate:** `make bootstrap` converges byte-for-byte, the committed seed is
+exactly the converged generated C, `make gust` succeeds from that seed, and no
+non-seed capability change is present.
+
+## Patch 22.7 — Post-flip CI, Documentation, and Rollback Qualification
+
+Move user-facing examples, README/ledger statements, release checks, package
+smokes, install flows, and relevant CI matrices to the Cranelift default.
+Retain focused explicit-C oracle and bootstrap lanes and ensure all native
+compiler/worker/runtime/normalizer inputs appear in workflow path filters.
+Exercise rollback only as an explicit `--backend c` or `--backend mir-to-c`
+choice; never as automatic recovery. Preserve Stdlib-owned surfaces and use a
+checked cross-lane relay if one needs an owning update.
+
+**Exit Gate:** documentation, help, package/install behavior, PR CI, push CI,
+and release-shaped smokes agree that Cranelift is default; explicit C remains a
+working named oracle; and dependency/path-filter falsifiers trigger every
+owning qualification workflow.
+
+## Patch 22.8 — Default-Native Stability Window
+
+Observe the merged default in the authoritative GitHub environment for three
+consecutive scheduled daily `Cranelift Historical Full` runs. Each run must be
+on a `main` commit containing the complete default flip and seed reconvergence,
+must expose the complete registry-derived job population, and must finish with
+every job successful. Also run one manual Historical Full on the exact final
+pre-closure implementation head. Any critical native regression, incomplete
+population, superseding correction, default-route change, or unresolved P1/P2
+review finding resets the three-run window. Record run IDs, full SHAs, events,
+job populations, conclusions, and elapsed budgets in generated authority.
+
+**Exit Gate:** three consecutive scheduled runs and the exact-head manual run
+are complete successes, no critical native regression or unresolved review
+finding remains, and explicit-C rollback/oracle evidence remains green.
+
+## Patch 22.9 — Phase 22 Closure
+
+Re-run the opening inventory, default-route identity, explicit-C byte identity,
+package/install, complete-corpus, bootstrap, documentation/CI, and stability
+guards from their authoritative entry points. Dispatch a final Historical Full
+on exact merged implementation main if the Patch 22.8 exact-head run is no
+longer current. Generate the closure record from registry authority, replace
+all placeholders with checked evidence, mark every row DONE, and write the
+terminal lane state only after the closure PR merges.
+
+**Exit Gate:** every Phase 22 row is DONE; bare Gust uses Cranelift; explicit
+Cranelift is identical; explicit C is retained and byte-identical to the
+pre-flip default; no silent fallback exists; package/install and bootstrap gates
+pass; the stability window and latest exact-main Historical Full are green;
+all exact-head pull-request workflows succeed; and no review conversation is
+unresolved. Phase 23 remains inactive.
+
+---
+
+# Immutable Phase 21 Completion Record — Tenant-Scoped Typed Queries and Cranelift Self-Hosting Qualification
+
+**Lane:** Cranelift. Branches follow the existing
+`codex/phase<N>-<patch>-<slug>` pattern.
+
+Workflow, Monitoring, Merge, Phase Completion, Runner, and Git Authorization
+policies were defined in `AGENTS.md`. Shared semantic ownership was defined in
+`docs/SHARED_SEMANTIC_ZONE.md`. This section is the immutable Phase 21 record;
+Phase 22 above is the active Cranelift roadmap.
 
 Phase 21 has two serial tracks because both require the single compiler-semantic
 writer. Track A implements and attacks the operator-selected OD-8 provenance
