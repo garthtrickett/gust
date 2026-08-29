@@ -1,9 +1,8 @@
 # Roadmap tail — Phases 20 to 25
 
-`TASK.md` holds Phase 19. **Phases 20
-through 25 were not in the repository.** `docs/VISION_RECONCILIATION.md` cited
-`mir-to-cranelift.md` three times for "the arc across phases 18–25", and that file
-is not here — it was a source document, never landed. This file closes that gap.
+`TASK.md` holds the active Cranelift phase. Phases 20 and 21 are completed
+history, Phase 22 is active, and this document preserves the remaining arc
+through Phase 25 without competing with the live roadmap.
 
 **What this document is.** The roadmap tail as recorded, so the C-retirement
 priority declared in `docs/VISION_RECONCILIATION.md` §7 has a written plan behind
@@ -12,8 +11,13 @@ and it does not create work for any lane. Phase content belongs to the owning
 lane's roadmap when that lane opens the phase; this exists so the shape is not
 lost in the meantime.
 
-**Not authoritative over an open phase.** When a lane opens Phase 20, `TASK.md`
+**Not authoritative over an open phase.** When a lane opens a phase, `TASK.md`
 or its successor is authoritative and this file becomes background.
+
+Open GitHub issues are routed in `docs/ISSUE_ROADMAP.md`. That register makes
+every issue visible in a Markdown roadmap without injecting unrelated work into
+an active phase. Issue rows must be promoted into the owning active roadmap
+before implementation begins.
 
 ---
 
@@ -90,6 +94,27 @@ the new default; telemetry, if used, distinguishes native failures clearly.
 merged final post-flip implementation main completes its full registry-derived
 job population successfully, with no unresolved material review findings.
 
+## Post-Phase 22 assurance and issue-health checkpoint
+
+Before Phase 23 freezes and de-emphasises the MIR-to-C oracle, run the
+report-only assurance-foundation maintenance routed by
+`docs/ISSUE_ROADMAP.md`: repair or retire stale evidence under issues #110 and
+#240, then use those concrete failures as pilot inputs for
+`docs/SEMANTIC_CHANGE_ASSURANCE.md` Phases A and B. This checkpoint may repair
+control-plane evidence; it may not change language semantics, native lowering,
+or the Phase 23 deprecation decision.
+
+After that report-only work, resolve issue #105 in a separate bounded compiler
+patch. Reject only a second declaration in the same lexical scope, preserve
+parent-scope shadowing and disjoint-block reuse, and correct the overbroad
+whole-function guidance in `GEMINI.md`. Do not let removal of generated C hide
+the language diagnostic gap.
+
+**Exit gate:** all three issue rows have current-main closure evidence, every
+retained guard states an invariant that still exists, and Phase 23 does not
+begin with a known broken or obsolete MIR/MIR-to-C evidence owner or an
+unresolved same-scope declaration diagnostic.
+
 ## Phase 23 — MIR-to-C deprecation
 
 **Purpose:** stop treating C as a normal supported backend while preserving it as
@@ -151,13 +176,14 @@ deferred feature migration
     → resource semantics
       → ABI and modules
         → explicit runtime
-          → target/link hardening          (Phase 18, in progress)
+          → target/link hardening          (Phase 18)
             → whole-program qualification  (Phase 20)
               → self-hosting               (Phase 21)
                 → default flip             (Phase 22)
-                  → C backend deprecation  (Phase 23)
-                    → generated-C removal  (Phase 24)
-                      → bootstrap C removal (Phase 25)
+                  → assurance/issue health (post-Phase 22)
+                    → C backend deprecation  (Phase 23)
+                      → generated-C removal  (Phase 24)
+                        → bootstrap C removal (Phase 25)
 ```
 
 Three claims about how early each outcome is reachable, recorded as stated:
@@ -176,17 +202,18 @@ to the phase that must precede it, so a premature claim is visibly premature.
 
 ## The two-lane interaction
 
-`TASK_STDLIB.md` already records the Stdlib patch order and the CR-2 block: S1.0,
-S1.1, S1.2, S1.3 and S1.7 are unblocked, S1.4 to S1.6 wait on CR-2, and **the
-lane idles after S1.3** unless CR-2 is sequenced into the Cranelift roadmap. That
-part is captured; this section records only how it meets the tail above.
+`TASK_STDLIB.md` is authoritative for Stdlib S1. S1.0 through S1.7 are complete.
+CR-2 and the narrower CR-11 through CR-13 are resolved; S1.8 through S1.11 are
+blocked on compiler-owned CR-15. This section records only how that live state
+meets the backend tail above.
 
 - **S1.1 was worth doing standalone** regardless of lane scheduling, because
   `str == str` typechecked and emitted invalid C. It is done (#74).
-- **At Phase 18 closure**, starting Stdlib on S1.0 → S1.3 → S1.7 while Phase 19
-  and CR-2 run is a genuine two-lane period, and `justfile` contention is halved
-  because CR-2 is one phase rather than fifteen patches.
-- **After CR-2**, S1.4 to S1.6 unblock and the dual-lane model pays for itself.
+- **The completed CR-2 handoff** unblocked S1.4 through S1.6 without letting the
+  Stdlib lane define compiler semantics.
+- **CR-15 remains a compiler-owned post-tail obligation.** It must be promoted
+  into an activated Cranelift roadmap before S1.8 resumes; this record does not
+  schedule it.
 
 `docs/AGENT_TOPOLOGY.md` §2 is the constraint this has to respect: two lanes may
 work in parallel, but during a heavy CI wave only one should push.
