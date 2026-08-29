@@ -6,7 +6,7 @@ Generated from `scripts/cranelift_feature_registry.json`. Do not edit by hand.
 - Status: `implementation_complete_patch22_2_relay_pending`
 - Next action: `merge_stdlib_owned_patch22_2_relay_then_mark_22_2_and_22_3_done`
 - Observed main: `f648de3fb200f83735b0a86ca1d843500c6401aa`
-- Predecessor: `phase22_explicit_c_migration_v1`
+- Predecessor: `phase22_explicit_c_migration_v2`
 
 ## Inferred output
 
