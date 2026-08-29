@@ -125,6 +125,17 @@ def validate() -> dict:
                         require(isinstance(native_feature_diff, dict),
                                 "Patch 21.13a seed authority omits generated diff accounting")
                         live_seed_lines = native_feature_diff.get("current_lines")
+                        phase22_seed = json.loads(
+                            REGISTRY.read_text(encoding="utf-8")
+                        ).get("phase22_default_route_seed_convergence")
+                        if phase22_seed is not None:
+                            require(phase22_seed.get("predecessor_seed_authority") ==
+                                    native_feature_seed.get("contract_version"),
+                                    "Patch 22.6a seed authority does not name Patch 21.13a")
+                            phase22_diff = phase22_seed.get("generated_seed_diff")
+                            require(isinstance(phase22_diff, dict),
+                                    "Patch 22.6a seed authority omits generated diff accounting")
+                            live_seed_lines = phase22_diff.get("current_lines")
     require(len(seed.splitlines()) == live_seed_lines, "committed seed line count drifted")
     for symbol in (
         "typechecker__env_get_canonical_branded_type_name",

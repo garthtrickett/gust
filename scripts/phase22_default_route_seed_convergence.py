@@ -62,6 +62,20 @@ def validate() -> dict:
         "explicit_c_role": "retained_semantic_oracle",
         "fallback": "forbidden",
     }, "seed help contract drifted")
+    handoff_validators = [
+        "scripts/phase19_seed_convergence.py",
+        "scripts/phase20_seed_convergence.py",
+        "scripts/phase20_post_prerequisite_seed_convergence.py",
+        "scripts/phase20_protected_access_seed_convergence.py",
+        "scripts/phase21_tenant_scope_seed_convergence.py",
+        "scripts/phase21_native_feature_seed_convergence.py",
+    ]
+    require(record.get("successor_handoff_validators") == handoff_validators,
+            "historical seed successor-handoff inventory drifted")
+    for relative in handoff_validators:
+        require("phase22_default_route_seed_convergence" in
+                (ROOT / relative).read_text(encoding="utf-8"),
+                f"historical seed validator lacks Patch 22.6a handoff: {relative}")
     diff = record.get("generated_seed_diff")
     require(diff == {
         "previous_lines": 62917,
@@ -151,6 +165,12 @@ def render(record: dict) -> str:
         f"- Fixed-point policy: `{record['fixed_point_policy']}`",
         f"- Bootstrap route: `{record['bootstrap_route']}`",
         f"- Seed-only policy: `{record['seed_only_policy']}`",
+        "",
+        "## Historical validator handoff",
+        "",
+    ] + [
+        f"- `{path}`" for path in record["successor_handoff_validators"]
+    ] + [
         "",
         "## Generated seed diff",
         "",

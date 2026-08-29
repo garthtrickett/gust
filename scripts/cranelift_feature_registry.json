@@ -3834,6 +3834,14 @@
       "explicit_c_role": "retained_semantic_oracle",
       "fallback": "forbidden"
     },
+    "successor_handoff_validators": [
+      "scripts/phase19_seed_convergence.py",
+      "scripts/phase20_seed_convergence.py",
+      "scripts/phase20_post_prerequisite_seed_convergence.py",
+      "scripts/phase20_protected_access_seed_convergence.py",
+      "scripts/phase21_tenant_scope_seed_convergence.py",
+      "scripts/phase21_native_feature_seed_convergence.py"
+    ],
     "generated_seed_diff": {
       "previous_lines": 62917,
       "current_lines": 64825,

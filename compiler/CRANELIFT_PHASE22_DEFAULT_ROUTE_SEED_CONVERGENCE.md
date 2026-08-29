@@ -15,6 +15,15 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - Bootstrap route: `explicit_mir_to_c`
 - Seed-only policy: `generated_seed_and_seed_specific_authority_only`
 
+## Historical validator handoff
+
+- `scripts/phase19_seed_convergence.py`
+- `scripts/phase20_seed_convergence.py`
+- `scripts/phase20_post_prerequisite_seed_convergence.py`
+- `scripts/phase20_protected_access_seed_convergence.py`
+- `scripts/phase21_tenant_scope_seed_convergence.py`
+- `scripts/phase21_native_feature_seed_convergence.py`
+
 ## Generated seed diff
 
 - Previous lines: 62917

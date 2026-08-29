@@ -80,8 +80,18 @@ def validate() -> dict:
         "edits_stdlib_or_CR15": False,
         "begins_patch21_14": False,
     }, "Patch 21.13a widened beyond seed reconvergence")
+    live_seed_lines = diff["current_lines"]
+    successor = registry.get("phase22_default_route_seed_convergence")
+    if successor is not None:
+        require(successor.get("predecessor_seed_authority") ==
+                record["contract_version"],
+                "Patch 22.6a seed authority does not name this predecessor")
+        successor_diff = successor.get("generated_seed_diff")
+        require(isinstance(successor_diff, dict),
+                "Patch 22.6a seed authority omits generated diff accounting")
+        live_seed_lines = successor_diff.get("current_lines")
     require(len(SEED.read_text(encoding="utf-8").splitlines()) ==
-            diff["current_lines"], "committed seed line count drifted")
+            live_seed_lines, "committed seed line count drifted")
     require("- [x] Patch 21.13a — Native-Feature Bootstrap Seed Reconvergence — DONE"
             in TASK.read_text(encoding="utf-8"),
             "TASK.md does not mark Patch 21.13a DONE")
