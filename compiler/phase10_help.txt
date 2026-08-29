@@ -2,7 +2,7 @@ Usage:
   gust <source.gst>
   gust --backend mir-to-c <source.gst>
   gust --backend c <source.gst>
-  gust --backend cranelift -o <output> <source.gst>
+  gust --backend cranelift [-o <output>] <source.gst>
 
 Backends:
   mir-to-c, c  Emit C source to stdout (default).
@@ -10,7 +10,7 @@ Backends:
 
 Options:
   --backend <mir-to-c|c|cranelift>  Select the backend explicitly.
-  -o <output>                     Required only by the cranelift backend.
+  -o <output>                     Optional Cranelift output; defaults to the source stem.
   -h, --help                      Show this help and exit.
 
 Native backend driver:

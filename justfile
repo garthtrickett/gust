@@ -9235,10 +9235,14 @@ guard-cranelift-phase10-backend-selection-contract:
       'Compiler invocation error: the MIR-to-C backend does not accept -o' \
       mir-to-c-output \
       ./gust --backend mir-to-c -o "$output_path" "$source_fixture"
-    expect_invocation_failure \
-      'Compiler invocation error: the experimental backend requires exactly one -o <output> value' \
-      cranelift-missing-output \
-      ./gust --backend cranelift "$source_fixture"
+    if rg -F '"phase22_native_implicit_output"' scripts/cranelift_feature_registry.json >/dev/null; then
+      rg -n -F 'invocation.output_path = compiler_native_implicit_output_path(invocation.source_path, ctx);' "$compiler_entry" >/dev/null
+    else
+      expect_invocation_failure \
+        'Compiler invocation error: the experimental backend requires exactly one -o <output> value' \
+        cranelift-missing-output \
+        ./gust --backend cranelift "$source_fixture"
+    fi
 
     readme_flat="$(tr '\n' ' ' < "$readme_doc")"
     printf '%s\n' "$readme_flat" |
@@ -9276,7 +9280,11 @@ guard-cranelift-phase10-output-contract:
 
     rg -n -F 'output_path: str,' "$compiler_entry" >/dev/null
     rg -n -F 'invocation.output_path = output_path;' "$compiler_entry" >/dev/null
-    rg -n -F 'the experimental backend requires exactly one -o <output> value' "$compiler_entry" >/dev/null
+    if rg -F '"phase22_native_implicit_output"' scripts/cranelift_feature_registry.json >/dev/null; then
+      rg -n -F 'compiler_native_implicit_output_path(invocation.source_path, ctx)' "$compiler_entry" >/dev/null
+    else
+      rg -n -F 'the experimental backend requires exactly one -o <output> value' "$compiler_entry" >/dev/null
+    fi
     rg -n -F 'Experimental Cranelift backend selection is valid, but the source-level route is not connected yet.' "$compiler_entry" >/dev/null
 
     if rg -n -i 'os\.(WriteFile|Create|Open|Rename|Remove)|std\.System|cargo run|compiler-mir-.*object|native-link|link-canonical|Command::new' "$compiler_entry" >/dev/null; then
@@ -21855,7 +21863,9 @@ guard-cranelift-dependency-beachhead:
         rg -v '^compiler/experiments/cranelift/' |
         rg -v '^compiler/CRANELIFT_[^:]*\.md:' |
         rg -v '^compiler/test_runner_entry\.gst:[0-9]+:[[:space:]]*os\.LogStr\("  gust --backend cranelift -o <output> <source\.gst>"\);$' |
-        rg -v '^compiler/phase10_help\.txt:[0-9]+:  gust --backend cranelift -o <output> <source\.gst>$' ||
+        rg -v '^compiler/test_runner_entry\.gst:[0-9]+:[[:space:]]*os\.LogStr\("  gust --backend cranelift \[-o <output>\] <source\.gst>"\);$' |
+        rg -v '^compiler/phase10_help\.txt:[0-9]+:  gust --backend cranelift -o <output> <source\.gst>$' |
+        rg -v '^compiler/phase10_help\.txt:[0-9]+:  gust --backend cranelift \[-o <output>\] <source\.gst>$' ||
         true
     )"
     if [ -n "$production_refs" ]; then
@@ -23517,3 +23527,24 @@ guard-cranelift-phase22-explicit-c-migration-evidence:
     echo "🧪 Replaying Phase 22 explicit C no-op migration evidence..."
     just guard-cranelift-phase22-explicit-c-migration-contract
     bash scripts/phase22_explicit_c_migration.sh
+
+# Cranelift lane, Phase 22.3. Appended so inherited recipe-body line authority
+# remains stable while the successor output contract is independently owned.
+guard-cranelift-phase22-native-implicit-output-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🚦 Checking Phase 22 native implicit-output authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase22-native-implicit-output-contract | grep -F $'guard-cranelift-phase22-native-implicit-output-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase22_explicit_c_migration.py validate
+    python3 scripts/phase22_explicit_c_migration.py check-review
+    python3 scripts/phase22_native_implicit_output.py validate
+    python3 scripts/phase22_native_implicit_output.py check-review
+
+guard-cranelift-phase22-native-implicit-output-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Replaying Phase 22 native implicit-output evidence..."
+    just guard-cranelift-phase22-native-implicit-output-contract
+    bash scripts/phase22_native_implicit_output.sh

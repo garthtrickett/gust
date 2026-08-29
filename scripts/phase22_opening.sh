@@ -46,23 +46,34 @@ else
   test ! -s "$build_dir/c-alias.stderr" || fail "rejected C alias emitted stderr"
 fi
 
-set +e
-./gust --backend cranelift "$fixture" > "$build_dir/missing-output.stdout" 2> "$build_dir/missing-output.stderr"
-missing_output_status="$?"
-set -e
-test "$missing_output_status" -ne 0 || fail "Cranelift without -o unexpectedly succeeded"
-rg -F 'Compiler invocation error: the experimental backend requires exactly one -o <output> value' \
-  "$build_dir/missing-output.stdout" >/dev/null ||
-  fail "the current Cranelift -o diagnostic drifted"
-test ! -s "$build_dir/missing-output.stderr" || fail "missing-output rejection emitted stderr"
+if rg -F '"phase22_native_implicit_output"' scripts/cranelift_feature_registry.json >/dev/null; then
+  rg -F 'invocation.output_path = compiler_native_implicit_output_path(invocation.source_path, ctx);' \
+    compiler/test_runner_entry.gst >/dev/null ||
+    fail "the successor implicit-output route is absent"
+else
+  set +e
+  ./gust --backend cranelift "$fixture" > "$build_dir/missing-output.stdout" 2> "$build_dir/missing-output.stderr"
+  missing_output_status="$?"
+  set -e
+  test "$missing_output_status" -ne 0 || fail "Cranelift without -o unexpectedly succeeded"
+  rg -F 'Compiler invocation error: the experimental backend requires exactly one -o <output> value' \
+    "$build_dir/missing-output.stdout" >/dev/null ||
+    fail "the current Cranelift -o diagnostic drifted"
+  test ! -s "$build_dir/missing-output.stderr" || fail "missing-output rejection emitted stderr"
+fi
 
 ./build/phase10-package/bin/gust --help > "$build_dir/help.stdout" 2> "$build_dir/help.stderr"
 test ! -s "$build_dir/help.stderr" || fail "help emitted stderr"
 rg -F 'gust <source.gst>' "$build_dir/help.stdout" >/dev/null || fail "bare help route is missing"
 rg -F 'Emit C source to stdout (default).' "$build_dir/help.stdout" >/dev/null ||
   fail "help no longer identifies the current default"
-rg -F 'Required only by the cranelift backend.' "$build_dir/help.stdout" >/dev/null ||
-  fail "help no longer records the Cranelift output contract"
+if rg -F '"phase22_native_implicit_output"' scripts/cranelift_feature_registry.json >/dev/null; then
+  rg -F 'Optional Cranelift output; defaults to the source stem.' "$build_dir/help.stdout" >/dev/null ||
+    fail "help no longer records the successor implicit-output contract"
+else
+  rg -F 'Required only by the cranelift backend.' "$build_dir/help.stdout" >/dev/null ||
+    fail "help no longer records the Cranelift output contract"
+fi
 rg -F 'fallback to MIR-to-C.' "$build_dir/help.stdout" >/dev/null ||
   fail "help no longer records no fallback"
 

@@ -10,7 +10,7 @@ repository invocation scan. Do not edit by hand.
 - Default backend: `mir_to_c_unchanged`
 - Explicit `c`: `exact_alias_of_mir_to_c`
 - Cranelift-owned migrations: `60`
-- Remaining implicit consumers: `25`
+- Remaining implicit consumers: `26`
 - Pending Stdlib-owned consumers: `15`
 
 ## Migration classes
@@ -23,7 +23,7 @@ repository invocation scan. Do not edit by hand.
 ## Preserved implicit consumers
 
 - `help_surface_probe`: `2`
-- `intentional_default_selection_probe`: `6`
+- `intentional_default_selection_probe`: `7`
 - `invocation_parser_probe`: `2`
 - `stdlib_owned_C_or_diagnostic_guard`: `15`
 
@@ -31,14 +31,14 @@ repository invocation scan. Do not edit by hand.
 
 | Path | Line | Expected artifact | Falsifier |
 | --- | ---: | --- | --- |
-| `justfile` | 23136 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
-| `justfile` | 23137 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
-| `justfile` | 23151 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
-| `justfile` | 23183 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
-| `justfile` | 23187 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
-| `justfile` | 23194 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
-| `justfile` | 23195 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
-| `justfile` | 23277 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
+| `justfile` | 23146 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
+| `justfile` | 23147 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
+| `justfile` | 23161 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
+| `justfile` | 23193 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
+| `justfile` | 23197 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
+| `justfile` | 23204 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
+| `justfile` | 23205 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
+| `justfile` | 23287 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
 | `scripts/stdlib_s1_branded_collections_parity.sh` | 60 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
 | `scripts/stdlib_s1_branded_collections_parity.sh` | 64 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |
 | `scripts/stdlib_s1_branded_collections_parity.sh` | 130 | `generated_C_or_diagnostic` | `default_flip_lands_before_the_owning_lane_classifies_the_consumer` |

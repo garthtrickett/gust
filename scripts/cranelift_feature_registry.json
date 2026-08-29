@@ -3468,10 +3468,10 @@
     },
     "migration": {
       "opening_implicit_count": 83,
-      "current_implicit_count": 25,
+      "current_implicit_count": 26,
       "cranelift_owned_migrated_count": 60,
-      "patch22_evidence_invocation_count": 7,
-      "patch22_evidence_implicit_count": 2,
+      "patch22_evidence_invocation_count": 17,
+      "patch22_evidence_implicit_count": 3,
       "bootstrap_migrated_count": 5,
       "repository_guard_migrated_count": 15,
       "script_guard_migrated_count": 39,
@@ -3480,29 +3480,29 @@
       "explicit_non_bootstrap_spelling": "mir-to-c"
     },
     "current_invocation_inventory": {
-      "total": 276,
+      "total": 286,
       "selection_counts": {
-        "explicit_c": 144,
-        "explicit_cranelift": 104,
+        "explicit_c": 146,
+        "explicit_cranelift": 111,
         "explicit_invalid_or_parser_probe": 3,
-        "implicit_default": 25
+        "implicit_default": 26
       },
       "consumer_class_counts": {
-        "already_explicit_or_parser_probe": 251,
+        "already_explicit_or_parser_probe": 260,
         "help_surface_probe": 2,
-        "intentional_default_selection_probe": 6,
+        "intentional_default_selection_probe": 7,
         "invocation_parser_probe": 2,
         "stdlib_owned_C_or_diagnostic_guard": 15
       },
       "owner_counts": {
-        "cranelift": 253,
+        "cranelift": 263,
         "stdlib": 23
       },
       "unclassified_count": 0
     },
     "preserved_implicit_classes": {
       "help_surface_probe": 2,
-      "intentional_default_selection_probe": 6,
+      "intentional_default_selection_probe": 7,
       "invocation_parser_probe": 2,
       "stdlib_owned_C_or_diagnostic_guard": 15
     },
@@ -3526,6 +3526,54 @@
       "changes_bootstrap_seed": false,
       "edits_stdlib_or_CR15": false,
       "begins_patch22_3": false
+    }
+  },
+  "phase22_native_implicit_output": {
+    "contract_version": "phase22_native_implicit_output_v1",
+    "status": "implementation_complete_patch22_2_relay_pending",
+    "next_action": "merge_stdlib_owned_patch22_2_relay_then_mark_22_2_and_22_3_done",
+    "review_view": "compiler/CRANELIFT_PHASE22_NATIVE_IMPLICIT_OUTPUT.md",
+    "observed_main_sha": "f648de3fb200f83735b0a86ca1d843500c6401aa",
+    "predecessor_authority": "phase22_explicit_c_migration_v1",
+    "route_contract": {
+      "default_backend": "mir_to_c_unchanged",
+      "selection": "explicit_cranelift_without_explicit_output_only",
+      "source_suffix": "exact_lowercase_dot_gst",
+      "source_stem": "remove_exactly_one_terminal_dot_gst",
+      "output_directory": "normalized_lexical_source_directory",
+      "target_executable_suffix": "empty_for_all_declared_phase14_elf_and_macho_targets",
+      "invalid_source_names": ["missing_dot_gst_suffix", "empty_stem", "dot_stem", "dotdot_stem"],
+      "collision_rule": "reject_when_the_derived_output_still_ends_in_dot_gst",
+      "explicit_output": "opaque_and_authoritative",
+      "existing_output_success": "phase9g_atomic_replacement",
+      "existing_output_failure": "preserved_byte_for_byte",
+      "directory_creation": "forbidden",
+      "native_source_route": "same_route_as_equivalent_explicit_output",
+      "fallback_policy": "forbidden"
+    },
+    "diagnostics": {
+      "source_suffix": "Compiler invocation error: implicit Cranelift output requires a source path ending in .gst",
+      "portable_stem": "Compiler invocation error: implicit Cranelift output requires a non-empty portable source stem",
+      "source_collision": "Compiler invocation error: implicit Cranelift output would collide with a Gust source path"
+    },
+    "evidence": {
+      "inferred_explicit_executable_bytes": "identical",
+      "observable_semantics": "match_mir_to_c_oracle",
+      "malformed_intent_cases": 4,
+      "poisoned_driver_rejection": true,
+      "driver_failure_preserves_existing_output": true,
+      "bare_backend": "mir_to_c_unchanged"
+    },
+    "boundary": {
+      "changes_explicit_cranelift_output_inference": true,
+      "changes_default_backend": false,
+      "changes_accepted_Gust_program_meaning": false,
+      "adds_or_changes_MIR_operations": false,
+      "changes_target_linker_or_phase9g_publication": false,
+      "changes_ABI_layout_or_runtime_symbols": false,
+      "changes_bootstrap_seed": false,
+      "edits_stdlib_or_CR15": false,
+      "begins_patch22_4": false
     }
   },
   "phase19_brand_authority": {
