@@ -3770,10 +3770,10 @@
     "observed_main_sha": "8b2135ac664dfdeb32c2fd5ca28cc43bbf80ed3b",
     "predecessor_authority": "phase22_preflip_default_cohort_v1",
     "post_flip_invocation_inventory": {
-      "total": 296,
-      "selection_counts": {"explicit_c": 164, "explicit_cranelift": 115, "explicit_invalid_or_parser_probe": 3, "implicit_default": 14},
-      "consumer_class_counts": {"already_explicit_or_parser_probe": 282, "cranelift_C_or_diagnostic_guard": 2, "help_surface_probe": 2, "intentional_default_selection_probe": 8, "invocation_parser_probe": 2},
-      "owner_counts": {"cranelift": 273, "stdlib": 23},
+      "total": 299,
+      "selection_counts": {"explicit_c": 167, "explicit_cranelift": 115, "explicit_invalid_or_parser_probe": 3, "implicit_default": 14},
+      "consumer_class_counts": {"already_explicit_or_parser_probe": 285, "cranelift_C_or_diagnostic_guard": 2, "help_surface_probe": 2, "intentional_default_selection_probe": 8, "invocation_parser_probe": 2},
+      "owner_counts": {"cranelift": 276, "stdlib": 23},
       "unclassified_count": 0
     },
     "route_contract": {
