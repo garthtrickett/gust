@@ -583,6 +583,29 @@ surviving argument and the retired one is fifty libraries versus one, in-process
 versus behind a capability boundary** — which is exactly the distinction §98
 draws.
 
+## 8. Adversarial strategy and architecture review, 2026-08-30
+
+The external review and the point-by-point repository response are preserved in
+`gust-av.md`. Its valid corrections were applied to the authoritative documents
+rather than turning this advisory reconciliation into a second specification.
+The resulting resolutions are:
+
+- the compiler demo, generation economics, commercial demand, and defensibility
+  are four independent evidence gates;
+- the lead tenant claim is bounded to compiler-owned typed queries with trusted
+  provenance, not application-wide isolation;
+- schema-per-workspace and shared-schema/RLS deployments have different proof
+  obligations;
+- declaration, operator authorization, runtime capability enforcement, and
+  sandbox isolation are separate layers;
+- no-GC ownership serves Gust's independently stated general-purpose systems
+  language goal, not the necessity proof for the initial security wedge; and
+- human review moves to intent, authority, evidence, exceptions, migrations,
+  and incident-relevant code, and its burden must be measured.
+
+No `ONE_WAY_LEDGER.md` status changed as a result. These are specification and
+evidence-program corrections, not implementation evidence.
+
 ## Appendix A — Arena-based SAM topology
 
 Extracted from `general-ecosystem.md` before its retirement (§3.3). This is the

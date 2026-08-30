@@ -2,7 +2,13 @@
 
 **Product, Language, Runtime, and Platform Decisions**
 
-> **What this document is.** A well-specified hypothesis with fourteen registered decisions: seven open, two direction-set, one design-set/evidence-open, and four resolved (§0.15). Two evidence-open decisions — **OD-9** (can a model write Gust) and **OD-8** (is the scoping analysis sound) — can invalidate the thesis outright, and both resolve inside the next four months. The prose is confident because vague prose cannot be attacked; the uncertainty is real and lives in §0.15. Read that table before treating any of this as settled.
+> **What this document is.** A well-specified hypothesis with a central decision
+> register (§0.15). **OD-9**—whether a model can write Gust competitively—remains
+> thesis-invalidating and open. **OD-8** resolved on 2026-08-25 only as a bounded
+> positive for the predefined compiler-owned typed-query suite; its exclusions
+> remain live. The prose is confident because vague prose cannot be attacked;
+> the uncertainty is real and lives in §0.15. Read that table before treating
+> any of this as settled.
 >
 > **The plan is four months long.** Build the demo (§0.7). Do not pick a business until it exists (§0.8). Everything past §0.16 is a specification of a system that is deliberately *not* being built yet — it exists so that demo-stage decisions do not foreclose it, and most of it should never be built by us.
 
@@ -12,7 +18,8 @@
 
 ## 0.1 Thesis
 
-**Gust is built for software that is written by machines and never read by people.**
+**Gust is built for software that is written mostly by machines and whose
+implementation is not reliably read before it ships.**
 
 Humans own intent, authority, and outcomes. The compiler owns everything in between.
 
@@ -27,6 +34,11 @@ Three reasons it cannot carry that weight. This document contradicts itself if i
 The operative rule is therefore narrower than "nobody reads it":
 
 > **Explicit exactly where the explicitness is the artifact. Inferred everywhere else.**
+
+Human review does not disappear. It moves from routine implementation detail to
+intent, authority, evidence, exceptions, migrations, and incident-relevant code.
+The product must measure the time and expertise required to review those
+replacement artifacts; moving review is not evidence that review became free.
 
 Explicit, because someone reads them: authority, ownership, error propagation, resource lifetime. Inferred or desugared, because nobody reads them and a mistake is a compile error anyway: context threading, codec plumbing, dispatch tables.
 
@@ -74,7 +86,11 @@ Agent-authored software fails in two ways:
 - **Unauthorized** — it touches something it should not. Leaks data, calls the wrong service, exfiltrates a secret. *Catastrophic per incident, rare in volume.*
 - **Incorrect** — it does the wrong thing within its authority. Charges the wrong amount, drops the record. *Survivable per incident, constant in volume.*
 
-Capability enforcement solves the first completely. Nothing in this document — or in any shipping system — solves the second.
+Capability enforcement can solve the first only inside an explicit trusted
+computing base and guarantee boundary. A source declaration alone does not:
+operator authorization, runtime enforcement, adapter confinement, and an
+independent isolation boundary are all required. Nothing in this document — or
+in any shipping system — solves the second.
 
 By volume, incorrect vastly exceeds unauthorized. So why does this document spend most of its length on capability? **Because capability is tractable and intent is not.** Capability enforcement is a solved design problem; Austral and WASI demonstrate it works. Intent checking — mechanically confirming a program does what was asked — is an open research problem nobody has solved at application scale. Leading with the unsolved half is how you never ship.
 
@@ -82,9 +98,15 @@ State the claim precisely:
 
 > **Gust makes agent-authored code containable. Containment is shippable now. Correctness is the frontier.**
 
-Containment means the blast radius is bounded, declared, and visible in a diff. It does not mean the program is right. Anyone who reads this document and concludes Gust makes agent code trustworthy has been oversold, and the document is at fault.
+Containment means the blast radius is bounded, declared, authorized, enforced,
+and visible in evidence. It does not mean the program is right. Anyone who reads
+this document and concludes Gust makes agent code trustworthy has been oversold,
+and the document is at fault.
 
-Three consequences: the demo sells containment and must say containment; the intent layer (Part XXI) is roadmap, not launch, and blocks v0.5 rather than v0.1; and the long-term thesis needs both — containment alone is a good security product with a ceiling.
+Three consequences: the demo sells containment and must say containment; the
+intent layer (Part XXI) is roadmap, not launch, and blocks v1.0 rather than the
+demo or v0.5; and the long-term thesis needs both—containment alone is a good
+security product with a ceiling.
 
 ## 0.5 The four layers
 
@@ -199,6 +221,19 @@ failure is selected deliberately to make the control visible. It must not be
 presented as evidence that Gust beats a hardened TypeScript stack across a
 distribution of applications.
 
+Three stages must not be collapsed into one claim:
+
+1. **Mechanism demo:** the compiler rejects the selected unscoped typed-query
+   construction.
+2. **Containment demo:** the same application runs with ambient bypasses closed,
+   runtime capabilities enforced, and native or supplier code isolated.
+3. **Production-shaped demo:** trusted tenant establishment, pinned schema
+   acquisition, realistic Postgres behaviour, traces, deployment evidence, and
+   an independent attack are present.
+
+Passing an earlier stage authorizes work on the next stage; it is not evidence
+that the later stage already holds.
+
 ### The evidence programme after the demo
 
 If the first artifact holds, expand it into the staged protocol in
@@ -220,6 +255,14 @@ A capacity. The full run waits until the demo surface exists. It does not replac
 the independent counting programme (§0.9), customer conversations
 (`docs/BUSINESS_STRATEGY.md` §1), or a later controlled test of whether traces
 improve model learning.
+
+Before treating a new language as necessary, run an architecture spike of the
+strongest existing-language alternative: a restricted TypeScript frontend with
+closed query construction, enforced imports, tenant provenance, capability
+declarations, and a confined runtime. It must be implemented seriously enough
+that its concrete failures—not ecosystem caricature—form the positive case for
+Gust. A full fourth benchmark arm is required only if that spike remains a
+credible competitor after Stage 0.
 
 ### Track A0 — the floor under both tracks
 
@@ -243,13 +286,36 @@ Track A0 is scoped by a single question: **can an agent express this without kno
 
 That is the decision, and it is deliberate rather than indecisive. Every candidate business — containment substrate, an integrated product, regulated verticals, training environments — requires the identical next four months. There is no path that skips effects, tenant scoping, and model fluency.
 
-More decisively: **OD-8 and OD-9 are thesis-invalidating and both resolve inside those four months.** If the scoping analysis has a hole, or a model cannot write Gust well, every downstream option dies simultaneously. Choosing a go-to-market before knowing whether the mechanism works is how a year gets spent on the wrong thing.
+OD-8 now supplies bounded positive evidence for the predefined typed-query
+suite, not an end-to-end isolation result. **OD-9 remains thesis-invalidating.**
+If a later in-scope scoping counterexample appears, or a model cannot write Gust
+within the agreed budget, the technical or generation gate fails. Choosing a
+go-to-market before those gates and the independent commercial and
+defensibility gates hold is how a year gets spent on the wrong thing.
 
-So the demo is not a step toward a strategy. **It is the instrument that selects the strategy.**
+The demo can eliminate a technical path and authorize the next evidence stage.
+It cannot select a business by itself. Month four has four independent gates:
 
-### Then, if the demo holds: the integrated product
+1. **Technical:** the stated control holds within its published boundary.
+2. **Generation:** agents achieve secure functional completion within the
+   preregistered repair and cost budget.
+3. **Commercial:** a named buyer, budget, and feasible adoption path exist.
+4. **Defensibility:** Gust materially beats the cheapest credible incumbent
+   response.
 
-The most likely second move is an integrated development-and-support product — issue tracking, support inbox, feature flags, team communication, git integration — built on Gust and agent-generated.
+Success in one gate is not evidence for another. A product or acquisition path
+is selected only from the combined record.
+
+### Then, if all four gates hold: candidate integrated product
+
+An integrated development-and-support product — issue tracking, support inbox,
+feature flags, team communication, git integration — is one candidate second
+move, not the automatic fallback. It is a second company whose product taste,
+distribution, migration, support, and operational burden can succeed or fail
+independently of Gust. The default validation vehicle is instead one narrow,
+production-shaped multi-tenant reference application with real users and public
+capability evidence. Expanding to the integrated product requires its own
+product and distribution evidence.
 
 **Why this and not something else:**
 
@@ -276,7 +342,14 @@ Not a plan to execute, but the likely terminal outcome and worth being ready for
 
 That last row is why the product matters more than the demo eventually. *A genuinely complex production system, agent-generated in Gust, publicly inspectable, with no cross-tenant incidents* is stronger evidence than any case study, and it is obtained without a single procurement call.
 
-**Open-core.** Open: language specification and reference compiler — credibility, adoption, and the answer to dependency risk. Proprietary: verified runtime, trace infrastructure, conformance tooling, scoping analysis implementation. Open-sourcing everything destroys the leverage.
+**Open-core.** Open: the language specification, reference compiler, the
+scoping analysis required for the public compiler-owned typed-query guarantee,
+and its conformance fixtures. A public claim cannot depend decisively on an
+analysis absent from the reference implementation users are asked to trust.
+Proprietary candidates are the hosted verified runtime, deployment-policy gate,
+trace infrastructure, operational control plane, and managed conformance
+service. Any stronger proprietary guarantee must name its additional mechanism
+and evidence rather than silently borrowing the open compiler's claim.
 
 ### The motion
 
@@ -324,7 +397,14 @@ This runs **alongside** the demo, months 0–3 (§0.14), done by someone who is 
 2. **It is customer research.** It reveals whether tenant scoping actually dominates the bug distribution. If the top failure turns out to be exposed credentials, §56's centrality is wrong and we need to know before building the product around it.
 3. **It makes us the named alternative before the moment arrives** — which decides who wins when it does.
 
-Do this ethically: public deployments only, responsible disclosure to affected operators before publication, aggregate statistics rather than named victims. The credibility of the number depends entirely on how it was obtained.
+Do this only under a preregistered research protocol covering how an
+AI-generated deployment is identified, the sampling frame and denominator,
+selection bias, legal authorization and consent, the definition of a confirmed
+cross-tenant leak, independent false-positive adjudication, responsible
+disclosure timing, and publication audit. Public reachability is not by itself
+permission to test. Publish aggregate statistics rather than named victims. If
+a defensible protocol and denominator cannot be obtained, abandon the prevalence
+claim rather than publish vulnerability marketing.
 
 **Do not become a scanner company.** The scanner is the argument, not the product. It is the cheap fix we expect the market to reach for first, and being known for it makes us harder to distinguish from it.
 
@@ -338,13 +418,18 @@ Earlier drafts modelled direct-to-team SaaS, platform licensing, and first-party
 
 **If acquisition follows:** priced on strategic necessity, competitive tension between bidders, and how acute the liability feels at that moment. Genuinely wide range; the variable is almost entirely whether more than one buyer wants it.
 
-### Honest odds
+### Planning priors, not measured probabilities
 
 | Outcome | Probability |
 |---|---|
 | Thesis fails on OD-8 or OD-9; four months spent finding out | ~30% |
 | A good compiler, a small product with some customers, no exit | ~50% |
 | Product works, artifact is compelling, acquisition | ~20% |
+
+These figures are planning priors. They are not customer evidence and are not
+produced by a calibrated model. The decision record must state the staffing,
+throughput, dependency, infrastructure, adoption, and buyer assumptions that
+would move each estimate before using it for funding or strategy.
 
 Not a strong expected value in dollars. A very good one for four months of work at the demonstrated rate, and the downside is bounded in a way almost nothing in this space is.
 
@@ -367,7 +452,9 @@ Ordered by what actually threatens the plan, not by how alarming they sound.
 - **Scope discipline.** §0.15 is the defence and must be enforced in review.
 ## 0.12 What humans actually do
 
-If nobody reads the code, the source file is not the primary artifact. Three things replace it:
+When implementation is not reliably read, the source file is not the primary
+review artifact. Three things take priority, while incident-relevant code and
+migrations remain human-reviewed:
 
 | Human owns | Artifact | Status |
 |---|---|---|
@@ -375,7 +462,9 @@ If nobody reads the code, the source file is not the primary artifact. Three thi
 | **Outcomes** — what did it do | Structured execution trace (§108) | Specified |
 | **Intent** — what should it do | *Nothing yet* | **Missing — Part XXI, OD-6** |
 
-Gust's interface is the authority diff, not the editor.
+Gust's primary review interface is the authority diff, not the editor. The
+benchmark must also measure review burden and reviewer comprehension for the new
+artifacts; a shorter artifact is not automatically a better understood one.
 
 **The failure mode inverts.** Human code fails from misunderstanding — the author missed a case. Types and review catch that. Agent code fails from **plausible-but-wrong**: it compiles, type-checks, reads well, and does something subtly different from what was asked. Types do not catch that. Review does not catch it if nobody reads. Only execution against stated intent does — which is why Part XXI exists and why §0.4 is careful about what is being claimed.
 
@@ -416,7 +505,12 @@ instrument. `docs/GENERATION_SECURITY_BENCHMARK.md` is the protocol.
 
 **Months 0–3 — the counting, in parallel.** §0.9. Independent of compiler progress, done by someone who is not on Track A or B.
 
-**Month 4 — the decision point.** OD-8 and OD-9 have resolved by now. If either failed, stop or re-scope; that is the 30% branch in §0.10 and it is the cheapest available way to be wrong. If both held, proceed.
+**Month 4 — the decision point.** Evaluate the four independent gates in §0.8:
+technical, generation, commercial, and defensibility. OD-8 supplies bounded
+technical evidence and OD-9 supplies generation evidence; neither supplies a
+buyer or a moat. If any required gate fails, stop, re-scope, or continue as a
+research artifact. Do not proceed automatically from a successful compiler demo
+to the integrated product.
 
 **Months 4–24 — the product.** The substrate first (workspaces, identity, permissions, objects, notifications, audit — Parts III, X, XI), then feature flags, then issues, then support inbox. Git hosting integrated, not rebuilt. Migration tooling from day one. This is v0.5 shipped with a price attached.
 
@@ -518,7 +612,6 @@ be written at all.
 
 Gust does not attempt to be:
 
-- a general-purpose systems language;
 - a host for existing JavaScript, Python, or Rust ecosystems;
 - a runtime for arbitrary untrusted third-party code in-process;
 - a formal-verification system (§79);
@@ -528,10 +621,19 @@ Gust does not attempt to be:
 - a platform whose guarantees survive an unrestricted escape hatch (Part XVIII);
 - an improvement to tooling that operates on code humans already maintain.
 
+**Gust is intended to remain a general-purpose systems language.** That is an
+independent product/design goal, not evidence for the initial containment wedge.
+Its no-GC ownership and native-backend work must be justified against that
+general-purpose goal and must not be presented as necessary to prove typed-query
+tenant provenance. The two proof chains meet where a production Gust application
+depends on the general-purpose runtime; success in either chain does not prove
+the other.
+
 And two hard constraints on how the business is run, not merely things we prefer not to do:
 
 - **No enterprise sales.** No procurement, no security questionnaires, no 6–18 month cycles. This rules out the regulated-vertical play (§0.8) despite it being arguably the better business, and that trade is accepted deliberately. A plan the team will not execute is worth zero.
-- **No business decision before month four.** §0.8. The demo selects the strategy.
+- **No business decision before month four.** §0.8. The four-gate evidence record,
+  not the demo alone, selects the strategy.
 
 **One line:** the fix for AI-generated data leaks is structural, and for the first time in the history of this problem the lever is ten generators instead of ten million developers.
 
@@ -635,9 +737,15 @@ A function's type states both the values it transforms and the authority it requ
 
 ### Lead claim
 
-> **The most common way AI-generated applications leak data cannot be expressed in this language.**
+> **Gust rejects compiler-owned typed queries whose scoped-entity obligations
+> are not discharged by matching trusted tenant provenance.**
 
-Missing tenant scoping — an application querying the database without restricting to the current user — is the canonical failure of agent-authored software and the direct cause of repeated public data-exposure incidents. §56 makes an unscoped query a **compile error**. Not a lint, not a scanner, not a template someone might forget: the program does not build.
+Missing tenant scoping is a canonical failure of agent-authored software. §56
+makes that construction a **compile error** inside the compiler-owned typed-query
+path. Not a lint, not a scanner, not a template someone might forget: that query
+does not build. This is not a claim of application-wide tenant isolation. Caches,
+messages, jobs, object storage, non-query reads, multi-step flows, raw SQL, and
+trusted-context establishment require separate controls and evidence.
 
 ### The limit of the claim
 
@@ -772,7 +880,19 @@ Gust automatically scopes database access, object storage, jobs, caches, logs, a
 
 The tenant context is platform-owned and immutable for the lifetime of a request or job. Background jobs carry a signed tenant context. Cross-tenant administration requires an explicit privileged capability.
 
-The default PostgreSQL isolation model is one schema per workspace. Stronger options are database-per-workspace and cluster-per-workspace.
+The first production-shaped demo uses **one schema per workspace**. Its proof
+obligations are trusted connection acquisition, schema/search-path pinning,
+pool-reset correctness, and preventing a connection from retaining a previous
+workspace. The typed-query provenance analysis remains valuable within that
+schema, but it is not the mechanism selecting the schema.
+
+A future shared-schema mode with a tenant column is a separate architecture, not
+an interchangeable implementation. Its proof obligations are predicate
+provenance, joins, nesting, mutations, and relational completeness, and it must
+retain PostgreSQL row-level security as an independent downstream boundary.
+Database-per-workspace and cluster-per-workspace are stronger deployment
+options. Each supported mode needs its own threat model, conformance suite, and
+external guarantee.
 
 ---
 
@@ -802,7 +922,14 @@ The language directly understands client and server execution boundaries, databa
 
 Gust uses explicit ownership and region-based memory built around branded contexts such as `ctx`.
 
-The goal is strong memory safety without garbage collection, unrestricted pointer use, or hiding ownership entirely.
+The goal is a general-purpose systems language with strong memory safety without
+garbage collection, unrestricted pointer use, or hiding ownership entirely.
+That goal predates and exceeds the tenant-provenance wedge. No-GC ownership is
+not required to reject an unscoped typed query; it is retained because Gust is
+intended to serve long-running services, edge and embedded work, native tooling,
+and other general-purpose workloads where predictable resource behaviour is
+valuable. Model-fluency and containment evaluations must report the cost of this
+choice instead of crediting it to the narrower security claim.
 
 ## 11. Errors and absence
 
@@ -956,6 +1083,14 @@ network.request<host>
 
 **Effects are declared on every function, without exception.** Earlier drafts permitted inference on private functions; that is withdrawn. Full annotation makes diffs informative, traces correlatable, and generation more constrained. The cost is verbosity, and it is worth paying *here* specifically: the effect set is the artifact a reviewer reads (§0.12), so stating it is the point rather than an overhead. This is not the general "verbosity is free" claim, which Part IV withdraws — it is the case that claim was reaching for.
 
+This remains a design hypothesis until OD-9 measures it. The benchmark must
+compare exact per-function annotation with a prototype that infers effects for
+private implementation functions while keeping public, package, capability, and
+deployment boundaries explicit. If exact annotation causes effect-set explosion,
+compiler special cases, or materially worse secure functional completion, the
+artifact boundary—not the slogan—decides the design. This paragraph authorizes
+an evaluation, not a semantic change by documentation.
+
 This enables static least privilege, containable agent-generated code, compiler-checked mocks, automatic deployment policies, and auditable authority changes.
 
 ## 18. Effect granularity
@@ -976,6 +1111,18 @@ uses network.request<"stripe.com">,
 ```
 
 Low-level supplier requirements are held by the approved capability implementation.
+
+That creates two linked authority manifests:
+
+| Layer | Example | Reviewed and enforced as |
+| --- | --- | --- |
+| Application authority | `payments.charge` | The business operation application reviewers approve |
+| Implementation authority | `network.request<"api.stripe.com">`, `secret.use<"stripe_key">`, permitted request fields | The low-level authority the runtime grants the approved adapter |
+
+Certification assesses implementation trust and contract conformance; it does
+not replace runtime confinement. Evidence must map each business operation to
+the implementation authority it exercised, and an adapter may not obtain
+low-level authority absent from its implementation manifest.
 
 This matters because of §0.12: when the manifest is the artifact humans actually read, abstraction level *is* the product. `payments.charge` is reviewable by someone who is not a systems engineer, and generatable by an agent reasoning in domain terms.
 
@@ -1769,7 +1916,14 @@ effects and a concrete connection API remain separate work.
 
 PostgreSQL is the source of truth for the database schema.
 
-Gust introspects PostgreSQL and generates base Gust types, similar to Kanel.
+Schema acquisition is separate from compilation. An explicit command connects
+to PostgreSQL and emits a canonical, content-addressed schema snapshot. That
+snapshot is reviewed and pinned; ordinary compilation derives types, effects,
+and query obligations offline from it. Deployment verifies that the pinned
+snapshot matches the target schema version before release. Identical source and
+pinned inputs therefore cannot silently observe different live database state.
+
+Gust generates base Gust types from that snapshot, similar to Kanel.
 
 Application domain types may wrap generated database types but do not redefine the database schema.
 
@@ -1789,7 +1943,7 @@ Query results are strongly typed. Database schema changes regenerate types and p
 
 Row 7 of `docs/DEMO_TARGET_PROGRAM.md`, and the largest single item on that list. OD-2 settled *who* derives — the compiler, because §13's ban on user-written generic functions stands. Nothing states *what* comes out of the derivation.
 
-**The claim this section makes: a query site derives three things, not one, and they must come out of one derivation rather than three passes.**
+**The claim this section makes: a query site derives three things, not one, and they must come out of one semantic analysis over one closed query IR rather than three independent interpretations.**
 
 At a site such as `from Issue where workspace == scope and state == Open`, the compiler must produce:
 
@@ -1797,7 +1951,17 @@ At a site such as `from Issue where workspace == scope and state == Open`, the c
 2. **The effect requirement.** The entity determines what authority the query needs: reading `Issue` requires `db.read<Issue>`. The compiler derives the *requirement*; §18.1's rule 1 still applies, so the enclosing function must have **declared** a set that covers it. Derivation never widens a declaration — it only says what the declaration must contain.
 3. **The scope obligation.** §56.2's provenance rule attaches here: which scoped entities the query roots at, and whether each obligation is discharged by a predicate flowing from a `Scope[…]` binding.
 
-**Why one derivation and not three.** These three read the same query structure — the entity set, the join graph, the predicate list. Computed separately they can disagree about it, and the disagreement is silent because each pass individually succeeds. A join that the type derivation treats as one entity and the scope derivation treats as another produces a well-typed query with an unchecked obligation, which is §56.1's attack class 2 arriving through the back door rather than the front. **One walk over one structure, emitting three facts, cannot disagree with itself.**
+**Why one semantic analysis and not three.** These three read the same closed
+query IR—the entity set, join graph, and predicate list. Computed from separate
+representations they can silently disagree. One analysis avoids that class of
+drift, but it does not prove the emitted SQL preserves the IR's meaning.
+
+SQL lowering is therefore a separate, inspectable stage with differential tests
+against an IR interpreter and real PostgreSQL. The suite covers null semantics,
+joins, aliases, collations, row-level security, function volatility, subqueries,
+mutations, `RETURNING`, parameters versus identifiers, and every typed
+extension. The lowering may be wrong even when the analysis is internally
+consistent; external claims require evidence for both.
 
 **What is not derived.** The operator set (§16 is compiler-owned and closed), the predicate language, and any user extension of the builder. PostgreSQL-specific features arrive as explicit typed extensions (§55) rather than as a generic escape hatch, and the escape hatch that does exist is §57's privileged raw SQL — outside the derivation, and therefore outside all three of its guarantees. That is the honest cost of having an escape hatch and the reason §56.1 asks whether holding that capability is non-transitive.
 
@@ -2499,13 +2663,42 @@ The design constraint: a diagnostic must be sufficient for correction without re
 
 Agent execution runs in a pre-warmed sandbox with the application's capability set already resolved.
 
-The sandbox boundary and the capability boundary are the same mechanism. Gust does not wrap an untrusted container around agent output and hope; the compiler has already established what the program can reach, and the runtime enforces exactly that set.
+The capability boundary and the sandbox boundary are independent, layered
+controls. The compiler records declared authority; an operator policy authorizes
+a ceiling; unforgeable runtime handles enforce each invocation. A process,
+Wasm, VM, or equivalent sandbox separately contains compiler defects, memory
+corruption, malformed native adapters, unexpected syscalls, denial of service,
+and resource exhaustion. CPU, memory, filesystem, network, and syscall limits
+are explicit sandbox policy.
 
-Sandboxes are disposable, content-addressed, and reproducible. Two runs of the same release with the same input produce the same trace, or the difference is itself recorded as a nondeterminism finding.
+The trusted computing base includes the compiler, runtime capability broker,
+policy evaluator, schema/context establishment, approved in-process adapters,
+and the isolation mechanism. A language-level capability system cannot safely
+serve as its own fault-containment boundary when those components may contain
+defects.
+
+Sandboxes are disposable and content-addressed. Deterministic tests run against
+controlled external fakes; record/replay requires a captured transcript of
+time, randomness, scheduling, database state, network responses, retries, and
+other external events. Production traces are observations and are not claimed
+to replay identically without that transcript.
 
 ## 111. Reproducibility
 
-Content-addressed builds, no install-time execution (§15), virtualized time and randomness (§76), and deterministic scheduling (§77) combine to make a run a clean observation.
+Keep four properties separate:
+
+1. **Reproducible builds:** pinned inputs produce identical artifacts under the
+   stated environment.
+2. **Deterministic tests:** controlled fakes, virtual time/randomness, and a
+   deterministic scheduler produce repeatable test executions.
+3. **Record/replay:** a captured external-world transcript permits replay of a
+   particular execution.
+4. **Production observability:** traces record what occurred without promising
+   that an uncontrolled external world will repeat it.
+
+Content-addressed builds and no install-time execution (§15) support the first;
+virtualized time and randomness (§76) and deterministic scheduling (§77) support
+the second. None alone establishes the other properties.
 
 > **One of those four holds; a stronger property is enforced elsewhere.** Verified 2026-08-20 at `b47d0049`. No install-time execution is real (no macros, build scripts, or compile-time execution). Content-addressed builds, virtualized time and randomness, and deterministic scheduling are all absent.
 >
@@ -2525,7 +2718,10 @@ precisely bounded semantic-reproducibility contract. Such a contract describes
 a different comparison population and does not weaken or substitute for Phase
 21's authoritative byte-identity gate.
 
-A nondeterministic run is not a weaker signal; it is a contaminated one, and must be discarded rather than averaged.
+A nondeterministic **controlled test** is a contaminated comparison and must be
+diagnosed rather than averaged. A production run that observes a changing
+external world is ordinary evidence, labelled with its captured inputs and
+limits rather than discarded.
 
 ## 112. Traces as training signal
 
@@ -2569,13 +2765,20 @@ Agents may not approve escape hatches (§97), may not self-elevate capabilities,
 
 Authority granted to an agent is narrowed, never inherited: an agent operating on behalf of a user receives a strict subset of that user's authority, scoped to the task.
 
+The first deployment receives no special exemption merely because there is no
+prior manifest to diff against. Organization-level policy ceilings, risk-ranked
+effects, least-authority suggestions, and mandatory justification for privileged
+effects apply to the complete initial manifest. Later diffs are an additional
+review surface, not the source of authorization.
+
 ---
 
 # Part XXI — Intent and Specification (OD-6)
 
-> **Status: SPECULATIVE.** Blocks v1.0, not v0.1 (§0.4). This is the unsolved half — correctness rather than containment — and leading with it is how nothing ships.
-
-*Blocks v0.5, not the demo. Specified as a requirement, not a design — the form is unresolved. This is the difference between containment and correctness (§0.4).*
+> **Status: SPECULATIVE.** Blocks v1.0, not the demo or v0.5 (§0.4, §0.15
+> OD-6). This is the unsolved half—correctness rather than containment—and
+> leading with it is how nothing ships. It is specified as a requirement, not a
+> settled design.
 
 ## 115. Why this Part exists
 
@@ -2642,11 +2845,14 @@ One attachment point, two authoring depths. A reviewer never chooses between the
 
 > **Status: index.** Restates rules from every Part above; each rule inherits its own Part's status. `docs/ONE_WAY_LEDGER.md` records which of them the compiler currently enforces.
 
-1. Gust is built for software written by machines and never read by people — as a market observation about what to build first, not as a licence for ceremony in the language (§0.1).
+1. Gust is built for software written mostly by machines and whose implementation
+   is not reliably read before shipping; human review moves to intent, authority,
+   evidence, exceptions, migrations, and incident-relevant code (§0.1).
 2. Humans own intent, authority, and outcomes. The compiler owns everything in between.
 3. Gust delivers containment, not correctness. Never claim otherwise.
 4. No code executes authority it did not declare, and the compiler enforces it.
-5. The unscoped query does not compile.
+5. A compiler-owned typed query with an undischarged trusted-scope obligation
+   does not compile; this is not an application-wide isolation claim.
 6. The lever is the generator, not the developer. Judge every decision against it.
 7. Gust arrives as a mode of someone's product, never as a product users must choose.
 8. The demo is the asset. Everything else is scaffolding.
@@ -2684,7 +2890,8 @@ One attachment point, two authoring depths. A reviewer never chooses between the
 40. Escape hatches always expose the exact boundary at which Gust's guarantees weaken.
 41. Determinism is a product requirement, because a run is an observation.
 42. Every run emits a structured trace; the trace is an artifact, not a log.
-43. The sandbox boundary and the capability boundary are the same mechanism.
+43. Capability enforcement and sandbox isolation are independent layers; both
+   are required for containment.
 44. Agents are service accounts with narrowed authority and their own audit trail.
 45. Conformance checks substitute for reading and must be resourced as such.
 46. Gust says *enforce*, *check*, and *reject*. Gust does not say *prove*.

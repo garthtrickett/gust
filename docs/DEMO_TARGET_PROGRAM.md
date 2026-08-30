@@ -24,6 +24,20 @@ table below, with an owner per row.
   `docs/DEMO_EXPLOIT_AUTOPSIES.md`. Those autopsies demonstrate shipped
   guarantees; they do not add speculative prerequisites to the program below.
 
+This target is the **mechanism stage** only. A containment-stage claim also
+requires ambient bypasses to be closed, runtime capabilities to be enforced,
+and native or supplier code to be independently isolated. A production-shaped
+claim additionally requires trusted tenant establishment, pinned schema
+acquisition, realistic Postgres execution, traces, deployment evidence, and an
+independent attack. Passing this file's positive and negative cases does not by
+itself pass either later stage.
+
+The first production-shaped deployment uses **one PostgreSQL schema per
+workspace**. Its isolation proof is about trusted connection acquisition,
+schema/search-path pinning, and pool reset. A shared-schema/tenant-column variant
+is a separate architecture with predicate-provenance and RLS obligations; it is
+not silently interchangeable with this target.
+
 **Written 2026-08-20 against `b47d0049`.** Verified blockers cite
 `docs/ONE_WAY_LEDGER.md`, which carries the reproductions.
 
@@ -99,6 +113,11 @@ Three properties, and each is load-bearing:
 3. **An unscoped typed query does not compile.** Each scoped root carries an
    obligation, and only matching non-forgeable typed Scope provenance can
    discharge it. Predicate spelling or an arbitrary request value cannot.
+
+That third property is deliberately bounded. It does not establish safe cache
+keys, message or job propagation, object-storage scoping, non-query reads,
+multi-step identifier flows, raw SQL, or correctness of the host that created
+the trusted `Scope`. Those paths require their own controls and evidence.
 
 ## The negative case
 
@@ -184,7 +203,7 @@ Ordered by dependency. Status re-verified 2026-08-22; evidence in
 | 5 | `uses` clauses parsed and checked across the call graph | **ABSENT** — ledger E10, but `FunctionSignature` already carries per-function obligations | **unowned** — VISION §0.7 Track A; spec proposed at **§18.1** |
 | 6 | Entity declarations that mark an entity workspace-scoped | **ABSENT** | Cranelift lane — Phase 21 Track A, Patch 21.2 onward; VISION **§56.2** rule 1 |
 | 7 | Compiler-owned query derivation (`from`, `.where`, `.all`) | **ABSENT** | Cranelift lane — Phase 21 Track A, Patch 21.3 onward; VISION **§55.1**. OD-2 resolved 2026-08-20: this is compiler work by decision, not a library someone could contribute |
-| 8 | Tenant scope tracked through query construction; unscoped rejected | **ABSENT** | Cranelift lane — Phase 21 Track A, Patches 21.4–21.7; OD-8 is design-set/evidence-open at VISION **§56.2**, attack list at **§56.1** |
+| 8 | Tenant scope tracked through query construction; unscoped rejected | **ABSENT in this target program** | Cranelift lane — OD-8 resolved 2026-08-25 as bounded positive for the predefined compiler-owned typed-query suite; VISION **§56.2** records the design and verdict and **§56.1** the attack list. That evidence does not make this aspirational target compile or cover the named exclusions. |
 | 9 | A Postgres capability to execute the query against | **ABSENT** | **unowned** — VISION **§54.0**, which finds this row shares CR-5's blocker with `MutexGuard` |
 | 10 | Panic scoped to the request, not the process | **VIOLATED** — ledger E3 | `TASK_STDLIB.md` CR-3, issue #91 — unscheduled |
 
@@ -281,10 +300,10 @@ order. **This is a recommendation, not a decision** — the ordering argument is
 written down so that choosing differently is a choice rather than an accident.
 
 **1. Rows 6 and 8 — workspace-scoped entities, and scope tracked through query
-construction.** These are §56, the lead claim, and OD-8 is thesis-invalidating:
-*is the scoping analysis sound?* §0.11 says one counterexample kills the only
-claim being made, and that someone adversarial must attack it before publication.
-**A soundness question should be answered while the surface is small enough to
+construction.** These are §56, the lead claim. OD-8's predefined attack suite
+has since produced a bounded positive verdict, but the target program and its
+excluded cache/non-query/multi-step paths remain unimplemented here. **The
+analysis belongs before convenience surfaces while it is still small enough to
 attack.** Every row below adds code the analysis must then hold over.
 
 **2. Row 5 — `uses` clauses and effect checking.** Track A item 1, and the thing
