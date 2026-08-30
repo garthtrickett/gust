@@ -116,7 +116,7 @@ func run_test(t: Test[ctx]) int {
     bin_path = std.Concat(bin_path, "_bin");
 
     if is_neg == 1 {
-        mut cmd := std.Concat("./gust ", path);
+        mut cmd := std.Concat("./gust --backend mir-to-c ", path);
         cmd = std.Concat(cmd, " > ");
         cmd = std.Concat(cmd, temp_log);
         cmd = std.Concat(cmd, " 2>&1");
@@ -151,7 +151,7 @@ func run_test(t: Test[ctx]) int {
             run_system_cmd("mkdir -p temp_e2e_filesystem_dir && echo 'func main() {}' > temp_e2e_filesystem_dir/file1.gst && echo 'plain text' > temp_e2e_filesystem_dir/file2.txt");
         }
 
-        mut cmd_comp := std.Concat("./gust ", path);
+        mut cmd_comp := std.Concat("./gust --backend mir-to-c ", path);
         cmd_comp = std.Concat(cmd_comp, " > ");
         cmd_comp = std.Concat(cmd_comp, temp_log);
         cmd_comp = std.Concat(cmd_comp, " 2>&1");
