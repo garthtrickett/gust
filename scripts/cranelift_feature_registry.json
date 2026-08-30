@@ -3570,7 +3570,7 @@
         {"path": "scripts/stdlib_s1_composition_parity.sh", "line": 30, "recipe": "none", "compiler_token": "./gust"}
       ],
       "post_flip_review_relay": {
-        "status": "awaiting_owning_stdlib_correction",
+        "status": "transition_authorized_awaiting_owning_stdlib_merge",
         "review_pull_request": 251,
         "review_thread": "PRRT_kwDOS1ExJc6dYPJO",
         "consumer_count": 6,
@@ -3587,6 +3587,36 @@
           {"path": "tests/test_runner.gst", "line": 119, "recipe": "none", "compiler_token": "./gust"},
           {"path": "tests/test_runner.gst", "line": 154, "recipe": "none", "compiler_token": "./gust"}
         ],
+        "transition_authority": {
+          "status": "authorized_pre_or_exact_post_relay",
+          "owning_pull_request": 264,
+          "base_sha": "e4dd6b938d43c689887956eb8d46a381ce7eba03",
+          "authorized_head_sha": "95144aea75dd3812cd52e86391ea5a8c54b11363",
+          "changed_path_count": 2,
+          "changed_paths": [
+            "tests/e2e_codegen_assertions.gst",
+            "tests/test_runner.gst"
+          ],
+          "route_only_replacement_count": 6,
+          "pre_relay_invocation_inventory": {
+            "total": 306,
+            "selection_counts": {"explicit_c": 167, "explicit_cranelift": 115, "explicit_invalid_or_parser_probe": 3, "implicit_default": 21},
+            "consumer_class_counts": {"already_explicit_or_parser_probe": 285, "cranelift_C_or_diagnostic_guard": 2, "help_surface_probe": 3, "intentional_default_selection_probe": 8, "invocation_parser_probe": 2, "stdlib_owned_C_or_diagnostic_guard": 6},
+            "owner_counts": {"cranelift": 277, "stdlib": 29},
+            "unclassified_count": 0
+          },
+          "post_relay_invocation_inventory": {
+            "total": 306,
+            "selection_counts": {"explicit_c": 173, "explicit_cranelift": 115, "explicit_invalid_or_parser_probe": 3, "implicit_default": 15},
+            "consumer_class_counts": {"already_explicit_or_parser_probe": 291, "cranelift_C_or_diagnostic_guard": 2, "help_surface_probe": 3, "intentional_default_selection_probe": 8, "invocation_parser_probe": 2},
+            "owner_counts": {"cranelift": 277, "stdlib": 29},
+            "unclassified_count": 0
+          }
+        },
+        "landed_merge_evidence": {
+          "status": "pending_owning_stdlib_merge",
+          "owning_pull_request": 264
+        },
         "required_before": "patch22_8_stability_authority_publication"
       },
       "expected_selection": "explicit_mir_to_c",

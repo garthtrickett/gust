@@ -57,9 +57,9 @@ def validate() -> dict:
             "qualification_complete_default_flip_prerequisites_satisfied",
             "pre-flip prerequisite is incomplete")
     scanner = __import__("phase22_opening")
-    require(scanner.scan_summary(scanner.scan_invocations()) ==
-            record.get("post_flip_invocation_inventory"),
-            "post-flip invocation inventory drifted")
+    scanner.validate_post_flip_relay_transition(
+        registry, scanner.scan_invocations()
+    )
     require(record.get("route_contract") == {
         "default_backend": "cranelift",
         "explicit_native_backend": "cranelift",
