@@ -128,8 +128,17 @@ def check() -> None:
                 f"{key} status drifted")
 
     task = TASK.read_text(encoding="utf-8")
-    active = task.split("## Status", 1)[1].split(
+    require(task.startswith("# Phase 23 — MIR-to-C Deprecation"),
+            "TASK.md does not open the active Phase 23 roadmap")
+    immutable_marker = (
+        "# Immutable Phase 22 Completion Record — Cranelift Default Backend "
+        "Transition"
+    )
+    require(immutable_marker in task,
+            "TASK.md does not preserve the immutable Phase 22 record")
+    phase22_record = task.split(immutable_marker, 1)[1].split(
         "# Immutable Phase 21 Completion Record", 1)[0]
+    active = phase22_record.split("## Status", 1)[1]
     rows = re.findall(r"^- \[([ x])\] Patch (22\.\d+[a-z]?) — .+$",
                       active, re.MULTILINE)
     require([patch for _, patch in rows] == EXPECTED_PATCHES,

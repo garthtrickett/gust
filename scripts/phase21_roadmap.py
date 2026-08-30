@@ -283,8 +283,13 @@ def validate() -> dict:
             "Phase 21 roadmap amendments drifted")
 
     task = TASK.read_text(encoding="utf-8")
-    require(task.startswith("# Phase 22 — Cranelift Default Backend Transition"),
-            "TASK.md does not open the active Phase 22 roadmap")
+    require(task.startswith("# Phase 23 — MIR-to-C Deprecation"),
+            "TASK.md does not open the active Phase 23 roadmap")
+    require(
+        "# Immutable Phase 22 Completion Record — Cranelift Default Backend "
+        "Transition" in task,
+        "TASK.md does not preserve the immutable Phase 22 record",
+    )
     immutable_marker = (
         "# Immutable Phase 21 Completion Record — Tenant-Scoped Typed Queries "
         "and Cranelift Self-Hosting Qualification"
