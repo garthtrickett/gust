@@ -59,11 +59,12 @@ def validate(value: dict | None = None) -> dict:
             "full_program_route": "mir_native_full_program_source_lower",
             "typed_ast_tags": [9, 11],
             "canonical_operations": ["GuardUnwrap", "ScheduleDefer"],
-            "scalar_signature_policy": "a_typed_program_with_guard_or_defer_may_use_the_existing_full_program_route_when_no_non_scalar_signature_selects_it",
+            "scalar_signature_policy": "a_function_only_typed_program_with_guard_or_defer_may_use_the_existing_full_program_route_when_no_non_scalar_signature_selects_it",
         },
         "fixtures": {
             "positive": "compiler/phase20_resource_acquisition_directory_source.gst",
             "retained_deferred": "compiler/phase13_structured_cfg_short_circuit_deferred_source.gst",
+            "retained_declaration": "tests/e2e_formatting_utilities.gst",
         },
         "phase22_closed_inventory_extension": {
             "status": "exact_phase23_extension_excluded_only_from_phase22_relay_identity",
@@ -116,6 +117,8 @@ def validate_source_handoff(value: dict) -> None:
             "typed guard/defer inventory drifted")
     require("mir_native_full_program_contains_guard_or_defer(programs, ctx)" in full,
             "scalar-signature handoff is missing")
+    require("if statement.tag != 3 {" in full,
+            "function-only scalar guard/defer admission boundary is missing")
     for forbidden in ("phase20_resource_acquisition", "OpenDir", "Directory"):
         require(forbidden not in deferred and forbidden not in full,
                 "source admission contains a fixture or resource-specific exception")
@@ -182,6 +185,21 @@ def validate_retained_deferral(value: dict) -> None:
             "retained short-circuit deferral changed")
 
 
+def validate_retained_declaration_deferral(value: dict) -> None:
+    source = ROOT / value["fixtures"]["retained_declaration"]
+    env = os.environ.copy()
+    env["GUST_NATIVE_BACKEND_DRIVER"] = str(DRIVER)
+    artifact = BUILD / "retained-declaration.native"
+    observed = run([str(GUST), "--backend", "cranelift", "-o", str(artifact),
+                    str(source)], env=env)
+    require(observed.returncode != 0 and not artifact.exists(),
+            "declaration-bearing scalar source reached native publication")
+    output = observed.stdout.decode("utf-8", errors="replace")
+    require("reason_code=source_feature_not_represented" in output and
+            "expected_failure_stage=before_driver_discovery" in output,
+            "declaration-bearing scalar source classification changed")
+
+
 def render(value: dict) -> str:
     source = value["source_admission"]
     fixtures = value["fixtures"]
@@ -200,7 +218,7 @@ def render(value: dict) -> str:
         f"- Existing canonical operations: `{', '.join(source['canonical_operations'])}`",
         "",
         "The narrower structured-CFG recognizer does not claim typed `guard` or `defer`. "
-        "The generic full-program encoder admits that AST cohort, including scalar-only "
+        "The generic full-program encoder admits that AST cohort for function-only scalar "
         "program signatures, and the existing worker validates and lowers the same two "
         "canonical operations. No resource, directory, fixture, module, or path exception exists.",
         "",
@@ -208,14 +226,16 @@ def render(value: dict) -> str:
         "",
         f"- Positive source: `{fixtures['positive']}`",
         f"- Retained deferral: `{fixtures['retained_deferred']}`",
+        f"- Retained declaration-bearing deferral: `{fixtures['retained_declaration']}`",
         f"- Oracle: `{observables['oracle']}`",
         f"- Expected exit: `{observables['exit_status']}` with empty stdout/stderr",
         f"- Native artifact: `{observables['native_artifact']}`",
         "- Phase 22 relay inventory: the exact three evidence invocations are a registered Phase 23 extension and are excluded only while validating the frozen Phase 22 six-site relay identity.",
         "",
         "The evidence guard rejects restoring the preempting guard/defer deferral, "
-        "removing the generic scalar-signature handoff, replacing the existing worker "
-        "operations, or admitting the retained short-circuit structured-CFG deferral.",
+        "removing the generic function-only scalar-signature handoff, replacing the existing "
+        "worker operations, admitting declaration-bearing scalar source, or admitting the "
+        "retained short-circuit structured-CFG deferral.",
         "",
         "No accepted Gust meaning, canonical MIR operation or operation meaning, resource/move/cleanup "
         "semantics, ABI/layout/runtime symbol, backend fallback, bootstrap seed, Stdlib, or CR-15 authority changes.",
@@ -244,6 +264,7 @@ def evidence() -> None:
     require(oracle == (value["observables"]["exit_status"], b"", b""),
             "positive observables differ from registered contract")
     validate_retained_deferral(value)
+    validate_retained_declaration_deferral(value)
     check_review(value)
     print(f"phase23_structured_guard_defer_native_admission: evidence ok artifact_bytes={native[3].stat().st_size}")
 

@@ -1126,6 +1126,11 @@ func mir_native_full_program_contains_guard_or_defer(
     programs: std.Vector[ast.Program[ctx], ctx],
     ctx: &Arena
 ) int {
+    // Scalar-only programs reach this route only through the narrow guard/defer
+    // handoff. Keep that additive cohort function-only: a declaration-bearing
+    // program retains its pre-existing conservative source classification until
+    // its complete executable shape is otherwise admitted.
+    mut contains_guard_or_defer := 0;
     mut program_index := 0;
     while program_index < len(programs) {
         unsafe {
@@ -1134,19 +1139,20 @@ func mir_native_full_program_contains_guard_or_defer(
             mut statement_index := 0;
             while statement_index < len(top_level) {
                 mut statement := top_level[statement_index];
-                if statement.tag == 3 &&
-                   mir_native_full_program_block_contains_guard_or_defer(
-                       statement.FunctionDecl.body, ctx
-                   ) == 1
-                {
-                    return 1;
+                if statement.tag != 3 {
+                    return 0;
+                }
+                if mir_native_full_program_block_contains_guard_or_defer(
+                    statement.FunctionDecl.body, ctx
+                ) == 1 {
+                    contains_guard_or_defer = 1;
                 }
                 statement_index = statement_index + 1;
             }
         }
         program_index = program_index + 1;
     }
-    return 0;
+    return contains_guard_or_defer;
 }
 
 func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program[ctx], ctx], module_prefixes: std.Vector[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) MirNativeFullProgramModel[ctx] {

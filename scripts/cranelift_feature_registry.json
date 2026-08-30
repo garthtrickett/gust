@@ -4396,11 +4396,12 @@
       "full_program_route": "mir_native_full_program_source_lower",
       "typed_ast_tags": [9, 11],
       "canonical_operations": ["GuardUnwrap", "ScheduleDefer"],
-      "scalar_signature_policy": "a_typed_program_with_guard_or_defer_may_use_the_existing_full_program_route_when_no_non_scalar_signature_selects_it"
+      "scalar_signature_policy": "a_function_only_typed_program_with_guard_or_defer_may_use_the_existing_full_program_route_when_no_non_scalar_signature_selects_it"
     },
     "fixtures": {
       "positive": "compiler/phase20_resource_acquisition_directory_source.gst",
-      "retained_deferred": "compiler/phase13_structured_cfg_short_circuit_deferred_source.gst"
+      "retained_deferred": "compiler/phase13_structured_cfg_short_circuit_deferred_source.gst",
+      "retained_declaration": "tests/e2e_formatting_utilities.gst"
     },
     "phase22_closed_inventory_extension": {
       "status": "exact_phase23_extension_excluded_only_from_phase22_relay_identity",
