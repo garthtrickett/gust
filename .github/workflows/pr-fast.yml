@@ -498,6 +498,9 @@ jobs:
       - name: Phase 22 Historical route successor correction
         run: just guard-cranelift-phase22-historical-route-successor-contract
 
+      - name: Phase 22 one-time default-native stability qualification
+        run: just guard-cranelift-phase22-stability-qualification-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 

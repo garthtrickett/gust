@@ -134,7 +134,7 @@ def validate() -> dict:
     }, "qualification result drifted")
     task = TASK.read_text(encoding="utf-8")
     require("- [x] Patch 22.7 — Post-flip CI, Documentation, and Rollback Qualification — DONE" in task and
-            "- [ ] Patch 22.8 — One-Time Default-Native Stability Qualification" in task,
+            "Patch 22.8 — One-Time Default-Native Stability Qualification" in task,
             "22.7/22.8 roadmap boundary drifted")
     levels = json.loads(LEVELS.read_text(encoding="utf-8"))["guards"]
     require(levels.get(GUARD_L1) == 1 and levels.get(GUARD_L2) == 2,
