@@ -2820,7 +2820,45 @@
           "retained_lowering_surface": {"type": "object"},
           "production_use_falsifier": {"type": "object"},
           "retired_location_guard": {"type": "object"},
-          "issue_closure": {"type": "object"},
+          "issue_closure": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["state", "implementation_pull_request",
+                         "implementation_exact_head_sha",
+                         "implementation_merged_main_sha", "pull_request_event",
+                         "successful_workflows", "total_workflows",
+                         "unfinished_workflows", "non_success_workflows",
+                         "unresolved_review_threads", "current_main_validation",
+                         "issue_state"],
+            "properties": {
+              "state": {"const": "closed_after_merged_current_main_validation"},
+              "implementation_pull_request": {"const": 271},
+              "implementation_exact_head_sha": {"const": "bf53fa38a079a8cb9c019872408603ed9c17a356"},
+              "implementation_merged_main_sha": {"const": "3c437227ae75a7b90a14916bd8d23df6799d5f00"},
+              "pull_request_event": {"const": "pull_request"},
+              "successful_workflows": {"const": 115},
+              "total_workflows": {"const": 115},
+              "unfinished_workflows": {"const": 0},
+              "non_success_workflows": {"const": 0},
+              "unresolved_review_threads": {"const": 0},
+              "current_main_validation": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["sha", "commands", "result"],
+                "properties": {
+                  "sha": {"const": "3c437227ae75a7b90a14916bd8d23df6799d5f00"},
+                  "commands": {
+                    "const": [
+                      "just guard-mir-lower-tiny-function-surface",
+                      "just guard-cranelift-phase23-mir-evidence-owner-contract"
+                    ]
+                  },
+                  "result": {"const": "completed_success"}
+                }
+              },
+              "issue_state": {"const": "closed"}
+            }
+          },
           "boundary": {"type": "object"}
         }
       },
