@@ -1808,13 +1808,18 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         if self.layouts.enums.contains_key(name.as_str()) {
             return Ok(());
         }
-        let fields: Vec<FieldPlacement> = self
+        let mut fields: Vec<FieldPlacement> = self
             .layouts
             .layout(ty)?
             .fields
             .values()
             .cloned()
             .collect();
+        fields.sort_by(|left, right| {
+            left.offset
+                .cmp(&right.offset)
+                .then_with(|| left.ty.cmp(&right.ty))
+        });
         for field in fields {
             let field_address = add_offset(builder, place.address, field.offset);
             self.initialize_index_sentinels(
