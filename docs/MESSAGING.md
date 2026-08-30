@@ -50,8 +50,8 @@ willingness to pay is near zero until after a breach.
 
 ## 3. The claim, and its exact boundary
 
-> **The compiler statically enforces that every database query is tenant-scoped.
-> The unscoped program does not compile.**
+> **The compiler rejects compiler-owned typed queries whose scoped-entity
+> obligations are not discharged by matching trusted tenant provenance.**
 
 **Say `enforce`, `check`, `reject`. Never say `prove`.** That is a rule, not a
 style preference — `docs/VISION.md` §79 sets it, because this is static
@@ -59,9 +59,10 @@ enforcement backed by generated conformance tests, not formal verification. **On
 misplaced "proven" converts a defensible claim into one a competent reviewer can
 retire in a sentence.**
 
-**Three things the claim does not cover**, and saying so first is stronger than
-being caught by it: caches, non-query reads, and multi-step flows are outside the
-analysis by construction. **The claim is about queries, so make it about queries.**
+**The claim does not cover** caches, messages, jobs, object storage, non-query
+reads, multi-step flows, unsafe/raw SQL, or establishment of the trusted request
+context. Saying so first is stronger than being caught by it. **The claim is
+about the compiler-owned typed-query path, so make it about that path.**
 
 *Source: `docs/VISION.md` §56 and §56.2; the boundary at §56.2's closing note.*
 
@@ -125,29 +126,29 @@ during builds, no mutable registry state.**
 **The single most important section, because the fastest way to lose a technical
 buyer is a claim their engineer disproves in the room.**
 
-`docs/ONE_WAY_LEDGER.md` scores 45 design rules against the compiler as of
-2026-08-22: **10 HOLDS, 9 PARTIAL, 7 VIOLATED, 1 DEFERRED, 18 ABSENT.** Phase
-19 moved brand identity from `VIOLATED` to `HOLDS`; the narrower CR-11 and CR-12
-matching defects keep cross-context movement `PARTIAL`.
+Do not copy a dated implementation summary into meeting material. Refresh it
+from `docs/ONE_WAY_LEDGER.md`, the active roadmaps, exact merged commit, and
+closure artifacts immediately before the meeting.
 
 - **Do not describe the effect system in the present tense.** There is no `uses`
   keyword in either lexer.
-- **Do not describe tenant scoping as working.** It is the *claim* and the demo
-  target; the analysis is specified (§56.2) and unbuilt.
+- **Do not turn OD-8's bounded positive verdict into application-wide tenant
+  isolation.** It covers the predefined compiler-owned typed-query suite and
+  explicitly excludes the paths listed in §3 above.
 - **What is real today** is the compiler, the arena and brand model, the resource
   and move semantics, the native backend work, and a self-hosted bootstrap.
-- **Regenerate the counts before the meeting rather than trusting the line
-  above.** They move, and a stale number here would be exactly the kind of
-  unchecked fact this document warns against. Count rows in
+- **Regenerate the ledger counts before the meeting.** They move, and a stale
+  number here would be exactly the kind of unchecked fact this document warns
+  against. Count rows in
   `docs/ONE_WAY_LEDGER.md` whose status cell contains `**HOLDS**`, `**PARTIAL**`,
   `**VIOLATED**`, `**DEFERRED**` or `**ABSENT**` — one status per table row — and
   use those numbers instead of these.
 
-**The honest frame for a demo-stage conversation:** *this is a well-specified
-hypothesis with a working compiler underneath it and two questions that can kill
-it, both resolving within four months.* That is a stronger thing to say than a
-polished overclaim, **and it is the frame the ledger makes available and almost
-nobody else can offer.**
+**The honest frame for a demo-stage conversation:** this is a well-specified
+hypothesis with a working compiler underneath it, a bounded typed-query verdict,
+and independent technical, generation, commercial, and defensibility gates.
+That is stronger than a polished overclaim, **and it is the frame the ledger
+makes available and almost nobody else can offer.**
 
 ---
 
@@ -188,6 +189,29 @@ and traces. The benchmark must also be allowed to show that the hardened
 TypeScript arm is good enough or that Gust is too costly for a model to use. If
 it cannot hurt the thesis, it cannot help the pitch.
 
+## 5.3 Post-Cranelift launch
+
+The coordinated Cranelift outreach occurs only after Phase 25 and the complete
+tail in `docs/ROADMAP_TAIL.md` close. `docs/CRANELIFT_LAUNCH.md` owns its claim
+ladder, proof package, upstream factual review, outreach waves, and falsifiers.
+
+This does not postpone all relationship development. At each credible material
+milestone, `docs/EVIDENCE_LED_OUTREACH.md` governs evidence cards, recipient
+research, individualized drafts, operator rewrite and approval, the relationship
+ledger, and feedback routing. Phase 20–24 may therefore support narrow private
+technical contact, but not a coordinated public Cranelift campaign.
+
+The launch target is a Level-3 statement: the self-hosted compiler builds and
+runs through the native path and normal supported bootstrap no longer requires
+generated C or a host C compiler, with the Rust adapter and optional
+foreign-runtime boundary stated honestly. Use only the exact wording supported
+by the final closure evidence.
+
+Do not announce a “world first,” “no Rust,” whole-language coverage, formal
+verification, blanket memory safety, or production readiness. The event earns
+technical credibility and relationships; it does not establish the governed web
+stack, OD-9, adoption, product-market fit, or acquisition demand.
+
 ## 6. What not to say
 
 - **"Proven" or "verified"** — §79. Enforce, check, reject.
@@ -203,6 +227,11 @@ it cannot hurt the thesis, it cannot help the pitch.
   being it is a payroll line.**
 - **Any comparison to Rust or Go as the competitor.** It flatters us and it is a
   category error — nobody choosing between Gust and Rust is the buyer in §2.
+- **A Cranelift historical “first” claim without the exact category and upstream
+  confirmation.** “One of the first” still requires private factual review;
+  ordinary search is not enough.
+- **“Gust contains no Rust.”** The compiler frontend may be Gust while a narrow
+  Rust adapter integrates Cranelift and runtime components may remain.
 
 ---
 
@@ -215,12 +244,13 @@ it cannot hurt the thesis, it cannot help the pitch.
 > You can train that down. You cannot train it away, and *rarely* is not a
 > sentence you can put in a contract or give to an auditor.
 >
-> **Gust is a language where the unscoped program does not compile.** Same
-> guarantee every time, checked by the compiler rather than by whoever remembered
-> the policy.
+> **Gust is building a compiler-owned typed-query path where a scoped entity
+> without matching trusted tenant provenance does not compile.** The guarantee
+> is narrow and deterministic rather than a policy someone must remember.
 >
-> The compiler exists and is self-hosted. Tenant scoping is the next four months,
-> and there are two questions that could kill it. We will know by month four.
+> The compiler exists and is self-hosted. OD-8 has a bounded positive verdict for
+> its predefined typed-query attack suite; agent fluency, the production-shaped
+> containment system, buyer demand, and defensibility remain separate gates.
 
 **That last paragraph is not a hedge — it is the differentiator.** Everyone in
 this market is claiming; the credible move is being specific about what is not
@@ -235,6 +265,8 @@ built yet and when it will be known.
 | Market positioning, who buys, timing | `docs/VISION.md` §2, §0.8, §0.9 |
 | Lines and framing | `docs/STRATEGY_REVIEW.md` §6 |
 | Buyer question, competitor, objections, risks | `docs/BUSINESS_STRATEGY.md` |
+| Continuous individualized outreach and relationship learning | `docs/EVIDENCE_LED_OUTREACH.md` |
+| Post-Phase 25 technical launch and outreach | `docs/CRANELIFT_LAUNCH.md` |
 | The claim and its boundary | `docs/VISION.md` §56, §56.2 |
 | External-language rule | `docs/VISION.md` §79 |
 | What is actually true today | `docs/ONE_WAY_LEDGER.md` |

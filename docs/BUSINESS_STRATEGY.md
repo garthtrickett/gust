@@ -30,6 +30,22 @@ counting programme, §0.10 the numbers and odds, §0.11 the risks, §0.14 the
 sequencing, Part XVI the certification service. **What follows is only what none
 of them covers.**
 
+### 0.1 Four independent gates
+
+The month-four decision uses four gates and does not substitute evidence across
+them:
+
+| Gate | Required evidence | What does not satisfy it |
+| --- | --- | --- |
+| Technical | The stated compiler/runtime control survives its threat model and independent attack | A polished application demo |
+| Generation | Secure functional completion within a preregistered repair, token, latency, and intervention budget | Compiler soundness alone |
+| Commercial | A named buyer, incident owner, budget, and feasible adoption path | Benchmark superiority or prospect enthusiasm |
+| Defensibility | Material advantage over the cheapest credible incumbent response | Time already spent building Gust |
+
+A mechanism demo can eliminate a path or authorize the next evidence stage. It
+cannot select the company. The integrated product, acquisition, licensing, and
+research-artifact outcomes are chosen only from the combined gate record.
+
 ---
 
 ## 1. The contradiction to resolve first
@@ -67,6 +83,15 @@ conversation rather than by code, it costs nothing but time, and every other
 commercial decision depends on it. **It is also the cheapest possible way to
 discover that the product path is thinner than modelled** — which is the outcome
 §0.10's own odds already lean toward.
+
+Five named prospects are a minimum discovery sample, not proof of demand. For
+each conversation record: who owned the last relevant incident; its direct and
+indirect cost; which budget paid; which controls were considered or accepted;
+who can authorize language/runtime adoption; procurement, migration, ecosystem,
+support, and lock-in objections; and whether acquisition, licensing, internal
+implementation, or ordinary guardrails are preferred. Name the target generator
+or platform and its incentives; “roughly ten generators” remains a falsifiable
+adoption hypothesis until this map exists.
 
 **And resolve it with the right question, because the obvious one does not
 work.** *"Would you buy this?"* returns a polite maybe from everyone and
@@ -238,6 +263,30 @@ Three things reduce it, and only the third is durable:
 **That reframing is the single most important line in this document.** §56 gets
 the meeting. Ring 4 is what is being bought.
 
+Do not assume the incumbent must copy the whole architecture. Track the cheapest
+valuable subset—closed query APIs, generated RLS, tenant-provenance types,
+restricted imports, deployment policy gates, repair diagnostics, and sandboxed
+execution—and test whether that subset captures most of the liability reduction.
+The “three years of calendar” thesis holds only if diligence shows that the
+buyer needs the larger machine interface.
+
+The open-core boundary needs the same precision. The public specification and
+reference compiler must state which enforcement they include; the proprietary
+deployment gate and runtime must state what additional guarantees they enforce.
+A decisive scoping analysis cannot simultaneously be the public reference
+compiler's defining guarantee and an opaque proprietary secret. Trust,
+inspectability, and commercial leverage are explicit trade-offs, not assumptions.
+
+### 3.1 The integrated product is a separate-company decision
+
+An integrated issues/support/flags/communication product can succeed while Gust
+is irrelevant or fail while Gust is valuable. It therefore does not follow
+automatically from a green compiler demo. The default production evidence is a
+narrow multi-tenant reference application with real users, adversarial tests,
+and public capability evidence. Expanding to five mature product surfaces needs
+separate evidence for buyer demand, distribution, migration, taste, operations,
+and support.
+
 ---
 
 ## 4. What acquisition actually requires
@@ -300,8 +349,10 @@ are not serial, and one of them has a longer lead time than the build.**
 | **Now** | Preregister the security-adjusted generation benchmark | Task format, threat model, budgets, metrics and audit method can be fixed before results exist without competing for Track A implementation capacity |
 | **Month 1–2** | Write the RLS comparison as a document, and have someone hostile attack it | The first competent buyer raises it; §2 must survive it |
 | **Month 3** | Second conversation with the same five, showing the rejection diagnostic | The diagnostic is the artifact; a promise at month 0 and a demo at month 3 is a credible arc |
-| **Month 4** | §0.14's decision point, **with commercial evidence alongside technical** | OD-8 and OD-9 resolve here; the buyer question should resolve here too |
+| **At every credible material milestone** | Run the evidence-led outreach review in `docs/EVIDENCE_LED_OUTREACH.md` | Builds a small informed network while evidence accumulates; contact remains individualized, operator-rewritten, and never autonomous |
+| **Month 4** | §0.14's four-gate decision point, **with commercial evidence alongside technical** | OD-8 contributes bounded technical evidence; OD-9 and the buyer/defensibility gates must resolve far enough to choose the next evidence stage |
 | **After the demo holds** | Five-application harness pilot, then 30–50 applications and an independent audit | Turns one selected mechanism demonstration into evidence against the strongest TypeScript alternative; scale only after the pilot fixes the instrument |
+| **After Phase 25 and the complete Cranelift tail close** | Execute `docs/CRANELIFT_LAUNCH.md` | Convert exact native/bootstrap evidence into technical credibility and a small strategic listening programme; no intermediate Phase 20–24 result triggers the coordinated outreach |
 
 **The asymmetry to exploit:** the counting programme and the buyer conversations
 are the only work in this document that **does not depend on the compiler working
@@ -309,6 +360,13 @@ at all.** They can run through the 30% branch and still have produced something 
 a statistic and a market map — where four months of compiler work would have
 produced nothing. **That is the cheapest available hedge and it is currently
 unstaffed.**
+
+The post-tail launch is deliberately later than the commercial discovery and
+individualized evidence-led outreach above. Buyer interviews, technical
+correction requests, and benchmark design gather evidence now; the coordinated
+Cranelift announcement waits until one durable Level-3 claim is reproducible.
+Technical attention from any milestone is not commercial-gate evidence unless a
+named person with authority enters a concrete adoption or design-partner path.
 
 ---
 
@@ -357,7 +415,9 @@ alternative today.
 **Bounded is not the same as zero, and what remains is worth naming**, because it
 changes how the four months should be spent.
 
-If OD-8 or OD-9 fails, three things survive and none of them is the compiler:
+If any remaining technical, generation, commercial, or defensibility gate
+fails—including OD-9, or the bounded OD-8 result proving insufficient—three
+things survive and none of them is the compiler:
 
 - **The statistic (§0.9)**, if it was started. It is independent of the thesis
   and it is publishable whichever way it comes out. **A rigorous count of how

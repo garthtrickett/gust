@@ -5,7 +5,8 @@ demo.**
 
 This document turns `VISION.md` section 0.7's single side-by-side into a staged,
 falsifiable benchmark. It does not replace the first demo, add a third demo
-track, resolve OD-8 or OD-9 in advance, or choose a business. The demo proves
+track, resolve OD-9 or the remaining evidence gates in advance, reopen OD-8's
+bounded-positive verdict, or choose a business. The demo proves
 that Gust can express and reject the selected failure. The benchmark asks
 whether that advantage survives realistic application variety and the strongest
 credible TypeScript alternative.
@@ -63,18 +64,37 @@ Write and preregister the task format, threat model, acceptance tests, stopping
 rule, model and tool budgets, scoring procedure, audit procedure, and minimum
 effect worth pursuing. Freeze them before the main results are visible.
 
+Stage 0 also includes a serious architecture spike of the strongest
+existing-language alternative: a restricted TypeScript frontend with a closed
+query IR, compiler-enforced imports, tenant provenance, declared effects, and a
+confined runtime. The spike records exactly which guarantees it can and cannot
+provide while retaining TypeScript's model fluency and ecosystem. It must not be
+a paper dialect designed to lose. Its concrete failure modes form part of the
+positive case for a new language; if it remains credible, it graduates into a
+maintained fourth arm before the main run.
+
 This design work may run alongside Track B only when it does not consume Track A
 compiler capacity. It does not authorise building the absent database, effect,
 or trace surfaces outside their owning roadmap.
 
-### Stage 1 — the existing single demo
+### Stage 1 — staged demonstration
 
 Build one recognisable multi-tenant issue tracker or support inbox. Use one
 chosen cross-tenant failure to make the distinction legible: the conventional
 program can ship the error while Gust rejects the unsafe construction.
 
-This is a mechanism demonstration, not a prevalence estimate and not a fair
-contest. Its TypeScript failure is selected deliberately. Say so.
+Stage 1 has three separately reported exit gates:
+
+1. **Mechanism:** the selected unsafe typed query is rejected.
+2. **Containment:** ambient bypasses are closed, runtime capabilities are
+   enforced, and native or adapter code is independently isolated.
+3. **Production-shaped:** tenant establishment, schema acquisition and pinning,
+   realistic Postgres behaviour, traces, deployment evidence, and an independent
+   attack are present.
+
+The first is a mechanism demonstration, not a prevalence estimate and not a
+fair contest. Its TypeScript failure is selected deliberately. Say so, and do
+not report Stage 1.1 as though Stage 1.2 or 1.3 also passed.
 
 ### Stage 2 — five-application harness pilot
 
@@ -125,10 +145,15 @@ TypeScript; it is TypeScript plus a fluent model, RLS, scanners, repair loops,
 and a controlled runtime. If Gust wins only against arm 1, the structural wedge
 has not survived its strongest objection.
 
-A later fourth arm may test a deliberately restricted TypeScript dialect with
-compiler-enforced imports, effects, tenant provenance, and runtime capabilities.
-It belongs only when someone can implement and maintain it credibly; a paper
-strawman is not evidence.
+Database defense in depth is held fair across deployment models. A shared-schema
+Gust arm retains PostgreSQL RLS as an independent boundary; a schema-per-workspace
+Gust arm is tested for trusted connection acquisition, schema pinning, and pool
+reset. The benchmark must not improve Gust's apparent result by withholding a
+downstream database control that a production deployment should use.
+
+The Stage 0 restricted-TypeScript spike becomes a fourth arm when it can be
+implemented and maintained credibly. If it is excluded, publish the concrete
+technical or resourcing reason; “new language is cleaner” is not sufficient.
 
 ## 5. Controls
 
