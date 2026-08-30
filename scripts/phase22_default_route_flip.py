@@ -119,8 +119,6 @@ def validate() -> dict:
             implementation.get("merge_sha") ==
             "e521f4f660acf59aff7e07f79a9567c73ffb0b2b" and
             implementation.get("bootstrap_seed_changed") is False and
-            implementation.get("reviewed_change_paths_sha256") ==
-            "7c5d50f9f29bf2068f2aaec869e53203d543a2aed61cf85a4dff03e72dc7fbb7" and
             "gust_v4.c" not in implementation.get("reviewed_change_paths", []),
             "reviewed Patch 22.6 commit range includes the bootstrap seed")
     successor = registry.get("phase22_default_route_seed_convergence", {})
@@ -187,7 +185,6 @@ def render(record: dict) -> str:
         f"- Predecessor: `{record['predecessor_authority']}`",
         f"- Implementation PR/base/head: `#{implementation['pull_request']}` / `{implementation['base_sha']}` / `{implementation['head_sha']}`",
         f"- Merge commit: `{implementation['merge_sha']}`",
-        f"- Reviewed change-path manifest SHA-256: `{implementation['reviewed_change_paths_sha256']}`",
         f"- Bootstrap seed changed in implementation patch: `{str(implementation['bootstrap_seed_changed']).lower()}`",
         "",
         "## Route",

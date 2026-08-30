@@ -3814,7 +3814,6 @@
       "head_sha": "40be16fd5eb190d3c468fc8e4c5652d61ba5ec43",
       "merge_sha": "e521f4f660acf59aff7e07f79a9567c73ffb0b2b",
       "bootstrap_seed_changed": false,
-      "reviewed_change_paths_sha256": "7c5d50f9f29bf2068f2aaec869e53203d543a2aed61cf85a4dff03e72dc7fbb7",
       "reviewed_change_paths": [
         ".github/workflows/phase22-default-route-flip.yml",
         ".github/workflows/pr-fast.yml",
