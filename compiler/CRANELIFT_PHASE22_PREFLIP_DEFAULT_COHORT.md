@@ -31,6 +31,15 @@ Generated from `scripts/cranelift_feature_registry.json`. Do not edit by hand.
 - `compiler/parser_reference_access_test_entry.gst`
 - `compiler/typechecker_expression_provenance_test_entry.gst`
 
+## Post-merge default-Index correction
+
+- Review: `#257` / `PRRT_kwDOS1ExJc6daULJ`
+- Source fixture: `compiler/phase22_default_index_initialization_source.gst`
+- Helper fixture: `compiler/phase22_default_index_initialization_helper.gst`
+- Pre-correction oracle/native exit: `7/41`
+- Corrected oracle/native exit: `7/7`
+- Contract: `Index_defaults_to_i32_minus_one_recursively_through_non_enum_struct_fields`
+
 The Phase 21 record remains historical. This successor authority resolves
 its three runtime-divergence rows without changing the 121 explicitly owned
 non-default native capability deferrals or the ten identical oracle/native

@@ -93,6 +93,7 @@ Out of scope:
 - [x] Patch 22.6 — Cranelift Default Route Flip — DONE
 - [x] Patch 22.6a — Default-Route Bootstrap Seed Reconvergence — DONE
 - [x] Patch 22.7 — Post-flip CI, Documentation, and Rollback Qualification — DONE
+- [x] Patch 22.7a — Post-Merge Review Corrections — DONE
 - [ ] Patch 22.8 — One-Time Default-Native Stability Qualification
 - [ ] Patch 22.9 — Phase 22 Closure
 
@@ -304,6 +305,26 @@ checked cross-lane relay if one needs an owning update.
 and release-shaped smokes agree that Cranelift is default; explicit C remains a
 working named oracle; and dependency/path-filter falsifiers trigger every
 owning qualification workflow.
+
+## Patch 22.7a — Post-Merge Review Corrections
+
+Correct the Cranelift-owned post-merge findings before the stability authority
+is published. Extend the executable-invocation inventory to root shell scripts,
+imported justfiles, and test-owned compiler invocations; project each expected
+artifact into the generated review; validate the Patch 22.6 implementation
+range from its immutable reviewed manifest rather than the mutable worktree;
+and make aggregate default initialization recursively preserve the existing
+MIR-to-C `Index` sentinel semantics in Cranelift. Record, but do not edit, the
+six Stdlib-owned test invocations that require an explicit MIR-to-C route.
+
+**Exit Gate:** the live inventory has zero unclassified rows and its generated
+projection includes every expected artifact; the immutable Patch 22.6 manifest
+proves that its implementation PR did not carry the bootstrap seed; direct and
+nested `Index` defaults have identical MIR-to-C and Cranelift behavior; and the
+exact six-site Stdlib relay is registered as required before Patch 22.8
+publication. No test-owned source, accepted Gust meaning, canonical MIR,
+ABI/layout/runtime symbol, default route, fallback, bootstrap seed, Stdlib API,
+CR-15, or Phase 23 work is changed.
 
 ## Patch 22.8 — One-Time Default-Native Stability Qualification
 

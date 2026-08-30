@@ -4,10 +4,12 @@ on:
   pull_request:
     paths:
       - 'TASK.md'
+      - 'reset-heavy-guards-workflow.sh'
       - 'Makefile'
       - 'README.md'
       - 'gust_v4.c'
       - 'compiler/*.gst'
+      - 'tests/*.gst'
       - 'compiler/CRANELIFT_PHASE22_OPENING.md'
       - 'compiler/experiments/cranelift/**'
       - 'docs/ONE_WAY_LEDGER.md'
@@ -26,15 +28,17 @@ on:
       - '.github/workflows/heavy-guards.yml'
       - '.github/workflows/phase22-opening.yml'
       - '.github/workflows/pr-fast.yml'
-      - 'justfile'
+      - 'justfile*'
   push:
     branches: [main]
     paths:
       - 'TASK.md'
+      - 'reset-heavy-guards-workflow.sh'
       - 'Makefile'
       - 'README.md'
       - 'gust_v4.c'
       - 'compiler/*.gst'
+      - 'tests/*.gst'
       - 'compiler/CRANELIFT_PHASE22_OPENING.md'
       - 'compiler/experiments/cranelift/**'
       - 'docs/ONE_WAY_LEDGER.md'
@@ -53,7 +57,7 @@ on:
       - '.github/workflows/heavy-guards.yml'
       - '.github/workflows/phase22-opening.yml'
       - '.github/workflows/pr-fast.yml'
-      - 'justfile'
+      - 'justfile*'
   workflow_dispatch:
 
 permissions:

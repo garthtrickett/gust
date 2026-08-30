@@ -142,6 +142,12 @@ def classify(path: Path, line_no: int, command: str, recipe: str,
         expected_artifact = "generated_C_or_diagnostic"
         transition = "checked_cross_lane_relay_before_22.6"
         falsifier = "default_flip_lands_before_the_owning_lane_classifies_the_consumer"
+    elif relative.startswith("tests/"):
+        consumer_class = "stdlib_owned_C_or_diagnostic_guard"
+        owner = "stdlib"
+        expected_artifact = "generated_C_or_diagnostic"
+        transition = "checked_cross_lane_relay_after_postmerge_review"
+        falsifier = "default_native_route_reaches_a_test_owned_generated_C_consumer"
     elif relative.startswith("justfile") and "expect_invocation_failure" in command:
         consumer_class = "invocation_parser_probe"
         owner = "cranelift"
@@ -215,7 +221,9 @@ def python_compiler_lists(path: Path) -> list[tuple[int, str, str]]:
 def scan_invocations() -> list[dict[str, object]]:
     files = [ROOT / "Makefile"]
     files.extend(sorted(ROOT.glob("justfile*")))
+    files.extend(sorted(ROOT.glob("*.sh")))
     files.extend(sorted((ROOT / "scripts").glob("*.sh")))
+    files.extend(sorted((ROOT / "tests").glob("*.gst")))
     rows: list[dict[str, object]] = []
     for path in files:
         for line_no, command, recipe in logical_commands(path):
@@ -377,13 +385,17 @@ def validate() -> dict:
     workflow = WORKFLOW.read_text(encoding="utf-8")
     require(f"just {GUARD_L1}" in workflow and f"just {GUARD_L2}" in workflow,
             "dedicated workflow does not own both opening guards")
+    for path_filter in ("'reset-heavy-guards-workflow.sh'", "'tests/*.gst'",
+                        "'justfile*'"):
+        require(workflow.count(path_filter) == 2,
+                f"dedicated workflow does not own both path filters for {path_filter}")
     require(REVIEW.is_file(), "generated opening review is missing")
     review = REVIEW.read_text(encoding="utf-8")
-    inventory = record["invocation_inventory"]
+    inventory = scan_summary(rows)
     stable_markers = (
         f"- Contract: `{record['contract_version']}`",
         f"- Observed main: `{record['observed_main_sha']}`",
-        f"- Executable compiler invocations: `{inventory['total']}`",
+        f"- Live successor executable compiler invocations: `{inventory['total']}`",
         f"- Unclassified invocations: `{inventory['unclassified_count']}`",
         "## Stability qualification",
         "- Required successful runs: `1`",
@@ -392,11 +404,14 @@ def validate() -> dict:
     )
     require(all(marker in review for marker in stable_markers),
             "frozen generated opening review semantic markers drifted")
+    require(review == render(record, rows),
+            "generated opening review is stale")
     return record
 
 
 def render(record: dict, rows: list[dict[str, object]]) -> str:
-    inventory = record["invocation_inventory"]
+    opening_inventory = record["invocation_inventory"]
+    inventory = scan_summary(rows)
     handoff = record["native_capability_handoff"]
     stability = record["stability_qualification"]
     lines = [
@@ -410,7 +425,8 @@ def render(record: dict, rows: list[dict[str, object]]) -> str:
         f"- Status: `{record['status']}`",
         f"- Next patch: `{record['next_patch']}`",
         f"- Observed main: `{record['observed_main_sha']}`",
-        f"- Executable compiler invocations: `{inventory['total']}`",
+        f"- Opening-baseline executable compiler invocations: `{opening_inventory['total']}`",
+        f"- Live successor executable compiler invocations: `{inventory['total']}`",
         f"- Unclassified invocations: `{inventory['unclassified_count']}`",
         "",
         "## Current CLI and package",
@@ -437,21 +453,22 @@ def render(record: dict, rows: list[dict[str, object]]) -> str:
         )
     lines += [
         "",
-        "## Invocation summary",
+        "## Live successor invocation summary",
         "",
     ]
     for key, value in inventory["selection_counts"].items():
         lines.append(f"- Selection `{key}`: `{value}`")
     for key, value in inventory["consumer_class_counts"].items():
         lines.append(f"- Consumer class `{key}`: `{value}`")
-    lines += ["", "## Executable invocation inventory", ""]
-    lines.append("| Path | Line | Recipe | Selection | Class | Owner | Expected transition | Falsifier |")
-    lines.append("| --- | ---: | --- | --- | --- | --- | --- | --- |")
+    lines += ["", "## Live successor executable invocation inventory", ""]
+    lines.append("| Path | Line | Recipe | Selection | Class | Owner | Expected artifact | Expected transition | Falsifier |")
+    lines.append("| --- | ---: | --- | --- | --- | --- | --- | --- | --- |")
     for row in rows:
         lines.append(
             f"| `{row['path']}` | {row['line']} | `{row['recipe']}` | "
             f"`{row['selection']}` | `{row['consumer_class']}` | "
-            f"`{row['owner']}` | `{row['expected_transition']}` | "
+            f"`{row['owner']}` | `{row['expected_artifact']}` | "
+            f"`{row['expected_transition']}` | "
             f"`{row['falsifier']}` |"
         )
     lines += [
@@ -491,17 +508,18 @@ def main() -> None:
     if args.command == "scan":
         print(json.dumps(scan_summary(rows), indent=2, sort_keys=True))
         return
-    record = validate()
     if args.command == "project":
         registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
-        require("phase22_explicit_c_migration" not in registry,
-                "opening review is frozen after Patch 22.2 begins")
+        record = registry.get("phase22_opening")
+        require(isinstance(record, dict), "Patch 22.1 authority is missing")
         REVIEW.write_text(render(record, rows), encoding="utf-8")
-    elif args.command == "check-review":
-        registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
-        if "phase22_explicit_c_migration" not in registry:
-            require(REVIEW.read_text(encoding="utf-8") == render(record, rows),
-                    "generated opening review is stale; run project")
+        validate()
+        print(f"{GUARD_L1}: project ok")
+        return
+    record = validate()
+    if args.command == "check-review":
+        require(REVIEW.read_text(encoding="utf-8") == render(record, rows),
+                "generated opening review is stale; run project")
     else:
         print(f"{GUARD_L1}: ok")
 

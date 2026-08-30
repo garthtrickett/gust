@@ -3569,6 +3569,26 @@
         {"path": "scripts/stdlib_s1_clone_destination_parity.sh", "line": 128, "recipe": "none", "compiler_token": "./gust"},
         {"path": "scripts/stdlib_s1_composition_parity.sh", "line": 30, "recipe": "none", "compiler_token": "./gust"}
       ],
+      "post_flip_review_relay": {
+        "status": "awaiting_owning_stdlib_correction",
+        "review_pull_request": 251,
+        "review_thread": "PRRT_kwDOS1ExJc6dYPJO",
+        "consumer_count": 6,
+        "expected_selection": "explicit_mir_to_c",
+        "paths": [
+          "tests/e2e_codegen_assertions.gst",
+          "tests/test_runner.gst"
+        ],
+        "site_manifest": [
+          {"path": "tests/e2e_codegen_assertions.gst", "line": 33, "recipe": "none", "compiler_token": "./gust"},
+          {"path": "tests/e2e_codegen_assertions.gst", "line": 39, "recipe": "none", "compiler_token": "./gust"},
+          {"path": "tests/e2e_codegen_assertions.gst", "line": 45, "recipe": "none", "compiler_token": "./gust"},
+          {"path": "tests/e2e_codegen_assertions.gst", "line": 52, "recipe": "none", "compiler_token": "./gust"},
+          {"path": "tests/test_runner.gst", "line": 119, "recipe": "none", "compiler_token": "./gust"},
+          {"path": "tests/test_runner.gst", "line": 154, "recipe": "none", "compiler_token": "./gust"}
+        ],
+        "required_before": "patch22_8_stability_authority_publication"
+      },
       "expected_selection": "explicit_mir_to_c",
       "evidence": "owning_pr_exact_head_complete_pull_request_population",
       "required_before": "patch22_2_done_and_any_later_default_flip_patch"
@@ -3725,6 +3745,18 @@
       "other_zero_initialization": "unchanged_zero",
       "parity": "exit_stdout_and_stderr_byte_identical_to_explicit_MIR_to_C"
     },
+    "postmerge_default_index_correction": {
+      "review_pull_request": 257,
+      "review_thread": "PRRT_kwDOS1ExJc6daULJ",
+      "source_fixture": "compiler/phase22_default_index_initialization_source.gst",
+      "helper_fixture": "compiler/phase22_default_index_initialization_helper.gst",
+      "oracle_exit": 7,
+      "pre_correction_native_exit": 41,
+      "corrected_native_exit": 7,
+      "initialization_contract": "Index_defaults_to_i32_minus_one_recursively_through_non_enum_struct_fields",
+      "MIR_to_C": "unchanged_semantic_oracle",
+      "other_default_initialization": "unchanged_zero"
+    },
     "complete_guard_overlay": {
       "inventory_total": 326,
       "required_native_case_count": 195,
@@ -3770,11 +3802,46 @@
     "observed_main_sha": "8b2135ac664dfdeb32c2fd5ca28cc43bbf80ed3b",
     "predecessor_authority": "phase22_preflip_default_cohort_v1",
     "post_flip_invocation_inventory": {
-      "total": 299,
-      "selection_counts": {"explicit_c": 167, "explicit_cranelift": 115, "explicit_invalid_or_parser_probe": 3, "implicit_default": 14},
-      "consumer_class_counts": {"already_explicit_or_parser_probe": 285, "cranelift_C_or_diagnostic_guard": 2, "help_surface_probe": 2, "intentional_default_selection_probe": 8, "invocation_parser_probe": 2},
-      "owner_counts": {"cranelift": 276, "stdlib": 23},
+      "total": 306,
+      "selection_counts": {"explicit_c": 167, "explicit_cranelift": 115, "explicit_invalid_or_parser_probe": 3, "implicit_default": 21},
+      "consumer_class_counts": {"already_explicit_or_parser_probe": 285, "cranelift_C_or_diagnostic_guard": 2, "help_surface_probe": 3, "intentional_default_selection_probe": 8, "invocation_parser_probe": 2, "stdlib_owned_C_or_diagnostic_guard": 6},
+      "owner_counts": {"cranelift": 277, "stdlib": 29},
       "unclassified_count": 0
+    },
+    "implementation_patch": {
+      "pull_request": 259,
+      "base_sha": "8b2135ac664dfdeb32c2fd5ca28cc43bbf80ed3b",
+      "head_sha": "40be16fd5eb190d3c468fc8e4c5652d61ba5ec43",
+      "merge_sha": "e521f4f660acf59aff7e07f79a9567c73ffb0b2b",
+      "bootstrap_seed_changed": false,
+      "reviewed_change_paths_sha256": "7c5d50f9f29bf2068f2aaec869e53203d543a2aed61cf85a4dff03e72dc7fbb7",
+      "reviewed_change_paths": [
+        ".github/workflows/phase22-default-route-flip.yml",
+        ".github/workflows/pr-fast.yml",
+        "TASK.md",
+        "compiler/CRANELIFT_PHASE22_DEFAULT_ROUTE_FLIP.md",
+        "compiler/phase10_help.txt",
+        "compiler/test_runner_entry.gst",
+        "justfile",
+        "justfile-step51",
+        "scripts/cranelift_feature_registry.json",
+        "scripts/cranelift_feature_registry.schema.json",
+        "scripts/cranelift_manifest.py",
+        "scripts/cranelift_registry.py",
+        "scripts/cranelift_test_levels.json",
+        "scripts/phase12_5_route_architecture.sh",
+        "scripts/phase13_registry_differential.sh",
+        "scripts/phase14_closure.py",
+        "scripts/phase22_default_native_package.py",
+        "scripts/phase22_default_route_flip.py",
+        "scripts/phase22_explicit_c_migration.py",
+        "scripts/phase22_explicit_c_migration.sh",
+        "scripts/phase22_native_implicit_output.py",
+        "scripts/phase22_native_implicit_output.sh",
+        "scripts/phase22_opening.py",
+        "scripts/phase22_opening.sh",
+        "scripts/phase22_preflip_default_cohort.py"
+      ]
     },
     "route_contract": {
       "default_backend": "cranelift",
