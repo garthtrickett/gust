@@ -1060,6 +1060,95 @@ func mir_native_full_program_collect_layout_authority(model: MirNativeFullProgra
     return updated;
 }
 
+func mir_native_full_program_block_contains_guard_or_defer(
+    block_index: Index[ast.BlockStatement[ctx], ctx],
+    ctx: &Arena
+) int {
+    if block_index == empty[Index[ast.BlockStatement[ctx], ctx]] {
+        return 0;
+    }
+    unsafe {
+        mut block := ctx[block_index];
+        mut statements: std.Vector[ast.Statement[ctx], ctx] :=
+            ctx[block.statements];
+        mut statement_index := 0;
+        while statement_index < len(statements) {
+            mut statement := statements[statement_index];
+            if statement.tag == 9 || statement.tag == 11 {
+                return 1;
+            }
+            if statement.tag == 6 &&
+               mir_native_full_program_block_contains_guard_or_defer(
+                   statement.While.body, ctx
+               ) == 1
+            {
+                return 1;
+            }
+            if statement.tag == 7 {
+                if mir_native_full_program_block_contains_guard_or_defer(
+                    statement.If.consequence, ctx
+                ) == 1 ||
+                   mir_native_full_program_block_contains_guard_or_defer(
+                    statement.If.alternative, ctx
+                ) == 1
+                {
+                    return 1;
+                }
+            }
+            if statement.tag == 8 {
+                mut cases: std.Vector[ast.MatchCase[ctx], ctx] :=
+                    ctx[statement.Match.cases];
+                mut case_index := 0;
+                while case_index < len(cases) {
+                    if mir_native_full_program_block_contains_guard_or_defer(
+                        cases[case_index].body, ctx
+                    ) == 1
+                    {
+                        return 1;
+                    }
+                    case_index = case_index + 1;
+                }
+            }
+            if statement.tag == 10 &&
+               mir_native_full_program_block_contains_guard_or_defer(
+                   statement.UnsafeBlock.body, ctx
+               ) == 1
+            {
+                return 1;
+            }
+            statement_index = statement_index + 1;
+        }
+    }
+    return 0;
+}
+
+func mir_native_full_program_contains_guard_or_defer(
+    programs: std.Vector[ast.Program[ctx], ctx],
+    ctx: &Arena
+) int {
+    mut program_index := 0;
+    while program_index < len(programs) {
+        unsafe {
+            mut top_level: std.Vector[ast.Statement[ctx], ctx] :=
+                ctx[programs[program_index].statements];
+            mut statement_index := 0;
+            while statement_index < len(top_level) {
+                mut statement := top_level[statement_index];
+                if statement.tag == 3 &&
+                   mir_native_full_program_block_contains_guard_or_defer(
+                       statement.FunctionDecl.body, ctx
+                   ) == 1
+                {
+                    return 1;
+                }
+                statement_index = statement_index + 1;
+            }
+        }
+        program_index = program_index + 1;
+    }
+    return 0;
+}
+
 func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program[ctx], ctx], module_prefixes: std.Vector[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) MirNativeFullProgramModel[ctx] {
     mut model := mir_native_full_program_empty_model(ctx);
     if len(programs) == 0 || len(programs) != len(module_prefixes) {
@@ -1198,7 +1287,9 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
         }
         module_index = module_index + 1;
     }
-    if non_scalar_signature_count == 0 {
+    if non_scalar_signature_count == 0 &&
+       mir_native_full_program_contains_guard_or_defer(programs, ctx) == 0
+    {
         unsafe { (*env).current_prefix = ""; }
         return model;
     }

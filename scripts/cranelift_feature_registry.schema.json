@@ -71,6 +71,7 @@
     "phase22_closure",
     "phase23_issue_health_opening",
     "phase23_mir_evidence_owner",
+    "phase23_structured_guard_defer_native_admission",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -2859,6 +2860,24 @@
               "issue_state": {"const": "closed"}
             }
           },
+          "boundary": {"type": "object"}
+        }
+      },
+      "phase23_structured_guard_defer_native_admission": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version", "status", "next_patch", "owner",
+                     "review_view", "source_admission", "fixtures",
+                     "observables", "boundary"],
+        "properties": {
+          "contract_version": {"const": "phase23_structured_guard_defer_native_admission_v1"},
+          "status": {"const": "patch23_3a_complete"},
+          "next_patch": {"const": "23.3"},
+          "owner": {"const": "cranelift"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE23_STRUCTURED_GUARD_DEFER_NATIVE_ADMISSION.md"},
+          "source_admission": {"type": "object"},
+          "fixtures": {"type": "object"},
+          "observables": {"type": "object"},
           "boundary": {"type": "object"}
         }
       },

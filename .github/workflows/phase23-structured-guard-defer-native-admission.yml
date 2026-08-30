@@ -1,0 +1,75 @@
+name: Cranelift Phase 23 Structured Guard Defer Native Admission
+
+on:
+  pull_request:
+    paths:
+      - 'TASK.md'
+      - 'gust_v4.c'
+      - 'src/runtime.c'
+      - 'src/runtime/**'
+      - 'compiler/CRANELIFT_PHASE23_STRUCTURED_GUARD_DEFER_NATIVE_ADMISSION.md'
+      - 'compiler/mir_native_backend_structured_cfg_source.gst'
+      - 'compiler/mir_native_backend_full_program_source.gst'
+      - 'compiler/phase20_resource_acquisition_directory_source.gst'
+      - 'compiler/phase13_structured_cfg_short_circuit_deferred_source.gst'
+      - 'compiler/experiments/cranelift/src/**'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase23_structured_guard_defer_native_admission.py'
+      - 'scripts/install-just-ci.sh'
+      - 'scripts/install-native-deps-ci.sh'
+      - 'justfile'
+      - 'Makefile'
+      - '.github/workflows/phase23-structured-guard-defer-native-admission.yml'
+      - '.github/workflows/pr-fast.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'TASK.md'
+      - 'gust_v4.c'
+      - 'src/runtime.c'
+      - 'src/runtime/**'
+      - 'compiler/CRANELIFT_PHASE23_STRUCTURED_GUARD_DEFER_NATIVE_ADMISSION.md'
+      - 'compiler/mir_native_backend_structured_cfg_source.gst'
+      - 'compiler/mir_native_backend_full_program_source.gst'
+      - 'compiler/phase20_resource_acquisition_directory_source.gst'
+      - 'compiler/phase13_structured_cfg_short_circuit_deferred_source.gst'
+      - 'compiler/experiments/cranelift/src/**'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase23_structured_guard_defer_native_admission.py'
+      - 'scripts/install-just-ci.sh'
+      - 'scripts/install-native-deps-ci.sh'
+      - 'justfile'
+      - 'Makefile'
+      - '.github/workflows/phase23-structured-guard-defer-native-admission.yml'
+      - '.github/workflows/pr-fast.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  evidence:
+    name: Patch 23.3a generic guard/defer source-to-native parity
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install guard tools
+        run: |
+          bash scripts/install-native-deps-ci.sh ripgrep
+          bash scripts/install-just-ci.sh "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Patch 23.3a evidence
+        run: just guard-cranelift-phase23-structured-guard-defer-native-admission-evidence
