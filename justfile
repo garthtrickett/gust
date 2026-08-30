@@ -1186,73 +1186,6 @@ guard-mir-to-c-local-binding-read-native-smoke:
     fi
     echo "✅ Tiny MIR-to-C local binding/read native smoke passed."
 
-guard-mir-to-c-tiny-surface:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    echo "🔒 Checking tiny MIR-to-C surface..."
-    rg -n -F 'func mir_to_c_tiny_fixture' compiler/mir.gst >/dev/null
-    rg -n -F 'gust MIR-to-C tiny fixture' compiler/mir.gst compiler/mir_to_c_entry_smoke_test_entry.gst >/dev/null
-    rg -n -F 'void tiny_shell(void) { return; }' compiler/mir.gst compiler/mir_to_c_function_shell_smoke_test_entry.gst >/dev/null
-    rg -n -F 'int tiny_return_int(void) { return 1; }' compiler/mir.gst compiler/mir_to_c_return_int_literal_smoke_test_entry.gst justfile >/dev/null
-    rg -n -F 'int main(void) { return tiny_return_int(); }' justfile >/dev/null
-    rg -n -F 'int tiny_block_jump(void) { goto block_1; block_1: return 1; }' compiler/mir.gst compiler/mir_to_c_block_jump_smoke_test_entry.gst justfile >/dev/null
-    rg -n -F 'int main(void) { return tiny_block_jump(); }' justfile >/dev/null
-    rg -n -F 'int tiny_conditional_branch(void) { if (1) goto block_1; goto block_2; block_1: return 1; block_2: return 2; }' compiler/mir.gst compiler/mir_to_c_conditional_branch_smoke_test_entry.gst justfile >/dev/null
-    rg -n -F 'int main(void) { return tiny_conditional_branch(); }' justfile >/dev/null
-    rg -n -F 'int tiny_resource_metadata_local(void) { int value = 2; return value; }' compiler/mir.gst compiler/mir_to_c_resource_metadata_smoke_test_entry.gst >/dev/null
-    rg -n -F 'int tiny_provenance_metadata_local_read(void) { int value = 2; return value; }' compiler/mir.gst compiler/mir_to_c_provenance_metadata_smoke_test_entry.gst >/dev/null
-    rg -n -F 'void tiny_native_boundary_metadata_function(void) { return; }' compiler/mir.gst compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst >/dev/null
-    rg -n -F 'metadata perturbed C source' compiler/mir_to_c_resource_metadata_smoke_test_entry.gst compiler/mir_to_c_provenance_metadata_smoke_test_entry.gst compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst >/dev/null
-    rg -n -F 'SUCCESS: mir to c entry smoke' compiler/mir_to_c_entry_smoke_test_entry.gst >/dev/null
-    rg -n -F 'SUCCESS: mir to c function shell smoke' compiler/mir_to_c_function_shell_smoke_test_entry.gst >/dev/null
-    rg -n -F 'SUCCESS: mir to c return int literal smoke' compiler/mir_to_c_return_int_literal_smoke_test_entry.gst >/dev/null
-    rg -n -F 'SUCCESS: mir to c block jump smoke' compiler/mir_to_c_block_jump_smoke_test_entry.gst >/dev/null
-    rg -n -F 'SUCCESS: mir to c conditional branch smoke' compiler/mir_to_c_conditional_branch_smoke_test_entry.gst >/dev/null
-    rg -n -F 'SUCCESS: mir to c resource metadata smoke' compiler/mir_to_c_resource_metadata_smoke_test_entry.gst >/dev/null
-    rg -n -F 'SUCCESS: mir to c provenance metadata smoke' compiler/mir_to_c_provenance_metadata_smoke_test_entry.gst >/dev/null
-    rg -n -F 'SUCCESS: mir to c native boundary metadata smoke' compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst >/dev/null
-    rg -n -F 'guard-mir-to-c-entry-smoke' justfile >/dev/null
-    rg -n -F 'guard-mir-to-c-function-shell-smoke' justfile >/dev/null
-    rg -n -F 'guard-mir-to-c-return-int-literal-smoke' justfile >/dev/null
-    rg -n -F 'guard-mir-to-c-return-int-literal-native-smoke' justfile >/dev/null
-    rg -n -F 'guard-mir-to-c-block-jump-smoke' justfile >/dev/null
-    rg -n -F 'guard-mir-to-c-block-jump-native-smoke' justfile >/dev/null
-    rg -n -F 'guard-mir-to-c-conditional-branch-smoke' justfile >/dev/null
-    rg -n -F 'guard-mir-to-c-conditional-branch-native-smoke' justfile >/dev/null
-    rg -n -F 'guard-mir-to-c-resource-metadata-smoke' justfile >/dev/null
-    rg -n -F 'guard-mir-to-c-provenance-metadata-smoke' justfile >/dev/null
-    rg -n -F 'guard-mir-to-c-native-boundary-metadata-smoke' justfile >/dev/null
-    rg -n -F 'guard-mir-to-c-provenance-metadata-native-smoke' justfile >/dev/null
-    rg -n -F 'compiler/mir_to_c_entry_smoke_test_entry.gst' justfile >/dev/null
-    rg -n -F 'compiler/mir_to_c_function_shell_smoke_test_entry.gst' justfile >/dev/null
-    rg -n -F 'compiler/mir_to_c_return_int_literal_smoke_test_entry.gst' justfile >/dev/null
-    rg -n -F 'compiler/mir_to_c_block_jump_smoke_test_entry.gst' justfile >/dev/null
-    rg -n -F 'compiler/mir_to_c_conditional_branch_smoke_test_entry.gst' justfile >/dev/null
-    rg -n -F 'compiler/mir_to_c_resource_metadata_smoke_test_entry.gst' justfile >/dev/null
-    rg -n -F 'compiler/mir_to_c_provenance_metadata_smoke_test_entry.gst' justfile >/dev/null
-    rg -n -F 'compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst' justfile >/dev/null
-    unexpected_mir_to_c_refs="$(rg -n -F 'mir_to_c_' compiler/*.gst | rg -v 'compiler/mir.gst:|compiler/mir_to_c_entry_smoke_test_entry.gst:|compiler/mir_to_c_function_shell_smoke_test_entry.gst:|compiler/mir_to_c_return_int_literal_smoke_test_entry.gst:|compiler/mir_to_c_local_binding_read_smoke_test_entry.gst:|compiler/mir_to_c_block_jump_smoke_test_entry.gst:|compiler/mir_to_c_conditional_branch_smoke_test_entry.gst:|compiler/mir_to_c_resource_metadata_smoke_test_entry.gst:|compiler/mir_to_c_provenance_metadata_smoke_test_entry.gst:|compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst:' || true)"
-    if [ -n "$unexpected_mir_to_c_refs" ]; then
-      echo "Unexpected MIR-to-C reference outside fixture-only files:"
-      echo "$unexpected_mir_to_c_refs"
-      exit 1
-    fi
-    forbidden_refs="$(rg -n -F 'MirStmt.LocalSet' compiler/mir_to_c_entry_smoke_test_entry.gst compiler/mir_to_c_function_shell_smoke_test_entry.gst compiler/mir_to_c_return_int_literal_smoke_test_entry.gst || true)"
-    if [ -n "$forbidden_refs" ]; then
-      echo "Tiny MIR-to-C fixtures must not cover locals/statements yet:"
-      echo "$forbidden_refs"
-      exit 1
-    fi
-    if rg -n -F 'MirTerminator.Branch' compiler/mir_to_c_entry_smoke_test_entry.gst compiler/mir_to_c_function_shell_smoke_test_entry.gst compiler/mir_to_c_return_int_literal_smoke_test_entry.gst >/dev/null; then
-      echo "Tiny MIR-to-C fixtures must not cover branches yet."
-      exit 1
-    fi
-    if rg -n -F 'MirValue.Call' compiler/mir_to_c_entry_smoke_test_entry.gst compiler/mir_to_c_function_shell_smoke_test_entry.gst compiler/mir_to_c_return_int_literal_smoke_test_entry.gst >/dev/null; then
-      echo "Tiny MIR-to-C fixtures must not cover calls yet."
-      exit 1
-    fi
-    echo "✅ Tiny MIR-to-C surface guard passed."
-
 guard-mir-feature-harness-surface:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -22302,18 +22235,7 @@ guard-mir-lower-tiny-function-surface:
     rg -n -F 'guard-mir-lower-resource-metadata-smoke' justfile >/dev/null
     rg -n -F 'guard-mir-lower-provenance-metadata-smoke' justfile >/dev/null
     rg -n -F 'guard-mir-lower-native-boundary-metadata-smoke' justfile >/dev/null
-    unexpected_lower_refs="$(rg -n -F 'mir_lower_' compiler/*.gst | rg -v 'compiler/mir.gst:|compiler/mir_lower_tiny_function_fixture_smoke_test_entry.gst:|compiler/mir_lower_function_shell_smoke_test_entry.gst:|compiler/mir_lower_return_int_literal_smoke_test_entry.gst:|compiler/mir_lower_local_binding_read_smoke_test_entry.gst:|compiler/mir_lower_resource_metadata_smoke_test_entry.gst:|compiler/mir_lower_provenance_metadata_smoke_test_entry.gst:|compiler/mir_lower_native_boundary_metadata_smoke_test_entry.gst:|compiler/mir_lower_block_jump_smoke_test_entry.gst:|compiler/mir_lower_conditional_branch_smoke_test_entry.gst:|compiler/mir_to_c_entry_smoke_test_entry.gst:|compiler/mir_to_c_function_shell_smoke_test_entry.gst:|compiler/mir_to_c_return_int_literal_smoke_test_entry.gst:|compiler/mir_to_c_local_binding_read_smoke_test_entry.gst:|compiler/mir_to_c_block_jump_smoke_test_entry.gst:|compiler/mir_to_c_conditional_branch_smoke_test_entry.gst:|compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst:|compiler/mir_to_c_provenance_metadata_smoke_test_entry.gst:|compiler/mir_to_c_resource_metadata_smoke_test_entry.gst:' || true)"
-    if [ -n "$unexpected_lower_refs" ]; then
-      echo "Unexpected MIR lowering reference outside fixture-only files:"
-      echo "$unexpected_lower_refs"
-      exit 1
-    fi
-    backend_refs="$(rg -n -F 'Cranelift' compiler/mir.gst compiler/mir_lower_tiny_function_fixture_smoke_test_entry.gst compiler/mir_lower_function_shell_smoke_test_entry.gst compiler/mir_lower_return_int_literal_smoke_test_entry.gst compiler/mir_lower_local_binding_read_smoke_test_entry.gst compiler/mir_lower_resource_metadata_smoke_test_entry.gst compiler/mir_lower_provenance_metadata_smoke_test_entry.gst compiler/mir_lower_native_boundary_metadata_smoke_test_entry.gst compiler/mir_lower_block_jump_smoke_test_entry.gst compiler/mir_lower_conditional_branch_smoke_test_entry.gst || true)"
-    if [ -n "$backend_refs" ]; then
-      echo "Tiny MIR lowering fixtures must not mention Cranelift yet:"
-      echo "$backend_refs"
-      exit 1
-    fi
+    python3 scripts/phase23_mir_evidence_owner.py surface
     echo "✅ Tiny MIR lowering surface guard passed."
 
 guard_step52_resource_use_after_move_enforcement:
@@ -23722,3 +23644,17 @@ guard-cranelift-phase23-issue-health-opening-evidence:
     echo "🧪 Replaying Phase 23 checkpoint issue evidence..."
     just guard-cranelift-phase23-issue-health-opening-contract
     python3 scripts/phase23_issue_health_opening.py evidence
+
+# Cranelift lane, Patch 23.2 implementation. Retain one exact fixture-only MIR
+# lowering invariant and retire the obsolete production MIR-to-C location guard.
+guard-cranelift-phase23-mir-evidence-owner-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Checking Phase 23 MIR evidence ownership..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase23-mir-evidence-owner-contract | grep -F $'guard-cranelift-phase23-mir-evidence-owner-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    just guard-mir-lower-tiny-function-surface
+    python3 scripts/phase23_mir_evidence_owner.py falsifiers
+    python3 scripts/phase23_mir_evidence_owner.py retirement
+    python3 scripts/phase23_mir_evidence_owner.py check-review

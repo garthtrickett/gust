@@ -70,6 +70,7 @@
     "phase22_stability_qualification",
     "phase22_closure",
     "phase23_issue_health_opening",
+    "phase23_mir_evidence_owner",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -2798,6 +2799,28 @@
           "assurance_boundary": {"type": "object"},
           "deprecation_predecessor_gate": {"type": "array", "minItems": 6, "maxItems": 6, "uniqueItems": true, "items": {"type": "string"}},
           "phase22_closed_inventory_successor": {"type": "object"},
+          "boundary": {"type": "object"}
+        }
+      },
+      "phase23_mir_evidence_owner": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version", "status", "issue", "owner",
+                     "review_view", "implementation_base_sha", "retained_guard",
+                     "retained_lowering_surface", "production_use_falsifier",
+                     "retired_location_guard", "issue_closure", "boundary"],
+        "properties": {
+          "contract_version": {"const": "phase23_mir_evidence_owner_v1"},
+          "status": {"enum": ["implementation_ready_pending_merged_current_main_closure", "closed_on_merged_current_main"]},
+          "issue": {"const": 110},
+          "owner": {"const": "cranelift"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE23_MIR_EVIDENCE_OWNER.md"},
+          "implementation_base_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+          "retained_guard": {"const": "guard-mir-lower-tiny-function-surface"},
+          "retained_lowering_surface": {"type": "object"},
+          "production_use_falsifier": {"type": "object"},
+          "retired_location_guard": {"type": "object"},
+          "issue_closure": {"type": "object"},
           "boundary": {"type": "object"}
         }
       },

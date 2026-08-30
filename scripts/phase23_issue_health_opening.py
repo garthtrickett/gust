@@ -265,12 +265,9 @@ def evidence() -> None:
     lower = run(["just", "guard-mir-lower-tiny-function-surface"])
     require(lower.returncode == 0,
             "#110 retained lowering guard does not pass current main")
-    c_surface = run(["just", "guard-mir-to-c-tiny-surface"])
-    c_log = (c_surface.stdout + c_surface.stderr).decode("utf-8", "replace")
-    require(c_surface.returncode != 0 and
-            "Unexpected MIR-to-C reference outside fixture-only files:" in c_log and
-            "compiler/mir_target_request.gst" in c_log,
-            "#110 obsolete MIR-to-C location guard no longer has the recorded failure")
+    successor = run(["python3", "scripts/phase23_mir_evidence_owner.py", "evidence"])
+    require(successor.returncode == 0,
+            "#110 Patch 23.2 successor authority does not pass current main")
 
     resource_env = os.environ.copy()
     resource_env["GUST_NATIVE_BACKEND_DRIVER"] = str(driver)
