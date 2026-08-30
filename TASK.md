@@ -109,7 +109,7 @@ Out of scope:
 ## Status
 
 - [x] Patch 23.0 — Phase 23 Roadmap Activation — DONE
-- [ ] Patch 23.1 — Post-Phase-22 Assurance and Issue-Health Opening
+- [x] Patch 23.1 — Post-Phase-22 Assurance and Issue-Health Opening — DONE
 - [ ] Patch 23.2 — MIR Evidence-Owner Repair and Retirement (#110)
 - [ ] Patch 23.3 — Resource-Acquisition Parity Evidence Repair (#240)
 - [ ] Patch 23.4 — Assurance Phase A Authority and Trigger Inventory

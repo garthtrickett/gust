@@ -4180,6 +4180,125 @@
     ],
     "view_derivation": "the_closure_view_is_generated_from_this_registry_block_and_the_named_phase22_authorities"
   },
+  "phase23_issue_health_opening": {
+    "contract_version": "phase23_issue_health_opening_v1",
+    "status": "patch23_1_complete",
+    "next_patch": "23.2",
+    "review_view": "compiler/CRANELIFT_PHASE23_ISSUE_HEALTH_OPENING.md",
+    "observed_main_sha": "aa21bef767eddf1622d6648f8547726575a6ffb5",
+    "open_issue_numbers": [91, 101, 102, 103, 105, 108, 110, 133, 240],
+    "checkpoint_issues": [
+      {
+        "issue": 110,
+        "state": "open",
+        "owner": "cranelift",
+        "invariant": "fixture_only_mir_lower_entry_points_remain_out_of_production_callers_while_the_obsolete_mir_to_c_location_allowlist_is_retired",
+        "entry_points": ["just_recipe:mir-lower-tiny-function-surface", "just_recipe:mir-to-c-tiny-surface"],
+        "expected": "retained_lowering_invariant_passes_and_obsolete_location_invariant_has_no_live_owner",
+        "actual": "lowering_guard_passes; MIR-to-C location guard fails on legitimate production modules including compiler/mir_target_request.gst",
+        "reachability": "both_guards_are_unassigned_and_explicitly_allowlisted_as_unreachable",
+        "superseding_authority": "TASK.md Patch 23.2 retains_and_reaches_lowering_guard_and_retires_obsolete_location_guard",
+        "semantic_effect": "none_evidence_only",
+        "bootstrap_effect": "none",
+        "closure_falsifier": "lowering_guard_is_not_reachable_or_production_mir_lower_usage_is_accepted_or_obsolete_guard_name_retains_a_live_caller",
+        "successor_patch": "23.2"
+      },
+      {
+        "issue": 240,
+        "state": "open",
+        "owner": "cranelift",
+        "invariant": "resource_positive_cases_execute_identically_through_explicit_C_and_supported_native_routes_while_negative_diagnostics_remain_byte_identical_without_fallback",
+        "entry_points": ["just guard-cranelift-phase20-resource-acquisition-parity"],
+        "expected": "supported_positive_native_artifacts_run_with_registered_observables_and_all_negative_diagnostics_preserve_parity",
+        "actual": "guard_fails_after_the_user_positive_produces_a_29144_byte_native_artifact_that_exits_168_with_empty_output_because_the_guard_still_requires_pre_driver_rejection",
+        "reachability": "Level_2_PR_Fast_registry_derived_fourteen_family_matrix",
+        "superseding_authority": "TASK.md Patch 23.3 replaces_only_stale_positive_expectations_and_preserves_issue106_negatives",
+        "semantic_effect": "none_evidence_only",
+        "bootstrap_effect": "none",
+        "closure_falsifier": "any_positive_lacks_executable_C_native_parity_or_any_negative_diagnostic_or_cleanup_contract_changes",
+        "successor_patch": "23.3"
+      },
+      {
+        "issue": 105,
+        "state": "open",
+        "owner": "cranelift",
+        "invariant": "only_a_second_declaration_in_the_current_lexical_scope_is_rejected_while_parent_scope_shadowing_disjoint_blocks_assignment_and_different_functions_remain_legal",
+        "entry_points": ["compiler/phase23_same_scope_duplicate_current.gst", "compiler/phase23_parent_scope_shadow_current.gst"],
+        "expected": "same_scope_duplicate_rejects_with_one_Gust_diagnostic_and_parent_scope_shadow_remains_accepted",
+        "actual": "both_sources_compile_through_explicit_MIR_to_C_with_empty_stderr_and_the_same_scope_generated_C_contains_two_int_value_declarations_then_host_C_rejects_redefinition",
+        "reachability": "dedicated_current_main_witnesses_owned_by_Patch_23_1_and_not_yet_a_semantic_guard",
+        "superseding_authority": "TASK.md Patch 23.6 owns_the_exact_lexical_diagnostic_and_Patch_23.6a_owns_seed_reconvergence",
+        "semantic_effect": "none_in_23_1_exact_rejection_deferred_to_23_6",
+        "bootstrap_effect": "none_in_23_1_seed_effect_deferred_to_23_6a",
+        "closure_falsifier": "same_scope_duplicate_still_compiles_or_parent_scope_shadow_disjoint_block_reuse_assignment_or_different_function_reuse_is_rejected",
+        "successor_patch": "23.6"
+      }
+    ],
+    "latest_successful_historical_full": {
+      "workflow": "Cranelift Historical Full",
+      "run_id": 33303824486,
+      "event": "schedule",
+      "head_sha": "a7adbcd186512a3b4fd99b953bb2bc30f6838c52",
+      "status": "completed",
+      "conclusion": "success",
+      "successful_jobs": 18,
+      "total_jobs": 18,
+      "relationship": "latest_successful_predecessor_baseline_not_phase23_closure_evidence"
+    },
+    "repository_health": {
+      "observed_at_utc": "2026-08-30T14:18:00Z",
+      "workflow_file_count": 121,
+      "pull_request_trigger_count": 118,
+      "push_trigger_count": 119,
+      "workflow_dispatch_trigger_count": 103,
+      "ruleset_id": 20214069,
+      "ruleset_name": "Protect main",
+      "ruleset_enforcement": "active",
+      "required_status_checks": ["Codex / Trusted actor"],
+      "required_approving_review_count": 0,
+      "required_review_thread_resolution": true
+    },
+    "assurance_boundary": {
+      "authorization": "phase_A_and_phase_B_report_only",
+      "historical_inputs": [110, 240],
+      "selected_current_pilot": 105,
+      "allowed_patches": ["23.4", "23.5"],
+      "forbidden": [
+        "assurance_phases_C_D_or_E",
+        "independent_model_review",
+        "protected_publication",
+        "repository_rule_changes",
+        "new_required_status_check"
+      ]
+    },
+    "deprecation_predecessor_gate": ["23.2", "23.3", "23.4", "23.5", "23.6", "23.6a"],
+    "phase22_closed_inventory_successor": {
+      "status": "exact_phase23_extension_excluded_only_from_phase22_relay_identity",
+      "owning_patch": "23.1",
+      "path": "scripts/phase23_issue_health_opening.py",
+      "selection": "explicit_c",
+      "invocation_count": 2,
+      "commands": [
+        "['./gust', '--backend', 'mir-to-c', str(SAME_SCOPE)]",
+        "['./gust', '--backend', 'mir-to-c', str(PARENT_SHADOW)]"
+      ],
+      "phase22_relay_contract": "the_exact_six_site_Stdlib_relay_and_306_invocation_inventory_remain_unchanged",
+      "phase23_contract": "both_new_calls_remain_visible_in_the_live_scan_and_are_owned_by_the_Patch_23_1_evidence_guard",
+      "falsifier": "missing_partial_extra_path_command_or_selection_drift_is_rejected"
+    },
+    "boundary": {
+      "changes_guard_behavior": false,
+      "changes_compiler_behavior": false,
+      "changes_backend_route_or_fallback": false,
+      "changes_issue_state": false,
+      "changes_accepted_Gust_program_meaning": false,
+      "adds_or_changes_MIR_operations": false,
+      "changes_ABI_layout_or_runtime_symbols": false,
+      "changes_bootstrap_seed": false,
+      "edits_stdlib_or_CR15": false,
+      "begins_deprecation_patch": false
+    }
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",

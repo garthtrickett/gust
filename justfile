@@ -23703,3 +23703,22 @@ guard-cranelift-phase22-close:
     just guard-cranelift-phase22-stability-qualification-contract
     python3 scripts/cranelift_registry.py validate
     python3 scripts/phase22_closure.py --check
+
+# Cranelift lane, Patch 23.1. Record only the live checkpoint evidence and its
+# bounded successors; no guard, compiler, route, issue, or semantic state moves.
+guard-cranelift-phase23-issue-health-opening-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🩺 Checking Phase 23 assurance and issue-health opening..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase23-issue-health-opening-contract | grep -F $'guard-cranelift-phase23-issue-health-opening-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase23_issue_health_opening.py validate
+    python3 scripts/phase23_issue_health_opening.py check-review
+
+guard-cranelift-phase23-issue-health-opening-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Replaying Phase 23 checkpoint issue evidence..."
+    just guard-cranelift-phase23-issue-health-opening-contract
+    python3 scripts/phase23_issue_health_opening.py evidence

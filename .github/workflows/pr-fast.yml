@@ -504,6 +504,9 @@ jobs:
       - name: Phase 22 default-backend transition closure
         run: just guard-cranelift-phase22-close
 
+      - name: Phase 23 assurance and issue-health opening
+        run: just guard-cranelift-phase23-issue-health-opening-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 
