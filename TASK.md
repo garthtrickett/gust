@@ -96,7 +96,7 @@ Out of scope:
 - [x] Patch 22.7a — Post-Merge Review Corrections — DONE
 - [x] Patch 22.7b — Exact Six-Site Relay Transition Authority — DONE
 - [x] Patch 22.8 — One-Time Default-Native Stability Qualification — DONE
-- [ ] Patch 22.9 — Phase 22 Closure
+- [x] Patch 22.9 — Phase 22 Closure — DONE
 
 Status rows are machine-parsed. Keep each row as
 `- [ ] Patch 22.N — <Title>` or `- [x] Patch 22.N — <Title> — DONE`; an
@@ -401,6 +401,21 @@ pre-flip default; no silent fallback exists; package/install and bootstrap gates
 pass; the one-time stability qualification and latest exact-main Historical
 Full are green; all exact-head pull-request workflows succeed; and no review
 conversation is unresolved. Phase 23 remains inactive.
+
+## Phase 22 Closure Record
+
+Phase 22 closes with Cranelift as the default backend while explicit
+`--backend cranelift` remains identical, explicit `--backend mir-to-c` and
+`--backend c` remain the byte-identical semantic oracle and rollback route,
+fallback remains forbidden, and the three-artifact package/install plus
+explicit-MIR-to-C bootstrap contracts remain qualified.
+
+Authoritative `Cranelift Historical Full` run **33303824486**, event
+`schedule`, completed `success` on exact final implementation main
+**a7adbcd186512a3b4fd99b953bb2bc30f6838c52** with **18/18** jobs successful
+and zero unfinished/non-success jobs. The generated closure record is
+`docs/PHASE22_CLOSURE.md`; the terminal lane record is written only after the
+closure PR merges. Phase 23 remains inactive.
 
 ---
 

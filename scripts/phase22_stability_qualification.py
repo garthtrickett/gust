@@ -129,8 +129,13 @@ def validate() -> dict:
             "Historical target projection or shard population drifted")
 
     task = TASK.read_text(encoding="utf-8")
+    patch22_9_open = "- [ ] Patch 22.9 — Phase 22 Closure" in task
+    patch22_9_closed = (
+        "- [x] Patch 22.9 — Phase 22 Closure — DONE" in task and
+        "## Phase 22 Closure Record" in task
+    )
     require("- [x] Patch 22.8 — One-Time Default-Native Stability Qualification — DONE" in task and
-            "- [ ] Patch 22.9 — Phase 22 Closure" in task,
+            (patch22_9_open or patch22_9_closed),
             "22.8/22.9 roadmap boundary drifted")
     levels = json.loads(LEVELS.read_text(encoding="utf-8"))["guards"]
     require(levels.get(GUARD_L1) == 1 and levels.get(GUARD_L2) == 2,

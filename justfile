@@ -23691,3 +23691,15 @@ guard-cranelift-phase22-stability-qualification-evidence:
     echo "🧪 Replaying the retained explicit-C oracle and rollback evidence..."
     just guard-cranelift-phase22-stability-qualification-contract
     python3 scripts/phase22_stability_qualification.py evidence
+
+# Cranelift lane, Patch 22.9. Close only from the registry-owned route,
+# delivery, bootstrap, stability, and exact-main Historical authorities.
+guard-cranelift-phase22-close:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Closing Phase 22 Cranelift default-backend transition..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase22-close | grep -F $'guard-cranelift-phase22-close\t1\t' >/dev/null
+    just guard-cranelift-phase22-stability-qualification-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase22_closure.py --check
