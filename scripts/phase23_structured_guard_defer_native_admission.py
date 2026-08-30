@@ -59,12 +59,12 @@ def validate(value: dict | None = None) -> dict:
             "full_program_route": "mir_native_full_program_source_lower",
             "typed_ast_tags": [9, 11],
             "canonical_operations": ["GuardUnwrap", "ScheduleDefer"],
-            "scalar_signature_policy": "a_function_only_typed_program_with_guard_or_defer_may_use_the_existing_full_program_route_when_no_non_scalar_signature_selects_it",
+            "scalar_signature_policy": "a_function_only_typed_program_with_both_guard_and_defer_may_use_the_existing_full_program_route_when_no_non_scalar_signature_selects_it",
         },
         "fixtures": {
             "positive": "compiler/phase20_resource_acquisition_directory_source.gst",
             "retained_deferred": "compiler/phase13_structured_cfg_short_circuit_deferred_source.gst",
-            "retained_declaration": "tests/e2e_formatting_utilities.gst",
+            "retained_declarations": ["tests/e2e_formatting_utilities.gst", "tests/e2e_native_collections_evaluation.gst"],
         },
         "phase22_closed_inventory_extension": {
             "status": "exact_phase23_extension_excluded_only_from_phase22_relay_identity",
@@ -112,11 +112,13 @@ def validate_source_handoff(value: dict) -> None:
             "structured-CFG probe still preempts guard/defer")
 
     full = FULL_PROGRAM.read_text(encoding="utf-8")
-    require("func mir_native_full_program_contains_guard_or_defer(" in full,
+    require("func mir_native_full_program_contains_guard_and_defer(" in full and
+            "func mir_native_full_program_block_guard_defer_mask(" in full,
             "generic typed guard/defer inventory is missing")
-    require("statement.tag == 9 || statement.tag == 11" in full,
+    require("if statement.tag == 9 {" in full and
+            "if statement.tag == 11 {" in full,
             "typed guard/defer inventory drifted")
-    require("mir_native_full_program_contains_guard_or_defer(programs, ctx)" in full,
+    require("mir_native_full_program_contains_guard_and_defer(programs, ctx)" in full,
             "scalar-signature handoff is missing")
     require("if statement.tag != 3 {" in full,
             "function-only scalar guard/defer admission boundary is missing")
@@ -187,18 +189,19 @@ def validate_retained_deferral(value: dict) -> None:
 
 
 def validate_retained_declaration_deferral(value: dict) -> None:
-    source = ROOT / value["fixtures"]["retained_declaration"]
     env = os.environ.copy()
     env["GUST_NATIVE_BACKEND_DRIVER"] = str(DRIVER)
-    artifact = BUILD / "retained-declaration.native"
-    observed = run([str(GUST), "--backend", "cranelift", "-o", str(artifact),
-                    str(source)], env=env)
-    require(observed.returncode != 0 and not artifact.exists(),
-            "declaration-bearing scalar source reached native publication")
-    output = observed.stdout.decode("utf-8", errors="replace")
-    require("reason_code=source_feature_not_represented" in output and
-            "expected_failure_stage=before_driver_discovery" in output,
-            "declaration-bearing scalar source classification changed")
+    for index, fixture in enumerate(value["fixtures"]["retained_declarations"]):
+        source = ROOT / fixture
+        artifact = BUILD / f"retained-declaration-{index}.native"
+        observed = run([str(GUST), "--backend", "cranelift", "-o", str(artifact),
+                        str(source)], env=env)
+        require(observed.returncode != 0 and not artifact.exists(),
+                "retained scalar source reached native publication")
+        output = observed.stdout.decode("utf-8", errors="replace")
+        require("reason_code=source_feature_not_represented" in output and
+                "expected_failure_stage=before_driver_discovery" in output,
+                "retained scalar source classification changed")
 
 
 def render(value: dict) -> str:
@@ -219,15 +222,15 @@ def render(value: dict) -> str:
         f"- Existing canonical operations: `{', '.join(source['canonical_operations'])}`",
         "",
         "The narrower structured-CFG recognizer does not claim typed `guard` or `defer`. "
-        "The generic full-program encoder admits that AST cohort for function-only scalar "
-        "program signatures, and the existing worker validates and lowers the same two "
+        "The generic full-program encoder admits only function-only scalar programs that contain both "
+        "operations, and the existing worker validates and lowers the same two "
         "canonical operations. No resource, directory, fixture, module, or path exception exists.",
         "",
         "## Evidence contract",
         "",
         f"- Positive source: `{fixtures['positive']}`",
         f"- Retained deferral: `{fixtures['retained_deferred']}`",
-        f"- Retained declaration-bearing deferral: `{fixtures['retained_declaration']}`",
+        f"- Retained declaration/defer-only deferrals: `{', '.join(fixtures['retained_declarations'])}`",
         f"- Oracle: `{observables['oracle']}`",
         f"- Expected exit: `{observables['exit_status']}` with empty stdout/stderr",
         f"- Native artifact: `{observables['native_artifact']}`",
@@ -235,7 +238,7 @@ def render(value: dict) -> str:
         f"{value['phase22_closed_inventory_extension']['invocation_count']} evidence invocations are a registered Phase 23 extension and are excluded only while validating the frozen Phase 22 six-site relay identity.",
         "",
         "The evidence guard rejects restoring the preempting guard/defer deferral, "
-        "removing the generic function-only scalar-signature handoff, replacing the existing "
+        "removing the generic function-only both-operations scalar-signature handoff, replacing the existing "
         "worker operations, admitting declaration-bearing scalar source, or admitting the "
         "retained short-circuit structured-CFG deferral.",
         "",
