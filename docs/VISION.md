@@ -422,7 +422,7 @@ Earlier drafts modelled direct-to-team SaaS, platform licensing, and first-party
 
 | Outcome | Probability |
 |---|---|
-| Thesis fails on OD-8 or OD-9; four months spent finding out | ~30% |
+| Remaining technical, generation, commercial, or defensibility gates fail; the bounded OD-8 result proves insufficient | ~30% |
 | A good compiler, a small product with some customers, no exit | ~50% |
 | Product works, artifact is compelling, acquisition | ~20% |
 
@@ -433,7 +433,7 @@ would move each estimate before using it for funding or strategy.
 
 Not a strong expected value in dollars. A very good one for four months of work at the demonstrated rate, and the downside is bounded in a way almost nothing in this space is.
 
-**The number to hold onto is not the exit.** It is that the decision point is a few million over three to four months rather than $80M over four years, and that the 30% branch is the cheapest possible way to be wrong.
+**The number to hold onto is not the exit.** It is that the decision point is a few million over three to four months rather than $80M over four years, and that the failure branch is the cheapest possible way to be wrong. OD-8's bounded-positive result narrows that branch; it does not remove OD-9, buyer, adoption, end-to-end-containment, or defensibility risk.
 
 ## 0.11 Principal risks
 

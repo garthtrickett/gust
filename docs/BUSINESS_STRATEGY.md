@@ -415,7 +415,9 @@ alternative today.
 **Bounded is not the same as zero, and what remains is worth naming**, because it
 changes how the four months should be spent.
 
-If OD-8 or OD-9 fails, three things survive and none of them is the compiler:
+If any remaining technical, generation, commercial, or defensibility gate
+fails—including OD-9, or the bounded OD-8 result proving insufficient—three
+things survive and none of them is the compiler:
 
 - **The statistic (§0.9)**, if it was started. It is independent of the thesis
   and it is publishable whichever way it comes out. **A rigorous count of how

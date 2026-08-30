@@ -5,7 +5,8 @@ demo.**
 
 This document turns `VISION.md` section 0.7's single side-by-side into a staged,
 falsifiable benchmark. It does not replace the first demo, add a third demo
-track, resolve OD-8 or OD-9 in advance, or choose a business. The demo proves
+track, resolve OD-9 or the remaining evidence gates in advance, reopen OD-8's
+bounded-positive verdict, or choose a business. The demo proves
 that Gust can express and reject the selected failure. The benchmark asks
 whether that advantage survives realistic application variety and the strongest
 credible TypeScript alternative.

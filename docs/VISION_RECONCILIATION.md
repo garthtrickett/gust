@@ -586,7 +586,7 @@ draws.
 ## 8. Adversarial strategy and architecture review, 2026-08-30
 
 The external review and the point-by-point repository response are preserved in
-`gust-av.md`. Its valid corrections were applied to the authoritative documents
+`docs/gust-av.md`. Its valid corrections were applied to the authoritative documents
 rather than turning this advisory reconciliation into a second specification.
 The resulting resolutions are:
 
