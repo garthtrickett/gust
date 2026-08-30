@@ -38,7 +38,7 @@ def opening_module():
     return module
 
 
-def validate() -> tuple[dict, list[dict[str, object]]]:
+def validate() -> tuple[dict, str]:
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     opening = registry.get("phase22_opening", {})
     require(opening.get("contract_version") == "phase22_opening_v2",
@@ -66,16 +66,13 @@ def validate() -> tuple[dict, list[dict[str, object]]]:
 
     scanner = opening_module()
     rows = scanner.scan_invocations()
-    summary = scanner.scan_summary(rows)
     pre_relay_inventory = record.get("current_invocation_inventory")
     post_relay_inventory = record.get(
         "authorized_post_relay_invocation_inventory"
     )
-    expected_live_inventory = registry.get(
-        "phase22_default_route_flip", {}).get(
-            "post_flip_invocation_inventory", post_relay_inventory)
-    require(summary == expected_live_inventory,
-            f"merged post-relay invocation inventory drifted: {summary!r}")
+    relay_transition_state, transition = (
+        scanner.validate_post_flip_relay_transition(registry, rows)
+    )
     migration = record.get("migration", {})
     has_implicit_output_successor = "phase22_native_implicit_output" in registry
     has_preflip_successor = "phase22_preflip_default_cohort" in registry
@@ -120,7 +117,7 @@ def validate() -> tuple[dict, list[dict[str, object]]]:
     relay = record.get("cross_lane_relay", {})
     post_flip_relay = relay.get("post_flip_review_relay", {})
     require(post_flip_relay.get("status") ==
-            "awaiting_owning_stdlib_correction" and
+            "transition_authorized_awaiting_owning_stdlib_merge" and
             post_flip_relay.get("review_pull_request") == 251 and
             post_flip_relay.get("review_thread") ==
             "PRRT_kwDOS1ExJc6dYPJO" and
@@ -130,7 +127,9 @@ def validate() -> tuple[dict, list[dict[str, object]]]:
             post_flip_relay.get("required_before") ==
             "patch22_8_stability_authority_publication",
             "post-flip review relay authority drifted")
-    require(len(relay_rows) == post_flip_relay["consumer_count"] and
+    require(len(relay_rows) ==
+            (post_flip_relay["consumer_count"]
+             if relay_transition_state == "pre_relay" else 0) and
             relay.get("consumer_count") == 15 and
             relay.get("authorized_post_relay_consumer_count") == 0,
             "cross-lane relay transition count drifted")
@@ -159,15 +158,25 @@ def validate() -> tuple[dict, list[dict[str, object]]]:
         for row in post_flip_relay.get("site_manifest", [])
     }
     live_pending_sites = {
-        tuple(row[field] for field in site_fields)
-        for row in relay_rows
+        tuple(row[field] for field in site_fields): row
+        for row in stdlib_rows
+        if tuple(row[field] for field in site_fields) in pending_sites
     }
     require(len(pending_sites) == 6 and
-            pending_sites == live_pending_sites and
-            sorted({str(row["path"]) for row in relay_rows}) ==
+            pending_sites == set(live_pending_sites) and
+            sorted({str(row["path"]) for row in live_pending_sites.values()}) ==
             post_flip_relay.get("paths") and
-            all(row["selection"] == "implicit_default" for row in relay_rows),
+            all(row["selection"] ==
+                ("implicit_default" if relay_transition_state == "pre_relay"
+                 else "explicit_c")
+                for row in live_pending_sites.values()),
             "post-flip review relay site manifest drifted")
+    require(transition == post_flip_relay.get("transition_authority") and
+            post_flip_relay.get("landed_merge_evidence") == {
+                "status": "pending_owning_stdlib_merge",
+                "owning_pull_request": 264,
+            },
+            "six-site transition authorization or merge-evidence state drifted")
     require(relay.get("status") == "merged_on_main" and
             relay.get("owner") == "stdlib" and
             relay.get("pull_request") == 256 and
@@ -259,7 +268,7 @@ def validate() -> tuple[dict, list[dict[str, object]]]:
     boundary = record.get("boundary", {})
     require(boundary and all(value is False for value in boundary.values()),
             "Patch 22.2 widened beyond the recorded boundary")
-    return record, relay_rows
+    return record, relay_transition_state
 
 
 def render(record: dict) -> str:
@@ -327,6 +336,8 @@ def render(record: dict) -> str:
         "",
         f"- Status: `{post_flip_relay['status']}`",
         f"- Review: `#{post_flip_relay['review_pull_request']}` / `{post_flip_relay['review_thread']}`",
+        f"- Authorized owning PR: `#{post_flip_relay['transition_authority']['owning_pull_request']}` at `{post_flip_relay['transition_authority']['authorized_head_sha']}`",
+        f"- Landed merge evidence: `{post_flip_relay['landed_merge_evidence']['status']}`",
         f"- Required owning transitions: `{post_flip_relay['consumer_count']}`",
         f"- Expected selection: `{post_flip_relay['expected_selection']}`",
     ]
@@ -338,8 +349,12 @@ def render(record: dict) -> str:
         "exact-head pull-request population successful and zero review threads.",
         "This authority now accepts only the exact merged 15-site post-relay",
         "inventory plus the six test-owned consumers discovered by post-merge",
-        "review. Those six sites remain an explicit owning-lane relay and block",
-        "Patch 22.8 publication. This correction does not edit Stdlib.",
+        "review. The transition authority admits only the exact pre-relay",
+        "manifest or the exact two-path/six-site post-relay manifest; partial,",
+        "extra-site, path-drift, same-count substitution, and unrelated inventory",
+        "states reject. Authorization is not landed merge evidence, and Patch",
+        "22.8 remains blocked until the owning merge is recorded. This correction",
+        "does not edit Stdlib.",
         "",
     ]
     return "\n".join(lines)
@@ -349,7 +364,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("command", choices=("validate", "project", "check-review"))
     args = parser.parse_args()
-    record, _ = validate()
+    record, relay_transition_state = validate()
     expected = render(record)
     if args.command == "project":
         REVIEW.write_text(expected, encoding="utf-8")
@@ -358,7 +373,7 @@ def main() -> None:
                 "generated migration review is stale; run project")
     else:
         print(
-            f"{GUARD_L1}: ok (60 migrated, relay state=merged_post_relay)"
+            f"{GUARD_L1}: ok (60 migrated, relay state={relay_transition_state})"
         )
 
 

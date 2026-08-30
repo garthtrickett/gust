@@ -11,6 +11,8 @@ Do not edit by hand.
 - Opening-baseline executable compiler invocations: `269`
 - Live successor executable compiler invocations: `306`
 - Unclassified invocations: `0`
+- Relay transition: `authorized_pre_or_exact_post_relay`
+- Authorized owning PR: `#264` at `95144aea75dd3812cd52e86391ea5a8c54b11363`
 
 ## Current CLI and package
 
@@ -31,20 +33,29 @@ Do not edit by hand.
 - `heavy_guards` — `parallel_heavy_guards_built_from_current_default_C_compiler`; transition `22.7_default_and_explicit_C_qualification`
 - `historical_full` — `daily_registry_derived_level3_owner_at_03_23_UTC`; transition `22.8_one_exact_final_main_success`
 
-## Live successor invocation summary
+## Authorized successor invocation summaries
 
-- Selection `explicit_c`: `167`
-- Selection `explicit_cranelift`: `115`
-- Selection `explicit_invalid_or_parser_probe`: `3`
-- Selection `implicit_default`: `21`
-- Consumer class `already_explicit_or_parser_probe`: `285`
-- Consumer class `cranelift_C_or_diagnostic_guard`: `2`
-- Consumer class `help_surface_probe`: `3`
-- Consumer class `intentional_default_selection_probe`: `8`
-- Consumer class `invocation_parser_probe`: `2`
-- Consumer class `stdlib_owned_C_or_diagnostic_guard`: `6`
+- Pre-relay selection `explicit_c`: `167`
+- Pre-relay selection `explicit_cranelift`: `115`
+- Pre-relay selection `explicit_invalid_or_parser_probe`: `3`
+- Pre-relay selection `implicit_default`: `21`
+- Post-relay selection `explicit_c`: `173`
+- Post-relay selection `explicit_cranelift`: `115`
+- Post-relay selection `explicit_invalid_or_parser_probe`: `3`
+- Post-relay selection `implicit_default`: `15`
+- Pre-relay consumer class `already_explicit_or_parser_probe`: `285`
+- Pre-relay consumer class `cranelift_C_or_diagnostic_guard`: `2`
+- Pre-relay consumer class `help_surface_probe`: `3`
+- Pre-relay consumer class `intentional_default_selection_probe`: `8`
+- Pre-relay consumer class `invocation_parser_probe`: `2`
+- Pre-relay consumer class `stdlib_owned_C_or_diagnostic_guard`: `6`
+- Post-relay consumer class `already_explicit_or_parser_probe`: `291`
+- Post-relay consumer class `cranelift_C_or_diagnostic_guard`: `2`
+- Post-relay consumer class `help_surface_probe`: `3`
+- Post-relay consumer class `intentional_default_selection_probe`: `8`
+- Post-relay consumer class `invocation_parser_probe`: `2`
 
-## Live successor executable invocation inventory
+## Transition-normalized successor executable invocation inventory
 
 | Path | Line | Recipe | Selection | Class | Owner | Expected artifact | Expected transition | Falsifier |
 | --- | ---: | --- | --- | --- | --- | --- | --- | --- |
@@ -348,12 +359,12 @@ Do not edit by hand.
 | `scripts/stdlib_s1_composition_parity.sh` | 30 | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `stdlib` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/stdlib_s1_composition_parity.sh` | 31 | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `stdlib` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/stdlib_s1_composition_parity.sh` | 72 | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `stdlib` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `tests/e2e_codegen_assertions.gst` | 33 | `none` | `implicit_default` | `stdlib_owned_C_or_diagnostic_guard` | `stdlib` | `generated_C_or_diagnostic` | `checked_cross_lane_relay_after_postmerge_review` | `default_native_route_reaches_a_test_owned_generated_C_consumer` |
-| `tests/e2e_codegen_assertions.gst` | 39 | `none` | `implicit_default` | `stdlib_owned_C_or_diagnostic_guard` | `stdlib` | `generated_C_or_diagnostic` | `checked_cross_lane_relay_after_postmerge_review` | `default_native_route_reaches_a_test_owned_generated_C_consumer` |
-| `tests/e2e_codegen_assertions.gst` | 45 | `none` | `implicit_default` | `stdlib_owned_C_or_diagnostic_guard` | `stdlib` | `generated_C_or_diagnostic` | `checked_cross_lane_relay_after_postmerge_review` | `default_native_route_reaches_a_test_owned_generated_C_consumer` |
-| `tests/e2e_codegen_assertions.gst` | 52 | `none` | `implicit_default` | `stdlib_owned_C_or_diagnostic_guard` | `stdlib` | `generated_C_or_diagnostic` | `checked_cross_lane_relay_after_postmerge_review` | `default_native_route_reaches_a_test_owned_generated_C_consumer` |
-| `tests/test_runner.gst` | 119 | `none` | `implicit_default` | `stdlib_owned_C_or_diagnostic_guard` | `stdlib` | `generated_C_or_diagnostic` | `checked_cross_lane_relay_after_postmerge_review` | `default_native_route_reaches_a_test_owned_generated_C_consumer` |
-| `tests/test_runner.gst` | 154 | `none` | `implicit_default` | `stdlib_owned_C_or_diagnostic_guard` | `stdlib` | `generated_C_or_diagnostic` | `checked_cross_lane_relay_after_postmerge_review` | `default_native_route_reaches_a_test_owned_generated_C_consumer` |
+| `tests/e2e_codegen_assertions.gst` | 33 | `none` | `authorized_pre_implicit_or_exact_post_explicit_c` | `six_site_stdlib_C_or_diagnostic_relay` | `stdlib` | `generated_C_or_diagnostic` | `exact_six_site_explicit_mir_to_c_relay` | `partial_extra_path_drift_or_unrelated_inventory_change` |
+| `tests/e2e_codegen_assertions.gst` | 39 | `none` | `authorized_pre_implicit_or_exact_post_explicit_c` | `six_site_stdlib_C_or_diagnostic_relay` | `stdlib` | `generated_C_or_diagnostic` | `exact_six_site_explicit_mir_to_c_relay` | `partial_extra_path_drift_or_unrelated_inventory_change` |
+| `tests/e2e_codegen_assertions.gst` | 45 | `none` | `authorized_pre_implicit_or_exact_post_explicit_c` | `six_site_stdlib_C_or_diagnostic_relay` | `stdlib` | `generated_C_or_diagnostic` | `exact_six_site_explicit_mir_to_c_relay` | `partial_extra_path_drift_or_unrelated_inventory_change` |
+| `tests/e2e_codegen_assertions.gst` | 52 | `none` | `authorized_pre_implicit_or_exact_post_explicit_c` | `six_site_stdlib_C_or_diagnostic_relay` | `stdlib` | `generated_C_or_diagnostic` | `exact_six_site_explicit_mir_to_c_relay` | `partial_extra_path_drift_or_unrelated_inventory_change` |
+| `tests/test_runner.gst` | 119 | `none` | `authorized_pre_implicit_or_exact_post_explicit_c` | `six_site_stdlib_C_or_diagnostic_relay` | `stdlib` | `generated_C_or_diagnostic` | `exact_six_site_explicit_mir_to_c_relay` | `partial_extra_path_drift_or_unrelated_inventory_change` |
+| `tests/test_runner.gst` | 154 | `none` | `authorized_pre_implicit_or_exact_post_explicit_c` | `six_site_stdlib_C_or_diagnostic_relay` | `stdlib` | `generated_C_or_diagnostic` | `exact_six_site_explicit_mir_to_c_relay` | `partial_extra_path_drift_or_unrelated_inventory_change` |
 
 ## Phase 21 native-capability handoff
 

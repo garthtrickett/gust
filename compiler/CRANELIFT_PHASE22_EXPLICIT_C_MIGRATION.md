@@ -64,8 +64,10 @@ repository invocation scan. Do not edit by hand.
 
 ## Post-flip review relay
 
-- Status: `awaiting_owning_stdlib_correction`
+- Status: `transition_authorized_awaiting_owning_stdlib_merge`
 - Review: `#251` / `PRRT_kwDOS1ExJc6dYPJO`
+- Authorized owning PR: `#264` at `95144aea75dd3812cd52e86391ea5a8c54b11363`
+- Landed merge evidence: `pending_owning_stdlib_merge`
 - Required owning transitions: `6`
 - Expected selection: `explicit_mir_to_c`
 - `tests/e2e_codegen_assertions.gst:33`
@@ -79,5 +81,9 @@ Patch 22.2's original relay is complete. The owning Stdlib relay merged with its
 exact-head pull-request population successful and zero review threads.
 This authority now accepts only the exact merged 15-site post-relay
 inventory plus the six test-owned consumers discovered by post-merge
-review. Those six sites remain an explicit owning-lane relay and block
-Patch 22.8 publication. This correction does not edit Stdlib.
+review. The transition authority admits only the exact pre-relay
+manifest or the exact two-path/six-site post-relay manifest; partial,
+extra-site, path-drift, same-count substitution, and unrelated inventory
+states reject. Authorization is not landed merge evidence, and Patch
+22.8 remains blocked until the owning merge is recorded. This correction
+does not edit Stdlib.

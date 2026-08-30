@@ -94,6 +94,7 @@ Out of scope:
 - [x] Patch 22.6a — Default-Route Bootstrap Seed Reconvergence — DONE
 - [x] Patch 22.7 — Post-flip CI, Documentation, and Rollback Qualification — DONE
 - [x] Patch 22.7a — Post-Merge Review Corrections — DONE
+- [x] Patch 22.7b — Exact Six-Site Relay Transition Authority — DONE
 - [ ] Patch 22.8 — One-Time Default-Native Stability Qualification
 - [ ] Patch 22.9 — Phase 22 Closure
 
@@ -325,6 +326,29 @@ exact six-site Stdlib relay is registered as required before Patch 22.8
 publication. No test-owned source, accepted Gust meaning, canonical MIR,
 ABI/layout/runtime symbol, default route, fallback, bootstrap seed, Stdlib API,
 CR-15, or Phase 23 work is changed.
+
+## Patch 22.7b — Exact Six-Site Relay Transition Authority
+
+Authorize the checked owning Stdlib PR #264 without editing or merging its two
+test-owned paths. The executable-invocation authority admits exactly two
+repository states: the frozen post-22.7a inventory on main, or the exact
+two-path/six-site route-only transition in which the registered calls select
+`--backend mir-to-c`. Freeze both exact summaries, the all-or-nothing site
+manifest, and one state-independent generated projection so partial relays,
+added or removed sites, path or line drift, same-count substitutions, and
+unrelated invocation changes reject. Keep the authorization separate from
+pending owning-merge evidence; a later
+Cranelift-owned follow-up records the merge and collapses the transition before
+Patch 22.8 publication.
+
+**Exit Gate:** the unchanged exact main manifest validates as the pre-relay
+state; PR #264's exact full head is the sole admitted post-relay manifest; the
+opening, explicit-C migration, default-route, and successor route guards accept
+both complete states but no mixed or substituted state; generated projections
+are identical in either authorized state; landed merge evidence remains
+explicitly pending; and no Stdlib source, accepted Gust meaning, canonical MIR,
+ABI/layout/runtime symbol, route/default/fallback behavior, bootstrap seed,
+Patch 22.8 evidence, CR-15, or Phase 23 work changes.
 
 ## Patch 22.8 — One-Time Default-Native Stability Qualification
 

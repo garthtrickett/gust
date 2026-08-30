@@ -77,13 +77,9 @@ def validate() -> dict:
     }, "route contract drifted")
 
     scanner = opening_module()
-    summary = scanner.scan_summary(scanner.scan_invocations())
-    expected_live_inventory = registry.get(
-        "phase22_default_route_flip", {}).get(
-            "post_flip_invocation_inventory",
-            predecessor.get("authorized_post_relay_invocation_inventory"))
-    require(summary == expected_live_inventory,
-            f"successor merged invocation inventory drifted: {summary!r}")
+    scanner.validate_post_flip_relay_transition(
+        registry, scanner.scan_invocations()
+    )
     migration = predecessor.get("migration", {})
     require(migration.get("opening_implicit_count") +
             migration.get("patch22_evidence_implicit_count") -
