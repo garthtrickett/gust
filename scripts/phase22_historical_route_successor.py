@@ -98,7 +98,7 @@ def validate() -> dict:
             "PR Fast does not own the correction contract")
     task = TASK.read_text(encoding="utf-8")
     require("Historical Full run `33274538693` is retained as failed diagnostic evidence" in task and
-            "- [ ] Patch 22.8 — One-Time Default-Native Stability Qualification" in task,
+            "Patch 22.8 — One-Time Default-Native Stability Qualification" in task,
             "TASK.md correction record or pending 22.8 boundary drifted")
     boundary = record.get("boundary", {})
     require(boundary.get("changes_historical_successor_routing") is True and

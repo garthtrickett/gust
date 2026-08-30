@@ -64,26 +64,28 @@ repository invocation scan. Do not edit by hand.
 
 ## Post-flip review relay
 
-- Status: `transition_authorized_awaiting_owning_stdlib_merge`
+- Status: `landed_exact_post_relay_only`
 - Review: `#251` / `PRRT_kwDOS1ExJc6dYPJO`
-- Authorized owning PR: `#264` at `95144aea75dd3812cd52e86391ea5a8c54b11363`
-- Landed merge evidence: `pending_owning_stdlib_merge`
+- Landed owning PR: `#264`
+- Landed exact head: `3ada756e209bfa0556895169870ae00f96d94022`
+- Landed merge main: `a7adbcd186512a3b4fd99b953bb2bc30f6838c52`
+- Landed PR workflows: `6/6` successful
+- Relayed review thread: `resolved_non_outdated`
 - Required owning transitions: `6`
 - Expected selection: `explicit_mir_to_c`
-- `tests/e2e_codegen_assertions.gst:33`
-- `tests/e2e_codegen_assertions.gst:39`
-- `tests/e2e_codegen_assertions.gst:45`
-- `tests/e2e_codegen_assertions.gst:52`
-- `tests/test_runner.gst:119`
-- `tests/test_runner.gst:154`
+- `tests/e2e_codegen_assertions.gst:33` — `os.System("./gust --backend mir-to-c tests/codegen_helper_pod_move.gst > build/codegen_helper_pod_move_temp.log 2>&1");`
+- `tests/e2e_codegen_assertions.gst:39` — `os.System("./gust --backend mir-to-c tests/codegen_helper_linear_move.gst > build/codegen_helper_linear_move_temp.log 2>&1");`
+- `tests/e2e_codegen_assertions.gst:45` — `os.System("./gust --backend mir-to-c tests/codegen_helper_take_ops.gst > build/codegen_helper_take_ops_temp.log 2>&1");`
+- `tests/e2e_codegen_assertions.gst:52` — `os.System("./gust --backend mir-to-c tests/codegen_helper_match_destructure.gst > build/codegen_helper_match_destructure_temp.log 2>&1");`
+- `tests/test_runner.gst:119` — `mut cmd := std.Concat("./gust --backend mir-to-c ", path);`
+- `tests/test_runner.gst:154` — `mut cmd_comp := std.Concat("./gust --backend mir-to-c ", path);`
 
 Patch 22.2's original relay is complete. The owning Stdlib relay merged with its complete
 exact-head pull-request population successful and zero review threads.
 This authority now accepts only the exact merged 15-site post-relay
 inventory plus the six test-owned consumers discovered by post-merge
-review. The transition authority admits only the exact pre-relay
-manifest or the exact two-path/six-site post-relay manifest; partial,
-extra-site, path-drift, same-count substitution, and unrelated inventory
-states reject. Authorization is not landed merge evidence, and Patch
-22.8 remains blocked until the owning merge is recorded. This correction
-does not edit Stdlib.
+review. The completed transition now admits only the exact landed
+two-path/six-site post-relay manifest; the former pre-relay state,
+partial, extra-site, path-drift, same-count substitution, and unrelated
+inventory states reject. Exact PR evidence is recorded separately from
+the semantic inventory contract. This correction does not edit Stdlib.

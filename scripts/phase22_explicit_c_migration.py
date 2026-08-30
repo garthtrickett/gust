@@ -117,7 +117,7 @@ def validate() -> tuple[dict, str]:
     relay = record.get("cross_lane_relay", {})
     post_flip_relay = relay.get("post_flip_review_relay", {})
     require(post_flip_relay.get("status") ==
-            "transition_authorized_awaiting_owning_stdlib_merge" and
+            "landed_exact_post_relay_only" and
             post_flip_relay.get("review_pull_request") == 251 and
             post_flip_relay.get("review_thread") ==
             "PRRT_kwDOS1ExJc6dYPJO" and
@@ -127,9 +127,7 @@ def validate() -> tuple[dict, str]:
             post_flip_relay.get("required_before") ==
             "patch22_8_stability_authority_publication",
             "post-flip review relay authority drifted")
-    require(len(relay_rows) ==
-            (post_flip_relay["consumer_count"]
-             if relay_transition_state == "pre_relay" else 0) and
+    require(len(relay_rows) == 0 and
             relay.get("consumer_count") == 15 and
             relay.get("authorized_post_relay_consumer_count") == 0,
             "cross-lane relay transition count drifted")
@@ -153,30 +151,41 @@ def validate() -> tuple[dict, str]:
     require(all(live_sites[site]["selection"] == "explicit_c"
                 for site in expected_sites),
             "an authorized relay site did not make the exact route transition")
+    pending_site_fields = site_fields + ("command",)
     pending_sites = {
-        tuple(row[field] for field in site_fields)
+        tuple(row[field] for field in pending_site_fields)
         for row in post_flip_relay.get("site_manifest", [])
     }
     live_pending_sites = {
-        tuple(row[field] for field in site_fields): row
+        tuple(row[field] for field in pending_site_fields): row
         for row in stdlib_rows
-        if tuple(row[field] for field in site_fields) in pending_sites
+        if tuple(row[field] for field in pending_site_fields) in pending_sites
     }
     require(len(pending_sites) == 6 and
             pending_sites == set(live_pending_sites) and
             sorted({str(row["path"]) for row in live_pending_sites.values()}) ==
             post_flip_relay.get("paths") and
-            all(row["selection"] ==
-                ("implicit_default" if relay_transition_state == "pre_relay"
-                 else "explicit_c")
+            all(row["selection"] == "explicit_c"
                 for row in live_pending_sites.values()),
             "post-flip review relay site manifest drifted")
-    require(transition == post_flip_relay.get("transition_authority") and
+    require(relay_transition_state == "landed_post_relay" and
+            transition == post_flip_relay.get("landed_authority") and
             post_flip_relay.get("landed_merge_evidence") == {
-                "status": "pending_owning_stdlib_merge",
+                "status": "merged_on_main",
                 "owning_pull_request": 264,
+                "base_sha": "5638c3596be450b75f2af905b982875f7863bc37",
+                "exact_head_sha": "3ada756e209bfa0556895169870ae00f96d94022",
+                "merged_main_sha": "a7adbcd186512a3b4fd99b953bb2bc30f6838c52",
+                "pull_request_event": "pull_request",
+                "successful_workflows": 6,
+                "total_workflows": 6,
+                "unfinished_workflows": 0,
+                "non_success_workflows": 0,
+                "unresolved_review_threads": 0,
+                "relayed_review_thread": "PRRT_kwDOS1ExJc6dYPJO",
+                "relayed_review_thread_status": "resolved_non_outdated",
             },
-            "six-site transition authorization or merge-evidence state drifted")
+            "six-site landed authority or merge-evidence state drifted")
     require(relay.get("status") == "merged_on_main" and
             relay.get("owner") == "stdlib" and
             relay.get("pull_request") == 256 and
@@ -215,7 +224,7 @@ def validate() -> tuple[dict, str]:
     owner_selections = relay.get("authorized_post_relay_owner_selections", {})
     initial_stdlib_rows = [
         row for row in stdlib_rows
-        if tuple(row[field] for field in site_fields) not in pending_sites
+        if tuple(row[field] for field in pending_site_fields) not in pending_sites
     ]
     require(len(initial_stdlib_rows) == 23 and
             sum(row["selection"] == "explicit_c" for row in initial_stdlib_rows) ==
@@ -336,25 +345,29 @@ def render(record: dict) -> str:
         "",
         f"- Status: `{post_flip_relay['status']}`",
         f"- Review: `#{post_flip_relay['review_pull_request']}` / `{post_flip_relay['review_thread']}`",
-        f"- Authorized owning PR: `#{post_flip_relay['transition_authority']['owning_pull_request']}` at `{post_flip_relay['transition_authority']['authorized_head_sha']}`",
-        f"- Landed merge evidence: `{post_flip_relay['landed_merge_evidence']['status']}`",
+        f"- Landed owning PR: `#{post_flip_relay['landed_authority']['owning_pull_request']}`",
+        f"- Landed exact head: `{post_flip_relay['landed_merge_evidence']['exact_head_sha']}`",
+        f"- Landed merge main: `{post_flip_relay['landed_merge_evidence']['merged_main_sha']}`",
+        f"- Landed PR workflows: `{post_flip_relay['landed_merge_evidence']['successful_workflows']}/{post_flip_relay['landed_merge_evidence']['total_workflows']}` successful",
+        f"- Relayed review thread: `{post_flip_relay['landed_merge_evidence']['relayed_review_thread_status']}`",
         f"- Required owning transitions: `{post_flip_relay['consumer_count']}`",
         f"- Expected selection: `{post_flip_relay['expected_selection']}`",
     ]
     for row in post_flip_relay["site_manifest"]:
-        lines.append(f"- `{row['path']}:{row['line']}`")
+        lines.append(
+            f"- `{row['path']}:{row['line']}` — `{row['command']}`"
+        )
     lines += [
         "",
         "Patch 22.2's original relay is complete. The owning Stdlib relay merged with its complete",
         "exact-head pull-request population successful and zero review threads.",
         "This authority now accepts only the exact merged 15-site post-relay",
         "inventory plus the six test-owned consumers discovered by post-merge",
-        "review. The transition authority admits only the exact pre-relay",
-        "manifest or the exact two-path/six-site post-relay manifest; partial,",
-        "extra-site, path-drift, same-count substitution, and unrelated inventory",
-        "states reject. Authorization is not landed merge evidence, and Patch",
-        "22.8 remains blocked until the owning merge is recorded. This correction",
-        "does not edit Stdlib.",
+        "review. The completed transition now admits only the exact landed",
+        "two-path/six-site post-relay manifest; the former pre-relay state,",
+        "partial, extra-site, path-drift, same-count substitution, and unrelated",
+        "inventory states reject. Exact PR evidence is recorded separately from",
+        "the semantic inventory contract. This correction does not edit Stdlib.",
         "",
     ]
     return "\n".join(lines)

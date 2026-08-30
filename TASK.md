@@ -95,7 +95,7 @@ Out of scope:
 - [x] Patch 22.7 — Post-flip CI, Documentation, and Rollback Qualification — DONE
 - [x] Patch 22.7a — Post-Merge Review Corrections — DONE
 - [x] Patch 22.7b — Exact Six-Site Relay Transition Authority — DONE
-- [ ] Patch 22.8 — One-Time Default-Native Stability Qualification
+- [x] Patch 22.8 — One-Time Default-Native Stability Qualification — DONE
 - [ ] Patch 22.9 — Phase 22 Closure
 
 Status rows are machine-parsed. Keep each row as
@@ -352,6 +352,15 @@ Patch 22.8 evidence, CR-15, or Phase 23 work changes.
 
 ## Patch 22.8 — One-Time Default-Native Stability Qualification
 
+The owning six-site Stdlib relay PR #264 merged from exact head
+`3ada756e209bfa0556895169870ae00f96d94022` as exact main
+`a7adbcd186512a3b4fd99b953bb2bc30f6838c52`. Its complete exact-head
+`pull_request` population is 6/6 successful with zero review threads, and the
+relayed PR #251 thread `PRRT_kwDOS1ExJc6dYPJO` is resolved and non-outdated.
+The Cranelift invocation authority is therefore collapsed from the temporary
+two-state transition to the exact landed post-relay inventory before this
+patch's stability evidence is published.
+
 Run one authoritative `Cranelift Historical Full` qualification on the exact
 merged final post-flip implementation main. The run must expose the complete
 registry-derived job population and every job must complete successfully. The
@@ -366,6 +375,11 @@ successfully, while the Phase 10 shard still asserted the retired pre-flip
 selection/output state and the final aggregation was consequently skipped.
 The narrow successor correction must merge and a replacement run must succeed
 on exact corrected main before this patch may be marked DONE.
+
+Authoritative replacement run `33298850155`, event `workflow_dispatch`,
+completed `success` on exact final post-flip implementation main
+`a7adbcd186512a3b4fd99b953bb2bc30f6838c52` with the complete 18/18 job
+population successful and zero unfinished/non-success jobs.
 
 **Exit Gate:** the single exact-final-main Historical Full run is a complete
 success, zero material review findings remain unresolved, and explicit-C

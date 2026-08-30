@@ -23671,3 +23671,23 @@ guard-cranelift-phase22-historical-route-successor-evidence:
     echo "🧪 Replaying the corrected Phase 10 Historical successor shard..."
     just guard-cranelift-phase22-historical-route-successor-contract
     python3 scripts/phase22_historical_route_successor.py evidence
+
+# Cranelift lane, Patch 22.8. Record the single operator-selected exact-main
+# Historical qualification and retain the explicit-C oracle/rollback evidence.
+guard-cranelift-phase22-stability-qualification-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Checking the Phase 22 one-time stability authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase22-stability-qualification-contract | grep -F $'guard-cranelift-phase22-stability-qualification-contract\t1\t' >/dev/null
+    just guard-cranelift-phase22-historical-route-successor-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase22_stability_qualification.py validate
+    python3 scripts/phase22_stability_qualification.py check-review
+
+guard-cranelift-phase22-stability-qualification-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Replaying the retained explicit-C oracle and rollback evidence..."
+    just guard-cranelift-phase22-stability-qualification-contract
+    python3 scripts/phase22_stability_qualification.py evidence

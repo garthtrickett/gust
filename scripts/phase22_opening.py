@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import copy
 import json
 import re
 from collections import Counter
@@ -259,29 +260,36 @@ def scan_summary(rows: list[dict[str, object]]) -> dict[str, object]:
 
 def validate_post_flip_relay_transition(
         registry: dict, rows: list[dict[str, object]]) -> tuple[str, dict]:
-    """Admit only exact pre-relay or exact six-site post-relay state."""
+    """Require the exact landed six-site post-relay state."""
     migration = registry.get("phase22_explicit_c_migration", {})
     relay = migration.get("cross_lane_relay", {}).get(
         "post_flip_review_relay", {})
-    transition = relay.get("transition_authority", {})
-    require(transition.get("status") ==
-            "authorized_pre_or_exact_post_relay" and
-            transition.get("owning_pull_request") == 264 and
-            transition.get("base_sha") ==
-            "e4dd6b938d43c689887956eb8d46a381ce7eba03" and
-            transition.get("authorized_head_sha") ==
-            "95144aea75dd3812cd52e86391ea5a8c54b11363" and
-            transition.get("changed_path_count") == 2 and
-            transition.get("route_only_replacement_count") == 6 and
-            transition.get("changed_paths") == relay.get("paths"),
-            "six-site relay transition authorization drifted")
+    landed_authority = relay.get("landed_authority", {})
+    require(landed_authority.get("status") ==
+            "exact_post_relay_only" and
+            landed_authority.get("owning_pull_request") == 264 and
+            landed_authority.get("changed_path_count") == 2 and
+            landed_authority.get("route_only_replacement_count") == 6 and
+            landed_authority.get("changed_paths") == relay.get("paths"),
+            "landed six-site relay authority drifted")
     landed = relay.get("landed_merge_evidence", {})
     require(landed == {
-        "status": "pending_owning_stdlib_merge",
+        "status": "merged_on_main",
         "owning_pull_request": 264,
-    }, "relay authorization was confused with landed merge evidence")
+        "base_sha": "5638c3596be450b75f2af905b982875f7863bc37",
+        "exact_head_sha": "3ada756e209bfa0556895169870ae00f96d94022",
+        "merged_main_sha": "a7adbcd186512a3b4fd99b953bb2bc30f6838c52",
+        "pull_request_event": "pull_request",
+        "successful_workflows": 6,
+        "total_workflows": 6,
+        "unfinished_workflows": 0,
+        "non_success_workflows": 0,
+        "unresolved_review_threads": 0,
+        "relayed_review_thread": "PRRT_kwDOS1ExJc6dYPJO",
+        "relayed_review_thread_status": "resolved_non_outdated",
+    }, "landed relay merge evidence drifted")
 
-    site_fields = ("path", "line", "recipe", "compiler_token")
+    site_fields = ("path", "line", "recipe", "compiler_token", "command")
     expected_sites = {
         tuple(site[field] for field in site_fields)
         for site in relay.get("site_manifest", [])
@@ -297,24 +305,21 @@ def validate_post_flip_relay_transition(
             relay.get("paths"),
             "six-site relay path or site manifest drifted")
 
-    selections = {str(row["selection"]) for row in live_sites.values()}
     summary = scan_summary(rows)
-    pre = (selections == {"implicit_default"} and
-           summary == transition.get("pre_relay_invocation_inventory"))
-    post = (selections == {"explicit_c"} and
-            summary == transition.get("post_relay_invocation_inventory"))
-    require(pre != post,
-            "live invocation scan is neither exact pre-relay nor exact six-site post-relay state")
-    return ("pre_relay" if pre else "post_relay"), transition
+    require({str(row["selection"]) for row in live_sites.values()} ==
+            {"explicit_c"} and
+            summary == landed_authority.get("exact_invocation_inventory"),
+            "live invocation scan is not the exact landed six-site post-relay state")
+    return "landed_post_relay", landed_authority
 
 
 def transition_projection_rows(
         rows: list[dict[str, object]], registry: dict) -> list[dict[str, object]]:
-    """Return a state-independent generated projection for the exact relay."""
+    """Return the landed generated projection for the exact relay."""
     relay = registry["phase22_explicit_c_migration"]["cross_lane_relay"][
         "post_flip_review_relay"
     ]
-    site_fields = ("path", "line", "recipe", "compiler_token")
+    site_fields = ("path", "line", "recipe", "compiler_token", "command")
     expected_sites = {
         tuple(site[field] for field in site_fields)
         for site in relay["site_manifest"]
@@ -325,8 +330,8 @@ def transition_projection_rows(
         key = tuple(copy[field] for field in site_fields)
         if key in expected_sites:
             copy.update({
-                "selection": "authorized_pre_implicit_or_exact_post_explicit_c",
-                "consumer_class": "six_site_stdlib_C_or_diagnostic_relay",
+                "selection": "explicit_c",
+                "consumer_class": "landed_six_site_stdlib_C_or_diagnostic_relay",
                 "owner": "stdlib",
                 "expected_artifact": "generated_C_or_diagnostic",
                 "expected_transition": "exact_six_site_explicit_mir_to_c_relay",
@@ -334,6 +339,30 @@ def transition_projection_rows(
             })
         projected.append(copy)
     return projected
+
+
+def validate_landed_relay_command_substitution_rejection(
+        registry: dict, rows: list[dict[str, object]]) -> None:
+    """Prove same-selection changes cannot bypass the landed command manifest."""
+    substitutions = (
+        ("codegen_helper_pod_move.gst", "codegen_helper_linear_move.gst"),
+        ("--backend mir-to-c", "--backend c"),
+        ("2>&1", "2>/dev/null"),
+    )
+    for old, new in substitutions:
+        probe = copy.deepcopy(rows)
+        target = next(
+            row for row in probe
+            if row["path"] == "tests/e2e_codegen_assertions.gst" and
+            row["line"] == 33
+        )
+        target["command"] = str(target["command"]).replace(old, new)
+        try:
+            validate_post_flip_relay_transition(registry, probe)
+        except SystemExit:
+            continue
+        require(False,
+                f"landed relay command substitution was accepted: {old}")
 
 
 def validate() -> dict:
@@ -404,6 +433,7 @@ def validate() -> dict:
     require(isinstance(migration, dict),
             "explicit-C migration authority is missing")
     validate_post_flip_relay_transition(registry, rows)
+    validate_landed_relay_command_substitution_rejection(registry, rows)
     require(summary["unclassified_count"] == 0,
             "an executable compiler invocation is unclassified")
     require(all(row["owner"] and row["expected_artifact"] and
@@ -468,7 +498,7 @@ def validate() -> dict:
         f"- Observed main: `{record['observed_main_sha']}`",
         f"- Live successor executable compiler invocations: `{inventory['total']}`",
         f"- Unclassified invocations: `{inventory['unclassified_count']}`",
-        "- Relay transition: `authorized_pre_or_exact_post_relay`",
+        "- Relay state: `exact_post_relay_only`",
         "## Stability qualification",
         "- Required successful runs: `1`",
         "- Required head: `exact_merged_final_post_flip_implementation_main`",
@@ -483,9 +513,8 @@ def validate() -> dict:
 
 def render(record: dict, rows: list[dict[str, object]], registry: dict) -> str:
     opening_inventory = record["invocation_inventory"]
-    _, transition = validate_post_flip_relay_transition(registry, rows)
-    inventory = transition["pre_relay_invocation_inventory"]
-    post_inventory = transition["post_relay_invocation_inventory"]
+    _, landed_authority = validate_post_flip_relay_transition(registry, rows)
+    inventory = landed_authority["exact_invocation_inventory"]
     projected_rows = transition_projection_rows(rows, registry)
     handoff = record["native_capability_handoff"]
     stability = record["stability_qualification"]
@@ -503,8 +532,8 @@ def render(record: dict, rows: list[dict[str, object]], registry: dict) -> str:
         f"- Opening-baseline executable compiler invocations: `{opening_inventory['total']}`",
         f"- Live successor executable compiler invocations: `{inventory['total']}`",
         f"- Unclassified invocations: `{inventory['unclassified_count']}`",
-        f"- Relay transition: `{transition['status']}`",
-        f"- Authorized owning PR: `#{transition['owning_pull_request']}` at `{transition['authorized_head_sha']}`",
+        f"- Relay state: `{landed_authority['status']}`",
+        f"- Landed owning PR: `#{landed_authority['owning_pull_request']}`",
         "",
         "## Current CLI and package",
         "",
@@ -530,18 +559,22 @@ def render(record: dict, rows: list[dict[str, object]], registry: dict) -> str:
         )
     lines += [
         "",
-        "## Authorized successor invocation summaries",
+        "## Landed successor invocation summary",
         "",
     ]
     for key, value in inventory["selection_counts"].items():
-        lines.append(f"- Pre-relay selection `{key}`: `{value}`")
-    for key, value in post_inventory["selection_counts"].items():
-        lines.append(f"- Post-relay selection `{key}`: `{value}`")
+        lines.append(f"- Landed selection `{key}`: `{value}`")
     for key, value in inventory["consumer_class_counts"].items():
-        lines.append(f"- Pre-relay consumer class `{key}`: `{value}`")
-    for key, value in post_inventory["consumer_class_counts"].items():
-        lines.append(f"- Post-relay consumer class `{key}`: `{value}`")
-    lines += ["", "## Transition-normalized successor executable invocation inventory", ""]
+        lines.append(f"- Landed consumer class `{key}`: `{value}`")
+    lines += ["", "## Landed exact relay commands", ""]
+    relay = registry["phase22_explicit_c_migration"]["cross_lane_relay"][
+        "post_flip_review_relay"
+    ]
+    for site in relay["site_manifest"]:
+        lines.append(
+            f"- `{site['path']}:{site['line']}` — `{site['command']}`"
+        )
+    lines += ["", "## Landed successor executable invocation inventory", ""]
     lines.append("| Path | Line | Recipe | Selection | Class | Owner | Expected artifact | Expected transition | Falsifier |")
     lines.append("| --- | ---: | --- | --- | --- | --- | --- | --- | --- |")
     for row in projected_rows:
