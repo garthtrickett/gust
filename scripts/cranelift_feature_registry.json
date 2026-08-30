@@ -4115,6 +4115,71 @@
       "begins_patch22_9": false
     }
   },
+  "phase22_closure": {
+    "version": "phase22_closure_v1",
+    "status": "phase22_closed_cranelift_default_with_retained_explicit_c_oracle",
+    "authority_owner": "scripts/cranelift_feature_registry.json",
+    "wording": "Phase 22 closes the default-backend transition with bare and explicit Cranelift on one no-fallback route, explicit MIR-to-C and C retained as the byte-identical semantic oracle and rollback route, and the supported package, install, bootstrap, CI, and one-time exact-main stability authorities green.",
+    "authoritative_latest_historical_full": {
+      "workflow": "Cranelift Historical Full",
+      "run_id": 33303824486,
+      "event": "schedule",
+      "head_branch": "main",
+      "head_sha": "a7adbcd186512a3b4fd99b953bb2bc30f6838c52",
+      "status": "completed",
+      "conclusion": "success",
+      "successful_jobs": 18,
+      "total_jobs": 18,
+      "unfinished_jobs": 0,
+      "non_success_jobs": 0
+    },
+    "stability_authority": "phase22_stability_qualification_v1",
+    "route_authority": {
+      "default_backend": "cranelift",
+      "explicit_native_backend": "cranelift",
+      "default_and_explicit_native_route": "identical_shared_post_semantic_pipeline_route",
+      "explicit_c_spellings": ["mir-to-c", "c"],
+      "explicit_c_role": "retained_semantic_oracle",
+      "native_implicit_output": "source_directory_and_exact_terminal_dot_gst_stem",
+      "native_package": "executable_relative_three_artifact_sibling_package",
+      "fallback": "forbidden",
+      "bootstrap_route": "explicit_mir_to_c"
+    },
+    "delivery_authority": {
+      "make_default_goal": "phase10-native-package",
+      "default_backend": "cranelift",
+      "package_artifacts": ["gust", "gust-native-backend", "gust-runtime-package.a"],
+      "install_and_relocation_unit": "three_artifact_sibling_directory",
+      "explicit_c_spellings": ["c", "mir-to-c"],
+      "explicit_c_role": "semantic_oracle_bootstrap_and_operator_selected_rollback",
+      "fallback": "forbidden",
+      "bootstrap_route": "explicit_mir_to_c"
+    },
+    "bootstrap_authority": {
+      "route": "explicit_mir_to_c",
+      "authority": "phase22_default_route_seed_convergence_v1",
+      "fixed_point_policy": "make_bootstrap_stage2_stage3_byte_identity"
+    },
+    "completed_authorities": {
+      "phase22_opening": "phase22_opening_v2",
+      "phase22_explicit_c_migration": "phase22_explicit_c_migration_v2",
+      "phase22_native_implicit_output": "phase22_native_implicit_output_v1",
+      "phase22_default_native_package": "phase22_default_native_package_v1",
+      "phase22_preflip_default_cohort": "phase22_preflip_default_cohort_v1",
+      "phase22_default_route_flip": "phase22_default_route_flip_v1",
+      "phase22_default_route_seed_convergence": "phase22_default_route_seed_convergence_v1",
+      "phase22_postflip_qualification": "phase22_postflip_qualification_v1",
+      "phase22_historical_route_successor": "phase22_historical_route_successor_v1",
+      "phase22_stability_qualification": "phase22_stability_qualification_v1"
+    },
+    "non_claims": [
+      "Phase 22 deletes, deprecates, or weakens MIR-to-C or changes its semantic-oracle role.",
+      "Phase 22 changes accepted Gust meaning, canonical MIR, ABI/layout, runtime symbols, target, linker, or Phase 9G publication semantics.",
+      "Phase 22 makes Cranelift the bootstrap seed or removes the explicit MIR-to-C bootstrap route.",
+      "Phase 22 authorizes Phase 23, Stdlib S1.8-S1.11, or compiler-owned CR-15 work."
+    ],
+    "view_derivation": "the_closure_view_is_generated_from_this_registry_block_and_the_named_phase22_authorities"
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",

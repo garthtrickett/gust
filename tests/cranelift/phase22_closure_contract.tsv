@@ -1,0 +1,7 @@
+kind	requirement	evidence	level
+closure	every Phase 22 status row is DONE	TASK.md Status rows 22.0 through 22.9	1
+route	bare and explicit Cranelift share one route with no fallback	phase22_default_route_flip and phase22_postflip_qualification	1
+oracle	explicit C remains the byte-identical oracle and rollback route	phase22_explicit_c_migration and post-flip qualification	1
+delivery	package install relocation and bootstrap authorities remain green	phase22_default_native_package and phase22_default_route_seed_convergence	1
+phase_gate	latest exact-main Historical Full gate is satisfied	run 33303824486 completed success with 18/18 jobs on exact final implementation head a7adbcd186512a3b4fd99b953bb2bc30f6838c52	1
+non_claim	the closure view is generated from registry authority	view regenerated and compared byte for byte	1
