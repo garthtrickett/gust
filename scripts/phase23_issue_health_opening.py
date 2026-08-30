@@ -129,6 +129,26 @@ def validate() -> dict:
     require(value.get("deprecation_predecessor_gate") ==
             ["23.2", "23.3", "23.4", "23.5", "23.6", "23.6a"],
             "deprecation predecessor gate drifted")
+    successor = value.get("phase22_closed_inventory_successor", {})
+    successor_commands = successor.get("commands", [])
+    successor_metadata = dict(successor)
+    successor_metadata.pop("commands", None)
+    require(successor_metadata == {
+        "status": "exact_phase23_extension_excluded_only_from_phase22_relay_identity",
+        "owning_patch": "23.1",
+        "path": "scripts/phase23_issue_health_opening.py",
+        "selection": "explicit_c",
+        "invocation_count": 2,
+        "phase22_relay_contract": "the_exact_six_site_Stdlib_relay_and_306_invocation_inventory_remain_unchanged",
+        "phase23_contract": "both_new_calls_remain_visible_in_the_live_scan_and_are_owned_by_the_Patch_23_1_evidence_guard",
+        "falsifier": "missing_partial_extra_path_command_or_selection_drift_is_rejected",
+    }, "Phase 22 closed-inventory successor authority drifted")
+    require(len(successor_commands) == 2 and
+            successor_commands[0].endswith("str(SAME_SCOPE)]") and
+            successor_commands[1].endswith("str(PARENT_SHADOW)]") and
+            all(command.startswith("['." + "/gust', '--backend', 'mir-to-c', ")
+                for command in successor_commands),
+            "Phase 22 successor command manifest drifted")
     require(value.get("boundary") == {
         "changes_guard_behavior": False,
         "changes_compiler_behavior": False,
@@ -221,6 +241,7 @@ def render(value: dict) -> str:
         "- Historical stale-evidence inputs: `#110`, `#240`; selected current pilot: `#105`.",
         "- Not authorized: Phases C-E, independent model review, protected publication, repository-rule changes, or a new required check.",
         "- MIR-to-C deprecation remains blocked until Patches `23.2` through `23.6a` are DONE.",
+        "- The two Patch 23.1 explicit-C calls stay visible in the live invocation scan; only Phase 22's closed 306-call relay identity excludes their exact registered path and commands.",
         "", "Patch 23.1 records evidence only. It changes no guard, compiler behaviour, "
         "backend route, issue state, accepted Gust meaning, MIR, ABI/layout, runtime "
         "symbol, bootstrap seed, Stdlib source, or CR-15 authority.", "",

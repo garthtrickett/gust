@@ -258,9 +258,39 @@ def scan_summary(rows: list[dict[str, object]]) -> dict[str, object]:
     }
 
 
+def phase22_relay_inventory_rows(
+        registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    """Keep Phase 22's closed relay identity while validating exact successors."""
+    successor = registry.get("phase23_issue_health_opening", {}).get(
+        "phase22_closed_inventory_successor", {})
+    require(successor.get("status") ==
+            "exact_phase23_extension_excluded_only_from_phase22_relay_identity" and
+            successor.get("owning_patch") == "23.1" and
+            successor.get("path") ==
+            "scripts/phase23_issue_health_opening.py" and
+            successor.get("selection") == "explicit_c" and
+            successor.get("invocation_count") == 2,
+            "Phase 23 successor invocation authority drifted")
+    expected = {
+        (successor["path"], command, successor["selection"])
+        for command in successor.get("commands", [])
+    }
+    live_successors = [
+        row for row in rows if row["path"] == successor["path"]
+    ]
+    live = {
+        (str(row["path"]), str(row["command"]), str(row["selection"]))
+        for row in live_successors
+    }
+    require(len(expected) == len(live_successors) == 2 and live == expected,
+            "Phase 23 successor invocation path, command, or selection drifted")
+    return [row for row in rows if row not in live_successors]
+
+
 def validate_post_flip_relay_transition(
         registry: dict, rows: list[dict[str, object]]) -> tuple[str, dict]:
     """Require the exact landed six-site post-relay state."""
+    rows = phase22_relay_inventory_rows(registry, rows)
     migration = registry.get("phase22_explicit_c_migration", {})
     relay = migration.get("cross_lane_relay", {}).get(
         "post_flip_review_relay", {})
@@ -427,13 +457,14 @@ def validate() -> dict:
             require(marker_present or transitioned_by_postflip,
                     f"{surface_name} marker drifted: {row['id']}")
 
-    rows = scan_invocations()
+    live_rows = scan_invocations()
+    rows = phase22_relay_inventory_rows(registry, live_rows)
     summary = scan_summary(rows)
     migration = registry.get("phase22_explicit_c_migration")
     require(isinstance(migration, dict),
             "explicit-C migration authority is missing")
-    validate_post_flip_relay_transition(registry, rows)
-    validate_landed_relay_command_substitution_rejection(registry, rows)
+    validate_post_flip_relay_transition(registry, live_rows)
+    validate_landed_relay_command_substitution_rejection(registry, live_rows)
     require(summary["unclassified_count"] == 0,
             "an executable compiler invocation is unclassified")
     require(all(row["owner"] and row["expected_artifact"] and
@@ -506,14 +537,16 @@ def validate() -> dict:
     )
     require(all(marker in review for marker in stable_markers),
             "frozen generated opening review semantic markers drifted")
-    require(review == render(record, rows, registry),
+    require(review == render(record, live_rows, registry),
             "generated opening review is stale")
     return record
 
 
 def render(record: dict, rows: list[dict[str, object]], registry: dict) -> str:
+    live_rows = rows
+    rows = phase22_relay_inventory_rows(registry, live_rows)
     opening_inventory = record["invocation_inventory"]
-    _, landed_authority = validate_post_flip_relay_transition(registry, rows)
+    _, landed_authority = validate_post_flip_relay_transition(registry, live_rows)
     inventory = landed_authority["exact_invocation_inventory"]
     projected_rows = transition_projection_rows(rows, registry)
     handoff = record["native_capability_handoff"]

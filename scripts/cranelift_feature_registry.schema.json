@@ -2783,7 +2783,8 @@
         "required": ["contract_version", "status", "next_patch", "review_view",
                      "observed_main_sha", "open_issue_numbers", "checkpoint_issues",
                      "latest_successful_historical_full", "repository_health",
-                     "assurance_boundary", "deprecation_predecessor_gate", "boundary"],
+                     "assurance_boundary", "deprecation_predecessor_gate",
+                     "phase22_closed_inventory_successor", "boundary"],
         "properties": {
           "contract_version": {"const": "phase23_issue_health_opening_v1"},
           "status": {"const": "patch23_1_complete"},
@@ -2796,6 +2797,7 @@
           "repository_health": {"type": "object"},
           "assurance_boundary": {"type": "object"},
           "deprecation_predecessor_gate": {"type": "array", "minItems": 6, "maxItems": 6, "uniqueItems": true, "items": {"type": "string"}},
+          "phase22_closed_inventory_successor": {"type": "object"},
           "boundary": {"type": "object"}
         }
       },
