@@ -270,7 +270,7 @@ def phase22_relay_inventory_rows(
     expected_authorities = [
         ("23.1", "scripts/phase23_issue_health_opening.py", ["explicit_c"], 2),
         ("23.3a", "scripts/phase23_structured_guard_defer_native_admission.py",
-         ["explicit_c", "explicit_cranelift", "explicit_cranelift"], 3),
+         ["explicit_c", "explicit_cranelift", "explicit_cranelift", "explicit_cranelift"], 4),
     ]
     excluded: list[dict[str, object]] = []
     for successor, expected_authority in zip(successors, expected_authorities):

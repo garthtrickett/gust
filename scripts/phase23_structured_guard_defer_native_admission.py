@@ -70,10 +70,11 @@ def validate(value: dict | None = None) -> dict:
             "status": "exact_phase23_extension_excluded_only_from_phase22_relay_identity",
             "owning_patch": "23.3a",
             "path": "scripts/phase23_structured_guard_defer_native_admission.py",
-            "selection": ["explicit_c", "explicit_cranelift", "explicit_cranelift"],
-            "invocation_count": 3,
+            "selection": ["explicit_c", "explicit_cranelift", "explicit_cranelift", "explicit_cranelift"],
+            "invocation_count": 4,
             "commands": [
                 MIR_TO_C_COMMAND,
+                NATIVE_COMMAND,
                 NATIVE_COMMAND,
                 NATIVE_COMMAND,
             ],
@@ -230,7 +231,8 @@ def render(value: dict) -> str:
         f"- Oracle: `{observables['oracle']}`",
         f"- Expected exit: `{observables['exit_status']}` with empty stdout/stderr",
         f"- Native artifact: `{observables['native_artifact']}`",
-        "- Phase 22 relay inventory: the exact three evidence invocations are a registered Phase 23 extension and are excluded only while validating the frozen Phase 22 six-site relay identity.",
+        "- Phase 22 relay inventory: the exact "
+        f"{value['phase22_closed_inventory_extension']['invocation_count']} evidence invocations are a registered Phase 23 extension and are excluded only while validating the frozen Phase 22 six-site relay identity.",
         "",
         "The evidence guard rejects restoring the preempting guard/defer deferral, "
         "removing the generic function-only scalar-signature handoff, replacing the existing "
