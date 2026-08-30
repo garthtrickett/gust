@@ -1076,11 +1076,11 @@ func mir_native_full_program_block_guard_defer_mask(
     if block_index == empty[Index[ast.BlockStatement[ctx], ctx]] {
         return 0;
     }
+    mut mask := 0;
     unsafe {
         mut block := ctx[block_index];
         mut statements: std.Vector[ast.Statement[ctx], ctx] :=
             ctx[block.statements];
-        mut mask := 0;
         mut statement_index := 0;
         while statement_index < len(statements) {
             mut statement := statements[statement_index];
@@ -1132,9 +1132,8 @@ func mir_native_full_program_block_guard_defer_mask(
             }
             statement_index = statement_index + 1;
         }
-        return mask;
     }
-    return 0;
+    return mask;
 }
 
 func mir_native_full_program_contains_guard_and_defer(
