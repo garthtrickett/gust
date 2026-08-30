@@ -1,0 +1,71 @@
+name: Cranelift Phase 23 MIR Evidence Owner
+
+on:
+  pull_request:
+    paths:
+      - 'TASK.md'
+      - 'compiler/CRANELIFT_PHASE23_MIR_EVIDENCE_OWNER.md'
+      - 'compiler/CRANELIFT_PHASE22_OPENING.md'
+      - 'compiler/CRANELIFT_PHASE22_EXPLICIT_C_MIGRATION.md'
+      - 'compiler/mir.gst'
+      - 'compiler/mir_lower_*.gst'
+      - 'compiler/mir_to_c_*_smoke_test_entry.gst'
+      - 'docs/ISSUE_ROADMAP.md'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/guard_reachability_allowlist.json'
+      - 'scripts/fixture_reachability_allowlist.json'
+      - 'scripts/phase23_mir_evidence_owner.py'
+      - 'scripts/phase23_issue_health_opening.py'
+      - 'justfile'
+      - '.github/workflows/phase23-mir-evidence-owner.yml'
+      - '.github/workflows/pr-fast.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'TASK.md'
+      - 'compiler/CRANELIFT_PHASE23_MIR_EVIDENCE_OWNER.md'
+      - 'compiler/CRANELIFT_PHASE22_OPENING.md'
+      - 'compiler/CRANELIFT_PHASE22_EXPLICIT_C_MIGRATION.md'
+      - 'compiler/mir.gst'
+      - 'compiler/mir_lower_*.gst'
+      - 'compiler/mir_to_c_*_smoke_test_entry.gst'
+      - 'docs/ISSUE_ROADMAP.md'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/guard_reachability_allowlist.json'
+      - 'scripts/fixture_reachability_allowlist.json'
+      - 'scripts/phase23_mir_evidence_owner.py'
+      - 'scripts/phase23_issue_health_opening.py'
+      - 'justfile'
+      - '.github/workflows/phase23-mir-evidence-owner.yml'
+      - '.github/workflows/pr-fast.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  contract:
+    name: Patch 23.2 retained invariant and retirement
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install guard tools
+        run: |
+          bash scripts/install-native-deps-ci.sh ripgrep
+          bash scripts/install-just-ci.sh "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Patch 23.2 contract
+        run: just guard-cranelift-phase23-mir-evidence-owner-contract

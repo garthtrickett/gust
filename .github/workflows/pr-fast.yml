@@ -507,6 +507,9 @@ jobs:
       - name: Phase 23 assurance and issue-health opening
         run: just guard-cranelift-phase23-issue-health-opening-contract
 
+      - name: Phase 23 MIR evidence-owner repair
+        run: just guard-cranelift-phase23-mir-evidence-owner-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 

@@ -13,10 +13,6 @@
   "known_unexercised": {
     "mir_debug_leaf_smoke_test_entry": "Cranelift lane (MIR); staged pending its feature's migration",
     "mir_debug_printer_smoke_test_entry": "Cranelift lane (MIR); staged pending its feature's migration",
-    "mir_lower_function_shell_smoke_test_entry": "Cranelift lane (MIR); staged pending its feature's migration",
-    "mir_lower_native_boundary_metadata_smoke_test_entry": "Cranelift lane (MIR); staged pending its feature's migration",
-    "mir_lower_tiny_function_fixture_smoke_test_entry": "Cranelift lane (MIR); staged pending its feature's migration",
-    "mir_to_c_entry_smoke_test_entry": "Cranelift lane (MIR); staged pending its feature's migration",
-    "mir_to_c_function_shell_smoke_test_entry": "Cranelift lane (MIR); staged pending its feature's migration"
+    "mir_to_c_entry_smoke_test_entry": "Cranelift lane (MIR); staged pending its feature's migration"
   }
 }

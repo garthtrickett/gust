@@ -46,14 +46,14 @@ repository invocation scan. Do not edit by hand.
 
 | Path | Line | Recipe | Compiler |
 | --- | ---: | --- | --- |
-| `justfile` | 23146 | `guard-stdlib-s1-str-equality-diagnostic` | `./gust` |
-| `justfile` | 23147 | `guard-stdlib-s1-str-equality-diagnostic` | `./gust` |
-| `justfile` | 23161 | `guard-stdlib-s1-str-equality-diagnostic` | `./gust` |
-| `justfile` | 23193 | `guard-stdlib-s1-collection-receivers` | `./gust` |
-| `justfile` | 23197 | `guard-stdlib-s1-collection-receivers` | `./gust` |
-| `justfile` | 23204 | `guard-stdlib-s1-collection-receivers` | `./gust` |
-| `justfile` | 23205 | `guard-stdlib-s1-collection-receivers` | `./gust` |
-| `justfile` | 23287 | `guard-stdlib-s1-resource-prerequisites` | `./gust` |
+| `justfile` | 23068 | `guard-stdlib-s1-str-equality-diagnostic` | `./gust` |
+| `justfile` | 23069 | `guard-stdlib-s1-str-equality-diagnostic` | `./gust` |
+| `justfile` | 23083 | `guard-stdlib-s1-str-equality-diagnostic` | `./gust` |
+| `justfile` | 23115 | `guard-stdlib-s1-collection-receivers` | `./gust` |
+| `justfile` | 23119 | `guard-stdlib-s1-collection-receivers` | `./gust` |
+| `justfile` | 23126 | `guard-stdlib-s1-collection-receivers` | `./gust` |
+| `justfile` | 23127 | `guard-stdlib-s1-collection-receivers` | `./gust` |
+| `justfile` | 23209 | `guard-stdlib-s1-resource-prerequisites` | `./gust` |
 | `scripts/stdlib_s1_branded_collections_parity.sh` | 60 | `none` | `./gust` |
 | `scripts/stdlib_s1_branded_collections_parity.sh` | 64 | `none` | `./gust` |
 | `scripts/stdlib_s1_branded_collections_parity.sh` | 130 | `none` | `./gust` |

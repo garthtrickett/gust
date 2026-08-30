@@ -3553,14 +3553,14 @@
         "scripts/stdlib_s1_composition_parity.sh"
       ],
       "authorized_site_manifest": [
-        {"path": "justfile", "line": 23146, "recipe": "guard-stdlib-s1-str-equality-diagnostic", "compiler_token": "./gust"},
-        {"path": "justfile", "line": 23147, "recipe": "guard-stdlib-s1-str-equality-diagnostic", "compiler_token": "./gust"},
-        {"path": "justfile", "line": 23161, "recipe": "guard-stdlib-s1-str-equality-diagnostic", "compiler_token": "./gust"},
-        {"path": "justfile", "line": 23193, "recipe": "guard-stdlib-s1-collection-receivers", "compiler_token": "./gust"},
-        {"path": "justfile", "line": 23197, "recipe": "guard-stdlib-s1-collection-receivers", "compiler_token": "./gust"},
-        {"path": "justfile", "line": 23204, "recipe": "guard-stdlib-s1-collection-receivers", "compiler_token": "./gust"},
-        {"path": "justfile", "line": 23205, "recipe": "guard-stdlib-s1-collection-receivers", "compiler_token": "./gust"},
-        {"path": "justfile", "line": 23287, "recipe": "guard-stdlib-s1-resource-prerequisites", "compiler_token": "./gust"},
+        {"path": "justfile", "line": 23068, "recipe": "guard-stdlib-s1-str-equality-diagnostic", "compiler_token": "./gust"},
+        {"path": "justfile", "line": 23069, "recipe": "guard-stdlib-s1-str-equality-diagnostic", "compiler_token": "./gust"},
+        {"path": "justfile", "line": 23083, "recipe": "guard-stdlib-s1-str-equality-diagnostic", "compiler_token": "./gust"},
+        {"path": "justfile", "line": 23115, "recipe": "guard-stdlib-s1-collection-receivers", "compiler_token": "./gust"},
+        {"path": "justfile", "line": 23119, "recipe": "guard-stdlib-s1-collection-receivers", "compiler_token": "./gust"},
+        {"path": "justfile", "line": 23126, "recipe": "guard-stdlib-s1-collection-receivers", "compiler_token": "./gust"},
+        {"path": "justfile", "line": 23127, "recipe": "guard-stdlib-s1-collection-receivers", "compiler_token": "./gust"},
+        {"path": "justfile", "line": 23209, "recipe": "guard-stdlib-s1-resource-prerequisites", "compiler_token": "./gust"},
         {"path": "scripts/stdlib_s1_branded_collections_parity.sh", "line": 60, "recipe": "none", "compiler_token": "./gust"},
         {"path": "scripts/stdlib_s1_branded_collections_parity.sh", "line": 64, "recipe": "none", "compiler_token": "./gust"},
         {"path": "scripts/stdlib_s1_branded_collections_parity.sh", "line": 130, "recipe": "none", "compiler_token": "./gust"},
@@ -4297,6 +4297,75 @@
       "changes_bootstrap_seed": false,
       "edits_stdlib_or_CR15": false,
       "begins_deprecation_patch": false
+    }
+  },
+  "phase23_mir_evidence_owner": {
+    "contract_version": "phase23_mir_evidence_owner_v1",
+    "status": "implementation_ready_pending_merged_current_main_closure",
+    "issue": 110,
+    "owner": "cranelift",
+    "review_view": "compiler/CRANELIFT_PHASE23_MIR_EVIDENCE_OWNER.md",
+    "implementation_base_sha": "0c5167443121f3dc2f0a0e143da8638753d96a8d",
+    "retained_guard": "guard-mir-lower-tiny-function-surface",
+    "retained_lowering_surface": {
+      "invariant": "registered_mir_lower_fixture_entry_points_are_defined_in_compiler_mir_and_called_only_by_the_complete_registered_fixture_cohort",
+      "definitions": [
+        "mir_lower_block_jump_fixture",
+        "mir_lower_conditional_branch_fixture",
+        "mir_lower_local_binding_read_fixture",
+        "mir_lower_native_boundary_metadata_fixture",
+        "mir_lower_provenance_metadata_fixture",
+        "mir_lower_resource_metadata_fixture",
+        "mir_lower_return_int_literal_fixture",
+        "mir_lower_tiny_function_fixture"
+      ],
+      "fixture_callers": [
+        {"path":"compiler/mir_lower_block_jump_smoke_test_entry.gst","entry":"mir_lower_block_jump_fixture","occurrences":1},
+        {"path":"compiler/mir_lower_conditional_branch_smoke_test_entry.gst","entry":"mir_lower_conditional_branch_fixture","occurrences":1},
+        {"path":"compiler/mir_lower_function_shell_smoke_test_entry.gst","entry":"mir_lower_tiny_function_fixture","occurrences":1},
+        {"path":"compiler/mir_lower_local_binding_read_smoke_test_entry.gst","entry":"mir_lower_local_binding_read_fixture","occurrences":1},
+        {"path":"compiler/mir_lower_native_boundary_metadata_smoke_test_entry.gst","entry":"mir_lower_native_boundary_metadata_fixture","occurrences":1},
+        {"path":"compiler/mir_lower_provenance_metadata_smoke_test_entry.gst","entry":"mir_lower_provenance_metadata_fixture","occurrences":1},
+        {"path":"compiler/mir_lower_resource_metadata_smoke_test_entry.gst","entry":"mir_lower_resource_metadata_fixture","occurrences":1},
+        {"path":"compiler/mir_lower_return_int_literal_smoke_test_entry.gst","entry":"mir_lower_return_int_literal_fixture","occurrences":1},
+        {"path":"compiler/mir_lower_tiny_function_fixture_smoke_test_entry.gst","entry":"mir_lower_tiny_function_fixture","occurrences":1},
+        {"path":"compiler/mir_to_c_block_jump_smoke_test_entry.gst","entry":"mir_lower_block_jump_fixture","occurrences":1},
+        {"path":"compiler/mir_to_c_conditional_branch_smoke_test_entry.gst","entry":"mir_lower_conditional_branch_fixture","occurrences":1},
+        {"path":"compiler/mir_to_c_function_shell_smoke_test_entry.gst","entry":"mir_lower_tiny_function_fixture","occurrences":1},
+        {"path":"compiler/mir_to_c_local_binding_read_smoke_test_entry.gst","entry":"mir_lower_local_binding_read_fixture","occurrences":1},
+        {"path":"compiler/mir_to_c_native_boundary_metadata_smoke_test_entry.gst","entry":"mir_lower_native_boundary_metadata_fixture","occurrences":1},
+        {"path":"compiler/mir_to_c_provenance_metadata_smoke_test_entry.gst","entry":"mir_lower_provenance_metadata_fixture","occurrences":1},
+        {"path":"compiler/mir_to_c_resource_metadata_smoke_test_entry.gst","entry":"mir_lower_resource_metadata_fixture","occurrences":1},
+        {"path":"compiler/mir_to_c_return_int_literal_smoke_test_entry.gst","entry":"mir_lower_return_int_literal_fixture","occurrences":1}
+      ],
+      "forbidden_backend_token": "Cranelift",
+      "normal_topology_owner": "PR_Fast_Level_1_and_dedicated_Patch_23_2_workflow"
+    },
+    "production_use_falsifier": {
+      "injected_path": "compiler/typechecker.gst",
+      "injected_entry": "mir_lower_tiny_function_fixture",
+      "expected": "reject_unregistered_production_caller"
+    },
+    "retired_location_guard": {
+      "recipe": "guard-mir-to-c-tiny-surface",
+      "reason": "production_MIR_to_C_is_legitimate_so_a_fixture_only_location_allowlist_no_longer_states_a_valid_invariant",
+      "replacement": "executable_MIR_to_C_behavioral_guards_and_the_retained_fixture_only_lowering_guard",
+      "required_live_callers": 0,
+      "required_reachability_exemptions": 0
+    },
+    "issue_closure": {
+      "state": "pending_implementation_merge",
+      "requirement": "close_only_after_current_main_guard_passes_and_the_issue_and_routing_ledger_cite_exact_PR_and_merge_evidence"
+    },
+    "boundary": {
+      "changes_production_MIR_or_MIR_to_C_capability": false,
+      "changes_accepted_Gust_program_meaning": false,
+      "adds_or_changes_MIR_operations": false,
+      "changes_backend_route_or_fallback": false,
+      "changes_ABI_layout_or_runtime_symbols": false,
+      "changes_bootstrap_seed": false,
+      "edits_stdlib_or_CR15": false,
+      "begins_patch23_3": false
     }
   },
   "phase19_brand_authority": {
