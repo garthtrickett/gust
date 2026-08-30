@@ -2868,7 +2868,7 @@
         "additionalProperties": false,
         "required": ["contract_version", "status", "next_patch", "owner",
                      "review_view", "source_admission", "fixtures",
-                     "observables", "boundary"],
+                     "phase22_closed_inventory_extension", "observables", "boundary"],
         "properties": {
           "contract_version": {"const": "phase23_structured_guard_defer_native_admission_v1"},
           "status": {"const": "patch23_3a_complete"},
@@ -2877,6 +2877,7 @@
           "review_view": {"const": "compiler/CRANELIFT_PHASE23_STRUCTURED_GUARD_DEFER_NATIVE_ADMISSION.md"},
           "source_admission": {"type": "object"},
           "fixtures": {"type": "object"},
+          "phase22_closed_inventory_extension": {"type": "object"},
           "observables": {"type": "object"},
           "boundary": {"type": "object"}
         }

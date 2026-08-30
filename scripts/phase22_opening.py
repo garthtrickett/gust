@@ -261,30 +261,43 @@ def scan_summary(rows: list[dict[str, object]]) -> dict[str, object]:
 def phase22_relay_inventory_rows(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep Phase 22's closed relay identity while validating exact successors."""
-    successor = registry.get("phase23_issue_health_opening", {}).get(
-        "phase22_closed_inventory_successor", {})
-    require(successor.get("status") ==
-            "exact_phase23_extension_excluded_only_from_phase22_relay_identity" and
-            successor.get("owning_patch") == "23.1" and
-            successor.get("path") ==
-            "scripts/phase23_issue_health_opening.py" and
-            successor.get("selection") == "explicit_c" and
-            successor.get("invocation_count") == 2,
-            "Phase 23 successor invocation authority drifted")
-    expected = {
-        (successor["path"], command, successor["selection"])
-        for command in successor.get("commands", [])
-    }
-    live_successors = [
-        row for row in rows if row["path"] == successor["path"]
+    successors = [
+        registry.get("phase23_issue_health_opening", {}).get(
+            "phase22_closed_inventory_successor", {}),
+        registry.get("phase23_structured_guard_defer_native_admission", {}).get(
+            "phase22_closed_inventory_extension", {}),
     ]
-    live = {
-        (str(row["path"]), str(row["command"]), str(row["selection"]))
-        for row in live_successors
-    }
-    require(len(expected) == len(live_successors) == 2 and live == expected,
-            "Phase 23 successor invocation path, command, or selection drifted")
-    return [row for row in rows if row not in live_successors]
+    expected_authorities = [
+        ("23.1", "scripts/phase23_issue_health_opening.py", ["explicit_c"], 2),
+        ("23.3a", "scripts/phase23_structured_guard_defer_native_admission.py",
+         ["explicit_c", "explicit_cranelift", "explicit_cranelift"], 3),
+    ]
+    excluded: list[dict[str, object]] = []
+    for successor, expected_authority in zip(successors, expected_authorities):
+        patch, path, selections, count = expected_authority
+        require(successor.get("status") ==
+                "exact_phase23_extension_excluded_only_from_phase22_relay_identity" and
+                successor.get("owning_patch") == patch and
+                successor.get("path") == path and
+                successor.get("selection") == (selections[0] if len(selections) == 1 else selections) and
+                successor.get("invocation_count") == count,
+                "Phase 23 successor invocation authority drifted")
+        expected_selections = selections * count if len(selections) == 1 else selections
+        expected = [
+            (path, command, selection)
+            for command, selection in zip(
+                successor.get("commands", []), expected_selections
+            )
+        ]
+        live_successors = [row for row in rows if row["path"] == path]
+        live = [
+            (str(row["path"]), str(row["command"]), str(row["selection"]))
+            for row in live_successors
+        ]
+        require(len(expected) == len(live_successors) == count and live == expected,
+                "Phase 23 successor invocation path, command, or selection drifted")
+        excluded.extend(live_successors)
+    return [row for row in rows if row not in excluded]
 
 
 def validate_post_flip_relay_transition(

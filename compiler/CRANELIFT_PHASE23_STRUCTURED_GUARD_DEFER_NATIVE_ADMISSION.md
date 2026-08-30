@@ -19,6 +19,7 @@ The narrower structured-CFG recognizer does not claim typed `guard` or `defer`. 
 - Oracle: `mir_to_c`
 - Expected exit: `0` with empty stdout/stderr
 - Native artifact: `nonempty_linked_executable`
+- Phase 22 relay inventory: the exact three evidence invocations are a registered Phase 23 extension and are excluded only while validating the frozen Phase 22 six-site relay identity.
 
 The evidence guard rejects restoring the preempting guard/defer deferral, removing the generic scalar-signature handoff, replacing the existing worker operations, or admitting the retained short-circuit structured-CFG deferral.
 

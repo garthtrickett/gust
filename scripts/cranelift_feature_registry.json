@@ -4402,6 +4402,18 @@
       "positive": "compiler/phase20_resource_acquisition_directory_source.gst",
       "retained_deferred": "compiler/phase13_structured_cfg_short_circuit_deferred_source.gst"
     },
+    "phase22_closed_inventory_extension": {
+      "status": "exact_phase23_extension_excluded_only_from_phase22_relay_identity",
+      "owning_patch": "23.3a",
+      "path": "scripts/phase23_structured_guard_defer_native_admission.py",
+      "selection": ["explicit_c", "explicit_cranelift", "explicit_cranelift"],
+      "invocation_count": 3,
+      "commands": [
+        "[str(GUST), '--backend', 'mir-to-c', str(source)]",
+        "[str(GUST), '--backend', 'cranelift', '-o', str(artifact), str(source)]",
+        "[str(GUST), '--backend', 'cranelift', '-o', str(artifact), str(source)]"
+      ]
+    },
     "observables": {
       "exit_status": 0,
       "stdout": "",

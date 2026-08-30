@@ -22,6 +22,8 @@ GUST = ROOT / "gust"
 DRIVER = ROOT / "build/phase10-package/bin/gust-native-backend"
 BUILD = ROOT / "build/guards/phase23_structured_guard_defer_native_admission"
 GUARD = "guard-cranelift-phase23-structured-guard-defer-native-admission-contract"
+MIR_TO_C_COMMAND = "[str(" + "GUST), '--backend', 'mir-to-c', str(source)]"
+NATIVE_COMMAND = "[str(" + "GUST), '--backend', 'cranelift', '-o', str(artifact), str(source)]"
 
 
 def require(condition: bool, message: str) -> None:
@@ -62,6 +64,18 @@ def validate(value: dict | None = None) -> dict:
         "fixtures": {
             "positive": "compiler/phase20_resource_acquisition_directory_source.gst",
             "retained_deferred": "compiler/phase13_structured_cfg_short_circuit_deferred_source.gst",
+        },
+        "phase22_closed_inventory_extension": {
+            "status": "exact_phase23_extension_excluded_only_from_phase22_relay_identity",
+            "owning_patch": "23.3a",
+            "path": "scripts/phase23_structured_guard_defer_native_admission.py",
+            "selection": ["explicit_c", "explicit_cranelift", "explicit_cranelift"],
+            "invocation_count": 3,
+            "commands": [
+                MIR_TO_C_COMMAND,
+                NATIVE_COMMAND,
+                NATIVE_COMMAND,
+            ],
         },
         "observables": {
             "exit_status": 0,
@@ -197,6 +211,7 @@ def render(value: dict) -> str:
         f"- Oracle: `{observables['oracle']}`",
         f"- Expected exit: `{observables['exit_status']}` with empty stdout/stderr",
         f"- Native artifact: `{observables['native_artifact']}`",
+        "- Phase 22 relay inventory: the exact three evidence invocations are a registered Phase 23 extension and are excluded only while validating the frozen Phase 22 six-site relay identity.",
         "",
         "The evidence guard rejects restoring the preempting guard/defer deferral, "
         "removing the generic scalar-signature handoff, replacing the existing worker "
