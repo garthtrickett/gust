@@ -154,6 +154,29 @@ def resolved_runtime_divergences(registry: dict, record: dict) -> set[str]:
     return resolved
 
 
+def phase23_guard_defer_transition(registry: dict, cases: list[dict]) -> dict:
+    record = registry.get("phase23_structured_guard_defer_native_admission", {})
+    transition = record.get("phase21_complete_suite_transition", {})
+    expected = {
+        "status": "exact_phase23_guard_defer_admission_overlay",
+        "admitted_runner_fixtures": [
+            "tests/e2e_guard_hashmap_lookup.gst",
+            "tests/e2e_guard_mutability.gst",
+        ],
+        "required_native_case_delta": 2,
+        "classified_deferral_delta": -2,
+        "reason_count_deltas": {
+            "deferred_p13_structured_cfg_non_reducible_shape": -2,
+        },
+    }
+    require(transition == expected,
+            "Phase 23 guard/defer complete-suite transition drifted")
+    paths = {case["path"] for case in cases}
+    require(set(transition["admitted_runner_fixtures"]) <= paths,
+            "Phase 23 guard/defer transition fixture drifted from runner inventory")
+    return transition
+
+
 def validate() -> dict:
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     predecessor = registry.get("phase21_native_rebuild_reproducibility", {})
@@ -177,6 +200,7 @@ def validate() -> dict:
     resolved_runtime_divergences(registry, record)
 
     cases = runner_cases()
+    phase23_guard_defer_transition(registry, cases)
     inventory = record.get("inventory", {})
     observed = {
         "total": len(cases),
@@ -649,6 +673,8 @@ def evidence() -> None:
     deferral_count = 0
     corpus_started = time.monotonic()
     cases = runner_cases()
+    transition = phase23_guard_defer_transition(
+        json.loads(REGISTRY.read_text(encoding="utf-8")), cases)
     shard_base, shard_roots = create_shards(
         deadline, record["execution_shards"]["count"])
     executors = [concurrent.futures.ThreadPoolExecutor(max_workers=1)
@@ -678,12 +704,17 @@ def evidence() -> None:
             executor.shutdown(wait=True, cancel_futures=True)
         remove_shards(shard_base, shard_roots)
 
-    require(reason_counts == classification["compile_deferral_reason_counts"],
+    expected_reason_counts = dict(classification["compile_deferral_reason_counts"])
+    for reason, delta in transition["reason_count_deltas"].items():
+        expected_reason_counts[reason] += delta
+    require(reason_counts == expected_reason_counts,
             f"compile deferral population drifted: {reason_counts}")
     require(required_count ==
-            classification["required_native_case_count"] + len(resolved_runtime) and
+            classification["required_native_case_count"] +
+            transition["required_native_case_delta"] + len(resolved_runtime) and
             deferral_count ==
-            classification["total_classified_deferral_count"] - len(resolved_runtime),
+            classification["total_classified_deferral_count"] +
+            transition["classified_deferral_delta"] - len(resolved_runtime),
             "complete classified population count drifted")
     corpus_ms = int((time.monotonic() - corpus_started) * 1000)
     require(corpus_ms <= budgets["max_corpus_suite_ms"],

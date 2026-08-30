@@ -2868,7 +2868,8 @@
         "additionalProperties": false,
         "required": ["contract_version", "status", "next_patch", "owner",
                      "review_view", "source_admission", "fixtures",
-                     "phase22_closed_inventory_extension", "observables", "boundary"],
+                     "phase22_closed_inventory_extension", "phase21_complete_suite_transition",
+                     "observables", "boundary"],
         "properties": {
           "contract_version": {"const": "phase23_structured_guard_defer_native_admission_v1"},
           "status": {"const": "patch23_3a_complete"},
@@ -2878,6 +2879,7 @@
           "source_admission": {"type": "object"},
           "fixtures": {"type": "object"},
           "phase22_closed_inventory_extension": {"type": "object"},
+          "phase21_complete_suite_transition": {"type": "object"},
           "observables": {"type": "object"},
           "boundary": {"type": "object"}
         }

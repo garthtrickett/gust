@@ -79,6 +79,18 @@ def validate(value: dict | None = None) -> dict:
                 NATIVE_COMMAND,
             ],
         },
+        "phase21_complete_suite_transition": {
+            "status": "exact_phase23_guard_defer_admission_overlay",
+            "admitted_runner_fixtures": [
+                "tests/e2e_guard_hashmap_lookup.gst",
+                "tests/e2e_guard_mutability.gst",
+            ],
+            "required_native_case_delta": 2,
+            "classified_deferral_delta": -2,
+            "reason_count_deltas": {
+                "deferred_p13_structured_cfg_non_reducible_shape": -2,
+            },
+        },
         "observables": {
             "exit_status": 0,
             "stdout": "",
@@ -236,6 +248,8 @@ def render(value: dict) -> str:
         f"- Native artifact: `{observables['native_artifact']}`",
         "- Phase 22 relay inventory: the exact "
         f"{value['phase22_closed_inventory_extension']['invocation_count']} evidence invocations are a registered Phase 23 extension and are excluded only while validating the frozen Phase 22 six-site relay identity.",
+        "- Complete-suite overlay: two exact guard/defer runner fixtures move from the "
+        "historical non-reducible deferral cohort to required native qualification.",
         "",
         "The evidence guard rejects restoring the preempting guard/defer deferral, "
         "removing the generic function-only both-operations scalar-signature handoff, replacing the existing "

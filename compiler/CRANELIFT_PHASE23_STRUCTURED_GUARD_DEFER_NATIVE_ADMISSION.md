@@ -21,6 +21,7 @@ The narrower structured-CFG recognizer does not claim typed `guard` or `defer`. 
 - Expected exit: `0` with empty stdout/stderr
 - Native artifact: `nonempty_linked_executable`
 - Phase 22 relay inventory: the exact 4 evidence invocations are a registered Phase 23 extension and are excluded only while validating the frozen Phase 22 six-site relay identity.
+- Complete-suite overlay: two exact guard/defer runner fixtures move from the historical non-reducible deferral cohort to required native qualification.
 
 The evidence guard rejects restoring the preempting guard/defer deferral, removing the generic function-only both-operations scalar-signature handoff, replacing the existing worker operations, admitting declaration-bearing scalar source, or admitting the retained short-circuit structured-CFG deferral.
 
