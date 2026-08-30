@@ -351,6 +351,7 @@ are not serial, and one of them has a longer lead time than the build.**
 | **Month 3** | Second conversation with the same five, showing the rejection diagnostic | The diagnostic is the artifact; a promise at month 0 and a demo at month 3 is a credible arc |
 | **Month 4** | §0.14's four-gate decision point, **with commercial evidence alongside technical** | OD-8 contributes bounded technical evidence; OD-9 and the buyer/defensibility gates must resolve far enough to choose the next evidence stage |
 | **After the demo holds** | Five-application harness pilot, then 30–50 applications and an independent audit | Turns one selected mechanism demonstration into evidence against the strongest TypeScript alternative; scale only after the pilot fixes the instrument |
+| **After Phase 25 and the complete Cranelift tail close** | Execute `docs/CRANELIFT_LAUNCH.md` | Convert exact native/bootstrap evidence into technical credibility and a small strategic listening programme; no intermediate Phase 20–24 result triggers the coordinated outreach |
 
 **The asymmetry to exploit:** the counting programme and the buyer conversations
 are the only work in this document that **does not depend on the compiler working
@@ -358,6 +359,12 @@ at all.** They can run through the 30% branch and still have produced something 
 a statistic and a market map — where four months of compiler work would have
 produced nothing. **That is the cheapest available hedge and it is currently
 unstaffed.**
+
+The post-tail launch is deliberately later than the commercial discovery above.
+Buyer interviews and benchmark design gather evidence now; the coordinated
+Cranelift announcement waits until one durable Level-3 claim is reproducible.
+Technical attention from that launch is not commercial-gate evidence unless a
+named person with authority enters a concrete adoption or design-partner path.
 
 ---
 

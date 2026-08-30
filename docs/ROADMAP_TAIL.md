@@ -166,6 +166,25 @@ release archives. Preserve an independently auditable bootstrap chain.
 bootstrap path without invoking a C compiler, except for explicitly documented
 optional foreign-runtime components.
 
+## Post-Phase 25 — technical launch and outreach
+
+After Phase 25 **and every preceding tail checkpoint** are closed on merged
+`main`, execute `docs/CRANELIFT_LAUNCH.md`. No Phase 20–24 milestone triggers the
+coordinated outreach campaign independently.
+
+The launch is an evidence and relationship checkpoint, not another compiler
+phase. It packages exact release identity, one-command reproduction,
+no-fallback and semantic evidence, exact-main Historical Full, native bootstrap
+transcripts, limitations, and the honest Rust/optional foreign-runtime boundary.
+Quiet upstream review precedes the public technical launch; strategic outreach
+follows as a small, tailored listening programme rather than a mass announcement
+or premature pilot request.
+
+**Launch gate:** the post-tail Level-3 claim in
+`docs/CRANELIFT_LAUNCH.md` is supported in full, or the launch is delayed. No
+“first” claim is used without a precisely defined category and credible upstream
+confirmation.
+
 ---
 
 ## The critical path
@@ -190,9 +209,9 @@ Three claims about how early each outcome is reachable, recorded as stated:
 
 | Outcome | Earliest realistic point |
 | --- | --- |
-| Gust stops emitting C for ordinary user programs | after Phases 13–21 |
-| The MIR-to-C implementation can be deleted | after Phases 22–23 |
-| Gust can claim it does not require C to build itself | after Phase 24 |
+| Gust stops emitting C by default for ordinary user programs | after Phase 22 |
+| The MIR-to-C implementation can be deleted | after Phase 24 |
+| Gust can claim its normal supported bootstrap does not require a host C compiler | after Phase 25 |
 
 **Read these as ordering claims rather than dates.** None has a duration attached
 and this document does not supply one; the value is that each outcome is pinned

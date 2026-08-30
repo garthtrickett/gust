@@ -514,12 +514,20 @@ to the integrated product.
 
 **Months 4–24 — the product.** The substrate first (workspaces, identity, permissions, objects, notifications, audit — Parts III, X, XI), then feature flags, then issues, then support inbox. Git hosting integrated, not rebuilt. Migration tooling from day one. This is v0.5 shipped with a price attached.
 
-**Months 4 onward — conversations.** Parallel, non-exclusive, inbound-led off the published artifact and then off the product running in production.
+**Months 4 onward — commercial discovery conversations.** Parallel and
+non-exclusive, gathering buyer and adoption evidence. These are not the
+coordinated Cranelift launch campaign, which waits for the complete tail below.
 
 **Later, uncommitted:**
 
 - **v1.0** — jobs, self-hosted parity, capability fakes, deterministic test scheduling, multi-tenant rollout, intent layer v1 (OD-6).
 - **Post-1.0** — durable workflows, realtime, distributed cache, supplier certification, registry, editions and LTS.
+
+**After the complete Cranelift/C-retirement tail closes:** execute the technical
+launch and outreach plan in `docs/CRANELIFT_LAUNCH.md`. Intermediate Phase
+20–24 results do not trigger the coordinated campaign. The launch establishes
+technical credibility and relationships; it does not satisfy the generation,
+commercial, or defensibility gates in §0.8.
 
 Everything from v1.0 down is specified in this document so that demo-stage decisions do not foreclose it. None of it is committed, and most of it should never be built by us.
 
