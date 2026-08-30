@@ -195,6 +195,12 @@ The coordinated Cranelift outreach occurs only after Phase 25 and the complete
 tail in `docs/ROADMAP_TAIL.md` close. `docs/CRANELIFT_LAUNCH.md` owns its claim
 ladder, proof package, upstream factual review, outreach waves, and falsifiers.
 
+This does not postpone all relationship development. At each credible material
+milestone, `docs/EVIDENCE_LED_OUTREACH.md` governs evidence cards, recipient
+research, individualized drafts, operator rewrite and approval, the relationship
+ledger, and feedback routing. Phase 20–24 may therefore support narrow private
+technical contact, but not a coordinated public Cranelift campaign.
+
 The launch target is a Level-3 statement: the self-hosted compiler builds and
 runs through the native path and normal supported bootstrap no longer requires
 generated C or a host C compiler, with the Rust adapter and optional
@@ -259,6 +265,7 @@ built yet and when it will be known.
 | Market positioning, who buys, timing | `docs/VISION.md` §2, §0.8, §0.9 |
 | Lines and framing | `docs/STRATEGY_REVIEW.md` §6 |
 | Buyer question, competitor, objections, risks | `docs/BUSINESS_STRATEGY.md` |
+| Continuous individualized outreach and relationship learning | `docs/EVIDENCE_LED_OUTREACH.md` |
 | Post-Phase 25 technical launch and outreach | `docs/CRANELIFT_LAUNCH.md` |
 | The claim and its boundary | `docs/VISION.md` §56, §56.2 |
 | External-language rule | `docs/VISION.md` §79 |

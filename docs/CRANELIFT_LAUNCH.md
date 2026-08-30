@@ -2,16 +2,19 @@
 
 **Status:** planned after the complete Cranelift/C-retirement tail; not active.
 
-This document defines Gust's first coordinated external technical-credibility
-launch. It creates no compiler work and authorizes no outreach. The launch begins
-only after Phase 25 and every preceding checkpoint in `docs/ROADMAP_TAIL.md` are
-closed with authoritative merged-main evidence.
+This document defines Gust's coordinated external technical-credibility launch.
+It creates no compiler work and authorizes no outreach. The launch begins only
+after Phase 25 and every preceding checkpoint in `docs/ROADMAP_TAIL.md` are
+closed with authoritative merged-main evidence. Earlier individualized research
+and operator-approved contact is governed separately by
+`docs/EVIDENCE_LED_OUTREACH.md`.
 
 Intermediate milestones—including whole-program qualification, native
-self-hosting qualification, and the default-backend flip—may be recorded
-internally. They do not trigger the outreach campaign. Waiting for the complete
-tail gives the public event one clear, durable claim instead of a sequence of
-nearly-finished announcements.
+self-hosting qualification, and the default-backend flip—do not trigger this
+coordinated public campaign. They may trigger a narrow evidence-led outreach
+review and a small number of private, operator-approved technical messages under
+the protocol above. Waiting for the complete tail still gives the public event
+one clear, durable claim instead of a sequence of nearly-finished announcements.
 
 ## 1. Launch gate
 
@@ -134,6 +137,10 @@ Before any historical novelty wording:
 Launch does not depend on endorsement. It does depend on accurate wording.
 
 ## 7. Outreach sequence
+
+Every recipient is researched, drafted, humanized, approved, recorded, and
+followed up under `docs/EVIDENCE_LED_OUTREACH.md`. Nothing in these waves permits
+autonomous contact or publication.
 
 ### Wave 0 — quiet technical review
 

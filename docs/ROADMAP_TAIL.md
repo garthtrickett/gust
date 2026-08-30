@@ -170,7 +170,10 @@ optional foreign-runtime components.
 
 After Phase 25 **and every preceding tail checkpoint** are closed on merged
 `main`, execute `docs/CRANELIFT_LAUNCH.md`. No Phase 20–24 milestone triggers the
-coordinated outreach campaign independently.
+coordinated public outreach campaign independently. Each authoritative milestone
+may still trigger the evidence-card and recipient review in
+`docs/EVIDENCE_LED_OUTREACH.md`; any resulting contact is narrow, private where
+appropriate, and sent only by the operator after rewriting and approval.
 
 The launch is an evidence and relationship checkpoint, not another compiler
 phase. It packages exact release identity, one-command reproduction,
@@ -184,6 +187,11 @@ or premature pilot request.
 `docs/CRANELIFT_LAUNCH.md` is supported in full, or the launch is delayed. No
 “first” claim is used without a precisely defined category and credible upstream
 confirmation.
+
+The tail therefore has two different outreach cadences: continuous
+evidence-specific relationship development under
+`docs/EVIDENCE_LED_OUTREACH.md`, and one coordinated Level-3 public launch after
+the entire tail under `docs/CRANELIFT_LAUNCH.md`.
 
 ---
 
