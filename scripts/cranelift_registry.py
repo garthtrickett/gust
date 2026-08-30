@@ -72,6 +72,7 @@ TOP_FIELDS = {
     "phase22_historical_route_successor",
     "phase22_stability_qualification",
     "phase22_closure",
+    "phase23_issue_health_opening",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming", "phase19_classification", "phase19_representation",
