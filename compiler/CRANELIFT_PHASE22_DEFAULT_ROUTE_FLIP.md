@@ -7,6 +7,9 @@ Generated from `scripts/cranelift_feature_registry.json`. Do not edit by hand.
 - Next action: `patch22_6a_default_route_bootstrap_seed_reconvergence`
 - Observed main: `8b2135ac664dfdeb32c2fd5ca28cc43bbf80ed3b`
 - Predecessor: `phase22_preflip_default_cohort_v1`
+- Implementation PR/base/head: `#259` / `8b2135ac664dfdeb32c2fd5ca28cc43bbf80ed3b` / `40be16fd5eb190d3c468fc8e4c5652d61ba5ec43`
+- Merge commit: `e521f4f660acf59aff7e07f79a9567c73ffb0b2b`
+- Bootstrap seed changed in implementation patch: `false`
 
 ## Route
 

@@ -95,6 +95,22 @@ def validate() -> dict:
             "Index_typed_ZeroInitialize_emits_i32_minus_one" and
             resolved.get("other_zero_initialization") == "unchanged_zero",
             "runtime-divergence reconciliation drifted")
+    correction = record.get("postmerge_default_index_correction", {})
+    require(correction == {
+        "review_pull_request": 257,
+        "review_thread": "PRRT_kwDOS1ExJc6daULJ",
+        "source_fixture":
+            "compiler/phase22_default_index_initialization_source.gst",
+        "helper_fixture":
+            "compiler/phase22_default_index_initialization_helper.gst",
+        "oracle_exit": 7,
+        "pre_correction_native_exit": 41,
+        "corrected_native_exit": 7,
+        "initialization_contract":
+            "Index_defaults_to_i32_minus_one_recursively_through_non_enum_struct_fields",
+        "MIR_to_C": "unchanged_semantic_oracle",
+        "other_default_initialization": "unchanged_zero",
+    }, "post-merge default-Index correction authority drifted")
     overlay = record.get("complete_guard_overlay", {})
     require(overlay == {
         "inventory_total": 326,
@@ -115,10 +131,15 @@ def validate() -> dict:
     for marker in (
         '"ZeroInitialize" => {',
         "index_element_layout_type(&node.ty).is_ok()",
+        "fn initialize_index_sentinels(",
+        "self.initialize_index_sentinels(builder, place, ty)?;",
         "-1",
         "scalar_ir_type(&node.ty, self.pointer_type())?",
     ):
         require(marker in lowering, f"generic sentinel lowering marker missing: {marker}")
+    require((ROOT / correction["source_fixture"]).is_file() and
+            (ROOT / correction["helper_fixture"]).is_file(),
+            "default-Index focused source fixture is missing")
     suite = PHASE21_SUITE.read_text(encoding="utf-8")
     for marker in ("resolved_runtime_divergences", "len(resolved_runtime)"):
         require(marker in suite, "complete-suite successor accounting is missing")
@@ -160,6 +181,7 @@ def validate() -> dict:
 def render(record: dict) -> str:
     overlay = record["complete_guard_overlay"]
     resolved = record["resolved_phase21_runtime_divergences"]
+    correction = record["postmerge_default_index_correction"]
     lines = [
         "# Cranelift Phase 22.5 — Pre-flip Default-Cohort Qualification",
         "",
@@ -193,6 +215,15 @@ def render(record: dict) -> str:
     ]
     lines += [f"- `{fixture}`" for fixture in resolved["fixtures"]]
     lines += [
+        "",
+        "## Post-merge default-Index correction",
+        "",
+        f"- Review: `#{correction['review_pull_request']}` / `{correction['review_thread']}`",
+        f"- Source fixture: `{correction['source_fixture']}`",
+        f"- Helper fixture: `{correction['helper_fixture']}`",
+        f"- Pre-correction oracle/native exit: `{correction['oracle_exit']}/{correction['pre_correction_native_exit']}`",
+        f"- Corrected oracle/native exit: `{correction['oracle_exit']}/{correction['corrected_native_exit']}`",
+        f"- Contract: `{correction['initialization_contract']}`",
         "",
         "The Phase 21 record remains historical. This successor authority resolves",
         "its three runtime-divergence rows without changing the 121 explicitly owned",
@@ -255,10 +286,41 @@ def evidence() -> None:
                 oracle_run.stdout == native_run.stdout and
                 oracle_run.stderr == native_run.stderr,
                 f"focused observable parity failed: {fixture}")
+    correction = record["postmerge_default_index_correction"]
+    fixture = correction["source_fixture"]
+    case = output / "default-index-initialization"
+    case.mkdir()
+    oracle_c = run([str(native_compiler), "--backend", "mir-to-c", fixture],
+                   env=env)
+    require(oracle_c.returncode == 0 and oracle_c.stdout and
+            not oracle_c.stderr,
+            "default-Index oracle compile failed")
+    c_path = case / "oracle.final.c"
+    c_path.write_bytes((ROOT / "src/runtime.c").read_bytes() +
+                       b"\n" + oracle_c.stdout)
+    oracle_program = case / "oracle-program"
+    c_build = run([os.environ.get("CC", "cc"), "-O2", "-Wall", "-pthread",
+                   "-Isrc", str(c_path), "-o", str(oracle_program)])
+    require(c_build.returncode == 0,
+            f"default-Index oracle host compile failed: {c_build.stderr[-500:]!r}")
+    native_program = case / "native-program"
+    native_build = run([str(native_compiler), "--backend", "cranelift", "-o",
+                        str(native_program), fixture], env=native_env)
+    require(native_build.returncode == 0 and native_program.is_file() and
+            not native_build.stdout and not native_build.stderr,
+            "default-Index native compile or no-fallback contract failed")
+    oracle_run = run([str(oracle_program)])
+    native_run = run([str(native_program)])
+    require(oracle_run.returncode == native_run.returncode ==
+            correction["corrected_native_exit"] and
+            oracle_run.stdout == native_run.stdout and
+            oracle_run.stderr == native_run.stderr,
+            "default-Index scalar/struct observable parity failed")
     elapsed_ms = int((time.monotonic() - started) * 1000)
     require(elapsed_ms <= record["budgets"]["complete_suite_ms"],
             "focused reconciliation exceeded the inherited complete-suite budget")
-    print(f"{GUARD_L2}: ok cases=3 elapsed_ms={elapsed_ms}")
+    case_count = len(record["resolved_phase21_runtime_divergences"]["fixtures"]) + 1
+    print(f"{GUARD_L2}: ok cases={case_count} elapsed_ms={elapsed_ms}")
 
 
 def main() -> None:

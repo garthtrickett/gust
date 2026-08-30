@@ -7,6 +7,8 @@ on:
       - 'Makefile'
       - 'gust_v4.c'
       - 'compiler/*.gst'
+      - 'tests/*.gst'
+      - 'reset-heavy-guards-workflow.sh'
       - 'compiler/CRANELIFT_PHASE22_OPENING.md'
       - 'compiler/CRANELIFT_PHASE22_EXPLICIT_C_MIGRATION.md'
       - 'scripts/*.py'
@@ -18,7 +20,7 @@ on:
       - '.github/workflows/phase22-opening.yml'
       - '.github/workflows/phase22-explicit-c-migration.yml'
       - '.github/workflows/pr-fast.yml'
-      - 'justfile'
+      - 'justfile*'
   push:
     branches: [main]
     paths:
@@ -26,6 +28,8 @@ on:
       - 'Makefile'
       - 'gust_v4.c'
       - 'compiler/*.gst'
+      - 'tests/*.gst'
+      - 'reset-heavy-guards-workflow.sh'
       - 'compiler/CRANELIFT_PHASE22_OPENING.md'
       - 'compiler/CRANELIFT_PHASE22_EXPLICIT_C_MIGRATION.md'
       - 'scripts/*.py'
@@ -37,7 +41,7 @@ on:
       - '.github/workflows/phase22-opening.yml'
       - '.github/workflows/phase22-explicit-c-migration.yml'
       - '.github/workflows/pr-fast.yml'
-      - 'justfile'
+      - 'justfile*'
   workflow_dispatch:
 
 permissions:

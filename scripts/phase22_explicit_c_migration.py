@@ -118,12 +118,24 @@ def validate() -> tuple[dict, list[dict[str, object]]]:
     relay_rows = [row for row in implicit if row["owner"] == "stdlib"]
     stdlib_rows = [row for row in rows if row["owner"] == "stdlib"]
     relay = record.get("cross_lane_relay", {})
-    expected_relay_count = relay.get("authorized_post_relay_consumer_count")
-    require(len(relay_rows) == expected_relay_count and
+    post_flip_relay = relay.get("post_flip_review_relay", {})
+    require(post_flip_relay.get("status") ==
+            "awaiting_owning_stdlib_correction" and
+            post_flip_relay.get("review_pull_request") == 251 and
+            post_flip_relay.get("review_thread") ==
+            "PRRT_kwDOS1ExJc6dYPJO" and
+            post_flip_relay.get("consumer_count") == 6 and
+            post_flip_relay.get("expected_selection") ==
+            "explicit_mir_to_c" and
+            post_flip_relay.get("required_before") ==
+            "patch22_8_stability_authority_publication",
+            "post-flip review relay authority drifted")
+    require(len(relay_rows) == post_flip_relay["consumer_count"] and
             relay.get("consumer_count") == 15 and
             relay.get("authorized_post_relay_consumer_count") == 0,
             "cross-lane relay transition count drifted")
-    require(sorted({str(row["path"]) for row in stdlib_rows}) ==
+    require(sorted({str(row["path"]) for row in stdlib_rows
+                    if not str(row["path"]).startswith("tests/")}) ==
             sorted(relay.get("paths", [])),
             "cross-lane relay path set drifted")
     site_fields = ("path", "line", "recipe", "compiler_token")
@@ -142,6 +154,20 @@ def validate() -> tuple[dict, list[dict[str, object]]]:
     require(all(live_sites[site]["selection"] == "explicit_c"
                 for site in expected_sites),
             "an authorized relay site did not make the exact route transition")
+    pending_sites = {
+        tuple(row[field] for field in site_fields)
+        for row in post_flip_relay.get("site_manifest", [])
+    }
+    live_pending_sites = {
+        tuple(row[field] for field in site_fields)
+        for row in relay_rows
+    }
+    require(len(pending_sites) == 6 and
+            pending_sites == live_pending_sites and
+            sorted({str(row["path"]) for row in relay_rows}) ==
+            post_flip_relay.get("paths") and
+            all(row["selection"] == "implicit_default" for row in relay_rows),
+            "post-flip review relay site manifest drifted")
     require(relay.get("status") == "merged_on_main" and
             relay.get("owner") == "stdlib" and
             relay.get("pull_request") == 256 and
@@ -178,11 +204,15 @@ def validate() -> tuple[dict, list[dict[str, object]]]:
             "stdlib_owned_C_or_diagnostic_guard" not in post_classes,
             "authorized post-relay inventory is not the exact 15-site delta")
     owner_selections = relay.get("authorized_post_relay_owner_selections", {})
-    require(len(stdlib_rows) == 23 and
-            sum(row["selection"] == "explicit_c" for row in stdlib_rows) ==
+    initial_stdlib_rows = [
+        row for row in stdlib_rows
+        if tuple(row[field] for field in site_fields) not in pending_sites
+    ]
+    require(len(initial_stdlib_rows) == 23 and
+            sum(row["selection"] == "explicit_c" for row in initial_stdlib_rows) ==
             owner_selections.get("explicit_c") == 20 and
             sum(row["selection"] == "explicit_cranelift"
-                for row in stdlib_rows) ==
+                for row in initial_stdlib_rows) ==
             owner_selections.get("explicit_cranelift") == 3,
             "merged post-relay Stdlib selection set drifted")
 
@@ -222,6 +252,10 @@ def validate() -> tuple[dict, list[dict[str, object]]]:
     workflow = WORKFLOW.read_text(encoding="utf-8")
     require(f"just {GUARD_L1}" in workflow and f"just {GUARD_L2}" in workflow,
             "dedicated workflow does not own both guards")
+    for path_filter in ("'reset-heavy-guards-workflow.sh'", "'tests/*.gst'",
+                        "'justfile*'"):
+        require(workflow.count(path_filter) == 2,
+                f"dedicated workflow does not own both path filters for {path_filter}")
     boundary = record.get("boundary", {})
     require(boundary and all(value is False for value in boundary.values()),
             "Patch 22.2 widened beyond the recorded boundary")
@@ -233,6 +267,7 @@ def render(record: dict) -> str:
     pre_inventory = record["current_invocation_inventory"]
     post_inventory = record["authorized_post_relay_invocation_inventory"]
     relay = record["cross_lane_relay"]
+    post_flip_relay = relay["post_flip_review_relay"]
     lines = [
         "# Cranelift Phase 22.2 — Explicit C Route and No-op Consumer Migration",
         "",
@@ -288,12 +323,23 @@ def render(record: dict) -> str:
         )
     lines += [
         "",
-        "Patch 22.2 is complete. The owning Stdlib relay merged with its complete",
+        "## Post-flip review relay",
+        "",
+        f"- Status: `{post_flip_relay['status']}`",
+        f"- Review: `#{post_flip_relay['review_pull_request']}` / `{post_flip_relay['review_thread']}`",
+        f"- Required owning transitions: `{post_flip_relay['consumer_count']}`",
+        f"- Expected selection: `{post_flip_relay['expected_selection']}`",
+    ]
+    for row in post_flip_relay["site_manifest"]:
+        lines.append(f"- `{row['path']}:{row['line']}`")
+    lines += [
+        "",
+        "Patch 22.2's original relay is complete. The owning Stdlib relay merged with its complete",
         "exact-head pull-request population successful and zero review threads.",
         "This authority now accepts only the exact merged 15-site post-relay",
-        "inventory; the earlier pre-relay inventory is historical and no longer",
-        "admitted as repository state. Patch 22.6 remains unchecked, and this",
-        "reconciliation does not edit Stdlib or change the MIR-to-C default.",
+        "inventory plus the six test-owned consumers discovered by post-merge",
+        "review. Those six sites remain an explicit owning-lane relay and block",
+        "Patch 22.8 publication. This correction does not edit Stdlib.",
         "",
     ]
     return "\n".join(lines)

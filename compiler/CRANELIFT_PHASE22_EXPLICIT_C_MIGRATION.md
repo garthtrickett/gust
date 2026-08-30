@@ -62,9 +62,22 @@ repository invocation scan. Do not edit by hand.
 | `scripts/stdlib_s1_clone_destination_parity.sh` | 128 | `none` | `./gust` |
 | `scripts/stdlib_s1_composition_parity.sh` | 30 | `none` | `./gust` |
 
-Patch 22.2 is complete. The owning Stdlib relay merged with its complete
+## Post-flip review relay
+
+- Status: `awaiting_owning_stdlib_correction`
+- Review: `#251` / `PRRT_kwDOS1ExJc6dYPJO`
+- Required owning transitions: `6`
+- Expected selection: `explicit_mir_to_c`
+- `tests/e2e_codegen_assertions.gst:33`
+- `tests/e2e_codegen_assertions.gst:39`
+- `tests/e2e_codegen_assertions.gst:45`
+- `tests/e2e_codegen_assertions.gst:52`
+- `tests/test_runner.gst:119`
+- `tests/test_runner.gst:154`
+
+Patch 22.2's original relay is complete. The owning Stdlib relay merged with its complete
 exact-head pull-request population successful and zero review threads.
 This authority now accepts only the exact merged 15-site post-relay
-inventory; the earlier pre-relay inventory is historical and no longer
-admitted as repository state. Patch 22.6 remains unchecked, and this
-reconciliation does not edit Stdlib or change the MIR-to-C default.
+inventory plus the six test-owned consumers discovered by post-merge
+review. Those six sites remain an explicit owning-lane relay and block
+Patch 22.8 publication. This correction does not edit Stdlib.

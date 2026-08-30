@@ -110,9 +110,17 @@ def validate() -> dict:
         "./build/gust_stage2_bin --backend mir-to-c compiler/test_runner_entry.gst",
     ):
         require(marker in makefile, f"bootstrap route is not explicit C: {marker}")
-    seed_changed = "gust_v4.c" in subprocess.run(
-        ["git", "diff", "--name-only"], cwd=ROOT, text=True,
-        stdout=subprocess.PIPE, check=True).stdout.splitlines()
+    implementation = record.get("implementation_patch", {})
+    require(implementation.get("pull_request") == 259 and
+            implementation.get("base_sha") ==
+            "8b2135ac664dfdeb32c2fd5ca28cc43bbf80ed3b" and
+            implementation.get("head_sha") ==
+            "40be16fd5eb190d3c468fc8e4c5652d61ba5ec43" and
+            implementation.get("merge_sha") ==
+            "e521f4f660acf59aff7e07f79a9567c73ffb0b2b" and
+            implementation.get("bootstrap_seed_changed") is False and
+            "gust_v4.c" not in implementation.get("reviewed_change_paths", []),
+            "reviewed Patch 22.6 commit range includes the bootstrap seed")
     successor = registry.get("phase22_default_route_seed_convergence", {})
     successor_complete = (
         successor.get("contract_version") ==
@@ -121,8 +129,8 @@ def validate() -> dict:
         successor.get("accounted_authority") ==
         "phase22_default_route_flip_v1"
     )
-    require(not seed_changed or successor_complete,
-            "Patch 22.6 modified the bootstrap seed without Patch 22.6a authority")
+    require(successor_complete,
+            "Patch 22.6a no longer accounts for the separate seed transition")
 
     corpus = record.get("frozen_preflip_c_corpus", [])
     require(len(corpus) == 4 and len({row["source"] for row in corpus}) == 4 and
@@ -164,6 +172,7 @@ def validate() -> dict:
 def render(record: dict) -> str:
     route = record["route_contract"]
     evidence = record["evidence"]
+    implementation = record["implementation_patch"]
     lines = [
         "# Cranelift Phase 22.6 — Default Route Flip",
         "",
@@ -174,6 +183,9 @@ def render(record: dict) -> str:
         f"- Next action: `{record['next_action']}`",
         f"- Observed main: `{record['observed_main_sha']}`",
         f"- Predecessor: `{record['predecessor_authority']}`",
+        f"- Implementation PR/base/head: `#{implementation['pull_request']}` / `{implementation['base_sha']}` / `{implementation['head_sha']}`",
+        f"- Merge commit: `{implementation['merge_sha']}`",
+        f"- Bootstrap seed changed in implementation patch: `{str(implementation['bootstrap_seed_changed']).lower()}`",
         "",
         "## Route",
         "",

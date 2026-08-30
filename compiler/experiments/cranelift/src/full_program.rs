@@ -1789,6 +1789,50 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         }
     }
 
+    fn initialize_index_sentinels(
+        &mut self,
+        builder: &mut FunctionBuilder<'_>,
+        place: Place,
+        ty: &str,
+    ) -> Result<(), Box<dyn Error>> {
+        if index_element_type_name(ty).is_some() {
+            let sentinel = builder.ins().iconst(types::I32, -1);
+            builder
+                .ins()
+                .store(MemFlags::trusted(), sentinel, place.address, 0);
+            return Ok(());
+        }
+        let Some(name) = struct_type_name(ty) else {
+            return Ok(());
+        };
+        if self.layouts.enums.contains_key(name.as_str()) {
+            return Ok(());
+        }
+        let mut fields: Vec<FieldPlacement> = self
+            .layouts
+            .layout(ty)?
+            .fields
+            .values()
+            .cloned()
+            .collect();
+        fields.sort_by(|left, right| {
+            left.offset
+                .cmp(&right.offset)
+                .then_with(|| left.ty.cmp(&right.ty))
+        });
+        for field in fields {
+            let field_address = add_offset(builder, place.address, field.offset);
+            self.initialize_index_sentinels(
+                builder,
+                Place {
+                    address: field_address,
+                },
+                &field.ty,
+            )?;
+        }
+        Ok(())
+    }
+
     fn copy_place(
         &mut self,
         builder: &mut FunctionBuilder<'_>,
@@ -1820,6 +1864,7 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         let layout = self.layouts.layout(ty)?;
         let place = make_stack_place(builder, &layout, self.pointer_type())?;
         self.zero_place(builder, place, &layout);
+        self.initialize_index_sentinels(builder, place, ty)?;
         Ok(place)
     }
 
