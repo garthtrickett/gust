@@ -119,7 +119,7 @@ Out of scope:
 - [x] Patch 23.2 — MIR Evidence-Owner Repair and Retirement (#110) — DONE
 - [x] Patch 23.3 — Resource-Acquisition Parity Evidence Repair (#240) — DONE
 - [x] Patch 23.3a — Structured Guard/Defer Native Admission — DONE
-- [ ] Patch 23.4 — Assurance Phase A Authority and Trigger Inventory
+- [x] Patch 23.4 — Assurance Phase A Authority and Trigger Inventory — DONE
 - [ ] Patch 23.5 — Assurance Phase B Deterministic Report-Only Evaluator
 - [ ] Patch 23.6 — Same-Scope Declaration Diagnostic (#105)
 - [ ] Patch 23.6a — Diagnostic Bootstrap Seed Reconvergence

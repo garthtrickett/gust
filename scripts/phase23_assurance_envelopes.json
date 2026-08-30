@@ -1,0 +1,128 @@
+{
+  "schema_version": "phase23_assurance_envelope_v1",
+  "phase": "23",
+  "source_identity": {
+    "repository": "garthtrickett/gust",
+    "observed_main_sha": "4ba10f35c3603dffdc9bf740d200af0df17691f2",
+    "base_sha": "4ba10f35c3603dffdc9bf740d200af0df17691f2",
+    "observed_at_utc": "2026-08-31T05:00:00Z"
+  },
+  "loss_taxonomy": [
+    "passed", "failed", "unsupported", "skipped_with_reason", "not_applicable",
+    "not_executed", "empty_selection", "fallback_used", "malformed_evidence",
+    "stale_evidence", "unresolved"
+  ],
+  "repository_facts": {
+    "ruleset": {
+      "id": 20214069,
+      "name": "Protect main",
+      "enforcement": "active",
+      "required_status_checks": ["Codex / Trusted actor"],
+      "required_approving_review_count": 0,
+      "required_review_thread_resolution": true
+    },
+    "workflow_file_count": 124,
+    "pull_request_trigger_count": 121,
+    "push_trigger_count": 122,
+    "workflow_dispatch_trigger_count": 106,
+    "qualification_rule": "exact_full_candidate_head_sha_and_event_pull_request_with_all_review_threads_resolved"
+  },
+  "envelopes": [
+    {
+      "id": "phase23_issue110_closed_stale_guard_repair",
+      "issue": 110,
+      "state": "historical_closed_input",
+      "risk_class": "R2",
+      "source_identity": {
+        "repository": "garthtrickett/gust",
+        "observed_main_sha": "3c437227ae75a7b90a14916bd8d23df6799d5f00",
+        "base_sha": "0c5167443121f3dc2f0a0e143da8638753d96a8d",
+        "observed_at_utc": "2026-08-30T16:00:00Z"
+      },
+      "authority_references": [
+        {"kind": "operator_authority", "path": "TASK.md#Roadmap-Activation", "role": "Phase 23 report-only pilot activation"},
+        {"kind": "inherited_contract", "path": "TASK.md#Patch-23.2", "role": "retain a live lowering invariant and retire only obsolete evidence"},
+        {"kind": "inherited_contract", "path": "docs/SHARED_SEMANTIC_ZONE.md#The-zone", "role": "MIR and backend meaning remain unchanged"},
+        {"kind": "inherited_contract", "path": "AGENTS.md#Monitoring-policy", "role": "exact full head SHA and pull_request workflow population"},
+        {"kind": "candidate_evidence", "path": "PR#271@bf53fa38a079a8cb9c019872408603ed9c17a356", "role": "115/115 successful pull_request workflows"},
+        {"kind": "closure_evidence", "path": "scripts/cranelift_feature_registry.json#phase23_mir_evidence_owner", "role": "merged-current-main guard and issue closure record"}
+      ],
+      "expected_inventory": [
+        {"id": "guard-mir-lower-tiny-function-surface", "required_state": "passed_and_reachable", "authority": "scripts/phase23_mir_evidence_owner.py"},
+        {"id": "obsolete_mir_to_c_location_guard", "required_state": "retired_with_no_live_callers", "authority": "scripts/phase23_mir_evidence_owner.py"},
+        {"id": "Cranelift Historical Full", "required_state": "predecessor_baseline_only_not_phase23_closure", "authority": "scripts/phase23_issue_health_opening.py"}
+      ],
+      "observed_loss_states": ["stale_evidence"],
+      "candidate_evidence": ["PR#271 exact head pull_request population 115/115 passed; zero unresolved review threads"],
+      "closure_evidence": ["merged main 3c437227ae75a7b90a14916bd8d23df6799d5f00", "issue #110 closed after current-main guard validation"],
+      "assumptions": [],
+      "non_goals": ["no production MIR-to-C capability change", "no accepted Gust meaning change"],
+      "parked_scope": ["Assurance Phases C-E"]
+    },
+    {
+      "id": "phase23_issue240_closed_resource_acquisition_repair",
+      "issue": 240,
+      "state": "historical_closed_input",
+      "risk_class": "R2",
+      "source_identity": {
+        "repository": "garthtrickett/gust",
+        "observed_main_sha": "a26103fd40dd8c3762efe05c593d5ad111e7a50a",
+        "base_sha": "c9144929455515efe11f219a0518ee79576bea13",
+        "observed_at_utc": "2026-08-31T03:55:00Z"
+      },
+      "authority_references": [
+        {"kind": "operator_authority", "path": "TASK.md#Roadmap-Activation", "role": "Phase 23 report-only pilot activation"},
+        {"kind": "inherited_contract", "path": "TASK.md#Patch-23.3", "role": "only stale positive assertions may be replaced"},
+        {"kind": "inherited_contract", "path": "docs/SHARED_SEMANTIC_ZONE.md#The-zone", "role": "resource semantics and native meaning remain unchanged"},
+        {"kind": "inherited_contract", "path": "scripts/cranelift_feature_registry.json#phase20_resource_acquisition_obligations", "role": "registry-owned supported-native route"},
+        {"kind": "candidate_evidence", "path": "PR#275@cf97e6e4c99762366fde05002beb475de9cbde6e", "role": "116/116 successful pull_request workflows"},
+        {"kind": "closure_evidence", "path": "scripts/cranelift_feature_registry.json#phase23_resource_acquisition_parity", "role": "merged-current-main guard and issue closure record"}
+      ],
+      "expected_inventory": [
+        {"id": "user_resource_positive", "required_state": "explicit_C_and_native_executable_observables_match", "authority": "scripts/phase20_resource_acquisition.sh"},
+        {"id": "directory_resource_positive", "required_state": "explicit_C_and_native_executable_observables_match", "authority": "scripts/phase20_resource_acquisition.sh"},
+        {"id": "resource_negative_diagnostics", "required_state": "passed_without_fallback", "authority": "scripts/phase20_resource_acquisition.sh"},
+        {"id": "Cranelift Historical Full", "required_state": "predecessor_baseline_only_not_phase23_closure", "authority": "scripts/phase23_issue_health_opening.py"}
+      ],
+      "observed_loss_states": ["stale_evidence"],
+      "candidate_evidence": ["PR#275 exact head pull_request population 116/116 passed; zero unresolved review threads"],
+      "closure_evidence": ["merged main a26103fd40dd8c3762efe05c593d5ad111e7a50a", "issue #240 closed after current-main guard validation"],
+      "assumptions": [],
+      "non_goals": ["no #106 resource semantic change", "no fallback", "no Directory-specific native exception"],
+      "parked_scope": ["Assurance Phases C-E"]
+    },
+    {
+      "id": "phase23_issue105_planned_same_scope_R1_pilot",
+      "issue": 105,
+      "state": "planned_R1_pilot",
+      "risk_class": "R1",
+      "source_identity": {
+        "repository": "garthtrickett/gust",
+        "observed_main_sha": "4ba10f35c3603dffdc9bf740d200af0df17691f2",
+        "base_sha": "4ba10f35c3603dffdc9bf740d200af0df17691f2",
+        "observed_at_utc": "2026-08-31T05:00:00Z"
+      },
+      "authority_references": [
+        {"kind": "operator_authority", "path": "TASK.md#Roadmap-Activation", "role": "authorizes the Phase A/B report-only R1 pilot preparation"},
+        {"kind": "inherited_contract", "path": "TASK.md#Patch-23.6", "role": "only current-lexical-scope second declarations reject"},
+        {"kind": "inherited_contract", "path": "docs/SHARED_SEMANTIC_ZONE.md#Not-in-the-zone", "role": "rejecting a currently miscompiled program is bounded diagnostic work"},
+        {"kind": "inherited_contract", "path": "docs/VISION.md#0.15", "role": "no new operator decision is represented by this envelope"},
+        {"kind": "candidate_evidence", "path": "compiler/phase23_same_scope_duplicate_current.gst", "role": "current accepted source/host-C rejection witness before implementation"},
+        {"kind": "closure_evidence", "path": "TASK.md#Patch-23.6a", "role": "isolated bootstrap seed reconvergence follows semantic implementation"}
+      ],
+      "expected_inventory": [
+        {"id": "same_scope_duplicate", "required_state": "Gust_rejects_before_backend", "authority": "TASK.md Patch 23.6"},
+        {"id": "parent_scope_shadow", "required_state": "accepted", "authority": "TASK.md Patch 23.6"},
+        {"id": "disjoint_block_reuse_assignment_different_function", "required_state": "accepted", "authority": "TASK.md Patch 23.6"},
+        {"id": "explicit_C_and_Cranelift_diagnostic", "required_state": "same_acceptance_and_diagnostic", "authority": "TASK.md Patch 23.6"},
+        {"id": "bootstrap_seed", "required_state": "isolated_stage2_stage3_byte_identity_in_Patch_23.6a", "authority": "AGENTS.md Bootstrap seed"}
+      ],
+      "observed_loss_states": ["not_executed", "unresolved"],
+      "candidate_evidence": ["none; implementation patch 23.6 has not begun"],
+      "closure_evidence": ["none; #105 remains open pending current-main semantic and seed evidence"],
+      "assumptions": ["current witnesses accurately delimit same-scope versus parent-scope behavior until Patch 23.6 reproduces the complete cohort"],
+      "non_goals": ["no whole-function uniqueness rule", "no parent-scope rejection", "no change to canonical MIR or ABI"],
+      "parked_scope": ["Assurance Phases C-E", "Phase 24 generated-C removal", "Phase 25 bootstrap-C removal"]
+    }
+  ]
+}
