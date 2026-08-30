@@ -1,9 +1,9 @@
 # GitHub issue roadmap
 
-**Status:** repository-wide routing index  
-**Last audited:** 2026-08-29  
-**Audited GitHub repository:** `garthtrickett/gust`  
-**Audited main:** `db4b58bdd78dde41226f9a1e110d555a3c7f5d5d`
+**Status:** repository-wide routing index
+**Last audited:** 2026-08-30
+**Audited GitHub repository:** `garthtrickett/gust`
+**Audited main:** `3c437227ae75a7b90a14916bd8d23df6799d5f00`
 
 This file gives every open GitHub issue an owned place in Gust's Markdown
 roadmap. It prevents an issue from being technically well reported but absent
@@ -55,7 +55,6 @@ change a VISION decision, or widen the active Phase 22 boundary.
 | Issue | Disposition and owner | Roadmap destination | Ordering and closure evidence |
 | --- | --- | --- | --- |
 | [#240 — Phase 20 resource-acquisition parity guard expects a pre-migration native deferral](https://github.com/garthtrickett/gust/issues/240) | **Repair; Cranelift control-plane owner.** Semantic authority remains closed; the stale positive-route assertions do not. | `docs/SEMANTIC_CHANGE_ASSURANCE.md` Phase A/B input in the post-Phase 22 assurance checkpoint, before Phase 23. | Preserve #106 semantics and negative parity; qualify current supported positive executables with a real driver. Close only when the focused guard passes on current main and its retained invariant is named. |
-| [#110 — Two MIR surface guards fail](https://github.com/garthtrickett/gust/issues/110) | **Implementation authority selected; Cranelift/MIR owner; closure evidence pending.** Patch 23.2 retains the complete fixture-only lowering invariant, makes it normally reachable and mutation-sensitive, and retires the obsolete MIR-to-C location guard without changing executable behavioural coverage. | Phase 23 Patch 23.2, then `docs/SEMANTIC_CHANGE_ASSURANCE.md` Phase A/B historical input. | Keep the issue open until the implementation is merged, the retained guard passes on exact current main, and this ledger plus the issue cite the exact PR and merge commit. |
 | [#105 — Same-scope local redeclaration reaches the C compiler](https://github.com/garthtrickett/gust/issues/105) | **Bounded diagnostic repair; Cranelift compiler owner.** Current evidence narrows this to duplicate declarations in one lexical scope; disjoint block reuse is valid, and the earlier per-branch-scope prerequisite has landed. | Post-Phase 22 issue-health checkpoint, as its own compiler patch before Phase 23 de-emphasises the C oracle. | Reject only a second declaration in the current lexical scope; preserve parent-scope shadowing and disjoint-block reuse. Correct `GEMINI.md`'s overbroad whole-function rule and close on positive and negative compiler/bootstrapping evidence. |
 | [#133 — Define `str ==` and `!=` as content equality](https://github.com/garthtrickett/gust/issues/133) | **Deferred semantic change; Cranelift owner.** `TASK_STDLIB.md` CR-1 remains the coordination authority. | Post-Phase 25 language-ergonomics roadmap, after CR-15 handoff unless separately activated earlier. | Generic operator semantics only; no new runtime symbol or backend special case. Close on positive equality/inequality coverage for the then-supported compiler path and bootstrap chain. Do not reintroduce a retired C backend merely to preserve the issue's historical parity wording. |
 | [#102 — Safe enum variant construction / `Option`](https://github.com/garthtrickett/gust/issues/102) | **Deferred generic semantic change; Cranelift owner.** `TASK_STDLIB.md` CR-14 establishes that an `Option`-only helper is forbidden. | Post-Phase 25 language-ergonomics roadmap, after CR-15 handoff; before the OD-9 demo experiment. | Implement generic enum-variant construction for user enums and `Option`, with no representation-field spelling in ordinary source. Close on safe construction, match/destructuring, diagnostics, and bootstrap evidence. |
@@ -66,11 +65,9 @@ change a VISION decision, or widen the active Phase 22 boundary.
 
 ## Audit result
 
-All nine GitHub issues open on 2026-08-29 are represented above. None qualified
-for closure on audited main:
+All eight GitHub issues open on 2026-08-30 are represented above. Issue #110
+qualified for closure on audited main; the remaining issues did not:
 
-- #110 has a bounded Patch 23.2 implementation authority, but remains open until
-  merged current-main guard and exact PR/merge evidence are recorded;
 - #133's rejection diagnostic remains in the self-hosted typechecker;
 - #102 remains an open CR-14 generic-construction gap;
 - `std.Spawn` remains registered and detached for #101;
@@ -82,8 +79,6 @@ for closure on audited main:
 
 ## Closed issue ledger
 
-No issue moved to the closed ledger in the 2026-08-29 audit. Add future rows as:
-
 | Issue | Closure evidence | Roadmap item |
 | --- | --- | --- |
-| `#N` | PR, merge commit, exact current-main validation | owning patch or milestone |
+| [#110 — Two MIR surface guards fail](https://github.com/garthtrickett/gust/issues/110) | PR #271 exact head `bf53fa38a079a8cb9c019872408603ed9c17a356` passed 115/115 `pull_request` workflows with zero unresolved review threads and merged as `3c437227ae75a7b90a14916bd8d23df6799d5f00`; both `just guard-mir-lower-tiny-function-surface` and the Patch 23.2 contract passed on that exact current main. | Phase 23 Patch 23.2; retained historical input for Semantic Change Assurance Phases A/B. |

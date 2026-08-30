@@ -142,7 +142,7 @@ def validate() -> dict:
     require(value.get("contract_version") == "phase23_mir_evidence_owner_v1",
             "contract version drifted")
     require(value.get("status") ==
-            "implementation_ready_pending_merged_current_main_closure",
+            "closed_on_merged_current_main",
             "implementation/closure state drifted")
     require(value.get("issue") == 110 and value.get("owner") == "cranelift",
             "issue or owner drifted")
@@ -187,8 +187,25 @@ def validate() -> dict:
         "required_reachability_exemptions": 0,
     }, "retired location-guard authority drifted")
     require(value.get("issue_closure") == {
-        "state": "pending_implementation_merge",
-        "requirement": "close_only_after_current_main_guard_passes_and_the_issue_and_routing_ledger_cite_exact_PR_and_merge_evidence",
+        "state": "closed_after_merged_current_main_validation",
+        "implementation_pull_request": 271,
+        "implementation_exact_head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356",
+        "implementation_merged_main_sha": "3c437227ae75a7b90a14916bd8d23df6799d5f00",
+        "pull_request_event": "pull_request",
+        "successful_workflows": 115,
+        "total_workflows": 115,
+        "unfinished_workflows": 0,
+        "non_success_workflows": 0,
+        "unresolved_review_threads": 0,
+        "current_main_validation": {
+            "sha": "3c437227ae75a7b90a14916bd8d23df6799d5f00",
+            "commands": [
+                "just guard-mir-lower-tiny-function-surface",
+                "just guard-cranelift-phase23-mir-evidence-owner-contract",
+            ],
+            "result": "completed_success",
+        },
+        "issue_state": "closed",
     }, "issue-closure sequencing drifted")
     require(value.get("boundary") == {
         "changes_production_MIR_or_MIR_to_C_capability": False,
@@ -200,12 +217,12 @@ def validate() -> dict:
         "edits_stdlib_or_CR15": False,
         "begins_patch23_3": False,
     }, "Patch 23.2 boundary drifted")
-    require("- [ ] Patch 23.2 — MIR Evidence-Owner Repair and Retirement (#110)" in
+    require("- [x] Patch 23.2 — MIR Evidence-Owner Repair and Retirement (#110) — DONE" in
             TASK.read_text(encoding="utf-8"),
-            "Patch 23.2 must remain open until merged-main closure evidence")
-    require("Implementation authority selected; Cranelift/MIR owner; closure evidence pending." in
+            "TASK status does not record Patch 23.2 closure")
+    require("PR #271 exact head `bf53fa38a079a8cb9c019872408603ed9c17a356` passed 115/115" in
             ISSUE_ROADMAP.read_text(encoding="utf-8"),
-            "issue routing ledger does not preserve the merged-main closure boundary")
+            "issue routing ledger does not cite exact implementation evidence")
     return value
 
 
@@ -247,11 +264,17 @@ def render(value: dict) -> str:
         "into `compiler/typechecker.gst`; the retained exact cohort must reject it.",
         "Executable MIR-to-C behavioural guards remain unchanged.",
         "",
-        "## Closure sequencing",
+        "## Closure evidence",
         "",
-        "Issue #110 remains open in this implementation revision. It may close only "
-        "after this guard is merged and passes from exact current main, and after "
-        "the issue plus `docs/ISSUE_ROADMAP.md` cite the exact PR and merge commit.",
+        f"PR `#{value['issue_closure']['implementation_pull_request']}` exact head "
+        f"`{value['issue_closure']['implementation_exact_head_sha']}` passed "
+        f"`{value['issue_closure']['successful_workflows']}/"
+        f"{value['issue_closure']['total_workflows']}` pull-request workflows with "
+        f"`{value['issue_closure']['unresolved_review_threads']}` unresolved review threads "
+        f"and merged as `{value['issue_closure']['implementation_merged_main_sha']}`.",
+        "The retained lowering guard and Patch 23.2 contract both passed from that "
+        "exact merged current main. Issue #110 is closed and the routing ledger cites "
+        "the same exact PR, head, merge, and current-main evidence.",
         "",
         "No production MIR/MIR-to-C capability, accepted Gust meaning, MIR operation, "
         "backend route, ABI/layout/runtime symbol, bootstrap seed, Stdlib, or CR-15 "
