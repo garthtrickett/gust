@@ -32,6 +32,17 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - Deletions: 186
 - Net line delta: 1908
 
+## Phase 23 successor transition
+
+- Contract: `phase23_diagnostic_seed_reconvergence_transition_v1`
+- Status: `ready_for_seed_publication`
+- Authority base main: `d49cf1835972951b806621b798e7f905aa95df1a`
+- Accounted compiler authorities: `phase23_structured_guard_defer_native_admission_v1, phase23_same_scope_declaration_v1`
+- Seed PR policy: `gust_v4_c_only`
+- Partial or unregistered identity: `rejected`
+- Accepted `pre_publication` identity: 64825 lines, `c2e2cd6d5043af87aacc007d92b105d673bbeea7e8f484a61e18126f39a32383`
+- Accepted `post_publication` identity: 64929 lines, `33b23ff4e8dab6c84365920bf3a2a674d7e3f5248646f6ffd69c8f7cc014083a`
+
 The regenerated seed serializes the final Patch 22.6 compiler sources.
 Stage 2 and stage 3 are byte-identical through explicit MIR-to-C. A
 compiler rebuilt directly from this seed reports Cranelift as the

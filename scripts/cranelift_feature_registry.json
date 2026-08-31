@@ -3947,6 +3947,38 @@
       "deletions": 186,
       "line_delta": 1908
     },
+    "phase23_successor_transition": {
+      "contract_version": "phase23_diagnostic_seed_reconvergence_transition_v1",
+      "status": "ready_for_seed_publication",
+      "predecessor_seed_authority": "phase22_default_route_seed_convergence_v1",
+      "authority_base_main": "d49cf1835972951b806621b798e7f905aa95df1a",
+      "accounted_compiler_authorities": [
+        "phase23_structured_guard_defer_native_admission_v1",
+        "phase23_same_scope_declaration_v1"
+      ],
+      "accepted_live_seed_identities": [
+        {
+          "state": "pre_publication",
+          "line_count": 64825,
+          "sha256": "c2e2cd6d5043af87aacc007d92b105d673bbeea7e8f484a61e18126f39a32383"
+        },
+        {
+          "state": "post_publication",
+          "line_count": 64929,
+          "sha256": "33b23ff4e8dab6c84365920bf3a2a674d7e3f5248646f6ffd69c8f7cc014083a"
+        }
+      ],
+      "generated_seed_diff": {
+        "previous_lines": 64825,
+        "current_lines": 64929,
+        "insertions": 154,
+        "deletions": 50,
+        "line_delta": 104
+      },
+      "seed_pr_policy": "gust_v4_c_only",
+      "partial_or_unregistered_identity": "rejected",
+      "closure_transition": "collapse_to_post_publication_after_seed_merge"
+    },
     "boundary": {
       "adds_or_changes_Gust_semantics": false,
       "adds_or_changes_MIR_or_native_lowering": false,

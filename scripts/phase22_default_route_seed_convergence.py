@@ -25,6 +25,68 @@ def require(condition: bool, message: str) -> None:
         raise SystemExit(f"{GUARD}: {message}")
 
 
+def accepted_live_seed_identities(record: dict) -> list[dict]:
+    transition = record.get("phase23_successor_transition")
+    require(transition == {
+        "contract_version": "phase23_diagnostic_seed_reconvergence_transition_v1",
+        "status": "ready_for_seed_publication",
+        "predecessor_seed_authority": "phase22_default_route_seed_convergence_v1",
+        "authority_base_main": "d49cf1835972951b806621b798e7f905aa95df1a",
+        "accounted_compiler_authorities": [
+            "phase23_structured_guard_defer_native_admission_v1",
+            "phase23_same_scope_declaration_v1",
+        ],
+        "accepted_live_seed_identities": [
+            {
+                "state": "pre_publication",
+                "line_count": 64825,
+                "sha256": "c2e2cd6d5043af87aacc007d92b105d673bbeea7e8f484a61e18126f39a32383",
+            },
+            {
+                "state": "post_publication",
+                "line_count": 64929,
+                "sha256": "33b23ff4e8dab6c84365920bf3a2a674d7e3f5248646f6ffd69c8f7cc014083a",
+            },
+        ],
+        "generated_seed_diff": {
+            "previous_lines": 64825,
+            "current_lines": 64929,
+            "insertions": 154,
+            "deletions": 50,
+            "line_delta": 104,
+        },
+        "seed_pr_policy": "gust_v4_c_only",
+        "partial_or_unregistered_identity": "rejected",
+        "closure_transition": "collapse_to_post_publication_after_seed_merge",
+    }, "Phase 23 seed successor transition drifted")
+    identities = transition["accepted_live_seed_identities"]
+    require(len({(row["line_count"], row["sha256"]) for row in identities}) == 2,
+            "Phase 23 seed transition identities are not distinct")
+    successor_diff = transition["generated_seed_diff"]
+    require(successor_diff["current_lines"] - successor_diff["previous_lines"] ==
+            successor_diff["line_delta"] and
+            successor_diff["insertions"] - successor_diff["deletions"] ==
+            successor_diff["line_delta"],
+            "Phase 23 generated seed line delta is inconsistent")
+    return identities
+
+
+def accepted_live_seed_line_counts(record: dict) -> set[int]:
+    return {row["line_count"] for row in accepted_live_seed_identities(record)}
+
+
+def accepted_live_seed_line_count(record: dict, actual_line_count: int) -> int:
+    require(actual_line_count in accepted_live_seed_line_counts(record),
+            "committed seed line count is outside the exact Phase 23 transition")
+    return actual_line_count
+
+
+def live_seed_identity_is_accepted(record: dict, line_count: int, sha256: str) -> bool:
+    return any({"line_count": line_count, "sha256": sha256} == {
+        "line_count": row["line_count"], "sha256": row["sha256"],
+    } for row in accepted_live_seed_identities(record))
+
+
 def validate() -> dict:
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     prior_seed = registry.get("phase21_native_feature_seed_convergence", {})
@@ -99,10 +161,13 @@ def validate() -> dict:
 
     seed_bytes = SEED.read_bytes()
     seed_text = seed_bytes.decode("utf-8")
-    require(len(seed_text.splitlines()) == diff["current_lines"],
-            "committed seed line count drifted")
-    require(hashlib.sha256(seed_bytes).hexdigest() == record["converged_seed_digest"],
-            "committed seed digest drifted")
+    live_seed_identity = {
+        "line_count": len(seed_text.splitlines()),
+        "sha256": hashlib.sha256(seed_bytes).hexdigest(),
+    }
+    require(live_seed_identity_is_accepted(
+        record, live_seed_identity["line_count"], live_seed_identity["sha256"]),
+            "committed seed is neither exact pre-publication nor post-publication identity")
     for help_fragment in (
         "cranelift  Compile to one native executable (default).",
         "mir-to-c, c  Emit C source to stdout (retained semantic oracle).",
@@ -148,6 +213,7 @@ def validate() -> dict:
 
 def render(record: dict) -> str:
     diff = record["generated_seed_diff"]
+    transition = record["phase23_successor_transition"]
     return "\n".join([
         "# Cranelift Phase 22 Default-Route Seed Convergence",
         "",
@@ -179,6 +245,19 @@ def render(record: dict) -> str:
         f"- Insertions: {diff['insertions']}",
         f"- Deletions: {diff['deletions']}",
         f"- Net line delta: {diff['line_delta']}",
+        "",
+        "## Phase 23 successor transition",
+        "",
+        f"- Contract: `{transition['contract_version']}`",
+        f"- Status: `{transition['status']}`",
+        f"- Authority base main: `{transition['authority_base_main']}`",
+        f"- Accounted compiler authorities: `{', '.join(transition['accounted_compiler_authorities'])}`",
+        f"- Seed PR policy: `{transition['seed_pr_policy']}`",
+        f"- Partial or unregistered identity: `{transition['partial_or_unregistered_identity']}`",
+    ] + [
+        f"- Accepted `{row['state']}` identity: {row['line_count']} lines, `{row['sha256']}`"
+        for row in transition["accepted_live_seed_identities"]
+    ] + [
         "",
         "The regenerated seed serializes the final Patch 22.6 compiler sources.",
         "Stage 2 and stage 3 are byte-identical through explicit MIR-to-C. A",
