@@ -74,6 +74,7 @@
     "phase23_resource_acquisition_parity",
     "phase23_structured_guard_defer_native_admission",
     "phase23_assurance_phase_a",
+    "phase23_assurance_phase_b",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -2965,6 +2966,25 @@
           "selected_current_pilot": {"const": 105},
           "authorization": {"const": "phase_A_and_phase_B_report_only"},
           "forbidden": {"type": "array", "minItems": 6, "uniqueItems": true, "items": {"type": "string"}},
+          "boundary": {"type": "object"}
+        }
+      },
+      "phase23_assurance_phase_b": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version", "status", "owner", "phase_a_envelopes", "manifests",
+                     "review_view", "renderer", "guard", "authorization", "forbidden", "boundary"],
+        "properties": {
+          "contract_version": {"const": "phase23_assurance_phase_b_v1"},
+          "status": {"const": "phase23_5_complete_report_only"},
+          "owner": {"const": "cranelift"},
+          "phase_a_envelopes": {"const": "scripts/phase23_assurance_envelopes.json"},
+          "manifests": {"const": "scripts/phase23_assurance_manifests.json"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE23_ASSURANCE_PHASE_B.md"},
+          "renderer": {"const": "scripts/phase23_assurance_phase_b.py"},
+          "guard": {"const": "guard-cranelift-phase23-assurance-phase-b-contract"},
+          "authorization": {"const": "phase_A_and_phase_B_report_only"},
+          "forbidden": {"type": "array", "minItems": 7, "uniqueItems": true, "items": {"type": "string"}},
           "boundary": {"type": "object"}
         }
       },

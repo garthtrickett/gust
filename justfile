@@ -23706,3 +23706,15 @@ guard-cranelift-phase23-assurance-phase-a-contract:
     python3 scripts/cranelift_registry.py validate
     python3 scripts/phase23_assurance_phase_a.py validate
     python3 scripts/phase23_assurance_phase_a.py check-review
+
+# Cranelift lane, Patch 23.5. Evaluate only captured deterministic manifests;
+# do not execute candidate code or add a workflow/merge authority.
+guard-cranelift-phase23-assurance-phase-b-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧾 Checking Phase 23 deterministic report-only assurance evaluator..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase23-assurance-phase-b-contract | grep -F $'guard-cranelift-phase23-assurance-phase-b-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase23_assurance_phase_b.py validate
+    python3 scripts/phase23_assurance_phase_b.py check-review

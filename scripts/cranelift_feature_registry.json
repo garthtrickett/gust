@@ -4533,6 +4533,38 @@
       "begins_patch23_5": false
     }
   },
+  "phase23_assurance_phase_b": {
+    "contract_version": "phase23_assurance_phase_b_v1",
+    "status": "phase23_5_complete_report_only",
+    "owner": "cranelift",
+    "phase_a_envelopes": "scripts/phase23_assurance_envelopes.json",
+    "manifests": "scripts/phase23_assurance_manifests.json",
+    "review_view": "compiler/CRANELIFT_PHASE23_ASSURANCE_PHASE_B.md",
+    "renderer": "scripts/phase23_assurance_phase_b.py",
+    "guard": "guard-cranelift-phase23-assurance-phase-b-contract",
+    "authorization": "phase_A_and_phase_B_report_only",
+    "forbidden": [
+      "assurance_phases_C_D_or_E",
+      "independent_model_review",
+      "protected_publication",
+      "repository_rule_changes",
+      "new_required_status_check",
+      "new_workflow",
+      "candidate_code_execution"
+    ],
+    "boundary": {
+      "changes_compiler_behavior": false,
+      "changes_accepted_Gust_program_meaning": false,
+      "changes_MIR_or_native_lowering": false,
+      "changes_ABI_layout_or_runtime_symbols": false,
+      "changes_backend_route_or_fallback": false,
+      "changes_bootstrap_seed": false,
+      "edits_stdlib_or_CR15": false,
+      "adds_workflow_or_required_status": false,
+      "executes_candidate_code": false,
+      "begins_patch23_6": false
+    }
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",
