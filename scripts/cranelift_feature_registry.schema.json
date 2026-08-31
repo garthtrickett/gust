@@ -2994,10 +2994,10 @@
         "additionalProperties": false,
         "required": ["contract_version", "status", "issue", "owner", "review_view",
                      "diagnostic", "negative", "positives", "oracle", "default_native", "assurance",
-                     "phase22_closed_inventory_extension", "boundary"],
+                     "phase22_closed_inventory_extension", "issue_closure", "boundary"],
         "properties": {
           "contract_version": {"const": "phase23_same_scope_declaration_v1"},
-          "status": {"const": "implementation_ready_pending_merged_current_main_closure"},
+          "status": {"enum": ["implementation_ready_pending_merged_current_main_closure", "closed_on_merged_current_main"]},
           "issue": {"const": 105},
           "owner": {"const": "cranelift"},
           "review_view": {"const": "compiler/CRANELIFT_PHASE23_SAME_SCOPE_DECLARATION.md"},
@@ -3008,6 +3008,40 @@
           "default_native": {"const": "same_duplicate_diagnostic_before_native_capability_selection; valid_cases_retain_explicit_native_capability_deferral_without_fallback"},
           "assurance": {"const": "scripts/phase23_same_scope_declaration_assurance.json"},
           "phase22_closed_inventory_extension": {"type": "object"},
+          "issue_closure": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["state", "implementation_pull_request",
+                         "implementation_exact_head_sha", "implementation_merged_main_sha",
+                         "pull_request_event", "successful_workflows", "total_workflows",
+                         "unfinished_workflows", "non_success_workflows",
+                         "unresolved_review_threads", "current_main_validation",
+                         "issue_state", "bootstrap_seed_status"],
+            "properties": {
+              "state": {"const": "closed_after_merged_current_main_validation"},
+              "implementation_pull_request": {"const": 278},
+              "implementation_exact_head_sha": {"const": "74b259d2c7573b4929f2ffa331a261085a16e894"},
+              "implementation_merged_main_sha": {"const": "f6814323588eeb5321a7c0e20210aec802be568f"},
+              "pull_request_event": {"const": "pull_request"},
+              "successful_workflows": {"const": 120},
+              "total_workflows": {"const": 120},
+              "unfinished_workflows": {"const": 0},
+              "non_success_workflows": {"const": 0},
+              "unresolved_review_threads": {"const": 0},
+              "current_main_validation": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["sha", "commands", "result"],
+                "properties": {
+                  "sha": {"const": "f6814323588eeb5321a7c0e20210aec802be568f"},
+                  "commands": {"const": ["make gust", "make phase10-native-package", "just guard-cranelift-phase23-same-scope-declaration-evidence"]},
+                  "result": {"const": "completed_success"}
+                }
+              },
+              "issue_state": {"const": "closed"},
+              "bootstrap_seed_status": {"const": "unchanged_deferred_to_patch23_6a"}
+            }
+          },
           "boundary": {"type": "object"}
         }
       },
