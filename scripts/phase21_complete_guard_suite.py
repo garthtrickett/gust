@@ -707,6 +707,10 @@ def evidence() -> None:
     expected_reason_counts = dict(classification["compile_deferral_reason_counts"])
     for reason, delta in transition["reason_count_deltas"].items():
         expected_reason_counts[reason] += delta
+    expected_reason_counts = {
+        reason: count for reason, count in expected_reason_counts.items()
+        if count != 0
+    }
     require(reason_counts == expected_reason_counts,
             f"compile deferral population drifted: {reason_counts}")
     require(required_count ==
