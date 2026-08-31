@@ -2008,7 +2008,10 @@ func mir_native_structured_cfg_deferred_reason(
                     }
                 }
             }
-            if statement.tag == 8 || statement.tag == 9 {
+            // `guard` and `defer` are already represented by the generic
+            // full-program canonical operations GuardUnwrap and ScheduleDefer.
+            // Do not let this narrower i32 CFG probe preempt that route.
+            if statement.tag == 8 {
                 return std.Clone(
                     ctx,
                     "deferred_p13_structured_cfg_non_reducible_shape"

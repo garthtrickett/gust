@@ -208,6 +208,8 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase18-deferral-audit'
       'Phase 18 target object and linker closure'
       'just guard-cranelift-phase18-close'
+      'Phase 23 structured guard/defer native admission'
+      'just guard-cranelift-phase23-structured-guard-defer-native-admission-contract'
       'Phase 19 brand identity and value representation opening'
       'just guard-cranelift-phase19-opening-contract'
       'Phase 20 opening evidence and qualification authority'
@@ -23658,3 +23660,24 @@ guard-cranelift-phase23-mir-evidence-owner-contract:
     python3 scripts/phase23_mir_evidence_owner.py falsifiers
     python3 scripts/phase23_mir_evidence_owner.py retirement
     python3 scripts/phase23_mir_evidence_owner.py check-review
+
+# Cranelift lane, Patch 23.3a. A generic typed guard/defer source admission
+# hands off to the existing full-program canonical-MIR operations without a
+# resource, fixture, or source-path exception.
+guard-cranelift-phase23-structured-guard-defer-native-admission-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Checking Phase 23 structured guard/defer native admission..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase23-structured-guard-defer-native-admission-contract | grep -F $'guard-cranelift-phase23-structured-guard-defer-native-admission-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase23_structured_guard_defer_native_admission.py validate
+    python3 scripts/phase23_structured_guard_defer_native_admission.py check-review
+
+guard-cranelift-phase23-structured-guard-defer-native-admission-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    make gust
+    make phase10-native-package
+    just guard-cranelift-phase23-structured-guard-defer-native-admission-contract
+    python3 scripts/phase23_structured_guard_defer_native_admission.py evidence

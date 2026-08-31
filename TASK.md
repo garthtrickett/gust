@@ -57,6 +57,10 @@ In scope:
 
 - current-main repair or principled retirement of issues #110 and #240's stale
   control-plane evidence, with retained invariants reachable and green;
+- one generic Patch 23.3a source-admission handoff for already-defined
+  full-program `GuardUnwrap` and `ScheduleDefer` canonical operations, so an
+  earlier bounded structured-CFG probe cannot preempt that existing native
+  route;
 - Semantic Change Assurance Phase A authority/trigger inventory and Phase B
   deterministic evaluator in report-only mode, using #110 and #240 as concrete
   stale-evidence inputs and preparing #105 as the selected current pilot;
@@ -95,8 +99,10 @@ Out of scope:
   away from explicit MIR-to-C, removing the host C compiler from bootstrap, or
   claiming a native bootstrap seed;
 - changing accepted Gust meaning except the exact roadmap-authorized #105
-  rejection; changing canonical MIR, MIR operation meaning, Cranelift lowering,
-  ABI/layout, runtime symbols, target/linker policy, resource/move/provenance
+  rejection; adding or changing canonical MIR operations or their meaning,
+  except for Patch 23.3a's generic source-admission handoff to the existing
+  full-program `GuardUnwrap` and `ScheduleDefer` lowering; changing ABI/layout,
+  runtime symbols, target/linker policy, resource/move/provenance
   semantics, or Phase 9G ownership;
 - adding a fallback, retry-through-C, environment-selected route, feature
   exception, compiler-module exception, stdlib-type exception, or backend-only
@@ -112,6 +118,7 @@ Out of scope:
 - [x] Patch 23.1 — Post-Phase-22 Assurance and Issue-Health Opening — DONE
 - [x] Patch 23.2 — MIR Evidence-Owner Repair and Retirement (#110) — DONE
 - [ ] Patch 23.3 — Resource-Acquisition Parity Evidence Repair (#240)
+- [ ] Patch 23.3a — Structured Guard/Defer Native Admission
 - [ ] Patch 23.4 — Assurance Phase A Authority and Trigger Inventory
 - [ ] Patch 23.5 — Assurance Phase B Deterministic Report-Only Evaluator
 - [ ] Patch 23.6 — Same-Scope Declaration Diagnostic (#105)
@@ -261,6 +268,33 @@ oracle observables; every negative case retains its compiler-owned diagnostic;
 the guard rejects missing driver, fallback, missing artifact, stale deferral,
 and empty selection; no resource semantics changed; and #240 has current-main
 closure evidence.
+
+## Patch 23.3a — Structured Guard/Defer Native Admission
+
+On 2026-08-30 the operator authorized this inserted Cranelift-owned
+prerequisite after Patch 23.3 re-derived that a valid directory acquisition
+program is preempted before driver discovery by the bounded structured-CFG
+probe. Make the generic source-admission handoff route typed `guard` and
+`defer` statements to the existing full-program canonical-MIR operations
+`GuardUnwrap` and `ScheduleDefer`. Preserve their existing validation and
+Cranelift lowering. The handoff must be based on typed AST operation kind, not
+on a resource, directory, fixture, module, or source-path exception.
+
+This patch does not add a MIR operation, change the meaning of an existing MIR
+operation, change resource acquisition, cleanup, destructor, move, provenance,
+ABI, layout, runtime, target, linker, fallback, or publication semantics. It
+does not widen the earlier bounded structured-CFG subset: loop/backedge,
+short-circuit, and unsupported condition deferrals remain explicit. MIR-to-C
+remains the semantic oracle.
+
+**Exit Gate:** the generic handoff is registry-owned and schema-validated;
+positive guard/defer source reaches the existing native full-program driver and
+matches MIR-to-C exit status, streams, artifact policy, and registered cleanup
+observables; retained unsupported structured-CFG categories remain deferred
+before driver discovery; mutation-sensitive tests reject restoration of the
+preempting deferral or a fixture/path-specific exception; and no canonical MIR
+operation, semantic authority, ABI/layout/runtime symbol, bootstrap seed, or
+Stdlib/CR-15 authority changes.
 
 ## Patch 23.4 — Assurance Phase A Authority and Trigger Inventory
 
@@ -482,6 +516,7 @@ MIR-to-C. Phase 24 and Phase 25 remain inactive.
 23.0 roadmap activation
 → 23.1 checkpoint opening
 → 23.2 #110 evidence health
+→ 23.3a generic guard/defer native admission
 → 23.3 #240 parity health
 → 23.4 Assurance A
 → 23.5 Assurance B report-only evaluator

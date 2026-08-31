@@ -4385,6 +4385,68 @@
       "begins_patch23_3": false
     }
   },
+  "phase23_structured_guard_defer_native_admission": {
+    "contract_version": "phase23_structured_guard_defer_native_admission_v1",
+    "status": "patch23_3a_complete",
+    "next_patch": "23.3",
+    "owner": "cranelift",
+    "review_view": "compiler/CRANELIFT_PHASE23_STRUCTURED_GUARD_DEFER_NATIVE_ADMISSION.md",
+    "source_admission": {
+      "narrow_probe": "mir_native_structured_cfg_deferred_reason",
+      "full_program_route": "mir_native_full_program_source_lower",
+      "typed_ast_tags": [9, 11],
+      "canonical_operations": ["GuardUnwrap", "ScheduleDefer"],
+      "scalar_signature_policy": "a_function_only_typed_program_with_both_guard_and_defer_may_use_the_existing_full_program_route_when_no_non_scalar_signature_selects_it"
+    },
+    "fixtures": {
+      "positive": "compiler/phase20_resource_acquisition_directory_source.gst",
+      "retained_deferred": "compiler/phase13_structured_cfg_short_circuit_deferred_source.gst",
+      "retained_declarations": ["tests/e2e_formatting_utilities.gst", "tests/e2e_native_collections_evaluation.gst"]
+    },
+    "phase22_closed_inventory_extension": {
+      "status": "exact_phase23_extension_excluded_only_from_phase22_relay_identity",
+      "owning_patch": "23.3a",
+      "path": "scripts/phase23_structured_guard_defer_native_admission.py",
+      "selection": ["explicit_c", "explicit_cranelift", "explicit_cranelift", "explicit_cranelift"],
+      "invocation_count": 4,
+      "commands": [
+        "[str(GUST), '--backend', 'mir-to-c', str(source)]",
+        "[str(GUST), '--backend', 'cranelift', '-o', str(artifact), str(source)]",
+        "[str(GUST), '--backend', 'cranelift', '-o', str(artifact), str(source)]",
+        "[str(GUST), '--backend', 'cranelift', '-o', str(artifact), str(source)]"
+      ]
+    },
+    "phase21_complete_suite_transition": {
+      "status": "exact_phase23_guard_defer_admission_overlay",
+      "admitted_runner_fixtures": [
+        "tests/e2e_guard_hashmap_lookup.gst",
+        "tests/e2e_guard_mutability.gst"
+      ],
+      "required_native_case_delta": 2,
+      "classified_deferral_delta": -2,
+      "reason_count_deltas": {
+        "deferred_p13_structured_cfg_non_reducible_shape": -2
+      }
+    },
+    "observables": {
+      "exit_status": 0,
+      "stdout": "",
+      "stderr": "",
+      "native_artifact": "nonempty_linked_executable",
+      "oracle": "mir_to_c"
+    },
+    "boundary": {
+      "changes_accepted_Gust_program_meaning": false,
+      "adds_or_changes_MIR_operations": false,
+      "changes_existing_MIR_operation_meaning": false,
+      "changes_resource_move_or_cleanup_semantics": false,
+      "changes_ABI_layout_or_runtime_symbols": false,
+      "changes_backend_route_or_fallback": false,
+      "changes_bootstrap_seed": false,
+      "edits_stdlib_or_CR15": false,
+      "begins_patch23_3": false
+    }
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",

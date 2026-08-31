@@ -74,6 +74,7 @@ TOP_FIELDS = {
     "phase22_closure",
     "phase23_issue_health_opening",
     "phase23_mir_evidence_owner",
+    "phase23_structured_guard_defer_native_admission",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming", "phase19_classification", "phase19_representation",
