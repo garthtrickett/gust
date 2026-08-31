@@ -75,6 +75,7 @@
     "phase23_structured_guard_defer_native_admission",
     "phase23_assurance_phase_a",
     "phase23_assurance_phase_b",
+    "phase23_same_scope_declaration",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -2985,6 +2986,28 @@
           "guard": {"const": "guard-cranelift-phase23-assurance-phase-b-contract"},
           "authorization": {"const": "phase_A_and_phase_B_report_only"},
           "forbidden": {"type": "array", "minItems": 7, "uniqueItems": true, "items": {"type": "string"}},
+          "boundary": {"type": "object"}
+        }
+      },
+      "phase23_same_scope_declaration": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version", "status", "issue", "owner", "review_view",
+                     "diagnostic", "negative", "positives", "oracle", "default_native", "assurance",
+                     "phase22_closed_inventory_extension", "boundary"],
+        "properties": {
+          "contract_version": {"const": "phase23_same_scope_declaration_v1"},
+          "status": {"const": "implementation_ready_pending_merged_current_main_closure"},
+          "issue": {"const": 105},
+          "owner": {"const": "cranelift"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE23_SAME_SCOPE_DECLARATION.md"},
+          "diagnostic": {"const": "Semantic Error: Duplicate declaration '<name>' in the same lexical scope"},
+          "negative": {"const": "compiler/phase23_same_scope_duplicate_current.gst"},
+          "positives": {"type": "array", "minItems": 4, "maxItems": 4, "uniqueItems": true, "items": {"type": "string"}},
+          "oracle": {"const": "explicit_mir_to_c"},
+          "default_native": {"const": "same_duplicate_diagnostic_before_native_capability_selection; valid_cases_retain_explicit_native_capability_deferral_without_fallback"},
+          "assurance": {"const": "scripts/phase23_same_scope_declaration_assurance.json"},
+          "phase22_closed_inventory_extension": {"type": "object"},
           "boundary": {"type": "object"}
         }
       },

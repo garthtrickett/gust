@@ -294,7 +294,7 @@ assert_rejected_before_driver \
 assert_rejected_before_driver \
   "$duplicate_source" \
   duplicate-declaration \
-  'generic local-state MIR contains a duplicate local declaration'
+  "Semantic Error: Duplicate declaration 'value' in the same lexical scope"
 assert_rejected_before_driver \
   "$type_mismatch_source" \
   type-mismatched-assignment \

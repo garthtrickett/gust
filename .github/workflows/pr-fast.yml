@@ -522,6 +522,9 @@ jobs:
       - name: Phase 23 deterministic report-only assurance evaluator
         run: just guard-cranelift-phase23-assurance-phase-b-contract
 
+      - name: Phase 23 same-scope declaration diagnostic
+        run: just guard-cranelift-phase23-same-scope-declaration-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 

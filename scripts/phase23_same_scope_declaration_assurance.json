@@ -1,0 +1,16 @@
+{
+  "contract_version": "phase23_same_scope_declaration_assurance_v1",
+  "mode": "report_only",
+  "issue": 105,
+  "base_main_sha": "b6264ccef8f35e8fe9b055b685648efec8ac6858",
+  "result": "unqualified_candidate_evidence",
+  "inventory": {
+    "same_scope_duplicate": "Gust_rejects_before_backend",
+    "parent_scope_shadow": "explicit_mir_to_c_accepts",
+    "disjoint_block_reuse": "explicit_mir_to_c_accepts",
+    "assignment": "explicit_mir_to_c_accepts",
+    "different_function_reuse": "explicit_mir_to_c_accepts",
+    "default_native": "duplicate_diagnostic_or_explicit_capability_deferral_without_fallback"
+  },
+  "closure_evidence": "pending_merged_current_main_validation_and_patch23_6a_seed"
+}

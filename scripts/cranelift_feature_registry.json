@@ -4565,6 +4565,50 @@
       "begins_patch23_6": false
     }
   },
+  "phase23_same_scope_declaration": {
+    "contract_version": "phase23_same_scope_declaration_v1",
+    "status": "implementation_ready_pending_merged_current_main_closure",
+    "issue": 105,
+    "owner": "cranelift",
+    "review_view": "compiler/CRANELIFT_PHASE23_SAME_SCOPE_DECLARATION.md",
+    "diagnostic": "Semantic Error: Duplicate declaration '<name>' in the same lexical scope",
+    "negative": "compiler/phase23_same_scope_duplicate_current.gst",
+    "positives": [
+      "compiler/phase23_parent_scope_shadow_current.gst",
+      "compiler/phase23_disjoint_block_reuse_current.gst",
+      "compiler/phase23_assignment_reuse_current.gst",
+      "compiler/phase23_different_function_reuse_current.gst"
+    ],
+    "oracle": "explicit_mir_to_c",
+    "default_native": "same_duplicate_diagnostic_before_native_capability_selection; valid_cases_retain_explicit_native_capability_deferral_without_fallback",
+    "assurance": "scripts/phase23_same_scope_declaration_assurance.json",
+    "phase22_closed_inventory_extension": {
+      "status": "exact_phase23_extension_excluded_only_from_phase22_relay_identity",
+      "owning_patch": "23.6",
+      "path": "scripts/phase23_same_scope_declaration.py",
+      "selection": ["explicit_c", "implicit_default", "explicit_c", "implicit_default"],
+      "invocation_count": 4,
+      "commands": [
+        "[str(GUST), '--backend', 'mir-to-c', str(NEGATIVE)]",
+        "[str(GUST), str(NEGATIVE)]",
+        "[str(GUST), '--backend', 'mir-to-c', str(source)]",
+        "[str(GUST), str(source)]"
+      ],
+      "phase22_relay_contract": "the_exact_six_site_Stdlib_relay_and_306_invocation_inventory_remain_unchanged",
+      "phase23_contract": "all_four_same_scope_evidence_calls_remain_visible_in_the_live_scan_and_are_owned_by_the_Patch_23_6_evidence_guard",
+      "falsifier": "missing_partial_extra_path_command_or_selection_drift_is_rejected"
+    },
+    "boundary": {
+      "rejects_only_current_lexical_scope_duplicate_declarations": true,
+      "preserves_parent_scope_shadowing_disjoint_block_reuse_assignment_and_different_function_reuse": true,
+      "adds_or_changes_MIR_operations": false,
+      "changes_backend_route_or_fallback": false,
+      "changes_ABI_layout_or_runtime_symbols": false,
+      "changes_bootstrap_seed": false,
+      "edits_stdlib_or_CR15": false,
+      "begins_patch23_6a": false
+    }
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",

@@ -43,30 +43,24 @@ func main() {
     mut t1: Test[ctx]; // CORRECT: Branded variable
 }
 ```
-### C. Flat Function Scope & C-Redefinition Invariants
-* **Rule:** All variables declared within a single function block (such as `func main()`) must have completely unique names across that entire block, even if they reside in separate logical phases, test steps, or conditional structures.
-* **Why:** The Gust-to-C transpiler outputs variable declarations directly into flat C function scopes. Unlike more permissive high-level languages, C strictly prohibits redefining a variable name within the same block scope [2]. Attempting to declare `mut x` twice within the same function will compile cleanly in the Gust parser but trigger a fatal C compiler `redefinition of 'x'` error during the native compilation phase [2].
-* **Action:** 
-  * Never copy-paste test scaffolding blocks that reuse identical variable names (e.g., `empty_prog_vec` or `empty_prefixes`) [2].
-  * Always append descriptive, context-specific suffixes to temporary test variables (e.g., use `empty_prog_vec_tl` and `empty_prefixes_tl` for thread-local tests, and `empty_prog_vec_dup` for deduplication tests) [2].
+### C. Lexical Declaration Scope
+* **Rule:** A second `mut` declaration with the same name in the current lexical scope is rejected by Gust. A nested block may shadow a parent binding, and disjoint nested blocks may reuse a name.
+* **Why:** The compiler diagnoses the one source form that would otherwise reach generated C as a same-block redefinition. The diagnostic is a Gust error before either backend is selected; it is not a whole-function naming rule.
+* **Action:** Use ordinary lexical names. Do not add artificial suffixes merely because a name appears in a parent or disjoint block; only avoid declaring the same name twice in one block.
 
 ```gust
-// ❌ Incorrect (Will transpile to C redefinitions in main's flat scope)
+// ❌ Incorrect (two declarations in one lexical scope)
 func main() {
-    // Step 1
-    mut empty_prog_vec: std.Vector[ast.Program[ctx], ctx] := std.VectorNew(ctx);
-    ...
-    // Step 2 (Scaffolding copy-pasted)
-    mut empty_prog_vec: std.Vector[ast.Program[ctx], ctx] := std.VectorNew(ctx); // C ERROR: Redefinition
+    mut value := 1;
+    mut value := 2; // Gust diagnostic: duplicate declaration in the same lexical scope
 }
 
-// ✅ Correct (Unique names per logical context)
+// ✅ Correct (a nested lexical scope may shadow its parent)
 func main() {
-    // Step 1
-    mut empty_prog_vec_dup: std.Vector[ast.Program[ctx], ctx] := std.VectorNew(ctx);
-    ...
-    // Step 2 
-    mut empty_prog_vec_tl: std.Vector[ast.Program[ctx], ctx] := std.VectorNew(ctx); // Safe C transpilation
+    mut value := 1;
+    if 1 {
+        mut value := 2;
+    }
 }
 
 ```

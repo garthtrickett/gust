@@ -23718,3 +23718,22 @@ guard-cranelift-phase23-assurance-phase-b-contract:
     python3 scripts/cranelift_registry.py validate
     python3 scripts/phase23_assurance_phase_b.py validate
     python3 scripts/phase23_assurance_phase_b.py check-review
+
+# Cranelift lane, Patch 23.6. Reject only a second declaration in the current
+# lexical scope; explicit C remains the oracle and the seed stays deferred.
+guard-cranelift-phase23-same-scope-declaration-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Checking Phase 23 same-scope declaration diagnostic..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase23-same-scope-declaration-contract | grep -F $'guard-cranelift-phase23-same-scope-declaration-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase23_same_scope_declaration.py validate
+    python3 scripts/phase23_same_scope_declaration.py check-review
+
+guard-cranelift-phase23-same-scope-declaration-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    make gust
+    just guard-cranelift-phase23-same-scope-declaration-contract
+    python3 scripts/phase23_same_scope_declaration.py evidence

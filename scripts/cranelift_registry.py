@@ -78,6 +78,7 @@ TOP_FIELDS = {
     "phase23_structured_guard_defer_native_admission",
     "phase23_assurance_phase_a",
     "phase23_assurance_phase_b",
+    "phase23_same_scope_declaration",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming", "phase19_classification", "phase19_representation",
