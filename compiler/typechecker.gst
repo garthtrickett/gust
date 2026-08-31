@@ -5729,6 +5729,18 @@ func scope_insert(scope: Index[Scope[ctx], ctx], name: str, t: ast.Type[ctx], ct
     typechecker_log_trace("🗄️", msg, ctx);
 }
 
+func scope_contains_current(scope: Index[Scope[ctx], ctx], name: str, ctx: &Arena) int {
+    if scope == empty[Index[Scope[ctx], ctx]] {
+        return 0;
+    }
+    unsafe {
+        if ctx[scope].bindings.Get(name).Ok {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 func scope_contains(scope: Index[Scope[ctx], ctx], name: str, ctx: &Arena) int {
     mut curr_scope := scope;
     while curr_scope != empty[Index[Scope[ctx], ctx]] {
@@ -13383,6 +13395,13 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut name := stmt.VarDecl.name;
             mut val_idx := stmt.VarDecl.value;
             mut var_type_idx := stmt.VarDecl.var_type;
+
+            if scope_contains_current(scope, name, ctx) == 1 {
+                mut msg := std.Concat("Semantic Error: Duplicate declaration '", name);
+                msg = std.Concat(msg, "' in the same lexical scope");
+                report_error(2, msg, stmt.VarDecl.span, env, ctx);
+                return res;
+            }
 
             mut val_type: ast.Type[ctx];
             val_type.tag = 3; // Void
