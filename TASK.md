@@ -117,7 +117,7 @@ Out of scope:
 - [x] Patch 23.0 — Phase 23 Roadmap Activation — DONE
 - [x] Patch 23.1 — Post-Phase-22 Assurance and Issue-Health Opening — DONE
 - [x] Patch 23.2 — MIR Evidence-Owner Repair and Retirement (#110) — DONE
-- [ ] Patch 23.3 — Resource-Acquisition Parity Evidence Repair (#240)
+- [x] Patch 23.3 — Resource-Acquisition Parity Evidence Repair (#240) — DONE
 - [x] Patch 23.3a — Structured Guard/Defer Native Admission — DONE
 - [ ] Patch 23.4 — Assurance Phase A Authority and Trigger Inventory
 - [ ] Patch 23.5 — Assurance Phase B Deterministic Report-Only Evaluator

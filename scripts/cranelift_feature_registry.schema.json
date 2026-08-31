@@ -2869,7 +2869,7 @@
         "additionalProperties": false,
         "required": ["contract_version", "status", "issue", "owner",
                      "review_view", "retained_guard", "oracle", "native_route",
-                     "positive_cases", "falsifiers", "boundary"],
+                     "positive_cases", "falsifiers", "issue_closure", "boundary"],
         "properties": {
           "contract_version": {"const": "phase23_resource_acquisition_parity_v1"},
           "status": {"enum": ["implementation_ready_pending_merged_current_main_closure", "closed_on_merged_current_main"]},
@@ -2881,6 +2881,46 @@
           "native_route": {"const": "explicit_cranelift_with_absolute_packaged_driver_and_no_fallback"},
           "positive_cases": {"type": "array", "minItems": 3, "maxItems": 3, "uniqueItems": true, "items": {"type": "object"}},
           "falsifiers": {"type": "object"},
+          "issue_closure": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["state", "implementation_pull_request",
+                         "implementation_exact_head_sha",
+                         "implementation_merged_main_sha", "pull_request_event",
+                         "successful_workflows", "total_workflows",
+                         "unfinished_workflows", "non_success_workflows",
+                         "unresolved_review_threads", "current_main_validation",
+                         "issue_state"],
+            "properties": {
+              "state": {"const": "closed_after_merged_current_main_validation"},
+              "implementation_pull_request": {"const": 275},
+              "implementation_exact_head_sha": {"const": "cf97e6e4c99762366fde05002beb475de9cbde6e"},
+              "implementation_merged_main_sha": {"const": "a26103fd40dd8c3762efe05c593d5ad111e7a50a"},
+              "pull_request_event": {"const": "pull_request"},
+              "successful_workflows": {"const": 116},
+              "total_workflows": {"const": 116},
+              "unfinished_workflows": {"const": 0},
+              "non_success_workflows": {"const": 0},
+              "unresolved_review_threads": {"const": 0},
+              "current_main_validation": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["sha", "commands", "result"],
+                "properties": {
+                  "sha": {"const": "a26103fd40dd8c3762efe05c593d5ad111e7a50a"},
+                  "commands": {
+                    "const": [
+                      "make gust",
+                      "just guard-cranelift-phase23-resource-acquisition-parity-contract",
+                      "just guard-cranelift-phase20-resource-acquisition-parity"
+                    ]
+                  },
+                  "result": {"const": "completed_success"}
+                }
+              },
+              "issue_state": {"const": "closed"}
+            }
+          },
           "boundary": {"type": "object"}
         }
       },

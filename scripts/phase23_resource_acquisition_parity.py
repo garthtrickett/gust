@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parent.parent
 REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 REVIEW = ROOT / "compiler/CRANELIFT_PHASE23_RESOURCE_ACQUISITION_PARITY.md"
 TASK = ROOT / "TASK.md"
+ISSUE_ROADMAP = ROOT / "docs/ISSUE_ROADMAP.md"
 PHASE20_GUARD = ROOT / "scripts/phase20_resource_acquisition.sh"
 GUARD = "guard-cranelift-phase23-resource-acquisition-parity-contract"
 
@@ -34,7 +35,7 @@ def validate(value: dict | None = None) -> dict:
     require(value.get("contract_version") == "phase23_resource_acquisition_parity_v1",
             "contract version drifted")
     require(value.get("status") ==
-            "implementation_ready_pending_merged_current_main_closure",
+            "closed_on_merged_current_main",
             "implementation/closure state drifted")
     require(value.get("issue") == 240 and value.get("owner") == "cranelift",
             "issue or owner drifted")
@@ -62,6 +63,28 @@ def validate(value: dict | None = None) -> dict:
         "stale_deferral": "each_registered_positive_reaches_driver_and_matches_explicit_C_observables",
         "empty_selection": "exact_three_case_registry_selection_is_required",
     }, "falsifier inventory drifted")
+    require(value.get("issue_closure") == {
+        "state": "closed_after_merged_current_main_validation",
+        "implementation_pull_request": 275,
+        "implementation_exact_head_sha": "cf97e6e4c99762366fde05002beb475de9cbde6e",
+        "implementation_merged_main_sha": "a26103fd40dd8c3762efe05c593d5ad111e7a50a",
+        "pull_request_event": "pull_request",
+        "successful_workflows": 116,
+        "total_workflows": 116,
+        "unfinished_workflows": 0,
+        "non_success_workflows": 0,
+        "unresolved_review_threads": 0,
+        "current_main_validation": {
+            "sha": "a26103fd40dd8c3762efe05c593d5ad111e7a50a",
+            "commands": [
+                "make gust",
+                "just guard-cranelift-phase23-resource-acquisition-parity-contract",
+                "just guard-cranelift-phase20-resource-acquisition-parity",
+            ],
+            "result": "completed_success",
+        },
+        "issue_state": "closed",
+    }, "issue-closure sequencing drifted")
     require(value.get("boundary") == {
         "preserves_issue106_resource_semantics": True,
         "preserves_negative_diagnostic_parity": True,
@@ -73,9 +96,12 @@ def validate(value: dict | None = None) -> dict:
         "edits_stdlib_or_CR15": False,
         "begins_patch23_4": False,
     }, "Patch 23.3 boundary drifted")
-    require("- [x] Patch 23.3a — Structured Guard/Defer Native Admission — DONE" in
+    require("- [x] Patch 23.3 — Resource-Acquisition Parity Evidence Repair (#240) — DONE" in
             TASK.read_text(encoding="utf-8"),
-            "TASK does not record the merged Patch 23.3a prerequisite")
+            "TASK status does not record Patch 23.3 closure")
+    require("PR #275 exact head `cf97e6e4c99762366fde05002beb475de9cbde6e` passed 116/116" in
+            ISSUE_ROADMAP.read_text(encoding="utf-8"),
+            "issue routing ledger does not cite exact implementation evidence")
     require("phase23_resource_acquisition_parity.py positive-cases" in
             PHASE20_GUARD.read_text(encoding="utf-8"),
             "retained parity guard no longer consumes registry-owned selection")
@@ -121,6 +147,18 @@ def render(value: dict) -> str:
         "pre-existing requested output and requiring the native-driver discovery "
         "diagnostic. That prevents silent C fallback. All inherited #106 negative "
         "diagnostic parity and cleanup checks remain unchanged.",
+        "",
+        "## Closure evidence",
+        "",
+        f"PR `#{value['issue_closure']['implementation_pull_request']}` exact head "
+        f"`{value['issue_closure']['implementation_exact_head_sha']}` passed "
+        f"`{value['issue_closure']['successful_workflows']}/"
+        f"{value['issue_closure']['total_workflows']}` pull-request workflows with "
+        f"`{value['issue_closure']['unresolved_review_threads']}` unresolved review threads "
+        f"and merged as `{value['issue_closure']['implementation_merged_main_sha']}`.",
+        "The retained Level 2 parity guard and Patch 23.3 contract both passed from "
+        "that exact merged current main. Issue #240 is closed and the routing ledger "
+        "cites the same exact PR, head, merge, and current-main evidence.",
         "",
         "This is evidence/control-plane repair only: it changes no accepted Gust "
         "meaning, canonical MIR operation, resource/move/cleanup semantics, "

@@ -4387,7 +4387,7 @@
   },
   "phase23_resource_acquisition_parity": {
     "contract_version": "phase23_resource_acquisition_parity_v1",
-    "status": "implementation_ready_pending_merged_current_main_closure",
+    "status": "closed_on_merged_current_main",
     "issue": 240,
     "owner": "cranelift",
     "review_view": "compiler/CRANELIFT_PHASE23_RESOURCE_ACQUISITION_PARITY.md",
@@ -4404,6 +4404,28 @@
       "missing_artifact": "each_successful_native_compile_publishes_a_nonempty_executable",
       "stale_deferral": "each_registered_positive_reaches_driver_and_matches_explicit_C_observables",
       "empty_selection": "exact_three_case_registry_selection_is_required"
+    },
+    "issue_closure": {
+      "state": "closed_after_merged_current_main_validation",
+      "implementation_pull_request": 275,
+      "implementation_exact_head_sha": "cf97e6e4c99762366fde05002beb475de9cbde6e",
+      "implementation_merged_main_sha": "a26103fd40dd8c3762efe05c593d5ad111e7a50a",
+      "pull_request_event": "pull_request",
+      "successful_workflows": 116,
+      "total_workflows": 116,
+      "unfinished_workflows": 0,
+      "non_success_workflows": 0,
+      "unresolved_review_threads": 0,
+      "current_main_validation": {
+        "sha": "a26103fd40dd8c3762efe05c593d5ad111e7a50a",
+        "commands": [
+          "make gust",
+          "just guard-cranelift-phase23-resource-acquisition-parity-contract",
+          "just guard-cranelift-phase20-resource-acquisition-parity"
+        ],
+        "result": "completed_success"
+      },
+      "issue_state": "closed"
     },
     "boundary": {
       "preserves_issue106_resource_semantics": true,
