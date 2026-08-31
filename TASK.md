@@ -350,14 +350,23 @@ current-main evidence; and the only expected seed change is deferred to 23.6a.
 
 ## Patch 23.6a — Diagnostic Bootstrap Seed Reconvergence
 
-From exact merged 23.6 main, run the isolated bootstrap sequence, require stage
-2/stage 3 byte identity, account for every generated difference as #105's
-current-scope diagnostic, and publish `gust_v4.c` alone. Do not fold roadmap,
-guard, fixture, registry, or documentation changes into the seed PR.
+On 2026-08-31 the operator authorized the measured seed-attribution correction:
+the last committed seed predates both the already-merged Patch 23.3a generic
+guard/defer native-admission handoff and Patch 23.6's #105 current-scope
+diagnostic. This changes only which already-merged compiler-source deltas the
+generated seed is authorized to serialize; it adds no semantic or backend
+authority.
 
-**Exit Gate:** the seed-only diff is fully explained, `make bootstrap` reaches
-the fixed point, all exact-head workflows pass, reviews are resolved, and the
-mandatory post-Phase-22 checkpoint is formally DONE before Patch 23.7 begins.
+From exact merged 23.6 main, run the isolated bootstrap sequence, require stage
+2/stage 3 byte identity, account for every generated difference as either Patch
+23.3a's generic guard/defer admission or #105's current-scope diagnostic, and
+publish `gust_v4.c` alone. Do not fold roadmap, guard, fixture, registry, or
+documentation changes into the seed PR.
+
+**Exit Gate:** the seed-only diff is fully explained by exactly those two
+already-merged compiler-source authorities, `make bootstrap` reaches the fixed
+point, all exact-head workflows pass, reviews are resolved, and the mandatory
+post-Phase-22 checkpoint is formally DONE before Patch 23.7 begins.
 
 ## Patch 23.7 — MIR-to-C Deprecation Opening and Consumer Inventory
 
