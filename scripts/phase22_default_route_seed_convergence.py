@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -87,6 +88,41 @@ def live_seed_identity_is_accepted(record: dict, line_count: int, seed_digest: s
     } for row in accepted_live_seed_identities(record))
 
 
+def seed_identity(seed_bytes: bytes) -> dict:
+    return {
+        "line_count": len(seed_bytes.decode("utf-8").splitlines()),
+        "seed_digest": hashlib.sha256(seed_bytes).hexdigest(),
+    }
+
+
+def regeneration_is_accepted(record: dict, committed: dict, regenerated: dict) -> bool:
+    identities = {
+        row["state"]: {
+            "line_count": row["line_count"],
+            "seed_digest": row["seed_digest"],
+        }
+        for row in accepted_live_seed_identities(record)
+    }
+    return (
+        committed == identities["pre_publication"] and
+        regenerated == identities["post_publication"]
+    ) or (
+        committed == identities["post_publication"] and
+        regenerated == identities["post_publication"]
+    )
+
+
+def validate_regeneration(record: dict) -> None:
+    committed_seed = subprocess.check_output(
+        ["git", "show", "HEAD:gust_v4.c"], cwd=ROOT,
+    )
+    committed = seed_identity(committed_seed)
+    regenerated = seed_identity(SEED.read_bytes())
+    require(regeneration_is_accepted(record, committed, regenerated),
+            "bootstrap result is neither the exact registered pre-to-post transition "
+            "nor the exact post-publication fixed point")
+
+
 def validate() -> dict:
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     prior_seed = registry.get("phase21_native_feature_seed_convergence", {})
@@ -161,10 +197,7 @@ def validate() -> dict:
 
     seed_bytes = SEED.read_bytes()
     seed_text = seed_bytes.decode("utf-8")
-    live_seed_identity = {
-        "line_count": len(seed_text.splitlines()),
-        "seed_digest": hashlib.sha256(seed_bytes).hexdigest(),
-    }
+    live_seed_identity = seed_identity(seed_bytes)
     require(live_seed_identity_is_accepted(
         record, live_seed_identity["line_count"], live_seed_identity["seed_digest"]),
             "committed seed is neither exact pre-publication nor post-publication identity")
@@ -272,7 +305,10 @@ def render(record: dict) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=("validate", "project", "check-review"))
+    parser.add_argument(
+        "command",
+        choices=("validate", "project", "check-review", "check-regeneration"),
+    )
     args = parser.parse_args()
     record = validate()
     if args.command == "project":
@@ -280,6 +316,8 @@ def main() -> None:
     elif args.command == "check-review":
         require(REVIEW.is_file() and REVIEW.read_text(encoding="utf-8") == render(record),
                 "generated review is stale; run project")
+    elif args.command == "check-regeneration":
+        validate_regeneration(record)
     print(f"{GUARD}: ok")
 
 
