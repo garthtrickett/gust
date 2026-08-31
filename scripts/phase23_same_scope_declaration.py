@@ -37,7 +37,7 @@ POSITIVE_DEFAULT_COMMAND = "[str(GUST), str(source)]"
 
 EXPECTED_AUTHORITY = {
     "contract_version": "phase23_same_scope_declaration_v1",
-    "status": "implementation_ready_pending_merged_current_main_closure",
+    "status": "closed_on_merged_current_main",
     "issue": 105,
     "owner": "cranelift",
     "review_view": "compiler/CRANELIFT_PHASE23_SAME_SCOPE_DECLARATION.md",
@@ -62,6 +62,29 @@ EXPECTED_AUTHORITY = {
         "phase22_relay_contract": "the_exact_six_site_Stdlib_relay_and_306_invocation_inventory_remain_unchanged",
         "phase23_contract": "all_four_same_scope_evidence_calls_remain_visible_in_the_live_scan_and_are_owned_by_the_Patch_23_6_evidence_guard",
         "falsifier": "missing_partial_extra_path_command_or_selection_drift_is_rejected",
+    },
+    "issue_closure": {
+        "state": "closed_after_merged_current_main_validation",
+        "implementation_pull_request": 278,
+        "implementation_exact_head_sha": "74b259d2c7573b4929f2ffa331a261085a16e894",
+        "implementation_merged_main_sha": "f6814323588eeb5321a7c0e20210aec802be568f",
+        "pull_request_event": "pull_request",
+        "successful_workflows": 120,
+        "total_workflows": 120,
+        "unfinished_workflows": 0,
+        "non_success_workflows": 0,
+        "unresolved_review_threads": 0,
+        "current_main_validation": {
+            "sha": "f6814323588eeb5321a7c0e20210aec802be568f",
+            "commands": [
+                "make gust",
+                "make phase10-native-package",
+                "just guard-cranelift-phase23-same-scope-declaration-evidence",
+            ],
+            "result": "completed_success",
+        },
+        "issue_state": "closed",
+        "bootstrap_seed_status": "unchanged_deferred_to_patch23_6a",
     },
     "boundary": {
         "rejects_only_current_lexical_scope_duplicate_declarations": True,
@@ -118,15 +141,17 @@ def validate() -> None:
     assurance()
     require(NEGATIVE.is_file() and all(path.is_file() for path in POSITIVES),
             "fixture inventory is incomplete")
-    require("Patch 23.6 — Same-Scope Declaration Diagnostic (#105)" in TASK.read_text(encoding="utf-8"),
-            "Patch 23.6 roadmap authority is missing")
+    require("- [x] Patch 23.6 — Same-Scope Declaration Diagnostic (#105) — DONE" in
+            TASK.read_text(encoding="utf-8"),
+            "Patch 23.6 roadmap status is not closed")
     gemini = GEMINI.read_text(encoding="utf-8")
     require("### C. Lexical Declaration Scope" in gemini and
             "whole-function naming rule" in gemini,
             "GEMINI lexical-scope correction drifted")
     issue_roadmap = ISSUE_ROADMAP.read_text(encoding="utf-8")
-    require("Reject only a second declaration in the current lexical scope" in issue_roadmap,
-            "#105 routing invariant drifted")
+    require("PR #278 exact head `74b259d2c7573b4929f2ffa331a261085a16e894` passed 120/120" in
+            issue_roadmap,
+            "#105 routing ledger does not cite exact implementation evidence")
     levels = json.loads(LEVELS.read_text(encoding="utf-8")).get("guards", {})
     require(levels.get(GUARD) == 1, "Level 1 guard registration drifted")
     require(f"{GUARD}:" in JUSTFILE.read_text(encoding="utf-8"), "Just guard is missing")
@@ -192,6 +217,18 @@ def render() -> str:
         "- Current-scope-only: parent shadowing, disjoint block reuse, assignment, and different-function reuse remain valid.",
         "- Explicit MIR-to-C remains the oracle. Default-native valid fixtures retain their explicit native-capability deferral; no fallback is added.",
         "- Seed reconvergence is deliberately deferred to Patch 23.6a.",
+        "",
+        "## Closure evidence",
+        "",
+        f"PR `#{value['issue_closure']['implementation_pull_request']}` exact head "
+        f"`{value['issue_closure']['implementation_exact_head_sha']}` passed "
+        f"`{value['issue_closure']['successful_workflows']}/"
+        f"{value['issue_closure']['total_workflows']}` pull-request workflows with "
+        f"`{value['issue_closure']['unresolved_review_threads']}` unresolved review threads "
+        f"and merged as `{value['issue_closure']['implementation_merged_main_sha']}`.",
+        "The focused diagnostic evidence and bootstrap-sensitive `make gust` passed "
+        "on that exact merged current main. Issue #105 is closed; `gust_v4.c` is "
+        "unchanged and remains isolated to Patch 23.6a.",
         "",
     ]
     return "\n".join(lines)
