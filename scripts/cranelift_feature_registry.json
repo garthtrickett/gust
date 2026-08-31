@@ -3960,12 +3960,12 @@
         {
           "state": "pre_publication",
           "line_count": 64825,
-          "sha256": "c2e2cd6d5043af87aacc007d92b105d673bbeea7e8f484a61e18126f39a32383"
+          "seed_digest": "c2e2cd6d5043af87aacc007d92b105d673bbeea7e8f484a61e18126f39a32383"
         },
         {
           "state": "post_publication",
           "line_count": 64929,
-          "sha256": "33b23ff4e8dab6c84365920bf3a2a674d7e3f5248646f6ffd69c8f7cc014083a"
+          "seed_digest": "33b23ff4e8dab6c84365920bf3a2a674d7e3f5248646f6ffd69c8f7cc014083a"
         }
       ],
       "generated_seed_diff": {

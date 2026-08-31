@@ -40,12 +40,12 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
             {
                 "state": "pre_publication",
                 "line_count": 64825,
-                "sha256": "c2e2cd6d5043af87aacc007d92b105d673bbeea7e8f484a61e18126f39a32383",
+                "seed_digest": "c2e2cd6d5043af87aacc007d92b105d673bbeea7e8f484a61e18126f39a32383",
             },
             {
                 "state": "post_publication",
                 "line_count": 64929,
-                "sha256": "33b23ff4e8dab6c84365920bf3a2a674d7e3f5248646f6ffd69c8f7cc014083a",
+                "seed_digest": "33b23ff4e8dab6c84365920bf3a2a674d7e3f5248646f6ffd69c8f7cc014083a",
             },
         ],
         "generated_seed_diff": {
@@ -60,7 +60,7 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
         "closure_transition": "collapse_to_post_publication_after_seed_merge",
     }, "Phase 23 seed successor transition drifted")
     identities = transition["accepted_live_seed_identities"]
-    require(len({(row["line_count"], row["sha256"]) for row in identities}) == 2,
+    require(len({(row["line_count"], row["seed_digest"]) for row in identities}) == 2,
             "Phase 23 seed transition identities are not distinct")
     successor_diff = transition["generated_seed_diff"]
     require(successor_diff["current_lines"] - successor_diff["previous_lines"] ==
@@ -81,9 +81,9 @@ def accepted_live_seed_line_count(record: dict, actual_line_count: int) -> int:
     return actual_line_count
 
 
-def live_seed_identity_is_accepted(record: dict, line_count: int, sha256: str) -> bool:
-    return any({"line_count": line_count, "sha256": sha256} == {
-        "line_count": row["line_count"], "sha256": row["sha256"],
+def live_seed_identity_is_accepted(record: dict, line_count: int, seed_digest: str) -> bool:
+    return any({"line_count": line_count, "seed_digest": seed_digest} == {
+        "line_count": row["line_count"], "seed_digest": row["seed_digest"],
     } for row in accepted_live_seed_identities(record))
 
 
@@ -163,10 +163,10 @@ def validate() -> dict:
     seed_text = seed_bytes.decode("utf-8")
     live_seed_identity = {
         "line_count": len(seed_text.splitlines()),
-        "sha256": hashlib.sha256(seed_bytes).hexdigest(),
+        "seed_digest": hashlib.sha256(seed_bytes).hexdigest(),
     }
     require(live_seed_identity_is_accepted(
-        record, live_seed_identity["line_count"], live_seed_identity["sha256"]),
+        record, live_seed_identity["line_count"], live_seed_identity["seed_digest"]),
             "committed seed is neither exact pre-publication nor post-publication identity")
     for help_fragment in (
         "cranelift  Compile to one native executable (default).",
@@ -255,7 +255,7 @@ def render(record: dict) -> str:
         f"- Seed PR policy: `{transition['seed_pr_policy']}`",
         f"- Partial or unregistered identity: `{transition['partial_or_unregistered_identity']}`",
     ] + [
-        f"- Accepted `{row['state']}` identity: {row['line_count']} lines, `{row['sha256']}`"
+        f"- Accepted `{row['state']}` identity: {row['line_count']} lines, `{row['seed_digest']}`"
         for row in transition["accepted_live_seed_identities"]
     ] + [
         "",
