@@ -118,7 +118,7 @@ Out of scope:
 - [x] Patch 23.1 — Post-Phase-22 Assurance and Issue-Health Opening — DONE
 - [x] Patch 23.2 — MIR Evidence-Owner Repair and Retirement (#110) — DONE
 - [ ] Patch 23.3 — Resource-Acquisition Parity Evidence Repair (#240)
-- [ ] Patch 23.3a — Structured Guard/Defer Native Admission
+- [x] Patch 23.3a — Structured Guard/Defer Native Admission — DONE
 - [ ] Patch 23.4 — Assurance Phase A Authority and Trigger Inventory
 - [ ] Patch 23.5 — Assurance Phase B Deterministic Report-Only Evaluator
 - [ ] Patch 23.6 — Same-Scope Declaration Diagnostic (#105)

@@ -374,6 +374,7 @@
     "guard-cranelift-phase23-issue-health-opening-contract": 1,
     "guard-cranelift-phase23-issue-health-opening-evidence": 2,
     "guard-cranelift-phase23-mir-evidence-owner-contract": 1,
+    "guard-cranelift-phase23-resource-acquisition-parity-contract": 1,
     "guard-cranelift-phase23-structured-guard-defer-native-admission-contract": 1,
     "guard-cranelift-phase23-structured-guard-defer-native-admission-evidence": 2,
     "guard-cranelift-phase20-resource-scope-cleanup-parity": 2,

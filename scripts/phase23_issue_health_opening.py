@@ -269,15 +269,10 @@ def evidence() -> None:
     require(successor.returncode == 0,
             "#110 Patch 23.2 successor authority does not pass current main")
 
-    resource_env = os.environ.copy()
-    resource_env["GUST_NATIVE_BACKEND_DRIVER"] = str(driver)
-    resource = run(
-        ["just", "guard-cranelift-phase20-resource-acquisition-parity"],
-        env=resource_env,
-    )
-    native = ROOT / "build/guards/phase20_resource_acquisition/phase20_resource_acquisition_source.native"
-    require(resource.returncode != 0 and native.is_file(),
-            "#240 stale guard did not fail after producing the supported native artifact")
+    resource = run(["just", "guard-cranelift-phase20-resource-acquisition-parity"])
+    native = ROOT / "build/guards/phase20_resource_acquisition/user.native"
+    require(resource.returncode == 0 and native.is_file(),
+            "#240 supported native parity guard does not pass current main")
     native_run = run([str(native)])
     require(native_run.returncode == 168 and not native_run.stdout and not native_run.stderr,
             "#240 positive native observable drifted")

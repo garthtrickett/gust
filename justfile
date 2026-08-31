@@ -23661,6 +23661,18 @@ guard-cranelift-phase23-mir-evidence-owner-contract:
     python3 scripts/phase23_mir_evidence_owner.py retirement
     python3 scripts/phase23_mir_evidence_owner.py check-review
 
+# Cranelift lane, Patch 23.3. Replace only stale pre-driver positive assertions
+# with the registered executable parity contract; #106 semantics stay unchanged.
+guard-cranelift-phase23-resource-acquisition-parity-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔗 Checking Phase 23 resource-acquisition parity evidence..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase23-resource-acquisition-parity-contract | grep -F $'guard-cranelift-phase23-resource-acquisition-parity-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase23_resource_acquisition_parity.py validate
+    python3 scripts/phase23_resource_acquisition_parity.py check-review
+
 # Cranelift lane, Patch 23.3a. A generic typed guard/defer source admission
 # hands off to the existing full-program canonical-MIR operations without a
 # resource, fixture, or source-path exception.
