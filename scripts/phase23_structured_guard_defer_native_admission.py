@@ -110,8 +110,8 @@ def validate(value: dict | None = None) -> dict:
             "begins_patch23_3": False,
         },
     }, "registry authority drifted")
-    require("- [ ] Patch 23.3a — Structured Guard/Defer Native Admission" in
-            TASK.read_text(encoding="utf-8"), "TASK 23.3a status is missing")
+    require("- [x] Patch 23.3a — Structured Guard/Defer Native Admission — DONE" in
+            TASK.read_text(encoding="utf-8"), "TASK 23.3a completion is missing")
     return value
 
 

@@ -510,6 +510,9 @@ jobs:
       - name: Phase 23 MIR evidence-owner repair
         run: just guard-cranelift-phase23-mir-evidence-owner-contract
 
+      - name: Phase 23 resource-acquisition parity evidence repair
+        run: just guard-cranelift-phase23-resource-acquisition-parity-contract
+
       - name: Phase 23 structured guard/defer native admission
         run: just guard-cranelift-phase23-structured-guard-defer-native-admission-contract
 

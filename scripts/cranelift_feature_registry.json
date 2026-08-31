@@ -4385,6 +4385,38 @@
       "begins_patch23_3": false
     }
   },
+  "phase23_resource_acquisition_parity": {
+    "contract_version": "phase23_resource_acquisition_parity_v1",
+    "status": "implementation_ready_pending_merged_current_main_closure",
+    "issue": 240,
+    "owner": "cranelift",
+    "review_view": "compiler/CRANELIFT_PHASE23_RESOURCE_ACQUISITION_PARITY.md",
+    "retained_guard": "guard-cranelift-phase20-resource-acquisition-parity",
+    "oracle": "explicit_mir_to_c",
+    "native_route": "explicit_cranelift_with_absolute_packaged_driver_and_no_fallback",
+    "positive_cases": [
+      {"id": "user", "source": "compiler/phase20_resource_acquisition_source.gst", "exit_status": 168, "stdout": "", "stderr": ""},
+      {"id": "directory", "source": "compiler/phase20_resource_acquisition_directory_source.gst", "exit_status": 0, "stdout": "", "stderr": ""},
+      {"id": "path_transfer", "source": "compiler/phase20_resource_acquisition_path_transfer_source.gst", "exit_status": 42, "stdout": "", "stderr": ""}
+    ],
+    "falsifiers": {
+      "missing_driver": "supported_positive_fails_with_native_driver_discovery_diagnostic_and_preserves_requested_output",
+      "missing_artifact": "each_successful_native_compile_publishes_a_nonempty_executable",
+      "stale_deferral": "each_registered_positive_reaches_driver_and_matches_explicit_C_observables",
+      "empty_selection": "exact_three_case_registry_selection_is_required"
+    },
+    "boundary": {
+      "preserves_issue106_resource_semantics": true,
+      "preserves_negative_diagnostic_parity": true,
+      "changes_accepted_Gust_program_meaning": false,
+      "adds_or_changes_MIR_operations": false,
+      "changes_backend_route_or_fallback": false,
+      "changes_ABI_layout_or_runtime_symbols": false,
+      "changes_bootstrap_seed": false,
+      "edits_stdlib_or_CR15": false,
+      "begins_patch23_4": false
+    }
+  },
   "phase23_structured_guard_defer_native_admission": {
     "contract_version": "phase23_structured_guard_defer_native_admission_v1",
     "status": "patch23_3a_complete",

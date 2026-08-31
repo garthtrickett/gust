@@ -71,6 +71,7 @@
     "phase22_closure",
     "phase23_issue_health_opening",
     "phase23_mir_evidence_owner",
+    "phase23_resource_acquisition_parity",
     "phase23_structured_guard_defer_native_admission",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
@@ -2860,6 +2861,26 @@
               "issue_state": {"const": "closed"}
             }
           },
+          "boundary": {"type": "object"}
+        }
+      },
+      "phase23_resource_acquisition_parity": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version", "status", "issue", "owner",
+                     "review_view", "retained_guard", "oracle", "native_route",
+                     "positive_cases", "falsifiers", "boundary"],
+        "properties": {
+          "contract_version": {"const": "phase23_resource_acquisition_parity_v1"},
+          "status": {"enum": ["implementation_ready_pending_merged_current_main_closure", "closed_on_merged_current_main"]},
+          "issue": {"const": 240},
+          "owner": {"const": "cranelift"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE23_RESOURCE_ACQUISITION_PARITY.md"},
+          "retained_guard": {"const": "guard-cranelift-phase20-resource-acquisition-parity"},
+          "oracle": {"const": "explicit_mir_to_c"},
+          "native_route": {"const": "explicit_cranelift_with_absolute_packaged_driver_and_no_fallback"},
+          "positive_cases": {"type": "array", "minItems": 3, "maxItems": 3, "uniqueItems": true, "items": {"type": "object"}},
+          "falsifiers": {"type": "object"},
           "boundary": {"type": "object"}
         }
       },

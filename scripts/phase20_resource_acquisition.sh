@@ -2,9 +2,6 @@
 set -euo pipefail
 
 build_root="build/guards/phase20_resource_acquisition"
-user_positive="compiler/phase20_resource_acquisition_source.gst"
-directory_positive="compiler/phase20_resource_acquisition_directory_source.gst"
-path_transfer_positive="compiler/phase20_resource_acquisition_path_transfer_source.gst"
 negatives=(
   compiler/phase20_resource_acquisition_user_discarded_invalid.gst
   compiler/phase20_resource_acquisition_directory_discarded_invalid.gst
@@ -20,7 +17,12 @@ expected=(
   ResourceAcquisitionLeak
 )
 
+make phase10-native-package
+native_driver="$(pwd)/build/phase10-package/bin/gust-native-backend"
+
 python3 scripts/phase20_resource_acquisition.py validate
+python3 scripts/phase23_resource_acquisition_parity.py validate
+test -x "$native_driver"
 rm -rf "$build_root"
 mkdir -p "$build_root"
 
@@ -51,9 +53,37 @@ run_mir_to_c_positive() {
   test ! -s "$build_root/$stem.stderr"
 }
 
-run_mir_to_c_positive "$user_positive" user 168
-run_mir_to_c_positive "$directory_positive" directory 0
-run_mir_to_c_positive "$path_transfer_positive" path_transfer 42
+run_native_positive() {
+  local source="$1"
+  local stem="$2"
+  local expected_status="$3"
+
+  GUST_NATIVE_BACKEND_DRIVER="$native_driver" \
+    ./gust --backend cranelift -o "$build_root/$stem.native" "$source" \
+      >"$build_root/$stem.native.compile.stdout" \
+      2>"$build_root/$stem.native.compile.stderr"
+  test ! -s "$build_root/$stem.native.compile.stdout"
+  test ! -s "$build_root/$stem.native.compile.stderr"
+  test -x "$build_root/$stem.native"
+  test -s "$build_root/$stem.native"
+  set +e
+  "$build_root/$stem.native" >"$build_root/$stem.native.stdout" \
+    2>"$build_root/$stem.native.stderr"
+  local status="$?"
+  set -e
+  test "$status" = "$expected_status"
+  cmp -s "$build_root/$stem.stdout" "$build_root/$stem.native.stdout"
+  cmp -s "$build_root/$stem.stderr" "$build_root/$stem.native.stderr"
+}
+
+positive_count=0
+while IFS=$'\t' read -r id source expected_status; do
+  test -n "$id"
+  run_mir_to_c_positive "$source" "$id" "$expected_status"
+  run_native_positive "$source" "$id" "$expected_status"
+  positive_count=$((positive_count + 1))
+done < <(python3 scripts/phase23_resource_acquisition_parity.py positive-cases)
+test "$positive_count" = 3
 
 index=0
 for negative in "${negatives[@]}"; do
@@ -80,38 +110,24 @@ for negative in "${negatives[@]}"; do
   index=$((index + 1))
 done
 
-user_stem="$(basename "$user_positive" .gst)"
+missing_output="$build_root/missing-driver-output"
+missing_driver="$(pwd)/$build_root/deliberately-missing-driver"
+printf '%s\n' phase23-resource-acquisition-missing-driver-sentinel >"$missing_output"
+cp "$missing_output" "$missing_output.expected"
 set +e
-./gust --backend cranelift -o "$build_root/$user_stem.native" "$user_positive" \
-  >"$build_root/$user_stem.native.stdout" \
-  2>"$build_root/$user_stem.native.stderr"
-user_native_status="$?"
+GUST_NATIVE_BACKEND_DRIVER="$missing_driver" \
+  ./gust --backend cranelift -o "$missing_output" \
+  compiler/phase20_resource_acquisition_source.gst \
+  >"$build_root/missing-driver.stdout" 2>"$build_root/missing-driver.stderr"
+missing_driver_status="$?"
 set -e
-test "$user_native_status" -ne 0
-test ! -e "$build_root/$user_stem.native"
-rg -F 'decision=source_or_type_failure capability=phase13_generic_source_to_mir' \
-  "$build_root/$user_stem.native.stdout" >/dev/null
-rg -F 'expected_failure_stage=before_driver_discovery' \
-  "$build_root/$user_stem.native.stdout" >/dev/null
-rg -F 'class=canonical_mir_verification_error' \
-  "$build_root/$user_stem.native.stdout" >/dev/null
-rg -F 'unsupported top-level statement in module/import cohort' \
-  "$build_root/$user_stem.native.stderr" >/dev/null
-
-directory_stem="$(basename "$directory_positive" .gst)"
-set +e
-./gust --backend cranelift -o "$build_root/$directory_stem.native" \
-  "$directory_positive" >"$build_root/$directory_stem.native.stdout" \
-  2>"$build_root/$directory_stem.native.stderr"
-directory_native_status="$?"
-set -e
-test "$directory_native_status" -ne 0
-test ! -e "$build_root/$directory_stem.native"
-test ! -s "$build_root/$directory_stem.native.stderr"
-rg -F 'decision=deferred' "$build_root/$directory_stem.native.stdout" >/dev/null
-rg -F 'expected_failure_stage=before_driver_discovery' \
-  "$build_root/$directory_stem.native.stdout" >/dev/null
-rg -F 'class=unsupported_native_capability' \
-  "$build_root/$directory_stem.native.stdout" >/dev/null
+test "$missing_driver_status" -ne 0
+cmp -s "$missing_output.expected" "$missing_output"
+cat "$build_root/missing-driver.stdout" "$build_root/missing-driver.stderr" \
+  >"$build_root/missing-driver.combined"
+rg -F 'Native backend driver discovery error:' \
+  "$build_root/missing-driver.combined" >/dev/null
+rg -F 'explicit native backend driver path is unavailable or not executable' \
+  "$build_root/missing-driver.combined" >/dev/null
 
 echo "✅ Phase 20 acquisition-site resource parity passed"
