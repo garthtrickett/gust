@@ -7,7 +7,6 @@ import argparse
 import json
 import os
 import subprocess
-import tempfile
 from pathlib import Path
 
 
@@ -277,21 +276,14 @@ def evidence() -> None:
     require(native_run.returncode == 168 and not native_run.stdout and not native_run.stderr,
             "#240 positive native observable drifted")
 
-    with tempfile.TemporaryDirectory(prefix="gust-phase23-issue-health-") as raw:
-        temp = Path(raw)
-        same_c = run(["./gust", "--backend", "mir-to-c", str(SAME_SCOPE)])
-        shadow_c = run(["./gust", "--backend", "mir-to-c", str(PARENT_SHADOW)])
-        require(same_c.returncode == 0 and not same_c.stderr,
-                "#105 same-scope duplicate is no longer accepted by current main")
-        require(shadow_c.returncode == 0 and not shadow_c.stderr,
-                "#105 parent-scope shadow is no longer accepted by current main")
-        combined = temp / "same_scope.c"
-        combined.write_bytes((ROOT / "src/runtime.c").read_bytes() + same_c.stdout)
-        cc = run([os.environ.get("CC", "cc"), "-O0", "-w", "-pthread", "-Isrc",
-                  str(combined), "-o", str(temp / "same_scope")])
-        cc_log = (cc.stdout + cc.stderr).decode("utf-8", "replace")
-        require(cc.returncode != 0 and "redefinition of" in cc_log and "value" in cc_log,
-                "#105 host-C same-scope redeclaration failure drifted")
+    same_c = run(["./gust", "--backend", "mir-to-c", str(SAME_SCOPE)])
+    shadow_c = run(["./gust", "--backend", "mir-to-c", str(PARENT_SHADOW)])
+    require(same_c.returncode == 1 and not same_c.stderr and
+            b"Semantic Error: Duplicate declaration 'value' in the same lexical scope" in
+            same_c.stdout,
+            "#105 successor same-scope diagnostic does not pass current main")
+    require(shadow_c.returncode == 0 and not shadow_c.stderr and shadow_c.stdout,
+            "#105 parent-scope shadow is no longer accepted by current main")
 
     check_review(value)
     print("phase23_issue_health_opening: evidence ok")
