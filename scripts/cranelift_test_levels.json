@@ -377,6 +377,7 @@
     "guard-cranelift-phase23-resource-acquisition-parity-contract": 1,
     "guard-cranelift-phase23-structured-guard-defer-native-admission-contract": 1,
     "guard-cranelift-phase23-structured-guard-defer-native-admission-evidence": 2,
+    "guard-cranelift-phase23-assurance-phase-a-contract": 1,
     "guard-cranelift-phase20-resource-scope-cleanup-parity": 2,
     "guard-cranelift-phase20-seed-convergence": 1,
     "guard-cranelift-phase20-nested-brand-annotation-contract": 1,

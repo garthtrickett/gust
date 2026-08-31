@@ -23693,3 +23693,16 @@ guard-cranelift-phase23-structured-guard-defer-native-admission-evidence:
     make phase10-native-package
     just guard-cranelift-phase23-structured-guard-defer-native-admission-contract
     python3 scripts/phase23_structured_guard_defer_native_admission.py evidence
+
+# Cranelift lane, Patch 23.4. The assurance authority is deliberately report-only:
+# it records the historical inputs and #105 pilot without adding a new workflow
+# or any merge, semantic, or repository-rule authority.
+guard-cranelift-phase23-assurance-phase-a-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧾 Checking Phase 23 report-only assurance authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase23-assurance-phase-a-contract | grep -F $'guard-cranelift-phase23-assurance-phase-a-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase23_assurance_phase_a.py validate
+    python3 scripts/phase23_assurance_phase_a.py check-review

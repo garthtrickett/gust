@@ -516,6 +516,9 @@ jobs:
       - name: Phase 23 structured guard/defer native admission
         run: just guard-cranelift-phase23-structured-guard-defer-native-admission-contract
 
+      - name: Phase 23 report-only assurance authority
+        run: just guard-cranelift-phase23-assurance-phase-a-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 
