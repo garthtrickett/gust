@@ -1,0 +1,130 @@
+{
+  "schema_version": "phase23_assurance_phase_b_manifest_v1",
+  "phase": "23",
+  "loss_taxonomy": [
+    "passed", "failed", "unsupported", "skipped_with_reason", "not_applicable",
+    "not_executed", "empty_selection", "fallback_used", "malformed_evidence",
+    "stale_evidence", "unresolved"
+  ],
+  "fixtures": [
+    {
+      "id": "issue110_qualified",
+      "subject": "issue_110_merged_current_main",
+      "expected_result": "passed",
+      "expected_candidate": {"repository": "garthtrickett/gust", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "base_sha": "0c5167443121f3dc2f0a0e143da8638753d96a8d", "event": "pull_request"},
+      "candidate": {"repository": "garthtrickett/gust", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "base_sha": "0c5167443121f3dc2f0a0e143da8638753d96a8d", "event": "pull_request"},
+      "expected_inventory": ["guard-mir-lower-tiny-function-surface", "obsolete_mir_to_c_location_guard"],
+      "observed_inventory": ["guard-mir-lower-tiny-function-surface", "obsolete_mir_to_c_location_guard"],
+      "expected_runs": [{"name": "PR Fast", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "event": "pull_request", "status": "completed", "conclusion": "success"}],
+      "observed_runs": [{"name": "PR Fast", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "event": "pull_request", "status": "completed", "conclusion": "success"}],
+      "expected_artifacts": [{"id": "phase23_issue110_review", "sha256": "b687f4f8e34a8f6dc61fdfb6ca5cba638983e10c4164e8a6e380b10371ed80d3"}],
+      "observed_artifacts": [{"id": "phase23_issue110_review", "sha256": "b687f4f8e34a8f6dc61fdfb6ca5cba638983e10c4164e8a6e380b10371ed80d3"}],
+      "candidate_policy": "exact_full_candidate_head_sha_and_event_pull_request_with_all_review_threads_resolved",
+      "declared_loss_state": "passed",
+      "reason": "merged issue #110 evidence is complete"
+    },
+    {
+      "id": "issue240_qualified",
+      "subject": "issue_240_merged_current_main",
+      "expected_result": "passed",
+      "expected_candidate": {"repository": "garthtrickett/gust", "head_sha": "cf97e6e4c99762366fde05002beb475de9cbde6e", "base_sha": "c9144929455515efe11f219a0518ee79576bea13", "event": "pull_request"},
+      "candidate": {"repository": "garthtrickett/gust", "head_sha": "cf97e6e4c99762366fde05002beb475de9cbde6e", "base_sha": "c9144929455515efe11f219a0518ee79576bea13", "event": "pull_request"},
+      "expected_inventory": ["user_resource_positive", "directory_resource_positive", "resource_negative_diagnostics"],
+      "observed_inventory": ["user_resource_positive", "directory_resource_positive", "resource_negative_diagnostics"],
+      "expected_runs": [{"name": "PR Fast", "head_sha": "cf97e6e4c99762366fde05002beb475de9cbde6e", "event": "pull_request", "status": "completed", "conclusion": "success"}],
+      "observed_runs": [{"name": "PR Fast", "head_sha": "cf97e6e4c99762366fde05002beb475de9cbde6e", "event": "pull_request", "status": "completed", "conclusion": "success"}],
+      "expected_artifacts": [{"id": "phase23_issue240_review", "sha256": "d4bb2118d2bb640727499b19f1f0a865c8c891642101ae44a5945f16b4361f13"}],
+      "observed_artifacts": [{"id": "phase23_issue240_review", "sha256": "d4bb2118d2bb640727499b19f1f0a865c8c891642101ae44a5945f16b4361f13"}],
+      "candidate_policy": "exact_full_candidate_head_sha_and_event_pull_request_with_all_review_threads_resolved",
+      "declared_loss_state": "passed",
+      "reason": "merged issue #240 parity evidence is complete"
+    },
+    {
+      "id": "phase22_closed_historical_qualified",
+      "subject": "phase22_closed_historical_patch",
+      "expected_result": "passed",
+      "expected_candidate": {"repository": "garthtrickett/gust", "head_sha": "5cf1e103e064d420b29d817281790689e3db0b30", "base_sha": "a7adbcd186512a3b4fd99b953bb2bc30f6838c52", "event": "pull_request"},
+      "candidate": {"repository": "garthtrickett/gust", "head_sha": "5cf1e103e064d420b29d817281790689e3db0b30", "base_sha": "a7adbcd186512a3b4fd99b953bb2bc30f6838c52", "event": "pull_request"},
+      "expected_inventory": ["phase22_stability_authority", "historical_full_complete_population"],
+      "observed_inventory": ["phase22_stability_authority", "historical_full_complete_population"],
+      "expected_runs": [{"name": "PR Fast", "head_sha": "5cf1e103e064d420b29d817281790689e3db0b30", "event": "pull_request", "status": "completed", "conclusion": "success"}],
+      "observed_runs": [{"name": "PR Fast", "head_sha": "5cf1e103e064d420b29d817281790689e3db0b30", "event": "pull_request", "status": "completed", "conclusion": "success"}],
+      "expected_artifacts": [{"id": "phase22_stability_review", "sha256": "5e5e66f10f9588613b22d6db8d8908b94d811d8fe4de502d00f7c42f0193e452"}],
+      "observed_artifacts": [{"id": "phase22_stability_review", "sha256": "5e5e66f10f9588613b22d6db8d8908b94d811d8fe4de502d00f7c42f0193e452"}],
+      "candidate_policy": "exact_full_candidate_head_sha_and_event_pull_request_with_all_review_threads_resolved",
+      "declared_loss_state": "passed",
+      "reason": "closed historical Phase 22 record is qualified"
+    },
+    {
+      "id": "issue105_preimplementation",
+      "subject": "issue_105_valid_preimplementation_envelope",
+      "expected_result": "not_executed",
+      "expected_candidate": {"repository": "garthtrickett/gust", "head_sha": "c64ceceb95f2a010ca242f91e4174e4479330dec", "base_sha": "c64ceceb95f2a010ca242f91e4174e4479330dec", "event": "pull_request"},
+      "candidate": {"repository": "garthtrickett/gust", "head_sha": "c64ceceb95f2a010ca242f91e4174e4479330dec", "base_sha": "c64ceceb95f2a010ca242f91e4174e4479330dec", "event": "pull_request"},
+      "expected_inventory": [], "observed_inventory": [], "expected_runs": [], "observed_runs": [], "expected_artifacts": [], "observed_artifacts": [],
+      "candidate_policy": "exact_full_candidate_head_sha_and_event_pull_request_with_all_review_threads_resolved",
+      "declared_loss_state": "not_executed",
+      "reason": "#105 remains a valid report-only pre-implementation envelope"
+    },
+    {
+      "id": "wrong_sha", "subject": "identity_falsifier", "expected_result": "stale_evidence",
+      "expected_candidate": {"repository": "garthtrickett/gust", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "base_sha": "0c5167443121f3dc2f0a0e143da8638753d96a8d", "event": "pull_request"},
+      "candidate": {"repository": "garthtrickett/gust", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "base_sha": "0c5167443121f3dc2f0a0e143da8638753d96a8d", "event": "pull_request"},
+      "expected_inventory": [], "observed_inventory": [], "expected_runs": [], "observed_runs": [], "expected_artifacts": [], "observed_artifacts": [], "candidate_policy": "exact_full_candidate_head_sha_and_event_pull_request_with_all_review_threads_resolved", "declared_loss_state": "stale_evidence", "reason": "candidate SHA substitution"
+    },
+    {
+      "id": "wrong_event", "subject": "event_falsifier", "expected_result": "stale_evidence",
+      "expected_candidate": {"repository": "garthtrickett/gust", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "base_sha": "0c5167443121f3dc2f0a0e143da8638753d96a8d", "event": "pull_request"},
+      "candidate": {"repository": "garthtrickett/gust", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "base_sha": "0c5167443121f3dc2f0a0e143da8638753d96a8d", "event": "push"},
+      "expected_inventory": [], "observed_inventory": [], "expected_runs": [], "observed_runs": [], "expected_artifacts": [], "observed_artifacts": [], "candidate_policy": "exact_full_candidate_head_sha_and_event_pull_request_with_all_review_threads_resolved", "declared_loss_state": "stale_evidence", "reason": "wrong Actions event"
+    },
+    {
+      "id": "cancelled", "subject": "run_falsifier", "expected_result": "skipped_with_reason",
+      "expected_candidate": {"repository": "garthtrickett/gust", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "base_sha": "0c5167443121f3dc2f0a0e143da8638753d96a8d", "event": "pull_request"},
+      "candidate": {"repository": "garthtrickett/gust", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "base_sha": "0c5167443121f3dc2f0a0e143da8638753d96a8d", "event": "pull_request"},
+      "expected_inventory": ["a"], "observed_inventory": ["a"], "expected_runs": [{"name": "PR Fast", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "event": "pull_request", "status": "completed", "conclusion": "success"}], "observed_runs": [{"name": "PR Fast", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "event": "pull_request", "status": "completed", "conclusion": "cancelled"}], "expected_artifacts": [{"id": "a", "sha256": "1111111111111111111111111111111111111111111111111111111111111111"}], "observed_artifacts": [{"id": "a", "sha256": "1111111111111111111111111111111111111111111111111111111111111111"}], "candidate_policy": "exact_full_candidate_head_sha_and_event_pull_request_with_all_review_threads_resolved", "declared_loss_state": "passed", "reason": "cancelled run"
+    },
+    {
+      "id": "red", "subject": "run_falsifier", "expected_result": "failed",
+      "expected_candidate": {"repository": "garthtrickett/gust", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "base_sha": "0c5167443121f3dc2f0a0e143da8638753d96a8d", "event": "pull_request"},
+      "candidate": {"repository": "garthtrickett/gust", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "base_sha": "0c5167443121f3dc2f0a0e143da8638753d96a8d", "event": "pull_request"},
+      "expected_inventory": ["a"], "observed_inventory": ["a"], "expected_runs": [{"name": "PR Fast", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "event": "pull_request", "status": "completed", "conclusion": "success"}], "observed_runs": [{"name": "PR Fast", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "event": "pull_request", "status": "completed", "conclusion": "failure"}], "expected_artifacts": [{"id": "a", "sha256": "1111111111111111111111111111111111111111111111111111111111111111"}], "observed_artifacts": [{"id": "a", "sha256": "1111111111111111111111111111111111111111111111111111111111111111"}], "candidate_policy": "exact_full_candidate_head_sha_and_event_pull_request_with_all_review_threads_resolved", "declared_loss_state": "passed", "reason": "red run"
+    },
+    {
+      "id": "missing", "subject": "inventory_falsifier", "expected_result": "unresolved",
+      "expected_candidate": {"repository": "garthtrickett/gust", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "base_sha": "0c5167443121f3dc2f0a0e143da8638753d96a8d", "event": "pull_request"}, "candidate": {"repository": "garthtrickett/gust", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "base_sha": "0c5167443121f3dc2f0a0e143da8638753d96a8d", "event": "pull_request"}, "expected_inventory": ["a", "b"], "observed_inventory": ["a"], "expected_runs": [{"name": "PR Fast", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "event": "pull_request", "status": "completed", "conclusion": "success"}], "observed_runs": [{"name": "PR Fast", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "event": "pull_request", "status": "completed", "conclusion": "success"}], "expected_artifacts": [{"id": "a", "sha256": "1111111111111111111111111111111111111111111111111111111111111111"}], "observed_artifacts": [{"id": "a", "sha256": "1111111111111111111111111111111111111111111111111111111111111111"}], "candidate_policy": "exact_full_candidate_head_sha_and_event_pull_request_with_all_review_threads_resolved", "declared_loss_state": "passed", "reason": "missing expected inventory member"
+    },
+    {
+      "id": "empty", "subject": "run_falsifier", "expected_result": "empty_selection",
+      "expected_candidate": {"repository": "garthtrickett/gust", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "base_sha": "0c5167443121f3dc2f0a0e143da8638753d96a8d", "event": "pull_request"}, "candidate": {"repository": "garthtrickett/gust", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "base_sha": "0c5167443121f3dc2f0a0e143da8638753d96a8d", "event": "pull_request"}, "expected_inventory": ["a"], "observed_inventory": ["a"], "expected_runs": [], "observed_runs": [], "expected_artifacts": [{"id": "a", "sha256": "1111111111111111111111111111111111111111111111111111111111111111"}], "observed_artifacts": [{"id": "a", "sha256": "1111111111111111111111111111111111111111111111111111111111111111"}], "candidate_policy": "exact_full_candidate_head_sha_and_event_pull_request_with_all_review_threads_resolved", "declared_loss_state": "passed", "reason": "empty run selection"
+    },
+    {
+      "id": "malformed", "subject": "manifest_falsifier", "expected_result": "malformed_evidence",
+      "expected_candidate": {"repository": "garthtrickett/gust", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "base_sha": "0c5167443121f3dc2f0a0e143da8638753d96a8d", "event": "pull_request"}, "candidate": {"repository": "garthtrickett/gust", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "base_sha": "0c5167443121f3dc2f0a0e143da8638753d96a8d", "event": "pull_request"}, "expected_inventory": [], "observed_inventory": [], "expected_runs": [], "observed_runs": [], "expected_artifacts": [], "observed_artifacts": [], "candidate_policy": "exact_full_candidate_head_sha_and_event_pull_request_with_all_review_threads_resolved", "declared_loss_state": "passed", "reason": "empty required inventory is malformed"
+    },
+    {
+      "id": "forged_digest", "subject": "artifact_falsifier", "expected_result": "malformed_evidence",
+      "expected_candidate": {"repository": "garthtrickett/gust", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "base_sha": "0c5167443121f3dc2f0a0e143da8638753d96a8d", "event": "pull_request"}, "candidate": {"repository": "garthtrickett/gust", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "base_sha": "0c5167443121f3dc2f0a0e143da8638753d96a8d", "event": "pull_request"}, "expected_inventory": ["a"], "observed_inventory": ["a"], "expected_runs": [{"name": "PR Fast", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "event": "pull_request", "status": "completed", "conclusion": "success"}], "observed_runs": [{"name": "PR Fast", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "event": "pull_request", "status": "completed", "conclusion": "success"}], "expected_artifacts": [{"id": "a", "sha256": "1111111111111111111111111111111111111111111111111111111111111111"}], "observed_artifacts": [{"id": "a", "sha256": "2222222222222222222222222222222222222222222222222222222222222222"}], "candidate_policy": "exact_full_candidate_head_sha_and_event_pull_request_with_all_review_threads_resolved", "declared_loss_state": "passed", "reason": "forged artifact digest"
+    },
+    {
+      "id": "candidate_policy_change", "subject": "policy_falsifier", "expected_result": "stale_evidence",
+      "expected_candidate": {"repository": "garthtrickett/gust", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "base_sha": "0c5167443121f3dc2f0a0e143da8638753d96a8d", "event": "pull_request"}, "candidate": {"repository": "garthtrickett/gust", "head_sha": "bf53fa38a079a8cb9c019872408603ed9c17a356", "base_sha": "0c5167443121f3dc2f0a0e143da8638753d96a8d", "event": "pull_request"}, "expected_inventory": [], "observed_inventory": [], "expected_runs": [], "observed_runs": [], "expected_artifacts": [], "observed_artifacts": [], "candidate_policy": "candidate_controlled_policy", "declared_loss_state": "stale_evidence", "reason": "candidate policy changed"
+    },
+    {
+      "id": "unsupported", "subject": "loss_taxonomy", "expected_result": "unsupported",
+      "expected_candidate": {"repository": "garthtrickett/gust", "head_sha": "c64ceceb95f2a010ca242f91e4174e4479330dec", "base_sha": "c64ceceb95f2a010ca242f91e4174e4479330dec", "event": "pull_request"}, "candidate": {"repository": "garthtrickett/gust", "head_sha": "c64ceceb95f2a010ca242f91e4174e4479330dec", "base_sha": "c64ceceb95f2a010ca242f91e4174e4479330dec", "event": "pull_request"}, "expected_inventory": [], "observed_inventory": [], "expected_runs": [], "observed_runs": [], "expected_artifacts": [], "observed_artifacts": [], "candidate_policy": "exact_full_candidate_head_sha_and_event_pull_request_with_all_review_threads_resolved", "declared_loss_state": "unsupported", "reason": "captured unsupported capability"
+    },
+    {
+      "id": "not_applicable", "subject": "loss_taxonomy", "expected_result": "not_applicable",
+      "expected_candidate": {"repository": "garthtrickett/gust", "head_sha": "c64ceceb95f2a010ca242f91e4174e4479330dec", "base_sha": "c64ceceb95f2a010ca242f91e4174e4479330dec", "event": "pull_request"}, "candidate": {"repository": "garthtrickett/gust", "head_sha": "c64ceceb95f2a010ca242f91e4174e4479330dec", "base_sha": "c64ceceb95f2a010ca242f91e4174e4479330dec", "event": "pull_request"}, "expected_inventory": [], "observed_inventory": [], "expected_runs": [], "observed_runs": [], "expected_artifacts": [], "observed_artifacts": [], "candidate_policy": "exact_full_candidate_head_sha_and_event_pull_request_with_all_review_threads_resolved", "declared_loss_state": "not_applicable", "reason": "captured non-applicable evidence"
+    },
+    {
+      "id": "fallback", "subject": "loss_taxonomy", "expected_result": "fallback_used",
+      "expected_candidate": {"repository": "garthtrickett/gust", "head_sha": "c64ceceb95f2a010ca242f91e4174e4479330dec", "base_sha": "c64ceceb95f2a010ca242f91e4174e4479330dec", "event": "pull_request"}, "candidate": {"repository": "garthtrickett/gust", "head_sha": "c64ceceb95f2a010ca242f91e4174e4479330dec", "base_sha": "c64ceceb95f2a010ca242f91e4174e4479330dec", "event": "pull_request"}, "expected_inventory": [], "observed_inventory": [], "expected_runs": [], "observed_runs": [], "expected_artifacts": [], "observed_artifacts": [], "candidate_policy": "exact_full_candidate_head_sha_and_event_pull_request_with_all_review_threads_resolved", "declared_loss_state": "fallback_used", "reason": "captured fallback evidence"
+    },
+    {
+      "id": "stale_unresolved", "subject": "loss_taxonomy", "expected_result": "unresolved",
+      "expected_candidate": {"repository": "garthtrickett/gust", "head_sha": "c64ceceb95f2a010ca242f91e4174e4479330dec", "base_sha": "c64ceceb95f2a010ca242f91e4174e4479330dec", "event": "pull_request"}, "candidate": {"repository": "garthtrickett/gust", "head_sha": "c64ceceb95f2a010ca242f91e4174e4479330dec", "base_sha": "c64ceceb95f2a010ca242f91e4174e4479330dec", "event": "pull_request"}, "expected_inventory": [], "observed_inventory": [], "expected_runs": [], "observed_runs": [], "expected_artifacts": [], "observed_artifacts": [], "candidate_policy": "exact_full_candidate_head_sha_and_event_pull_request_with_all_review_threads_resolved", "declared_loss_state": "unresolved", "reason": "captured unresolved evidence"
+    }
+  ]
+}
