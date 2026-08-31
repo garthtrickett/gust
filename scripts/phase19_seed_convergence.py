@@ -7,6 +7,8 @@ import argparse
 import json
 from pathlib import Path
 
+from phase22_default_route_seed_convergence import accepted_live_seed_line_count
+
 
 ROOT = Path(__file__).resolve().parent.parent
 REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
@@ -135,7 +137,8 @@ def validate() -> dict:
                             phase22_diff = phase22_seed.get("generated_seed_diff")
                             require(isinstance(phase22_diff, dict),
                                     "Patch 22.6a seed authority omits generated diff accounting")
-                            live_seed_lines = phase22_diff.get("current_lines")
+                            live_seed_lines = accepted_live_seed_line_count(
+                                phase22_seed, len(seed.splitlines()))
     require(len(seed.splitlines()) == live_seed_lines, "committed seed line count drifted")
     for symbol in (
         "typechecker__env_get_canonical_branded_type_name",

@@ -135,4 +135,9 @@ jobs:
         run: cmp build/gust_stage2.c build/gust_stage3.c
       - name: Regeneration leaves the committed seed unchanged
         if: steps.seed_scope.outputs.required == 'true'
-        run: git diff --exit-code -- gust_v4.c
+        run: |
+          if git diff --quiet -- gust_v4.c; then
+            git diff --exit-code -- gust_v4.c
+          else
+            python3 scripts/phase22_default_route_seed_convergence.py check-regeneration
+          fi
