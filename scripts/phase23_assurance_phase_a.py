@@ -74,20 +74,33 @@ def read_json(path: Path) -> dict:
     return value
 
 
+def repository_is_shallow() -> bool:
+    result = subprocess.run(
+        ["git", "rev-parse", "--is-shallow-repository"], cwd=ROOT,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=False,
+    )
+    require(result.returncode == 0, "cannot determine repository shallow state")
+    state = result.stdout.strip()
+    require(state in {"true", "false"}, "repository shallow state is malformed")
+    return state == "true"
+
+
 def require_identity(value: object, label: str) -> None:
     require(isinstance(value, dict) and set(value) == IDENTITY_FIELDS,
             f"{label} identity field set drifted")
     require(value["repository"] == "garthtrickett/gust", f"{label} repository drifted")
+    shallow = repository_is_shallow()
     for key in ("observed_main_sha", "base_sha"):
         sha = value[key]
         require(isinstance(sha, str) and len(sha) == 40 and
                 all(char in "0123456789abcdef" for char in sha),
                 f"{label} {key} must be a full lowercase SHA")
-        exists = subprocess.run(
-            ["git", "cat-file", "-e", f"{sha}^{{commit}}"], cwd=ROOT,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
-        )
-        require(exists.returncode == 0, f"{label} {key} is not a known commit")
+        if not shallow:
+            exists = subprocess.run(
+                ["git", "cat-file", "-e", f"{sha}^{{commit}}"], cwd=ROOT,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+            )
+            require(exists.returncode == 0, f"{label} {key} is not a known commit")
     observed_at = value["observed_at_utc"]
     require(isinstance(observed_at, str) and observed_at.endswith("Z") and len(observed_at) == 20,
             f"{label} observation timestamp drifted")
