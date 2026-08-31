@@ -30,6 +30,10 @@ POSITIVES = [
     ROOT / "compiler/phase23_assignment_reuse_current.gst",
     ROOT / "compiler/phase23_different_function_reuse_current.gst",
 ]
+NEGATIVE_C_COMMAND = "[str(GUST), '--backend', 'mir-to-c', str(NEGATIVE)]"
+NEGATIVE_DEFAULT_COMMAND = "[str(GUST), str(NEGATIVE)]"
+POSITIVE_C_COMMAND = "[str(GUST), '--backend', 'mir-to-c', str(source)]"
+POSITIVE_DEFAULT_COMMAND = "[str(GUST), str(source)]"
 
 EXPECTED_AUTHORITY = {
     "contract_version": "phase23_same_scope_declaration_v1",
@@ -43,6 +47,22 @@ EXPECTED_AUTHORITY = {
     "oracle": "explicit_mir_to_c",
     "default_native": "same_duplicate_diagnostic_before_native_capability_selection; valid_cases_retain_explicit_native_capability_deferral_without_fallback",
     "assurance": "scripts/phase23_same_scope_declaration_assurance.json",
+    "phase22_closed_inventory_extension": {
+        "status": "exact_phase23_extension_excluded_only_from_phase22_relay_identity",
+        "owning_patch": "23.6",
+        "path": "scripts/phase23_same_scope_declaration.py",
+        "selection": ["explicit_c", "implicit_default", "explicit_c", "implicit_default"],
+        "invocation_count": 4,
+        "commands": [
+            NEGATIVE_C_COMMAND,
+            NEGATIVE_DEFAULT_COMMAND,
+            POSITIVE_C_COMMAND,
+            POSITIVE_DEFAULT_COMMAND,
+        ],
+        "phase22_relay_contract": "the_exact_six_site_Stdlib_relay_and_306_invocation_inventory_remain_unchanged",
+        "phase23_contract": "all_four_same_scope_evidence_calls_remain_visible_in_the_live_scan_and_are_owned_by_the_Patch_23_6_evidence_guard",
+        "falsifier": "missing_partial_extra_path_command_or_selection_drift_is_rejected",
+    },
     "boundary": {
         "rejects_only_current_lexical_scope_duplicate_declarations": True,
         "preserves_parent_scope_shadowing_disjoint_block_reuse_assignment_and_different_function_reuse": True,

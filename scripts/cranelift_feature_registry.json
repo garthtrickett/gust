@@ -4582,6 +4582,22 @@
     "oracle": "explicit_mir_to_c",
     "default_native": "same_duplicate_diagnostic_before_native_capability_selection; valid_cases_retain_explicit_native_capability_deferral_without_fallback",
     "assurance": "scripts/phase23_same_scope_declaration_assurance.json",
+    "phase22_closed_inventory_extension": {
+      "status": "exact_phase23_extension_excluded_only_from_phase22_relay_identity",
+      "owning_patch": "23.6",
+      "path": "scripts/phase23_same_scope_declaration.py",
+      "selection": ["explicit_c", "implicit_default", "explicit_c", "implicit_default"],
+      "invocation_count": 4,
+      "commands": [
+        "[str(GUST), '--backend', 'mir-to-c', str(NEGATIVE)]",
+        "[str(GUST), str(NEGATIVE)]",
+        "[str(GUST), '--backend', 'mir-to-c', str(source)]",
+        "[str(GUST), str(source)]"
+      ],
+      "phase22_relay_contract": "the_exact_six_site_Stdlib_relay_and_306_invocation_inventory_remain_unchanged",
+      "phase23_contract": "all_four_same_scope_evidence_calls_remain_visible_in_the_live_scan_and_are_owned_by_the_Patch_23_6_evidence_guard",
+      "falsifier": "missing_partial_extra_path_command_or_selection_drift_is_rejected"
+    },
     "boundary": {
       "rejects_only_current_lexical_scope_duplicate_declarations": true,
       "preserves_parent_scope_shadowing_disjoint_block_reuse_assignment_and_different_function_reuse": true,

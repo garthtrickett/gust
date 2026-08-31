@@ -2993,7 +2993,8 @@
         "type": "object",
         "additionalProperties": false,
         "required": ["contract_version", "status", "issue", "owner", "review_view",
-                     "diagnostic", "negative", "positives", "oracle", "default_native", "assurance", "boundary"],
+                     "diagnostic", "negative", "positives", "oracle", "default_native", "assurance",
+                     "phase22_closed_inventory_extension", "boundary"],
         "properties": {
           "contract_version": {"const": "phase23_same_scope_declaration_v1"},
           "status": {"const": "implementation_ready_pending_merged_current_main_closure"},
@@ -3006,6 +3007,7 @@
           "oracle": {"const": "explicit_mir_to_c"},
           "default_native": {"const": "same_duplicate_diagnostic_before_native_capability_selection; valid_cases_retain_explicit_native_capability_deferral_without_fallback"},
           "assurance": {"const": "scripts/phase23_same_scope_declaration_assurance.json"},
+          "phase22_closed_inventory_extension": {"type": "object"},
           "boundary": {"type": "object"}
         }
       },
