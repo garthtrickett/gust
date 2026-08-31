@@ -1,9 +1,9 @@
 # GitHub issue roadmap
 
 **Status:** repository-wide routing index
-**Last audited:** 2026-08-30
+**Last audited:** 2026-08-31
 **Audited GitHub repository:** `garthtrickett/gust`
-**Audited main:** `3c437227ae75a7b90a14916bd8d23df6799d5f00`
+**Audited main:** `a26103fd40dd8c3762efe05c593d5ad111e7a50a`
 
 This file gives every open GitHub issue an owned place in Gust's Markdown
 roadmap. It prevents an issue from being technically well reported but absent
@@ -54,7 +54,6 @@ change a VISION decision, or widen the active Phase 22 boundary.
 
 | Issue | Disposition and owner | Roadmap destination | Ordering and closure evidence |
 | --- | --- | --- | --- |
-| [#240 — Phase 20 resource-acquisition parity guard expects a pre-migration native deferral](https://github.com/garthtrickett/gust/issues/240) | **Repair; Cranelift control-plane owner.** Semantic authority remains closed; the stale positive-route assertions do not. | `docs/SEMANTIC_CHANGE_ASSURANCE.md` Phase A/B input in the post-Phase 22 assurance checkpoint, before Phase 23. | Preserve #106 semantics and negative parity; qualify current supported positive executables with a real driver. Close only when the focused guard passes on current main and its retained invariant is named. |
 | [#105 — Same-scope local redeclaration reaches the C compiler](https://github.com/garthtrickett/gust/issues/105) | **Bounded diagnostic repair; Cranelift compiler owner.** Current evidence narrows this to duplicate declarations in one lexical scope; disjoint block reuse is valid, and the earlier per-branch-scope prerequisite has landed. | Post-Phase 22 issue-health checkpoint, as its own compiler patch before Phase 23 de-emphasises the C oracle. | Reject only a second declaration in the current lexical scope; preserve parent-scope shadowing and disjoint-block reuse. Correct `GEMINI.md`'s overbroad whole-function rule and close on positive and negative compiler/bootstrapping evidence. |
 | [#133 — Define `str ==` and `!=` as content equality](https://github.com/garthtrickett/gust/issues/133) | **Deferred semantic change; Cranelift owner.** `TASK_STDLIB.md` CR-1 remains the coordination authority. | Post-Phase 25 language-ergonomics roadmap, after CR-15 handoff unless separately activated earlier. | Generic operator semantics only; no new runtime symbol or backend special case. Close on positive equality/inequality coverage for the then-supported compiler path and bootstrap chain. Do not reintroduce a retired C backend merely to preserve the issue's historical parity wording. |
 | [#102 — Safe enum variant construction / `Option`](https://github.com/garthtrickett/gust/issues/102) | **Deferred generic semantic change; Cranelift owner.** `TASK_STDLIB.md` CR-14 establishes that an `Option`-only helper is forbidden. | Post-Phase 25 language-ergonomics roadmap, after CR-15 handoff; before the OD-9 demo experiment. | Implement generic enum-variant construction for user enums and `Option`, with no representation-field spelling in ordinary source. Close on safe construction, match/destructuring, diagnostics, and bootstrap evidence. |
@@ -65,8 +64,9 @@ change a VISION decision, or widen the active Phase 22 boundary.
 
 ## Audit result
 
-All eight GitHub issues open on 2026-08-30 are represented above. Issue #110
-qualified for closure on audited main; the remaining issues did not:
+All seven GitHub issues open on 2026-08-31 are represented above. Issues #110
+and #240 qualified for closure on their audited current-main revisions; the
+remaining issues did not:
 
 - #133's rejection diagnostic remains in the self-hosted typechecker;
 - #102 remains an open CR-14 generic-construction gap;
@@ -75,10 +75,11 @@ qualified for closure on audited main; the remaining issues did not:
 - `os.System` remains an ambient builtin while declared extern calls are gated
   for #108;
 - #103 remains explicitly documented as unimplemented; and
-- #105 and #240 retain current-main work described in their rows.
+- #105 retains current-main work described in its row.
 
 ## Closed issue ledger
 
 | Issue | Closure evidence | Roadmap item |
 | --- | --- | --- |
 | [#110 — Two MIR surface guards fail](https://github.com/garthtrickett/gust/issues/110) | PR #271 exact head `bf53fa38a079a8cb9c019872408603ed9c17a356` passed 115/115 `pull_request` workflows with zero unresolved review threads and merged as `3c437227ae75a7b90a14916bd8d23df6799d5f00`; both `just guard-mir-lower-tiny-function-surface` and the Patch 23.2 contract passed on that exact current main. | Phase 23 Patch 23.2; retained historical input for Semantic Change Assurance Phases A/B. |
+| [#240 — Phase 20 resource-acquisition parity guard expects a pre-migration native deferral](https://github.com/garthtrickett/gust/issues/240) | PR #275 exact head `cf97e6e4c99762366fde05002beb475de9cbde6e` passed 116/116 `pull_request` workflows with zero unresolved review threads and merged as `a26103fd40dd8c3762efe05c593d5ad111e7a50a`; `make gust`, the Patch 23.3 contract, and retained `just guard-cranelift-phase20-resource-acquisition-parity` passed on that exact current main. | Phase 23 Patch 23.3; retained historical input for Semantic Change Assurance Phases A/B. |
