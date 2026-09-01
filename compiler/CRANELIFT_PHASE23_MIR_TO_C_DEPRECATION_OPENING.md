@@ -158,7 +158,7 @@ Do not edit by hand.
 | `compiler/CRANELIFT_PHASE22_DEFAULT_ROUTE_SEED_CONVERGENCE.md` | `6802676e8775f7b284a09a61d1914304f8be871195f3a74fd1f689686dd380f2` | `explicit_backend_spelling=0, mir_to_c_name=3, generated_c_contract=0` | `historical_only` | `cranelift` | `preserve_as_historical_evidence` | `not_removed_by_phase23` | `historical_record_is_reclassified_as_live_support` |
 | `compiler/CRANELIFT_PHASE22_EXPLICIT_C_MIGRATION.md` | `2c672f0d40728b5661f40aae2aadc27187e50a9bd865759d5bafef7a08966093` | `explicit_backend_spelling=6, mir_to_c_name=9, generated_c_contract=0` | `historical_only` | `cranelift` | `preserve_as_historical_evidence` | `not_removed_by_phase23` | `historical_record_is_reclassified_as_live_support` |
 | `compiler/CRANELIFT_PHASE22_NATIVE_IMPLICIT_OUTPUT.md` | `95cc8cb650c4f9e1b3edc4baa57eed20e2d3ab450aed7affc371a40afacf0e7c` | `explicit_backend_spelling=0, mir_to_c_name=3, generated_c_contract=0` | `historical_only` | `cranelift` | `preserve_as_historical_evidence` | `not_removed_by_phase23` | `historical_record_is_reclassified_as_live_support` |
-| `compiler/CRANELIFT_PHASE22_OPENING.md` | `d695d8e520b0fb7bbb41c3b06e813089e6db70d3d6e46e66d440c93e98a41b8b` | `explicit_backend_spelling=6, mir_to_c_name=16, generated_c_contract=9` | `historical_only` | `cranelift` | `preserve_as_historical_evidence` | `not_removed_by_phase23` | `historical_record_is_reclassified_as_live_support` |
+| `compiler/CRANELIFT_PHASE22_OPENING.md` | `f2aa699b786135cf15999b393f8a63fd7cd0ed61b64559c8b36d07561fd0b8fd` | `explicit_backend_spelling=6, mir_to_c_name=16, generated_c_contract=9` | `historical_only` | `cranelift` | `preserve_as_historical_evidence` | `not_removed_by_phase23` | `historical_record_is_reclassified_as_live_support` |
 | `compiler/CRANELIFT_PHASE22_POSTFLIP_QUALIFICATION.md` | `a7e88bb9826ef6206280aa23e2e1f83265f1b6e1a92a5973d73dee4c88adb44c` | `explicit_backend_spelling=0, mir_to_c_name=2, generated_c_contract=0` | `historical_only` | `cranelift` | `preserve_as_historical_evidence` | `not_removed_by_phase23` | `historical_record_is_reclassified_as_live_support` |
 | `compiler/CRANELIFT_PHASE22_PREFLIP_DEFAULT_COHORT.md` | `5bf3bdffb714855b7643c6d67a01ecc0f0b853dcca684313498255a14990fae2` | `explicit_backend_spelling=0, mir_to_c_name=2, generated_c_contract=0` | `historical_only` | `cranelift` | `preserve_as_historical_evidence` | `not_removed_by_phase23` | `historical_record_is_reclassified_as_live_support` |
 | `compiler/CRANELIFT_PHASE22_STABILITY_QUALIFICATION.md` | `9e21c8df316ca3b57c244ba5322be515e4bd691a30e4418b231e7ab19c3322e4` | `explicit_backend_spelling=0, mir_to_c_name=1, generated_c_contract=0` | `historical_only` | `cranelift` | `preserve_as_historical_evidence` | `not_removed_by_phase23` | `historical_record_is_reclassified_as_live_support` |
@@ -701,7 +701,7 @@ explicit successor when they intentionally migrate or archive a surface.
 - Status: `patch23_11_complete`
 - Authority base main: `7941bceb2ed62bca97917ad241290caf5fd97bf6`
 - Current text surfaces: `567`
-- Current text manifest: `19d3440dfbf2be71ad0afe676196a6e0f1a72ffedd188ef1aa78e6b018d42b19`
+- Current text manifest: `b09feb3d91ab333851210bf0e263eb832f540bb2ac087b7728a2ef75627f1aed`
 - Current invocations: `317`
 - Current invocation manifest: `34f9d3eee9e915f633c2fae9a434e235ce1af2f69bec5901c0de16090972bfb1`
 - Live explicit-C invocations: `178` (unchanged)

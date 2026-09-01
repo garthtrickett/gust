@@ -4998,7 +4998,7 @@
         },
         "current_inventory": {
           "text_surface_count": 567,
-          "text_surface_manifest_digest": "19d3440dfbf2be71ad0afe676196a6e0f1a72ffedd188ef1aa78e6b018d42b19",
+          "text_surface_manifest_digest": "b09feb3d91ab333851210bf0e263eb832f540bb2ac087b7728a2ef75627f1aed",
           "invocation_count": 317,
           "invocation_manifest_digest": "34f9d3eee9e915f633c2fae9a434e235ce1af2f69bec5901c0de16090972bfb1",
           "structural_surface_count": 15,
@@ -5026,6 +5026,7 @@
           ".github/workflows/pr-fast.yml",
           "TASK.md",
           "compiler/CRANELIFT_PHASE23_MIR_TO_C_ARCHIVED_CORPUS.md",
+          "compiler/CRANELIFT_PHASE22_OPENING.md",
           "compiler/CRANELIFT_PHASE23_MIR_TO_C_DEPRECATION_OPENING.md",
           "compiler/CRANELIFT_PHASE23_MIR_TO_C_FROZEN_SURFACE.md",
           "compiler/fixtures/phase23_mir_to_c_reference_corpus_v1.json",

@@ -3162,7 +3162,7 @@
                   "unchanged_invocation_selection_fields": {"type": "array", "minItems": 3, "maxItems": 3, "uniqueItems": true},
                   "implicit_default_replay_delta": {"const": 1},
                   "live_explicit_c_population": {"const": 178},
-                  "authority_only_paths": {"type": "array", "minItems": 16, "maxItems": 16, "uniqueItems": true},
+                  "authority_only_paths": {"type": "array", "minItems": 17, "maxItems": 17, "uniqueItems": true},
                   "partial_or_unregistered_inventory": {"const": "rejected"}
                 }
               },
