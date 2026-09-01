@@ -22,6 +22,7 @@ LEVELS = ROOT / "scripts/cranelift_test_levels.json"
 JUSTFILE = ROOT / "justfile"
 PR_FAST = ROOT / ".github/workflows/pr-fast.yml"
 WORKFLOW = ROOT / ".github/workflows/phase21-cranelift-built-compiler-programs.yml"
+FOCUSED_WORKFLOW = ROOT / ".github/workflows/phase23-mir-to-c-focused-live.yml"
 WORKER = ROOT / "build/gust-native-backend"
 PACKAGED_GUST = ROOT / "build/phase10-package/bin/gust"
 RUNTIME_PACKAGE = ROOT / "build/phase10-package/bin/gust-runtime-package.a"
@@ -237,9 +238,25 @@ def validate() -> dict:
     require(f"just {GUARD_L1}" in PR_FAST.read_text(encoding="utf-8"),
             "PR Fast does not own the Patch 21.15 contract guard")
     workflow = WORKFLOW.read_text(encoding="utf-8")
-    for token in (f"just {GUARD_L1}", f"just {GUARD_L2}",
-                  "make gust phase10-native-package"):
-        require(token in workflow, f"dedicated Patch 21.15 workflow lacks {token}")
+    focused = registry.get("phase23_mir_to_c_focused_live", {})
+    if focused.get("status") == "patch23_10_complete":
+        require(f"just {GUARD_L1}" in workflow and f"just {GUARD_L2}" not in workflow
+                and "make gust phase10-native-package" not in workflow,
+                "Patch 21.15 workflow did not delegate only its evidence")
+        successor = FOCUSED_WORKFLOW.read_text(encoding="utf-8")
+        for token in (f"just {GUARD_L2}", "make gust phase10-native-package"):
+            require(successor.count(token) == 1,
+                    f"Patch 23.10 successor does not own {token} exactly once")
+        for successor_path in (
+            "- 'scripts/phase23_mir_to_c_focused_live.py'",
+            "- '.github/workflows/phase23-mir-to-c-focused-live.yml'",
+        ):
+            require(workflow.count(successor_path) == 2,
+                    f"Patch 21.15 contract does not watch {successor_path}")
+    else:
+        for token in (f"just {GUARD_L1}", f"just {GUARD_L2}",
+                      "make gust phase10-native-package"):
+            require(token in workflow, f"dedicated Patch 21.15 workflow lacks {token}")
     for runtime_path in ("- 'src/runtime.c'", "- 'src/runtime/**'"):
         require(workflow.count(runtime_path) == 2,
                 f"dedicated workflow does not cover {runtime_path} twice")

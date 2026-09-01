@@ -17,8 +17,10 @@ on:
       - 'scripts/cranelift_test_levels.json'
       - 'scripts/phase21_cranelift_built_compiler_programs.py'
       - 'scripts/phase21_full_compiler_native_qualification.py'
+      - 'scripts/phase23_mir_to_c_focused_live.py'
       - '.github/workflows/phase21-full-compiler-native-qualification.yml'
       - '.github/workflows/phase21-cranelift-built-compiler-programs.yml'
+      - '.github/workflows/phase23-mir-to-c-focused-live.yml'
       - '.github/workflows/pr-fast.yml'
       - 'justfile'
   push:
@@ -38,8 +40,10 @@ on:
       - 'scripts/cranelift_test_levels.json'
       - 'scripts/phase21_cranelift_built_compiler_programs.py'
       - 'scripts/phase21_full_compiler_native_qualification.py'
+      - 'scripts/phase23_mir_to_c_focused_live.py'
       - '.github/workflows/phase21-full-compiler-native-qualification.yml'
       - '.github/workflows/phase21-cranelift-built-compiler-programs.yml'
+      - '.github/workflows/phase23-mir-to-c-focused-live.yml'
       - '.github/workflows/pr-fast.yml'
       - 'justfile'
   workflow_dispatch:
@@ -61,15 +65,3 @@ jobs:
       - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: guard-cranelift-phase21-cranelift-built-compiler-programs-contract
         run: just guard-cranelift-phase21-cranelift-built-compiler-programs-contract
-
-  evidence:
-    needs: contract
-    runs-on: ubuntu-latest
-    timeout-minutes: 75
-    steps:
-      - uses: actions/checkout@v4
-      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
-      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - run: make gust phase10-native-package
-      - name: guard-cranelift-phase21-cranelift-built-compiler-programs-evidence
-        run: just guard-cranelift-phase21-cranelift-built-compiler-programs-evidence

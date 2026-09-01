@@ -173,11 +173,9 @@ def check_pr_workflow(policy: dict) -> None:
         "PR Fast must delegate Phase 13 prerequisite contracts to the closure owner",
     )
     require(
-        text.count(
-            'just guard-cranelift-differential-family "${{ matrix.family }}"'
-        )
-        == 1,
-        "PR Fast must invoke the registry-derived differential-family guard exactly once",
+        'just guard-cranelift-differential-family "${{ matrix.family }}"'
+        not in text,
+        "PR Fast must delegate live-C differential families to Patch 23.10",
     )
     require(
         "historical-closure:" not in text,
@@ -189,7 +187,7 @@ def check_pr_workflow(policy: dict) -> None:
         "PR Fast must not run Level 3 full-history entry points",
     )
     require(
-        "needs: [guard, level1, phase11-family, phase20-nested-brand-annotation]" in text,
+        "needs: [guard, level1, phase20-nested-brand-annotation]" in text,
         "PR Fast final job must depend only on Level 1 and Level 2 jobs",
     )
     require_direct_levels(policy, text, {1, 2}, "PR Fast")

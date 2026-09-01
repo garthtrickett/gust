@@ -489,14 +489,21 @@ def check_pr_workflow(path):
     text = path.read_text(encoding="utf-8")
 
     required = (
-        "phase11_families:",
-        'matrix=$(python3 scripts/cranelift_ci_family.py matrix-json)',
-        "family: ${{ fromJSON(needs.build.outputs.phase11_families) }}",
-        'just guard-cranelift-differential-family "${{ matrix.family }}"',
-        "needs: [guard, level1, phase11-family, phase20-nested-brand-annotation]",
+        "needs: [guard, level1, phase20-nested-brand-annotation]",
     )
     for token in required:
         require_token(text, token, path.relative_to(ROOT))
+
+    retired = (
+        "phase11_families:",
+        "phase11-family:",
+        "fromJSON(needs.build.outputs.phase11_families)",
+        'just guard-cranelift-differential-family "${{ matrix.family }}"',
+        "mir-to-c-return-int",
+    )
+    for token in retired:
+        require(token not in text,
+                f"{path.relative_to(ROOT)} retains default-C matrix token: {token}")
 
     require(
         "historical-closure:" not in text
