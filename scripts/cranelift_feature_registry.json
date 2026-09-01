@@ -3947,7 +3947,7 @@
       "deletions": 186,
       "line_delta": 1908
     },
-    "phase23_successor_transition": {
+  "phase23_successor_transition": {
       "contract_version": "phase23_diagnostic_seed_reconvergence_transition_v1",
       "status": "landed_post_publication",
       "predecessor_seed_authority": "phase22_default_route_seed_convergence_v1",
@@ -3987,9 +3987,48 @@
         "changed_paths": [
           "gust_v4.c"
         ]
+    }
+  },
+  "phase23_deprecation_seed_transition": {
+    "contract_version": "phase23_deprecation_seed_reconvergence_transition_v1",
+    "status": "authorized_pre_publication",
+    "predecessor_seed_authority": "phase23_diagnostic_seed_reconvergence_transition_v1",
+    "authority_base_main": "e39ddaf86fe689a9817fb4ee50e6eab0c506139c",
+    "accounted_compiler_authority": "phase23_mir_to_c_user_deprecation_v1",
+    "accepted_live_seed_identities": [
+      {
+        "state": "pre_publication",
+        "line_count": 64929,
+        "seed_digest": "33b23ff4e8dab6c84365920bf3a2a674d7e3f5248646f6ffd69c8f7cc014083a"
+      },
+      {
+        "state": "post_publication",
+        "line_count": 64929,
+        "seed_digest": "af8a283c9ef4dbe621f78729e89a4c7270c0b740aeb7164af57fa953e5f29924"
       }
+    ],
+    "generated_seed_diff": {
+      "previous_lines": 64929,
+      "current_lines": 64929,
+      "insertions": 2,
+      "deletions": 2,
+      "line_delta": 0
     },
-    "boundary": {
+    "presentation_diff": {
+      "removed": [
+        "mir-to-c, c  Emit C source to stdout (retained semantic oracle).",
+        ""
+      ],
+      "added": [
+        "mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.",
+        "Bootstrap C retirement is separate and deferred to Phase 25."
+      ]
+    },
+    "seed_pr_policy": "gust_v4_c_only",
+    "partial_or_unregistered_identity": "rejected",
+    "closure_transition": "pending_seed_publication"
+  },
+  "boundary": {
       "adds_or_changes_Gust_semantics": false,
       "adds_or_changes_MIR_or_native_lowering": false,
       "changes_ABI_layout_runtime_symbols_target_or_linker": false,
@@ -4760,7 +4799,7 @@
       },
       "post_deprecation_inventory": {
         "text_surface_count": 566,
-        "text_surface_manifest_digest": "7e55cd04d4ceda17434c825d186a572f90ee987050b904783863782543bc20ce",
+        "text_surface_manifest_digest": "7d7e61b089b9f0573c6cb490ffab09bdf0a1fbf87ee0628d49adea7ae117c4a8",
         "invocation_count": 316,
         "invocation_manifest_digest": "97a1535de0d7e52edff46019b529935d143f5a3c3d6013ad2ecab76ad4fbf32f",
         "structural_surface_count": 15,
