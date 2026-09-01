@@ -68,8 +68,9 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
             "changed_paths": ["gust_v4.c"],
         },
     }, "Phase 23 seed successor transition drifted")
-    identities = transition["accepted_live_seed_identities"]
-    require(len(identities) == 1 and identities[0]["state"] == "post_publication",
+    predecessor_identities = transition["accepted_live_seed_identities"]
+    require(len(predecessor_identities) == 1 and
+            predecessor_identities[0]["state"] == "post_publication",
             "Phase 23 seed transition did not collapse to the landed identity")
     successor_diff = transition["generated_seed_diff"]
     require(successor_diff["current_lines"] - successor_diff["previous_lines"] ==
@@ -77,6 +78,60 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
             successor_diff["insertions"] - successor_diff["deletions"] ==
             successor_diff["line_delta"],
             "Phase 23 generated seed line delta is inconsistent")
+    deprecation_transition = record.get("phase23_deprecation_seed_transition")
+    require(deprecation_transition == {
+        "contract_version": "phase23_deprecation_seed_reconvergence_transition_v1",
+        "status": "authorized_pre_publication",
+        "predecessor_seed_authority":
+            "phase23_diagnostic_seed_reconvergence_transition_v1",
+        "authority_base_main": "e39ddaf86fe689a9817fb4ee50e6eab0c506139c",
+        "accounted_compiler_authority":
+            "phase23_mir_to_c_user_deprecation_v1",
+        "accepted_live_seed_identities": [
+            {
+                "state": "pre_publication",
+                "line_count": 64929,
+                "seed_digest":
+                    "33b23ff4e8dab6c84365920bf3a2a674d7e3f5248646f6ffd69c8f7cc014083a",
+            },
+            {
+                "state": "post_publication",
+                "line_count": 64929,
+                "seed_digest":
+                    "af8a283c9ef4dbe621f78729e89a4c7270c0b740aeb7164af57fa953e5f29924",
+            },
+        ],
+        "generated_seed_diff": {
+            "previous_lines": 64929,
+            "current_lines": 64929,
+            "insertions": 2,
+            "deletions": 2,
+            "line_delta": 0,
+        },
+        "presentation_diff": {
+            "removed": [
+                "mir-to-c, c  Emit C source to stdout (retained semantic oracle).",
+                "",
+            ],
+            "added": [
+                "mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.",
+                "Bootstrap C retirement is separate and deferred to Phase 25.",
+            ],
+        },
+        "seed_pr_policy": "gust_v4_c_only",
+        "partial_or_unregistered_identity": "rejected",
+        "closure_transition": "pending_seed_publication",
+    }, "Phase 23 deprecation seed transition drifted")
+    identities = deprecation_transition["accepted_live_seed_identities"]
+    require([row["state"] for row in identities] ==
+            ["pre_publication", "post_publication"],
+            "Phase 23 deprecation seed transition state order drifted")
+    deprecation_diff = deprecation_transition["generated_seed_diff"]
+    require(deprecation_diff["current_lines"] - deprecation_diff["previous_lines"] ==
+            deprecation_diff["line_delta"] and
+            deprecation_diff["insertions"] - deprecation_diff["deletions"] ==
+            deprecation_diff["line_delta"],
+            "Phase 23 deprecation seed line delta is inconsistent")
     return identities
 
 
@@ -112,7 +167,7 @@ def regeneration_is_accepted(record: dict, committed: dict, regenerated: dict) -
         for row in accepted_live_seed_identities(record)
     }
     return (
-        committed == identities["post_publication"] and
+        committed in (identities["pre_publication"], identities["post_publication"]) and
         regenerated == identities["post_publication"]
     )
 
@@ -124,7 +179,7 @@ def validate_regeneration(record: dict) -> None:
     committed = seed_identity(committed_seed)
     regenerated = seed_identity(SEED.read_bytes())
     require(regeneration_is_accepted(record, committed, regenerated),
-            "bootstrap result is not the exact landed post-publication fixed point")
+            "bootstrap result is not the exact registered deprecation fixed point")
 
 
 def validate() -> dict:
@@ -205,11 +260,19 @@ def validate() -> dict:
     require(live_seed_identity_is_accepted(
         record, live_seed_identity["line_count"], live_seed_identity["seed_digest"]),
             "committed seed is neither exact pre-publication nor post-publication identity")
-    for help_fragment in (
+    help_fragments = [
         "cranelift  Compile to one native executable (default).",
-        "mir-to-c, c  Emit C source to stdout (retained semantic oracle).",
         "fallback to MIR-to-C.",
-    ):
+    ]
+    if live_seed_identity["seed_digest"] == "33b23ff4e8dab6c84365920bf3a2a674d7e3f5248646f6ffd69c8f7cc014083a":
+        help_fragments.append(
+            "mir-to-c, c  Emit C source to stdout (retained semantic oracle).")
+    else:
+        help_fragments.extend([
+            "mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.",
+            "Bootstrap C retirement is separate and deferred to Phase 25.",
+        ])
+    for help_fragment in help_fragments:
         require(help_fragment in seed_text,
                 f"regenerated seed lacks help contract fragment: {help_fragment}")
     require("- [x] Patch 22.6a — Default-Route Bootstrap Seed Reconvergence — DONE"
@@ -257,6 +320,8 @@ def render(record: dict) -> str:
     diff = record["generated_seed_diff"]
     transition = record["phase23_successor_transition"]
     landed = transition["landed_seed_evidence"]
+    deprecation = record["phase23_deprecation_seed_transition"]
+    deprecation_diff = deprecation["generated_seed_diff"]
     return "\n".join([
         "# Cranelift Phase 22 Default-Route Seed Convergence",
         "",
@@ -312,6 +377,20 @@ def render(record: dict) -> str:
         f"- Exact-head workflows: {landed['successful_workflows']}/{landed['workflow_population']} successful, {landed['unfinished_workflows']} unfinished, {landed['non_success_workflows']} non-success",
         f"- Unresolved non-outdated review threads: {landed['unresolved_non_outdated_review_threads']}",
         f"- Changed paths: `{', '.join(landed['changed_paths'])}`",
+        "",
+        "## Phase 23 deprecation seed transition",
+        "",
+        f"- Contract: `{deprecation['contract_version']}`",
+        f"- Status: `{deprecation['status']}`",
+        f"- Authority base main: `{deprecation['authority_base_main']}`",
+        f"- Accounted compiler authority: `{deprecation['accounted_compiler_authority']}`",
+        f"- Seed PR policy: `{deprecation['seed_pr_policy']}`",
+        f"- Partial or unregistered identity: `{deprecation['partial_or_unregistered_identity']}`",
+        f"- Generated diff: {deprecation_diff['insertions']} insertions, {deprecation_diff['deletions']} deletions, {deprecation_diff['line_delta']} net lines",
+    ] + [
+        f"- Accepted `{row['state']}` identity: {row['line_count']} lines, `{row['seed_digest']}`"
+        for row in deprecation["accepted_live_seed_identities"]
+    ] + [
         "",
         "The regenerated seed preserves the final Patch 22.6 default-route compiler",
         "sources and serializes the registered Patch 23.3a guard/defer admission and",
