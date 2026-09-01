@@ -81,19 +81,13 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
     deprecation_transition = record.get("phase23_deprecation_seed_transition")
     require(deprecation_transition == {
         "contract_version": "phase23_deprecation_seed_reconvergence_transition_v1",
-        "status": "authorized_pre_publication",
+        "status": "landed_post_publication",
         "predecessor_seed_authority":
             "phase23_diagnostic_seed_reconvergence_transition_v1",
         "authority_base_main": "e39ddaf86fe689a9817fb4ee50e6eab0c506139c",
         "accounted_compiler_authority":
             "phase23_mir_to_c_user_deprecation_v1",
         "accepted_live_seed_identities": [
-            {
-                "state": "pre_publication",
-                "line_count": 64929,
-                "seed_digest":
-                    "33b23ff4e8dab6c84365920bf3a2a674d7e3f5248646f6ffd69c8f7cc014083a",
-            },
             {
                 "state": "post_publication",
                 "line_count": 64929,
@@ -120,11 +114,24 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
         },
         "seed_pr_policy": "gust_v4_c_only",
         "partial_or_unregistered_identity": "rejected",
-        "closure_transition": "pending_seed_publication",
+        "closure_transition": "collapsed_to_post_publication",
+        "landed_seed_evidence": {
+            "pull_request": 289,
+            "head_sha": "ba040834dadef99982892016a2163d0296270a0a",
+            "merge_main_sha": "3d9ed5df9188cf38275885a665316e58cfb9dd21",
+            "merged_at": "2026-09-01T08:53:43Z",
+            "event": "pull_request",
+            "workflow_population": 22,
+            "successful_workflows": 22,
+            "unfinished_workflows": 0,
+            "non_success_workflows": 0,
+            "unresolved_non_outdated_review_threads": 0,
+            "changed_paths": ["gust_v4.c"],
+        },
     }, "Phase 23 deprecation seed transition drifted")
     identities = deprecation_transition["accepted_live_seed_identities"]
     require([row["state"] for row in identities] ==
-            ["pre_publication", "post_publication"],
+            ["post_publication"],
             "Phase 23 deprecation seed transition state order drifted")
     deprecation_diff = deprecation_transition["generated_seed_diff"]
     require(deprecation_diff["current_lines"] - deprecation_diff["previous_lines"] ==
@@ -166,10 +173,8 @@ def regeneration_is_accepted(record: dict, committed: dict, regenerated: dict) -
         }
         for row in accepted_live_seed_identities(record)
     }
-    return (
-        committed in (identities["pre_publication"], identities["post_publication"]) and
+    return committed == identities["post_publication"] and \
         regenerated == identities["post_publication"]
-    )
 
 
 def validate_regeneration(record: dict) -> None:
@@ -313,6 +318,11 @@ def validate() -> dict:
         in TASK.read_text(encoding="utf-8"),
         "TASK.md does not formally close Patch 23.6a",
     )
+    require(
+        "- [x] Patch 23.8a — Deprecation Bootstrap Seed Reconvergence — DONE"
+        in TASK.read_text(encoding="utf-8"),
+        "TASK.md does not formally close Patch 23.8a",
+    )
     return record
 
 
@@ -322,6 +332,7 @@ def render(record: dict) -> str:
     landed = transition["landed_seed_evidence"]
     deprecation = record["phase23_deprecation_seed_transition"]
     deprecation_diff = deprecation["generated_seed_diff"]
+    deprecation_landed = deprecation["landed_seed_evidence"]
     return "\n".join([
         "# Cranelift Phase 22 Default-Route Seed Convergence",
         "",
@@ -391,6 +402,17 @@ def render(record: dict) -> str:
         f"- Accepted `{row['state']}` identity: {row['line_count']} lines, `{row['seed_digest']}`"
         for row in deprecation["accepted_live_seed_identities"]
     ] + [
+        "",
+        "## Phase 23 deprecation landed seed evidence",
+        "",
+        f"- Pull request: `#{deprecation_landed['pull_request']}`",
+        f"- Exact head: `{deprecation_landed['head_sha']}`",
+        f"- Merge main: `{deprecation_landed['merge_main_sha']}`",
+        f"- Merged at: `{deprecation_landed['merged_at']}`",
+        f"- Event: `{deprecation_landed['event']}`",
+        f"- Exact-head workflows: {deprecation_landed['successful_workflows']}/{deprecation_landed['workflow_population']} successful, {deprecation_landed['unfinished_workflows']} unfinished, {deprecation_landed['non_success_workflows']} non-success",
+        f"- Unresolved non-outdated review threads: {deprecation_landed['unresolved_non_outdated_review_threads']}",
+        f"- Changed paths: `{', '.join(deprecation_landed['changed_paths'])}`",
         "",
         "The regenerated seed preserves the final Patch 22.6 default-route compiler",
         "sources and serializes the registered Patch 23.3a guard/defer admission and",

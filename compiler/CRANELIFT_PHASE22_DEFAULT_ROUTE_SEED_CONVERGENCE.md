@@ -56,14 +56,24 @@ Generated from `scripts/cranelift_feature_registry.json` by
 ## Phase 23 deprecation seed transition
 
 - Contract: `phase23_deprecation_seed_reconvergence_transition_v1`
-- Status: `authorized_pre_publication`
+- Status: `landed_post_publication`
 - Authority base main: `e39ddaf86fe689a9817fb4ee50e6eab0c506139c`
 - Accounted compiler authority: `phase23_mir_to_c_user_deprecation_v1`
 - Seed PR policy: `gust_v4_c_only`
 - Partial or unregistered identity: `rejected`
 - Generated diff: 2 insertions, 2 deletions, 0 net lines
-- Accepted `pre_publication` identity: 64929 lines, `33b23ff4e8dab6c84365920bf3a2a674d7e3f5248646f6ffd69c8f7cc014083a`
 - Accepted `post_publication` identity: 64929 lines, `af8a283c9ef4dbe621f78729e89a4c7270c0b740aeb7164af57fa953e5f29924`
+
+## Phase 23 deprecation landed seed evidence
+
+- Pull request: `#289`
+- Exact head: `ba040834dadef99982892016a2163d0296270a0a`
+- Merge main: `3d9ed5df9188cf38275885a665316e58cfb9dd21`
+- Merged at: `2026-09-01T08:53:43Z`
+- Event: `pull_request`
+- Exact-head workflows: 22/22 successful, 0 unfinished, 0 non-success
+- Unresolved non-outdated review threads: 0
+- Changed paths: `gust_v4.c`
 
 The regenerated seed preserves the final Patch 22.6 default-route compiler
 sources and serializes the registered Patch 23.3a guard/defer admission and
