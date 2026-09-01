@@ -261,6 +261,27 @@ def scan_summary(rows: list[dict[str, object]]) -> dict[str, object]:
 def phase22_relay_inventory_rows(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep Phase 22's closed relay identity while validating exact successors."""
+    migration = registry.get("phase23_production_release_audit", {}).get(
+        "phase22_closed_inventory_migration", {})
+    require(migration.get("status") ==
+            "exact_phase23_migration_projected_to_phase22_predecessor" and
+            migration.get("owning_patch") == "23.12" and
+            migration.get("path") == "scripts/run-gust-file.sh" and
+            migration.get("falsifier") ==
+            "missing_partial_extra_or_same_count_command_substitution_is_rejected",
+            "Patch 23.12 Phase 22 projection authority drifted")
+    current = migration.get("current_row")
+    previous = migration.get("previous_row")
+    require(isinstance(current, dict) and isinstance(previous, dict),
+            "Patch 23.12 Phase 22 projection rows are missing")
+    live_current = [row for row in rows if row.get("path") == migration["path"]]
+    require(live_current == [current],
+            "Patch 23.12 current runner invocation is missing, partial, or substituted")
+    rows = [copy.deepcopy(row) for row in rows if row not in live_current]
+    rows.append(copy.deepcopy(previous))
+    rows.sort(key=lambda row: (
+        str(row["path"]), int(row["line"]), str(row["command"])
+    ))
     successors = [
         registry.get("phase23_issue_health_opening", {}).get(
             "phase22_closed_inventory_successor", {}),

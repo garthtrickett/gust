@@ -223,10 +223,12 @@ def scan(registry: dict) -> dict[str, object]:
 def policy_accepts(record: dict, summary: dict[str, object]) -> bool:
     transition = record.get("focused_live_transition", {})
     archive_transition = record.get("archived_corpus_transition", {})
-    expected_live = archive_transition.get(
+    production_transition = record.get("production_release_transition", {})
+    expected_live = production_transition.get(
+        "current_live_c_case_surface", archive_transition.get(
         "current_live_c_case_surface", transition.get(
         "current_live_c_case_surface", record.get("live_c_case_surface")
-    ))
+    )))
     return (
         record.get("capability_surface") == summary["capability_surface"] and
         expected_live == summary["live_c_case_surface"] and
@@ -362,8 +364,30 @@ def validate() -> tuple[dict, dict[str, object]]:
                 archive_transition["previous_live_c_case_surface"].get(field),
                 f"Patch 23.11 changed frozen live-C field: {field}")
     require(archive_transition["current_live_c_case_surface"] ==
+            record.get("production_release_transition", {}).get(
+                "previous_live_c_case_surface"),
+            "Patch 23.12 predecessor is not the registered Patch 23.11 successor")
+    production_transition = record.get("production_release_transition")
+    require(isinstance(production_transition, dict) and
+            production_transition.get("contract_version") ==
+            "phase23_frozen_production_release_transition_v1" and
+            production_transition.get("status") == "patch23_12_complete" and
+            production_transition.get("authority_base_main") ==
+            "c2b6ec8c4a3650e704541ebd00b57020783f1def" and
+            production_transition.get("previous_live_c_case_surface") ==
+            archive_transition.get("current_live_c_case_surface") and
+            production_transition.get("removed_case") == {
+                "path": "scripts/run-gust-file.sh",
+                "owner": "cranelift",
+                "reason": "supported_developer_runner_migrated_to_explicit_cranelift",
+            } and production_transition.get("count_delta") == -1 and
+            production_transition.get("partial_or_unregistered_surface") ==
+            "rejected", "Patch 23.12 frozen live-C transition drifted")
+    require(production_transition["current_live_c_case_surface"]["count"] ==
+            production_transition["previous_live_c_case_surface"]["count"] - 1 and
+            production_transition["current_live_c_case_surface"] ==
             summary["live_c_case_surface"],
-            "live explicit-C surface is not the registered Patch 23.11 successor")
+            "live explicit-C surface is not the registered Patch 23.12 successor")
     validate_mutations(record, registry)
     require(record.get("explicit_c_byte_authority") ==
             registry["phase23_mir_to_c_deprecation_opening"]
@@ -426,7 +450,7 @@ def render(record: dict, registry: dict) -> str:
     capabilities = capability_rows(registry)
     cases = live_c_case_rows()
     cap = record["capability_surface"]
-    live = record["archived_corpus_transition"]["current_live_c_case_surface"]
+    live = record["production_release_transition"]["current_live_c_case_surface"]
     lines = [
         "# Cranelift Phase 23.9 — Frozen MIR-to-C Feature Surface",
         "",
@@ -440,7 +464,7 @@ def render(record: dict, registry: dict) -> str:
         f"- Capability observable manifest: `{cap['observable_contract_manifest_digest']}`",
         f"- Frozen live explicit-C cases: `{live['count']}`",
         f"- Live-C identity manifest: `{live['complete_identity_manifest_digest']}`",
-        "- Current identity is the registered Patch 23.11 archive-authority successor; the frozen population is unchanged.",
+        "- Current identity is the registered Patch 23.12 production-route successor; the supported runner moved to Cranelift and the frozen C population decreased by one.",
         f"- Maintenance: `{record['maintenance_policy']['classification']}`",
         "- New features require authorized shared semantics and a supported Cranelift path first.",
         "- C-only capabilities, backend-only semantic claims, and fallback are forbidden.",

@@ -17350,6 +17350,29 @@ guard-cranelift-phase23-mir-to-c-archived-corpus-evidence:
     just guard-cranelift-phase23-mir-to-c-archived-corpus-contract
     python3 scripts/phase23_mir_to_c_archived_corpus.py evidence
 
+# Cranelift lane, Patch 23.12. Prove supported build, package, install,
+# relocation, release, and developer routes are native while C stays bounded.
+guard-cranelift-phase23-production-release-audit-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📦 Checking the Phase 23 production/release audit authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase23-production-release-audit-contract | grep -F $'guard-cranelift-phase23-production-release-audit-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase23_mir_to_c_deprecation_opening.py validate
+    python3 scripts/phase23_mir_to_c_deprecation_opening.py check-review
+    python3 scripts/phase23_mir_to_c_frozen_surface.py validate
+    python3 scripts/phase23_mir_to_c_frozen_surface.py check-review
+    python3 scripts/phase23_production_release_audit.py validate
+    python3 scripts/phase23_production_release_audit.py check-review
+
+guard-cranelift-phase23-production-release-audit-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Qualifying native package/install/release routes without fallback..."
+    just guard-cranelift-phase23-production-release-audit-contract
+    python3 scripts/phase23_production_release_audit.py evidence
+
 guard-cranelift-phase21-native-rebuild-reproducibility-contract:
     #!/usr/bin/env bash
     set -euo pipefail

@@ -14,25 +14,33 @@ if [ ! -f "$TEST_PATH" ]; then
   exit 1
 fi
 
-# Force make to recognize compiler changes by touching the entrypoint and rebuilding.
-if [ -f compiler/test_runner_entry.gst ]; then
-  touch compiler/test_runner_entry.gst
-fi
-
 mkdir -p build
 BUILD_LOG="build/gust-build.log"
-if ! make gust >"$BUILD_LOG" 2>&1; then
-  cat "$BUILD_LOG" >&2
-  echo "❌ Error: 'make gust' failed. Aborting. Full diagnostics: $BUILD_LOG" >&2
+if [ "${GUST_RUNNER_SKIP_BUILD:-0}" != "1" ]; then
+  # Force make to recognize compiler changes before a normal developer run.
+  if [ -f compiler/test_runner_entry.gst ]; then
+    touch compiler/test_runner_entry.gst
+  fi
+  if ! make phase10-native-package >"$BUILD_LOG" 2>&1; then
+    cat "$BUILD_LOG" >&2
+    echo "❌ Error: native package build failed. Aborting. Full diagnostics: $BUILD_LOG" >&2
+    exit 1
+  fi
+elif [ ! -x gust ] || [ ! -x build/gust-native-backend ] || \
+    [ ! -f build/gust-runtime-package.a ]; then
+  echo "❌ Error: GUST_RUNNER_SKIP_BUILD requires an existing native package." >&2
   exit 1
 fi
 
 TEST_STEM="$(basename "$TEST_PATH" .gst)"
 TEMP_OUTPUT="build/${TEST_STEM}.compile.log"
+NATIVE_OUTPUT="build/${TEST_STEM}_bin"
 
-echo "=== [1/3] COMPILING GUST TO C ===" > to.log
+echo "=== [1/2] COMPILING GUST WITH CRANELIFT ===" > to.log
 
-./gust --backend mir-to-c "$TEST_PATH" > "$TEMP_OUTPUT" 2>&1
+rm -f "$NATIVE_OUTPUT"
+./build/phase10-package/bin/gust --backend cranelift -o "$NATIVE_OUTPUT" \
+  "$TEST_PATH" > "$TEMP_OUTPUT" 2>&1
 COMP_STATUS=$?
 cat "$TEMP_OUTPUT" >> to.log
 
@@ -52,22 +60,13 @@ if [ "$COMP_STATUS" -ne 0 ]; then
   exit "$COMP_STATUS"
 fi
 
-grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" "$TEMP_OUTPUT" > "build/${TEST_STEM}.c"
-
-echo -e "\n=== [2/3] COMPILING NATIVE C EXECUTABLE ===" >> to.log
-cat src/runtime.c "build/${TEST_STEM}.c" > "build/${TEST_STEM}_final.c"
-
-CC_BIN="${CC:-cc}"
-"$CC_BIN" -O2 -Wall -pthread -Isrc "build/${TEST_STEM}_final.c" -o "build/${TEST_STEM}_bin" >> to.log 2>&1
-C_STATUS=$?
-
-if [ "$C_STATUS" -ne 0 ]; then
-  echo "❌ Native C compilation failed! See to.log for compiler errors."
-  exit "$C_STATUS"
+if [ ! -x "$NATIVE_OUTPUT" ]; then
+  echo "❌ Cranelift compilation produced no executable artifact. See to.log for compiler diagnostics."
+  exit 1
 fi
 
-echo -e "\n=== [3/3] RUNNING COMPILED BINARY ===" >> to.log
-"./build/${TEST_STEM}_bin" >> to.log 2>&1
+echo -e "\n=== [2/2] RUNNING COMPILED BINARY ===" >> to.log
+"$NATIVE_OUTPUT" >> to.log 2>&1
 RUN_STATUS=$?
 
 if [ "$RUN_STATUS" -ne 0 ]; then
