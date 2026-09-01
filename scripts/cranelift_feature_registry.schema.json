@@ -76,6 +76,7 @@
     "phase23_assurance_phase_a",
     "phase23_assurance_phase_b",
     "phase23_same_scope_declaration",
+    "phase23_mir_to_c_deprecation_opening",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -3043,6 +3044,30 @@
               "bootstrap_seed_status": {"const": "unchanged_deferred_to_patch23_6a"}
             }
           },
+          "boundary": {"type": "object"}
+        }
+      },
+      "phase23_mir_to_c_deprecation_opening": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version", "status", "next_patch", "owner",
+                     "review_view", "renderer", "observed_main_sha",
+                     "classifications", "inventory", "structural_surfaces",
+                     "pre_deprecation_baseline", "boundary"],
+        "properties": {
+          "contract_version": {"const": "phase23_mir_to_c_deprecation_opening_v1"},
+          "status": {"const": "patch23_7_complete"},
+          "next_patch": {"const": "23.8"},
+          "owner": {"const": "cranelift"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE23_MIR_TO_C_DEPRECATION_OPENING.md"},
+          "renderer": {"const": "scripts/phase23_mir_to_c_deprecation_opening.py"},
+          "observed_main_sha": {"const": "f328b30d107467811f8eabfd1dc14e17136187f1"},
+          "classifications": {"type": "array", "minItems": 6, "maxItems": 6,
+                              "uniqueItems": true, "items": {"type": "string"}},
+          "inventory": {"type": "object"},
+          "structural_surfaces": {"type": "array", "minItems": 15,
+                                  "maxItems": 15, "items": {"type": "object"}},
+          "pre_deprecation_baseline": {"type": "object"},
           "boundary": {"type": "object"}
         }
       },
