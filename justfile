@@ -17331,6 +17331,25 @@ guard-cranelift-phase23-mir-to-c-focused-live-evidence:
     just guard-cranelift-phase23-mir-to-c-focused-live-contract
     python3 scripts/phase23_mir_to_c_focused_live.py evidence
 
+# Cranelift lane, Patch 23.11. Validate immutable MIR-to-C references and
+# replay default/explicit Cranelift without creating a second live-C lane.
+guard-cranelift-phase23-mir-to-c-archived-corpus-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📦 Checking the Phase 23 archived MIR-to-C corpus authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase23-mir-to-c-archived-corpus-contract | grep -F $'guard-cranelift-phase23-mir-to-c-archived-corpus-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase23_mir_to_c_archived_corpus.py validate
+    python3 scripts/phase23_mir_to_c_archived_corpus.py check-review
+
+guard-cranelift-phase23-mir-to-c-archived-corpus-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Replaying Cranelift against the archived MIR-to-C corpus..."
+    just guard-cranelift-phase23-mir-to-c-archived-corpus-contract
+    python3 scripts/phase23_mir_to_c_archived_corpus.py evidence
+
 guard-cranelift-phase21-native-rebuild-reproducibility-contract:
     #!/usr/bin/env bash
     set -euo pipefail

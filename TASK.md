@@ -128,7 +128,7 @@ Out of scope:
 - [x] Patch 23.8a — Deprecation Bootstrap Seed Reconvergence — DONE
 - [x] Patch 23.9 — Frozen MIR-to-C Feature Surface — DONE
 - [x] Patch 23.10 — Focused Live Compatibility Lane and Default-CI Retirement — DONE
-- [ ] Patch 23.11 — Archived MIR-to-C Reference Corpus
+- [x] Patch 23.11 — Archived MIR-to-C Reference Corpus — DONE
 - [ ] Patch 23.12 — Production, Release, Package, and Downstream Audit
 - [ ] Patch 23.13 — Cross-Feature Qualification and Residue Audit
 - [ ] Patch 23.14 — Exact-Main Historical Full Qualification

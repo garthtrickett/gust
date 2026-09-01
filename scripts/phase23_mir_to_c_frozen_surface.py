@@ -222,9 +222,11 @@ def scan(registry: dict) -> dict[str, object]:
 
 def policy_accepts(record: dict, summary: dict[str, object]) -> bool:
     transition = record.get("focused_live_transition", {})
-    expected_live = transition.get(
+    archive_transition = record.get("archived_corpus_transition", {})
+    expected_live = archive_transition.get(
+        "current_live_c_case_surface", transition.get(
         "current_live_c_case_surface", record.get("live_c_case_surface")
-    )
+    ))
     return (
         record.get("capability_surface") == summary["capability_surface"] and
         expected_live == summary["live_c_case_surface"] and
@@ -338,9 +340,30 @@ def validate() -> tuple[dict, dict[str, object]]:
         require(transition["current_live_c_case_surface"].get(field) ==
                 transition["previous_live_c_case_surface"].get(field),
                 f"Patch 23.10 changed frozen live-C field: {field}")
-    require(transition["current_live_c_case_surface"] ==
+    archive_transition = record.get("archived_corpus_transition")
+    require(isinstance(archive_transition, dict) and
+            archive_transition.get("contract_version") ==
+            "phase23_frozen_archive_transition_v1" and
+            archive_transition.get("status") == "patch23_11_complete" and
+            archive_transition.get("authority_base_main") ==
+            "7941bceb2ed62bca97917ad241290caf5fd97bf6" and
+            archive_transition.get("previous_live_c_case_surface") ==
+            transition.get("current_live_c_case_surface") and
+            archive_transition.get("unchanged_fields") == [
+                "count", "owner_contract_count", "owner_counts",
+                "consumer_class_counts", "selection_counts",
+            ] and
+            archive_transition.get("change_reason") ==
+            "archive_authority_and_native_replay_shifted_command_lines_and_owner_file_digests_without_adding_a_live_explicit_C_case" and
+            archive_transition.get("partial_or_unregistered_surface") ==
+            "rejected", "Patch 23.11 frozen archive transition drifted")
+    for field in archive_transition["unchanged_fields"]:
+        require(archive_transition["current_live_c_case_surface"].get(field) ==
+                archive_transition["previous_live_c_case_surface"].get(field),
+                f"Patch 23.11 changed frozen live-C field: {field}")
+    require(archive_transition["current_live_c_case_surface"] ==
             summary["live_c_case_surface"],
-            "live explicit-C surface is not the registered Patch 23.10 successor")
+            "live explicit-C surface is not the registered Patch 23.11 successor")
     validate_mutations(record, registry)
     require(record.get("explicit_c_byte_authority") ==
             registry["phase23_mir_to_c_deprecation_opening"]
@@ -356,7 +379,7 @@ def validate() -> tuple[dict, dict[str, object]]:
         "begins_patch23_10": False,
     }, "Patch 23.9 boundary drifted")
     task = TASK.read_text(encoding="utf-8")
-    for patch in ("23.7", "23.8", "23.8a", "23.9"):
+    for patch in ("23.7", "23.8", "23.8a", "23.9", "23.10", "23.11"):
         require(re.search(
             rf"^- \[x\] Patch {re.escape(patch)} .* — DONE$", task, re.M
         ) is not None, f"mandatory Patch {patch} status is not DONE")
@@ -403,7 +426,7 @@ def render(record: dict, registry: dict) -> str:
     capabilities = capability_rows(registry)
     cases = live_c_case_rows()
     cap = record["capability_surface"]
-    live = record["focused_live_transition"]["current_live_c_case_surface"]
+    live = record["archived_corpus_transition"]["current_live_c_case_surface"]
     lines = [
         "# Cranelift Phase 23.9 — Frozen MIR-to-C Feature Surface",
         "",
@@ -417,7 +440,7 @@ def render(record: dict, registry: dict) -> str:
         f"- Capability observable manifest: `{cap['observable_contract_manifest_digest']}`",
         f"- Frozen live explicit-C cases: `{live['count']}`",
         f"- Live-C identity manifest: `{live['complete_identity_manifest_digest']}`",
-        "- Current identity is the registered Patch 23.10 workflow-routing successor; the frozen population is unchanged.",
+        "- Current identity is the registered Patch 23.11 archive-authority successor; the frozen population is unchanged.",
         f"- Maintenance: `{record['maintenance_policy']['classification']}`",
         "- New features require authorized shared semantics and a supported Cranelift path first.",
         "- C-only capabilities, backend-only semantic claims, and fallback are forbidden.",

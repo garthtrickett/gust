@@ -48,14 +48,18 @@ SELF_EXCLUSIONS = {
     ".github/workflows/phase23-mir-to-c-deprecation-opening.yml",
     ".github/workflows/phase23-mir-to-c-frozen-surface.yml",
     ".github/workflows/phase23-mir-to-c-focused-live.yml",
+    ".github/workflows/phase23-mir-to-c-archived-corpus.yml",
     "compiler/CRANELIFT_PHASE23_MIR_TO_C_DEPRECATION_OPENING.md",
     "compiler/CRANELIFT_PHASE23_MIR_TO_C_FROZEN_SURFACE.md",
     "compiler/CRANELIFT_PHASE23_MIR_TO_C_FOCUSED_LIVE.md",
+    "compiler/CRANELIFT_PHASE23_MIR_TO_C_ARCHIVED_CORPUS.md",
+    "compiler/fixtures/phase23_mir_to_c_reference_corpus_v1.json",
     "scripts/cranelift_feature_registry.json",
     "scripts/cranelift_feature_registry.schema.json",
     "scripts/phase23_mir_to_c_deprecation_opening.py",
     "scripts/phase23_mir_to_c_frozen_surface.py",
     "scripts/phase23_mir_to_c_focused_live.py",
+    "scripts/phase23_mir_to_c_archived_corpus.py",
 }
 
 SURFACE_PATTERNS = {
@@ -593,6 +597,47 @@ def validate() -> dict:
         "scripts/phase23_mir_to_c_focused_live.py",
         "scripts/phase23_mir_to_c_frozen_surface.py",
     ], "Patch 23.10 authority-only path manifest drifted")
+    archive_transition = successor.get("archived_corpus_inventory_transition")
+    require(isinstance(archive_transition, dict) and
+            archive_transition.get("contract_version") ==
+            "phase23_archived_corpus_inventory_transition_v1" and
+            archive_transition.get("status") == "patch23_11_complete" and
+            archive_transition.get("authority_base_main") ==
+            "7941bceb2ed62bca97917ad241290caf5fd97bf6" and
+            archive_transition.get("previous_inventory") ==
+            focused_transition.get("current_inventory") and
+            archive_transition.get("unchanged_inventory_fields") == [
+                "text_surface_count", "structural_surface_count",
+                "structural_manifest_digest", "classification_counts",
+                "unclassified_count",
+            ] and
+            archive_transition.get("unchanged_invocation_selection_fields") == [
+                "explicit_c", "explicit_cranelift",
+                "explicit_invalid_or_parser_probe",
+            ] and
+            archive_transition.get("implicit_default_replay_delta") == 1 and
+            archive_transition.get("live_explicit_c_population") == 178 and
+            archive_transition.get("partial_or_unregistered_inventory") ==
+            "rejected", "Patch 23.11 archived-corpus inventory transition drifted")
+    require(archive_transition.get("authority_only_paths") == [
+        ".github/workflows/phase23-mir-to-c-archived-corpus.yml",
+        ".github/workflows/pr-fast.yml",
+        "TASK.md",
+        "compiler/CRANELIFT_PHASE23_MIR_TO_C_ARCHIVED_CORPUS.md",
+        "compiler/CRANELIFT_PHASE22_OPENING.md",
+        "compiler/CRANELIFT_PHASE23_MIR_TO_C_DEPRECATION_OPENING.md",
+        "compiler/CRANELIFT_PHASE23_MIR_TO_C_FROZEN_SURFACE.md",
+        "compiler/fixtures/phase23_mir_to_c_reference_corpus_v1.json",
+        "justfile",
+        "scripts/cranelift_feature_registry.json",
+        "scripts/cranelift_feature_registry.schema.json",
+        "scripts/cranelift_registry.py",
+        "scripts/cranelift_test_levels.json",
+        "scripts/phase23_mir_to_c_archived_corpus.py",
+        "scripts/phase23_mir_to_c_deprecation_opening.py",
+        "scripts/phase23_mir_to_c_frozen_surface.py",
+        "scripts/phase22_opening.py",
+    ], "Patch 23.11 authority-only path manifest drifted")
     live_inventory = inventory_summary()
     live_seed_digest = digest_bytes(SEED.read_bytes())
     accepted_by_seed = {
@@ -614,9 +659,26 @@ def validate() -> dict:
         require(focused_transition["current_inventory"].get(field) ==
                 focused_transition["previous_inventory"].get(field),
                 f"Patch 23.10 changed retained inventory field: {field}")
-    expected_inventory = focused_transition["current_inventory"]
+    for field in archive_transition["unchanged_inventory_fields"]:
+        require(archive_transition["current_inventory"].get(field) ==
+                archive_transition["previous_inventory"].get(field),
+                f"Patch 23.11 changed retained inventory field: {field}")
+    previous_selections = archive_transition["previous_inventory"][
+        "invocation_selection_counts"]
+    current_selections = archive_transition["current_inventory"][
+        "invocation_selection_counts"]
+    for field in archive_transition["unchanged_invocation_selection_fields"]:
+        require(current_selections.get(field) == previous_selections.get(field),
+                f"Patch 23.11 changed retained invocation selection: {field}")
+    require(current_selections.get("implicit_default", 0) ==
+            previous_selections.get("implicit_default", 0) +
+            archive_transition["implicit_default_replay_delta"] and
+            archive_transition["current_inventory"]["invocation_count"] ==
+            archive_transition["previous_inventory"]["invocation_count"] + 1,
+            "Patch 23.11 native archive replay invocation delta drifted")
+    expected_inventory = archive_transition["current_inventory"]
     require(expected_inventory == live_inventory,
-            "live Patch 23.10 MIR-to-C inventory is not the exact registered successor")
+            "live Patch 23.11 MIR-to-C inventory is not the exact registered successor")
     require(live_inventory["unclassified_count"] == 0,
             "consumer or artifact remains unclassified")
     validate_identity_falsifiers(live_inventory)
@@ -955,6 +1017,23 @@ def render(record: dict) -> str:
         f"- Current invocation manifest: `{focused_inventory['invocation_manifest_digest']}`",
         "- Invocation count, structural surfaces, route selections, and zero-unclassified status are unchanged.",
         "- One registered authority reference joins the archive-candidate text inventory; other identity changes are workflow routing files and shifted command locations.",
+        "- Partial or unregistered inventory: `rejected`",
+        "",
+    ]
+    archive_transition = successor["archived_corpus_inventory_transition"]
+    archive_inventory = archive_transition["current_inventory"]
+    lines += [
+        "## Patch 23.11 archived-corpus inventory successor",
+        "",
+        f"- Contract: `{archive_transition['contract_version']}`",
+        f"- Status: `{archive_transition['status']}`",
+        f"- Authority base main: `{archive_transition['authority_base_main']}`",
+        f"- Current text surfaces: `{archive_inventory['text_surface_count']}`",
+        f"- Current text manifest: `{archive_inventory['text_surface_manifest_digest']}`",
+        f"- Current invocations: `{archive_inventory['invocation_count']}`",
+        f"- Current invocation manifest: `{archive_inventory['invocation_manifest_digest']}`",
+        f"- Live explicit-C invocations: `{archive_transition['live_explicit_c_population']}` (unchanged)",
+        "- The sole added invocation is default-native archived-corpus replay; no live-C caller was added.",
         "- Partial or unregistered inventory: `rejected`",
         "",
     ]
