@@ -577,6 +577,7 @@ def validate() -> dict:
         ".github/workflows/phase23-mir-to-c-focused-live.yml",
         ".github/workflows/pr-fast.yml",
         "TASK.md",
+        "compiler/CRANELIFT_PHASE22_OPENING.md",
         "compiler/CRANELIFT_PHASE23_MIR_TO_C_DEPRECATION_OPENING.md",
         "compiler/CRANELIFT_PHASE23_MIR_TO_C_FOCUSED_LIVE.md",
         "compiler/CRANELIFT_PHASE23_MIR_TO_C_FROZEN_SURFACE.md",

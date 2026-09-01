@@ -3136,7 +3136,7 @@
                   "previous_inventory": {"type": "object"},
                   "current_inventory": {"type": "object"},
                   "unchanged_fields": {"type": "array", "minItems": 5, "maxItems": 5, "uniqueItems": true},
-                  "authority_only_paths": {"type": "array", "minItems": 19, "maxItems": 19, "uniqueItems": true},
+                  "authority_only_paths": {"type": "array", "minItems": 20, "maxItems": 20, "uniqueItems": true},
                   "partial_or_unregistered_inventory": {"const": "rejected"}
                 }
               },

@@ -4941,7 +4941,7 @@
         },
         "current_inventory": {
           "text_surface_count": 567,
-          "text_surface_manifest_digest": "30c349f1916cc756977ff08cdddad1fdf41d6e3cfd6ec178603e59f154256445",
+          "text_surface_manifest_digest": "afa41420ef493b0136b7398e9c670bae9c98179aab5453b3cb08db16074a92a9",
           "invocation_count": 316,
           "invocation_manifest_digest": "38dd7844248df6e5713c92196bae672d80fca3b89e7a2a15d0b0db675df2bce6",
           "structural_surface_count": 15,
@@ -4963,6 +4963,7 @@
           ".github/workflows/phase23-mir-to-c-focused-live.yml",
           ".github/workflows/pr-fast.yml",
           "TASK.md",
+          "compiler/CRANELIFT_PHASE22_OPENING.md",
           "compiler/CRANELIFT_PHASE23_MIR_TO_C_DEPRECATION_OPENING.md",
           "compiler/CRANELIFT_PHASE23_MIR_TO_C_FOCUSED_LIVE.md",
           "compiler/CRANELIFT_PHASE23_MIR_TO_C_FROZEN_SURFACE.md",
