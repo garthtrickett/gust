@@ -27,6 +27,24 @@ The demo is a typed ping: click a button, the Wasm frontend calls the native
 backend through generated code, gets `Result[PingOutput, AppError]`, renders it.
 **Boring as an app, and that is the point** — the claim is architectural.
 
+`docs/WASM_DOM_ARCHITECTURE.md` records the proposed implementation shape for
+the last boundary in this loop. It uses web standards as authority,
+`wasm-bindgen`/`web-sys` as focused ABI and binding-generation references, Lit as
+the incremental-part reference, and a generated narrow JavaScript bridge rather
+than application-written JavaScript or a general framework runtime. That note
+does not resolve this document's demo-sequencing contradiction or activate the
+slice.
+
+`docs/HTTP_RPC_ARCHITECTURE.md` records the proposed shape for the middle of the
+loop. HTTP follows RFC 9110/9112, uses h11 as the Sans-I/O state-machine
+reference, llhttp as a strict parser and malformed-input cross-check, and Go's
+`net/http` as an operational lifecycle reference. `gustrpc` remains
+transport-independent and Gust-owned; Connect is the primary HTTP-native RPC
+reference, gRPC supplies later deadline/status/streaming lessons, and tRPC is
+only an ergonomics reference. Slice 0 stays unary JSON over strict HTTP/1.1 and
+does not acquire HTTP/2, streaming, reflection, batching, or Protobuf as hidden
+prerequisites.
+
 **What it must prove:** shared types usable by both sides; a service definition
 that generates *both* the backend dispatcher and the frontend stub; a native
 backend binary; a Wasm frontend; and a call that updates the DOM with no
@@ -35,6 +53,14 @@ app-specific hand-written JavaScript.
 **What it must not try to prove yet:** SAM controller, template compiler,
 routing, auth, database, forms, validation, subscriptions, streaming, binary
 transport, WIT, SSR, hydration, component model, asset pipeline, deploy CLI.
+
+The later reference selections do not widen that list. TanStack `query-core`,
+Vite/esbuild/Lightning CSS, SSE/Connect streaming/Phoenix Channels/WebSockets,
+and OCI/BuildKit/Kubernetes rollout semantics now have owning architecture
+notes, but none is a prerequisite for typed ping. Slice 0 may serve fixed
+generated artifacts and use full-page reload; query caching, optimistic
+reconciliation, scoped-CSS bundling, realtime transports, production packaging,
+health probes, and rolling replacement remain later explicit slices.
 
 **Build order** (fifteen steps, each independently checkable): skeleton → type
 scanner → JSON encoders → JSON decoders → manifest → handler without HTTP →
@@ -83,6 +109,13 @@ like.
 having **no equivalent anywhere in `compiler/`**. Slice 0's step 0.3 and the
 trace proposal need the same code. **Whoever writes it unblocks both.**
 
+The implementation reference is now recorded without changing that status:
+RFC 8259 is normative, Serde JSON is the worked strongly typed reader/writer
+reference, and JSONTestSuite is the hostile parser corpus. Slice 0 still needs
+compiler-generated monomorphic codecs, not a generic dynamic JSON value or a
+Serde-style trait system. The full boundary decisions are in
+`docs/FULL_STACK_REFERENCE_MAP.md` and `docs/HTTP_RPC_ARCHITECTURE.md`.
+
 ---
 
 ## What blocks it, in order of how much
@@ -105,6 +138,13 @@ generates `contract_hash.txt` and sends `x-gustrpc-contract`, with the backend
 ignoring it initially. §108 requires a versioned schema for the same reason:
 **version from the first commit, because the moment anything consumes it, it is
 an interface.**
+
+The contract hash is only one part of the boundary. The generated dispatcher
+must also be provable without sockets, inject immutable auth/tenant/request
+context rather than decode it from application JSON, keep Query retry separate
+from Mutation idempotency, and return stable structured errors. The proposed
+wire shape, strict HTTP limits, security boundary, conformance corpus, and later
+Connect-compatible path are in `docs/HTTP_RPC_ARCHITECTURE.md`.
 
 ---
 
