@@ -64501,8 +64501,8 @@ void compiler_print_help() {
     os_LogStr(((Slice_unsigned_char){ (unsigned char*)"", 0 }));
     os_LogStr(((Slice_unsigned_char){ (unsigned char*)"Backends:", 9 }));
     os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  cranelift  Compile to one native executable (default).", 56 }));
-    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  mir-to-c, c  Emit C source to stdout (retained semantic oracle).", 66 }));
-    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"", 0 }));
+    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.", 107 }));
+    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  Bootstrap C retirement is separate and deferred to Phase 25.", 62 }));
     os_LogStr(((Slice_unsigned_char){ (unsigned char*)"Options:", 8 }));
     os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  --backend <mir-to-c|c|cranelift>  Select the backend explicitly.", 66 }));
     os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  -o <output>                     Optional Cranelift output; defaults to the source stem.", 89 }));
