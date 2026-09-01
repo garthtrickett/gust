@@ -77,6 +77,7 @@
     "phase23_assurance_phase_b",
     "phase23_same_scope_declaration",
     "phase23_mir_to_c_deprecation_opening",
+    "phase23_mir_to_c_frozen_surface",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -3076,6 +3077,7 @@
                          "observed_main_sha", "presentation",
                          "post_deprecation_inventory",
                          "seed_reconvergence_inventory_transition",
+                         "frozen_surface_inventory_transition",
                          "explicit_c_byte_authority", "route_contract",
                          "boundary"],
             "properties": {
@@ -3100,12 +3102,105 @@
                   "landed_seed_evidence": {"pull_request": 289, "head_sha": "ba040834dadef99982892016a2163d0296270a0a", "merge_main_sha": "3d9ed5df9188cf38275885a665316e58cfb9dd21", "merged_at": "2026-09-01T08:53:43Z", "event": "pull_request", "workflow_population": 22, "successful_workflows": 22, "unfinished_workflows": 0, "non_success_workflows": 0, "unresolved_non_outdated_review_threads": 0, "changed_paths": ["gust_v4.c"]}
                 }
               },
+              "frozen_surface_inventory_transition": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["contract_version", "status", "authority_base_main",
+                             "previous_inventory", "current_inventory",
+                             "unchanged_live_route_fields", "authority_only_paths",
+                             "partial_or_unregistered_inventory"],
+                "properties": {
+                  "contract_version": {"const": "phase23_frozen_surface_inventory_transition_v1"},
+                  "status": {"const": "patch23_9_complete"},
+                  "authority_base_main": {"const": "05b2545ce21688577834d5914137c81be7c99de5"},
+                  "previous_inventory": {"type": "object"},
+                  "current_inventory": {"type": "object"},
+                  "unchanged_live_route_fields": {"type": "array", "minItems": 7, "maxItems": 7, "uniqueItems": true},
+                  "authority_only_paths": {"type": "array", "minItems": 11, "maxItems": 11, "uniqueItems": true},
+                  "partial_or_unregistered_inventory": {"const": "rejected"}
+                }
+              },
               "explicit_c_byte_authority": {"type": "object"},
               "route_contract": {"type": "object"},
               "boundary": {"type": "object"}
             }
           },
           "boundary": {"type": "object"}
+        }
+      },
+      "phase23_mir_to_c_frozen_surface": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version", "status", "next_patch", "owner",
+                     "review_view", "renderer", "capability_surface",
+                     "live_c_case_surface", "maintenance_policy",
+                     "explicit_c_byte_authority", "boundary"],
+        "properties": {
+          "contract_version": {"const": "phase23_mir_to_c_frozen_surface_v1"},
+          "status": {"const": "patch23_9_complete"},
+          "next_patch": {"const": "23.10"},
+          "owner": {"const": "cranelift"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE23_MIR_TO_C_FROZEN_SURFACE.md"},
+          "renderer": {"const": "scripts/phase23_mir_to_c_frozen_surface.py"},
+          "capability_surface": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["count", "complete_identity_manifest_digest",
+                         "feature_id_manifest_digest", "fixture_count",
+                         "fixture_manifest_digest",
+                         "observable_contract_manifest_digest",
+                         "origin_phase_counts", "feature_family_counts"],
+            "properties": {
+              "count": {"const": 34},
+              "complete_identity_manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "feature_id_manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "fixture_count": {"const": 64},
+              "fixture_manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "observable_contract_manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "origin_phase_counts": {"type": "object"},
+              "feature_family_counts": {"type": "object"}
+            }
+          },
+          "live_c_case_surface": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["count", "complete_identity_manifest_digest",
+                         "case_id_manifest_digest", "owner_contract_count",
+                         "owner_contract_manifest_digest", "owner_counts",
+                         "consumer_class_counts", "selection_counts"],
+            "properties": {
+              "count": {"const": 178},
+              "complete_identity_manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "case_id_manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "owner_contract_count": {"const": 64},
+              "owner_contract_manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "owner_counts": {"type": "object"},
+              "consumer_class_counts": {"type": "object"},
+              "selection_counts": {"type": "object"}
+            }
+          },
+          "maintenance_policy": {
+            "const": {
+              "classification": "compatibility_correction_only",
+              "new_feature_prerequisite": "authorized_shared_semantics_and_supported_cranelift_path_first",
+              "c_only_capability": "forbidden",
+              "backend_only_semantic_claim": "forbidden",
+              "fallback": "forbidden",
+              "weakened_expected_inventory": "forbidden"
+            }
+          },
+          "explicit_c_byte_authority": {"type": "object"},
+          "boundary": {
+            "const": {
+              "changes_accepted_Gust_program_meaning": false,
+              "adds_or_changes_MIR_operations": false,
+              "changes_backend_capability_route_or_fallback": false,
+              "changes_ABI_layout_runtime_symbols_target_or_linker": false,
+              "changes_bootstrap_route_or_seed": false,
+              "edits_stdlib_or_CR15": false,
+              "begins_patch23_10": false
+            }
+          }
         }
       },
       "phase19_brand_authority": {

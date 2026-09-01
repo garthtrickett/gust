@@ -46,10 +46,13 @@ CLASSES = {
 
 SELF_EXCLUSIONS = {
     ".github/workflows/phase23-mir-to-c-deprecation-opening.yml",
+    ".github/workflows/phase23-mir-to-c-frozen-surface.yml",
     "compiler/CRANELIFT_PHASE23_MIR_TO_C_DEPRECATION_OPENING.md",
+    "compiler/CRANELIFT_PHASE23_MIR_TO_C_FROZEN_SURFACE.md",
     "scripts/cranelift_feature_registry.json",
     "scripts/cranelift_feature_registry.schema.json",
     "scripts/phase23_mir_to_c_deprecation_opening.py",
+    "scripts/phase23_mir_to_c_frozen_surface.py",
 }
 
 SURFACE_PATTERNS = {
@@ -507,6 +510,45 @@ def validate() -> dict:
             "changed_paths": ["gust_v4.c"],
         },
     }, "Patch 23.8a seed inventory transition drifted")
+    frozen_transition = successor.get("frozen_surface_inventory_transition")
+    require(isinstance(frozen_transition, dict) and
+            frozen_transition.get("contract_version") ==
+            "phase23_frozen_surface_inventory_transition_v1" and
+            frozen_transition.get("status") == "patch23_9_complete" and
+            frozen_transition.get("authority_base_main") ==
+            "05b2545ce21688577834d5914137c81be7c99de5" and
+            frozen_transition.get("previous_inventory") == {
+                "seed_digest":
+                    "af8a283c9ef4dbe621f78729e89a4c7270c0b740aeb7164af57fa953e5f29924",
+                "text_surface_count": 566,
+                "text_surface_manifest_digest":
+                    "6ee29149e1afba58a8407416effa561714ccb774ccaa074496ba1a9714683fec",
+            } and
+            frozen_transition.get("unchanged_live_route_fields") == [
+                "invocation_count",
+                "invocation_manifest_digest",
+                "structural_surface_count",
+                "structural_manifest_digest",
+                "classification_counts",
+                "invocation_selection_counts",
+                "unclassified_count",
+            ] and
+            frozen_transition.get("partial_or_unregistered_inventory") ==
+            "rejected",
+            "Patch 23.9 frozen-surface inventory transition drifted")
+    require(frozen_transition.get("authority_only_paths") == [
+        ".github/workflows/phase23-mir-to-c-frozen-surface.yml",
+        "TASK.md",
+        "compiler/CRANELIFT_PHASE23_MIR_TO_C_FROZEN_SURFACE.md",
+        "justfile",
+        "scripts/cranelift_feature_registry.json",
+        "scripts/cranelift_feature_registry.schema.json",
+        "scripts/cranelift_registry.py",
+        "scripts/cranelift_test_levels.json",
+        "scripts/phase23_mir_to_c_deprecation_opening.py",
+        "scripts/phase23_mir_to_c_frozen_surface.py",
+        ".github/workflows/pr-fast.yml",
+    ], "Patch 23.9 authority-only path manifest drifted")
     live_inventory = inventory_summary()
     live_seed_digest = digest_bytes(SEED.read_bytes())
     accepted_by_seed = {
@@ -516,12 +558,17 @@ def validate() -> dict:
     require(live_seed_digest in accepted_by_seed,
             "live seed is outside the Patch 23.8a inventory transition")
     accepted_state = accepted_by_seed[live_seed_digest]
-    expected_inventory = copy.deepcopy(successor["post_deprecation_inventory"])
-    expected_inventory["text_surface_count"] = accepted_state["text_surface_count"]
-    expected_inventory["text_surface_manifest_digest"] = \
+    previous_inventory = copy.deepcopy(successor["post_deprecation_inventory"])
+    previous_inventory["text_surface_count"] = accepted_state["text_surface_count"]
+    previous_inventory["text_surface_manifest_digest"] = \
         accepted_state["text_surface_manifest_digest"]
+    for field in frozen_transition["unchanged_live_route_fields"]:
+        require(frozen_transition["current_inventory"].get(field) ==
+                previous_inventory.get(field),
+                f"Patch 23.9 changed frozen route field: {field}")
+    expected_inventory = frozen_transition["current_inventory"]
     require(expected_inventory == live_inventory,
-            "live seed and MIR-to-C consumer inventory are not an exact registered pair")
+            "live Patch 23.9 MIR-to-C inventory is not the exact registered successor")
     require(live_inventory["unclassified_count"] == 0,
             "consumer or artifact remains unclassified")
     validate_identity_falsifiers(live_inventory)
@@ -827,6 +874,23 @@ def render(record: dict) -> str:
         f"- Exact-head workflows: {seed_landed['successful_workflows']}/{seed_landed['workflow_population']} successful, {seed_landed['unfinished_workflows']} unfinished, {seed_landed['non_success_workflows']} non-success",
         f"- Unresolved non-outdated review threads: {seed_landed['unresolved_non_outdated_review_threads']}",
         f"- Changed paths: `{', '.join(seed_landed['changed_paths'])}`",
+        "",
+    ]
+    frozen_transition = successor["frozen_surface_inventory_transition"]
+    frozen_inventory = frozen_transition["current_inventory"]
+    lines += [
+        "## Patch 23.9 frozen-surface inventory successor",
+        "",
+        f"- Contract: `{frozen_transition['contract_version']}`",
+        f"- Status: `{frozen_transition['status']}`",
+        f"- Authority base main: `{frozen_transition['authority_base_main']}`",
+        f"- Current text surfaces: `{frozen_inventory['text_surface_count']}`",
+        f"- Current text manifest: `{frozen_inventory['text_surface_manifest_digest']}`",
+        f"- Current invocations: `{frozen_inventory['invocation_count']}`",
+        f"- Current invocation manifest: `{frozen_inventory['invocation_manifest_digest']}`",
+        "- Invocation identities, structural surfaces, classifications, and route selections are unchanged.",
+        "- The transition contains authority and generated-review changes only.",
+        "- Partial or unregistered inventory: `rejected`",
         "",
     ]
     return "\n".join(lines)

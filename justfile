@@ -23757,3 +23757,23 @@ guard-cranelift-phase23-mir-to-c-deprecation-opening-evidence:
     make phase10-native-package
     just guard-cranelift-phase23-mir-to-c-deprecation-opening-contract
     python3 scripts/phase23_mir_to_c_deprecation_opening.py evidence
+
+# Cranelift lane, Patch 23.9. Freeze the accepted explicit-C compatibility
+# surface without adding a capability, changing a backend route, or fallback.
+guard-cranelift-phase23-mir-to-c-frozen-surface-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧊 Checking Phase 23 frozen MIR-to-C feature surface..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase23-mir-to-c-frozen-surface-contract | grep -F $'guard-cranelift-phase23-mir-to-c-frozen-surface-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase23_mir_to_c_deprecation_opening.py validate
+    python3 scripts/phase23_mir_to_c_frozen_surface.py validate
+    python3 scripts/phase23_mir_to_c_frozen_surface.py check-review
+
+guard-cranelift-phase23-mir-to-c-frozen-surface-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just guard-cranelift-phase23-mir-to-c-deprecation-opening-evidence
+    just guard-cranelift-phase23-mir-to-c-frozen-surface-contract
+    python3 scripts/phase23_mir_to_c_frozen_surface.py evidence
