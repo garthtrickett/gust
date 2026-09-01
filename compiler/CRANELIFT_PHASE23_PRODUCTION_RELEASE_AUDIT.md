@@ -5,12 +5,12 @@ Generated from the canonical feature registry. Do not edit by hand.
 - Contract: `phase23_production_release_audit_v1`
 - Status: `patch23_12_complete`
 - Next patch: `23.13`
-- Supported surfaces: `5`
-- Supported surface manifest: `c399d935e3d86d7c13de2f3735bdcbd584dec571acdb0b29ee9dd2d05afd16ae`
-- Repository compiler invocations: `317`
-- Retained explicit-C call sites: `177`
+- Supported surfaces: `6`
+- Supported surface manifest: `7617ab681ba668c39e10a3203d371b2d955ba000779084b2ebf0da17125fd4c0`
+- Repository compiler invocations: `318`
+- Retained explicit-C call sites: `178`
 - Phase 25 bootstrap explicit-C call sites: `5`
-- Non-production historical/test call sites: `172`
+- Non-production historical/test call sites: `173`
 - Supported production/release explicit-C calls: `0`
 - Active non-bootstrap live-C lanes: `1`
 - Active live-C owner: `phase23_mir_to_c_focused_live`

@@ -10,7 +10,8 @@ bash scripts/phase22_default_native_package.sh
 
 # The supported single-program entry is now native. Poisoning MIR-to-C while it
 # builds and executes proves the helper does not use or fall back to C.
-GUST_RUNNER_SKIP_BUILD=1 bash scripts/run-gust-file.sh \
+GUST_RUNNER_ROUTE=cranelift GUST_RUNNER_SKIP_BUILD=1 \
+  bash scripts/run-gust-file.sh \
   compiler/phase20_component_allocation_source.gst >/dev/null
 rg -F 'COMPILING GUST WITH CRANELIFT' to.log >/dev/null || {
   echo "$guard: supported runner did not use its native route" >&2

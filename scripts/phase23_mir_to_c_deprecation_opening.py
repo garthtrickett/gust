@@ -653,14 +653,23 @@ def validate() -> dict:
             archive_transition.get("current_inventory") and
             production_transition.get("migration") == {
                 "path": "scripts/run-gust-file.sh",
-                "from": "explicit_mir_to_c_plus_host_C_compile_link",
-                "to": "explicit_cranelift_native_artifact",
-                "explicit_c_delta": -1,
+                "historical_route":
+                    "explicit_mir_to_c_plus_host_C_compile_link_preserved",
+                "supported_route":
+                    "explicit_cranelift_native_artifact_selected_by_GUST_RUNNER_ROUTE",
+                "supported_callers": [
+                    "flake.nix:gt-one-gst", "justfile:gt-one-gst",
+                    "justfile:guard",
+                    "scripts/phase23_production_release_audit.sh",
+                ],
+                "invocation_delta": 1,
+                "explicit_c_delta": 0,
                 "explicit_cranelift_delta": 1,
-                "production_surface_delta": -1,
+                "production_surface_delta": 0,
             } and production_transition.get("unchanged_fields") == [
-                "invocation_count", "structural_surface_count",
-                "structural_manifest_digest", "unclassified_count",
+                "text_surface_count", "structural_surface_count",
+                "structural_manifest_digest", "classification_counts",
+                "unclassified_count",
             ] and production_transition.get("partial_or_unregistered_inventory") ==
             "rejected", "Patch 23.12 production/release inventory transition drifted")
     live_inventory = inventory_summary()
@@ -710,13 +719,15 @@ def validate() -> dict:
     current_production_selections = production_transition["current_inventory"][
         "invocation_selection_counts"]
     require(current_production_selections.get("explicit_c") ==
-            previous_production_selections.get("explicit_c") - 1 and
+            previous_production_selections.get("explicit_c") and
             current_production_selections.get("explicit_cranelift") ==
             previous_production_selections.get("explicit_cranelift") + 1 and
+            production_transition["current_inventory"]["invocation_count"] ==
+            production_transition["previous_inventory"]["invocation_count"] + 1 and
             production_transition["current_inventory"]["classification_counts"]
             ["production_or_release_migration"] ==
             production_transition["previous_inventory"]["classification_counts"]
-            ["production_or_release_migration"] - 1,
+            ["production_or_release_migration"],
             "Patch 23.12 supported-runner migration delta drifted")
     expected_inventory = production_transition["current_inventory"]
     require(expected_inventory == live_inventory,

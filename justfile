@@ -38,10 +38,10 @@ gt-one name:
 
 # Focused self-hosted Gust workflows use the shared script.
 gt-one-gst file:
-    bash scripts/run-gust-file.sh "{{file}}"
+    GUST_RUNNER_ROUTE=cranelift bash scripts/run-gust-file.sh "{{file}}"
 
 guard file:
-    bash scripts/run-gust-file.sh "{{file}}"
+    GUST_RUNNER_ROUTE=cranelift bash scripts/run-gust-file.sh "{{file}}"
 
 guard-pr-fast-shard shard:
     #!/usr/bin/env bash

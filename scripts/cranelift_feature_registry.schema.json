@@ -3181,7 +3181,7 @@
                   "previous_inventory": {"type": "object"},
                   "current_inventory": {"type": "object"},
                   "migration": {"type": "object"},
-                  "unchanged_fields": {"type": "array", "minItems": 4, "maxItems": 4, "uniqueItems": true},
+                  "unchanged_fields": {"type": "array", "minItems": 5, "maxItems": 5, "uniqueItems": true},
                   "partial_or_unregistered_inventory": {"const": "rejected"}
                 }
               },
@@ -3287,15 +3287,17 @@
             "additionalProperties": false,
             "required": ["contract_version", "status", "authority_base_main",
                          "previous_live_c_case_surface", "current_live_c_case_surface",
-                         "removed_case", "count_delta", "partial_or_unregistered_surface"],
+                         "preserved_case", "unchanged_fields", "change_reason",
+                         "partial_or_unregistered_surface"],
             "properties": {
               "contract_version": {"const": "phase23_frozen_production_release_transition_v1"},
               "status": {"const": "patch23_12_complete"},
               "authority_base_main": {"const": "c2b6ec8c4a3650e704541ebd00b57020783f1def"},
               "previous_live_c_case_surface": {"type": "object"},
               "current_live_c_case_surface": {"type": "object"},
-              "removed_case": {"type": "object"},
-              "count_delta": {"const": -1},
+              "preserved_case": {"type": "object"},
+              "unchanged_fields": {"type": "array", "minItems": 5, "maxItems": 5, "uniqueItems": true},
+              "change_reason": {"const": "dual_route_authority_shifted_the_preserved_case_line_and_owner_file_digests_without_changing_live_explicit_C_population"},
               "partial_or_unregistered_surface": {"const": "rejected"}
             }
           },
@@ -3445,12 +3447,12 @@
                          "active_non_bootstrap_live_c_lane_count",
                          "active_non_bootstrap_live_c_owner", "unknown_downstream_count"],
             "properties": {
-              "supported_surface_count": {"const": 5},
+              "supported_surface_count": {"const": 6},
               "supported_surface_manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
-              "repository_invocation_count": {"const": 317},
-              "repository_explicit_c_count": {"const": 177},
+              "repository_invocation_count": {"const": 318},
+              "repository_explicit_c_count": {"const": 178},
               "phase25_bootstrap_explicit_c_count": {"const": 5},
-              "non_bootstrap_retained_test_surface_count": {"const": 172},
+              "non_bootstrap_retained_test_surface_count": {"const": 173},
               "supported_production_or_release_explicit_c_count": {"const": 0},
               "active_non_bootstrap_live_c_lane_count": {"const": 1},
               "active_non_bootstrap_live_c_owner": {"const": "phase23_mir_to_c_focused_live"},

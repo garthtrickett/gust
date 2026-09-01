@@ -376,16 +376,23 @@ def validate() -> tuple[dict, dict[str, object]]:
             "c2b6ec8c4a3650e704541ebd00b57020783f1def" and
             production_transition.get("previous_live_c_case_surface") ==
             archive_transition.get("current_live_c_case_surface") and
-            production_transition.get("removed_case") == {
+            production_transition.get("preserved_case") == {
                 "path": "scripts/run-gust-file.sh",
                 "owner": "cranelift",
-                "reason": "supported_developer_runner_migrated_to_explicit_cranelift",
-            } and production_transition.get("count_delta") == -1 and
+                "reason":
+                    "historical_C_route_preserved_while_supported_callers_select_explicit_cranelift",
+            } and production_transition.get("unchanged_fields") == [
+                "count", "owner_contract_count", "owner_counts",
+                "consumer_class_counts", "selection_counts",
+            ] and production_transition.get("change_reason") ==
+            "dual_route_authority_shifted_the_preserved_case_line_and_owner_file_digests_without_changing_live_explicit_C_population" and
             production_transition.get("partial_or_unregistered_surface") ==
             "rejected", "Patch 23.12 frozen live-C transition drifted")
-    require(production_transition["current_live_c_case_surface"]["count"] ==
-            production_transition["previous_live_c_case_surface"]["count"] - 1 and
-            production_transition["current_live_c_case_surface"] ==
+    for field in production_transition["unchanged_fields"]:
+        require(production_transition["current_live_c_case_surface"].get(field) ==
+                production_transition["previous_live_c_case_surface"].get(field),
+                f"Patch 23.12 changed frozen live-C field: {field}")
+    require(production_transition["current_live_c_case_surface"] ==
             summary["live_c_case_surface"],
             "live explicit-C surface is not the registered Patch 23.12 successor")
     validate_mutations(record, registry)

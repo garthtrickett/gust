@@ -5058,25 +5058,27 @@
           "unclassified_count": 0
         },
         "current_inventory": {
-          "text_surface_count": 566,
-          "text_surface_manifest_digest": "a0e7c8d5f71c64a03b442ac16bacd2d8791b7ea129bed6162b89cc9b1e4f145f",
-          "invocation_count": 317,
-          "invocation_manifest_digest": "9ea292a2248618cebad52741850d4c2bb723563b3fc2bedc03ce1e22a6edab88",
+          "text_surface_count": 567,
+          "text_surface_manifest_digest": "ad472de1f9b96cd28db6ad6a794927c244c498f7e6f2f34aaaacde39a92470b3",
+          "invocation_count": 318,
+          "invocation_manifest_digest": "f27c56c4865a333647c4af6f770bb2f81cca8e4e7a909e2e3221035ff8ae42b0",
           "structural_surface_count": 15,
           "structural_manifest_digest": "b7cd89cf9619d7bc28ecdbafaf6b616534fd68d9728ef47b85629f0531c8a22a",
-          "classification_counts": {"archive_candidate":470,"bootstrap_phase25":10,"focused_live_oracle":4,"historical_only":70,"production_or_release_migration":27},
-          "invocation_selection_counts": {"explicit_c":177,"explicit_cranelift":119,"explicit_invalid_or_parser_probe":3,"implicit_default":18},
+          "classification_counts": {"archive_candidate":470,"bootstrap_phase25":10,"focused_live_oracle":4,"historical_only":70,"production_or_release_migration":28},
+          "invocation_selection_counts": {"explicit_c":178,"explicit_cranelift":119,"explicit_invalid_or_parser_probe":3,"implicit_default":18},
           "unclassified_count": 0
         },
         "migration": {
           "path": "scripts/run-gust-file.sh",
-          "from": "explicit_mir_to_c_plus_host_C_compile_link",
-          "to": "explicit_cranelift_native_artifact",
-          "explicit_c_delta": -1,
+          "historical_route": "explicit_mir_to_c_plus_host_C_compile_link_preserved",
+          "supported_route": "explicit_cranelift_native_artifact_selected_by_GUST_RUNNER_ROUTE",
+          "supported_callers": ["flake.nix:gt-one-gst","justfile:gt-one-gst","justfile:guard","scripts/phase23_production_release_audit.sh"],
+          "invocation_delta": 1,
+          "explicit_c_delta": 0,
           "explicit_cranelift_delta": 1,
-          "production_surface_delta": -1
+          "production_surface_delta": 0
         },
-        "unchanged_fields": ["invocation_count", "structural_surface_count", "structural_manifest_digest", "unclassified_count"],
+        "unchanged_fields": ["text_surface_count", "structural_surface_count", "structural_manifest_digest", "classification_counts", "unclassified_count"],
         "partial_or_unregistered_inventory": "rejected"
       },
       "explicit_c_byte_authority": {
@@ -5253,21 +5255,22 @@
         "selection_counts": {"explicit_c":178}
       },
       "current_live_c_case_surface": {
-        "count": 177,
-        "complete_identity_manifest_digest": "5d5518fb2922efd410c66fe67b3cf92b0c98792d684a834148c9bd90bbc2f1a2",
-        "case_id_manifest_digest": "fc90df6df1a060cbf676bbe2c20c4a8c8d3cf1220c589908a89a3dcee7933811",
-        "owner_contract_count": 63,
-        "owner_contract_manifest_digest": "8a24b7d07e7aded5647d8d4e44dd1376576e984912eb4cc7ec6c3b3b3e4f424b",
-        "owner_counts": {"cranelift":151,"stdlib":26},
-        "consumer_class_counts": {"already_explicit_or_parser_probe":177},
-        "selection_counts": {"explicit_c":177}
+        "count": 178,
+        "complete_identity_manifest_digest": "982b643143070c04b653eb0ae70efdc0fbfd5cc2ed664dfe33d1c5491f3fc6ab",
+        "case_id_manifest_digest": "29d1e0b2d3f29d30d6f67081a9ee7d10d029fd7f1613afad495fce0defe6ae1e",
+        "owner_contract_count": 64,
+        "owner_contract_manifest_digest": "cd3582ca7fb1330d06521748c666aba83be75977ab5dd5530afc2a5c3a3382e9",
+        "owner_counts": {"cranelift":152,"stdlib":26},
+        "consumer_class_counts": {"already_explicit_or_parser_probe":178},
+        "selection_counts": {"explicit_c":178}
       },
-      "removed_case": {
+      "preserved_case": {
         "path": "scripts/run-gust-file.sh",
         "owner": "cranelift",
-        "reason": "supported_developer_runner_migrated_to_explicit_cranelift"
+        "reason": "historical_C_route_preserved_while_supported_callers_select_explicit_cranelift"
       },
-      "count_delta": -1,
+      "unchanged_fields": ["count", "owner_contract_count", "owner_counts", "consumer_class_counts", "selection_counts"],
+      "change_reason": "dual_route_authority_shifted_the_preserved_case_line_and_owner_file_digests_without_changing_live_explicit_C_population",
       "partial_or_unregistered_surface": "rejected"
     },
     "maintenance_policy": {
@@ -5452,12 +5455,12 @@
     "review_view": "compiler/CRANELIFT_PHASE23_PRODUCTION_RELEASE_AUDIT.md",
     "renderer": "scripts/phase23_production_release_audit.py",
     "audit": {
-      "supported_surface_count": 5,
-      "supported_surface_manifest_digest": "c399d935e3d86d7c13de2f3735bdcbd584dec571acdb0b29ee9dd2d05afd16ae",
-      "repository_invocation_count": 317,
-      "repository_explicit_c_count": 177,
+      "supported_surface_count": 6,
+      "supported_surface_manifest_digest": "7617ab681ba668c39e10a3203d371b2d955ba000779084b2ebf0da17125fd4c0",
+      "repository_invocation_count": 318,
+      "repository_explicit_c_count": 178,
       "phase25_bootstrap_explicit_c_count": 5,
-      "non_bootstrap_retained_test_surface_count": 172,
+      "non_bootstrap_retained_test_surface_count": 173,
       "supported_production_or_release_explicit_c_count": 0,
       "active_non_bootstrap_live_c_lane_count": 1,
       "active_non_bootstrap_live_c_owner": "phase23_mir_to_c_focused_live",
@@ -5485,7 +5488,7 @@
       "no_fallback": "native_succeeds_with_mir_to_c_test_poisoned"
     },
     "phase22_closed_inventory_migration": {
-      "status": "exact_phase23_migration_projected_to_phase22_predecessor",
+      "status": "exact_phase23_dual_route_projected_to_phase22_predecessor",
       "owning_patch": "23.12",
       "path": "scripts/run-gust-file.sh",
       "previous_row": {
@@ -5501,9 +5504,22 @@
         "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
         "command": "./gust --backend mir-to-c \"$TEST_PATH\" > \"$TEMP_OUTPUT\" 2>&1"
       },
-      "current_row": {
+      "current_historical_row": {
         "path": "scripts/run-gust-file.sh",
-        "line": 42,
+        "line": 61,
+        "recipe": "none",
+        "compiler_token": "./gust",
+        "selection": "explicit_c",
+        "consumer_class": "already_explicit_or_parser_probe",
+        "owner": "cranelift",
+        "expected_artifact": "selected_backend_contract",
+        "expected_transition": "preserve_explicit_selection",
+        "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+        "command": "./gust --backend mir-to-c \"$TEST_PATH\" > \"$TEMP_OUTPUT\" 2>&1"
+      },
+      "added_native_row": {
+        "path": "scripts/run-gust-file.sh",
+        "line": 111,
         "recipe": "none",
         "compiler_token": "./build/phase10-package/bin/gust",
         "selection": "explicit_cranelift",

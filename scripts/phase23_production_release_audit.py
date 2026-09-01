@@ -88,12 +88,17 @@ def scan() -> dict[str, object]:
         )),
         surface("flake.nix", "developer_single_program_entry", (
             'gt-one-gst() {',
-            'bash scripts/run-gust-file.sh "$1"',
+            'GUST_RUNNER_ROUTE=cranelift bash scripts/run-gust-file.sh "$1"',
         )),
-        surface("scripts/run-gust-file.sh", "explicit_native_focused_runner", (
+        surface("justfile", "developer_single_program_commands", (
+            'GUST_RUNNER_ROUTE=cranelift bash scripts/run-gust-file.sh "{{file}}"',
+        )),
+        surface("scripts/run-gust-file.sh", "shared_explicit_route_runner", (
+            'RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-mir-to-c}"',
             "make phase10-native-package",
             "./build/phase10-package/bin/gust",
             "--backend cranelift",
+            "./gust --backend mir-to-c",
             'NATIVE_OUTPUT="build/${TEST_STEM}_bin"',
             "COMPILING GUST WITH CRANELIFT",
         )),
@@ -105,11 +110,11 @@ def scan() -> dict[str, object]:
         )),
     )
     runner = RUNNER.read_text(encoding="utf-8")
-    require(re.search(r"--backend(?:=|\s+)(?:mir-to-c|c)(?:\s|['\"]|$)", runner)
-            is None, "supported focused runner retains an explicit-C selection")
-    for forbidden in ("src/runtime.c", "COMPILING GUST TO C", "Native C compilation"):
-        require(forbidden not in runner,
-                f"supported focused runner retains generated-C behavior: {forbidden}")
+    require(runner.count("--backend mir-to-c") == 1 and
+            runner.count("--backend cranelift") == 1,
+            "shared runner does not expose exactly one explicit route per backend")
+    require("GUST_RUNNER_ROUTE must be 'mir-to-c' or 'cranelift'" in runner,
+            "shared runner does not reject an unknown explicit route")
     require(len(bootstrap) == 5,
             "Phase 25 bootstrap explicit-C invocation count drifted")
     return {
@@ -192,11 +197,13 @@ def validate() -> tuple[dict, dict[str, object]]:
     }, "package qualification contract drifted")
     phase22_migration = record.get("phase22_closed_inventory_migration", {})
     require(phase22_migration.get("status") ==
-            "exact_phase23_migration_projected_to_phase22_predecessor" and
+            "exact_phase23_dual_route_projected_to_phase22_predecessor" and
             phase22_migration.get("owning_patch") == "23.12" and
             phase22_migration.get("path") == "scripts/run-gust-file.sh" and
             phase22_migration.get("previous_row", {}).get("selection") == "explicit_c" and
-            phase22_migration.get("current_row", {}).get("selection") ==
+            phase22_migration.get("current_historical_row", {}).get("selection") ==
+            "explicit_c" and
+            phase22_migration.get("added_native_row", {}).get("selection") ==
             "explicit_cranelift" and phase22_migration.get("falsifier") ==
             "missing_partial_extra_or_same_count_command_substitution_is_rejected",
             "Phase 22 closed-inventory migration authority drifted")
