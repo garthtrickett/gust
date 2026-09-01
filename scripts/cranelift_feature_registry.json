@@ -4981,6 +4981,66 @@
         ],
         "partial_or_unregistered_inventory": "rejected"
       },
+      "archived_corpus_inventory_transition": {
+        "contract_version": "phase23_archived_corpus_inventory_transition_v1",
+        "status": "patch23_11_complete",
+        "authority_base_main": "7941bceb2ed62bca97917ad241290caf5fd97bf6",
+        "previous_inventory": {
+          "text_surface_count": 567,
+          "text_surface_manifest_digest": "bf36e9d615a9ae0e7ed87819a6a6a5747914dbc18e8b8801ef29f86f9223a250",
+          "invocation_count": 316,
+          "invocation_manifest_digest": "38dd7844248df6e5713c92196bae672d80fca3b89e7a2a15d0b0db675df2bce6",
+          "structural_surface_count": 15,
+          "structural_manifest_digest": "b7cd89cf9619d7bc28ecdbafaf6b616534fd68d9728ef47b85629f0531c8a22a",
+          "classification_counts": {"archive_candidate":470,"bootstrap_phase25":10,"focused_live_oracle":4,"historical_only":70,"production_or_release_migration":28},
+          "invocation_selection_counts": {"explicit_c":178,"explicit_cranelift":118,"explicit_invalid_or_parser_probe":3,"implicit_default":17},
+          "unclassified_count": 0
+        },
+        "current_inventory": {
+          "text_surface_count": 567,
+          "text_surface_manifest_digest": "19d3440dfbf2be71ad0afe676196a6e0f1a72ffedd188ef1aa78e6b018d42b19",
+          "invocation_count": 317,
+          "invocation_manifest_digest": "34f9d3eee9e915f633c2fae9a434e235ce1af2f69bec5901c0de16090972bfb1",
+          "structural_surface_count": 15,
+          "structural_manifest_digest": "b7cd89cf9619d7bc28ecdbafaf6b616534fd68d9728ef47b85629f0531c8a22a",
+          "classification_counts": {"archive_candidate":470,"bootstrap_phase25":10,"focused_live_oracle":4,"historical_only":70,"production_or_release_migration":28},
+          "invocation_selection_counts": {"explicit_c":178,"explicit_cranelift":118,"explicit_invalid_or_parser_probe":3,"implicit_default":18},
+          "unclassified_count": 0
+        },
+        "unchanged_inventory_fields": [
+          "text_surface_count",
+          "structural_surface_count",
+          "structural_manifest_digest",
+          "classification_counts",
+          "unclassified_count"
+        ],
+        "unchanged_invocation_selection_fields": [
+          "explicit_c",
+          "explicit_cranelift",
+          "explicit_invalid_or_parser_probe"
+        ],
+        "implicit_default_replay_delta": 1,
+        "live_explicit_c_population": 178,
+        "authority_only_paths": [
+          ".github/workflows/phase23-mir-to-c-archived-corpus.yml",
+          ".github/workflows/pr-fast.yml",
+          "TASK.md",
+          "compiler/CRANELIFT_PHASE23_MIR_TO_C_ARCHIVED_CORPUS.md",
+          "compiler/CRANELIFT_PHASE23_MIR_TO_C_DEPRECATION_OPENING.md",
+          "compiler/CRANELIFT_PHASE23_MIR_TO_C_FROZEN_SURFACE.md",
+          "compiler/fixtures/phase23_mir_to_c_reference_corpus_v1.json",
+          "justfile",
+          "scripts/cranelift_feature_registry.json",
+          "scripts/cranelift_feature_registry.schema.json",
+          "scripts/cranelift_registry.py",
+          "scripts/cranelift_test_levels.json",
+          "scripts/phase23_mir_to_c_archived_corpus.py",
+          "scripts/phase23_mir_to_c_deprecation_opening.py",
+          "scripts/phase23_mir_to_c_frozen_surface.py",
+          "scripts/phase22_opening.py"
+        ],
+        "partial_or_unregistered_inventory": "rejected"
+      },
       "explicit_c_byte_authority": {
         "source": "compiler/phase23_parent_scope_shadow_current.gst",
         "source_digest": "f55f9c7a51d8cbbd5e63851c490c3bfd5ffe9103ebfba891b3699cfe24770d2d",
@@ -5112,6 +5172,34 @@
       "change_reason": "authority_and_workflow_routing_changed_case_lines_and_owner_file_digests_without_changing_live_explicit_C_population",
       "partial_or_unregistered_surface": "rejected"
     },
+    "archived_corpus_transition": {
+      "contract_version": "phase23_frozen_archive_transition_v1",
+      "status": "patch23_11_complete",
+      "authority_base_main": "7941bceb2ed62bca97917ad241290caf5fd97bf6",
+      "previous_live_c_case_surface": {
+        "count": 178,
+        "complete_identity_manifest_digest": "bb851a75e4f031c838de218ca3a06a0942c65bb6d2f47688016cd8f34ca2d33a",
+        "case_id_manifest_digest": "2d384467a1b829643ffad8b7c450b3879a4ba96f724a286da5b1b303de2026f1",
+        "owner_contract_count": 64,
+        "owner_contract_manifest_digest": "3944d58d05caec9838d3ab883c9c67d24c0e0e226165880db2af6c524c302ec8",
+        "owner_counts": {"cranelift":152,"stdlib":26},
+        "consumer_class_counts": {"already_explicit_or_parser_probe":178},
+        "selection_counts": {"explicit_c":178}
+      },
+      "current_live_c_case_surface": {
+        "count": 178,
+        "complete_identity_manifest_digest": "cfa7d365723a6e32788e7c55022171f38031e9f4056940bdc583c1c0070630f1",
+        "case_id_manifest_digest": "a38382975b21d9c1b136e508d12b291ad5ae74fcb280984467d953366ba88a8b",
+        "owner_contract_count": 64,
+        "owner_contract_manifest_digest": "8aebb3ce6b8f7d123f10a2498c7d2e2a6fbcca474ecb495664e29578f848b2e6",
+        "owner_counts": {"cranelift":152,"stdlib":26},
+        "consumer_class_counts": {"already_explicit_or_parser_probe":178},
+        "selection_counts": {"explicit_c":178}
+      },
+      "unchanged_fields": ["count", "owner_contract_count", "owner_counts", "consumer_class_counts", "selection_counts"],
+      "change_reason": "archive_authority_and_native_replay_shifted_command_lines_and_owner_file_digests_without_adding_a_live_explicit_C_case",
+      "partial_or_unregistered_surface": "rejected"
+    },
     "maintenance_policy": {
       "classification": "compatibility_correction_only",
       "new_feature_prerequisite": "authorized_shared_semantics_and_supported_cranelift_path_first",
@@ -5224,6 +5312,66 @@
       "changes_bootstrap_route_or_seed": false,
       "edits_stdlib_or_CR15": false,
       "begins_patch23_11": false
+    }
+  },
+  "phase23_mir_to_c_archived_corpus": {
+    "contract_version": "phase23_mir_to_c_archived_corpus_v1",
+    "status": "patch23_11_complete",
+    "next_patch": "23.12",
+    "owner": "cranelift",
+    "review_view": "compiler/CRANELIFT_PHASE23_MIR_TO_C_ARCHIVED_CORPUS.md",
+    "renderer": "scripts/phase23_mir_to_c_archived_corpus.py",
+    "corpus_path": "compiler/fixtures/phase23_mir_to_c_reference_corpus_v1.json",
+    "case_count": 34,
+    "case_manifest_sha256": "05441b754c03674400c58acdf3ba58ae48191e85a35085fa5c94c414b1727f8e",
+    "corpus_sha256": "bac2ec3c004cad87d14d5ddff3b4e09988f3f3e2d97497846adb8b783314c6ac",
+    "capture_authority": {
+      "source_commit": "7941bceb2ed62bca97917ad241290caf5fd97bf6",
+      "compiler_source_manifest_sha256": "833ae2ff74e4c5697fa47079e0da98d7d6909d9651e6700f7328fdd8580cd3a7",
+      "bootstrap_seed_sha256": "af8a283c9ef4dbe621f78729e89a4c7270c0b740aeb7164af57fa953e5f29924",
+      "oracle_route": "explicit_--backend_mir-to-c",
+      "target": "x86_64-unknown-linux-gnu",
+      "cc": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+      "linker": "GNU ld (GNU Binutils for Ubuntu) 2.42",
+      "normalized_environment": {
+        "LANG": "C",
+        "LC_ALL": "C",
+        "SOURCE_DATE_EPOCH": "0",
+        "TZ": "UTC"
+      }
+    },
+    "supersession_policy": {
+      "immutable_version": "v1",
+      "refresh": "new_version_and_explicit_roadmap_authority_only",
+      "mismatch": "fail_never_refresh_silently",
+      "focused_live_lane": "retained_not_replaced"
+    },
+    "phase22_closed_inventory_extension": {
+      "status": "exact_phase23_extension_excluded_only_from_phase22_relay_identity",
+      "owning_patch": "23.11",
+      "path": "scripts/phase23_mir_to_c_archived_corpus.py",
+      "selection": "implicit_default",
+      "invocation_count": 1,
+      "commands": [
+        "[str(GUST)]"
+      ],
+      "phase22_relay_contract": "the_exact_six_site_Stdlib_relay_and_306_invocation_inventory_remain_unchanged",
+      "phase23_contract": "the_single_default_Cranelift_archive_replay_call_remains_visible_in_the_live_scan_and_is_owned_by_the_Patch_23_11_evidence_guard",
+      "falsifier": "missing_partial_extra_path_command_or_selection_drift_is_rejected"
+    },
+    "budgets": {
+      "workflow_timeout_minutes": 75,
+      "max_elapsed_ms": 600000,
+      "max_peak_rss_kib": 6291456
+    },
+    "boundary": {
+      "changes_accepted_Gust_program_meaning": false,
+      "adds_or_changes_MIR_operations": false,
+      "changes_ABI_layout_runtime_symbols_target_or_linker": false,
+      "changes_backend_route_default_or_fallback": false,
+      "changes_bootstrap_route_or_seed": false,
+      "edits_stdlib_or_CR15": false,
+      "begins_patch23_12": false
     }
   },
   "phase19_brand_authority": {

@@ -527,6 +527,9 @@ jobs:
       - name: Phase 23 focused live MIR-to-C lane
         run: just guard-cranelift-phase23-mir-to-c-focused-live-contract
 
+      - name: Phase 23 archived MIR-to-C reference corpus
+        run: just guard-cranelift-phase23-mir-to-c-archived-corpus-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 

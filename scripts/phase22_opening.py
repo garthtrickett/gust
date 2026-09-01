@@ -268,6 +268,8 @@ def phase22_relay_inventory_rows(
             "phase22_closed_inventory_extension", {}),
         registry.get("phase23_same_scope_declaration", {}).get(
             "phase22_closed_inventory_extension", {}),
+        registry.get("phase23_mir_to_c_archived_corpus", {}).get(
+            "phase22_closed_inventory_extension", {}),
     ]
     expected_authorities = [
         ("23.1", "scripts/phase23_issue_health_opening.py", ["explicit_c"], 2),
@@ -275,6 +277,8 @@ def phase22_relay_inventory_rows(
          ["explicit_c", "explicit_cranelift", "explicit_cranelift", "explicit_cranelift"], 4),
         ("23.6", "scripts/phase23_same_scope_declaration.py",
          ["explicit_c", "implicit_default", "explicit_c", "implicit_default"], 4),
+        ("23.11", "scripts/phase23_mir_to_c_archived_corpus.py",
+         ["implicit_default"], 1),
     ]
     excluded: list[dict[str, object]] = []
     for successor, expected_authority in zip(successors, expected_authorities):
