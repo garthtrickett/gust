@@ -256,11 +256,23 @@ def validate() -> tuple[dict, dict[str, object]]:
     policy = record.get("supersession_policy")
     require(isinstance(capture, dict) and isinstance(policy, dict),
             "capture or supersession authority is missing")
-    require(corpus_policy_accepts(corpus, candidates, capture, policy),
+    corpus_capture = corpus.get("capture_authority")
+    require(isinstance(corpus_capture, dict) and capture == {
+        "source_commit": corpus_capture.get("source_commit"),
+        "compiler_source_manifest_digest":
+            corpus_capture.get("compiler_source_manifest_sha256"),
+        "bootstrap_seed_digest": corpus_capture.get("bootstrap_seed_sha256"),
+        "oracle_route": corpus_capture.get("oracle_route"),
+        "target": corpus_capture.get("target"),
+        "cc": corpus_capture.get("cc"),
+        "linker": corpus_capture.get("linker"),
+        "normalized_environment": corpus_capture.get("normalized_environment"),
+    }, "registry digest authority does not map exactly to corpus provenance")
+    require(corpus_policy_accepts(corpus, candidates, corpus_capture, policy),
             "archived corpus or provenance drifted")
     require(record.get("case_count") == len(candidates)
-            and record.get("case_manifest_sha256") == canonical_digest(corpus["cases"])
-            and record.get("corpus_sha256") == digest_bytes(CORPUS.read_bytes()),
+            and record.get("case_manifest_digest") == canonical_digest(corpus["cases"])
+            and record.get("corpus_digest") == digest_bytes(CORPUS.read_bytes()),
             "archived corpus identity drifted")
     phase22_extension = record.get("phase22_closed_inventory_extension")
     require(isinstance(phase22_extension, dict) and {
@@ -284,7 +296,7 @@ def validate() -> tuple[dict, dict[str, object]]:
             and len(extension_commands) == 1
             and extension_commands[0] == "[str(GUST)]",
             "Patch 23.11 Phase 22 successor command drifted")
-    validate_mutations(corpus, candidates, capture, policy)
+    validate_mutations(corpus, candidates, corpus_capture, policy)
     focused = registry.get("phase23_mir_to_c_focused_live", {})
     require(focused.get("status") == "patch23_10_complete"
             and focused.get("cohort", {}).get("family_count") == 14
@@ -400,11 +412,11 @@ def render(record: dict) -> str:
         f"- Status: `{record['status']}`",
         f"- Cases: `{record['case_count']}`",
         f"- Corpus: `{record['corpus_path']}`",
-        f"- Corpus SHA-256: `{record['corpus_sha256']}`",
-        f"- Case manifest: `{record['case_manifest_sha256']}`",
+        f"- Corpus SHA-256: `{record['corpus_digest']}`",
+        f"- Case manifest: `{record['case_manifest_digest']}`",
         f"- Capture source commit: `{capture['source_commit']}`",
-        f"- Compiler source manifest: `{capture['compiler_source_manifest_sha256']}`",
-        f"- Bootstrap seed: `{capture['bootstrap_seed_sha256']}`",
+        f"- Compiler source manifest: `{capture['compiler_source_manifest_digest']}`",
+        f"- Bootstrap seed: `{capture['bootstrap_seed_digest']}`",
         f"- C compiler: `{capture['cc']}`",
         f"- Linker: `{capture['linker']}`",
         "- Replay: default and explicit Cranelift, with no C fallback.",
