@@ -42,8 +42,8 @@ func compiler_print_help() {
     os.LogStr("");
     os.LogStr("Backends:");
     os.LogStr("  cranelift  Compile to one native executable (default).");
-    os.LogStr("  mir-to-c, c  Emit C source to stdout (retained semantic oracle).");
-    os.LogStr("");
+    os.LogStr("  mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.");
+    os.LogStr("  Bootstrap C retirement is separate and deferred to Phase 25.");
     os.LogStr("Options:");
     os.LogStr("  --backend <mir-to-c|c|cranelift>  Select the backend explicitly.");
     os.LogStr("  -o <output>                     Optional Cranelift output; defaults to the source stem.");

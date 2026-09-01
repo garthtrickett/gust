@@ -124,7 +124,7 @@ Out of scope:
 - [x] Patch 23.6 — Same-Scope Declaration Diagnostic (#105) — DONE
 - [x] Patch 23.6a — Diagnostic Bootstrap Seed Reconvergence — DONE
 - [x] Patch 23.7 — MIR-to-C Deprecation Opening and Consumer Inventory — DONE
-- [ ] Patch 23.8 — User-Facing MIR-to-C Deprecation Contract
+- [x] Patch 23.8 — User-Facing MIR-to-C Deprecation Contract — DONE
 - [ ] Patch 23.8a — Deprecation Bootstrap Seed Reconvergence
 - [ ] Patch 23.9 — Frozen MIR-to-C Feature Surface
 - [ ] Patch 23.10 — Focused Live Compatibility Lane and Default-CI Retirement

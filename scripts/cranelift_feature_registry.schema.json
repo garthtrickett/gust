@@ -3053,7 +3053,7 @@
         "required": ["contract_version", "status", "next_patch", "owner",
                      "review_view", "renderer", "observed_main_sha",
                      "classifications", "inventory", "structural_surfaces",
-                     "pre_deprecation_baseline", "boundary"],
+                     "pre_deprecation_baseline", "deprecation_contract", "boundary"],
         "properties": {
           "contract_version": {"const": "phase23_mir_to_c_deprecation_opening_v1"},
           "status": {"const": "patch23_7_complete"},
@@ -3068,6 +3068,26 @@
           "structural_surfaces": {"type": "array", "minItems": 15,
                                   "maxItems": 15, "items": {"type": "object"}},
           "pre_deprecation_baseline": {"type": "object"},
+          "deprecation_contract": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["contract_version", "status", "next_patch",
+                         "observed_main_sha", "presentation",
+                         "post_deprecation_inventory",
+                         "explicit_c_byte_authority", "route_contract",
+                         "boundary"],
+            "properties": {
+              "contract_version": {"const": "phase23_mir_to_c_user_deprecation_v1"},
+              "status": {"const": "patch23_8_complete"},
+              "next_patch": {"const": "23.8a"},
+              "observed_main_sha": {"const": "2bbc917a3afc4eec0bd9362a2684e0c52879bca5"},
+              "presentation": {"type": "object"},
+              "post_deprecation_inventory": {"type": "object"},
+              "explicit_c_byte_authority": {"type": "object"},
+              "route_contract": {"type": "object"},
+              "boundary": {"type": "object"}
+            }
+          },
           "boundary": {"type": "object"}
         }
       },

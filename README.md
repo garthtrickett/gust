@@ -45,15 +45,21 @@ That framing is deliberate and it is the one that survives. `docs/VISION.md` §0
 ## Two backends, and why
 
 Gust compiles to native executables through Cranelift by default. The retained
-C99 backend is selected explicitly with `--backend c` or
-`--backend mir-to-c`; it remains the semantic oracle, portability route, and
-self-hosting bootstrap route.
+C99 backend is deprecated and selected explicitly with `--backend c` or
+`--backend mir-to-c`; both spellings remain accepted and byte-identical during
+Phase 23, with backend removal scheduled for Phase 24. Its focused semantic-
+oracle role remains live until that removal.
 
 That portability has a semantic cost worth stating plainly. Transpiling to C means inheriting **C's abstract machine**, not just its syntax: pointer provenance, effective-type rules, and signed-overflow latitude included. An arena-and-index model carves differently-typed objects out of one allocation and reconstructs pointers from a base and an offset, which is precisely the pattern those rules punish. Code that is provably correct under Gust's model can still be miscompiled at `-O2` by a C compiler applying rules Gust never agreed to.
 
 The native Cranelift backend exists to close that gap. It is **not** a performance play. It is what makes "the compiler carries the danger" actually true, by expressing Gust's memory model in a backend that honours it rather than laundering it through C's. Cranelift's memory model is deliberately concrete — loads and stores with alias information the compiler supplies — rather than an abstract machine with undefined-behaviour-driven optimisation latitude.
 
-The C backend remains the portability path and the bootstrap seed. A differential test suite keeps the two backends honest against each other. Cranelift never silently falls back to C: an unavailable or rejected native backend is a compilation failure, and choosing C is always explicit.
+The deprecated C backend remains a temporary compatibility path and the focused
+semantic oracle. The C bootstrap seed and host-C bootstrap chain are separate:
+their retirement is deferred to Phase 25, not implied by Phase 24 backend
+removal. A differential test suite keeps the two backends honest against each
+other. Cranelift never silently falls back to C: an unavailable or rejected
+native backend is a compilation failure, and choosing C is always explicit.
 
 ---
 
@@ -119,9 +125,11 @@ build/phase10-package/bin/gust program.gst
 ```
 
 The executable defaults to the source path with the final `.gst` removed. Use
-`-o <path>` to choose another path. For the retained C oracle or an explicit
-rollback, use `--backend c` or `--backend mir-to-c`; C is emitted to standard
-output. There is no automatic fallback between the native and C routes.
+`-o <path>` to choose another path. The deprecated C compatibility choices,
+`--backend c` or `--backend mir-to-c`, remain accepted through Phase 23 and
+emit byte-identical C to standard output; backend removal is scheduled for
+Phase 24. Bootstrap-C retirement is a separate Phase 25 change.
+There is no automatic fallback between the native and C routes.
 
 ### Running the Test Suite
 To verify the compiler's typechecker, code generator, and FFI standard library runtime, execute:

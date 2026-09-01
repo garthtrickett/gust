@@ -4747,6 +4747,79 @@
         "stderr_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
       }
     },
+    "deprecation_contract": {
+      "contract_version": "phase23_mir_to_c_user_deprecation_v1",
+      "status": "patch23_8_complete",
+      "next_patch": "23.8a",
+      "observed_main_sha": "2bbc917a3afc4eec0bd9362a2684e0c52879bca5",
+      "presentation": {
+        "compiler_help": "mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.",
+        "bootstrap_help": "Bootstrap C retirement is separate and deferred to Phase 25.",
+        "root_documentation": "deprecated_explicit_C_spellings_remain_accepted_through_phase23_backend_removal_phase24_bootstrap_C_retirement_phase25",
+        "ordinary_compilation_notice": "none_help_and_documentation_only"
+      },
+      "post_deprecation_inventory": {
+        "text_surface_count": 566,
+        "text_surface_manifest_digest": "7e55cd04d4ceda17434c825d186a572f90ee987050b904783863782543bc20ce",
+        "invocation_count": 316,
+        "invocation_manifest_digest": "97a1535de0d7e52edff46019b529935d143f5a3c3d6013ad2ecab76ad4fbf32f",
+        "structural_surface_count": 15,
+        "structural_manifest_digest": "b7cd89cf9619d7bc28ecdbafaf6b616534fd68d9728ef47b85629f0531c8a22a",
+        "classification_counts": {
+          "archive_candidate": 469,
+          "bootstrap_phase25": 10,
+          "focused_live_oracle": 4,
+          "historical_only": 70,
+          "production_or_release_migration": 28
+        },
+        "invocation_selection_counts": {
+          "explicit_c": 178,
+          "explicit_cranelift": 118,
+          "explicit_invalid_or_parser_probe": 3,
+          "implicit_default": 17
+        },
+        "unclassified_count": 0
+      },
+      "explicit_c_byte_authority": {
+        "source": "compiler/phase23_parent_scope_shadow_current.gst",
+        "source_digest": "f55f9c7a51d8cbbd5e63851c490c3bfd5ffe9103ebfba891b3699cfe24770d2d",
+        "mir_to_c": {
+          "compile_status": 0,
+          "stdout_size": 1378,
+          "stdout_digest": "29beb215da168e165a2da7ddda24028f7f7842d001487d044659baa932c18a80",
+          "stderr_size": 0,
+          "stderr_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "c_alias": {
+          "compile_status": 0,
+          "stdout_size": 1378,
+          "stdout_digest": "29beb215da168e165a2da7ddda24028f7f7842d001487d044659baa932c18a80",
+          "stderr_size": 0,
+          "stderr_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "route_contract": {
+        "default_backend": "cranelift",
+        "explicit_native_backend": "cranelift",
+        "default_and_explicit_native": "byte_and_observable_identical",
+        "explicit_c_spellings": ["mir-to-c", "c"],
+        "explicit_c_acceptance": "retained_byte_identical_through_phase23",
+        "fallback": "forbidden",
+        "backend_removal_phase": "24",
+        "bootstrap_C_retirement_phase": "25"
+      },
+      "boundary": {
+        "changes_help_and_root_documentation": true,
+        "changes_backend_route_or_acceptance": false,
+        "changes_ordinary_compilation_stdout_or_stderr": false,
+        "changes_accepted_Gust_program_meaning": false,
+        "adds_or_changes_MIR_operations": false,
+        "changes_ABI_layout_runtime_symbols_target_or_linker": false,
+        "changes_bootstrap_route_or_seed": false,
+        "edits_stdlib_or_CR15": false,
+        "begins_patch23_8a": false
+      }
+    },
     "boundary": {
       "changes_backend_route_or_presentation": false,
       "changes_accepted_Gust_program_meaning": false,

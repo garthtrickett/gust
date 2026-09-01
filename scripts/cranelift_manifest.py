@@ -160,7 +160,7 @@ def validate_compiler_and_package_surface() -> None:
         "compiler help must expose the retained C aliases and Cranelift selector",
     )
     require(
-        'os.LogStr("  mir-to-c, c  Emit C source to stdout (retained semantic oracle).");'
+        'os.LogStr("  mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.");'
         in test_runner,
         "compiler help must identify the retained explicit C oracle",
     )

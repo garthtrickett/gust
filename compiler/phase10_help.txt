@@ -6,8 +6,8 @@ Usage:
 
 Backends:
   cranelift  Compile to one native executable (default).
-  mir-to-c, c  Emit C source to stdout (retained semantic oracle).
-
+  mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.
+  Bootstrap C retirement is separate and deferred to Phase 25.
 Options:
   --backend <mir-to-c|c|cranelift>  Select the backend explicitly.
   -o <output>                     Optional Cranelift output; defaults to the source stem.
