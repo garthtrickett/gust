@@ -122,7 +122,7 @@ Out of scope:
 - [x] Patch 23.4 — Assurance Phase A Authority and Trigger Inventory — DONE
 - [x] Patch 23.5 — Assurance Phase B Deterministic Report-Only Evaluator — DONE
 - [x] Patch 23.6 — Same-Scope Declaration Diagnostic (#105) — DONE
-- [ ] Patch 23.6a — Diagnostic Bootstrap Seed Reconvergence
+- [x] Patch 23.6a — Diagnostic Bootstrap Seed Reconvergence — DONE
 - [ ] Patch 23.7 — MIR-to-C Deprecation Opening and Consumer Inventory
 - [ ] Patch 23.8 — User-Facing MIR-to-C Deprecation Contract
 - [ ] Patch 23.8a — Deprecation Bootstrap Seed Reconvergence

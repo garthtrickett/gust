@@ -35,16 +35,28 @@ Generated from `scripts/cranelift_feature_registry.json` by
 ## Phase 23 successor transition
 
 - Contract: `phase23_diagnostic_seed_reconvergence_transition_v1`
-- Status: `ready_for_seed_publication`
+- Status: `landed_post_publication`
 - Authority base main: `d49cf1835972951b806621b798e7f905aa95df1a`
 - Accounted compiler authorities: `phase23_structured_guard_defer_native_admission_v1, phase23_same_scope_declaration_v1`
 - Seed PR policy: `gust_v4_c_only`
 - Partial or unregistered identity: `rejected`
-- Accepted `pre_publication` identity: 64825 lines, `c2e2cd6d5043af87aacc007d92b105d673bbeea7e8f484a61e18126f39a32383`
 - Accepted `post_publication` identity: 64929 lines, `33b23ff4e8dab6c84365920bf3a2a674d7e3f5248646f6ffd69c8f7cc014083a`
 
-The regenerated seed serializes the final Patch 22.6 compiler sources.
-Stage 2 and stage 3 are byte-identical through explicit MIR-to-C. A
+## Phase 23 landed seed evidence
+
+- Pull request: `#281`
+- Exact head: `b3ce3637017e29074f34b8657e7e75d9e0a39ef9`
+- Merge main: `5f0130fa24430e96da2425d05f24a8223e914f1d`
+- Merged at: `2026-09-01T00:43:42Z`
+- Event: `pull_request`
+- Exact-head workflows: 21/21 successful, 0 unfinished, 0 non-success
+- Unresolved non-outdated review threads: 0
+- Changed paths: `gust_v4.c`
+
+The regenerated seed preserves the final Patch 22.6 default-route compiler
+sources and serializes the registered Patch 23.3a guard/defer admission and
+Patch 23.6 same-scope diagnostic authorities. Stage 2 and stage 3 are
+byte-identical through explicit MIR-to-C. A
 compiler rebuilt directly from this seed reports Cranelift as the
 default, identifies both explicit C spellings as the retained semantic
 oracle, and promises no fallback. This patch adds no Gust semantics,
