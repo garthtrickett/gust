@@ -240,6 +240,7 @@ def validate() -> tuple[dict, dict[str, object]]:
         'just guard-cranelift-differential-family "${{ matrix.family }}"',
         "just guard-cranelift-phase21-cranelift-built-compiler-programs-evidence",
         "make gust phase10-native-package",
+        "build/gust-runtime-package.a",
     ):
         require(workflow.count(token) == 1, f"focused workflow ownership drifted: {token}")
     for path_filter in PATH_FILTERS:

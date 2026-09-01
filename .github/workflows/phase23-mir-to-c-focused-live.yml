@@ -69,6 +69,7 @@ jobs:
           path: |
             gust
             build/gust-native-backend
+            build/gust-runtime-package.a
             build/phase10-package
 
   family:
