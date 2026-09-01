@@ -1,0 +1,62 @@
+name: Cranelift Phase 23 MIR-to-C Deprecation Opening
+
+on:
+  pull_request:
+    paths:
+      - 'TASK.md'
+      - 'README.md'
+      - 'GEMINI.md'
+      - 'gust_v4.c'
+      - 'Makefile'
+      - 'compiler/**'
+      - 'docs/**'
+      - 'scripts/**'
+      - 'src/**'
+      - 'tests/**'
+      - 'justfile*'
+      - '.github/workflows/**'
+  push:
+    branches: [main]
+    paths:
+      - 'TASK.md'
+      - 'README.md'
+      - 'GEMINI.md'
+      - 'gust_v4.c'
+      - 'Makefile'
+      - 'compiler/**'
+      - 'docs/**'
+      - 'scripts/**'
+      - 'src/**'
+      - 'tests/**'
+      - 'justfile*'
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-cranelift-phase23-mir-to-c-deprecation-opening-contract
+        run: just guard-cranelift-phase23-mir-to-c-deprecation-opening-contract
+
+  evidence:
+    needs: contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-cranelift-phase23-mir-to-c-deprecation-opening-evidence
+        run: just guard-cranelift-phase23-mir-to-c-deprecation-opening-evidence

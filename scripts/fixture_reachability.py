@@ -34,6 +34,9 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 FIXTURES = "compiler/*_test_entry.gst"
 ALLOWLIST = ROOT / "scripts" / "fixture_reachability_allowlist.json"
 RECIPE_HEAD = re.compile(r"^([a-zA-Z0-9_-]+)([^:]*):(.*)$")
+NON_EXECUTING_INVENTORIES = {
+    "compiler/CRANELIFT_PHASE23_MIR_TO_C_DEPRECATION_OPENING.md",
+}
 
 
 def recipes_mentioning(stem, sources):
@@ -72,7 +75,8 @@ def unexercised():
         # exercised by the very file recording that it is not.
         elsewhere = [f for f in elsewhere
                      if not f.startswith("justfile")
-                     and not pathlib.Path(f).name.startswith("fixture_reachability")]
+                     and not pathlib.Path(f).name.startswith("fixture_reachability")
+                     and f not in NON_EXECUTING_INVENTORIES]
         if elsewhere:
             continue
         owners = recipes_mentioning(stem, sources)

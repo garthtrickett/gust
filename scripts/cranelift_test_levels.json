@@ -18,6 +18,8 @@
     }
   },
   "guards": {
+    "guard-cranelift-phase23-mir-to-c-deprecation-opening-contract": 1,
+    "guard-cranelift-phase23-mir-to-c-deprecation-opening-evidence": 2,
     "guard-cranelift-phase16-complete-abi-evidence": 3,
     "guard-cranelift-phase16-composition-differential": 2,
     "guard-cranelift-phase16-composition-contract": 1,

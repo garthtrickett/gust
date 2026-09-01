@@ -23737,3 +23737,22 @@ guard-cranelift-phase23-same-scope-declaration-evidence:
     make gust
     just guard-cranelift-phase23-same-scope-declaration-contract
     python3 scripts/phase23_same_scope_declaration.py evidence
+
+# Cranelift lane, Patch 23.7. Inventory-only deprecation opening; this changes
+# no route or presentation and freezes exact consumer/artifact identities.
+guard-cranelift-phase23-mir-to-c-deprecation-opening-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Checking Phase 23 MIR-to-C deprecation opening inventory..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase23-mir-to-c-deprecation-opening-contract | grep -F $'guard-cranelift-phase23-mir-to-c-deprecation-opening-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase23_mir_to_c_deprecation_opening.py validate
+    python3 scripts/phase23_mir_to_c_deprecation_opening.py check-review
+
+guard-cranelift-phase23-mir-to-c-deprecation-opening-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    make gust
+    just guard-cranelift-phase23-mir-to-c-deprecation-opening-contract
+    python3 scripts/phase23_mir_to_c_deprecation_opening.py evidence
