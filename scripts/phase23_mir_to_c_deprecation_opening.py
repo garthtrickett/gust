@@ -433,7 +433,7 @@ def projected_text_surfaces(record: dict) -> list[dict[str, object]]:
         "seed_reconvergence_inventory_transition"]
     states = transition["accepted_live_states"]
     require([row["state"] for row in states] ==
-            ["pre_publication", "post_publication"],
+            ["post_publication"],
             "seed inventory projection state order drifted")
     live_seed_digest = digest_bytes(SEED.read_bytes())
     require(live_seed_digest in {row["seed_digest"] for row in states},
@@ -469,25 +469,17 @@ def validate() -> dict:
     seed_transition = successor.get("seed_reconvergence_inventory_transition")
     require(seed_transition == {
         "contract_version": "phase23_deprecation_seed_inventory_transition_v1",
-        "status": "authorized_pre_publication",
+        "status": "landed_post_publication",
         "authority_base_main": "2204239042b3e19283dc400d212445a72aff1f50",
         "seed_path": "gust_v4.c",
         "accepted_live_states": [
-            {
-                "state": "pre_publication",
-                "seed_digest":
-                    "33b23ff4e8dab6c84365920bf3a2a674d7e3f5248646f6ffd69c8f7cc014083a",
-                "text_surface_count": 566,
-                "text_surface_manifest_digest":
-                    "7d7e61b089b9f0573c6cb490ffab09bdf0a1fbf87ee0628d49adea7ae117c4a8",
-            },
             {
                 "state": "post_publication",
                 "seed_digest":
                     "af8a283c9ef4dbe621f78729e89a4c7270c0b740aeb7164af57fa953e5f29924",
                 "text_surface_count": 566,
                 "text_surface_manifest_digest":
-                    "4a5d0d7e3cf0e8f192d5b32ef0c032d1e1c3a85f9f05d4d0e86812cf697c949b",
+                    "6ee29149e1afba58a8407416effa561714ccb774ccaa074496ba1a9714683fec",
             },
         ],
         "unchanged_inventory_fields": [
@@ -500,7 +492,20 @@ def validate() -> dict:
             "unclassified_count",
         ],
         "partial_or_mismatched_seed_inventory_state": "rejected",
-        "closure_transition": "pending_seed_publication",
+        "closure_transition": "collapsed_to_post_publication",
+        "landed_seed_evidence": {
+            "pull_request": 289,
+            "head_sha": "ba040834dadef99982892016a2163d0296270a0a",
+            "merge_main_sha": "3d9ed5df9188cf38275885a665316e58cfb9dd21",
+            "merged_at": "2026-09-01T08:53:43Z",
+            "event": "pull_request",
+            "workflow_population": 22,
+            "successful_workflows": 22,
+            "unfinished_workflows": 0,
+            "non_success_workflows": 0,
+            "unresolved_non_outdated_review_threads": 0,
+            "changed_paths": ["gust_v4.c"],
+        },
     }, "Patch 23.8a seed inventory transition drifted")
     live_inventory = inventory_summary()
     live_seed_digest = digest_bytes(SEED.read_bytes())
@@ -545,6 +550,8 @@ def validate() -> dict:
             "TASK.md does not mark Patch 23.7 DONE")
     require("- [x] Patch 23.8 — User-Facing MIR-to-C Deprecation Contract — DONE" in task,
             "TASK.md does not mark Patch 23.8 DONE")
+    require("- [x] Patch 23.8a — Deprecation Bootstrap Seed Reconvergence — DONE" in task,
+            "TASK.md does not mark Patch 23.8a DONE")
 
     presentation = successor.get("presentation", {})
     expected_presentation = {
@@ -782,6 +789,7 @@ def render(record: dict) -> str:
     successor = record["deprecation_contract"]
     post = successor["post_deprecation_inventory"]
     seed_transition = successor["seed_reconvergence_inventory_transition"]
+    seed_landed = seed_transition["landed_seed_evidence"]
     lines += [
         "## Patch 23.8 user-facing deprecation successor",
         "",
@@ -809,6 +817,16 @@ def render(record: dict) -> str:
         f"- Accepted `{row['state']}` pair: seed `{row['seed_digest']}`, text manifest `{row['text_surface_manifest_digest']}`"
         for row in seed_transition["accepted_live_states"]
     ] + [
+        "",
+        "### Patch 23.8a landed seed evidence",
+        "",
+        f"- Pull request: `#{seed_landed['pull_request']}`",
+        f"- Exact head: `{seed_landed['head_sha']}`",
+        f"- Merge main: `{seed_landed['merge_main_sha']}`",
+        f"- Merged at: `{seed_landed['merged_at']}`",
+        f"- Exact-head workflows: {seed_landed['successful_workflows']}/{seed_landed['workflow_population']} successful, {seed_landed['unfinished_workflows']} unfinished, {seed_landed['non_success_workflows']} non-success",
+        f"- Unresolved non-outdated review threads: {seed_landed['unresolved_non_outdated_review_threads']}",
+        f"- Changed paths: `{', '.join(seed_landed['changed_paths'])}`",
         "",
     ]
     return "\n".join(lines)

@@ -3991,17 +3991,12 @@
   },
   "phase23_deprecation_seed_transition": {
     "contract_version": "phase23_deprecation_seed_reconvergence_transition_v1",
-    "status": "authorized_pre_publication",
+      "status": "landed_post_publication",
     "predecessor_seed_authority": "phase23_diagnostic_seed_reconvergence_transition_v1",
     "authority_base_main": "e39ddaf86fe689a9817fb4ee50e6eab0c506139c",
     "accounted_compiler_authority": "phase23_mir_to_c_user_deprecation_v1",
     "accepted_live_seed_identities": [
-      {
-        "state": "pre_publication",
-        "line_count": 64929,
-        "seed_digest": "33b23ff4e8dab6c84365920bf3a2a674d7e3f5248646f6ffd69c8f7cc014083a"
-      },
-      {
+        {
         "state": "post_publication",
         "line_count": 64929,
         "seed_digest": "af8a283c9ef4dbe621f78729e89a4c7270c0b740aeb7164af57fa953e5f29924"
@@ -4026,7 +4021,22 @@
     },
     "seed_pr_policy": "gust_v4_c_only",
     "partial_or_unregistered_identity": "rejected",
-    "closure_transition": "pending_seed_publication"
+      "closure_transition": "collapsed_to_post_publication",
+      "landed_seed_evidence": {
+        "pull_request": 289,
+        "head_sha": "ba040834dadef99982892016a2163d0296270a0a",
+        "merge_main_sha": "3d9ed5df9188cf38275885a665316e58cfb9dd21",
+        "merged_at": "2026-09-01T08:53:43Z",
+        "event": "pull_request",
+        "workflow_population": 22,
+        "successful_workflows": 22,
+        "unfinished_workflows": 0,
+        "non_success_workflows": 0,
+        "unresolved_non_outdated_review_threads": 0,
+        "changed_paths": [
+          "gust_v4.c"
+        ]
+      }
   },
   "boundary": {
       "adds_or_changes_Gust_semantics": false,
@@ -4821,21 +4831,15 @@
       },
       "seed_reconvergence_inventory_transition": {
         "contract_version": "phase23_deprecation_seed_inventory_transition_v1",
-        "status": "authorized_pre_publication",
+        "status": "landed_post_publication",
         "authority_base_main": "2204239042b3e19283dc400d212445a72aff1f50",
         "seed_path": "gust_v4.c",
         "accepted_live_states": [
           {
-            "state": "pre_publication",
-            "seed_digest": "33b23ff4e8dab6c84365920bf3a2a674d7e3f5248646f6ffd69c8f7cc014083a",
-            "text_surface_count": 566,
-            "text_surface_manifest_digest": "7d7e61b089b9f0573c6cb490ffab09bdf0a1fbf87ee0628d49adea7ae117c4a8"
-          },
-          {
             "state": "post_publication",
             "seed_digest": "af8a283c9ef4dbe621f78729e89a4c7270c0b740aeb7164af57fa953e5f29924",
             "text_surface_count": 566,
-            "text_surface_manifest_digest": "4a5d0d7e3cf0e8f192d5b32ef0c032d1e1c3a85f9f05d4d0e86812cf697c949b"
+            "text_surface_manifest_digest": "6ee29149e1afba58a8407416effa561714ccb774ccaa074496ba1a9714683fec"
           }
         ],
         "unchanged_inventory_fields": [
@@ -4848,7 +4852,22 @@
           "unclassified_count"
         ],
         "partial_or_mismatched_seed_inventory_state": "rejected",
-        "closure_transition": "pending_seed_publication"
+        "closure_transition": "collapsed_to_post_publication",
+        "landed_seed_evidence": {
+          "pull_request": 289,
+          "head_sha": "ba040834dadef99982892016a2163d0296270a0a",
+          "merge_main_sha": "3d9ed5df9188cf38275885a665316e58cfb9dd21",
+          "merged_at": "2026-09-01T08:53:43Z",
+          "event": "pull_request",
+          "workflow_population": 22,
+          "successful_workflows": 22,
+          "unfinished_workflows": 0,
+          "non_success_workflows": 0,
+          "unresolved_non_outdated_review_threads": 0,
+          "changed_paths": [
+            "gust_v4.c"
+          ]
+        }
       },
       "explicit_c_byte_authority": {
         "source": "compiler/phase23_parent_scope_shadow_current.gst",
