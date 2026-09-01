@@ -30,7 +30,7 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
     transition = record.get("phase23_successor_transition")
     require(transition == {
         "contract_version": "phase23_diagnostic_seed_reconvergence_transition_v1",
-        "status": "ready_for_seed_publication",
+        "status": "landed_post_publication",
         "predecessor_seed_authority": "phase22_default_route_seed_convergence_v1",
         "authority_base_main": "d49cf1835972951b806621b798e7f905aa95df1a",
         "accounted_compiler_authorities": [
@@ -38,11 +38,6 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
             "phase23_same_scope_declaration_v1",
         ],
         "accepted_live_seed_identities": [
-            {
-                "state": "pre_publication",
-                "line_count": 64825,
-                "seed_digest": "c2e2cd6d5043af87aacc007d92b105d673bbeea7e8f484a61e18126f39a32383",
-            },
             {
                 "state": "post_publication",
                 "line_count": 64929,
@@ -58,11 +53,24 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
         },
         "seed_pr_policy": "gust_v4_c_only",
         "partial_or_unregistered_identity": "rejected",
-        "closure_transition": "collapse_to_post_publication_after_seed_merge",
+        "closure_transition": "collapsed_to_post_publication",
+        "landed_seed_evidence": {
+            "pull_request": 281,
+            "head_sha": "b3ce3637017e29074f34b8657e7e75d9e0a39ef9",
+            "merge_main_sha": "5f0130fa24430e96da2425d05f24a8223e914f1d",
+            "merged_at": "2026-09-01T00:43:42Z",
+            "event": "pull_request",
+            "workflow_population": 21,
+            "successful_workflows": 21,
+            "unfinished_workflows": 0,
+            "non_success_workflows": 0,
+            "unresolved_non_outdated_review_threads": 0,
+            "changed_paths": ["gust_v4.c"],
+        },
     }, "Phase 23 seed successor transition drifted")
     identities = transition["accepted_live_seed_identities"]
-    require(len({(row["line_count"], row["seed_digest"]) for row in identities}) == 2,
-            "Phase 23 seed transition identities are not distinct")
+    require(len(identities) == 1 and identities[0]["state"] == "post_publication",
+            "Phase 23 seed transition did not collapse to the landed identity")
     successor_diff = transition["generated_seed_diff"]
     require(successor_diff["current_lines"] - successor_diff["previous_lines"] ==
             successor_diff["line_delta"] and
@@ -104,9 +112,6 @@ def regeneration_is_accepted(record: dict, committed: dict, regenerated: dict) -
         for row in accepted_live_seed_identities(record)
     }
     return (
-        committed == identities["pre_publication"] and
-        regenerated == identities["post_publication"]
-    ) or (
         committed == identities["post_publication"] and
         regenerated == identities["post_publication"]
     )
@@ -119,8 +124,7 @@ def validate_regeneration(record: dict) -> None:
     committed = seed_identity(committed_seed)
     regenerated = seed_identity(SEED.read_bytes())
     require(regeneration_is_accepted(record, committed, regenerated),
-            "bootstrap result is neither the exact registered pre-to-post transition "
-            "nor the exact post-publication fixed point")
+            "bootstrap result is not the exact landed post-publication fixed point")
 
 
 def validate() -> dict:
@@ -241,12 +245,18 @@ def validate() -> dict:
             "PR Fast does not own the Patch 22.6a Level 1 guard")
     require(f"{GUARD}:" in JUSTFILE.read_text(encoding="utf-8"),
             "Patch 22.6a just guard is missing")
+    require(
+        "- [x] Patch 23.6a — Diagnostic Bootstrap Seed Reconvergence — DONE"
+        in TASK.read_text(encoding="utf-8"),
+        "TASK.md does not formally close Patch 23.6a",
+    )
     return record
 
 
 def render(record: dict) -> str:
     diff = record["generated_seed_diff"]
     transition = record["phase23_successor_transition"]
+    landed = transition["landed_seed_evidence"]
     return "\n".join([
         "# Cranelift Phase 22 Default-Route Seed Convergence",
         "",
@@ -292,8 +302,21 @@ def render(record: dict) -> str:
         for row in transition["accepted_live_seed_identities"]
     ] + [
         "",
-        "The regenerated seed serializes the final Patch 22.6 compiler sources.",
-        "Stage 2 and stage 3 are byte-identical through explicit MIR-to-C. A",
+        "## Phase 23 landed seed evidence",
+        "",
+        f"- Pull request: `#{landed['pull_request']}`",
+        f"- Exact head: `{landed['head_sha']}`",
+        f"- Merge main: `{landed['merge_main_sha']}`",
+        f"- Merged at: `{landed['merged_at']}`",
+        f"- Event: `{landed['event']}`",
+        f"- Exact-head workflows: {landed['successful_workflows']}/{landed['workflow_population']} successful, {landed['unfinished_workflows']} unfinished, {landed['non_success_workflows']} non-success",
+        f"- Unresolved non-outdated review threads: {landed['unresolved_non_outdated_review_threads']}",
+        f"- Changed paths: `{', '.join(landed['changed_paths'])}`",
+        "",
+        "The regenerated seed preserves the final Patch 22.6 default-route compiler",
+        "sources and serializes the registered Patch 23.3a guard/defer admission and",
+        "Patch 23.6 same-scope diagnostic authorities. Stage 2 and stage 3 are",
+        "byte-identical through explicit MIR-to-C. A",
         "compiler rebuilt directly from this seed reports Cranelift as the",
         "default, identifies both explicit C spellings as the retained semantic",
         "oracle, and promises no fallback. This patch adds no Gust semantics,",

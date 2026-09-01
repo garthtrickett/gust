@@ -3949,7 +3949,7 @@
     },
     "phase23_successor_transition": {
       "contract_version": "phase23_diagnostic_seed_reconvergence_transition_v1",
-      "status": "ready_for_seed_publication",
+      "status": "landed_post_publication",
       "predecessor_seed_authority": "phase22_default_route_seed_convergence_v1",
       "authority_base_main": "d49cf1835972951b806621b798e7f905aa95df1a",
       "accounted_compiler_authorities": [
@@ -3957,11 +3957,6 @@
         "phase23_same_scope_declaration_v1"
       ],
       "accepted_live_seed_identities": [
-        {
-          "state": "pre_publication",
-          "line_count": 64825,
-          "seed_digest": "c2e2cd6d5043af87aacc007d92b105d673bbeea7e8f484a61e18126f39a32383"
-        },
         {
           "state": "post_publication",
           "line_count": 64929,
@@ -3977,7 +3972,22 @@
       },
       "seed_pr_policy": "gust_v4_c_only",
       "partial_or_unregistered_identity": "rejected",
-      "closure_transition": "collapse_to_post_publication_after_seed_merge"
+      "closure_transition": "collapsed_to_post_publication",
+      "landed_seed_evidence": {
+        "pull_request": 281,
+        "head_sha": "b3ce3637017e29074f34b8657e7e75d9e0a39ef9",
+        "merge_main_sha": "5f0130fa24430e96da2425d05f24a8223e914f1d",
+        "merged_at": "2026-09-01T00:43:42Z",
+        "event": "pull_request",
+        "workflow_population": 21,
+        "successful_workflows": 21,
+        "unfinished_workflows": 0,
+        "non_success_workflows": 0,
+        "unresolved_non_outdated_review_threads": 0,
+        "changed_paths": [
+          "gust_v4.c"
+        ]
+      }
     },
     "boundary": {
       "adds_or_changes_Gust_semantics": false,
