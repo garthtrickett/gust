@@ -4799,7 +4799,7 @@
       },
       "post_deprecation_inventory": {
         "text_surface_count": 566,
-        "text_surface_manifest_digest": "7e55cd04d4ceda17434c825d186a572f90ee987050b904783863782543bc20ce",
+        "text_surface_manifest_digest": "7d7e61b089b9f0573c6cb490ffab09bdf0a1fbf87ee0628d49adea7ae117c4a8",
         "invocation_count": 316,
         "invocation_manifest_digest": "97a1535de0d7e52edff46019b529935d143f5a3c3d6013ad2ecab76ad4fbf32f",
         "structural_surface_count": 15,
