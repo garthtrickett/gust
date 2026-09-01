@@ -175,26 +175,25 @@ appears rather than in the abstract.
 
 > **The lines below are indexed, with the objections they have to survive, at `docs/MESSAGING.md`.**
 
-## 6. Positioning — and a candidate answer to OD-10
+## 6. Positioning — and the OD-10 direction
 
 The review proposes a wedge:
 
 > **Build and operate durable SaaS applications with one binary, one language,
 > one platform contract, and AI-verifiable architecture.**
 
-**OD-10 — distribution for the product path — is the one open decision with
-nothing written against it** (`docs/VISION.md` §0.15). This is the first
-candidate. Recorded as input, not as an answer: it is narrower and more
-commercially legible than "ultimate language", and the review's own caution is
-the reason it is only a candidate — *"creating a language does not automatically
-produce leverage. It can also place you beneath everyone else, maintaining an
-enormous stack for very few users."*
+**The direction for OD-10 — distribution for the product path — was set on
+2026-09-01.** Gust reaches users through existing deployment providers,
+generator partnerships, cloud marketplaces, appliances, and self-hosting
+before considering a Gust-operated cloud. This keeps the wedge narrower and
+more commercially legible than "ultimate language" without assuming that
+creating a language automatically creates distribution leverage.
 
-### 6.1 First deployment — proposed, 2026-08-20
+### 6.1 First deployment — proposed 2026-08-20, adopted by OD-10
 
-**Distinct from OD-10 on purpose.** OD-10 asks who owns distribution for the
-product path. This asks how to ship next month. Conflating them is how a
-convenient first target quietly becomes a strategy.
+The first deployment is now the first execution of OD-10, while remaining only
+one channel. A convenient first target must not quietly become the permanent
+product substrate.
 
 **Step 1 — a bare Linux VM, before any platform.** `scp` the binary, a systemd
 unit, a one-page runbook. Nothing else. **This is the acceptance test for a claim
@@ -211,18 +210,44 @@ it exists, "Railway makes this easy" is untested against an alternative; afterwa
 it is known which parts are convenience and which are load-bearing. Cost: an
 afternoon.
 
-**Step 2 — a managed platform, with a thin shim.** Render for the least
-surprising path (a web service running a binary, managed Postgres, no ceremony);
-Railway for the better CLI to build against, which is what the shim is actually
-built on; Fly is closer to "just run this binary" than either, at the cost of a
-more opinionated networking model to inherit.
+**Step 2 — a managed platform, behind a deployment-provider boundary.** Railway
+is the proposed first hosted implementation. Its current [public GraphQL
+API][railway-api], project/service model, [templates][railway-templates], and
+[PostgreSQL service][railway-postgres] make it a practical place to prove the
+boundary. This is an implementation sequence, not a permanent product
+commitment. It implements OD-10's provider-led direction without committing
+application architecture to Railway.
 
-**Thin is the operative word.** `gust deploy` emits a static binary plus a small
-manifest and shells out; it does not model the platform's services, environments,
-or variables. **A thick wrapper around someone else's CLI becomes a compatibility
-surface maintained forever** — their breaking changes become ours and their
-concepts leak into the model. Thin means that moving to an appliance later changes
-only the shim.
+**Thin is still the operative word, but thin does not mean unmodelled.**
+`gust deploy` produces an immutable artifact and a canonical, desired-state
+`ReleasePlan`, validates its capability and configuration bindings, and passes
+that plan to a deployment provider. The provider translates Gust's stable
+contract into a pinned provider API or CLI; provider service objects,
+environment-variable conventions, and retry behavior do not become application
+concepts.
+
+The conceptual control-plane interface is reconciliation-oriented — `Plan`,
+`Apply`, `Status`, and `Rollback` — rather than a large imperative capability
+containing `CreateService`, `SetSecret`, `CreatePostgres`, and `Logs`. Separate
+resource contracts cover compute, databases, secret bindings, domains, and
+observability. That keeps retries idempotent, stateful resources explicit, and
+logs out of the mutation surface.
+
+The proposed sequence is:
+
+1. prove the artifact and lifecycle contract on a bare Linux VM;
+2. implement the local/bare-VM provider and Railway provider against the same
+   `ReleasePlan`;
+3. implement Render as a second conformance target before freezing the
+   deployment-provider interface;
+4. evaluate Northflank early, and use Fly later as a lower-level stress test of
+   the abstraction rather than shaping the first version around it.
+
+Render's current [API][render-api] covers services, managed datastores,
+deployments, logs, domains, and audit logs, which makes it a useful independent
+check. Northflank exposes its platform through an [API and OpenAPI
+description][northflank-api]. Fly's [Machines API][fly-machines] is valuable for
+testing whether the contract survives a more infrastructure-shaped substrate.
 
 **Avoid Docker to get started.** A base image reintroduces precisely the
 uncontrolled dependency graph §4 above says Gust does not have. If the static
@@ -238,16 +263,56 @@ at all.
 Not *this deploys easily* — everything deploys easily. **"This application
 declares Postgres, SMTP, and a secret named `stripe`; this environment provides
 two of the three; deployment refused."** That is §0.5's capability manifest made
-operational, it is checkable against Railway's and Render's own CLIs today, and it
-is the same shape as the lead product claim in §56: **the unconfigured deployment
-does not deploy.**
+operational, it is checkable against Railway's and Render's provider interfaces
+today, and it is the same shape as the lead product claim in §56: **the
+unconfigured deployment does not deploy.**
 
-**The caution that keeps this from becoming OD-10's answer by default.** The
-perpetual-underclass argument in this review says cloud vendors own distribution.
-Building on a platform's CLI puts distribution in that platform's hands — fine for
-a demo and first users, and **exactly the position OD-10 exists to escape as a
-product path.** Adopt it deliberately, and do not let convenience decide the
-strategic question by attrition.
+### 6.2 Distribution sequence — direction set 2026-09-01
+
+Do not implement every channel at once. Start with one blessed path and one
+escape hatch, then use a genuinely independent second provider to test whether
+the abstraction is real:
+
+1. prove the self-contained artifact and lifecycle contract through bare-VM
+   deployment and self-hosting;
+2. ship Railway as the first blessed hosted route;
+3. add Render as the second provider and conformance target;
+4. pursue generator partnerships once the application model and deployment
+   contract are stable enough to generate reliably;
+5. add cloud marketplaces and appliances when user demand justifies their
+   packaging, support, and certification cost;
+6. consider Gust Cloud only after the operating case has been earned.
+
+Railway and Render can provide early reach, but Gust must retain the CLI,
+project format, Application Model, Environment Binding, `ReleasePlan`, provider
+conformance suite, and direct developer relationship. That is the difference
+between borrowing distribution and becoming permanently subordinate to it.
+
+The provider may be absent from ordinary application code, but it must remain
+visible in the deployment plan, audit record, billing, support, incident
+response, and resolved resource identities. Calling the product "Gust Cloud"
+while Railway invisibly owns the infrastructure is not merely an adapter
+default if Gust also owns customer accounts, billing, support, or data
+obligations; that is a product and operating-model decision under OD-10.
+
+Gust Cloud becomes justified only when several gates are met: repeated user
+demand for one managed experience; provider limitations that block material
+Gust-specific value; enough deployment volume to support a real operations
+team; a clear advantage from hosted capability governance, auditing, or rollout;
+acceptable provider economics and customer ownership; and readiness to own
+billing, support, security, backups, and incident response. Until then it would
+add operational surface before adding unique product value.
+
+If Gust Cloud is later built, it must consume the same provider-neutral
+contracts and pass the same conformance evidence. Already configured
+applications must continue running when the Gust control plane is unavailable;
+only new deployments, reconciliation, hosted views, scaling, or credential
+rotation may depend on that plane.
+
+Portability here means that application code, release artifacts, and the
+deployment contract do not depend on Railway. It does not mean a stateful
+deployment can move providers without an explicit database/data migration,
+backup, DNS, region, secret, and rollback plan.
 
 Two revisions to adopt:
 
@@ -264,3 +329,10 @@ the whole project this lane has read:
 > The winning product is not a language that lets AI produce more code. It is a
 > system that makes vast amounts of AI-produced code **safe, coherent,
 > inspectable, upgradeable, and operable over decades.**
+
+[railway-api]: https://docs.railway.com/integrations/api
+[railway-templates]: https://docs.railway.com/templates/create
+[railway-postgres]: https://docs.railway.com/databases/postgresql
+[render-api]: https://render.com/docs/api
+[northflank-api]: https://northflank.com/docs/v1/api/use-the-api
+[fly-machines]: https://fly.io/docs/machines/api/

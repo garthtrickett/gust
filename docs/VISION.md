@@ -441,7 +441,7 @@ Ordered by what actually threatens the plan, not by how alarming they sound.
 
 - **Model fluency (OD-9) — the top risk.** Nobody has made a frontier model fluent in a language with no corpus. If it fails, the readership thesis fails with it, because the whole argument is that only the model needs to learn Gust. Most underweighted item in this document, hardest to estimate, and the reason Track B starts in week one (§0.7).
 - **A soundness hole in the scoping analysis (OD-8).** One counterexample kills the only claim we make. Someone adversarial must attack it before anything is published.
-- **Distribution — unsolved.** For the product path this is as hard as the build, and there is currently no answer. Self-serve prosumer SaaS in a crowded category with no marketing budget. Think about it early rather than discovering it at launch.
+- **Distribution — direction set, execution unproven (OD-10).** Reach users first through deployment providers, generator partnerships, cloud marketplaces, appliances, and self-hosting; do not make a Gust-operated cloud a prerequisite for adoption. The remaining risk is channel dependence: Railway or another provider may supply early reach while owning discovery, billing context, and infrastructure leverage. Gust must retain the CLI, project format, Application Model, Environment Binding, `ReleasePlan`, provider conformance, and direct developer relationship, then add channels deliberately rather than mistaking one convenient substrate for the product.
 - **The product eats the compiler.** Modest traction, support tickets, churn, a customer wanting SSO — and eighteen months later there is a small business and a stalled language. Most likely slow failure, and it does not announce itself. Mitigations: self-serve only, refuse every enterprise request, cap the feature surface deliberately, treat revenue as runway rather than a metric.
 - **The freakout produces a scanner, not a language.** Incidents continuing is near-certain; the market reaching for a structural fix is not. **Budget for losing the first wave.** History says the second one arrives, slowly (§0.3).
 - **Taste does not get cheaper.** Agents make code cheap; they do not make product decisions. Several surfaces means several sets of judgment calls about what to leave out, and the all-in-one graveyard is full of teams who got the code right and the decisions wrong.
@@ -555,7 +555,7 @@ second, drifting copy of it.
 | **OD-8** | ~~**Soundness of the tenant-scoping analysis** — adversarial review before publication. *Thesis-invalidating.*~~ | **RESOLVED 2026-08-25 — BOUNDED POSITIVE** — the complete predefined §56.1 suite found no in-scope compiler-owned typed-query counterexample; the verdict does not cover caches, non-query reads, multi-step flows, unsafe/raw SQL, or trusted-context establishment | — | §56; generated evidence in `compiler/CRANELIFT_PHASE21_OD8_ADVERSARIAL_VERDICT.md` |
 | OD-1 | Transparent suspension vs coloured async (server) | **DIRECTION SET 2026-08-20** — transparent suspension unless a fatal blocker is hit; §21 defines what counts | Demo | §21; evidence in `docs/ONE_WAY_LEDGER.md` E9; escalation as `TASK_STDLIB.md` CR-8 |
 | OD-2 | ~~Generic functions vs compiler-owned query derivation~~ | **RESOLVED 2026-08-20** — compiler-owned derivation; §13's ban stands | — | §14; consequences in §13 and `docs/DEMO_TARGET_PROGRAM.md` |
-| OD-10 | **Distribution for the product path** | **OPEN** — first candidate recorded 2026-08-20 (`docs/STRATEGY_REVIEW.md` §6); **first *deployment* proposed separately at §6.1**, deliberately not an answer to this row | Month 4 | §0.11 |
+| OD-10 | **Distribution for the product path** | **DIRECTION SET 2026-09-01** — provider-led distribution first through Railway, Render, generator partnerships, cloud marketplaces, appliances, and self-hosting; Gust Cloud is deferred until demand and operational readiness justify it | — | §0.11; §6; `docs/STRATEGY_REVIEW.md` §6; `docs/DEPLOYMENT_ARCHITECTURE.md` |
 | OD-3 | SAM state ownership under linear resources and no interior mutability | **OPEN** — leading direction proposed 2026-08-20 (§38.1); partly decided by implementation, `std.Rc` already ships | v0.5 | §27, §38; the discrepancy as `TASK_STDLIB.md` CR-9; evidence in `docs/ONE_WAY_LEDGER.md` E8 |
 | OD-4 | WASM stack-switching support and payload cost | **OPEN** — recommendation recorded and then revised on checked support data, 2026-08-20 (§21.1) | v0.5 | §21, §41 |
 | OD-6 | Form of the intent layer | **OPEN** — leading proposal recorded 2026-08-20 (§117.1): contracts on capabilities as the core, examples as the authoring surface, properties for depth | v1.0 | Part XXI |
@@ -825,6 +825,12 @@ Gust provides one official way to build every common part of an application. Con
 
 The platform owns UI and rendering, routing, client/server communication, server actions and APIs, authentication, authorization, database access, migrations, forms and validation, background jobs, scheduling and workflows, testing, deployment, configuration and secrets, and logs, metrics, tracing, and errors.
 
+`docs/FULL_STACK_REFERENCE_MAP.md` records the proposed upstream reference map
+for those platform surfaces. Standards and focused mature implementations are
+behavioral authorities or conformance oracles, not hidden application
+dependencies: Gust keeps its own capability, effect, resource, type, error, and
+tenant contracts.
+
 These are native Gust primitives rather than a collection of hidden third-party packages.
 
 External suppliers are reserved for genuinely external services: payment providers, S3-compatible infrastructure, email and SMS delivery, AI APIs, maps, tax calculation, shipping.
@@ -851,6 +857,16 @@ Gust owns the standard capability interfaces. Suppliers may implement those inte
 
 An approved capability may be vendor-hosted, hosted by Gust, customer-hosted, or deployed inside a self-hosted Gust installation. Regardless of hosting model, the implementation, configuration, provenance, and isolation model must remain certified by Gust.
 
+Before adoption gives external suppliers a reason to build for Gust, Gust may
+publish production-grade reference adapters behind these same contracts. Those
+adapters receive no special compiler authority, and applications remain coupled
+to the Gust capability rather than the adapter. A later vendor-maintained
+implementation must pass the same conformance and containment gates, so the
+handoff changes ownership rather than application architecture. The complete
+bootstrap, reference-source, S3, Stripe, and vendor-handoff strategy is recorded
+in `docs/SUPPLIER_ADAPTER_STRATEGY.md`; that note does not activate supplier
+implementation work or promise certification.
+
 ## 5. Native infrastructure
 
 Every Gust application includes PostgreSQL and an S3-compatible object store.
@@ -859,13 +875,22 @@ Applications access both through Gust-owned APIs. The underlying infrastructure 
 
 Changing infrastructure providers must not require changing the application architecture.
 
+PostgreSQL authentication, S3 signing, Stripe webhook authentication, and HTTPS
+all depend on one runtime-owned cryptography and TLS provider contract. The
+initial proposed production provider is a narrow shim over a pinned supported
+OpenSSL 3 build; applications and supplier adapters do not bind cryptographic
+libraries directly, and handwritten Gust cryptography is never selected for
+production traffic. `docs/CRYPTO_PROVIDER_ARCHITECTURE.md` records the provider
+selection, initial primitive cohort, TLS resource boundary, validation corpus,
+and sequencing without activating implementation work.
+
 ## 6. Hosted and self-hosted deployment
 
-Gust Cloud is the default and easiest production environment, but Gust is not cloud-only.
+Provider-led deployment is the first distribution model. Prove the self-contained artifact on a bare Linux VM, make Railway the first blessed hosted route behind Gust's deployment-provider boundary, and use Render as the second conformance target. Generator partnerships, cloud marketplaces, appliances, and self-hosting extend distribution without changing application code or making Gust operate every customer's infrastructure.
 
-Self-hosted Gust installs the same runtime, control plane, policy system, capability model, observability system, and deployment system.
+Gust Cloud is a later product, not a prerequisite or the assumed first home for an application. It should be built only after repeated user demand, provider limitations that block Gust-specific value, sufficient deployment volume to support an operations team, and readiness to own billing, support, security, backups, and incident response. If built, it uses the same Application Model, Environment Binding, `ReleasePlan`, capability contracts, provider boundary, and conformance corpus as every other target.
 
-Hosted and self-hosted Gust must not diverge into different products.
+Self-hosted Gust and any future Gust Cloud install the same runtime, policy system, capability model, observability contracts, and deployment semantics. An already configured application must continue running if Gust's deployment control plane disappears. Hosted and self-hosted Gust must not diverge into different products.
 
 ## 7. First-use experience
 
@@ -1630,6 +1655,13 @@ languages below the application boundary, not normal application source
 languages. The exact target-neutral template surface is unimplemented and must
 be settled before a shared renderer is claimed.
 
+`docs/WASM_DOM_ARCHITECTURE.md` records the proposed implementation reference
+hierarchy: web standards are normative, `wasm-bindgen`/`web-sys` are worked
+references for the generated Wasm-to-browser boundary, Lit is the worked
+reference for static skeletons and incremental parts, and Web Platform Tests
+provide cross-browser evidence. The note does not activate client work or import
+those projects as application dependencies.
+
 Components are ordinary functions returning `View` and compose by calling other
 component functions. Browser templates use typed HTML expressions and
 incremental DOM-part updates rather than a virtual DOM. The sketch below is the
@@ -1746,20 +1778,56 @@ native framework objects never become application state.
 
 Forms are typed, schema-validated, integrated with RPC validation, and accessibility-aware.
 
+HTML form submission and constraint-validation behavior is the platform
+baseline; WCAG and WAI-ARIA are the accessibility authorities. Conform is the
+worked reference for deriving typed field metadata and validation from one
+schema while preserving progressively enhanced server submission. Gust owns
+the RPC/schema relationship, server authority, stable error paths, focus
+behavior, safe generated markup, and accessibility policy; Conform's React hooks
+and schema-library dependencies are not application dependencies.
+
+Playwright is the external real-browser E2E reference for Chromium, Firefox,
+and WebKit, including network interception, traces, and accessibility-tree
+snapshots. `axe-core` supplies automated accessibility checks inside those
+tests, but does not replace keyboard, focus, screen-reader, or manual WCAG
+review. See `docs/WASM_DOM_ARCHITECTURE.md` and
+`docs/FULL_STACK_REFERENCE_MAP.md`.
+
 Browser styling uses compiler-owned scoped CSS. Global styles require explicit
 declaration. Mobile styling lowers through the canonical `View` model to the
 pinned native adapter; application-authored SwiftUI, UIKit, Compose, or Android
 Views styling is not part of the normal source model.
 
+Vue's scope-attribute transformation is the focused worked reference, while
+Lightning CSS is the parsing/transformation/minification reference. Gust owns
+stable scope identity, CSS admission rules, explicit global/deep escapes, and
+the generated DOM/CSS pairing; neither Vue components nor a JavaScript CSS
+runtime enters the application model. See `docs/WASM_DOM_ARCHITECTURE.md`.
+
 ## 41. Browser compilation target
 
 Gust targets WebAssembly first, with a small JavaScript bridge for DOM integration. A JavaScript output backend may be added later for compatibility.
+
+The bridge is generated platform code with a bounded host-function manifest,
+typed memory transfers, explicit browser-object lifetime, exception translation,
+and one SAM action-dispatch entry. Ordinary application code receives `View` and
+declared browser capabilities rather than raw `window`, `document`, `Node`, or
+unrestricted Web APIs. See `docs/WASM_DOM_ARCHITECTURE.md` for the proposed
+boundary, first slice, conformance corpus, and sequencing.
 
 A basic application ships only the Gust UI runtime, compiled application client code, and required browser bindings.
 
 It does not ship a package loader, supplier SDKs, runtime reflection, unused standard-library code, or a large general-purpose framework runtime.
 
 Ahead-of-time compilation and tree shaking should make payload size proportional to used features. The design target for a basic application is tens of compressed kilobytes rather than hundreds.
+
+Vite is the development-server/module-invalidation reference and esbuild is the
+focused production asset-graph/output reference. The first Wasm development
+loop uses deterministic content-addressed output and correct full-page reload;
+state-preserving Wasm HMR is deferred until model layout, pending actions,
+browser handles, listeners, and resource cleanup are compatible across module
+replacement. These tools may sit behind the build boundary during bring-up but
+do not define Gust syntax, plugins, or runtime dependencies.
 
 See OD-4: the suspension model (§21) may impose payload cost on this target.
 
@@ -1787,6 +1855,12 @@ Typed routes improve refactoring, authorization, generated links, compiler inspe
 
 Code splitting occurs at typed route boundaries and explicit component boundaries. Lazy loading is explicit and compiler-managed.
 
+The WHATWG URL and URLPattern standards govern parsing, serialization, and
+matching. TanStack Router is the focused worked reference for typed route
+identity, path and search parameters, loader dependencies, preloading,
+pending/error states, and code-split boundaries. Gust keeps explicit
+compiler-visible declarations and does not adopt React or filesystem routing.
+
 ## 43. Client persistence and offline support
 
 Offline support and persistence use standard browser capabilities backed by approved storage such as IndexedDB.
@@ -1797,6 +1871,16 @@ Persistence is typed, versioned, tenant-aware where applicable, and explicitly d
 
 Queries, mutations, streams, subscriptions, webhooks, and public HTTP APIs share one typed action foundation while retaining distinct semantics.
 
+`docs/HTTP_RPC_ARCHITECTURE.md` records the proposed transport and reference
+hierarchy. RFC 9110/9112 are authoritative for a Gust-owned strict HTTP/1.1
+server; h11, llhttp, and Go `net/http` are focused state-machine, parser, and
+server-lifecycle references. Unary `gustrpc` begins as generated JSON over that
+server, with a transport-independent dispatcher. Connect is the primary
+HTTP-native RPC reference, gRPC informs later deadlines/status/streaming, and
+tRPC remains an ergonomics reference rather than a wire authority. This note
+does not activate Part IX work or make HTTP/2, Protobuf, reflection, batching,
+or streaming prerequisites for Slice 0.
+
 - **Query** — read-only typed RPC. Safe reads may retry automatically.
 - **Mutation** — state-changing RPC. Automatic retries require explicit idempotency.
 - **Stream** — ordered best-effort server-to-client stream.
@@ -1805,6 +1889,15 @@ Queries, mutations, streams, subscriptions, webhooks, and public HTTP APIs share
 - **HTTP** — intentionally public REST-style or protocol-specific endpoint.
 
 All boundary forms share schema-derived serialization, validation, authentication, tenant resolution, authorization, tracing, auditing, and structured `Result` errors.
+
+The proposed later transport sequence is SSE/EventSource for the first
+server-to-browser typed Subscription, Connect-style typed server streams where
+appropriate, and WebSockets only for demonstrated duplex or multiplexed-topic
+needs. Phoenix Channels is the focused join/leave/heartbeat/reconnect/drain
+reference; RFC 6455, the WHATWG WebSocket API, `wsproto`, and Autobahn govern the
+wire/state-machine/conformance boundary. A transport connection never implies
+durability: durable subscriptions require a versioned application cursor and a
+changefeed or event log. See `docs/HTTP_RPC_ARCHITECTURE.md`.
 
 *v0.1 ships the HTTP form only.*
 
@@ -1816,9 +1909,21 @@ Mutations support explicit idempotency keys.
 
 ## 46. Client cache and optimistic updates
 
-RPC queries use a built-in normalized cache keyed by procedure identity, typed input, and tenant context.
+RPC queries use a built-in typed query-result cache keyed by procedure identity,
+canonical typed input, tenant context, and applicable contract version. The
+first cache is deliberately not a normalized entity graph.
 
-Mutations dispatch optimistic SAM actions, retain rollback state, call the server, and reconcile against the authoritative result.
+TanStack `query-core` is the worked behavioral reference for fresh/stale state,
+in-flight deduplication, cancellation, retry eligibility, invalidation,
+observation, background refetch, and bounded garbage collection. Its React
+surface and arbitrary cache-mutation callbacks are not part of Gust.
+
+Mutations dispatch optimistic SAM actions into §38.1's pending journal, call the
+server, and reconcile against the authoritative confirmed result. Rejection
+removes the matching action and refolds; acknowledgement replaces confirmed
+data, removes the matching action, and refolds any remaining actions. This is
+the rollback state—typed pending actions—rather than user-maintained inverse
+snapshots of shared cache values.
 
 Subscriptions and streams update the same cache and dispatch ordinary SAM actions.
 
@@ -1834,6 +1939,14 @@ Subscriptions and streams update the same cache and dispatch ordinary SAM action
 
 Gust owns the identity, session, membership, recovery, MFA, and audit model.
 
+WebAuthn and OpenID Connect Core are normative for their respective protocol
+boundaries. Gust does not copy a framework authentication model: WebAuthn governs
+passkey ceremonies and relying-party/origin/challenge/signature checks; OIDC
+governs issuer, audience, nonce/state, token, claims, key rotation, and provider
+interoperability. External identity verifies identity but never grants Gust
+authorization. The reference split is recorded in
+`docs/FULL_STACK_REFERENCE_MAP.md`.
+
 Native authentication methods: passkeys, passwords, magic links, OAuth/OIDC, and enterprise SAML through an approved identity supplier.
 
 A person has one global Gust identity with separate organisation memberships, workspace access, and roles and permissions.
@@ -1847,6 +1960,12 @@ Anonymous users receive restricted workspace-scoped sessions.
 Authenticated sessions are device-bound, revocable, short-lived, and backed by rotating refresh credentials.
 
 Gust tracks active devices and supports session revocation.
+
+No framework session implementation is selected as authority. Gust owns cookie
+and CSRF policy, device binding, short-lived access, rotating refresh
+credentials, theft/replay handling, revocation, tenant selection, audit, and the
+immutable request capability context; standards and focused implementations are
+interoperability oracles only.
 
 ## 49. Service accounts and API tokens
 
@@ -1935,6 +2054,14 @@ effects and a concrete connection API remain separate work.
 
 **One choice worth taking deliberately rather than by default.** Linking a C client is the fast path; implementing the wire protocol in Gust is slower and is the first real test of whether this language can write the code it intends to contain. `docs/VISION_RECONCILIATION.md` §7 puts C retirement at the top of the current priority list — that is about the MIR-to-C *backend* rather than a ban on C libraries, so linking a client does not violate it. But choosing the fast path here means the first vendor capability (§98) is a C dependency, and §98's whole argument is about what a dependency costs. **Take it as a decision with that stated, not as an implementation detail.**
 
+`docs/POSTGRES_DRIVER_ARCHITECTURE.md` records the proposed implementation
+shape for the native option: PostgreSQL's protocol specification is normative;
+pgx's `pgproto3` and `pgconn` are the primary worked references; rust-postgres
+is an independent cross-check; and Gust owns the linear connection, effects,
+memory lifetimes, and compiler-generated codecs. It also defines the bounded
+first protocol slice and keeps a narrow libpq wrapper available as an explicit
+temporary oracle rather than an accidental product architecture.
+
 **What this row actually is.** The first supplier capability under §98, and therefore the test of that model rather than an application of it. If the shape does not work for Postgres — the easiest, best-understood, most stable vendor surface available — it will not work for the ones that follow.
 
 
@@ -1958,6 +2085,14 @@ Application domain types may wrap generated database types but do not redefine t
 ## 55. Query model
 
 Gust provides a typed Kysely-style query builder over generated database types.
+
+`sqlc` is the proposed primary implementation reference for SQL-to-generated
+typed functions: parsing against schema/catalog state, parameter/result mapping,
+and generated function shape. It does not define Gust's query API or authority.
+Gust's one compiler walk must still derive the result type, effect requirement,
+and scope obligation together as §55.1 requires. See
+`docs/POSTGRES_DRIVER_ARCHITECTURE.md` and
+`docs/FULL_STACK_REFERENCE_MAP.md`.
 
 **The query builder is a compiler-owned derivation (§14), not a user-level generic library.** Result type computation for filters, joins, aggregates, projections, and pagination is performed by the compiler. This is what allows a Kysely-class typed surface without the type-level programming facilities §13 excludes.
 
@@ -2099,6 +2234,15 @@ Every migration is registered in one central ordered manifest.
 
 The compiler may suggest generated migrations, but developers review and own the final migration code. This review is not delegated to an agent by default: migrations are the one place where an incorrect generated diff is not recoverable by rollback, and therefore the one place the readership thesis does not apply.
 
+Migration references are deliberately split. Flyway is the operational
+reference for applying explicit ordered files and recording versions,
+checksums, times, and outcomes in schema history. Atlas is the separate
+design-time reference for schema inspection, proposed SQL diffs, migration
+linting, and drift detection. Generated plans are review input and never gain
+authority to auto-apply in production. Neither overrides the explicit
+reviewed-file, central-manifest, approval, compatibility, backfill, and rollout
+rules in §§58–62.
+
 ## 59. Destructive migrations
 
 Destructive changes require explicit annotation, deployment approval, backup verification, and compatibility checks.
@@ -2155,6 +2299,14 @@ The runtime provides bounded exponential backoff, timeouts, cancellation, priori
 
 Jobs are enqueued transactionally through the database outbox.
 
+Oban is the primary worked implementation reference for the PostgreSQL-backed
+runtime: transactional enqueue, at-least-once execution, uniqueness, retry and
+backoff, scheduling, priorities, cancellation, history, orphan recovery,
+database outage behavior, isolated queues, and graceful shutdown. Gust does not
+adopt Elixir processes, Ecto, plugins, or Oban's public schema; typed job inputs,
+tenant/effect context, idempotency declarations, outbox, fairness, and workflow
+semantics remain Gust-owned. See `docs/FULL_STACK_REFERENCE_MAP.md`.
+
 ## 65. Scheduling
 
 Scheduled jobs use explicit schedules with clear timezone semantics.
@@ -2166,6 +2318,14 @@ Recurring schedules create individual auditable job executions.
 Durable workflows are typed state machines. They may wait for timers, events, approvals, or supplier responses.
 
 Workflow state is persisted. Worker failure does not lose workflow progress.
+
+Temporal's Go SDK and server semantics are the primary worked references for
+durable event history, deterministic replay, activities, signals, timers,
+cancellation, child workflows, and versioning. Gust does not port or require the
+Temporal service: ordinary background work stays in the simpler Oban-style job
+runtime, while Gust owns any later workflow history/storage schema, typed state,
+tenant/effect rules, worker compatibility, and bounded operational model.
+Pinned-history replay is the central conformance artifact.
 
 ## 67. Workspace fairness
 
@@ -2190,6 +2350,13 @@ Streams provide ordered best-effort live delivery. Durable subscriptions provide
 Messages are schema-versioned and tenant-scoped. Consumers must be idempotent.
 
 Breaking message changes require a new schema version and a compatibility period.
+
+SSE and WebSockets are delivery adapters over this contract, not the event bus
+or durability mechanism. The first browser subscription uses EventSource with
+an explicit typed resumable cursor. WebSockets arrive only for genuine duplex
+traffic and multiplexed typed topics, with bounded per-connection/topic queues
+and an explicit slow-consumer policy. Transport reconnect never skips tenant,
+authorization, schema, retention, or idempotency checks.
 
 ---
 
@@ -2295,6 +2462,13 @@ Configuration is typed, non-sensitive application input.
 
 It supports defaults, environment-specific overrides, validation, and deployment-time checking.
 
+.NET's Configuration providers and Options pattern are the primary worked
+references for ordered source layering, explicit precedence, binding into typed
+settings, validation at startup, immutable snapshots, and reload notifications.
+Gust does not inherit .NET dependency injection or ambient per-read lookups. A
+request, job, or workflow observes one validated configuration snapshot rather
+than a mixture of values from both sides of a reload.
+
 ## 81. Secrets
 
 Secrets are opaque linear values. They have no readable string representation in safe code.
@@ -2314,6 +2488,12 @@ Public effect signatures expose logical secret names rather than provider-specif
 ## 82. Rotation and providers
 
 Secret rotation supports overlapping active versions. All access is audited. Expiry and rotation policies are platform-enforced.
+
+OpenBao is the provider-backed lifecycle reference for opaque secret handles,
+TTLs, renewable leases, replacement, expiry, and revocation. Gust does not
+embed or reproduce a secrets manager; it defines a narrow provider protocol so
+self-hosted and hosted providers can supply the same lifecycle without exposing
+provider paths, credentials, or raw secret bytes to ordinary application code.
 
 Self-hosted secret providers must implement Gust's provider protocol and be certified for isolation, auditability, rotation, and access control.
 
@@ -2366,6 +2546,12 @@ Self-hosted secret providers must implement Gust's provider protocol and be cert
 
 Suppliers implement versioned Gust capability contracts.
 
+Gust-maintained reference adapters implement exactly the same protocol while a
+supplier ecosystem is being bootstrapped. They are labelled as Gust-maintained,
+not vendor-endorsed, and remain replaceable by a conforming vendor or community
+implementation. `docs/SUPPLIER_ADAPTER_STRATEGY.md` defines the ownership
+progression and the supplier-neutral conformance boundary.
+
 The protocol uses typed schemas, mutual authentication, tenant-scoped credentials, request IDs, deadlines, and signed provenance metadata.
 
 Capability negotiation occurs during deployment rather than dynamically during ordinary requests.
@@ -2409,6 +2595,14 @@ Compatibility adapters are owned by Gust or the supplier as part of certificatio
 
 The deployment unit is an immutable application release.
 
+The portable packaged form is an OCI image or multi-platform image index,
+identified and deployed by digest. The OCI Image and Distribution
+specifications are normative; BuildKit is the worked reference for repeatable,
+cache-efficient construction, not a runtime requirement. The image contains
+only runtime binaries/libraries, generated Wasm/bridge/assets, manifests, and
+explicit migration material—never the compiler, source tree, credentials, or
+build cache. `docs/DEPLOYMENT_ARCHITECTURE.md` owns the detailed proposal.
+
 A release may serve one or many workspaces. Workspace-specific configuration and data remain separate from release code.
 
 ## 88. Preview environments
@@ -2423,6 +2617,20 @@ Migrations pass compatibility gates before traffic shifts.
 
 Old and new clients, jobs, messages, and schemas must overlap during rolling upgrades.
 
+Startup, readiness, and liveness are separate contracts following Kubernetes'
+mature operational semantics without making Kubernetes mandatory. Readiness
+controls traffic and drain; liveness detects a wedged process and must not turn
+a transient database or supplier outage into a fleet restart. Rolling
+replacement follows bounded surge/unavailability, minimum-ready and progress-
+deadline behavior, immutable revision rollback, and an independent
+old/new-version compatibility gate.
+
+Shutdown makes readiness false first, stops new RPC/job/subscription work,
+redirects or closes realtime clients with resumable cursors where possible,
+drains bounded in-flight work, closes owned resources, and exits before the
+termination deadline. Container health alone does not prove RPC, schema,
+message, job, session, supplier, or frontend compatibility.
+
 ## 90. Regions and scaling
 
 Regions and data residency are organisation or workspace policies.
@@ -2434,6 +2642,12 @@ Resource classes and scaling limits are deployment declarations. Application cod
 Local development runs the same runtime and control-plane semantics through approved local implementations.
 
 Local mode may reduce scale, but it must not weaken tenant isolation, authorization, effect checking, or capability enforcement.
+
+The local asset server follows Vite's module-graph, invalidation, diagnostics,
+and rejected-hot-update-to-full-reload behavior while serving Gust-generated
+Wasm, bridge, CSS, and assets. It is a development adapter around the same
+compiler-owned asset and release manifests used by production, not a second
+application architecture.
 
 ## 92. Privileged operational actions
 
@@ -2658,6 +2872,13 @@ shape, not a dependency or an instruction to reproduce its current governance.
 ## 108. Execution traces
 
 Every run emits a structured, machine-readable trace. The trace is a first-class artifact with a versioned schema, not a log format. It is one of the three things humans actually read (§0.12).
+
+Operational interoperability follows the OpenTelemetry specification for trace
+context, spans, metrics, logs, resources, semantic conventions, and OTLP. OTel
+does not replace this execution trace: it governs propagation and export, while
+the Gust artifact records authority and correctness evidence with stronger
+tenant, provenance, redaction, and determinism rules. They share correlation
+identity only where policy permits. See `docs/FULL_STACK_REFERENCE_MAP.md`.
 
 > **No run trace exists.** Verified 2026-08-20 at `b47d0049`. The only thing in the compiler named "trace" is `typechecker_log_trace` (`compiler/typechecker.gst:8618-8619`), whose body is empty — 40 call sites compiling to nothing. That is stubbed compiler debug logging, and it says nothing about a *program's* run regardless.
 >
