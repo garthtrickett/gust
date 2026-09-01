@@ -79,7 +79,7 @@ def validate() -> dict:
     for marker in (
         "invocation.backend.tag = 1; // Cranelift",
         'os.LogStr("  cranelift  Compile to one native executable (default).");',
-        'os.LogStr("  mir-to-c, c  Emit C source to stdout (retained semantic oracle).");',
+        'os.LogStr("  mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.");',
         "if invocation.backend.tag == 1 {",
         "native_source_route.mir_native_scalar_source_compile(",
         "codegen.codegen_generate(programs, module_prefixes, &env, ctx)",
@@ -98,7 +98,8 @@ def validate() -> dict:
 
     help_text = HELP.read_text(encoding="utf-8")
     require("Compile to one native executable (default)." in help_text and
-            "retained semantic oracle" in help_text and
+            "DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24." in help_text and
+            "Bootstrap C retirement is separate and deferred to Phase 25." in help_text and
             "Optional Cranelift output; defaults to the source stem." in help_text and
             "fallback to MIR-to-C." in help_text,
             "checked help projection drifted")

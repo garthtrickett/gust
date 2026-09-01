@@ -8,8 +8,10 @@ import copy
 import hashlib
 import importlib.util
 import json
+import os
 import re
 import subprocess
+import tempfile
 from collections import Counter
 from pathlib import Path
 
@@ -24,6 +26,11 @@ PR_FAST = ROOT / ".github/workflows/pr-fast.yml"
 WORKFLOW = ROOT / ".github/workflows/phase23-mir-to-c-deprecation-opening.yml"
 GUST = ROOT / "gust"
 BASELINE_SOURCE = ROOT / "compiler/phase23_parent_scope_shadow_current.gst"
+NATIVE_IDENTITY_SOURCE = ROOT / "compiler/phase10_scalar_return_source.gst"
+ENTRY = ROOT / "compiler/test_runner_entry.gst"
+HELP = ROOT / "compiler/phase10_help.txt"
+README = ROOT / "README.md"
+PACKAGED_GUST = ROOT / "build/phase10-package/bin/gust"
 GUARD_L1 = "guard-cranelift-phase23-mir-to-c-deprecation-opening-contract"
 GUARD_L2 = "guard-cranelift-phase23-mir-to-c-deprecation-opening-evidence"
 
@@ -432,11 +439,19 @@ def validate() -> dict:
             "opening main identity drifted")
     require(record.get("classifications") == sorted(CLASSES),
             "classification vocabulary drifted")
-    require(record.get("inventory") == inventory_summary(),
+    successor = record.get("deprecation_contract")
+    require(isinstance(successor, dict) and
+            successor.get("contract_version") ==
+            "phase23_mir_to_c_user_deprecation_v1" and
+            successor.get("status") == "patch23_8_complete" and
+            successor.get("next_patch") == "23.8a",
+            "Patch 23.8 deprecation successor is missing or incomplete")
+    live_inventory = inventory_summary()
+    require(successor.get("post_deprecation_inventory") == live_inventory,
             "live MIR-to-C consumer inventory drifted")
-    require(record["inventory"]["unclassified_count"] == 0,
+    require(live_inventory["unclassified_count"] == 0,
             "consumer or artifact remains unclassified")
-    validate_identity_falsifiers(record["inventory"])
+    validate_identity_falsifiers(live_inventory)
 
     structural = record.get("structural_surfaces")
     require(structural == STRUCTURAL_SURFACES,
@@ -460,6 +475,62 @@ def validate() -> dict:
                 f"mandatory predecessor Patch {patch} is not DONE")
     require("- [x] Patch 23.7 — MIR-to-C Deprecation Opening and Consumer Inventory — DONE" in task,
             "TASK.md does not mark Patch 23.7 DONE")
+    require("- [x] Patch 23.8 — User-Facing MIR-to-C Deprecation Contract — DONE" in task,
+            "TASK.md does not mark Patch 23.8 DONE")
+
+    presentation = successor.get("presentation", {})
+    expected_presentation = {
+        "compiler_help":
+            "mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.",
+        "bootstrap_help":
+            "Bootstrap C retirement is separate and deferred to Phase 25.",
+        "root_documentation":
+            "deprecated_explicit_C_spellings_remain_accepted_through_phase23_backend_removal_phase24_bootstrap_C_retirement_phase25",
+        "ordinary_compilation_notice": "none_help_and_documentation_only",
+    }
+    require(presentation == expected_presentation,
+            "Patch 23.8 presentation authority drifted")
+    entry = ENTRY.read_text(encoding="utf-8")
+    help_text = HELP.read_text(encoding="utf-8")
+    readme = README.read_text(encoding="utf-8")
+    for marker in (presentation["compiler_help"], presentation["bootstrap_help"]):
+        require(marker in entry and marker in help_text,
+                f"compiler help deprecation marker is missing: {marker}")
+    require(entry.count('std.str_eq(backend_name, "mir-to-c")') == 1 and
+            entry.count('std.str_eq(backend_name, "c")') == 1,
+            "an explicit C spelling is no longer accepted by the shared parser")
+    for marker in (
+        "C99 backend is deprecated",
+        "backend removal scheduled for Phase 24",
+        "retirement is deferred to Phase 25",
+        "deprecated C compatibility choices",
+    ):
+        require(marker in readme,
+                f"root user deprecation timeline is missing: {marker}")
+    require(record["pre_deprecation_baseline"] ==
+            successor.get("explicit_c_byte_authority"),
+            "Patch 23.8 did not preserve the Patch 23.7 byte authority")
+    require(successor.get("route_contract") == {
+        "default_backend": "cranelift",
+        "explicit_native_backend": "cranelift",
+        "default_and_explicit_native": "byte_and_observable_identical",
+        "explicit_c_spellings": ["mir-to-c", "c"],
+        "explicit_c_acceptance": "retained_byte_identical_through_phase23",
+        "fallback": "forbidden",
+        "backend_removal_phase": "24",
+        "bootstrap_C_retirement_phase": "25",
+    }, "Patch 23.8 route contract drifted")
+    require(successor.get("boundary") == {
+        "changes_help_and_root_documentation": True,
+        "changes_backend_route_or_acceptance": False,
+        "changes_ordinary_compilation_stdout_or_stderr": False,
+        "changes_accepted_Gust_program_meaning": False,
+        "adds_or_changes_MIR_operations": False,
+        "changes_ABI_layout_runtime_symbols_target_or_linker": False,
+        "changes_bootstrap_route_or_seed": False,
+        "edits_stdlib_or_CR15": False,
+        "begins_patch23_8a": False,
+    }, "Patch 23.8 boundary drifted")
 
     baseline = record.get("pre_deprecation_baseline", {})
     require(baseline.get("source") == BASELINE_SOURCE.relative_to(ROOT).as_posix() and
@@ -519,6 +590,54 @@ def evidence(record: dict) -> None:
     c_alias = compile_baseline("c")
     require(mir_to_c == c_alias == record["pre_deprecation_baseline"]["mir_to_c"],
             "pre-deprecation explicit-C aliases or bytes drifted")
+    help_result = subprocess.run(
+        (str(GUST), "--help"), cwd=ROOT, stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE, timeout=180, check=False,
+    )
+    require(help_result.returncode == 0 and help_result.stderr == b"" and
+            help_result.stdout == HELP.read_bytes(),
+            "live compiler help does not match the checked deprecation projection")
+
+    require(PACKAGED_GUST.is_file(),
+            "packaged compiler is missing; run make phase10-native-package")
+    guard_root = ROOT / "build/guards"
+    guard_root.mkdir(parents=True, exist_ok=True)
+    env = os.environ.copy()
+    env.pop("GUST_NATIVE_BACKEND_DRIVER", None)
+    with tempfile.TemporaryDirectory(prefix="phase23-8-", dir=guard_root) as tmp:
+        output = Path(tmp)
+        bare = output / "bare"
+        explicit = output / "explicit"
+        bare_build = subprocess.run(
+            (str(PACKAGED_GUST), "-o", str(bare),
+             str(NATIVE_IDENTITY_SOURCE.relative_to(ROOT))),
+            cwd=ROOT, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            timeout=180, check=False,
+        )
+        explicit_build = subprocess.run(
+            (str(PACKAGED_GUST), "--backend", "cranelift", "-o", str(explicit),
+             str(NATIVE_IDENTITY_SOURCE.relative_to(ROOT))),
+            cwd=ROOT, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            timeout=180, check=False,
+        )
+        require(bare_build.returncode == explicit_build.returncode == 0 and
+                bare_build.stdout == explicit_build.stdout == b"" and
+                bare_build.stderr == explicit_build.stderr == b"" and
+                bare.is_file() and explicit.is_file() and
+                bare.read_bytes() == explicit.read_bytes(),
+                "default and explicit Cranelift artifacts or diagnostics differ")
+        bare_run = subprocess.run(
+            (str(bare),), cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            timeout=180, check=False,
+        )
+        explicit_run = subprocess.run(
+            (str(explicit),), cwd=ROOT, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, timeout=180, check=False,
+        )
+        require((bare_run.returncode, bare_run.stdout, bare_run.stderr) ==
+                (explicit_run.returncode, explicit_run.stdout,
+                 explicit_run.stderr),
+                "default and explicit Cranelift execution differs")
     print("phase23_mir_to_c_deprecation_opening: evidence ok")
 
 
@@ -590,6 +709,26 @@ def render(record: dict) -> str:
         "Patch 23.7 changes no backend route or presentation. Its manifests",
         "freeze the opening population so later Phase 23 patches must record an",
         "explicit successor when they intentionally migrate or archive a surface.",
+        "",
+    ]
+    successor = record["deprecation_contract"]
+    post = successor["post_deprecation_inventory"]
+    lines += [
+        "## Patch 23.8 user-facing deprecation successor",
+        "",
+        f"- Contract: `{successor['contract_version']}`",
+        f"- Status: `{successor['status']}`",
+        f"- Next patch: `{successor['next_patch']}`",
+        f"- Compiler help: `{successor['presentation']['compiler_help']}`",
+        f"- Bootstrap help: `{successor['presentation']['bootstrap_help']}`",
+        "- Both explicit C spellings remain accepted and byte-identical.",
+        "- Generated-C backend removal is Phase 24; bootstrap-C retirement is Phase 25.",
+        "- Ordinary compilation emits no deprecation notice.",
+        f"- Post-deprecation text surfaces: `{post['text_surface_count']}`",
+        f"- Post-deprecation text manifest: `{post['text_surface_manifest_digest']}`",
+        f"- Post-deprecation invocations: `{post['invocation_count']}`",
+        f"- Post-deprecation invocation manifest: `{post['invocation_manifest_digest']}`",
+        f"- Unclassified: `{post['unclassified_count']}`",
         "",
     ]
     return "\n".join(lines)

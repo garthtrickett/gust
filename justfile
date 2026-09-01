@@ -23747,12 +23747,13 @@ guard-cranelift-phase23-mir-to-c-deprecation-opening-contract:
     python3 scripts/cranelift_test_levels.py validate
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase23-mir-to-c-deprecation-opening-contract | grep -F $'guard-cranelift-phase23-mir-to-c-deprecation-opening-contract\t1\t' >/dev/null
     python3 scripts/cranelift_registry.py validate
+    just guard-cranelift-phase22-default-route-flip-contract
     python3 scripts/phase23_mir_to_c_deprecation_opening.py validate
     python3 scripts/phase23_mir_to_c_deprecation_opening.py check-review
 
 guard-cranelift-phase23-mir-to-c-deprecation-opening-evidence:
     #!/usr/bin/env bash
     set -euo pipefail
-    make gust
+    make phase10-native-package
     just guard-cranelift-phase23-mir-to-c-deprecation-opening-contract
     python3 scripts/phase23_mir_to_c_deprecation_opening.py evidence
