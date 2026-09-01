@@ -2300,7 +2300,9 @@ mir_native_backend_filesystem_allocation_source__MirNativeFilesystemAllocationMo
 int mir_native_backend_full_program_source__MirNativeFullProgramStringHeader_IsValid(mir_native_backend_full_program_source__MirNativeFullProgramStringHeader* req);
 mir_native_backend_full_program_source__MirNativeFullProgramModel mir_native_backend_full_program_source__mir_native_full_program_analyze_signatures(std_Vector_ast__Program programs, std_Vector_str module_prefixes, typechecker__TypeEnvironment* env, os_Arena* ctx);
 Slice_unsigned_char mir_native_backend_full_program_source__mir_native_full_program_append_int(Slice_unsigned_char value, int integer, os_Arena* ctx);
+int mir_native_backend_full_program_source__mir_native_full_program_block_guard_defer_mask(int block_index, os_Arena* ctx);
 mir_native_backend_full_program_source__MirNativeFullProgramModel mir_native_backend_full_program_source__mir_native_full_program_collect_layout_authority(mir_native_backend_full_program_source__MirNativeFullProgramModel model, typechecker__TypeEnvironment* env, os_Arena* ctx);
+int mir_native_backend_full_program_source__mir_native_full_program_contains_guard_and_defer(std_Vector_ast__Program programs, os_Arena* ctx);
 mir__MirProgramBundle mir_native_backend_full_program_source__mir_native_full_program_emit_bundle(mir_native_backend_full_program_source__MirNativeFullProgramModel model, std_Vector_str module_paths, std_Vector_str module_prefixes, os_Arena* ctx);
 int mir_native_backend_full_program_source__mir_native_full_program_empty_enum_vector(os_Arena* ctx);
 int mir_native_backend_full_program_source__mir_native_full_program_empty_function_vector(os_Arena* ctx);
@@ -2317,6 +2319,7 @@ int mir_native_backend_full_program_source__mir_native_full_program_function_ind
 int mir_native_backend_full_program_source__mir_native_full_program_integer_width(int value);
 mir_native_backend_full_program_source__MirNativeFullProgramModel mir_native_backend_full_program_source__mir_native_full_program_invalid(mir_native_backend_full_program_source__MirNativeFullProgramModel model, Slice_unsigned_char diagnostic, os_Arena* ctx);
 mir_native_backend_full_program_source__MirNativeFullProgramNode mir_native_backend_full_program_source__mir_native_full_program_make_node(Slice_unsigned_char kind, Slice_unsigned_char type_identity, Slice_unsigned_char text_operand, Slice_unsigned_char second_text_operand, int integer_operand, int second_integer_operand, int source_line, int source_column, int source_start_offset, int source_end_offset, os_Arena* ctx);
+int mir_native_backend_full_program_source__mir_native_full_program_merge_guard_defer_mask(int left, int right);
 mir_native_backend_full_program_source__MirNativeFullProgramNode mir_native_backend_full_program_source__mir_native_full_program_node_with_child(mir_native_backend_full_program_source__MirNativeFullProgramNode node, int child_index, os_Arena* ctx);
 int mir_native_backend_full_program_source__mir_native_full_program_push_node(int nodes_index, mir_native_backend_full_program_source__MirNativeFullProgramNode node, os_Arena* ctx);
 Slice_unsigned_char mir_native_backend_full_program_source__mir_native_full_program_qualified_name(Slice_unsigned_char prefix, Slice_unsigned_char name, os_Arena* ctx);
@@ -3254,6 +3257,7 @@ int typechecker__resource_type_payload_matches(ast__Type resource_type, ast__Typ
 Slice_unsigned_char typechecker__resource_type_payload_name(ast__Type resource_type, os_Arena* ctx);
 Slice_unsigned_char typechecker__resource_type_payload_struct_name(ast__Type resource_type, os_Arena* ctx);
 int typechecker__scope_contains(int scope, Slice_unsigned_char name, os_Arena* ctx);
+int typechecker__scope_contains_current(int scope, Slice_unsigned_char name, os_Arena* ctx);
 void typechecker__scope_insert(int scope, Slice_unsigned_char name, ast__Type t, os_Arena* ctx);
 ast__Type typechecker__scope_lookup(int scope, Slice_unsigned_char name, os_Arena* ctx);
 int typechecker__scope_new(int parent, os_Arena* ctx);
@@ -18790,6 +18794,18 @@ void typechecker__scope_insert(int scope, Slice_unsigned_char name, ast__Type t,
     typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🗄️", 7 }), msg, ctx);
 }
 
+int typechecker__scope_contains_current(int scope, Slice_unsigned_char name, os_Arena* ctx) {
+    if ((scope == 0xFFFFFFFF)) {
+    return 0;
+    }
+    {
+    if (({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*((typechecker__Scope*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(scope)))).bindings), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*((typechecker__Scope*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(scope)))).bindings), name, 1); } res; }).Ok) {
+    return 1;
+    }
+    }
+    return 0;
+}
+
 int typechecker__scope_contains(int scope, Slice_unsigned_char name, os_Arena* ctx) {
     int curr_scope = scope;
     while ((curr_scope != 0xFFFFFFFF)) {
@@ -21349,21 +21365,21 @@ int typechecker__env_function_is_validated_resource_destructor(typechecker__Type
 
 int typechecker__env_private_function_access_allowed(typechecker__TypeEnvironment* env, Slice_unsigned_char name, int compiler_cleanup_invocation, os_Arena* ctx) {
     {
-    LookupResult_typechecker__FunctionSignature _guard_res_sig_8441_9 = {0};
-    _guard_res_sig_8441_9 = ({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_registry), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_registry), name, 1); } res; });
-    if (!_guard_res_sig_8441_9.Ok) {
+    LookupResult_typechecker__FunctionSignature _guard_res_sig_8453_9 = {0};
+    _guard_res_sig_8453_9 = ({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_registry), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_registry), name, 1); } res; });
+    if (!_guard_res_sig_8453_9.Ok) {
         return 1;
     }
-    typechecker__FunctionSignature sig = _guard_res_sig_8441_9.Val;
+    typechecker__FunctionSignature sig = _guard_res_sig_8453_9.Val;
     if ((sig.is_private == 0)) {
     return 1;
     }
-    LookupResult_str _guard_res_owner_8447_9 = {0};
-    _guard_res_owner_8447_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_declaration_module), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_declaration_module), name, 1); } res; });
-    if (!_guard_res_owner_8447_9.Ok) {
+    LookupResult_str _guard_res_owner_8459_9 = {0};
+    _guard_res_owner_8459_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_declaration_module), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_declaration_module), name, 1); } res; });
+    if (!_guard_res_owner_8459_9.Ok) {
         return 0;
     }
-    Slice_unsigned_char owner = _guard_res_owner_8447_9.Val;
+    Slice_unsigned_char owner = _guard_res_owner_8459_9.Val;
     if ((std_str_eq(owner, (*(env)).current_prefix) == 1)) {
     return 1;
     }
@@ -22481,12 +22497,12 @@ int typechecker__env_resource_storage_field_order(typechecker__TypeEnvironment* 
     return (0 - 1);
     }
     Slice_unsigned_char root = typechecker__env_resource_storage_root(storage_name, ctx);
-    LookupResult_ast__Type _guard_res_root_type_lookup_9566_9 = {0};
-    _guard_res_root_type_lookup_9566_9 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), root, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), root, 1); } res; });
-    if (!_guard_res_root_type_lookup_9566_9.Ok) {
+    LookupResult_ast__Type _guard_res_root_type_lookup_9578_9 = {0};
+    _guard_res_root_type_lookup_9578_9 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), root, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), root, 1); } res; });
+    if (!_guard_res_root_type_lookup_9578_9.Ok) {
         return (0 - 1);
     }
-    ast__Type root_type_lookup = _guard_res_root_type_lookup_9566_9.Val;
+    ast__Type root_type_lookup = _guard_res_root_type_lookup_9578_9.Val;
     ast__Type root_type = typechecker__env_resolve_type(env, root_type_lookup, ctx);
     if ((root_type.tag != 8)) {
     return (0 - 1);
@@ -22786,12 +22802,12 @@ int typechecker__env_bind_resource_identity(typechecker__TypeEnvironment* env, S
     if (((storage_name.len == 0) || (identity.len == 0))) {
     return 0;
     }
-    LookupResult_typechecker__ResourceAcquisitionObligation _guard_res_obligation_lookup_9871_9 = {0};
-    _guard_res_obligation_lookup_9871_9 = ({ LookupResult_typechecker__ResourceAcquisitionObligation res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_acquisition_obligations), identity, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_acquisition_obligations), identity, 1); } res; });
-    if (!_guard_res_obligation_lookup_9871_9.Ok) {
+    LookupResult_typechecker__ResourceAcquisitionObligation _guard_res_obligation_lookup_9883_9 = {0};
+    _guard_res_obligation_lookup_9883_9 = ({ LookupResult_typechecker__ResourceAcquisitionObligation res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_acquisition_obligations), identity, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_acquisition_obligations), identity, 1); } res; });
+    if (!_guard_res_obligation_lookup_9883_9.Ok) {
         return 0;
     }
-    typechecker__ResourceAcquisitionObligation obligation_lookup = _guard_res_obligation_lookup_9871_9.Val;
+    typechecker__ResourceAcquisitionObligation obligation_lookup = _guard_res_obligation_lookup_9883_9.Val;
     *os_HashMapRef(&((*(env)).resource_value_identities), std_Clone_str(ctx, storage_name), 1) = std_Clone_str(ctx, identity);
     typechecker__ResourceAcquisitionObligation obligation = obligation_lookup;
     Slice_unsigned_char root = typechecker__env_resource_storage_root(storage_name, ctx);
@@ -22842,12 +22858,12 @@ int typechecker__env_bind_resource_expression(typechecker__TypeEnvironment* env,
 
 int typechecker__env_resource_obligation_set_state(typechecker__TypeEnvironment* env, Slice_unsigned_char identity, int state, os_Arena* ctx) {
     {
-    LookupResult_typechecker__ResourceAcquisitionObligation _guard_res_lookup_9940_9 = {0};
-    _guard_res_lookup_9940_9 = ({ LookupResult_typechecker__ResourceAcquisitionObligation res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_acquisition_obligations), identity, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_acquisition_obligations), identity, 1); } res; });
-    if (!_guard_res_lookup_9940_9.Ok) {
+    LookupResult_typechecker__ResourceAcquisitionObligation _guard_res_lookup_9952_9 = {0};
+    _guard_res_lookup_9952_9 = ({ LookupResult_typechecker__ResourceAcquisitionObligation res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_acquisition_obligations), identity, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_acquisition_obligations), identity, 1); } res; });
+    if (!_guard_res_lookup_9952_9.Ok) {
         return 0;
     }
-    typechecker__ResourceAcquisitionObligation lookup = _guard_res_lookup_9940_9.Val;
+    typechecker__ResourceAcquisitionObligation lookup = _guard_res_lookup_9952_9.Val;
     typechecker__ResourceAcquisitionObligation obligation = lookup;
     obligation.state = state;
     *os_HashMapRef(&((*(env)).resource_acquisition_obligations), std_Clone_str(ctx, identity), 1) = obligation;
@@ -22872,12 +22888,12 @@ typechecker__ExpressionProvenance typechecker__env_expression_provenance_rooted_
     return prov;
     }
     {
-    LookupResult_str _guard_res_identity_9970_9 = {0};
-    _guard_res_identity_9970_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_value_identities), resource_storage_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_value_identities), resource_storage_name, 1); } res; });
-    if (!_guard_res_identity_9970_9.Ok) {
+    LookupResult_str _guard_res_identity_9982_9 = {0};
+    _guard_res_identity_9982_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_value_identities), resource_storage_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_value_identities), resource_storage_name, 1); } res; });
+    if (!_guard_res_identity_9982_9.Ok) {
         return prov;
     }
-    Slice_unsigned_char identity = _guard_res_identity_9970_9.Val;
+    Slice_unsigned_char identity = _guard_res_identity_9982_9.Val;
     if ((typechecker__env_resource_obligation_is_pending(env, identity, ctx) == 0)) {
     return prov;
     }
@@ -22964,12 +22980,12 @@ int typechecker__env_transfer_resource_return_expression(typechecker__TypeEnviro
 
 int typechecker__env_resource_destructor_matches_obligation(typechecker__TypeEnvironment* env, Slice_unsigned_char resolved_func, Slice_unsigned_char identity, os_Arena* ctx) {
     {
-    LookupResult_typechecker__ResourceAcquisitionObligation _guard_res_lookup_10064_9 = {0};
-    _guard_res_lookup_10064_9 = ({ LookupResult_typechecker__ResourceAcquisitionObligation res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_acquisition_obligations), identity, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_acquisition_obligations), identity, 1); } res; });
-    if (!_guard_res_lookup_10064_9.Ok) {
+    LookupResult_typechecker__ResourceAcquisitionObligation _guard_res_lookup_10076_9 = {0};
+    _guard_res_lookup_10076_9 = ({ LookupResult_typechecker__ResourceAcquisitionObligation res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_acquisition_obligations), identity, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_acquisition_obligations), identity, 1); } res; });
+    if (!_guard_res_lookup_10076_9.Ok) {
         return 0;
     }
-    typechecker__ResourceAcquisitionObligation lookup = _guard_res_lookup_10064_9.Val;
+    typechecker__ResourceAcquisitionObligation lookup = _guard_res_lookup_10076_9.Val;
     Slice_unsigned_char destructor_name = lookup.destructor_name;
     if ((destructor_name.len == 0)) {
     return 0;
@@ -24719,9 +24735,9 @@ int typechecker__env_validate_resource_declaration(typechecker__TypeEnvironment*
     }
     Slice_unsigned_char type_name = typechecker__env_resolve_namespaced_ident(env, stmt.StructDecl.name, ctx);
     Slice_unsigned_char destructor_name = typechecker__env_resolve_namespaced_ident(env, declared_destructor, ctx);
-    LookupResult_typechecker__FunctionSignature _guard_res_sig_11874_9 = {0};
-    _guard_res_sig_11874_9 = ({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_registry), destructor_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_registry), destructor_name, 1); } res; });
-    if (!_guard_res_sig_11874_9.Ok) {
+    LookupResult_typechecker__FunctionSignature _guard_res_sig_11886_9 = {0};
+    _guard_res_sig_11886_9 = ({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_registry), destructor_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_registry), destructor_name, 1); } res; });
+    if (!_guard_res_sig_11886_9.Ok) {
         Slice_unsigned_char missing_msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [ResourceDestructorMissing] Declared destructor '", 65 }); Slice_unsigned_char _s2 = declared_destructor; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     missing_msg = (({ Slice_unsigned_char _s1 = missing_msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' for resource type '", 21 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     missing_msg = (({ Slice_unsigned_char _s1 = missing_msg; Slice_unsigned_char _s2 = type_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -24729,10 +24745,10 @@ int typechecker__env_validate_resource_declaration(typechecker__TypeEnvironment*
     typechecker__report_error(2, missing_msg, stmt.StructDecl.span, env, ctx);
     return 0;
     }
-    typechecker__FunctionSignature sig = _guard_res_sig_11874_9.Val;
-    LookupResult_str _guard_res_type_owner_11883_9 = {0};
-    _guard_res_type_owner_11883_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_declaration_module), type_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_declaration_module), type_name, 1); } res; });
-    if (!_guard_res_type_owner_11883_9.Ok) {
+    typechecker__FunctionSignature sig = _guard_res_sig_11886_9.Val;
+    LookupResult_str _guard_res_type_owner_11895_9 = {0};
+    _guard_res_type_owner_11895_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_declaration_module), type_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_declaration_module), type_name, 1); } res; });
+    if (!_guard_res_type_owner_11895_9.Ok) {
         Slice_unsigned_char owner_msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [ResourceDestructorModuleMismatch] Destructor '", 63 }); Slice_unsigned_char _s2 = destructor_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     owner_msg = (({ Slice_unsigned_char _s1 = owner_msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' must be declared in the same module as resource type '", 56 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     owner_msg = (({ Slice_unsigned_char _s1 = owner_msg; Slice_unsigned_char _s2 = type_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -24740,10 +24756,10 @@ int typechecker__env_validate_resource_declaration(typechecker__TypeEnvironment*
     typechecker__report_error(2, owner_msg, stmt.StructDecl.span, env, ctx);
     return 0;
     }
-    Slice_unsigned_char type_owner = _guard_res_type_owner_11883_9.Val;
-    LookupResult_str _guard_res_destructor_owner_11891_9 = {0};
-    _guard_res_destructor_owner_11891_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_declaration_module), destructor_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_declaration_module), destructor_name, 1); } res; });
-    if (!_guard_res_destructor_owner_11891_9.Ok) {
+    Slice_unsigned_char type_owner = _guard_res_type_owner_11895_9.Val;
+    LookupResult_str _guard_res_destructor_owner_11903_9 = {0};
+    _guard_res_destructor_owner_11903_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_declaration_module), destructor_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_declaration_module), destructor_name, 1); } res; });
+    if (!_guard_res_destructor_owner_11903_9.Ok) {
         Slice_unsigned_char missing_owner_msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [ResourceDestructorModuleMismatch] Destructor '", 63 }); Slice_unsigned_char _s2 = destructor_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     missing_owner_msg = (({ Slice_unsigned_char _s1 = missing_owner_msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' must be declared in the same module as resource type '", 56 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     missing_owner_msg = (({ Slice_unsigned_char _s1 = missing_owner_msg; Slice_unsigned_char _s2 = type_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -24751,7 +24767,7 @@ int typechecker__env_validate_resource_declaration(typechecker__TypeEnvironment*
     typechecker__report_error(2, missing_owner_msg, stmt.StructDecl.span, env, ctx);
     return 0;
     }
-    Slice_unsigned_char destructor_owner = _guard_res_destructor_owner_11891_9.Val;
+    Slice_unsigned_char destructor_owner = _guard_res_destructor_owner_11903_9.Val;
     if ((std_str_eq(type_owner, destructor_owner) == 0)) {
     Slice_unsigned_char different_owner_msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [ResourceDestructorModuleMismatch] Destructor '", 63 }); Slice_unsigned_char _s2 = destructor_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     different_owner_msg = (({ Slice_unsigned_char _s1 = different_owner_msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' must be declared in the same module as resource type '", 56 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -26134,6 +26150,12 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
     Slice_unsigned_char name = stmt.VarDecl.name;
     int val_idx = stmt.VarDecl.value;
     int var_type_idx = stmt.VarDecl.var_type;
+    if ((typechecker__scope_contains_current(scope, name, ctx) == 1)) {
+    Slice_unsigned_char msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: Duplicate declaration '", 39 }); Slice_unsigned_char _s2 = name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    msg = (({ Slice_unsigned_char _s1 = msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' in the same lexical scope", 27 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    typechecker__report_error(2, msg, stmt.VarDecl.span, env, ctx);
+    return res;
+    }
     ast__Type val_type = ((ast__Type){ .tag = 0 });
     val_type.tag = 3;
     typechecker__ExpressionProvenance val_prov_decl_for_nlaunder = typechecker__expression_provenance_void_unknown(ctx);
@@ -26206,22 +26228,22 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
     }
     typechecker__scope_insert(scope, std_Clone_str(ctx, name), resolved_explicit, ctx);
     *os_HashMapRef(&((*(env)).variable_types), std_Clone_str(ctx, name), 1) = resolved_explicit;
-    LookupResult_ast__Type _guard_res_lookup_type_explicit_13472_17 = {0};
-    _guard_res_lookup_type_explicit_13472_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), name, 1); } res; });
-    if (!_guard_res_lookup_type_explicit_13472_17.Ok) {
+    LookupResult_ast__Type _guard_res_lookup_type_explicit_13491_17 = {0};
+    _guard_res_lookup_type_explicit_13491_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), name, 1); } res; });
+    if (!_guard_res_lookup_type_explicit_13491_17.Ok) {
         return res;
     }
-    ast__Type lookup_type_explicit = _guard_res_lookup_type_explicit_13472_17.Val;
+    ast__Type lookup_type_explicit = _guard_res_lookup_type_explicit_13491_17.Val;
     val_type = lookup_type_explicit;
     } else {
     typechecker__scope_insert(scope, std_Clone_str(ctx, name), val_type, ctx);
     *os_HashMapRef(&((*(env)).variable_types), std_Clone_str(ctx, name), 1) = val_type;
-    LookupResult_ast__Type _guard_res_lookup_type_13479_17 = {0};
-    _guard_res_lookup_type_13479_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), name, 1); } res; });
-    if (!_guard_res_lookup_type_13479_17.Ok) {
+    LookupResult_ast__Type _guard_res_lookup_type_13498_17 = {0};
+    _guard_res_lookup_type_13498_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), name, 1); } res; });
+    if (!_guard_res_lookup_type_13498_17.Ok) {
         return res;
     }
-    ast__Type lookup_type = _guard_res_lookup_type_13479_17.Val;
+    ast__Type lookup_type = _guard_res_lookup_type_13498_17.Val;
     val_type = lookup_type;
     }
     Slice_unsigned_char declaration_arena_identity = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
@@ -53514,6 +53536,88 @@ mir_native_backend_full_program_source__MirNativeFullProgramModel mir_native_bac
     return updated;
 }
 
+int mir_native_backend_full_program_source__mir_native_full_program_merge_guard_defer_mask(int left, int right) {
+    if (((left == 3) || (right == 3))) {
+    return 3;
+    }
+    if ((left == 0)) {
+    return right;
+    }
+    if (((right == 0) || (left == right))) {
+    return left;
+    }
+    return 3;
+}
+
+int mir_native_backend_full_program_source__mir_native_full_program_block_guard_defer_mask(int block_index, os_Arena* ctx) {
+    if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    if ((block_index == 0xFFFFFFFF)) {
+    return 0;
+    }
+    int mask = 0;
+    {
+    ast__BlockStatement block = (*((ast__BlockStatement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(block_index))));
+    std_Vector_ast__Statement statements = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(block.statements))));
+    int statement_index = 0;
+    while ((statement_index < statements.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    ast__Statement statement = (*({ if (statement_index < 0 || statement_index >= statements.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(statements.data[statement_index]); }));
+    if ((statement.tag == 9)) {
+    mask = mir_native_backend_full_program_source__mir_native_full_program_merge_guard_defer_mask(mask, 1);
+    }
+    if ((statement.tag == 11)) {
+    mask = mir_native_backend_full_program_source__mir_native_full_program_merge_guard_defer_mask(mask, 2);
+    }
+    if ((statement.tag == 6)) {
+    mask = mir_native_backend_full_program_source__mir_native_full_program_merge_guard_defer_mask(mask, mir_native_backend_full_program_source__mir_native_full_program_block_guard_defer_mask(statement.While.body, ctx));
+    }
+    if ((statement.tag == 7)) {
+    mask = mir_native_backend_full_program_source__mir_native_full_program_merge_guard_defer_mask(mask, mir_native_backend_full_program_source__mir_native_full_program_block_guard_defer_mask(statement.If.consequence, ctx));
+    mask = mir_native_backend_full_program_source__mir_native_full_program_merge_guard_defer_mask(mask, mir_native_backend_full_program_source__mir_native_full_program_block_guard_defer_mask(statement.If.alternative, ctx));
+    }
+    if ((statement.tag == 8)) {
+    std_Vector_ast__MatchCase cases = (*((std_Vector_ast__MatchCase*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(statement.Match.cases))));
+    int case_index = 0;
+    while ((case_index < cases.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    mask = mir_native_backend_full_program_source__mir_native_full_program_merge_guard_defer_mask(mask, mir_native_backend_full_program_source__mir_native_full_program_block_guard_defer_mask((*({ if (case_index < 0 || case_index >= cases.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(cases.data[case_index]); })).body, ctx));
+    case_index = (case_index + 1);
+    }
+    }
+    if ((statement.tag == 10)) {
+    mask = mir_native_backend_full_program_source__mir_native_full_program_merge_guard_defer_mask(mask, mir_native_backend_full_program_source__mir_native_full_program_block_guard_defer_mask(statement.UnsafeBlock.body, ctx));
+    }
+    statement_index = (statement_index + 1);
+    }
+    }
+    return mask;
+}
+
+int mir_native_backend_full_program_source__mir_native_full_program_contains_guard_and_defer(std_Vector_ast__Program programs, os_Arena* ctx) {
+    int contains_guard_and_defer = 0;
+    int program_index = 0;
+    while ((program_index < programs.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    {
+    std_Vector_ast__Statement top_level = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)((*({ if (program_index < 0 || program_index >= programs.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(programs.data[program_index]); })).statements))));
+    int statement_index = 0;
+    while ((statement_index < top_level.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    ast__Statement statement = (*({ if (statement_index < 0 || statement_index >= top_level.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(top_level.data[statement_index]); }));
+    if ((statement.tag != 3)) {
+    return 0;
+    }
+    if ((mir_native_backend_full_program_source__mir_native_full_program_block_guard_defer_mask(statement.FunctionDecl.body, ctx) == 3)) {
+    contains_guard_and_defer = 1;
+    }
+    statement_index = (statement_index + 1);
+    }
+    }
+    program_index = (program_index + 1);
+    }
+    return contains_guard_and_defer;
+}
+
 mir_native_backend_full_program_source__MirNativeFullProgramModel mir_native_backend_full_program_source__mir_native_full_program_analyze_signatures(std_Vector_ast__Program programs, std_Vector_str module_prefixes, typechecker__TypeEnvironment* env, os_Arena* ctx) {
     mir_native_backend_full_program_source__MirNativeFullProgramModel model = mir_native_backend_full_program_source__mir_native_full_program_empty_model(ctx);
     if (((programs.len == 0) || (programs.len != module_prefixes.len))) {
@@ -53585,7 +53689,7 @@ mir_native_backend_full_program_source__MirNativeFullProgramModel mir_native_bac
     }
     module_index = (module_index + 1);
     }
-    if ((non_scalar_signature_count == 0)) {
+    if (((non_scalar_signature_count == 0) && (mir_native_backend_full_program_source__mir_native_full_program_contains_guard_and_defer(programs, ctx) == 0))) {
     {
     (*(env)).current_prefix = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     }
@@ -61484,7 +61588,7 @@ Slice_unsigned_char mir_native_backend_structured_cfg_source__mir_native_structu
     }
     }
     }
-    if (((statement.tag == 8) || (statement.tag == 9))) {
+    if ((statement.tag == 8)) {
     return std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"deferred_p13_structured_cfg_non_reducible_shape", 47 }));
     }
     }
