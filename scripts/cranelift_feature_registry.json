@@ -5000,7 +5000,7 @@
           "text_surface_count": 567,
           "text_surface_manifest_digest": "b09feb3d91ab333851210bf0e263eb832f540bb2ac087b7728a2ef75627f1aed",
           "invocation_count": 317,
-          "invocation_manifest_digest": "34f9d3eee9e915f633c2fae9a434e235ce1af2f69bec5901c0de16090972bfb1",
+          "invocation_manifest_digest": "11033cb9e521bd434269a00aa0a287650ce58f488c129b1d8a088b93b53a7655",
           "structural_surface_count": 15,
           "structural_manifest_digest": "b7cd89cf9619d7bc28ecdbafaf6b616534fd68d9728ef47b85629f0531c8a22a",
           "classification_counts": {"archive_candidate":470,"bootstrap_phase25":10,"focused_live_oracle":4,"historical_only":70,"production_or_release_migration":28},

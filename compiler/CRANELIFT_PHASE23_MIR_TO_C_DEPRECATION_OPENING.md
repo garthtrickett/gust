@@ -703,7 +703,7 @@ explicit successor when they intentionally migrate or archive a surface.
 - Current text surfaces: `567`
 - Current text manifest: `b09feb3d91ab333851210bf0e263eb832f540bb2ac087b7728a2ef75627f1aed`
 - Current invocations: `317`
-- Current invocation manifest: `34f9d3eee9e915f633c2fae9a434e235ce1af2f69bec5901c0de16090972bfb1`
+- Current invocation manifest: `11033cb9e521bd434269a00aa0a287650ce58f488c129b1d8a088b93b53a7655`
 - Live explicit-C invocations: `178` (unchanged)
 - The sole added invocation is default-native archived-corpus replay; no live-C caller was added.
 - Partial or unregistered inventory: `rejected`
