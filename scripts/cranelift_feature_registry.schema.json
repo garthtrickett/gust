@@ -80,6 +80,7 @@
     "phase23_mir_to_c_frozen_surface",
     "phase23_mir_to_c_focused_live",
     "phase23_mir_to_c_archived_corpus",
+    "phase23_production_release_audit",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -3082,6 +3083,7 @@
                          "frozen_surface_inventory_transition",
                          "focused_live_inventory_transition",
                          "archived_corpus_inventory_transition",
+                         "production_release_inventory_transition",
                          "explicit_c_byte_authority", "route_contract",
                          "boundary"],
             "properties": {
@@ -3166,6 +3168,23 @@
                   "partial_or_unregistered_inventory": {"const": "rejected"}
                 }
               },
+              "production_release_inventory_transition": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["contract_version", "status", "authority_base_main",
+                             "previous_inventory", "current_inventory", "migration",
+                             "unchanged_fields", "partial_or_unregistered_inventory"],
+                "properties": {
+                  "contract_version": {"const": "phase23_production_release_inventory_transition_v1"},
+                  "status": {"const": "patch23_12_complete"},
+                  "authority_base_main": {"const": "c2b6ec8c4a3650e704541ebd00b57020783f1def"},
+                  "previous_inventory": {"type": "object"},
+                  "current_inventory": {"type": "object"},
+                  "migration": {"type": "object"},
+                  "unchanged_fields": {"type": "array", "minItems": 5, "maxItems": 5, "uniqueItems": true},
+                  "partial_or_unregistered_inventory": {"const": "rejected"}
+                }
+              },
               "explicit_c_byte_authority": {"type": "object"},
               "route_contract": {"type": "object"},
               "boundary": {"type": "object"}
@@ -3180,7 +3199,8 @@
         "required": ["contract_version", "status", "next_patch", "owner",
                      "review_view", "renderer", "capability_surface",
                      "live_c_case_surface", "focused_live_transition",
-                     "archived_corpus_transition", "maintenance_policy",
+                     "archived_corpus_transition", "production_release_transition",
+                     "maintenance_policy",
                      "explicit_c_byte_authority", "boundary"],
         "properties": {
           "contract_version": {"const": "phase23_mir_to_c_frozen_surface_v1"},
@@ -3259,6 +3279,25 @@
               "current_live_c_case_surface": {"type": "object"},
               "unchanged_fields": {"type": "array", "minItems": 5, "maxItems": 5, "uniqueItems": true},
               "change_reason": {"const": "archive_authority_and_native_replay_shifted_command_lines_and_owner_file_digests_without_adding_a_live_explicit_C_case"},
+              "partial_or_unregistered_surface": {"const": "rejected"}
+            }
+          },
+          "production_release_transition": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["contract_version", "status", "authority_base_main",
+                         "previous_live_c_case_surface", "current_live_c_case_surface",
+                         "preserved_case", "unchanged_fields", "change_reason",
+                         "partial_or_unregistered_surface"],
+            "properties": {
+              "contract_version": {"const": "phase23_frozen_production_release_transition_v1"},
+              "status": {"const": "patch23_12_complete"},
+              "authority_base_main": {"const": "c2b6ec8c4a3650e704541ebd00b57020783f1def"},
+              "previous_live_c_case_surface": {"type": "object"},
+              "current_live_c_case_surface": {"type": "object"},
+              "preserved_case": {"type": "object"},
+              "unchanged_fields": {"type": "array", "minItems": 5, "maxItems": 5, "uniqueItems": true},
+              "change_reason": {"const": "dual_route_authority_shifted_the_preserved_case_line_and_owner_file_digests_without_changing_live_explicit_C_population"},
               "partial_or_unregistered_surface": {"const": "rejected"}
             }
           },
@@ -3381,6 +3420,51 @@
             "edits_stdlib_or_CR15": false,
             "begins_patch23_12": false
           }
+        }
+      },
+      "phase23_production_release_audit": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version", "status", "next_patch", "owner",
+                     "review_view", "renderer", "audit", "route_contract",
+                     "timelines", "package_contract",
+                     "phase22_closed_inventory_migration", "budgets", "boundary"],
+        "properties": {
+          "contract_version": {"const": "phase23_production_release_audit_v1"},
+          "status": {"const": "patch23_12_complete"},
+          "next_patch": {"const": "23.13"},
+          "owner": {"const": "cranelift"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE23_PRODUCTION_RELEASE_AUDIT.md"},
+          "renderer": {"const": "scripts/phase23_production_release_audit.py"},
+          "audit": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["supported_surface_count", "supported_surface_manifest_digest",
+                         "repository_invocation_count", "repository_explicit_c_count",
+                         "phase25_bootstrap_explicit_c_count",
+                         "non_bootstrap_retained_test_surface_count",
+                         "supported_production_or_release_explicit_c_count",
+                         "active_non_bootstrap_live_c_lane_count",
+                         "active_non_bootstrap_live_c_owner", "unknown_downstream_count"],
+            "properties": {
+              "supported_surface_count": {"const": 6},
+              "supported_surface_manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "repository_invocation_count": {"const": 318},
+              "repository_explicit_c_count": {"const": 178},
+              "phase25_bootstrap_explicit_c_count": {"const": 5},
+              "non_bootstrap_retained_test_surface_count": {"const": 173},
+              "supported_production_or_release_explicit_c_count": {"const": 0},
+              "active_non_bootstrap_live_c_lane_count": {"const": 1},
+              "active_non_bootstrap_live_c_owner": {"const": "phase23_mir_to_c_focused_live"},
+              "unknown_downstream_count": {"const": 0}
+            }
+          },
+          "route_contract": {"type": "object"},
+          "timelines": {"type": "object"},
+          "package_contract": {"type": "object"},
+          "phase22_closed_inventory_migration": {"type": "object"},
+          "budgets": {"type": "object"},
+          "boundary": {"type": "object"}
         }
       },
       "phase19_brand_authority": {

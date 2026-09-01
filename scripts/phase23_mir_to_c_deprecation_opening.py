@@ -49,10 +49,12 @@ SELF_EXCLUSIONS = {
     ".github/workflows/phase23-mir-to-c-frozen-surface.yml",
     ".github/workflows/phase23-mir-to-c-focused-live.yml",
     ".github/workflows/phase23-mir-to-c-archived-corpus.yml",
+    ".github/workflows/phase23-production-release-audit.yml",
     "compiler/CRANELIFT_PHASE23_MIR_TO_C_DEPRECATION_OPENING.md",
     "compiler/CRANELIFT_PHASE23_MIR_TO_C_FROZEN_SURFACE.md",
     "compiler/CRANELIFT_PHASE23_MIR_TO_C_FOCUSED_LIVE.md",
     "compiler/CRANELIFT_PHASE23_MIR_TO_C_ARCHIVED_CORPUS.md",
+    "compiler/CRANELIFT_PHASE23_PRODUCTION_RELEASE_AUDIT.md",
     "compiler/fixtures/phase23_mir_to_c_reference_corpus_v1.json",
     "scripts/cranelift_feature_registry.json",
     "scripts/cranelift_feature_registry.schema.json",
@@ -60,6 +62,8 @@ SELF_EXCLUSIONS = {
     "scripts/phase23_mir_to_c_frozen_surface.py",
     "scripts/phase23_mir_to_c_focused_live.py",
     "scripts/phase23_mir_to_c_archived_corpus.py",
+    "scripts/phase23_production_release_audit.py",
+    "scripts/phase23_production_release_audit.sh",
 }
 
 SURFACE_PATTERNS = {
@@ -638,6 +642,36 @@ def validate() -> dict:
         "scripts/phase23_mir_to_c_frozen_surface.py",
         "scripts/phase22_opening.py",
     ], "Patch 23.11 authority-only path manifest drifted")
+    production_transition = successor.get("production_release_inventory_transition")
+    require(isinstance(production_transition, dict) and
+            production_transition.get("contract_version") ==
+            "phase23_production_release_inventory_transition_v1" and
+            production_transition.get("status") == "patch23_12_complete" and
+            production_transition.get("authority_base_main") ==
+            "c2b6ec8c4a3650e704541ebd00b57020783f1def" and
+            production_transition.get("previous_inventory") ==
+            archive_transition.get("current_inventory") and
+            production_transition.get("migration") == {
+                "path": "scripts/run-gust-file.sh",
+                "historical_route":
+                    "explicit_mir_to_c_plus_host_C_compile_link_preserved",
+                "supported_route":
+                    "explicit_cranelift_native_artifact_selected_by_GUST_RUNNER_ROUTE",
+                "supported_callers": [
+                    "flake.nix:gt-one-gst", "justfile:gt-one-gst",
+                    "justfile:guard",
+                    "scripts/phase23_production_release_audit.sh",
+                ],
+                "invocation_delta": 1,
+                "explicit_c_delta": 0,
+                "explicit_cranelift_delta": 1,
+                "production_surface_delta": 0,
+            } and production_transition.get("unchanged_fields") == [
+                "text_surface_count", "structural_surface_count",
+                "structural_manifest_digest", "classification_counts",
+                "unclassified_count",
+            ] and production_transition.get("partial_or_unregistered_inventory") ==
+            "rejected", "Patch 23.12 production/release inventory transition drifted")
     live_inventory = inventory_summary()
     live_seed_digest = digest_bytes(SEED.read_bytes())
     accepted_by_seed = {
@@ -676,9 +710,28 @@ def validate() -> dict:
             archive_transition["current_inventory"]["invocation_count"] ==
             archive_transition["previous_inventory"]["invocation_count"] + 1,
             "Patch 23.11 native archive replay invocation delta drifted")
-    expected_inventory = archive_transition["current_inventory"]
+    for field in production_transition["unchanged_fields"]:
+        require(production_transition["current_inventory"].get(field) ==
+                production_transition["previous_inventory"].get(field),
+                f"Patch 23.12 changed retained inventory field: {field}")
+    previous_production_selections = production_transition["previous_inventory"][
+        "invocation_selection_counts"]
+    current_production_selections = production_transition["current_inventory"][
+        "invocation_selection_counts"]
+    require(current_production_selections.get("explicit_c") ==
+            previous_production_selections.get("explicit_c") and
+            current_production_selections.get("explicit_cranelift") ==
+            previous_production_selections.get("explicit_cranelift") + 1 and
+            production_transition["current_inventory"]["invocation_count"] ==
+            production_transition["previous_inventory"]["invocation_count"] + 1 and
+            production_transition["current_inventory"]["classification_counts"]
+            ["production_or_release_migration"] ==
+            production_transition["previous_inventory"]["classification_counts"]
+            ["production_or_release_migration"],
+            "Patch 23.12 supported-runner migration delta drifted")
+    expected_inventory = production_transition["current_inventory"]
     require(expected_inventory == live_inventory,
-            "live Patch 23.11 MIR-to-C inventory is not the exact registered successor")
+            "live Patch 23.12 MIR-to-C inventory is not the exact registered successor")
     require(live_inventory["unclassified_count"] == 0,
             "consumer or artifact remains unclassified")
     validate_identity_falsifiers(live_inventory)
@@ -1034,6 +1087,24 @@ def render(record: dict) -> str:
         f"- Current invocation manifest: `{archive_inventory['invocation_manifest_digest']}`",
         f"- Live explicit-C invocations: `{archive_transition['live_explicit_c_population']}` (unchanged)",
         "- The sole added invocation is default-native archived-corpus replay; no live-C caller was added.",
+        "- Partial or unregistered inventory: `rejected`",
+        "",
+    ]
+    production_transition = successor["production_release_inventory_transition"]
+    production_inventory = production_transition["current_inventory"]
+    lines += [
+        "## Patch 23.12 production/release inventory successor",
+        "",
+        f"- Contract: `{production_transition['contract_version']}`",
+        f"- Status: `{production_transition['status']}`",
+        f"- Authority base main: `{production_transition['authority_base_main']}`",
+        f"- Current text surfaces: `{production_inventory['text_surface_count']}`",
+        f"- Current text manifest: `{production_inventory['text_surface_manifest_digest']}`",
+        f"- Current invocations: `{production_inventory['invocation_count']}`",
+        f"- Current invocation manifest: `{production_inventory['invocation_manifest_digest']}`",
+        f"- Explicit-C invocations: `{production_inventory['invocation_selection_counts']['explicit_c']}`",
+        f"- Explicit-Cranelift invocations: `{production_inventory['invocation_selection_counts']['explicit_cranelift']}`",
+        "- The supported single-program runner moved from generated C plus host-C linking to an explicit Cranelift artifact.",
         "- Partial or unregistered inventory: `rejected`",
         "",
     ]

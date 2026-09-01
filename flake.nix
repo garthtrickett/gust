@@ -84,7 +84,7 @@
 
             # Run a single positive or negative Gust test and pipe all compiler logs + runtime output to to.log
             gt-one-gst() {
-              bash scripts/run-gust-file.sh "$1"
+              GUST_RUNNER_ROUTE=cranelift bash scripts/run-gust-file.sh "$1"
             }
 
             gcf() {
