@@ -78,6 +78,7 @@
     "phase23_same_scope_declaration",
     "phase23_mir_to_c_deprecation_opening",
     "phase23_mir_to_c_frozen_surface",
+    "phase23_mir_to_c_focused_live",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -3078,6 +3079,7 @@
                          "post_deprecation_inventory",
                          "seed_reconvergence_inventory_transition",
                          "frozen_surface_inventory_transition",
+                         "focused_live_inventory_transition",
                          "explicit_c_byte_authority", "route_contract",
                          "boundary"],
             "properties": {
@@ -3120,6 +3122,24 @@
                   "partial_or_unregistered_inventory": {"const": "rejected"}
                 }
               },
+              "focused_live_inventory_transition": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["contract_version", "status", "authority_base_main",
+                             "previous_inventory", "current_inventory",
+                             "unchanged_fields", "authority_only_paths",
+                             "partial_or_unregistered_inventory"],
+                "properties": {
+                  "contract_version": {"const": "phase23_focused_live_inventory_transition_v1"},
+                  "status": {"const": "patch23_10_complete"},
+                  "authority_base_main": {"const": "7178ee245d6d340329f6b5614dbf8be12fe8d273"},
+                  "previous_inventory": {"type": "object"},
+                  "current_inventory": {"type": "object"},
+                  "unchanged_fields": {"type": "array", "minItems": 5, "maxItems": 5, "uniqueItems": true},
+                  "authority_only_paths": {"type": "array", "minItems": 20, "maxItems": 20, "uniqueItems": true},
+                  "partial_or_unregistered_inventory": {"const": "rejected"}
+                }
+              },
               "explicit_c_byte_authority": {"type": "object"},
               "route_contract": {"type": "object"},
               "boundary": {"type": "object"}
@@ -3133,7 +3153,7 @@
         "additionalProperties": false,
         "required": ["contract_version", "status", "next_patch", "owner",
                      "review_view", "renderer", "capability_surface",
-                     "live_c_case_surface", "maintenance_policy",
+                     "live_c_case_surface", "focused_live_transition", "maintenance_policy",
                      "explicit_c_byte_authority", "boundary"],
         "properties": {
           "contract_version": {"const": "phase23_mir_to_c_frozen_surface_v1"},
@@ -3179,6 +3199,24 @@
               "selection_counts": {"type": "object"}
             }
           },
+          "focused_live_transition": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["contract_version", "status", "authority_base_main",
+                         "previous_live_c_case_surface", "current_live_c_case_surface",
+                         "unchanged_fields", "change_reason",
+                         "partial_or_unregistered_surface"],
+            "properties": {
+              "contract_version": {"const": "phase23_frozen_live_c_transition_v1"},
+              "status": {"const": "patch23_10_complete"},
+              "authority_base_main": {"const": "7178ee245d6d340329f6b5614dbf8be12fe8d273"},
+              "previous_live_c_case_surface": {"type": "object"},
+              "current_live_c_case_surface": {"type": "object"},
+              "unchanged_fields": {"type": "array", "minItems": 5, "maxItems": 5, "uniqueItems": true},
+              "change_reason": {"const": "authority_and_workflow_routing_changed_case_lines_and_owner_file_digests_without_changing_live_explicit_C_population"},
+              "partial_or_unregistered_surface": {"const": "rejected"}
+            }
+          },
           "maintenance_policy": {
             "const": {
               "classification": "compatibility_correction_only",
@@ -3201,6 +3239,41 @@
               "begins_patch23_10": false
             }
           }
+        }
+      },
+      "phase23_mir_to_c_focused_live": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version", "status", "next_patch", "owner",
+                     "review_view", "renderer", "cohort", "route_contract",
+                     "budgets", "removed_default_coverage", "boundary"],
+        "properties": {
+          "contract_version": {"const": "phase23_mir_to_c_focused_live_v1"},
+          "status": {"const": "patch23_10_complete"},
+          "next_patch": {"const": "23.11"},
+          "owner": {"const": "cranelift"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE23_MIR_TO_C_FOCUSED_LIVE.md"},
+          "renderer": {"const": "scripts/phase23_mir_to_c_focused_live.py"},
+          "cohort": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["family_count", "family_ids", "family_manifest_digest",
+                         "program_count", "program_ids", "program_manifest_digest",
+                         "coverage"],
+            "properties": {
+              "family_count": {"const": 14},
+              "family_ids": {"type": "array", "minItems": 14, "maxItems": 14, "uniqueItems": true},
+              "family_manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "program_count": {"const": 6},
+              "program_ids": {"type": "array", "minItems": 6, "maxItems": 6, "uniqueItems": true},
+              "program_manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "coverage": {"type": "array", "minItems": 7, "maxItems": 7, "uniqueItems": true}
+            }
+          },
+          "route_contract": {"type": "object"},
+          "budgets": {"type": "object"},
+          "removed_default_coverage": {"type": "array", "minItems": 4, "maxItems": 4},
+          "boundary": {"type": "object"}
         }
       },
       "phase19_brand_authority": {

@@ -1,0 +1,117 @@
+name: Cranelift Phase 23 Focused Live MIR-to-C
+
+on:
+  pull_request:
+    paths:
+      - 'TASK.md'
+      - 'README.md'
+      - 'GEMINI.md'
+      - 'gust_v4.c'
+      - 'Makefile'
+      - '*.sh'
+      - 'compiler/**'
+      - 'docs/**'
+      - 'scripts/**'
+      - 'src/**'
+      - 'tests/**'
+      - 'justfile*'
+      - '.github/workflows/**'
+  push:
+    branches: [main]
+    paths:
+      - 'TASK.md'
+      - 'README.md'
+      - 'GEMINI.md'
+      - 'gust_v4.c'
+      - 'Makefile'
+      - '*.sh'
+      - 'compiler/**'
+      - 'docs/**'
+      - 'scripts/**'
+      - 'src/**'
+      - 'tests/**'
+      - 'justfile*'
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: just guard-cranelift-phase23-mir-to-c-focused-live-contract
+
+  build:
+    needs: contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    outputs:
+      families: ${{ steps.families.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: make gust phase10-native-package
+      - id: families
+        run: echo "matrix=$(python3 scripts/cranelift_ci_family.py matrix-json)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase23-focused-live-build
+          path: |
+            gust
+            build/gust-native-backend
+            build/gust-runtime-package.a
+            build/phase10-package
+
+  family:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        family: ${{ fromJSON(needs.build.outputs.families) }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - uses: actions/download-artifact@v4
+        with:
+          name: phase23-focused-live-build
+          path: .
+      - run: chmod +x gust build/gust-native-backend build/phase10-package/bin/gust build/phase10-package/bin/gust-native-backend
+      - run: just guard-cranelift-differential-family "${{ matrix.family }}"
+
+  whole-program:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - uses: actions/download-artifact@v4
+        with:
+          name: phase23-focused-live-build
+          path: .
+      - run: chmod +x gust build/gust-native-backend build/phase10-package/bin/gust build/phase10-package/bin/gust-native-backend
+      - run: just guard-cranelift-phase21-cranelift-built-compiler-programs-evidence
+
+  evidence:
+    needs: [family, whole-program]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: just guard-cranelift-phase23-mir-to-c-focused-live-evidence

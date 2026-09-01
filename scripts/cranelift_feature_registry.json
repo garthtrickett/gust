@@ -4924,6 +4924,63 @@
         ],
         "partial_or_unregistered_inventory": "rejected"
       },
+      "focused_live_inventory_transition": {
+        "contract_version": "phase23_focused_live_inventory_transition_v1",
+        "status": "patch23_10_complete",
+        "authority_base_main": "7178ee245d6d340329f6b5614dbf8be12fe8d273",
+        "previous_inventory": {
+          "text_surface_count": 566,
+          "text_surface_manifest_digest": "c0792ffe4ce7506ff5fede547bee6e36935753fe83839a2dee5e2ed5e4882eaf",
+          "invocation_count": 316,
+          "invocation_manifest_digest": "97a1535de0d7e52edff46019b529935d143f5a3c3d6013ad2ecab76ad4fbf32f",
+          "structural_surface_count": 15,
+          "structural_manifest_digest": "b7cd89cf9619d7bc28ecdbafaf6b616534fd68d9728ef47b85629f0531c8a22a",
+          "classification_counts": {"archive_candidate":469,"bootstrap_phase25":10,"focused_live_oracle":4,"historical_only":70,"production_or_release_migration":28},
+          "invocation_selection_counts": {"explicit_c":178,"explicit_cranelift":118,"explicit_invalid_or_parser_probe":3,"implicit_default":17},
+          "unclassified_count": 0
+        },
+        "current_inventory": {
+          "text_surface_count": 567,
+          "text_surface_manifest_digest": "bf36e9d615a9ae0e7ed87819a6a6a5747914dbc18e8b8801ef29f86f9223a250",
+          "invocation_count": 316,
+          "invocation_manifest_digest": "38dd7844248df6e5713c92196bae672d80fca3b89e7a2a15d0b0db675df2bce6",
+          "structural_surface_count": 15,
+          "structural_manifest_digest": "b7cd89cf9619d7bc28ecdbafaf6b616534fd68d9728ef47b85629f0531c8a22a",
+          "classification_counts": {"archive_candidate":470,"bootstrap_phase25":10,"focused_live_oracle":4,"historical_only":70,"production_or_release_migration":28},
+          "invocation_selection_counts": {"explicit_c":178,"explicit_cranelift":118,"explicit_invalid_or_parser_probe":3,"implicit_default":17},
+          "unclassified_count": 0
+        },
+        "unchanged_fields": [
+          "invocation_count",
+          "structural_surface_count",
+          "structural_manifest_digest",
+          "invocation_selection_counts",
+          "unclassified_count"
+        ],
+        "authority_only_paths": [
+          ".github/workflows/heavy-guards.yml",
+          ".github/workflows/phase21-cranelift-built-compiler-programs.yml",
+          ".github/workflows/phase23-mir-to-c-focused-live.yml",
+          ".github/workflows/pr-fast.yml",
+          "TASK.md",
+          "compiler/CRANELIFT_PHASE22_OPENING.md",
+          "compiler/CRANELIFT_PHASE23_MIR_TO_C_DEPRECATION_OPENING.md",
+          "compiler/CRANELIFT_PHASE23_MIR_TO_C_FOCUSED_LIVE.md",
+          "compiler/CRANELIFT_PHASE23_MIR_TO_C_FROZEN_SURFACE.md",
+          "justfile",
+          "scripts/cranelift_ci_family.py",
+          "scripts/cranelift_feature_registry.json",
+          "scripts/cranelift_feature_registry.schema.json",
+          "scripts/cranelift_registry.py",
+          "scripts/cranelift_test_levels.json",
+          "scripts/cranelift_test_levels.py",
+          "scripts/phase21_cranelift_built_compiler_programs.py",
+          "scripts/phase23_mir_to_c_deprecation_opening.py",
+          "scripts/phase23_mir_to_c_focused_live.py",
+          "scripts/phase23_mir_to_c_frozen_surface.py"
+        ],
+        "partial_or_unregistered_inventory": "rejected"
+      },
       "explicit_c_byte_authority": {
         "source": "compiler/phase23_parent_scope_shadow_current.gst",
         "source_digest": "f55f9c7a51d8cbbd5e63851c490c3bfd5ffe9103ebfba891b3699cfe24770d2d",
@@ -5027,6 +5084,34 @@
         "explicit_c": 178
       }
     },
+    "focused_live_transition": {
+      "contract_version": "phase23_frozen_live_c_transition_v1",
+      "status": "patch23_10_complete",
+      "authority_base_main": "7178ee245d6d340329f6b5614dbf8be12fe8d273",
+      "previous_live_c_case_surface": {
+        "count": 178,
+        "complete_identity_manifest_digest": "c0f08f79f8171426a8112eb76daf0b29f15381d8e5a773bbce241694305cfc35",
+        "case_id_manifest_digest": "794ea271a30b3a841c37f12990ac4697f54f3e3bf3aca4cf089c0244add0565a",
+        "owner_contract_count": 64,
+        "owner_contract_manifest_digest": "685d9f95377380c8327ff79c5067b8c1e124c51a666a2aed7c9cb5c7d51a568f",
+        "owner_counts": {"cranelift":152,"stdlib":26},
+        "consumer_class_counts": {"already_explicit_or_parser_probe":178},
+        "selection_counts": {"explicit_c":178}
+      },
+      "current_live_c_case_surface": {
+        "count": 178,
+        "complete_identity_manifest_digest": "bb851a75e4f031c838de218ca3a06a0942c65bb6d2f47688016cd8f34ca2d33a",
+        "case_id_manifest_digest": "2d384467a1b829643ffad8b7c450b3879a4ba96f724a286da5b1b303de2026f1",
+        "owner_contract_count": 64,
+        "owner_contract_manifest_digest": "3944d58d05caec9838d3ab883c9c67d24c0e0e226165880db2af6c524c302ec8",
+        "owner_counts": {"cranelift":152,"stdlib":26},
+        "consumer_class_counts": {"already_explicit_or_parser_probe":178},
+        "selection_counts": {"explicit_c":178}
+      },
+      "unchanged_fields": ["count", "owner_contract_count", "owner_counts", "consumer_class_counts", "selection_counts"],
+      "change_reason": "authority_and_workflow_routing_changed_case_lines_and_owner_file_digests_without_changing_live_explicit_C_population",
+      "partial_or_unregistered_surface": "rejected"
+    },
     "maintenance_policy": {
       "classification": "compatibility_correction_only",
       "new_feature_prerequisite": "authorized_shared_semantics_and_supported_cranelift_path_first",
@@ -5061,6 +5146,84 @@
       "changes_bootstrap_route_or_seed": false,
       "edits_stdlib_or_CR15": false,
       "begins_patch23_10": false
+    }
+  },
+  "phase23_mir_to_c_focused_live": {
+    "contract_version": "phase23_mir_to_c_focused_live_v1",
+    "status": "patch23_10_complete",
+    "next_patch": "23.11",
+    "owner": "cranelift",
+    "review_view": "compiler/CRANELIFT_PHASE23_MIR_TO_C_FOCUSED_LIVE.md",
+    "renderer": "scripts/phase23_mir_to_c_focused_live.py",
+    "cohort": {
+      "family_count": 14,
+      "family_ids": [
+        "scalars",
+        "locals",
+        "cfg",
+        "block-params",
+        "direct-calls",
+        "imports",
+        "metadata-diagnostics",
+        "primitive-layout",
+        "conversions",
+        "pointer-memory",
+        "strings-views",
+        "arrays-slices",
+        "structs-enums",
+        "aggregate-flow"
+      ],
+      "family_manifest_digest": "1fffc956d284c857b85be3860487c395f656b2a3b809c26d701914114fdbea89",
+      "program_count": 6,
+      "program_ids": [
+        "imported_module",
+        "resource_cleanup",
+        "scalar_positive",
+        "scalar_type_error",
+        "trusted_typed_query",
+        "typed_query_provenance_error"
+      ],
+      "program_manifest_digest": "6ae773959d60b59ecaaf1f039f9fc33188d040e0d4558dcc24d10dc1ecef43ad",
+      "coverage": [
+        "module",
+        "output_artifact",
+        "rejection",
+        "resource",
+        "side_effects",
+        "success",
+        "typed_query"
+      ]
+    },
+    "route_contract": {
+      "owner": "phase23_mir_to_c_focused_live",
+      "non_bootstrap_live_lane_count": 1,
+      "oracle_backend": "explicit_mir_to_c",
+      "subject_backend": "explicit_cranelift",
+      "fallback": "forbidden",
+      "default_production_native_matrices_contain_mir_to_c": false,
+      "bootstrap_C_owner": "phase25",
+      "archive_successor": "23.11"
+    },
+    "budgets": {
+      "workflow_timeout_minutes": 75,
+      "family_job_timeout_minutes": 60,
+      "whole_program_suite_elapsed_ms": 180000,
+      "whole_program_peak_rss_kib": 6291456
+    },
+    "removed_default_coverage": [
+      {"source":"pr_fast_static_matrix","cell":"mir-to-c-return-int","successor":"family_and_whole_program_focused_lane"},
+      {"source":"pr_fast_phase11_family_matrix","cell":"14_registry_families","successor":"focused_family_matrix"},
+      {"source":"heavy_guards_matrix","cell":"mir-to-c-boring-surface","guard":"guard-mir-to-c-boring-surface","successor":"focused_family_and_archived_23_11"},
+      {"source":"phase21_compiler_programs_workflow","cell":"evidence","successor":"focused_whole_program"}
+    ],
+    "boundary": {
+      "changes_accepted_Gust_program_meaning": false,
+      "adds_or_changes_MIR_operations": false,
+      "changes_ABI_layout_runtime_symbols_target_or_linker": false,
+      "changes_backend_route_default_or_fallback": false,
+      "changes_bootstrap_route_or_seed": false,
+      "edits_stdlib_or_CR15": false,
+      "begins_patch23_11": false
     }
   },
   "phase19_brand_authority": {

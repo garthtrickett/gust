@@ -20,6 +20,8 @@
   "guards": {
     "guard-cranelift-phase23-mir-to-c-frozen-surface-contract": 1,
     "guard-cranelift-phase23-mir-to-c-frozen-surface-evidence": 2,
+    "guard-cranelift-phase23-mir-to-c-focused-live-contract": 1,
+    "guard-cranelift-phase23-mir-to-c-focused-live-evidence": 2,
     "guard-cranelift-phase23-mir-to-c-deprecation-opening-contract": 1,
     "guard-cranelift-phase23-mir-to-c-deprecation-opening-evidence": 2,
     "guard-cranelift-phase16-complete-abi-evidence": 3,

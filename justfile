@@ -50,15 +50,12 @@ guard-pr-fast-shard shard:
     rm -rf build/guards
     rm -f to.log
     case "{{shard}}" in
-      mir-to-c-return-int)
-        just guard-mir-to-c-return-int-literal-native-smoke
-        ;;
       routed-return-int)
         just guard-mir-feature-return-int-routed-execution
         ;;
       *)
         echo "unknown PR fast shard: {{shard}}"
-        echo "expected one of: mir-to-c-return-int, routed-return-int"
+        echo "expected: routed-return-int"
         exit 1
         ;;
     esac
@@ -86,8 +83,8 @@ guard-pr-fast-ci-surface:
       fi
     done
 
-    if [ "$(rg -c -F 'bash scripts/install-just-ci.sh "$HOME/.local/bin"' "$workflow")" != "5" ]; then
-      echo "PR Fast must install pinned just in its build, Level 1, static guard, family, and Phase 20 parity jobs."
+    if [ "$(rg -c -F 'bash scripts/install-just-ci.sh "$HOME/.local/bin"' "$workflow")" != "4" ]; then
+      echo "PR Fast must install pinned just in its build, Level 1, static native, and Phase 20 parity jobs."
       exit 1
     fi
 
@@ -232,12 +229,7 @@ guard-pr-fast-ci-surface:
       'just guard-cranelift-phase19-close'
       'Phase 17 cross-feature runtime composition'
       'just guard-cranelift-phase17-composition-contract'
-      'phase11-family:'
-      'phase11_families:'
-      'matrix.family'
-      'Run Level 2 differential family'
-      'just guard-cranelift-differential-family'
-      'needs: [guard, level1, phase11-family, phase20-nested-brand-annotation]'
+      'needs: [guard, level1, phase20-nested-brand-annotation]'
       'actions/upload-artifact@v4'
       'actions/download-artifact@v4'
       'name: gust-build'
@@ -271,15 +263,14 @@ guard-pr-fast-ci-surface:
     static_shard_count="$(
       awk '/shard:/{flag=1; next} flag && /^[[:space:]]*steps:/{flag=0} flag && /^[[:space:]]*- /{count++} END{print count+0}' "$workflow"
     )"
-    family_count="$(python3 "$family_runner" families | wc -l | tr -d ' ')"
-    projected_shard_count="$((static_shard_count + family_count))"
+    projected_shard_count="$static_shard_count"
     if [ "$projected_shard_count" -gt "23" ]; then
       echo "PR Fast projected shard capacity exceeded: maximum=23 projected=$projected_shard_count."
       exit 1
     fi
 
     bash -n "$just_installer"
-    echo "✅ PR fast CI surface guard passed: Level 1 contracts plus registry-derived Level 2 families; projected shards=$projected_shard_count within max=23."
+    echo "✅ PR fast CI surface guard passed: Level 1 contracts plus native-only focused jobs; projected shards=$projected_shard_count within max=23."
 
 guard-cranelift-core-mir-basic-suite-shard shard:
     #!/usr/bin/env bash
@@ -458,9 +449,6 @@ guard-cloud-heavy-shard shard:
         just guard-mir-to-c-conditional-branch-native-smoke
         just guard-mir-feature-if-else-return-int-routed-execution
         ;;
-      mir-to-c-boring-surface)
-        just guard-mir-to-c-boring-surface
-        ;;
       migration-surfaces)
         just guard-mir-feature-harness-surface
         just guard-mir-feature-registry-surface
@@ -568,7 +556,7 @@ guard-cloud-heavy-shard shard:
         ;;
       *)
         echo "unknown cloud heavy shard: {{shard}}"
-        echo "expected one of: phase9-branch-core-baseline, phase9-branch-core-legacy, phase9-branch-core-mir-basic-scalars, phase9-branch-core-mir-basic-calls, phase9-branch-core-mir-basic-differential, phase9-branch-core-mir-bundles, phase9-branch-core-mir-block-graphs, phase9-branch-compiler-mir-scalars, phase9-branch-compiler-mir-metadata, phase9-branch-compiler-mir-blocks, phase9-branch-translator-scalar, phase9-branch-translator-cfg, phase9-branch-translator-metadata, phase9-branch-translator-imports, phase9c-native-diff-return-local, phase9c-native-diff-cfg, phase9c-native-diff-metadata, phase9c-native-diff-boundary, mir-branch, migration-surfaces, mir-to-c-boring-surface, migration-return-int-owned, migration-return-int-routed, migration-local-binding-owned, migration-local-binding-routed, migration-if-else-owned, migration-if-else-routed, migration-provenance-owned, migration-provenance-routed, step51-policy, step52-registration, step52-lifetime-diagnostics, step52-cleanup-boundary, step52-terminal-states, step52-transfer-defer, step52-directory, runner-surface, parser-raw-casts"
+        echo "expected a registered native, migration, safety, or runner shard"
         exit 1
         ;;
     esac
@@ -17326,6 +17314,23 @@ guard-cranelift-phase21-cranelift-built-compiler-programs-evidence:
     just guard-cranelift-phase21-cranelift-built-compiler-programs-contract
     python3 scripts/phase21_cranelift_built_compiler_programs.py evidence
 
+guard-cranelift-phase23-mir-to-c-focused-live-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🎯 Checking the Phase 23 focused live MIR-to-C authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase23-mir-to-c-focused-live-contract | grep -F $'guard-cranelift-phase23-mir-to-c-focused-live-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase23_mir_to_c_focused_live.py validate
+    python3 scripts/phase23_mir_to_c_focused_live.py check-review
+
+guard-cranelift-phase23-mir-to-c-focused-live-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Confirming the focused live MIR-to-C cohort completed..."
+    just guard-cranelift-phase23-mir-to-c-focused-live-contract
+    python3 scripts/phase23_mir_to_c_focused_live.py evidence
+
 guard-cranelift-phase21-native-rebuild-reproducibility-contract:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -19825,7 +19830,7 @@ guard-cranelift-ci-family-projection:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Validating registry-derived Cranelift CI family projection..."
-    registry_json="scripts/cranelift_feature_registry.json"
+    focused_workflow=".github/workflows/phase23-mir-to-c-focused-live.yml"
     family_runner="scripts/cranelift_ci_family.py"
     pr_workflow=".github/workflows/pr-fast.yml"
     heavy_workflow=".github/workflows/heavy-guards.yml"
@@ -19837,7 +19842,7 @@ guard-cranelift-ci-family-projection:
 
     rg -n -F 'guard-cranelift-differential-family family:' justfile >/dev/null
     matrix_family_token='just guard-cranelift-differential-family "$''{''{ matrix.family }''}"'
-    rg -n -F "$matrix_family_token" "$pr_workflow" >/dev/null
+    rg -n -F "$matrix_family_token" "$focused_workflow" >/dev/null
     rg -n -F 'guard-cranelift-phase11-ci-family family:' justfile >/dev/null
 
     while IFS= read -r family; do

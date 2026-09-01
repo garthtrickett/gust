@@ -221,9 +221,13 @@ def scan(registry: dict) -> dict[str, object]:
 
 
 def policy_accepts(record: dict, summary: dict[str, object]) -> bool:
+    transition = record.get("focused_live_transition", {})
+    expected_live = transition.get(
+        "current_live_c_case_surface", record.get("live_c_case_surface")
+    )
     return (
         record.get("capability_surface") == summary["capability_surface"] and
-        record.get("live_c_case_surface") == summary["live_c_case_surface"] and
+        expected_live == summary["live_c_case_surface"] and
         record.get("maintenance_policy") == {
             "classification": "compatibility_correction_only",
             "new_feature_prerequisite":
@@ -313,6 +317,30 @@ def validate() -> tuple[dict, dict[str, object]]:
             record.get("renderer") == Path(__file__).relative_to(ROOT).as_posix(),
             "owner, review, or renderer authority drifted")
     summary = scan(registry)
+    transition = record.get("focused_live_transition")
+    require(isinstance(transition, dict) and
+            transition.get("contract_version") ==
+            "phase23_frozen_live_c_transition_v1" and
+            transition.get("status") == "patch23_10_complete" and
+            transition.get("authority_base_main") ==
+            "7178ee245d6d340329f6b5614dbf8be12fe8d273" and
+            transition.get("previous_live_c_case_surface") ==
+            record.get("live_c_case_surface") and
+            transition.get("unchanged_fields") == [
+                "count", "owner_contract_count", "owner_counts",
+                "consumer_class_counts", "selection_counts",
+            ] and
+            transition.get("change_reason") ==
+            "authority_and_workflow_routing_changed_case_lines_and_owner_file_digests_without_changing_live_explicit_C_population" and
+            transition.get("partial_or_unregistered_surface") == "rejected",
+            "Patch 23.10 frozen live-C transition drifted")
+    for field in transition["unchanged_fields"]:
+        require(transition["current_live_c_case_surface"].get(field) ==
+                transition["previous_live_c_case_surface"].get(field),
+                f"Patch 23.10 changed frozen live-C field: {field}")
+    require(transition["current_live_c_case_surface"] ==
+            summary["live_c_case_surface"],
+            "live explicit-C surface is not the registered Patch 23.10 successor")
     validate_mutations(record, registry)
     require(record.get("explicit_c_byte_authority") ==
             registry["phase23_mir_to_c_deprecation_opening"]
@@ -375,7 +403,7 @@ def render(record: dict, registry: dict) -> str:
     capabilities = capability_rows(registry)
     cases = live_c_case_rows()
     cap = record["capability_surface"]
-    live = record["live_c_case_surface"]
+    live = record["focused_live_transition"]["current_live_c_case_surface"]
     lines = [
         "# Cranelift Phase 23.9 — Frozen MIR-to-C Feature Surface",
         "",
@@ -389,6 +417,7 @@ def render(record: dict, registry: dict) -> str:
         f"- Capability observable manifest: `{cap['observable_contract_manifest_digest']}`",
         f"- Frozen live explicit-C cases: `{live['count']}`",
         f"- Live-C identity manifest: `{live['complete_identity_manifest_digest']}`",
+        "- Current identity is the registered Patch 23.10 workflow-routing successor; the frozen population is unchanged.",
         f"- Maintenance: `{record['maintenance_policy']['classification']}`",
         "- New features require authorized shared semantics and a supported Cranelift path first.",
         "- C-only capabilities, backend-only semantic claims, and fallback are forbidden.",

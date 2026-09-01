@@ -29,9 +29,6 @@ jobs:
     name: build Gust and CI surface
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    outputs:
-      phase11_families: ${{ steps.phase11_families.outputs.matrix }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -59,10 +56,6 @@ jobs:
 
       - name: Diff check
         run: git diff --check
-
-      - name: Project Phase 11 CI families
-        id: phase11_families
-        run: echo "matrix=$(python3 scripts/cranelift_ci_family.py matrix-json)" >> "$GITHUB_OUTPUT"
 
       - name: PR fast CI surface guard
         run: just guard-pr-fast-ci-surface
@@ -531,6 +524,9 @@ jobs:
       - name: Phase 23 frozen MIR-to-C feature surface
         run: just guard-cranelift-phase23-mir-to-c-frozen-surface-contract
 
+      - name: Phase 23 focused live MIR-to-C lane
+        run: just guard-cranelift-phase23-mir-to-c-focused-live-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 
@@ -550,7 +546,6 @@ jobs:
       fail-fast: false
       matrix:
         shard:
-          - mir-to-c-return-int
           - routed-return-int
 
     steps:
@@ -574,38 +569,6 @@ jobs:
 
       - name: Run PR fast shard
         run: just guard-pr-fast-shard "${{ matrix.shard }}"
-
-  phase11-family:
-    name: Phase 11 family / ${{ matrix.family }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    needs: build
-    strategy:
-      fail-fast: false
-      matrix:
-        family: ${{ fromJSON(needs.build.outputs.phase11_families) }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install guard tools
-        run: |
-          bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
-          bash scripts/install-just-ci.sh "$HOME/.local/bin"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: Download Gust build outputs
-        uses: actions/download-artifact@v4
-        with:
-          name: gust-build
-          path: .
-
-      - name: Restore executable bit
-        run: chmod +x ./gust 2>/dev/null || true
-
-      - name: Run Level 2 differential family
-        run: just guard-cranelift-differential-family "${{ matrix.family }}"
 
   phase20-nested-brand-annotation:
     name: Phase 20 nested brand annotation parity
@@ -675,7 +638,7 @@ jobs:
     name: final diff check
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    needs: [guard, level1, phase11-family, phase20-nested-brand-annotation]
+    needs: [guard, level1, phase20-nested-brand-annotation]
 
     steps:
       - name: Checkout

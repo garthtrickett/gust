@@ -47,12 +47,15 @@ CLASSES = {
 SELF_EXCLUSIONS = {
     ".github/workflows/phase23-mir-to-c-deprecation-opening.yml",
     ".github/workflows/phase23-mir-to-c-frozen-surface.yml",
+    ".github/workflows/phase23-mir-to-c-focused-live.yml",
     "compiler/CRANELIFT_PHASE23_MIR_TO_C_DEPRECATION_OPENING.md",
     "compiler/CRANELIFT_PHASE23_MIR_TO_C_FROZEN_SURFACE.md",
+    "compiler/CRANELIFT_PHASE23_MIR_TO_C_FOCUSED_LIVE.md",
     "scripts/cranelift_feature_registry.json",
     "scripts/cranelift_feature_registry.schema.json",
     "scripts/phase23_mir_to_c_deprecation_opening.py",
     "scripts/phase23_mir_to_c_frozen_surface.py",
+    "scripts/phase23_mir_to_c_focused_live.py",
 }
 
 SURFACE_PATTERNS = {
@@ -549,6 +552,47 @@ def validate() -> dict:
         "scripts/phase23_mir_to_c_frozen_surface.py",
         ".github/workflows/pr-fast.yml",
     ], "Patch 23.9 authority-only path manifest drifted")
+    focused_transition = successor.get("focused_live_inventory_transition")
+    require(isinstance(focused_transition, dict) and
+            focused_transition.get("contract_version") ==
+            "phase23_focused_live_inventory_transition_v1" and
+            focused_transition.get("status") == "patch23_10_complete" and
+            focused_transition.get("authority_base_main") ==
+            "7178ee245d6d340329f6b5614dbf8be12fe8d273" and
+            focused_transition.get("previous_inventory") ==
+            frozen_transition.get("current_inventory") and
+            focused_transition.get("unchanged_fields") == [
+                "invocation_count",
+                "structural_surface_count",
+                "structural_manifest_digest",
+                "invocation_selection_counts",
+                "unclassified_count",
+            ] and
+            focused_transition.get("partial_or_unregistered_inventory") ==
+            "rejected",
+            "Patch 23.10 focused-live inventory transition drifted")
+    require(focused_transition.get("authority_only_paths") == [
+        ".github/workflows/heavy-guards.yml",
+        ".github/workflows/phase21-cranelift-built-compiler-programs.yml",
+        ".github/workflows/phase23-mir-to-c-focused-live.yml",
+        ".github/workflows/pr-fast.yml",
+        "TASK.md",
+        "compiler/CRANELIFT_PHASE22_OPENING.md",
+        "compiler/CRANELIFT_PHASE23_MIR_TO_C_DEPRECATION_OPENING.md",
+        "compiler/CRANELIFT_PHASE23_MIR_TO_C_FOCUSED_LIVE.md",
+        "compiler/CRANELIFT_PHASE23_MIR_TO_C_FROZEN_SURFACE.md",
+        "justfile",
+        "scripts/cranelift_ci_family.py",
+        "scripts/cranelift_feature_registry.json",
+        "scripts/cranelift_feature_registry.schema.json",
+        "scripts/cranelift_registry.py",
+        "scripts/cranelift_test_levels.json",
+        "scripts/cranelift_test_levels.py",
+        "scripts/phase21_cranelift_built_compiler_programs.py",
+        "scripts/phase23_mir_to_c_deprecation_opening.py",
+        "scripts/phase23_mir_to_c_focused_live.py",
+        "scripts/phase23_mir_to_c_frozen_surface.py",
+    ], "Patch 23.10 authority-only path manifest drifted")
     live_inventory = inventory_summary()
     live_seed_digest = digest_bytes(SEED.read_bytes())
     accepted_by_seed = {
@@ -566,9 +610,13 @@ def validate() -> dict:
         require(frozen_transition["current_inventory"].get(field) ==
                 previous_inventory.get(field),
                 f"Patch 23.9 changed frozen route field: {field}")
-    expected_inventory = frozen_transition["current_inventory"]
+    for field in focused_transition["unchanged_fields"]:
+        require(focused_transition["current_inventory"].get(field) ==
+                focused_transition["previous_inventory"].get(field),
+                f"Patch 23.10 changed retained inventory field: {field}")
+    expected_inventory = focused_transition["current_inventory"]
     require(expected_inventory == live_inventory,
-            "live Patch 23.9 MIR-to-C inventory is not the exact registered successor")
+            "live Patch 23.10 MIR-to-C inventory is not the exact registered successor")
     require(live_inventory["unclassified_count"] == 0,
             "consumer or artifact remains unclassified")
     validate_identity_falsifiers(live_inventory)
@@ -890,6 +938,23 @@ def render(record: dict) -> str:
         f"- Current invocation manifest: `{frozen_inventory['invocation_manifest_digest']}`",
         "- Invocation identities, structural surfaces, classifications, and route selections are unchanged.",
         "- The transition contains authority and generated-review changes only.",
+        "- Partial or unregistered inventory: `rejected`",
+        "",
+    ]
+    focused_transition = successor["focused_live_inventory_transition"]
+    focused_inventory = focused_transition["current_inventory"]
+    lines += [
+        "## Patch 23.10 focused-live inventory successor",
+        "",
+        f"- Contract: `{focused_transition['contract_version']}`",
+        f"- Status: `{focused_transition['status']}`",
+        f"- Authority base main: `{focused_transition['authority_base_main']}`",
+        f"- Current text surfaces: `{focused_inventory['text_surface_count']}`",
+        f"- Current text manifest: `{focused_inventory['text_surface_manifest_digest']}`",
+        f"- Current invocations: `{focused_inventory['invocation_count']}`",
+        f"- Current invocation manifest: `{focused_inventory['invocation_manifest_digest']}`",
+        "- Invocation count, structural surfaces, route selections, and zero-unclassified status are unchanged.",
+        "- One registered authority reference joins the archive-candidate text inventory; other identity changes are workflow routing files and shifted command locations.",
         "- Partial or unregistered inventory: `rejected`",
         "",
     ]
