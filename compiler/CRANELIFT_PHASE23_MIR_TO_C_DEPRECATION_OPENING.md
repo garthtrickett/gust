@@ -541,7 +541,7 @@ Do not edit by hand.
 | `scripts/phase22_closure.py` | `9f0032286c705c36672488c5358fb65e23d3bc740940e5480b833740b8221281` | `explicit_backend_spelling=0, mir_to_c_name=3, generated_c_contract=0` | `archive_candidate` | `cranelift` | `map_to_live_lane_or_archive_in_23_10_and_23_11` | `24` | `active_evidence_surface_is_missing_or_changes_identity` |
 | `scripts/phase22_default_native_package.py` | `3a04f5f57f6dfa78d4d074707c02dda787a425c0e7081be0f4db79ec772e651c` | `explicit_backend_spelling=1, mir_to_c_name=2, generated_c_contract=0` | `archive_candidate` | `cranelift` | `map_to_live_lane_or_archive_in_23_10_and_23_11` | `24` | `active_evidence_surface_is_missing_or_changes_identity` |
 | `scripts/phase22_default_native_package.sh` | `8b1ec96db1eef9522134b8b7df6602da0ef202866d1f5a92aa54b3a6963aa0bc` | `explicit_backend_spelling=2, mir_to_c_name=0, generated_c_contract=0` | `archive_candidate` | `cranelift` | `map_to_live_lane_or_archive_in_23_10_and_23_11` | `24` | `active_evidence_surface_is_missing_or_changes_identity` |
-| `scripts/phase22_default_route_flip.py` | `12621b527f741041b6e568eddb84e694ee572e75fc6eefec8da5418cd4c02fa6` | `explicit_backend_spelling=6, mir_to_c_name=10, generated_c_contract=5` | `archive_candidate` | `cranelift` | `map_to_live_lane_or_archive_in_23_10_and_23_11` | `24` | `active_evidence_surface_is_missing_or_changes_identity` |
+| `scripts/phase22_default_route_flip.py` | `3e3489ea3960c9b1f2d728b78a52285316bf46a2cd3d78c331c0ef84bdc71127` | `explicit_backend_spelling=6, mir_to_c_name=10, generated_c_contract=5` | `archive_candidate` | `cranelift` | `map_to_live_lane_or_archive_in_23_10_and_23_11` | `24` | `active_evidence_surface_is_missing_or_changes_identity` |
 | `scripts/phase22_default_route_seed_convergence.py` | `2356796cbe6676a4566fb29e269449d31e715cf37457c4330cc28cc1013f09ce` | `explicit_backend_spelling=4, mir_to_c_name=8, generated_c_contract=3` | `archive_candidate` | `cranelift` | `map_to_live_lane_or_archive_in_23_10_and_23_11` | `24` | `active_evidence_surface_is_missing_or_changes_identity` |
 | `scripts/phase22_explicit_c_migration.py` | `9832a0b6ba741c536513103af0e9692f215fe55e31292a76925d6b09586d775c` | `explicit_backend_spelling=4, mir_to_c_name=9, generated_c_contract=1` | `archive_candidate` | `cranelift` | `map_to_live_lane_or_archive_in_23_10_and_23_11` | `24` | `active_evidence_surface_is_missing_or_changes_identity` |
 | `scripts/phase22_explicit_c_migration.sh` | `5d0d293494dfc378d294ce79cdb2e955c71002d3d9860072738b4671ed60b323` | `explicit_backend_spelling=6, mir_to_c_name=10, generated_c_contract=1` | `archive_candidate` | `cranelift` | `map_to_live_lane_or_archive_in_23_10_and_23_11` | `24` | `active_evidence_surface_is_missing_or_changes_identity` |
@@ -645,7 +645,7 @@ explicit successor when they intentionally migrate or archive a surface.
 - Generated-C backend removal is Phase 24; bootstrap-C retirement is Phase 25.
 - Ordinary compilation emits no deprecation notice.
 - Post-deprecation text surfaces: `566`
-- Post-deprecation text manifest: `79de6970ef8f2c7af66e2e12f68d5ca93de5a86b224626eb9e6b15cba8d14559`
+- Post-deprecation text manifest: `7e55cd04d4ceda17434c825d186a572f90ee987050b904783863782543bc20ce`
 - Post-deprecation invocations: `316`
-- Post-deprecation invocation manifest: `a962239b0804a5467d147fae24f4f804a5f296b8b8e81c21c7de3de9783df795`
+- Post-deprecation invocation manifest: `97a1535de0d7e52edff46019b529935d143f5a3c3d6013ad2ecab76ad4fbf32f`
 - Unclassified: `0`

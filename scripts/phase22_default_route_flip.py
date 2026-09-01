@@ -98,8 +98,7 @@ def validate() -> dict:
 
     help_text = HELP.read_text(encoding="utf-8")
     require("Compile to one native executable (default)." in help_text and
-            "DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24." in help_text and
-            "Bootstrap C retirement is separate and deferred to Phase 25." in help_text and
+            "DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24." in help_text and "Bootstrap C retirement is separate and deferred to Phase 25." in help_text and
             "Optional Cranelift output; defaults to the source stem." in help_text and
             "fallback to MIR-to-C." in help_text,
             "checked help projection drifted")
