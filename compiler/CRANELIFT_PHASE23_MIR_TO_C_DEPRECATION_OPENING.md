@@ -649,3 +649,12 @@ explicit successor when they intentionally migrate or archive a surface.
 - Post-deprecation invocations: `316`
 - Post-deprecation invocation manifest: `97a1535de0d7e52edff46019b529935d143f5a3c3d6013ad2ecab76ad4fbf32f`
 - Unclassified: `0`
+
+### Patch 23.8a seed inventory transition
+
+- Contract: `phase23_deprecation_seed_inventory_transition_v1`
+- Status: `authorized_pre_publication`
+- Authority base main: `2204239042b3e19283dc400d212445a72aff1f50`
+- Partial or mismatched state: `rejected`
+- Accepted `pre_publication` pair: seed `33b23ff4e8dab6c84365920bf3a2a674d7e3f5248646f6ffd69c8f7cc014083a`, text manifest `7d7e61b089b9f0573c6cb490ffab09bdf0a1fbf87ee0628d49adea7ae117c4a8`
+- Accepted `post_publication` pair: seed `af8a283c9ef4dbe621f78729e89a4c7270c0b740aeb7164af57fa953e5f29924`, text manifest `4a5d0d7e3cf0e8f192d5b32ef0c032d1e1c3a85f9f05d4d0e86812cf697c949b`

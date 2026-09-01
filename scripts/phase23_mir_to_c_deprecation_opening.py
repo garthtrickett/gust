@@ -30,6 +30,7 @@ NATIVE_IDENTITY_SOURCE = ROOT / "compiler/phase10_scalar_return_source.gst"
 ENTRY = ROOT / "compiler/test_runner_entry.gst"
 HELP = ROOT / "compiler/phase10_help.txt"
 README = ROOT / "README.md"
+SEED = ROOT / "gust_v4.c"
 PACKAGED_GUST = ROOT / "build/phase10-package/bin/gust"
 GUARD_L1 = "guard-cranelift-phase23-mir-to-c-deprecation-opening-contract"
 GUARD_L2 = "guard-cranelift-phase23-mir-to-c-deprecation-opening-evidence"
@@ -425,6 +426,25 @@ def validate_identity_falsifiers(expected: dict[str, object]) -> None:
             "same-count invocation command substitution was accepted")
 
 
+def projected_text_surfaces(record: dict) -> list[dict[str, object]]:
+    """Keep the generated review stable across the registered seed-only PR."""
+    rows = scan_text_surfaces()
+    transition = record["deprecation_contract"][
+        "seed_reconvergence_inventory_transition"]
+    states = transition["accepted_live_states"]
+    require([row["state"] for row in states] ==
+            ["pre_publication", "post_publication"],
+            "seed inventory projection state order drifted")
+    live_seed_digest = digest_bytes(SEED.read_bytes())
+    require(live_seed_digest in {row["seed_digest"] for row in states},
+            "seed inventory projection saw an unregistered live seed")
+    seed_rows = [row for row in rows if row["path"] == transition["seed_path"]]
+    require(len(seed_rows) == 1,
+            "seed inventory projection did not find exactly one seed row")
+    seed_rows[0]["digest"] = states[0]["seed_digest"]
+    return rows
+
+
 def validate() -> dict:
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     record = registry.get("phase23_mir_to_c_deprecation_opening")
@@ -446,9 +466,57 @@ def validate() -> dict:
             successor.get("status") == "patch23_8_complete" and
             successor.get("next_patch") == "23.8a",
             "Patch 23.8 deprecation successor is missing or incomplete")
+    seed_transition = successor.get("seed_reconvergence_inventory_transition")
+    require(seed_transition == {
+        "contract_version": "phase23_deprecation_seed_inventory_transition_v1",
+        "status": "authorized_pre_publication",
+        "authority_base_main": "2204239042b3e19283dc400d212445a72aff1f50",
+        "seed_path": "gust_v4.c",
+        "accepted_live_states": [
+            {
+                "state": "pre_publication",
+                "seed_digest":
+                    "33b23ff4e8dab6c84365920bf3a2a674d7e3f5248646f6ffd69c8f7cc014083a",
+                "text_surface_count": 566,
+                "text_surface_manifest_digest":
+                    "7d7e61b089b9f0573c6cb490ffab09bdf0a1fbf87ee0628d49adea7ae117c4a8",
+            },
+            {
+                "state": "post_publication",
+                "seed_digest":
+                    "af8a283c9ef4dbe621f78729e89a4c7270c0b740aeb7164af57fa953e5f29924",
+                "text_surface_count": 566,
+                "text_surface_manifest_digest":
+                    "4a5d0d7e3cf0e8f192d5b32ef0c032d1e1c3a85f9f05d4d0e86812cf697c949b",
+            },
+        ],
+        "unchanged_inventory_fields": [
+            "invocation_count",
+            "invocation_manifest_digest",
+            "structural_surface_count",
+            "structural_manifest_digest",
+            "classification_counts",
+            "invocation_selection_counts",
+            "unclassified_count",
+        ],
+        "partial_or_mismatched_seed_inventory_state": "rejected",
+        "closure_transition": "pending_seed_publication",
+    }, "Patch 23.8a seed inventory transition drifted")
     live_inventory = inventory_summary()
-    require(successor.get("post_deprecation_inventory") == live_inventory,
-            "live MIR-to-C consumer inventory drifted")
+    live_seed_digest = digest_bytes(SEED.read_bytes())
+    accepted_by_seed = {
+        row["seed_digest"]: row
+        for row in seed_transition["accepted_live_states"]
+    }
+    require(live_seed_digest in accepted_by_seed,
+            "live seed is outside the Patch 23.8a inventory transition")
+    accepted_state = accepted_by_seed[live_seed_digest]
+    expected_inventory = copy.deepcopy(successor["post_deprecation_inventory"])
+    expected_inventory["text_surface_count"] = accepted_state["text_surface_count"]
+    expected_inventory["text_surface_manifest_digest"] = \
+        accepted_state["text_surface_manifest_digest"]
+    require(expected_inventory == live_inventory,
+            "live seed and MIR-to-C consumer inventory are not an exact registered pair")
     require(live_inventory["unclassified_count"] == 0,
             "consumer or artifact remains unclassified")
     validate_identity_falsifiers(live_inventory)
@@ -694,7 +762,7 @@ def render(record: dict) -> str:
         "| Path | Digest | Matches | Class | Owner | Action | Removal | Falsifier |",
         "| --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
-    for row in scan_text_surfaces():
+    for row in projected_text_surfaces(record):
         matches = ", ".join(
             f"{key}={value}" for key, value in row["match_counts"].items()
         )
@@ -713,6 +781,7 @@ def render(record: dict) -> str:
     ]
     successor = record["deprecation_contract"]
     post = successor["post_deprecation_inventory"]
+    seed_transition = successor["seed_reconvergence_inventory_transition"]
     lines += [
         "## Patch 23.8 user-facing deprecation successor",
         "",
@@ -729,6 +798,17 @@ def render(record: dict) -> str:
         f"- Post-deprecation invocations: `{post['invocation_count']}`",
         f"- Post-deprecation invocation manifest: `{post['invocation_manifest_digest']}`",
         f"- Unclassified: `{post['unclassified_count']}`",
+        "",
+        "### Patch 23.8a seed inventory transition",
+        "",
+        f"- Contract: `{seed_transition['contract_version']}`",
+        f"- Status: `{seed_transition['status']}`",
+        f"- Authority base main: `{seed_transition['authority_base_main']}`",
+        f"- Partial or mismatched state: `{seed_transition['partial_or_mismatched_seed_inventory_state']}`",
+    ] + [
+        f"- Accepted `{row['state']}` pair: seed `{row['seed_digest']}`, text manifest `{row['text_surface_manifest_digest']}`"
+        for row in seed_transition["accepted_live_states"]
+    ] + [
         "",
     ]
     return "\n".join(lines)
