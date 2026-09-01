@@ -346,7 +346,7 @@ Do not edit by hand.
 | `docs/VISION.md` | `eb6eef22fa5a84e316b1055a4938d2d4e9588bb3d0446af55ede80be996d3ca4` | `explicit_backend_spelling=0, mir_to_c_name=1, generated_c_contract=0` | `production_or_release_migration` | `cranelift` | `review_claims_in_23_8_and_23_12` | `24_or_25_as_claim_requires` | `live_documentation_claim_is_missing_or_changes_identity` |
 | `docs/VISION_RECONCILIATION.md` | `4ff47c5b26f448990647d34c0c92948abdd9e39635415f4a5bd01ac9ce7e59ec` | `explicit_backend_spelling=0, mir_to_c_name=4, generated_c_contract=1` | `production_or_release_migration` | `cranelift` | `review_claims_in_23_8_and_23_12` | `24_or_25_as_claim_requires` | `live_documentation_claim_is_missing_or_changes_identity` |
 | `gust_v4.c` | `af8a283c9ef4dbe621f78729e89a4c7270c0b740aeb7164af57fa953e5f29924` | `explicit_backend_spelling=4, mir_to_c_name=107, generated_c_contract=183` | `bootstrap_phase25` | `cranelift` | `preserve_exact_C_bootstrap_dependency` | `25` | `bootstrap_surface_is_missing_changed_or_reclassified` |
-| `justfile` | `897aaea43f33117c0be7e7567ff0806377a21f591c02d8b0753bca66c17708b4` | `explicit_backend_spelling=38, mir_to_c_name=773, generated_c_contract=6` | `archive_candidate` | `cranelift` | `map_to_live_lane_or_archive_in_23_10_and_23_11` | `24` | `active_evidence_surface_is_missing_or_changes_identity` |
+| `justfile` | `2a2ddf09449ee96acfbc7e019e0523a276e4450c2c3206c001356624303a3d7f` | `explicit_backend_spelling=38, mir_to_c_name=774, generated_c_contract=6` | `archive_candidate` | `cranelift` | `map_to_live_lane_or_archive_in_23_10_and_23_11` | `24` | `active_evidence_surface_is_missing_or_changes_identity` |
 | `justfile-step51` | `f509bc6724dc99a63bf2f4bdfb19ea2bfb2105572bbc7e0018ff2259aa6b4b05` | `explicit_backend_spelling=3, mir_to_c_name=3, generated_c_contract=0` | `archive_candidate` | `cranelift` | `map_to_live_lane_or_archive_in_23_10_and_23_11` | `24` | `active_evidence_surface_is_missing_or_changes_identity` |
 | `scripts/cranelift_ci_family.py` | `3392257e496b2d3259438a0cd682ac87b571a2d1940bd2acc2d09df24b53d9c1` | `explicit_backend_spelling=0, mir_to_c_name=1, generated_c_contract=0` | `archive_candidate` | `cranelift` | `map_to_live_lane_or_archive_in_23_10_and_23_11` | `24` | `active_evidence_surface_is_missing_or_changes_identity` |
 | `scripts/cranelift_manifest.py` | `1ecd31756323c1446437d1462bc660062ff183568fc00da37f1921e5ecfe2bce` | `explicit_backend_spelling=0, mir_to_c_name=9, generated_c_contract=1` | `archive_candidate` | `cranelift` | `map_to_live_lane_or_archive_in_23_10_and_23_11` | `24` | `active_evidence_surface_is_missing_or_changes_identity` |
@@ -688,7 +688,7 @@ explicit successor when they intentionally migrate or archive a surface.
 - Status: `patch23_10_complete`
 - Authority base main: `7178ee245d6d340329f6b5614dbf8be12fe8d273`
 - Current text surfaces: `567`
-- Current text manifest: `afa41420ef493b0136b7398e9c670bae9c98179aab5453b3cb08db16074a92a9`
+- Current text manifest: `bf36e9d615a9ae0e7ed87819a6a6a5747914dbc18e8b8801ef29f86f9223a250`
 - Current invocations: `316`
 - Current invocation manifest: `38dd7844248df6e5713c92196bae672d80fca3b89e7a2a15d0b0db675df2bce6`
 - Invocation count, structural surfaces, route selections, and zero-unclassified status are unchanged.

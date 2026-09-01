@@ -19830,7 +19830,7 @@ guard-cranelift-ci-family-projection:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "🔒 Validating registry-derived Cranelift CI family projection..."
-    registry_json="scripts/cranelift_feature_registry.json"
+    focused_workflow=".github/workflows/phase23-mir-to-c-focused-live.yml"
     family_runner="scripts/cranelift_ci_family.py"
     pr_workflow=".github/workflows/pr-fast.yml"
     heavy_workflow=".github/workflows/heavy-guards.yml"
@@ -19842,7 +19842,7 @@ guard-cranelift-ci-family-projection:
 
     rg -n -F 'guard-cranelift-differential-family family:' justfile >/dev/null
     matrix_family_token='just guard-cranelift-differential-family "$''{''{ matrix.family }''}"'
-    rg -n -F "$matrix_family_token" "$pr_workflow" >/dev/null
+    rg -n -F "$matrix_family_token" "$focused_workflow" >/dev/null
     rg -n -F 'guard-cranelift-phase11-ci-family family:' justfile >/dev/null
 
     while IFS= read -r family; do

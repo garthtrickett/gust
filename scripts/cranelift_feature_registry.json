@@ -4941,7 +4941,7 @@
         },
         "current_inventory": {
           "text_surface_count": 567,
-          "text_surface_manifest_digest": "afa41420ef493b0136b7398e9c670bae9c98179aab5453b3cb08db16074a92a9",
+          "text_surface_manifest_digest": "bf36e9d615a9ae0e7ed87819a6a6a5747914dbc18e8b8801ef29f86f9223a250",
           "invocation_count": 316,
           "invocation_manifest_digest": "38dd7844248df6e5713c92196bae672d80fca3b89e7a2a15d0b0db675df2bce6",
           "structural_surface_count": 15,
@@ -5100,10 +5100,10 @@
       },
       "current_live_c_case_surface": {
         "count": 178,
-        "complete_identity_manifest_digest": "8aa148504a0e2688668fd334804ceb47b96cbec33b417b0fdac5415af813c584",
+        "complete_identity_manifest_digest": "bb851a75e4f031c838de218ca3a06a0942c65bb6d2f47688016cd8f34ca2d33a",
         "case_id_manifest_digest": "2d384467a1b829643ffad8b7c450b3879a4ba96f724a286da5b1b303de2026f1",
         "owner_contract_count": 64,
-        "owner_contract_manifest_digest": "38b59c3857a4604dcfeaef91fabaa96df5a4d5a5eb5532576fbefdd0e9ae66ae",
+        "owner_contract_manifest_digest": "3944d58d05caec9838d3ab883c9c67d24c0e0e226165880db2af6c524c302ec8",
         "owner_counts": {"cranelift":152,"stdlib":26},
         "consumer_class_counts": {"already_explicit_or_parser_probe":178},
         "selection_counts": {"explicit_c":178}
