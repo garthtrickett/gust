@@ -23198,6 +23198,7 @@ guard-stdlib-s1-resource-prerequisites:
     vision="docs/VISION.md"
     foundations="docs/STDLIB_FOUNDATIONS.md"
     findings="docs/STDLIB_SURFACE_FINDINGS.md"
+    registry="scripts/cranelift_feature_registry.json"
     module="tests/stdlib_s1_mutex_guard_generic_derivation_module.gst"
     witness="tests/stdlib_s1_mutex_guard_generic_derivation_rejected.gst"
 
@@ -23216,6 +23217,14 @@ guard-stdlib-s1-resource-prerequisites:
     rg -n -F '### CR-5 — Generic resource semantics sufficient for a scoped guard — **RESOLVED 2026-08-24**' "$roadmap" >/dev/null
     rg -n -F '### CR-15 — Compiler-owned derivation for the generic MutexGuard surface' "$roadmap" >/dev/null
     rg -n -F '*Blocked by CR-15. CR-5'"'"'s resource floor is resolved.*' "$roadmap" >/dev/null
+    for status in \
+      '- [ ] Patch S1.8 — MutexGuard Prototype' \
+      '- [ ] Patch S1.9 — MutexGuard Scope and Resource Tests' \
+      '- [ ] Patch S1.10 — MutexGuard Fiber Contention Tests' \
+      '- [ ] Patch S1.11 — Realistic Example Migration'
+    do
+      rg -n -F -- "$status" "$roadmap" >/dev/null
+    done
 
     # OD-2 stays categorical: this correction selects derivation and must never
     # turn into a local exception for user-written generic functions.
@@ -23249,26 +23258,51 @@ guard-stdlib-s1-resource-prerequisites:
     rg -n -F 'func lock(mutex: &std.Mutex[T, ctx]) MutexGuard[T, ctx]' "$module" >/dev/null
     rg -n -F 'func get(owner: &MutexGuard[T, ctx]) &T' "$module" >/dev/null
 
-    # Pin the exact live limitation that CR-15 hands to the compiler lane. The
-    # witness must remain rejected for unresolved generic substitution, not for
-    # an unrelated parser error or a weakened raw-Mutex boundary.
+    # This guard has two exact states. Before Patch 24.0c, pin the rejected
+    # generic-substitution gap. Once the owning derivation authority is present,
+    # accept only its validated v1 contract and require the same witness to
+    # compile. S1.8 remains inactive above until a later checked Patch 24.0f
+    # closure/handoff successor deliberately replaces that boundary.
     mkdir -p build/guards/stdlib_s1_resource_prerequisites
     make gust >build/guards/stdlib_s1_resource_prerequisites/build.log 2>&1
     output="build/guards/stdlib_s1_resource_prerequisites/generic-derivation.output"
+    derivation_version="$(python3 -c 'import json, sys; value = json.load(open(sys.argv[1])).get("phase24_cr15_derivation"); print("" if value is None else value.get("contract_version", "<invalid>") if isinstance(value, dict) else "<invalid>")' "$registry")"
     if ./gust --backend mir-to-c "$witness" >"$output" 2>&1; then
-      echo "$witness unexpectedly compiled; re-derive CR-15 before resuming S1.8."
-      exit 1
+      witness_compiled=1
+    else
+      witness_compiled=0
     fi
-    for token in \
-      'Brand Nesting Restriction violation.' \
-      '[ResourceDestructorSignature]' \
-      'Argument type mismatch for function' \
-      'stdlib_s1_mutex_guard_generic_derivation_module__T'
-    do
-      rg -n -F "$token" "$output" >/dev/null
-    done
+    case "$derivation_version" in
+      '')
+        if [ "$witness_compiled" -eq 1 ]; then
+          echo "$witness unexpectedly compiled without the checked Patch 24.0c authority."
+          exit 1
+        fi
+        for token in \
+          'Brand Nesting Restriction violation.' \
+          '[ResourceDestructorSignature]' \
+          'Argument type mismatch for function' \
+          'stdlib_s1_mutex_guard_generic_derivation_module__T'
+        do
+          rg -n -F "$token" "$output" >/dev/null
+        done
+        ;;
+      phase24_cr15_derivation_v1)
+        python3 scripts/phase24_cr15_derivation.py validate >/dev/null
+        if [ "$witness_compiled" -ne 1 ]; then
+          cat "$output"
+          echo "$witness must compile under the checked Patch 24.0c authority."
+          exit 1
+        fi
+        rg -n -F '// Transpiled C Code' "$output" >/dev/null
+        ;;
+      *)
+        echo "Unrecognized CR-15 derivation authority: $derivation_version"
+        exit 1
+        ;;
+    esac
 
-    echo "✅ CR-5 is resolved; CR-15 preserves OD-2 and pins the compiler-owned generic derivation gap."
+    echo "✅ CR-15 prerequisite state is exact and S1.8 remains inactive pending Patch 24.0f handoff."
 
 # Stdlib lane, Phase S1. Appended at the end for the same reason as the other S1
 # guards: several guards extract recipe bodies with sed ranges bounded by the
