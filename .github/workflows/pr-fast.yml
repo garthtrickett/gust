@@ -533,6 +533,9 @@ jobs:
       - name: Phase 23 production and release route audit
         run: just guard-cranelift-phase23-production-release-audit-contract
 
+      - name: Phase 23 cross-feature qualification and residue audit
+        run: just guard-cranelift-phase23-cross-feature-qualification-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 
