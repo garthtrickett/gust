@@ -1,11 +1,353 @@
 # Phase 23 — MIR-to-C Deprecation
 
+<!-- The first-line Phase 23 heading is retained as a compatibility anchor for
+     immutable predecessor closure guards. The active Cranelift roadmap begins
+     immediately below. -->
+
+# Phase 24 Opening Preflight — Make Compiler Meaning Explicit
+
 **Lane:** Cranelift. Branches follow the existing
 `codex/phase<N>-<patch>-<slug>` pattern.
 
 Workflow, Monitoring, Merge, Phase Completion, Runner, Issue Intake, and Git
 Authorization policies are defined in `AGENTS.md`. Shared semantic ownership is
-defined in `docs/SHARED_SEMANTIC_ZONE.md`. This document is the active Cranelift
+defined in `docs/SHARED_SEMANTIC_ZONE.md`. This bounded preflight is the active
+Cranelift roadmap. It is not activation of Phase 24 backend retirement.
+
+The preflight removes accepted or rejected Gust meaning selected by source-file
+name fragments before any backend is retired or compiler structure is changed.
+It first freezes both sides of the existing branches, then inventories concrete
+stdlib/runtime spellings recognized by compiler code, and only then permits the
+smallest filename-independent correction already supported by live semantic
+authority. A genuine unresolved choice between a universal rule and an explicit
+internal compilation profile stops the correction for operator direction.
+
+## Roadmap Activation
+
+Phase 23 formally closed on 2026-09-02. Its closure PR #298 completed
+**125/125** strict exact-head `pull_request` workflows with zero unfinished or
+non-success workflows, zero reviews, and zero unresolved non-outdated review
+threads. Exact head `aef80c40737cb3288f4ede2c234ade3118ddf316` merged as exact
+main `a69023f305df973d47bb1d3a7f18ed32fedcfced`.
+
+Docs PR #299 then recorded the future architecture sequence. Its exact head
+`78a09041e017c35870805c5499869158cbbb3149` completed **10/10** strict
+exact-head `pull_request` workflows with zero unfinished/non-success workflows,
+zero reviews, and zero review threads, and merged as exact main
+`1c5e7fe5dee11aa00019bffafe14778a449b96d4`.
+
+On 2026-09-02 the operator explicitly authorized this roadmap promotion and the
+Cranelift completion loop through the opening-preflight closure only. The
+operator required characterization before correction and prohibited selecting
+a new Gust semantic rule for convenience.
+
+This activation does not authorize Phase 24 backend-retirement implementation,
+Phase 24.5 consolidation, Phase 25, TypeEnvironment splitting,
+`FunctionCheckFrame`, intrinsic-ID implementation, native-command
+decomposition, registry or CI consolidation, edits to `TASK_STDLIB.md`, Stdlib,
+CR-15, Web Slice 1, or an operator-owned semantic/product decision.
+
+## Preflight Boundary
+
+In scope:
+
+- exact characterization of the current accepted/rejected behaviour with and
+  without the `test_tcs_` and `test_index_` source-name fragments, including
+  byte-identical renamed witnesses and stable diagnostic observations;
+- an exact compiler-source inventory of concrete stdlib/runtime spellings that
+  influence semantic classification or intrinsic behaviour, with source site,
+  decision, current authority, eventual intrinsic owner, phase, reason, and
+  falsifier;
+- the smallest generic compiler-owned correction that makes the characterized
+  behaviour independent of source filename using authority that already exists;
+- default/explicit native and retained explicit compatibility-path parity,
+  explicit no-fallback behaviour, diagnostics, artifacts, bootstrap
+  convergence, generated authority, review gates, and exact-main Historical
+  qualification for the completed preflight; and
+- an isolated generated bootstrap-seed reconvergence after the self-hosted
+  typechecker reaches its final preflight form.
+
+Out of scope:
+
+- deleting, disabling, or changing the accepted spelling or output of the
+  retained generated-C compatibility backend;
+- changing canonical MIR, native lowering, ABI/layout, runtime symbols,
+  target/linker policy, resource/drop/move/provenance semantics, operator
+  semantics, or Phase 9G artifact ownership;
+- inventing a fixture-name exception, compiler-module exception, stdlib-type
+  exception, backend-only rule, fallback, or environment-selected meaning;
+- choosing between a universal semantic rule and an internal compilation
+  profile when current authority and characterization do not decide it;
+- assigning intrinsic IDs, replacing recognized spellings, splitting
+  typechecker state or modules, decomposing the native command, refactoring the
+  registry/CI topology, or beginning any backend-retirement deletion; and
+- editing Stdlib-owned sources or roadmap, CR-15, Phase 24.5, Phase 25, or Web
+  Slice 1.
+
+## Status
+
+- [x] Patch 24.0 — Opening-Preflight Roadmap Activation — DONE
+- [ ] Patch 24.1 — Filename-Selected Behaviour Characterization
+- [ ] Patch 24.2 — Compiler-Recognized Semantic Spelling Inventory
+- [ ] Patch 24.3 — Filename-Independent Typechecker Correction
+- [ ] Patch 24.3a — Preflight Bootstrap Seed Reconvergence
+- [ ] Patch 24.4 — Opening-Preflight Closure
+
+Status rows are machine-parsed. Keep each row as
+`- [ ] Patch 24.N — <Title>` or `- [x] Patch 24.N — <Title> — DONE`; an
+inserted amendment may append one lowercase letter to `N`.
+
+## Immutable Contracts
+
+- Renaming a source file cannot change whether the contained Gust program is
+  accepted, rejected, or assigned a diagnostic.
+- Characterization precedes correction. A passing post-change fixture is not
+  evidence of what either pre-change branch did.
+- Existing compiler-owned semantic authority decides Patch 24.3. If it does not
+  decide the result, the patch stops with paired evidence and a bounded decision
+  report; absence of authority is not permission to pick a convenient rule.
+- The spelling inventory is report-only. It identifies semantic decisions and
+  their eventual intrinsic owner but assigns no intrinsic IDs and changes no
+  dispatch.
+- Cranelift remains the default production backend and never falls back. The
+  retained explicit compatibility route and bootstrap chain remain available
+  exactly as Phase 23 left them until separately activated retirement phases.
+- `make gust`, `make bootstrap`, and `gust_v4.c` retain their current host-C
+  bootstrap chain. A changed seed is generated at a stage-2/stage-3 fixed point
+  and published alone.
+- No compiler-module, fixture-name, source-spelling, stdlib-type, or backend
+  exception is an acceptable correction.
+- Phase 24 backend retirement, Phase 24.5 consolidation, and Phase 25 native
+  bootstrap remain inactive after this preflight closes.
+
+## Validation Model
+
+**Level 1 — authority and inventory:** exact roadmap/status parsing; paired
+filename-branch inventory; concrete-spelling inventory completeness and unique
+site identity; registry/schema/projection freshness; predecessor closure;
+consumer, guard, fixture, and workflow reachability; explicit no-fallback; and
+diff hygiene.
+
+**Level 2 — focused behaviour:** pre-change byte-identical renamed pairs on both
+sides of each filename branch; accepted/rejected result, diagnostic, emitted
+artifact, side-effect, and cleanup comparison; post-change rename invariance;
+default/explicit native identity; retained compatibility-path parity; and
+positive/negative falsifiers proving the former branches cannot reappear.
+
+**Bootstrap — self-hosted compiler:** `make gust` for each compiler-source
+patch; both retained compiler paths where affected; then an isolated
+`gust_v4.c`-only reconvergence with stage 2/stage 3 byte identity.
+
+**Closure — exact final preflight main:** one authoritative `Cranelift Historical
+Full` run on the exact merged final preflight implementation main, with the
+complete registry-derived job population successful and zero unresolved
+material review findings. Record run ID, full SHA, event, conclusion, unique job
+population, and budgets. Wrong-SHA, wrong-event, partial, stale, red, fallback,
+or pulse/registrar observations are not closure evidence.
+
+Every PR is qualified only by the complete workflow population filtered to its
+exact full 40-character head SHA and `event == "pull_request"`, current-main
+ancestry, and zero unresolved non-outdated review threads. Local validation is
+advisory; GitHub Actions is authoritative.
+
+## Patch 24.0 — Opening-Preflight Roadmap Activation
+
+**Purpose:** promote only the operator-authorized opening preflight into the
+Cranelift task authority without changing compiler behaviour, backend routes,
+bootstrap artifacts, or later-phase activation.
+
+**Steps:**
+
+- Record exact Phase 23 closure and docs-direction predecessor evidence plus the
+  operator's bounded activation.
+- Define the ordered characterization, inventory, correction, isolated seed,
+  and closure patches with their invariants, stop boundary, and evidence.
+- Preserve completed predecessor guards through an explicit roadmap-only
+  inventory successor; retain the first-line Phase 23 compatibility anchor
+  until a separately activated backend-retirement patch removes obsolete
+  predecessor machinery.
+- Keep the completed Phase 23 text below as an immutable record.
+
+**Exit Gate:** the roadmap and its activation are mechanically reviewable; the
+only live semantic work authorized is Patches 24.1–24.3; Phase 23 closure and
+its exact retained-route inventory remain green; no compiler, backend, runtime,
+bootstrap, Stdlib, or accepted-program behaviour changes; and the roadmap PR's
+exact-head workflows and review gates pass.
+
+## Patch 24.1 — Filename-Selected Behaviour Characterization
+
+**Purpose:** freeze what the compiler currently does on both sides of every
+`test_tcs_` and `test_index_` filename branch before any branch is replaced.
+
+**Steps:**
+
+- Enumerate every filename-dependent decision site and every current caller or
+  fixture that can reach it.
+- For each distinct behaviour, create byte-identical source pairs whose only
+  difference is a filename that does or does not contain the selecting fragment.
+- Record acceptance, rejection, full diagnostic identity, artifacts, cleanup,
+  and both retained compiler-path observations without normalizing a difference
+  away.
+- Map each branch to current VISION/shared-zone/compiler authority and state
+  whether that authority already requires a universal rule, already defines a
+  non-user-selectable internal profile, or leaves a genuine decision open.
+
+**Exit Gate:** every live filename-selected site has positive and negative
+rename witnesses, both pre-change outcomes are reproducible, the complete site
+and fixture manifests are mutation-sensitive, and no compiler behaviour has
+changed. If existing authority does not decide the replacement model, stop here
+with the paired evidence and decision report.
+
+## Patch 24.2 — Compiler-Recognized Semantic Spelling Inventory
+
+**Purpose:** expose concrete stdlib/runtime spellings that compiler code treats
+as semantic categories or intrinsic operations, without replacing them.
+
+**Steps:**
+
+- Scan compiler-owned source for exact names, prefixes, and suffixes used in
+  semantic classification, source admission, type construction, code
+  generation, canonical-MIR selection, ABI/layout decisions, or runtime-call
+  recognition.
+- Record one stable row per site with spelling, file/line identity, layer,
+  decision made, semantic role, current authority, present owner, eventual
+  intrinsic owner, intended later phase, reason retained, and falsifier.
+- Separate semantic/intrinsic recognition from diagnostics, serialization,
+  mangling, generated names, comments, fixtures, and non-decision comparisons.
+- Add substitution, omission, duplicate-site, unclassified-site, and stale-line
+  falsifiers. Make no intrinsic-ID, dispatch, compiler-structure, or semantic
+  change.
+
+**Exit Gate:** every compiler-recognized concrete stdlib/runtime decision site
+is classified exactly once; zero unknown decision sites remain; non-semantic
+spellings are explicitly partitioned; registry and generated review projection
+agree; and the inventory guard detects omission, substitution, duplication,
+and classification drift.
+
+## Patch 24.3 — Filename-Independent Typechecker Correction
+
+**Purpose:** remove source-filename control over accepted meaning using only the
+smallest generic rule selected by existing authority and Patch 24.1 evidence.
+
+**Steps:**
+
+- Replace each filename-substring branch with the already-authorized universal
+  semantic rule, or with an existing explicitly defined internal compilation
+  profile only where characterization proves compatibility requires it.
+- Make profile selection compiler-owned and non-forgeable by a user filename;
+  do not infer mode from path, basename, fixture identity, module name, source
+  spelling, backend, or environment.
+- Require all Patch 24.1 renamed pairs to become outcome-identical while
+  preserving the selected diagnostic and both retained compiler paths.
+- Add structural falsifiers proving the filename fragments cannot influence
+  typechecking and no equivalent filename recognizer has replaced them.
+
+**Exit Gate:** byte-identical programs produce identical acceptance,
+diagnostics, artifacts, side effects, and cleanup under arbitrary filenames;
+the old branches and equivalent path-selected meaning are absent; native and
+retained compatibility paths agree; explicit no-fallback remains; `make gust`
+passes; and no new semantic choice, MIR/ABI/runtime change, or broader refactor
+was required. If this cannot be satisfied from existing authority, stop rather
+than publish a rule.
+
+## Patch 24.3a — Preflight Bootstrap Seed Reconvergence
+
+**Purpose:** reconverge the generated bootstrap seed after the final
+self-hosted typechecker correction, in an isolated seed-only publication.
+
+**Steps:**
+
+- Start from exact merged Patch 24.3 main and run the repository bootstrap entry
+  point without hand-editing generated output.
+- Require stage 2 and stage 3 byte identity and re-run the characterized
+  filename-invariance cases through the rebuilt compiler.
+- Publish only `gust_v4.c`. If the seed is already byte-identical, record the
+  checked no-diff fixed point in preflight authority rather than manufacture a
+  seed commit.
+
+**Exit Gate:** bootstrap reaches a byte-identical fixed point; the rebuilt
+compiler preserves both supported paths and Patch 24.3 behaviour; a changed
+seed is the sole PR path; and no Phase 25 bootstrap-route work is introduced.
+
+## Patch 24.4 — Opening-Preflight Closure
+
+**Purpose:** close only the make-compiler-meaning-explicit preflight and leave
+all later architecture phases inactive.
+
+**Steps:**
+
+- Re-run characterization, rename-invariance, spelling inventory,
+  registry/schema/projection, predecessor closure, no-fallback, both retained
+  compiler paths, bootstrap, consumer, guard, fixture, and workflow-reachability
+  authority.
+- Dispatch and independently qualify one authoritative Historical Full on exact
+  merged final preflight implementation main; reject incomplete or stale job
+  populations and unresolved material findings.
+- Generate the preflight closure from registry source, replace evidence
+  placeholders, mark every preflight row DONE, publish the atomic closure PR,
+  and write a terminal lane state after merge.
+
+**Exit Gate:** no accepted or rejected Gust meaning depends on a filename
+substring; both former branch behaviours were characterized before correction;
+the concrete spelling inventory is complete and report-only; bootstrap is
+converged; the exact-main Historical population and closure PR are fully green;
+all review threads are resolved; and Phase 24 backend retirement, Phase 24.5,
+Phase 25, Stdlib, CR-15, and Web Slice 1 remain inactive.
+
+## Recommended Implementation Order
+
+24.0 roadmap activation
+→ 24.1 filename-selected behaviour characterization
+→ 24.2 concrete semantic spelling inventory
+→ 24.3 filename-independent correction
+→ 24.3a isolated seed reconvergence
+→ 24.4 opening-preflight closure.
+
+Characterization must merge before the inventory, and both must merge before
+the correction. The correction cannot select an unresolved semantic rule. The
+seed cannot share a PR with compiler-source changes. Historical qualification
+runs only after the final implementation/seed main exists. No later phase is
+activated by completing this sequence.
+
+## Opening-Preflight Success Criteria
+
+The bounded preflight succeeds when:
+
+- every filename-dependent typechecker branch has paired pre-change evidence;
+- renaming a byte-identical source file no longer changes acceptance,
+  diagnostics, artifacts, side effects, or cleanup;
+- the generic correction is directly entailed by existing semantic authority,
+  or the lane stopped before choosing an unresolved rule;
+- every compiler-recognized concrete stdlib/runtime decision site is classified
+  with owner, later phase, reason, and falsifier, while intrinsic IDs remain
+  unimplemented;
+- default/explicit native, retained explicit compatibility, no-fallback,
+  bootstrap, package/install, diagnostic, cleanup, and artifact authority stay
+  green;
+- the bootstrap seed is current and stage 2/stage 3 are byte-identical;
+- one authoritative Historical Full succeeds with its complete expected job
+  population on exact merged final preflight implementation main; and
+- generated closure authority and the terminal lane record cite exact PR head,
+  merge main, workflow population, review state, Historical run, event, full
+  SHA, job population, conclusion, and budgets.
+
+This preflight may say **source filename no longer selects accepted Gust
+meaning, and compiler-recognized concrete semantic spellings are completely
+classified**. It may not say the generated-C backend is removed, the compiler
+is consolidated, intrinsic IDs exist, the bootstrap is native, or Phase 24 is
+otherwise complete.
+
+---
+
+# Immutable Phase 23 Completion Record — MIR-to-C Deprecation
+
+**Lane:** Cranelift. Branches follow the existing
+`codex/phase<N>-<patch>-<slug>` pattern.
+
+Workflow, Monitoring, Merge, Phase Completion, Runner, Issue Intake, and Git
+Authorization policies are defined in `AGENTS.md`. Shared semantic ownership is
+defined in `docs/SHARED_SEMANTIC_ZONE.md`. This section is the immutable Phase
+23 completion record; the opening preflight above is the active Cranelift
 roadmap.
 
 Phase 23 stops presenting MIR-to-C as a normal supported production backend
@@ -621,7 +963,7 @@ claims.
 Workflow, Monitoring, Merge, Phase Completion, Runner, and Git Authorization
 policies are defined in `AGENTS.md`. Shared semantic ownership is defined in
 `docs/SHARED_SEMANTIC_ZONE.md`. This section is the immutable Phase 22 record;
-Phase 23 above is the active Cranelift roadmap.
+the opening preflight above is the active Cranelift roadmap.
 
 Phase 22 changes the compiler's default route from MIR-to-C to Cranelift while
 retaining MIR-to-C as the semantic oracle and an explicit supported backend.
@@ -1043,7 +1385,7 @@ closure PR merges. Phase 23 remains inactive.
 Workflow, Monitoring, Merge, Phase Completion, Runner, and Git Authorization
 policies were defined in `AGENTS.md`. Shared semantic ownership was defined in
 `docs/SHARED_SEMANTIC_ZONE.md`. This section is the immutable Phase 21 record;
-Phase 23 above is the active Cranelift roadmap.
+the opening preflight above is the active Cranelift roadmap.
 
 Phase 21 has two serial tracks because both require the single compiler-semantic
 writer. Track A implements and attacks the operator-selected OD-8 provenance

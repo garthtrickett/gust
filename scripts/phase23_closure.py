@@ -323,6 +323,12 @@ def check() -> None:
 
     transition = closure.get("consumer_inventory_transition", {})
     previous = historical_authority["consumer_inventory_transition"]["current_inventory"]
+    roadmap_transition = closure.get(
+        "phase24_opening_preflight_roadmap_transition")
+    closure_current = (
+        roadmap_transition.get("previous_inventory")
+        if isinstance(roadmap_transition, dict) else live_inventory()
+    )
     unchanged = [
         "invocation_count", "invocation_manifest_digest",
         "structural_surface_count", "structural_manifest_digest",
@@ -333,7 +339,7 @@ def check() -> None:
             transition.get("status") == "patch23_15_complete" and
             transition.get("authority_base_main") == predecessor["merge_main_sha"] and
             transition.get("previous_inventory") == previous and
-            transition.get("current_inventory") == live_inventory() and
+            transition.get("current_inventory") == closure_current and
             transition.get("unchanged_fields") == unchanged and
             transition.get("partial_extra_or_substituted_surface") == "rejected",
             "closure consumer inventory transition drifted")
@@ -344,6 +350,32 @@ def check() -> None:
     require([row.get("path") for row in
              transition.get("registered_added_text_surfaces", [])] == added,
             "closure added-text manifest path order drifted")
+    if isinstance(roadmap_transition, dict):
+        roadmap_unchanged = [
+            "text_surface_count", "invocation_count",
+            "invocation_manifest_digest", "structural_surface_count",
+            "structural_manifest_digest", "classification_counts",
+            "invocation_selection_counts", "unclassified_count",
+        ]
+        require(
+            roadmap_transition.get("contract_version") ==
+            "phase24_opening_preflight_roadmap_transition_v1" and
+            roadmap_transition.get("status") == "patch24_0_complete" and
+            roadmap_transition.get("authority_base_main") ==
+            "1c5e7fe5dee11aa00019bffafe14778a449b96d4" and
+            roadmap_transition.get("previous_inventory") ==
+            transition["current_inventory"] and
+            roadmap_transition.get("current_inventory") == live_inventory() and
+            roadmap_transition.get("registered_changed_paths") ==
+            ["TASK.md", "scripts/phase23_closure.py"] and
+            roadmap_transition.get("unchanged_fields") == roadmap_unchanged and
+            roadmap_transition.get(
+                "partial_extra_or_substituted_surface") == "rejected",
+            "Patch 24.0 roadmap consumer inventory transition drifted")
+        for field in roadmap_unchanged:
+            require(roadmap_transition["current_inventory"].get(field) ==
+                    roadmap_transition["previous_inventory"].get(field),
+                    f"Patch 24.0 changed consumer inventory field: {field}")
 
     require(closure.get("unresolved_material_findings") == 0,
             "closure has unresolved material findings")
