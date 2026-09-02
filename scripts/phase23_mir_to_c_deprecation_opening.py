@@ -855,13 +855,81 @@ def validate() -> dict:
                             "production_or_release_migration",
                         )),
                     "Patch 23.15 classified text-surface delta drifted")
+            roadmap_transition = registry.get("phase23_closure", {}).get(
+                "phase24_opening_preflight_roadmap_transition")
             closure_rows = [row for row in scan_text_surfaces()
                             if row["path"] in closure_paths]
-            require([row["path"] for row in closure_rows] == closure_paths and
-                    closure_transition.get("registered_added_text_surfaces") ==
-                    closure_rows,
-                    "Patch 23.15 added text-surface identity drifted")
+            require([row.get("path") for row in closure_transition.get(
+                        "registered_added_text_surfaces", [])] == closure_paths,
+                    "Patch 23.15 recorded added text-surface paths drifted")
+            if roadmap_transition is None:
+                require(closure_transition.get(
+                            "registered_added_text_surfaces") == closure_rows,
+                        "Patch 23.15 added text-surface identity drifted")
             expected_inventory = closure_current
+            if roadmap_transition is not None:
+                changed_paths = ["TASK.md", "scripts/phase23_closure.py"]
+                previous_changed_surfaces = [
+                    {
+                        "path": "TASK.md",
+                        "digest": "83173140afd89df31664c9a3fe4a03fedb9f662c1167fccdd7f649b761b4581e",
+                        "match_counts": {
+                            "explicit_backend_spelling": 0,
+                            "mir_to_c_name": 115,
+                            "generated_c_contract": 25,
+                        },
+                        "classification": "production_or_release_migration",
+                        "owner": "cranelift",
+                        "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+                        "deprecation_action": "review_claims_in_23_8_and_23_12",
+                        "removal_phase": "24_or_25_as_claim_requires",
+                        "falsifier":
+                        "live_documentation_claim_is_missing_or_changes_identity",
+                    },
+                    closure_transition["registered_added_text_surfaces"][1],
+                ]
+                roadmap_unchanged = [
+                    "text_surface_count", "invocation_count",
+                    "invocation_manifest_digest", "structural_surface_count",
+                    "structural_manifest_digest", "classification_counts",
+                    "invocation_selection_counts", "unclassified_count",
+                ]
+                require(
+                    roadmap_transition.get("contract_version") ==
+                    "phase24_opening_preflight_roadmap_transition_v1" and
+                    roadmap_transition.get("status") == "patch24_0_complete" and
+                    roadmap_transition.get("authority_base_main") ==
+                    "1c5e7fe5dee11aa00019bffafe14778a449b96d4" and
+                    roadmap_transition.get("previous_inventory") ==
+                    closure_current and
+                    roadmap_transition.get("previous_changed_text_surfaces") ==
+                    previous_changed_surfaces and
+                    roadmap_transition.get("registered_changed_paths") ==
+                    changed_paths and
+                    roadmap_transition.get("unchanged_fields") ==
+                    roadmap_unchanged and
+                    roadmap_transition.get(
+                        "partial_extra_or_substituted_surface") == "rejected",
+                    "Patch 24.0 roadmap inventory transition drifted")
+                roadmap_current = roadmap_transition["current_inventory"]
+                for field in roadmap_unchanged:
+                    require(roadmap_current.get(field) ==
+                            closure_current.get(field),
+                            f"Patch 24.0 changed retained inventory field: {field}")
+                live_text_rows = scan_text_surfaces()
+                changed_rows = [row for row in live_text_rows
+                                if row["path"] in changed_paths]
+                require([row["path"] for row in changed_rows] == changed_paths and
+                        roadmap_transition.get(
+                            "current_changed_text_surfaces") == changed_rows,
+                        "Patch 24.0 changed text-surface identity drifted")
+                require(
+                    canonical_digest([row for row in live_text_rows
+                                      if row["path"] not in changed_paths]) ==
+                    roadmap_transition.get(
+                        "unchanged_other_text_surface_manifest_digest"),
+                    "Patch 24.0 changed an unregistered text surface")
+                expected_inventory = roadmap_current
     require(expected_inventory == live_inventory,
             "live Phase 23 MIR-to-C inventory is not the exact registered successor")
     require(live_inventory["unclassified_count"] == 0,
