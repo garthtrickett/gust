@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import ast
 import copy
+import importlib.util
 import json
 import re
 from collections import Counter
@@ -242,7 +243,16 @@ def scan_invocations() -> list[dict[str, object]]:
                 path, line_no, command, "", token, selection(command)
             ))
     rows.sort(key=lambda row: (str(row["path"]), int(row["line"]), str(row["command"])))
-    return rows
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    if "stdlib_guard_transition" not in registry.get("phase24_cr15_opening", {}):
+        return rows
+    path = ROOT / "scripts/phase24_cr15_stdlib_guard_transition.py"
+    spec = importlib.util.spec_from_file_location("phase24_cr15_guard_transition", path)
+    require(spec is not None and spec.loader is not None,
+            "cannot load the Patch 24.0c guard transition")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.normalize_phase22_invocations(registry, rows)
 
 
 def scan_summary(rows: list[dict[str, object]]) -> dict[str, object]:

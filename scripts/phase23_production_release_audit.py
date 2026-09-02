@@ -58,10 +58,22 @@ def surface(path: str, role: str, markers: tuple[str, ...]) -> dict[str, object]
     text = absolute.read_text(encoding="utf-8")
     for marker in markers:
         require(marker in text, f"supported surface marker is missing: {path}: {marker}")
+    digest = digest_bytes(absolute.read_bytes())
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    if (path == "justfile" and
+            "stdlib_guard_transition" in registry.get("phase24_cr15_opening", {})):
+        transition_path = ROOT / "scripts/phase24_cr15_stdlib_guard_transition.py"
+        spec = importlib.util.spec_from_file_location(
+            "phase24_cr15_guard_transition", transition_path)
+        require(spec is not None and spec.loader is not None,
+                "cannot load the Patch 24.0c guard transition")
+        transition = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(transition)
+        digest = transition.normalized_owner_file_digest(registry, path, digest)
     return {
         "path": path,
         "role": role,
-        "sha256": digest_bytes(absolute.read_bytes()),
+        "sha256": digest,
         "markers": markers,
     }
 

@@ -67,6 +67,9 @@ SELF_EXCLUSIONS = {
     "scripts/phase23_production_release_audit.py",
     "scripts/phase23_production_release_audit.sh",
     "scripts/phase23_cross_feature_qualification.py",
+    ".github/workflows/phase24-cr15-stdlib-guard-transition.yml",
+    "compiler/CRANELIFT_PHASE24_CR15_STDLIB_GUARD_TRANSITION.md",
+    "scripts/phase24_cr15_stdlib_guard_transition.py",
 }
 
 SURFACE_PATTERNS = {
@@ -385,7 +388,16 @@ def scan_text_surfaces() -> list[dict[str, object]]:
             "removal_phase": removal,
             "falsifier": falsifier,
         })
-    return rows
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    if "stdlib_guard_transition" not in registry.get("phase24_cr15_opening", {}):
+        return rows
+    path = ROOT / "scripts/phase24_cr15_stdlib_guard_transition.py"
+    spec = importlib.util.spec_from_file_location("phase24_cr15_guard_transition", path)
+    require(spec is not None and spec.loader is not None,
+            "cannot load the Patch 24.0c guard transition")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.normalize_phase23_text_surfaces(registry, rows)
 
 
 def scan_invocations() -> list[dict[str, object]]:

@@ -6421,6 +6421,69 @@
       "edits_stdlib": false,
       "implements_CR15": false,
       "begins_patch24_0c_or_24_1": false
+    },
+    "stdlib_guard_transition": {
+      "contract_version": "phase24_cr15_stdlib_guard_transition_v1",
+      "status": "authorized_exact_pre_or_post_relay",
+      "owner": "cranelift",
+      "owning_stdlib_pull_request": 304,
+      "owning_stdlib_base_sha": "da1889834f78853d685570cdbef70be77b9be06c",
+      "owning_stdlib_exact_head_sha": "45074ffef9a899c892a98837d9ba085a820ab35b",
+      "changed_paths": ["justfile"],
+      "changed_path_count": 1,
+      "changed_site_count": 1,
+      "pre_relay_justfile_digest": "47b2886ff09862a09bac75419c4dd8714e184333e79e7415af6ac73f4064ff2c",
+      "post_relay_justfile_digest": "97ebdee95b04c0f036b1f84a7d6a9d7ad1bb6adacc9c3ee2c5e2f8ea4bf43467",
+      "changed_site": {
+        "path": "justfile",
+        "recipe": "guard-stdlib-s1-resource-prerequisites",
+        "compiler_token": "./gust",
+        "selection": "explicit_c",
+        "command": "if ./gust --backend mir-to-c \"$witness\" >\"$output\" 2>&1; then",
+        "pre_relay_line": 23258,
+        "post_relay_line": 23270
+      },
+      "phase22_invocation_summary": {
+        "total": 318,
+        "selection_counts": {"explicit_c":178,"explicit_cranelift":119,"explicit_invalid_or_parser_probe":3,"implicit_default":18},
+        "consumer_class_counts": {"already_explicit_or_parser_probe":300,"cranelift_C_or_diagnostic_guard":5,"help_surface_probe":3,"intentional_default_selection_probe":8,"invocation_parser_probe":2},
+        "owner_counts": {"cranelift":289,"stdlib":29},
+        "unclassified_count": 0
+      },
+      "canonical_phase23_text_surfaces": [
+        {
+          "path": "justfile",
+          "digest": "47b2886ff09862a09bac75419c4dd8714e184333e79e7415af6ac73f4064ff2c",
+          "accepted_live_digests": ["47b2886ff09862a09bac75419c4dd8714e184333e79e7415af6ac73f4064ff2c","97ebdee95b04c0f036b1f84a7d6a9d7ad1bb6adacc9c3ee2c5e2f8ea4bf43467"],
+          "match_counts": {"explicit_backend_spelling":38,"mir_to_c_name":794,"generated_c_contract":6},
+          "classification": "archive_candidate",
+          "owner": "cranelift",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "removal_phase": "24",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+        },
+        {
+          "path": "scripts/phase22_opening.py",
+          "digest": "cd62a233193281c00ad7f85ea92bc917fc4f0b55db968aab67dcb5e7f8ec5446",
+          "accepted_live_digests": ["88daff9c82fd440887b1933920bb6d4721ab3a60ef226159cca84a62c890949d"],
+          "match_counts": {"explicit_backend_spelling":2,"mir_to_c_name":12,"generated_c_contract":11},
+          "classification": "archive_candidate",
+          "owner": "cranelift",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "removal_phase": "24",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+        }
+      ],
+      "projection_policy": {
+        "pre_relay": "accepted_as_live_predecessor",
+        "post_relay": "accepted_only_at_exact_registered_file_and_site_identity",
+        "closed_phase_projection": "canonical_pre_relay_identity",
+        "partial_extra_substituted_or_unrelated": "rejected",
+        "authorization_is_not_landed_merge_evidence": true
+      },
+      "review_view": "compiler/CRANELIFT_PHASE24_CR15_STDLIB_GUARD_TRANSITION.md"
     }
   },
   "phase19_brand_authority": {
