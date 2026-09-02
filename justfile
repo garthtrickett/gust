@@ -23267,9 +23267,14 @@ guard-stdlib-s1-resource-prerequisites:
     make gust >build/guards/stdlib_s1_resource_prerequisites/build.log 2>&1
     output="build/guards/stdlib_s1_resource_prerequisites/generic-derivation.output"
     derivation_version="$(python3 -c 'import json, sys; value = json.load(open(sys.argv[1])).get("phase24_cr15_derivation"); print("" if value is None else value.get("contract_version", "<invalid>") if isinstance(value, dict) else "<invalid>")' "$registry")"
+    if ./gust --backend mir-to-c "$witness" >"$output" 2>&1; then
+      witness_compiled=1
+    else
+      witness_compiled=0
+    fi
     case "$derivation_version" in
       '')
-        if ./gust --backend mir-to-c "$witness" >"$output" 2>&1; then
+        if [ "$witness_compiled" -eq 1 ]; then
           echo "$witness unexpectedly compiled without the checked Patch 24.0c authority."
           exit 1
         fi
@@ -23284,7 +23289,7 @@ guard-stdlib-s1-resource-prerequisites:
         ;;
       phase24_cr15_derivation_v1)
         python3 scripts/phase24_cr15_derivation.py validate >/dev/null
-        if ! ./gust --backend mir-to-c "$witness" >"$output" 2>&1; then
+        if [ "$witness_compiled" -ne 1 ]; then
           cat "$output"
           echo "$witness must compile under the checked Patch 24.0c authority."
           exit 1
