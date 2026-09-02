@@ -43,6 +43,13 @@ click into Wasm → Wasm requests fetch → glue performs fetch → response bac
 Wasm → DOM update from typed result. **Steps 6 and 7 deliberately run before the
 HTTP server**, so the contract is provable without the platform.
 
+**Follow-on boundary slice:** `docs/WEB_SLICE_1_SCHEMA_VALIDATION.md` owns the
+planned schema and boundary-validation layer. It turns the shared type and codec
+foundation here into safe parsing, structured validation errors, versioned
+schema artifacts, and HTTP/RPC/form adapters. Validation remains outside Slice
+0's exit gate so the first end-to-end contract is not widened while it is being
+proved.
+
 ---
 
 ## Four things today's decisions confirm
