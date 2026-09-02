@@ -387,6 +387,10 @@ func main() {
         j = j + 1;
     }
 
+    typechecker.typechecker_finish_protected_resource_derivations(
+        &programs, module_prefixes, &env, scope, ctx
+    );
+
     if len(env.errors) > 0 {
         mut k := 0;
         while k < len(env.errors) {

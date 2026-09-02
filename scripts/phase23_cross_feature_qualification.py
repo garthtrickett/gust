@@ -144,6 +144,8 @@ def validate_transition(record: dict, registry: dict) -> None:
         "phase24_cr15_roadmap_amendment_transition")
     cr15_opening_successor = registry.get("phase23_closure", {}).get(
         "phase24_cr15_opening_transition")
+    cr15_derivation_successor = registry.get(
+        "phase24_cr15_derivation", {}).get("consumer_inventory_transition")
     if successor is None:
         require(transition.get("current_inventory") == live_inventory,
                 "Patch 23.13 consumer inventory transition drifted")
@@ -317,7 +319,9 @@ def validate_transition(record: dict, registry: dict) -> None:
                             cr15_opening_successor.get("previous_inventory") ==
                             cr15_roadmap_successor["current_inventory"] and
                             cr15_opening_successor.get("current_inventory") ==
-                            live_inventory and
+                            (live_inventory if cr15_derivation_successor is None
+                             else cr15_derivation_successor.get(
+                                 "previous_inventory")) and
                             cr15_opening_successor.get("registered_changed_paths") ==
                             changed_paths and
                             cr15_opening_successor.get("previous_changed_text_surfaces") ==
@@ -327,22 +331,79 @@ def validate_transition(record: dict, registry: dict) -> None:
                             cr15_opening_successor.get(
                                 "partial_extra_or_substituted_surface") == "rejected",
                             "Patch 24.0b CR-15 consumer successor drifted")
-                        changed_rows = [row for row in live_rows
-                                        if row["path"] in changed_paths]
-                        require([row["path"] for row in changed_rows] == changed_paths and
-                                cr15_opening_successor.get(
-                                    "current_changed_text_surfaces") == changed_rows,
-                                "Patch 24.0b changed surface identity drifted")
-                        require(module.canonical_digest([
-                            row for row in live_rows if row["path"] not in changed_paths
-                        ]) == cr15_opening_successor.get(
-                            "unchanged_other_text_surface_manifest_digest"),
-                            "Patch 24.0b changed an unregistered text surface")
+                        if cr15_derivation_successor is None:
+                            changed_rows = [row for row in live_rows
+                                            if row["path"] in changed_paths]
+                            require([row["path"] for row in changed_rows] == changed_paths and
+                                    cr15_opening_successor.get(
+                                        "current_changed_text_surfaces") == changed_rows,
+                                    "Patch 24.0b changed surface identity drifted")
+                            require(module.canonical_digest([
+                                row for row in live_rows if row["path"] not in changed_paths
+                            ]) == cr15_opening_successor.get(
+                                "unchanged_other_text_surface_manifest_digest"),
+                                "Patch 24.0b changed an unregistered text surface")
+                        else:
+                            successor_unchanged = [
+                                "invocation_count", "invocation_manifest_digest",
+                                "structural_surface_count", "structural_manifest_digest",
+                                "invocation_selection_counts", "unclassified_count",
+                            ]
+                            successor_paths = cr15_derivation_successor.get(
+                                "registered_changed_paths", [])
+                            successor_rows = [row for row in live_rows
+                                              if row["path"] in successor_paths]
+                            require(
+                                cr15_derivation_successor.get("contract_version") ==
+                                "phase24_cr15_derivation_consumer_transition_v1" and
+                                cr15_derivation_successor.get("status") ==
+                                "patch24_0c_complete" and
+                                cr15_derivation_successor.get("authority_base_main") ==
+                                "c37024afa580d1e03c5ff70150ed0ae7518a9648" and
+                                cr15_derivation_successor.get("previous_inventory") ==
+                                cr15_opening_successor["current_inventory"] and
+                                cr15_derivation_successor.get("current_inventory") ==
+                                live_inventory and
+                                cr15_derivation_successor.get("unchanged_fields") ==
+                                successor_unchanged and
+                                live_inventory.get("text_surface_count") ==
+                                cr15_derivation_successor["previous_inventory"].get(
+                                    "text_surface_count") + 1 and
+                                live_inventory.get("classification_counts", {}).get(
+                                    "archive_candidate") ==
+                                cr15_derivation_successor["previous_inventory"].get(
+                                    "classification_counts", {}).get(
+                                        "archive_candidate") + 1 and
+                                all(live_inventory.get("classification_counts", {}).get(key) ==
+                                    cr15_derivation_successor["previous_inventory"].get(
+                                        "classification_counts", {}).get(key)
+                                    for key in (
+                                        "bootstrap_phase25", "focused_live_oracle",
+                                        "historical_only", "production_or_release_migration",
+                                    )) and
+                                cr15_derivation_successor.get(
+                                    "partial_extra_or_substituted_surface") == "rejected" and
+                                [row["path"] for row in successor_rows] == successor_paths and
+                                cr15_derivation_successor.get(
+                                    "current_changed_text_surfaces") == successor_rows and
+                                module.canonical_digest([
+                                    row for row in live_rows
+                                    if row["path"] not in successor_paths
+                                ]) == cr15_derivation_successor.get(
+                                    "unchanged_other_text_surface_manifest_digest"),
+                                "Patch 24.0c CR-15 consumer successor drifted")
+                            for field in successor_unchanged:
+                                require(live_inventory.get(field) ==
+                                        cr15_derivation_successor[
+                                            "previous_inventory"].get(field),
+                                        f"Patch 24.0c changed consumer inventory field: {field}")
 
     frozen = registry["phase23_mir_to_c_frozen_surface"][
         "production_release_transition"]
     surface = record.get("frozen_surface_transition", {})
     closure_frozen = registry.get("phase23_closure", {}).get(
+        "frozen_surface_transition")
+    derivation_frozen = registry.get("phase24_cr15_derivation", {}).get(
         "frozen_surface_transition")
     require(surface.get("contract_version") ==
             "phase23_cross_feature_frozen_surface_transition_v1" and
@@ -373,12 +434,36 @@ def validate_transition(record: dict, registry: dict) -> None:
                 closure_frozen.get("previous_live_c_case_surface") ==
                 surface["current_live_c_case_surface"] and
                 closure_frozen.get("current_live_c_case_surface") ==
-                current_frozen_surface(registry) and
+                (current_frozen_surface(registry) if derivation_frozen is None
+                 else derivation_frozen.get("previous_live_c_case_surface")) and
                 closure_frozen.get("unchanged_fields") ==
                 surface["unchanged_fields"] and
                 closure_frozen.get("partial_or_unregistered_surface") ==
                 "rejected",
                 "Patch 23.15 frozen surface successor drifted")
+        if derivation_frozen is not None:
+            live_frozen = current_frozen_surface(registry)
+            require(
+                derivation_frozen.get("contract_version") ==
+                "phase24_cr15_derivation_frozen_surface_transition_v1" and
+                derivation_frozen.get("status") == "patch24_0c_complete" and
+                derivation_frozen.get("authority_base_main") ==
+                "c37024afa580d1e03c5ff70150ed0ae7518a9648" and
+                derivation_frozen.get("previous_live_c_case_surface") ==
+                closure_frozen["current_live_c_case_surface"] and
+                derivation_frozen.get("current_live_c_case_surface") ==
+                live_frozen and
+                derivation_frozen.get("unchanged_fields") ==
+                surface["unchanged_fields"] and
+                derivation_frozen.get("change_reason") ==
+                "CR15_derivation_preserved_the_frozen_explicit_C_case_population_through_exact_relay_projection" and
+                derivation_frozen.get("partial_or_unregistered_surface") ==
+                "rejected",
+                "Patch 24.0c frozen surface successor drifted")
+            for field in surface["unchanged_fields"]:
+                require(live_frozen.get(field) ==
+                        derivation_frozen["previous_live_c_case_surface"].get(field),
+                        f"Patch 24.0c changed frozen C field: {field}")
 
 
 def validate() -> dict:

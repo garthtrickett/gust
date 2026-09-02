@@ -88,6 +88,7 @@ TOP_FIELDS = {
     "phase23_historical_full_qualification",
     "phase23_closure",
     "phase24_cr15_opening",
+    "phase24_cr15_derivation",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming", "phase19_classification", "phase19_representation",

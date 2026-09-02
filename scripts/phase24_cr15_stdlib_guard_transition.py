@@ -36,18 +36,41 @@ def authority(registry: dict | None = None) -> dict:
     return value
 
 
+def derivation_successor_digest(registry: dict) -> str | None:
+    """Return the exact Patch 24.0c justfile successor when it is registered."""
+    derivation = registry.get("phase24_cr15_derivation")
+    if not isinstance(derivation, dict):
+        return None
+    transition = derivation.get("consumer_inventory_transition")
+    if not isinstance(transition, dict):
+        return None
+    digest = transition.get("live_justfile_successor_digest")
+    require(isinstance(digest, str) and len(digest) == 64,
+            "Patch 24.0c justfile successor digest drifted")
+    return digest
+
+
 def validate_static(value: dict) -> None:
     require(value.get("contract_version") ==
             "phase24_cr15_stdlib_guard_transition_v1",
             "contract version drifted")
-    require(value.get("status") == "authorized_exact_pre_or_post_relay" and
+    require(value.get("status") == "landed_exact_relay" and
             value.get("owner") == "cranelift" and
             value.get("owning_stdlib_pull_request") == 304 and
             value.get("owning_stdlib_exact_head_sha") ==
-            "45074ffef9a899c892a98837d9ba085a820ab35b" and
+            "f1267700e29784a1e59ff97e327f93a91da89585" and
             value.get("owning_stdlib_base_sha") ==
-            "da1889834f78853d685570cdbef70be77b9be06c",
+            "57fb7c5d531b752ebc34e20be170ec653f0f62b9",
             "owning relay identity drifted")
+    require(value.get("landed_merge_evidence") == {
+        "merge_main_sha": "c37024afa580d1e03c5ff70150ed0ae7518a9648",
+        "pull_request_workflow_count": 93,
+        "pull_request_workflow_success_count": 93,
+        "unfinished_or_non_success_count": 0,
+        "review_count": 0,
+        "unresolved_thread_count": 0,
+        "changed_paths": ["justfile"],
+    }, "landed relay evidence drifted")
     require(value.get("changed_paths") == ["justfile"] and
             value.get("changed_path_count") == 1 and
             value.get("changed_site_count") == 1,
@@ -88,9 +111,10 @@ def validate_static(value: dict) -> None:
     require(value.get("projection_policy") == {
         "pre_relay": "accepted_as_live_predecessor",
         "post_relay": "accepted_only_at_exact_registered_file_and_site_identity",
+        "patch24_0c_successor": "accepted_only_at_exact_registered_derivation_digest",
         "closed_phase_projection": "canonical_pre_relay_identity",
         "partial_extra_substituted_or_unrelated": "rejected",
-        "authorization_is_not_landed_merge_evidence": True,
+        "landed_merge_evidence_is_recorded": True,
     }, "projection policy drifted")
 
 
@@ -102,8 +126,11 @@ def live_state(registry: dict | None = None) -> str:
         return "pre_relay"
     if digest == value["post_relay_justfile_digest"]:
         return "post_relay"
+    successor = derivation_successor_digest(registry)
+    if successor is not None and digest == successor:
+        return "derivation_successor"
     require(False,
-            "justfile is neither the exact pre-relay nor exact one-site post-relay state")
+            "justfile is not an exact registered relay or derivation state")
     raise AssertionError("unreachable")
 
 
@@ -113,7 +140,8 @@ def normalize_phase22_invocations(
     value = authority(registry)
     state = live_state(registry)
     site = value["changed_site"]
-    line_key = f"{state}_line"
+    line_key = ("pre_relay_line" if state == "pre_relay"
+                else "post_relay_line")
     matches = [
         row for row in rows
         if row.get("path") == site["path"] and
@@ -154,7 +182,11 @@ def normalize_phase23_text_surfaces(
         path = str(expected["path"])
         require(path in by_path, f"canonical text surface is missing: {path}")
         live = by_path[path]
-        accepted = expected.get("accepted_live_digests", [])
+        accepted = list(expected.get("accepted_live_digests", []))
+        if path == "justfile":
+            successor = derivation_successor_digest(registry)
+            if successor is not None:
+                accepted.append(successor)
         require(live.get("digest") in accepted,
                 f"unregistered text-surface identity: {path}")
         for field in (
@@ -180,7 +212,11 @@ def normalized_owner_file_digest(
         return digest
     value = authority(registry)
     state = live_state(registry)
-    expected = value[f"{state}_justfile_digest"]
+    expected = (value["pre_relay_justfile_digest"]
+                if state == "pre_relay"
+                else value["post_relay_justfile_digest"])
+    if state == "derivation_successor":
+        expected = derivation_successor_digest(registry)
     require(digest == expected, "live-C justfile owner identity drifted")
     return value["pre_relay_justfile_digest"]
 
@@ -222,12 +258,14 @@ def render(value: dict) -> str:
         f"- Preserved explicit-C count: `{summary['selection_counts']['explicit_c']}`",
         f"- Preserved unclassified count: `{summary['unclassified_count']}`",
         "",
-        "The exact pre-relay file or the exact registered one-site successor is accepted.",
+        "The exact relay is merged and recorded. Only the exact pre-relay, landed one-site",
+        "relay, or registry-owned Patch 24.0c derivation successor is accepted.",
         "Closed Phase 22/23 projections use the canonical predecessor identity because",
         "the compiler command and route are unchanged. Partial, extra-site, substituted,",
         "path-drifted, or unrelated `justfile` changes are rejected.",
         "",
-        "This row authorizes the transition; it does not claim the Stdlib PR has merged.",
+        "The landed evidence records 93/93 successful exact-head pull-request workflows,",
+        "zero reviews, zero unresolved threads, and the sole changed path `justfile`.",
         "It changes no language, MIR, backend, route/default/fallback, runtime, bootstrap,",
         "or Stdlib semantics.",
         "",

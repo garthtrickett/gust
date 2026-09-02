@@ -1044,7 +1044,7 @@ func codegen_get_expression_type(expr_idx: Index[ast.Expression[ctx], ctx], env:
             return dummy;
         }
         mut span := codegen_get_expression_span(expr_idx, ctx);
-        mut prefix := (*env).current_prefix;
+        mut prefix := typechecker.typechecker_resolution_scope_key(env as *typechecker.TypeEnvironment[ctx], ctx);
         
         mut found_idx := 0 - 1;
         mut i := 0;
@@ -3558,7 +3558,7 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
         if tag == 4 { // VarDecl
                     mut t_var: ast.Type[ctx];
                     mut span := ctx[stmt_idx].VarDecl.span;
-                    mut prefix := (*env).current_prefix;
+                    mut prefix := typechecker.typechecker_resolution_scope_key(env as *typechecker.TypeEnvironment[ctx], ctx);
                     
                     mut found_idx := 0 - 1;
                     mut i := 0;
@@ -4665,9 +4665,13 @@ typedef void Any;
             mut statements_vec_program_emit: std.Vector[ast.Statement[ctx], ctx] := ctx[prog.statements];
             mut s_idx := 0;
             while s_idx < len(statements_vec_program_emit) {
+                mut emission_prefix := std.Clone(ctx, (*env).current_prefix);
+                (*env).current_function_identity_scope = "";
+                if statements_vec_program_emit[s_idx].tag == 3 && typechecker.typechecker_is_protected_resource_derived(statements_vec_program_emit[s_idx].FunctionDecl.name, env as *typechecker.TypeEnvironment[ctx], ctx) == 1 { (*env).protected_resource_preserve_concrete_types = 1; (*env).current_prefix = typechecker.typechecker_protected_resource_resolution_prefix(statements_vec_program_emit[s_idx].FunctionDecl.name, env as *typechecker.TypeEnvironment[ctx], ctx); (*env).current_function_identity_scope = typechecker.typechecker_protected_resource_identity(statements_vec_program_emit[s_idx].FunctionDecl.name, env as *typechecker.TypeEnvironment[ctx], ctx); }
                 mut stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
                 ctx.Set(stmt_idx, statements_vec_program_emit[s_idx]);
                 mut stmt_c := codegen_generate_statement(stmt_idx, env, ctx);
+                (*env).protected_resource_preserve_concrete_types = 0; (*env).current_prefix = emission_prefix; (*env).current_function_identity_scope = "";
                 chunks.Push(stmt_c);
                 s_idx = s_idx + 1;
             }

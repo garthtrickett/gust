@@ -23740,6 +23740,28 @@ guard-cranelift-phase24-cr15-opening-evidence:
     just guard-cranelift-phase24-cr15-opening-contract
     python3 scripts/phase24_cr15_opening.py evidence
 
+# Cranelift lane, Patch 24.0c. Qualify the generic protected-Resource
+# derivation before the broader adversarial and every-exit work in 24.0d.
+guard-cranelift-phase24-cr15-derivation-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🛡️ Checking Phase 24 CR-15 protected-Resource derivation authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase24-cr15-derivation-contract | grep -F $'guard-cranelift-phase24-cr15-derivation-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase24_cr15_opening.py validate
+    python3 scripts/phase24_cr15_opening.py check-review
+    python3 scripts/phase24_cr15_derivation.py validate
+    python3 scripts/phase24_cr15_derivation.py check-review
+
+guard-cranelift-phase24-cr15-derivation-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Exercising protected-Resource derivation through both retained paths..."
+    make phase10-native-package
+    just guard-cranelift-phase24-cr15-derivation-contract
+    python3 scripts/phase24_cr15_derivation.py evidence
+
 guard-cranelift-phase23-issue-health-opening-evidence:
     #!/usr/bin/env bash
     set -euo pipefail

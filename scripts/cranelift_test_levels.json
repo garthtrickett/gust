@@ -387,6 +387,8 @@
     "guard-cranelift-phase22-close": 1,
     "guard-cranelift-phase24-cr15-opening-contract": 1,
     "guard-cranelift-phase24-cr15-opening-evidence": 2,
+    "guard-cranelift-phase24-cr15-derivation-contract": 1,
+    "guard-cranelift-phase24-cr15-derivation-evidence": 2,
     "guard-cranelift-phase23-issue-health-opening-contract": 1,
     "guard-cranelift-phase23-issue-health-opening-evidence": 2,
     "guard-cranelift-phase23-mir-evidence-owner-contract": 1,
