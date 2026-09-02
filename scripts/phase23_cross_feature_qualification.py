@@ -140,6 +140,8 @@ def validate_transition(record: dict, registry: dict) -> None:
         "consumer_inventory_transition")
     roadmap_successor = registry.get("phase23_closure", {}).get(
         "phase24_opening_preflight_roadmap_transition")
+    cr15_roadmap_successor = registry.get("phase23_closure", {}).get(
+        "phase24_cr15_roadmap_amendment_transition")
     if successor is None:
         require(transition.get("current_inventory") == live_inventory,
                 "Patch 23.13 consumer inventory transition drifted")
@@ -237,7 +239,9 @@ def validate_transition(record: dict, registry: dict) -> None:
                     "1c5e7fe5dee11aa00019bffafe14778a449b96d4" and
                     roadmap_successor.get("previous_inventory") ==
                     closure_successor["current_inventory"] and
-                    roadmap_successor.get("current_inventory") == live_inventory and
+                    roadmap_successor.get("current_inventory") ==
+                    (live_inventory if cr15_roadmap_successor is None else
+                     cr15_roadmap_successor.get("previous_inventory")) and
                     roadmap_successor.get("registered_changed_paths") ==
                     changed_paths and
                     roadmap_successor.get("unchanged_fields") == roadmap_fields and
@@ -248,18 +252,57 @@ def validate_transition(record: dict, registry: dict) -> None:
                     require(roadmap_successor["current_inventory"].get(field) ==
                             roadmap_successor["previous_inventory"].get(field),
                             f"Patch 24.0 changed consumer inventory field: {field}")
-                changed_rows = [row for row in module.scan_text_surfaces()
-                                if row["path"] in changed_paths]
-                require([row["path"] for row in changed_rows] == changed_paths and
-                        roadmap_successor.get(
-                            "current_changed_text_surfaces") == changed_rows,
-                        "Patch 24.0 changed surface identity drifted")
-                require(module.canonical_digest([
-                    row for row in module.scan_text_surfaces()
-                    if row["path"] not in changed_paths
-                ]) == roadmap_successor.get(
-                    "unchanged_other_text_surface_manifest_digest"),
-                    "Patch 24.0 changed an unregistered text surface")
+                live_rows = module.scan_text_surfaces()
+                if cr15_roadmap_successor is None:
+                    changed_rows = [row for row in live_rows
+                                    if row["path"] in changed_paths]
+                    require([row["path"] for row in changed_rows] == changed_paths and
+                            roadmap_successor.get(
+                                "current_changed_text_surfaces") == changed_rows,
+                            "Patch 24.0 changed surface identity drifted")
+                    require(module.canonical_digest([
+                        row for row in live_rows if row["path"] not in changed_paths
+                    ]) == roadmap_successor.get(
+                        "unchanged_other_text_surface_manifest_digest"),
+                        "Patch 24.0 changed an unregistered text surface")
+                else:
+                    require(
+                        cr15_roadmap_successor.get("contract_version") ==
+                        "phase24_cr15_roadmap_amendment_transition_v1" and
+                        cr15_roadmap_successor.get("status") ==
+                        "patch24_0a_complete" and
+                        cr15_roadmap_successor.get("authority_base_main") ==
+                        "86d13496fa83c6d3688402f09b77a8dfbb8168fc" and
+                        cr15_roadmap_successor.get("previous_inventory") ==
+                        roadmap_successor["current_inventory"] and
+                        cr15_roadmap_successor.get(
+                            "previous_changed_text_surfaces") ==
+                        roadmap_successor["current_changed_text_surfaces"] and
+                        cr15_roadmap_successor.get("registered_changed_paths") ==
+                        changed_paths and
+                        cr15_roadmap_successor.get("unchanged_fields") ==
+                        roadmap_fields and
+                        cr15_roadmap_successor.get(
+                            "partial_extra_or_substituted_surface") == "rejected",
+                        "Patch 24.0a CR-15 consumer inventory successor drifted")
+                    for field in roadmap_fields:
+                        require(cr15_roadmap_successor["current_inventory"].get(field) ==
+                                roadmap_successor["current_inventory"].get(field),
+                                f"Patch 24.0a changed consumer inventory field: {field}")
+                    require(cr15_roadmap_successor["current_inventory"] ==
+                            live_inventory,
+                            "Patch 24.0a CR-15 inventory successor drifted")
+                    changed_rows = [row for row in live_rows
+                                    if row["path"] in changed_paths]
+                    require([row["path"] for row in changed_rows] == changed_paths and
+                            cr15_roadmap_successor.get(
+                                "current_changed_text_surfaces") == changed_rows,
+                            "Patch 24.0a changed surface identity drifted")
+                    require(module.canonical_digest([
+                        row for row in live_rows if row["path"] not in changed_paths
+                    ]) == cr15_roadmap_successor.get(
+                        "unchanged_other_text_surface_manifest_digest"),
+                        "Patch 24.0a changed an unregistered text surface")
 
     frozen = registry["phase23_mir_to_c_frozen_surface"][
         "production_release_transition"]

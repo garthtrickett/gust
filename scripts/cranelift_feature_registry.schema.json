@@ -3671,6 +3671,7 @@
           "production_audit_transition", "bootstrap_authority",
           "consumer_inventory_transition",
           "phase24_opening_preflight_roadmap_transition",
+          "phase24_cr15_roadmap_amendment_transition",
           "unresolved_material_findings",
           "non_claims", "boundary", "view_derivation"
         ],
@@ -3755,6 +3756,24 @@
               "contract_version": {"const": "phase24_opening_preflight_roadmap_transition_v1"},
               "status": {"const": "patch24_0_complete"},
               "authority_base_main": {"const": "1c5e7fe5dee11aa00019bffafe14778a449b96d4"},
+              "previous_inventory": {"type": "object"},
+              "current_inventory": {"type": "object"},
+              "registered_changed_paths": {"const": ["TASK.md","scripts/phase23_closure.py"]},
+              "previous_changed_text_surfaces": {"type": "array", "minItems": 2, "maxItems": 2},
+              "current_changed_text_surfaces": {"type": "array", "minItems": 2, "maxItems": 2},
+              "unchanged_other_text_surface_manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "unchanged_fields": {"const": ["text_surface_count","invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","classification_counts","invocation_selection_counts","unclassified_count"]},
+              "partial_extra_or_substituted_surface": {"const": "rejected"}
+            }
+          },
+          "phase24_cr15_roadmap_amendment_transition": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_changed_paths","previous_changed_text_surfaces","current_changed_text_surfaces","unchanged_other_text_surface_manifest_digest","unchanged_fields","partial_extra_or_substituted_surface"],
+            "properties": {
+              "contract_version": {"const": "phase24_cr15_roadmap_amendment_transition_v1"},
+              "status": {"const": "patch24_0a_complete"},
+              "authority_base_main": {"const": "86d13496fa83c6d3688402f09b77a8dfbb8168fc"},
               "previous_inventory": {"type": "object"},
               "current_inventory": {"type": "object"},
               "registered_changed_paths": {"const": ["TASK.md","scripts/phase23_closure.py"]},

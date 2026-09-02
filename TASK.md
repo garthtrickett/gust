@@ -41,11 +41,19 @@ Cranelift completion loop through the opening-preflight closure only. The
 operator required characterization before correction and prohibited selecting
 a new Gust semantic rule for convenience.
 
-This activation does not authorize Phase 24 backend-retirement implementation,
-Phase 24.5 consolidation, Phase 25, TypeEnvironment splitting,
-`FunctionCheckFrame`, intrinsic-ID implementation, native-command
-decomposition, registry or CI consolidation, edits to `TASK_STDLIB.md`, Stdlib,
-CR-15, Web Slice 1, or an operator-owned semantic/product decision.
+After Patch 24.0 merged, the operator explicitly amended the sequence on
+2026-09-02: schedule and activate the compiler-owned CR-15 protected-Resource
+guard derivation before Patch 24.1, hand verified compiler authority to Stdlib,
+then resume this preflight unchanged. That instruction resolves only the
+sequencing and implementation authority already selected by OD-2 and OD-13; it
+does not reopen either decision or authorize Stdlib implementation.
+
+The initial activation did not authorize CR-15. This amendment does, but still
+does not authorize Phase 24 backend-retirement implementation, Phase 24.5
+consolidation, Phase 25, TypeEnvironment splitting, `FunctionCheckFrame`,
+intrinsic-ID implementation, native-command decomposition, registry or CI
+consolidation, edits to `TASK_STDLIB.md`, Stdlib implementation, Web Slice 1,
+or another operator-owned semantic/product decision.
 
 ## Preflight Boundary
 
@@ -81,12 +89,22 @@ Out of scope:
 - assigning intrinsic IDs, replacing recognized spellings, splitting
   typechecker state or modules, decomposing the native command, refactoring the
   registry/CI topology, or beginning any backend-retirement deletion; and
-- editing Stdlib-owned sources or roadmap, CR-15, Phase 24.5, Phase 25, or Web
-  Slice 1.
+- editing Stdlib-owned sources or roadmap, Phase 24.5, Phase 25, or Web Slice 1.
+
+CR-15 is a prerequisite sequence, not part of the filename/spelling preflight.
+Its exact boundary is Patches 24.0b–24.0f below. Patch 24.1 remains paused until
+the compiler authority, isolated seed, exact-main qualification, and checked
+Stdlib handoff are complete.
 
 ## Status
 
 - [x] Patch 24.0 — Opening-Preflight Roadmap Activation — DONE
+- [x] Patch 24.0a — CR-15 Sequencing and Roadmap Amendment — DONE
+- [ ] Patch 24.0b — CR-15 Opening Evidence and Inert Derivation Contract
+- [ ] Patch 24.0c — Protected-Resource Guard Derivation
+- [ ] Patch 24.0d — CR-15 Cross-Path and Adversarial Qualification
+- [ ] Patch 24.0e — CR-15 Bootstrap Seed Reconvergence
+- [ ] Patch 24.0f — CR-15 Closure and Stdlib Handoff
 - [ ] Patch 24.1 — Filename-Selected Behaviour Characterization
 - [ ] Patch 24.2 — Compiler-Recognized Semantic Spelling Inventory
 - [ ] Patch 24.3 — Filename-Independent Typechecker Correction
@@ -117,6 +135,18 @@ inserted amendment may append one lowercase letter to `N`.
   and published alone.
 - No compiler-module, fixture-name, source-spelling, stdlib-type, or backend
   exception is an acceptable correction.
+- CR-15 is compiler-owned, backend-neutral derivation over resolved generic
+  Resource and protected-access metadata. It may not reopen arbitrary
+  user-written generic functions or recognize `Mutex`, `MutexGuard`,
+  `sync.lock`, or `sync.get` in either backend.
+- The selected initial API shape is module-level `sync.lock(&mutex)` returning
+  a move-only `MutexGuard[T, ctx]` and `sync.get(&guard)` returning guard-rooted
+  `&T`. The compiler derives concrete acquisition, guard, destructor, and
+  rooted-accessor identities; Stdlib retains ownership of representation,
+  re-entrancy, implementation, tests, examples, and later ergonomics.
+- CR-15 lowers through ordinary canonical calls and the existing Resource
+  cleanup and protected-access semantics in both retained compiler paths.
+  Backend-specific lowering and fallback are forbidden.
 - Phase 24 backend retirement, Phase 24.5 consolidation, and Phase 25 native
   bootstrap remain inactive after this preflight closes.
 
@@ -137,6 +167,14 @@ positive/negative falsifiers proving the former branches cannot reappear.
 **Bootstrap — self-hosted compiler:** `make gust` for each compiler-source
 patch; both retained compiler paths where affected; then an isolated
 `gust_v4.c`-only reconvergence with stage 2/stage 3 byte identity.
+
+**CR-15 — protected-Resource derivation:** preserve the checked rejected
+generic witness before implementation; require inferred and explicit concrete
+guard identities, branded protected access while the guard is live, obligation
+transfer on move, exactly-once cleanup across every existing exit form, and
+negative evidence for forgery, escape, post-move/post-cleanup access,
+unprotected types, unresolved placeholders, arbitrary generic functions,
+spelling-specific recognition, backend divergence, and fallback.
 
 **Closure — exact final preflight main:** one authoritative `Cranelift Historical
 Full` run on the exact merged final preflight implementation main, with the
@@ -173,6 +211,158 @@ only live semantic work authorized is Patches 24.1–24.3; Phase 23 closure and
 its exact retained-route inventory remain green; no compiler, backend, runtime,
 bootstrap, Stdlib, or accepted-program behaviour changes; and the roadmap PR's
 exact-head workflows and review gates pass.
+
+## Patch 24.0a — CR-15 Sequencing and Roadmap Amendment
+
+**Purpose:** promote the already-decided compiler-owned CR-15 derivation into
+an active, bootstrap-safe sequence before Patch 24.1 without implementing it or
+changing the Phase 24 opening-preflight boundary.
+
+**Steps:**
+
+- Preserve the live seven-point report and its checked rejected witness as the
+  predecessor contract.
+- Record separate opening/inert-contract, implementation, qualification,
+  generated-seed, and closure/handoff patches.
+- Update the Cranelift future sequence so CR-15 completes before the opening
+  preflight, while backend retirement, Phase 24.5, Phase 25, Web Slice 1, and
+  Stdlib implementation remain inactive.
+- Preserve completed Phase 23 consumer authority through an exact roadmap-only
+  successor that rejects partial, extra, or substituted text-surface changes.
+
+**Exit Gate:** only roadmap, future-sequence, and generated predecessor
+authority changes; CR-15 is explicitly activated and Patch 24.1 is explicitly
+paused; the operator-selected protected-Resource derivation boundary and all
+non-claims are complete; Phase 23 closure and exact retained-route inventory
+remain green; and the amendment PR's exact-head workflows and review gates pass.
+
+## Patch 24.0b — CR-15 Opening Evidence and Inert Derivation Contract
+
+**Purpose:** freeze the rejected reusable-guard baseline and add only the inert,
+compiler-owned metadata/derivation contract needed to distinguish a protected
+Resource family from arbitrary user generics before accepted meaning changes.
+
+**Steps:**
+
+- Reproduce the checked `MutexGuard[T, ctx]` declaration, destructor, call, and
+  accessor failures from current main and preserve full diagnostic identities.
+- Inventory the resolved Resource, protected-access, brand, constructor,
+  destructor, obligation, and concrete type/call-registration facts available
+  before either backend.
+- Define a generic derivation descriptor and stable identity rules driven only
+  by those resolved facts. Keep it inert: no previously rejected program may
+  become accepted in this patch.
+- Add structural falsifiers for `Mutex`, `MutexGuard`, `sync.lock`, and
+  `sync.get` recognition and for reopening arbitrary user-written generic
+  functions.
+
+**Exit Gate:** the complete pre-change rejection is reproducible through both
+retained paths before backend selection; the descriptor is backend-neutral and
+inert; no accepted meaning, MIR operation/meaning, ABI/layout/runtime symbol,
+backend route/fallback, Stdlib source, or seed changes; and `make gust` plus
+focused authority/registry/reachability guards pass.
+
+## Patch 24.0c — Protected-Resource Guard Derivation
+
+**Purpose:** implement the smallest generic compiler-owned derivation selected
+by OD-2 and OD-13 for the module-level protected-Resource guard surface.
+
+**Steps:**
+
+- From a concrete protected Resource type and context brand, derive concrete
+  acquisition, guard, destructor, and rooted-accessor identities before normal
+  call checking and concrete type registration.
+- Admit the selected module-level `sync.lock(&mutex)` / `sync.get(&guard)`
+  contract without admitting arbitrary user-written generic functions or
+  extension-method syntax.
+- Substitute the concrete protected type and brand through branded-nesting,
+  opaque construction, destructor signature, acquisition obligation, move,
+  cleanup, and protected-access checks.
+- Lower accepted calls through ordinary canonical calls and the existing
+  Resource/protected-access machinery. Add no MIR instruction, changed MIR
+  meaning, runtime symbol, ABI/layout rule, backend-specific recognition, or
+  fallback.
+
+**Exit Gate:** inferred and explicit guard identities agree; the selected safe
+surface accepts for multiple protected types/brands; arbitrary generic
+functions and unprotected types still reject; ownership transfer and
+guard-rooted liveness use the existing generic rules; default/explicit
+Cranelift and retained explicit compatibility paths agree; no backend contains
+a consumer spelling; `make gust` passes; and the implementation PR contains no
+`gust_v4.c` change.
+
+## Patch 24.0d — CR-15 Cross-Path and Adversarial Qualification
+
+**Purpose:** qualify the landed derivation as a generic semantic capability and
+close every falsifier before bootstrap reconvergence or Stdlib handoff.
+
+**Steps:**
+
+- Exercise at least two protected Resource families and two context brands with
+  inferred and explicit concrete result identities through both retained paths.
+- Require identical acceptance, diagnostics, canonical MIR, exit status,
+  output, side effects, artifacts, and cleanup with explicit no-fallback.
+- Cover move transfer, every existing scope-exit form, exactly-once destructor
+  execution, protected reference escape, use after move/cleanup, construction
+  forgery, unresolved placeholders, wrong brand, unprotected input, nested
+  scopes, and repeated acquisition.
+- Prove a spelling-substituted consumer with equivalent resolved metadata
+  derives identically, while a same-spelled consumer without the metadata does
+  not receive authority.
+
+**Exit Gate:** every positive, negative, parity, resource, liveness, and
+mutation-sensitive case is registry-owned and reachable; ordinary canonical
+MIR is byte-identical between inferred/explicit equivalents; MIR-to-C remains
+the semantic oracle; Cranelift has no bespoke lowering and never falls back;
+all observed differences are zero or owned with a falsifier; and no Stdlib,
+ABI/layout/runtime-symbol, route/default, or seed change occurs.
+
+## Patch 24.0e — CR-15 Bootstrap Seed Reconvergence
+
+**Purpose:** reconverge the generated bootstrap seed after the self-hosted
+derivation implementation in a strictly isolated publication.
+
+**Steps:**
+
+- Start from exact merged Patch 24.0d main and run the repository bootstrap
+  entry point without hand-editing generated output.
+- Require stage 2 and stage 3 byte identity and rerun the CR-15 positive,
+  negative, resource, liveness, parity, and no-fallback evidence through the
+  rebuilt compiler.
+- Publish only `gust_v4.c`. If the seed is already byte-identical, record the
+  checked no-diff fixed point instead of manufacturing a seed commit.
+
+**Exit Gate:** bootstrap reaches a byte-identical fixed point; a changed seed is
+the sole PR path; both retained compiler paths preserve the qualified CR-15
+contract; and no Phase 25 bootstrap-route or Stdlib work is introduced.
+
+## Patch 24.0f — CR-15 Closure and Stdlib Handoff
+
+**Purpose:** close only the compiler-owned derivation and issue the checked
+handoff that permits the Stdlib lane to resume S1.8–S1.11 before Cranelift
+returns to Patch 24.1.
+
+**Steps:**
+
+- Re-run the opening baseline, derivation, cross-path/adversarial, registry,
+  schema/projection, consumer, guard, fixture, workflow-reachability,
+  no-fallback, package/install, and bootstrap authorities.
+- Run and independently qualify one authoritative Historical Full on exact
+  merged final CR-15 implementation/seed main with its complete
+  registry-derived job population successful and zero unresolved material
+  review findings.
+- Generate closure/handoff authority from its registry source, record exact
+  PR heads, merge mains, workflow populations, review state, Historical run ID,
+  event, full SHA, jobs, conclusion, and budgets, then mark all CR-15 rows DONE.
+- Notify the Stdlib lane only after the closure PR merges and the compiler
+  authority is re-derived on current main. The handoff authorizes S1.8–S1.11
+  under their own roadmap; it does not implement or edit them.
+
+**Exit Gate:** CR-15 is verified complete on merged current main; protected
+Resource guard derivation remains generic, backend-neutral, no-fallback, and
+bootstrap-converged; both retained paths agree; the checked handoff is durable;
+Patch 24.1 is next; and Phase 24 backend retirement, Phase 24.5, Phase 25, Web
+Slice 1, and Stdlib implementation remain inactive in this lane.
 
 ## Patch 24.1 — Filename-Selected Behaviour Characterization
 
@@ -291,23 +481,31 @@ all later architecture phases inactive.
 substring; both former branch behaviours were characterized before correction;
 the concrete spelling inventory is complete and report-only; bootstrap is
 converged; the exact-main Historical population and closure PR are fully green;
-all review threads are resolved; and Phase 24 backend retirement, Phase 24.5,
-Phase 25, Stdlib, CR-15, and Web Slice 1 remain inactive.
+all review threads are resolved; CR-15 remains complete and handed off; and
+Phase 24 backend retirement, Phase 24.5, Phase 25, Stdlib implementation, and
+Web Slice 1 remain inactive.
 
 ## Recommended Implementation Order
 
 24.0 roadmap activation
+→ 24.0a CR-15 sequencing amendment
+→ 24.0b CR-15 opening and inert derivation contract
+→ 24.0c protected-Resource guard derivation
+→ 24.0d cross-path and adversarial qualification
+→ 24.0e isolated seed reconvergence
+→ 24.0f CR-15 closure and checked Stdlib handoff
 → 24.1 filename-selected behaviour characterization
 → 24.2 concrete semantic spelling inventory
 → 24.3 filename-independent correction
 → 24.3a isolated seed reconvergence
 → 24.4 opening-preflight closure.
 
-Characterization must merge before the inventory, and both must merge before
-the correction. The correction cannot select an unresolved semantic rule. The
-seed cannot share a PR with compiler-source changes. Historical qualification
-runs only after the final implementation/seed main exists. No later phase is
-activated by completing this sequence.
+CR-15 must close and hand off before Patch 24.1 begins. Characterization must
+then merge before the inventory, and both must merge before the correction. A
+seed cannot share a PR with compiler-source changes. The filename correction
+cannot select an unresolved semantic rule. Each Historical qualification runs
+only after its corresponding final implementation/seed main exists. No later
+phase is activated by completing this sequence.
 
 ## Opening-Preflight Success Criteria
 
