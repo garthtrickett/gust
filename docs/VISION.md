@@ -1058,12 +1058,6 @@ The compiler may provide bounded, compiler-owned derivations for standard platfo
 
 Compiler-owned derivations must be deterministic, inspectable, and incapable of arbitrary code execution.
 
-`docs/WEB_SLICE_1_SCHEMA_VALIDATION.md` records the planned first implementation
-of that rule for untrusted web input: ordinary Gust types remain the single
-authority, while the compiler derives parsing, validation, structured errors,
-codecs, schema artifacts and boundary adapters. It deliberately does not add a
-runtime schema-builder DSL or a parallel schema type system.
-
 > Gust permits explicit runtime code and bounded compiler-owned derivation, but no user-programmable compile-time language.
 
 *Rationale: no install-time or compile-time execution removes the single largest class of ecosystem supply-chain attack, and guarantees that reading a source file — when someone finally does — tells you what the program does.*
