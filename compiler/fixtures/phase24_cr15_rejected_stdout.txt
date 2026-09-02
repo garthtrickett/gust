@@ -1,0 +1,108 @@
+TypeError in tests/stdlib_s1_mutex_guard_generic_derivation_module.gst at line 0:0: Semantic Error: Brand Nesting Restriction violation. Element 'stdlib_s1_mutex_guard_generic_derivation_module__T' inside collection branded with 'ctx' must be copyable POD or branded with identical brand 'ctx'
+   1 | #[linear]
+   2 | #[destructor(release_mutex_guard)]
+
+TypeError in tests/stdlib_s1_mutex_guard_generic_derivation_module.gst at line 6:5: Semantic Error: Brand Nesting Restriction violation. Element 'stdlib_s1_mutex_guard_generic_derivation_module__T' inside collection branded with 'ctx' must be copyable POD or branded with identical brand 'ctx'
+   3 | #[opaque]
+   4 | type MutexGuard[T, ctx] struct {
+   5 |     mutex: &std.Mutex[T, ctx],
+   6 |     protected: *T
+     |     ^
+   7 | }
+   8 |
+
+TypeError in tests/stdlib_s1_mutex_guard_generic_derivation_module.gst at line 6:5: Semantic Error: Brand Nesting Restriction violation. Element 'stdlib_s1_mutex_guard_generic_derivation_module__T' inside collection branded with 'ctx' must be copyable POD or branded with identical brand 'ctx'
+   3 | #[opaque]
+   4 | type MutexGuard[T, ctx] struct {
+   5 |     mutex: &std.Mutex[T, ctx],
+   6 |     protected: *T
+     |     ^
+   7 | }
+   8 |
+
+TypeError in tests/stdlib_s1_mutex_guard_generic_derivation_module.gst at line 1:1: Semantic Error: [ResourceDestructorSignature] Destructor 'stdlib_s1_mutex_guard_generic_derivation_module__release_mutex_guard' must take exactly one owned parameter of type 'stdlib_s1_mutex_guard_generic_derivation_module__MutexGuard'
+   1 | #[linear]
+     | ^
+   2 | #[destructor(release_mutex_guard)]
+   3 | #[opaque]
+
+TypeError in tests/stdlib_s1_mutex_guard_generic_derivation_rejected.gst at line 12:28: Semantic Error: Argument type mismatch for function 'stdlib_s1_mutex_guard_generic_derivation_module__lock'. Expected Reference(Struct("std_Mutex_stdlib_s1_mutex_guard_generic_derivation_module__T_ctx", Some("arena")), None) but got Reference(Struct("std_Mutex_Counter_arena", Some("arena")), Some("arena"))
+   9 |     defer arena.Free();
+  10 |     mut mutex: std.Mutex[Counter, arena] := std.MutexNew(&arena);
+  11 |     mutex.value.value = 41;
+  12 |     mut owner := sync.lock(&mutex);
+     |                            ^
+  13 |     mut value := sync.get(&owner);
+  14 |     value.value = value.value + 1;
+
+TypeError in tests/stdlib_s1_mutex_guard_generic_derivation_rejected.gst at line 14:5: Semantic Error: [FieldNotFound] Field 'value' not found on struct layout 'stdlib_s1_mutex_guard_generic_derivation_module__T'
+  11 |     mutex.value.value = 41;
+  12 |     mut owner := sync.lock(&mutex);
+  13 |     mut value := sync.get(&owner);
+  14 |     value.value = value.value + 1;
+     |     ^
+  15 |     return value.value;
+  16 | }
+
+TypeError in tests/stdlib_s1_mutex_guard_generic_derivation_rejected.gst at line 14:19: Semantic Error: [FieldNotFound] Field 'value' not found on struct layout 'stdlib_s1_mutex_guard_generic_derivation_module__T'
+  11 |     mutex.value.value = 41;
+  12 |     mut owner := sync.lock(&mutex);
+  13 |     mut value := sync.get(&owner);
+  14 |     value.value = value.value + 1;
+     |                   ^
+  15 |     return value.value;
+  16 | }
+
+TypeError in tests/stdlib_s1_mutex_guard_generic_derivation_rejected.gst at line 14:19: Semantic Error: [TypeMismatch] Mismatched types in binary operation '+'. Left: Void, Right: Int
+  11 |     mutex.value.value = 41;
+  12 |     mut owner := sync.lock(&mutex);
+  13 |     mut value := sync.get(&owner);
+  14 |     value.value = value.value + 1;
+     |                   ^
+  15 |     return value.value;
+  16 | }
+
+TypeError in tests/stdlib_s1_mutex_guard_generic_derivation_rejected.gst at line 14:19: Semantic Error: [TypeMismatch] Math operation '+' is only allowed on Int or Byte types, but got Void
+  11 |     mutex.value.value = 41;
+  12 |     mut owner := sync.lock(&mutex);
+  13 |     mut value := sync.get(&owner);
+  14 |     value.value = value.value + 1;
+     |                   ^
+  15 |     return value.value;
+  16 | }
+
+TypeError in tests/stdlib_s1_mutex_guard_generic_derivation_rejected.gst at line 14:19: Semantic Error: [FieldNotFound] Field 'value' not found on struct layout 'stdlib_s1_mutex_guard_generic_derivation_module__T'
+  11 |     mutex.value.value = 41;
+  12 |     mut owner := sync.lock(&mutex);
+  13 |     mut value := sync.get(&owner);
+  14 |     value.value = value.value + 1;
+     |                   ^
+  15 |     return value.value;
+  16 | }
+
+TypeError in tests/stdlib_s1_mutex_guard_generic_derivation_rejected.gst at line 14:19: Semantic Error: [TypeMismatch] Mismatched types in assignment. Cannot assign Int to Void
+  11 |     mutex.value.value = 41;
+  12 |     mut owner := sync.lock(&mutex);
+  13 |     mut value := sync.get(&owner);
+  14 |     value.value = value.value + 1;
+     |                   ^
+  15 |     return value.value;
+  16 | }
+
+TypeError in tests/stdlib_s1_mutex_guard_generic_derivation_rejected.gst at line 15:12: Semantic Error: [FieldNotFound] Field 'value' not found on struct layout 'stdlib_s1_mutex_guard_generic_derivation_module__T'
+  12 |     mut owner := sync.lock(&mutex);
+  13 |     mut value := sync.get(&owner);
+  14 |     value.value = value.value + 1;
+  15 |     return value.value;
+     |            ^
+  16 | }
+  17 |
+
+TypeError in tests/stdlib_s1_mutex_guard_generic_derivation_rejected.gst at line 15:12: Semantic Error: [TypeMismatch] Return type mismatch. Expected Int but got Void
+  12 |     mut owner := sync.lock(&mutex);
+  13 |     mut value := sync.get(&owner);
+  14 |     value.value = value.value + 1;
+  15 |     return value.value;
+     |            ^
+  16 | }
+  17 |

@@ -84,6 +84,7 @@
     "phase23_cross_feature_qualification",
     "phase23_historical_full_qualification",
     "phase23_closure",
+    "phase24_cr15_opening",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -3672,6 +3673,7 @@
           "consumer_inventory_transition",
           "phase24_opening_preflight_roadmap_transition",
           "phase24_cr15_roadmap_amendment_transition",
+          "phase24_cr15_opening_transition",
           "unresolved_material_findings",
           "non_claims", "boundary", "view_derivation"
         ],
@@ -3784,12 +3786,49 @@
               "partial_extra_or_substituted_surface": {"const": "rejected"}
             }
           },
+          "phase24_cr15_opening_transition": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_changed_paths","previous_changed_text_surfaces","current_changed_text_surfaces","unchanged_other_text_surface_manifest_digest","unchanged_fields","partial_extra_or_substituted_surface"],
+            "properties": {
+              "contract_version": {"const": "phase24_cr15_opening_transition_v1"},
+              "status": {"const": "patch24_0b_complete_inert"},
+              "authority_base_main": {"const": "8b84622ddffb88a97bd06d6b87e948d1e7e88545"},
+              "previous_inventory": {"type": "object"},
+              "current_inventory": {"type": "object"},
+              "registered_changed_paths": {"const": ["TASK.md","scripts/phase23_closure.py"]},
+              "previous_changed_text_surfaces": {"type": "array", "minItems": 2, "maxItems": 2},
+              "current_changed_text_surfaces": {"type": "array", "minItems": 2, "maxItems": 2},
+              "unchanged_other_text_surface_manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "unchanged_fields": {"const": ["text_surface_count","invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","classification_counts","invocation_selection_counts","unclassified_count"]},
+              "partial_extra_or_substituted_surface": {"const": "rejected"}
+            }
+          },
           "unresolved_material_findings": {"const": 0},
           "non_claims": {"type": "array", "minItems": 4, "uniqueItems": true},
           "boundary": {
             "const": {"changes_accepted_Gust_program_meaning":false,"adds_or_changes_MIR_operations":false,"changes_ABI_layout_runtime_symbols_target_or_linker":false,"changes_backend_route_default_or_fallback":false,"changes_bootstrap_route_or_seed":false,"edits_stdlib_or_CR15":false,"begins_phase24_or_phase25":false}
           },
           "view_derivation": {"const": "the_closure_view_is_generated_from_this_registry_block_and_the_named_phase23_authorities"}
+        }
+      },
+      "phase24_cr15_opening": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version","status","authority_base_main","next_patch","review_view","witnesses","rejected_baseline","compiler_fact_markers","inert_derivation_descriptor","forbidden_recognizers","implementation_markers_absent","boundary"],
+        "properties": {
+          "contract_version": {"const": "phase24_cr15_opening_v1"},
+          "status": {"const": "patch24_0b_complete_inert"},
+          "authority_base_main": {"const": "8b84622ddffb88a97bd06d6b87e948d1e7e88545"},
+          "next_patch": {"const": "24.0c"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE24_CR15_OPENING.md"},
+          "witnesses": {"const": ["tests/stdlib_s1_mutex_guard_generic_derivation_module.gst","tests/stdlib_s1_mutex_guard_generic_derivation_rejected.gst"]},
+          "rejected_baseline": {"type": "object"},
+          "compiler_fact_markers": {"type": "array", "minItems": 15, "uniqueItems": true},
+          "inert_derivation_descriptor": {"type": "object"},
+          "forbidden_recognizers": {"const": ["consumer_type_spelling","consumer_guard_spelling","consumer_lock_spelling","consumer_get_spelling","arbitrary_user_generic_function","backend_selected_rule"]},
+          "implementation_markers_absent": {"const": ["ProtectedResourceGuardDerivation","env_derive_protected_resource_guard","typechecker_derive_protected_resource_guard"]},
+          "boundary": {"const": {"changes_accepted_Gust_program_meaning":false,"adds_or_changes_MIR_operations":false,"changes_ABI_layout_runtime_symbols_target_or_linker":false,"changes_backend_route_default_or_fallback":false,"changes_bootstrap_route_or_seed":false,"edits_stdlib":false,"implements_CR15":false,"begins_patch24_0c_or_24_1":false}}
         }
       },
       "phase19_brand_authority": {
