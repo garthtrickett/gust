@@ -500,6 +500,9 @@ jobs:
       - name: Phase 23 assurance and issue-health opening
         run: just guard-cranelift-phase23-issue-health-opening-contract
 
+      - name: Phase 24 CR-15 inert opening authority
+        run: just guard-cranelift-phase24-cr15-opening-contract
+
       - name: Phase 23 MIR evidence-owner repair
         run: just guard-cranelift-phase23-mir-evidence-owner-contract
 

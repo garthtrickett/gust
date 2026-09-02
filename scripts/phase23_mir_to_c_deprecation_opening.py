@@ -859,6 +859,8 @@ def validate() -> dict:
                 "phase24_opening_preflight_roadmap_transition")
             cr15_roadmap_transition = registry.get("phase23_closure", {}).get(
                 "phase24_cr15_roadmap_amendment_transition")
+            cr15_opening_transition = registry.get("phase23_closure", {}).get(
+                "phase24_cr15_opening_transition")
             closure_rows = [row for row in scan_text_surfaces()
                             if row["path"] in closure_paths]
             require([row.get("path") for row in closure_transition.get(
@@ -958,19 +960,54 @@ def validate() -> dict:
                         require(cr15_current.get(field) ==
                                 roadmap_current.get(field),
                                 f"Patch 24.0a changed retained inventory field: {field}")
-                    changed_rows = [row for row in live_text_rows
-                                    if row["path"] in changed_paths]
-                    require([row["path"] for row in changed_rows] == changed_paths and
+                    if cr15_opening_transition is None:
+                        changed_rows = [row for row in live_text_rows
+                                        if row["path"] in changed_paths]
+                        require([row["path"] for row in changed_rows] == changed_paths and
+                                cr15_roadmap_transition.get(
+                                    "current_changed_text_surfaces") == changed_rows,
+                                "Patch 24.0a changed text-surface identity drifted")
+                        require(
+                            canonical_digest([row for row in live_text_rows
+                                              if row["path"] not in changed_paths]) ==
                             cr15_roadmap_transition.get(
-                                "current_changed_text_surfaces") == changed_rows,
-                            "Patch 24.0a changed text-surface identity drifted")
-                    require(
-                        canonical_digest([row for row in live_text_rows
-                                          if row["path"] not in changed_paths]) ==
-                        cr15_roadmap_transition.get(
-                            "unchanged_other_text_surface_manifest_digest"),
-                        "Patch 24.0a changed an unregistered text surface")
-                    expected_inventory = cr15_current
+                                "unchanged_other_text_surface_manifest_digest"),
+                            "Patch 24.0a changed an unregistered text surface")
+                        expected_inventory = cr15_current
+                    else:
+                        require(
+                            cr15_opening_transition.get("contract_version") ==
+                            "phase24_cr15_opening_transition_v1" and
+                            cr15_opening_transition.get("status") ==
+                            "patch24_0b_complete_inert" and
+                            cr15_opening_transition.get("authority_base_main") ==
+                            "8b84622ddffb88a97bd06d6b87e948d1e7e88545" and
+                            cr15_opening_transition.get("previous_inventory") ==
+                            cr15_current and
+                            cr15_opening_transition.get("current_inventory") ==
+                            live_inventory and
+                            cr15_opening_transition.get("registered_changed_paths") ==
+                            changed_paths and
+                            cr15_opening_transition.get("previous_changed_text_surfaces") ==
+                            cr15_roadmap_transition["current_changed_text_surfaces"] and
+                            cr15_opening_transition.get("unchanged_fields") ==
+                            roadmap_unchanged and
+                            cr15_opening_transition.get(
+                                "partial_extra_or_substituted_surface") == "rejected",
+                            "Patch 24.0b CR-15 opening transition drifted")
+                        changed_rows = [row for row in live_text_rows
+                                        if row["path"] in changed_paths]
+                        require([row["path"] for row in changed_rows] == changed_paths and
+                                cr15_opening_transition.get(
+                                    "current_changed_text_surfaces") == changed_rows,
+                                "Patch 24.0b changed text-surface identity drifted")
+                        require(
+                            canonical_digest([row for row in live_text_rows
+                                              if row["path"] not in changed_paths]) ==
+                            cr15_opening_transition.get(
+                                "unchanged_other_text_surface_manifest_digest"),
+                            "Patch 24.0b changed an unregistered text surface")
+                        expected_inventory = cr15_opening_transition["current_inventory"]
     require(expected_inventory == live_inventory,
             "live Phase 23 MIR-to-C inventory is not the exact registered successor")
     require(live_inventory["unclassified_count"] == 0,

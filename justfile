@@ -23687,6 +23687,25 @@ guard-cranelift-phase23-issue-health-opening-contract:
     python3 scripts/phase23_issue_health_opening.py validate
     python3 scripts/phase23_issue_health_opening.py check-review
 
+# Cranelift lane, Patch 24.0b. Freeze the rejected CR-15 baseline and the
+# compiler-owned inert derivation descriptor before accepted meaning changes.
+guard-cranelift-phase24-cr15-opening-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Checking the inert Phase 24 CR-15 opening authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase24-cr15-opening-contract | grep -F $'guard-cranelift-phase24-cr15-opening-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase24_cr15_opening.py validate
+    python3 scripts/phase24_cr15_opening.py check-review
+
+guard-cranelift-phase24-cr15-opening-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Replaying the rejected CR-15 baseline through both retained paths..."
+    just guard-cranelift-phase24-cr15-opening-contract
+    python3 scripts/phase24_cr15_opening.py evidence
+
 guard-cranelift-phase23-issue-health-opening-evidence:
     #!/usr/bin/env bash
     set -euo pipefail
