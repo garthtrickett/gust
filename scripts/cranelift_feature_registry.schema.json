@@ -3547,7 +3547,8 @@
           "review_view", "renderer", "predecessor_authority",
           "final_implementation_review_gate", "authoritative_historical_full",
           "expected_job_population", "elapsed_budgets",
-          "qualified_phase23_coverage", "staleness_policy", "boundary"
+          "qualified_phase23_coverage", "consumer_inventory_transition",
+          "staleness_policy", "boundary"
         ],
         "properties": {
           "contract_version": {"const": "phase23_historical_full_qualification_v1"},
@@ -3618,6 +3619,22 @@
               "native_default_package_no_fallback": "phase23_production_release_audit_v1",
               "bootstrap_fixed_point": "phase23_cross_feature_qualification_v1",
               "historical_population": ".github/workflows/cranelift-historical-full.yml"
+            }
+          },
+          "consumer_inventory_transition": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_added_paths","registered_added_text_surfaces","unchanged_fields","partial_extra_or_substituted_surface"],
+            "properties": {
+              "contract_version": {"const": "phase23_historical_consumer_inventory_transition_v1"},
+              "status": {"const": "patch23_14_complete"},
+              "authority_base_main": {"const": "fee6600d86f85f8a0a0da94211ae89895869187e"},
+              "previous_inventory": {"type": "object"},
+              "current_inventory": {"type": "object"},
+              "registered_added_paths": {"const": ["compiler/CRANELIFT_PHASE23_HISTORICAL_FULL_QUALIFICATION.md","scripts/phase23_historical_full_qualification.py"]},
+              "registered_added_text_surfaces": {"type": "array", "minItems": 2, "maxItems": 2},
+              "unchanged_fields": {"const": ["invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","invocation_selection_counts","unclassified_count"]},
+              "partial_extra_or_substituted_surface": {"const": "rejected"}
             }
           },
           "staleness_policy": {

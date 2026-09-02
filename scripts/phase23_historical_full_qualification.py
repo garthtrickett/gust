@@ -209,6 +209,35 @@ def validate() -> dict:
         require(marker in pull_paths and marker in push_paths,
                 f"Patch 23.14 workflow omits applicable input {native_input}")
 
+    transition = record.get("consumer_inventory_transition", {})
+    unchanged_fields = [
+        "invocation_count", "invocation_manifest_digest",
+        "structural_surface_count", "structural_manifest_digest",
+        "invocation_selection_counts", "unclassified_count",
+    ]
+    added_paths = [
+        "compiler/CRANELIFT_PHASE23_HISTORICAL_FULL_QUALIFICATION.md",
+        "scripts/phase23_historical_full_qualification.py",
+    ]
+    require(transition.get("contract_version") ==
+            "phase23_historical_consumer_inventory_transition_v1" and
+            transition.get("status") == "patch23_14_complete" and
+            transition.get("authority_base_main") ==
+            implementation["merged_main_sha"] and
+            transition.get("registered_added_paths") == added_paths and
+            [row.get("path") for row in
+             transition.get("registered_added_text_surfaces", [])] == added_paths and
+            transition.get("unchanged_fields") == unchanged_fields and
+            transition.get("partial_extra_or_substituted_surface") == "rejected",
+            "Patch 23.14 consumer inventory transition drifted")
+    previous = transition["previous_inventory"]
+    current = transition["current_inventory"]
+    require(current.get("text_surface_count") ==
+            previous.get("text_surface_count") + 2 and
+            all(current.get(field) == previous.get(field)
+                for field in unchanged_fields),
+            "Patch 23.14 consumer transition widened beyond two text surfaces")
+
     require(record.get("staleness_policy") == {
         "rule": "replace_if_applicable_phase23_input_lands_before_closure_publication",
         "applicable_input":

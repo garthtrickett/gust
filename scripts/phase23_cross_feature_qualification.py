@@ -120,7 +120,6 @@ def validate_transition(record: dict, registry: dict) -> None:
             transition.get("authority_base_main") ==
             "9b89296b25d2ab0cf1963ea1d1707139149d0576" and
             transition.get("previous_inventory") == opening["current_inventory"] and
-            transition.get("current_inventory") == current_consumer_inventory() and
             transition.get("unchanged_fields") == [
                 "invocation_count", "invocation_manifest_digest",
                 "structural_surface_count", "structural_manifest_digest",
@@ -132,6 +131,51 @@ def validate_transition(record: dict, registry: dict) -> None:
         require(transition["current_inventory"].get(field) ==
                 transition["previous_inventory"].get(field),
                 f"Patch 23.13 changed consumer inventory field: {field}")
+
+    live_inventory = current_consumer_inventory()
+    successor = registry.get("phase23_historical_full_qualification", {}).get(
+        "consumer_inventory_transition")
+    if successor is None:
+        require(transition.get("current_inventory") == live_inventory,
+                "Patch 23.13 consumer inventory transition drifted")
+    else:
+        successor_fields = [
+            "invocation_count", "invocation_manifest_digest",
+            "structural_surface_count", "structural_manifest_digest",
+            "invocation_selection_counts", "unclassified_count",
+        ]
+        added_paths = [
+            "compiler/CRANELIFT_PHASE23_HISTORICAL_FULL_QUALIFICATION.md",
+            "scripts/phase23_historical_full_qualification.py",
+        ]
+        require(successor.get("contract_version") ==
+                "phase23_historical_consumer_inventory_transition_v1" and
+                successor.get("status") == "patch23_14_complete" and
+                successor.get("authority_base_main") ==
+                "fee6600d86f85f8a0a0da94211ae89895869187e" and
+                successor.get("previous_inventory") ==
+                transition["current_inventory"] and
+                successor.get("current_inventory") == live_inventory and
+                successor.get("registered_added_paths") == added_paths and
+                successor.get("unchanged_fields") == successor_fields and
+                successor.get("partial_extra_or_substituted_surface") == "rejected",
+                "Patch 23.14 consumer inventory successor drifted")
+        for field in successor_fields:
+            require(successor["current_inventory"].get(field) ==
+                    successor["previous_inventory"].get(field),
+                    f"Patch 23.14 changed consumer inventory field: {field}")
+        require(successor["current_inventory"]["text_surface_count"] ==
+                successor["previous_inventory"]["text_surface_count"] + 2,
+                "Patch 23.14 did not add exactly two classified text surfaces")
+        module = load_module(
+            "phase23_deprecation_successor",
+            ROOT / "scripts/phase23_mir_to_c_deprecation_opening.py",
+        )
+        added_rows = [row for row in module.scan_text_surfaces()
+                      if row["path"] in added_paths]
+        require([row["path"] for row in added_rows] == added_paths and
+                successor.get("registered_added_text_surfaces") == added_rows,
+                "Patch 23.14 added surface manifest drifted")
 
     frozen = registry["phase23_mir_to_c_frozen_surface"][
         "production_release_transition"]

@@ -755,9 +755,64 @@ def validate() -> dict:
         require(qualification_transition["current_inventory"].get(field) ==
                 qualification_transition["previous_inventory"].get(field),
                 f"Patch 23.13 changed retained inventory field: {field}")
-    expected_inventory = qualification_transition["current_inventory"]
+    historical_transition = registry.get(
+        "phase23_historical_full_qualification", {}).get(
+            "consumer_inventory_transition")
+    if historical_transition is None:
+        expected_inventory = qualification_transition["current_inventory"]
+    else:
+        historical_unchanged = [
+            "invocation_count", "invocation_manifest_digest",
+            "structural_surface_count", "structural_manifest_digest",
+            "invocation_selection_counts", "unclassified_count",
+        ]
+        historical_paths = [
+            "compiler/CRANELIFT_PHASE23_HISTORICAL_FULL_QUALIFICATION.md",
+            "scripts/phase23_historical_full_qualification.py",
+        ]
+        require(historical_transition.get("contract_version") ==
+                "phase23_historical_consumer_inventory_transition_v1" and
+                historical_transition.get("status") == "patch23_14_complete" and
+                historical_transition.get("authority_base_main") ==
+                "fee6600d86f85f8a0a0da94211ae89895869187e" and
+                historical_transition.get("previous_inventory") ==
+                qualification_transition["current_inventory"] and
+                historical_transition.get("registered_added_paths") ==
+                historical_paths and
+                historical_transition.get("unchanged_fields") ==
+                historical_unchanged and
+                historical_transition.get("partial_extra_or_substituted_surface") ==
+                "rejected",
+                "Patch 23.14 Historical inventory transition drifted")
+        historical_previous = historical_transition["previous_inventory"]
+        historical_current = historical_transition["current_inventory"]
+        for field in historical_unchanged:
+            require(historical_current.get(field) ==
+                    historical_previous.get(field),
+                    f"Patch 23.14 changed retained inventory field: {field}")
+        previous_classes = historical_previous["classification_counts"]
+        current_classes = historical_current["classification_counts"]
+        require(historical_current["text_surface_count"] ==
+                historical_previous["text_surface_count"] + 2 and
+                current_classes.get("archive_candidate") ==
+                previous_classes.get("archive_candidate") + 1 and
+                current_classes.get("historical_only") ==
+                previous_classes.get("historical_only") + 1 and
+                all(current_classes.get(key) == previous_classes.get(key)
+                    for key in (
+                        "bootstrap_phase25", "focused_live_oracle",
+                        "production_or_release_migration",
+                    )),
+                "Patch 23.14 classified text-surface delta drifted")
+        historical_rows = [row for row in scan_text_surfaces()
+                           if row["path"] in historical_paths]
+        require([row["path"] for row in historical_rows] == historical_paths and
+                historical_transition.get("registered_added_text_surfaces") ==
+                historical_rows,
+                "Patch 23.14 added text-surface identity drifted")
+        expected_inventory = historical_current
     require(expected_inventory == live_inventory,
-            "live Patch 23.13 MIR-to-C inventory is not the exact registered successor")
+            "live Phase 23 MIR-to-C inventory is not the exact registered successor")
     require(live_inventory["unclassified_count"] == 0,
             "consumer or artifact remains unclassified")
     validate_identity_falsifiers(live_inventory)
