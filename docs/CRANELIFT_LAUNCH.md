@@ -21,7 +21,9 @@ one clear, durable claim instead of a sequence of nearly-finished announcements.
 Before outreach begins, verify from then-current authority rather than from a
 dated handoff:
 
-- every Phase 20–25 status row and intervening assurance checkpoint is closed;
+- every Phase 20–25 status row and intervening assurance checkpoint is closed,
+  including the bounded Phase 24.5 compiler-architecture consolidation between
+  generated-C backend retirement and native-bootstrap work;
 - the final implementation is merged to `main`;
 - the exact merged-main `Cranelift Historical Full` run is successful with its
   complete registry-derived job population;

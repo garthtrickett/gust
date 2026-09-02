@@ -1,8 +1,8 @@
 # Roadmap tail — Phases 20 to 25
 
-`TASK.md` holds the active Cranelift phase. Phases 20 and 21 are completed
-history, Phase 22 is active, and this document preserves the remaining arc
-through Phase 25 without competing with the live roadmap.
+`TASK.md` holds the active Cranelift phase. Phases 20 through 23 are completed
+history. Phases 24, 24.5 and 25 are not active, and this document preserves the
+remaining arc without competing with the live roadmap.
 
 **What this document is.** The roadmap tail as recorded, so the C-retirement
 priority declared in `docs/VISION_RECONCILIATION.md` §7 has a written plan behind
@@ -132,12 +132,44 @@ timeline. Audit downstream users that still require generated C.
 
 **Purpose:** remove MIR-to-C from the active compiler.
 
-Remove backend selection for C and the generated-C publication paths. Archive or
-delete the implementation, preserving historical fixtures only where useful.
-Replace differential guards with frozen expected-behaviour tests. Remove C
-compiler discovery from normal compilation, and C-specific error classes and
-temporary files. Update package contents and documentation. Prove no active route
-references the retired backend.
+### Phase 24 opening preflight — make compiler meaning explicit
+
+Before removal begins, complete one narrow preflight that prevents hidden test
+configuration from being carried into the reduced compiler:
+
+- replace typechecker behaviour selected by source filename fragments such as
+  `test_tcs_` and `test_index_` with an explicit compiler-owned mode where a
+  compatibility fixture genuinely needs one, or with one canonical rule where
+  it does not;
+- add characterization tests that freeze the accepted and rejected behaviour on
+  both sides of the current filename-selected branches before replacing them;
+- inventory concrete stdlib and runtime names recognized directly by compiler
+  code, and classify each occurrence by semantic role and eventual intrinsic
+  owner; and
+- do not begin the broader typechecker, Cranelift-driver, registry or CI
+  restructuring in this preflight.
+
+The invariant is simple: changing a source file's name must not change what the
+program means. The activated Phase 24 roadmap will own the exact patch boundary
+and evidence; this record does not activate it.
+
+**Preflight exit gate:** no accepted or rejected Gust meaning depends on a test
+filename substring, current behaviour is characterized explicitly, the
+string-recognized intrinsic inventory is complete, and no broader architecture
+change has been folded into the correction.
+
+Then remove backend selection for C and the generated-C publication paths.
+Archive or delete the implementation, preserving historical fixtures only where
+useful. Replace differential guards with frozen expected-behaviour tests. Remove
+C compiler discovery from normal compilation, and C-specific error classes and
+temporary files. Retire obsolete C routes, guards, registry rows, historical
+commands and workflows rather than preserving dead machinery for its own sake.
+Update package contents and documentation. Prove no active route references the
+retired backend.
+
+Deletion comes before consolidation deliberately. Phase 24 should expose the
+smaller architecture that actually remains instead of spending time refactoring
+code and evidence that this phase will remove.
 
 > The closure should say **Gust no longer emits C as a compiler backend.** It
 > should *not* claim the repository contains no C.
@@ -145,10 +177,53 @@ references the retired backend.
 **Exit gate:** normal builds, tests, packages and releases contain no generated-C
 backend path.
 
+## Phase 24.5 — Compiler architecture consolidation
+
+**Purpose:** make the reduced, native compiler easier to reason about before its
+bootstrap chain depends on that structure.
+
+This is a bounded, behaviour-preserving consolidation phase, not an open-ended
+rewrite and not a feature phase. It begins only after Phase 24 has deleted the
+retired backend surface, and Phase 25 does not begin until it closes.
+
+Work in dependency order:
+
+1. assign compiler-owned semantic or intrinsic IDs during resolution and make
+   later compiler stages dispatch on those IDs rather than concrete stdlib or
+   runtime spellings;
+2. replace manual save-and-restore of function-checking state with one atomic
+   `FunctionCheckFrame` boundary;
+3. split `TypeEnvironment` into focused subcontexts with explicit ownership and
+   narrow interfaces;
+4. decompose expression and statement checking along semantic seams while
+   preserving their characterized behaviour;
+5. split the Cranelift command monolith into domain modules behind a typed
+   command registry, keeping production lowering separate from historical
+   evidence commands;
+6. express historical registry contracts as declarative phase specifications
+   consumed by generic validation and projection machinery; and
+7. consolidate CI setup and generate thin workflow wrappers only after Phase 24
+   has removed obsolete workflows, while preserving every still-required
+   evidence identity and independent gate.
+
+The phase may reorganize ownership and representation of existing compiler
+facts. It may not introduce new Gust semantics, MIR meaning, ABI or layout,
+runtime symbols, stdlib API, backend fallback, weaker evidence or repository-rule
+exceptions. Each slice must remain bootstrap-safe and independently reviewable.
+
+**Exit gate:** the surviving compiler has explicit intrinsic identity and
+function-checking state boundaries, focused typechecking and command modules,
+declarative registry validation, and non-duplicative CI orchestration; the full
+required evidence remains green and the self-hosted compiler still converges.
+
 ## Phase 25 — Bootstrap and residual C retirement
 
 **Purpose:** remove the remaining C dependency from building and distributing
 Gust itself.
+
+Phase 25 opens only after the reduced compiler has completed Phase 24.5 and has
+a stable, fully evidenced structure. Native-bootstrap work must not become the
+mechanism by which the consolidation is attempted.
 
 Replace the legacy C bootstrap stage and establish a native bootstrap seed
 policy. Decide how bootstrap binaries are produced and verified. Rebuild the
@@ -210,7 +285,8 @@ deferred feature migration
                   → assurance/issue health (post-Phase 22)
                     → C backend deprecation  (Phase 23)
                       → generated-C removal  (Phase 24)
-                        → bootstrap C removal (Phase 25)
+                        → compiler consolidation (Phase 24.5)
+                          → bootstrap C removal (Phase 25)
 ```
 
 Three claims about how early each outcome is reachable, recorded as stated:
@@ -219,6 +295,7 @@ Three claims about how early each outcome is reachable, recorded as stated:
 | --- | --- |
 | Gust stops emitting C by default for ordinary user programs | after Phase 22 |
 | The MIR-to-C implementation can be deleted | after Phase 24 |
+| Native-bootstrap work can begin on the reduced, stable compiler | after Phase 24.5 |
 | Gust can claim its normal supported bootstrap does not require a host C compiler | after Phase 25 |
 
 **Read these as ordering claims rather than dates.** None has a duration attached
