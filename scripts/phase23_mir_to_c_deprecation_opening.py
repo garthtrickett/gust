@@ -804,13 +804,64 @@ def validate() -> dict:
                         "production_or_release_migration",
                     )),
                 "Patch 23.14 classified text-surface delta drifted")
-        historical_rows = [row for row in scan_text_surfaces()
-                           if row["path"] in historical_paths]
-        require([row["path"] for row in historical_rows] == historical_paths and
-                historical_transition.get("registered_added_text_surfaces") ==
-                historical_rows,
-                "Patch 23.14 added text-surface identity drifted")
-        expected_inventory = historical_current
+        closure_transition = registry.get("phase23_closure", {}).get(
+            "consumer_inventory_transition")
+        if closure_transition is None:
+            historical_rows = [row for row in scan_text_surfaces()
+                               if row["path"] in historical_paths]
+            require([row["path"] for row in historical_rows] == historical_paths and
+                    historical_transition.get("registered_added_text_surfaces") ==
+                    historical_rows,
+                    "Patch 23.14 added text-surface identity drifted")
+            expected_inventory = historical_current
+        else:
+            require([row.get("path") for row in historical_transition.get(
+                "registered_added_text_surfaces", [])] == historical_paths,
+                    "Patch 23.14 recorded added text-surface paths drifted")
+            closure_paths = [
+                "docs/PHASE23_CLOSURE.md",
+                "scripts/phase23_closure.py",
+            ]
+            require(closure_transition.get("contract_version") ==
+                    "phase23_closure_consumer_inventory_transition_v1" and
+                    closure_transition.get("status") == "patch23_15_complete" and
+                    closure_transition.get("authority_base_main") ==
+                    "8985a3d09b1f119accd12cd952940ef019d6a698" and
+                    closure_transition.get("previous_inventory") ==
+                    historical_current and
+                    closure_transition.get("registered_added_paths") ==
+                    closure_paths and
+                    closure_transition.get("unchanged_fields") ==
+                    historical_unchanged and
+                    closure_transition.get("partial_extra_or_substituted_surface") ==
+                    "rejected",
+                    "Patch 23.15 closure inventory transition drifted")
+            closure_current = closure_transition["current_inventory"]
+            for field in historical_unchanged:
+                require(closure_current.get(field) ==
+                        historical_current.get(field),
+                        f"Patch 23.15 changed retained inventory field: {field}")
+            historical_classes = historical_current["classification_counts"]
+            closure_classes = closure_current["classification_counts"]
+            require(closure_current["text_surface_count"] ==
+                    historical_current["text_surface_count"] + 2 and
+                    closure_classes.get("archive_candidate") ==
+                    historical_classes.get("archive_candidate") + 1 and
+                    closure_classes.get("historical_only") ==
+                    historical_classes.get("historical_only") + 1 and
+                    all(closure_classes.get(key) == historical_classes.get(key)
+                        for key in (
+                            "bootstrap_phase25", "focused_live_oracle",
+                            "production_or_release_migration",
+                        )),
+                    "Patch 23.15 classified text-surface delta drifted")
+            closure_rows = [row for row in scan_text_surfaces()
+                            if row["path"] in closure_paths]
+            require([row["path"] for row in closure_rows] == closure_paths and
+                    closure_transition.get("registered_added_text_surfaces") ==
+                    closure_rows,
+                    "Patch 23.15 added text-surface identity drifted")
+            expected_inventory = closure_current
     require(expected_inventory == live_inventory,
             "live Phase 23 MIR-to-C inventory is not the exact registered successor")
     require(live_inventory["unclassified_count"] == 0,

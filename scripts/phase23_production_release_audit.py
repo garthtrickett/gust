@@ -181,7 +181,39 @@ def validate() -> tuple[dict, dict[str, object]]:
             "route_contract", {}).get("non_bootstrap_live_lane_count") == 1,
             "focused live-C predecessor drifted")
     summary = scan()
-    validate_mutations(record, summary)
+    closure_transition = registry.get("phase23_closure", {}).get(
+        "production_audit_transition")
+    if closure_transition is None:
+        validate_mutations(record, summary)
+    else:
+        unchanged = [
+            "supported_surface_count", "repository_invocation_count",
+            "repository_explicit_c_count", "phase25_bootstrap_explicit_c_count",
+            "non_bootstrap_retained_test_surface_count",
+            "supported_production_or_release_explicit_c_count",
+            "active_non_bootstrap_live_c_lane_count",
+            "active_non_bootstrap_live_c_owner", "unknown_downstream_count",
+        ]
+        require(closure_transition.get("contract_version") ==
+                "phase23_closure_production_audit_transition_v1" and
+                closure_transition.get("status") == "patch23_15_complete" and
+                closure_transition.get("authority_base_main") ==
+                "8985a3d09b1f119accd12cd952940ef019d6a698" and
+                closure_transition.get("previous_audit") == record.get("audit") and
+                closure_transition.get("current_audit") == summary and
+                closure_transition.get("unchanged_fields") == unchanged and
+                closure_transition.get("change_reason") ==
+                "closure_status_and_guard_wiring_changed_supported_surface_file_digests_without_changing_routes_or_counts" and
+                closure_transition.get("partial_extra_or_substituted_audit") ==
+                "rejected",
+                "Patch 23.15 production audit transition drifted")
+        for field in unchanged:
+            require(closure_transition["current_audit"].get(field) ==
+                    closure_transition["previous_audit"].get(field),
+                    f"Patch 23.15 changed production audit field: {field}")
+        effective = copy.deepcopy(record)
+        effective["audit"] = closure_transition["current_audit"]
+        validate_mutations(effective, summary)
     require(record.get("timelines") == {
         "phase24": "remove_generated_C_backend_and_explicit_C_publication_routes",
         "phase25": "remove_bootstrap_seed_host_C_chain_and_residual_bootstrap_C",

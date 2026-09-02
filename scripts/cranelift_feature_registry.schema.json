@@ -83,6 +83,7 @@
     "phase23_production_release_audit",
     "phase23_cross_feature_qualification",
     "phase23_historical_full_qualification",
+    "phase23_closure",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -3656,6 +3657,100 @@
               "begins_patch23_15": false
             }
           }
+        }
+      },
+      "phase23_closure": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "version", "status", "authority_owner", "wording",
+          "predecessor_review_gate", "authoritative_latest_historical_full",
+          "historical_budgets", "completed_authorities", "issue_closure",
+          "assurance_authority", "route_authority", "compatibility_authority",
+          "frozen_surface_transition", "production_release_authority",
+          "production_audit_transition", "bootstrap_authority",
+          "consumer_inventory_transition", "unresolved_material_findings",
+          "non_claims", "boundary", "view_derivation"
+        ],
+        "properties": {
+          "version": {"const": "phase23_closure_v1"},
+          "status": {"const": "phase23_closed_mir_to_c_deprecated_production_native_bootstrap_c_preserved"},
+          "authority_owner": {"const": "scripts/cranelift_feature_registry.json"},
+          "wording": {"type": "string", "minLength": 1},
+          "predecessor_review_gate": {"type": "object"},
+          "authoritative_latest_historical_full": {"type": "object"},
+          "historical_budgets": {"type": "object"},
+          "completed_authorities": {"type": "object", "minProperties": 14, "maxProperties": 14},
+          "issue_closure": {
+            "const": {"issues":[105,110,240],"state":"closed_on_merged_current_main_evidence"}
+          },
+          "assurance_authority": {
+            "const": {"phase_a":"complete_report_only","phase_b":"complete_deterministic_report_only","merge_authority":false}
+          },
+          "route_authority": {
+            "const": {"default_backend":"cranelift","explicit_native_backend":"cranelift","explicit_c_spellings":["mir-to-c","c"],"explicit_c_acceptance":"deprecated_byte_identical_through_phase23","fallback":"forbidden","backend_removal_phase":"24","bootstrap_c_retirement_phase":"25"}
+          },
+          "compatibility_authority": {
+            "const": {"focused_non_bootstrap_live_lanes":1,"focused_lane":"phase23_mir_to_c_focused_live_v1","archived_corpus":"phase23_mir_to_c_archived_corpus_v1","archived_case_count":34,"frozen_live_c_cases":178}
+          },
+          "frozen_surface_transition": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["contract_version","status","authority_base_main","previous_live_c_case_surface","current_live_c_case_surface","unchanged_fields","change_reason","partial_or_unregistered_surface"],
+            "properties": {
+              "contract_version": {"const": "phase23_closure_frozen_surface_transition_v1"},
+              "status": {"const": "patch23_15_complete"},
+              "authority_base_main": {"const": "8985a3d09b1f119accd12cd952940ef019d6a698"},
+              "previous_live_c_case_surface": {"type": "object"},
+              "current_live_c_case_surface": {"type": "object"},
+              "unchanged_fields": {"const": ["count","case_id_manifest_digest","owner_contract_count","owner_counts","consumer_class_counts","selection_counts"]},
+              "change_reason": {"const": "closure_authority_and_workflow_wiring_shifted_command_lines_and_owner_file_digests_without_changing_the_frozen_explicit_C_case_population"},
+              "partial_or_unregistered_surface": {"const": "rejected"}
+            }
+          },
+          "production_release_authority": {
+            "const": {"authority":"phase23_production_release_audit_v1","supported_production_or_release_requires_mir_to_c":false,"remaining_live_c_owners":["phase23_mir_to_c_focused_live","phase25_bootstrap"]}
+          },
+          "production_audit_transition": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["contract_version","status","authority_base_main","previous_audit","current_audit","unchanged_fields","change_reason","partial_extra_or_substituted_audit"],
+            "properties": {
+              "contract_version": {"const": "phase23_closure_production_audit_transition_v1"},
+              "status": {"const": "patch23_15_complete"},
+              "authority_base_main": {"const": "8985a3d09b1f119accd12cd952940ef019d6a698"},
+              "previous_audit": {"type": "object"},
+              "current_audit": {"type": "object"},
+              "unchanged_fields": {"const": ["supported_surface_count","repository_invocation_count","repository_explicit_c_count","phase25_bootstrap_explicit_c_count","non_bootstrap_retained_test_surface_count","supported_production_or_release_explicit_c_count","active_non_bootstrap_live_c_lane_count","active_non_bootstrap_live_c_owner","unknown_downstream_count"]},
+              "change_reason": {"const": "closure_status_and_guard_wiring_changed_supported_surface_file_digests_without_changing_routes_or_counts"},
+              "partial_extra_or_substituted_audit": {"const": "rejected"}
+            }
+          },
+          "bootstrap_authority": {
+            "const": {"route":"explicit_mir_to_c_and_host_c","explicit_c_callers":5,"seed":"gust_v4.c","fixed_point":"stage2_stage3_byte_identity","owner_phase":"25"}
+          },
+          "consumer_inventory_transition": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_added_paths","registered_added_text_surfaces","unchanged_fields","partial_extra_or_substituted_surface"],
+            "properties": {
+              "contract_version": {"const": "phase23_closure_consumer_inventory_transition_v1"},
+              "status": {"const": "patch23_15_complete"},
+              "authority_base_main": {"const": "8985a3d09b1f119accd12cd952940ef019d6a698"},
+              "previous_inventory": {"type": "object"},
+              "current_inventory": {"type": "object"},
+              "registered_added_paths": {"type": "array"},
+              "registered_added_text_surfaces": {"type": "array"},
+              "unchanged_fields": {"const": ["invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","invocation_selection_counts","unclassified_count"]},
+              "partial_extra_or_substituted_surface": {"const": "rejected"}
+            }
+          },
+          "unresolved_material_findings": {"const": 0},
+          "non_claims": {"type": "array", "minItems": 4, "uniqueItems": true},
+          "boundary": {
+            "const": {"changes_accepted_Gust_program_meaning":false,"adds_or_changes_MIR_operations":false,"changes_ABI_layout_runtime_symbols_target_or_linker":false,"changes_backend_route_default_or_fallback":false,"changes_bootstrap_route_or_seed":false,"edits_stdlib_or_CR15":false,"begins_phase24_or_phase25":false}
+          },
+          "view_derivation": {"const": "the_closure_view_is_generated_from_this_registry_block_and_the_named_phase23_authorities"}
         }
       },
       "phase19_brand_authority": {

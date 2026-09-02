@@ -90,6 +90,7 @@ def phase23_guard_inventory(levels: dict[str, int], level: int) -> list[str]:
                 GUARD_L1,
                 GUARD_L2,
                 "guard-cranelift-phase23-historical-full-qualification-contract",
+                "guard-cranelift-phase23-close",
             }
             and assigned == level]
 
@@ -135,6 +136,8 @@ def validate_transition(record: dict, registry: dict) -> None:
     live_inventory = current_consumer_inventory()
     successor = registry.get("phase23_historical_full_qualification", {}).get(
         "consumer_inventory_transition")
+    closure_successor = registry.get("phase23_closure", {}).get(
+        "consumer_inventory_transition")
     if successor is None:
         require(transition.get("current_inventory") == live_inventory,
                 "Patch 23.13 consumer inventory transition drifted")
@@ -155,7 +158,6 @@ def validate_transition(record: dict, registry: dict) -> None:
                 "fee6600d86f85f8a0a0da94211ae89895869187e" and
                 successor.get("previous_inventory") ==
                 transition["current_inventory"] and
-                successor.get("current_inventory") == live_inventory and
                 successor.get("registered_added_paths") == added_paths and
                 successor.get("unchanged_fields") == successor_fields and
                 successor.get("partial_extra_or_substituted_surface") == "rejected",
@@ -173,13 +175,52 @@ def validate_transition(record: dict, registry: dict) -> None:
         )
         added_rows = [row for row in module.scan_text_surfaces()
                       if row["path"] in added_paths]
-        require([row["path"] for row in added_rows] == added_paths and
-                successor.get("registered_added_text_surfaces") == added_rows,
-                "Patch 23.14 added surface manifest drifted")
+        if closure_successor is None:
+            require([row["path"] for row in added_rows] == added_paths and
+                    successor.get("registered_added_text_surfaces") == added_rows,
+                    "Patch 23.14 added surface manifest drifted")
+            require(successor.get("current_inventory") == live_inventory,
+                    "Patch 23.14 consumer inventory successor drifted")
+        else:
+            require([row.get("path") for row in successor.get(
+                "registered_added_text_surfaces", [])] == added_paths,
+                    "Patch 23.14 recorded added surface paths drifted")
+            closure_paths = [
+                "docs/PHASE23_CLOSURE.md",
+                "scripts/phase23_closure.py",
+            ]
+            require(closure_successor.get("contract_version") ==
+                    "phase23_closure_consumer_inventory_transition_v1" and
+                    closure_successor.get("status") == "patch23_15_complete" and
+                    closure_successor.get("authority_base_main") ==
+                    "8985a3d09b1f119accd12cd952940ef019d6a698" and
+                    closure_successor.get("previous_inventory") ==
+                    successor["current_inventory"] and
+                    closure_successor.get("current_inventory") == live_inventory and
+                    closure_successor.get("registered_added_paths") == closure_paths and
+                    closure_successor.get("unchanged_fields") == successor_fields and
+                    closure_successor.get("partial_extra_or_substituted_surface") ==
+                    "rejected",
+                    "Patch 23.15 consumer inventory successor drifted")
+            for field in successor_fields:
+                require(closure_successor["current_inventory"].get(field) ==
+                        closure_successor["previous_inventory"].get(field),
+                        f"Patch 23.15 changed consumer inventory field: {field}")
+            require(closure_successor["current_inventory"]["text_surface_count"] ==
+                    closure_successor["previous_inventory"]["text_surface_count"] + 2,
+                    "Patch 23.15 did not add exactly two classified text surfaces")
+            closure_rows = [row for row in module.scan_text_surfaces()
+                            if row["path"] in closure_paths]
+            require([row["path"] for row in closure_rows] == closure_paths and
+                    closure_successor.get("registered_added_text_surfaces") ==
+                    closure_rows,
+                    "Patch 23.15 added surface manifest drifted")
 
     frozen = registry["phase23_mir_to_c_frozen_surface"][
         "production_release_transition"]
     surface = record.get("frozen_surface_transition", {})
+    closure_frozen = registry.get("phase23_closure", {}).get(
+        "frozen_surface_transition")
     require(surface.get("contract_version") ==
             "phase23_cross_feature_frozen_surface_transition_v1" and
             surface.get("status") == "patch23_13_complete" and
@@ -187,8 +228,6 @@ def validate_transition(record: dict, registry: dict) -> None:
             "9b89296b25d2ab0cf1963ea1d1707139149d0576" and
             surface.get("previous_live_c_case_surface") ==
             frozen["current_live_c_case_surface"] and
-            surface.get("current_live_c_case_surface") ==
-            current_frozen_surface(registry) and
             surface.get("unchanged_fields") == [
                 "count", "case_id_manifest_digest", "owner_contract_count",
                 "owner_counts", "consumer_class_counts", "selection_counts",
@@ -198,6 +237,25 @@ def validate_transition(record: dict, registry: dict) -> None:
         require(surface["current_live_c_case_surface"].get(field) ==
                 surface["previous_live_c_case_surface"].get(field),
                 f"Patch 23.13 changed frozen C field: {field}")
+    if closure_frozen is None:
+        require(surface.get("current_live_c_case_surface") ==
+                current_frozen_surface(registry),
+                "Patch 23.13 frozen surface transition drifted")
+    else:
+        require(closure_frozen.get("contract_version") ==
+                "phase23_closure_frozen_surface_transition_v1" and
+                closure_frozen.get("status") == "patch23_15_complete" and
+                closure_frozen.get("authority_base_main") ==
+                "8985a3d09b1f119accd12cd952940ef019d6a698" and
+                closure_frozen.get("previous_live_c_case_surface") ==
+                surface["current_live_c_case_surface"] and
+                closure_frozen.get("current_live_c_case_surface") ==
+                current_frozen_surface(registry) and
+                closure_frozen.get("unchanged_fields") ==
+                surface["unchanged_fields"] and
+                closure_frozen.get("partial_or_unregistered_surface") ==
+                "rejected",
+                "Patch 23.15 frozen surface successor drifted")
 
 
 def validate() -> dict:

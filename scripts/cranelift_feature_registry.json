@@ -5867,6 +5867,233 @@
       "begins_patch23_15": false
     }
   },
+  "phase23_closure": {
+    "version": "phase23_closure_v1",
+    "status": "phase23_closed_mir_to_c_deprecated_production_native_bootstrap_c_preserved",
+    "authority_owner": "scripts/cranelift_feature_registry.json",
+    "wording": "Phase 23 closes MIR-to-C deprecation with both explicit C spellings accepted and byte-identical, Cranelift retained as the default no-fallback production route, exactly one focused live compatibility lane, a versioned archived reference corpus for other selected parity, zero supported production or release dependency on MIR-to-C, and the C bootstrap chain explicitly preserved for Phase 25.",
+    "predecessor_review_gate": {
+      "pull_request": 297,
+      "head_sha": "b646bd4b84b8b804910880c4efed8b7831d31e87",
+      "merge_main_sha": "8985a3d09b1f119accd12cd952940ef019d6a698",
+      "merged_at": "2026-09-02T06:06:43Z",
+      "event": "pull_request",
+      "successful_workflows": 124,
+      "total_workflows": 124,
+      "unfinished_workflows": 0,
+      "non_success_workflows": 0,
+      "unresolved_non_outdated_review_threads": 0
+    },
+    "authoritative_latest_historical_full": {
+      "workflow": "Cranelift Historical Full",
+      "run_id": 33584176425,
+      "event": "workflow_dispatch",
+      "head_branch": "main",
+      "head_sha": "fee6600d86f85f8a0a0da94211ae89895869187e",
+      "status": "completed",
+      "conclusion": "success",
+      "successful_jobs": 18,
+      "total_jobs": 18,
+      "unfinished_jobs": 0,
+      "non_success_jobs": 0,
+      "created_at": "2026-09-02T02:41:49Z",
+      "completed_at": "2026-09-02T04:12:03Z"
+    },
+    "historical_budgets": {
+      "workflow_timeout_seconds_per_job": 10800,
+      "observed_run_wall_seconds": 5414,
+      "observed_max_job_seconds": 4286,
+      "observed_aggregate_job_seconds": 22697,
+      "all_jobs_within_budget": true
+    },
+    "completed_authorities": {
+      "phase23_issue_health_opening": "phase23_issue_health_opening_v1",
+      "phase23_mir_evidence_owner": "phase23_mir_evidence_owner_v1",
+      "phase23_resource_acquisition_parity": "phase23_resource_acquisition_parity_v1",
+      "phase23_structured_guard_defer_native_admission": "phase23_structured_guard_defer_native_admission_v1",
+      "phase23_assurance_phase_a": "phase23_assurance_phase_a_v1",
+      "phase23_assurance_phase_b": "phase23_assurance_phase_b_v1",
+      "phase23_same_scope_declaration": "phase23_same_scope_declaration_v1",
+      "phase23_mir_to_c_deprecation_opening": "phase23_mir_to_c_deprecation_opening_v1",
+      "phase23_mir_to_c_frozen_surface": "phase23_mir_to_c_frozen_surface_v1",
+      "phase23_mir_to_c_focused_live": "phase23_mir_to_c_focused_live_v1",
+      "phase23_mir_to_c_archived_corpus": "phase23_mir_to_c_archived_corpus_v1",
+      "phase23_production_release_audit": "phase23_production_release_audit_v1",
+      "phase23_cross_feature_qualification": "phase23_cross_feature_qualification_v1",
+      "phase23_historical_full_qualification": "phase23_historical_full_qualification_v1"
+    },
+    "issue_closure": {
+      "issues": [105, 110, 240],
+      "state": "closed_on_merged_current_main_evidence"
+    },
+    "assurance_authority": {
+      "phase_a": "complete_report_only",
+      "phase_b": "complete_deterministic_report_only",
+      "merge_authority": false
+    },
+    "route_authority": {
+      "default_backend": "cranelift",
+      "explicit_native_backend": "cranelift",
+      "explicit_c_spellings": ["mir-to-c", "c"],
+      "explicit_c_acceptance": "deprecated_byte_identical_through_phase23",
+      "fallback": "forbidden",
+      "backend_removal_phase": "24",
+      "bootstrap_c_retirement_phase": "25"
+    },
+    "compatibility_authority": {
+      "focused_non_bootstrap_live_lanes": 1,
+      "focused_lane": "phase23_mir_to_c_focused_live_v1",
+      "archived_corpus": "phase23_mir_to_c_archived_corpus_v1",
+      "archived_case_count": 34,
+      "frozen_live_c_cases": 178
+    },
+    "frozen_surface_transition": {
+      "contract_version": "phase23_closure_frozen_surface_transition_v1",
+      "status": "patch23_15_complete",
+      "authority_base_main": "8985a3d09b1f119accd12cd952940ef019d6a698",
+      "previous_live_c_case_surface": {
+        "count": 178,
+        "complete_identity_manifest_digest": "623eff3a33e0ad24423f7eec6e8e069d1d105f8c0509a93915d8cf82bdfed3e3",
+        "case_id_manifest_digest": "29d1e0b2d3f29d30d6f67081a9ee7d10d029fd7f1613afad495fce0defe6ae1e",
+        "owner_contract_count": 64,
+        "owner_contract_manifest_digest": "365f55e3049cadcd2264e147eaaf27c8918d0357cd925879d41cad896df894ff",
+        "owner_counts": {"cranelift":152,"stdlib":26},
+        "consumer_class_counts": {"already_explicit_or_parser_probe":178},
+        "selection_counts": {"explicit_c":178}
+      },
+      "current_live_c_case_surface": {
+        "count": 178,
+        "complete_identity_manifest_digest": "41a0e7005efe1515cb745a478ab0a1b84cabee75fea056ec9cd5fe7f1355beef",
+        "case_id_manifest_digest": "29d1e0b2d3f29d30d6f67081a9ee7d10d029fd7f1613afad495fce0defe6ae1e",
+        "owner_contract_count": 64,
+        "owner_contract_manifest_digest": "354dedcb990ffbf07c7dd40ea70cb70ff85f750699517dba0caeb08e5e0c8efb",
+        "owner_counts": {"cranelift":152,"stdlib":26},
+        "consumer_class_counts": {"already_explicit_or_parser_probe":178},
+        "selection_counts": {"explicit_c":178}
+      },
+      "unchanged_fields": ["count","case_id_manifest_digest","owner_contract_count","owner_counts","consumer_class_counts","selection_counts"],
+      "change_reason": "closure_authority_and_workflow_wiring_shifted_command_lines_and_owner_file_digests_without_changing_the_frozen_explicit_C_case_population",
+      "partial_or_unregistered_surface": "rejected"
+    },
+    "production_release_authority": {
+      "authority": "phase23_production_release_audit_v1",
+      "supported_production_or_release_requires_mir_to_c": false,
+      "remaining_live_c_owners": ["phase23_mir_to_c_focused_live", "phase25_bootstrap"]
+    },
+    "production_audit_transition": {
+      "contract_version": "phase23_closure_production_audit_transition_v1",
+      "status": "patch23_15_complete",
+      "authority_base_main": "8985a3d09b1f119accd12cd952940ef019d6a698",
+      "previous_audit": {
+        "supported_surface_count": 6,
+        "supported_surface_manifest_digest": "058f5060d850fd8d90b46769cc63df586946596e5426718d005768548e64c511",
+        "repository_invocation_count": 318,
+        "repository_explicit_c_count": 178,
+        "phase25_bootstrap_explicit_c_count": 5,
+        "non_bootstrap_retained_test_surface_count": 173,
+        "supported_production_or_release_explicit_c_count": 0,
+        "active_non_bootstrap_live_c_lane_count": 1,
+        "active_non_bootstrap_live_c_owner": "phase23_mir_to_c_focused_live",
+        "unknown_downstream_count": 0
+      },
+      "current_audit": {
+        "supported_surface_count": 6,
+        "supported_surface_manifest_digest": "9ca0d618388c331c6cfca45566a767fabd0a2e9125fb39fcbbc9e7f04f8994be",
+        "repository_invocation_count": 318,
+        "repository_explicit_c_count": 178,
+        "phase25_bootstrap_explicit_c_count": 5,
+        "non_bootstrap_retained_test_surface_count": 173,
+        "supported_production_or_release_explicit_c_count": 0,
+        "active_non_bootstrap_live_c_lane_count": 1,
+        "active_non_bootstrap_live_c_owner": "phase23_mir_to_c_focused_live",
+        "unknown_downstream_count": 0
+      },
+      "unchanged_fields": ["supported_surface_count","repository_invocation_count","repository_explicit_c_count","phase25_bootstrap_explicit_c_count","non_bootstrap_retained_test_surface_count","supported_production_or_release_explicit_c_count","active_non_bootstrap_live_c_lane_count","active_non_bootstrap_live_c_owner","unknown_downstream_count"],
+      "change_reason": "closure_status_and_guard_wiring_changed_supported_surface_file_digests_without_changing_routes_or_counts",
+      "partial_extra_or_substituted_audit": "rejected"
+    },
+    "bootstrap_authority": {
+      "route": "explicit_mir_to_c_and_host_c",
+      "explicit_c_callers": 5,
+      "seed": "gust_v4.c",
+      "fixed_point": "stage2_stage3_byte_identity",
+      "owner_phase": "25"
+    },
+    "consumer_inventory_transition": {
+      "contract_version": "phase23_closure_consumer_inventory_transition_v1",
+      "status": "patch23_15_complete",
+      "authority_base_main": "8985a3d09b1f119accd12cd952940ef019d6a698",
+      "previous_inventory": {
+        "text_surface_count": 569,
+        "text_surface_manifest_digest": "ef276043a3f1cf49b69099997cf72ff355354e08099d8597191c6569583844bf",
+        "invocation_count": 318,
+        "invocation_manifest_digest": "f27c56c4865a333647c4af6f770bb2f81cca8e4e7a909e2e3221035ff8ae42b0",
+        "structural_surface_count": 15,
+        "structural_manifest_digest": "b7cd89cf9619d7bc28ecdbafaf6b616534fd68d9728ef47b85629f0531c8a22a",
+        "classification_counts": {"archive_candidate":471,"bootstrap_phase25":10,"focused_live_oracle":4,"historical_only":71,"production_or_release_migration":28},
+        "invocation_selection_counts": {"explicit_c":178,"explicit_cranelift":119,"explicit_invalid_or_parser_probe":3,"implicit_default":18},
+        "unclassified_count": 0
+      },
+      "current_inventory": {
+        "text_surface_count": 571,
+        "text_surface_manifest_digest": "ab79028393ed3ff7d34ebcef2739db2e4f20749577cf5e4f9a551d0151b22380",
+        "invocation_count": 318,
+        "invocation_manifest_digest": "f27c56c4865a333647c4af6f770bb2f81cca8e4e7a909e2e3221035ff8ae42b0",
+        "structural_surface_count": 15,
+        "structural_manifest_digest": "b7cd89cf9619d7bc28ecdbafaf6b616534fd68d9728ef47b85629f0531c8a22a",
+        "classification_counts": {"archive_candidate":472,"bootstrap_phase25":10,"focused_live_oracle":4,"historical_only":72,"production_or_release_migration":28},
+        "invocation_selection_counts": {"explicit_c":178,"explicit_cranelift":119,"explicit_invalid_or_parser_probe":3,"implicit_default":18},
+        "unclassified_count": 0
+      },
+      "registered_added_paths": [
+        "docs/PHASE23_CLOSURE.md",
+        "scripts/phase23_closure.py"
+      ],
+      "registered_added_text_surfaces": [
+        {
+          "path": "docs/PHASE23_CLOSURE.md",
+          "digest": "9c6c634950cb149c7dc683b69ce5911581ae19844e1dad58c99ca255063598a1",
+          "match_counts": {"explicit_backend_spelling":0,"mir_to_c_name":7,"generated_c_contract":1},
+          "classification": "historical_only",
+          "owner": "cranelift",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "removal_phase": "not_removed_by_phase23",
+          "falsifier": "historical_record_is_reclassified_as_live_support"
+        },
+        {
+          "path": "scripts/phase23_closure.py",
+          "digest": "12adabf505ddb482ffa7fb13efddf185b2c4016ce58149cb6077b4b2933aac3b",
+          "match_counts": {"explicit_backend_spelling":0,"mir_to_c_name":23,"generated_c_contract":0},
+          "classification": "archive_candidate",
+          "owner": "cranelift",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "removal_phase": "24",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+        }
+      ],
+      "unchanged_fields": ["invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","invocation_selection_counts","unclassified_count"],
+      "partial_extra_or_substituted_surface": "rejected"
+    },
+    "unresolved_material_findings": 0,
+    "non_claims": [
+      "Phase 23 removes the generated-C backend or either explicit C spelling.",
+      "Phase 23 removes retained C runtime objects, the host C compiler, or the Phase 25 bootstrap chain.",
+      "Phase 23 changes accepted Gust meaning beyond the merged same-scope diagnostic and structured guard/defer authorities, canonical MIR, ABI/layout, runtime symbols, target/linker policy, or Phase 9G ownership.",
+      "Phase 23 activates Phase 24, Phase 25, Stdlib S1.8-S1.11, or compiler-owned CR-15 work."
+    ],
+    "boundary": {
+      "changes_accepted_Gust_program_meaning": false,
+      "adds_or_changes_MIR_operations": false,
+      "changes_ABI_layout_runtime_symbols_target_or_linker": false,
+      "changes_backend_route_default_or_fallback": false,
+      "changes_bootstrap_route_or_seed": false,
+      "edits_stdlib_or_CR15": false,
+      "begins_phase24_or_phase25": false
+    },
+    "view_derivation": "the_closure_view_is_generated_from_this_registry_block_and_the_named_phase23_authorities"
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",

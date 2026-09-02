@@ -1,0 +1,55 @@
+name: Cranelift Phase 23 Closure
+
+on:
+  pull_request:
+    paths:
+      - 'TASK.md'
+      - 'Makefile'
+      - 'README.md'
+      - 'gust_v4.c'
+      - 'compiler/**'
+      - 'docs/**'
+      - 'src/runtime.c'
+      - 'src/runtime/**'
+      - 'tools/normalize_generated_arena_offsets.py'
+      - 'scripts/**'
+      - 'tests/**'
+      - '.github/workflows/**'
+      - 'justfile*'
+  push:
+    branches: [main]
+    paths:
+      - 'TASK.md'
+      - 'Makefile'
+      - 'README.md'
+      - 'gust_v4.c'
+      - 'compiler/**'
+      - 'docs/**'
+      - 'src/runtime.c'
+      - 'src/runtime/**'
+      - 'tools/normalize_generated_arena_offsets.py'
+      - 'scripts/**'
+      - 'tests/**'
+      - '.github/workflows/**'
+      - 'justfile*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  close:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-cranelift-phase23-close
+        run: just guard-cranelift-phase23-close
+      - name: complete Phase 23 cross-feature evidence
+        run: just guard-cranelift-phase23-cross-feature-qualification-evidence
