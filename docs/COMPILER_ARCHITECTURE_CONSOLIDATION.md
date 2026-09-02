@@ -1,6 +1,8 @@
 # Compiler architecture consolidation roadmap
 
-**Status:** operator direction recorded; Phases 24, 24.5 and 25 remain inactive.
+**Status:** the CR-15 compiler prerequisite and Phase 24 opening preflight are
+sequenced in active `TASK.md`; Phases 24 backend retirement, 24.5 and 25 remain
+inactive.
 
 This document records the structural-debt sequence selected after the
 thermo-nuclear code-quality review. It supplements `docs/ROADMAP_TAIL.md` without
@@ -15,6 +17,26 @@ The ordering rule is:
 
 That order avoids polishing machinery Phase 24 will remove and avoids placing a
 new bootstrap chain on top of known state-management and module-boundary debt.
+
+## CR-15 prerequisite — protected-Resource guard derivation
+
+The operator amended the sequence on 2026-09-02 after the opening-preflight
+roadmap merged. Before filename characterization begins, the Cranelift lane must
+complete the already-decided compiler-owned derivation needed by Stdlib S1.8.
+
+The compiler derives concrete acquisition, guard, destructor, and rooted-access
+identities from resolved protected-Resource type and brand metadata for the
+selected module-level `sync.lock` / `sync.get` contract. This is not general
+user-written generic functions, a `Mutex` or spelling special case, backend
+lowering, or fallback. Both retained compiler paths consume ordinary canonical
+Resource and protected-access semantics. Compiler-source implementation and
+generated `gust_v4.c` reconvergence remain separate atomic publications.
+
+**Exit gate:** the generic derivation is qualified across both retained paths,
+the bootstrap seed is converged in isolation, exact-main Historical authority
+is green, and the merged compiler authority is handed to Stdlib to unblock
+S1.8–S1.11. The Cranelift lane then resumes the unchanged opening preflight at
+Patch 24.1; it does not implement Stdlib work.
 
 ---
 
@@ -101,7 +123,8 @@ mechanism by which consolidation is attempted.
 The critical path is therefore:
 
 ```text
-Phase 24 opening preflight
+CR-15 protected-Resource guard derivation and checked Stdlib handoff
+  → Phase 24 opening preflight
   → Phase 24 backend retirement
     → Phase 24.5 compiler consolidation
       → Phase 25 native bootstrap

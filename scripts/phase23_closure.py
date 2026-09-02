@@ -54,6 +54,15 @@ def require(condition: bool, message: str) -> None:
         fail(message)
 
 
+def load_module(name: str, path: Path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    require(spec is not None and spec.loader is not None,
+            f"cannot load {path.relative_to(ROOT)}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def event_paths(workflow: str, event: str, next_event: str) -> str:
     start_marker = f"  {event}:"
     end_marker = f"  {next_event}:"
@@ -325,6 +334,8 @@ def check() -> None:
     previous = historical_authority["consumer_inventory_transition"]["current_inventory"]
     roadmap_transition = closure.get(
         "phase24_opening_preflight_roadmap_transition")
+    cr15_roadmap_transition = closure.get(
+        "phase24_cr15_roadmap_amendment_transition")
     closure_current = (
         roadmap_transition.get("previous_inventory")
         if isinstance(roadmap_transition, dict) else live_inventory()
@@ -365,7 +376,9 @@ def check() -> None:
             "1c5e7fe5dee11aa00019bffafe14778a449b96d4" and
             roadmap_transition.get("previous_inventory") ==
             transition["current_inventory"] and
-            roadmap_transition.get("current_inventory") == live_inventory() and
+            roadmap_transition.get("current_inventory") ==
+            (live_inventory() if cr15_roadmap_transition is None else
+             cr15_roadmap_transition.get("previous_inventory")) and
             roadmap_transition.get("registered_changed_paths") ==
             ["TASK.md", "scripts/phase23_closure.py"] and
             roadmap_transition.get("unchanged_fields") == roadmap_unchanged and
@@ -376,6 +389,47 @@ def check() -> None:
             require(roadmap_transition["current_inventory"].get(field) ==
                     roadmap_transition["previous_inventory"].get(field),
                     f"Patch 24.0 changed consumer inventory field: {field}")
+        if isinstance(cr15_roadmap_transition, dict):
+            require(
+                cr15_roadmap_transition.get("contract_version") ==
+                "phase24_cr15_roadmap_amendment_transition_v1" and
+                cr15_roadmap_transition.get("status") == "patch24_0a_complete" and
+                cr15_roadmap_transition.get("authority_base_main") ==
+                "86d13496fa83c6d3688402f09b77a8dfbb8168fc" and
+                cr15_roadmap_transition.get("previous_inventory") ==
+                roadmap_transition["current_inventory"] and
+                cr15_roadmap_transition.get("current_inventory") ==
+                live_inventory() and
+                cr15_roadmap_transition.get("registered_changed_paths") ==
+                ["TASK.md", "scripts/phase23_closure.py"] and
+                cr15_roadmap_transition.get("previous_changed_text_surfaces") ==
+                roadmap_transition["current_changed_text_surfaces"] and
+                cr15_roadmap_transition.get("unchanged_fields") ==
+                roadmap_unchanged and
+                cr15_roadmap_transition.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Patch 24.0a CR-15 roadmap consumer transition drifted")
+            for field in roadmap_unchanged:
+                require(cr15_roadmap_transition["current_inventory"].get(field) ==
+                        roadmap_transition["current_inventory"].get(field),
+                        f"Patch 24.0a changed consumer inventory field: {field}")
+            module = load_module(
+                "phase23_deprecation_successor",
+                ROOT / "scripts/phase23_mir_to_c_deprecation_opening.py",
+            )
+            changed_paths = ["TASK.md", "scripts/phase23_closure.py"]
+            live_rows = module.scan_text_surfaces()
+            changed_rows = [row for row in live_rows
+                            if row["path"] in changed_paths]
+            require([row["path"] for row in changed_rows] == changed_paths and
+                    cr15_roadmap_transition.get(
+                        "current_changed_text_surfaces") == changed_rows,
+                    "Patch 24.0a changed surface identity drifted")
+            require(module.canonical_digest([
+                row for row in live_rows if row["path"] not in changed_paths
+            ]) == cr15_roadmap_transition.get(
+                "unchanged_other_text_surface_manifest_digest"),
+                "Patch 24.0a changed an unregistered text surface")
 
     require(closure.get("unresolved_material_findings") == 0,
             "closure has unresolved material findings")
