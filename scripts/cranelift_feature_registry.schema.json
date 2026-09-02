@@ -82,6 +82,7 @@
     "phase23_mir_to_c_archived_corpus",
     "phase23_production_release_audit",
     "phase23_cross_feature_qualification",
+    "phase23_historical_full_qualification",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -3534,6 +3535,125 @@
               "changes_bootstrap_route_or_seed": false,
               "edits_stdlib_or_CR15": false,
               "begins_patch23_14": false
+            }
+          }
+        }
+      },
+      "phase23_historical_full_qualification": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "contract_version", "status", "next_patch", "owner",
+          "review_view", "renderer", "predecessor_authority",
+          "final_implementation_review_gate", "authoritative_historical_full",
+          "expected_job_population", "elapsed_budgets",
+          "qualified_phase23_coverage", "consumer_inventory_transition",
+          "staleness_policy", "boundary"
+        ],
+        "properties": {
+          "contract_version": {"const": "phase23_historical_full_qualification_v1"},
+          "status": {"const": "patch23_14_complete"},
+          "next_patch": {"const": "23.15"},
+          "owner": {"const": "cranelift"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE23_HISTORICAL_FULL_QUALIFICATION.md"},
+          "renderer": {"const": "scripts/phase23_historical_full_qualification.py"},
+          "predecessor_authority": {"const": "phase23_cross_feature_qualification_v1"},
+          "final_implementation_review_gate": {
+            "const": {
+              "pull_request": 296,
+              "head_sha": "321ddd2e0cb093298db800a7ea966d5ae92e5418",
+              "merged_main_sha": "fee6600d86f85f8a0a0da94211ae89895869187e",
+              "event": "pull_request",
+              "successful_workflows": 123,
+              "total_workflows": 123,
+              "unfinished_workflows": 0,
+              "non_success_workflows": 0,
+              "unresolved_non_outdated_review_threads": 0,
+              "unresolved_material_findings": 0
+            }
+          },
+          "authoritative_historical_full": {
+            "const": {
+              "workflow": "Cranelift Historical Full",
+              "run_id": 33584176425,
+              "event": "workflow_dispatch",
+              "head_branch": "main",
+              "head_sha": "fee6600d86f85f8a0a0da94211ae89895869187e",
+              "status": "completed",
+              "conclusion": "success",
+              "successful_jobs": 18,
+              "total_jobs": 18,
+              "unfinished_jobs": 0,
+              "non_success_jobs": 0,
+              "created_at": "2026-09-02T02:41:49Z",
+              "completed_at": "2026-09-02T04:12:03Z"
+            }
+          },
+          "expected_job_population": {
+            "const": {
+              "inventory_job": "Project declared Phase 14 targets",
+              "build_job": "Build shared Gust artifact",
+              "historical_shards": ["phase9-core","phase19","phase20","phase18","phase9g","phase15","phase16","phase10","phase11","phase17"],
+              "declared_targets": ["x86_64-unknown-linux-gnu","aarch64-unknown-linux-gnu","i686-unknown-linux-gnu","x86_64-apple-darwin","aarch64-apple-darwin"],
+              "completion_job": "Level 3 declared-target completion",
+              "expected_unique_jobs": 18,
+              "observed_unique_jobs": 18,
+              "every_expected_job_present_exactly_once": true
+            }
+          },
+          "elapsed_budgets": {
+            "const": {
+              "workflow_timeout_seconds_per_job": 10800,
+              "observed_run_wall_seconds": 5414,
+              "observed_max_job_seconds": 4286,
+              "observed_aggregate_job_seconds": 22697,
+              "all_jobs_within_budget": true
+            }
+          },
+          "qualified_phase23_coverage": {
+            "const": {
+              "final_implementation": "phase23_cross_feature_qualification_v1",
+              "issue_health": ["phase23_mir_evidence_owner_v1","phase23_resource_acquisition_parity_v1","phase23_same_scope_declaration_v1"],
+              "assurance_report_only": ["phase23_assurance_phase_a_v1","phase23_assurance_phase_b_v1"],
+              "focused_compatibility_successor": "phase23_mir_to_c_focused_live_v1",
+              "native_default_package_no_fallback": "phase23_production_release_audit_v1",
+              "bootstrap_fixed_point": "phase23_cross_feature_qualification_v1",
+              "historical_population": ".github/workflows/cranelift-historical-full.yml"
+            }
+          },
+          "consumer_inventory_transition": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_added_paths","registered_added_text_surfaces","unchanged_fields","partial_extra_or_substituted_surface"],
+            "properties": {
+              "contract_version": {"const": "phase23_historical_consumer_inventory_transition_v1"},
+              "status": {"const": "patch23_14_complete"},
+              "authority_base_main": {"const": "fee6600d86f85f8a0a0da94211ae89895869187e"},
+              "previous_inventory": {"type": "object"},
+              "current_inventory": {"type": "object"},
+              "registered_added_paths": {"const": ["compiler/CRANELIFT_PHASE23_HISTORICAL_FULL_QUALIFICATION.md","scripts/phase23_historical_full_qualification.py"]},
+              "registered_added_text_surfaces": {"type": "array", "minItems": 2, "maxItems": 2},
+              "unchanged_fields": {"const": ["invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","invocation_selection_counts","unclassified_count"]},
+              "partial_extra_or_substituted_surface": {"const": "rejected"}
+            }
+          },
+          "staleness_policy": {
+            "const": {
+              "rule": "replace_if_applicable_phase23_input_lands_before_closure_publication",
+              "applicable_input": "change_that_alters_the_Historical_workload_or_final_implementation_artifact",
+              "authority_only_projection": "does_not_stale_the_recorded_final_implementation_run"
+            }
+          },
+          "boundary": {
+            "const": {
+              "records_exact_main_historical_authority": true,
+              "changes_accepted_Gust_program_meaning": false,
+              "adds_or_changes_MIR_operations": false,
+              "changes_ABI_layout_runtime_symbols_target_or_linker": false,
+              "changes_backend_route_default_or_fallback": false,
+              "changes_bootstrap_route_or_seed": false,
+              "edits_stdlib_or_CR15": false,
+              "begins_patch23_15": false
             }
           }
         }

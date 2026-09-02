@@ -1,0 +1,54 @@
+name: Cranelift Phase 23 Historical Full Qualification
+
+on:
+  pull_request:
+    paths:
+      - 'TASK.md'
+      - 'Makefile'
+      - 'README.md'
+      - 'GEMINI.md'
+      - 'gust_v4.c'
+      - 'compiler/**'
+      - 'docs/**'
+      - 'scripts/**'
+      - 'src/runtime.c'
+      - 'src/runtime/**'
+      - 'tests/**'
+      - 'tools/normalize_generated_arena_offsets.py'
+      - '.github/workflows/**'
+      - 'justfile*'
+  push:
+    branches: [main]
+    paths:
+      - 'TASK.md'
+      - 'Makefile'
+      - 'README.md'
+      - 'GEMINI.md'
+      - 'gust_v4.c'
+      - 'compiler/**'
+      - 'docs/**'
+      - 'scripts/**'
+      - 'src/runtime.c'
+      - 'src/runtime/**'
+      - 'tests/**'
+      - 'tools/normalize_generated_arena_offsets.py'
+      - '.github/workflows/**'
+      - 'justfile*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: just guard-cranelift-phase23-historical-full-qualification-contract

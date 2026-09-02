@@ -131,7 +131,7 @@ Out of scope:
 - [x] Patch 23.11 — Archived MIR-to-C Reference Corpus — DONE
 - [x] Patch 23.12 — Production, Release, Package, and Downstream Audit — DONE
 - [x] Patch 23.13 — Cross-Feature Qualification and Residue Audit — DONE
-- [ ] Patch 23.14 — Exact-Main Historical Full Qualification
+- [x] Patch 23.14 — Exact-Main Historical Full Qualification — DONE
 - [ ] Patch 23.15 — Phase 23 Closure
 
 Status rows are machine-parsed. Keep each row as
