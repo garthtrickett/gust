@@ -249,7 +249,10 @@ def policy_accepts(record: dict, summary: dict[str, object]) -> bool:
             "current_live_c_case_surface", expected_live)
     expected_live = registry.get("phase23_closure", {}).get(
         "frozen_surface_transition", {}).get(
-            "current_live_c_case_surface", expected_live)
+        "current_live_c_case_surface", expected_live)
+    expected_live = registry.get("phase24_cr15_derivation", {}).get(
+        "frozen_surface_transition", {}).get(
+        "current_live_c_case_surface", expected_live)
     return (
         record.get("capability_surface") == summary["capability_surface"] and
         expected_live == summary["live_c_case_surface"] and
@@ -436,6 +439,8 @@ def validate() -> tuple[dict, dict[str, object]]:
                 f"Patch 23.13 changed frozen live-C field: {field}")
     closure_transition = registry.get("phase23_closure", {}).get(
         "frozen_surface_transition")
+    derivation_transition = registry.get("phase24_cr15_derivation", {}).get(
+        "frozen_surface_transition")
     if closure_transition is None:
         require(qualification_transition["current_live_c_case_surface"] ==
                 summary["live_c_case_surface"],
@@ -453,7 +458,9 @@ def validate() -> tuple[dict, dict[str, object]]:
                 closure_transition.get("previous_live_c_case_surface") ==
                 qualification_transition["current_live_c_case_surface"] and
                 closure_transition.get("current_live_c_case_surface") ==
-                summary["live_c_case_surface"] and
+                (summary["live_c_case_surface"] if derivation_transition is None
+                 else derivation_transition.get(
+                     "previous_live_c_case_surface")) and
                 closure_transition.get("unchanged_fields") == closure_unchanged and
                 closure_transition.get("change_reason") ==
                 "closure_authority_and_workflow_wiring_shifted_command_lines_and_owner_file_digests_without_changing_the_frozen_explicit_C_case_population" and
@@ -464,6 +471,28 @@ def validate() -> tuple[dict, dict[str, object]]:
             require(closure_transition["current_live_c_case_surface"].get(field) ==
                     closure_transition["previous_live_c_case_surface"].get(field),
                     f"Patch 23.15 changed frozen live-C field: {field}")
+        if derivation_transition is not None:
+            require(
+                derivation_transition.get("contract_version") ==
+                "phase24_cr15_derivation_frozen_surface_transition_v1" and
+                derivation_transition.get("status") == "patch24_0c_complete" and
+                derivation_transition.get("authority_base_main") ==
+                "da1889834f78853d685570cdbef70be77b9be06c" and
+                derivation_transition.get("previous_live_c_case_surface") ==
+                closure_transition["current_live_c_case_surface"] and
+                derivation_transition.get("current_live_c_case_surface") ==
+                summary["live_c_case_surface"] and
+                derivation_transition.get("unchanged_fields") ==
+                closure_unchanged and
+                derivation_transition.get("change_reason") ==
+                "CR15_derivation_shifted_owner_file_digests_without_changing_the_frozen_explicit_C_case_population" and
+                derivation_transition.get("partial_or_unregistered_surface") ==
+                "rejected",
+                "Patch 24.0c frozen live-C transition drifted")
+            for field in closure_unchanged:
+                require(derivation_transition["current_live_c_case_surface"].get(field) ==
+                        derivation_transition["previous_live_c_case_surface"].get(field),
+                        f"Patch 24.0c changed frozen live-C field: {field}")
     validate_mutations(record, registry)
     require(record.get("explicit_c_byte_authority") ==
             registry["phase23_mir_to_c_deprecation_opening"]
@@ -532,6 +561,9 @@ def render(record: dict, registry: dict) -> str:
             registry["phase23_cross_feature_qualification"][
                 "frozen_surface_transition"]["current_live_c_case_surface"],
         )
+    live = registry.get("phase24_cr15_derivation", {}).get(
+        "frozen_surface_transition", {}).get(
+            "current_live_c_case_surface", live)
     lines = [
         "# Cranelift Phase 23.9 — Frozen MIR-to-C Feature Surface",
         "",

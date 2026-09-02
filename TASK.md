@@ -101,7 +101,7 @@ Stdlib handoff are complete.
 - [x] Patch 24.0 — Opening-Preflight Roadmap Activation — DONE
 - [x] Patch 24.0a — CR-15 Sequencing and Roadmap Amendment — DONE
 - [x] Patch 24.0b — CR-15 Opening Evidence and Inert Derivation Contract — DONE
-- [ ] Patch 24.0c — Protected-Resource Guard Derivation
+- [x] Patch 24.0c — Protected-Resource Guard Derivation — DONE
 - [ ] Patch 24.0d — CR-15 Cross-Path and Adversarial Qualification
 - [ ] Patch 24.0e — CR-15 Bootstrap Seed Reconvergence
 - [ ] Patch 24.0f — CR-15 Closure and Stdlib Handoff

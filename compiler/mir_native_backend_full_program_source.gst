@@ -1191,6 +1191,8 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
             unsafe {
                 if statement.tag == 3 {
                     mut function: MirNativeFullProgramFunction[ctx];
+                    mut is_protected_derived := typechecker.typechecker_is_protected_resource_derived(statement.FunctionDecl.name, env as *typechecker.TypeEnvironment[ctx], ctx);
+                    if is_protected_derived == 1 { (*env).protected_resource_preserve_concrete_types = 1; (*env).current_prefix = typechecker.typechecker_protected_resource_resolution_prefix(statement.FunctionDecl.name, env as *typechecker.TypeEnvironment[ctx], ctx); }
                     function.module_index = module_index;
                     function.source_name = std.Clone(
                         ctx,
@@ -1301,6 +1303,7 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
                             non_scalar_signature_count + 1;
                     }
                     functions.Push(function);
+                    if is_protected_derived == 1 { (*env).protected_resource_preserve_concrete_types = 0; (*env).current_prefix = module_prefixes[module_index]; }
                 }
             }
             statement_index = statement_index + 1;
@@ -1351,6 +1354,9 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
                             ctx
                         );
                     }
+                    mut is_protected_derived := typechecker.typechecker_is_protected_resource_derived(statement.FunctionDecl.name, env as *typechecker.TypeEnvironment[ctx], ctx);
+                    if is_protected_derived == 1 { (*env).protected_resource_preserve_concrete_types = 1; (*env).current_prefix = typechecker.typechecker_protected_resource_resolution_prefix(statement.FunctionDecl.name, env as *typechecker.TypeEnvironment[ctx], ctx); }
+                    (*env).current_function_identity_scope = std.Clone(ctx, qualified_name);
                     mut body_node := mir_native_full_program_flatten_block(
                         statement.FunctionDecl.body,
                         model.nodes,
@@ -1367,6 +1373,8 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
                     mut updated := functions[function_index];
                     updated.body_node_index = body_node;
                     functions.Set(function_index, updated);
+                    (*env).current_function_identity_scope = "";
+                    if is_protected_derived == 1 { (*env).protected_resource_preserve_concrete_types = 0; (*env).current_prefix = module_prefixes[module_index]; }
                 }
             }
             statement_index = statement_index + 1;

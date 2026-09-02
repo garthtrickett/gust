@@ -43,6 +43,14 @@ def authority() -> dict:
     return value
 
 
+def derivation_successor_active() -> bool:
+    data = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    successor = data.get("phase24_cr15_derivation")
+    return (isinstance(successor, dict) and
+            successor.get("contract_version") == "phase24_cr15_derivation_v1" and
+            successor.get("status") == "patch24_0c_complete")
+
+
 def validate() -> dict:
     value = authority()
     require(value.get("contract_version") == "phase24_cr15_opening_v1",
@@ -123,9 +131,10 @@ def validate() -> dict:
     source = TYPECHECKER.read_text(encoding="utf-8")
     for marker in value.get("compiler_fact_markers", []):
         require(marker in source, f"compiler fact marker is missing: {marker}")
-    for forbidden in value.get("implementation_markers_absent", []):
-        require(forbidden not in source,
-                f"opening is no longer inert; implementation marker exists: {forbidden}")
+    if not derivation_successor_active():
+        for forbidden in value.get("implementation_markers_absent", []):
+            require(forbidden not in source,
+                    f"opening is no longer inert; implementation marker exists: {forbidden}")
 
     task = TASK.read_text(encoding="utf-8")
     require("- [x] Patch 24.0b — CR-15 Opening Evidence and Inert Derivation Contract — DONE" in task,
@@ -194,6 +203,10 @@ def check_review(value: dict) -> None:
 
 def evidence() -> None:
     value = validate()
+    if derivation_successor_active():
+        check_review(value)
+        print("phase24_cr15_opening: historical rejected baseline preserved; Patch 24.0c successor active")
+        return
     require((ROOT / "gust").is_file(), "make gust prerequisite is missing")
     baseline = value["rejected_baseline"]
     expected_stdout = EXPECTED_STDOUT.read_bytes()

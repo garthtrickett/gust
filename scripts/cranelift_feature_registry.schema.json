@@ -85,6 +85,7 @@
     "phase23_historical_full_qualification",
     "phase23_closure",
     "phase24_cr15_opening",
+    "phase24_cr15_derivation",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -3852,6 +3853,100 @@
               "review_view": {"const": "compiler/CRANELIFT_PHASE24_CR15_STDLIB_GUARD_TRANSITION.md"}
             }
           }
+        }
+      },
+      "phase24_cr15_derivation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version","status","authority_base_main","next_patch","review_view","witnesses","derivation","compiler_markers","negative_authority","consumer_inventory_transition","frozen_surface_transition","production_audit_transition","boundary"],
+        "properties": {
+          "contract_version": {"const": "phase24_cr15_derivation_v1"},
+          "status": {"const": "patch24_0c_complete"},
+          "authority_base_main": {"const": "da1889834f78853d685570cdbef70be77b9be06c"},
+          "next_patch": {"const": "24.0d"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE24_CR15_DERIVATION.md"},
+          "witnesses": {
+            "const": {
+              "template": "tests/stdlib_s1_mutex_guard_generic_derivation_module.gst",
+              "accepted_constructor_shape": "tests/stdlib_s1_mutex_guard_generic_derivation_rejected.gst",
+              "multiple_identity": "tests/phase24_cr15_protected_resource_multiple.gst",
+              "native_inferred": "tests/phase24_cr15_protected_resource_native_inferred.gst",
+              "native_explicit": "tests/phase24_cr15_protected_resource_native_explicit.gst",
+              "native_second_type": "tests/phase24_cr15_protected_resource_native_second_type.gst",
+              "arbitrary_generic_rejected": "tests/phase24_cr15_arbitrary_generic_rejected.gst",
+              "unprotected_rejected": "tests/phase24_cr15_unprotected_rejected.gst"
+            }
+          },
+          "derivation": {
+            "const": {
+              "selection": "structural_resolved_protected_resource_quartet",
+              "surface": "module_level_acquisition_and_rooted_accessor_only",
+              "identity": "declaration_owner_plus_local_role_plus_concrete_guard_payload_and_brand",
+              "materialization": "concrete_typed_ast_before_backend_selection",
+              "lowering": "ordinary_canonical_calls_and_existing_resource_cleanup",
+              "placeholder_policy": "unresolved_recipe_layouts_removed_before_backend_inventory",
+              "backend_policy": "shared_typed_input_no_consumer_spelling_no_fallback"
+            }
+          },
+          "compiler_markers": {
+            "const": [
+              "type ProtectedResourceFunction[ctx] struct",
+              "type ProtectedResourceDerivedFunction[ctx] struct",
+              "func typechecker_protected_guard_shape(",
+              "func typechecker_bind_protected_application(",
+              "func typechecker_instantiate_protected_resource(",
+              "func typechecker_finish_protected_resource_derivations("
+            ]
+          },
+          "negative_authority": {"const": ["arbitrary_user_generic_functions_remain_closed","unprotected_inputs_receive_no_derivation","extension_method_syntax_is_not_admitted","consumer_spelling_is_not_authority"]},
+          "consumer_inventory_transition": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_changed_paths","current_changed_text_surfaces","unchanged_other_text_surface_manifest_digest","unchanged_fields","partial_extra_or_substituted_surface"],
+            "properties": {
+              "contract_version": {"const": "phase24_cr15_derivation_consumer_transition_v1"},
+              "status": {"const": "patch24_0c_complete"},
+              "authority_base_main": {"const": "da1889834f78853d685570cdbef70be77b9be06c"},
+              "previous_inventory": {"type": "object"},
+              "current_inventory": {"type": "object"},
+              "registered_changed_paths": {"type": "array", "minItems": 12, "maxItems": 12, "uniqueItems": true},
+              "current_changed_text_surfaces": {"type": "array", "minItems": 12, "maxItems": 12},
+              "unchanged_other_text_surface_manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "unchanged_fields": {"const": ["invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","invocation_selection_counts","unclassified_count"]},
+              "partial_extra_or_substituted_surface": {"const": "rejected"}
+            }
+          },
+          "frozen_surface_transition": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["contract_version","status","authority_base_main","previous_live_c_case_surface","current_live_c_case_surface","unchanged_fields","change_reason","partial_or_unregistered_surface"],
+            "properties": {
+              "contract_version": {"const": "phase24_cr15_derivation_frozen_surface_transition_v1"},
+              "status": {"const": "patch24_0c_complete"},
+              "authority_base_main": {"const": "da1889834f78853d685570cdbef70be77b9be06c"},
+              "previous_live_c_case_surface": {"type": "object"},
+              "current_live_c_case_surface": {"type": "object"},
+              "unchanged_fields": {"const": ["count","case_id_manifest_digest","owner_contract_count","owner_counts","consumer_class_counts","selection_counts"]},
+              "change_reason": {"const": "CR15_derivation_shifted_owner_file_digests_without_changing_the_frozen_explicit_C_case_population"},
+              "partial_or_unregistered_surface": {"const": "rejected"}
+            }
+          },
+          "production_audit_transition": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["contract_version","status","authority_base_main","previous_audit","current_audit","unchanged_fields","change_reason","partial_extra_or_substituted_audit"],
+            "properties": {
+              "contract_version": {"const": "phase24_cr15_derivation_production_audit_transition_v1"},
+              "status": {"const": "patch24_0c_complete"},
+              "authority_base_main": {"const": "da1889834f78853d685570cdbef70be77b9be06c"},
+              "previous_audit": {"type": "object"},
+              "current_audit": {"type": "object"},
+              "unchanged_fields": {"const": ["supported_surface_count","repository_invocation_count","repository_explicit_c_count","phase25_bootstrap_explicit_c_count","non_bootstrap_retained_test_surface_count","supported_production_or_release_explicit_c_count","active_non_bootstrap_live_c_lane_count","active_non_bootstrap_live_c_owner","unknown_downstream_count"]},
+              "change_reason": {"const": "CR15_derivation_shifted_supported_surface_file_digests_without_changing_routes_or_counts"},
+              "partial_extra_or_substituted_audit": {"const": "rejected"}
+            }
+          },
+          "boundary": {"const": {"adds_or_changes_MIR_operations":false,"changes_ABI_layout_runtime_symbols_target_or_linker":false,"changes_backend_route_default_or_fallback":false,"changes_bootstrap_route_or_seed":false,"edits_stdlib":false,"begins_patch24_0d_or_24_1":false}}
         }
       },
       "phase19_brand_authority": {

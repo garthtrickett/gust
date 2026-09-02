@@ -195,6 +195,8 @@ def validate() -> tuple[dict, dict[str, object]]:
     summary = scan()
     closure_transition = registry.get("phase23_closure", {}).get(
         "production_audit_transition")
+    derivation_transition = registry.get("phase24_cr15_derivation", {}).get(
+        "production_audit_transition")
     if closure_transition is None:
         validate_mutations(record, summary)
     else:
@@ -212,7 +214,9 @@ def validate() -> tuple[dict, dict[str, object]]:
                 closure_transition.get("authority_base_main") ==
                 "8985a3d09b1f119accd12cd952940ef019d6a698" and
                 closure_transition.get("previous_audit") == record.get("audit") and
-                closure_transition.get("current_audit") == summary and
+                closure_transition.get("current_audit") ==
+                (summary if derivation_transition is None else
+                 derivation_transition.get("previous_audit")) and
                 closure_transition.get("unchanged_fields") == unchanged and
                 closure_transition.get("change_reason") ==
                 "closure_status_and_guard_wiring_changed_supported_surface_file_digests_without_changing_routes_or_counts" and
@@ -225,6 +229,27 @@ def validate() -> tuple[dict, dict[str, object]]:
                     f"Patch 23.15 changed production audit field: {field}")
         effective = copy.deepcopy(record)
         effective["audit"] = closure_transition["current_audit"]
+        if derivation_transition is not None:
+            require(
+                derivation_transition.get("contract_version") ==
+                "phase24_cr15_derivation_production_audit_transition_v1" and
+                derivation_transition.get("status") == "patch24_0c_complete" and
+                derivation_transition.get("authority_base_main") ==
+                "da1889834f78853d685570cdbef70be77b9be06c" and
+                derivation_transition.get("previous_audit") ==
+                closure_transition["current_audit"] and
+                derivation_transition.get("current_audit") == summary and
+                derivation_transition.get("unchanged_fields") == unchanged and
+                derivation_transition.get("change_reason") ==
+                "CR15_derivation_shifted_supported_surface_file_digests_without_changing_routes_or_counts" and
+                derivation_transition.get("partial_extra_or_substituted_audit") ==
+                "rejected",
+                "Patch 24.0c production audit transition drifted")
+            for field in unchanged:
+                require(derivation_transition["current_audit"].get(field) ==
+                        derivation_transition["previous_audit"].get(field),
+                        f"Patch 24.0c changed production audit field: {field}")
+            effective["audit"] = derivation_transition["current_audit"]
         validate_mutations(effective, summary)
     require(record.get("timelines") == {
         "phase24": "remove_generated_C_backend_and_explicit_C_publication_routes",
