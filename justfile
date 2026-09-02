@@ -23843,3 +23843,16 @@ guard-cranelift-phase23-cross-feature-qualification-evidence:
     echo "🧪 Running complete Phase 23 cross-feature qualification..."
     just guard-cranelift-phase23-cross-feature-qualification-contract
     python3 scripts/phase23_cross_feature_qualification.py evidence
+
+# Cranelift lane, Patch 23.14. Record the one complete exact-final-main
+# Historical run without replaying Level 3 from pull-request CI.
+guard-cranelift-phase23-historical-full-qualification-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🕰️ Checking Phase 23 exact-main Historical Full authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase23-historical-full-qualification-contract | grep -F $'guard-cranelift-phase23-historical-full-qualification-contract\t1\t' >/dev/null
+    just guard-cranelift-phase23-cross-feature-qualification-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase23_historical_full_qualification.py validate
+    python3 scripts/phase23_historical_full_qualification.py check-review

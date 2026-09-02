@@ -85,6 +85,7 @@ TOP_FIELDS = {
     "phase23_mir_to_c_archived_corpus",
     "phase23_production_release_audit",
     "phase23_cross_feature_qualification",
+    "phase23_historical_full_qualification",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming", "phase19_classification", "phase19_representation",

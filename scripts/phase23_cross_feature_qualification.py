@@ -86,7 +86,11 @@ def load_module(name: str, path: Path):
 def phase23_guard_inventory(levels: dict[str, int], level: int) -> list[str]:
     return [guard for guard, assigned in levels.items()
             if guard.startswith("guard-cranelift-phase23-")
-            and guard not in {GUARD_L1, GUARD_L2}
+            and guard not in {
+                GUARD_L1,
+                GUARD_L2,
+                "guard-cranelift-phase23-historical-full-qualification-contract",
+            }
             and assigned == level]
 
 

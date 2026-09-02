@@ -536,6 +536,9 @@ jobs:
       - name: Phase 23 cross-feature qualification and residue audit
         run: just guard-cranelift-phase23-cross-feature-qualification-contract
 
+      - name: Phase 23 exact-main Historical Full qualification
+        run: just guard-cranelift-phase23-historical-full-qualification-contract
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 
