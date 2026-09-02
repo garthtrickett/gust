@@ -3815,7 +3815,7 @@
       "phase24_cr15_opening": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["contract_version","status","authority_base_main","next_patch","review_view","witnesses","rejected_baseline","compiler_fact_markers","inert_derivation_descriptor","forbidden_recognizers","implementation_markers_absent","boundary"],
+        "required": ["contract_version","status","authority_base_main","next_patch","review_view","witnesses","rejected_baseline","compiler_fact_markers","inert_derivation_descriptor","forbidden_recognizers","implementation_markers_absent","boundary","stdlib_guard_transition"],
         "properties": {
           "contract_version": {"const": "phase24_cr15_opening_v1"},
           "status": {"const": "patch24_0b_complete_inert"},
@@ -3828,7 +3828,30 @@
           "inert_derivation_descriptor": {"type": "object"},
           "forbidden_recognizers": {"const": ["consumer_type_spelling","consumer_guard_spelling","consumer_lock_spelling","consumer_get_spelling","arbitrary_user_generic_function","backend_selected_rule"]},
           "implementation_markers_absent": {"const": ["ProtectedResourceGuardDerivation","env_derive_protected_resource_guard","typechecker_derive_protected_resource_guard"]},
-          "boundary": {"const": {"changes_accepted_Gust_program_meaning":false,"adds_or_changes_MIR_operations":false,"changes_ABI_layout_runtime_symbols_target_or_linker":false,"changes_backend_route_default_or_fallback":false,"changes_bootstrap_route_or_seed":false,"edits_stdlib":false,"implements_CR15":false,"begins_patch24_0c_or_24_1":false}}
+          "boundary": {"const": {"changes_accepted_Gust_program_meaning":false,"adds_or_changes_MIR_operations":false,"changes_ABI_layout_runtime_symbols_target_or_linker":false,"changes_backend_route_default_or_fallback":false,"changes_bootstrap_route_or_seed":false,"edits_stdlib":false,"implements_CR15":false,"begins_patch24_0c_or_24_1":false}},
+          "stdlib_guard_transition": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["contract_version","status","owner","owning_stdlib_pull_request","owning_stdlib_base_sha","owning_stdlib_exact_head_sha","changed_paths","changed_path_count","changed_site_count","pre_relay_justfile_sha256","post_relay_justfile_sha256","changed_site","phase22_invocation_summary","canonical_phase23_text_surfaces","projection_policy","review_view"],
+            "properties": {
+              "contract_version": {"const": "phase24_cr15_stdlib_guard_transition_v1"},
+              "status": {"const": "authorized_exact_pre_or_post_relay"},
+              "owner": {"const": "cranelift"},
+              "owning_stdlib_pull_request": {"const": 304},
+              "owning_stdlib_base_sha": {"const": "da1889834f78853d685570cdbef70be77b9be06c"},
+              "owning_stdlib_exact_head_sha": {"const": "45074ffef9a899c892a98837d9ba085a820ab35b"},
+              "changed_paths": {"const": ["justfile"]},
+              "changed_path_count": {"const": 1},
+              "changed_site_count": {"const": 1},
+              "pre_relay_justfile_sha256": {"const": "47b2886ff09862a09bac75419c4dd8714e184333e79e7415af6ac73f4064ff2c"},
+              "post_relay_justfile_sha256": {"const": "97ebdee95b04c0f036b1f84a7d6a9d7ad1bb6adacc9c3ee2c5e2f8ea4bf43467"},
+              "changed_site": {"type": "object"},
+              "phase22_invocation_summary": {"type": "object"},
+              "canonical_phase23_text_surfaces": {"type": "array", "minItems": 2, "maxItems": 2},
+              "projection_policy": {"type": "object"},
+              "review_view": {"const": "compiler/CRANELIFT_PHASE24_CR15_STDLIB_GUARD_TRANSITION.md"}
+            }
+          }
         }
       },
       "phase19_brand_authority": {

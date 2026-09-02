@@ -1,0 +1,61 @@
+name: Cranelift Phase 24 CR-15 Stdlib Guard Transition
+
+on:
+  pull_request:
+    paths:
+      - 'justfile'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/phase22_opening.py'
+      - 'scripts/phase23_mir_to_c_deprecation_opening.py'
+      - 'scripts/phase23_mir_to_c_frozen_surface.py'
+      - 'scripts/phase23_production_release_audit.py'
+      - 'scripts/phase24_cr15_stdlib_guard_transition.py'
+      - 'compiler/CRANELIFT_PHASE24_CR15_STDLIB_GUARD_TRANSITION.md'
+      - '.github/workflows/phase24-cr15-stdlib-guard-transition.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'justfile'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/phase22_opening.py'
+      - 'scripts/phase23_mir_to_c_deprecation_opening.py'
+      - 'scripts/phase23_mir_to_c_frozen_surface.py'
+      - 'scripts/phase23_production_release_audit.py'
+      - 'scripts/phase24_cr15_stdlib_guard_transition.py'
+      - 'compiler/CRANELIFT_PHASE24_CR15_STDLIB_GUARD_TRANSITION.md'
+      - '.github/workflows/phase24-cr15-stdlib-guard-transition.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - name: Validate exact pre/post transition
+        run: |
+          python3 scripts/phase24_cr15_stdlib_guard_transition.py validate
+          python3 scripts/phase24_cr15_stdlib_guard_transition.py check-review
+          python3 scripts/phase22_opening.py validate
+          python3 scripts/phase22_opening.py check-review
+          python3 scripts/phase22_explicit_c_migration.py validate
+          python3 scripts/phase22_explicit_c_migration.py check-review
+          python3 scripts/phase23_mir_to_c_deprecation_opening.py validate
+          python3 scripts/phase23_mir_to_c_deprecation_opening.py check-review
+          python3 scripts/phase23_mir_to_c_frozen_surface.py validate
+          python3 scripts/phase23_mir_to_c_frozen_surface.py check-review
+          python3 scripts/phase23_production_release_audit.py validate
+          python3 scripts/phase23_production_release_audit.py check-review
+          python3 scripts/phase23_cross_feature_qualification.py validate
+          python3 scripts/phase23_cross_feature_qualification.py check-review
+          python3 scripts/phase23_closure.py --check

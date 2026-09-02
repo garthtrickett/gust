@@ -109,6 +109,15 @@ def capability_rows(registry: dict) -> list[dict[str, object]]:
 
 
 def live_c_case_rows() -> list[dict[str, object]]:
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    transition = None
+    if "stdlib_guard_transition" in registry.get("phase24_cr15_opening", {}):
+        path = ROOT / "scripts/phase24_cr15_stdlib_guard_transition.py"
+        spec = importlib.util.spec_from_file_location("phase24_cr15_guard_transition", path)
+        require(spec is not None and spec.loader is not None,
+                "cannot load the Patch 24.0c guard transition")
+        transition = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(transition)
     rows = []
     for row in opening_module().scan_invocations():
         if row["selection"] != "explicit_c":
@@ -138,7 +147,12 @@ def live_c_case_rows() -> list[dict[str, object]]:
             "consumer_class": row["consumer_class"],
             "compiler_token": row["compiler_token"],
             "command_digest": canonical_digest(row["command"]),
-            "owner_file_digest": digest_bytes(owner_path.read_bytes()),
+            "owner_file_digest": (
+                transition.normalized_owner_file_digest(
+                    registry, path, digest_bytes(owner_path.read_bytes())
+                ) if transition is not None else
+                digest_bytes(owner_path.read_bytes())
+            ),
             "complete_case_digest": canonical_digest(complete),
         })
     rows.sort(key=lambda row: str(row["case_id"]))
