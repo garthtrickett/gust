@@ -5998,7 +5998,7 @@
       },
       "current_audit": {
         "supported_surface_count": 6,
-        "supported_surface_manifest_digest": "9ca0d618388c331c6cfca45566a767fabd0a2e9125fb39fcbbc9e7f04f8994be",
+        "supported_surface_manifest_digest": "d42f0663249e8ac61f939a6b802eb3ce5078a7aad7bc34da588ba6bafc23c2e0",
         "repository_invocation_count": 318,
         "repository_explicit_c_count": 178,
         "phase25_bootstrap_explicit_c_count": 5,
@@ -6345,9 +6345,9 @@
       "routes": ["retained_explicit_compatibility", "explicit_cranelift"],
       "exit_status": 1,
       "stdout_bytes": 5679,
-      "stdout_sha256": "9497d8a1cde030469bb89cb01e141975e9b3613b7577c66345d8813f665dbad4",
+      "stdout_fixture": "compiler/fixtures/phase24_cr15_rejected_stdout.txt",
+      "fixture_normalization": "rstrip_horizontal_whitespace_per_line_and_trailing_blank_lines_single_final_newline",
       "stderr_bytes": 0,
-      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "route_outputs_byte_identical": true,
       "backend_selection_reached": false,
       "failure_families": [

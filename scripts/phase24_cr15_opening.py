@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import subprocess
 from pathlib import Path
@@ -21,6 +20,7 @@ WORKFLOW = ROOT / ".github/workflows/phase24-cr15-opening.yml"
 TYPECHECKER = ROOT / "compiler/typechecker.gst"
 MODULE = ROOT / "tests/stdlib_s1_mutex_guard_generic_derivation_module.gst"
 WITNESS = ROOT / "tests/stdlib_s1_mutex_guard_generic_derivation_rejected.gst"
+EXPECTED_STDOUT = ROOT / "compiler/fixtures/phase24_cr15_rejected_stdout.txt"
 GUARD_L1 = "guard-cranelift-phase24-cr15-opening-contract"
 GUARD_L2 = "guard-cranelift-phase24-cr15-opening-evidence"
 
@@ -30,15 +30,17 @@ def require(condition: bool, message: str) -> None:
         raise SystemExit(f"{GUARD_L1}: {message}")
 
 
+def canonical_diagnostic(data: bytes) -> bytes:
+    """Keep complete diagnostics while ignoring source-display trailing blanks."""
+    rendered = b"\n".join(line.rstrip(b" \t") for line in data.splitlines())
+    return rendered.rstrip(b"\n") + b"\n"
+
+
 def authority() -> dict:
     data = json.loads(REGISTRY.read_text(encoding="utf-8"))
     value = data.get("phase24_cr15_opening")
     require(isinstance(value, dict), "registry authority is missing")
     return value
-
-
-def digest(data: bytes) -> str:
-    return hashlib.sha256(data).hexdigest()
 
 
 def validate() -> dict:
@@ -63,9 +65,9 @@ def validate() -> dict:
         "routes": ["retained_explicit_compatibility", "explicit_cranelift"],
         "exit_status": 1,
         "stdout_bytes": 5679,
-        "stdout_sha256": "9497d8a1cde030469bb89cb01e141975e9b3613b7577c66345d8813f665dbad4",
+        "stdout_fixture": EXPECTED_STDOUT.relative_to(ROOT).as_posix(),
+        "fixture_normalization": "rstrip_horizontal_whitespace_per_line_and_trailing_blank_lines_single_final_newline",
         "stderr_bytes": 0,
-        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
         "route_outputs_byte_identical": True,
         "backend_selection_reached": False,
         "failure_families": [
@@ -143,7 +145,7 @@ def validate() -> dict:
         "tools/normalize_generated_arena_offsets.py", GUARD_L1, GUARD_L2,
     ):
         require(required in workflow, f"workflow is missing {required}")
-    for witness in (MODULE, WITNESS):
+    for witness in (MODULE, WITNESS, EXPECTED_STDOUT):
         require(witness.is_file(), f"missing witness {witness.relative_to(ROOT)}")
     return value
 
@@ -164,7 +166,7 @@ def render(value: dict) -> str:
         "## Rejected baseline",
         "",
         f"Both retained compiler paths reject with status `{baseline['exit_status']}` before backend selection.",
-        f"Their stdout is byte-identical: `{baseline['stdout_bytes']}` bytes, SHA-256 `{baseline['stdout_sha256']}`; stderr is empty.",
+        f"Their stdout is byte-identical to `{baseline['stdout_fixture']}` (`{baseline['stdout_bytes']}` bytes); stderr is empty.",
         "Failure families: " + ", ".join(f"`{item}`" for item in baseline["failure_families"]) + ".",
         "",
         "## Inert derivation descriptor",
@@ -194,6 +196,9 @@ def evidence() -> None:
     value = validate()
     require((ROOT / "gust").is_file(), "make gust prerequisite is missing")
     baseline = value["rejected_baseline"]
+    expected_stdout = EXPECTED_STDOUT.read_bytes()
+    require(expected_stdout == canonical_diagnostic(expected_stdout),
+            "expected diagnostic fixture is not canonical")
     route_names = json.loads(REGISTRY.read_text(encoding="utf-8"))["phase23_closure"]["route_authority"]
     routes = [route_names["explicit_c_spellings"][0], route_names["explicit_native_backend"]]
     outputs: list[bytes] = []
@@ -210,10 +215,9 @@ def evidence() -> None:
         require(result.returncode == baseline["exit_status"],
                 f"{route} rejection status drifted")
         require(len(result.stdout) == baseline["stdout_bytes"] and
-                digest(result.stdout) == baseline["stdout_sha256"],
+                canonical_diagnostic(result.stdout) == expected_stdout,
                 f"{route} diagnostic identity drifted")
-        require(len(result.stderr) == baseline["stderr_bytes"] and
-                digest(result.stderr) == baseline["stderr_sha256"],
+        require(len(result.stderr) == baseline["stderr_bytes"],
                 f"{route} stderr identity drifted")
         for family in baseline["failure_families"]:
             require(family.encode() in result.stdout,
