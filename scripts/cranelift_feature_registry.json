@@ -6432,8 +6432,8 @@
       "changed_paths": ["justfile"],
       "changed_path_count": 1,
       "changed_site_count": 1,
-      "pre_relay_justfile_sha256": "47b2886ff09862a09bac75419c4dd8714e184333e79e7415af6ac73f4064ff2c",
-      "post_relay_justfile_sha256": "97ebdee95b04c0f036b1f84a7d6a9d7ad1bb6adacc9c3ee2c5e2f8ea4bf43467",
+      "pre_relay_justfile_digest": "47b2886ff09862a09bac75419c4dd8714e184333e79e7415af6ac73f4064ff2c",
+      "post_relay_justfile_digest": "97ebdee95b04c0f036b1f84a7d6a9d7ad1bb6adacc9c3ee2c5e2f8ea4bf43467",
       "changed_site": {
         "path": "justfile",
         "recipe": "guard-stdlib-s1-resource-prerequisites",
@@ -6454,7 +6454,7 @@
         {
           "path": "justfile",
           "digest": "47b2886ff09862a09bac75419c4dd8714e184333e79e7415af6ac73f4064ff2c",
-          "accepted_live_sha256": ["47b2886ff09862a09bac75419c4dd8714e184333e79e7415af6ac73f4064ff2c","97ebdee95b04c0f036b1f84a7d6a9d7ad1bb6adacc9c3ee2c5e2f8ea4bf43467"],
+          "accepted_live_digests": ["47b2886ff09862a09bac75419c4dd8714e184333e79e7415af6ac73f4064ff2c","97ebdee95b04c0f036b1f84a7d6a9d7ad1bb6adacc9c3ee2c5e2f8ea4bf43467"],
           "match_counts": {"explicit_backend_spelling":38,"mir_to_c_name":794,"generated_c_contract":6},
           "classification": "archive_candidate",
           "owner": "cranelift",
@@ -6466,7 +6466,7 @@
         {
           "path": "scripts/phase22_opening.py",
           "digest": "cd62a233193281c00ad7f85ea92bc917fc4f0b55db968aab67dcb5e7f8ec5446",
-          "accepted_live_sha256": ["88daff9c82fd440887b1933920bb6d4721ab3a60ef226159cca84a62c890949d"],
+          "accepted_live_digests": ["88daff9c82fd440887b1933920bb6d4721ab3a60ef226159cca84a62c890949d"],
           "match_counts": {"explicit_backend_spelling":2,"mir_to_c_name":12,"generated_c_contract":11},
           "classification": "archive_candidate",
           "owner": "cranelift",

@@ -52,9 +52,9 @@ def validate_static(value: dict) -> None:
             value.get("changed_path_count") == 1 and
             value.get("changed_site_count") == 1,
             "relay path or site count drifted")
-    require(value.get("pre_relay_justfile_sha256") ==
+    require(value.get("pre_relay_justfile_digest") ==
             "47b2886ff09862a09bac75419c4dd8714e184333e79e7415af6ac73f4064ff2c" and
-            value.get("post_relay_justfile_sha256") ==
+            value.get("post_relay_justfile_digest") ==
             "97ebdee95b04c0f036b1f84a7d6a9d7ad1bb6adacc9c3ee2c5e2f8ea4bf43467",
             "relay file identity drifted")
     site = value.get("changed_site", {})
@@ -98,9 +98,9 @@ def live_state(registry: dict | None = None) -> str:
     value = authority(registry)
     validate_static(value)
     digest = digest_bytes(JUSTFILE.read_bytes())
-    if digest == value["pre_relay_justfile_sha256"]:
+    if digest == value["pre_relay_justfile_digest"]:
         return "pre_relay"
-    if digest == value["post_relay_justfile_sha256"]:
+    if digest == value["post_relay_justfile_digest"]:
         return "post_relay"
     require(False,
             "justfile is neither the exact pre-relay nor exact one-site post-relay state")
@@ -154,7 +154,7 @@ def normalize_phase23_text_surfaces(
         path = str(expected["path"])
         require(path in by_path, f"canonical text surface is missing: {path}")
         live = by_path[path]
-        accepted = expected.get("accepted_live_sha256", [])
+        accepted = expected.get("accepted_live_digests", [])
         require(live.get("digest") in accepted,
                 f"unregistered text-surface identity: {path}")
         for field in (
@@ -180,9 +180,9 @@ def normalized_owner_file_digest(
         return digest
     value = authority(registry)
     state = live_state(registry)
-    expected = value[f"{state}_justfile_sha256"]
+    expected = value[f"{state}_justfile_digest"]
     require(digest == expected, "live-C justfile owner identity drifted")
-    return value["pre_relay_justfile_sha256"]
+    return value["pre_relay_justfile_digest"]
 
 
 def validate() -> tuple[dict, str]:

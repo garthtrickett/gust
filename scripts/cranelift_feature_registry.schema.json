@@ -3832,7 +3832,7 @@
           "stdlib_guard_transition": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["contract_version","status","owner","owning_stdlib_pull_request","owning_stdlib_base_sha","owning_stdlib_exact_head_sha","changed_paths","changed_path_count","changed_site_count","pre_relay_justfile_sha256","post_relay_justfile_sha256","changed_site","phase22_invocation_summary","canonical_phase23_text_surfaces","projection_policy","review_view"],
+            "required": ["contract_version","status","owner","owning_stdlib_pull_request","owning_stdlib_base_sha","owning_stdlib_exact_head_sha","changed_paths","changed_path_count","changed_site_count","pre_relay_justfile_digest","post_relay_justfile_digest","changed_site","phase22_invocation_summary","canonical_phase23_text_surfaces","projection_policy","review_view"],
             "properties": {
               "contract_version": {"const": "phase24_cr15_stdlib_guard_transition_v1"},
               "status": {"const": "authorized_exact_pre_or_post_relay"},
@@ -3843,8 +3843,8 @@
               "changed_paths": {"const": ["justfile"]},
               "changed_path_count": {"const": 1},
               "changed_site_count": {"const": 1},
-              "pre_relay_justfile_sha256": {"const": "47b2886ff09862a09bac75419c4dd8714e184333e79e7415af6ac73f4064ff2c"},
-              "post_relay_justfile_sha256": {"const": "97ebdee95b04c0f036b1f84a7d6a9d7ad1bb6adacc9c3ee2c5e2f8ea4bf43467"},
+              "pre_relay_justfile_digest": {"const": "47b2886ff09862a09bac75419c4dd8714e184333e79e7415af6ac73f4064ff2c"},
+              "post_relay_justfile_digest": {"const": "97ebdee95b04c0f036b1f84a7d6a9d7ad1bb6adacc9c3ee2c5e2f8ea4bf43467"},
               "changed_site": {"type": "object"},
               "phase22_invocation_summary": {"type": "object"},
               "canonical_phase23_text_surfaces": {"type": "array", "minItems": 2, "maxItems": 2},
