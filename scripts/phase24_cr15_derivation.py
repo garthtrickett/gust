@@ -43,7 +43,7 @@ def validate() -> dict:
     require(value.get("status") == "patch24_0c_complete",
             "derivation status drifted")
     require(value.get("authority_base_main") ==
-            "da1889834f78853d685570cdbef70be77b9be06c",
+            "c37024afa580d1e03c5ff70150ed0ae7518a9648",
             "authority base main drifted")
     require(value.get("next_patch") == "24.0d", "next patch drifted")
     require(value.get("review_view") == REVIEW.relative_to(ROOT).as_posix(),

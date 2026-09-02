@@ -235,13 +235,13 @@ def validate() -> tuple[dict, dict[str, object]]:
                 "phase24_cr15_derivation_production_audit_transition_v1" and
                 derivation_transition.get("status") == "patch24_0c_complete" and
                 derivation_transition.get("authority_base_main") ==
-                "da1889834f78853d685570cdbef70be77b9be06c" and
+                "c37024afa580d1e03c5ff70150ed0ae7518a9648" and
                 derivation_transition.get("previous_audit") ==
                 closure_transition["current_audit"] and
                 derivation_transition.get("current_audit") == summary and
                 derivation_transition.get("unchanged_fields") == unchanged and
                 derivation_transition.get("change_reason") ==
-                "CR15_derivation_shifted_supported_surface_file_digests_without_changing_routes_or_counts" and
+                "CR15_derivation_preserved_the_production_audit_through_exact_relay_projection" and
                 derivation_transition.get("partial_extra_or_substituted_audit") ==
                 "rejected",
                 "Patch 24.0c production audit transition drifted")

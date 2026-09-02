@@ -477,7 +477,7 @@ def validate() -> tuple[dict, dict[str, object]]:
                 "phase24_cr15_derivation_frozen_surface_transition_v1" and
                 derivation_transition.get("status") == "patch24_0c_complete" and
                 derivation_transition.get("authority_base_main") ==
-                "da1889834f78853d685570cdbef70be77b9be06c" and
+                "c37024afa580d1e03c5ff70150ed0ae7518a9648" and
                 derivation_transition.get("previous_live_c_case_surface") ==
                 closure_transition["current_live_c_case_surface"] and
                 derivation_transition.get("current_live_c_case_surface") ==
@@ -485,7 +485,7 @@ def validate() -> tuple[dict, dict[str, object]]:
                 derivation_transition.get("unchanged_fields") ==
                 closure_unchanged and
                 derivation_transition.get("change_reason") ==
-                "CR15_derivation_shifted_owner_file_digests_without_changing_the_frozen_explicit_C_case_population" and
+                "CR15_derivation_preserved_the_frozen_explicit_C_case_population_through_exact_relay_projection" and
                 derivation_transition.get("partial_or_unregistered_surface") ==
                 "rejected",
                 "Patch 24.0c frozen live-C transition drifted")

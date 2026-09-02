@@ -288,7 +288,7 @@ def check() -> None:
             "phase24_cr15_derivation_frozen_surface_transition_v1" and
             derivation_frozen_transition.get("status") == "patch24_0c_complete" and
             derivation_frozen_transition.get("authority_base_main") ==
-            "da1889834f78853d685570cdbef70be77b9be06c" and
+            "c37024afa580d1e03c5ff70150ed0ae7518a9648" and
             derivation_frozen_transition.get("previous_live_c_case_surface") ==
             frozen_transition["current_live_c_case_surface"] and
             derivation_frozen_transition.get("current_live_c_case_surface") ==
@@ -296,7 +296,7 @@ def check() -> None:
             derivation_frozen_transition.get("unchanged_fields") ==
             frozen_unchanged and
             derivation_frozen_transition.get("change_reason") ==
-            "CR15_derivation_shifted_owner_file_digests_without_changing_the_frozen_explicit_C_case_population" and
+            "CR15_derivation_preserved_the_frozen_explicit_C_case_population_through_exact_relay_projection" and
             derivation_frozen_transition.get("partial_or_unregistered_surface") ==
             "rejected",
             "Patch 24.0c frozen-surface closure successor drifted")
@@ -362,7 +362,7 @@ def check() -> None:
             derivation_production_transition.get("status") ==
             "patch24_0c_complete" and
             derivation_production_transition.get("authority_base_main") ==
-            "da1889834f78853d685570cdbef70be77b9be06c" and
+            "c37024afa580d1e03c5ff70150ed0ae7518a9648" and
             derivation_production_transition.get("previous_audit") ==
             production_transition["current_audit"] and
             derivation_production_transition.get("current_audit") ==
@@ -370,7 +370,7 @@ def check() -> None:
             derivation_production_transition.get("unchanged_fields") ==
             production_unchanged and
             derivation_production_transition.get("change_reason") ==
-            "CR15_derivation_shifted_supported_surface_file_digests_without_changing_routes_or_counts" and
+            "CR15_derivation_preserved_the_production_audit_through_exact_relay_projection" and
             derivation_production_transition.get(
                 "partial_extra_or_substituted_audit") == "rejected",
             "Patch 24.0c production-audit closure successor drifted")
@@ -542,7 +542,7 @@ def check() -> None:
                         cr15_derivation_transition.get("status") ==
                         "patch24_0c_complete" and
                         cr15_derivation_transition.get("authority_base_main") ==
-                        "da1889834f78853d685570cdbef70be77b9be06c" and
+                        "c37024afa580d1e03c5ff70150ed0ae7518a9648" and
                         cr15_derivation_transition.get("previous_inventory") ==
                         cr15_opening_transition["current_inventory"] and
                         cr15_derivation_transition.get("current_inventory") == current and

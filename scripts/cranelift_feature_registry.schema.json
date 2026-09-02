@@ -3833,14 +3833,15 @@
           "stdlib_guard_transition": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["contract_version","status","owner","owning_stdlib_pull_request","owning_stdlib_base_sha","owning_stdlib_exact_head_sha","changed_paths","changed_path_count","changed_site_count","pre_relay_justfile_digest","post_relay_justfile_digest","changed_site","phase22_invocation_summary","canonical_phase23_text_surfaces","projection_policy","review_view"],
+            "required": ["contract_version","status","owner","owning_stdlib_pull_request","owning_stdlib_base_sha","owning_stdlib_exact_head_sha","landed_merge_evidence","changed_paths","changed_path_count","changed_site_count","pre_relay_justfile_digest","post_relay_justfile_digest","changed_site","phase22_invocation_summary","canonical_phase23_text_surfaces","projection_policy","review_view"],
             "properties": {
               "contract_version": {"const": "phase24_cr15_stdlib_guard_transition_v1"},
-              "status": {"const": "authorized_exact_pre_or_post_relay"},
+              "status": {"const": "landed_exact_relay"},
               "owner": {"const": "cranelift"},
               "owning_stdlib_pull_request": {"const": 304},
-              "owning_stdlib_base_sha": {"const": "da1889834f78853d685570cdbef70be77b9be06c"},
-              "owning_stdlib_exact_head_sha": {"const": "45074ffef9a899c892a98837d9ba085a820ab35b"},
+              "owning_stdlib_base_sha": {"const": "57fb7c5d531b752ebc34e20be170ec653f0f62b9"},
+              "owning_stdlib_exact_head_sha": {"const": "f1267700e29784a1e59ff97e327f93a91da89585"},
+              "landed_merge_evidence": {"const": {"merge_main_sha":"c37024afa580d1e03c5ff70150ed0ae7518a9648","pull_request_workflow_count":93,"pull_request_workflow_success_count":93,"unfinished_or_non_success_count":0,"review_count":0,"unresolved_thread_count":0,"changed_paths":["justfile"]}},
               "changed_paths": {"const": ["justfile"]},
               "changed_path_count": {"const": 1},
               "changed_site_count": {"const": 1},
@@ -3862,7 +3863,7 @@
         "properties": {
           "contract_version": {"const": "phase24_cr15_derivation_v1"},
           "status": {"const": "patch24_0c_complete"},
-          "authority_base_main": {"const": "da1889834f78853d685570cdbef70be77b9be06c"},
+          "authority_base_main": {"const": "c37024afa580d1e03c5ff70150ed0ae7518a9648"},
           "next_patch": {"const": "24.0d"},
           "review_view": {"const": "compiler/CRANELIFT_PHASE24_CR15_DERIVATION.md"},
           "witnesses": {
@@ -3902,15 +3903,16 @@
           "consumer_inventory_transition": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_changed_paths","current_changed_text_surfaces","unchanged_other_text_surface_manifest_digest","unchanged_fields","partial_extra_or_substituted_surface"],
+            "required": ["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_changed_paths","current_changed_text_surfaces","live_justfile_successor_digest","unchanged_other_text_surface_manifest_digest","unchanged_fields","partial_extra_or_substituted_surface"],
             "properties": {
               "contract_version": {"const": "phase24_cr15_derivation_consumer_transition_v1"},
               "status": {"const": "patch24_0c_complete"},
-              "authority_base_main": {"const": "da1889834f78853d685570cdbef70be77b9be06c"},
+              "authority_base_main": {"const": "c37024afa580d1e03c5ff70150ed0ae7518a9648"},
               "previous_inventory": {"type": "object"},
               "current_inventory": {"type": "object"},
               "registered_changed_paths": {"type": "array", "minItems": 12, "maxItems": 12, "uniqueItems": true},
               "current_changed_text_surfaces": {"type": "array", "minItems": 12, "maxItems": 12},
+              "live_justfile_successor_digest": {"const": "84792d72c720a64bcd4d7df089e99684a36587daf031d808ec50f58ae5b0ecd1"},
               "unchanged_other_text_surface_manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
               "unchanged_fields": {"const": ["invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","invocation_selection_counts","unclassified_count"]},
               "partial_extra_or_substituted_surface": {"const": "rejected"}
@@ -3923,11 +3925,11 @@
             "properties": {
               "contract_version": {"const": "phase24_cr15_derivation_frozen_surface_transition_v1"},
               "status": {"const": "patch24_0c_complete"},
-              "authority_base_main": {"const": "da1889834f78853d685570cdbef70be77b9be06c"},
+              "authority_base_main": {"const": "c37024afa580d1e03c5ff70150ed0ae7518a9648"},
               "previous_live_c_case_surface": {"type": "object"},
               "current_live_c_case_surface": {"type": "object"},
               "unchanged_fields": {"const": ["count","case_id_manifest_digest","owner_contract_count","owner_counts","consumer_class_counts","selection_counts"]},
-              "change_reason": {"const": "CR15_derivation_shifted_owner_file_digests_without_changing_the_frozen_explicit_C_case_population"},
+              "change_reason": {"const": "CR15_derivation_preserved_the_frozen_explicit_C_case_population_through_exact_relay_projection"},
               "partial_or_unregistered_surface": {"const": "rejected"}
             }
           },
@@ -3938,11 +3940,11 @@
             "properties": {
               "contract_version": {"const": "phase24_cr15_derivation_production_audit_transition_v1"},
               "status": {"const": "patch24_0c_complete"},
-              "authority_base_main": {"const": "da1889834f78853d685570cdbef70be77b9be06c"},
+              "authority_base_main": {"const": "c37024afa580d1e03c5ff70150ed0ae7518a9648"},
               "previous_audit": {"type": "object"},
               "current_audit": {"type": "object"},
               "unchanged_fields": {"const": ["supported_surface_count","repository_invocation_count","repository_explicit_c_count","phase25_bootstrap_explicit_c_count","non_bootstrap_retained_test_surface_count","supported_production_or_release_explicit_c_count","active_non_bootstrap_live_c_lane_count","active_non_bootstrap_live_c_owner","unknown_downstream_count"]},
-              "change_reason": {"const": "CR15_derivation_shifted_supported_surface_file_digests_without_changing_routes_or_counts"},
+              "change_reason": {"const": "CR15_derivation_preserved_the_production_audit_through_exact_relay_projection"},
               "partial_extra_or_substituted_audit": {"const": "rejected"}
             }
           },

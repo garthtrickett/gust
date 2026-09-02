@@ -359,7 +359,7 @@ def validate_transition(record: dict, registry: dict) -> None:
                                 cr15_derivation_successor.get("status") ==
                                 "patch24_0c_complete" and
                                 cr15_derivation_successor.get("authority_base_main") ==
-                                "da1889834f78853d685570cdbef70be77b9be06c" and
+                                "c37024afa580d1e03c5ff70150ed0ae7518a9648" and
                                 cr15_derivation_successor.get("previous_inventory") ==
                                 cr15_opening_successor["current_inventory"] and
                                 cr15_derivation_successor.get("current_inventory") ==
@@ -448,7 +448,7 @@ def validate_transition(record: dict, registry: dict) -> None:
                 "phase24_cr15_derivation_frozen_surface_transition_v1" and
                 derivation_frozen.get("status") == "patch24_0c_complete" and
                 derivation_frozen.get("authority_base_main") ==
-                "da1889834f78853d685570cdbef70be77b9be06c" and
+                "c37024afa580d1e03c5ff70150ed0ae7518a9648" and
                 derivation_frozen.get("previous_live_c_case_surface") ==
                 closure_frozen["current_live_c_case_surface"] and
                 derivation_frozen.get("current_live_c_case_surface") ==
@@ -456,7 +456,7 @@ def validate_transition(record: dict, registry: dict) -> None:
                 derivation_frozen.get("unchanged_fields") ==
                 surface["unchanged_fields"] and
                 derivation_frozen.get("change_reason") ==
-                "CR15_derivation_shifted_owner_file_digests_without_changing_the_frozen_explicit_C_case_population" and
+                "CR15_derivation_preserved_the_frozen_explicit_C_case_population_through_exact_relay_projection" and
                 derivation_frozen.get("partial_or_unregistered_surface") ==
                 "rejected",
                 "Patch 24.0c frozen surface successor drifted")

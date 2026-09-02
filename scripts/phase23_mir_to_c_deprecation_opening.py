@@ -1042,7 +1042,7 @@ def validate() -> dict:
                                 cr15_derivation_transition.get("status") ==
                                 "patch24_0c_complete" and
                                 cr15_derivation_transition.get("authority_base_main") ==
-                                "da1889834f78853d685570cdbef70be77b9be06c" and
+                                "c37024afa580d1e03c5ff70150ed0ae7518a9648" and
                                 cr15_derivation_transition.get("previous_inventory") ==
                                 cr15_opening_transition["current_inventory"] and
                                 cr15_derivation_transition.get("current_inventory") ==
