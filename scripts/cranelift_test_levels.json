@@ -18,6 +18,8 @@
     }
   },
   "guards": {
+    "guard-cranelift-phase23-cross-feature-qualification-contract": 1,
+    "guard-cranelift-phase23-cross-feature-qualification-evidence": 2,
     "guard-cranelift-phase23-mir-to-c-frozen-surface-contract": 1,
     "guard-cranelift-phase23-mir-to-c-frozen-surface-evidence": 2,
     "guard-cranelift-phase23-mir-to-c-focused-live-contract": 1,

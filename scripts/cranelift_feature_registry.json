@@ -5456,7 +5456,7 @@
     "renderer": "scripts/phase23_production_release_audit.py",
     "audit": {
       "supported_surface_count": 6,
-      "supported_surface_manifest_digest": "7617ab681ba668c39e10a3203d371b2d955ba000779084b2ebf0da17125fd4c0",
+      "supported_surface_manifest_digest": "e33455dae7d0d52c7d585256c3a485b2af96543c7551275c400e0ea9d0d419d4",
       "repository_invocation_count": 318,
       "repository_explicit_c_count": 178,
       "phase25_bootstrap_explicit_c_count": 5,
@@ -5544,6 +5544,169 @@
       "changes_bootstrap_route_or_seed": false,
       "edits_stdlib_or_CR15": false,
       "begins_patch23_13": false
+    }
+  },
+  "phase23_cross_feature_qualification": {
+    "contract_version": "phase23_cross_feature_qualification_v1",
+    "status": "patch23_13_complete",
+    "next_patch": "23.14",
+    "owner": "cranelift",
+    "review_view": "compiler/CRANELIFT_PHASE23_CROSS_FEATURE_QUALIFICATION.md",
+    "renderer": "scripts/phase23_cross_feature_qualification.py",
+    "phase23_level1_guards": [
+      "guard-cranelift-phase23-issue-health-opening-contract",
+      "guard-cranelift-phase23-mir-evidence-owner-contract",
+      "guard-cranelift-phase23-resource-acquisition-parity-contract",
+      "guard-cranelift-phase23-structured-guard-defer-native-admission-contract",
+      "guard-cranelift-phase23-assurance-phase-a-contract",
+      "guard-cranelift-phase23-assurance-phase-b-contract",
+      "guard-cranelift-phase23-same-scope-declaration-contract",
+      "guard-cranelift-phase23-mir-to-c-deprecation-opening-contract",
+      "guard-cranelift-phase23-mir-to-c-frozen-surface-contract",
+      "guard-cranelift-phase23-mir-to-c-focused-live-contract",
+      "guard-cranelift-phase23-mir-to-c-archived-corpus-contract",
+      "guard-cranelift-phase23-production-release-audit-contract"
+    ],
+    "phase23_level2_guards": [
+      "guard-cranelift-phase23-issue-health-opening-evidence",
+      "guard-cranelift-phase23-structured-guard-defer-native-admission-evidence",
+      "guard-cranelift-phase23-same-scope-declaration-evidence",
+      "guard-cranelift-phase23-mir-to-c-deprecation-opening-evidence",
+      "guard-cranelift-phase23-mir-to-c-frozen-surface-evidence",
+      "guard-cranelift-phase23-mir-to-c-focused-live-evidence",
+      "guard-cranelift-phase23-mir-to-c-archived-corpus-evidence",
+      "guard-cranelift-phase23-production-release-audit-evidence"
+    ],
+    "supplemental_level2_guards": [
+      "guard-cranelift-phase18-target-authority-parity",
+      "guard-cranelift-phase18-target-support-parity",
+      "guard-cranelift-phase18-target-diagnostic-parity",
+      "guard-cranelift-phase20-resource-scope-cleanup-parity",
+      "guard-cranelift-phase22-postflip-qualification-evidence"
+    ],
+    "execution_model": {
+      "prebuild": "make_phase10_native_package_once",
+      "guard_runner_build_policy": "GUST_RUNNER_SKIP_BUILD=1_after_prebuild",
+      "guard_semantics": "all_registered_commands_execute_unchanged",
+      "bootstrap": "make_bootstrap_after_guards_without_skip_build"
+    },
+    "coverage": {
+      "level1_authority": ["phase23_level1_guards"],
+      "level2_behaviour": ["phase23_level2_guards"],
+      "issue_health": ["phase23_mir_evidence_owner", "phase23_resource_acquisition_parity", "phase23_same_scope_declaration"],
+      "assurance_report_only": ["phase23_assurance_phase_a", "phase23_assurance_phase_b"],
+      "deprecation_and_frozen_surface": ["phase23_mir_to_c_deprecation_opening", "phase23_mir_to_c_frozen_surface"],
+      "focused_live_and_archive": ["phase23_mir_to_c_focused_live", "phase23_mir_to_c_archived_corpus"],
+      "package_install_and_release": ["phase23_production_release_audit", "guard-cranelift-phase22-postflip-qualification-evidence"],
+      "bootstrap": ["make bootstrap", "guard-cranelift-phase22-default-route-seed-convergence"],
+      "default_and_explicit_native": ["guard-cranelift-phase22-postflip-qualification-evidence"],
+      "explicit_c_identity": ["guard-cranelift-phase23-mir-to-c-deprecation-opening-evidence", "guard-cranelift-phase23-mir-to-c-focused-live-evidence"],
+      "cleanup_and_resources": ["guard-cranelift-phase20-resource-scope-cleanup-parity", "guard-cranelift-phase23-resource-acquisition-parity-contract"],
+      "side_effects": ["guard-cranelift-phase23-mir-to-c-focused-live-evidence", "guard-cranelift-phase23-production-release-audit-evidence"],
+      "diagnostics": ["guard-cranelift-phase23-same-scope-declaration-evidence", "guard-cranelift-phase18-target-diagnostic-parity"],
+      "target": ["guard-cranelift-phase18-target-authority-parity", "guard-cranelift-phase18-target-support-parity", "guard-cranelift-phase18-target-diagnostic-parity"],
+      "no_fallback": ["guard-cranelift-phase22-postflip-qualification-evidence", "guard-cranelift-phase23-production-release-audit-evidence"],
+      "consumer_scanner": ["phase23_mir_to_c_deprecation_opening.inventory_summary"],
+      "workflow_reachability": ["scripts/guard_reachability.py", "scripts/fixture_reachability.py"]
+    },
+    "route_inventory": {
+      "supported_surface_count": 6,
+      "supported_surface_manifest_digest": "e33455dae7d0d52c7d585256c3a485b2af96543c7551275c400e0ea9d0d419d4",
+      "repository_invocation_count": 318,
+      "repository_explicit_c_count": 178,
+      "phase25_bootstrap_explicit_c_count": 5,
+      "non_bootstrap_retained_test_surface_count": 173,
+      "supported_production_or_release_explicit_c_count": 0,
+      "active_non_bootstrap_live_c_lane_count": 1,
+      "active_non_bootstrap_live_c_owner": "phase23_mir_to_c_focused_live",
+      "unknown_downstream_count": 0
+    },
+    "residues": [
+      {
+        "id": "nonbootstrap_explicit_c_evidence",
+        "count": 173,
+        "owner": "cranelift",
+        "destination_phase": "24",
+        "reason": "deprecated_generated_C_backend_retained_for_the_single_focused_oracle_and_classified_historical_or_archived_evidence",
+        "falsifier": "count_or_complete_identity_changes_or_any_supported_production_or_release_route_requires_C"
+      },
+      {
+        "id": "bootstrap_explicit_c_chain",
+        "count": 5,
+        "owner": "cranelift",
+        "destination_phase": "25",
+        "reason": "make_gust_make_bootstrap_and_the_committed_C_seed_remain_owned_by_the_separate_bootstrap_retirement_phase",
+        "falsifier": "count_or_identity_changes_or_bootstrap_stops_using_the_registered_explicit_C_chain_before_Phase_25"
+      }
+    ],
+    "consumer_inventory_transition": {
+      "contract_version": "phase23_cross_feature_consumer_inventory_transition_v1",
+      "status": "patch23_13_complete",
+      "authority_base_main": "9b89296b25d2ab0cf1963ea1d1707139149d0576",
+      "previous_inventory": {
+        "text_surface_count": 567,
+        "text_surface_manifest_digest": "ad472de1f9b96cd28db6ad6a794927c244c498f7e6f2f34aaaacde39a92470b3",
+        "invocation_count": 318,
+        "invocation_manifest_digest": "f27c56c4865a333647c4af6f770bb2f81cca8e4e7a909e2e3221035ff8ae42b0",
+        "structural_surface_count": 15,
+        "structural_manifest_digest": "b7cd89cf9619d7bc28ecdbafaf6b616534fd68d9728ef47b85629f0531c8a22a",
+        "classification_counts": {"archive_candidate":470,"bootstrap_phase25":10,"focused_live_oracle":4,"historical_only":70,"production_or_release_migration":28},
+        "invocation_selection_counts": {"explicit_c":178,"explicit_cranelift":119,"explicit_invalid_or_parser_probe":3,"implicit_default":18},
+        "unclassified_count": 0
+      },
+      "current_inventory": {
+        "text_surface_count": 567,
+        "text_surface_manifest_digest": "99bc009128972f67c07683c9bd9c54f660eb14ac3131fae1fb86b379ee99df90",
+        "invocation_count": 318,
+        "invocation_manifest_digest": "f27c56c4865a333647c4af6f770bb2f81cca8e4e7a909e2e3221035ff8ae42b0",
+        "structural_surface_count": 15,
+        "structural_manifest_digest": "b7cd89cf9619d7bc28ecdbafaf6b616534fd68d9728ef47b85629f0531c8a22a",
+        "classification_counts": {"archive_candidate":470,"bootstrap_phase25":10,"focused_live_oracle":4,"historical_only":70,"production_or_release_migration":28},
+        "invocation_selection_counts": {"explicit_c":178,"explicit_cranelift":119,"explicit_invalid_or_parser_probe":3,"implicit_default":18},
+        "unclassified_count": 0
+      },
+      "unchanged_fields": ["invocation_count", "invocation_manifest_digest", "structural_surface_count", "structural_manifest_digest", "classification_counts", "invocation_selection_counts", "unclassified_count"],
+      "partial_or_unregistered_inventory": "rejected"
+    },
+    "frozen_surface_transition": {
+      "contract_version": "phase23_cross_feature_frozen_surface_transition_v1",
+      "status": "patch23_13_complete",
+      "authority_base_main": "9b89296b25d2ab0cf1963ea1d1707139149d0576",
+      "previous_live_c_case_surface": {
+        "count": 178,
+        "complete_identity_manifest_digest": "982b643143070c04b653eb0ae70efdc0fbfd5cc2ed664dfe33d1c5491f3fc6ab",
+        "case_id_manifest_digest": "29d1e0b2d3f29d30d6f67081a9ee7d10d029fd7f1613afad495fce0defe6ae1e",
+        "owner_contract_count": 64,
+        "owner_contract_manifest_digest": "cd3582ca7fb1330d06521748c666aba83be75977ab5dd5530afc2a5c3a3382e9",
+        "owner_counts": {"cranelift":152,"stdlib":26},
+        "consumer_class_counts": {"already_explicit_or_parser_probe":178},
+        "selection_counts": {"explicit_c":178}
+      },
+      "current_live_c_case_surface": {
+        "count": 178,
+        "complete_identity_manifest_digest": "ed61c5acc62b5d0f7a2be3fff0863ad1a30965dde30126a23204a6adfd37992e",
+        "case_id_manifest_digest": "29d1e0b2d3f29d30d6f67081a9ee7d10d029fd7f1613afad495fce0defe6ae1e",
+        "owner_contract_count": 64,
+        "owner_contract_manifest_digest": "9b10d32c44400f0ffebd436ed8fe1874119fbf4cc9f9e0fd6e251d4a1c205da2",
+        "owner_counts": {"cranelift":152,"stdlib":26},
+        "consumer_class_counts": {"already_explicit_or_parser_probe":178},
+        "selection_counts": {"explicit_c":178}
+      },
+      "unchanged_fields": ["count", "case_id_manifest_digest", "owner_contract_count", "owner_counts", "consumer_class_counts", "selection_counts"],
+      "partial_or_unregistered_surface": "rejected"
+    },
+    "budgets": {"workflow_timeout_minutes": 90, "evidence_elapsed_ms": 5100000},
+    "unexplained_differences": [],
+    "module_or_fixture_exceptions": [],
+    "unclassified_residues": [],
+    "boundary": {
+      "changes_accepted_Gust_program_meaning": false,
+      "adds_or_changes_MIR_operations": false,
+      "changes_ABI_layout_runtime_symbols_target_or_linker": false,
+      "changes_backend_route_default_or_fallback": false,
+      "changes_bootstrap_route_or_seed": false,
+      "edits_stdlib_or_CR15": false,
+      "begins_patch23_14": false
     }
   },
   "phase19_brand_authority": {

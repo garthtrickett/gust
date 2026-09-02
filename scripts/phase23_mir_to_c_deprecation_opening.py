@@ -50,11 +50,13 @@ SELF_EXCLUSIONS = {
     ".github/workflows/phase23-mir-to-c-focused-live.yml",
     ".github/workflows/phase23-mir-to-c-archived-corpus.yml",
     ".github/workflows/phase23-production-release-audit.yml",
+    ".github/workflows/phase23-cross-feature-qualification.yml",
     "compiler/CRANELIFT_PHASE23_MIR_TO_C_DEPRECATION_OPENING.md",
     "compiler/CRANELIFT_PHASE23_MIR_TO_C_FROZEN_SURFACE.md",
     "compiler/CRANELIFT_PHASE23_MIR_TO_C_FOCUSED_LIVE.md",
     "compiler/CRANELIFT_PHASE23_MIR_TO_C_ARCHIVED_CORPUS.md",
     "compiler/CRANELIFT_PHASE23_PRODUCTION_RELEASE_AUDIT.md",
+    "compiler/CRANELIFT_PHASE23_CROSS_FEATURE_QUALIFICATION.md",
     "compiler/fixtures/phase23_mir_to_c_reference_corpus_v1.json",
     "scripts/cranelift_feature_registry.json",
     "scripts/cranelift_feature_registry.schema.json",
@@ -64,6 +66,7 @@ SELF_EXCLUSIONS = {
     "scripts/phase23_mir_to_c_archived_corpus.py",
     "scripts/phase23_production_release_audit.py",
     "scripts/phase23_production_release_audit.sh",
+    "scripts/phase23_cross_feature_qualification.py",
 }
 
 SURFACE_PATTERNS = {
@@ -672,6 +675,25 @@ def validate() -> dict:
                 "unclassified_count",
             ] and production_transition.get("partial_or_unregistered_inventory") ==
             "rejected", "Patch 23.12 production/release inventory transition drifted")
+    qualification_transition = registry.get(
+        "phase23_cross_feature_qualification", {}).get(
+            "consumer_inventory_transition", {})
+    require(isinstance(qualification_transition, dict) and
+            qualification_transition.get("contract_version") ==
+            "phase23_cross_feature_consumer_inventory_transition_v1" and
+            qualification_transition.get("status") == "patch23_13_complete" and
+            qualification_transition.get("authority_base_main") ==
+            "9b89296b25d2ab0cf1963ea1d1707139149d0576" and
+            qualification_transition.get("previous_inventory") ==
+            production_transition.get("current_inventory") and
+            qualification_transition.get("unchanged_fields") == [
+                "invocation_count", "invocation_manifest_digest",
+                "structural_surface_count", "structural_manifest_digest",
+                "classification_counts", "invocation_selection_counts",
+                "unclassified_count",
+            ] and qualification_transition.get(
+                "partial_or_unregistered_inventory") == "rejected",
+            "Patch 23.13 qualification inventory transition drifted")
     live_inventory = inventory_summary()
     live_seed_digest = digest_bytes(SEED.read_bytes())
     accepted_by_seed = {
@@ -729,9 +751,13 @@ def validate() -> dict:
             production_transition["previous_inventory"]["classification_counts"]
             ["production_or_release_migration"],
             "Patch 23.12 supported-runner migration delta drifted")
-    expected_inventory = production_transition["current_inventory"]
+    for field in qualification_transition["unchanged_fields"]:
+        require(qualification_transition["current_inventory"].get(field) ==
+                qualification_transition["previous_inventory"].get(field),
+                f"Patch 23.13 changed retained inventory field: {field}")
+    expected_inventory = qualification_transition["current_inventory"]
     require(expected_inventory == live_inventory,
-            "live Patch 23.12 MIR-to-C inventory is not the exact registered successor")
+            "live Patch 23.13 MIR-to-C inventory is not the exact registered successor")
     require(live_inventory["unclassified_count"] == 0,
             "consumer or artifact remains unclassified")
     validate_identity_falsifiers(live_inventory)
@@ -1105,6 +1131,25 @@ def render(record: dict) -> str:
         f"- Explicit-C invocations: `{production_inventory['invocation_selection_counts']['explicit_c']}`",
         f"- Explicit-Cranelift invocations: `{production_inventory['invocation_selection_counts']['explicit_cranelift']}`",
         "- The supported single-program runner moved from generated C plus host-C linking to an explicit Cranelift artifact.",
+        "- Partial or unregistered inventory: `rejected`",
+        "",
+    ]
+    qualification_transition = json.loads(REGISTRY.read_text(encoding="utf-8"))[
+        "phase23_cross_feature_qualification"]["consumer_inventory_transition"]
+    qualification_inventory = qualification_transition["current_inventory"]
+    lines += [
+        "## Patch 23.13 cross-feature inventory successor",
+        "",
+        f"- Contract: `{qualification_transition['contract_version']}`",
+        f"- Status: `{qualification_transition['status']}`",
+        f"- Authority base main: `{qualification_transition['authority_base_main']}`",
+        f"- Current text surfaces: `{qualification_inventory['text_surface_count']}`",
+        f"- Current text manifest: `{qualification_inventory['text_surface_manifest_digest']}`",
+        f"- Current invocations: `{qualification_inventory['invocation_count']}`",
+        f"- Current invocation manifest: `{qualification_inventory['invocation_manifest_digest']}`",
+        f"- Explicit-C invocations: `{qualification_inventory['invocation_selection_counts']['explicit_c']}`",
+        f"- Explicit-Cranelift invocations: `{qualification_inventory['invocation_selection_counts']['explicit_cranelift']}`",
+        "- Qualification authority changes no compiler invocation or classification.",
         "- Partial or unregistered inventory: `rejected`",
         "",
     ]

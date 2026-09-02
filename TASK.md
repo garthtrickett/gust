@@ -130,7 +130,7 @@ Out of scope:
 - [x] Patch 23.10 — Focused Live Compatibility Lane and Default-CI Retirement — DONE
 - [x] Patch 23.11 — Archived MIR-to-C Reference Corpus — DONE
 - [x] Patch 23.12 — Production, Release, Package, and Downstream Audit — DONE
-- [ ] Patch 23.13 — Cross-Feature Qualification and Residue Audit
+- [x] Patch 23.13 — Cross-Feature Qualification and Residue Audit — DONE
 - [ ] Patch 23.14 — Exact-Main Historical Full Qualification
 - [ ] Patch 23.15 — Phase 23 Closure
 

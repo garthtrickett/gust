@@ -6,7 +6,7 @@ Generated from the canonical feature registry. Do not edit by hand.
 - Status: `patch23_12_complete`
 - Next patch: `23.13`
 - Supported surfaces: `6`
-- Supported surface manifest: `7617ab681ba668c39e10a3203d371b2d955ba000779084b2ebf0da17125fd4c0`
+- Supported surface manifest: `e33455dae7d0d52c7d585256c3a485b2af96543c7551275c400e0ea9d0d419d4`
 - Repository compiler invocations: `318`
 - Retained explicit-C call sites: `178`
 - Phase 25 bootstrap explicit-C call sites: `5`

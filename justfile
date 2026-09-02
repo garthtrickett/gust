@@ -23824,3 +23824,22 @@ guard-cranelift-phase23-mir-to-c-frozen-surface-evidence:
     just guard-cranelift-phase23-mir-to-c-deprecation-opening-evidence
     just guard-cranelift-phase23-mir-to-c-frozen-surface-contract
     python3 scripts/phase23_mir_to_c_frozen_surface.py evidence
+
+# Cranelift lane, Patch 23.13. Qualify the complete registered Phase 23
+# Level 1/2 surface and classify the remaining backend/bootstrap residue.
+guard-cranelift-phase23-cross-feature-qualification-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧭 Checking Phase 23 cross-feature qualification authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase23-cross-feature-qualification-contract | grep -F $'guard-cranelift-phase23-cross-feature-qualification-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase23_cross_feature_qualification.py validate
+    python3 scripts/phase23_cross_feature_qualification.py check-review
+
+guard-cranelift-phase23-cross-feature-qualification-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Running complete Phase 23 cross-feature qualification..."
+    just guard-cranelift-phase23-cross-feature-qualification-contract
+    python3 scripts/phase23_cross_feature_qualification.py evidence
