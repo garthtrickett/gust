@@ -184,8 +184,14 @@ def validate() -> dict:
             "Historical per-job timeout authority drifted")
 
     task = TASK.read_text(encoding="utf-8")
+    closure_present = isinstance(registry.get("phase23_closure"), dict)
+    closure_row = (
+        "- [x] Patch 23.15 — Phase 23 Closure — DONE"
+        if closure_present else
+        "- [ ] Patch 23.15 — Phase 23 Closure"
+    )
     require("- [x] Patch 23.14 — Exact-Main Historical Full Qualification — DONE" in task and
-            "- [ ] Patch 23.15 — Phase 23 Closure" in task,
+            closure_row in task,
             "23.14/23.15 roadmap boundary drifted")
     levels = json.loads(LEVELS.read_text(encoding="utf-8"))["guards"]
     require(levels.get(GUARD) == 1, "Patch 23.14 guard level drifted")

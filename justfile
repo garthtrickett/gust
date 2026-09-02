@@ -23856,3 +23856,25 @@ guard-cranelift-phase23-historical-full-qualification-contract:
     python3 scripts/cranelift_registry.py validate
     python3 scripts/phase23_historical_full_qualification.py validate
     python3 scripts/phase23_historical_full_qualification.py check-review
+
+# Cranelift lane, Patch 23.15. Close from the complete Phase 23 authority,
+# exact-final-main Historical record, retained focused oracle, and Phase 25
+# bootstrap boundary without replaying Level 3 from pull-request CI.
+guard-cranelift-phase23-close:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Closing Phase 23 MIR-to-C deprecation..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase23-close | grep -F $'guard-cranelift-phase23-close\t1\t' >/dev/null
+    just guard-cranelift-phase23-issue-health-opening-contract
+    just guard-cranelift-phase23-assurance-phase-a-contract
+    just guard-cranelift-phase23-assurance-phase-b-contract
+    just guard-cranelift-phase23-mir-to-c-deprecation-opening-contract
+    just guard-cranelift-phase23-mir-to-c-frozen-surface-contract
+    just guard-cranelift-phase23-mir-to-c-focused-live-contract
+    just guard-cranelift-phase23-mir-to-c-archived-corpus-contract
+    just guard-cranelift-phase23-production-release-audit-contract
+    just guard-cranelift-phase23-cross-feature-qualification-contract
+    just guard-cranelift-phase23-historical-full-qualification-contract
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase23_closure.py --check

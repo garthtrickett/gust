@@ -233,6 +233,9 @@ def policy_accepts(record: dict, summary: dict[str, object]) -> bool:
     expected_live = registry.get("phase23_cross_feature_qualification", {}).get(
         "frozen_surface_transition", {}).get(
             "current_live_c_case_surface", expected_live)
+    expected_live = registry.get("phase23_closure", {}).get(
+        "frozen_surface_transition", {}).get(
+            "current_live_c_case_surface", expected_live)
     return (
         record.get("capability_surface") == summary["capability_surface"] and
         expected_live == summary["live_c_case_surface"] and
@@ -417,9 +420,36 @@ def validate() -> tuple[dict, dict[str, object]]:
         require(qualification_transition["current_live_c_case_surface"].get(field) ==
                 qualification_transition["previous_live_c_case_surface"].get(field),
                 f"Patch 23.13 changed frozen live-C field: {field}")
-    require(qualification_transition["current_live_c_case_surface"] ==
-            summary["live_c_case_surface"],
-            "live explicit-C surface is not the registered Patch 23.13 successor")
+    closure_transition = registry.get("phase23_closure", {}).get(
+        "frozen_surface_transition")
+    if closure_transition is None:
+        require(qualification_transition["current_live_c_case_surface"] ==
+                summary["live_c_case_surface"],
+                "live explicit-C surface is not the registered Patch 23.13 successor")
+    else:
+        closure_unchanged = [
+            "count", "case_id_manifest_digest", "owner_contract_count",
+            "owner_counts", "consumer_class_counts", "selection_counts",
+        ]
+        require(closure_transition.get("contract_version") ==
+                "phase23_closure_frozen_surface_transition_v1" and
+                closure_transition.get("status") == "patch23_15_complete" and
+                closure_transition.get("authority_base_main") ==
+                "8985a3d09b1f119accd12cd952940ef019d6a698" and
+                closure_transition.get("previous_live_c_case_surface") ==
+                qualification_transition["current_live_c_case_surface"] and
+                closure_transition.get("current_live_c_case_surface") ==
+                summary["live_c_case_surface"] and
+                closure_transition.get("unchanged_fields") == closure_unchanged and
+                closure_transition.get("change_reason") ==
+                "closure_authority_and_workflow_wiring_shifted_command_lines_and_owner_file_digests_without_changing_the_frozen_explicit_C_case_population" and
+                closure_transition.get("partial_or_unregistered_surface") ==
+                "rejected",
+                "Patch 23.15 frozen live-C transition drifted")
+        for field in closure_unchanged:
+            require(closure_transition["current_live_c_case_surface"].get(field) ==
+                    closure_transition["previous_live_c_case_surface"].get(field),
+                    f"Patch 23.15 changed frozen live-C field: {field}")
     validate_mutations(record, registry)
     require(record.get("explicit_c_byte_authority") ==
             registry["phase23_mir_to_c_deprecation_opening"]
@@ -482,8 +512,12 @@ def render(record: dict, registry: dict) -> str:
     capabilities = capability_rows(registry)
     cases = live_c_case_rows()
     cap = record["capability_surface"]
-    live = registry["phase23_cross_feature_qualification"][
-        "frozen_surface_transition"]["current_live_c_case_surface"]
+    live = registry.get("phase23_closure", {}).get(
+        "frozen_surface_transition", {}).get(
+            "current_live_c_case_surface",
+            registry["phase23_cross_feature_qualification"][
+                "frozen_surface_transition"]["current_live_c_case_surface"],
+        )
     lines = [
         "# Cranelift Phase 23.9 — Frozen MIR-to-C Feature Surface",
         "",
@@ -497,7 +531,7 @@ def render(record: dict, registry: dict) -> str:
         f"- Capability observable manifest: `{cap['observable_contract_manifest_digest']}`",
         f"- Frozen live explicit-C cases: `{live['count']}`",
         f"- Live-C identity manifest: `{live['complete_identity_manifest_digest']}`",
-        "- Current identity is the registered Patch 23.13 qualification successor; the explicit-C population and complete case-ID manifest are unchanged.",
+        "- Current identity is the registered Phase 23 closure successor; the explicit-C population and complete case-ID manifest are unchanged.",
         f"- Maintenance: `{record['maintenance_policy']['classification']}`",
         "- New features require authorized shared semantics and a supported Cranelift path first.",
         "- C-only capabilities, backend-only semantic claims, and fallback are forbidden.",

@@ -1,0 +1,10 @@
+kind	requirement	evidence	level
+closure	every Phase 23 status row is DONE	TASK.md Status rows 23.0 through 23.15	1
+issue_health	checkpoint issues are closed on merged current-main evidence	issues 105 110 and 240 registered closure authorities	1
+assurance	Assurance A and B remain deterministic and report-only	phase23_assurance_phase_a and phase23_assurance_phase_b	1
+route	explicit C remains accepted byte-identical deprecated and no-fallback	deprecation frozen-surface and focused-live authorities	1
+compatibility	one focused live lane and the archived corpus remain complete	focused-live and archived-corpus registry authorities	1
+delivery	supported production package install and release routes are native	phase23_production_release_audit	1
+bootstrap	the Phase 25 bootstrap chain remains explicit and fixed-point	five registered bootstrap callers make gust make bootstrap and gust_v4.c	1
+phase_gate	the exact-final-main Historical Full gate is complete success	run 33584176425 completed success with 18/18 jobs on fee6600d86f85f8a0a0da94211ae89895869187e	1
+non_claim	the closure view is generated from registry authority	view regenerated and compared byte for byte	1

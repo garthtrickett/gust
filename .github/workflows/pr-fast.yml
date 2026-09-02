@@ -539,6 +539,9 @@ jobs:
       - name: Phase 23 exact-main Historical Full qualification
         run: just guard-cranelift-phase23-historical-full-qualification-contract
 
+      - name: Phase 23 closure
+        run: just guard-cranelift-phase23-close
+
       - name: Phase 19 cross-feature composition
         run: just guard-cranelift-phase19-composition-contract
 

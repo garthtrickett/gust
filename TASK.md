@@ -132,7 +132,7 @@ Out of scope:
 - [x] Patch 23.12 — Production, Release, Package, and Downstream Audit — DONE
 - [x] Patch 23.13 — Cross-Feature Qualification and Residue Audit — DONE
 - [x] Patch 23.14 — Exact-Main Historical Full Qualification — DONE
-- [ ] Patch 23.15 — Phase 23 Closure
+- [x] Patch 23.15 — Phase 23 Closure — DONE
 
 Status rows are machine-parsed. Keep each row as
 `- [ ] Patch 23.N — <Title>` or `- [x] Patch 23.N — <Title> — DONE`; an
@@ -519,6 +519,28 @@ latest applicable exact-final-implementation-main Historical Full is green with
 its complete job population; every exact-head closure workflow succeeds; review
 threads are resolved; and no supported production or release workflow requires
 MIR-to-C. Phase 24 and Phase 25 remain inactive.
+
+## Phase 23 Closure Record
+
+Phase 23 closes with explicit `--backend mir-to-c` and `--backend c` accepted,
+byte-identical, and deprecated for Phase 24 backend removal. Cranelift remains
+the default and explicit native route with no C fallback. Exactly one focused
+non-bootstrap live compatibility lane remains, all other selected parity uses
+the versioned archived corpus, and no supported production, package/install,
+or release workflow requires MIR-to-C. The five explicit bootstrap callers and
+`gust_v4.c` fixed-point chain remain owned by Phase 25.
+
+Authoritative `Cranelift Historical Full` run **33584176425**, event
+`workflow_dispatch`, completed `success` on exact final implementation main
+**fee6600d86f85f8a0a0da94211ae89895869187e** with **18/18** jobs successful,
+zero unfinished/non-success jobs, and recorded run/max-job/aggregate budgets of
+5414/4286/22697 seconds. Patch 23.14 PR #297 merged from exact head
+`b646bd4b84b8b804910880c4efed8b7831d31e87` as exact main
+`8985a3d09b1f119accd12cd952940ef019d6a698` after 124/124 exact-head
+`pull_request` workflows succeeded and all review conversations were resolved.
+The generated closure record is `docs/PHASE23_CLOSURE.md`; the terminal lane
+record is written only after the closure PR merges. Phase 24 and Phase 25
+remain inactive.
 
 ## Recommended Implementation Order
 
