@@ -90,6 +90,7 @@
     "phase24_cr15_seed_authority_consumer_transition",
     "phase24_cr15_closure",
     "phase24_filename_behavior_characterization",
+    "phase24_semantic_spelling_inventory",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -4168,7 +4169,7 @@
           "contract_version": {"const":"phase24_filename_behavior_characterization_v1"},
           "status": {"const":"patch24_1_complete_observational_decision_open"},
           "authority_base_main": {"const":"3abae7a96111b15e27e295a81f15b7f97a2e372c"},
-          "live_justfile_successor_digest": {"const":"d7616985e89f0b15be60a11a4f0c337e10ff05f7831393ee4fb9bea3901b925a"},
+          "live_justfile_successor_digest": {"const":"74bea653752ec6b7432c0df3613a2e3b243e59bc36789c4b98b0baecf3951e08"},
           "phase22_invocation_transition": {"type":"object"},
           "consumer_inventory_transition": {"type":"object"},
           "review_view": {"const":"compiler/CRANELIFT_PHASE24_FILENAME_BEHAVIOR_CHARACTERIZATION.md"},
@@ -4206,7 +4207,7 @@
               "phase22_invocation_transition": {
                 "contract_version":"phase24_universal_tcs_decision_phase22_invocation_transition_v1",
                 "previous_invocation":{"path":"scripts/phase24_filename_behavior_characterization.py","line":361,"recipe":"none","compiler_token":"python_argv","selection":"implicit_default","consumer_class":"cranelift_C_or_diagnostic_guard","owner":"cranelift","expected_artifact":"generated_C_or_diagnostic","expected_transition":"22.2_explicit_C_selection","falsifier":"default_flip_changes_the_guard_artifact_before_explicit_C_migration","command":"[str(ROOT / 'gust'), *ROUTES[route], relative_target]"},
-                "current_invocation":{"path":"scripts/phase24_filename_behavior_characterization.py","line":427,"recipe":"none","compiler_token":"python_argv","selection":"implicit_default","consumer_class":"cranelift_C_or_diagnostic_guard","owner":"cranelift","expected_artifact":"generated_C_or_diagnostic","expected_transition":"22.2_explicit_C_selection","falsifier":"default_flip_changes_the_guard_artifact_before_explicit_C_migration","command":"[str(ROOT / 'gust'), *ROUTES[route], relative_target]"},
+                "current_invocation":{"path":"scripts/phase24_filename_behavior_characterization.py","line":428,"recipe":"none","compiler_token":"python_argv","selection":"implicit_default","consumer_class":"cranelift_C_or_diagnostic_guard","owner":"cranelift","expected_artifact":"generated_C_or_diagnostic","expected_transition":"22.2_explicit_C_selection","falsifier":"default_flip_changes_the_guard_artifact_before_explicit_C_migration","command":"[str(ROOT / 'gust'), *ROUTES[route], relative_target]"},
                 "summary_unchanged":true,
                 "partial_extra_or_substituted_invocation":"rejected"
               },
@@ -4236,6 +4237,52 @@
               "begins_patch24_2_or_24_3":false
             }
           }
+        }
+      },
+      "phase24_semantic_spelling_inventory": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version","status","authority_base_main","review_view","inventory_summary","consumer_inventory_transition","classification_policy","falsifiers","boundary"],
+        "properties": {
+          "contract_version": {"const":"phase24_semantic_spelling_inventory_v1"},
+          "status": {"const":"patch24_2_complete_report_only"},
+          "authority_base_main": {"const":"f36d43e33cb2c0f5b66c801b82d5e27ebcfc0ddc"},
+          "review_view": {"const":"compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md"},
+          "inventory_summary": {
+            "type":"object",
+            "additionalProperties":false,
+            "required":["source_file_count","site_count","semantic_site_count","semantic_manifest_digest","classification_counts","partition_manifest_digests","complete_manifest_digest","unknown_site_count"],
+            "properties": {
+              "source_file_count":{"type":"integer","minimum":1},
+              "site_count":{"type":"integer","minimum":1},
+              "semantic_site_count":{"type":"integer","minimum":1},
+              "semantic_manifest_digest":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+              "classification_counts":{"type":"object"},
+              "partition_manifest_digests":{"type":"object"},
+              "complete_manifest_digest":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+              "unknown_site_count":{"const":0}
+            }
+          },
+          "consumer_inventory_transition": {
+            "type":"object",
+            "additionalProperties":false,
+            "required":["contract_version","previous_inventory","current_inventory","registered_changed_text_surfaces","added_text_surfaces","previous_changed_text_surfaces","current_changed_text_surfaces","unchanged_other_text_surface_manifest_digest","unchanged_fields","partial_extra_or_substituted_surface"],
+            "properties": {
+              "contract_version":{"const":"phase24_semantic_spelling_consumer_transition_v1"},
+              "previous_inventory":{"type":"object"},
+              "current_inventory":{"type":"object"},
+              "registered_changed_text_surfaces":{"const":[".github/workflows/pr-fast.yml","TASK.md","compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md","scripts/cranelift_registry.py","scripts/cranelift_test_levels.json"]},
+              "added_text_surfaces":{"const":["compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md"]},
+              "previous_changed_text_surfaces":{"type":"array","minItems":4,"maxItems":4},
+              "current_changed_text_surfaces":{"type":"array","minItems":5,"maxItems":5},
+              "unchanged_other_text_surface_manifest_digest":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+              "unchanged_fields":{"const":["invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","invocation_selection_counts","unclassified_count"]},
+              "partial_extra_or_substituted_surface":{"const":"rejected"}
+            }
+          },
+          "classification_policy": {"type":"object"},
+          "falsifiers":{"const":["omitted_site","substituted_spelling","duplicate_site","unclassified_site","stale_line"]},
+          "boundary":{"const":{"changes_compiler_or_runtime_source":false,"changes_accepted_Gust_program_meaning":false,"adds_intrinsic_ids_or_dispatch":false,"changes_MIR_ABI_layout_runtime_symbols_or_backend_route":false,"changes_bootstrap_route_or_seed":false,"edits_stdlib":false,"begins_patch24_3":false}}
         }
       },
       "phase19_brand_authority": {
