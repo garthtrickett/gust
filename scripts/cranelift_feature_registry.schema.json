@@ -87,6 +87,7 @@
     "phase24_cr15_opening",
     "phase24_cr15_derivation",
     "phase24_cr15_qualification",
+    "phase24_cr15_seed_authority_consumer_transition",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -3985,6 +3986,24 @@
           "raw_mutex_call_site_transition": {"type":"object"},
           "consumer_inventory_transition": {"type":"object"},
           "boundary": {"const":{"changes_accepted_Gust_meaning_beyond_CR15":false,"adds_or_changes_MIR_operations":false,"changes_ABI_layout_runtime_symbols_target_or_linker":false,"changes_backend_route_default_or_fallback":false,"changes_bootstrap_route_or_seed":false,"edits_stdlib":false,"begins_patch24_0e_or_24_1":false}}
+        }
+      },
+      "phase24_cr15_seed_authority_consumer_transition": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_changed_paths","previous_changed_text_surfaces","current_changed_text_surfaces","unchanged_other_text_surface_manifest_digest","unchanged_fields","partial_extra_or_substituted_surface"],
+        "properties": {
+          "contract_version": {"const":"phase24_cr15_seed_authority_consumer_transition_v1"},
+          "status": {"const":"ready_for_seed_publication"},
+          "authority_base_main": {"const":"10076805b56697304e7b236fff09cdf3689fcc05"},
+          "previous_inventory": {"type":"object"},
+          "current_inventory": {"type":"object"},
+          "registered_changed_paths": {"const":["compiler/CRANELIFT_PHASE22_DEFAULT_ROUTE_SEED_CONVERGENCE.md","scripts/cranelift_registry.py","scripts/phase22_default_route_seed_convergence.py","scripts/phase23_closure.py"]},
+          "previous_changed_text_surfaces": {"type":"array","minItems":4,"maxItems":4},
+          "current_changed_text_surfaces": {"type":"array","minItems":4,"maxItems":4},
+          "unchanged_other_text_surface_manifest_digest": {"type":"string","pattern":"^[0-9a-f]{64}$"},
+          "unchanged_fields": {"const":["text_surface_count","invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","classification_counts","invocation_selection_counts","unclassified_count"]},
+          "partial_extra_or_substituted_surface": {"const":"rejected"}
         }
       },
       "phase19_brand_authority": {

@@ -148,6 +148,8 @@ def validate_transition(record: dict, registry: dict) -> None:
         "phase24_cr15_derivation", {}).get("consumer_inventory_transition")
     cr15_qualification_successor = registry.get(
         "phase24_cr15_qualification", {}).get("consumer_inventory_transition")
+    cr15_seed_successor = registry.get(
+        "phase24_cr15_seed_authority_consumer_transition")
     if successor is None:
         require(transition.get("current_inventory") == live_inventory,
                 "Patch 23.13 consumer inventory transition drifted")
@@ -425,10 +427,13 @@ def validate_transition(record: dict, registry: dict) -> None:
                                 ]
                                 qualification_paths = cr15_qualification_successor.get(
                                     "registered_changed_paths", [])
-                                qualification_rows = [
-                                    row for row in live_rows
-                                    if row["path"] in qualification_paths
-                                ]
+                                qualification_rows = (
+                                    [row for row in live_rows
+                                     if row["path"] in qualification_paths]
+                                    if cr15_seed_successor is None else
+                                    cr15_qualification_successor.get(
+                                        "current_changed_text_surfaces", [])
+                                )
                                 previous_rows = cr15_qualification_successor.get(
                                     "previous_changed_text_surfaces", [])
                                 require(
@@ -444,7 +449,9 @@ def validate_transition(record: dict, registry: dict) -> None:
                                         "previous_inventory") ==
                                     cr15_derivation_successor["current_inventory"] and
                                     cr15_qualification_successor.get(
-                                        "current_inventory") == live_inventory and
+                                        "current_inventory") ==
+                                    (live_inventory if cr15_seed_successor is None else
+                                     cr15_seed_successor.get("previous_inventory")) and
                                     cr15_qualification_successor.get(
                                         "unchanged_fields") ==
                                     qualification_unchanged and
@@ -460,10 +467,13 @@ def validate_transition(record: dict, registry: dict) -> None:
                                     qualification_paths and
                                     all(previous != live for previous, live in
                                         zip(previous_rows, qualification_rows)) and
-                                    module.canonical_digest([
+                                    (module.canonical_digest([
                                         row for row in live_rows
                                         if row["path"] not in qualification_paths
-                                    ]) == cr15_qualification_successor.get(
+                                    ]) if cr15_seed_successor is None else
+                                     cr15_qualification_successor.get(
+                                         "unchanged_other_text_surface_manifest_digest")) ==
+                                    cr15_qualification_successor.get(
                                         "unchanged_other_text_surface_manifest_digest"),
                                     "Patch 24.0d CR-15 consumer successor drifted")
                                 for field in qualification_unchanged:
@@ -472,6 +482,55 @@ def validate_transition(record: dict, registry: dict) -> None:
                                         cr15_qualification_successor[
                                             "previous_inventory"].get(field),
                                         f"Patch 24.0d changed consumer inventory field: {field}")
+                                if cr15_seed_successor is not None:
+                                    seed_paths = [
+                                        "compiler/CRANELIFT_PHASE22_DEFAULT_ROUTE_SEED_CONVERGENCE.md",
+                                        "scripts/cranelift_registry.py",
+                                        "scripts/phase22_default_route_seed_convergence.py",
+                                        "scripts/phase23_closure.py",
+                                    ]
+                                    seed_unchanged = qualification_unchanged
+                                    seed_rows = [row for row in live_rows
+                                                 if row["path"] in seed_paths]
+                                    previous_seed_rows = cr15_seed_successor.get(
+                                        "previous_changed_text_surfaces", [])
+                                    require(
+                                        cr15_seed_successor.get("contract_version") ==
+                                        "phase24_cr15_seed_authority_consumer_transition_v1" and
+                                        cr15_seed_successor.get("status") ==
+                                        "ready_for_seed_publication" and
+                                        cr15_seed_successor.get("authority_base_main") ==
+                                        "10076805b56697304e7b236fff09cdf3689fcc05" and
+                                        cr15_seed_successor.get("previous_inventory") ==
+                                        cr15_qualification_successor["current_inventory"] and
+                                        cr15_seed_successor.get("current_inventory") ==
+                                        live_inventory and
+                                        cr15_seed_successor.get(
+                                            "registered_changed_paths") == seed_paths and
+                                        cr15_seed_successor.get("unchanged_fields") ==
+                                        seed_unchanged and
+                                        cr15_seed_successor.get(
+                                            "partial_extra_or_substituted_surface") ==
+                                        "rejected" and
+                                        [row["path"] for row in seed_rows] == seed_paths and
+                                        cr15_seed_successor.get(
+                                            "current_changed_text_surfaces") == seed_rows and
+                                        [row.get("path") for row in previous_seed_rows] ==
+                                        seed_paths and
+                                        all(previous != current for previous, current in
+                                            zip(previous_seed_rows, seed_rows)) and
+                                        module.canonical_digest([
+                                            row for row in live_rows
+                                            if row["path"] not in seed_paths
+                                        ]) == cr15_seed_successor.get(
+                                            "unchanged_other_text_surface_manifest_digest"),
+                                        "Patch 24.0e CR-15 seed consumer successor drifted")
+                                    for field in seed_unchanged:
+                                        require(
+                                            live_inventory.get(field) ==
+                                            cr15_seed_successor[
+                                                "previous_inventory"].get(field),
+                                            f"Patch 24.0e changed consumer inventory field: {field}")
 
     frozen = registry["phase23_mir_to_c_frozen_surface"][
         "production_release_transition"]
