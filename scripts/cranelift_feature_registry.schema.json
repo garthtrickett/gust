@@ -86,6 +86,7 @@
     "phase23_closure",
     "phase24_cr15_opening",
     "phase24_cr15_derivation",
+    "phase24_cr15_qualification",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -3949,6 +3950,39 @@
             }
           },
           "boundary": {"const": {"adds_or_changes_MIR_operations":false,"changes_ABI_layout_runtime_symbols_target_or_linker":false,"changes_backend_route_default_or_fallback":false,"changes_bootstrap_route_or_seed":false,"edits_stdlib":false,"begins_patch24_0d_or_24_1":false}}
+        }
+      },
+      "phase24_cr15_qualification": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version","status","authority_base_main","next_patch","live_justfile_successor_digest","review_view","witnesses","positive_authority","canonical_lowering","negative_authority","consumer_inventory_transition","boundary"],
+        "properties": {
+          "contract_version": {"const": "phase24_cr15_qualification_v1"},
+          "status": {"const": "patch24_0d_complete"},
+          "authority_base_main": {"const": "2383096a741c62e8de103a5b79281b9f616eb805"},
+          "next_patch": {"const": "24.0e"},
+          "live_justfile_successor_digest": {"const": "b8a73312109a5bc68aea9639e7a01c182a2b9ea3f04b7d220ce002a8813245a4"},
+          "review_view": {"const": "compiler/CRANELIFT_PHASE24_CR15_QUALIFICATION.md"},
+          "witnesses": {
+            "const": {
+              "inferred":"tests/phase24_cr15_qualification_positive.gst",
+              "explicit":"tests/phase24_cr15_qualification_explicit.gst",
+              "spelling_substituted_module":"tests/phase24_cr15_qualification_module.gst",
+              "same_spelling_without_metadata_module":"tests/phase24_cr15_qualification_no_metadata_module.gst",
+              "same_spelling_without_metadata_rejected":"tests/phase24_cr15_qualification_no_metadata_rejected.gst",
+              "use_after_move_rejected":"tests/phase24_cr15_qualification_use_after_move_rejected.gst",
+              "escape_rejected":"tests/phase24_cr15_qualification_escape_rejected.gst",
+              "forgery_rejected":"tests/phase24_cr15_qualification_forgery_rejected.gst",
+              "unresolved_rejected":"tests/phase24_cr15_qualification_unresolved_rejected.gst",
+              "wrong_brand_rejected":"tests/phase24_cr15_qualification_wrong_brand_rejected.gst",
+              "post_cleanup_rejected":"compiler/phase20_protected_access_after_close_invalid.gst"
+            }
+          },
+          "positive_authority": {"type":"object"},
+          "canonical_lowering": {"type":"object"},
+          "negative_authority": {"type":"object"},
+          "consumer_inventory_transition": {"type":"object"},
+          "boundary": {"const":{"changes_accepted_Gust_meaning_beyond_CR15":false,"adds_or_changes_MIR_operations":false,"changes_ABI_layout_runtime_symbols_target_or_linker":false,"changes_backend_route_default_or_fallback":false,"changes_bootstrap_route_or_seed":false,"edits_stdlib":false,"begins_patch24_0e_or_24_1":false}}
         }
       },
       "phase19_brand_authority": {

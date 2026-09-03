@@ -3495,7 +3495,36 @@ func codegen_generate_active_defers(env: &typechecker.TypeEnvironment[ctx], star
         mut generated := "";
         mut i := len((*env).codegen_active_defers) - 1;
         while i >= start_index {
-            generated = std.Concat(generated, (*env).codegen_active_defers[i]);
+            mut entry := (*env).codegen_active_defers[i];
+            if len(entry) > 0 && std.str_byte_at(entry, 0) == 68 {
+                generated = std.Concat(
+                    generated, std.str_slice(entry, 1, len(entry))
+                );
+            }
+            i = i - 1;
+        }
+        return std.Clone(ctx, generated);
+    }
+}
+
+func codegen_generate_active_scope_exits(env: &typechecker.TypeEnvironment[ctx], start_index: int, stop_at_loop: int, ctx: &Arena) str {
+    unsafe {
+        mut generated := "";
+        mut i := len((*env).codegen_active_defers) - 1;
+        while i >= start_index {
+            mut entry := (*env).codegen_active_defers[i];
+            if len(entry) == 0 && stop_at_loop == 1 {
+                return std.Clone(ctx, generated);
+            }
+            if len(entry) > 0 {
+                mut output := entry;
+                if std.str_byte_at(entry, 0) == 68 {
+                    output = std.str_slice(entry, 1, len(entry));
+                }
+                generated = std.Concat(
+                    generated, output
+                );
+            }
             i = i - 1;
         }
         return std.Clone(ctx, generated);
@@ -3511,6 +3540,12 @@ func codegen_generate_block_statement(block_idx: Index[ast.BlockStatement[ctx], 
         mut body_statements_codegen_block: std.Vector[ast.Statement[ctx], ctx] := ctx[block_val_codegen_block.statements];
         mut chunks: std.Vector[str, ctx] := std.VectorNew(ctx);
         mut defer_start := len((*env).codegen_active_defers);
+        mut cleanup := codegen_generate_resource_cleanup_plan(
+            "block", block_val_codegen_block.span, env, ctx
+        );
+        if len(cleanup) > 0 {
+            (*env).codegen_active_defers.Push(cleanup);
+        }
         mut j := 0;
         while j < len(body_statements_codegen_block) {
             mut child_stmt_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
@@ -3520,7 +3555,7 @@ func codegen_generate_block_statement(block_idx: Index[ast.BlockStatement[ctx], 
             if stmt_tag == 11 { // Defer
                 mut defer_expr_idx := ctx[child_stmt_idx].Defer.expr;
                 mut expr_str := codegen_generate_expression(defer_expr_idx, env, ctx);
-                mut formatted := std.Concat("    ", expr_str);
+                mut formatted := std.Concat("D    ", expr_str);
                 formatted = std.Concat(formatted, ";\n");
                 (*env).codegen_active_defers.Push(std.Clone(ctx, formatted));
             } else {
@@ -3529,17 +3564,11 @@ func codegen_generate_block_statement(block_idx: Index[ast.BlockStatement[ctx], 
             }
             j = j + 1;
         }
-        mut local_defers := codegen_generate_active_defers(
-            env, defer_start, ctx
+        mut local_defers := codegen_generate_active_scope_exits(
+            env, defer_start, 0, ctx
         );
         if len(local_defers) > 0 {
             chunks.Push(local_defers);
-        }
-        mut cleanup := codegen_generate_resource_cleanup_plan(
-            "block", block_val_codegen_block.span, env, ctx
-        );
-        if len(cleanup) > 0 {
-            chunks.Push(cleanup);
         }
         while len((*env).codegen_active_defers) > defer_start {
             (*env).codegen_active_defers.Pop();
@@ -3679,13 +3708,35 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
             return std.Clone(ctx, res);
         }
         if tag == 13 { // Expression
-            mut res := std.Concat("    ", codegen_generate_expression(ctx[stmt_idx].Expression.expr, env, ctx));
+            mut expression_idx := ctx[stmt_idx].Expression.expr;
+            mut expression := ctx[expression_idx];
+            mut expression_text := codegen_generate_expression(
+                expression_idx, env, ctx
+            );
+            mut res := "";
+            if expression.tag == 0 &&
+               (std.str_eq(expression.Identifier.name, "break") == 1 ||
+                std.str_eq(expression.Identifier.name, "continue") == 1) &&
+               len((*env).codegen_active_defers) > 0 {
+                res = codegen_generate_active_scope_exits(
+                    env, 0, 1, ctx
+                );
+            }
+            res = std.Concat(res, "    ");
+            res = std.Concat(res, expression_text);
             res = std.Concat(res, ";\n");
             return std.Clone(ctx, res);
         }
         if tag == 3 { // FunctionDecl
             mut f_name := ctx[stmt_idx].FunctionDecl.name;
             mut namespaced_name := typechecker.env_resolve_namespaced_ident(env, f_name, ctx);
+            if typechecker.typechecker_is_protected_resource_derived(
+                (*env).current_function_identity_scope,
+                env as *typechecker.TypeEnvironment[ctx],
+                ctx
+            ) == 1 {
+                namespaced_name = std.Clone(ctx, (*env).current_function_identity_scope);
+            }
             mut sig_lookup := (*env).function_registry.Get(namespaced_name);
             mut t_ret := ctx[ctx[stmt_idx].FunctionDecl.return_type];
             if sig_lookup.Ok {
@@ -3940,7 +3991,9 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
             }
             if tag == 6 { // While
                 mut cond_str := codegen_generate_expression(ctx[stmt_idx].While.condition, env, ctx);
+                (*env).codegen_active_defers.Push("");
                 mut body_str := codegen_generate_block_statement(ctx[stmt_idx].While.body, env, ctx);
+                (*env).codegen_active_defers.Pop();
                 
                 mut check_str := "        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }\n";
                 body_str = std.Concat(check_str, body_str);

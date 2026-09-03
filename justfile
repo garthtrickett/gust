@@ -23762,6 +23762,28 @@ guard-cranelift-phase24-cr15-derivation-evidence:
     just guard-cranelift-phase24-cr15-derivation-contract
     python3 scripts/phase24_cr15_derivation.py evidence
 
+# Cranelift lane, Patch 24.0d. Qualify cross-path identity, every existing
+# scope exit, generic cleanup, and the complete CR-15 adversarial boundary.
+guard-cranelift-phase24-cr15-qualification-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Checking Phase 24 CR-15 cross-path qualification authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase24-cr15-qualification-contract | grep -F $'guard-cranelift-phase24-cr15-qualification-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    just guard-cranelift-phase24-cr15-derivation-contract
+    python3 scripts/phase24_cr15_qualification.py validate
+    python3 scripts/phase24_cr15_qualification.py check-review
+
+guard-cranelift-phase24-cr15-qualification-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    make gust
+    make phase10-native-package
+    just guard-cranelift-phase24-cr15-qualification-contract
+    just guard-cranelift-phase24-cr15-derivation-evidence
+    python3 scripts/phase24_cr15_qualification.py evidence
+
 guard-cranelift-phase23-issue-health-opening-evidence:
     #!/usr/bin/env bash
     set -euo pipefail

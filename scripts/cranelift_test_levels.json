@@ -18,6 +18,8 @@
     }
   },
   "guards": {
+    "guard-cranelift-phase24-cr15-qualification-contract": 1,
+    "guard-cranelift-phase24-cr15-qualification-evidence": 2,
     "guard-cranelift-phase23-close": 1,
     "guard-cranelift-phase23-historical-full-qualification-contract": 1,
     "guard-cranelift-phase23-cross-feature-qualification-contract": 1,
