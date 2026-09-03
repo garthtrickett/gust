@@ -3991,7 +3991,7 @@
       "phase24_cr15_seed_authority_consumer_transition": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_changed_paths","previous_changed_text_surfaces","current_changed_text_surfaces","unchanged_other_text_surface_manifest_digest","unchanged_fields","partial_extra_or_substituted_surface"],
+        "required": ["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_changed_paths","previous_changed_text_surfaces","current_changed_text_surfaces","unchanged_other_text_surface_manifest_digest","unchanged_fields","partial_extra_or_substituted_surface","seed_publication_transition"],
         "properties": {
           "contract_version": {"const":"phase24_cr15_seed_authority_consumer_transition_v1"},
           "status": {"const":"ready_for_seed_publication"},
@@ -4003,7 +4003,26 @@
           "current_changed_text_surfaces": {"type":"array","minItems":4,"maxItems":4},
           "unchanged_other_text_surface_manifest_digest": {"type":"string","pattern":"^[0-9a-f]{64}$"},
           "unchanged_fields": {"const":["text_surface_count","invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","classification_counts","invocation_selection_counts","unclassified_count"]},
-          "partial_extra_or_substituted_surface": {"const":"rejected"}
+          "partial_extra_or_substituted_surface": {"const":"rejected"},
+          "seed_publication_transition": {
+            "type":"object",
+            "additionalProperties":false,
+            "required":["contract_version","status","authority_base_main","previous_inventory","registered_authority_changed_paths","previous_authority_text_surfaces","current_authority_text_surfaces","seed_path","accepted_live_states","unchanged_other_text_surface_manifest_digest","unchanged_fields","partial_extra_or_substituted_surface"],
+            "properties":{
+              "contract_version":{"const":"phase24_cr15_seed_publication_consumer_transition_v1"},
+              "status":{"const":"ready_for_seed_publication"},
+              "authority_base_main":{"const":"f1da52fdd0211414017d160d5bd55a2f12748530"},
+              "previous_inventory":{"type":"object"},
+              "registered_authority_changed_paths":{"const":["scripts/phase23_closure.py"]},
+              "previous_authority_text_surfaces":{"type":"array","minItems":1,"maxItems":1},
+              "current_authority_text_surfaces":{"type":"array","minItems":1,"maxItems":1},
+              "seed_path":{"const":"gust_v4.c"},
+              "accepted_live_states":{"type":"array","minItems":2,"maxItems":2},
+              "unchanged_other_text_surface_manifest_digest":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+              "unchanged_fields":{"const":["text_surface_count","invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","classification_counts","invocation_selection_counts","unclassified_count"]},
+              "partial_extra_or_substituted_surface":{"const":"rejected"}
+            }
+          }
         }
       },
       "phase19_brand_authority": {

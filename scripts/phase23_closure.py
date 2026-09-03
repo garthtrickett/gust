@@ -401,6 +401,10 @@ def check() -> None:
         "phase24_cr15_qualification", {}).get("consumer_inventory_transition")
     cr15_seed_transition = registry.get(
         "phase24_cr15_seed_authority_consumer_transition")
+    cr15_seed_publication = (
+        cr15_seed_transition.get("seed_publication_transition")
+        if isinstance(cr15_seed_transition, dict) else None
+    )
     closure_current = (
         roadmap_transition.get("previous_inventory")
         if isinstance(roadmap_transition, dict) else live_inventory()
@@ -664,8 +668,13 @@ def check() -> None:
                                 "scripts/phase22_default_route_seed_convergence.py",
                                 "scripts/phase23_closure.py",
                             ]
-                            seed_rows = [row for row in live_rows
-                                         if row["path"] in seed_paths]
+                            seed_rows = (
+                                [row for row in live_rows
+                                 if row["path"] in seed_paths]
+                                if cr15_seed_publication is None else
+                                cr15_seed_transition.get(
+                                    "current_changed_text_surfaces", [])
+                            )
                             previous_seed_rows = cr15_seed_transition.get(
                                 "previous_changed_text_surfaces", [])
                             require(
@@ -677,7 +686,9 @@ def check() -> None:
                                 "10076805b56697304e7b236fff09cdf3689fcc05" and
                                 cr15_seed_transition.get("previous_inventory") ==
                                 cr15_qualification_transition["current_inventory"] and
-                                cr15_seed_transition.get("current_inventory") == current and
+                                cr15_seed_transition.get("current_inventory") ==
+                                (current if cr15_seed_publication is None else
+                                 cr15_seed_publication.get("previous_inventory")) and
                                 cr15_seed_transition.get("registered_changed_paths") ==
                                 seed_paths and
                                 cr15_seed_transition.get("unchanged_fields") ==
@@ -692,10 +703,13 @@ def check() -> None:
                                 seed_paths and
                                 all(previous != live for previous, live in
                                     zip(previous_seed_rows, seed_rows)) and
-                                module.canonical_digest([
+                                (module.canonical_digest([
                                     row for row in live_rows
                                     if row["path"] not in seed_paths
-                                ]) == cr15_seed_transition.get(
+                                ]) if cr15_seed_publication is None else
+                                 cr15_seed_transition.get(
+                                     "unchanged_other_text_surface_manifest_digest")) ==
+                                cr15_seed_transition.get(
                                     "unchanged_other_text_surface_manifest_digest"),
                                 "Patch 24.0e CR-15 closure successor drifted")
                             for field in qualification_unchanged:
@@ -704,6 +718,9 @@ def check() -> None:
                                     cr15_seed_transition[
                                         "previous_inventory"].get(field),
                                     f"Patch 24.0e changed closure inventory field: {field}")
+                            if cr15_seed_publication is not None:
+                                module.validate_phase24_cr15_seed_publication_transition(
+                                    registry, current, live_rows)
 
     require(closure.get("unresolved_material_findings") == 0,
             "closure has unresolved material findings")
