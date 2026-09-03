@@ -91,6 +91,7 @@
     "phase24_cr15_closure",
     "phase24_filename_behavior_characterization",
     "phase24_semantic_spelling_inventory",
+    "phase24_s1_8_authority_successor",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -4237,6 +4238,27 @@
               "begins_patch24_2_or_24_3":false
             }
           }
+        }
+      },
+      "phase24_s1_8_authority_successor": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version","status","authority_base_main","owning_stdlib_pull_request","owning_stdlib_exact_head_sha","changed_paths","inherited_inventory_contract","justfile_state_digests","unchanged_non_justfile_identity","added_phase23_text_surface","rejected_states","phase22_invocation_transition","consumer_inventory_transition","boundary"],
+        "properties": {
+          "contract_version": {"const":"phase24_s1_8_authority_successor_v1"},
+          "status": {"const":"ready_for_exact_stdlib_s1_8_rebase"},
+          "authority_base_main": {"const":"148a7715e7a3f22e30e361750d2e49a443ce5c42"},
+          "owning_stdlib_pull_request": {"const":314},
+          "owning_stdlib_exact_head_sha": {"const":"96a51a20dd4071ad63ead144cdb11ce4da3834a6"},
+          "changed_paths": {"const":[".github/workflows/stdlib-s1-mutex-guard.yml",".github/workflows/stdlib-s1-resource-prerequisites.yml","TASK_STDLIB.md","docs/STDLIB_FOUNDATIONS.md","docs/STDLIB_SURFACE_FINDINGS.md","justfile","scripts/stdlib_s1_mutex_guard_parity.sh","tests/stdlib_s1_mutex_guard.gst","tests/stdlib_s1_mutex_guard_generic_derivation_module.gst"]},
+          "inherited_inventory_contract": {"const":"phase24_stdlib_s1_8_inventory_successor_v1"},
+          "justfile_state_digests": {"const":{"pre_s1_8":"74bea653752ec6b7432c0df3613a2e3b243e59bc36789c4b98b0baecf3951e08","post_s1_8":"8cd6f74b95c4e576168ea861288fa40ed918328d4e43428975466f902c0f843f"}},
+          "unchanged_non_justfile_identity": {"const":"byte_identical_to_inherited_pre_and_post_states"},
+          "added_phase23_text_surface": {"const":{"path":"scripts/stdlib_s1_mutex_guard_parity.sh","digest":"f03f7b26d667150fcc2019a5aea8f99f12ac165e4da28eac18d1c878fc7eb9fe","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":7,"generated_c_contract":0},"classification":"archive_candidate","owner":"stdlib","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"}},
+          "rejected_states": {"const":["partial","extra","substituted","safe_raw","backend_specific","path_drifted","unrelated"]},
+          "phase22_invocation_transition": {"const":{"contract_version":"phase24_s1_8_authority_phase22_invocation_transition_v1","previous_invocation":{"path":"scripts/phase24_filename_behavior_characterization.py","line":428,"recipe":"none","compiler_token":"python_argv","selection":"implicit_default","consumer_class":"cranelift_C_or_diagnostic_guard","owner":"cranelift","expected_artifact":"generated_C_or_diagnostic","expected_transition":"22.2_explicit_C_selection","falsifier":"default_flip_changes_the_guard_artifact_before_explicit_C_migration","command":"[str(ROOT / 'gust'), *ROUTES[route], relative_target]"},"current_invocation":{"path":"scripts/phase24_filename_behavior_characterization.py","line":441,"recipe":"none","compiler_token":"python_argv","selection":"implicit_default","consumer_class":"cranelift_C_or_diagnostic_guard","owner":"cranelift","expected_artifact":"generated_C_or_diagnostic","expected_transition":"22.2_explicit_C_selection","falsifier":"default_flip_changes_the_guard_artifact_before_explicit_C_migration","command":"[str(ROOT / 'gust'), *ROUTES[route], relative_target]"},"summary_unchanged":true,"partial_extra_or_substituted_invocation":"rejected"}},
+          "consumer_inventory_transition": {"type":"object"},
+          "boundary": {"const":{"changes_compiler_runtime_or_stdlib_source":false,"changes_accepted_Gust_program_meaning":false,"adds_or_changes_MIR_ABI_layout_or_runtime_symbols":false,"changes_backend_route_default_or_fallback":false,"changes_bootstrap_route_or_seed":false,"begins_patch24_3":false}}
         }
       },
       "phase24_semantic_spelling_inventory": {
