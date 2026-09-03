@@ -1,4 +1,4 @@
-import "stdlib_s1_mutex_guard_generic_derivation_module.gst" as sync;
+import "phase24_cr15_qualification_no_metadata_module.gst" as access;
 
 type Counter struct {
     value: int
@@ -8,7 +8,6 @@ func main() int {
     mut arena := os.Arena.New();
     defer arena.Free();
     mut mutex: std.Mutex[Counter, arena];
-    mut owner                                  := sync.lock(&mutex);
-    mut value := sync.get(&owner);
+    mut owner := access.enter(&mutex);
     return 0;
 }

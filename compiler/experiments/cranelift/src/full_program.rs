@@ -1652,6 +1652,7 @@ struct FunctionLowerer<'a, 'm> {
     abi: FunctionAbi,
     scopes: Vec<HashMap<String, Local>>,
     defers: Vec<Vec<usize>>,
+    scope_cleanups: Vec<Option<usize>>,
     loops: Vec<(Block, Block, usize)>,
     sret: Option<Value>,
 }
@@ -1679,6 +1680,7 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
             abi,
             scopes: vec![HashMap::new()],
             defers: vec![Vec::new()],
+            scope_cleanups: vec![None],
             loops: Vec::new(),
             sret: None,
         }
@@ -3665,18 +3667,24 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
                 "full-program block lowering received a non-Block node",
             ));
         }
+        let scope_cleanup = node
+            .children
+            .last()
+            .copied()
+            .filter(|child| self.program.nodes[*child].kind == "ScopeCleanup");
         self.scopes.push(HashMap::new());
         self.defers.push(Vec::new());
+        self.scope_cleanups.push(scope_cleanup);
         let mut terminated = false;
-        let mut scope_cleanup = None;
+        let mut observed_scope_cleanup = None;
         for (child_index, child) in node.children.clone().into_iter().enumerate() {
             if self.program.nodes[child].kind == "ScopeCleanup" {
-                if child_index + 1 != node.children.len() || scope_cleanup.is_some() {
+                if child_index + 1 != node.children.len() || observed_scope_cleanup.is_some() {
                     return Err(invalid(
                         "full-program scope cleanup must be the final unique block operation",
                     ));
                 }
-                scope_cleanup = Some(child);
+                observed_scope_cleanup = Some(child);
                 continue;
             }
             if terminated {
@@ -3687,11 +3695,9 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
             terminated = self.lower_statement(builder, child)?;
         }
         if !terminated {
-            self.emit_scope_defers(builder, self.defers.len() - 1)?;
-            if let Some(cleanup) = scope_cleanup {
-                self.lower_scope_cleanup(builder, cleanup)?;
-            }
+            self.emit_scope_exit(builder, self.defers.len() - 1)?;
         }
+        self.scope_cleanups.pop();
         self.defers.pop();
         self.scopes.pop();
         Ok(terminated)
@@ -3735,7 +3741,7 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
                         .last()
                         .ok_or_else(|| invalid("loop control appears outside a loop"))?;
                     for scope in (scope_depth..self.defers.len()).rev() {
-                        self.emit_scope_defers(builder, scope)?;
+                        self.emit_scope_exit(builder, scope)?;
                     }
                     builder.ins().jump(
                         if expression.text == "continue" {
@@ -3776,6 +3782,18 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
     ) -> Result<(), Box<dyn Error>> {
         for deferred in self.defers[scope].clone().into_iter().rev() {
             self.lower_expression(builder, deferred, None)?;
+        }
+        Ok(())
+    }
+
+    fn emit_scope_exit(
+        &mut self,
+        builder: &mut FunctionBuilder<'_>,
+        scope: usize,
+    ) -> Result<(), Box<dyn Error>> {
+        self.emit_scope_defers(builder, scope)?;
+        if let Some(cleanup) = self.scope_cleanups[scope] {
+            self.lower_scope_cleanup(builder, cleanup)?;
         }
         Ok(())
     }

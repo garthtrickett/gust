@@ -50,6 +50,17 @@ def derivation_successor_digest(registry: dict) -> str | None:
     return digest
 
 
+def qualification_successor_digest(registry: dict) -> str | None:
+    """Return the exact Patch 24.0d justfile successor when it is registered."""
+    qualification = registry.get("phase24_cr15_qualification")
+    if not isinstance(qualification, dict):
+        return None
+    digest = qualification.get("live_justfile_successor_digest")
+    require(isinstance(digest, str) and len(digest) == 64,
+            "Patch 24.0d justfile successor digest drifted")
+    return digest
+
+
 def validate_static(value: dict) -> None:
     require(value.get("contract_version") ==
             "phase24_cr15_stdlib_guard_transition_v1",
@@ -112,6 +123,7 @@ def validate_static(value: dict) -> None:
         "pre_relay": "accepted_as_live_predecessor",
         "post_relay": "accepted_only_at_exact_registered_file_and_site_identity",
         "patch24_0c_successor": "accepted_only_at_exact_registered_derivation_digest",
+        "patch24_0d_successor": "accepted_only_at_exact_registered_qualification_digest",
         "closed_phase_projection": "canonical_pre_relay_identity",
         "partial_extra_substituted_or_unrelated": "rejected",
         "landed_merge_evidence_is_recorded": True,
@@ -129,6 +141,9 @@ def live_state(registry: dict | None = None) -> str:
     successor = derivation_successor_digest(registry)
     if successor is not None and digest == successor:
         return "derivation_successor"
+    successor = qualification_successor_digest(registry)
+    if successor is not None and digest == successor:
+        return "qualification_successor"
     require(False,
             "justfile is not an exact registered relay or derivation state")
     raise AssertionError("unreachable")
@@ -187,6 +202,9 @@ def normalize_phase23_text_surfaces(
             successor = derivation_successor_digest(registry)
             if successor is not None:
                 accepted.append(successor)
+            successor = qualification_successor_digest(registry)
+            if successor is not None:
+                accepted.append(successor)
         require(live.get("digest") in accepted,
                 f"unregistered text-surface identity: {path}")
         for field in (
@@ -217,6 +235,8 @@ def normalized_owner_file_digest(
                 else value["post_relay_justfile_digest"])
     if state == "derivation_successor":
         expected = derivation_successor_digest(registry)
+    elif state == "qualification_successor":
+        expected = qualification_successor_digest(registry)
     require(digest == expected, "live-C justfile owner identity drifted")
     return value["pre_relay_justfile_digest"]
 
@@ -259,7 +279,7 @@ def render(value: dict) -> str:
         f"- Preserved unclassified count: `{summary['unclassified_count']}`",
         "",
         "The exact relay is merged and recorded. Only the exact pre-relay, landed one-site",
-        "relay, or registry-owned Patch 24.0c derivation successor is accepted.",
+        "relay, or exact registry-owned Patch 24.0c/24.0d successor is accepted.",
         "Closed Phase 22/23 projections use the canonical predecessor identity because",
         "the compiler command and route are unchanged. Partial, extra-site, substituted,",
         "path-drifted, or unrelated `justfile` changes are rejected.",

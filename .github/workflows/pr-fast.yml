@@ -506,6 +506,9 @@ jobs:
       - name: Phase 24 CR-15 protected-Resource derivation
         run: just guard-cranelift-phase24-cr15-derivation-contract
 
+      - name: Phase 24 CR-15 cross-path qualification
+        run: just guard-cranelift-phase24-cr15-qualification-contract
+
       - name: Phase 23 MIR evidence-owner repair
         run: just guard-cranelift-phase23-mir-evidence-owner-contract
 

@@ -70,6 +70,9 @@ SELF_EXCLUSIONS = {
     ".github/workflows/phase24-cr15-stdlib-guard-transition.yml",
     "compiler/CRANELIFT_PHASE24_CR15_STDLIB_GUARD_TRANSITION.md",
     "scripts/phase24_cr15_stdlib_guard_transition.py",
+    ".github/workflows/phase24-cr15-qualification.yml",
+    "compiler/CRANELIFT_PHASE24_CR15_QUALIFICATION.md",
+    "scripts/phase24_cr15_qualification.py",
 }
 
 SURFACE_PATTERNS = {
@@ -876,6 +879,9 @@ def validate() -> dict:
             cr15_derivation_transition = registry.get(
                 "phase24_cr15_derivation", {}).get(
                     "consumer_inventory_transition")
+            cr15_qualification_transition = registry.get(
+                "phase24_cr15_qualification", {}).get(
+                    "consumer_inventory_transition")
             closure_rows = [row for row in scan_text_surfaces()
                             if row["path"] in closure_paths]
             require([row.get("path") for row in closure_transition.get(
@@ -1034,8 +1040,22 @@ def validate() -> dict:
                             ]
                             successor_paths = cr15_derivation_transition.get(
                                 "registered_changed_paths", [])
-                            successor_rows = [row for row in live_text_rows
-                                              if row["path"] in successor_paths]
+                            successor_rows = (
+                                [row for row in live_text_rows
+                                 if row["path"] in successor_paths]
+                                if cr15_qualification_transition is None else
+                                cr15_derivation_transition.get(
+                                    "current_changed_text_surfaces", [])
+                            )
+                            successor_other_digest = (
+                                canonical_digest([
+                                    row for row in live_text_rows
+                                    if row["path"] not in successor_paths
+                                ])
+                                if cr15_qualification_transition is None else
+                                cr15_derivation_transition.get(
+                                    "unchanged_other_text_surface_manifest_digest")
+                            )
                             require(
                                 cr15_derivation_transition.get("contract_version") ==
                                 "phase24_cr15_derivation_consumer_transition_v1" and
@@ -1046,7 +1066,10 @@ def validate() -> dict:
                                 cr15_derivation_transition.get("previous_inventory") ==
                                 cr15_opening_transition["current_inventory"] and
                                 cr15_derivation_transition.get("current_inventory") ==
-                                live_inventory and
+                                (live_inventory
+                                 if cr15_qualification_transition is None else
+                                 cr15_qualification_transition.get(
+                                     "previous_inventory")) and
                                 cr15_derivation_transition.get("unchanged_fields") ==
                                 successor_unchanged and
                                 live_inventory.get("text_surface_count") ==
@@ -1069,10 +1092,7 @@ def validate() -> dict:
                                 [row["path"] for row in successor_rows] == successor_paths and
                                 cr15_derivation_transition.get(
                                     "current_changed_text_surfaces") == successor_rows and
-                                canonical_digest([
-                                    row for row in live_text_rows
-                                    if row["path"] not in successor_paths
-                                ]) == cr15_derivation_transition.get(
+                                successor_other_digest == cr15_derivation_transition.get(
                                     "unchanged_other_text_surface_manifest_digest"),
                                 "Patch 24.0c CR-15 derivation transition drifted")
                             for field in successor_unchanged:
@@ -1082,6 +1102,74 @@ def validate() -> dict:
                                         f"Patch 24.0c changed retained inventory field: {field}")
                             expected_inventory = cr15_derivation_transition[
                                 "current_inventory"]
+                            if cr15_qualification_transition is not None:
+                                qualification_unchanged = [
+                                    "text_surface_count", "invocation_count",
+                                    "invocation_manifest_digest",
+                                    "structural_surface_count",
+                                    "structural_manifest_digest",
+                                    "classification_counts",
+                                    "invocation_selection_counts",
+                                    "unclassified_count",
+                                ]
+                                qualification_paths = cr15_qualification_transition.get(
+                                    "registered_changed_paths", [])
+                                qualification_rows = [
+                                    row for row in live_text_rows
+                                    if row["path"] in qualification_paths
+                                ]
+                                previous_by_path = {
+                                    row["path"]: row for row in
+                                    cr15_qualification_transition.get(
+                                        "previous_changed_text_surfaces", [])
+                                }
+                                require(
+                                    cr15_qualification_transition.get(
+                                        "contract_version") ==
+                                    "phase24_cr15_qualification_consumer_transition_v1" and
+                                    cr15_qualification_transition.get("status") ==
+                                    "patch24_0d_complete" and
+                                    cr15_qualification_transition.get(
+                                        "authority_base_main") ==
+                                    "2383096a741c62e8de103a5b79281b9f616eb805" and
+                                    cr15_qualification_transition.get(
+                                        "previous_inventory") ==
+                                    cr15_derivation_transition["current_inventory"] and
+                                    cr15_qualification_transition.get(
+                                        "current_inventory") == live_inventory and
+                                    cr15_qualification_transition.get(
+                                        "unchanged_fields") ==
+                                    qualification_unchanged and
+                                    cr15_qualification_transition.get(
+                                        "partial_extra_or_substituted_surface") ==
+                                    "rejected" and
+                                    [row["path"] for row in qualification_rows] ==
+                                    qualification_paths and
+                                    cr15_qualification_transition.get(
+                                        "current_changed_text_surfaces") ==
+                                    qualification_rows and
+                                    [row.get("path") for row in
+                                     cr15_qualification_transition.get(
+                                         "previous_changed_text_surfaces", [])] ==
+                                    qualification_paths and
+                                    all(previous_by_path[path] != row
+                                        for path, row in zip(
+                                            qualification_paths,
+                                            qualification_rows)) and
+                                    canonical_digest([
+                                        row for row in live_text_rows
+                                        if row["path"] not in qualification_paths
+                                    ]) == cr15_qualification_transition.get(
+                                        "unchanged_other_text_surface_manifest_digest"),
+                                    "Patch 24.0d CR-15 qualification transition drifted")
+                                for field in qualification_unchanged:
+                                    require(
+                                        live_inventory.get(field) ==
+                                        cr15_qualification_transition[
+                                            "previous_inventory"].get(field),
+                                        f"Patch 24.0d changed retained inventory field: {field}")
+                                expected_inventory = cr15_qualification_transition[
+                                    "current_inventory"]
     require(expected_inventory == live_inventory,
             "live Phase 23 MIR-to-C inventory is not the exact registered successor")
     require(live_inventory["unclassified_count"] == 0,

@@ -344,6 +344,58 @@ func mir_native_full_program_flatten_expression(expression_index: Index[ast.Expr
             mut raw_callee := typechecker.get_call_func_name(
                 expression.Call.function, ctx
             );
+            mut constructor_helper := std.Clone(ctx, "");
+            if std.str_eq(raw_callee, "std.MutexNew") == 1 ||
+               std.str_eq(raw_callee, "std_MutexNew") == 1 {
+                mut constructor_type := codegen.codegen_get_expression_type(
+                    expression_index, env, ctx
+                );
+                constructor_type = typechecker.env_resolve_type(
+                    env, constructor_type, ctx
+                );
+                if constructor_type.tag != 8 { return 0 - 1; }
+                mut erased_constructor :=
+                    codegen.codegen_get_erased_struct_name(
+                        constructor_type.Struct.struct_name, env, ctx
+                    );
+                if std.str_find(erased_constructor, "std_Mutex_") != 0 {
+                    return 0 - 1;
+                }
+                constructor_helper = std.Concat(
+                    "__gust_mutex_new_", erased_constructor
+                );
+                raw_callee = constructor_helper;
+            }
+            mut intrinsic_receiver := empty[Index[ast.Expression[ctx], ctx]];
+            mut call_function := ctx[expression.Call.function];
+            if call_function.tag == 11 {
+                mut receiver_type := codegen.codegen_get_expression_type(
+                    call_function.Selector.left, env, ctx
+                );
+                receiver_type = typechecker.env_resolve_type(
+                    env, receiver_type, ctx
+                );
+                if receiver_type.tag == 8 {
+                    mut receiver_name := typechecker.typechecker_strip_module_prefix(
+                        receiver_type.Struct.struct_name, ctx
+                    );
+                    mut is_mutex := 0;
+                    if std.str_find(receiver_name, "Mutex_") == 0 ||
+                       std.str_find(receiver_name, "std_Mutex_") == 0 {
+                        is_mutex = 1;
+                    }
+                    if is_mutex == 1 &&
+                       (std.str_eq(call_function.Selector.right, "Lock") == 1 ||
+                        std.str_eq(call_function.Selector.right, "Unlock") == 1) {
+                        intrinsic_receiver = call_function.Selector.left;
+                        if std.str_eq(call_function.Selector.right, "Lock") == 1 {
+                            raw_callee = "std_Mutex_Lock_impl";
+                        } else {
+                            raw_callee = "std_Mutex_Unlock_impl";
+                        }
+                    }
+                }
+            }
             node.text_operand = std.Clone(ctx, raw_callee);
             node.second_text_operand = std.Clone(
                 ctx,
@@ -351,6 +403,82 @@ func mir_native_full_program_flatten_expression(expression_index: Index[ast.Expr
                     env, raw_callee, ctx
                 )
             );
+            if len(constructor_helper) > 0 {
+                node.second_text_operand = std.Clone(ctx, constructor_helper);
+            }
+            if intrinsic_receiver != empty[Index[ast.Expression[ctx], ctx]] {
+                node.second_text_operand = std.Clone(ctx, raw_callee);
+                mut callee_node := mir_native_full_program_make_node(
+                    "LocalRead", "Void", raw_callee, "", 0, 0,
+                    span.start.line, span.start.column,
+                    span.start.offset, span.end.offset, ctx
+                );
+                mut callee_index := mir_native_full_program_push_node(
+                    nodes_index, callee_node, ctx
+                );
+                node = mir_native_full_program_node_with_child(
+                    node, callee_index, ctx
+                );
+                mut receiver := mir_native_full_program_flatten_expression(
+                    intrinsic_receiver, nodes_index, env, ctx
+                );
+                if receiver < 0 { return 0 - 1; }
+                mut lock_state := mir_native_full_program_make_node(
+                    "FieldOrMethodSelect", "Int", "lock_state", "", 0, 0,
+                    span.start.line, span.start.column,
+                    span.start.offset, span.end.offset, ctx
+                );
+                lock_state = mir_native_full_program_node_with_child(
+                    lock_state, receiver, ctx
+                );
+                mut lock_state_index := mir_native_full_program_push_node(
+                    nodes_index, lock_state, ctx
+                );
+                node = mir_native_full_program_node_with_child(
+                    node, lock_state_index, ctx
+                );
+                if std.str_eq(raw_callee, "std_Mutex_Lock_impl") == 1 {
+                    // The runtime import is polymorphic only in its pointee.
+                    // Canonicalize that ABI position to the existing generic
+                    // pointer identity so different protected payloads share
+                    // one runtime declaration.
+                    node.type_identity = "RawPointer(Void)";
+                    mut call_type := codegen.codegen_get_expression_type(
+                        expression_index, env, ctx
+                    );
+                    call_type = typechecker.env_resolve_type(env, call_type, ctx);
+                    if call_type.tag != 9 { return 0 - 1; }
+                    mut value_type := mir_native_full_program_type_identity(
+                        ctx[call_type.RawPointer.inner], env, ctx
+                    );
+                    mut value_field := mir_native_full_program_make_node(
+                        "FieldOrMethodSelect", value_type, "value", "", 0, 0,
+                        span.start.line, span.start.column,
+                        span.start.offset, span.end.offset, ctx
+                    );
+                    value_field = mir_native_full_program_node_with_child(
+                        value_field, receiver, ctx
+                    );
+                    mut value_field_index := mir_native_full_program_push_node(
+                        nodes_index, value_field, ctx
+                    );
+                    mut value_address := mir_native_full_program_make_node(
+                        "AddressOf", "RawPointer(Void)", "", "", 0, 0,
+                        span.start.line, span.start.column,
+                        span.start.offset, span.end.offset, ctx
+                    );
+                    value_address = mir_native_full_program_node_with_child(
+                        value_address, value_field_index, ctx
+                    );
+                    mut value_address_index := mir_native_full_program_push_node(
+                        nodes_index, value_address, ctx
+                    );
+                    node = mir_native_full_program_node_with_child(
+                        node, value_address_index, ctx
+                    );
+                }
+                return mir_native_full_program_push_node(nodes_index, node, ctx);
+            }
             mut callee := mir_native_full_program_flatten_expression(
                 expression.Call.function, nodes_index, env, ctx
             );
@@ -933,6 +1061,164 @@ func mir_native_full_program_function_index(functions: std.Vector[MirNativeFullP
     return 0 - 1;
 }
 
+func mir_native_full_program_append_mutex_constructor_helpers(
+    model: MirNativeFullProgramModel[ctx],
+    functions_index: Index[std.Vector[MirNativeFullProgramFunction[ctx], ctx], ctx],
+    ctx: &Arena
+) MirNativeFullProgramModel[ctx] {
+    mut updated := model;
+    mut functions: std.Vector[MirNativeFullProgramFunction[ctx], ctx] :=
+        ctx[functions_index];
+    mut layouts: std.Vector[MirNativeFullProgramLayout[ctx], ctx] :=
+        ctx[model.layouts];
+    mut layout_index := 0;
+    while layout_index < len(layouts) {
+        mut erased_name := layouts[layout_index].erased_name;
+        if std.str_find(erased_name, "std_Mutex_") == 0 {
+            mut helper_name := std.Concat(
+                "__gust_mutex_new_", erased_name
+            );
+            if mir_native_full_program_function_index(
+                functions, helper_name, ctx
+            ) < 0 {
+                mut mutex_type := std.Concat("Struct(\"", erased_name);
+                mutex_type = std.Concat(mutex_type, "\", None)");
+
+                mut zero := mir_native_full_program_make_node(
+                    "ZeroInitialize", mutex_type, mutex_type, "", 0, 0,
+                    0, 0, 0, 0, ctx
+                );
+                mut zero_index := mir_native_full_program_push_node(
+                    model.nodes, zero, ctx
+                );
+                mut declare := mir_native_full_program_make_node(
+                    "LocalDeclare", mutex_type, "value", "", 1, 0,
+                    0, 0, 0, 0, ctx
+                );
+                declare = mir_native_full_program_node_with_child(
+                    declare, zero_index, ctx
+                );
+                mut declare_index := mir_native_full_program_push_node(
+                    model.nodes, declare, ctx
+                );
+
+                mut field_receiver := mir_native_full_program_make_node(
+                    "LocalRead", mutex_type, "value", "", 0, 0,
+                    0, 0, 0, 0, ctx
+                );
+                mut field_receiver_index := mir_native_full_program_push_node(
+                    model.nodes, field_receiver, ctx
+                );
+                mut lock_state := mir_native_full_program_make_node(
+                    "FieldOrMethodSelect", "Int", "lock_state", "", 0, 0,
+                    0, 0, 0, 0, ctx
+                );
+                lock_state = mir_native_full_program_node_with_child(
+                    lock_state, field_receiver_index, ctx
+                );
+                mut lock_state_index := mir_native_full_program_push_node(
+                    model.nodes, lock_state, ctx
+                );
+
+                mut allocator := mir_native_full_program_make_node(
+                    "LocalRead", "Void", "std_Mutex_Alloc", "", 0, 0,
+                    0, 0, 0, 0, ctx
+                );
+                mut allocator_index := mir_native_full_program_push_node(
+                    model.nodes, allocator, ctx
+                );
+                mut allocation := mir_native_full_program_make_node(
+                    "Call", "Int", "std_Mutex_Alloc", "std_Mutex_Alloc",
+                    0, 0, 0, 0, 0, 0, ctx
+                );
+                allocation = mir_native_full_program_node_with_child(
+                    allocation, allocator_index, ctx
+                );
+                mut allocation_index := mir_native_full_program_push_node(
+                    model.nodes, allocation, ctx
+                );
+                mut assign := mir_native_full_program_make_node(
+                    "Assign", "Void", "", "", 0, 0,
+                    0, 0, 0, 0, ctx
+                );
+                assign = mir_native_full_program_node_with_child(
+                    assign, lock_state_index, ctx
+                );
+                assign = mir_native_full_program_node_with_child(
+                    assign, allocation_index, ctx
+                );
+                mut assign_index := mir_native_full_program_push_node(
+                    model.nodes, assign, ctx
+                );
+
+                mut return_value := mir_native_full_program_make_node(
+                    "LocalRead", mutex_type, "value", "", 0, 0,
+                    0, 0, 0, 0, ctx
+                );
+                mut return_value_index := mir_native_full_program_push_node(
+                    model.nodes, return_value, ctx
+                );
+                mut return_node := mir_native_full_program_make_node(
+                    "Return", "Void", "", "", 1, 0,
+                    0, 0, 0, 0, ctx
+                );
+                return_node = mir_native_full_program_node_with_child(
+                    return_node, return_value_index, ctx
+                );
+                mut return_index := mir_native_full_program_push_node(
+                    model.nodes, return_node, ctx
+                );
+
+                mut body := mir_native_full_program_make_node(
+                    "Block", "Void", "", "", 0, 0,
+                    0, 0, 0, 0, ctx
+                );
+                body = mir_native_full_program_node_with_child(
+                    body, declare_index, ctx
+                );
+                body = mir_native_full_program_node_with_child(
+                    body, assign_index, ctx
+                );
+                body = mir_native_full_program_node_with_child(
+                    body, return_index, ctx
+                );
+                mut body_index := mir_native_full_program_push_node(
+                    model.nodes, body, ctx
+                );
+
+                mut helper: MirNativeFullProgramFunction[ctx];
+                helper.module_index = 0;
+                helper.source_name = std.Clone(ctx, helper_name);
+                helper.qualified_name = std.Clone(ctx, helper_name);
+                helper.is_extern = 0;
+                helper.extern_symbol_name = std.Clone(ctx, "");
+                helper.parameter_names =
+                    mir_native_full_program_empty_string_vector(ctx);
+                helper.parameter_types =
+                    mir_native_full_program_empty_string_vector(ctx);
+                mut helper_parameter_names: std.Vector[str, ctx] :=
+                    std.VectorNew(ctx);
+                helper_parameter_names.Push(std.Clone(ctx, "ctx"));
+                ctx.Set(helper.parameter_names, helper_parameter_names);
+                mut helper_parameter_types: std.Vector[str, ctx] :=
+                    std.VectorNew(ctx);
+                helper_parameter_types.Push(std.Clone(
+                    ctx, "Reference(Arena, None)"
+                ));
+                ctx.Set(helper.parameter_types, helper_parameter_types);
+                helper.return_type = std.Clone(ctx, mutex_type);
+                helper.body = empty[Index[ast.BlockStatement[ctx], ctx]];
+                helper.body_node_index = body_index;
+                functions.Push(helper);
+            }
+        }
+        layout_index = layout_index + 1;
+    }
+    ctx.Set(functions_index, functions);
+    updated.function_count = len(functions);
+    return updated;
+}
+
 func mir_native_full_program_collect_layout_authority(model: MirNativeFullProgramModel[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) MirNativeFullProgramModel[ctx] {
     mut updated := model;
     unsafe {
@@ -1320,6 +1606,17 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
     model.represented = 1;
     model.function_count = len(functions);
     model.non_scalar_signature_count = non_scalar_signature_count;
+    ctx.Set(model.functions, functions);
+    model = mir_native_full_program_collect_layout_authority(
+        model, env, ctx
+    );
+    if model.invalid == 1 {
+        return model;
+    }
+    model = mir_native_full_program_append_mutex_constructor_helpers(
+        model, model.functions, ctx
+    );
+    functions = ctx[model.functions];
 
     // Second pass: lower every non-extern body only after the complete symbol
     // table exists. This permits recursive and cross-module calls without
@@ -1383,13 +1680,7 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
     }
     unsafe { (*env).current_prefix = ""; }
     ctx.Set(model.functions, functions);
-
-    model = mir_native_full_program_collect_layout_authority(
-        model, env, ctx
-    );
-    if model.invalid == 1 {
-        return model;
-    }
+    model.function_count = len(functions);
 
     mut entry_index :=
         mir_native_full_program_function_index(functions, "main", ctx);
