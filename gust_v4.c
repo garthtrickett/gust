@@ -56,6 +56,23 @@ typedef struct typechecker__FunctionSignature typechecker__FunctionSignature;
 typedef struct LookupResult_typechecker__FunctionSignature LookupResult_typechecker__FunctionSignature;
 typedef struct typechecker__LinearResourceRecord typechecker__LinearResourceRecord;
 typedef struct LookupResult_typechecker__LinearResourceRecord LookupResult_typechecker__LinearResourceRecord;
+typedef struct ast__Statement_Assignment ast__Statement_Assignment;
+typedef struct ast__Statement_Defer ast__Statement_Defer;
+typedef struct ast__Statement_EnumDecl ast__Statement_EnumDecl;
+typedef struct ast__Statement_Expression ast__Statement_Expression;
+typedef struct ast__Statement_FunctionDecl ast__Statement_FunctionDecl;
+typedef struct ast__Statement_Guard ast__Statement_Guard;
+typedef struct ast__Statement_If ast__Statement_If;
+typedef struct ast__Statement_Import ast__Statement_Import;
+typedef struct ast__Statement_Match ast__Statement_Match;
+typedef struct ast__Statement_Return ast__Statement_Return;
+typedef struct ast__Statement_StructDecl ast__Statement_StructDecl;
+typedef struct ast__Statement_UnsafeBlock ast__Statement_UnsafeBlock;
+typedef struct ast__Statement_VarDecl ast__Statement_VarDecl;
+typedef struct ast__Statement_While ast__Statement_While;
+typedef struct ast__Statement ast__Statement;
+typedef struct typechecker__ProtectedResourceFunction typechecker__ProtectedResourceFunction;
+typedef struct LookupResult_typechecker__ProtectedResourceFunction LookupResult_typechecker__ProtectedResourceFunction;
 typedef struct typechecker__ResourceAcquisitionObligation typechecker__ResourceAcquisitionObligation;
 typedef struct LookupResult_typechecker__ResourceAcquisitionObligation LookupResult_typechecker__ResourceAcquisitionObligation;
 typedef struct std_HashMap_str_ast__Type std_HashMap_str_ast__Type;
@@ -87,21 +104,6 @@ typedef struct ast__Parameter ast__Parameter;
 typedef struct ast__Program ast__Program;
 typedef struct ast__QueryJoin ast__QueryJoin;
 typedef struct ast__QueryRoot ast__QueryRoot;
-typedef struct ast__Statement_Assignment ast__Statement_Assignment;
-typedef struct ast__Statement_Defer ast__Statement_Defer;
-typedef struct ast__Statement_EnumDecl ast__Statement_EnumDecl;
-typedef struct ast__Statement_Expression ast__Statement_Expression;
-typedef struct ast__Statement_FunctionDecl ast__Statement_FunctionDecl;
-typedef struct ast__Statement_Guard ast__Statement_Guard;
-typedef struct ast__Statement_If ast__Statement_If;
-typedef struct ast__Statement_Import ast__Statement_Import;
-typedef struct ast__Statement_Match ast__Statement_Match;
-typedef struct ast__Statement_Return ast__Statement_Return;
-typedef struct ast__Statement_StructDecl ast__Statement_StructDecl;
-typedef struct ast__Statement_UnsafeBlock ast__Statement_UnsafeBlock;
-typedef struct ast__Statement_VarDecl ast__Statement_VarDecl;
-typedef struct ast__Statement_While ast__Statement_While;
-typedef struct ast__Statement ast__Statement;
 typedef struct ast__VariantDef ast__VariantDef;
 typedef struct codegen__CodegenStringHeader codegen__CodegenStringHeader;
 typedef struct codegen__Codegen codegen__Codegen;
@@ -652,6 +654,7 @@ typedef struct std_HashMap_str_typechecker__EnumTemplate std_HashMap_str_typeche
 typedef struct std_HashMap_str_typechecker__ExpressionProvenance std_HashMap_str_typechecker__ExpressionProvenance;
 typedef struct std_HashMap_str_typechecker__FunctionSignature std_HashMap_str_typechecker__FunctionSignature;
 typedef struct std_HashMap_str_typechecker__LinearResourceRecord std_HashMap_str_typechecker__LinearResourceRecord;
+typedef struct std_HashMap_str_typechecker__ProtectedResourceFunction std_HashMap_str_typechecker__ProtectedResourceFunction;
 typedef struct std_HashMap_str_typechecker__ResourceAcquisitionObligation std_HashMap_str_typechecker__ResourceAcquisitionObligation;
 typedef struct std_HashMap_str_typechecker__StructLayout std_HashMap_str_typechecker__StructLayout;
 typedef struct std_HashMap_str_typechecker__StructTemplate std_HashMap_str_typechecker__StructTemplate;
@@ -780,12 +783,14 @@ typedef struct std_Vector_mir_struct_layout__MirStructOperation std_Vector_mir_s
 typedef struct std_Vector_mir_struct_layout__MirStructValue std_Vector_mir_struct_layout__MirStructValue;
 typedef struct std_Vector_typechecker__ExpressionProvenance std_Vector_typechecker__ExpressionProvenance;
 typedef struct std_Vector_typechecker__PrefixMapEntry std_Vector_typechecker__PrefixMapEntry;
+typedef struct std_Vector_typechecker__ProtectedResourceDerivedFunction std_Vector_typechecker__ProtectedResourceDerivedFunction;
 typedef struct std_Vector_typechecker__QueryScopeObligation std_Vector_typechecker__QueryScopeObligation;
 typedef struct std_Vector_typechecker__ResolvedTypeEntry std_Vector_typechecker__ResolvedTypeEntry;
 typedef struct std_Vector_typechecker__ResourceCleanupAction std_Vector_typechecker__ResourceCleanupAction;
 typedef struct typechecker__AddressOriginRecord typechecker__AddressOriginRecord;
 typedef struct typechecker__OriginSet typechecker__OriginSet;
 typedef struct typechecker__PrefixMapEntry typechecker__PrefixMapEntry;
+typedef struct typechecker__ProtectedResourceDerivedFunction typechecker__ProtectedResourceDerivedFunction;
 typedef struct typechecker__QueryScopeObligation typechecker__QueryScopeObligation;
 typedef struct typechecker__ResolvedTypeEntry typechecker__ResolvedTypeEntry;
 typedef struct typechecker__ResourceCleanupAction typechecker__ResourceCleanupAction;
@@ -829,6 +834,22 @@ typedef struct CastResult_typechecker__ExpressionProvenance CastResult_typecheck
 typedef struct CastResult_std_Vector_ast__Type CastResult_std_Vector_ast__Type;
 typedef struct CastResult_typechecker__FunctionSignature CastResult_typechecker__FunctionSignature;
 typedef struct CastResult_typechecker__LinearResourceRecord CastResult_typechecker__LinearResourceRecord;
+typedef struct CastResult_ast__Statement_Assignment CastResult_ast__Statement_Assignment;
+typedef struct CastResult_ast__Statement_Defer CastResult_ast__Statement_Defer;
+typedef struct CastResult_ast__Statement_EnumDecl CastResult_ast__Statement_EnumDecl;
+typedef struct CastResult_ast__Statement_Expression CastResult_ast__Statement_Expression;
+typedef struct CastResult_ast__Statement_FunctionDecl CastResult_ast__Statement_FunctionDecl;
+typedef struct CastResult_ast__Statement_Guard CastResult_ast__Statement_Guard;
+typedef struct CastResult_ast__Statement_If CastResult_ast__Statement_If;
+typedef struct CastResult_ast__Statement_Import CastResult_ast__Statement_Import;
+typedef struct CastResult_ast__Statement_Match CastResult_ast__Statement_Match;
+typedef struct CastResult_ast__Statement_Return CastResult_ast__Statement_Return;
+typedef struct CastResult_ast__Statement_StructDecl CastResult_ast__Statement_StructDecl;
+typedef struct CastResult_ast__Statement_UnsafeBlock CastResult_ast__Statement_UnsafeBlock;
+typedef struct CastResult_ast__Statement_VarDecl CastResult_ast__Statement_VarDecl;
+typedef struct CastResult_ast__Statement_While CastResult_ast__Statement_While;
+typedef struct CastResult_ast__Statement CastResult_ast__Statement;
+typedef struct CastResult_typechecker__ProtectedResourceFunction CastResult_typechecker__ProtectedResourceFunction;
 typedef struct CastResult_typechecker__ResourceAcquisitionObligation CastResult_typechecker__ResourceAcquisitionObligation;
 typedef struct CastResult_std_HashMap_str_ast__Type CastResult_std_HashMap_str_ast__Type;
 typedef struct CastResult_typechecker__StructLayout CastResult_typechecker__StructLayout;
@@ -857,21 +878,6 @@ typedef struct CastResult_ast__Parameter CastResult_ast__Parameter;
 typedef struct CastResult_ast__Program CastResult_ast__Program;
 typedef struct CastResult_ast__QueryJoin CastResult_ast__QueryJoin;
 typedef struct CastResult_ast__QueryRoot CastResult_ast__QueryRoot;
-typedef struct CastResult_ast__Statement_Assignment CastResult_ast__Statement_Assignment;
-typedef struct CastResult_ast__Statement_Defer CastResult_ast__Statement_Defer;
-typedef struct CastResult_ast__Statement_EnumDecl CastResult_ast__Statement_EnumDecl;
-typedef struct CastResult_ast__Statement_Expression CastResult_ast__Statement_Expression;
-typedef struct CastResult_ast__Statement_FunctionDecl CastResult_ast__Statement_FunctionDecl;
-typedef struct CastResult_ast__Statement_Guard CastResult_ast__Statement_Guard;
-typedef struct CastResult_ast__Statement_If CastResult_ast__Statement_If;
-typedef struct CastResult_ast__Statement_Import CastResult_ast__Statement_Import;
-typedef struct CastResult_ast__Statement_Match CastResult_ast__Statement_Match;
-typedef struct CastResult_ast__Statement_Return CastResult_ast__Statement_Return;
-typedef struct CastResult_ast__Statement_StructDecl CastResult_ast__Statement_StructDecl;
-typedef struct CastResult_ast__Statement_UnsafeBlock CastResult_ast__Statement_UnsafeBlock;
-typedef struct CastResult_ast__Statement_VarDecl CastResult_ast__Statement_VarDecl;
-typedef struct CastResult_ast__Statement_While CastResult_ast__Statement_While;
-typedef struct CastResult_ast__Statement CastResult_ast__Statement;
 typedef struct CastResult_ast__VariantDef CastResult_ast__VariantDef;
 typedef struct CastResult_codegen__CodegenStringHeader CastResult_codegen__CodegenStringHeader;
 typedef struct CastResult_codegen__Codegen CastResult_codegen__Codegen;
@@ -1423,6 +1429,7 @@ typedef struct CastResult_std_HashMap_str_typechecker__EnumTemplate CastResult_s
 typedef struct CastResult_std_HashMap_str_typechecker__ExpressionProvenance CastResult_std_HashMap_str_typechecker__ExpressionProvenance;
 typedef struct CastResult_std_HashMap_str_typechecker__FunctionSignature CastResult_std_HashMap_str_typechecker__FunctionSignature;
 typedef struct CastResult_std_HashMap_str_typechecker__LinearResourceRecord CastResult_std_HashMap_str_typechecker__LinearResourceRecord;
+typedef struct CastResult_std_HashMap_str_typechecker__ProtectedResourceFunction CastResult_std_HashMap_str_typechecker__ProtectedResourceFunction;
 typedef struct CastResult_std_HashMap_str_typechecker__ResourceAcquisitionObligation CastResult_std_HashMap_str_typechecker__ResourceAcquisitionObligation;
 typedef struct CastResult_std_HashMap_str_typechecker__StructLayout CastResult_std_HashMap_str_typechecker__StructLayout;
 typedef struct CastResult_std_HashMap_str_typechecker__StructTemplate CastResult_std_HashMap_str_typechecker__StructTemplate;
@@ -1551,12 +1558,14 @@ typedef struct CastResult_std_Vector_mir_struct_layout__MirStructOperation CastR
 typedef struct CastResult_std_Vector_mir_struct_layout__MirStructValue CastResult_std_Vector_mir_struct_layout__MirStructValue;
 typedef struct CastResult_std_Vector_typechecker__ExpressionProvenance CastResult_std_Vector_typechecker__ExpressionProvenance;
 typedef struct CastResult_std_Vector_typechecker__PrefixMapEntry CastResult_std_Vector_typechecker__PrefixMapEntry;
+typedef struct CastResult_std_Vector_typechecker__ProtectedResourceDerivedFunction CastResult_std_Vector_typechecker__ProtectedResourceDerivedFunction;
 typedef struct CastResult_std_Vector_typechecker__QueryScopeObligation CastResult_std_Vector_typechecker__QueryScopeObligation;
 typedef struct CastResult_std_Vector_typechecker__ResolvedTypeEntry CastResult_std_Vector_typechecker__ResolvedTypeEntry;
 typedef struct CastResult_std_Vector_typechecker__ResourceCleanupAction CastResult_std_Vector_typechecker__ResourceCleanupAction;
 typedef struct CastResult_typechecker__AddressOriginRecord CastResult_typechecker__AddressOriginRecord;
 typedef struct CastResult_typechecker__OriginSet CastResult_typechecker__OriginSet;
 typedef struct CastResult_typechecker__PrefixMapEntry CastResult_typechecker__PrefixMapEntry;
+typedef struct CastResult_typechecker__ProtectedResourceDerivedFunction CastResult_typechecker__ProtectedResourceDerivedFunction;
 typedef struct CastResult_typechecker__QueryScopeObligation CastResult_typechecker__QueryScopeObligation;
 typedef struct CastResult_typechecker__ResolvedTypeEntry CastResult_typechecker__ResolvedTypeEntry;
 typedef struct CastResult_typechecker__ResourceCleanupAction CastResult_typechecker__ResourceCleanupAction;
@@ -1593,6 +1602,7 @@ Slice_unsigned_char codegen__codegen_gen_struct_initializer(Slice_unsigned_char 
 Slice_unsigned_char codegen__codegen_gen_type_aware_initializer(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
 Slice_unsigned_char codegen__codegen_generate(std_Vector_ast__Program programs, std_Vector_str prefixes, typechecker__TypeEnvironment* env, os_Arena* ctx);
 Slice_unsigned_char codegen__codegen_generate_active_defers(typechecker__TypeEnvironment* env, int start_index, os_Arena* ctx);
+Slice_unsigned_char codegen__codegen_generate_active_scope_exits(typechecker__TypeEnvironment* env, int start_index, int stop_at_loop, os_Arena* ctx);
 Slice_unsigned_char codegen__codegen_generate_block_statement(int block_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
 Slice_unsigned_char codegen__codegen_generate_clone_helper(Slice_unsigned_char struct_name, typechecker__TypeEnvironment* env, os_Arena* ctx);
 Slice_unsigned_char codegen__codegen_generate_expression(int expr_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
@@ -2300,6 +2310,7 @@ mir_native_backend_filesystem_allocation_source__MirNativeFilesystemAllocationMo
 int mir_native_backend_full_program_source__MirNativeFullProgramStringHeader_IsValid(mir_native_backend_full_program_source__MirNativeFullProgramStringHeader* req);
 mir_native_backend_full_program_source__MirNativeFullProgramModel mir_native_backend_full_program_source__mir_native_full_program_analyze_signatures(std_Vector_ast__Program programs, std_Vector_str module_prefixes, typechecker__TypeEnvironment* env, os_Arena* ctx);
 Slice_unsigned_char mir_native_backend_full_program_source__mir_native_full_program_append_int(Slice_unsigned_char value, int integer, os_Arena* ctx);
+mir_native_backend_full_program_source__MirNativeFullProgramModel mir_native_backend_full_program_source__mir_native_full_program_append_mutex_constructor_helpers(mir_native_backend_full_program_source__MirNativeFullProgramModel model, int functions_index, os_Arena* ctx);
 int mir_native_backend_full_program_source__mir_native_full_program_block_guard_defer_mask(int block_index, os_Arena* ctx);
 mir_native_backend_full_program_source__MirNativeFullProgramModel mir_native_backend_full_program_source__mir_native_full_program_collect_layout_authority(mir_native_backend_full_program_source__MirNativeFullProgramModel model, typechecker__TypeEnvironment* env, os_Arena* ctx);
 int mir_native_backend_full_program_source__mir_native_full_program_contains_guard_and_defer(std_Vector_ast__Program programs, os_Arena* ctx);
@@ -3310,6 +3321,7 @@ Slice_unsigned_char typechecker__strip_brand_prefix(Slice_unsigned_char brand, o
 ast__Type typechecker__substitute_generics(typechecker__TypeEnvironment* env, ast__Type t, std_HashMap_str_ast__Type map, os_Arena* ctx);
 int typechecker__type_is_resource(ast__Type t, os_Arena* ctx);
 ast__Type typechecker__typechecker_apply_brand_substitutions(ast__Type t, std_HashMap_str_str* substitutions, os_Arena* ctx);
+int typechecker__typechecker_bind_protected_application(ast__Type formal, ast__Type actual, Slice_unsigned_char prefix, std_HashMap_str_ast__Type* map, typechecker__TypeEnvironment* env, os_Arena* ctx);
 typechecker__BrandIdentity typechecker__typechecker_brand_identity_from_resolved_type(ast__Type resolved, typechecker__TypeEnvironment* env, os_Arena* ctx);
 std_Vector_typechecker__QueryScopeObligation typechecker__typechecker_build_query_scope_obligations(ast__Expression expr, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
 Slice_unsigned_char typechecker__typechecker_canonical_type_ident(typechecker__TypeEnvironment* env, ast__Type t, os_Arena* ctx);
@@ -3328,6 +3340,7 @@ std_HashMap_str_int typechecker__typechecker_clone_int_map(std_HashMap_str_int s
 std_HashMap_str_typechecker__LinearResourceRecord typechecker__typechecker_clone_linear_resource_map(std_HashMap_str_typechecker__LinearResourceRecord src, os_Arena* ctx);
 int typechecker__typechecker_clone_origin_set(int src, os_Arena* ctx);
 std_HashMap_str_Index_typechecker__OriginSet typechecker__typechecker_clone_origins(std_HashMap_str_Index_typechecker__OriginSet src, os_Arena* ctx);
+int typechecker__typechecker_clone_protected_block(int block_idx, std_HashMap_str_ast__Type substitutions, typechecker__TypeEnvironment* env, os_Arena* ctx);
 std_HashMap_str_typechecker__ResourceAcquisitionObligation typechecker__typechecker_clone_resource_acquisition_obligation_map(std_HashMap_str_typechecker__ResourceAcquisitionObligation src, os_Arena* ctx);
 std_HashMap_str_str typechecker__typechecker_clone_string_map(std_HashMap_str_str src, os_Arena* ctx);
 std_Vector_ast__Type typechecker__typechecker_complete_flattened_template_arguments(std_Vector_ast__Type parsed_args, int generic_count, int brand_parameter_index, int enclosing_brand, os_Arena* ctx);
@@ -3342,6 +3355,7 @@ int typechecker__typechecker_ends_with(Slice_unsigned_char s, Slice_unsigned_cha
 typechecker__BrandIdentity typechecker__typechecker_explicit_brand_identity(ast__Type t, os_Arena* ctx);
 void typechecker__typechecker_extract_ok_checked_variables(int expr_idx, std_HashMap_str_int* checked_map, os_Arena* ctx);
 int typechecker__typechecker_find_brand_identity_argument(std_Vector_ast__Type args, typechecker__BrandIdentity identity, os_Arena* ctx);
+void typechecker__typechecker_finish_protected_resource_derivations(std_Vector_ast__Program* programs, std_Vector_str prefixes, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
 Slice_unsigned_char typechecker__typechecker_get_file_stem(Slice_unsigned_char path, os_Arena* ctx);
 ast__Type typechecker__typechecker_get_index_element_type(ast__Type idx_t, typechecker__TypeEnvironment* env, os_Arena* ctx);
 std_Vector_str typechecker__typechecker_get_sorted_keys_enum(std_HashMap_str_std_Vector_str* map, os_Arena* ctx);
@@ -3352,13 +3366,16 @@ std_Vector_str typechecker__typechecker_get_sorted_keys_layout(std_HashMap_str_t
 std_Vector_str typechecker__typechecker_get_sorted_keys_struct_template(std_HashMap_str_typechecker__StructTemplate* map, os_Arena* ctx);
 std_Vector_str typechecker__typechecker_get_sorted_keys_type(std_HashMap_str_ast__Type* map, os_Arena* ctx);
 ast__Type typechecker__typechecker_get_template_elem_type(Slice_unsigned_char struct_name, Slice_unsigned_char field_name, typechecker__TypeEnvironment* env, os_Arena* ctx);
+int typechecker__typechecker_guard_application(ast__Type t, Slice_unsigned_char prefix, typechecker__TypeEnvironment* env, Slice_unsigned_char* guard_name, os_Arena* ctx);
 int typechecker__typechecker_has_boolean_fields(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
 int typechecker__typechecker_has_boolean_fields_recursive(ast__Type t, typechecker__TypeEnvironment* env, std_HashMap_str_int* visited, os_Arena* ctx);
 int typechecker__typechecker_infer_enum_template_brand_parameter(Slice_unsigned_char template_name, std_Vector_str generics, std_Vector_ast__VariantDef variants, typechecker__TypeEnvironment* env, os_Arena* ctx);
 int typechecker__typechecker_infer_struct_template_brand_parameter(Slice_unsigned_char template_name, std_Vector_str generics, std_Vector_ast__FieldDef fields, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char typechecker__typechecker_instantiate_protected_resource(Slice_unsigned_char source_name, std_Vector_ast__Type actuals, typechecker__TypeEnvironment* env, os_Arena* ctx);
 int typechecker__typechecker_is_arena_value_or_ref(ast__Type t, os_Arena* ctx);
 int typechecker__typechecker_is_contextual_generic_constructor_name(Slice_unsigned_char name);
 int typechecker__typechecker_is_linear(ast__Type t, typechecker__TypeEnvironment* env, std_HashMap_str_int* visited, os_Arena* ctx);
+int typechecker__typechecker_is_protected_resource_derived(Slice_unsigned_char name, typechecker__TypeEnvironment* env, os_Arena* ctx);
 int typechecker__typechecker_is_stack_allowed(ast__Type t, typechecker__TypeEnvironment* env, os_Arena* ctx);
 int typechecker__typechecker_is_stack_allowed_recursive(ast__Type t, typechecker__TypeEnvironment* env, std_HashMap_str_int* visited, os_Arena* ctx);
 std_HashMap_str_typechecker__ResourceAcquisitionObligation typechecker__typechecker_join_resource_acquisition_obligation_maps(std_HashMap_str_typechecker__ResourceAcquisitionObligation left, std_HashMap_str_typechecker__ResourceAcquisitionObligation right, os_Arena* ctx);
@@ -3371,6 +3388,12 @@ int typechecker__typechecker_name_contains_generic_component(Slice_unsigned_char
 Slice_unsigned_char typechecker__typechecker_name_without_explicit_brand(Slice_unsigned_char name, Slice_unsigned_char brand_name, os_Arena* ctx);
 Slice_unsigned_char typechecker__typechecker_normalize_canonical_type_name(Slice_unsigned_char name, os_Arena* ctx);
 ast__Type typechecker__typechecker_parse_type_from_string(Slice_unsigned_char target_struct, os_Arena* ctx);
+Slice_unsigned_char typechecker__typechecker_protected_concrete_name(Slice_unsigned_char source_name, ast__Type guard_type, typechecker__TypeEnvironment* env, os_Arena* ctx);
+int typechecker__typechecker_protected_guard_shape(Slice_unsigned_char name, typechecker__TypeEnvironment* env, Slice_unsigned_char* payload, Slice_unsigned_char* brand, os_Arena* ctx);
+int typechecker__typechecker_protected_quartet(typechecker__TypeEnvironment* env, Slice_unsigned_char guard_name, os_Arena* ctx);
+Slice_unsigned_char typechecker__typechecker_protected_resource_identity(Slice_unsigned_char name, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char typechecker__typechecker_protected_resource_resolution_prefix(Slice_unsigned_char name, typechecker__TypeEnvironment* env, os_Arena* ctx);
+int typechecker__typechecker_protected_resource_role(Slice_unsigned_char name, typechecker__FunctionSignature sig, Slice_unsigned_char prefix, typechecker__TypeEnvironment* env, Slice_unsigned_char* guard_name, os_Arena* ctx);
 int typechecker__typechecker_query_cross_tenant_capability_state(ast__Expression expr, typechecker__TypeEnvironment* env, os_Arena* ctx);
 int typechecker__typechecker_query_expression_has_trusted_scope(int expr_idx, Slice_unsigned_char required_scope_identity, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
 typechecker__QueryScopeObligation typechecker__typechecker_query_make_scope_obligation(Slice_unsigned_char entity_identity, Slice_unsigned_char binding_identity, Slice_unsigned_char scope_identity, Slice_unsigned_char root_kind, int source_order, int discharged, token__Span query_span, os_Arena* ctx);
@@ -3378,6 +3401,7 @@ int typechecker__typechecker_query_predicate_discharges_root(int predicate_idx, 
 int typechecker__typechecker_query_side_is_scoped_field(int expr_idx, Slice_unsigned_char binding_name, Slice_unsigned_char scope_field, os_Arena* ctx);
 void typechecker__typechecker_record_contextual_expression_type(int expr_idx, ast__Type resolved_type, typechecker__TypeEnvironment* env, os_Arena* ctx);
 Slice_unsigned_char typechecker__typechecker_remove_flattened_identity(Slice_unsigned_char name, Slice_unsigned_char identity, os_Arena* ctx);
+Slice_unsigned_char typechecker__typechecker_resolution_scope_key(typechecker__TypeEnvironment* env, os_Arena* ctx);
 std_HashMap_str_typechecker__ResourceAcquisitionObligation typechecker__typechecker_resource_failure_path_obligation_map(std_HashMap_str_typechecker__ResourceAcquisitionObligation src, Slice_unsigned_char identity, os_Arena* ctx);
 Slice_unsigned_char typechecker__typechecker_resource_success_condition_identity(int expr_idx, typechecker__TypeEnvironment* env, os_Arena* ctx);
 Slice_unsigned_char typechecker__typechecker_serialize_enums(typechecker__TypeEnvironment* env, os_Arena* ctx);
@@ -3398,6 +3422,7 @@ Slice_unsigned_char typechecker__typechecker_template_local_name(Slice_unsigned_
 int typechecker__typechecker_type_is_brand_marker(ast__Type t, os_Arena* ctx);
 int typechecker__typechecker_type_is_matching_trusted_scope(ast__Type t, Slice_unsigned_char required_scope_identity, os_Arena* ctx);
 int typechecker__typechecker_type_matches_brand_identity_argument(ast__Type t, typechecker__BrandIdentity identity, os_Arena* ctx);
+int typechecker__typechecker_type_names(ast__Type t, Slice_unsigned_char name, os_Arena* ctx);
 int typechecker__typechecker_type_uses_generic_as_value(ast__Type t, Slice_unsigned_char generic_name, Slice_unsigned_char current_template_name, int candidate_brand_index, typechecker__TypeEnvironment* env, os_Arena* ctx);
 void typechecker__typechecker_validate_query_predicate_intrinsic_boundaries(int expr_idx, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
 void typechecker__typechecker_validate_query_predicates_when_scope_bypassed(ast__Expression expr, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx);
@@ -3711,6 +3736,162 @@ struct LookupResult_typechecker__LinearResourceRecord {
     typechecker__LinearResourceRecord Val;
 };
 
+struct ast__Statement_Assignment {
+    int left;
+    token__Span span;
+    int value;
+};
+
+struct ast__Statement_Defer {
+    int expr;
+    token__Span span;
+};
+
+struct ast__Statement_EnumDecl {
+    int generics;
+    Slice_unsigned_char name;
+    token__Span span;
+    int variants;
+};
+
+struct ast__Statement_Expression {
+    int expr;
+    token__Span span;
+};
+
+struct ast__Statement_FunctionDecl {
+    int body;
+    Slice_unsigned_char extern_abi;
+    Slice_unsigned_char extern_symbol_name;
+    int is_extern;
+    int is_private;
+    int is_unsafe;
+    Slice_unsigned_char name;
+    int params;
+    int requires_layout_metadata;
+    int requires_sandbox_arena;
+    int requires_unsafe_call;
+    int return_type;
+    token__Span span;
+};
+
+struct ast__Statement_Guard {
+    int else_body;
+    int is_mut;
+    Slice_unsigned_char name;
+    token__Span span;
+    int value;
+};
+
+struct ast__Statement_If {
+    int alternative;
+    int condition;
+    int consequence;
+    token__Span span;
+};
+
+struct ast__Statement_Import {
+    Slice_unsigned_char alias;
+    Slice_unsigned_char path;
+    token__Span span;
+};
+
+struct ast__Statement_Match {
+    int cases;
+    int expression;
+    token__Span span;
+};
+
+struct ast__Statement_Return {
+    int expr;
+    token__Span span;
+};
+
+struct ast__Statement_StructDecl {
+    Slice_unsigned_char declared_destructor_name;
+    int fields;
+    int generics;
+    int is_linear_resource;
+    int is_opaque;
+    int is_packed;
+    int is_repr_c;
+    int is_scoped_entity;
+    Slice_unsigned_char layout_abi;
+    Slice_unsigned_char name;
+    Slice_unsigned_char scope_field;
+    token__Span span;
+};
+
+struct ast__Statement_UnsafeBlock {
+    int body;
+    token__Span span;
+};
+
+struct ast__Statement_VarDecl {
+    int is_mut;
+    Slice_unsigned_char name;
+    token__Span span;
+    int value;
+    int var_type;
+};
+
+struct ast__Statement_While {
+    int body;
+    int condition;
+    token__Span span;
+};
+
+typedef enum {
+    ast__Statement_Tag__Import = 0,
+    ast__Statement_Tag__StructDecl = 1,
+    ast__Statement_Tag__EnumDecl = 2,
+    ast__Statement_Tag__FunctionDecl = 3,
+    ast__Statement_Tag__VarDecl = 4,
+    ast__Statement_Tag__Assignment = 5,
+    ast__Statement_Tag__While = 6,
+    ast__Statement_Tag__If = 7,
+    ast__Statement_Tag__Match = 8,
+    ast__Statement_Tag__Guard = 9,
+    ast__Statement_Tag__UnsafeBlock = 10,
+    ast__Statement_Tag__Defer = 11,
+    ast__Statement_Tag__Return = 12,
+    ast__Statement_Tag__Expression = 13,
+} ast__Statement_Tag;
+
+struct ast__Statement {
+    int tag;
+    union {
+        struct ast__Statement_Assignment Assignment;
+        struct ast__Statement_Defer Defer;
+        struct ast__Statement_EnumDecl EnumDecl;
+        struct ast__Statement_Expression Expression;
+        struct ast__Statement_FunctionDecl FunctionDecl;
+        struct ast__Statement_Guard Guard;
+        struct ast__Statement_If If;
+        struct ast__Statement_Import Import;
+        struct ast__Statement_Match Match;
+        struct ast__Statement_Return Return;
+        struct ast__Statement_StructDecl StructDecl;
+        struct ast__Statement_UnsafeBlock UnsafeBlock;
+        struct ast__Statement_VarDecl VarDecl;
+        struct ast__Statement_While While;
+    };
+};
+
+struct typechecker__ProtectedResourceFunction {
+    Slice_unsigned_char file;
+    Slice_unsigned_char guard_name;
+    Slice_unsigned_char prefix;
+    int role;
+    typechecker__FunctionSignature signature;
+    ast__Statement statement;
+};
+
+struct LookupResult_typechecker__ProtectedResourceFunction {
+    unsigned char Ok;
+    typechecker__ProtectedResourceFunction Val;
+};
+
 struct typechecker__ResourceAcquisitionObligation {
     Slice_unsigned_char cleanup_condition;
     int declaration_order;
@@ -3929,148 +4110,6 @@ struct ast__QueryRoot {
     Slice_unsigned_char binding_name;
     Slice_unsigned_char entity_name;
     token__Span span;
-};
-
-struct ast__Statement_Assignment {
-    int left;
-    token__Span span;
-    int value;
-};
-
-struct ast__Statement_Defer {
-    int expr;
-    token__Span span;
-};
-
-struct ast__Statement_EnumDecl {
-    int generics;
-    Slice_unsigned_char name;
-    token__Span span;
-    int variants;
-};
-
-struct ast__Statement_Expression {
-    int expr;
-    token__Span span;
-};
-
-struct ast__Statement_FunctionDecl {
-    int body;
-    Slice_unsigned_char extern_abi;
-    Slice_unsigned_char extern_symbol_name;
-    int is_extern;
-    int is_private;
-    int is_unsafe;
-    Slice_unsigned_char name;
-    int params;
-    int requires_layout_metadata;
-    int requires_sandbox_arena;
-    int requires_unsafe_call;
-    int return_type;
-    token__Span span;
-};
-
-struct ast__Statement_Guard {
-    int else_body;
-    int is_mut;
-    Slice_unsigned_char name;
-    token__Span span;
-    int value;
-};
-
-struct ast__Statement_If {
-    int alternative;
-    int condition;
-    int consequence;
-    token__Span span;
-};
-
-struct ast__Statement_Import {
-    Slice_unsigned_char alias;
-    Slice_unsigned_char path;
-    token__Span span;
-};
-
-struct ast__Statement_Match {
-    int cases;
-    int expression;
-    token__Span span;
-};
-
-struct ast__Statement_Return {
-    int expr;
-    token__Span span;
-};
-
-struct ast__Statement_StructDecl {
-    Slice_unsigned_char declared_destructor_name;
-    int fields;
-    int generics;
-    int is_linear_resource;
-    int is_opaque;
-    int is_packed;
-    int is_repr_c;
-    int is_scoped_entity;
-    Slice_unsigned_char layout_abi;
-    Slice_unsigned_char name;
-    Slice_unsigned_char scope_field;
-    token__Span span;
-};
-
-struct ast__Statement_UnsafeBlock {
-    int body;
-    token__Span span;
-};
-
-struct ast__Statement_VarDecl {
-    int is_mut;
-    Slice_unsigned_char name;
-    token__Span span;
-    int value;
-    int var_type;
-};
-
-struct ast__Statement_While {
-    int body;
-    int condition;
-    token__Span span;
-};
-
-typedef enum {
-    ast__Statement_Tag__Import = 0,
-    ast__Statement_Tag__StructDecl = 1,
-    ast__Statement_Tag__EnumDecl = 2,
-    ast__Statement_Tag__FunctionDecl = 3,
-    ast__Statement_Tag__VarDecl = 4,
-    ast__Statement_Tag__Assignment = 5,
-    ast__Statement_Tag__While = 6,
-    ast__Statement_Tag__If = 7,
-    ast__Statement_Tag__Match = 8,
-    ast__Statement_Tag__Guard = 9,
-    ast__Statement_Tag__UnsafeBlock = 10,
-    ast__Statement_Tag__Defer = 11,
-    ast__Statement_Tag__Return = 12,
-    ast__Statement_Tag__Expression = 13,
-} ast__Statement_Tag;
-
-struct ast__Statement {
-    int tag;
-    union {
-        struct ast__Statement_Assignment Assignment;
-        struct ast__Statement_Defer Defer;
-        struct ast__Statement_EnumDecl EnumDecl;
-        struct ast__Statement_Expression Expression;
-        struct ast__Statement_FunctionDecl FunctionDecl;
-        struct ast__Statement_Guard Guard;
-        struct ast__Statement_If If;
-        struct ast__Statement_Import Import;
-        struct ast__Statement_Match Match;
-        struct ast__Statement_Return Return;
-        struct ast__Statement_StructDecl StructDecl;
-        struct ast__Statement_UnsafeBlock UnsafeBlock;
-        struct ast__Statement_VarDecl VarDecl;
-        struct ast__Statement_While While;
-    };
 };
 
 struct ast__VariantDef {
@@ -8541,6 +8580,15 @@ struct std_HashMap_str_typechecker__LinearResourceRecord {
     typechecker__LinearResourceRecord* values;
 };
 
+struct std_HashMap_str_typechecker__ProtectedResourceFunction {
+    os_Arena* arena;
+    int capacity;
+    Slice_unsigned_char* keys;
+    int len;
+    int* occupied;
+    typechecker__ProtectedResourceFunction* values;
+};
+
 struct std_HashMap_str_typechecker__ResourceAcquisitionObligation {
     os_Arena* arena;
     int capacity;
@@ -9443,6 +9491,13 @@ struct std_Vector_typechecker__PrefixMapEntry {
     int len;
 };
 
+struct std_Vector_typechecker__ProtectedResourceDerivedFunction {
+    os_Arena* arena;
+    int capacity;
+    typechecker__ProtectedResourceDerivedFunction* data;
+    int len;
+};
+
 struct std_Vector_typechecker__QueryScopeObligation {
     os_Arena* arena;
     int capacity;
@@ -9476,6 +9531,15 @@ struct typechecker__OriginSet {
 struct typechecker__PrefixMapEntry {
     Slice_unsigned_char prefix;
     std_Vector_typechecker__ResolvedTypeEntry types;
+};
+
+struct typechecker__ProtectedResourceDerivedFunction {
+    Slice_unsigned_char file;
+    Slice_unsigned_char identity;
+    Slice_unsigned_char prefix;
+    Slice_unsigned_char resolution_prefix;
+    ast__Statement statement;
+    std_HashMap_str_ast__Type substitutions;
 };
 
 struct typechecker__QueryScopeObligation {
@@ -9549,6 +9613,11 @@ struct typechecker__TypeEnvironment {
     std_HashMap_str_int moved_vars;
     std_HashMap_str_int open_directories;
     std_HashMap_str_typechecker__LinearResourceRecord open_linear_resources;
+    int protected_resource_active_derivation;
+    std_HashMap_str_ast__Type protected_resource_active_substitutions;
+    std_Vector_typechecker__ProtectedResourceDerivedFunction protected_resource_derived_functions;
+    std_HashMap_str_typechecker__ProtectedResourceFunction protected_resource_functions;
+    int protected_resource_preserve_concrete_types;
     std_Vector_typechecker__PrefixMapEntry resolved_types_nested;
     std_HashMap_str_typechecker__ResourceAcquisitionObligation resource_acquisition_obligations;
     std_HashMap_str_Index_std_Vector_typechecker__ResourceCleanupAction resource_cleanup_plans;
@@ -9970,6 +10039,7 @@ int LookupResult_typechecker__EnumTemplate_IsValid(LookupResult_typechecker__Enu
 int LookupResult_typechecker__ExpressionProvenance_IsValid(LookupResult_typechecker__ExpressionProvenance* req);
 int LookupResult_typechecker__FunctionSignature_IsValid(LookupResult_typechecker__FunctionSignature* req);
 int LookupResult_typechecker__LinearResourceRecord_IsValid(LookupResult_typechecker__LinearResourceRecord* req);
+int LookupResult_typechecker__ProtectedResourceFunction_IsValid(LookupResult_typechecker__ProtectedResourceFunction* req);
 int LookupResult_typechecker__ResourceAcquisitionObligation_IsValid(LookupResult_typechecker__ResourceAcquisitionObligation* req);
 int LookupResult_typechecker__StructLayout_IsValid(LookupResult_typechecker__StructLayout* req);
 int LookupResult_typechecker__StructTemplate_IsValid(LookupResult_typechecker__StructTemplate* req);
@@ -10049,6 +10119,12 @@ int LookupResult_typechecker__FunctionSignature_IsValid(LookupResult_typechecker
 }
 
 int LookupResult_typechecker__LinearResourceRecord_IsValid(LookupResult_typechecker__LinearResourceRecord* req) {
+    if (req == NULL) return 0;
+    if (req->Ok != 0x00 && req->Ok != 0x01) return 0;
+    return 1;
+}
+
+int LookupResult_typechecker__ProtectedResourceFunction_IsValid(LookupResult_typechecker__ProtectedResourceFunction* req) {
     if (req == NULL) return 0;
     if (req->Ok != 0x00 && req->Ok != 0x01) return 0;
     return 1;
@@ -14442,6 +14518,15 @@ void* typechecker__function_signature_requires_sandbox_policy_pthread_wrapper(vo
     return NULL;
 }
 
+Slice_unsigned_char typechecker__typechecker_resolution_scope_key(typechecker__TypeEnvironment* env, os_Arena* ctx) {
+    {
+    if ((typechecker__typechecker_is_protected_resource_derived((*(env)).current_function_identity_scope, env, ctx) == 1)) {
+    return std_Clone_str(ctx, (*(env)).current_function_identity_scope);
+    }
+    return std_Clone_str(ctx, (*(env)).current_prefix);
+    }
+}
+
 int typechecker__set_init(os_Arena* ctx) {
     int s_idx = os_ArenaAlloc(ctx, sizeof(typechecker__OriginSet));
     {
@@ -18063,6 +18148,30 @@ ast__Type typechecker__check_expression_internal(int expr_idx, typechecker__Type
     os_VectorPush(&(evaluated_arg_provenances_call_nlaunder), arg_prov_eval_call_nlaunder);
     i = (i + 1);
     }
+    LookupResult_typechecker__ProtectedResourceFunction protected_lookup = ({ LookupResult_typechecker__ProtectedResourceFunction res = {0}; res.Ok = os_HashMapContains(&((*(env)).protected_resource_functions), resolved_func, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).protected_resource_functions), resolved_func, 1); } res; });
+    if (protected_lookup.Ok) {
+    Slice_unsigned_char concrete_func = typechecker__typechecker_instantiate_protected_resource(resolved_func, evaluated_args, env, ctx);
+    if ((concrete_func.len == 0)) {
+    typechecker__report_error(2, ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [ProtectedResourceDerivation] protected Resource functions require one complete structurally matching module-level guard quartet", 144 }), expr.Call.span, env, ctx);
+    return dummy;
+    }
+    resolved_func = concrete_func;
+    LookupResult_typechecker__FunctionSignature _guard_res_concrete_sig_4942_21 = {0};
+    _guard_res_concrete_sig_4942_21 = ({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_registry), resolved_func, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_registry), resolved_func, 1); } res; });
+    if (!_guard_res_concrete_sig_4942_21.Ok) {
+        return dummy;
+    }
+    typechecker__FunctionSignature concrete_sig = _guard_res_concrete_sig_4942_21.Val;
+    sig = concrete_sig;
+    ast__Expression identifier = ((ast__Expression){ .tag = 0 });
+    identifier.tag = 0;
+    identifier.Identifier.name = std_Clone_str(ctx, resolved_func);
+    identifier.Identifier.span = expr.Call.span;
+    int identifier_idx = os_ArenaAlloc(ctx, sizeof(ast__Expression));
+    ({ *((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(identifier_idx))) = identifier; });
+    ast__Expression* call_ref = ((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr_idx)));
+    call_ref->Call.function = identifier_idx;
+    }
     if ((sig.params.len != args_vec_valid_call.len)) {
     Slice_unsigned_char msg = (({ 
         Slice_unsigned_char _arg1 = resolved_func;
@@ -18197,7 +18306,7 @@ ast__Type typechecker__check_expression(int expr_idx, typechecker__TypeEnvironme
     ast__Type t = typechecker__check_expression_internal(expr_idx, env, scope, ctx);
     {
     token__Span final_span = typechecker__get_expression_span(expr_idx, ctx);
-    Slice_unsigned_char prefix = (*(env)).current_prefix;
+    Slice_unsigned_char prefix = typechecker__typechecker_resolution_scope_key(env, ctx);
     int found_idx = (0 - 1);
     int i = 0;
     while ((i < (*(env)).resolved_types_nested.len)) {
@@ -18241,7 +18350,7 @@ void* typechecker__typechecker_is_contextual_generic_constructor_name_pthread_wr
 void typechecker__typechecker_record_contextual_expression_type(int expr_idx, ast__Type resolved_type, typechecker__TypeEnvironment* env, os_Arena* ctx) {
     {
     token__Span span = typechecker__get_expression_span(expr_idx, ctx);
-    Slice_unsigned_char prefix = (*(env)).current_prefix;
+    Slice_unsigned_char prefix = typechecker__typechecker_resolution_scope_key(env, ctx);
     int i = 0;
     while ((i < (*(env)).resolved_types_nested.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
@@ -19805,17 +19914,6 @@ ast__Type typechecker__substitute_generics(typechecker__TypeEnvironment* env, as
     ast__Type res_type = ((ast__Type){ .tag = 0 });
     if ((t.tag == 8)) {
     Slice_unsigned_char name = t.Struct.struct_name;
-    std_Vector_str map_keys = (({ std_Vector_str _v = (std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx }; for (int _i = 0; _i < (map.capacity); _i++) { if ((map.occupied)[_i] == 1) { os_VectorPush(&_v, (map.keys)[_i]); } } _v; }));
-    Slice_unsigned_char joined_keys = ast__ast_join_strings(map_keys, ((Slice_unsigned_char){ (unsigned char*)", ", 2 }), ctx);
-    Slice_unsigned_char log_msg = (({ 
-        Slice_unsigned_char _arg1 = name;
-        Slice_unsigned_char _arg2 = joined_keys;
-        int _alloc_size = 50 + _arg1.len + _arg2.len + 1;
-        char* _buf = (char*)os_ScratchAlloc(_alloc_size);
-        int _len = snprintf(_buf, _alloc_size, "substitute_generics Struct: name=%.*s, map_keys=[%.*s]", _arg1.len, (char*)_arg1.data, _arg2.len, (char*)_arg2.data);
-        ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
-    }));
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"👁", 4 }), log_msg, ctx);
     int resolved_nested_template = 0;
     std_Vector_str template_keys = typechecker__typechecker_get_sorted_keys_struct_template(&((*(env)).struct_templates), ctx);
     int template_idx = 0;
@@ -19869,18 +19967,7 @@ ast__Type typechecker__substitute_generics(typechecker__TypeEnvironment* env, as
     if ((resolved_nested_template == 1)) {
     } else {
     if (lookup.Ok) {
-    res_type = lookup.Val;
-    Slice_unsigned_char before_str = name;
-    Slice_unsigned_char after_str = ast__serialize_type(res_type, ctx);
-    Slice_unsigned_char subst_msg = (({ 
-        Slice_unsigned_char _arg1 = before_str;
-        Slice_unsigned_char _arg2 = after_str;
-        int _alloc_size = 54 + _arg1.len + _arg2.len + 1;
-        char* _buf = (char*)os_ScratchAlloc(_alloc_size);
-        int _len = snprintf(_buf, _alloc_size, "substitute_generics: replaced placeholder '%.*s' with %.*s", _arg1.len, (char*)_arg1.data, _arg2.len, (char*)_arg2.data);
-        ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
-    }));
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"👁️", 7 }), subst_msg, ctx);
+    return lookup.Val;
     } else {
     std_Vector_str parts = (({ Slice_unsigned_char _s = name; Slice_unsigned_char _delim = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); os_Arena* _ctx = ctx; struct std_Vector_str _tmp = std_str_split(_s, _delim, _ctx); ((std_Vector_str){ .data = _tmp.data, .len = _tmp.len, .capacity = _tmp.capacity, .arena = _tmp.arena }); }));
     int changed = 0;
@@ -19933,17 +20020,6 @@ ast__Type typechecker__substitute_generics(typechecker__TypeEnvironment* env, as
     } else {
     new_struct = typechecker__get_type_ident(b_type, ctx);
     }
-    Slice_unsigned_char before_str = name;
-    Slice_unsigned_char after_str = ast__serialize_type(b_type, ctx);
-    Slice_unsigned_char subst_msg = (({ 
-        Slice_unsigned_char _arg1 = before_str;
-        Slice_unsigned_char _arg2 = after_str;
-        int _alloc_size = 54 + _arg1.len + _arg2.len + 1;
-        char* _buf = (char*)os_ScratchAlloc(_alloc_size);
-        int _len = snprintf(_buf, _alloc_size, "substitute_generics: replaced placeholder '%.*s' with %.*s", _arg1.len, (char*)_arg1.data, _arg2.len, (char*)_arg2.data);
-        ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
-    }));
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"👁️", 7 }), subst_msg, ctx);
     } else {
     std_Vector_str parts = (({ Slice_unsigned_char _s = name; Slice_unsigned_char _delim = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); os_Arena* _ctx = ctx; struct std_Vector_str _tmp = std_str_split(_s, _delim, _ctx); ((std_Vector_str){ .data = _tmp.data, .len = _tmp.len, .capacity = _tmp.capacity, .arena = _tmp.arena }); }));
     int changed = 0;
@@ -19972,19 +20048,13 @@ ast__Type typechecker__substitute_generics(typechecker__TypeEnvironment* env, as
     }
     int new_brand = t.Index.brand;
     if ((t.Index.brand != 0xFFFFFFFF)) {
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"substitute_generics Index: before reading brand", 47 }), ctx);
     Slice_unsigned_char brand_name = (*((Slice_unsigned_char*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(t.Index.brand))));
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"substitute_generics Index: before brand map lookup", 50 }), ctx);
     LookupResult_ast__Type brand_lookup = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&(map), typechecker__strip_brand_prefix(brand_name, ctx), 1); if (res.Ok) { res.Val = *os_HashMapRef(&(map), typechecker__strip_brand_prefix(brand_name, ctx), 1); } res; });
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"substitute_generics Index: after brand map lookup", 49 }), ctx);
     if (brand_lookup.Ok) {
     ast__Type b_type = brand_lookup.Val;
     if ((b_type.tag == 8)) {
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"substitute_generics Index: before ArenaAlloc for new_brand", 58 }), ctx);
     new_brand = ((int)os_ArenaAlloc(ctx, sizeof(Slice_unsigned_char)));
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"substitute_generics Index: after ArenaAlloc for new_brand", 57 }), ctx);
     ({ *((Slice_unsigned_char*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(new_brand))) = std_Clone_str(ctx, b_type.Struct.struct_name); });
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"substitute_generics Index: successfully cloned new_brand", 56 }), ctx);
     }
     }
     }
@@ -20063,6 +20133,7 @@ errors__Result_ast__Type typechecker__monomorphize(typechecker__TypeEnvironment*
     {
     Slice_unsigned_char old_prefix = (*(env)).current_prefix;
     std_HashMap_str_str old_imports = (*(env)).imports;
+    int old_preserve_concrete_types = (*(env)).protected_resource_preserve_concrete_types;
     Slice_unsigned_char template_prefix = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     int pos = std_str_find(template_name, ((Slice_unsigned_char){ (unsigned char*)"__", 2 }));
     if ((pos != (0 - 1))) {
@@ -20071,26 +20142,21 @@ errors__Result_ast__Type typechecker__monomorphize(typechecker__TypeEnvironment*
     if ((std_str_eq(template_prefix, ((Slice_unsigned_char){ (unsigned char*)"", 0 })) == 0)) {
     (*(env)).current_prefix = std_Clone_str(ctx, template_prefix);
     }
+    Slice_unsigned_char protected_payload = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    Slice_unsigned_char protected_brand = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    if ((typechecker__typechecker_protected_guard_shape(template_name, env, &(protected_payload), &(protected_brand), ctx) == 1)) {
+    (*(env)).protected_resource_preserve_concrete_types = 1;
+    }
     errors__Result_ast__Type res = typechecker__monomorphize_impl(env, template_name, args, ctx);
     (*(env)).current_prefix = old_prefix;
     (*(env)).imports = old_imports;
+    (*(env)).protected_resource_preserve_concrete_types = old_preserve_concrete_types;
     return res;
     }
 }
 
 errors__Result_ast__Type typechecker__monomorphize_impl(typechecker__TypeEnvironment* env, Slice_unsigned_char template_name, std_Vector_ast__Type args, os_Arena* ctx) {
     {
-    int args_idx_start = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__Type));
-    ({ *((std_Vector_ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(args_idx_start))) = args; });
-    Slice_unsigned_char start_args_name = typechecker__get_monomorphized_name(template_name, args_idx_start, ctx);
-    Slice_unsigned_char start_msg = (({ 
-        Slice_unsigned_char _arg1 = start_args_name;
-        int _alloc_size = 31 + _arg1.len + 1;
-        char* _buf = (char*)os_ScratchAlloc(_alloc_size);
-        int _len = snprintf(_buf, _alloc_size, "monomorphize_impl: start for %.*s", _arg1.len, (char*)_arg1.data);
-        ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
-    }));
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔄", 4 }), start_msg, ctx);
     errors__Result_ast__Type res = ((errors__Result_ast__Type){ .tag = 0 });
     res.tag = 0;
     int start_err_len = (*(env)).errors.len;
@@ -20236,14 +20302,6 @@ errors__Result_ast__Type typechecker__monomorphize_impl(typechecker__TypeEnviron
     placeholder.fields = enum_fields;
     *os_HashMapRef(&((*(env)).struct_registry), std_Clone_str(ctx, concrete_name), 1) = placeholder;
     *os_HashMapRef(&((*(env)).enum_registry), std_Clone_str(ctx, concrete_name), 1) = concrete_variants;
-    Slice_unsigned_char success_msg = (({ 
-        Slice_unsigned_char _arg1 = concrete_name;
-        int _alloc_size = 54 + _arg1.len + 1;
-        char* _buf = (char*)os_ScratchAlloc(_alloc_size);
-        int _len = snprintf(_buf, _alloc_size, "monomorphize_impl: successfully instantiated enum '%.*s'", _arg1.len, (char*)_arg1.data);
-        ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
-    }));
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔄", 4 }), success_msg, ctx);
     }
     res.Ok.val.tag = 8;
     res.Ok.val.Struct.struct_name = std_Clone_str(ctx, concrete_name);
@@ -20324,14 +20382,6 @@ errors__Result_ast__Type typechecker__monomorphize_impl(typechecker__TypeEnviron
     while ((f_idx < fields_vec_struct_template.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     ast__FieldDef field = (*({ if (f_idx < 0 || f_idx >= fields_vec_struct_template.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(fields_vec_struct_template.data[f_idx]); }));
-    Slice_unsigned_char log_start = (({ 
-        Slice_unsigned_char _arg1 = field.name;
-        int _alloc_size = 35 + _arg1.len + 1;
-        char* _buf = (char*)os_ScratchAlloc(_alloc_size);
-        int _len = snprintf(_buf, _alloc_size, "monomorphize_impl field: %.*s - start", _arg1.len, (char*)_arg1.data);
-        ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
-    }));
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"⚙", 3 }), log_start, ctx);
     ast__Type substituted_t = typechecker__substitute_generics(env, field.field_type, substitution_map, ctx);
     ast__Type field_type = typechecker__env_resolve_type(env, substituted_t, ctx);
     *os_HashMapRef(&(concrete_fields), std_Clone_str(ctx, field.name), 1) = field_type;
@@ -20340,26 +20390,10 @@ errors__Result_ast__Type typechecker__monomorphize_impl(typechecker__TypeEnviron
     typechecker__env_check_brand_nesting(env, field_type, brand, field.span, ctx);
     preserved_nesting_error_count = ((preserved_nesting_error_count + (*(env)).errors.len) - nesting_err_len_before);
     }
-    Slice_unsigned_char log_end = (({ 
-        Slice_unsigned_char _arg1 = field.name;
-        int _alloc_size = 33 + _arg1.len + 1;
-        char* _buf = (char*)os_ScratchAlloc(_alloc_size);
-        int _len = snprintf(_buf, _alloc_size, "monomorphize_impl field: %.*s - end", _arg1.len, (char*)_arg1.data);
-        ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
-    }));
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"⚙", 3 }), log_end, ctx);
     f_idx = (f_idx + 1);
     }
     placeholder.fields = concrete_fields;
     *os_HashMapRef(&((*(env)).struct_registry), std_Clone_str(ctx, concrete_name), 1) = placeholder;
-    Slice_unsigned_char success_msg = (({ 
-        Slice_unsigned_char _arg1 = concrete_name;
-        int _alloc_size = 56 + _arg1.len + 1;
-        char* _buf = (char*)os_ScratchAlloc(_alloc_size);
-        int _len = snprintf(_buf, _alloc_size, "monomorphize_impl: successfully instantiated struct '%.*s'", _arg1.len, (char*)_arg1.data);
-        ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
-    }));
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔄", 4 }), success_msg, ctx);
     if ((brand == 0xFFFFFFFF)) {
     int f = 0;
     while ((f < fields_vec_struct_template.len)) {
@@ -21016,6 +21050,11 @@ typechecker__TypeEnvironment typechecker__env_new(os_Arena* ctx) {
     env_ref_new->enum_templates = ((struct std_HashMap_str_typechecker__EnumTemplate){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
     env_ref_new->template_local_names = ((struct std_HashMap_str_str){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
     env_ref_new->function_registry = ((struct std_HashMap_str_typechecker__FunctionSignature){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    env_ref_new->protected_resource_functions = ((struct std_HashMap_str_typechecker__ProtectedResourceFunction){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    env_ref_new->protected_resource_derived_functions = ((struct std_Vector_typechecker__ProtectedResourceDerivedFunction){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    env_ref_new->protected_resource_active_substitutions = ((struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    env_ref_new->protected_resource_active_derivation = 0;
+    env_ref_new->protected_resource_preserve_concrete_types = 0;
     env_ref_new->brand_identities = ((struct std_HashMap_str_typechecker__BrandIdentity){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
     env_ref_new->arena_lifecycle_states = ((struct std_HashMap_str_typechecker__ArenaLifecycleState){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
     env_ref_new->arena_lifecycle_bindings = ((struct std_HashMap_str_str){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
@@ -21365,21 +21404,21 @@ int typechecker__env_function_is_validated_resource_destructor(typechecker__Type
 
 int typechecker__env_private_function_access_allowed(typechecker__TypeEnvironment* env, Slice_unsigned_char name, int compiler_cleanup_invocation, os_Arena* ctx) {
     {
-    LookupResult_typechecker__FunctionSignature _guard_res_sig_8453_9 = {0};
-    _guard_res_sig_8453_9 = ({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_registry), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_registry), name, 1); } res; });
-    if (!_guard_res_sig_8453_9.Ok) {
+    LookupResult_typechecker__FunctionSignature _guard_res_sig_8473_9 = {0};
+    _guard_res_sig_8473_9 = ({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_registry), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_registry), name, 1); } res; });
+    if (!_guard_res_sig_8473_9.Ok) {
         return 1;
     }
-    typechecker__FunctionSignature sig = _guard_res_sig_8453_9.Val;
+    typechecker__FunctionSignature sig = _guard_res_sig_8473_9.Val;
     if ((sig.is_private == 0)) {
     return 1;
     }
-    LookupResult_str _guard_res_owner_8459_9 = {0};
-    _guard_res_owner_8459_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_declaration_module), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_declaration_module), name, 1); } res; });
-    if (!_guard_res_owner_8459_9.Ok) {
+    LookupResult_str _guard_res_owner_8479_9 = {0};
+    _guard_res_owner_8479_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_declaration_module), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_declaration_module), name, 1); } res; });
+    if (!_guard_res_owner_8479_9.Ok) {
         return 0;
     }
-    Slice_unsigned_char owner = _guard_res_owner_8459_9.Val;
+    Slice_unsigned_char owner = _guard_res_owner_8479_9.Val;
     if ((std_str_eq(owner, (*(env)).current_prefix) == 1)) {
     return 1;
     }
@@ -22497,12 +22536,12 @@ int typechecker__env_resource_storage_field_order(typechecker__TypeEnvironment* 
     return (0 - 1);
     }
     Slice_unsigned_char root = typechecker__env_resource_storage_root(storage_name, ctx);
-    LookupResult_ast__Type _guard_res_root_type_lookup_9578_9 = {0};
-    _guard_res_root_type_lookup_9578_9 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), root, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), root, 1); } res; });
-    if (!_guard_res_root_type_lookup_9578_9.Ok) {
+    LookupResult_ast__Type _guard_res_root_type_lookup_9598_9 = {0};
+    _guard_res_root_type_lookup_9598_9 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), root, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), root, 1); } res; });
+    if (!_guard_res_root_type_lookup_9598_9.Ok) {
         return (0 - 1);
     }
-    ast__Type root_type_lookup = _guard_res_root_type_lookup_9578_9.Val;
+    ast__Type root_type_lookup = _guard_res_root_type_lookup_9598_9.Val;
     ast__Type root_type = typechecker__env_resolve_type(env, root_type_lookup, ctx);
     if ((root_type.tag != 8)) {
     return (0 - 1);
@@ -22802,12 +22841,12 @@ int typechecker__env_bind_resource_identity(typechecker__TypeEnvironment* env, S
     if (((storage_name.len == 0) || (identity.len == 0))) {
     return 0;
     }
-    LookupResult_typechecker__ResourceAcquisitionObligation _guard_res_obligation_lookup_9883_9 = {0};
-    _guard_res_obligation_lookup_9883_9 = ({ LookupResult_typechecker__ResourceAcquisitionObligation res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_acquisition_obligations), identity, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_acquisition_obligations), identity, 1); } res; });
-    if (!_guard_res_obligation_lookup_9883_9.Ok) {
+    LookupResult_typechecker__ResourceAcquisitionObligation _guard_res_obligation_lookup_9903_9 = {0};
+    _guard_res_obligation_lookup_9903_9 = ({ LookupResult_typechecker__ResourceAcquisitionObligation res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_acquisition_obligations), identity, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_acquisition_obligations), identity, 1); } res; });
+    if (!_guard_res_obligation_lookup_9903_9.Ok) {
         return 0;
     }
-    typechecker__ResourceAcquisitionObligation obligation_lookup = _guard_res_obligation_lookup_9883_9.Val;
+    typechecker__ResourceAcquisitionObligation obligation_lookup = _guard_res_obligation_lookup_9903_9.Val;
     *os_HashMapRef(&((*(env)).resource_value_identities), std_Clone_str(ctx, storage_name), 1) = std_Clone_str(ctx, identity);
     typechecker__ResourceAcquisitionObligation obligation = obligation_lookup;
     Slice_unsigned_char root = typechecker__env_resource_storage_root(storage_name, ctx);
@@ -22858,12 +22897,12 @@ int typechecker__env_bind_resource_expression(typechecker__TypeEnvironment* env,
 
 int typechecker__env_resource_obligation_set_state(typechecker__TypeEnvironment* env, Slice_unsigned_char identity, int state, os_Arena* ctx) {
     {
-    LookupResult_typechecker__ResourceAcquisitionObligation _guard_res_lookup_9952_9 = {0};
-    _guard_res_lookup_9952_9 = ({ LookupResult_typechecker__ResourceAcquisitionObligation res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_acquisition_obligations), identity, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_acquisition_obligations), identity, 1); } res; });
-    if (!_guard_res_lookup_9952_9.Ok) {
+    LookupResult_typechecker__ResourceAcquisitionObligation _guard_res_lookup_9972_9 = {0};
+    _guard_res_lookup_9972_9 = ({ LookupResult_typechecker__ResourceAcquisitionObligation res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_acquisition_obligations), identity, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_acquisition_obligations), identity, 1); } res; });
+    if (!_guard_res_lookup_9972_9.Ok) {
         return 0;
     }
-    typechecker__ResourceAcquisitionObligation lookup = _guard_res_lookup_9952_9.Val;
+    typechecker__ResourceAcquisitionObligation lookup = _guard_res_lookup_9972_9.Val;
     typechecker__ResourceAcquisitionObligation obligation = lookup;
     obligation.state = state;
     *os_HashMapRef(&((*(env)).resource_acquisition_obligations), std_Clone_str(ctx, identity), 1) = obligation;
@@ -22888,12 +22927,12 @@ typechecker__ExpressionProvenance typechecker__env_expression_provenance_rooted_
     return prov;
     }
     {
-    LookupResult_str _guard_res_identity_9982_9 = {0};
-    _guard_res_identity_9982_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_value_identities), resource_storage_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_value_identities), resource_storage_name, 1); } res; });
-    if (!_guard_res_identity_9982_9.Ok) {
+    LookupResult_str _guard_res_identity_10002_9 = {0};
+    _guard_res_identity_10002_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_value_identities), resource_storage_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_value_identities), resource_storage_name, 1); } res; });
+    if (!_guard_res_identity_10002_9.Ok) {
         return prov;
     }
-    Slice_unsigned_char identity = _guard_res_identity_9982_9.Val;
+    Slice_unsigned_char identity = _guard_res_identity_10002_9.Val;
     if ((typechecker__env_resource_obligation_is_pending(env, identity, ctx) == 0)) {
     return prov;
     }
@@ -22980,12 +23019,12 @@ int typechecker__env_transfer_resource_return_expression(typechecker__TypeEnviro
 
 int typechecker__env_resource_destructor_matches_obligation(typechecker__TypeEnvironment* env, Slice_unsigned_char resolved_func, Slice_unsigned_char identity, os_Arena* ctx) {
     {
-    LookupResult_typechecker__ResourceAcquisitionObligation _guard_res_lookup_10076_9 = {0};
-    _guard_res_lookup_10076_9 = ({ LookupResult_typechecker__ResourceAcquisitionObligation res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_acquisition_obligations), identity, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_acquisition_obligations), identity, 1); } res; });
-    if (!_guard_res_lookup_10076_9.Ok) {
+    LookupResult_typechecker__ResourceAcquisitionObligation _guard_res_lookup_10096_9 = {0};
+    _guard_res_lookup_10096_9 = ({ LookupResult_typechecker__ResourceAcquisitionObligation res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_acquisition_obligations), identity, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_acquisition_obligations), identity, 1); } res; });
+    if (!_guard_res_lookup_10096_9.Ok) {
         return 0;
     }
-    typechecker__ResourceAcquisitionObligation lookup = _guard_res_lookup_10076_9.Val;
+    typechecker__ResourceAcquisitionObligation lookup = _guard_res_lookup_10096_9.Val;
     Slice_unsigned_char destructor_name = lookup.destructor_name;
     if ((destructor_name.len == 0)) {
     return 0;
@@ -23458,9 +23497,7 @@ ast__Type typechecker__env_resolve_type_internal(typechecker__TypeEnvironment* e
     res_ref_env_resolve_type->Index.struct_name = typechecker__env_resolve_namespaced_ident(env, t.Index.struct_name, ctx);
     Slice_unsigned_char brand_name = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     if ((t.Index.brand != 0xFFFFFFFF)) {
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type Index: before reading brand", 44 }), ctx);
     brand_name = (*((Slice_unsigned_char*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(t.Index.brand))));
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type Index: successfully read brand", 47 }), ctx);
     }
     ast__Type temp_struct = typechecker__make_type_struct(t.Index.struct_name, brand_name, ctx);
     std_HashMap_str_int temp_active = (*(env)).active_monomorphizations;
@@ -23472,6 +23509,9 @@ ast__Type typechecker__env_resolve_type_internal(typechecker__TypeEnvironment* e
     }
     } else {
     if ((t.tag == 8)) {
+    if ((((*(env)).protected_resource_preserve_concrete_types == 1) && ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_registry), t.Struct.struct_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_registry), t.Struct.struct_name, 1); } res; }).Ok)) {
+    return t;
+    }
     if ((typechecker__typechecker_type_is_brand_marker(t, ctx) == 1)) {
     return t;
     }
@@ -23481,15 +23521,6 @@ ast__Type typechecker__env_resolve_type_internal(typechecker__TypeEnvironment* e
     if ((t.Struct.brand != 0xFFFFFFFF)) {
     brand_name = (*((Slice_unsigned_char*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(t.Struct.brand))));
     }
-    Slice_unsigned_char log_msg = (({ 
-        Slice_unsigned_char _arg1 = namespaced_name;
-        Slice_unsigned_char _arg2 = brand_name;
-        int _alloc_size = 42 + _arg1.len + _arg2.len + 1;
-        char* _buf = (char*)os_ScratchAlloc(_alloc_size);
-        int _len = snprintf(_buf, _alloc_size, "env_resolve_type Struct: name=%.*s, brand=%.*s", _arg1.len, (char*)_arg1.data, _arg2.len, (char*)_arg2.data);
-        ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
-    }));
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"📥", 4 }), log_msg, ctx);
     Slice_unsigned_char clean_name = namespaced_name;
     int d_idx = std_str_find(namespaced_name, ((Slice_unsigned_char){ (unsigned char*)"__", 2 }));
     if ((d_idx != (0 - 1))) {
@@ -23636,9 +23667,7 @@ ast__Type typechecker__env_resolve_type_internal(typechecker__TypeEnvironment* e
     }
     if ((t.Struct.brand != 0xFFFFFFFF)) {
     int has_template = 0;
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type: before struct_templates.Get", 45 }), ctx);
     unsigned char is_struct_tmpl = ({ LookupResult_typechecker__StructTemplate res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_templates), namespaced_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_templates), namespaced_name, 1); } res; }).Ok;
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type: after struct_templates.Get", 44 }), ctx);
     int has_struct_tmpl = 0;
     if (is_struct_tmpl) {
     has_struct_tmpl = 1;
@@ -23646,9 +23675,7 @@ ast__Type typechecker__env_resolve_type_internal(typechecker__TypeEnvironment* e
     if ((has_struct_tmpl == 1)) {
     has_template = 1;
     } else {
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type: before enum_templates.Get", 43 }), ctx);
     unsigned char is_enum_tmpl = ({ LookupResult_typechecker__EnumTemplate res = {0}; res.Ok = os_HashMapContains(&((*(env)).enum_templates), namespaced_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).enum_templates), namespaced_name, 1); } res; }).Ok;
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type: after enum_templates.Get", 42 }), ctx);
     int has_enum_tmpl = 0;
     if (is_enum_tmpl) {
     has_enum_tmpl = 1;
@@ -23657,16 +23684,13 @@ ast__Type typechecker__env_resolve_type_internal(typechecker__TypeEnvironment* e
     has_template = 1;
     }
     }
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type: determined has_template", 41 }), ctx);
     if ((has_template == 1)) {
     std_Vector_ast__Type args = ((struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
     os_VectorPush(&(args), typechecker__make_type_brand_marker(brand_name, ctx));
     errors__Result_ast__Type mono_res = typechecker__monomorphize(env, namespaced_name, args, ctx);
     if ((mono_res.tag == 0)) {
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type: monomorphize returned Ok", 42 }), ctx);
     return mono_res.Ok.val;
     } else {
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type: monomorphize returned Err", 43 }), ctx);
     os_VectorPush(&((*(env)).errors), (*((errors__CompilerError*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(mono_res.Err.error)))));
     }
     }
@@ -23713,14 +23737,6 @@ ast__Type typechecker__env_resolve_type_internal(typechecker__TypeEnvironment* e
     }
     }
     Slice_unsigned_char name = typechecker__env_resolve_namespaced_ident(env, t.Generic.name, ctx);
-    Slice_unsigned_char log_msg = (({ 
-        Slice_unsigned_char _arg1 = name;
-        int _alloc_size = 33 + _arg1.len + 1;
-        char* _buf = (char*)os_ScratchAlloc(_alloc_size);
-        int _len = snprintf(_buf, _alloc_size, "env_resolve_type Generic: name=%.*s", _arg1.len, (char*)_arg1.data);
-        ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
-    }));
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"📥", 4 }), log_msg, ctx);
     int brand_parameter_index = typechecker__env_get_template_brand_parameter_index(env, name);
     std_Vector_ast__Type new_args = ((struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
     int i = 0;
@@ -23748,7 +23764,6 @@ ast__Type typechecker__env_resolve_type_internal(typechecker__TypeEnvironment* e
     }
     }
     }
-    typechecker__typechecker_log_trace(((Slice_unsigned_char){ (unsigned char*)"🔍", 4 }), ((Slice_unsigned_char){ (unsigned char*)"env_resolve_type: returning ctx[res_idx]", 40 }), ctx);
     return (*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(res_idx))));
     }
 }
@@ -24393,7 +24408,493 @@ void typechecker__env_require_explicit_public_brand(typechecker__TypeEnvironment
     }
 }
 
+int typechecker__typechecker_type_names(ast__Type t, Slice_unsigned_char name, os_Arena* ctx) {
+    if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    {
+    if ((t.tag == 7)) {
+    return std_str_eq(t.Index.struct_name, name);
+    }
+    if ((t.tag == 8)) {
+    return std_str_eq(t.Struct.struct_name, name);
+    }
+    if ((t.tag == 9)) {
+    return typechecker__typechecker_type_names((*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(t.RawPointer.inner)))), name, ctx);
+    }
+    if ((t.tag == 11)) {
+    return typechecker__typechecker_type_names((*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(t.Reference.inner)))), name, ctx);
+    }
+    if ((t.tag == 10)) {
+    std_Vector_ast__Type a = (*((std_Vector_ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(t.Generic.args))));
+    int i = 0;
+    while ((i < a.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    if ((typechecker__typechecker_type_names((*({ if (i < 0 || i >= a.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(a.data[i]); })), name, ctx) == 1)) {
+    return 1;
+    }
+    i = (i + 1);
+    }
+    }
+    return 0;
+    }
+}
+
+int typechecker__typechecker_protected_guard_shape(Slice_unsigned_char name, typechecker__TypeEnvironment* env, Slice_unsigned_char* payload, Slice_unsigned_char* brand, os_Arena* ctx) {
+    {
+    LookupResult_typechecker__StructTemplate _guard_res_t_11499_9 = {0};
+    _guard_res_t_11499_9 = ({ LookupResult_typechecker__StructTemplate res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_templates), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_templates), name, 1); } res; });
+    if (!_guard_res_t_11499_9.Ok) {
+        return 0;
+    }
+    typechecker__StructTemplate t = _guard_res_t_11499_9.Val;
+    LookupResult_int _guard_res_linear_11500_9 = {0};
+    _guard_res_linear_11500_9 = ({ LookupResult_int res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_linear_resource), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_linear_resource), name, 1); } res; });
+    if (!_guard_res_linear_11500_9.Ok) {
+        return 0;
+    }
+    int linear = _guard_res_linear_11500_9.Val;
+    LookupResult_int _guard_res_opaque_11501_9 = {0};
+    _guard_res_opaque_11501_9 = ({ LookupResult_int res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_declared_opaque), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_declared_opaque), name, 1); } res; });
+    if (!_guard_res_opaque_11501_9.Ok) {
+        return 0;
+    }
+    int opaque = _guard_res_opaque_11501_9.Val;
+    LookupResult_str _guard_res_destructor_11502_9 = {0};
+    _guard_res_destructor_11502_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_declared_destructor), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_declared_destructor), name, 1); } res; });
+    if (!_guard_res_destructor_11502_9.Ok) {
+        return 0;
+    }
+    Slice_unsigned_char destructor = _guard_res_destructor_11502_9.Val;
+    std_Vector_str g = (*((std_Vector_str*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(t.generics))));
+    if ((((((linear != 1) || (opaque != 1)) || (destructor.len == 0)) || (t.brand_parameter_index < 0)) || (t.brand_parameter_index >= g.len))) {
+    return 0;
+    }
+    (*(brand)) = std_Clone_str(ctx, (*({ if (t.brand_parameter_index < 0 || t.brand_parameter_index >= g.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(g.data[t.brand_parameter_index]); })));
+    std_Vector_ast__FieldDef f = (*((std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(t.fields))));
+    int i = 0;
+    while ((i < f.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    if (((*({ if (i < 0 || i >= f.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(f.data[i]); })).field_type.tag == 9)) {
+    int j = 0;
+    while ((j < g.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    if (((j != t.brand_parameter_index) && (typechecker__typechecker_type_names((*({ if (i < 0 || i >= f.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(f.data[i]); })).field_type, (*({ if (j < 0 || j >= g.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(g.data[j]); })), ctx) == 1))) {
+    (*(payload)) = std_Clone_str(ctx, (*({ if (j < 0 || j >= g.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(g.data[j]); })));
+    }
+    j = (j + 1);
+    }
+    }
+    i = (i + 1);
+    }
+    if (((*(payload)).len == 0)) {
+    return 0;
+    }
+    i = 0;
+    while ((i < f.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    if (((*({ if (i < 0 || i >= f.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(f.data[i]); })).field_type.tag == 11)) {
+    ast__Type c = (*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)((*({ if (i < 0 || i >= f.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(f.data[i]); })).field_type.Reference.inner))));
+    if ((((c.tag == 10) && (typechecker__typechecker_type_names(c, (*(payload)), ctx) == 1)) && (typechecker__typechecker_type_names(c, (*(brand)), ctx) == 1))) {
+    return 1;
+    }
+    }
+    i = (i + 1);
+    }
+    return 0;
+    }
+}
+
+int typechecker__typechecker_guard_application(ast__Type t, Slice_unsigned_char prefix, typechecker__TypeEnvironment* env, Slice_unsigned_char* guard_name, os_Arena* ctx) {
+    if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    {
+    if ((t.tag == 11)) {
+    return typechecker__typechecker_guard_application((*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(t.Reference.inner)))), prefix, env, guard_name, ctx);
+    }
+    if ((t.tag != 10)) {
+    return 0;
+    }
+    Slice_unsigned_char n = t.Generic.name;
+    if (((std_str_find(n, ((Slice_unsigned_char){ (unsigned char*)"__", 2 })) == (0 - 1)) && (std_str_find(n, ((Slice_unsigned_char){ (unsigned char*)".", 1 })) == (0 - 1)))) {
+    n = (({ Slice_unsigned_char _s1 = prefix; Slice_unsigned_char _s2 = n; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    }
+    Slice_unsigned_char p = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    Slice_unsigned_char b = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    if ((typechecker__typechecker_protected_guard_shape(n, env, &(p), &(b), ctx) == 1)) {
+    (*(guard_name)) = std_Clone_str(ctx, n);
+    return 1;
+    }
+    return 0;
+    }
+}
+
+int typechecker__typechecker_protected_resource_role(Slice_unsigned_char name, typechecker__FunctionSignature sig, Slice_unsigned_char prefix, typechecker__TypeEnvironment* env, Slice_unsigned_char* guard_name, os_Arena* ctx) {
+    {
+    Slice_unsigned_char n = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    typechecker__typechecker_guard_application(sig.return_type, prefix, env, &(n), ctx);
+    int i = 0;
+    while (((n.len == 0) && (i < sig.params.len))) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    typechecker__typechecker_guard_application((*({ if (i < 0 || i >= sig.params.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(sig.params.data[i]); })), prefix, env, &(n), ctx);
+    i = (i + 1);
+    }
+    if ((n.len == 0)) {
+    return 0;
+    }
+    Slice_unsigned_char payload = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    Slice_unsigned_char brand = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    if ((typechecker__typechecker_protected_guard_shape(n, env, &(payload), &(brand), ctx) == 0)) {
+    return 0;
+    }
+    (*(guard_name)) = std_Clone_str(ctx, n);
+    LookupResult_str _guard_res_d_11527_9 = {0};
+    _guard_res_d_11527_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_declared_destructor), n, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_declared_destructor), n, 1); } res; });
+    if (!_guard_res_d_11527_9.Ok) {
+        return 0;
+    }
+    Slice_unsigned_char d = _guard_res_d_11527_9.Val;
+    Slice_unsigned_char dn = d;
+    if ((std_str_find(dn, ((Slice_unsigned_char){ (unsigned char*)"__", 2 })) == (0 - 1))) {
+    dn = (({ Slice_unsigned_char _s1 = prefix; Slice_unsigned_char _s2 = dn; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    }
+    if ((((((std_str_eq(name, dn) == 1) && (sig.params.len == 1)) && ((*({ if (0 < 0 || 0 >= sig.params.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(sig.params.data[0]); })).tag == 10)) && (sig.return_type.tag == 3)) && (sig.is_private == 1))) {
+    return 1;
+    }
+    if ((((sig.params.len == 1) && ((*({ if (0 < 0 || 0 >= sig.params.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(sig.params.data[0]); })).tag == 11)) && (sig.return_type.tag == 10))) {
+    ast__Type c = (*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)((*({ if (0 < 0 || 0 >= sig.params.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(sig.params.data[0]); })).Reference.inner))));
+    if ((((c.tag == 10) && (typechecker__typechecker_type_names(c, payload, ctx) == 1)) && (typechecker__typechecker_type_names(c, brand, ctx) == 1))) {
+    return 2;
+    }
+    }
+    if ((((((sig.params.len == 1) && ((*({ if (0 < 0 || 0 >= sig.params.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(sig.params.data[0]); })).tag == 11)) && (sig.return_type.tag == 11)) && (typechecker__typechecker_guard_application((*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)((*({ if (0 < 0 || 0 >= sig.params.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(sig.params.data[0]); })).Reference.inner)))), prefix, env, &(n), ctx) == 1)) && (typechecker__typechecker_type_names((*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(sig.return_type.Reference.inner)))), payload, ctx) == 1))) {
+    return 3;
+    }
+    return 0;
+    }
+}
+
+int typechecker__typechecker_protected_quartet(typechecker__TypeEnvironment* env, Slice_unsigned_char guard_name, os_Arena* ctx) {
+    {
+    int a = 0;
+    int d = 0;
+    int g = 0;
+    std_Vector_str keys = (({ std_Vector_str _v = (std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx }; for (int _i = 0; _i < ((*(env)).protected_resource_functions.capacity); _i++) { if (((*(env)).protected_resource_functions.occupied)[_i] == 1) { os_VectorPush(&_v, ((*(env)).protected_resource_functions.keys)[_i]); } } _v; }));
+    int i = 0;
+    while ((i < keys.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    LookupResult_typechecker__ProtectedResourceFunction f = ({ LookupResult_typechecker__ProtectedResourceFunction res = {0}; res.Ok = os_HashMapContains(&((*(env)).protected_resource_functions), (*({ if (i < 0 || i >= keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(keys.data[i]); })), 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).protected_resource_functions), (*({ if (i < 0 || i >= keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(keys.data[i]); })), 1); } res; });
+    if (f.Ok) {
+    if ((std_str_eq(f.Val.guard_name, guard_name) == 1)) {
+    if ((f.Val.role == 1)) {
+    d = (d + 1);
+    }
+    if ((f.Val.role == 2)) {
+    a = (a + 1);
+    }
+    if ((f.Val.role == 3)) {
+    g = (g + 1);
+    }
+    }
+    }
+    i = (i + 1);
+    }
+    if ((((a == 1) && (d == 1)) && (g == 1))) {
+    return 1;
+    }
+    return 0;
+    }
+}
+
+int typechecker__typechecker_bind_protected_application(ast__Type formal, ast__Type actual, Slice_unsigned_char prefix, std_HashMap_str_ast__Type* map, typechecker__TypeEnvironment* env, os_Arena* ctx) {
+    if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    {
+    if (((formal.tag == 11) && (actual.tag == 11))) {
+    return typechecker__typechecker_bind_protected_application((*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(formal.Reference.inner)))), (*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(actual.Reference.inner)))), prefix, map, env, ctx);
+    }
+    if (((formal.tag == 9) && (actual.tag == 9))) {
+    return typechecker__typechecker_bind_protected_application((*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(formal.RawPointer.inner)))), (*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(actual.RawPointer.inner)))), prefix, map, env, ctx);
+    }
+    if (((formal.tag != 10) || (actual.tag != 8))) {
+    return 0;
+    }
+    Slice_unsigned_char template_name = formal.Generic.name;
+    if (((std_str_find(template_name, ((Slice_unsigned_char){ (unsigned char*)"__", 2 })) == (0 - 1)) && (std_str_find(template_name, ((Slice_unsigned_char){ (unsigned char*)".", 1 })) == (0 - 1)))) {
+    template_name = (({ Slice_unsigned_char _s1 = prefix; Slice_unsigned_char _s2 = template_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    }
+    if ((std_str_find(template_name, ((Slice_unsigned_char){ (unsigned char*)".", 1 })) != (0 - 1))) {
+    template_name = typechecker__env_resolve_namespaced_ident(env, template_name, ctx);
+    }
+    if ((typechecker__typechecker_matches_template_prefix(actual.Struct.struct_name, template_name) == 0)) {
+    return 0;
+    }
+    LookupResult_typechecker__StructTemplate _guard_res_template_11548_9 = {0};
+    _guard_res_template_11548_9 = ({ LookupResult_typechecker__StructTemplate res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_templates), template_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_templates), template_name, 1); } res; });
+    if (!_guard_res_template_11548_9.Ok) {
+        return 0;
+    }
+    typechecker__StructTemplate template = _guard_res_template_11548_9.Val;
+    Slice_unsigned_char suffix = std_str_slice(actual.Struct.struct_name, (template_name.len + 1), actual.Struct.struct_name.len);
+    std_Vector_ast__Type values = ((struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    if (((template.brand_parameter_index >= 0) && (actual.Struct.brand != 0xFFFFFFFF))) {
+    Slice_unsigned_char brand_suffix = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"_", 1 }); Slice_unsigned_char _s2 = (*((Slice_unsigned_char*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(actual.Struct.brand)))); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    if ((typechecker__typechecker_ends_with(suffix, brand_suffix) == 1)) {
+    Slice_unsigned_char payload_suffix = std_str_slice(suffix, 0, (suffix.len - brand_suffix.len));
+    values = typechecker__parse_types_from_suffix(env, payload_suffix, ctx);
+    } else {
+    values = typechecker__parse_types_from_suffix(env, suffix, ctx);
+    }
+    } else {
+    values = typechecker__parse_types_from_suffix(env, suffix, ctx);
+    }
+    values = typechecker__typechecker_complete_flattened_template_arguments(values, (*((std_Vector_str*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(template.generics)))).len, template.brand_parameter_index, actual.Struct.brand, ctx);
+    std_Vector_ast__Type names = (*((std_Vector_ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(formal.Generic.args))));
+    if ((names.len != values.len)) {
+    return 0;
+    }
+    int i = 0;
+    while ((i < names.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    Slice_unsigned_char key = typechecker__get_type_ident((*({ if (i < 0 || i >= names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(names.data[i]); })), ctx);
+    *os_HashMapRef(&((*(map))), std_Clone_str(ctx, key), 1) = (*({ if (i < 0 || i >= values.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(values.data[i]); }));
+    i = (i + 1);
+    }
+    return 1;
+    }
+}
+
+Slice_unsigned_char typechecker__typechecker_protected_concrete_name(Slice_unsigned_char source_name, ast__Type guard_type, typechecker__TypeEnvironment* env, os_Arena* ctx) {
+    {
+    if ((guard_type.tag == 8)) {
+    Slice_unsigned_char owner = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    LookupResult_str owner_lookup = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_declaration_module), source_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_declaration_module), source_name, 1); } res; });
+    if (owner_lookup.Ok) {
+    owner = owner_lookup.Val;
+    }
+    Slice_unsigned_char source_local = source_name;
+    if (((owner.len > 0) && (typechecker__typechecker_starts_with(source_name, owner) == 1))) {
+    source_local = std_str_slice(source_name, owner.len, source_name.len);
+    }
+    Slice_unsigned_char guard_local = guard_type.Struct.struct_name;
+    if (((owner.len > 0) && (typechecker__typechecker_starts_with(guard_local, owner) == 1))) {
+    guard_local = std_str_slice(guard_local, owner.len, guard_local.len);
+    }
+    guard_local = typechecker__typechecker_strip_module_prefix(guard_local, ctx);
+    return std_Clone_str(ctx, (({ Slice_unsigned_char _s1 = owner; Slice_unsigned_char _s2 = (({ Slice_unsigned_char _s1 = (({ Slice_unsigned_char _s1 = source_local; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_protected_", 11 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })); Slice_unsigned_char _s2 = guard_local; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
+    }
+    return std_Clone_str(ctx, (({ Slice_unsigned_char _s1 = (({ Slice_unsigned_char _s1 = source_name; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"__protected_", 12 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })); Slice_unsigned_char _s2 = typechecker__typechecker_canonical_type_ident(env, guard_type, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
+    }
+}
+
+int typechecker__typechecker_is_protected_resource_derived(Slice_unsigned_char name, typechecker__TypeEnvironment* env, os_Arena* ctx) {
+    {
+    int i = 0;
+    while ((i < (*(env)).protected_resource_derived_functions.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    typechecker__ProtectedResourceDerivedFunction derived = (*({ if (i < 0 || i >= (*(env)).protected_resource_derived_functions.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(env)).protected_resource_derived_functions.data[i]); }));
+    if (((std_str_eq(derived.statement.FunctionDecl.name, name) == 1) || (std_str_eq(derived.identity, name) == 1))) {
+    return 1;
+    }
+    i = (i + 1);
+    }
+    return 0;
+    }
+}
+
+Slice_unsigned_char typechecker__typechecker_protected_resource_resolution_prefix(Slice_unsigned_char name, typechecker__TypeEnvironment* env, os_Arena* ctx) {
+    {
+    int i = 0;
+    while ((i < (*(env)).protected_resource_derived_functions.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    typechecker__ProtectedResourceDerivedFunction derived = (*({ if (i < 0 || i >= (*(env)).protected_resource_derived_functions.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(env)).protected_resource_derived_functions.data[i]); }));
+    if (((std_str_eq(derived.statement.FunctionDecl.name, name) == 1) || (std_str_eq(derived.identity, name) == 1))) {
+    return std_Clone_str(ctx, derived.resolution_prefix);
+    }
+    i = (i + 1);
+    }
+    return ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    }
+}
+
+Slice_unsigned_char typechecker__typechecker_protected_resource_identity(Slice_unsigned_char name, typechecker__TypeEnvironment* env, os_Arena* ctx) {
+    {
+    int i = 0;
+    while ((i < (*(env)).protected_resource_derived_functions.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    typechecker__ProtectedResourceDerivedFunction derived = (*({ if (i < 0 || i >= (*(env)).protected_resource_derived_functions.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(env)).protected_resource_derived_functions.data[i]); }));
+    if (((std_str_eq(derived.statement.FunctionDecl.name, name) == 1) || (std_str_eq(derived.identity, name) == 1))) {
+    return std_Clone_str(ctx, derived.identity);
+    }
+    i = (i + 1);
+    }
+    return std_Clone_str(ctx, name);
+    }
+}
+
+int typechecker__typechecker_clone_protected_block(int block_idx, std_HashMap_str_ast__Type substitutions, typechecker__TypeEnvironment* env, os_Arena* ctx) {
+    if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    if ((block_idx == 0xFFFFFFFF)) {
+    return block_idx;
+    }
+    {
+    ast__BlockStatement block = (*((ast__BlockStatement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(block_idx))));
+    std_Vector_ast__Statement source = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(block.statements))));
+    std_Vector_ast__Statement statements = ((struct std_Vector_ast__Statement){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    int i = 0;
+    while ((i < source.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    ast__Statement statement = (*({ if (i < 0 || i >= source.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(source.data[i]); }));
+    if (((statement.tag == 4) && (statement.VarDecl.var_type != 0xFFFFFFFF))) {
+    ast__Type t = typechecker__env_resolve_type(env, typechecker__substitute_generics(env, (*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(statement.VarDecl.var_type)))), substitutions, ctx), ctx);
+    statement.VarDecl.var_type = os_ArenaAlloc(ctx, sizeof(ast__Type));
+    ({ *((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(statement.VarDecl.var_type))) = t; });
+    }
+    if ((statement.tag == 6)) {
+    statement.While.body = typechecker__typechecker_clone_protected_block(statement.While.body, substitutions, env, ctx);
+    }
+    if ((statement.tag == 7)) {
+    statement.If.consequence = typechecker__typechecker_clone_protected_block(statement.If.consequence, substitutions, env, ctx);
+    statement.If.alternative = typechecker__typechecker_clone_protected_block(statement.If.alternative, substitutions, env, ctx);
+    }
+    if ((statement.tag == 8)) {
+    std_Vector_ast__MatchCase cases = (*((std_Vector_ast__MatchCase*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(statement.Match.cases))));
+    int j = 0;
+    while ((j < cases.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    (*({ if (j < 0 || j >= cases.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(cases.data[j]); })).body = typechecker__typechecker_clone_protected_block((*({ if (j < 0 || j >= cases.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(cases.data[j]); })).body, substitutions, env, ctx);
+    j = (j + 1);
+    }
+    statement.Match.cases = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__MatchCase));
+    ({ *((std_Vector_ast__MatchCase*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(statement.Match.cases))) = cases; });
+    }
+    if ((statement.tag == 9)) {
+    statement.Guard.else_body = typechecker__typechecker_clone_protected_block(statement.Guard.else_body, substitutions, env, ctx);
+    }
+    if ((statement.tag == 10)) {
+    statement.UnsafeBlock.body = typechecker__typechecker_clone_protected_block(statement.UnsafeBlock.body, substitutions, env, ctx);
+    }
+    os_VectorPush(&(statements), statement);
+    i = (i + 1);
+    }
+    block.statements = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__Statement));
+    ({ *((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(block.statements))) = statements; });
+    int result = os_ArenaAlloc(ctx, sizeof(ast__BlockStatement));
+    ({ *((ast__BlockStatement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(result))) = block; });
+    return result;
+    }
+}
+
+Slice_unsigned_char typechecker__typechecker_instantiate_protected_resource(Slice_unsigned_char source_name, std_Vector_ast__Type actuals, typechecker__TypeEnvironment* env, os_Arena* ctx) {
+    {
+    LookupResult_typechecker__ProtectedResourceFunction _guard_res_source_11615_9 = {0};
+    _guard_res_source_11615_9 = ({ LookupResult_typechecker__ProtectedResourceFunction res = {0}; res.Ok = os_HashMapContains(&((*(env)).protected_resource_functions), source_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).protected_resource_functions), source_name, 1); } res; });
+    if (!_guard_res_source_11615_9.Ok) {
+        return ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    }
+    typechecker__ProtectedResourceFunction source = _guard_res_source_11615_9.Val;
+    if (((typechecker__typechecker_protected_quartet(env, source.guard_name, ctx) == 0) || (source.signature.params.len != actuals.len))) {
+    return ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    }
+    Slice_unsigned_char caller_prefix = std_Clone_str(ctx, (*(env)).current_prefix);
+    std_HashMap_str_ast__Type substitutions = ((struct std_HashMap_str_ast__Type){ .keys = NULL, .values = NULL, .occupied = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    int i = 0;
+    while ((i < actuals.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    if ((typechecker__typechecker_bind_protected_application((*({ if (i < 0 || i >= source.signature.params.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(source.signature.params.data[i]); })), (*({ if (i < 0 || i >= actuals.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(actuals.data[i]); })), source.prefix, &(substitutions), env, ctx) == 0)) {
+    (*(env)).current_prefix = caller_prefix;
+    return ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    }
+    i = (i + 1);
+    }
+    (*(env)).current_prefix = std_Clone_str(ctx, source.prefix);
+    (*(env)).protected_resource_preserve_concrete_types = 1;
+    ast__Type guard_application = source.signature.return_type;
+    if ((source.role != 2)) {
+    guard_application = (*({ if (0 < 0 || 0 >= source.signature.params.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(source.signature.params.data[0]); }));
+    if ((guard_application.tag == 11)) {
+    guard_application = (*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(guard_application.Reference.inner))));
+    }
+    }
+    ast__Type concrete_guard = typechecker__substitute_generics(env, guard_application, substitutions, ctx);
+    concrete_guard = typechecker__env_resolve_type(env, concrete_guard, ctx);
+    if ((concrete_guard.tag != 8)) {
+    (*(env)).current_prefix = caller_prefix;
+    (*(env)).protected_resource_preserve_concrete_types = 0;
+    return ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    }
+    std_Vector_str keys = (({ std_Vector_str _v = (std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx }; for (int _i = 0; _i < ((*(env)).protected_resource_functions.capacity); _i++) { if (((*(env)).protected_resource_functions.occupied)[_i] == 1) { os_VectorPush(&_v, ((*(env)).protected_resource_functions.keys)[_i]); } } _v; }));
+    i = 0;
+    while ((i < keys.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    LookupResult_typechecker__ProtectedResourceFunction recipe_lookup = ({ LookupResult_typechecker__ProtectedResourceFunction res = {0}; res.Ok = os_HashMapContains(&((*(env)).protected_resource_functions), (*({ if (i < 0 || i >= keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(keys.data[i]); })), 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).protected_resource_functions), (*({ if (i < 0 || i >= keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(keys.data[i]); })), 1); } res; });
+    if (recipe_lookup.Ok) {
+    typechecker__ProtectedResourceFunction recipe = recipe_lookup.Val;
+    if ((std_str_eq(recipe.guard_name, source.guard_name) == 1)) {
+    Slice_unsigned_char concrete_name = typechecker__typechecker_protected_concrete_name((*({ if (i < 0 || i >= keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(keys.data[i]); })), concrete_guard, env, ctx);
+    if ((({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_registry), concrete_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_registry), concrete_name, 1); } res; }).Ok == 0)) {
+    typechecker__FunctionSignature concrete_sig = recipe.signature;
+    concrete_sig.params = ((struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    int p = 0;
+    while ((p < recipe.signature.params.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    os_VectorPush(&(concrete_sig.params), typechecker__env_resolve_type(env, typechecker__substitute_generics(env, (*({ if (p < 0 || p >= recipe.signature.params.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(recipe.signature.params.data[p]); })), substitutions, ctx), ctx));
+    p = (p + 1);
+    }
+    concrete_sig.return_type = typechecker__env_resolve_type(env, typechecker__substitute_generics(env, recipe.signature.return_type, substitutions, ctx), ctx);
+    ast__Statement derived_stmt = recipe.statement;
+    derived_stmt.FunctionDecl.name = std_Clone_str(ctx, std_str_slice(concrete_name, recipe.prefix.len, concrete_name.len));
+    std_Vector_ast__Parameter derived_params = ((struct std_Vector_ast__Parameter){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    std_Vector_ast__Parameter source_params = (*((std_Vector_ast__Parameter*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(recipe.statement.FunctionDecl.params))));
+    p = 0;
+    while ((p < source_params.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    ast__Parameter parameter = (*({ if (p < 0 || p >= source_params.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(source_params.data[p]); }));
+    parameter.param_type = (*({ if (p < 0 || p >= concrete_sig.params.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(concrete_sig.params.data[p]); }));
+    os_VectorPush(&(derived_params), parameter);
+    p = (p + 1);
+    }
+    int derived_params_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__Parameter));
+    ({ *((std_Vector_ast__Parameter*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(derived_params_idx))) = derived_params; });
+    derived_stmt.FunctionDecl.params = derived_params_idx;
+    int derived_return_idx = os_ArenaAlloc(ctx, sizeof(ast__Type));
+    ({ *((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(derived_return_idx))) = concrete_sig.return_type; });
+    derived_stmt.FunctionDecl.return_type = derived_return_idx;
+    derived_stmt.FunctionDecl.body = typechecker__typechecker_clone_protected_block(derived_stmt.FunctionDecl.body, substitutions, env, ctx);
+    typechecker__ProtectedResourceDerivedFunction derived = ((typechecker__ProtectedResourceDerivedFunction){ .file = ((Slice_unsigned_char){ NULL, 0 }), .identity = ((Slice_unsigned_char){ NULL, 0 }), .prefix = ((Slice_unsigned_char){ NULL, 0 }), .resolution_prefix = ((Slice_unsigned_char){ NULL, 0 }), .statement = ((ast__Statement){ .tag = 0 }), .substitutions = ((std_HashMap_str_ast__Type){ .arena = NULL, .capacity = 0, .keys = NULL, .len = 0, .occupied = NULL, .values = NULL }) });
+    derived.statement = derived_stmt;
+    derived.identity = std_Clone_str(ctx, concrete_name);
+    derived.prefix = std_Clone_str(ctx, recipe.prefix);
+    derived.resolution_prefix = std_Clone_str(ctx, caller_prefix);
+    derived.file = std_Clone_str(ctx, recipe.file);
+    derived.substitutions = substitutions;
+    os_VectorPush(&((*(env)).protected_resource_derived_functions), derived);
+    typechecker__env_register_function(env, concrete_name, concrete_sig, ctx);
+    typechecker__env_register_function_declaration_module(env, concrete_name, recipe.prefix, ctx);
+    if ((recipe.role == 1)) {
+    typechecker__env_register_struct_linear_metadata(env, concrete_guard.Struct.struct_name, 1, ctx);
+    typechecker__env_register_struct_linear_destructor(env, concrete_guard.Struct.struct_name, concrete_name, ctx);
+    typechecker__env_register_inert_resource_declaration_metadata(env, concrete_guard.Struct.struct_name, concrete_name, 1, ctx);
+    typechecker__env_register_struct_declaration_module(env, concrete_guard.Struct.struct_name, recipe.prefix, ctx);
+    typechecker__env_register_validated_resource_destructor(env, concrete_guard.Struct.struct_name, concrete_name, ctx);
+    }
+    }
+    }
+    }
+    i = (i + 1);
+    }
+    Slice_unsigned_char result = typechecker__typechecker_protected_concrete_name(source_name, concrete_guard, env, ctx);
+    (*(env)).current_prefix = caller_prefix;
+    (*(env)).protected_resource_preserve_concrete_types = 0;
+    return std_Clone_str(ctx, result);
+    }
+}
+
 ast__Type typechecker__env_resolve_type(typechecker__TypeEnvironment* env, ast__Type t, os_Arena* ctx) {
+    {
+    if (((*(env)).protected_resource_active_derivation == 1)) {
+    (*(env)).protected_resource_active_derivation = 0;
+    ast__Type substituted = typechecker__substitute_generics(env, t, (*(env)).protected_resource_active_substitutions, ctx);
+    (*(env)).protected_resource_active_derivation = 1;
+    return substituted;
+    }
+    }
     ast__Type resolved = typechecker__env_resolve_type_internal(env, t, ctx);
     typechecker__BrandIdentity identity = typechecker__typechecker_brand_identity_from_resolved_type(resolved, env, ctx);
     typechecker__env_record_brand_identity(env, resolved, identity, ctx);
@@ -24619,18 +25120,11 @@ void typechecker__env_pre_register_statement(typechecker__TypeEnvironment* env, 
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     ast__Parameter p = (*({ if (i < 0 || i >= params_vec_function_decl.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(params_vec_function_decl.data[i]); }));
     os_VectorPush(&(sig.param_names), std_Clone_str(ctx, p.name));
-    ast__Type resolved_param_type = typechecker__env_resolve_type(env, p.param_type, ctx);
-    typechecker__env_require_explicit_public_brand(env, p.param_type, resolved_param_type, p.name, p.span, ctx);
-    if ((resolved_param_type.tag == 4)) {
-    ast__Type t_arena_ptr = typechecker__make_type_pointer(resolved_param_type, ctx);
-    resolved_param_type = t_arena_ptr;
-    }
-    os_VectorPush(&(sig.params), resolved_param_type);
+    os_VectorPush(&(sig.params), p.param_type);
     i = (i + 1);
     }
     ast__Type source_return_type = (*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(stmt.FunctionDecl.return_type))));
-    sig.return_type = typechecker__env_resolve_type(env, source_return_type, ctx);
-    typechecker__env_require_explicit_public_brand(env, source_return_type, sig.return_type, namespaced_name, stmt.FunctionDecl.span, ctx);
+    sig.return_type = source_return_type;
     sig.return_origins = typechecker__set_init(ctx);
     sig.is_unsafe = stmt.FunctionDecl.is_unsafe;
     sig.is_extern = stmt.FunctionDecl.is_extern;
@@ -24640,9 +25134,153 @@ void typechecker__env_pre_register_statement(typechecker__TypeEnvironment* env, 
     sig.requires_layout_metadata = stmt.FunctionDecl.requires_layout_metadata;
     sig.requires_sandbox_arena = stmt.FunctionDecl.requires_sandbox_arena;
     sig.is_private = stmt.FunctionDecl.is_private;
+    Slice_unsigned_char guard_name = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    int protected_role = typechecker__typechecker_protected_resource_role(namespaced_name, sig, (*(env)).current_prefix, env, &(guard_name), ctx);
+    if ((protected_role > 0)) {
+    typechecker__ProtectedResourceFunction recipe = ((typechecker__ProtectedResourceFunction){ .file = ((Slice_unsigned_char){ NULL, 0 }), .guard_name = ((Slice_unsigned_char){ NULL, 0 }), .prefix = ((Slice_unsigned_char){ NULL, 0 }), .role = 0, .signature = ((typechecker__FunctionSignature){ .extern_abi = ((Slice_unsigned_char){ NULL, 0 }), .extern_symbol_name = ((Slice_unsigned_char){ NULL, 0 }), .is_compile_time_only = 0, .is_extern = 0, .is_private = 0, .is_unsafe = 0, .param_names = ((std_Vector_str){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .params = ((std_Vector_ast__Type){ .arena = NULL, .capacity = 0, .data = NULL, .len = 0 }), .requires_layout_metadata = 0, .requires_sandbox_arena = 0, .requires_unsafe_call = 0, .return_origins = 0xFFFFFFFF, .return_type = ((ast__Type){ .tag = 0 }) }), .statement = ((ast__Statement){ .tag = 0 }) });
+    recipe.statement = stmt;
+    recipe.signature = sig;
+    recipe.prefix = std_Clone_str(ctx, (*(env)).current_prefix);
+    recipe.file = std_Clone_str(ctx, (*(env)).current_file);
+    recipe.guard_name = std_Clone_str(ctx, guard_name);
+    recipe.role = protected_role;
+    *os_HashMapRef(&((*(env)).protected_resource_functions), std_Clone_str(ctx, namespaced_name), 1) = recipe;
+    } else {
+    i = 0;
+    while ((i < params_vec_function_decl.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    ast__Parameter p = (*({ if (i < 0 || i >= params_vec_function_decl.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(params_vec_function_decl.data[i]); }));
+    ast__Type resolved_param_type = typechecker__env_resolve_type(env, p.param_type, ctx);
+    typechecker__env_require_explicit_public_brand(env, p.param_type, resolved_param_type, p.name, p.span, ctx);
+    if ((resolved_param_type.tag == 4)) {
+    resolved_param_type = typechecker__make_type_pointer(resolved_param_type, ctx);
+    }
+    (*({ if (i < 0 || i >= sig.params.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(sig.params.data[i]); })) = resolved_param_type;
+    i = (i + 1);
+    }
+    sig.return_type = typechecker__env_resolve_type(env, source_return_type, ctx);
+    typechecker__env_require_explicit_public_brand(env, source_return_type, sig.return_type, namespaced_name, stmt.FunctionDecl.span, ctx);
+    }
     typechecker__env_register_function(env, namespaced_name, sig, ctx);
     typechecker__env_register_function_declaration_module(env, namespaced_name, (*(env)).current_prefix, ctx);
     }
+    }
+}
+
+void typechecker__typechecker_finish_protected_resource_derivations(std_Vector_ast__Program* programs, std_Vector_str prefixes, typechecker__TypeEnvironment* env, int scope, os_Arena* ctx) {
+    {
+    int i = 0;
+    while ((i < (*(env)).protected_resource_derived_functions.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    typechecker__ProtectedResourceDerivedFunction derived = (*({ if (i < 0 || i >= (*(env)).protected_resource_derived_functions.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(env)).protected_resource_derived_functions.data[i]); }));
+    (*(env)).current_prefix = std_Clone_str(ctx, derived.prefix);
+    (*(env)).current_file = std_Clone_str(ctx, derived.file);
+    (*(env)).current_function_identity_scope = std_Clone_str(ctx, derived.identity);
+    (*(env)).protected_resource_active_substitutions = derived.substitutions;
+    (*(env)).protected_resource_active_derivation = 1;
+    (*(env)).protected_resource_preserve_concrete_types = 1;
+    int statement_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
+    ({ *((ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(statement_idx))) = derived.statement; });
+    typechecker__check_statement(statement_idx, env, scope, ctx);
+    (*(env)).protected_resource_active_derivation = 0;
+    (*(env)).protected_resource_preserve_concrete_types = 0;
+    (*(env)).current_function_identity_scope = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    i = (i + 1);
+    }
+    std_Vector_str recipe_names = (({ std_Vector_str _v = (std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx }; for (int _i = 0; _i < ((*(env)).protected_resource_functions.capacity); _i++) { if (((*(env)).protected_resource_functions.occupied)[_i] == 1) { os_VectorPush(&_v, ((*(env)).protected_resource_functions.keys)[_i]); } } _v; }));
+    i = 0;
+    while ((i < recipe_names.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    LookupResult_typechecker__ProtectedResourceFunction recipe_lookup = ({ LookupResult_typechecker__ProtectedResourceFunction res = {0}; res.Ok = os_HashMapContains(&((*(env)).protected_resource_functions), (*({ if (i < 0 || i >= recipe_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(recipe_names.data[i]); })), 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).protected_resource_functions), (*({ if (i < 0 || i >= recipe_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(recipe_names.data[i]); })), 1); } res; });
+    if (recipe_lookup.Ok) {
+    LookupResult_typechecker__StructTemplate template_lookup = ({ LookupResult_typechecker__StructTemplate res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_templates), recipe_lookup.Val.guard_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_templates), recipe_lookup.Val.guard_name, 1); } res; });
+    if (template_lookup.Ok) {
+    std_Vector_str template_generics = (*((std_Vector_str*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(template_lookup.Val.generics))));
+    std_Vector_ast__Type placeholder_args = ((struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    int g = 0;
+    while ((g < template_generics.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    if ((g == template_lookup.Val.brand_parameter_index)) {
+    os_VectorPush(&(placeholder_args), typechecker__make_type_brand_marker((*({ if (g < 0 || g >= template_generics.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(template_generics.data[g]); })), ctx));
+    } else {
+    os_VectorPush(&(placeholder_args), typechecker__make_type_struct((({ Slice_unsigned_char _s1 = recipe_lookup.Val.prefix; Slice_unsigned_char _s2 = (*({ if (g < 0 || g >= template_generics.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(template_generics.data[g]); })); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx));
+    }
+    g = (g + 1);
+    }
+    int placeholder_args_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__Type));
+    ({ *((std_Vector_ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(placeholder_args_idx))) = placeholder_args; });
+    os_HashMapRemove(&((*(env)).struct_registry), typechecker__get_monomorphized_name(recipe_lookup.Val.guard_name, placeholder_args_idx, ctx), 1);
+    std_Vector_ast__FieldDef template_fields = (*((std_Vector_ast__FieldDef*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(template_lookup.Val.fields))));
+    g = 0;
+    while ((g < template_fields.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    if (((*({ if (g < 0 || g >= template_fields.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(template_fields.data[g]); })).field_type.tag == 11)) {
+    ast__Type carrier = (*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)((*({ if (g < 0 || g >= template_fields.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(template_fields.data[g]); })).field_type.Reference.inner))));
+    if ((carrier.tag == 10)) {
+    std_Vector_ast__Type carrier_args = (*((std_Vector_ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(carrier.Generic.args))));
+    std_Vector_ast__Type qualified_args = ((struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    int a = 0;
+    while ((a < carrier_args.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    ast__Type arg = (*({ if (a < 0 || a >= carrier_args.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(carrier_args.data[a]); }));
+    if (((arg.tag == 8) && (typechecker__typechecker_type_is_brand_marker(arg, ctx) == 0))) {
+    arg = typechecker__make_type_struct((({ Slice_unsigned_char _s1 = recipe_lookup.Val.prefix; Slice_unsigned_char _s2 = arg.Struct.struct_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx);
+    }
+    os_VectorPush(&(qualified_args), arg);
+    a = (a + 1);
+    }
+    int qualified_args_idx = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__Type));
+    ({ *((std_Vector_ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(qualified_args_idx))) = qualified_args; });
+    os_HashMapRemove(&((*(env)).struct_registry), typechecker__get_monomorphized_name(carrier.Generic.name, qualified_args_idx, ctx), 1);
+    }
+    }
+    g = (g + 1);
+    }
+    }
+    }
+    os_HashMapRemove(&((*(env)).function_registry), (*({ if (i < 0 || i >= recipe_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(recipe_names.data[i]); })), 1);
+    os_HashMapRemove(&((*(env)).function_declaration_module), (*({ if (i < 0 || i >= recipe_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(recipe_names.data[i]); })), 1);
+    i = (i + 1);
+    }
+    i = 0;
+    while ((i < (*(programs)).len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    ast__Program program = (*({ if (i < 0 || i >= (*(programs)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(programs)).data[i]); }));
+    std_Vector_ast__Statement source = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(program.statements))));
+    std_Vector_ast__Statement materialized = ((struct std_Vector_ast__Statement){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    int j = 0;
+    while ((j < source.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    int keep = 1;
+    if (((*({ if (j < 0 || j >= source.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(source.data[j]); })).tag == 3)) {
+    Slice_unsigned_char n = (*({ if (j < 0 || j >= source.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(source.data[j]); })).FunctionDecl.name;
+    if ((std_str_find(n, ((Slice_unsigned_char){ (unsigned char*)"__", 2 })) == (0 - 1))) {
+    n = (({ Slice_unsigned_char _s1 = (*({ if (i < 0 || i >= prefixes.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(prefixes.data[i]); })); Slice_unsigned_char _s2 = n; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    }
+    if (({ LookupResult_typechecker__ProtectedResourceFunction res = {0}; res.Ok = os_HashMapContains(&((*(env)).protected_resource_functions), n, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).protected_resource_functions), n, 1); } res; }).Ok) {
+    keep = 0;
+    }
+    }
+    if ((keep == 1)) {
+    os_VectorPush(&(materialized), (*({ if (j < 0 || j >= source.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(source.data[j]); })));
+    }
+    j = (j + 1);
+    }
+    j = 0;
+    while ((j < (*(env)).protected_resource_derived_functions.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    typechecker__ProtectedResourceDerivedFunction derived = (*({ if (j < 0 || j >= (*(env)).protected_resource_derived_functions.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(env)).protected_resource_derived_functions.data[j]); }));
+    if ((std_str_eq(derived.prefix, (*({ if (i < 0 || i >= prefixes.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(prefixes.data[i]); }))) == 1)) {
+    os_VectorPush(&(materialized), derived.statement);
+    }
+    j = (j + 1);
+    }
+    program.statements = os_ArenaAlloc(ctx, sizeof(std_Vector_ast__Statement));
+    ({ *((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(program.statements))) = materialized; });
+    (*({ if (i < 0 || i >= (*(programs)).len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(programs)).data[i]); })) = program;
+    i = (i + 1);
+    }
+    (*(env)).protected_resource_active_derivation = 0;
     }
 }
 
@@ -24735,9 +25373,9 @@ int typechecker__env_validate_resource_declaration(typechecker__TypeEnvironment*
     }
     Slice_unsigned_char type_name = typechecker__env_resolve_namespaced_ident(env, stmt.StructDecl.name, ctx);
     Slice_unsigned_char destructor_name = typechecker__env_resolve_namespaced_ident(env, declared_destructor, ctx);
-    LookupResult_typechecker__FunctionSignature _guard_res_sig_11886_9 = {0};
-    _guard_res_sig_11886_9 = ({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_registry), destructor_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_registry), destructor_name, 1); } res; });
-    if (!_guard_res_sig_11886_9.Ok) {
+    LookupResult_typechecker__FunctionSignature _guard_res_sig_12140_9 = {0};
+    _guard_res_sig_12140_9 = ({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_registry), destructor_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_registry), destructor_name, 1); } res; });
+    if (!_guard_res_sig_12140_9.Ok) {
         Slice_unsigned_char missing_msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [ResourceDestructorMissing] Declared destructor '", 65 }); Slice_unsigned_char _s2 = declared_destructor; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     missing_msg = (({ Slice_unsigned_char _s1 = missing_msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' for resource type '", 21 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     missing_msg = (({ Slice_unsigned_char _s1 = missing_msg; Slice_unsigned_char _s2 = type_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -24745,10 +25383,10 @@ int typechecker__env_validate_resource_declaration(typechecker__TypeEnvironment*
     typechecker__report_error(2, missing_msg, stmt.StructDecl.span, env, ctx);
     return 0;
     }
-    typechecker__FunctionSignature sig = _guard_res_sig_11886_9.Val;
-    LookupResult_str _guard_res_type_owner_11895_9 = {0};
-    _guard_res_type_owner_11895_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_declaration_module), type_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_declaration_module), type_name, 1); } res; });
-    if (!_guard_res_type_owner_11895_9.Ok) {
+    typechecker__FunctionSignature sig = _guard_res_sig_12140_9.Val;
+    LookupResult_str _guard_res_type_owner_12149_9 = {0};
+    _guard_res_type_owner_12149_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_declaration_module), type_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_declaration_module), type_name, 1); } res; });
+    if (!_guard_res_type_owner_12149_9.Ok) {
         Slice_unsigned_char owner_msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [ResourceDestructorModuleMismatch] Destructor '", 63 }); Slice_unsigned_char _s2 = destructor_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     owner_msg = (({ Slice_unsigned_char _s1 = owner_msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' must be declared in the same module as resource type '", 56 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     owner_msg = (({ Slice_unsigned_char _s1 = owner_msg; Slice_unsigned_char _s2 = type_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -24756,10 +25394,10 @@ int typechecker__env_validate_resource_declaration(typechecker__TypeEnvironment*
     typechecker__report_error(2, owner_msg, stmt.StructDecl.span, env, ctx);
     return 0;
     }
-    Slice_unsigned_char type_owner = _guard_res_type_owner_11895_9.Val;
-    LookupResult_str _guard_res_destructor_owner_11903_9 = {0};
-    _guard_res_destructor_owner_11903_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_declaration_module), destructor_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_declaration_module), destructor_name, 1); } res; });
-    if (!_guard_res_destructor_owner_11903_9.Ok) {
+    Slice_unsigned_char type_owner = _guard_res_type_owner_12149_9.Val;
+    LookupResult_str _guard_res_destructor_owner_12157_9 = {0};
+    _guard_res_destructor_owner_12157_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_declaration_module), destructor_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_declaration_module), destructor_name, 1); } res; });
+    if (!_guard_res_destructor_owner_12157_9.Ok) {
         Slice_unsigned_char missing_owner_msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [ResourceDestructorModuleMismatch] Destructor '", 63 }); Slice_unsigned_char _s2 = destructor_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     missing_owner_msg = (({ Slice_unsigned_char _s1 = missing_owner_msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' must be declared in the same module as resource type '", 56 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     missing_owner_msg = (({ Slice_unsigned_char _s1 = missing_owner_msg; Slice_unsigned_char _s2 = type_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -24767,7 +25405,7 @@ int typechecker__env_validate_resource_declaration(typechecker__TypeEnvironment*
     typechecker__report_error(2, missing_owner_msg, stmt.StructDecl.span, env, ctx);
     return 0;
     }
-    Slice_unsigned_char destructor_owner = _guard_res_destructor_owner_11903_9.Val;
+    Slice_unsigned_char destructor_owner = _guard_res_destructor_owner_12157_9.Val;
     if ((std_str_eq(type_owner, destructor_owner) == 0)) {
     Slice_unsigned_char different_owner_msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [ResourceDestructorModuleMismatch] Destructor '", 63 }); Slice_unsigned_char _s2 = destructor_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     different_owner_msg = (({ Slice_unsigned_char _s1 = different_owner_msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' must be declared in the same module as resource type '", 56 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -24775,6 +25413,13 @@ int typechecker__env_validate_resource_declaration(typechecker__TypeEnvironment*
     different_owner_msg = (({ Slice_unsigned_char _s1 = different_owner_msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"'", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     typechecker__report_error(2, different_owner_msg, stmt.StructDecl.span, env, ctx);
     return 0;
+    }
+    LookupResult_typechecker__ProtectedResourceFunction protected_destructor = ({ LookupResult_typechecker__ProtectedResourceFunction res = {0}; res.Ok = os_HashMapContains(&((*(env)).protected_resource_functions), destructor_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).protected_resource_functions), destructor_name, 1); } res; });
+    if (protected_destructor.Ok) {
+    if ((((protected_destructor.Val.role == 1) && (std_str_eq(protected_destructor.Val.guard_name, type_name) == 1)) && (typechecker__typechecker_protected_quartet(env, type_name, ctx) == 1))) {
+    typechecker__env_register_validated_resource_destructor(env, type_name, destructor_name, ctx);
+    return 1;
+    }
     }
     int owned_parameter_matches = 0;
     if ((sig.params.len == 1)) {
@@ -25993,6 +26638,9 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
     int return_type_idx = stmt.FunctionDecl.return_type;
     int body_idx = stmt.FunctionDecl.body;
     Slice_unsigned_char function_name_return_prov = typechecker__env_resolve_namespaced_ident(env, stmt.FunctionDecl.name, ctx);
+    if (({ LookupResult_typechecker__ProtectedResourceFunction res = {0}; res.Ok = os_HashMapContains(&((*(env)).protected_resource_functions), function_name_return_prov, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).protected_resource_functions), function_name_return_prov, 1); } res; }).Ok) {
+    return res;
+    }
     std_HashMap_str_int parent_moved = typechecker__typechecker_clone_int_map((*(env)).moved_vars, ctx);
     std_HashMap_str_int parent_checked = typechecker__typechecker_clone_int_map((*(env)).checked_results, ctx);
     std_HashMap_str_int parent_open_dirs = typechecker__typechecker_clone_int_map((*(env)).open_directories, ctx);
@@ -26228,22 +26876,22 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
     }
     typechecker__scope_insert(scope, std_Clone_str(ctx, name), resolved_explicit, ctx);
     *os_HashMapRef(&((*(env)).variable_types), std_Clone_str(ctx, name), 1) = resolved_explicit;
-    LookupResult_ast__Type _guard_res_lookup_type_explicit_13491_17 = {0};
-    _guard_res_lookup_type_explicit_13491_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), name, 1); } res; });
-    if (!_guard_res_lookup_type_explicit_13491_17.Ok) {
+    LookupResult_ast__Type _guard_res_lookup_type_explicit_13758_17 = {0};
+    _guard_res_lookup_type_explicit_13758_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), name, 1); } res; });
+    if (!_guard_res_lookup_type_explicit_13758_17.Ok) {
         return res;
     }
-    ast__Type lookup_type_explicit = _guard_res_lookup_type_explicit_13491_17.Val;
+    ast__Type lookup_type_explicit = _guard_res_lookup_type_explicit_13758_17.Val;
     val_type = lookup_type_explicit;
     } else {
     typechecker__scope_insert(scope, std_Clone_str(ctx, name), val_type, ctx);
     *os_HashMapRef(&((*(env)).variable_types), std_Clone_str(ctx, name), 1) = val_type;
-    LookupResult_ast__Type _guard_res_lookup_type_13498_17 = {0};
-    _guard_res_lookup_type_13498_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), name, 1); } res; });
-    if (!_guard_res_lookup_type_13498_17.Ok) {
+    LookupResult_ast__Type _guard_res_lookup_type_13765_17 = {0};
+    _guard_res_lookup_type_13765_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), name, 1); } res; });
+    if (!_guard_res_lookup_type_13765_17.Ok) {
         return res;
     }
-    ast__Type lookup_type = _guard_res_lookup_type_13498_17.Val;
+    ast__Type lookup_type = _guard_res_lookup_type_13765_17.Val;
     val_type = lookup_type;
     }
     Slice_unsigned_char declaration_arena_identity = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
@@ -26280,7 +26928,7 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
     typechecker__report_error(2, msg, stmt.VarDecl.span, env, ctx);
     }
     }
-    Slice_unsigned_char prefix = (*(env)).current_prefix;
+    Slice_unsigned_char prefix = typechecker__typechecker_resolution_scope_key(env, ctx);
     int found_idx = (0 - 1);
     int i = 0;
     while ((i < (*(env)).resolved_types_nested.len)) {
@@ -26369,7 +27017,7 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
     typechecker__report_error(2, msg, left.Identifier.span, env, ctx);
     }
     token__Span final_span = left.Identifier.span;
-    Slice_unsigned_char prefix = (*(env)).current_prefix;
+    Slice_unsigned_char prefix = typechecker__typechecker_resolution_scope_key(env, ctx);
     int found_idx = (0 - 1);
     int i_res = 0;
     while ((i_res < (*(env)).resolved_types_nested.len)) {
@@ -27279,7 +27927,7 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
     typechecker__report_error(2, msg, stmt.Guard.span, env, ctx);
     }
     }
-    Slice_unsigned_char prefix = (*(env)).current_prefix;
+    Slice_unsigned_char prefix = typechecker__typechecker_resolution_scope_key(env, ctx);
     int found_idx = (0 - 1);
     int i_res = 0;
     while ((i_res < (*(env)).resolved_types_nested.len)) {
@@ -32731,7 +33379,7 @@ ast__Type codegen__codegen_get_expression_type(int expr_idx, typechecker__TypeEn
     return dummy;
     }
     token__Span span = codegen__codegen_get_expression_span(expr_idx, ctx);
-    Slice_unsigned_char prefix = (*(env)).current_prefix;
+    Slice_unsigned_char prefix = typechecker__typechecker_resolution_scope_key(((typechecker__TypeEnvironment*)env), ctx);
     int found_idx = (0 - 1);
     int i = 0;
     while ((i < (*(env)).resolved_types_nested.len)) {
@@ -35142,7 +35790,33 @@ Slice_unsigned_char codegen__codegen_generate_active_defers(typechecker__TypeEnv
     int i = ((*(env)).codegen_active_defers.len - 1);
     while ((i >= start_index)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
-    generated = (({ Slice_unsigned_char _s1 = generated; Slice_unsigned_char _s2 = (*({ if (i < 0 || i >= (*(env)).codegen_active_defers.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(env)).codegen_active_defers.data[i]); })); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char entry = (*({ if (i < 0 || i >= (*(env)).codegen_active_defers.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(env)).codegen_active_defers.data[i]); }));
+    if (((entry.len > 0) && (std_str_byte_at(entry, 0) == 68))) {
+    generated = (({ Slice_unsigned_char _s1 = generated; Slice_unsigned_char _s2 = std_str_slice(entry, 1, entry.len); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    }
+    i = (i - 1);
+    }
+    return std_Clone_str(ctx, generated);
+    }
+}
+
+Slice_unsigned_char codegen__codegen_generate_active_scope_exits(typechecker__TypeEnvironment* env, int start_index, int stop_at_loop, os_Arena* ctx) {
+    {
+    Slice_unsigned_char generated = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    int i = ((*(env)).codegen_active_defers.len - 1);
+    while ((i >= start_index)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    Slice_unsigned_char entry = (*({ if (i < 0 || i >= (*(env)).codegen_active_defers.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &((*(env)).codegen_active_defers.data[i]); }));
+    if (((entry.len == 0) && (stop_at_loop == 1))) {
+    return std_Clone_str(ctx, generated);
+    }
+    if ((entry.len > 0)) {
+    Slice_unsigned_char output = entry;
+    if ((std_str_byte_at(entry, 0) == 68)) {
+    output = std_str_slice(entry, 1, entry.len);
+    }
+    generated = (({ Slice_unsigned_char _s1 = generated; Slice_unsigned_char _s2 = output; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    }
     i = (i - 1);
     }
     return std_Clone_str(ctx, generated);
@@ -35158,6 +35832,10 @@ Slice_unsigned_char codegen__codegen_generate_block_statement(int block_idx, typ
     std_Vector_ast__Statement body_statements_codegen_block = (*((std_Vector_ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(block_val_codegen_block.statements))));
     std_Vector_str chunks = ((struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
     int defer_start = (*(env)).codegen_active_defers.len;
+    Slice_unsigned_char cleanup = codegen__codegen_generate_resource_cleanup_plan(((Slice_unsigned_char){ (unsigned char*)"block", 5 }), block_val_codegen_block.span, env, ctx);
+    if ((cleanup.len > 0)) {
+    os_VectorPush(&((*(env)).codegen_active_defers), cleanup);
+    }
     int j = 0;
     while ((j < body_statements_codegen_block.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
@@ -35167,7 +35845,7 @@ Slice_unsigned_char codegen__codegen_generate_block_statement(int block_idx, typ
     if ((stmt_tag == 11)) {
     int defer_expr_idx = (*((ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(child_stmt_idx)))).Defer.expr;
     Slice_unsigned_char expr_str = codegen__codegen_generate_expression(defer_expr_idx, env, ctx);
-    Slice_unsigned_char formatted = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"    ", 4 }); Slice_unsigned_char _s2 = expr_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char formatted = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"D    ", 5 }); Slice_unsigned_char _s2 = expr_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     formatted = (({ Slice_unsigned_char _s1 = formatted; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)";\n", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     os_VectorPush(&((*(env)).codegen_active_defers), std_Clone_str(ctx, formatted));
     } else {
@@ -35176,13 +35854,9 @@ Slice_unsigned_char codegen__codegen_generate_block_statement(int block_idx, typ
     }
     j = (j + 1);
     }
-    Slice_unsigned_char local_defers = codegen__codegen_generate_active_defers(env, defer_start, ctx);
+    Slice_unsigned_char local_defers = codegen__codegen_generate_active_scope_exits(env, defer_start, 0, ctx);
     if ((local_defers.len > 0)) {
     os_VectorPush(&(chunks), local_defers);
-    }
-    Slice_unsigned_char cleanup = codegen__codegen_generate_resource_cleanup_plan(((Slice_unsigned_char){ (unsigned char*)"block", 5 }), block_val_codegen_block.span, env, ctx);
-    if ((cleanup.len > 0)) {
-    os_VectorPush(&(chunks), cleanup);
     }
     while (((*(env)).codegen_active_defers.len > defer_start)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
@@ -35202,7 +35876,7 @@ Slice_unsigned_char codegen__codegen_generate_statement(int stmt_idx, typechecke
     if ((tag == 4)) {
     ast__Type t_var = ((ast__Type){ .tag = 0 });
     token__Span span = (*((ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(stmt_idx)))).VarDecl.span;
-    Slice_unsigned_char prefix = (*(env)).current_prefix;
+    Slice_unsigned_char prefix = typechecker__typechecker_resolution_scope_key(((typechecker__TypeEnvironment*)env), ctx);
     int found_idx = (0 - 1);
     int i = 0;
     while ((i < (*(env)).resolved_types_nested.len)) {
@@ -35307,13 +35981,24 @@ Slice_unsigned_char codegen__codegen_generate_statement(int stmt_idx, typechecke
     return std_Clone_str(ctx, res);
     }
     if ((tag == 13)) {
-    Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"    ", 4 }); Slice_unsigned_char _s2 = codegen__codegen_generate_expression((*((ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(stmt_idx)))).Expression.expr, env, ctx); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    int expression_idx = (*((ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(stmt_idx)))).Expression.expr;
+    ast__Expression expression = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expression_idx))));
+    Slice_unsigned_char expression_text = codegen__codegen_generate_expression(expression_idx, env, ctx);
+    Slice_unsigned_char res = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    if ((((expression.tag == 0) && ((std_str_eq(expression.Identifier.name, ((Slice_unsigned_char){ (unsigned char*)"break", 5 })) == 1) || (std_str_eq(expression.Identifier.name, ((Slice_unsigned_char){ (unsigned char*)"continue", 8 })) == 1))) && ((*(env)).codegen_active_defers.len > 0))) {
+    res = codegen__codegen_generate_active_scope_exits(env, 0, 1, ctx);
+    }
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"    ", 4 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = expression_text; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     res = (({ Slice_unsigned_char _s1 = res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)";\n", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     return std_Clone_str(ctx, res);
     }
     if ((tag == 3)) {
     Slice_unsigned_char f_name = (*((ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(stmt_idx)))).FunctionDecl.name;
     Slice_unsigned_char namespaced_name = typechecker__env_resolve_namespaced_ident(env, f_name, ctx);
+    if ((typechecker__typechecker_is_protected_resource_derived((*(env)).current_function_identity_scope, ((typechecker__TypeEnvironment*)env), ctx) == 1)) {
+    namespaced_name = std_Clone_str(ctx, (*(env)).current_function_identity_scope);
+    }
     LookupResult_typechecker__FunctionSignature sig_lookup = ({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_registry), namespaced_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_registry), namespaced_name, 1); } res; });
     ast__Type t_ret = (*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)((*((ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(stmt_idx)))).FunctionDecl.return_type))));
     if (sig_lookup.Ok) {
@@ -35527,7 +36212,9 @@ Slice_unsigned_char codegen__codegen_generate_statement(int stmt_idx, typechecke
     }
     if ((tag == 6)) {
     Slice_unsigned_char cond_str = codegen__codegen_generate_expression((*((ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(stmt_idx)))).While.condition, env, ctx);
+    os_VectorPush(&((*(env)).codegen_active_defers), ((Slice_unsigned_char){ (unsigned char*)"", 0 }));
     Slice_unsigned_char body_str = codegen__codegen_generate_block_statement((*((ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(stmt_idx)))).While.body, env, ctx);
+    os_VectorPop(&((*(env)).codegen_active_defers));
     Slice_unsigned_char check_str = ((Slice_unsigned_char){ (unsigned char*)"        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }\n", 107 });
     body_str = (({ Slice_unsigned_char _s1 = check_str; Slice_unsigned_char _s2 = body_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"    while (", 11 }); Slice_unsigned_char _s2 = cond_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -35939,14 +36626,14 @@ Slice_unsigned_char codegen__codegen_generate(std_Vector_ast__Program programs, 
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     Slice_unsigned_char key = (*({ if (i_fwd < 0 || i_fwd >= erased_struct_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(erased_struct_keys.data[i_fwd]); }));
     if ((((((((std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"std_Vector_str", 14 })) == 0) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"os_Dir", 6 })) == 0)) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"os_DirEntry", 11 })) == 0)) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"os_ProcessResult", 16 })) == 0)) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_Dir", 19 })) == 0)) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_DirEntry", 24 })) == 0)) && (std_str_find(key, ((Slice_unsigned_char){ (unsigned char*)"CastResult_", 11 })) == (0 - 1)))) {
-    LookupResult_str _guard_res_orig_key_4372_17 = {0};
-    _guard_res_orig_key_4372_17 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(erased_to_original), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(erased_to_original), key, 1); } res; });
-    if (!_guard_res_orig_key_4372_17.Ok) {
+    LookupResult_str _guard_res_orig_key_4425_17 = {0};
+    _guard_res_orig_key_4425_17 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(erased_to_original), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(erased_to_original), key, 1); } res; });
+    if (!_guard_res_orig_key_4425_17.Ok) {
         os_LogStr((({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"🚨 CRITICAL COMPILER BUG: erased_to_original.Get failed for key: ", 67 }); Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
     exit(1);
     return std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"", 0 }));
     }
-    Slice_unsigned_char orig_key = _guard_res_orig_key_4372_17.Val;
+    Slice_unsigned_char orig_key = _guard_res_orig_key_4425_17.Val;
     Slice_unsigned_char fwd = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"typedef struct ", 15 }); Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     fwd = (({ Slice_unsigned_char _s1 = fwd; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" ", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     fwd = (({ Slice_unsigned_char _s1 = fwd; Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -36014,14 +36701,14 @@ Slice_unsigned_char codegen__codegen_generate(std_Vector_ast__Program programs, 
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     Slice_unsigned_char key = (*({ if (i < 0 || i >= erased_struct_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(erased_struct_keys.data[i]); }));
     if (((((((std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"std_Vector_str", 14 })) == 0) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"os_Dir", 6 })) == 0)) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"os_DirEntry", 11 })) == 0)) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"os_ProcessResult", 16 })) == 0)) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_Dir", 19 })) == 0)) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_DirEntry", 24 })) == 0))) {
-    LookupResult_str _guard_res_orig_key_4456_17 = {0};
-    _guard_res_orig_key_4456_17 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(erased_to_original), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(erased_to_original), key, 1); } res; });
-    if (!_guard_res_orig_key_4456_17.Ok) {
+    LookupResult_str _guard_res_orig_key_4509_17 = {0};
+    _guard_res_orig_key_4509_17 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(erased_to_original), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(erased_to_original), key, 1); } res; });
+    if (!_guard_res_orig_key_4509_17.Ok) {
         os_LogStr((({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"🚨 CRITICAL COMPILER BUG: erased_to_original.Get failed for key: ", 67 }); Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
     exit(1);
     return std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"", 0 }));
     }
-    Slice_unsigned_char orig_key = _guard_res_orig_key_4456_17.Val;
+    Slice_unsigned_char orig_key = _guard_res_orig_key_4509_17.Val;
     int is_template_instance = 0;
     if ((std_str_find(key, ((Slice_unsigned_char){ (unsigned char*)"_", 1 })) != (0 - 1))) {
     is_template_instance = 1;
@@ -36188,14 +36875,14 @@ Slice_unsigned_char codegen__codegen_generate(std_Vector_ast__Program programs, 
     t_struct.Struct.brand = 0xFFFFFFFF;
     int has_bool = codegen__codegen_has_boolean_fields(t_struct, env, ctx);
     if ((has_bool == 1)) {
-    LookupResult_str _guard_res_orig_key_4625_17 = {0};
-    _guard_res_orig_key_4625_17 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(erased_to_original), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(erased_to_original), key, 1); } res; });
-    if (!_guard_res_orig_key_4625_17.Ok) {
+    LookupResult_str _guard_res_orig_key_4678_17 = {0};
+    _guard_res_orig_key_4678_17 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(erased_to_original), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(erased_to_original), key, 1); } res; });
+    if (!_guard_res_orig_key_4678_17.Ok) {
         os_LogStr((({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"🚨 CRITICAL COMPILER BUG: erased_to_original.Get failed for key: ", 67 }); Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
     exit(1);
     return std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"", 0 }));
     }
-    Slice_unsigned_char orig_key = _guard_res_orig_key_4625_17.Val;
+    Slice_unsigned_char orig_key = _guard_res_orig_key_4678_17.Val;
     std_Option_typechecker__StructLayout layout_lookup = ({ std_Option_typechecker__StructLayout _gust_map_get_opt_result = {0}; int _gust_map_get_opt_ok = os_HashMapContains(&((*(env)).struct_registry), orig_key, 1); if (_gust_map_get_opt_ok) { _gust_map_get_opt_result.tag = std_Option_typechecker__StructLayout_Tag__Some; _gust_map_get_opt_result.Some.val = *os_HashMapRef(&((*(env)).struct_registry), orig_key, 1); } else { _gust_map_get_opt_result.tag = std_Option_typechecker__StructLayout_Tag__None; } _gust_map_get_opt_result; });
     switch (layout_lookup.tag) {
         case std_Option_typechecker__StructLayout_Tag__Some: {
@@ -36236,9 +36923,19 @@ Slice_unsigned_char codegen__codegen_generate(std_Vector_ast__Program programs, 
     int s_idx = 0;
     while ((s_idx < statements_vec_program_emit.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    Slice_unsigned_char emission_prefix = std_Clone_str(ctx, (*(env)).current_prefix);
+    (*(env)).current_function_identity_scope = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    if ((((*({ if (s_idx < 0 || s_idx >= statements_vec_program_emit.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(statements_vec_program_emit.data[s_idx]); })).tag == 3) && (typechecker__typechecker_is_protected_resource_derived((*({ if (s_idx < 0 || s_idx >= statements_vec_program_emit.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(statements_vec_program_emit.data[s_idx]); })).FunctionDecl.name, ((typechecker__TypeEnvironment*)env), ctx) == 1))) {
+    (*(env)).protected_resource_preserve_concrete_types = 1;
+    (*(env)).current_prefix = typechecker__typechecker_protected_resource_resolution_prefix((*({ if (s_idx < 0 || s_idx >= statements_vec_program_emit.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(statements_vec_program_emit.data[s_idx]); })).FunctionDecl.name, ((typechecker__TypeEnvironment*)env), ctx);
+    (*(env)).current_function_identity_scope = typechecker__typechecker_protected_resource_identity((*({ if (s_idx < 0 || s_idx >= statements_vec_program_emit.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(statements_vec_program_emit.data[s_idx]); })).FunctionDecl.name, ((typechecker__TypeEnvironment*)env), ctx);
+    }
     int stmt_idx = os_ArenaAlloc(ctx, sizeof(ast__Statement));
     ({ *((ast__Statement*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(stmt_idx))) = (*({ if (s_idx < 0 || s_idx >= statements_vec_program_emit.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(statements_vec_program_emit.data[s_idx]); })); });
     Slice_unsigned_char stmt_c = codegen__codegen_generate_statement(stmt_idx, env, ctx);
+    (*(env)).protected_resource_preserve_concrete_types = 0;
+    (*(env)).current_prefix = emission_prefix;
+    (*(env)).current_function_identity_scope = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     os_VectorPush(&(chunks), stmt_c);
     s_idx = (s_idx + 1);
     }
@@ -52952,8 +53649,77 @@ int mir_native_backend_full_program_source__mir_native_full_program_flatten_expr
     if ((expression.tag == 12)) {
     node.kind = ((Slice_unsigned_char){ (unsigned char*)"Call", 4 });
     Slice_unsigned_char raw_callee = typechecker__get_call_func_name(expression.Call.function, ctx);
+    Slice_unsigned_char constructor_helper = std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"", 0 }));
+    if (((std_str_eq(raw_callee, ((Slice_unsigned_char){ (unsigned char*)"std.MutexNew", 12 })) == 1) || (std_str_eq(raw_callee, ((Slice_unsigned_char){ (unsigned char*)"std_MutexNew", 12 })) == 1))) {
+    ast__Type constructor_type = codegen__codegen_get_expression_type(expression_index, env, ctx);
+    constructor_type = typechecker__env_resolve_type(env, constructor_type, ctx);
+    if ((constructor_type.tag != 8)) {
+    return (0 - 1);
+    }
+    Slice_unsigned_char erased_constructor = codegen__codegen_get_erased_struct_name(constructor_type.Struct.struct_name, env, ctx);
+    if ((std_str_find(erased_constructor, ((Slice_unsigned_char){ (unsigned char*)"std_Mutex_", 10 })) != 0)) {
+    return (0 - 1);
+    }
+    constructor_helper = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"__gust_mutex_new_", 17 }); Slice_unsigned_char _s2 = erased_constructor; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    raw_callee = constructor_helper;
+    }
+    int intrinsic_receiver = 0xFFFFFFFF;
+    ast__Expression call_function = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expression.Call.function))));
+    if ((call_function.tag == 11)) {
+    ast__Type receiver_type = codegen__codegen_get_expression_type(call_function.Selector.left, env, ctx);
+    receiver_type = typechecker__env_resolve_type(env, receiver_type, ctx);
+    if ((receiver_type.tag == 8)) {
+    Slice_unsigned_char receiver_name = typechecker__typechecker_strip_module_prefix(receiver_type.Struct.struct_name, ctx);
+    int is_mutex = 0;
+    if (((std_str_find(receiver_name, ((Slice_unsigned_char){ (unsigned char*)"Mutex_", 6 })) == 0) || (std_str_find(receiver_name, ((Slice_unsigned_char){ (unsigned char*)"std_Mutex_", 10 })) == 0))) {
+    is_mutex = 1;
+    }
+    if (((is_mutex == 1) && ((std_str_eq(call_function.Selector.right, ((Slice_unsigned_char){ (unsigned char*)"Lock", 4 })) == 1) || (std_str_eq(call_function.Selector.right, ((Slice_unsigned_char){ (unsigned char*)"Unlock", 6 })) == 1)))) {
+    intrinsic_receiver = call_function.Selector.left;
+    if ((std_str_eq(call_function.Selector.right, ((Slice_unsigned_char){ (unsigned char*)"Lock", 4 })) == 1)) {
+    raw_callee = ((Slice_unsigned_char){ (unsigned char*)"std_Mutex_Lock_impl", 19 });
+    } else {
+    raw_callee = ((Slice_unsigned_char){ (unsigned char*)"std_Mutex_Unlock_impl", 21 });
+    }
+    }
+    }
+    }
     node.text_operand = std_Clone_str(ctx, raw_callee);
     node.second_text_operand = std_Clone_str(ctx, typechecker__env_resolve_namespaced_ident(env, raw_callee, ctx));
+    if ((constructor_helper.len > 0)) {
+    node.second_text_operand = std_Clone_str(ctx, constructor_helper);
+    }
+    if ((intrinsic_receiver != 0xFFFFFFFF)) {
+    node.second_text_operand = std_Clone_str(ctx, raw_callee);
+    mir_native_backend_full_program_source__MirNativeFullProgramNode callee_node = mir_native_backend_full_program_source__mir_native_full_program_make_node(((Slice_unsigned_char){ (unsigned char*)"LocalRead", 9 }), ((Slice_unsigned_char){ (unsigned char*)"Void", 4 }), raw_callee, ((Slice_unsigned_char){ (unsigned char*)"", 0 }), 0, 0, span.start.line, span.start.column, span.start.offset, span.end.offset, ctx);
+    int callee_index = mir_native_backend_full_program_source__mir_native_full_program_push_node(nodes_index, callee_node, ctx);
+    node = mir_native_backend_full_program_source__mir_native_full_program_node_with_child(node, callee_index, ctx);
+    int receiver = mir_native_backend_full_program_source__mir_native_full_program_flatten_expression(intrinsic_receiver, nodes_index, env, ctx);
+    if ((receiver < 0)) {
+    return (0 - 1);
+    }
+    mir_native_backend_full_program_source__MirNativeFullProgramNode lock_state = mir_native_backend_full_program_source__mir_native_full_program_make_node(((Slice_unsigned_char){ (unsigned char*)"FieldOrMethodSelect", 19 }), ((Slice_unsigned_char){ (unsigned char*)"Int", 3 }), ((Slice_unsigned_char){ (unsigned char*)"lock_state", 10 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), 0, 0, span.start.line, span.start.column, span.start.offset, span.end.offset, ctx);
+    lock_state = mir_native_backend_full_program_source__mir_native_full_program_node_with_child(lock_state, receiver, ctx);
+    int lock_state_index = mir_native_backend_full_program_source__mir_native_full_program_push_node(nodes_index, lock_state, ctx);
+    node = mir_native_backend_full_program_source__mir_native_full_program_node_with_child(node, lock_state_index, ctx);
+    if ((std_str_eq(raw_callee, ((Slice_unsigned_char){ (unsigned char*)"std_Mutex_Lock_impl", 19 })) == 1)) {
+    node.type_identity = ((Slice_unsigned_char){ (unsigned char*)"RawPointer(Void)", 16 });
+    ast__Type call_type = codegen__codegen_get_expression_type(expression_index, env, ctx);
+    call_type = typechecker__env_resolve_type(env, call_type, ctx);
+    if ((call_type.tag != 9)) {
+    return (0 - 1);
+    }
+    Slice_unsigned_char value_type = mir_native_backend_full_program_source__mir_native_full_program_type_identity((*((ast__Type*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(call_type.RawPointer.inner)))), env, ctx);
+    mir_native_backend_full_program_source__MirNativeFullProgramNode value_field = mir_native_backend_full_program_source__mir_native_full_program_make_node(((Slice_unsigned_char){ (unsigned char*)"FieldOrMethodSelect", 19 }), value_type, ((Slice_unsigned_char){ (unsigned char*)"value", 5 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), 0, 0, span.start.line, span.start.column, span.start.offset, span.end.offset, ctx);
+    value_field = mir_native_backend_full_program_source__mir_native_full_program_node_with_child(value_field, receiver, ctx);
+    int value_field_index = mir_native_backend_full_program_source__mir_native_full_program_push_node(nodes_index, value_field, ctx);
+    mir_native_backend_full_program_source__MirNativeFullProgramNode value_address = mir_native_backend_full_program_source__mir_native_full_program_make_node(((Slice_unsigned_char){ (unsigned char*)"AddressOf", 9 }), ((Slice_unsigned_char){ (unsigned char*)"RawPointer(Void)", 16 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), 0, 0, span.start.line, span.start.column, span.start.offset, span.end.offset, ctx);
+    value_address = mir_native_backend_full_program_source__mir_native_full_program_node_with_child(value_address, value_field_index, ctx);
+    int value_address_index = mir_native_backend_full_program_source__mir_native_full_program_push_node(nodes_index, value_address, ctx);
+    node = mir_native_backend_full_program_source__mir_native_full_program_node_with_child(node, value_address_index, ctx);
+    }
+    return mir_native_backend_full_program_source__mir_native_full_program_push_node(nodes_index, node, ctx);
+    }
     int callee = mir_native_backend_full_program_source__mir_native_full_program_flatten_expression(expression.Call.function, nodes_index, env, ctx);
     if ((callee < 0)) {
     return (0 - 1);
@@ -53037,12 +53803,12 @@ Slice_unsigned_char mir_native_backend_full_program_source__mir_native_full_prog
 int mir_native_backend_full_program_source__mir_native_full_program_resource_storage_node(Slice_unsigned_char storage_name, int source_line, int source_column, int source_start_offset, int source_end_offset, int nodes_index, typechecker__TypeEnvironment* env, os_Arena* ctx) {
     Slice_unsigned_char root = mir_native_backend_full_program_source__mir_native_full_program_storage_root(storage_name, ctx);
     {
-    LookupResult_ast__Type _guard_res_root_type_lookup_441_9 = {0};
-    _guard_res_root_type_lookup_441_9 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), root, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), root, 1); } res; });
-    if (!_guard_res_root_type_lookup_441_9.Ok) {
+    LookupResult_ast__Type _guard_res_root_type_lookup_569_9 = {0};
+    _guard_res_root_type_lookup_569_9 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), root, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), root, 1); } res; });
+    if (!_guard_res_root_type_lookup_569_9.Ok) {
         return (0 - 1);
     }
-    ast__Type root_type_lookup = _guard_res_root_type_lookup_441_9.Val;
+    ast__Type root_type_lookup = _guard_res_root_type_lookup_569_9.Val;
     Slice_unsigned_char root_type = mir_native_backend_full_program_source__mir_native_full_program_type_identity(root_type_lookup, env, ctx);
     if (((root_type.len == 0) || (std_str_eq(root_type, ((Slice_unsigned_char){ (unsigned char*)"Unknown", 7 })) == 1))) {
     return (0 - 1);
@@ -53067,19 +53833,19 @@ int mir_native_backend_full_program_source__mir_native_full_program_resource_sto
     if ((resolved_storage_type.tag != 8)) {
     return (0 - 1);
     }
-    LookupResult_typechecker__StructLayout _guard_res_layout_lookup_472_13 = {0};
-    _guard_res_layout_lookup_472_13 = ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_registry), resolved_storage_type.Struct.struct_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_registry), resolved_storage_type.Struct.struct_name, 1); } res; });
-    if (!_guard_res_layout_lookup_472_13.Ok) {
+    LookupResult_typechecker__StructLayout _guard_res_layout_lookup_600_13 = {0};
+    _guard_res_layout_lookup_600_13 = ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_registry), resolved_storage_type.Struct.struct_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_registry), resolved_storage_type.Struct.struct_name, 1); } res; });
+    if (!_guard_res_layout_lookup_600_13.Ok) {
         return (0 - 1);
     }
-    typechecker__StructLayout layout_lookup = _guard_res_layout_lookup_472_13.Val;
+    typechecker__StructLayout layout_lookup = _guard_res_layout_lookup_600_13.Val;
     Slice_unsigned_char field_name = std_str_slice(storage_name, field_start, field_end);
-    LookupResult_ast__Type _guard_res_field_lookup_480_13 = {0};
-    _guard_res_field_lookup_480_13 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&(layout_lookup.fields), field_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(layout_lookup.fields), field_name, 1); } res; });
-    if (!_guard_res_field_lookup_480_13.Ok) {
+    LookupResult_ast__Type _guard_res_field_lookup_608_13 = {0};
+    _guard_res_field_lookup_608_13 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&(layout_lookup.fields), field_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(layout_lookup.fields), field_name, 1); } res; });
+    if (!_guard_res_field_lookup_608_13.Ok) {
         return (0 - 1);
     }
-    ast__Type field_lookup = _guard_res_field_lookup_480_13.Val;
+    ast__Type field_lookup = _guard_res_field_lookup_608_13.Val;
     storage_type = field_lookup;
     cursor = field_end;
     }
@@ -53428,6 +54194,75 @@ int mir_native_backend_full_program_source__mir_native_full_program_function_ind
     return (0 - 1);
 }
 
+mir_native_backend_full_program_source__MirNativeFullProgramModel mir_native_backend_full_program_source__mir_native_full_program_append_mutex_constructor_helpers(mir_native_backend_full_program_source__MirNativeFullProgramModel model, int functions_index, os_Arena* ctx) {
+    mir_native_backend_full_program_source__MirNativeFullProgramModel updated = model;
+    std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramFunction functions = (*((std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramFunction*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(functions_index))));
+    std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramLayout layouts = (*((std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramLayout*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(model.layouts))));
+    int layout_index = 0;
+    while ((layout_index < layouts.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    Slice_unsigned_char erased_name = (*({ if (layout_index < 0 || layout_index >= layouts.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(layouts.data[layout_index]); })).erased_name;
+    if ((std_str_find(erased_name, ((Slice_unsigned_char){ (unsigned char*)"std_Mutex_", 10 })) == 0)) {
+    Slice_unsigned_char helper_name = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"__gust_mutex_new_", 17 }); Slice_unsigned_char _s2 = erased_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    if ((mir_native_backend_full_program_source__mir_native_full_program_function_index(functions, helper_name, ctx) < 0)) {
+    Slice_unsigned_char mutex_type = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Struct(\"", 8 }); Slice_unsigned_char _s2 = erased_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    mutex_type = (({ Slice_unsigned_char _s1 = mutex_type; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"\", None)", 8 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    mir_native_backend_full_program_source__MirNativeFullProgramNode zero = mir_native_backend_full_program_source__mir_native_full_program_make_node(((Slice_unsigned_char){ (unsigned char*)"ZeroInitialize", 14 }), mutex_type, mutex_type, ((Slice_unsigned_char){ (unsigned char*)"", 0 }), 0, 0, 0, 0, 0, 0, ctx);
+    int zero_index = mir_native_backend_full_program_source__mir_native_full_program_push_node(model.nodes, zero, ctx);
+    mir_native_backend_full_program_source__MirNativeFullProgramNode declare = mir_native_backend_full_program_source__mir_native_full_program_make_node(((Slice_unsigned_char){ (unsigned char*)"LocalDeclare", 12 }), mutex_type, ((Slice_unsigned_char){ (unsigned char*)"value", 5 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), 1, 0, 0, 0, 0, 0, ctx);
+    declare = mir_native_backend_full_program_source__mir_native_full_program_node_with_child(declare, zero_index, ctx);
+    int declare_index = mir_native_backend_full_program_source__mir_native_full_program_push_node(model.nodes, declare, ctx);
+    mir_native_backend_full_program_source__MirNativeFullProgramNode field_receiver = mir_native_backend_full_program_source__mir_native_full_program_make_node(((Slice_unsigned_char){ (unsigned char*)"LocalRead", 9 }), mutex_type, ((Slice_unsigned_char){ (unsigned char*)"value", 5 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), 0, 0, 0, 0, 0, 0, ctx);
+    int field_receiver_index = mir_native_backend_full_program_source__mir_native_full_program_push_node(model.nodes, field_receiver, ctx);
+    mir_native_backend_full_program_source__MirNativeFullProgramNode lock_state = mir_native_backend_full_program_source__mir_native_full_program_make_node(((Slice_unsigned_char){ (unsigned char*)"FieldOrMethodSelect", 19 }), ((Slice_unsigned_char){ (unsigned char*)"Int", 3 }), ((Slice_unsigned_char){ (unsigned char*)"lock_state", 10 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), 0, 0, 0, 0, 0, 0, ctx);
+    lock_state = mir_native_backend_full_program_source__mir_native_full_program_node_with_child(lock_state, field_receiver_index, ctx);
+    int lock_state_index = mir_native_backend_full_program_source__mir_native_full_program_push_node(model.nodes, lock_state, ctx);
+    mir_native_backend_full_program_source__MirNativeFullProgramNode allocator = mir_native_backend_full_program_source__mir_native_full_program_make_node(((Slice_unsigned_char){ (unsigned char*)"LocalRead", 9 }), ((Slice_unsigned_char){ (unsigned char*)"Void", 4 }), ((Slice_unsigned_char){ (unsigned char*)"std_Mutex_Alloc", 15 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), 0, 0, 0, 0, 0, 0, ctx);
+    int allocator_index = mir_native_backend_full_program_source__mir_native_full_program_push_node(model.nodes, allocator, ctx);
+    mir_native_backend_full_program_source__MirNativeFullProgramNode allocation = mir_native_backend_full_program_source__mir_native_full_program_make_node(((Slice_unsigned_char){ (unsigned char*)"Call", 4 }), ((Slice_unsigned_char){ (unsigned char*)"Int", 3 }), ((Slice_unsigned_char){ (unsigned char*)"std_Mutex_Alloc", 15 }), ((Slice_unsigned_char){ (unsigned char*)"std_Mutex_Alloc", 15 }), 0, 0, 0, 0, 0, 0, ctx);
+    allocation = mir_native_backend_full_program_source__mir_native_full_program_node_with_child(allocation, allocator_index, ctx);
+    int allocation_index = mir_native_backend_full_program_source__mir_native_full_program_push_node(model.nodes, allocation, ctx);
+    mir_native_backend_full_program_source__MirNativeFullProgramNode assign = mir_native_backend_full_program_source__mir_native_full_program_make_node(((Slice_unsigned_char){ (unsigned char*)"Assign", 6 }), ((Slice_unsigned_char){ (unsigned char*)"Void", 4 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), 0, 0, 0, 0, 0, 0, ctx);
+    assign = mir_native_backend_full_program_source__mir_native_full_program_node_with_child(assign, lock_state_index, ctx);
+    assign = mir_native_backend_full_program_source__mir_native_full_program_node_with_child(assign, allocation_index, ctx);
+    int assign_index = mir_native_backend_full_program_source__mir_native_full_program_push_node(model.nodes, assign, ctx);
+    mir_native_backend_full_program_source__MirNativeFullProgramNode return_value = mir_native_backend_full_program_source__mir_native_full_program_make_node(((Slice_unsigned_char){ (unsigned char*)"LocalRead", 9 }), mutex_type, ((Slice_unsigned_char){ (unsigned char*)"value", 5 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), 0, 0, 0, 0, 0, 0, ctx);
+    int return_value_index = mir_native_backend_full_program_source__mir_native_full_program_push_node(model.nodes, return_value, ctx);
+    mir_native_backend_full_program_source__MirNativeFullProgramNode return_node = mir_native_backend_full_program_source__mir_native_full_program_make_node(((Slice_unsigned_char){ (unsigned char*)"Return", 6 }), ((Slice_unsigned_char){ (unsigned char*)"Void", 4 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), 1, 0, 0, 0, 0, 0, ctx);
+    return_node = mir_native_backend_full_program_source__mir_native_full_program_node_with_child(return_node, return_value_index, ctx);
+    int return_index = mir_native_backend_full_program_source__mir_native_full_program_push_node(model.nodes, return_node, ctx);
+    mir_native_backend_full_program_source__MirNativeFullProgramNode body = mir_native_backend_full_program_source__mir_native_full_program_make_node(((Slice_unsigned_char){ (unsigned char*)"Block", 5 }), ((Slice_unsigned_char){ (unsigned char*)"Void", 4 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ((Slice_unsigned_char){ (unsigned char*)"", 0 }), 0, 0, 0, 0, 0, 0, ctx);
+    body = mir_native_backend_full_program_source__mir_native_full_program_node_with_child(body, declare_index, ctx);
+    body = mir_native_backend_full_program_source__mir_native_full_program_node_with_child(body, assign_index, ctx);
+    body = mir_native_backend_full_program_source__mir_native_full_program_node_with_child(body, return_index, ctx);
+    int body_index = mir_native_backend_full_program_source__mir_native_full_program_push_node(model.nodes, body, ctx);
+    mir_native_backend_full_program_source__MirNativeFullProgramFunction helper = ((mir_native_backend_full_program_source__MirNativeFullProgramFunction){ .body = 0xFFFFFFFF, .body_node_index = 0, .extern_symbol_name = ((Slice_unsigned_char){ NULL, 0 }), .is_extern = 0, .module_index = 0, .parameter_names = 0xFFFFFFFF, .parameter_types = 0xFFFFFFFF, .qualified_name = ((Slice_unsigned_char){ NULL, 0 }), .return_type = ((Slice_unsigned_char){ NULL, 0 }), .source_name = ((Slice_unsigned_char){ NULL, 0 }) });
+    helper.module_index = 0;
+    helper.source_name = std_Clone_str(ctx, helper_name);
+    helper.qualified_name = std_Clone_str(ctx, helper_name);
+    helper.is_extern = 0;
+    helper.extern_symbol_name = std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"", 0 }));
+    helper.parameter_names = mir_native_backend_full_program_source__mir_native_full_program_empty_string_vector(ctx);
+    helper.parameter_types = mir_native_backend_full_program_source__mir_native_full_program_empty_string_vector(ctx);
+    std_Vector_str helper_parameter_names = ((struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    os_VectorPush(&(helper_parameter_names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ctx", 3 })));
+    ({ *((std_Vector_str*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(helper.parameter_names))) = helper_parameter_names; });
+    std_Vector_str helper_parameter_types = ((struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    os_VectorPush(&(helper_parameter_types), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Reference(Arena, None)", 22 })));
+    ({ *((std_Vector_str*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(helper.parameter_types))) = helper_parameter_types; });
+    helper.return_type = std_Clone_str(ctx, mutex_type);
+    helper.body = 0xFFFFFFFF;
+    helper.body_node_index = body_index;
+    os_VectorPush(&(functions), helper);
+    }
+    }
+    layout_index = (layout_index + 1);
+    }
+    ({ *((std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramFunction*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(functions_index))) = functions; });
+    updated.function_count = functions.len;
+    return updated;
+}
+
 mir_native_backend_full_program_source__MirNativeFullProgramModel mir_native_backend_full_program_source__mir_native_full_program_collect_layout_authority(mir_native_backend_full_program_source__MirNativeFullProgramModel model, typechecker__TypeEnvironment* env, os_Arena* ctx) {
     mir_native_backend_full_program_source__MirNativeFullProgramModel updated = model;
     {
@@ -53437,12 +54272,12 @@ mir_native_backend_full_program_source__MirNativeFullProgramModel mir_native_bac
     while ((layout_index < layout_names.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     Slice_unsigned_char name = (*({ if (layout_index < 0 || layout_index >= layout_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(layout_names.data[layout_index]); }));
-    LookupResult_typechecker__StructLayout _guard_res_registry_layout_947_13 = {0};
-    _guard_res_registry_layout_947_13 = ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_registry), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_registry), name, 1); } res; });
-    if (!_guard_res_registry_layout_947_13.Ok) {
+    LookupResult_typechecker__StructLayout _guard_res_registry_layout_1233_13 = {0};
+    _guard_res_registry_layout_1233_13 = ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_registry), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_registry), name, 1); } res; });
+    if (!_guard_res_registry_layout_1233_13.Ok) {
         return mir_native_backend_full_program_source__mir_native_full_program_invalid(updated, ((Slice_unsigned_char){ (unsigned char*)"Native backend canonical MIR verification failed: full-program layout registry changed during canonicalization", 110 }), ctx);
     }
-    typechecker__StructLayout registry_layout = _guard_res_registry_layout_947_13.Val;
+    typechecker__StructLayout registry_layout = _guard_res_registry_layout_1233_13.Val;
     mir_native_backend_full_program_source__MirNativeFullProgramLayout value = ((mir_native_backend_full_program_source__MirNativeFullProgramLayout){ .brand = ((Slice_unsigned_char){ NULL, 0 }), .erased_name = ((Slice_unsigned_char){ NULL, 0 }), .field_names = 0xFFFFFFFF, .field_types = 0xFFFFFFFF, .is_packed = 0, .is_repr_c = 0, .layout_abi = ((Slice_unsigned_char){ NULL, 0 }), .name = ((Slice_unsigned_char){ NULL, 0 }) });
     value.name = std_Clone_str(ctx, name);
     value.erased_name = codegen__codegen_get_erased_struct_name(name, env, ctx);
@@ -53490,12 +54325,12 @@ mir_native_backend_full_program_source__MirNativeFullProgramModel mir_native_bac
     int field_index = 0;
     while ((field_index < field_names.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
-    LookupResult_ast__Type _guard_res_field_type_1005_17 = {0};
-    _guard_res_field_type_1005_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&(registry_layout.fields), (*({ if (field_index < 0 || field_index >= field_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(field_names.data[field_index]); })), 1); if (res.Ok) { res.Val = *os_HashMapRef(&(registry_layout.fields), (*({ if (field_index < 0 || field_index >= field_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(field_names.data[field_index]); })), 1); } res; });
-    if (!_guard_res_field_type_1005_17.Ok) {
+    LookupResult_ast__Type _guard_res_field_type_1291_17 = {0};
+    _guard_res_field_type_1291_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&(registry_layout.fields), (*({ if (field_index < 0 || field_index >= field_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(field_names.data[field_index]); })), 1); if (res.Ok) { res.Val = *os_HashMapRef(&(registry_layout.fields), (*({ if (field_index < 0 || field_index >= field_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(field_names.data[field_index]); })), 1); } res; });
+    if (!_guard_res_field_type_1291_17.Ok) {
         return mir_native_backend_full_program_source__mir_native_full_program_invalid(updated, ((Slice_unsigned_char){ (unsigned char*)"Native backend canonical MIR verification failed: full-program layout field changed during canonicalization", 107 }), ctx);
     }
-    ast__Type field_type = _guard_res_field_type_1005_17.Val;
+    ast__Type field_type = _guard_res_field_type_1291_17.Val;
     os_VectorPush(&(field_types), mir_native_backend_full_program_source__mir_native_full_program_type_identity(field_type, env, ctx));
     field_index = (field_index + 1);
     }
@@ -53510,12 +54345,12 @@ mir_native_backend_full_program_source__MirNativeFullProgramModel mir_native_bac
     int enum_index = 0;
     while ((enum_index < enum_names.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
-    LookupResult_std_Vector_str _guard_res_enum_variants_1033_13 = {0};
-    _guard_res_enum_variants_1033_13 = ({ LookupResult_std_Vector_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).enum_registry), (*({ if (enum_index < 0 || enum_index >= enum_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(enum_names.data[enum_index]); })), 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).enum_registry), (*({ if (enum_index < 0 || enum_index >= enum_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(enum_names.data[enum_index]); })), 1); } res; });
-    if (!_guard_res_enum_variants_1033_13.Ok) {
+    LookupResult_std_Vector_str _guard_res_enum_variants_1319_13 = {0};
+    _guard_res_enum_variants_1319_13 = ({ LookupResult_std_Vector_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).enum_registry), (*({ if (enum_index < 0 || enum_index >= enum_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(enum_names.data[enum_index]); })), 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).enum_registry), (*({ if (enum_index < 0 || enum_index >= enum_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(enum_names.data[enum_index]); })), 1); } res; });
+    if (!_guard_res_enum_variants_1319_13.Ok) {
         return mir_native_backend_full_program_source__mir_native_full_program_invalid(updated, ((Slice_unsigned_char){ (unsigned char*)"Native backend canonical MIR verification failed: full-program enum registry changed during canonicalization", 108 }), ctx);
     }
-    std_Vector_str enum_variants = _guard_res_enum_variants_1033_13.Val;
+    std_Vector_str enum_variants = _guard_res_enum_variants_1319_13.Val;
     mir_native_backend_full_program_source__MirNativeFullProgramEnum enumeration = ((mir_native_backend_full_program_source__MirNativeFullProgramEnum){ .erased_name = ((Slice_unsigned_char){ NULL, 0 }), .name = ((Slice_unsigned_char){ NULL, 0 }), .variants = 0xFFFFFFFF });
     enumeration.name = std_Clone_str(ctx, (*({ if (enum_index < 0 || enum_index >= enum_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(enum_names.data[enum_index]); })));
     enumeration.erased_name = codegen__codegen_get_erased_struct_name(enumeration.name, env, ctx);
@@ -53639,6 +54474,11 @@ mir_native_backend_full_program_source__MirNativeFullProgramModel mir_native_bac
     {
     if ((statement.tag == 3)) {
     mir_native_backend_full_program_source__MirNativeFullProgramFunction function = ((mir_native_backend_full_program_source__MirNativeFullProgramFunction){ .body = 0xFFFFFFFF, .body_node_index = 0, .extern_symbol_name = ((Slice_unsigned_char){ NULL, 0 }), .is_extern = 0, .module_index = 0, .parameter_names = 0xFFFFFFFF, .parameter_types = 0xFFFFFFFF, .qualified_name = ((Slice_unsigned_char){ NULL, 0 }), .return_type = ((Slice_unsigned_char){ NULL, 0 }), .source_name = ((Slice_unsigned_char){ NULL, 0 }) });
+    int is_protected_derived = typechecker__typechecker_is_protected_resource_derived(statement.FunctionDecl.name, ((typechecker__TypeEnvironment*)env), ctx);
+    if ((is_protected_derived == 1)) {
+    (*(env)).protected_resource_preserve_concrete_types = 1;
+    (*(env)).current_prefix = typechecker__typechecker_protected_resource_resolution_prefix(statement.FunctionDecl.name, ((typechecker__TypeEnvironment*)env), ctx);
+    }
     function.module_index = module_index;
     function.source_name = std_Clone_str(ctx, statement.FunctionDecl.name);
     function.qualified_name = mir_native_backend_full_program_source__mir_native_full_program_qualified_name((*({ if (module_index < 0 || module_index >= module_prefixes.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(module_prefixes.data[module_index]); })), statement.FunctionDecl.name, ctx);
@@ -53683,6 +54523,10 @@ mir_native_backend_full_program_source__MirNativeFullProgramModel mir_native_bac
     non_scalar_signature_count = (non_scalar_signature_count + 1);
     }
     os_VectorPush(&(functions), function);
+    if ((is_protected_derived == 1)) {
+    (*(env)).protected_resource_preserve_concrete_types = 0;
+    (*(env)).current_prefix = (*({ if (module_index < 0 || module_index >= module_prefixes.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(module_prefixes.data[module_index]); }));
+    }
     }
     }
     statement_index = (statement_index + 1);
@@ -53698,6 +54542,13 @@ mir_native_backend_full_program_source__MirNativeFullProgramModel mir_native_bac
     model.represented = 1;
     model.function_count = functions.len;
     model.non_scalar_signature_count = non_scalar_signature_count;
+    ({ *((std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramFunction*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(model.functions))) = functions; });
+    model = mir_native_backend_full_program_source__mir_native_full_program_collect_layout_authority(model, env, ctx);
+    if ((model.invalid == 1)) {
+    return model;
+    }
+    model = mir_native_backend_full_program_source__mir_native_full_program_append_mutex_constructor_helpers(model, model.functions, ctx);
+    functions = (*((std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramFunction*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(model.functions))));
     module_index = 0;
     while ((module_index < programs.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
@@ -53716,6 +54567,12 @@ mir_native_backend_full_program_source__MirNativeFullProgramModel mir_native_bac
     if ((function_index < 0)) {
     return mir_native_backend_full_program_source__mir_native_full_program_invalid(model, ((Slice_unsigned_char){ (unsigned char*)"Native backend canonical MIR verification failed: full-program function disappeared before executable body lowering", 115 }), ctx);
     }
+    int is_protected_derived = typechecker__typechecker_is_protected_resource_derived(statement.FunctionDecl.name, ((typechecker__TypeEnvironment*)env), ctx);
+    if ((is_protected_derived == 1)) {
+    (*(env)).protected_resource_preserve_concrete_types = 1;
+    (*(env)).current_prefix = typechecker__typechecker_protected_resource_resolution_prefix(statement.FunctionDecl.name, ((typechecker__TypeEnvironment*)env), ctx);
+    }
+    (*(env)).current_function_identity_scope = std_Clone_str(ctx, qualified_name);
     int body_node = mir_native_backend_full_program_source__mir_native_full_program_flatten_block(statement.FunctionDecl.body, model.nodes, env, ctx);
     if ((body_node < 0)) {
     return mir_native_backend_full_program_source__mir_native_full_program_invalid(model, ((Slice_unsigned_char){ (unsigned char*)"Native backend canonical MIR verification failed: full-program executable body has an unresolved type or operation", 114 }), ctx);
@@ -53723,6 +54580,11 @@ mir_native_backend_full_program_source__MirNativeFullProgramModel mir_native_bac
     mir_native_backend_full_program_source__MirNativeFullProgramFunction updated = (*({ if (function_index < 0 || function_index >= functions.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(functions.data[function_index]); }));
     updated.body_node_index = body_node;
     ({ int _gust_vector_set_idx = function_index; if (_gust_vector_set_idx < 0 || _gust_vector_set_idx >= functions.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } functions.data[_gust_vector_set_idx] = updated; });
+    (*(env)).current_function_identity_scope = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    if ((is_protected_derived == 1)) {
+    (*(env)).protected_resource_preserve_concrete_types = 0;
+    (*(env)).current_prefix = (*({ if (module_index < 0 || module_index >= module_prefixes.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(module_prefixes.data[module_index]); }));
+    }
     }
     }
     statement_index = (statement_index + 1);
@@ -53733,10 +54595,7 @@ mir_native_backend_full_program_source__MirNativeFullProgramModel mir_native_bac
     (*(env)).current_prefix = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     }
     ({ *((std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramFunction*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(model.functions))) = functions; });
-    model = mir_native_backend_full_program_source__mir_native_full_program_collect_layout_authority(model, env, ctx);
-    if ((model.invalid == 1)) {
-    return model;
-    }
+    model.function_count = functions.len;
     int entry_index = mir_native_backend_full_program_source__mir_native_full_program_function_index(functions, ((Slice_unsigned_char){ (unsigned char*)"main", 4 }), ctx);
     if ((entry_index < 0)) {
     return mir_native_backend_full_program_source__mir_native_full_program_invalid(model, ((Slice_unsigned_char){ (unsigned char*)"Native backend canonical MIR verification failed: full-program bundle is missing main", 85 }), ctx);
@@ -64846,6 +65705,7 @@ void gust_user_main(void* _gust_arg) {
     }
     j = (j + 1);
     }
+    typechecker__typechecker_finish_protected_resource_derivations(&(programs), module_prefixes, &(env), scope, &(ctx));
     if ((env.errors.len > 0)) {
     int k = 0;
     while ((k < env.errors.len)) {
