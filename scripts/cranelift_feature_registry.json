@@ -6519,6 +6519,97 @@
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
         }
       ],
+      "s1_8_inventory_successor": {
+        "contract_version": "phase24_stdlib_s1_8_inventory_successor_v1",
+        "status": "ready_for_exact_stdlib_s1_8_publication",
+        "authority_base_main": "9d065b4b395b604b6c285a32f0ef23b71528e159",
+        "candidate_base_main": "3abae7a96111b15e27e295a81f15b7f97a2e372c",
+        "changed_paths": [
+          ".github/workflows/stdlib-s1-mutex-guard.yml",
+          ".github/workflows/stdlib-s1-resource-prerequisites.yml",
+          "TASK_STDLIB.md",
+          "docs/STDLIB_FOUNDATIONS.md",
+          "docs/STDLIB_SURFACE_FINDINGS.md",
+          "justfile",
+          "scripts/stdlib_s1_mutex_guard_parity.sh",
+          "tests/stdlib_s1_mutex_guard.gst",
+          "tests/stdlib_s1_mutex_guard_generic_derivation_module.gst"
+        ],
+        "accepted_states": [
+          {
+            "state": "pre_s1_8",
+            "files": [
+              {"path":".github/workflows/stdlib-s1-mutex-guard.yml","absent":true},
+              {"path":".github/workflows/stdlib-s1-resource-prerequisites.yml","digest":"100a179c1907fd729fd75b32080c0d55d53b7598552ef0156f258529d84b5101"},
+              {"path":"TASK_STDLIB.md","digest":"782fe8cef59209fcc05948691268eb537e77c52c18575b62bf97b4888d7c3d8f"},
+              {"path":"docs/STDLIB_FOUNDATIONS.md","digest":"039951ceacacfbcc29776b5c0dafbe3b2aed82570afee5c71cbd15cf87fb2940"},
+              {"path":"docs/STDLIB_SURFACE_FINDINGS.md","digest":"189b7f583439b1f84c1ebdb5eae373e0a7d6edf92661ad857d9f0b0a61cfddeb"},
+              {"path":"justfile","digest":"d7616985e89f0b15be60a11a4f0c337e10ff05f7831393ee4fb9bea3901b925a"},
+              {"path":"scripts/stdlib_s1_mutex_guard_parity.sh","absent":true},
+              {"path":"tests/stdlib_s1_mutex_guard.gst","absent":true},
+              {"path":"tests/stdlib_s1_mutex_guard_generic_derivation_module.gst","digest":"aa4675aa9c0e19aba07c58449e198423379d929e4bec418bd63e1a627233e5ff"}
+            ]
+          },
+          {
+            "state": "post_s1_8",
+            "files": [
+              {"path":".github/workflows/stdlib-s1-mutex-guard.yml","digest":"eac232f77b80bd8980396738dc4f1708882402bcc4a0db3411b0a40bfdc7acdd"},
+              {"path":".github/workflows/stdlib-s1-resource-prerequisites.yml","digest":"4d044673d694a7abd11c4caedc736b5eee4169ca0b95ab794ecbe67d64888e37"},
+              {"path":"TASK_STDLIB.md","digest":"0df37b2a836ef3541c278dce8aab6260886d1949bcae38a029448daf5bbc8ab1"},
+              {"path":"docs/STDLIB_FOUNDATIONS.md","digest":"d1b41c13376d718749e2b67e9bb32136dfd1cd05f0e2cacbf4d56e00f87695dd"},
+              {"path":"docs/STDLIB_SURFACE_FINDINGS.md","digest":"6cfe8375d21fa6a2820c7e1ef6d4a9f22782fa9303b0c88bcd17b4a4952d6857"},
+              {"path":"justfile","digest":"1f620d482f54ee575c2c0f39309cad0402f998676753fb6e260e18034c6f4696"},
+              {"path":"scripts/stdlib_s1_mutex_guard_parity.sh","digest":"f03f7b26d667150fcc2019a5aea8f99f12ac165e4da28eac18d1c878fc7eb9fe"},
+              {"path":"tests/stdlib_s1_mutex_guard.gst","digest":"34e8301d0efc25a3d5a8c30be591a13441debba8c3fcd7b23a4b8ae57b251b76"},
+              {"path":"tests/stdlib_s1_mutex_guard_generic_derivation_module.gst","digest":"9f275fd64a4a8ff65b4be05ff25c81f10f777c507eefdf720ff5b2031d55bc07"}
+            ]
+          }
+        ],
+        "raw_mutex_call_site_transition": {
+          "previous_totals": {"lock_calls":16,"unlock_calls":16,"calls":32},
+          "added_call_site": {"path":"tests/stdlib_s1_mutex_guard_generic_derivation_module.gst","role":"stdlib_s1_8_selected_module_internal_lifecycle","lock_calls":1,"unlock_calls":1},
+          "current_totals": {"lock_calls":17,"unlock_calls":17,"calls":34},
+          "safe_raw_calls_added": 0,
+          "partial_extra_or_substituted_call_site": "rejected"
+        },
+        "phase22_invocation_transition": {
+          "path": "justfile",
+          "recipe": "guard-stdlib-s1-resource-prerequisites",
+          "compiler_token": "./gust",
+          "selection": "explicit_c",
+          "command": "if ./gust --backend mir-to-c \"$witness\" >\"$output\" 2>&1; then",
+          "pre_line": 23270,
+          "post_line": 23285,
+          "summary_unchanged": true,
+          "partial_extra_or_substituted_invocation": "rejected"
+        },
+        "phase23_text_surface_transition": {
+          "changed_paths": ["TASK_STDLIB.md","docs/STDLIB_FOUNDATIONS.md","docs/STDLIB_SURFACE_FINDINGS.md","justfile"],
+          "previous_rows": [
+            {"path":"TASK_STDLIB.md","digest":"782fe8cef59209fcc05948691268eb537e77c52c18575b62bf97b4888d7c3d8f","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":21,"generated_c_contract":0},"classification":"production_or_release_migration","owner":"stdlib","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"review_claims_in_23_8_and_23_12","removal_phase":"24_or_25_as_claim_requires","falsifier":"live_documentation_claim_is_missing_or_changes_identity"},
+            {"path":"docs/STDLIB_FOUNDATIONS.md","digest":"039951ceacacfbcc29776b5c0dafbe3b2aed82570afee5c71cbd15cf87fb2940","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":3,"generated_c_contract":0},"classification":"production_or_release_migration","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"review_claims_in_23_8_and_23_12","removal_phase":"24_or_25_as_claim_requires","falsifier":"live_documentation_claim_is_missing_or_changes_identity"},
+            {"path":"docs/STDLIB_SURFACE_FINDINGS.md","digest":"189b7f583439b1f84c1ebdb5eae373e0a7d6edf92661ad857d9f0b0a61cfddeb","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":1,"generated_c_contract":1},"classification":"production_or_release_migration","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"review_claims_in_23_8_and_23_12","removal_phase":"24_or_25_as_claim_requires","falsifier":"live_documentation_claim_is_missing_or_changes_identity"},
+            {"path":"justfile","digest":"d7616985e89f0b15be60a11a4f0c337e10ff05f7831393ee4fb9bea3901b925a","match_counts":{"explicit_backend_spelling":38,"mir_to_c_name":794,"generated_c_contract":6},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"}
+          ],
+          "current_rows": [
+            {"path":"TASK_STDLIB.md","digest":"0df37b2a836ef3541c278dce8aab6260886d1949bcae38a029448daf5bbc8ab1","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":21,"generated_c_contract":0},"classification":"production_or_release_migration","owner":"stdlib","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"review_claims_in_23_8_and_23_12","removal_phase":"24_or_25_as_claim_requires","falsifier":"live_documentation_claim_is_missing_or_changes_identity"},
+            {"path":"docs/STDLIB_FOUNDATIONS.md","digest":"d1b41c13376d718749e2b67e9bb32136dfd1cd05f0e2cacbf4d56e00f87695dd","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":3,"generated_c_contract":0},"classification":"production_or_release_migration","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"review_claims_in_23_8_and_23_12","removal_phase":"24_or_25_as_claim_requires","falsifier":"live_documentation_claim_is_missing_or_changes_identity"},
+            {"path":"docs/STDLIB_SURFACE_FINDINGS.md","digest":"6cfe8375d21fa6a2820c7e1ef6d4a9f22782fa9303b0c88bcd17b4a4952d6857","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":1,"generated_c_contract":1},"classification":"production_or_release_migration","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"review_claims_in_23_8_and_23_12","removal_phase":"24_or_25_as_claim_requires","falsifier":"live_documentation_claim_is_missing_or_changes_identity"},
+            {"path":"justfile","digest":"1f620d482f54ee575c2c0f39309cad0402f998676753fb6e260e18034c6f4696","match_counts":{"explicit_backend_spelling":38,"mir_to_c_name":794,"generated_c_contract":6},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"}
+          ],
+          "closed_phase_projection": "canonical_pre_s1_8_identity",
+          "partial_extra_or_substituted_surface": "rejected"
+        },
+        "boundary": {
+          "changes_accepted_Gust_program_meaning": false,
+          "adds_or_changes_MIR_operations": false,
+          "changes_ABI_layout_runtime_symbols": false,
+          "changes_backend_route_default_or_fallback": false,
+          "changes_bootstrap_route_or_seed": false,
+          "edits_stdlib_candidate": false,
+          "begins_patch24_2_or_24_3": false
+        }
+      },
       "projection_policy": {
         "pre_relay": "accepted_as_live_predecessor",
         "post_relay": "accepted_only_at_exact_registered_file_and_site_identity",

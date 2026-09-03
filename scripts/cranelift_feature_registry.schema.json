@@ -3838,7 +3838,7 @@
           "stdlib_guard_transition": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["contract_version","status","owner","owning_stdlib_pull_request","owning_stdlib_base_sha","owning_stdlib_exact_head_sha","landed_merge_evidence","changed_paths","changed_path_count","changed_site_count","pre_relay_justfile_digest","post_relay_justfile_digest","changed_site","phase22_invocation_summary","canonical_phase23_text_surfaces","projection_policy","review_view"],
+            "required": ["contract_version","status","owner","owning_stdlib_pull_request","owning_stdlib_base_sha","owning_stdlib_exact_head_sha","landed_merge_evidence","changed_paths","changed_path_count","changed_site_count","pre_relay_justfile_digest","post_relay_justfile_digest","changed_site","phase22_invocation_summary","canonical_phase23_text_surfaces","s1_8_inventory_successor","projection_policy","review_view"],
             "properties": {
               "contract_version": {"const": "phase24_cr15_stdlib_guard_transition_v1"},
               "status": {"const": "landed_exact_relay"},
@@ -3855,6 +3855,23 @@
               "changed_site": {"type": "object"},
               "phase22_invocation_summary": {"type": "object"},
               "canonical_phase23_text_surfaces": {"type": "array", "minItems": 2, "maxItems": 2},
+              "s1_8_inventory_successor": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["contract_version","status","authority_base_main","candidate_base_main","changed_paths","accepted_states","raw_mutex_call_site_transition","phase22_invocation_transition","phase23_text_surface_transition","boundary"],
+                "properties": {
+                  "contract_version": {"const": "phase24_stdlib_s1_8_inventory_successor_v1"},
+                  "status": {"const": "ready_for_exact_stdlib_s1_8_publication"},
+                  "authority_base_main": {"const": "9d065b4b395b604b6c285a32f0ef23b71528e159"},
+                  "candidate_base_main": {"const": "3abae7a96111b15e27e295a81f15b7f97a2e372c"},
+                  "changed_paths": {"type":"array","minItems":9,"maxItems":9,"uniqueItems":true},
+                  "accepted_states": {"type":"array","minItems":2,"maxItems":2},
+                  "raw_mutex_call_site_transition": {"type":"object"},
+                  "phase22_invocation_transition": {"type":"object"},
+                  "phase23_text_surface_transition": {"type":"object"},
+                  "boundary": {"const":{"changes_accepted_Gust_program_meaning":false,"adds_or_changes_MIR_operations":false,"changes_ABI_layout_runtime_symbols":false,"changes_backend_route_default_or_fallback":false,"changes_bootstrap_route_or_seed":false,"edits_stdlib_candidate":false,"begins_patch24_2_or_24_3":false}}
+                }
+              },
               "projection_policy": {"type": "object"},
               "review_view": {"const": "compiler/CRANELIFT_PHASE24_CR15_STDLIB_GUARD_TRANSITION.md"}
             }
