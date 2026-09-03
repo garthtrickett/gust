@@ -23809,6 +23809,26 @@ guard-cranelift-phase24-cr15-close-evidence:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase24-cr15-close-evidence | grep -F $'guard-cranelift-phase24-cr15-close-evidence\t2\t' >/dev/null
     python3 scripts/phase24_cr15_closure.py evidence
 
+# Cranelift lane, Patch 24.1. Preserve both pre-change outcomes for every
+# filename-selected typechecker site without modifying compiler behaviour.
+guard-cranelift-phase24-filename-behavior-characterization-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔬 Checking Phase 24 filename-selected behaviour characterization..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase24-filename-behavior-characterization-contract | grep -F $'guard-cranelift-phase24-filename-behavior-characterization-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase24_filename_behavior_characterization.py validate
+    python3 scripts/phase24_filename_behavior_characterization.py check-review
+
+guard-cranelift-phase24-filename-behavior-characterization-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Replaying byte-identical filename-selected behaviour pairs..."
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase24-filename-behavior-characterization-evidence | grep -F $'guard-cranelift-phase24-filename-behavior-characterization-evidence\t2\t' >/dev/null
+    just guard-cranelift-phase24-filename-behavior-characterization-contract
+    python3 scripts/phase24_filename_behavior_characterization.py evidence
+
 guard-cranelift-phase23-issue-health-opening-evidence:
     #!/usr/bin/env bash
     set -euo pipefail

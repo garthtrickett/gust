@@ -1,0 +1,83 @@
+name: Cranelift Phase 24 Filename Behaviour Characterization
+
+on:
+  pull_request:
+    paths:
+      - 'TASK.md'
+      - 'GEMINI.md'
+      - 'gust_v4.c'
+      - 'compiler/*.gst'
+      - 'compiler/CRANELIFT_PHASE24_FILENAME_BEHAVIOR_CHARACTERIZATION.md'
+      - 'docs/COMPILER_ARCHITECTURE_CONSOLIDATION.md'
+      - 'docs/SHARED_SEMANTIC_ZONE.md'
+      - 'docs/VISION.md'
+      - 'src/runtime.c'
+      - 'src/runtime/**'
+      - 'tests/phase24_filename_*_characterization.gst'
+      - 'tests/test_tcs_*.gst'
+      - 'tests/test_runner.gst'
+      - 'tools/normalize_generated_arena_offsets.py'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase24_filename_behavior_characterization.py'
+      - '.github/workflows/phase24-filename-behavior-characterization.yml'
+      - '.github/workflows/pr-fast.yml'
+      - 'justfile*'
+  push:
+    branches: [main]
+    paths:
+      - 'TASK.md'
+      - 'GEMINI.md'
+      - 'gust_v4.c'
+      - 'compiler/*.gst'
+      - 'compiler/CRANELIFT_PHASE24_FILENAME_BEHAVIOR_CHARACTERIZATION.md'
+      - 'docs/COMPILER_ARCHITECTURE_CONSOLIDATION.md'
+      - 'docs/SHARED_SEMANTIC_ZONE.md'
+      - 'docs/VISION.md'
+      - 'src/runtime.c'
+      - 'src/runtime/**'
+      - 'tests/phase24_filename_*_characterization.gst'
+      - 'tests/test_tcs_*.gst'
+      - 'tests/test_runner.gst'
+      - 'tools/normalize_generated_arena_offsets.py'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/phase24_filename_behavior_characterization.py'
+      - '.github/workflows/phase24-filename-behavior-characterization.yml'
+      - '.github/workflows/pr-fast.yml'
+      - 'justfile*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-cranelift-phase24-filename-behavior-characterization-contract
+        run: just guard-cranelift-phase24-filename-behavior-characterization-contract
+
+  evidence:
+    needs: contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: make gust
+      - name: guard-cranelift-phase24-filename-behavior-characterization-evidence
+        run: just guard-cranelift-phase24-filename-behavior-characterization-evidence

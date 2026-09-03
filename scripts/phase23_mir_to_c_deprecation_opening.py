@@ -73,6 +73,7 @@ SELF_EXCLUSIONS = {
     ".github/workflows/phase24-cr15-qualification.yml",
     "compiler/CRANELIFT_PHASE24_CR15_QUALIFICATION.md",
     "scripts/phase24_cr15_qualification.py",
+    "scripts/phase24_filename_behavior_characterization.py",
 }
 
 SURFACE_PATTERNS = {
@@ -561,6 +562,54 @@ def validate_phase24_cr15_closure_transition(
     return live_inventory
 
 
+def validate_phase24_filename_characterization_transition(
+        registry: dict, live_inventory: dict, live_rows: list[dict]) -> dict:
+    """Accept only the observational Patch 24.1 TASK successor."""
+    value = registry.get("phase24_filename_behavior_characterization", {})
+    transition = value.get("consumer_inventory_transition", {})
+    closure = registry.get("phase24_cr15_closure", {}).get(
+        "consumer_inventory_transition", {})
+    paths = transition.get("registered_changed_paths", [])
+    unchanged = [
+        "text_surface_count", "invocation_count", "invocation_manifest_digest",
+        "structural_surface_count", "structural_manifest_digest",
+        "classification_counts", "invocation_selection_counts",
+        "unclassified_count",
+    ]
+    require(
+        transition.get("contract_version") ==
+        "phase24_filename_behavior_consumer_transition_v1" and
+        transition.get("status") == "patch24_1_complete_observational" and
+        transition.get("authority_base_main") ==
+        "3abae7a96111b15e27e295a81f15b7f97a2e372c" and
+        transition.get("previous_inventory") == closure.get("current_inventory") and
+        transition.get("current_inventory") == live_inventory and
+        paths == [
+            ".github/workflows/pr-fast.yml", "TASK.md",
+            "scripts/cranelift_registry.py",
+            "scripts/cranelift_test_levels.json", "scripts/phase23_closure.py",
+            "scripts/phase24_cr15_closure.py",
+        ] and
+        transition.get("unchanged_fields") == unchanged and
+        transition.get("partial_extra_or_substituted_surface") == "rejected",
+        "Patch 24.1 consumer transition drifted")
+    previous_rows = transition.get("previous_changed_text_surfaces", [])
+    current_rows = transition.get("current_changed_text_surfaces", [])
+    require([row.get("path") for row in previous_rows] == paths and
+            [row.get("path") for row in current_rows] == paths and
+            current_rows == [row for row in live_rows if row["path"] in paths],
+            "Patch 24.1 changed text-surface identity drifted")
+    for field in unchanged:
+        require(transition["current_inventory"].get(field) ==
+                transition["previous_inventory"].get(field),
+                f"Patch 24.1 changed retained inventory field: {field}")
+    require(canonical_digest([
+        row for row in live_rows if row["path"] not in paths
+    ]) == transition.get("unchanged_other_text_surface_manifest_digest"),
+            "Patch 24.1 changed an unregistered text surface")
+    return transition["current_inventory"]
+
+
 def validate_identity_falsifiers(expected: dict[str, object]) -> None:
     text_rows = scan_text_surfaces()
     invocation_rows = scan_invocations()
@@ -594,7 +643,11 @@ def projected_text_surfaces(
         "phase24_cr15_seed_authority_consumer_transition", {}).get(
             "seed_publication_transition")
     if live_seed_digest not in {row["seed_digest"] for row in states}:
-        if isinstance(registry.get("phase24_cr15_closure"), dict):
+        if isinstance(registry.get(
+                "phase24_filename_behavior_characterization"), dict):
+            validate_phase24_filename_characterization_transition(
+                registry, inventory_summary(), rows)
+        elif isinstance(registry.get("phase24_cr15_closure"), dict):
             validate_phase24_cr15_closure_transition(
                 registry, inventory_summary(), rows)
         else:
@@ -857,7 +910,17 @@ def validate() -> dict:
     accepted_state = accepted_by_seed.get(live_seed_digest)
     cr15_closure_inventory = None
     if accepted_state is None:
-        if isinstance(registry.get("phase24_cr15_closure"), dict):
+        if isinstance(registry.get(
+                "phase24_filename_behavior_characterization"), dict):
+            cr15_inventory = validate_phase24_filename_characterization_transition(
+                registry, live_inventory, scan_text_surfaces())
+            cr15_closure_inventory = cr15_inventory
+            seed_publication = registry[
+                "phase24_cr15_seed_authority_consumer_transition"][
+                    "seed_publication_transition"]
+            accepted_inventory = seed_publication[
+                "accepted_live_states"][1]["inventory"]
+        elif isinstance(registry.get("phase24_cr15_closure"), dict):
             cr15_inventory = validate_phase24_cr15_closure_transition(
                 registry, live_inventory, scan_text_surfaces())
             cr15_closure_inventory = cr15_inventory

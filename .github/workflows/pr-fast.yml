@@ -512,6 +512,9 @@ jobs:
       - name: Phase 24 CR-15 closure and Stdlib handoff
         run: just guard-cranelift-phase24-cr15-close
 
+      - name: Phase 24 filename-selected behaviour characterization
+        run: just guard-cranelift-phase24-filename-behavior-characterization-contract
+
       - name: Phase 23 MIR evidence-owner repair
         run: just guard-cranelift-phase23-mir-evidence-owner-contract
 

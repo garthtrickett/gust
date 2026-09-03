@@ -72,6 +72,17 @@ def closure_successor_digest(registry: dict) -> str | None:
     return digest
 
 
+def filename_characterization_successor_digest(registry: dict) -> str | None:
+    """Return the exact Patch 24.1 justfile successor when it is registered."""
+    characterization = registry.get("phase24_filename_behavior_characterization")
+    if not isinstance(characterization, dict):
+        return None
+    digest = characterization.get("live_justfile_successor_digest")
+    require(isinstance(digest, str) and len(digest) == 64,
+            "Patch 24.1 justfile successor digest drifted")
+    return digest
+
+
 def validate_static(value: dict) -> None:
     require(value.get("contract_version") ==
             "phase24_cr15_stdlib_guard_transition_v1",
@@ -158,6 +169,9 @@ def live_state(registry: dict | None = None) -> str:
     successor = closure_successor_digest(registry)
     if successor is not None and digest == successor:
         return "closure_successor"
+    successor = filename_characterization_successor_digest(registry)
+    if successor is not None and digest == successor:
+        return "filename_characterization_successor"
     require(False,
             "justfile is not an exact registered relay or derivation state")
     raise AssertionError("unreachable")
@@ -191,6 +205,43 @@ def normalize_phase22_invocations(
         row.get("compiler_token") == site["compiler_token"]
     )
     target["line"] = site["pre_relay_line"]
+    characterization = registry.get(
+        "phase24_filename_behavior_characterization", {})
+    transition = characterization.get("phase22_invocation_transition")
+    if isinstance(transition, dict):
+        require(transition.get("contract_version") ==
+                "phase24_filename_behavior_phase22_invocation_transition_v1" and
+                transition.get("status") == "exact_observational_invocation" and
+                transition.get("closed_phase_projection") ==
+                "remove_exact_patch24_1_observation_driver_only" and
+                transition.get("partial_extra_or_substituted_invocation") ==
+                "rejected",
+                "Patch 24.1 invocation transition drifted")
+        added = transition.get("added_invocation")
+        matches = [row for row in normalized if all(
+            row.get(field) == added.get(field) for field in (
+                "path", "line", "recipe", "compiler_token", "selection",
+                "consumer_class", "owner", "expected_artifact",
+                "expected_transition", "falsifier", "command"))]
+        require(len(matches) == 1,
+                "Patch 24.1 observation invocation is missing, duplicated, or substituted")
+        require(transition.get("live_summary") == {
+            "total": 319,
+            "selection_counts": {
+                "explicit_c": 178, "explicit_cranelift": 119,
+                "explicit_invalid_or_parser_probe": 3, "implicit_default": 19,
+            },
+            "consumer_class_counts": {
+                "already_explicit_or_parser_probe": 300,
+                "cranelift_C_or_diagnostic_guard": 6,
+                "help_surface_probe": 3,
+                "intentional_default_selection_probe": 8,
+                "invocation_parser_probe": 2,
+            },
+            "owner_counts": {"cranelift": 290, "stdlib": 29},
+            "unclassified_count": 0,
+        }, "Patch 24.1 live invocation summary drifted")
+        normalized.remove(matches[0])
     normalized.sort(key=lambda row: (
         str(row["path"]), int(row["line"]), str(row["command"])
     ))
@@ -220,6 +271,9 @@ def normalize_phase23_text_surfaces(
             if successor is not None:
                 accepted.append(successor)
             successor = closure_successor_digest(registry)
+            if successor is not None:
+                accepted.append(successor)
+            successor = filename_characterization_successor_digest(registry)
             if successor is not None:
                 accepted.append(successor)
         require(live.get("digest") in accepted,
@@ -256,6 +310,8 @@ def normalized_owner_file_digest(
         expected = qualification_successor_digest(registry)
     elif state == "closure_successor":
         expected = closure_successor_digest(registry)
+    elif state == "filename_characterization_successor":
+        expected = filename_characterization_successor_digest(registry)
     require(digest == expected, "live-C justfile owner identity drifted")
     return value["pre_relay_justfile_digest"]
 
