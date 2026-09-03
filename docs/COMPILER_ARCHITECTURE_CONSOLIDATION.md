@@ -5,6 +5,13 @@ after its closure PR merges and current `main` is re-derived. The
 Phase 24 opening preflight remains active in `TASK.md`; Phases 24 backend
 retirement, 24.5 and 25 remain inactive.
 
+Patch 24.1 characterized every filename-selected typechecker branch. On
+2026-09-03 the operator selected universal rejection of non-POD local
+declarations and guard-payload bindings. Source filenames are semantically inert,
+and these checks do not use an internal compilation profile. Patch 24.1a records
+that decision before the report-only spelling inventory; Patch 24.3 owns the
+later compiler correction.
+
 This document records the structural-debt sequence selected after the
 thermo-nuclear code-quality review. It supplements `docs/ROADMAP_TAIL.md` without
 changing or activating that file's phase authority. When a phase opens, its
@@ -54,9 +61,8 @@ lane.
 Complete one narrow preflight before backend retirement:
 
 - replace typechecker behaviour selected by source filename fragments such as
-  `test_tcs_` and `test_index_` with an explicit compiler-owned mode where a
-  compatibility fixture genuinely needs one, or with one canonical rule where
-  it does not;
+  `test_tcs_` and `test_index_` with the operator-selected canonical universal
+  rule, without an internal compilation profile;
 - add characterization tests that freeze the accepted and rejected behaviour on
   both sides of the current filename-selected branches before replacing them;
 - inventory concrete stdlib and runtime names recognized directly by compiler

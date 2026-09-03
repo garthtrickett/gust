@@ -349,6 +349,17 @@ def normalize_phase22_invocations(
                 "rejected",
                 "Patch 24.1 invocation transition drifted")
         added = transition.get("added_invocation")
+        decision = characterization.get("decision_authority_successor")
+        if isinstance(decision, dict):
+            decision_transition = decision.get("phase22_invocation_transition", {})
+            require(decision_transition.get("contract_version") ==
+                    "phase24_universal_tcs_decision_phase22_invocation_transition_v1" and
+                    decision_transition.get("previous_invocation") == added and
+                    decision_transition.get("summary_unchanged") is True and
+                    decision_transition.get("partial_extra_or_substituted_invocation") ==
+                    "rejected",
+                    "Patch 24.1a invocation successor drifted")
+            added = decision_transition.get("current_invocation")
         matches = [row for row in normalized if all(
             row.get(field) == added.get(field) for field in (
                 "path", "line", "recipe", "compiler_token", "selection",

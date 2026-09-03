@@ -19,8 +19,9 @@ name fragments before any backend is retired or compiler structure is changed.
 It first freezes both sides of the existing branches, then inventories concrete
 stdlib/runtime spellings recognized by compiler code, and only then permits the
 smallest filename-independent correction already supported by live semantic
-authority. A genuine unresolved choice between a universal rule and an explicit
-internal compilation profile stops the correction for operator direction.
+authority. Patch 24.1 found one genuine unresolved choice; the operator resolved
+it on 2026-09-03 in favour of universal non-POD rejection with semantically
+inert source filenames and no internal compilation profile for these checks.
 
 ## Roadmap Activation
 
@@ -40,6 +41,13 @@ On 2026-09-02 the operator explicitly authorized this roadmap promotion and the
 Cranelift completion loop through the opening-preflight closure only. The
 operator required characterization before correction and prohibited selecting
 a new Gust semantic rule for convenience.
+
+After Patch 24.1 merged, the operator explicitly resolved its recorded TCS
+decision on 2026-09-03: the existing non-POD stack restriction applies
+universally to local declarations and guard-payload bindings. Source filenames
+are semantically inert, and these checks do not use an internal compilation
+profile. Patch 24.1a records that authority without changing compiler behaviour;
+Patch 24.2 remains report-only and Patch 24.3 owns the later correction.
 
 After Patch 24.0 merged, the operator explicitly amended the sequence on
 2026-09-02: schedule and activate the compiler-owned CR-15 protected-Resource
@@ -84,8 +92,8 @@ Out of scope:
   semantics, or Phase 9G artifact ownership;
 - inventing a fixture-name exception, compiler-module exception, stdlib-type
   exception, backend-only rule, fallback, or environment-selected meaning;
-- choosing between a universal semantic rule and an internal compilation
-  profile when current authority and characterization do not decide it;
+- introducing an internal compilation profile, fixture exception, or other
+  selector for the universally applicable non-POD checks;
 - assigning intrinsic IDs, replacing recognized spellings, splitting
   typechecker state or modules, decomposing the native command, refactoring the
   registry/CI topology, or beginning any backend-retirement deletion; and
@@ -106,6 +114,7 @@ Stdlib handoff are complete.
 - [x] Patch 24.0e — CR-15 Bootstrap Seed Reconvergence — DONE
 - [x] Patch 24.0f — CR-15 Closure and Stdlib Handoff — DONE
 - [x] Patch 24.1 — Filename-Selected Behaviour Characterization — DONE
+- [x] Patch 24.1a — Universal TCS Semantic Decision Authority — DONE
 - [ ] Patch 24.2 — Compiler-Recognized Semantic Spelling Inventory
 - [ ] Patch 24.3 — Filename-Independent Typechecker Correction
 - [ ] Patch 24.3a — Preflight Bootstrap Seed Reconvergence
@@ -121,9 +130,10 @@ inserted amendment may append one lowercase letter to `N`.
   accepted, rejected, or assigned a diagnostic.
 - Characterization precedes correction. A passing post-change fixture is not
   evidence of what either pre-change branch did.
-- Existing compiler-owned semantic authority decides Patch 24.3. If it does not
-  decide the result, the patch stops with paired evidence and a bounded decision
-  report; absence of authority is not permission to pick a convenient rule.
+- Patch 24.3 universally rejects non-POD local declarations and guard-payload
+  bindings. Source filenames are semantically inert, and no internal compilation
+  profile selects these checks. This is operator authority recorded by Patch
+  24.1a, not a rule selected by implementation convenience.
 - The spelling inventory is report-only. It identifies semantic decisions and
   their eventual intrinsic owner but assigns no intrinsic IDs and changes no
   dispatch.
@@ -388,6 +398,28 @@ and fixture manifests are mutation-sensitive, and no compiler behaviour has
 changed. If existing authority does not decide the replacement model, stop here
 with the paired evidence and decision report.
 
+## Patch 24.1a — Universal TCS Semantic Decision Authority
+
+**Purpose:** record the operator-selected universal non-POD rule after Patch
+24.1 characterization and before the report-only spelling inventory, without
+changing compiler behaviour.
+
+**Steps:**
+
+- Preserve Patch 24.1's observations as historical evidence and record the
+  selected successor authority separately.
+- Require universal rejection of non-POD local declarations and guard-payload
+  bindings in all Gust programs.
+- Require source filenames to be semantically inert and forbid an internal
+  compilation profile for these checks.
+- Preserve the Patch 24.2 report-only and Patch 24.3 implementation boundaries.
+
+**Exit Gate:** VISION, roadmap, future-sequence, registry, schema, and generated
+decision authority agree on the universal rule; the observational Patch 24.1
+record remains unchanged; no compiler/runtime/Stdlib source, accepted program
+meaning, MIR, ABI/layout, backend route, bootstrap seed, or Patch 24.2 inventory
+changes; and the authority PR's exact-head workflows and review gates pass.
+
 ## Patch 24.2 — Compiler-Recognized Semantic Spelling Inventory
 
 **Purpose:** expose concrete stdlib/runtime spellings that compiler code treats
@@ -417,16 +449,14 @@ and classification drift.
 ## Patch 24.3 — Filename-Independent Typechecker Correction
 
 **Purpose:** remove source-filename control over accepted meaning using only the
-smallest generic rule selected by existing authority and Patch 24.1 evidence.
+universal rule selected by Patch 24.1a authority and Patch 24.1 evidence.
 
 **Steps:**
 
 - Replace each filename-substring branch with the already-authorized universal
-  semantic rule, or with an existing explicitly defined internal compilation
-  profile only where characterization proves compatibility requires it.
-- Make profile selection compiler-owned and non-forgeable by a user filename;
-  do not infer mode from path, basename, fixture identity, module name, source
-  spelling, backend, or environment.
+  semantic rule. Do not introduce an internal compilation profile.
+- Do not infer meaning from path, basename, fixture identity, module name,
+  source spelling, backend, or environment.
 - Require all Patch 24.1 renamed pairs to become outcome-identical while
   preserving the selected diagnostic and both retained compiler paths.
 - Add structural falsifiers proving the filename fragments cannot influence
@@ -495,17 +525,18 @@ Web Slice 1 remain inactive.
 → 24.0e isolated seed reconvergence
 → 24.0f CR-15 closure and checked Stdlib handoff
 → 24.1 filename-selected behaviour characterization
+→ 24.1a universal TCS semantic decision authority
 → 24.2 concrete semantic spelling inventory
 → 24.3 filename-independent correction
 → 24.3a isolated seed reconvergence
 → 24.4 opening-preflight closure.
 
-CR-15 must close and hand off before Patch 24.1 begins. Characterization must
-then merge before the inventory, and both must merge before the correction. A
-seed cannot share a PR with compiler-source changes. The filename correction
-cannot select an unresolved semantic rule. Each Historical qualification runs
-only after its corresponding final implementation/seed main exists. No later
-phase is activated by completing this sequence.
+CR-15 must close and hand off before Patch 24.1 begins. Characterization and its
+operator-selected decision successor must merge before the inventory, and all
+three must merge before the correction. A seed cannot share a PR with
+compiler-source changes. Each Historical qualification runs only after its
+corresponding final implementation/seed main exists. No later phase is activated
+by completing this sequence.
 
 ## Opening-Preflight Success Criteria
 
