@@ -663,10 +663,16 @@ def validate_phase24_filename_characterization_transition(
         return successor["current_inventory"]
 
     inventory_paths = inventory_successor.get("registered_changed_text_surfaces", [])
+    added_inventory_paths = inventory_successor.get("added_text_surfaces", [])
     previous_inventory_rows = inventory_successor.get(
         "previous_changed_text_surfaces", [])
     current_inventory_rows = inventory_successor.get(
         "current_changed_text_surfaces", [])
+    inventory_unchanged = [
+        "invocation_count", "invocation_manifest_digest",
+        "structural_surface_count", "structural_manifest_digest",
+        "invocation_selection_counts", "unclassified_count",
+    ]
     require(
         inventory_successor.get("contract_version") ==
         "phase24_semantic_spelling_consumer_transition_v1" and
@@ -674,21 +680,34 @@ def validate_phase24_filename_characterization_transition(
         successor["current_inventory"] and
         inventory_successor.get("current_inventory") == live_inventory and
         inventory_paths == sorted(inventory_paths) and
-        [row.get("path") for row in previous_inventory_rows] == inventory_paths and
+        added_inventory_paths == [
+            "compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md"] and
+        [row.get("path") for row in previous_inventory_rows] == [
+            path for path in inventory_paths if path not in added_inventory_paths] and
         [row.get("path") for row in current_inventory_rows] == inventory_paths and
         current_inventory_rows == [
             row for row in live_rows if row["path"] in inventory_paths] and
-        inventory_successor.get("unchanged_fields") == successor_unchanged and
+        inventory_successor.get("unchanged_fields") == inventory_unchanged and
         inventory_successor.get("partial_extra_or_substituted_surface") == "rejected",
         "Patch 24.2 consumer inventory successor drifted")
     require(canonical_digest([
         row for row in live_rows if row["path"] not in inventory_paths
     ]) == inventory_successor.get("unchanged_other_text_surface_manifest_digest"),
             "Patch 24.2 changed an unregistered text surface")
-    for field in successor_unchanged:
+    for field in inventory_unchanged:
         require(inventory_successor["current_inventory"].get(field) ==
                 inventory_successor["previous_inventory"].get(field),
                 f"Patch 24.2 changed retained inventory field: {field}")
+    previous_counts = inventory_successor["previous_inventory"]["classification_counts"]
+    current_counts = inventory_successor["current_inventory"]["classification_counts"]
+    require(
+        inventory_successor["current_inventory"]["text_surface_count"] ==
+        inventory_successor["previous_inventory"]["text_surface_count"] + 1 and
+        current_counts == {
+            **previous_counts,
+            "historical_only": previous_counts["historical_only"] + 1,
+        },
+        "Patch 24.2 generated evidence surface was not the sole inventory addition")
     return inventory_successor["current_inventory"]
 
 

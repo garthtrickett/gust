@@ -145,6 +145,8 @@ def s1_8_falsifier_self_test(successor: dict) -> None:
 
 
 def s1_8_state(value: dict, registry: dict | None = None) -> str:
+    if registry is None:
+        registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     successor = s1_8_successor(value)
     s1_8_falsifier_self_test(successor)
     live: list[dict[str, object]] = []
@@ -155,7 +157,7 @@ def s1_8_state(value: dict, registry: dict | None = None) -> str:
         else:
             live.append({"path": path, "absent": True})
     state = classify_s1_8_manifest(successor, live)
-    if state is None and registry is not None:
+    if state is None:
         # Later Cranelift roadmap rows may append their own guard recipes to the
         # justfile. Admit that exact registered successor only when the other
         # eight Stdlib-owned paths remain byte-identical to one complete state.

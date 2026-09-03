@@ -4266,16 +4266,17 @@
           "consumer_inventory_transition": {
             "type":"object",
             "additionalProperties":false,
-            "required":["contract_version","previous_inventory","current_inventory","registered_changed_text_surfaces","previous_changed_text_surfaces","current_changed_text_surfaces","unchanged_other_text_surface_manifest_digest","unchanged_fields","partial_extra_or_substituted_surface"],
+            "required":["contract_version","previous_inventory","current_inventory","registered_changed_text_surfaces","added_text_surfaces","previous_changed_text_surfaces","current_changed_text_surfaces","unchanged_other_text_surface_manifest_digest","unchanged_fields","partial_extra_or_substituted_surface"],
             "properties": {
               "contract_version":{"const":"phase24_semantic_spelling_consumer_transition_v1"},
               "previous_inventory":{"type":"object"},
               "current_inventory":{"type":"object"},
-              "registered_changed_text_surfaces":{"const":[".github/workflows/pr-fast.yml","TASK.md","scripts/cranelift_registry.py","scripts/cranelift_test_levels.json"]},
+              "registered_changed_text_surfaces":{"const":[".github/workflows/pr-fast.yml","TASK.md","compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md","scripts/cranelift_registry.py","scripts/cranelift_test_levels.json"]},
+              "added_text_surfaces":{"const":["compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md"]},
               "previous_changed_text_surfaces":{"type":"array","minItems":4,"maxItems":4},
-              "current_changed_text_surfaces":{"type":"array","minItems":4,"maxItems":4},
+              "current_changed_text_surfaces":{"type":"array","minItems":5,"maxItems":5},
               "unchanged_other_text_surface_manifest_digest":{"type":"string","pattern":"^[0-9a-f]{64}$"},
-              "unchanged_fields":{"const":["text_surface_count","invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","classification_counts","invocation_selection_counts","unclassified_count"]},
+              "unchanged_fields":{"const":["invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","invocation_selection_counts","unclassified_count"]},
               "partial_extra_or_substituted_surface":{"const":"rejected"}
             }
           },
