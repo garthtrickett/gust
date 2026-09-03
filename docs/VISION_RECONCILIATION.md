@@ -265,7 +265,7 @@ This is the largest visible divergence from Go-shaped simplicity, it appears on
 essentially every line of application code, and it is a direct risk to OD-9: a
 model with no corpus must thread it correctly every time.
 
-`compiler-plan.md` Phase 5.3 already specifies the fix — `with ctx { ... }`
+`docs/PHASES_26_AND_27.md` Phase 26.3 specifies the fix — `with ctx { ... }`
 blocks and `func f() ... using ctx`, desugared to today's explicit form before
 the semantic passes, with an allowlist of arena-backed stdlib functions and a
 hard exclusion for unsafe, FFI, sandbox, and resource code. It files this as

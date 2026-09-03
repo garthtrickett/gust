@@ -7,7 +7,10 @@ open phase.
 - `TASK.md` — active or most recently closed compiler lane roadmap.
 - `TASK_STDLIB.md` — active or most recently closed standard-library lane
   roadmap.
-- `docs/ROADMAP_TAIL.md` — compiler backend and bootstrap tail through Phase 25.
+- `docs/ROADMAP_TAIL.md` — compiler, safety, and consolidation tail through
+  Phase 27.
+- `docs/PHASES_26_AND_27.md` — detailed systems-safety, resource,
+  implicit-context, and consolidation plan after the C-retirement tail.
 - `docs/COMPILER_ARCHITECTURE_CONSOLIDATION.md` — Phase 24 opening preflight,
   deletion-first sequencing, bounded Phase 24.5 consolidation and the Phase 25
   predecessor gate.

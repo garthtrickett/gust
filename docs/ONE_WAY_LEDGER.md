@@ -126,7 +126,7 @@ evidence.
 | 33 | Channel ownership | VIOLATED | issue #101 — same root cause |
 | 34 | Host access | VIOLATED | unowned — closes with §0.7 Track A |
 | 29 | Overflow | VIOLATED | issue #103 — new |
-| 45 | One spelling of absence | VIOLATED | `docs/PHASES_5_AND_6.md` Phase 6.2 — after C deprecation, unscheduled |
+| 45 | One spelling of absence | VIOLATED | `docs/PHASES_26_AND_27.md` Phase 27.2 — after the C-retirement tail |
 | 14 | Mutation | DEFERRED | `TASK_STDLIB.md` CR-6 — rule withdrawn, unscheduled |
 
 Six of the seven violations have a written coordination owner; host access is
@@ -1156,8 +1156,9 @@ ungated because it is built in rather than declared.
 This narrows E19 into something actionable. E19 said host authority is ambient
 and the fix was the whole effect system. This says the gate mechanism **already
 exists** and simply is not applied to the builtins. Applying it is a policy
-decision plus the wrap-then-gate sequencing `compiler-plan.md` Step 5.1 already
-describes — wrap every existing call site in `unsafe` first, then turn on
+decision plus the wrap-then-gate sequence already recorded in
+`docs/PHASES_26_AND_27.md` Phase 26.1 — wrap every existing call site in
+`unsafe` first, then turn on
 enforcement — because the compiler and test runner use `os.*` throughout. Filed as issue #108, posing the question rather than prescribing the answer.
 
 **Row 38 — packages do not exist as a concept.**

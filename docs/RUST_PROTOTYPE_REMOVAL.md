@@ -138,7 +138,7 @@ lands.
    mentioning *"the optional Rust prototype compiler toolchains"*.
 
 **Step 1 before step 2 is the whole discipline** — it is the same A→B→C shape as
-Step 5.1: make the thing removable while it still exists, then remove it. A
+Phase 26.1: make the thing removable while it still exists, then remove it. A
 deletion that lands with its guards still pointing at the deleted files fails in
 CI rather than in review.
 

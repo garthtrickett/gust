@@ -4,7 +4,7 @@
 
 This document defines Gust's coordinated external technical-credibility launch.
 It creates no compiler work and authorizes no outreach. The launch begins only
-after Phase 25 and every preceding checkpoint in `docs/ROADMAP_TAIL.md` are
+after Phase 27 and every preceding checkpoint in `docs/ROADMAP_TAIL.md` are
 closed with authoritative merged-main evidence. Earlier individualized research
 and operator-approved contact is governed separately by
 `docs/EVIDENCE_LED_OUTREACH.md`.
@@ -21,7 +21,7 @@ one clear, durable claim instead of a sequence of nearly-finished announcements.
 Before outreach begins, verify from then-current authority rather than from a
 dated handoff:
 
-- every Phase 20–25 status row and intervening assurance checkpoint is closed;
+- every Phase 20–27 status row and intervening assurance checkpoint is closed;
 - the final implementation is merged to `main`;
 - the exact merged-main `Cranelift Historical Full` run is successful with its
   complete registry-derived job population;
