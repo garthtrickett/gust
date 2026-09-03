@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import re
 import subprocess
@@ -178,6 +179,23 @@ def complete_inventory() -> list[MethodCall]:
     return calls
 
 
+def s1_8_transition(registry: dict) -> tuple[dict, str] | None:
+    opening = registry.get("phase24_cr15_opening", {})
+    value = opening.get("stdlib_guard_transition")
+    if not isinstance(value, dict) or not isinstance(
+            value.get("s1_8_inventory_successor"), dict):
+        return None
+    path = ROOT / "scripts/phase24_cr15_stdlib_guard_transition.py"
+    spec = importlib.util.spec_from_file_location(
+        "phase24_s1_8_mutex_inventory_transition", path)
+    require(spec is not None and spec.loader is not None,
+            "cannot load the S1.8 inventory transition")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    successor = module.s1_8_successor(value)
+    return successor, module.s1_8_state(value)
+
+
 def validate() -> tuple[dict, list[MethodCall]]:
     scanner_self_test()
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
@@ -248,6 +266,20 @@ def validate() -> tuple[dict, list[MethodCall]]:
         expected_total_lock_calls = successor["current_totals"]["lock_calls"]
         expected_total_unlock_calls = successor["current_totals"]["unlock_calls"]
         expected_total_calls = successor["current_totals"]["calls"]
+    s1_8 = s1_8_transition(registry)
+    if s1_8 is not None:
+        s1_8_successor, s1_8_state = s1_8
+        raw = s1_8_successor["raw_mutex_call_site_transition"]
+        require(raw["previous_totals"] == {
+            "lock_calls": expected_total_lock_calls,
+            "unlock_calls": expected_total_unlock_calls,
+            "calls": expected_total_calls,
+        }, "S1.8 raw Mutex predecessor totals drifted")
+        if s1_8_state == "post_s1_8":
+            expected_call_sites = expected_call_sites + [raw["added_call_site"]]
+            expected_total_lock_calls = raw["current_totals"]["lock_calls"]
+            expected_total_unlock_calls = raw["current_totals"]["unlock_calls"]
+            expected_total_calls = raw["current_totals"]["calls"]
     expected = {
         row["path"]: {"Lock": row["lock_calls"],
                       "Unlock": row["unlock_calls"]}
@@ -304,6 +336,8 @@ def validate() -> tuple[dict, list[MethodCall]]:
 
 
 def render(authority: dict) -> str:
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    s1_8 = s1_8_transition(registry)
     lines = [
         "# Cranelift Phase 20 Explicit-Unsafe Mutex Primitive Migration",
         "",
@@ -354,6 +388,23 @@ def render(authority: dict) -> str:
         "Patch 20.16e.",
         "",
     ]
+    if s1_8 is not None:
+        successor, _ = s1_8
+        raw = successor["raw_mutex_call_site_transition"]
+        lines += [
+            "## Registered Stdlib S1.8 successor",
+            "",
+            f"- Contract: `{successor['contract_version']}`",
+            f"- Accepted complete successor: `{raw['current_totals']['calls']}` calls "
+            f"(`{raw['current_totals']['lock_calls']}` Lock, "
+            f"`{raw['current_totals']['unlock_calls']}` Unlock)",
+            "- Added site: `tests/stdlib_s1_mutex_guard_generic_derivation_module.gst`",
+            "",
+            "The added one Lock/one Unlock pair is internal to the selected S1.8 module",
+            "and remains explicitly unsafe. No safe raw call, backend-specific rule,",
+            "partial lifecycle pair, path substitution, or unrelated call site is admitted.",
+            "",
+        ]
     return "\n".join(lines)
 
 

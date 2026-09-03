@@ -36,6 +36,130 @@ def authority(registry: dict | None = None) -> dict:
     return value
 
 
+def s1_8_successor(value: dict) -> dict:
+    successor = value.get("s1_8_inventory_successor")
+    require(isinstance(successor, dict), "S1.8 inventory successor is missing")
+    require(
+        successor.get("contract_version") ==
+        "phase24_stdlib_s1_8_inventory_successor_v1" and
+        successor.get("status") ==
+        "ready_for_exact_stdlib_s1_8_publication" and
+        successor.get("authority_base_main") ==
+        "9d065b4b395b604b6c285a32f0ef23b71528e159" and
+        successor.get("candidate_base_main") ==
+        "3abae7a96111b15e27e295a81f15b7f97a2e372c" and
+        successor.get("changed_paths") == sorted(successor.get("changed_paths", [])) and
+        len(successor.get("changed_paths", [])) == 9 and
+        len(set(successor.get("changed_paths", []))) == 9 and
+        successor.get("boundary") == {
+            "changes_accepted_Gust_program_meaning": False,
+            "adds_or_changes_MIR_operations": False,
+            "changes_ABI_layout_runtime_symbols": False,
+            "changes_backend_route_default_or_fallback": False,
+            "changes_bootstrap_route_or_seed": False,
+            "edits_stdlib_candidate": False,
+            "begins_patch24_2_or_24_3": False,
+        },
+        "S1.8 inventory successor identity or boundary drifted")
+    states = successor.get("accepted_states", [])
+    require([row.get("state") for row in states] ==
+            ["pre_s1_8", "post_s1_8"],
+            "S1.8 accepted state order drifted")
+    for state in states:
+        files = state.get("files", [])
+        require([row.get("path") for row in files] == successor["changed_paths"],
+                f"S1.8 {state.get('state')} path manifest drifted")
+        require(all(("digest" in row) != ("absent" in row) for row in files),
+                f"S1.8 {state.get('state')} file identity is ambiguous")
+    require(all(row.get("absent") is True for row in states[0]["files"]
+                if "absent" in row) and
+            all(len(row.get("digest", "")) == 64 for state in states
+                for row in state["files"] if "digest" in row),
+            "S1.8 accepted file identity drifted")
+    raw = successor.get("raw_mutex_call_site_transition", {})
+    require(raw == {
+        "previous_totals": {"lock_calls": 16, "unlock_calls": 16, "calls": 32},
+        "added_call_site": {
+            "path": "tests/stdlib_s1_mutex_guard_generic_derivation_module.gst",
+            "role": "stdlib_s1_8_selected_module_internal_lifecycle",
+            "lock_calls": 1,
+            "unlock_calls": 1,
+        },
+        "current_totals": {"lock_calls": 17, "unlock_calls": 17, "calls": 34},
+        "safe_raw_calls_added": 0,
+        "partial_extra_or_substituted_call_site": "rejected",
+    }, "S1.8 raw Mutex transition drifted")
+    invocation = successor.get("phase22_invocation_transition", {})
+    require(invocation == {
+        "path": "justfile",
+        "recipe": "guard-stdlib-s1-resource-prerequisites",
+        "compiler_token": "./gust",
+        "selection": "explicit_c",
+        "command": 'if ./gust --backend mir-to-c "$witness" >"$output" 2>&1; then',
+        "pre_line": 23270,
+        "post_line": 23285,
+        "summary_unchanged": True,
+        "partial_extra_or_substituted_invocation": "rejected",
+    }, "S1.8 Phase 22 invocation transition drifted")
+    text = successor.get("phase23_text_surface_transition", {})
+    paths = text.get("changed_paths", [])
+    require(paths == [
+        "TASK_STDLIB.md", "docs/STDLIB_FOUNDATIONS.md",
+        "docs/STDLIB_SURFACE_FINDINGS.md", "justfile",
+    ] and
+            [row.get("path") for row in text.get("previous_rows", [])] == paths and
+            [row.get("path") for row in text.get("current_rows", [])] == paths and
+            text.get("closed_phase_projection") ==
+            "canonical_pre_s1_8_identity" and
+            text.get("partial_extra_or_substituted_surface") == "rejected",
+            "S1.8 Phase 23 text-surface transition drifted")
+    return successor
+
+
+def classify_s1_8_manifest(
+        successor: dict, live: list[dict[str, object]]) -> str | None:
+    matches = [row["state"] for row in successor["accepted_states"]
+               if row["files"] == live]
+    require(len(matches) <= 1, "S1.8 accepted state identities overlap")
+    return str(matches[0]) if matches else None
+
+
+def s1_8_falsifier_self_test(successor: dict) -> None:
+    pre = copy.deepcopy(successor["accepted_states"][0]["files"])
+    post = copy.deepcopy(successor["accepted_states"][1]["files"])
+    require(classify_s1_8_manifest(successor, pre) == "pre_s1_8" and
+            classify_s1_8_manifest(successor, post) == "post_s1_8",
+            "S1.8 exact-state classifier rejected a registered state")
+
+    partial = copy.deepcopy(post)
+    partial[0] = copy.deepcopy(pre[0])
+    substituted = copy.deepcopy(post)
+    substituted[0]["digest"] = "0" * 64
+    path_drifted = copy.deepcopy(post)
+    path_drifted[0]["path"] = ".github/workflows/substituted.yml"
+    extra = copy.deepcopy(post)
+    extra.append({"path": "tests/unrelated.gst", "digest": "1" * 64})
+    require(all(classify_s1_8_manifest(successor, candidate) is None
+                for candidate in (partial, substituted, path_drifted, extra)),
+            "S1.8 partial, substituted, path-drifted, or extra state was admitted")
+
+
+def s1_8_state(value: dict) -> str:
+    successor = s1_8_successor(value)
+    s1_8_falsifier_self_test(successor)
+    live: list[dict[str, object]] = []
+    for path in successor["changed_paths"]:
+        absolute = ROOT / path
+        if absolute.is_file():
+            live.append({"path": path, "digest": digest_bytes(absolute.read_bytes())})
+        else:
+            live.append({"path": path, "absent": True})
+    state = classify_s1_8_manifest(successor, live)
+    require(state is not None,
+            "live Stdlib surface is neither exact pre-S1.8 nor exact post-S1.8 state")
+    return state
+
+
 def derivation_successor_digest(registry: dict) -> str | None:
     """Return the exact Patch 24.0c justfile successor when it is registered."""
     derivation = registry.get("phase24_cr15_derivation")
@@ -150,11 +274,14 @@ def validate_static(value: dict) -> None:
         "partial_extra_substituted_or_unrelated": "rejected",
         "landed_merge_evidence_is_recorded": True,
     }, "projection policy drifted")
+    s1_8_successor(value)
 
 
 def live_state(registry: dict | None = None) -> str:
     value = authority(registry)
     validate_static(value)
+    if s1_8_state(value) == "post_s1_8":
+        return "s1_8_successor"
     digest = digest_bytes(JUSTFILE.read_bytes())
     if digest == value["pre_relay_justfile_digest"]:
         return "pre_relay"
@@ -185,6 +312,10 @@ def normalize_phase22_invocations(
     site = value["changed_site"]
     line_key = ("pre_relay_line" if state == "pre_relay"
                 else "post_relay_line")
+    expected_line = site[line_key]
+    if state == "s1_8_successor":
+        expected_line = s1_8_successor(value)[
+            "phase22_invocation_transition"]["post_line"]
     matches = [
         row for row in rows
         if row.get("path") == site["path"] and
@@ -193,7 +324,7 @@ def normalize_phase22_invocations(
     ]
     require(len(matches) == 1, "relay site is missing, duplicated, or substituted")
     match = matches[0]
-    require(match.get("line") == site[line_key] and
+    require(match.get("line") == expected_line and
             match.get("selection") == site["selection"] and
             match.get("command") == site["command"],
             "relay site command, route, or location drifted")
@@ -252,7 +383,18 @@ def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
     value = authority(registry)
-    live_state(registry)
+    state = live_state(registry)
+    if state == "s1_8_successor":
+        transition = s1_8_successor(value)["phase23_text_surface_transition"]
+        by_live_path = {str(row["path"]): row for row in rows}
+        require([by_live_path.get(path) for path in transition["changed_paths"]] ==
+                transition["current_rows"],
+                "live S1.8 text surfaces are partial, substituted, or drifted")
+        replacements = {
+            str(row["path"]): copy.deepcopy(row)
+            for row in transition["previous_rows"]
+        }
+        rows = [replacements.get(str(row["path"]), row) for row in rows]
     canonical = value.get("canonical_phase23_text_surfaces", [])
     require([row.get("path") for row in canonical] == [
         "justfile", "scripts/phase22_opening.py",
@@ -312,6 +454,10 @@ def normalized_owner_file_digest(
         expected = closure_successor_digest(registry)
     elif state == "filename_characterization_successor":
         expected = filename_characterization_successor_digest(registry)
+    elif state == "s1_8_successor":
+        expected = next(
+            row["digest"] for row in s1_8_successor(value)["accepted_states"][1]["files"]
+            if row["path"] == "justfile")
     require(digest == expected, "live-C justfile owner identity drifted")
     return value["pre_relay_justfile_digest"]
 
@@ -336,6 +482,8 @@ def validate() -> tuple[dict, str]:
 def render(value: dict) -> str:
     site = value["changed_site"]
     summary = value["phase22_invocation_summary"]
+    successor = s1_8_successor(value)
+    raw = successor["raw_mutex_call_site_transition"]
     return "\n".join([
         "# Cranelift Phase 24 CR-15 Stdlib Guard Transition",
         "",
@@ -363,6 +511,20 @@ def render(value: dict) -> str:
         "zero reviews, zero unresolved threads, and the sole changed path `justfile`.",
         "It changes no language, MIR, backend, route/default/fallback, runtime, bootstrap,",
         "or Stdlib semantics.",
+        "",
+        "## Exact S1.8 successor",
+        "",
+        f"- Contract: `{successor['contract_version']}`",
+        f"- Status: `{successor['status']}`",
+        f"- Candidate paths: `{len(successor['changed_paths'])}`",
+        f"- Raw lifecycle successor: `{raw['current_totals']['lock_calls']}` Lock / "
+        f"`{raw['current_totals']['unlock_calls']}` Unlock",
+        "",
+        "Only the exact pre-S1.8 state or the complete registered nine-path S1.8",
+        "state is accepted. The successor adds one internal explicit-unsafe Lock/Unlock",
+        "pair and preserves the closed Phase 22 invocation and Phase 23 text-surface",
+        "identities through exact normalization. Partial, extra, substituted, safe-raw,",
+        "backend-specific, path-drifted, and unrelated inventory states remain rejected.",
         "",
     ])
 

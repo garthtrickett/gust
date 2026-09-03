@@ -24,3 +24,16 @@ The landed evidence records 93/93 successful exact-head pull-request workflows,
 zero reviews, zero unresolved threads, and the sole changed path `justfile`.
 It changes no language, MIR, backend, route/default/fallback, runtime, bootstrap,
 or Stdlib semantics.
+
+## Exact S1.8 successor
+
+- Contract: `phase24_stdlib_s1_8_inventory_successor_v1`
+- Status: `ready_for_exact_stdlib_s1_8_publication`
+- Candidate paths: `9`
+- Raw lifecycle successor: `17` Lock / `17` Unlock
+
+Only the exact pre-S1.8 state or the complete registered nine-path S1.8
+state is accepted. The successor adds one internal explicit-unsafe Lock/Unlock
+pair and preserves the closed Phase 22 invocation and Phase 23 text-surface
+identities through exact normalization. Partial, extra, substituted, safe-raw,
+backend-specific, path-drifted, and unrelated inventory states remain rejected.

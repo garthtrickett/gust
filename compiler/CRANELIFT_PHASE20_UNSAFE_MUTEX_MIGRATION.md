@@ -43,3 +43,13 @@ returns a raw pointer internally; Lock/Unlock lowering, runtime symbols,
 ABI/layout, and MIR remain unchanged. Generic protected-access liveness
 is owned by the successor authority. Seed reconvergence remains isolated in
 Patch 20.16e.
+
+## Registered Stdlib S1.8 successor
+
+- Contract: `phase24_stdlib_s1_8_inventory_successor_v1`
+- Accepted complete successor: `34` calls (`17` Lock, `17` Unlock)
+- Added site: `tests/stdlib_s1_mutex_guard_generic_derivation_module.gst`
+
+The added one Lock/one Unlock pair is internal to the selected S1.8 module
+and remains explicitly unsafe. No safe raw call, backend-specific rule,
+partial lifecycle pair, path substitution, or unrelated call site is admitted.
