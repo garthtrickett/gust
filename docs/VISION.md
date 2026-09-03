@@ -565,6 +565,7 @@ second, drifting copy of it.
 | OD-13 | ~~**Mutex protected-access contract** — does lock acquisition return a linear guard carrying context-branded protected access, another compiler-owned access token, or retain raw-pointer access plus explicit unlock?~~ | **RESOLVED 2026-08-24** — safe lock acquisition returns one move-only linear guard carrying context-branded protected access; the guard owns automatic exactly-once unlock | — | §26.1; compiler evidence in `docs/SHARED_SEMANTIC_ZONE.md` D-4; implementation sequencing in `TASK.md` Patches 20.16a–20.16e |
 | OD-14 | **Gust mascot** — should Gust's mascot be a donkey, and what visual treatment should carry the identity? | **OPEN** — provisional direction recorded 2026-08-24: a donkey | Brand and demo presentation | §0.15.1 |
 | OD-15 | ~~**Native self-host reproducibility criterion** — must independent Cranelift compiler stages be byte-identical, or is a bounded semantic reproducibility contract sufficient?~~ | **RESOLVED 2026-08-27 — STRICT BINARY IDENTITY** — under an identical pinned authoritative environment (exact source commit, Cranelift/toolchain versions, target, flags, runtime, linker, and normalized environment), independently produced native stages must be byte-identical; a separately bounded cross-machine or cross-toolchain semantic contract cannot weaken the Phase 21 closure gate | — | §111.1; `TASK.md` Patch 21.16; generated evidence in `compiler/CRANELIFT_PHASE21_NATIVE_REBUILD_REPRODUCIBILITY.md` |
+| OD-16 | ~~**Non-POD local stack residency** — are non-POD local declarations and guard-payload bindings universally rejected, or checked only under an internal compiler profile?~~ | **RESOLVED 2026-09-03 — UNIVERSAL REJECTION** — the existing non-POD restriction applies in every Gust program; source filenames are semantically inert and no internal compilation profile selects these checks | — | §23; `TASK.md` Patch 24.1a; characterization in `compiler/CRANELIFT_PHASE24_FILENAME_BEHAVIOR_CHARACTERIZATION.md` |
 
 There is no OD-7. The number is unused and nothing in the repository references it; it is recorded here so a reader who notices the gap does not go looking.
 
@@ -1353,6 +1354,15 @@ Gust provides post-commit hooks and a transactional outbox for reliable external
 **Owned values.** Owned collections and allocations move by default unless explicitly cloned into a destination context.
 
 **Linear resources.** One owner, compiler-tracked lifecycle state. File or directory handles, secrets, transaction handles, capability handles, native resources, and structs containing linear fields.
+
+**Non-POD local stack residency (OD-16 resolved 2026-09-03).** A value the
+compiler's existing non-POD classification says cannot reside directly on the
+stack is rejected as a direct local declaration or guard-payload binding in
+every Gust program. Source filenames are semantically inert and cannot enable or
+disable this restriction. There is no internal compilation profile for these
+checks. Patch 24.1 records the pre-correction filename-selected observations;
+Patch 24.3 owns the later compiler correction and may not widen the existing
+non-POD classification while removing the filename dependency.
 
 ## 24. Contexts and arenas
 

@@ -40,6 +40,12 @@ Selected TCS declaration and guard filenames reject with the complete `StackAllo
 
 ## Authority classification and decision boundary
 
-VISION §26 already requires that a filename cannot enable the deferred aliasing restriction, so the `test_index_` hazard outcome has a universal replacement constraint. No VISION or shared-zone rule decides whether the non-POD local and guard-payload stack rejection is universal Gust semantics or a non-user-selectable internal compilation profile.
+At Patch 24.1, VISION §26 already required that a filename could not enable the deferred aliasing restriction, so the `test_index_` hazard outcome had a universal replacement constraint. No VISION or shared-zone rule then decided whether the non-POD local and guard-payload stack rejection was universal Gust semantics or a non-user-selectable internal compilation profile.
 
 Therefore Patch 24.1 closes as observational evidence with a genuine semantic decision open for the two TCS sites. It selects neither alternative and starts neither Patch 24.2 nor Patch 24.3. Per the live Exit Gate, the lane stops after this patch merges for operator authority.
+
+## Patch 24.1a operator decision successor
+
+On 2026-09-03 the operator selected universal rejection of non-POD local declarations and guard-payload bindings in every Gust program. Source filenames are semantically inert, and these checks do not use an internal compilation profile.
+
+This successor records authority only. It preserves every Patch 24.1 observation, changes no compiler-accepted program, and begins neither the report-only Patch 24.2 inventory nor the Patch 24.3 correction.

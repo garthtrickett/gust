@@ -238,12 +238,14 @@ def validate_static(value: dict) -> None:
         "Two `&T[ctx]` arguments may alias the same value and both write through it.",
         "There is no `inout`, no `&mut T[ctx]`, and no aliasing analysis.",
         "Restricting mutation through references",
+        "OD-16 resolved 2026-09-03",
+        "There is no internal compilation profile for these",
     ):
-        require(marker in vision, f"VISION section 26 authority marker is missing: {marker}")
+        require(marker in vision, f"VISION authority marker is missing: {marker}")
     architecture = ARCHITECTURE.read_text(encoding="utf-8")
-    require("with an explicit compiler-owned mode where a" in architecture and
-            "compatibility fixture genuinely needs one, or with one canonical rule" in architecture,
-            "architecture replacement alternatives drifted")
+    require("operator selected universal rejection of non-POD local" in architecture and
+            "without an internal compilation profile" in architecture,
+            "architecture decision successor drifted")
     require(SHARED_ZONE.is_file(), "shared semantic zone is missing")
 
     decision = value.get("decision_boundary")
@@ -258,6 +260,61 @@ def validate_static(value: dict) -> None:
         "patch24_2_started": False,
         "patch24_3_rule_selected": False,
     }, "decision boundary drifted")
+    successor = value.get("decision_authority_successor")
+    require(isinstance(successor, dict) and
+            successor.get("contract_version") ==
+            "phase24_universal_tcs_decision_v1" and
+            successor.get("status") ==
+            "patch24_1a_operator_decision_recorded" and
+            successor.get("operator_decision_date") == "2026-09-03" and
+            successor.get("authority_base_main") ==
+            "b32f9ab3716fb5562095bb1453ef9304c8574f04" and
+            successor.get("selected_rule") ==
+            "universal_rejection_of_non_POD_local_declarations_and_guard_payload_bindings" and
+            successor.get("applies_to_sites") == decision["blocking_sites"] and
+            successor.get("source_filenames_semantically_inert") is True and
+            successor.get("internal_compilation_profile_for_these_checks") is False and
+            successor.get("patch_order") == ["24.1a", "24.2", "24.3"] and
+            successor.get("changed_paths") == [
+                "TASK.md",
+                "compiler/CRANELIFT_PHASE23_MIR_TO_C_DEPRECATION_OPENING.md",
+                "compiler/CRANELIFT_PHASE24_FILENAME_BEHAVIOR_CHARACTERIZATION.md",
+                "docs/COMPILER_ARCHITECTURE_CONSOLIDATION.md",
+                "docs/VISION.md",
+                "scripts/cranelift_feature_registry.json",
+                "scripts/cranelift_feature_registry.schema.json",
+                "scripts/phase23_mir_to_c_deprecation_opening.py",
+                "scripts/phase24_cr15_stdlib_guard_transition.py",
+                "scripts/phase24_filename_behavior_characterization.py",
+            ] and
+            successor.get("boundary") == {
+                "changes_compiler_accepted_programs": False,
+                "implements_patch24_3_rule": False,
+                "adds_internal_compilation_profile": False,
+                "changes_MIR_ABI_runtime_backend_or_bootstrap": False,
+                "edits_stdlib": False,
+                "begins_patch24_2_inventory": False,
+            }, "Patch 24.1a decision successor drifted")
+    consumer = successor.get("consumer_inventory_transition", {})
+    require(consumer.get("contract_version") ==
+            "phase24_universal_tcs_decision_consumer_transition_v1" and
+            consumer.get("previous_inventory") ==
+            value["consumer_inventory_transition"]["current_inventory"] and
+            consumer.get("registered_changed_text_surfaces") ==
+            ["TASK.md", "docs/VISION.md"] and
+            [row.get("path") for row in consumer.get(
+                "previous_changed_text_surfaces", [])] ==
+            consumer.get("registered_changed_text_surfaces") and
+            [row.get("path") for row in consumer.get(
+                "current_changed_text_surfaces", [])] ==
+            consumer.get("registered_changed_text_surfaces") and
+            consumer.get("unchanged_fields") == [
+                "text_surface_count", "invocation_count",
+                "invocation_manifest_digest", "structural_surface_count",
+                "structural_manifest_digest", "classification_counts",
+                "invocation_selection_counts", "unclassified_count",
+            ] and consumer.get("partial_extra_or_substituted_surface") ==
+            "rejected", "Patch 24.1a consumer successor drifted")
     require(value.get("boundary") == {
         "changes_accepted_Gust_meaning": False,
         "changes_typechecker_or_compiler_source": False,
@@ -272,6 +329,9 @@ def validate_static(value: dict) -> None:
     task = TASK.read_text(encoding="utf-8")
     require("- [x] Patch 24.1 — Filename-Selected Behaviour Characterization — DONE" in task,
             "TASK status does not mark Patch 24.1 DONE")
+    require("- [x] Patch 24.1a — Universal TCS Semantic Decision Authority — DONE" in task and
+            "- [ ] Patch 24.2 — Compiler-Recognized Semantic Spelling Inventory" in task,
+            "TASK status does not record the Patch 24.1a decision boundary")
     levels = json.loads(LEVELS.read_text(encoding="utf-8"))["guards"]
     require(levels.get(GUARD_L1) == 1 and levels.get(GUARD_L2) == 2,
             "test-level assignments drifted")
@@ -338,9 +398,15 @@ def render(value: dict) -> str:
         "",
         "## Authority classification and decision boundary",
         "",
-        "VISION §26 already requires that a filename cannot enable the deferred aliasing restriction, so the `test_index_` hazard outcome has a universal replacement constraint. No VISION or shared-zone rule decides whether the non-POD local and guard-payload stack rejection is universal Gust semantics or a non-user-selectable internal compilation profile.",
+        "At Patch 24.1, VISION §26 already required that a filename could not enable the deferred aliasing restriction, so the `test_index_` hazard outcome had a universal replacement constraint. No VISION or shared-zone rule then decided whether the non-POD local and guard-payload stack rejection was universal Gust semantics or a non-user-selectable internal compilation profile.",
         "",
         "Therefore Patch 24.1 closes as observational evidence with a genuine semantic decision open for the two TCS sites. It selects neither alternative and starts neither Patch 24.2 nor Patch 24.3. Per the live Exit Gate, the lane stops after this patch merges for operator authority.",
+        "",
+        "## Patch 24.1a operator decision successor",
+        "",
+        "On 2026-09-03 the operator selected universal rejection of non-POD local declarations and guard-payload bindings in every Gust program. Source filenames are semantically inert, and these checks do not use an internal compilation profile.",
+        "",
+        "This successor records authority only. It preserves every Patch 24.1 observation, changes no compiler-accepted program, and begins neither the report-only Patch 24.2 inventory nor the Patch 24.3 correction.",
         "",
     ]
     return "\n".join(lines)
@@ -394,6 +460,18 @@ def validate_transitions(value: dict) -> None:
         "falsifier": "default_flip_changes_the_guard_artifact_before_explicit_C_migration",
         "command": "[str(ROOT / 'gust'), *ROUTES[route], relative_target]",
     }, "Phase 22 observation invocation identity drifted")
+    decision = value.get("decision_authority_successor", {})
+    decision_invocation = decision.get("phase22_invocation_transition", {})
+    require(decision_invocation.get("contract_version") ==
+            "phase24_universal_tcs_decision_phase22_invocation_transition_v1" and
+            decision_invocation.get("previous_invocation") ==
+            invocation.get("added_invocation") and
+            decision_invocation.get("current_invocation") == {
+                **invocation["added_invocation"], "line": 427,
+            } and
+            decision_invocation.get("summary_unchanged") is True and
+            decision_invocation.get("partial_extra_or_substituted_invocation") ==
+            "rejected", "Patch 24.1a Phase 22 invocation successor drifted")
     consumer = value.get("consumer_inventory_transition", {})
     require(consumer.get("contract_version") ==
             "phase24_filename_behavior_consumer_transition_v1" and
