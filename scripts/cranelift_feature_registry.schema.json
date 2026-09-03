@@ -89,6 +89,7 @@
     "phase24_cr15_qualification",
     "phase24_cr15_seed_authority_consumer_transition",
     "phase24_cr15_closure",
+    "phase24_filename_behavior_characterization",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -4138,6 +4139,51 @@
               "changes_bootstrap_route_or_seed":false,
               "edits_stdlib":false,
               "begins_patch24_1_or_backend_retirement":false
+            }
+          }
+        }
+      },
+      "phase24_filename_behavior_characterization": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version","status","authority_base_main","live_justfile_successor_digest","phase22_invocation_transition","consumer_inventory_transition","review_view","site_manifest","preexisting_selected_filenames","preexisting_caller_manifest","current_file_input_manifest","witnesses","observations","authority_classification","decision_boundary","boundary"],
+        "properties": {
+          "contract_version": {"const":"phase24_filename_behavior_characterization_v1"},
+          "status": {"const":"patch24_1_complete_observational_decision_open"},
+          "authority_base_main": {"const":"3abae7a96111b15e27e295a81f15b7f97a2e372c"},
+          "live_justfile_successor_digest": {"const":"d7616985e89f0b15be60a11a4f0c337e10ff05f7831393ee4fb9bea3901b925a"},
+          "phase22_invocation_transition": {"type":"object"},
+          "consumer_inventory_transition": {"type":"object"},
+          "review_view": {"const":"compiler/CRANELIFT_PHASE24_FILENAME_BEHAVIOR_CHARACTERIZATION.md"},
+          "site_manifest": {"type":"array","minItems":3,"maxItems":3},
+          "preexisting_selected_filenames": {"type":"object"},
+          "preexisting_caller_manifest": {"type":"array","minItems":1,"maxItems":1},
+          "current_file_input_manifest": {"type":"array","minItems":3,"maxItems":3},
+          "witnesses": {"type":"array","minItems":4,"maxItems":4},
+          "observations": {"type":"object"},
+          "authority_classification": {"type":"object"},
+          "decision_boundary": {
+            "type":"object","additionalProperties":false,
+            "required":["status","blocking_sites","question","next_action","patch24_2_started","patch24_3_rule_selected"],
+            "properties": {
+              "status":{"const":"genuine_semantic_decision_open"},
+              "blocking_sites":{"const":["var_declaration_stack_classification","guard_payload_stack_classification"]},
+              "question":{"const":"are_non_POD_local_and_guard_payload_stack_rejections_universal_Gust_semantics_or_an_internal_compilation_profile"},
+              "next_action":{"const":"stop_after_patch24_1_merge_for_operator_authority"},
+              "patch24_2_started":{"const":false},
+              "patch24_3_rule_selected":{"const":false}
+            }
+          },
+          "boundary": {
+            "const": {
+              "changes_accepted_Gust_meaning":false,
+              "changes_typechecker_or_compiler_source":false,
+              "adds_or_changes_MIR_operations":false,
+              "changes_ABI_layout_runtime_symbols_target_or_linker":false,
+              "changes_backend_route_default_or_fallback":false,
+              "changes_bootstrap_route_or_seed":false,
+              "edits_stdlib":false,
+              "begins_patch24_2_or_24_3":false
             }
           }
         }

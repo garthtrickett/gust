@@ -243,8 +243,17 @@ def validate() -> dict:
         "- [x] Patch 24.0f — CR-15 Closure and Stdlib Handoff — DONE",
     ):
         require(row in task, f"TASK status is missing {row}")
-    require("- [ ] Patch 24.1 — Filename-Selected Behaviour Characterization" in task,
-            "Patch 24.1 is not the next unchecked row")
+    characterization = registry.get("phase24_filename_behavior_characterization")
+    if isinstance(characterization, dict):
+        require(characterization.get("contract_version") ==
+                "phase24_filename_behavior_characterization_v1" and
+                characterization.get("status") ==
+                "patch24_1_complete_observational_decision_open" and
+                "- [x] Patch 24.1 — Filename-Selected Behaviour Characterization — DONE" in task,
+                "Patch 24.1 successor authority drifted")
+    else:
+        require("- [ ] Patch 24.1 — Filename-Selected Behaviour Characterization" in task,
+                "Patch 24.1 is not the next unchecked row")
     require("CR-15 is closed and handed off" in
             ARCHITECTURE.read_text(encoding="utf-8"),
             "architecture sequence does not record the checked handoff")

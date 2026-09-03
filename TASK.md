@@ -105,7 +105,7 @@ Stdlib handoff are complete.
 - [x] Patch 24.0d — CR-15 Cross-Path and Adversarial Qualification — DONE
 - [x] Patch 24.0e — CR-15 Bootstrap Seed Reconvergence — DONE
 - [x] Patch 24.0f — CR-15 Closure and Stdlib Handoff — DONE
-- [ ] Patch 24.1 — Filename-Selected Behaviour Characterization
+- [x] Patch 24.1 — Filename-Selected Behaviour Characterization — DONE
 - [ ] Patch 24.2 — Compiler-Recognized Semantic Spelling Inventory
 - [ ] Patch 24.3 — Filename-Independent Typechecker Correction
 - [ ] Patch 24.3a — Preflight Bootstrap Seed Reconvergence

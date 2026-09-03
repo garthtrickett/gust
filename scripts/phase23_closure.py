@@ -734,7 +734,11 @@ def check() -> None:
                                         "previous_inventory"].get(field),
                                     f"Patch 24.0e changed closure inventory field: {field}")
                             if cr15_seed_publication is not None:
-                                if cr15_closure_transition is not None:
+                                if isinstance(registry.get(
+                                        "phase24_filename_behavior_characterization"), dict):
+                                    module.validate_phase24_filename_characterization_transition(
+                                        registry, current, live_rows)
+                                elif cr15_closure_transition is not None:
                                     module.validate_phase24_cr15_closure_transition(
                                         registry, current, live_rows)
                                 else:
