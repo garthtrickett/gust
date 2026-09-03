@@ -144,7 +144,7 @@ def s1_8_falsifier_self_test(successor: dict) -> None:
             "S1.8 partial, substituted, path-drifted, or extra state was admitted")
 
 
-def s1_8_state(value: dict) -> str:
+def s1_8_state(value: dict, registry: dict | None = None) -> str:
     successor = s1_8_successor(value)
     s1_8_falsifier_self_test(successor)
     live: list[dict[str, object]] = []
@@ -155,6 +155,19 @@ def s1_8_state(value: dict) -> str:
         else:
             live.append({"path": path, "absent": True})
     state = classify_s1_8_manifest(successor, live)
+    if state is None and registry is not None:
+        # Later Cranelift roadmap rows may append their own guard recipes to the
+        # justfile. Admit that exact registered successor only when the other
+        # eight Stdlib-owned paths remain byte-identical to one complete state.
+        justfile_digest = filename_characterization_successor_digest(registry)
+        for accepted in successor["accepted_states"]:
+            adjusted = copy.deepcopy(accepted["files"])
+            for row in adjusted:
+                if row["path"] == "justfile":
+                    row.pop("absent", None)
+                    row["digest"] = justfile_digest
+            if live == adjusted:
+                state = str(accepted["state"])
     require(state is not None,
             "live Stdlib surface is neither exact pre-S1.8 nor exact post-S1.8 state")
     return state
@@ -278,9 +291,11 @@ def validate_static(value: dict) -> None:
 
 
 def live_state(registry: dict | None = None) -> str:
+    if registry is None:
+        registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     value = authority(registry)
     validate_static(value)
-    if s1_8_state(value) == "post_s1_8":
+    if s1_8_state(value, registry) == "post_s1_8":
         return "s1_8_successor"
     digest = digest_bytes(JUSTFILE.read_bytes())
     if digest == value["pre_relay_justfile_digest"]:

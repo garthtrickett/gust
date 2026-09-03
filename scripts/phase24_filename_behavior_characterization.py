@@ -330,7 +330,8 @@ def validate_static(value: dict) -> None:
     require("- [x] Patch 24.1 — Filename-Selected Behaviour Characterization — DONE" in task,
             "TASK status does not mark Patch 24.1 DONE")
     require("- [x] Patch 24.1a — Universal TCS Semantic Decision Authority — DONE" in task and
-            "- [ ] Patch 24.2 — Compiler-Recognized Semantic Spelling Inventory" in task,
+            ("- [ ] Patch 24.2 — Compiler-Recognized Semantic Spelling Inventory" in task or
+             "- [x] Patch 24.2 — Compiler-Recognized Semantic Spelling Inventory — DONE" in task),
             "TASK status does not record the Patch 24.1a decision boundary")
     levels = json.loads(LEVELS.read_text(encoding="utf-8"))["guards"]
     require(levels.get(GUARD_L1) == 1 and levels.get(GUARD_L2) == 2,
@@ -467,7 +468,7 @@ def validate_transitions(value: dict) -> None:
             decision_invocation.get("previous_invocation") ==
             invocation.get("added_invocation") and
             decision_invocation.get("current_invocation") == {
-                **invocation["added_invocation"], "line": 427,
+                **invocation["added_invocation"], "line": 428,
             } and
             decision_invocation.get("summary_unchanged") is True and
             decision_invocation.get("partial_extra_or_substituted_invocation") ==

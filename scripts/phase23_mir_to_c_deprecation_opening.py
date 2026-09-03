@@ -613,6 +613,9 @@ def validate_phase24_filename_characterization_transition(
         return transition["current_inventory"]
 
     successor = decision.get("consumer_inventory_transition", {})
+    inventory_successor = registry.get(
+        "phase24_semantic_spelling_inventory", {}).get(
+            "consumer_inventory_transition")
     successor_paths = successor.get("registered_changed_text_surfaces", [])
     successor_unchanged = [
         "text_surface_count", "invocation_count", "invocation_manifest_digest",
@@ -627,7 +630,6 @@ def validate_phase24_filename_characterization_transition(
         successor.get("contract_version") ==
         "phase24_universal_tcs_decision_consumer_transition_v1" and
         successor.get("previous_inventory") == transition["current_inventory"] and
-        successor.get("current_inventory") == live_inventory and
         successor_paths == ["TASK.md", "docs/VISION.md"] and
         successor.get("unchanged_fields") == successor_unchanged and
         successor.get("partial_extra_or_substituted_surface") == "rejected",
@@ -638,24 +640,56 @@ def validate_phase24_filename_characterization_transition(
     require([row.get("path") for row in previous_successor_rows] ==
             successor_paths and
             [row.get("path") for row in current_successor_rows] ==
-            successor_paths and
-            current_successor_rows == [
-                row for row in live_rows if row["path"] in successor_paths],
+            successor_paths,
             "Patch 24.1a decision text-surface identity drifted")
     by_path = {row["path"]: row for row in current_rows}
     require(previous_successor_rows[0] == by_path["TASK.md"] and
             previous_successor_rows[1].get("digest") ==
             "eb6eef22fa5a84e316b1055a4938d2d4e9588bb3d0446af55ede80be996d3ca4",
             "Patch 24.1a predecessor text-surface identity drifted")
-    require(canonical_digest([
-        row for row in live_rows if row["path"] not in successor_paths
-    ]) == successor.get("unchanged_other_text_surface_manifest_digest"),
-            "Patch 24.1a changed an unregistered text surface")
     for field in successor_unchanged:
         require(successor["current_inventory"].get(field) ==
                 successor["previous_inventory"].get(field),
                 f"Patch 24.1a changed retained inventory field: {field}")
-    return successor["current_inventory"]
+    if not isinstance(inventory_successor, dict):
+        require(successor.get("current_inventory") == live_inventory and
+                current_successor_rows == [
+                    row for row in live_rows if row["path"] in successor_paths],
+                "Patch 24.1a live text-surface identity drifted")
+        require(canonical_digest([
+            row for row in live_rows if row["path"] not in successor_paths
+        ]) == successor.get("unchanged_other_text_surface_manifest_digest"),
+                "Patch 24.1a changed an unregistered text surface")
+        return successor["current_inventory"]
+
+    inventory_paths = inventory_successor.get("registered_changed_text_surfaces", [])
+    previous_inventory_rows = inventory_successor.get(
+        "previous_changed_text_surfaces", [])
+    current_inventory_rows = inventory_successor.get(
+        "current_changed_text_surfaces", [])
+    require(
+        inventory_successor.get("contract_version") ==
+        "phase24_semantic_spelling_consumer_transition_v1" and
+        inventory_successor.get("previous_inventory") ==
+        successor["current_inventory"] and
+        inventory_successor.get("current_inventory") == live_inventory and
+        inventory_paths == sorted(inventory_paths) and
+        [row.get("path") for row in previous_inventory_rows] == inventory_paths and
+        [row.get("path") for row in current_inventory_rows] == inventory_paths and
+        current_inventory_rows == [
+            row for row in live_rows if row["path"] in inventory_paths] and
+        inventory_successor.get("unchanged_fields") == successor_unchanged and
+        inventory_successor.get("partial_extra_or_substituted_surface") == "rejected",
+        "Patch 24.2 consumer inventory successor drifted")
+    require(canonical_digest([
+        row for row in live_rows if row["path"] not in inventory_paths
+    ]) == inventory_successor.get("unchanged_other_text_surface_manifest_digest"),
+            "Patch 24.2 changed an unregistered text surface")
+    for field in successor_unchanged:
+        require(inventory_successor["current_inventory"].get(field) ==
+                inventory_successor["previous_inventory"].get(field),
+                f"Patch 24.2 changed retained inventory field: {field}")
+    return inventory_successor["current_inventory"]
 
 
 def validate_identity_falsifiers(expected: dict[str, object]) -> None:

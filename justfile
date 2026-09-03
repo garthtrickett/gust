@@ -23829,6 +23829,18 @@ guard-cranelift-phase24-filename-behavior-characterization-evidence:
     just guard-cranelift-phase24-filename-behavior-characterization-contract
     python3 scripts/phase24_filename_behavior_characterization.py evidence
 
+# Cranelift lane, Patch 24.2. Inventory every concrete stdlib/runtime spelling
+# recognized by compiler-owned source without changing compiler behaviour.
+guard-cranelift-phase24-semantic-spelling-inventory-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔎 Checking Phase 24 semantic spelling inventory..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase24-semantic-spelling-inventory-contract | grep -F $'guard-cranelift-phase24-semantic-spelling-inventory-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    just guard-cranelift-phase24-filename-behavior-characterization-contract
+    python3 scripts/phase24_semantic_spelling_inventory.py full
+
 guard-cranelift-phase23-issue-health-opening-evidence:
     #!/usr/bin/env bash
     set -euo pipefail

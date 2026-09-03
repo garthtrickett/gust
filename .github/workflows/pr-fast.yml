@@ -515,6 +515,9 @@ jobs:
       - name: Phase 24 filename-selected behaviour characterization
         run: just guard-cranelift-phase24-filename-behavior-characterization-contract
 
+      - name: Phase 24 compiler-recognized semantic spelling inventory
+        run: just guard-cranelift-phase24-semantic-spelling-inventory-contract
+
       - name: Phase 23 MIR evidence-owner repair
         run: just guard-cranelift-phase23-mir-evidence-owner-contract
 

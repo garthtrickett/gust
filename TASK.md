@@ -115,7 +115,7 @@ Stdlib handoff are complete.
 - [x] Patch 24.0f — CR-15 Closure and Stdlib Handoff — DONE
 - [x] Patch 24.1 — Filename-Selected Behaviour Characterization — DONE
 - [x] Patch 24.1a — Universal TCS Semantic Decision Authority — DONE
-- [ ] Patch 24.2 — Compiler-Recognized Semantic Spelling Inventory
+- [x] Patch 24.2 — Compiler-Recognized Semantic Spelling Inventory — DONE
 - [ ] Patch 24.3 — Filename-Independent Typechecker Correction
 - [ ] Patch 24.3a — Preflight Bootstrap Seed Reconvergence
 - [ ] Patch 24.4 — Opening-Preflight Closure

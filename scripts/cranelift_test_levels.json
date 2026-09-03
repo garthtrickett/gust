@@ -20,6 +20,7 @@
   "guards": {
     "guard-cranelift-phase24-filename-behavior-characterization-contract": 1,
     "guard-cranelift-phase24-filename-behavior-characterization-evidence": 2,
+    "guard-cranelift-phase24-semantic-spelling-inventory-contract": 1,
     "guard-cranelift-phase24-cr15-qualification-contract": 1,
     "guard-cranelift-phase24-cr15-qualification-evidence": 2,
     "guard-cranelift-phase24-cr15-close": 1,
