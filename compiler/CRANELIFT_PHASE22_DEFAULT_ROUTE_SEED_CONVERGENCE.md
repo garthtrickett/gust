@@ -75,6 +75,18 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - Unresolved non-outdated review threads: 0
 - Changed paths: `gust_v4.c`
 
+## Phase 24 CR-15 seed transition
+
+- Contract: `phase24_cr15_seed_reconvergence_transition_v1`
+- Status: `ready_for_seed_publication`
+- Authority base main: `10076805b56697304e7b236fff09cdf3689fcc05`
+- Accounted compiler authorities: `phase24_cr15_derivation_v1, phase24_cr15_qualification_v1`
+- Seed PR policy: `gust_v4_c_only`
+- Partial or unregistered identity: `rejected`
+- Generated diff: 1332 insertions, 472 deletions, 860 net lines
+- Accepted `pre_publication` identity: 64929 lines, `af8a283c9ef4dbe621f78729e89a4c7270c0b740aeb7164af57fa953e5f29924`
+- Accepted `post_publication` identity: 65789 lines, `706430d05010521657d44e0ee2afa2580afb71f1f5e8ca54a88f6e34f1a2e8d9`
+
 The regenerated seed preserves the final Patch 22.6 default-route compiler
 sources and serializes the registered Patch 23.3a guard/defer admission and
 Patch 23.6 same-scope diagnostic authorities. Stage 2 and stage 3 are

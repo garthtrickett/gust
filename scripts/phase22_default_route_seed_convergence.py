@@ -139,6 +139,54 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
             deprecation_diff["insertions"] - deprecation_diff["deletions"] ==
             deprecation_diff["line_delta"],
             "Phase 23 deprecation seed line delta is inconsistent")
+    cr15_transition = record.get("phase24_cr15_seed_transition")
+    require(cr15_transition == {
+        "contract_version": "phase24_cr15_seed_reconvergence_transition_v1",
+        "status": "ready_for_seed_publication",
+        "predecessor_seed_authority":
+            "phase23_deprecation_seed_reconvergence_transition_v1",
+        "authority_base_main": "10076805b56697304e7b236fff09cdf3689fcc05",
+        "accounted_compiler_authorities": [
+            "phase24_cr15_derivation_v1",
+            "phase24_cr15_qualification_v1",
+        ],
+        "accepted_live_seed_identities": [
+            {
+                "state": "pre_publication",
+                "line_count": 64929,
+                "seed_digest":
+                    "af8a283c9ef4dbe621f78729e89a4c7270c0b740aeb7164af57fa953e5f29924",
+            },
+            {
+                "state": "post_publication",
+                "line_count": 65789,
+                "seed_digest":
+                    "706430d05010521657d44e0ee2afa2580afb71f1f5e8ca54a88f6e34f1a2e8d9",
+            },
+        ],
+        "generated_seed_diff": {
+            "previous_lines": 64929,
+            "current_lines": 65789,
+            "insertions": 1332,
+            "deletions": 472,
+            "line_delta": 860,
+        },
+        "seed_pr_policy": "gust_v4_c_only",
+        "partial_or_unregistered_identity": "rejected",
+        "closure_transition": "collapse_to_post_publication_after_seed_merge",
+    }, "Phase 24 CR-15 seed transition drifted")
+    identities = cr15_transition["accepted_live_seed_identities"]
+    require([row["state"] for row in identities] ==
+            ["pre_publication", "post_publication"],
+            "Phase 24 CR-15 seed transition state order drifted")
+    require(len({(row["line_count"], row["seed_digest"]) for row in identities}) == 2,
+            "Phase 24 CR-15 seed transition identities are not distinct")
+    cr15_diff = cr15_transition["generated_seed_diff"]
+    require(cr15_diff["current_lines"] - cr15_diff["previous_lines"] ==
+            cr15_diff["line_delta"] and
+            cr15_diff["insertions"] - cr15_diff["deletions"] ==
+            cr15_diff["line_delta"],
+            "Phase 24 CR-15 seed line delta is inconsistent")
     return identities
 
 
@@ -148,7 +196,7 @@ def accepted_live_seed_line_counts(record: dict) -> set[int]:
 
 def accepted_live_seed_line_count(record: dict, actual_line_count: int) -> int:
     require(actual_line_count in accepted_live_seed_line_counts(record),
-            "committed seed line count is outside the exact Phase 23 transition")
+            "committed seed line count is outside the exact Phase 24 CR-15 transition")
     return actual_line_count
 
 
@@ -173,8 +221,13 @@ def regeneration_is_accepted(record: dict, committed: dict, regenerated: dict) -
         }
         for row in accepted_live_seed_identities(record)
     }
-    return committed == identities["post_publication"] and \
+    return (
+        committed == identities["pre_publication"] and
         regenerated == identities["post_publication"]
+    ) or (
+        committed == identities["post_publication"] and
+        regenerated == identities["post_publication"]
+    )
 
 
 def validate_regeneration(record: dict) -> None:
@@ -333,6 +386,8 @@ def render(record: dict) -> str:
     deprecation = record["phase23_deprecation_seed_transition"]
     deprecation_diff = deprecation["generated_seed_diff"]
     deprecation_landed = deprecation["landed_seed_evidence"]
+    cr15_transition = record["phase24_cr15_seed_transition"]
+    cr15_diff = cr15_transition["generated_seed_diff"]
     return "\n".join([
         "# Cranelift Phase 22 Default-Route Seed Convergence",
         "",
@@ -413,6 +468,20 @@ def render(record: dict) -> str:
         f"- Exact-head workflows: {deprecation_landed['successful_workflows']}/{deprecation_landed['workflow_population']} successful, {deprecation_landed['unfinished_workflows']} unfinished, {deprecation_landed['non_success_workflows']} non-success",
         f"- Unresolved non-outdated review threads: {deprecation_landed['unresolved_non_outdated_review_threads']}",
         f"- Changed paths: `{', '.join(deprecation_landed['changed_paths'])}`",
+        "",
+        "## Phase 24 CR-15 seed transition",
+        "",
+        f"- Contract: `{cr15_transition['contract_version']}`",
+        f"- Status: `{cr15_transition['status']}`",
+        f"- Authority base main: `{cr15_transition['authority_base_main']}`",
+        f"- Accounted compiler authorities: `{', '.join(cr15_transition['accounted_compiler_authorities'])}`",
+        f"- Seed PR policy: `{cr15_transition['seed_pr_policy']}`",
+        f"- Partial or unregistered identity: `{cr15_transition['partial_or_unregistered_identity']}`",
+        f"- Generated diff: {cr15_diff['insertions']} insertions, {cr15_diff['deletions']} deletions, {cr15_diff['line_delta']} net lines",
+    ] + [
+        f"- Accepted `{row['state']}` identity: {row['line_count']} lines, `{row['seed_digest']}`"
+        for row in cr15_transition["accepted_live_seed_identities"]
+    ] + [
         "",
         "The regenerated seed preserves the final Patch 22.6 default-route compiler",
         "sources and serializes the registered Patch 23.3a guard/defer admission and",
