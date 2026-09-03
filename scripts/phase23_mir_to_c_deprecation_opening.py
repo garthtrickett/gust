@@ -440,6 +440,72 @@ def inventory_summary() -> dict[str, object]:
     }
 
 
+def validate_phase24_cr15_seed_publication_transition(
+        registry: dict, live_inventory: dict, live_rows: list[dict]) -> dict:
+    authority = registry.get("phase24_cr15_seed_authority_consumer_transition", {})
+    transition = authority.get("seed_publication_transition", {})
+    authority_paths = ["scripts/phase23_closure.py"]
+    seed_path = "gust_v4.c"
+    unchanged_fields = [
+        "text_surface_count", "invocation_count", "invocation_manifest_digest",
+        "structural_surface_count", "structural_manifest_digest",
+        "classification_counts", "invocation_selection_counts",
+        "unclassified_count",
+    ]
+    states = transition.get("accepted_live_states", [])
+    require(
+        transition.get("contract_version") ==
+        "phase24_cr15_seed_publication_consumer_transition_v1" and
+        transition.get("status") == "ready_for_seed_publication" and
+        transition.get("authority_base_main") ==
+        "f1da52fdd0211414017d160d5bd55a2f12748530" and
+        transition.get("previous_inventory") == authority.get("current_inventory") and
+        transition.get("registered_authority_changed_paths") == authority_paths and
+        transition.get("seed_path") == seed_path and
+        transition.get("unchanged_fields") == unchanged_fields and
+        transition.get("partial_extra_or_substituted_surface") == "rejected" and
+        [row.get("state") for row in states] ==
+        ["pre_publication", "post_publication"],
+        "Patch 24.0e CR-15 seed publication transition drifted")
+    previous_authority_rows = transition.get(
+        "previous_authority_text_surfaces", [])
+    current_authority_rows = transition.get(
+        "current_authority_text_surfaces", [])
+    live_authority_rows = [row for row in live_rows
+                           if row["path"] in authority_paths]
+    parent_authority_rows = [
+        row for row in authority.get("current_changed_text_surfaces", [])
+        if row["path"] in authority_paths
+    ]
+    require(
+        previous_authority_rows == parent_authority_rows and
+        [row.get("path") for row in previous_authority_rows] == authority_paths and
+        current_authority_rows == live_authority_rows and
+        previous_authority_rows != current_authority_rows,
+        "Patch 24.0e seed publication authority-surface identity drifted")
+    matching_states = [row for row in states
+                       if row.get("inventory") == live_inventory]
+    require(len(matching_states) == 1,
+            "live inventory is neither exact pre-publication nor post-publication state")
+    live_seed_rows = [row for row in live_rows if row["path"] == seed_path]
+    require(live_seed_rows == [matching_states[0].get("seed_surface")],
+            "live seed surface does not match its registered publication state")
+    require(states[0].get("seed_surface") != states[1].get("seed_surface") and
+            states[0].get("inventory") != states[1].get("inventory"),
+            "seed publication states are not distinct")
+    for state in states:
+        for field in unchanged_fields:
+            require(state["inventory"].get(field) ==
+                    transition["previous_inventory"].get(field),
+                    f"seed publication changed retained inventory field: {field}")
+    require(canonical_digest([
+        row for row in live_rows
+        if row["path"] not in authority_paths + [seed_path]
+    ]) == transition.get("unchanged_other_text_surface_manifest_digest"),
+            "seed publication changed an unregistered text surface")
+    return matching_states[0]["inventory"]
+
+
 def validate_identity_falsifiers(expected: dict[str, object]) -> None:
     text_rows = scan_text_surfaces()
     invocation_rows = scan_invocations()
@@ -458,7 +524,8 @@ def validate_identity_falsifiers(expected: dict[str, object]) -> None:
             "same-count invocation command substitution was accepted")
 
 
-def projected_text_surfaces(record: dict) -> list[dict[str, object]]:
+def projected_text_surfaces(
+        registry: dict, record: dict) -> list[dict[str, object]]:
     """Keep the generated review stable across the registered seed-only PR."""
     rows = scan_text_surfaces()
     transition = record["deprecation_contract"][
@@ -468,12 +535,25 @@ def projected_text_surfaces(record: dict) -> list[dict[str, object]]:
             ["post_publication"],
             "seed inventory projection state order drifted")
     live_seed_digest = digest_bytes(SEED.read_bytes())
-    require(live_seed_digest in {row["seed_digest"] for row in states},
-            "seed inventory projection saw an unregistered live seed")
+    cr15_publication = registry.get(
+        "phase24_cr15_seed_authority_consumer_transition", {}).get(
+            "seed_publication_transition")
+    if live_seed_digest not in {row["seed_digest"] for row in states}:
+        validate_phase24_cr15_seed_publication_transition(
+            registry, inventory_summary(), rows)
     seed_rows = [row for row in rows if row["path"] == transition["seed_path"]]
     require(len(seed_rows) == 1,
             "seed inventory projection did not find exactly one seed row")
-    seed_rows[0]["digest"] = states[0]["seed_digest"]
+    if isinstance(cr15_publication, dict):
+        publication_states = cr15_publication.get("accepted_live_states", [])
+        require([row.get("state") for row in publication_states] ==
+                ["pre_publication", "post_publication"],
+                "seed publication projection state order drifted")
+        seed_rows[0].clear()
+        seed_rows[0].update(
+            copy.deepcopy(publication_states[0]["seed_surface"]))
+    else:
+        seed_rows[0]["digest"] = states[0]["seed_digest"]
     return rows
 
 
@@ -715,9 +795,17 @@ def validate() -> dict:
         row["seed_digest"]: row
         for row in seed_transition["accepted_live_states"]
     }
-    require(live_seed_digest in accepted_by_seed,
-            "live seed is outside the Patch 23.8a inventory transition")
-    accepted_state = accepted_by_seed[live_seed_digest]
+    accepted_state = accepted_by_seed.get(live_seed_digest)
+    if accepted_state is None:
+        cr15_inventory = validate_phase24_cr15_seed_publication_transition(
+            registry, live_inventory, scan_text_surfaces())
+        accepted_state = {
+            "text_surface_count": cr15_inventory["text_surface_count"],
+            "text_surface_manifest_digest":
+                cr15_inventory["text_surface_manifest_digest"],
+        }
+    require(accepted_state is not None,
+            "live seed is outside the registered seed inventory transitions")
     previous_inventory = copy.deepcopy(successor["post_deprecation_inventory"])
     previous_inventory["text_surface_count"] = accepted_state["text_surface_count"]
     previous_inventory["text_surface_manifest_digest"] = \
@@ -884,6 +972,10 @@ def validate() -> dict:
                     "consumer_inventory_transition")
             cr15_seed_transition = registry.get(
                 "phase24_cr15_seed_authority_consumer_transition")
+            cr15_seed_publication = (
+                cr15_seed_transition.get("seed_publication_transition")
+                if isinstance(cr15_seed_transition, dict) else None
+            )
             closure_rows = [row for row in scan_text_surfaces()
                             if row["path"] in closure_paths]
             require([row.get("path") for row in closure_transition.get(
@@ -1196,8 +1288,13 @@ def validate() -> dict:
                                         "invocation_selection_counts",
                                         "unclassified_count",
                                     ]
-                                    seed_rows = [row for row in live_text_rows
-                                                 if row["path"] in seed_paths]
+                                    seed_rows = (
+                                        [row for row in live_text_rows
+                                         if row["path"] in seed_paths]
+                                        if cr15_seed_publication is None else
+                                        cr15_seed_transition.get(
+                                            "current_changed_text_surfaces", [])
+                                    )
                                     previous_seed_rows = cr15_seed_transition.get(
                                         "previous_changed_text_surfaces", [])
                                     require(
@@ -1210,7 +1307,10 @@ def validate() -> dict:
                                         cr15_seed_transition.get("previous_inventory") ==
                                         cr15_qualification_transition["current_inventory"] and
                                         cr15_seed_transition.get("current_inventory") ==
-                                        live_inventory and
+                                        (live_inventory
+                                         if cr15_seed_publication is None else
+                                         cr15_seed_publication.get(
+                                             "previous_inventory")) and
                                         cr15_seed_transition.get("registered_changed_paths") ==
                                         seed_paths and
                                         cr15_seed_transition.get("unchanged_fields") ==
@@ -1225,10 +1325,13 @@ def validate() -> dict:
                                         seed_paths and
                                         all(previous != current for previous, current in
                                             zip(previous_seed_rows, seed_rows)) and
-                                        canonical_digest([
+                                        (canonical_digest([
                                             row for row in live_text_rows
                                             if row["path"] not in seed_paths
-                                        ]) == cr15_seed_transition.get(
+                                        ]) if cr15_seed_publication is None else
+                                         cr15_seed_transition.get(
+                                             "unchanged_other_text_surface_manifest_digest")) ==
+                                        cr15_seed_transition.get(
                                             "unchanged_other_text_surface_manifest_digest"),
                                         "Patch 24.0e CR-15 seed authority transition drifted")
                                     for field in seed_unchanged:
@@ -1239,6 +1342,11 @@ def validate() -> dict:
                                             f"Patch 24.0e changed retained inventory field: {field}")
                                     expected_inventory = cr15_seed_transition[
                                         "current_inventory"]
+                                    if cr15_seed_publication is not None:
+                                        expected_inventory = (
+                                            validate_phase24_cr15_seed_publication_transition(
+                                                registry, live_inventory, live_text_rows)
+                                        )
     require(expected_inventory == live_inventory,
             "live Phase 23 MIR-to-C inventory is not the exact registered successor")
     require(live_inventory["unclassified_count"] == 0,
@@ -1358,7 +1466,8 @@ def validate() -> dict:
     for path_filter in ("'compiler/**'", "'scripts/**'", "'src/**'", "'gust_v4.c'", "'justfile*'"):
         require(workflow.count(path_filter) == 2,
                 f"workflow does not own both path filters for {path_filter}")
-    require(REVIEW.is_file() and REVIEW.read_text(encoding="utf-8") == render(record),
+    require(REVIEW.is_file() and
+            REVIEW.read_text(encoding="utf-8") == render(registry, record),
             "generated opening review is stale; run project")
     return record
 
@@ -1435,7 +1544,7 @@ def evidence(record: dict) -> None:
     print("phase23_mir_to_c_deprecation_opening: evidence ok")
 
 
-def render(record: dict) -> str:
+def render(registry: dict, record: dict) -> str:
     inventory = record["inventory"]
     baseline = record["pre_deprecation_baseline"]
     lines = [
@@ -1488,7 +1597,7 @@ def render(record: dict) -> str:
         "| Path | Digest | Matches | Class | Owner | Action | Removal | Falsifier |",
         "| --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
-    for row in projected_text_surfaces(record):
+    for row in projected_text_surfaces(registry, record):
         matches = ", ".join(
             f"{key}={value}" for key, value in row["match_counts"].items()
         )
@@ -1652,7 +1761,7 @@ def main() -> None:
         registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
         record = registry.get("phase23_mir_to_c_deprecation_opening")
         require(isinstance(record, dict), "Patch 23.7 authority is missing")
-        REVIEW.write_text(render(record), encoding="utf-8")
+        REVIEW.write_text(render(registry, record), encoding="utf-8")
         validate()
         print(f"{GUARD_L1}: project ok")
         return
