@@ -7421,6 +7421,36 @@
       "post_s1_8": "8cd6f74b95c4e576168ea861288fa40ed918328d4e43428975466f902c0f843f"
     },
     "unchanged_non_justfile_identity": "byte_identical_to_inherited_pre_and_post_states",
+    "workflow_prerequisite_successor": {
+      "contract_version": "phase24_s1_8_workflow_prerequisite_successor_v1",
+      "status": "ready_for_exact_corrected_stdlib_s1_8_publication",
+      "authority_base_main": "49e28774b5514960264ca68d291c8cecc3d476b5",
+      "owning_stdlib_pull_request": 314,
+      "candidate_rebased_head_sha": "63d8af1e7310fcbafa8c0dfbe074b04c04d5deb8",
+      "changed_paths": [".github/workflows/stdlib-s1-mutex-guard.yml"],
+      "pre_workflow_digest": "eac232f77b80bd8980396738dc4f1708882402bcc4a0db3411b0a40bfdc7acdd",
+      "post_workflow_digest": "a5afeb46e55c23465fab8539e1c8e9ad7b8ed200522affa0edd835674d384424",
+      "required_step": "make gust",
+      "unchanged_other_eight_paths": "byte_identical_to_phase24_s1_8_authority_successor_v1",
+      "rejected_states": [
+        "broken_workflow_post_s1_8",
+        "partial",
+        "extra",
+        "substituted",
+        "safe_raw",
+        "backend_specific",
+        "path_drifted",
+        "unrelated"
+      ],
+      "boundary": {
+        "changes_compiler_runtime_or_stdlib_source": false,
+        "changes_accepted_Gust_program_meaning": false,
+        "adds_or_changes_MIR_ABI_layout_or_runtime_symbols": false,
+        "changes_backend_route_default_or_fallback": false,
+        "changes_bootstrap_route_or_seed": false,
+        "begins_patch24_3": false
+      }
+    },
     "added_phase23_text_surface": {"path":"scripts/stdlib_s1_mutex_guard_parity.sh","digest":"f03f7b26d667150fcc2019a5aea8f99f12ac165e4da28eac18d1c878fc7eb9fe","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":7,"generated_c_contract":0},"classification":"archive_candidate","owner":"stdlib","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
     "rejected_states": [
       "partial",

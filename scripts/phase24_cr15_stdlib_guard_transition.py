@@ -207,8 +207,55 @@ def s1_8_coordination_successor(registry: dict, successor: dict) -> dict:
     return coordination
 
 
+def s1_8_workflow_prerequisite_successor(
+        coordination: dict, successor: dict) -> dict:
+    workflow = coordination.get("workflow_prerequisite_successor")
+    require(isinstance(workflow, dict),
+            "S1.8 workflow prerequisite successor is missing")
+    original_post = next(
+        row for row in successor["accepted_states"][1]["files"]
+        if row["path"] == ".github/workflows/stdlib-s1-mutex-guard.yml")
+    require(
+        workflow == {
+            "contract_version":
+            "phase24_s1_8_workflow_prerequisite_successor_v1",
+            "status": "ready_for_exact_corrected_stdlib_s1_8_publication",
+            "authority_base_main":
+            "49e28774b5514960264ca68d291c8cecc3d476b5",
+            "owning_stdlib_pull_request": 314,
+            "candidate_rebased_head_sha":
+            "63d8af1e7310fcbafa8c0dfbe074b04c04d5deb8",
+            "changed_paths": [
+                ".github/workflows/stdlib-s1-mutex-guard.yml"],
+            "pre_workflow_digest":
+            "eac232f77b80bd8980396738dc4f1708882402bcc4a0db3411b0a40bfdc7acdd",
+            "post_workflow_digest":
+            "a5afeb46e55c23465fab8539e1c8e9ad7b8ed200522affa0edd835674d384424",
+            "required_step": "make gust",
+            "unchanged_other_eight_paths":
+            "byte_identical_to_phase24_s1_8_authority_successor_v1",
+            "rejected_states": [
+                "broken_workflow_post_s1_8", "partial", "extra",
+                "substituted", "safe_raw", "backend_specific",
+                "path_drifted", "unrelated",
+            ],
+            "boundary": {
+                "changes_compiler_runtime_or_stdlib_source": False,
+                "changes_accepted_Gust_program_meaning": False,
+                "adds_or_changes_MIR_ABI_layout_or_runtime_symbols": False,
+                "changes_backend_route_default_or_fallback": False,
+                "changes_bootstrap_route_or_seed": False,
+                "begins_patch24_3": False,
+            },
+        } and
+        original_post.get("digest") == workflow["pre_workflow_digest"],
+        "S1.8 workflow prerequisite successor identity or boundary drifted")
+    return workflow
+
+
 def coordinated_s1_8_states(
-        successor: dict, coordination: dict) -> list[dict[str, object]]:
+        successor: dict, coordination: dict,
+        workflow: dict) -> list[dict[str, object]]:
     states = copy.deepcopy(successor["accepted_states"])
     digests = coordination["justfile_state_digests"]
     for state in states:
@@ -216,6 +263,11 @@ def coordinated_s1_8_states(
             if row["path"] == "justfile":
                 row.pop("absent", None)
                 row["digest"] = digests[state["state"]]
+            if (state["state"] == "post_s1_8" and
+                    row["path"] == workflow["changed_paths"][0]):
+                require(row.get("digest") == workflow["pre_workflow_digest"],
+                        "S1.8 predecessor workflow identity drifted")
+                row["digest"] = workflow["post_workflow_digest"]
     return states
 
 
@@ -253,6 +305,8 @@ def s1_8_state(value: dict, registry: dict | None = None) -> str:
     successor = s1_8_successor(value)
     s1_8_falsifier_self_test(successor)
     coordination = s1_8_coordination_successor(registry, successor)
+    workflow = s1_8_workflow_prerequisite_successor(
+        coordination, successor)
     live: list[dict[str, object]] = []
     for path in successor["changed_paths"]:
         absolute = ROOT / path
@@ -262,8 +316,19 @@ def s1_8_state(value: dict, registry: dict | None = None) -> str:
             live.append({"path": path, "absent": True})
     coordinated = copy.deepcopy(successor)
     coordinated["accepted_states"] = coordinated_s1_8_states(
-        successor, coordination)
+        successor, coordination, workflow)
     s1_8_falsifier_self_test(coordinated)
+    broken = copy.deepcopy(successor)
+    broken["accepted_states"] = copy.deepcopy(successor["accepted_states"])
+    for state in broken["accepted_states"]:
+        for row in state["files"]:
+            if row["path"] == "justfile":
+                row.pop("absent", None)
+                row["digest"] = coordination[
+                    "justfile_state_digests"][state["state"]]
+    require(classify_s1_8_manifest(
+        coordinated, broken["accepted_states"][1]["files"]) is None,
+        "S1.8 broken-workflow post-state was admitted")
     state = classify_s1_8_manifest(coordinated, live)
     require(state is not None,
             "live Stdlib surface is neither exact pre-S1.8 nor exact post-S1.8 state")
