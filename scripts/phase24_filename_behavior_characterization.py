@@ -102,7 +102,7 @@ def source_sites() -> list[dict]:
             "selector": selector,
             "selector_occurrence": occurrence[selector],
             "statement_context": contexts[site_id],
-            "window_sha256": digest(window.encode()),
+            "window_digest": digest(window.encode()),
         })
     return sites
 
@@ -187,7 +187,7 @@ def validate_static(value: dict) -> None:
             "id": witness_id,
             "site_id": expected_site_ids[witness_id],
             "fixture": source.relative_to(ROOT).as_posix(),
-            "fixture_sha256": digest(source_bytes),
+            "fixture_digest": digest(source_bytes),
             "selected_filename": selected_name,
             "neutral_filename": neutral_name,
             "pair_bytes_identical": True,
@@ -196,7 +196,7 @@ def validate_static(value: dict) -> None:
                     else "test_tcs_")
         require(selector in selected_name and selector not in neutral_name,
                 f"filename selection pair drifted for {witness_id}")
-        require(digest(source_bytes + b"\nmutation") != row["fixture_sha256"],
+        require(digest(source_bytes + b"\nmutation") != row["fixture_digest"],
                 f"fixture digest is not mutation-sensitive for {witness_id}")
 
     authority = value.get("authority_classification")
@@ -308,7 +308,7 @@ def render(value: dict) -> str:
     for site in value["site_manifest"]:
         lines.append(
             f"| `{site['id']}` | `{site['selector']}` | `{site['path']}:{site['line']}` | "
-            f"`{site['statement_context']}` | `{site['window_sha256']}` |")
+            f"`{site['statement_context']}` | `{site['window_digest']}` |")
     lines += [
         "",
         "Pre-existing selected filenames: `test_tcs_` has "
@@ -328,8 +328,8 @@ def render(value: dict) -> str:
             lines.append(
                 f"| `{witness['id']}` | `{route}` | exit `{selected['exit_status']}` | "
                 f"exit `{neutral['exit_status']}` | `{selected['stdout_bytes']}` bytes / "
-                f"`{selected['stdout_sha256']}` | `{neutral['stdout_bytes']}` bytes / "
-                f"`{neutral['stdout_sha256']}` |")
+                f"`{selected['stdout_digest']}` | `{neutral['stdout_bytes']}` bytes / "
+                f"`{neutral['stdout_digest']}` |")
     lines += [
         "",
         "All stderr streams are empty. No invocation leaves `user.native`; accepted compatibility-path output is the complete compatibility artifact on stdout. Default and explicit Cranelift observations are byte-identical for each side.",
@@ -365,9 +365,9 @@ def run_observation(witness_id: str, route: str, side: str) -> dict:
     return {
         "exit_status": result.returncode,
         "stdout_bytes": len(result.stdout),
-        "stdout_sha256": digest(result.stdout),
+        "stdout_digest": digest(result.stdout),
         "stderr_bytes": len(result.stderr),
-        "stderr_sha256": digest(result.stderr),
+        "stderr_digest": digest(result.stderr),
         "native_artifact_present": (ROOT / "user.native").exists(),
     }
 
@@ -444,7 +444,7 @@ def evidence(value: dict) -> None:
                 require(actual == expected[witness_id][route][side],
                         f"{witness_id} {route} {side} observation drifted: {actual}")
                 require(actual["stderr_bytes"] == 0 and
-                        actual["stderr_sha256"] == EMPTY_SHA256,
+                        actual["stderr_digest"] == EMPTY_SHA256,
                         f"{witness_id} {route} {side} stderr is not empty")
                 require(not actual["native_artifact_present"],
                         f"{witness_id} {route} {side} left a native artifact")
