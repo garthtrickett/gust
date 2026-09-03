@@ -23796,6 +23796,7 @@ guard-cranelift-phase24-cr15-close:
     just guard-cranelift-phase24-cr15-opening-contract
     just guard-cranelift-phase24-cr15-derivation-contract
     just guard-cranelift-phase24-cr15-qualification-contract
+    just guard-cranelift-phase23-cross-feature-qualification-contract
     just guard-cranelift-phase22-default-route-seed-convergence
     python3 scripts/phase23_production_release_audit.py validate
     python3 scripts/phase24_cr15_closure.py validate

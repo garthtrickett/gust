@@ -4034,7 +4034,7 @@
           "contract_version": {"const":"phase24_cr15_closure_v1"},
           "status": {"const":"ready_for_merge_and_checked_post_merge_stdlib_handoff"},
           "authority_base_main": {"const":"aea95476d455c292f8b790a810b23bb98badcdd8"},
-          "live_justfile_successor_digest": {"const":"b9432f72f0ac644a7eef62c92f9766cf7c19406128c2834920b8dd3a828d4cd8"},
+          "live_justfile_successor_digest": {"const":"2d5aa99bafb59f662c0b6d33925570ca5cfbf22a66bc45b4af707b9ff59faa6c"},
           "consumer_inventory_transition": {
             "type":"object","additionalProperties":false,
             "required":["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_changed_paths","previous_changed_text_surfaces","current_changed_text_surfaces","unchanged_other_text_surface_manifest_digest","unchanged_fields","added_text_surface_count","partial_extra_or_substituted_surface"],
