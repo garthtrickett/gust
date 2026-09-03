@@ -23784,6 +23784,30 @@ guard-cranelift-phase24-cr15-qualification-evidence:
     just guard-cranelift-phase24-cr15-derivation-evidence
     python3 scripts/phase24_cr15_qualification.py evidence
 
+# Cranelift lane, Patch 24.0f. Close only the compiler-owned CR-15 authority
+# and issue the checked, post-merge Stdlib handoff.
+guard-cranelift-phase24-cr15-close:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking Phase 24 CR-15 closure and handoff authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase24-cr15-close | grep -F $'guard-cranelift-phase24-cr15-close\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    just guard-cranelift-phase24-cr15-opening-contract
+    just guard-cranelift-phase24-cr15-derivation-contract
+    just guard-cranelift-phase24-cr15-qualification-contract
+    just guard-cranelift-phase22-default-route-seed-convergence
+    python3 scripts/phase23_production_release_audit.py validate
+    python3 scripts/phase24_cr15_closure.py validate
+    python3 scripts/phase24_cr15_closure.py check-review
+
+guard-cranelift-phase24-cr15-close-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Replaying the complete Phase 24 CR-15 closure evidence..."
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase24-cr15-close-evidence | grep -F $'guard-cranelift-phase24-cr15-close-evidence\t2\t' >/dev/null
+    python3 scripts/phase24_cr15_closure.py evidence
+
 guard-cranelift-phase23-issue-health-opening-evidence:
     #!/usr/bin/env bash
     set -euo pipefail
