@@ -405,6 +405,8 @@ def check() -> None:
         cr15_seed_transition.get("seed_publication_transition")
         if isinstance(cr15_seed_transition, dict) else None
     )
+    cr15_closure_transition = registry.get(
+        "phase24_cr15_closure", {}).get("consumer_inventory_transition")
     closure_current = (
         roadmap_transition.get("previous_inventory")
         if isinstance(roadmap_transition, dict) else live_inventory()
@@ -558,6 +560,10 @@ def check() -> None:
                             "unchanged_other_text_surface_manifest_digest")
                     )
                     current = live_inventory()
+                    derivation_current = (
+                        current if cr15_qualification_transition is None
+                        else cr15_derivation_transition["current_inventory"]
+                    )
                     require(
                         cr15_derivation_transition.get("contract_version") ==
                         "phase24_cr15_derivation_consumer_transition_v1" and
@@ -572,15 +578,16 @@ def check() -> None:
                          cr15_qualification_transition.get("previous_inventory")) and
                         cr15_derivation_transition.get("unchanged_fields") ==
                         successor_unchanged and
-                        current.get("text_surface_count") ==
+                        derivation_current.get("text_surface_count") ==
                         cr15_derivation_transition["previous_inventory"].get(
                             "text_surface_count") + 1 and
-                        current.get("classification_counts", {}).get(
+                        derivation_current.get("classification_counts", {}).get(
                             "archive_candidate") ==
                         cr15_derivation_transition["previous_inventory"].get(
                             "classification_counts", {}).get(
                                 "archive_candidate") + 1 and
-                        all(current.get("classification_counts", {}).get(key) ==
+                        all(derivation_current.get(
+                                "classification_counts", {}).get(key) ==
                             cr15_derivation_transition["previous_inventory"].get(
                                 "classification_counts", {}).get(key)
                             for key in (
@@ -596,7 +603,7 @@ def check() -> None:
                             "unchanged_other_text_surface_manifest_digest"),
                         "Patch 24.0c CR-15 closure successor drifted")
                     for field in successor_unchanged:
-                        require(current.get(field) ==
+                        require(derivation_current.get(field) ==
                                 cr15_derivation_transition[
                                     "previous_inventory"].get(field),
                                 f"Patch 24.0c changed closure inventory field: {field}")
@@ -618,6 +625,10 @@ def check() -> None:
                         )
                         previous_rows = cr15_qualification_transition.get(
                             "previous_changed_text_surfaces", [])
+                        qualification_current = (
+                            current if cr15_seed_transition is None
+                            else cr15_qualification_transition["current_inventory"]
+                        )
                         require(
                             cr15_qualification_transition.get("contract_version") ==
                             "phase24_cr15_qualification_consumer_transition_v1" and
@@ -657,7 +668,7 @@ def check() -> None:
                             "Patch 24.0d CR-15 closure successor drifted")
                         for field in qualification_unchanged:
                             require(
-                                current.get(field) ==
+                                qualification_current.get(field) ==
                                 cr15_qualification_transition[
                                     "previous_inventory"].get(field),
                                 f"Patch 24.0d changed closure inventory field: {field}")
@@ -677,6 +688,10 @@ def check() -> None:
                             )
                             previous_seed_rows = cr15_seed_transition.get(
                                 "previous_changed_text_surfaces", [])
+                            seed_current = (
+                                current if cr15_seed_publication is None
+                                else cr15_seed_transition["current_inventory"]
+                            )
                             require(
                                 cr15_seed_transition.get("contract_version") ==
                                 "phase24_cr15_seed_authority_consumer_transition_v1" and
@@ -714,13 +729,17 @@ def check() -> None:
                                 "Patch 24.0e CR-15 closure successor drifted")
                             for field in qualification_unchanged:
                                 require(
-                                    current.get(field) ==
+                                    seed_current.get(field) ==
                                     cr15_seed_transition[
                                         "previous_inventory"].get(field),
                                     f"Patch 24.0e changed closure inventory field: {field}")
                             if cr15_seed_publication is not None:
-                                module.validate_phase24_cr15_seed_publication_transition(
-                                    registry, current, live_rows)
+                                if cr15_closure_transition is not None:
+                                    module.validate_phase24_cr15_closure_transition(
+                                        registry, current, live_rows)
+                                else:
+                                    module.validate_phase24_cr15_seed_publication_transition(
+                                        registry, current, live_rows)
 
     require(closure.get("unresolved_material_findings") == 0,
             "closure has unresolved material findings")
