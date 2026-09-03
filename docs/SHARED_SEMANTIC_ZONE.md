@@ -252,6 +252,14 @@ decision: OD-3 is still marked open in `VISION.md` §27 while `std.Rc`,
 > resolved type/brand metadata. Neither backend may recognize Mutex or the
 > library spelling. Until that generic authority lands, S1.8 remains blocked;
 > the Patch 20.16d registrar handoff alone is necessary but not sufficient.
+>
+> **Patch 24.0f closure/handoff.** Patches 24.0c–24.0e land and qualify the
+> generic, backend-neutral protected-`Resource` derivation and its isolated
+> bootstrap fixed point. The generated Patch 24.0f authority records exact
+> merged publications and exact-main Historical evidence. Its Stdlib handoff
+> becomes effective only after the closure PR merges and current `main` is
+> independently re-derived; it unblocks S1.8–S1.11 under the Stdlib roadmap but
+> does not choose or implement their library ergonomics.
 
 The original entry cited line numbers in a living document, which this file
 forbids elsewhere; it now cites the item.

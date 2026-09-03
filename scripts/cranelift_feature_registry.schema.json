@@ -88,6 +88,7 @@
     "phase24_cr15_derivation",
     "phase24_cr15_qualification",
     "phase24_cr15_seed_authority_consumer_transition",
+    "phase24_cr15_closure",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming",
@@ -4021,6 +4022,122 @@
               "unchanged_other_text_surface_manifest_digest":{"type":"string","pattern":"^[0-9a-f]{64}$"},
               "unchanged_fields":{"const":["text_surface_count","invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","classification_counts","invocation_selection_counts","unclassified_count"]},
               "partial_extra_or_substituted_surface":{"const":"rejected"}
+            }
+          }
+        }
+      },
+      "phase24_cr15_closure": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contract_version","status","authority_base_main","live_justfile_successor_digest","consumer_inventory_transition","next_patch","review_view","wording","completed_authorities","implementation_publications","authoritative_historical_full","historical_budgets","bootstrap","stdlib_handoff","boundary"],
+        "properties": {
+          "contract_version": {"const":"phase24_cr15_closure_v1"},
+          "status": {"const":"ready_for_merge_and_checked_post_merge_stdlib_handoff"},
+          "authority_base_main": {"const":"aea95476d455c292f8b790a810b23bb98badcdd8"},
+          "live_justfile_successor_digest": {"const":"2d5aa99bafb59f662c0b6d33925570ca5cfbf22a66bc45b4af707b9ff59faa6c"},
+          "consumer_inventory_transition": {
+            "type":"object","additionalProperties":false,
+            "required":["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_changed_paths","previous_changed_text_surfaces","current_changed_text_surfaces","unchanged_other_text_surface_manifest_digest","unchanged_fields","added_text_surface_count","partial_extra_or_substituted_surface"],
+            "properties": {
+              "contract_version":{"const":"phase24_cr15_closure_consumer_transition_v1"},
+              "status":{"const":"patch24_0f_ready_for_merge"},
+              "authority_base_main":{"const":"aea95476d455c292f8b790a810b23bb98badcdd8"},
+              "previous_inventory":{"type":"object"},
+              "current_inventory":{"type":"object"},
+              "registered_changed_paths":{"const":[".github/workflows/pr-fast.yml","TASK.md","docs/PHASE24_CR15_CLOSURE.md","docs/SHARED_SEMANTIC_ZONE.md","scripts/cranelift_registry.py","scripts/cranelift_test_levels.json","scripts/phase23_closure.py","scripts/phase24_cr15_closure.py"]},
+              "previous_changed_text_surfaces":{"type":"array","minItems":6,"maxItems":6},
+              "current_changed_text_surfaces":{"type":"array","minItems":8,"maxItems":8},
+              "unchanged_other_text_surface_manifest_digest":{"type":"string","pattern":"^[0-9a-f]{64}$"},
+              "unchanged_fields":{"const":["invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","invocation_selection_counts","unclassified_count"]},
+              "added_text_surface_count":{"const":2},
+              "partial_extra_or_substituted_surface":{"const":"rejected"}
+            }
+          },
+          "next_patch": {"const":"24.1"},
+          "review_view": {"const":"docs/PHASE24_CR15_CLOSURE.md"},
+          "wording": {"type":"string","minLength":1},
+          "completed_authorities": {
+            "const": {
+              "phase24_cr15_opening":["phase24_cr15_opening_v1","patch24_0b_complete_inert"],
+              "phase24_cr15_derivation":["phase24_cr15_derivation_v1","patch24_0c_complete"],
+              "phase24_cr15_qualification":["phase24_cr15_qualification_v1","patch24_0d_complete"]
+            }
+          },
+          "implementation_publications": {
+            "type":"array","minItems":7,"maxItems":7,
+            "items": {
+              "type":"object","additionalProperties":false,
+              "required":["patch","role","pull_request","head_sha","merge_main_sha","merged_at","workflow_population","successful_workflows","unfinished_workflows","non_success_workflows","unresolved_non_outdated_review_threads"],
+              "properties": {
+                "patch":{"type":"string"},"role":{"type":"string"},
+                "pull_request":{"type":"integer","minimum":1},
+                "head_sha":{"type":"string","pattern":"^[0-9a-f]{40}$"},
+                "merge_main_sha":{"type":"string","pattern":"^[0-9a-f]{40}$"},
+                "merged_at":{"type":"string","pattern":"Z$"},
+                "workflow_population":{"type":"integer","minimum":1},
+                "successful_workflows":{"type":"integer","minimum":1},
+                "unfinished_workflows":{"const":0},
+                "non_success_workflows":{"const":0},
+                "unresolved_non_outdated_review_threads":{"const":0}
+              }
+            }
+          },
+          "authoritative_historical_full": {
+            "type":"object","additionalProperties":false,
+            "required":["workflow","run_id","event","head_branch","head_sha","status","conclusion","successful_jobs","total_jobs","unfinished_jobs","non_success_jobs","created_at","completed_at"],
+            "properties": {
+              "workflow":{"const":"Cranelift Historical Full"},
+              "run_id":{"const":33726223959},
+              "event":{"const":"workflow_dispatch"},
+              "head_branch":{"const":"main"},
+              "head_sha":{"const":"aea95476d455c292f8b790a810b23bb98badcdd8"},
+              "status":{"const":"completed"},"conclusion":{"const":"success"},
+              "successful_jobs":{"const":18},"total_jobs":{"const":18},
+              "unfinished_jobs":{"const":0},"non_success_jobs":{"const":0},
+              "created_at":{"type":"string","pattern":"Z$"},
+              "completed_at":{"type":"string","pattern":"Z$"}
+            }
+          },
+          "historical_budgets": {
+            "type":"object","additionalProperties":false,
+            "required":["job_timeout_minutes","historical_shard_max_parallel","target_matrix_max_parallel","observed_run_wall_seconds","observed_max_job_seconds","observed_aggregate_job_seconds"],
+            "properties": {
+              "job_timeout_minutes":{"const":180},
+              "historical_shard_max_parallel":{"const":4},
+              "target_matrix_max_parallel":{"const":3},
+              "observed_run_wall_seconds":{"type":"integer","minimum":1},
+              "observed_max_job_seconds":{"type":"integer","minimum":1},
+              "observed_aggregate_job_seconds":{"type":"integer","minimum":1}
+            }
+          },
+          "bootstrap": {
+            "const": {
+              "seed_path":"gust_v4.c",
+              "seed_digest":"706430d05010521657d44e0ee2afa2580afb71f1f5e8ca54a88f6e34f1a2e8d9",
+              "line_count":65789,
+              "fixed_point":"stage2_stage3_byte_identical",
+              "publication_pr":307,
+              "bootstrap_route":"retained_explicit_mir_to_c_until_phase25"
+            }
+          },
+          "stdlib_handoff": {
+            "const": {
+              "status":"effective_only_after_closure_pr_merge_and_current_main_rederivation",
+              "unblocked_rows":["S1.8","S1.9","S1.10","S1.11"],
+              "compiler_contract":"generic_backend_neutral_protected_Resource_guard_derivation",
+              "stdlib_implementation_owned_by":"Stdlib lane",
+              "task_stdlib_edited_by_this_patch":false
+            }
+          },
+          "boundary": {
+            "const": {
+              "changes_accepted_Gust_meaning":false,
+              "adds_or_changes_MIR_operations":false,
+              "changes_ABI_layout_runtime_symbols_target_or_linker":false,
+              "changes_backend_route_default_or_fallback":false,
+              "changes_bootstrap_route_or_seed":false,
+              "edits_stdlib":false,
+              "begins_patch24_1_or_backend_retirement":false
             }
           }
         }

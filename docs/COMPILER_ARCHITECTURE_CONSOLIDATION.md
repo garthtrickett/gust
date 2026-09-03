@@ -1,8 +1,9 @@
 # Compiler architecture consolidation roadmap
 
-**Status:** the CR-15 compiler prerequisite and Phase 24 opening preflight are
-sequenced in active `TASK.md`; Phases 24 backend retirement, 24.5 and 25 remain
-inactive.
+**Status:** the atomic Patch 24.0f authority records how CR-15 is closed and handed off
+after its closure PR merges and current `main` is re-derived. The
+Phase 24 opening preflight remains active in `TASK.md`; Phases 24 backend
+retirement, 24.5 and 25 remain inactive.
 
 This document records the structural-debt sequence selected after the
 thermo-nuclear code-quality review. It supplements `docs/ROADMAP_TAIL.md` without
@@ -37,6 +38,14 @@ the bootstrap seed is converged in isolation, exact-main Historical authority
 is green, and the merged compiler authority is handed to Stdlib to unblock
 S1.8–S1.11. The Cranelift lane then resumes the unchanged opening preflight at
 Patch 24.1; it does not implement Stdlib work.
+
+Patch 24.0f records the exact merged compiler and seed publications, the exact
+final implementation/seed main, and its complete successful Historical Full
+population in the generated `docs/PHASE24_CR15_CLOSURE.md`. The handoff is
+effective only after that atomic closure PR merges and both lanes independently
+re-derive current `main`; it authorizes the Stdlib lane to resume S1.8–S1.11
+under `TASK_STDLIB.md` without transferring any Stdlib implementation into this
+lane.
 
 ---
 

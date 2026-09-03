@@ -61,6 +61,17 @@ def qualification_successor_digest(registry: dict) -> str | None:
     return digest
 
 
+def closure_successor_digest(registry: dict) -> str | None:
+    """Return the exact Patch 24.0f justfile successor when it is registered."""
+    closure = registry.get("phase24_cr15_closure")
+    if not isinstance(closure, dict):
+        return None
+    digest = closure.get("live_justfile_successor_digest")
+    require(isinstance(digest, str) and len(digest) == 64,
+            "Patch 24.0f justfile successor digest drifted")
+    return digest
+
+
 def validate_static(value: dict) -> None:
     require(value.get("contract_version") ==
             "phase24_cr15_stdlib_guard_transition_v1",
@@ -144,6 +155,9 @@ def live_state(registry: dict | None = None) -> str:
     successor = qualification_successor_digest(registry)
     if successor is not None and digest == successor:
         return "qualification_successor"
+    successor = closure_successor_digest(registry)
+    if successor is not None and digest == successor:
+        return "closure_successor"
     require(False,
             "justfile is not an exact registered relay or derivation state")
     raise AssertionError("unreachable")
@@ -205,6 +219,9 @@ def normalize_phase23_text_surfaces(
             successor = qualification_successor_digest(registry)
             if successor is not None:
                 accepted.append(successor)
+            successor = closure_successor_digest(registry)
+            if successor is not None:
+                accepted.append(successor)
         require(live.get("digest") in accepted,
                 f"unregistered text-surface identity: {path}")
         for field in (
@@ -237,6 +254,8 @@ def normalized_owner_file_digest(
         expected = derivation_successor_digest(registry)
     elif state == "qualification_successor":
         expected = qualification_successor_digest(registry)
+    elif state == "closure_successor":
+        expected = closure_successor_digest(registry)
     require(digest == expected, "live-C justfile owner identity drifted")
     return value["pre_relay_justfile_digest"]
 

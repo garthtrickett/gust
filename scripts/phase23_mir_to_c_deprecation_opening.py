@@ -506,6 +506,61 @@ def validate_phase24_cr15_seed_publication_transition(
     return matching_states[0]["inventory"]
 
 
+def validate_phase24_cr15_closure_transition(
+        registry: dict, live_inventory: dict, live_rows: list[dict]) -> dict:
+    """Accept only the exact Patch 24.0f closure evidence successor."""
+    closure = registry.get("phase24_cr15_closure", {})
+    transition = closure.get("consumer_inventory_transition", {})
+    seed_transition = registry.get(
+        "phase24_cr15_seed_authority_consumer_transition", {}).get(
+            "seed_publication_transition", {})
+    seed_states = seed_transition.get("accepted_live_states", [])
+    paths = transition.get("registered_changed_paths", [])
+    unchanged = [
+        "invocation_count", "invocation_manifest_digest",
+        "structural_surface_count", "structural_manifest_digest",
+        "invocation_selection_counts", "unclassified_count",
+    ]
+    require(
+        transition.get("contract_version") ==
+        "phase24_cr15_closure_consumer_transition_v1" and
+        transition.get("status") == "patch24_0f_ready_for_merge" and
+        transition.get("authority_base_main") ==
+        "aea95476d455c292f8b790a810b23bb98badcdd8" and
+        len(seed_states) == 2 and
+        seed_states[1].get("state") == "post_publication" and
+        transition.get("previous_inventory") == seed_states[1].get("inventory") and
+        transition.get("current_inventory") == live_inventory and
+        transition.get("unchanged_fields") == unchanged and
+        transition.get("partial_extra_or_substituted_surface") == "rejected" and
+        paths == sorted(paths) and len(paths) == len(set(paths)),
+        "Patch 24.0f closure consumer transition drifted")
+    previous_rows = transition.get("previous_changed_text_surfaces", [])
+    current_rows = transition.get("current_changed_text_surfaces", [])
+    require([row.get("path") for row in previous_rows] == [
+                path for path in paths
+                if any(base.get("path") == path for base in previous_rows)] and
+            [row.get("path") for row in current_rows] == [
+                path for path in paths
+                if any(live.get("path") == path for live in current_rows)],
+            "Patch 24.0f changed text-surface manifests drifted")
+    require(current_rows == [row for row in live_rows if row["path"] in paths],
+            "Patch 24.0f live changed text surfaces drifted")
+    require(canonical_digest([
+        row for row in live_rows if row["path"] not in paths
+    ]) == transition.get("unchanged_other_text_surface_manifest_digest"),
+            "Patch 24.0f changed an unregistered text surface")
+    for field in unchanged:
+        require(live_inventory.get(field) ==
+                transition["previous_inventory"].get(field),
+                f"Patch 24.0f changed retained inventory field: {field}")
+    require(transition.get("current_inventory", {}).get("text_surface_count") ==
+            transition["previous_inventory"].get("text_surface_count") +
+            transition.get("added_text_surface_count", -1),
+            "Patch 24.0f text-surface delta drifted")
+    return live_inventory
+
+
 def validate_identity_falsifiers(expected: dict[str, object]) -> None:
     text_rows = scan_text_surfaces()
     invocation_rows = scan_invocations()
@@ -539,8 +594,12 @@ def projected_text_surfaces(
         "phase24_cr15_seed_authority_consumer_transition", {}).get(
             "seed_publication_transition")
     if live_seed_digest not in {row["seed_digest"] for row in states}:
-        validate_phase24_cr15_seed_publication_transition(
-            registry, inventory_summary(), rows)
+        if isinstance(registry.get("phase24_cr15_closure"), dict):
+            validate_phase24_cr15_closure_transition(
+                registry, inventory_summary(), rows)
+        else:
+            validate_phase24_cr15_seed_publication_transition(
+                registry, inventory_summary(), rows)
     seed_rows = [row for row in rows if row["path"] == transition["seed_path"]]
     require(len(seed_rows) == 1,
             "seed inventory projection did not find exactly one seed row")
@@ -796,13 +855,25 @@ def validate() -> dict:
         for row in seed_transition["accepted_live_states"]
     }
     accepted_state = accepted_by_seed.get(live_seed_digest)
+    cr15_closure_inventory = None
     if accepted_state is None:
-        cr15_inventory = validate_phase24_cr15_seed_publication_transition(
-            registry, live_inventory, scan_text_surfaces())
+        if isinstance(registry.get("phase24_cr15_closure"), dict):
+            cr15_inventory = validate_phase24_cr15_closure_transition(
+                registry, live_inventory, scan_text_surfaces())
+            cr15_closure_inventory = cr15_inventory
+            seed_publication = registry[
+                "phase24_cr15_seed_authority_consumer_transition"][
+                    "seed_publication_transition"]
+            accepted_inventory = seed_publication[
+                "accepted_live_states"][1]["inventory"]
+        else:
+            cr15_inventory = validate_phase24_cr15_seed_publication_transition(
+                registry, live_inventory, scan_text_surfaces())
+            accepted_inventory = cr15_inventory
         accepted_state = {
-            "text_surface_count": cr15_inventory["text_surface_count"],
+            "text_surface_count": accepted_inventory["text_surface_count"],
             "text_surface_manifest_digest":
-                cr15_inventory["text_surface_manifest_digest"],
+                accepted_inventory["text_surface_manifest_digest"],
         }
     require(accepted_state is not None,
             "live seed is outside the registered seed inventory transitions")
@@ -1150,6 +1221,10 @@ def validate() -> dict:
                                 cr15_derivation_transition.get(
                                     "unchanged_other_text_surface_manifest_digest")
                             )
+                            derivation_live_inventory = (
+                                live_inventory if cr15_qualification_transition is None
+                                else cr15_derivation_transition["current_inventory"]
+                            )
                             require(
                                 cr15_derivation_transition.get("contract_version") ==
                                 "phase24_cr15_derivation_consumer_transition_v1" and
@@ -1166,15 +1241,17 @@ def validate() -> dict:
                                      "previous_inventory")) and
                                 cr15_derivation_transition.get("unchanged_fields") ==
                                 successor_unchanged and
-                                live_inventory.get("text_surface_count") ==
+                                derivation_live_inventory.get("text_surface_count") ==
                                 cr15_derivation_transition["previous_inventory"].get(
                                     "text_surface_count") + 1 and
-                                live_inventory.get("classification_counts", {}).get(
+                                derivation_live_inventory.get(
+                                    "classification_counts", {}).get(
                                     "archive_candidate") ==
                                 cr15_derivation_transition["previous_inventory"].get(
                                     "classification_counts", {}).get(
                                         "archive_candidate") + 1 and
-                                all(live_inventory.get("classification_counts", {}).get(key) ==
+                                all(derivation_live_inventory.get(
+                                        "classification_counts", {}).get(key) ==
                                     cr15_derivation_transition["previous_inventory"].get(
                                         "classification_counts", {}).get(key)
                                     for key in (
@@ -1190,7 +1267,7 @@ def validate() -> dict:
                                     "unchanged_other_text_surface_manifest_digest"),
                                 "Patch 24.0c CR-15 derivation transition drifted")
                             for field in successor_unchanged:
-                                require(live_inventory.get(field) ==
+                                require(derivation_live_inventory.get(field) ==
                                         cr15_derivation_transition[
                                             "previous_inventory"].get(field),
                                         f"Patch 24.0c changed retained inventory field: {field}")
@@ -1220,6 +1297,11 @@ def validate() -> dict:
                                     cr15_qualification_transition.get(
                                         "previous_changed_text_surfaces", [])
                                 }
+                                qualification_live_inventory = (
+                                    live_inventory if cr15_seed_transition is None
+                                    else cr15_qualification_transition[
+                                        "current_inventory"]
+                                )
                                 require(
                                     cr15_qualification_transition.get(
                                         "contract_version") ==
@@ -1266,7 +1348,7 @@ def validate() -> dict:
                                     "Patch 24.0d CR-15 qualification transition drifted")
                                 for field in qualification_unchanged:
                                     require(
-                                        live_inventory.get(field) ==
+                                        qualification_live_inventory.get(field) ==
                                         cr15_qualification_transition[
                                             "previous_inventory"].get(field),
                                         f"Patch 24.0d changed retained inventory field: {field}")
@@ -1297,6 +1379,10 @@ def validate() -> dict:
                                     )
                                     previous_seed_rows = cr15_seed_transition.get(
                                         "previous_changed_text_surfaces", [])
+                                    seed_live_inventory = (
+                                        live_inventory if cr15_seed_publication is None
+                                        else cr15_seed_transition["current_inventory"]
+                                    )
                                     require(
                                         cr15_seed_transition.get("contract_version") ==
                                         "phase24_cr15_seed_authority_consumer_transition_v1" and
@@ -1336,17 +1422,20 @@ def validate() -> dict:
                                         "Patch 24.0e CR-15 seed authority transition drifted")
                                     for field in seed_unchanged:
                                         require(
-                                            live_inventory.get(field) ==
+                                            seed_live_inventory.get(field) ==
                                             cr15_seed_transition[
                                                 "previous_inventory"].get(field),
                                             f"Patch 24.0e changed retained inventory field: {field}")
                                     expected_inventory = cr15_seed_transition[
                                         "current_inventory"]
                                     if cr15_seed_publication is not None:
-                                        expected_inventory = (
-                                            validate_phase24_cr15_seed_publication_transition(
-                                                registry, live_inventory, live_text_rows)
-                                        )
+                                        if cr15_closure_inventory is not None:
+                                            expected_inventory = cr15_closure_inventory
+                                        else:
+                                            expected_inventory = (
+                                                validate_phase24_cr15_seed_publication_transition(
+                                                    registry, live_inventory, live_text_rows)
+                                            )
     require(expected_inventory == live_inventory,
             "live Phase 23 MIR-to-C inventory is not the exact registered successor")
     require(live_inventory["unclassified_count"] == 0,
