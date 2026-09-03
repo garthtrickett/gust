@@ -8,13 +8,16 @@ type MutexGuard[T, ctx] struct {
 
 #[private]
 func release_mutex_guard(owner: MutexGuard[T, ctx]) {
-    // Signature-only probe: raw Mutex lifecycle calls remain compiler-owned.
+    unsafe {
+        (*owner.mutex).Unlock();
+    }
 }
 
 func lock(mutex: &std.Mutex[T, ctx]) MutexGuard[T, ctx] {
-    // CR-15 is reached while substituting this generic result shape, before a
-    // real implementation may acquire the Mutex.
     mut owner: MutexGuard[T, ctx];
+    unsafe {
+        owner.protected = (*mutex).Lock();
+    }
     owner.mutex = mutex;
     return owner;
 }

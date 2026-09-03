@@ -2,8 +2,8 @@
 
 A "stdlib foundations" plan covering string ergonomics, HashMap through
 references, branded collection consistency, `Clone` normalization, a scoped mutex
-guard, and then a roadmap out to `std.net`. Reviewed again 2026-08-24 after the
-Phase 20 resource/protected-access sequence and the CR-15 derivation probe.
+guard, and then a roadmap out to `std.net`. Reviewed again 2026-09-03 after the
+Phase 24.0f CR-15 closure and S1.8 implementation.
 
 **Most of the first half is already the Phase S1 roadmap in `TASK_STDLIB.md`, and
 every pre-guard item is done.** The valuable content is therefore the status
@@ -22,14 +22,13 @@ plan does not know it has.
 | 1.3 Branded collection type consistency | **S1.4** | **DONE** |
 | 1.4 `Clone` with arena references | **S1.5** | **DONE** |
 | Tests proving all five compose | **S1.6** | **DONE** |
-| 2.x scoped mutex guard | **S1.7 / S1.8** | **audit DONE; resource floor landed; reusable guard blocked on CR-15** |
+| 2.x scoped mutex guard | **S1.7 / S1.8** | **audit and safe prototype DONE** |
 
 Phase 19 delivered CR-2, and the narrower S1.4/S1.5 defects subsequently landed
 through Cranelift coordination. Phase 20 delivered CR-5 and generic
-protected-access liveness. The remaining guard blocker is CR-15: OD-2 excludes
-the imported generic functions the selected `sync.lock` / `sync.get` surface
-would otherwise use, so concrete instances must come from bounded
-compiler-owned derivation.
+protected-access liveness. Phase 24.0f then closed CR-15 with bounded
+compiler-owned derivation that preserves OD-2. S1.8 consumes that authority in
+the selected `sync.lock` / `sync.get` prototype.
 
 ### 1.1 is done, and it did not do what this plan wants
 
@@ -94,6 +93,11 @@ forbids. The operator chose bounded compiler-owned derivation over reopening
 generic functions. That derivation must be generic over Resource and protected
 access metadata and backend-neutral; it is not permission for a Mutex-named
 backend rule.
+
+**Resolved by Phase 24.0f and consumed by S1.8.** The merged derivation produces
+the selected concrete guard/acquisition/accessor identities before backend
+selection. The safe module now supplies the ordinary lock, guarded access, and
+registered cleanup bodies without changing the runtime symbol surface.
 
 **C. `Mutex[T]` grants mutable access through a guard, which is interior
 mutability.** The plan wisely defers it — *"I would not start there"* — but the
