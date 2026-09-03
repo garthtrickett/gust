@@ -6697,6 +6697,35 @@
       "without_metadata": "Brand Nesting Restriction",
       "post_cleanup": "[ProtectedAccessNotLive]"
     },
+    "raw_mutex_call_site_transition": {
+      "contract_version": "phase24_cr15_qualification_raw_mutex_transition_v1",
+      "status": "patch24_0d_complete",
+      "authority_base_main": "2383096a741c62e8de103a5b79281b9f616eb805",
+      "previous_call_sites": [
+        {"path":"compiler/e2e_complex_bootstrap_target.gst","role":"bootstrap_target","lock_calls":4,"unlock_calls":4},
+        {"path":"compiler/phase20_component_threading_source.gst","role":"compiler_threading_runtime_fixture","lock_calls":2,"unlock_calls":2},
+        {"path":"compiler/phase20_mutex_lock_safe_invalid.gst","role":"patch20_16d_enforcement_negative","lock_calls":1,"unlock_calls":0},
+        {"path":"compiler/phase20_mutex_unlock_safe_invalid.gst","role":"patch20_16d_enforcement_negative","lock_calls":0,"unlock_calls":1},
+        {"path":"compiler/phase20_protected_access_module.gst","role":"patch20_16d_explicit_unsafe_lifecycle_fixture","lock_calls":1,"unlock_calls":1},
+        {"path":"tests/e2e_mutex_concurrency.gst","role":"transitional_mutex_test","lock_calls":3,"unlock_calls":3},
+        {"path":"tests/e2e_sync_primitives.gst","role":"transitional_sync_test","lock_calls":4,"unlock_calls":4}
+      ],
+      "previous_totals": {"lock_calls":15,"unlock_calls":15,"calls":30},
+      "added_call_site": {"path":"tests/phase24_cr15_qualification_module.gst","role":"patch24_0d_spelling_substituted_metadata_fixture","lock_calls":1,"unlock_calls":1},
+      "current_call_sites": [
+        {"path":"compiler/e2e_complex_bootstrap_target.gst","role":"bootstrap_target","lock_calls":4,"unlock_calls":4},
+        {"path":"compiler/phase20_component_threading_source.gst","role":"compiler_threading_runtime_fixture","lock_calls":2,"unlock_calls":2},
+        {"path":"compiler/phase20_mutex_lock_safe_invalid.gst","role":"patch20_16d_enforcement_negative","lock_calls":1,"unlock_calls":0},
+        {"path":"compiler/phase20_mutex_unlock_safe_invalid.gst","role":"patch20_16d_enforcement_negative","lock_calls":0,"unlock_calls":1},
+        {"path":"compiler/phase20_protected_access_module.gst","role":"patch20_16d_explicit_unsafe_lifecycle_fixture","lock_calls":1,"unlock_calls":1},
+        {"path":"tests/e2e_mutex_concurrency.gst","role":"transitional_mutex_test","lock_calls":3,"unlock_calls":3},
+        {"path":"tests/e2e_sync_primitives.gst","role":"transitional_sync_test","lock_calls":4,"unlock_calls":4},
+        {"path":"tests/phase24_cr15_qualification_module.gst","role":"patch24_0d_spelling_substituted_metadata_fixture","lock_calls":1,"unlock_calls":1}
+      ],
+      "current_totals": {"lock_calls":16,"unlock_calls":16,"calls":32},
+      "baseline_calls_unchanged": 24,
+      "partial_extra_or_substituted_call_site": "rejected"
+    },
     "consumer_inventory_transition": {
       "contract_version": "phase24_cr15_qualification_consumer_transition_v1",
       "status": "patch24_0d_complete",

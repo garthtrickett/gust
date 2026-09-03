@@ -211,10 +211,47 @@ def validate() -> tuple[dict, list[MethodCall]]:
     for call in calls:
         counts = actual.setdefault(call.path, {"Lock": 0, "Unlock": 0})
         counts[call.method] += 1
+    expected_call_sites = authority.get("call_sites", [])
+    expected_total_lock_calls = authority.get("total_lock_calls")
+    expected_total_unlock_calls = authority.get("total_unlock_calls")
+    expected_total_calls = authority.get("total_calls")
+    successor = registry.get("phase24_cr15_qualification", {}).get(
+        "raw_mutex_call_site_transition")
+    if successor is not None:
+        require(
+            successor.get("contract_version") ==
+            "phase24_cr15_qualification_raw_mutex_transition_v1" and
+            successor.get("status") == "patch24_0d_complete" and
+            successor.get("authority_base_main") ==
+            "2383096a741c62e8de103a5b79281b9f616eb805" and
+            successor.get("previous_call_sites") == authority.get("call_sites") and
+            successor.get("previous_totals") == {
+                "lock_calls": authority.get("total_lock_calls"),
+                "unlock_calls": authority.get("total_unlock_calls"),
+                "calls": authority.get("total_calls"),
+            } and
+            successor.get("added_call_site") == {
+                "path": "tests/phase24_cr15_qualification_module.gst",
+                "role": "patch24_0d_spelling_substituted_metadata_fixture",
+                "lock_calls": 1,
+                "unlock_calls": 1,
+            } and
+            successor.get("current_call_sites") ==
+            authority.get("call_sites") + [successor["added_call_site"]] and
+            successor.get("current_totals") == {
+                "lock_calls": 16, "unlock_calls": 16, "calls": 32,
+            } and
+            successor.get("baseline_calls_unchanged") == 24 and
+            successor.get("partial_extra_or_substituted_call_site") == "rejected",
+            "Patch 24.0d raw Mutex call-site successor drifted")
+        expected_call_sites = successor["current_call_sites"]
+        expected_total_lock_calls = successor["current_totals"]["lock_calls"]
+        expected_total_unlock_calls = successor["current_totals"]["unlock_calls"]
+        expected_total_calls = successor["current_totals"]["calls"]
     expected = {
         row["path"]: {"Lock": row["lock_calls"],
                       "Unlock": row["unlock_calls"]}
-        for row in authority.get("call_sites", [])
+        for row in expected_call_sites
     }
     require(actual == expected,
             f"raw Mutex call-site classification drifted: actual={actual!r}")
@@ -224,11 +261,11 @@ def validate() -> tuple[dict, list[MethodCall]]:
             authority.get("baseline_unlock_calls") == 12 and
             authority.get("baseline_calls") == 24,
             "Patch 20.16c frozen 24-call baseline drifted")
-    require(lock_calls == authority.get("total_lock_calls") == 15,
+    require(lock_calls == expected_total_lock_calls,
             "raw Mutex Lock inventory drifted")
-    require(unlock_calls == authority.get("total_unlock_calls") == 15,
+    require(unlock_calls == expected_total_unlock_calls,
             "raw Mutex Unlock inventory drifted")
-    require(len(calls) == authority.get("total_calls") == 30,
+    require(len(calls) == expected_total_calls,
             "raw Mutex total call inventory drifted")
     require(authority.get("transitional_test_coverage") == [
         "tests/e2e_mutex_concurrency.gst",
