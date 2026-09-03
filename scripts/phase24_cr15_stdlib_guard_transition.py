@@ -116,6 +116,109 @@ def s1_8_successor(value: dict) -> dict:
     return successor
 
 
+def s1_8_coordination_successor(registry: dict, successor: dict) -> dict:
+    coordination = registry.get("phase24_s1_8_authority_successor")
+    require(isinstance(coordination, dict),
+            "S1.8 coordination successor is missing")
+    require(
+        coordination.get("contract_version") ==
+        "phase24_s1_8_authority_successor_v1" and
+        coordination.get("status") == "ready_for_exact_stdlib_s1_8_rebase" and
+        coordination.get("authority_base_main") ==
+        "148a7715e7a3f22e30e361750d2e49a443ce5c42" and
+        coordination.get("owning_stdlib_pull_request") == 314 and
+        coordination.get("owning_stdlib_exact_head_sha") ==
+        "96a51a20dd4071ad63ead144cdb11ce4da3834a6" and
+        coordination.get("changed_paths") == successor["changed_paths"] and
+        coordination.get("inherited_inventory_contract") ==
+        successor["contract_version"] and
+        coordination.get("justfile_state_digests") == {
+            "pre_s1_8":
+            "74bea653752ec6b7432c0df3613a2e3b243e59bc36789c4b98b0baecf3951e08",
+            "post_s1_8":
+            "8cd6f74b95c4e576168ea861288fa40ed918328d4e43428975466f902c0f843f",
+        } and
+        coordination.get("unchanged_non_justfile_identity") ==
+        "byte_identical_to_inherited_pre_and_post_states" and
+        coordination.get("added_phase23_text_surface") == {
+            "path": "scripts/stdlib_s1_mutex_guard_parity.sh",
+            "digest":
+            "f03f7b26d667150fcc2019a5aea8f99f12ac165e4da28eac18d1c878fc7eb9fe",
+            "match_counts": {
+                "explicit_backend_spelling": 0,
+                "mir_to_c_name": 7,
+                "generated_c_contract": 0,
+            },
+            "classification": "archive_candidate",
+            "owner": "stdlib",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "removal_phase": "24",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+        } and
+        coordination.get("rejected_states") == [
+            "partial", "extra", "substituted", "safe_raw",
+            "backend_specific", "path_drifted", "unrelated",
+        ] and
+        coordination.get("phase22_invocation_transition") == {
+            "contract_version":
+            "phase24_s1_8_authority_phase22_invocation_transition_v1",
+            "previous_invocation": {
+                "path": "scripts/phase24_filename_behavior_characterization.py",
+                "line": 428,
+                "recipe": "none",
+                "compiler_token": "python_argv",
+                "selection": "implicit_default",
+                "consumer_class": "cranelift_C_or_diagnostic_guard",
+                "owner": "cranelift",
+                "expected_artifact": "generated_C_or_diagnostic",
+                "expected_transition": "22.2_explicit_C_selection",
+                "falsifier":
+                "default_flip_changes_the_guard_artifact_before_explicit_C_migration",
+                "command":
+                "[str(ROOT / 'gust'), *ROUTES[route], relative_target]",
+            },
+            "current_invocation": {
+                "path": "scripts/phase24_filename_behavior_characterization.py",
+                "line": 441,
+                "recipe": "none",
+                "compiler_token": "python_argv",
+                "selection": "implicit_default",
+                "consumer_class": "cranelift_C_or_diagnostic_guard",
+                "owner": "cranelift",
+                "expected_artifact": "generated_C_or_diagnostic",
+                "expected_transition": "22.2_explicit_C_selection",
+                "falsifier":
+                "default_flip_changes_the_guard_artifact_before_explicit_C_migration",
+                "command":
+                "[str(ROOT / 'gust'), *ROUTES[route], relative_target]",
+            },
+            "summary_unchanged": True,
+            "partial_extra_or_substituted_invocation": "rejected",
+        } and
+        coordination.get("boundary") == {
+            "changes_compiler_runtime_or_stdlib_source": False,
+            "changes_accepted_Gust_program_meaning": False,
+            "adds_or_changes_MIR_ABI_layout_or_runtime_symbols": False,
+            "changes_backend_route_default_or_fallback": False,
+            "changes_bootstrap_route_or_seed": False,
+            "begins_patch24_3": False,
+        }, "S1.8 coordination successor identity or boundary drifted")
+    return coordination
+
+
+def coordinated_s1_8_states(
+        successor: dict, coordination: dict) -> list[dict[str, object]]:
+    states = copy.deepcopy(successor["accepted_states"])
+    digests = coordination["justfile_state_digests"]
+    for state in states:
+        for row in state["files"]:
+            if row["path"] == "justfile":
+                row.pop("absent", None)
+                row["digest"] = digests[state["state"]]
+    return states
+
+
 def classify_s1_8_manifest(
         successor: dict, live: list[dict[str, object]]) -> str | None:
     matches = [row["state"] for row in successor["accepted_states"]
@@ -149,6 +252,7 @@ def s1_8_state(value: dict, registry: dict | None = None) -> str:
         registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     successor = s1_8_successor(value)
     s1_8_falsifier_self_test(successor)
+    coordination = s1_8_coordination_successor(registry, successor)
     live: list[dict[str, object]] = []
     for path in successor["changed_paths"]:
         absolute = ROOT / path
@@ -156,20 +260,11 @@ def s1_8_state(value: dict, registry: dict | None = None) -> str:
             live.append({"path": path, "digest": digest_bytes(absolute.read_bytes())})
         else:
             live.append({"path": path, "absent": True})
-    state = classify_s1_8_manifest(successor, live)
-    if state is None:
-        # Later Cranelift roadmap rows may append their own guard recipes to the
-        # justfile. Admit that exact registered successor only when the other
-        # eight Stdlib-owned paths remain byte-identical to one complete state.
-        justfile_digest = filename_characterization_successor_digest(registry)
-        for accepted in successor["accepted_states"]:
-            adjusted = copy.deepcopy(accepted["files"])
-            for row in adjusted:
-                if row["path"] == "justfile":
-                    row.pop("absent", None)
-                    row["digest"] = justfile_digest
-            if live == adjusted:
-                state = str(accepted["state"])
+    coordinated = copy.deepcopy(successor)
+    coordinated["accepted_states"] = coordinated_s1_8_states(
+        successor, coordination)
+    s1_8_falsifier_self_test(coordinated)
+    state = classify_s1_8_manifest(coordinated, live)
     require(state is not None,
             "live Stdlib surface is neither exact pre-S1.8 nor exact post-S1.8 state")
     return state
@@ -377,6 +472,18 @@ def normalize_phase22_invocations(
                     "rejected",
                     "Patch 24.1a invocation successor drifted")
             added = decision_transition.get("current_invocation")
+        coordination = registry.get("phase24_s1_8_authority_successor", {})
+        coordination_transition = coordination.get(
+            "phase22_invocation_transition", {})
+        require(
+            coordination_transition.get("contract_version") ==
+            "phase24_s1_8_authority_phase22_invocation_transition_v1" and
+            coordination_transition.get("previous_invocation") == added and
+            coordination_transition.get("summary_unchanged") is True and
+            coordination_transition.get(
+                "partial_extra_or_substituted_invocation") == "rejected",
+            "S1.8 coordination invocation successor drifted")
+        added = coordination_transition.get("current_invocation")
         matches = [row for row in normalized if all(
             row.get(field) == added.get(field) for field in (
                 "path", "line", "recipe", "compiler_token", "selection",
@@ -414,15 +521,29 @@ def normalize_phase23_text_surfaces(
     state = live_state(registry)
     if state == "s1_8_successor":
         transition = s1_8_successor(value)["phase23_text_surface_transition"]
+        coordination = s1_8_coordination_successor(
+            registry, s1_8_successor(value))
+        expected_current = copy.deepcopy(transition["current_rows"])
+        for row in expected_current:
+            if row["path"] == "justfile":
+                row["digest"] = coordination[
+                    "justfile_state_digests"]["post_s1_8"]
         by_live_path = {str(row["path"]): row for row in rows}
         require([by_live_path.get(path) for path in transition["changed_paths"]] ==
-                transition["current_rows"],
+                expected_current,
                 "live S1.8 text surfaces are partial, substituted, or drifted")
         replacements = {
             str(row["path"]): copy.deepcopy(row)
             for row in transition["previous_rows"]
         }
+        replacements["justfile"]["digest"] = coordination[
+            "justfile_state_digests"]["pre_s1_8"]
         rows = [replacements.get(str(row["path"]), row) for row in rows]
+        added = coordination["added_phase23_text_surface"]
+        matches = [row for row in rows if row["path"] == added["path"]]
+        require(matches == [added],
+                "S1.8 added text surface is missing, substituted, or duplicated")
+        rows.remove(matches[0])
     canonical = value.get("canonical_phase23_text_surfaces", [])
     require([row.get("path") for row in canonical] == [
         "justfile", "scripts/phase22_opening.py",
@@ -483,9 +604,9 @@ def normalized_owner_file_digest(
     elif state == "filename_characterization_successor":
         expected = filename_characterization_successor_digest(registry)
     elif state == "s1_8_successor":
-        expected = next(
-            row["digest"] for row in s1_8_successor(value)["accepted_states"][1]["files"]
-            if row["path"] == "justfile")
+        successor = s1_8_successor(value)
+        coordination = s1_8_coordination_successor(registry, successor)
+        expected = coordination["justfile_state_digests"]["post_s1_8"]
     require(digest == expected, "live-C justfile owner identity drifted")
     return value["pre_relay_justfile_digest"]
 

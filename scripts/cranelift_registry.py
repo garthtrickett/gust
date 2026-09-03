@@ -94,6 +94,7 @@ TOP_FIELDS = {
     "phase24_cr15_closure",
     "phase24_filename_behavior_characterization",
     "phase24_semantic_spelling_inventory",
+    "phase24_s1_8_authority_successor",
     "phase19_spelling_inventory",
     "phase19_brand_authority",
     "phase19_type_naming", "phase19_classification", "phase19_representation",

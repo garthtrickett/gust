@@ -7398,6 +7398,66 @@
       "begins_patch24_3": false
     }
   },
+  "phase24_s1_8_authority_successor": {
+    "contract_version": "phase24_s1_8_authority_successor_v1",
+    "status": "ready_for_exact_stdlib_s1_8_rebase",
+    "authority_base_main": "148a7715e7a3f22e30e361750d2e49a443ce5c42",
+    "owning_stdlib_pull_request": 314,
+    "owning_stdlib_exact_head_sha": "96a51a20dd4071ad63ead144cdb11ce4da3834a6",
+    "changed_paths": [
+      ".github/workflows/stdlib-s1-mutex-guard.yml",
+      ".github/workflows/stdlib-s1-resource-prerequisites.yml",
+      "TASK_STDLIB.md",
+      "docs/STDLIB_FOUNDATIONS.md",
+      "docs/STDLIB_SURFACE_FINDINGS.md",
+      "justfile",
+      "scripts/stdlib_s1_mutex_guard_parity.sh",
+      "tests/stdlib_s1_mutex_guard.gst",
+      "tests/stdlib_s1_mutex_guard_generic_derivation_module.gst"
+    ],
+    "inherited_inventory_contract": "phase24_stdlib_s1_8_inventory_successor_v1",
+    "justfile_state_digests": {
+      "pre_s1_8": "74bea653752ec6b7432c0df3613a2e3b243e59bc36789c4b98b0baecf3951e08",
+      "post_s1_8": "8cd6f74b95c4e576168ea861288fa40ed918328d4e43428975466f902c0f843f"
+    },
+    "unchanged_non_justfile_identity": "byte_identical_to_inherited_pre_and_post_states",
+    "added_phase23_text_surface": {"path":"scripts/stdlib_s1_mutex_guard_parity.sh","digest":"f03f7b26d667150fcc2019a5aea8f99f12ac165e4da28eac18d1c878fc7eb9fe","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":7,"generated_c_contract":0},"classification":"archive_candidate","owner":"stdlib","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
+    "rejected_states": [
+      "partial",
+      "extra",
+      "substituted",
+      "safe_raw",
+      "backend_specific",
+      "path_drifted",
+      "unrelated"
+    ],
+    "phase22_invocation_transition": {
+      "contract_version": "phase24_s1_8_authority_phase22_invocation_transition_v1",
+      "previous_invocation": {"path":"scripts/phase24_filename_behavior_characterization.py","line":428,"recipe":"none","compiler_token":"python_argv","selection":"implicit_default","consumer_class":"cranelift_C_or_diagnostic_guard","owner":"cranelift","expected_artifact":"generated_C_or_diagnostic","expected_transition":"22.2_explicit_C_selection","falsifier":"default_flip_changes_the_guard_artifact_before_explicit_C_migration","command":"[str(ROOT / 'gust'), *ROUTES[route], relative_target]"},
+      "current_invocation": {"path":"scripts/phase24_filename_behavior_characterization.py","line":441,"recipe":"none","compiler_token":"python_argv","selection":"implicit_default","consumer_class":"cranelift_C_or_diagnostic_guard","owner":"cranelift","expected_artifact":"generated_C_or_diagnostic","expected_transition":"22.2_explicit_C_selection","falsifier":"default_flip_changes_the_guard_artifact_before_explicit_C_migration","command":"[str(ROOT / 'gust'), *ROUTES[route], relative_target]"},
+      "summary_unchanged": true,
+      "partial_extra_or_substituted_invocation": "rejected"
+    },
+    "consumer_inventory_transition": {
+      "contract_version": "phase24_s1_8_authority_consumer_transition_v1",
+      "previous_inventory": {"text_surface_count":575,"text_surface_manifest_digest":"6bcc1b2b6e564a4ddcd4a2b40b91288fa4182dcc219ef5556e05d49da20b7727","invocation_count":318,"invocation_manifest_digest":"f27c56c4865a333647c4af6f770bb2f81cca8e4e7a909e2e3221035ff8ae42b0","structural_surface_count":15,"structural_manifest_digest":"b7cd89cf9619d7bc28ecdbafaf6b616534fd68d9728ef47b85629f0531c8a22a","classification_counts":{"archive_candidate":474,"bootstrap_phase25":10,"focused_live_oracle":4,"historical_only":74,"production_or_release_migration":28},"invocation_selection_counts":{"explicit_c":178,"explicit_cranelift":119,"explicit_invalid_or_parser_probe":3,"implicit_default":18},"unclassified_count":0},
+      "current_inventory": {"text_surface_count":575,"text_surface_manifest_digest":"dca40f5bc6814ed7b6a3157cd03dfb8f779c97e295444df9e9de920b47aa050c","invocation_count":318,"invocation_manifest_digest":"f27c56c4865a333647c4af6f770bb2f81cca8e4e7a909e2e3221035ff8ae42b0","structural_surface_count":15,"structural_manifest_digest":"b7cd89cf9619d7bc28ecdbafaf6b616534fd68d9728ef47b85629f0531c8a22a","classification_counts":{"archive_candidate":474,"bootstrap_phase25":10,"focused_live_oracle":4,"historical_only":74,"production_or_release_migration":28},"invocation_selection_counts":{"explicit_c":178,"explicit_cranelift":119,"explicit_invalid_or_parser_probe":3,"implicit_default":18},"unclassified_count":0},
+      "registered_changed_paths": ["scripts/cranelift_registry.py"],
+      "previous_changed_text_surfaces": [{"path":"scripts/cranelift_registry.py","digest":"4478a291e491b02718c8887ba667fe5400fac96d062b5a30d1ab86f1776be501","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":61,"generated_c_contract":5},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"}],
+      "current_changed_text_surfaces": [{"path":"scripts/cranelift_registry.py","digest":"76bd587bc8634b55d9f4e6165cfb5468917a13f04f06142a227974a8cc5a5f62","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":61,"generated_c_contract":5},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"}],
+      "unchanged_other_text_surface_manifest_digest": "847ac9c869907917e0bd8f32a095ba9a92b3cb0bdc89d0118e3e202c3ff1a952",
+      "unchanged_fields": ["text_surface_count","invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","classification_counts","invocation_selection_counts","unclassified_count"],
+      "partial_extra_or_substituted_surface": "rejected"
+    },
+    "boundary": {
+      "changes_compiler_runtime_or_stdlib_source": false,
+      "changes_accepted_Gust_program_meaning": false,
+      "adds_or_changes_MIR_ABI_layout_or_runtime_symbols": false,
+      "changes_backend_route_default_or_fallback": false,
+      "changes_bootstrap_route_or_seed": false,
+      "begins_patch24_3": false
+    }
+  },
   "phase19_brand_authority": {
     "authority_version": "phase19_brand_identity_authority_v1",
     "status": "ready_for_patch19_3",

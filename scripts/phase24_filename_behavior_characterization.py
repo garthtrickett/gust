@@ -128,7 +128,20 @@ def validate_static(value: dict) -> None:
     require(value.get("authority_base_main") ==
             "3abae7a96111b15e27e295a81f15b7f97a2e372c",
             "authority base main drifted")
-    require(value.get("live_justfile_successor_digest") == digest(JUSTFILE.read_bytes()),
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    coordination = registry.get("phase24_s1_8_authority_successor", {})
+    require(
+        coordination.get("contract_version") ==
+        "phase24_s1_8_authority_successor_v1" and
+        coordination.get("owning_stdlib_pull_request") == 314 and
+        coordination.get("owning_stdlib_exact_head_sha") ==
+        "96a51a20dd4071ad63ead144cdb11ce4da3834a6",
+        "S1.8 coordination successor identity drifted")
+    accepted_justfile_digests = [
+        value.get("live_justfile_successor_digest"),
+        *coordination.get("justfile_state_digests", {}).values(),
+    ]
+    require(digest(JUSTFILE.read_bytes()) in accepted_justfile_digests,
             "live justfile successor digest drifted")
     require(value.get("review_view") == REVIEW.relative_to(ROOT).as_posix(),
             "review view drifted")
