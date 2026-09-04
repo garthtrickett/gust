@@ -187,7 +187,71 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
             cr15_diff["insertions"] - cr15_diff["deletions"] ==
             cr15_diff["line_delta"],
             "Phase 24 CR-15 seed line delta is inconsistent")
-    return identities
+
+    # Patch 24.2f moved the seed again, so the CR-15 post-publication identity is
+    # now this chain's pre-publication identity. Registered here before Patch
+    # 24.2g publishes gust_v4.c, because that publication must contain the seed
+    # and nothing else and would otherwise land red.
+    transfer_transition = record.get("phase24_2f_seed_transition")
+    require(transfer_transition == {
+        "contract_version":
+            "phase24_2f_resource_transfer_seed_reconvergence_transition_v1",
+        "status": "ready_for_seed_publication",
+        "predecessor_seed_authority":
+            "phase24_cr15_seed_reconvergence_transition_v1",
+        "authority_base_main": "6e5aaa671b705c71866cc30d719c70d5cd316b59",
+        "accounted_compiler_authorities": [
+            "phase24_s1_9_resource_assignment_implementation_v1",
+        ],
+        "accepted_live_seed_identities": [
+            {
+                "state": "pre_publication",
+                "line_count": 65789,
+                "seed_digest":
+                    "706430d05010521657d44e0ee2afa2580afb71f1f5e8ca54a88f6e34f1a2e8d9",
+            },
+            {
+                "state": "post_publication",
+                "line_count": 65784,
+                "seed_digest":
+                    "3f898b4bf34172fb0be90c5a78e8d07b8e319c74bee7a383d2f176267d09bf58",
+            },
+        ],
+        "generated_seed_diff": {
+            "previous_lines": 65789,
+            "current_lines": 65784,
+            "insertions": 86,
+            "deletions": 91,
+            "line_delta": -5,
+        },
+        "seed_pr_policy": "gust_v4_c_only",
+        "partial_or_unregistered_identity": "rejected",
+        "closure_transition": "collapse_to_post_publication_after_seed_merge",
+    }, "Patch 24.2f seed transition drifted")
+    transfer_identities = transfer_transition["accepted_live_seed_identities"]
+    require([row["state"] for row in transfer_identities] ==
+            ["pre_publication", "post_publication"],
+            "Patch 24.2f seed transition state order drifted")
+    require(len({(row["line_count"], row["seed_digest"])
+                 for row in transfer_identities}) == 2,
+            "Patch 24.2f seed transition identities are not distinct")
+    transfer_diff = transfer_transition["generated_seed_diff"]
+    require(transfer_diff["current_lines"] - transfer_diff["previous_lines"] ==
+            transfer_diff["line_delta"] and
+            transfer_diff["insertions"] - transfer_diff["deletions"] ==
+            transfer_diff["line_delta"],
+            "Patch 24.2f seed line delta is inconsistent")
+    # The chain must be continuous: this transition starts from the seed CR-15
+    # published. Compare identity only - the same seed is CR-15's
+    # post_publication and this transition's pre_publication.
+    require({key: transfer_identities[0][key]
+             for key in ("line_count", "seed_digest")} ==
+            {key: identities[1][key] for key in ("line_count", "seed_digest")},
+            "Patch 24.2f seed transition does not start from the CR-15 fixed point")
+    require(transfer_diff["previous_lines"] == transfer_identities[0]["line_count"] and
+            transfer_diff["current_lines"] == transfer_identities[1]["line_count"],
+            "Patch 24.2f seed diff does not match its own identities")
+    return transfer_identities
 
 
 def accepted_live_seed_line_counts(record: dict) -> set[int]:
@@ -196,7 +260,7 @@ def accepted_live_seed_line_counts(record: dict) -> set[int]:
 
 def accepted_live_seed_line_count(record: dict, actual_line_count: int) -> int:
     require(actual_line_count in accepted_live_seed_line_counts(record),
-            "committed seed line count is outside the exact Phase 24 CR-15 transition")
+            "committed seed line count is outside the exact registered seed transition")
     return actual_line_count
 
 

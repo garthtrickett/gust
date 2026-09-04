@@ -986,20 +986,62 @@ def normalize_phase23_text_surfaces(
         registry)
     transition = implementation["consumer_inventory_transition"]
     changed_paths = transition["registered_changed_paths"]
+    # Patch 24.2g-auth registers one further changed surface on top of the merged
+    # Patch 24.2f state. Both are exact registered states; anything else rejects.
+    auth = registry.get("phase22_default_route_seed_convergence", {}).get(
+        "phase24_2g_auth_seed_identity_successor")
+    auth_paths: list[str] = []
+    if isinstance(auth, dict):
+        require(auth.get("contract_version") ==
+                "phase24_2g_auth_seed_identity_successor_v1" and
+                auth.get("status") ==
+                "patch24_2g_auth_seed_identity_authority" and
+                auth.get("registered_changed_paths") == [
+                    "scripts/phase22_default_route_seed_convergence.py"] and
+                auth.get("added_text_surfaces") == [] and
+                auth.get("partial_extra_or_substituted_surface") == "rejected",
+                "Patch 24.2g-auth seed identity successor drifted")
+        auth_paths = auth["registered_changed_paths"]
+    union_paths = changed_paths + [
+        path for path in auth_paths if path not in changed_paths]
     changed_rows = [row for row in rows if row["path"] in changed_paths]
     require(changed_rows == transition["current_changed_text_surfaces"],
             "Patch 24.2f changed text surfaces are partial or substituted")
+    if auth_paths:
+        auth_rows = [row for row in rows if row["path"] in auth_paths]
+        auth_states = {
+            "pre_auth": auth["previous_changed_text_surfaces"],
+            "post_auth": auth["current_changed_text_surfaces"],
+        }
+        matched = [name for name, expected in auth_states.items()
+                   if auth_rows == expected]
+        require(len(matched) == 1,
+                "Patch 24.2g-auth changed text surfaces are partial or substituted")
+        state = matched[0]
+    else:
+        state = "pre_auth"
+    scope = changed_paths if state == "pre_auth" else union_paths
     other_digest = digest_bytes(json.dumps(
-        [row for row in rows if row["path"] not in changed_paths],
+        [row for row in rows if row["path"] not in scope],
         sort_keys=True, separators=(",", ":")).encode())
-    require(other_digest ==
-            transition["unchanged_other_text_surface_manifest_digest"],
+    expected_other = (transition["unchanged_other_text_surface_manifest_digest"]
+                      if state == "pre_auth"
+                      else auth["unchanged_other_text_surface_manifest_digest"])
+    require(other_digest == expected_other,
             f"Patch 24.2f changed an unregistered text surface: {other_digest}")
     replacements = {
         row["path"]: copy.deepcopy(row)
         for row in transition["previous_changed_text_surfaces"]
     }
+    if state == "post_auth":
+        # Project Patch 24.2g-auth's changed surface back to its merged-main
+        # identity too, so the closed Phase 23 and Phase 26/27 projections keep
+        # seeing the state they were registered against.
+        for row in auth["previous_changed_text_surfaces"]:
+            replacements[row["path"]] = copy.deepcopy(row)
     added = set(transition["added_text_surfaces"])
+    if state == "post_auth":
+        added |= set(auth["added_text_surfaces"])
     rows = [replacements.get(row["path"], row) for row in rows
             if row["path"] not in added]
     canonical = value.get("canonical_phase23_text_surfaces", [])
