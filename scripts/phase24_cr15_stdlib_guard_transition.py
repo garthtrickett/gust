@@ -253,6 +253,150 @@ def s1_8_workflow_prerequisite_successor(
     return workflow
 
 
+def provider_docs_successor(coordination: dict) -> dict:
+    successor = coordination.get("provider_docs_consumer_successor")
+    require(isinstance(successor, dict),
+            "provider docs consumer successor is missing")
+    paths = [
+        "docs/CRYPTO_PROVIDER_ARCHITECTURE.md",
+        "docs/DEMO_TARGET_PROGRAM.md",
+        "docs/DEPLOYMENT_ARCHITECTURE.md",
+        "docs/FULL_STACK_REFERENCE_MAP.md",
+        "docs/HTTP_RPC_ARCHITECTURE.md",
+        "docs/POSTGRES_DRIVER_ARCHITECTURE.md",
+        "docs/STDLIB_FOUNDATIONS.md",
+        "docs/STRATEGY_REVIEW.md",
+        "docs/SUPPLIER_ADAPTER_STRATEGY.md",
+        "docs/VISION.md",
+        "docs/WASM_DOM_ARCHITECTURE.md",
+        "docs/WEB_SLICE_0.md",
+    ]
+    boundary = {
+        "changes_compiler_runtime_or_stdlib_source": False,
+        "changes_accepted_Gust_program_meaning": False,
+        "adds_or_changes_MIR_ABI_layout_or_runtime_symbols": False,
+        "changes_backend_route_default_or_fallback": False,
+        "changes_bootstrap_route_or_seed": False,
+        "edits_provider_docs_candidate": False,
+        "begins_patch24_3": False,
+    }
+    require(
+        successor.get("contract_version") ==
+        "phase24_provider_docs_consumer_successor_v1" and
+        successor.get("status") ==
+        "ready_for_exact_provider_docs_rebase" and
+        successor.get("authority_base_main") ==
+        "a6e99e14a1a90da29c26ef5f40f119c7feee8fa3" and
+        successor.get("owning_docs_pull_request") == 320 and
+        successor.get("owning_docs_exact_head_sha") ==
+        "51c6365aea49d52931e98fbffd8d912734d53d6a" and
+        successor.get("changed_paths") == paths and
+        successor.get("accepted_live_states") == [
+            "pre_provider_docs", "post_provider_docs"] and
+        successor.get("rejected_states") == [
+            "partial", "extra", "substituted", "path_drifted",
+            "near_miss", "unrelated"] and
+        successor.get("boundary") == boundary,
+        "provider docs successor identity or boundary drifted")
+    states = successor.get("accepted_states", [])
+    require([row.get("state") for row in states] ==
+            successor["accepted_live_states"],
+            "provider docs accepted state order drifted")
+    for state in states:
+        files = state.get("files", [])
+        require([row.get("path") for row in files] == paths,
+                f"provider docs {state.get('state')} path manifest drifted")
+        require(all(("digest" in row) != ("absent" in row) for row in files),
+                f"provider docs {state.get('state')} file identity is ambiguous")
+    require(all(row.get("absent") is True for row in states[0]["files"]
+                if "absent" in row) and
+            all(len(row.get("digest", "")) == 64 for state in states
+                for row in state["files"] if "digest" in row) and
+            all("digest" in row for row in states[1]["files"]),
+            "provider docs accepted file identity drifted")
+    require(successor.get("stdlib_surface_transition") == {
+        "path": "docs/STDLIB_FOUNDATIONS.md",
+        "pre_digest":
+        "d1b41c13376d718749e2b67e9bb32136dfd1cd05f0e2cacbf4d56e00f87695dd",
+        "post_digest":
+        "33b8eedb1fbf96a14507c7a4fb706c5e9587ccaebdddb7112fba7859234ee843",
+        "normalized_state": "post_s1_8",
+        "partial_extra_or_substituted_surface": "rejected",
+    }, "provider docs Stdlib surface transition drifted")
+    phase23 = successor.get("phase23_text_surface_transition", {})
+    previous_rows = phase23.get("previous_rows", [])
+    current_rows = phase23.get("current_rows", [])
+    require(
+        phase23.get("changed_paths") == [
+            "docs/HTTP_RPC_ARCHITECTURE.md",
+            "docs/STDLIB_FOUNDATIONS.md",
+            "docs/VISION.md",
+        ] and
+        phase23.get("added_paths") == [
+            "docs/HTTP_RPC_ARCHITECTURE.md"] and
+        [row.get("path") for row in previous_rows] == [
+            "docs/STDLIB_FOUNDATIONS.md", "docs/VISION.md"] and
+        [row.get("path") for row in current_rows] ==
+        phase23.get("changed_paths") and
+        phase23.get("closed_phase_projection") ==
+        "canonical_pre_provider_docs_identity" and
+        phase23.get("partial_extra_or_substituted_surface") == "rejected",
+        "provider docs Phase 23 text-surface transition drifted")
+    return successor
+
+
+def classify_exact_file_manifest(
+        successor: dict, live: list[dict[str, object]]) -> str | None:
+    matches = [row["state"] for row in successor["accepted_states"]
+               if row["files"] == live]
+    require(len(matches) <= 1, "accepted provider docs identities overlap")
+    return str(matches[0]) if matches else None
+
+
+def provider_docs_falsifier_self_test(successor: dict) -> None:
+    pre = copy.deepcopy(successor["accepted_states"][0]["files"])
+    post = copy.deepcopy(successor["accepted_states"][1]["files"])
+    require(classify_exact_file_manifest(successor, pre) ==
+            "pre_provider_docs" and
+            classify_exact_file_manifest(successor, post) ==
+            "post_provider_docs",
+            "provider docs classifier rejected an exact registered state")
+    partial = copy.deepcopy(post)
+    partial[0] = copy.deepcopy(pre[0])
+    substituted = copy.deepcopy(post)
+    substituted[0]["digest"] = "0" * 64
+    path_drifted = copy.deepcopy(post)
+    path_drifted[0]["path"] = "docs/SUBSTITUTED_PROVIDER_ARCHITECTURE.md"
+    near_miss = copy.deepcopy(post)
+    near_miss[-1]["digest"] = "f" * 64
+    extra = copy.deepcopy(post)
+    extra.append({"path": "docs/UNRELATED.md", "digest": "1" * 64})
+    require(all(classify_exact_file_manifest(successor, candidate) is None
+                for candidate in (
+                    partial, substituted, path_drifted, near_miss, extra)),
+            "provider docs partial, substituted, path-drifted, near-miss, "
+            "or extra state was admitted")
+
+
+def provider_docs_state(coordination: dict) -> str:
+    successor = provider_docs_successor(coordination)
+    provider_docs_falsifier_self_test(successor)
+    live: list[dict[str, object]] = []
+    for path in successor["changed_paths"]:
+        absolute = ROOT / path
+        if absolute.is_file():
+            live.append({
+                "path": path,
+                "digest": digest_bytes(absolute.read_bytes()),
+            })
+        else:
+            live.append({"path": path, "absent": True})
+    state = classify_exact_file_manifest(successor, live)
+    require(state is not None,
+            "live provider docs surface is neither exact pre- nor post-state")
+    return state
+
+
 def coordinated_s1_8_states(
         successor: dict, coordination: dict,
         workflow: dict) -> list[dict[str, object]]:
@@ -307,6 +451,8 @@ def s1_8_state(value: dict, registry: dict | None = None) -> str:
     coordination = s1_8_coordination_successor(registry, successor)
     workflow = s1_8_workflow_prerequisite_successor(
         coordination, successor)
+    provider = provider_docs_successor(coordination)
+    provider_state = provider_docs_state(coordination)
     live: list[dict[str, object]] = []
     for path in successor["changed_paths"]:
         absolute = ROOT / path
@@ -329,6 +475,14 @@ def s1_8_state(value: dict, registry: dict | None = None) -> str:
     require(classify_s1_8_manifest(
         coordinated, broken["accepted_states"][1]["files"]) is None,
         "S1.8 broken-workflow post-state was admitted")
+    if provider_state == "post_provider_docs":
+        stdlib_transition = provider["stdlib_surface_transition"]
+        stdlib_row = next(
+            row for row in live
+            if row["path"] == stdlib_transition["path"])
+        require(stdlib_row.get("digest") == stdlib_transition["post_digest"],
+                "provider docs Stdlib post-state identity drifted")
+        stdlib_row["digest"] = stdlib_transition["pre_digest"]
     state = classify_s1_8_manifest(coordinated, live)
     require(state is not None,
             "live Stdlib surface is neither exact pre-S1.8 nor exact post-S1.8 state")
@@ -584,10 +738,35 @@ def normalize_phase23_text_surfaces(
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
     value = authority(registry)
     state = live_state(registry)
+    s1_successor = s1_8_successor(value)
+    coordination = s1_8_coordination_successor(registry, s1_successor)
+    provider = provider_docs_successor(coordination)
+    provider_state = provider_docs_state(coordination)
+    provider_text = provider["phase23_text_surface_transition"]
+    provider_paths = provider_text["changed_paths"]
+    by_live_path = {str(row["path"]): row for row in rows}
+    if provider_state == "pre_provider_docs":
+        require([by_live_path.get(path) for path in (
+            "docs/STDLIB_FOUNDATIONS.md", "docs/VISION.md",
+        )] == provider_text["previous_rows"] and
+                all(path not in by_live_path
+                    for path in provider_text["added_paths"]),
+                "provider docs pre-state Phase 23 surface drifted")
+    else:
+        require([by_live_path.get(path) for path in provider_paths] ==
+                provider_text["current_rows"],
+                "provider docs post-state Phase 23 surface is partial or substituted")
+        replacements = {
+            str(row["path"]): copy.deepcopy(row)
+            for row in provider_text["previous_rows"]
+        }
+        rows = [
+            replacements.get(str(row["path"]), row)
+            for row in rows
+            if str(row["path"]) not in provider_text["added_paths"]
+        ]
     if state == "s1_8_successor":
-        transition = s1_8_successor(value)["phase23_text_surface_transition"]
-        coordination = s1_8_coordination_successor(
-            registry, s1_8_successor(value))
+        transition = s1_successor["phase23_text_surface_transition"]
         expected_current = copy.deepcopy(transition["current_rows"])
         for row in expected_current:
             if row["path"] == "justfile":

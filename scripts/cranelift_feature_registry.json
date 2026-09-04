@@ -7533,6 +7533,102 @@
         "begins_patch24_3": false
       }
     },
+    "provider_docs_consumer_successor": {
+      "contract_version": "phase24_provider_docs_consumer_successor_v1",
+      "status": "ready_for_exact_provider_docs_rebase",
+      "authority_base_main": "a6e99e14a1a90da29c26ef5f40f119c7feee8fa3",
+      "owning_docs_pull_request": 320,
+      "owning_docs_exact_head_sha": "51c6365aea49d52931e98fbffd8d912734d53d6a",
+      "changed_paths": [
+        "docs/CRYPTO_PROVIDER_ARCHITECTURE.md",
+        "docs/DEMO_TARGET_PROGRAM.md",
+        "docs/DEPLOYMENT_ARCHITECTURE.md",
+        "docs/FULL_STACK_REFERENCE_MAP.md",
+        "docs/HTTP_RPC_ARCHITECTURE.md",
+        "docs/POSTGRES_DRIVER_ARCHITECTURE.md",
+        "docs/STDLIB_FOUNDATIONS.md",
+        "docs/STRATEGY_REVIEW.md",
+        "docs/SUPPLIER_ADAPTER_STRATEGY.md",
+        "docs/VISION.md",
+        "docs/WASM_DOM_ARCHITECTURE.md",
+        "docs/WEB_SLICE_0.md"
+      ],
+      "accepted_live_states": ["pre_provider_docs", "post_provider_docs"],
+      "accepted_states": [
+        {
+          "state": "pre_provider_docs",
+          "files": [
+            {"path":"docs/CRYPTO_PROVIDER_ARCHITECTURE.md","absent":true},
+            {"path":"docs/DEMO_TARGET_PROGRAM.md","digest":"21c4c13dcfb788859d5fed1163aefb5f75cb500d52e0e899a8eafff078aa47d8"},
+            {"path":"docs/DEPLOYMENT_ARCHITECTURE.md","absent":true},
+            {"path":"docs/FULL_STACK_REFERENCE_MAP.md","absent":true},
+            {"path":"docs/HTTP_RPC_ARCHITECTURE.md","absent":true},
+            {"path":"docs/POSTGRES_DRIVER_ARCHITECTURE.md","absent":true},
+            {"path":"docs/STDLIB_FOUNDATIONS.md","digest":"d1b41c13376d718749e2b67e9bb32136dfd1cd05f0e2cacbf4d56e00f87695dd"},
+            {"path":"docs/STRATEGY_REVIEW.md","digest":"b8556cbb75e72d4c0476d9471aae589da054e4cef6609bc63ba7941419219977"},
+            {"path":"docs/SUPPLIER_ADAPTER_STRATEGY.md","absent":true},
+            {"path":"docs/VISION.md","digest":"0205d0ae10240cc3608c515ccd3e0d2e361469d11fc555b882f790596a086d18"},
+            {"path":"docs/WASM_DOM_ARCHITECTURE.md","absent":true},
+            {"path":"docs/WEB_SLICE_0.md","digest":"214be86d7f8452c4d32c743ca4df064fd96e1267bcdf792d10e10a8bb76d811f"}
+          ]
+        },
+        {
+          "state": "post_provider_docs",
+          "files": [
+            {"path":"docs/CRYPTO_PROVIDER_ARCHITECTURE.md","digest":"362afb8d7894a5d11b8e002177cc2ffa70d623023f633ad870c23bdfd43696b9"},
+            {"path":"docs/DEMO_TARGET_PROGRAM.md","digest":"8a672df35729d0ce49ca938243c863ed9279b88c87e87cfc730ce0c2b9777d75"},
+            {"path":"docs/DEPLOYMENT_ARCHITECTURE.md","digest":"d240434fe524fa1782c37cda1f1d45e1de6dcf26ddeb3d155b95b43fcc64a8b3"},
+            {"path":"docs/FULL_STACK_REFERENCE_MAP.md","digest":"c98574bd4f570427e369df58511ce2f6335d6972ad54dc57bad386a7f51b5673"},
+            {"path":"docs/HTTP_RPC_ARCHITECTURE.md","digest":"8cc69acc0abccb86152f5b2c3b50fa614719724c4ab1f994a8298a00dac609ad"},
+            {"path":"docs/POSTGRES_DRIVER_ARCHITECTURE.md","digest":"a9de24cfbb8c1bc9c01ec2a7f5b7d1ea9efd0a8e636dc4ea7f0cf27a01aa9db4"},
+            {"path":"docs/STDLIB_FOUNDATIONS.md","digest":"33b8eedb1fbf96a14507c7a4fb706c5e9587ccaebdddb7112fba7859234ee843"},
+            {"path":"docs/STRATEGY_REVIEW.md","digest":"cd882fc8f21e7fd933f1cf30a14eafa3afce0698d684a3500303b5a490cac04d"},
+            {"path":"docs/SUPPLIER_ADAPTER_STRATEGY.md","digest":"7cf8092730ebbae8379bf60594ac87b64096ce83b8d54100b6c1449e6154f38e"},
+            {"path":"docs/VISION.md","digest":"f59e6cce2c5d54f2cd80a3c9825cec3c763c7628ae4394ae75c8c98defceb797"},
+            {"path":"docs/WASM_DOM_ARCHITECTURE.md","digest":"469199960c3ee91892e6e5a1955a4ee3a7b7693832557bc40efab3c3324f83e5"},
+            {"path":"docs/WEB_SLICE_0.md","digest":"a7b0e582247d08143771e3d526e35d2f84d1646c403fef1803746ec117a61957"}
+          ]
+        }
+      ],
+      "stdlib_surface_transition": {
+        "path": "docs/STDLIB_FOUNDATIONS.md",
+        "pre_digest": "d1b41c13376d718749e2b67e9bb32136dfd1cd05f0e2cacbf4d56e00f87695dd",
+        "post_digest": "33b8eedb1fbf96a14507c7a4fb706c5e9587ccaebdddb7112fba7859234ee843",
+        "normalized_state": "post_s1_8",
+        "partial_extra_or_substituted_surface": "rejected"
+      },
+      "phase23_text_surface_transition": {
+        "changed_paths": [
+          "docs/HTTP_RPC_ARCHITECTURE.md",
+          "docs/STDLIB_FOUNDATIONS.md",
+          "docs/VISION.md"
+        ],
+        "added_paths": ["docs/HTTP_RPC_ARCHITECTURE.md"],
+        "previous_rows": [
+          {"path":"docs/STDLIB_FOUNDATIONS.md","digest":"d1b41c13376d718749e2b67e9bb32136dfd1cd05f0e2cacbf4d56e00f87695dd","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":3,"generated_c_contract":0},"classification":"production_or_release_migration","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"review_claims_in_23_8_and_23_12","removal_phase":"24_or_25_as_claim_requires","falsifier":"live_documentation_claim_is_missing_or_changes_identity"},
+          {"path":"docs/VISION.md","digest":"0205d0ae10240cc3608c515ccd3e0d2e361469d11fc555b882f790596a086d18","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":1,"generated_c_contract":0},"classification":"production_or_release_migration","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"review_claims_in_23_8_and_23_12","removal_phase":"24_or_25_as_claim_requires","falsifier":"live_documentation_claim_is_missing_or_changes_identity"}
+        ],
+        "current_rows": [
+          {"path":"docs/HTTP_RPC_ARCHITECTURE.md","digest":"8cc69acc0abccb86152f5b2c3b50fa614719724c4ab1f994a8298a00dac609ad","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":1,"generated_c_contract":0},"classification":"production_or_release_migration","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"review_claims_in_23_8_and_23_12","removal_phase":"24_or_25_as_claim_requires","falsifier":"live_documentation_claim_is_missing_or_changes_identity"},
+          {"path":"docs/STDLIB_FOUNDATIONS.md","digest":"33b8eedb1fbf96a14507c7a4fb706c5e9587ccaebdddb7112fba7859234ee843","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":3,"generated_c_contract":0},"classification":"production_or_release_migration","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"review_claims_in_23_8_and_23_12","removal_phase":"24_or_25_as_claim_requires","falsifier":"live_documentation_claim_is_missing_or_changes_identity"},
+          {"path":"docs/VISION.md","digest":"f59e6cce2c5d54f2cd80a3c9825cec3c763c7628ae4394ae75c8c98defceb797","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":1,"generated_c_contract":0},"classification":"production_or_release_migration","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"review_claims_in_23_8_and_23_12","removal_phase":"24_or_25_as_claim_requires","falsifier":"live_documentation_claim_is_missing_or_changes_identity"}
+        ],
+        "closed_phase_projection": "canonical_pre_provider_docs_identity",
+        "partial_extra_or_substituted_surface": "rejected"
+      },
+      "rejected_states": [
+        "partial", "extra", "substituted", "path_drifted", "near_miss", "unrelated"
+      ],
+      "boundary": {
+        "changes_compiler_runtime_or_stdlib_source": false,
+        "changes_accepted_Gust_program_meaning": false,
+        "adds_or_changes_MIR_ABI_layout_or_runtime_symbols": false,
+        "changes_backend_route_default_or_fallback": false,
+        "changes_bootstrap_route_or_seed": false,
+        "edits_provider_docs_candidate": false,
+        "begins_patch24_3": false
+      }
+    },
     "boundary": {
       "changes_compiler_runtime_or_stdlib_source": false,
       "changes_accepted_Gust_program_meaning": false,
