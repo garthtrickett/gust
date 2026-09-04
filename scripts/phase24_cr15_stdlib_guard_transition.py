@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parent.parent
 REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 REVIEW = ROOT / "compiler/CRANELIFT_PHASE24_CR15_STDLIB_GUARD_TRANSITION.md"
 JUSTFILE = ROOT / "justfile"
+TASK = ROOT / "TASK.md"
 GUARD = "guard-cranelift-phase24-cr15-stdlib-guard-transition"
 
 
@@ -394,6 +395,82 @@ def provider_docs_state(coordination: dict) -> str:
     state = classify_exact_file_manifest(successor, live)
     require(state is not None,
             "live provider docs surface is neither exact pre- nor post-state")
+    return state
+
+
+def s1_9_resource_assignment_roadmap_successor(registry: dict) -> dict:
+    coordination = registry.get("phase24_s1_8_authority_successor", {})
+    successor = coordination.get("s1_9_resource_assignment_roadmap_successor")
+    require(isinstance(successor, dict),
+            "S1.9 Resource-assignment roadmap successor is missing")
+    boundary = {
+        "changes_compiler_runtime_or_stdlib_source": False,
+        "changes_accepted_Gust_program_meaning": False,
+        "adds_or_changes_MIR_ABI_layout_or_runtime_symbols": False,
+        "changes_backend_route_default_or_fallback": False,
+        "changes_bootstrap_route_or_seed": False,
+        "edits_stdlib": False,
+        "begins_patch24_3": False,
+    }
+    require(
+        successor.get("contract_version") ==
+        "phase24_s1_9_resource_assignment_roadmap_v1" and
+        successor.get("status") == "patch24_2e_complete" and
+        successor.get("authority_base_main") ==
+        "db13122a9235c4ecc865bff6c275c7bf3946769b" and
+        successor.get("changed_paths") == ["TASK.md"] and
+        successor.get("accepted_live_states") == [
+            "pre_roadmap_amendment", "post_roadmap_amendment"] and
+        successor.get("implementation_sequence") == [
+            "24.2f", "24.2g", "24.2h"] and
+        successor.get("resume_patch24_3_after") == "stdlib_s1_12" and
+        successor.get("rejected_states") == [
+            "partial", "extra", "substituted", "path_drifted",
+            "near_miss", "unrelated"] and
+        successor.get("boundary") == boundary,
+        "S1.9 Resource-assignment roadmap successor drifted")
+    states = successor.get("accepted_states", [])
+    require([row.get("state") for row in states] ==
+            successor["accepted_live_states"] and
+            all(row.get("files", []) and
+                [item.get("path") for item in row["files"]] == ["TASK.md"]
+                for row in states),
+            "S1.9 Resource-assignment roadmap state identity drifted")
+    return successor
+
+
+def classify_s1_9_resource_assignment_roadmap(
+        successor: dict, live: list[dict[str, object]]) -> str | None:
+    matches = [row["state"] for row in successor["accepted_states"]
+               if row["files"] == live]
+    require(len(matches) <= 1,
+            "S1.9 Resource-assignment roadmap identities overlap")
+    return str(matches[0]) if matches else None
+
+
+def s1_9_resource_assignment_roadmap_state(registry: dict) -> str:
+    successor = s1_9_resource_assignment_roadmap_successor(registry)
+    pre = copy.deepcopy(successor["accepted_states"][0]["files"])
+    post = copy.deepcopy(successor["accepted_states"][1]["files"])
+    require(classify_s1_9_resource_assignment_roadmap(successor, pre) ==
+            "pre_roadmap_amendment" and
+            classify_s1_9_resource_assignment_roadmap(successor, post) ==
+            "post_roadmap_amendment",
+            "S1.9 Resource-assignment roadmap exact states were rejected")
+    substituted = copy.deepcopy(post)
+    substituted[0]["digest"] = "0" * 64
+    path_drifted = copy.deepcopy(post)
+    path_drifted[0]["path"] = "TASK_SUBSTITUTED.md"
+    extra = copy.deepcopy(post)
+    extra.append({"path": "UNRELATED.md", "digest": "1" * 64})
+    require(all(classify_s1_9_resource_assignment_roadmap(
+        successor, candidate) is None
+        for candidate in (substituted, path_drifted, extra)),
+        "S1.9 Resource-assignment roadmap falsifier was admitted")
+    live = [{"path": "TASK.md", "digest": digest_bytes(TASK.read_bytes())}]
+    state = classify_s1_9_resource_assignment_roadmap(successor, live)
+    require(state is not None,
+            "live TASK is neither exact pre- nor post-S1.9 roadmap state")
     return state
 
 
@@ -788,6 +865,21 @@ def normalize_phase23_text_surfaces(
         require(matches == [added],
                 "S1.8 added text surface is missing, substituted, or duplicated")
         rows.remove(matches[0])
+    roadmap = s1_9_resource_assignment_roadmap_successor(registry)
+    roadmap_state = s1_9_resource_assignment_roadmap_state(registry)
+    roadmap_states = {
+        row["state"]: row["files"][0]
+        for row in roadmap["accepted_states"]
+    }
+    by_path = {str(row["path"]): row for row in rows}
+    require("TASK.md" in by_path,
+            "S1.9 Resource-assignment roadmap TASK surface is missing")
+    require(by_path["TASK.md"].get("digest") ==
+            roadmap_states[roadmap_state]["digest"],
+            "S1.9 Resource-assignment roadmap TASK surface drifted")
+    if roadmap_state == "post_roadmap_amendment":
+        by_path["TASK.md"]["digest"] = roadmap_states[
+            "pre_roadmap_amendment"]["digest"]
     canonical = value.get("canonical_phase23_text_surfaces", [])
     require([row.get("path") for row in canonical] == [
         "justfile", "scripts/phase22_opening.py",
@@ -859,6 +951,7 @@ def validate() -> tuple[dict, str]:
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     value = authority(registry)
     state = live_state(registry)
+    s1_9_resource_assignment_roadmap_state(registry)
 
     opening_path = ROOT / "scripts/phase22_opening.py"
     spec = importlib.util.spec_from_file_location("phase22_transition_opening", opening_path)
