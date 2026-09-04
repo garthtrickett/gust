@@ -9,6 +9,10 @@ open phase.
   roadmap.
 - `docs/ROADMAP_TAIL.md` — compiler, safety, and consolidation tail through
   Phase 27.
+- `docs/PHASE28_RUNTIME_PRODUCTION_SHAPE.md` — detailed current-state evidence,
+  decision checkpoints, ordered patch boundaries, ownership, and closure gates
+  for runtime production shape after the existing post-Phase-27 technical-launch
+  checkpoint. It is recorded future work, not an active phase.
 - `docs/PHASES_26_AND_27.md` — detailed systems-safety, resource,
   implicit-context, and consolidation plan after the C-retirement tail.
 - `docs/COMPILER_ARCHITECTURE_CONSOLIDATION.md` — Phase 24 opening preflight,
