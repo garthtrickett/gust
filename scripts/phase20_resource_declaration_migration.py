@@ -58,6 +58,10 @@ PHASE21_RESOURCE_SYNC_LINEAR_FIXTURES = [
     "compiler/phase21_resource_sync_renamed_module.gst",
 ]
 
+PATCH24_2F_LINEAR_FIXTURES = [
+    "compiler/phase24_resource_implicit_transfer_module.gst",
+]
+
 SOURCE_DESTRUCTORS = {
     SOURCE_DECLARATIONS[0]: (
         "Phase13CompositionResourceMetadata",
@@ -222,7 +226,8 @@ def validate() -> dict:
                              GENERIC_GUARD_LINEAR_FIXTURES +
                              CROSS_FEATURE_LINEAR_FIXTURES +
                              PROTECTED_ACCESS_LINEAR_FIXTURES +
-                             PHASE21_RESOURCE_SYNC_LINEAR_FIXTURES)
+                             PHASE21_RESOURCE_SYNC_LINEAR_FIXTURES +
+                             PATCH24_2F_LINEAR_FIXTURES)
     require(actual_linear == expected_linear,
             "compiler-owned #[linear] declaration inventory drifted: " +
             repr(actual_linear))
