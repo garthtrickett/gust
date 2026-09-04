@@ -141,6 +141,11 @@ def validate_static(value: dict) -> None:
         value.get("live_justfile_successor_digest"),
         *coordination.get("justfile_state_digests", {}).values(),
     ]
+    implementation = coordination.get(
+        "s1_9_resource_assignment_roadmap_successor", {}).get(
+            "implementation_successor", {})
+    accepted_justfile_digests.append(
+        implementation.get("live_justfile_successor_digest"))
     require(digest(JUSTFILE.read_bytes()) in accepted_justfile_digests,
             "live justfile successor digest drifted")
     require(value.get("review_view") == REVIEW.relative_to(ROOT).as_posix(),
