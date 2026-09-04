@@ -8,7 +8,7 @@ settle shared semantic decisions, or make any referenced project a Gust product
 dependency. The relevant architecture document and active roadmap remain
 authoritative for scope and sequencing.
 
-## Rule
+## Proposal rule
 
 Use an upstream project for the narrow thing it demonstrates well:
 

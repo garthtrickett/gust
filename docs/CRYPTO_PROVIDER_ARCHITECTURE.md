@@ -7,7 +7,7 @@ Any implementation that adds native symbols, resources, ABI, layout, FFI, or
 effects must first receive the ownership decisions required by `AGENTS.md` and
 `docs/SHARED_SEMANTIC_ZONE.md`.
 
-## Decision
+## Proposal
 
 Gust owns a small, typed, replaceable cryptography and TLS provider contract.
 The first production provider should be a narrow C shim over a pinned, supported

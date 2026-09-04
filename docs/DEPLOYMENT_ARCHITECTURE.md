@@ -6,7 +6,7 @@ Docker, authorize a runtime dependency, select a hosted control plane, or claim
 production readiness. `docs/VISION.md` Part XVII and the active roadmaps remain
 authoritative for sequencing.
 
-## Decision
+## Proposal
 
 Use standards and mature controllers for focused behavior rather than building
 a Gust-specific container format or orchestrator:
@@ -153,8 +153,9 @@ interface is frozen. Northflank's [API/OpenAPI surface][northflank-api] is worth
 evaluating early; Fly's lower-level [Machines API][fly-machines] is a later
 stress test.
 
-OD-10 sets provider-led distribution as the first product path; this sequence
-does not select a permanent Gust Cloud substrate. If Gust owns the customer
+This provider-led sequence is the current proposal recorded against open OD-10;
+it does not select a permanent Gust Cloud substrate or resolve the distribution
+decision. If Gust owns the customer
 relationship, billing, support, incident response, or data obligations while
 another provider supplies the infrastructure, that is an explicit operating
 model, not a hidden adapter default.

@@ -172,8 +172,8 @@ RPC implementation work to active Stdlib S1.
 
 **Crypto/TLS prerequisite.** `docs/CRYPTO_PROVIDER_ARCHITECTURE.md` records the
 proposed runtime-owned provider boundary needed between socket resources and
-the PostgreSQL/S3/Stripe consumers. It selects a narrow OpenSSL 3 shim as the
-initial production direction, keeps TLS and primitives out of handwritten Gust
+the PostgreSQL/S3/Stripe consumers. It proposes a narrow OpenSSL 3 shim as the
+initial production provider, keeps TLS and primitives out of handwritten Gust
 code, and requires an ownership decision before any FFI/layout/runtime-symbol or
 resource change. This is a consumer of the resource/network tail, not an
 addition to active Stdlib S1.

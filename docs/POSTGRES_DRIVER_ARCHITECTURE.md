@@ -4,7 +4,7 @@
 activate implementation work, assign either active lane, authorize a new
 dependency, or settle the supplier/effect decisions in `docs/VISION.md`.
 
-## Decision
+## Proposal
 
 Use **pgx as the primary implementation reference for a Gust-native PostgreSQL
 driver, but do not port pgx wholesale**.

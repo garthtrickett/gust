@@ -5,7 +5,7 @@ not activate WebAssembly, browser, template, RPC, or Stdlib work; assign an
 active roadmap lane; authorize runtime symbols; or settle OD-4. `docs/VISION.md`
 Part IX and `docs/WEB_SLICE_0.md` remain authoritative for product sequencing.
 
-## Decision
+## Proposal
 
 Gust targets browser WebAssembly through a small generated JavaScript bridge.
 The browser does not provide ambient DOM access to a core WebAssembly module;

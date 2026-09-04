@@ -157,16 +157,6 @@ or separately package remaining C runtime components. Remove C shims and pthread
 wrappers where practical. Audit build scripts, Nix packages, CI images and
 release archives. Preserve an independently auditable bootstrap chain.
 
-**Authoring constraint for the future Phase 25 roadmap:** replacements are
-Gust-first. Implement residual runtime, bootstrap, startup, allocation,
-threading, and OS helpers in Gust wherever that is bootstrap-safe and
-technically practical. Where Gust cannot yet express the lowest-level boundary,
-prefer a direct, documented platform-ABI binding or a minimal assembly shim.
-Do not replace C with Rust by default. The target normal bootstrap and runtime
-path requires neither a C nor Rust toolchain; any retained Rust component must
-be a narrowly scoped, explicitly justified temporary exception with an owner,
-the reason Gust cannot yet replace it, and a removal criterion.
-
 > A deliberately retained C runtime library may still exist after generated-C
 > retirement. **Full C removal is a separate policy decision** and should happen
 > only when each residual component has a justified replacement.
@@ -233,12 +223,6 @@ The tail therefore has two different outreach cadences: continuous
 evidence-specific relationship development under
 `docs/EVIDENCE_LED_OUTREACH.md`, and one coordinated Level-3 public launch after
 the entire tail under `docs/CRANELIFT_LAUNCH.md`.
-
-**Operator reminder required:** the Phase 25 terminal closure report must tell
-the operator that the Cranelift outreach gate has opened, link the outreach
-runbook in `docs/CRANELIFT_LAUNCH.md`, and ask whether to prepare the final
-evidence package and posts. Do not silently omit this reminder, and do not treat
-it as permission to contact or post to anyone.
 
 ---
 

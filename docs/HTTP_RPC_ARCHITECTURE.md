@@ -7,7 +7,7 @@ or shared-semantic-zone change; or claim production readiness. `docs/VISION.md`
 Part IX, `docs/WEB_SLICE_0.md`, and the active lane roadmaps remain authoritative
 for product sequencing.
 
-## Decision
+## Proposal
 
 Gust should eventually own its HTTP/1.1 server and its typed RPC contract. It
 should learn from several focused upstream implementations rather than port one

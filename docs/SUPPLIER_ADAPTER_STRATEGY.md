@@ -6,7 +6,7 @@ activate supplier implementation work, assign an active roadmap lane, admit a
 supplier, authorize a dependency, or promise certification. `docs/VISION.md`
 Part XVI remains authoritative for supplier governance.
 
-## Decision
+## Proposal
 
 Gust should not wait for external vendors to build the integrations required to
 make the platform useful. Before adoption gives Amazon, Stripe, or another

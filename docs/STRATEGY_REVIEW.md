@@ -175,25 +175,26 @@ appears rather than in the abstract.
 
 > **The lines below are indexed, with the objections they have to survive, at `docs/MESSAGING.md`.**
 
-## 6. Positioning — and the OD-10 direction
+## 6. Positioning — and the OD-10 candidate
 
 The review proposes a wedge:
 
 > **Build and operate durable SaaS applications with one binary, one language,
 > one platform contract, and AI-verifiable architecture.**
 
-**The direction for OD-10 — distribution for the product path — was set on
-2026-09-01.** Gust reaches users through existing deployment providers,
-generator partnerships, cloud marketplaces, appliances, and self-hosting
-before considering a Gust-operated cloud. This keeps the wedge narrower and
-more commercially legible than "ultimate language" without assuming that
-creating a language automatically creates distribution leverage.
+**OD-10 — distribution for the product path — remains open.** The current
+candidate reaches users through existing deployment providers, generator
+partnerships, cloud marketplaces, appliances, and self-hosting before
+considering a Gust-operated cloud. This keeps the wedge narrower and more
+commercially legible than "ultimate language" without assuming that creating a
+language automatically creates distribution leverage. The proposal below is
+decision input; it does not authorize implementation or change the register.
 
-### 6.1 First deployment — proposed 2026-08-20, adopted by OD-10
+### 6.1 First deployment — proposed 2026-08-20
 
-The first deployment is now the first execution of OD-10, while remaining only
-one channel. A convenient first target must not quietly become the permanent
-product substrate.
+The first deployment is a separately bounded proposal, not the answer to
+OD-10. A convenient first target must not quietly become the permanent product
+substrate.
 
 **Step 1 — a bare Linux VM, before any platform.** `scp` the binary, a systemd
 unit, a one-page runbook. Nothing else. **This is the acceptance test for a claim
@@ -215,8 +216,8 @@ is the proposed first hosted implementation. Its current [public GraphQL
 API][railway-api], project/service model, [templates][railway-templates], and
 [PostgreSQL service][railway-postgres] make it a practical place to prove the
 boundary. This is an implementation sequence, not a permanent product
-commitment. It implements OD-10's provider-led direction without committing
-application architecture to Railway.
+commitment. It tests the provider-led candidate without committing application
+architecture to Railway.
 
 **Thin is still the operative word, but thin does not mean unmodelled.**
 `gust deploy` produces an immutable artifact and a canonical, desired-state
@@ -267,52 +268,15 @@ operational, it is checkable against Railway's and Render's provider interfaces
 today, and it is the same shape as the lead product claim in §56: **the
 unconfigured deployment does not deploy.**
 
-### 6.2 Distribution sequence — direction set 2026-09-01
+### 6.2 Distribution sequence — proposal recorded 2026-09-01
 
-Do not implement every channel at once. Start with one blessed path and one
-escape hatch, then use a genuinely independent second provider to test whether
-the abstraction is real:
-
-1. prove the self-contained artifact and lifecycle contract through bare-VM
-   deployment and self-hosting;
-2. ship Railway as the first blessed hosted route;
-3. add Render as the second provider and conformance target;
-4. pursue generator partnerships once the application model and deployment
-   contract are stable enough to generate reliably;
-5. add cloud marketplaces and appliances when user demand justifies their
-   packaging, support, and certification cost;
-6. consider Gust Cloud only after the operating case has been earned.
-
-Railway and Render can provide early reach, but Gust must retain the CLI,
-project format, Application Model, Environment Binding, `ReleasePlan`, provider
-conformance suite, and direct developer relationship. That is the difference
-between borrowing distribution and becoming permanently subordinate to it.
-
-The provider may be absent from ordinary application code, but it must remain
-visible in the deployment plan, audit record, billing, support, incident
-response, and resolved resource identities. Calling the product "Gust Cloud"
-while Railway invisibly owns the infrastructure is not merely an adapter
-default if Gust also owns customer accounts, billing, support, or data
-obligations; that is a product and operating-model decision under OD-10.
-
-Gust Cloud becomes justified only when several gates are met: repeated user
-demand for one managed experience; provider limitations that block material
-Gust-specific value; enough deployment volume to support a real operations
-team; a clear advantage from hosted capability governance, auditing, or rollout;
-acceptable provider economics and customer ownership; and readiness to own
-billing, support, security, backups, and incident response. Until then it would
-add operational surface before adding unique product value.
-
-If Gust Cloud is later built, it must consume the same provider-neutral
-contracts and pass the same conformance evidence. Already configured
-applications must continue running when the Gust control plane is unavailable;
-only new deployments, reconciliation, hosted views, scaling, or credential
-rotation may depend on that plane.
-
-Portability here means that application code, release artifacts, and the
-deployment contract do not depend on Railway. It does not mean a stateful
-deployment can move providers without an explicit database/data migration,
-backup, DNS, region, secret, and rollback plan.
+The candidate is deliberately serial: prove the bare-VM contract, test one
+hosted provider, use an independent second provider as a conformance check, and
+add channels only when evidence warrants them. Gust Cloud remains a separate
+operating-model decision. `docs/DEPLOYMENT_ARCHITECTURE.md` owns the detailed
+sequence, portability limits, retained Gust assets, control-plane independence,
+and the gates that would justify a managed Gust service. Keeping that reasoning
+in one place prevents this strategy summary from becoming a competing copy.
 
 Two revisions to adopt:
 

@@ -136,17 +136,6 @@ Before any historical novelty wording:
 
 Launch does not depend on endorsement. It does depend on accurate wording.
 
-The primary public upstream route is the Bytecode Alliance Zulip
-[`#cranelift` stream](https://bytecodealliance.zulipchat.com/#narrow/stream/217117-cranelift).
-Ask there whether a short item at the public
-[Cranelift project meeting](https://github.com/bytecodealliance/meetings/tree/main/cranelift)
-would be useful; do not place an announcement in an issue tracker. If upstream
-considers the integration broadly useful, ask the SIG-Community stream about
-the appropriate amplification or article route.
-Address the community rather than treating named maintainers as a cold-email
-list, and offer minimized upstream defects or generally useful fixtures without
-asking for endorsement.
-
 ## 7. Outreach sequence
 
 Every recipient is researched, drafted, humanized, approved, recorded, and
@@ -165,22 +154,6 @@ Publish to Cranelift, Wasmtime, compiler, runtime, systems-language, bootstrap,
 and programming-language communities. Lead with the reproducible Level-3 claim,
 not Gust's commercial thesis. Seek external reproduction, technical criticism,
 qualified contributors, and durable search-visible evidence.
-
-Use one canonical technical article and submit it selectively rather than
-copying one announcement everywhere:
-
-| Venue | Fit and condition |
-| --- | --- |
-| [Bytecode Alliance Zulip `#cranelift`](https://bytecodealliance.zulipchat.com/#narrow/stream/217117-cranelift) | First public upstream route; lead with integration lessons and evidence. |
-| [Hacker News / Show HN](https://news.ycombinator.com/showhn.html) | Use only when readers can clone, build, and run an immutable release without an account or email gate. |
-| `r/ProgrammingLanguages` | Emphasize language design, self-hosting, canonical MIR, and the oracle migration; recheck live promotion rules first. |
-| `r/Compilers` | Emphasize lowering, ABI/layout, object/linking, differential evidence, and bootstrap; recheck live rules first. |
-| [Lobsters](https://lobste.rs/about) | Use only through an established participating account and within its current self-promotion norms. |
-| Rust communities | Use only when the material contains substantial Rust/Cranelift integration detail, not for a general Gust announcement. |
-
-Start upstream, incorporate corrections, and space later submissions so the
-operator can answer technical questions. Never solicit votes or imply Bytecode
-Alliance endorsement.
 
 ### Wave 2 — strategic listening
 
@@ -235,11 +208,3 @@ or acquisition demand.
 
 After the event, the four gates in `docs/VISION.md` §0.8 remain independent.
 Acquisition remains optional upside, not the sole definition of success.
-
-## 10. Source freshness
-
-Venue rules, meeting schedules, participants, and contact routes change. Recheck
-the official Cranelift site, Wasmtime/Cranelift contributing guide, Bytecode
-Alliance meeting repository, SIG-Community page, and the live rules of every
-publication venue immediately before use. Dated research is planning input, not
-permission to post.
