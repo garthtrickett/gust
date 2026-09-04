@@ -162,6 +162,30 @@ test rather than as a philosophy.
 7. **Three canonical examples** — HTTP server, concurrent KV server,
    file-processing daemon.
 
+**HTTP/RPC consumer architecture.** `docs/HTTP_RPC_ARCHITECTURE.md` records how
+the HTTP example grows into a platform boundary after the resource/network tail
+exists: a Gust-owned strict Sans-I/O HTTP/1.1 state machine over owned
+socket/TLS resources, a bounded server lifecycle, and a transport-independent
+generated `gustrpc` dispatcher. It uses h11, llhttp, Go `net/http`, Connect,
+gRPC, and tRPC only for their focused reference roles. It does not add HTTP or
+RPC implementation work to active Stdlib S1.
+
+**Crypto/TLS prerequisite.** `docs/CRYPTO_PROVIDER_ARCHITECTURE.md` records the
+proposed runtime-owned provider boundary needed between socket resources and
+the PostgreSQL/S3/Stripe consumers. It proposes a narrow OpenSSL 3 shim as the
+initial production provider, keeps TLS and primitives out of handwritten Gust
+code, and requires an ownership decision before any FFI/layout/runtime-symbol or
+resource change. This is a consumer of the resource/network tail, not an
+addition to active Stdlib S1.
+
+The PostgreSQL driver is a consumer of this tail, not another `std.net` item.
+`docs/POSTGRES_DRIVER_ARCHITECTURE.md` records its proposed boundary: an offline
+protocol core may precede networking, but the live connection depends on the
+owned socket, TLS/crypto, timeout, cleanup, and effect contracts above. It uses
+pgx's low-level protocol and connection packages as references without importing
+pgx's Go-facing type planner, pool, or `database/sql` compatibility surface into
+the Stdlib roadmap.
+
 **Two observations on the tail.**
 
 Step 4 is where `docs/VISION.md` §21's transparent-suspension direction gets

@@ -204,7 +204,7 @@ Ordered by dependency. Status re-verified 2026-08-22; evidence in
 | 6 | Entity declarations that mark an entity workspace-scoped | **ABSENT** | Cranelift lane — Phase 21 Track A, Patch 21.2 onward; VISION **§56.2** rule 1 |
 | 7 | Compiler-owned query derivation (`from`, `.where`, `.all`) | **ABSENT** | Cranelift lane — Phase 21 Track A, Patch 21.3 onward; VISION **§55.1**. OD-2 resolved 2026-08-20: this is compiler work by decision, not a library someone could contribute |
 | 8 | Tenant scope tracked through query construction; unscoped rejected | **ABSENT in this target program** | Cranelift lane — OD-8 resolved 2026-08-25 as bounded positive for the predefined compiler-owned typed-query suite; VISION **§56.2** records the design and verdict and **§56.1** the attack list. That evidence does not make this aspirational target compile or cover the named exclusions. |
-| 9 | A Postgres capability to execute the query against | **ABSENT** | **unowned** — VISION **§54.0**, which finds this row shares CR-5's blocker with `MutexGuard` |
+| 9 | A Postgres capability to execute the query against | **ABSENT** | **unowned** — VISION **§54.0**, which finds this row shares CR-5's blocker with `MutexGuard`; `docs/POSTGRES_DRIVER_ARCHITECTURE.md` records the proposed native-driver shape without activating it |
 | 10 | Panic scoped to the request, not the process | **VIOLATED** — ledger E3 | `TASK_STDLIB.md` CR-3, issue #91 — unscheduled |
 
 **OD-2's resolution on 2026-08-20 sharpens the ordering of this table, without
