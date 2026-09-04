@@ -4070,6 +4070,37 @@
     "partial_or_unregistered_identity": "rejected",
     "closure_transition": "collapse_to_post_publication_after_seed_merge"
   },
+    "phase24_2f_seed_transition": {
+      "contract_version": "phase24_2f_resource_transfer_seed_reconvergence_transition_v1",
+      "status": "ready_for_seed_publication",
+      "predecessor_seed_authority": "phase24_cr15_seed_reconvergence_transition_v1",
+      "authority_base_main": "6e5aaa671b705c71866cc30d719c70d5cd316b59",
+      "accounted_compiler_authorities": [
+        "phase24_s1_9_resource_assignment_implementation_v1"
+      ],
+      "accepted_live_seed_identities": [
+        {
+          "state": "pre_publication",
+          "line_count": 65789,
+          "seed_digest": "706430d05010521657d44e0ee2afa2580afb71f1f5e8ca54a88f6e34f1a2e8d9"
+        },
+        {
+          "state": "post_publication",
+          "line_count": 65784,
+          "seed_digest": "3f898b4bf34172fb0be90c5a78e8d07b8e319c74bee7a383d2f176267d09bf58"
+        }
+      ],
+      "generated_seed_diff": {
+        "previous_lines": 65789,
+        "current_lines": 65784,
+        "insertions": 86,
+        "deletions": 91,
+        "line_delta": -5
+      },
+      "seed_pr_policy": "gust_v4_c_only",
+      "partial_or_unregistered_identity": "rejected",
+      "closure_transition": "collapse_to_post_publication_after_seed_merge"
+    },
   "boundary": {
       "adds_or_changes_Gust_semantics": false,
       "adds_or_changes_MIR_or_native_lowering": false,
@@ -7658,22 +7689,24 @@
           "authority_base_main": "6e5aaa671b705c71866cc30d719c70d5cd316b59",
           "previous_inventory": {"text_surface_count":575,"text_surface_manifest_digest":"32bd13136386a2132cd829205d7f0afc867045510a3a3eaee261e83b9b8f1252","invocation_count":318,"invocation_manifest_digest":"f27c56c4865a333647c4af6f770bb2f81cca8e4e7a909e2e3221035ff8ae42b0","structural_surface_count":15,"structural_manifest_digest":"b7cd89cf9619d7bc28ecdbafaf6b616534fd68d9728ef47b85629f0531c8a22a","classification_counts":{"archive_candidate":474,"bootstrap_phase25":10,"focused_live_oracle":4,"historical_only":74,"production_or_release_migration":28},"invocation_selection_counts":{"explicit_c":178,"explicit_cranelift":119,"explicit_invalid_or_parser_probe":3,"implicit_default":18},"unclassified_count":0},
           "current_inventory": {"text_surface_count":576,"text_surface_manifest_digest":"8f4b18fdc73794c48fb89117d0e6ef10e17e6d724c57b9dac4744df0d6b8ff70","invocation_count":318,"invocation_manifest_digest":"f27c56c4865a333647c4af6f770bb2f81cca8e4e7a909e2e3221035ff8ae42b0","structural_surface_count":15,"structural_manifest_digest":"b7cd89cf9619d7bc28ecdbafaf6b616534fd68d9728ef47b85629f0531c8a22a","classification_counts":{"archive_candidate":475,"bootstrap_phase25":10,"focused_live_oracle":4,"historical_only":74,"production_or_release_migration":28},"invocation_selection_counts":{"explicit_c":178,"explicit_cranelift":119,"explicit_invalid_or_parser_probe":3,"implicit_default":18},"unclassified_count":0},
-          "registered_changed_paths": [".github/workflows/pr-fast.yml","compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md","compiler/typechecker.gst","scripts/cranelift_test_levels.json","scripts/phase24_resource_implicit_transfer.py"],
+          "registered_changed_paths": [".github/workflows/pr-fast.yml","compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md","compiler/typechecker.gst","scripts/cranelift_test_levels.json","scripts/phase24_cr15_closure.py","scripts/phase24_resource_implicit_transfer.py"],
           "added_text_surfaces": ["scripts/phase24_resource_implicit_transfer.py"],
           "previous_changed_text_surfaces": [
             {"path":".github/workflows/pr-fast.yml","digest":"78f69fb7d33e8170d013e44552c690aa2b6d9dce371ddca075c9ee62882e4630","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":8,"generated_c_contract":1},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
             {"path":"compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md","digest":"3382893952acc09783c4b721c94976fe7eb7d430dcc72c899f6f0a00af764936","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":0,"generated_c_contract":183},"classification":"historical_only","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"preserve_as_historical_evidence","removal_phase":"not_removed_by_phase23","falsifier":"historical_record_is_reclassified_as_live_support"},
             {"path":"compiler/typechecker.gst","digest":"061fc2f6514084876158fd5c489e668a63ecfe8b0294039247b3c435857bd4a8","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":0,"generated_c_contract":1},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
-            {"path":"scripts/cranelift_test_levels.json","digest":"9dbb50f1888c6366264e77ac63f466b41721f22f1e717cf1dead34a9c978b3cc","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":30,"generated_c_contract":0},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"}
+            {"path":"scripts/cranelift_test_levels.json","digest":"9dbb50f1888c6366264e77ac63f466b41721f22f1e717cf1dead34a9c978b3cc","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":30,"generated_c_contract":0},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
+            {"path":"scripts/phase24_cr15_closure.py","digest":"62dbd70b891e71ea7cfaea46280b8e8017bb616a1103cbb836c98e31f0f31cba","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":2,"generated_c_contract":0},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"}
           ],
           "current_changed_text_surfaces": [
             {"path":".github/workflows/pr-fast.yml","digest":"e8f29f44c51a910691e3d4334dd56646b28a25af6ba7b5efed4d0a7d514cbd9f","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":8,"generated_c_contract":1},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
             {"path":"compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md","digest":"9afd5a189163d62004b1c84926d19a243e17f019f71686015c18e14118afefb1","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":0,"generated_c_contract":183},"classification":"historical_only","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"preserve_as_historical_evidence","removal_phase":"not_removed_by_phase23","falsifier":"historical_record_is_reclassified_as_live_support"},
             {"path":"compiler/typechecker.gst","digest":"7304a512ad6dd37b928e53457190a21a9446b95e0b2c35da5accededc0337eaf","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":0,"generated_c_contract":1},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
             {"path":"scripts/cranelift_test_levels.json","digest":"ff4e30e4343b7fefcfea6f231190a6f3e625f3b95206939af29bcedc7da10831","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":30,"generated_c_contract":0},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
+            {"path":"scripts/phase24_cr15_closure.py","digest":"095aa735c7e9b36866c26c1be0a9369f137ecb2ba45fa6abdccf84fdd72670bf","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":2,"generated_c_contract":0},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
             {"path":"scripts/phase24_resource_implicit_transfer.py","digest":"8c0a310927781779ea4ab92cd6cc859065b94cf2b5b616af757419650ba0904c","match_counts":{"explicit_backend_spelling":2,"mir_to_c_name":4,"generated_c_contract":0},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"}
           ],
-          "unchanged_other_text_surface_manifest_digest": "b1f60cb9485946b02de38f721d15b770524c6440afb95b5e1f408a30d86e0d15",
+          "unchanged_other_text_surface_manifest_digest": "1e95a352215591a9791d6c360496ac83f152588b2e7d3843a8650d9d87f2005b",
           "unchanged_fields": ["invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","invocation_selection_counts","unclassified_count"],
           "partial_extra_or_substituted_surface": "rejected"
         },

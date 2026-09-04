@@ -483,6 +483,7 @@ def s1_9_resource_assignment_implementation_successor(
                 "compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md",
                 "compiler/typechecker.gst",
                 "scripts/cranelift_test_levels.json",
+                "scripts/phase24_cr15_closure.py",
                 "scripts/phase24_resource_implicit_transfer.py",
             ] and
             transition.get("added_text_surfaces") == [
