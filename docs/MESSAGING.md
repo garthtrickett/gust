@@ -191,14 +191,14 @@ it cannot hurt the thesis, it cannot help the pitch.
 
 ## 5.3 Post-Cranelift launch
 
-The coordinated Cranelift outreach occurs only after Phase 25 and the complete
+The coordinated Cranelift outreach occurs only after Phase 27 and the complete
 tail in `docs/ROADMAP_TAIL.md` close. `docs/CRANELIFT_LAUNCH.md` owns its claim
 ladder, proof package, upstream factual review, outreach waves, and falsifiers.
 
 This does not postpone all relationship development. At each credible material
 milestone, `docs/EVIDENCE_LED_OUTREACH.md` governs evidence cards, recipient
 research, individualized drafts, operator rewrite and approval, the relationship
-ledger, and feedback routing. Phase 20–24 may therefore support narrow private
+ledger, and feedback routing. Phase 20–26 may therefore support narrow private
 technical contact, but not a coordinated public Cranelift campaign.
 
 The launch target is a Level-3 statement: the self-hosted compiler builds and
@@ -266,7 +266,7 @@ built yet and when it will be known.
 | Lines and framing | `docs/STRATEGY_REVIEW.md` §6 |
 | Buyer question, competitor, objections, risks | `docs/BUSINESS_STRATEGY.md` |
 | Continuous individualized outreach and relationship learning | `docs/EVIDENCE_LED_OUTREACH.md` |
-| Post-Phase 25 technical launch and outreach | `docs/CRANELIFT_LAUNCH.md` |
+| Post-Phase 27 technical launch and outreach | `docs/CRANELIFT_LAUNCH.md` |
 | The claim and its boundary | `docs/VISION.md` §56, §56.2 |
 | External-language rule | `docs/VISION.md` §79 |
 | What is actually true today | `docs/ONE_WAY_LEDGER.md` |

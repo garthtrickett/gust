@@ -1,8 +1,7 @@
-# Roadmap tail — Phases 20 to 25
+# Roadmap tail — Phases 20 to 27
 
-`TASK.md` holds the active Cranelift phase. Phases 20 and 21 are completed
-history, Phase 22 is active, and this document preserves the remaining arc
-through Phase 25 without competing with the live roadmap.
+`TASK.md` and `TASK_STDLIB.md` hold the active lane roadmaps. This document
+preserves the remaining arc through Phase 27 without competing with them.
 
 **What this document is.** The roadmap tail as recorded, so the C-retirement
 priority declared in `docs/VISION_RECONCILIATION.md` §7 has a written plan behind
@@ -166,12 +165,44 @@ release archives. Preserve an independently auditable bootstrap chain.
 bootstrap path without invoking a C compiler, except for explicitly documented
 optional foreign-runtime components.
 
-## Post-Phase 25 — technical launch and outreach
+## Phase 26 — Systems safety, resources, and implicit context
 
-After Phase 25 **and every preceding tail checkpoint** are closed on merged
-`main`, execute `docs/CRANELIFT_LAUNCH.md`. No Phase 20–24 milestone triggers the
-coordinated public outreach campaign independently. Each authoritative milestone
-may still trigger the evidence-card and recipient review in
+**Purpose:** complete the safety work whose original placement directive put it
+after the Cranelift transition and C deprecation.
+
+Phase 26.1 completes gated raw pointers, non-laundering provenance, explicit FFI
+ownership and escape contracts, ABI layout enforcement, and isolated FFI
+allocation arenas. Phase 26.2 completes generalized linear-resource semantics.
+Phase 26.3 adds `with ctx` and function-level `using ctx` as one pre-semantic
+desugaring mechanism. The full plan, ordering, status snapshot, and stable legacy
+identifier policy live in `docs/PHASES_26_AND_27.md`.
+
+**Exit gate:** every Phase 26 increment has focused positive and negative
+evidence, stable diagnostics, the full compiler suite, and a converged
+Cranelift-native bootstrap; implicit context remains unavailable in unsafe, FFI,
+and resource-authority contexts.
+
+## Phase 27 — Consolidation
+
+**Purpose:** remove the obsolete paths made unnecessary by the completed safety
+model rather than carrying two ways to express the same operation indefinitely.
+
+Migrate legacy lookup results to `Option[T]`, remove `empty[T]` sentinel
+semantics, replace `open_directories` with generalized resources, finish explicit
+subscript mutation, audit safe collection and string surfaces, and consolidate
+compiler statement and expression representations into sum types. The detailed
+27.1–27.6 sequence is in `docs/PHASES_26_AND_27.md`.
+
+**Exit gate:** all six consolidation rows are complete, the one-way ledger has
+no remaining violation owned by this phase, bootstrap converges, and the
+consolidated compiler output is promoted through the repository's seed policy.
+
+## Post-Phase 27 — technical launch and outreach
+
+After Phase 27 **and every preceding tail checkpoint** are closed on merged
+`main`, execute `docs/CRANELIFT_LAUNCH.md`. No earlier Phase 20–26 milestone
+triggers the coordinated public outreach campaign independently. Each
+authoritative milestone may still trigger the evidence-card and recipient review in
 `docs/EVIDENCE_LED_OUTREACH.md`; any resulting contact is narrow, private where
 appropriate, and sent only by the operator after rewriting and approval.
 
@@ -211,6 +242,8 @@ deferred feature migration
                     → C backend deprecation  (Phase 23)
                       → generated-C removal  (Phase 24)
                         → bootstrap C removal (Phase 25)
+                          → systems safety/resources (Phase 26)
+                            → consolidation (Phase 27)
 ```
 
 Three claims about how early each outcome is reachable, recorded as stated:
@@ -220,6 +253,8 @@ Three claims about how early each outcome is reachable, recorded as stated:
 | Gust stops emitting C by default for ordinary user programs | after Phase 22 |
 | The MIR-to-C implementation can be deleted | after Phase 24 |
 | Gust can claim its normal supported bootstrap does not require a host C compiler | after Phase 25 |
+| Post-C-transition safety, FFI, resources, and implicit context are complete | after Phase 26 |
+| The superseded compiler and stdlib paths are removed | after Phase 27 |
 
 **Read these as ordering claims rather than dates.** None has a duration attached
 and this document does not supply one; the value is that each outcome is pinned

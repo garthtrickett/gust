@@ -1,4 +1,4 @@
-# Step 5.2 Resource Semantics Design Checkpoint
+# Phase 26.2 Resource Semantics Design Checkpoint
 
 > **Status: re-verified 2026-08-19 by Patch S1.7 of `TASK_STDLIB.md`.** The
 > per-item findings are in "Verified state" immediately below. The original text
@@ -17,7 +17,7 @@ list below.
 | 4 | Destructor identity | **not met for user types** — see below |
 | 5 | Transfer state | **met** — owned, borrowed, moved, closed, destructor_scheduled all represented |
 | 6 | Defer semantics | **met** — `Defer` is an AST node; this changed after the original text was written |
-| 7 | Provenance eligibility | **partial** — Step 5.1 provenance machinery exists |
+| 7 | Provenance eligibility | **partial** — Phase 26.1 provenance machinery exists |
 | 8 | Directory parity | **not met** — `open_directories` is still present and has not been retired |
 
 Two findings matter more than the table.
@@ -54,7 +54,7 @@ So the framework is further along than the original text says on representation,
 
 Retained unchanged. Read the verified state above first.
 
-This checkpoint freezes the semantic design direction for generalized linear resources after the Step 5.2 report-only closure. It is not an enforcement patch and must not add new `report_step52_*` targets.
+This checkpoint freezes the semantic design direction for generalized linear resources after the Phase 26.2 report-only closure. It is not an enforcement patch and must not add new `report_step52_*` targets.
 
 ## Goal
 
@@ -144,12 +144,12 @@ The first parity implementation should mirror the existing directory lane withou
 6. Add narrow compiler-backed guards only after parity is proven.
 7. Remove `open_directories` in a later cleanup-only patch once generalized coverage is equivalent.
 
-## Step 5.1 dependency
+## Phase 26.1 dependency
 
-Generalized resource enforcement depends on the Step 5.1 provenance/non-laundering lane. Before `Resource[ctx, T]` can become a trusted linear handle, the typechecker must be able to distinguish safe arena or validated OS-resource origins from raw-derived, sandbox-derived, and unknown unsafe origins. This prevents a raw pointer, sandbox scratch address, or external native address from being laundered into the future `open_linear_resources` registry as if it were a compiler-verified safe handle.
+Generalized resource enforcement depends on the Phase 26.1 provenance/non-laundering lane. Before `Resource[ctx, T]` can become a trusted linear handle, the typechecker must be able to distinguish safe arena or validated OS-resource origins from raw-derived, sandbox-derived, and unknown unsafe origins. This prevents a raw pointer, sandbox scratch address, or external native address from being laundered into the future `open_linear_resources` registry as if it were a compiler-verified safe handle.
 
-Step 5.2 report-only scaffolding may stay in place, but compiler-backed Step 5.2 enforcement should remain paused until the Step 5.1 deferred unsafe lanes have semantic designs. Generalized resource ownership depends on knowing whether a handle or reference came from safe arena construction, raw pointer manipulation, address escape, or external FFI.
+Phase 26.2 report-only scaffolding may stay in place, but compiler-backed Phase 26.2 enforcement should remain paused until the Phase 26.1 deferred unsafe lanes have semantic designs. Generalized resource ownership depends on knowing whether a handle or reference came from safe arena construction, raw pointer manipulation, address escape, or external FFI.
 
 ## Guardrails
 
-`make guard_step52_no_post_closure_report_churn` should remain green throughout this design work. If new Step 5.2 reports are needed, update the closure whitelist intentionally and document why the new report is a compiler-design prerequisite rather than status churn.
+`make guard_step52_no_post_closure_report_churn` should remain green throughout this design work. If new Phase 26.2 reports are needed, update the closure whitelist intentionally and document why the new report is a compiler-design prerequisite rather than status churn.

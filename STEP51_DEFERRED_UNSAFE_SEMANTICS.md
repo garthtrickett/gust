@@ -1,11 +1,11 @@
-# Step 5.1 Deferred Unsafe Semantics Checkpoint
+# Phase 26.1 Deferred Unsafe Semantics Checkpoint
 
 > **Status: historical, unverified.** This document predates the closure of
 > Phase 15 (`TASK.md`). Its claims about what the compiler can represent have
 > not been re-checked since. Do not treat it as a current statement of compiler
 > capability. Verify against the compiler before relying on any item here.
 
-This checkpoint returns sequencing to Step 5.1 before any compiler-backed Step 5.2 linear-resource enforcement continues. Basic unsafe enforcement is compiler-backed, but the full Step 5.1 objective is not complete until the deferred unsafe, FFI, layout, sandboxing, address-escape, and provenance lanes have semantic designs and guards.
+This checkpoint returns sequencing to Phase 26.1 before any compiler-backed Phase 26.2 linear-resource enforcement continues. Basic unsafe enforcement is compiler-backed, but the full Phase 26.1 objective is not complete until the deferred unsafe, FFI, layout, sandboxing, address-escape, and provenance lanes have semantic designs and guards.
 
 ## Current closed subset
 
@@ -18,7 +18,7 @@ The basic unsafe boundary is considered closed when `make guard_step51_basic_uns
 - unsafe function bodies as unsafe contexts
 - narrow local raw-derived pointer return escape
 
-This closed subset is necessary but not sufficient for the full Step 5.1 objective.
+This closed subset is necessary but not sufficient for the full Phase 26.1 objective.
 
 ## Deferred lanes
 
@@ -88,7 +88,7 @@ The helper predicates classify whether an origin allows safe branding, whether i
 
 ### Provenance propagation and non-laundering design checkpoint
 
-This checkpoint freezes the semantic propagation plan for broad unsafe non-laundering before Step 5.2 compiler-backed resource enforcement resumes. It is still a design checkpoint, not a diagnostic patch: no new rejection is enabled until the typechecker carries provenance state and focused guards exist.
+This checkpoint freezes the semantic propagation plan for broad unsafe non-laundering before Phase 26.2 compiler-backed resource enforcement resumes. It is still a design checkpoint, not a diagnostic patch: no new rejection is enabled until the typechecker carries provenance state and focused guards exist.
 
 The future typechecker should attach origin metadata to expression-check results, variable bindings, temporary values, return values, and container payload observations. The propagation model is conservative:
 
@@ -185,12 +185,12 @@ Direct external/native calls reject outside an explicit unsafe context with the 
 18. Add the first narrow non-laundering guard only after propagation is represented: reject raw-derived or sandbox-derived values returned as safe `Index[T, ctx]` or `&T[ctx]`.
 19. Add further compiler-backed guards only after each semantic lane has a stable representation and focused positive/negative fixtures.
 
-## Step 5.2 sequencing rule
+## Phase 26.2 sequencing rule
 
-Step 5.2 report-only scaffolding may remain in place, but Step 5.2 compiler-backed resource enforcement should not advance beyond inert design until these Step 5.1 deferred lanes are resolved or explicitly scoped as non-blocking. Resource ownership, destructor safety, and generalized handle tracking depend on knowing whether a value originated from safe arena construction, raw pointer manipulation, sandbox storage, or external FFI. In particular, `Resource[ctx, T]` handles and their future linear `Index[T, ctx]` aliases must only be born from safe arena or validated OS-resource constructors; raw-derived, sandbox-derived, and unknown unsafe-origin values must not be allowed to enter the generalized resource registry as trusted safe handles.
+Phase 26.2 report-only scaffolding may remain in place, but Phase 26.2 compiler-backed resource enforcement should not advance beyond inert design until these Phase 26.1 deferred lanes are resolved or explicitly scoped as non-blocking. Resource ownership, destructor safety, and generalized handle tracking depend on knowing whether a value originated from safe arena construction, raw pointer manipulation, sandbox storage, or external FFI. In particular, `Resource[ctx, T]` handles and their future linear `Index[T, ctx]` aliases must only be born from safe arena or validated OS-resource constructors; raw-derived, sandbox-derived, and unknown unsafe-origin values must not be allowed to enter the generalized resource registry as trusted safe handles.
 
 ## Guardrails
 
 - Do not add regex-only failing guards for FFI, address escapes, layout annotations, sandbox arenas, or provenance laundering.
 - Do not treat generated C strings, comments, type syntax, or runtime implementation details as direct user-facing unsafe operations.
-- Do not mark the full Step 5.1 objective complete until FFI/layout/sandboxing, address-escape, and full provenance/non-laundering have compiler-backed semantics or an explicit deferral record.
+- Do not mark the full Phase 26.1 objective complete until FFI/layout/sandboxing, address-escape, and full provenance/non-laundering have compiler-backed semantics or an explicit deferral record.

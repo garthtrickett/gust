@@ -117,7 +117,7 @@ better discipline. This one cannot:
 > re-bootstraps regardless.
 
 **The techniques that make self-hosted changes safe assume a single writer.**
-`docs/PHASES_5_AND_6.md` records Step 5.1's A→B→C staging — add the grammar as a
+`docs/PHASES_26_AND_27.md` records Phase 26.1's A→B→C staging — add the grammar as a
 no-op, wrap the entire codebase under the no-op, then switch enforcement on — and
 that only holds if the codebase is consistent at each step. **A second agent
 editing `compiler/` during step B silently invalidates the wrapping audit**, and

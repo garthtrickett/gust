@@ -513,10 +513,10 @@ Also run a lightweight weekly review of drafts awaiting operator rewrite,
 commitments, unprocessed replies, due follow-ups, and contacts who should remain
 untouched until later. Do not manufacture outreach because a review occurred.
 
-Phase closure triggers a **review**, not automatic contact. Phase 20–24 may
+Phase closure triggers a **review**, not automatic contact. Phase 20–26 may
 justify narrow private technical drafts under this protocol, but they do not
 trigger the coordinated public Cranelift campaign. That campaign begins only
-after Phase 25 and the complete tail close.
+after Phase 27 and the complete tail close.
 
 ## Compact standing instruction
 
