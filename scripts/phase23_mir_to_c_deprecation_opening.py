@@ -619,6 +619,9 @@ def validate_phase24_filename_characterization_transition(
     coordination_successor = registry.get(
         "phase24_s1_8_authority_successor", {}).get(
             "consumer_inventory_transition")
+    docs_successor = registry.get(
+        "phase24_s1_8_authority_successor", {}).get(
+            "phase26_27_docs_consumer_successor")
     successor_paths = successor.get("registered_changed_text_surfaces", [])
     successor_unchanged = [
         "text_surface_count", "invocation_count", "invocation_manifest_digest",
@@ -732,28 +735,111 @@ def validate_phase24_filename_characterization_transition(
         "phase24_s1_8_authority_consumer_transition_v1" and
         coordination_successor.get("previous_inventory") ==
         inventory_successor["current_inventory"] and
-        coordination_successor.get("current_inventory") == live_inventory and
         coordination_paths == ["scripts/cranelift_registry.py"] and
         coordination_previous_rows == [
             row for row in current_inventory_rows
             if row["path"] in coordination_paths] and
-        coordination_current_rows == [
-            row for row in live_rows if row["path"] in coordination_paths] and
+        [row.get("path") for row in coordination_current_rows] ==
+        coordination_paths and
         coordination_successor.get("unchanged_fields") ==
         coordination_unchanged and
         coordination_successor.get("partial_extra_or_substituted_surface") ==
         "rejected",
         "S1.8 coordination consumer transition drifted")
-    require(canonical_digest([
-        row for row in live_rows if row["path"] not in coordination_paths
-    ]) == coordination_successor.get(
-        "unchanged_other_text_surface_manifest_digest"),
-            "S1.8 coordination changed an unregistered text surface")
     for field in coordination_unchanged:
         require(coordination_successor["current_inventory"].get(field) ==
                 coordination_successor["previous_inventory"].get(field),
                 f"S1.8 coordination changed retained inventory field: {field}")
-    return coordination_successor["current_inventory"]
+    if not isinstance(docs_successor, dict):
+        require(coordination_successor.get("current_inventory") == live_inventory and
+                coordination_current_rows == [
+                    row for row in live_rows if row["path"] in coordination_paths],
+                "S1.8 coordination live consumer inventory drifted")
+        require(canonical_digest([
+            row for row in live_rows if row["path"] not in coordination_paths
+        ]) == coordination_successor.get(
+            "unchanged_other_text_surface_manifest_digest"),
+                "S1.8 coordination changed an unregistered text surface")
+        return coordination_successor["current_inventory"]
+
+    docs_paths = docs_successor.get("registered_changed_text_surfaces", [])
+    docs_previous_rows = docs_successor.get(
+        "previous_changed_text_surfaces", [])
+    docs_current_rows = docs_successor.get("current_changed_text_surfaces", [])
+    docs_unchanged = [
+        "text_surface_count", "invocation_count", "invocation_manifest_digest",
+        "structural_surface_count", "structural_manifest_digest",
+        "classification_counts", "invocation_selection_counts",
+        "unclassified_count",
+    ]
+    docs_boundary = {
+        "changes_compiler_runtime_or_stdlib_source": False,
+        "changes_accepted_Gust_program_meaning": False,
+        "adds_or_changes_MIR_ABI_layout_or_runtime_symbols": False,
+        "changes_backend_route_default_or_fallback": False,
+        "changes_bootstrap_route_or_seed": False,
+        "begins_patch24_3": False,
+    }
+    require(
+        docs_successor.get("contract_version") ==
+        "phase24_phase26_27_docs_consumer_successor_v1" and
+        docs_successor.get("status") ==
+        "ready_for_exact_phase26_27_docs_rebase" and
+        docs_successor.get("authority_base_main") ==
+        "35ed329bde30a63b40178dc43c60d4da89ac7cd5" and
+        docs_successor.get("owning_docs_pull_request") == 318 and
+        docs_successor.get("owning_docs_exact_head_sha") ==
+        "8c9cb859ac81bff2e8a4ba59985f965d1832197c" and
+        docs_successor.get("previous_inventory") ==
+        coordination_successor["current_inventory"] and
+        docs_successor.get("accepted_live_states") == [
+            "pre_phase26_27_docs", "post_phase26_27_docs"] and
+        docs_paths == [
+            "GEMINI.md",
+            "STEP51_DEFERRED_UNSAFE_SEMANTICS.md",
+            "docs/CRANELIFT_LAUNCH.md",
+            "docs/EVIDENCE_LED_OUTREACH.md",
+            "docs/MESSAGING.md",
+            "docs/ONE_WAY_LEDGER.md",
+            "docs/ROADMAP_TAIL.md",
+            "docs/RUST_PROTOTYPE_REMOVAL.md",
+            "docs/VISION_RECONCILIATION.md",
+        ] and
+        [row.get("path") for row in docs_previous_rows] == docs_paths and
+        [row.get("path") for row in docs_current_rows] == docs_paths and
+        docs_successor.get("unchanged_fields") == docs_unchanged and
+        docs_successor.get("partial_extra_or_substituted_surface") ==
+        "rejected" and
+        docs_successor.get("boundary") == docs_boundary,
+        "Phase 26/27 docs consumer successor drifted")
+    for previous_row, current_row in zip(docs_previous_rows, docs_current_rows):
+        require(
+            {key: value for key, value in previous_row.items() if key != "digest"} ==
+            {key: value for key, value in current_row.items() if key != "digest"} and
+            previous_row.get("digest") != current_row.get("digest"),
+            "Phase 26/27 docs changed a frozen row beyond file identity")
+    live_docs_rows = [row for row in live_rows if row["path"] in docs_paths]
+    accepted_live_states = [
+        ("pre_phase26_27_docs", docs_successor["previous_inventory"],
+         docs_previous_rows),
+        ("post_phase26_27_docs", docs_successor["current_inventory"],
+         docs_current_rows),
+    ]
+    matched_states = [
+        state for state, inventory, rows in accepted_live_states
+        if inventory == live_inventory and rows == live_docs_rows
+    ]
+    require(len(matched_states) == 1,
+            "Phase 26/27 docs live state is partial, extra, or substituted")
+    require(canonical_digest([
+        row for row in live_rows if row["path"] not in docs_paths
+    ]) == docs_successor.get("unchanged_other_text_surface_manifest_digest"),
+            "Phase 26/27 docs changed an unregistered text surface")
+    for field in docs_unchanged:
+        require(docs_successor["current_inventory"].get(field) ==
+                docs_successor["previous_inventory"].get(field),
+                f"Phase 26/27 docs changed retained inventory field: {field}")
+    return live_inventory
 
 
 def validate_identity_falsifiers(expected: dict[str, object]) -> None:
