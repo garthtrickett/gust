@@ -18,6 +18,8 @@
     }
   },
   "guards": {
+    "guard-cranelift-phase24-resource-implicit-transfer-contract": 1,
+    "guard-cranelift-phase24-resource-implicit-transfer-evidence": 2,
     "guard-cranelift-phase24-filename-behavior-characterization-contract": 1,
     "guard-cranelift-phase24-filename-behavior-characterization-evidence": 2,
     "guard-cranelift-phase24-semantic-spelling-inventory-contract": 1,
