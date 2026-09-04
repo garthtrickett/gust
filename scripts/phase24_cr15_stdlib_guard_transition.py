@@ -997,50 +997,70 @@ def normalize_phase23_text_surfaces(
                 auth.get("status") ==
                 "patch24_2g_auth_seed_identity_authority" and
                 auth.get("registered_changed_paths") == [
-                    "scripts/phase22_default_route_seed_convergence.py"] and
+                    "gust_v4.c",
+                    "scripts/phase22_default_route_seed_convergence.py",
+                    "scripts/phase24_cr15_closure.py"] and
                 auth.get("added_text_surfaces") == [] and
                 auth.get("partial_extra_or_substituted_surface") == "rejected",
                 "Patch 24.2g-auth seed identity successor drifted")
         auth_paths = auth["registered_changed_paths"]
     union_paths = changed_paths + [
         path for path in auth_paths if path not in changed_paths]
-    changed_rows = [row for row in rows if row["path"] in changed_paths]
-    require(changed_rows == transition["current_changed_text_surfaces"],
+    # A path registered by Patch 24.2g-auth is judged by that successor instead,
+    # since this patch moves it beyond the identity Patch 24.2f pinned.
+    solely_24_2f = [path for path in changed_paths if path not in auth_paths]
+    changed_rows = [row for row in rows if row["path"] in solely_24_2f]
+    require(changed_rows == [row for row in transition["current_changed_text_surfaces"]
+                             if row["path"] in solely_24_2f],
             "Patch 24.2f changed text surfaces are partial or substituted")
+    auth_pre_rows: dict[str, dict] = {}
     if auth_paths:
-        auth_rows = [row for row in rows if row["path"] in auth_paths]
-        auth_states = {
-            "pre_auth": auth["previous_changed_text_surfaces"],
-            "post_auth": auth["current_changed_text_surfaces"],
-        }
-        matched = [name for name, expected in auth_states.items()
-                   if auth_rows == expected]
-        require(len(matched) == 1,
-                "Patch 24.2g-auth changed text surfaces are partial or substituted")
-        state = matched[0]
-    else:
-        state = "pre_auth"
-    scope = changed_paths if state == "pre_auth" else union_paths
+        # Each registered path is judged independently: the guard script lands in
+        # Patch 24.2g-auth and gust_v4.c lands in Patch 24.2g, so a tree can hold
+        # one at its post identity while the other is still at its pre identity.
+        # Every combination is an exact registered state; anything else rejects.
+        pre_by_path = {row["path"]: row
+                       for row in auth["previous_changed_text_surfaces"]}
+        post_by_path = {row["path"]: row
+                        for row in auth["current_changed_text_surfaces"]}
+        require(sorted(pre_by_path) == sorted(auth_paths) and
+                sorted(post_by_path) == sorted(auth_paths),
+                "Patch 24.2g-auth registered paths and rows disagree")
+        live_by_path = {row["path"]: row for row in rows
+                        if row["path"] in auth_paths}
+        require(sorted(live_by_path) == sorted(auth_paths),
+                "Patch 24.2g-auth registered text surface is missing")
+        for path in auth_paths:
+            live_row = live_by_path[path]
+            require(live_row in (pre_by_path[path], post_by_path[path]),
+                    "Patch 24.2g-auth changed text surfaces are partial or "
+                    f"substituted: {path}")
+            auth_pre_rows[path] = pre_by_path[path]
+    # The auth paths are excluded from the unchanged-other digest in every state,
+    # so that digest does not depend on which of them has landed yet.
+    scope = union_paths
     other_digest = digest_bytes(json.dumps(
         [row for row in rows if row["path"] not in scope],
         sort_keys=True, separators=(",", ":")).encode())
-    expected_other = (transition["unchanged_other_text_surface_manifest_digest"]
-                      if state == "pre_auth"
-                      else auth["unchanged_other_text_surface_manifest_digest"])
+    expected_other = (auth["unchanged_other_text_surface_manifest_digest"]
+                      if auth_paths
+                      else transition["unchanged_other_text_surface_manifest_digest"])
     require(other_digest == expected_other,
             f"Patch 24.2f changed an unregistered text surface: {other_digest}")
     replacements = {
         row["path"]: copy.deepcopy(row)
         for row in transition["previous_changed_text_surfaces"]
     }
-    if state == "post_auth":
-        # Project Patch 24.2g-auth's changed surface back to its merged-main
-        # identity too, so the closed Phase 23 and Phase 26/27 projections keep
-        # seeing the state they were registered against.
-        for row in auth["previous_changed_text_surfaces"]:
-            replacements[row["path"]] = copy.deepcopy(row)
+    # Project each auth path back so the closed Phase 23 and Phase 26/27
+    # projections keep seeing the state they were registered against, whichever
+    # of these patches has landed. A path Patch 24.2f already tracks keeps that
+    # patch's own previous identity - those projections predate 24.2f and expect
+    # the pre-24.2f row, not this successor's.
+    for path, row in auth_pre_rows.items():
+        if path not in replacements:
+            replacements[path] = copy.deepcopy(row)
     added = set(transition["added_text_surfaces"])
-    if state == "post_auth":
+    if auth_paths:
         added |= set(auth["added_text_surfaces"])
     rows = [replacements.get(row["path"], row) for row in rows
             if row["path"] not in added]
