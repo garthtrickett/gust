@@ -885,6 +885,22 @@ def projected_text_surfaces(
         else:
             validate_phase24_cr15_seed_publication_transition(
                 registry, inventory_summary(), rows)
+    docs_successor = registry.get(
+        "phase24_s1_8_authority_successor", {}).get(
+            "phase26_27_docs_consumer_successor")
+    if isinstance(docs_successor, dict):
+        docs_paths = docs_successor["registered_changed_text_surfaces"]
+        by_path = {str(row["path"]): row for row in rows}
+        live_docs_rows = [by_path.get(path) for path in docs_paths]
+        previous_rows = docs_successor["previous_changed_text_surfaces"]
+        current_rows = docs_successor["current_changed_text_surfaces"]
+        require(live_docs_rows in (previous_rows, current_rows),
+                "Phase 26/27 docs projection state drifted")
+        if live_docs_rows == current_rows:
+            replacements = {
+                str(row["path"]): copy.deepcopy(row) for row in previous_rows
+            }
+            rows = [replacements.get(str(row["path"]), row) for row in rows]
     seed_rows = [row for row in rows if row["path"] == transition["seed_path"]]
     require(len(seed_rows) == 1,
             "seed inventory projection did not find exactly one seed row")
