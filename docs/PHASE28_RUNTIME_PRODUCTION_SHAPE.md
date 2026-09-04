@@ -31,37 +31,59 @@ waits for its authority before opening.
 
 ## Verified Current Production-Shape Gaps
 
-Verified directly on `origin/main` at
-`6e5aaa671b705c71866cc30d719c70d5cd316b59` on 2026-09-04:
+Verified directly against the live source at `origin/main`
+`6e5aaa671b705c71866cc30d719c70d5cd316b59` on 2026-09-04. Line citations are
+exact at that commit; Patch 28.0 re-derives them rather than trusting them
+after the tree moves. Where this record and the source disagree, the source
+wins:
 
-- `os_Arena_New` sets `Capacity` to `4294967296ULL`, passes that size to
-  `malloc`, and `os_ArenaAlloc` advances one bump offset. This requests one
+- `os_Arena_New` sets `Capacity` to `4294967296ULL`, passes that size to a
+  single `malloc`, and `os_ArenaAlloc` advances one bump offset
+  (`src/runtime/arena.c:30`, `src/runtime/arena.c:31`, `src/runtime/arena.c:57`,
+  `src/runtime/arena.c:79`, `src/runtime/arena.c:91`). This requests one
   contiguous 4 GiB allocation. On systems with lazy page backing or memory
   overcommit, a successful call may reserve virtual address space without 4 GiB
   of immediate resident commitment; the repository currently neither measures
   nor guarantees the resident-memory consequence.
-- Arena references retain the historical 32-bit offset ABI. `os_ArenaAlloc`
-  returns an `int` produced through `uint32_t`, and `GUST_ARENA_OFFSET`
-  zero-extends that bit pattern before pointer arithmetic. The arena's 4 GiB
-  capacity and its reference representation therefore cannot be changed
-  independently without an explicit compatibility decision.
+- Arena references retain the historical 32-bit offset ABI. Both `os_ArenaAlloc`
+  return paths narrow an offset through `uint32_t` (`src/runtime/arena.c:80`,
+  `src/runtime/arena.c:92`), and `GUST_ARENA_OFFSET` zero-extends that bit
+  pattern before pointer arithmetic (`src/runtime/core_headers.h:37`). The
+  arena's 4 GiB capacity and its reference representation therefore cannot be
+  changed independently without an explicit compatibility decision.
 - The cooperative runtime stores mutexes in a static 1,024-entry array and
-  channels in a static 256-entry array. `gust_mutex_count` and
-  `gust_channel_count` only increase; no runtime path returns either slot to a
-  reusable pool.
-- Every channel allocation separately allocates its payload ring with `malloc`.
-  No channel destruction path frees that buffer or destroys its internal
-  `pthread_mutex_t`; the mutex pool likewise has no per-slot destruction path.
-- Exhausting either static pool prints a message and calls `exit(1)`. The Phase
-  17 thread-runtime authority currently describes both allocation helpers as
-  `returns_explicit_error`, so the source behaviour and recorded failure form
-  must be reconciled before choosing a replacement.
+  channels in a static 256-entry array (`src/runtime/fiber.c:473`,
+  `src/runtime/fiber.c:474`, `src/runtime/fiber.c:561`,
+  `src/runtime/fiber.c:576`). `gust_mutex_count` and `gust_channel_count` only
+  increase (`src/runtime/fiber.c:484`, `src/runtime/fiber.c:586`); no runtime
+  path returns either slot to a reusable pool.
+- Every channel allocation separately allocates its payload ring with `malloc`
+  (`src/runtime/fiber.c:591`). No channel destruction path frees that buffer or
+  destroys its internal `pthread_mutex_t`; the runtime's only
+  `pthread_mutex_destroy` tears down scheduler shards
+  (`src/runtime/fiber.c:450`), not pool entries. The mutex pool likewise has no
+  per-slot destruction path.
+- Exhausting either static pool prints a message and calls `exit(1)`
+  (`src/runtime/fiber.c:481`, `src/runtime/fiber.c:482`,
+  `src/runtime/fiber.c:583`, `src/runtime/fiber.c:584`), while arena capacity
+  exhaustion calls `abort()` and scratch exhaustion calls `exit(1)`
+  (`src/runtime/arena.c:84`, `src/runtime/scratch.c:34`). The Phase 17
+  thread-runtime authority still records both pool allocation helpers as
+  `failure_form: returns_explicit_error`
+  (`scripts/cranelift_feature_registry.json:12395`,
+  `scripts/cranelift_feature_registry.json:12398`), so the source behaviour and
+  the recorded failure form must be reconciled before choosing a replacement.
 - The default packaged runtime is compiled with `-O2 -Wall -pthread` and does
-  not define `GUST_DEBUG`. Arena allocation metadata, pre/post canaries,
-  `os_Arena_Validate`, and scratch-reset poisoning are therefore debug-only.
-  Capacity bounds are not debug-only: arena and scratch allocation retain their
-  bounds checks in the default build. Phase 28 must not describe release
-  validation as wholly absent.
+  not define `GUST_DEBUG` (`scripts/phase22_explicit_c_migration.sh:58`,
+  `scripts/phase21_native_rebuild_reproducibility.py:174`); `-DGUST_DEBUG` is
+  added only by the sanitizer guard suite
+  (`scripts/phase21_complete_guard_suite.py:432`). Arena allocation metadata,
+  pre/post canaries, `os_Arena_Validate`, and scratch-reset poisoning are
+  therefore debug-only (`src/runtime/arena.c:6`, `src/runtime/arena.c:60`,
+  `src/runtime/scratch.c:42`). Capacity bounds are not debug-only: arena and
+  scratch allocation retain their bounds checks in the default build
+  (`src/runtime/arena.c:82`, `src/runtime/scratch.c:32`). Phase 28 must not
+  describe release validation as wholly absent.
 
 These are production-shape limitations, not authorization to change Gust
 meaning. In particular, this record does not choose a smaller or growable arena,
