@@ -4101,6 +4101,36 @@
       "partial_or_unregistered_identity": "rejected",
       "closure_transition": "collapse_to_post_publication_after_seed_merge"
     },
+    "phase24_2g_auth_seed_identity_successor": {
+      "contract_version": "phase24_2g_auth_seed_identity_successor_v1",
+      "status": "patch24_2g_auth_seed_identity_authority",
+      "authority_base_main": "6d8a89d8d23327c14f1cc4daa4c0cc582d8a7a63",
+      "purpose": "admit the registered Patch 24.2f seed identity in this convergence chain, and pre-register the gust_v4.c text surface identity Patch 24.2g will publish, so the seed-only publication is not rejected as an unregistered surface",
+      "registered_changed_paths": ["gust_v4.c", "scripts/phase22_default_route_seed_convergence.py", "scripts/phase24_cr15_closure.py"],
+      "added_text_surfaces": [],
+      "independent_path_states": "each registered path is independently either its pre or its post identity, because the script lands in Patch 24.2g-auth and the seed lands in Patch 24.2g",
+      "previous_changed_text_surfaces": [
+        {"path":"gust_v4.c","digest":"706430d05010521657d44e0ee2afa2580afb71f1f5e8ca54a88f6e34f1a2e8d9","match_counts":{"explicit_backend_spelling":4,"mir_to_c_name":107,"generated_c_contract":186},"classification":"bootstrap_phase25","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"preserve_exact_C_bootstrap_dependency","removal_phase":"25","falsifier":"bootstrap_surface_is_missing_changed_or_reclassified"},
+        {"path":"scripts/phase22_default_route_seed_convergence.py","digest":"08b430674a5b614c186ceae2db38101ca7f5fe7b9c33df0e40ce8c3d6c30d10a","match_counts":{"explicit_backend_spelling":4,"mir_to_c_name":12,"generated_c_contract":6},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
+        {"path":"scripts/phase24_cr15_closure.py","digest":"095aa735c7e9b36866c26c1be0a9369f137ecb2ba45fa6abdccf84fdd72670bf","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":2,"generated_c_contract":0},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"}
+      ],
+      "current_changed_text_surfaces": [
+        {"path":"gust_v4.c","digest":"3f898b4bf34172fb0be90c5a78e8d07b8e319c74bee7a383d2f176267d09bf58","match_counts":{"explicit_backend_spelling":4,"mir_to_c_name":107,"generated_c_contract":186},"classification":"bootstrap_phase25","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"preserve_exact_C_bootstrap_dependency","removal_phase":"25","falsifier":"bootstrap_surface_is_missing_changed_or_reclassified"},
+        {"path":"scripts/phase22_default_route_seed_convergence.py","digest":"d89514ecdc82e0425cecac6fe4e9149a79ffe18592c743795b81c76e4099623e","match_counts":{"explicit_backend_spelling":4,"mir_to_c_name":12,"generated_c_contract":6},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
+        {"path":"scripts/phase24_cr15_closure.py","digest":"d21e1433f99a00a72a092dcfe336ad75373abe280d5ff16e2f200a7d6d463b8c","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":2,"generated_c_contract":0},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"}
+      ],
+      "unchanged_other_text_surface_manifest_digest": "e5f09e91066cb6924b9ea686c70873093001a195382d3b85e416a7952d11ff5d",
+      "partial_extra_or_substituted_surface": "rejected",
+      "boundary": {
+        "changes_compiler_source": false,
+        "changes_accepted_Gust_program_meaning": false,
+        "adds_or_changes_MIR_ABI_layout_or_runtime_symbols": false,
+        "changes_backend_route_default_or_fallback": false,
+        "changes_bootstrap_route_or_seed": false,
+        "edits_stdlib": false,
+        "begins_patch24_3": false
+      }
+    },
   "boundary": {
       "adds_or_changes_Gust_semantics": false,
       "adds_or_changes_MIR_or_native_lowering": false,

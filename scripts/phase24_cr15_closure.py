@@ -377,9 +377,15 @@ def evidence() -> None:
     replay(["just", "guard-cranelift-phase24-cr15-opening-evidence"], 900)
     replay(["just", "guard-cranelift-phase24-cr15-qualification-evidence"], 1800)
     replay(["python3", "scripts/phase23_production_release_audit.py", "evidence"], 1800)
+    replay(["make", "bootstrap"], 1800)
+    # check-regeneration compares the committed seed against the seed on disk, so
+    # it only means anything once `make bootstrap` has actually regenerated that
+    # file. Run before the bootstrap it degenerated to "the committed seed is the
+    # registered fixed point", which silently held on main and broke the moment a
+    # patch legitimately moved the seed. .github/workflows/phase19-seed-convergence.yml
+    # already invokes it in this order, after the bootstrap; this matches it.
     replay(["python3", "scripts/phase22_default_route_seed_convergence.py",
             "check-regeneration"], 900)
-    replay(["make", "bootstrap"], 1800)
     replay(["just", "guard-cranelift-registry-schema"], 300)
     replay(["just", "guard-cranelift-registry-projection"], 300)
     replay(["just", "guard-cranelift-ci-family-projection"], 300)
