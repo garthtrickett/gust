@@ -56,6 +56,15 @@ then resume this preflight unchanged. That instruction resolves only the
 sequencing and implementation authority already selected by OD-2 and OD-13; it
 does not reopen either decision or authorize Stdlib implementation.
 
+On 2026-09-04 the operator activated one narrow compiler-owned prerequisite
+discovered by the preserved Stdlib S1.9 witness: implicit local binding of a
+compiler-tracked linear Resource transfers cleanup ownership to exactly one
+destination and invalidates the source binding and source-rooted access. This
+rule is generic over resolved Resource metadata and is enforced before backend
+selection. Patches 24.2e–24.2h own only its roadmap authority, implementation,
+conditional isolated seed reconvergence, and checked S1.9 handoff. The broad
+Patch 24.3 compiler-source migration remains paused until Stdlib S1.12.
+
 The initial activation did not authorize CR-15. This amendment does, but still
 does not authorize Phase 24 backend-retirement implementation, Phase 24.5
 consolidation, Phase 25, TypeEnvironment splitting, `FunctionCheckFrame`,
@@ -116,6 +125,10 @@ Stdlib handoff are complete.
 - [x] Patch 24.1 — Filename-Selected Behaviour Characterization — DONE
 - [x] Patch 24.1a — Universal TCS Semantic Decision Authority — DONE
 - [x] Patch 24.2 — Compiler-Recognized Semantic Spelling Inventory — DONE
+- [x] Patch 24.2e — S1.9 Resource-Assignment Prerequisite Amendment — DONE
+- [ ] Patch 24.2f — Generic Implicit Linear-Resource Assignment Transfer
+- [ ] Patch 24.2g — Resource-Assignment Bootstrap Seed Reconvergence
+- [ ] Patch 24.2h — S1.9 Prerequisite Closure and Stdlib Handoff
 - [ ] Patch 24.3 — Filename-Independent Typechecker Correction
 - [ ] Patch 24.3a — Preflight Bootstrap Seed Reconvergence
 - [ ] Patch 24.4 — Opening-Preflight Closure
@@ -157,6 +170,11 @@ inserted amendment may append one lowercase letter to `N`.
 - CR-15 lowers through ordinary canonical calls and the existing Resource
   cleanup and protected-access semantics in both retained compiler paths.
   Backend-specific lowering and fallback are forbidden.
+- Implicit local binding of a compiler-tracked linear Resource is an ownership
+  transfer: the destination owns the sole cleanup obligation, and the source
+  binding plus access rooted in it is invalid after the transfer. The rule is
+  driven only by resolved generic Resource metadata before backend selection;
+  no filename, fixture, backend, stdlib type, or consumer spelling may select it.
 - Phase 24 backend retirement, Phase 24.5 consolidation, and Phase 25 native
   bootstrap remain inactive after this preflight closes.
 
@@ -446,6 +464,88 @@ spellings are explicitly partitioned; registry and generated review projection
 agree; and the inventory guard detects omission, substitution, duplication,
 and classification drift.
 
+## Patch 24.2e — S1.9 Resource-Assignment Prerequisite Amendment
+
+**Purpose:** interpose only the operator-authorized generic implicit
+linear-Resource assignment correction before Stdlib S1.9 resumes, without
+resuming or widening Patch 24.3.
+
+**Steps:**
+
+- Preserve the checked S1.9 witness as read-only cross-lane evidence and record
+  its generic compiler ownership without absorbing any Stdlib path.
+- Define separate implementation, conditional seed-only, and closure/handoff
+  rows with pre-backend, retained-path, cleanup, and falsifier evidence.
+- Pause Patch 24.3 until Stdlib S1.12 after the S1.9 handoff.
+
+**Exit Gate:** only roadmap and required generated predecessor authority change;
+the correction is generic over compiler-tracked Resource metadata; no compiler,
+runtime, MIR, backend, ABI/layout, bootstrap seed, or Stdlib behaviour changes;
+and the amendment PR's exact-head workflows and review gates pass.
+
+## Patch 24.2f — Generic Implicit Linear-Resource Assignment Transfer
+
+**Purpose:** make an implicit local binding from a compiler-tracked linear
+Resource perform the same single-owner source invalidation required of an
+ownership transfer, before either backend is selected.
+
+**Steps:**
+
+- Characterize the accepted implicit-binding gap and the already-rejected
+  explicit use-after-move, extra-owner, and invalid lifecycle controls.
+- When a local declaration initializer is an identifier bound to an owned,
+  compiler-tracked linear Resource, bind the existing cleanup identity to the
+  destination and transition the source to moved exactly once.
+- Reject later source use and source-rooted protected access while preserving
+  valid destination use and exactly one destination cleanup.
+- Add a spelling-neutral Resource witness and structural falsifiers forbidding
+  filename, fixture, backend, consumer, or stdlib-type recognition.
+
+**Exit Gate:** the invalid aliasing program rejects with the generic
+`LinearResourceUseAfterMove` diagnostic before backend selection; the valid
+one-destination transfer compiles and schedules exactly one cleanup through
+both retained compiler paths; generic and adversarial controls pass; no MIR,
+ABI/layout, runtime, backend route/fallback, Stdlib source, or seed changes; and
+`make gust` plus focused resource, cleanup, registry, and predecessor guards
+pass.
+
+## Patch 24.2g — Resource-Assignment Bootstrap Seed Reconvergence
+
+**Purpose:** isolate any generated seed change required by Patch 24.2f.
+
+**Steps:**
+
+- Start from exact merged Patch 24.2f main and run the repository bootstrap
+  entry point without hand-editing generated output.
+- Require stage 2 and stage 3 byte identity and rerun the implicit-transfer
+  positive, negative, cleanup, retained-path, and no-fallback evidence.
+- Publish only `gust_v4.c`; if it is already byte-identical, record the checked
+  no-diff fixed point rather than manufacture a commit.
+
+**Exit Gate:** bootstrap reaches a byte-identical fixed point; a changed seed is
+the sole PR path; the generic transfer contract remains green through both
+retained paths; and no Stdlib or Phase 24.3 work is introduced.
+
+## Patch 24.2h — S1.9 Prerequisite Closure and Stdlib Handoff
+
+**Purpose:** close only the compiler-owned implicit Resource-transfer correction
+and issue the checked handoff that permits the Stdlib lane to resume S1.9.
+
+**Steps:**
+
+- Re-derive the implementation and seed state from exact current main and rerun
+  focused generic transfer, cleanup, retained-path, registry, predecessor, and
+  no-fallback authority.
+- Record exact PR heads, merge mains, workflow populations, review state, and
+  the bootstrap fixed-point result, then mark Patches 24.2f–24.2h DONE.
+- Notify Stdlib only after this closure merges; keep Patch 24.3 paused until
+  Stdlib S1.12 reaches its checked terminal handoff.
+
+**Exit Gate:** exact current main rejects source reuse after implicit linear
+Resource transfer, preserves exactly one destination cleanup through both
+retained paths, is bootstrap-converged and review-clean, and carries a durable
+S1.9 handoff without changing Stdlib-owned files or beginning Patch 24.3.
+
 ## Patch 24.3 — Filename-Independent Typechecker Correction
 
 **Purpose:** remove source-filename control over accepted meaning using only the
@@ -527,16 +627,22 @@ Web Slice 1 remain inactive.
 → 24.1 filename-selected behaviour characterization
 → 24.1a universal TCS semantic decision authority
 → 24.2 concrete semantic spelling inventory
+→ 24.2e S1.9 Resource-assignment prerequisite amendment
+→ 24.2f generic implicit linear-Resource assignment transfer
+→ 24.2g conditional isolated seed reconvergence
+→ 24.2h S1.9 prerequisite closure and checked Stdlib handoff
+→ Stdlib S1.9–S1.12
 → 24.3 filename-independent correction
 → 24.3a isolated seed reconvergence
 → 24.4 opening-preflight closure.
 
 CR-15 must close and hand off before Patch 24.1 begins. Characterization and its
-operator-selected decision successor must merge before the inventory, and all
-three must merge before the correction. A seed cannot share a PR with
-compiler-source changes. Each Historical qualification runs only after its
-corresponding final implementation/seed main exists. No later phase is activated
-by completing this sequence.
+operator-selected decision successor must merge before the inventory. The
+S1.9 Resource-assignment prerequisite and its checked handoff then complete
+before Stdlib S1.9 resumes; Patch 24.3 remains paused through Stdlib S1.12. A
+seed cannot share a PR with compiler-source changes. Each Historical
+qualification runs only after its corresponding final implementation/seed main
+exists. No later phase is activated by completing this sequence.
 
 ## Opening-Preflight Success Criteria
 

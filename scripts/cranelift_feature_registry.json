@@ -7629,6 +7629,29 @@
         "begins_patch24_3": false
       }
     },
+    "s1_9_resource_assignment_roadmap_successor": {
+      "contract_version": "phase24_s1_9_resource_assignment_roadmap_v1",
+      "status": "patch24_2e_complete",
+      "authority_base_main": "db13122a9235c4ecc865bff6c275c7bf3946769b",
+      "changed_paths": ["TASK.md"],
+      "accepted_live_states": ["pre_roadmap_amendment", "post_roadmap_amendment"],
+      "accepted_states": [
+        {"state":"pre_roadmap_amendment","files":[{"path":"TASK.md","digest":"de78175e717315f74ca0cfdc5694433739de4e172fbe55a7a6c178c51483bdcc"}]},
+        {"state":"post_roadmap_amendment","files":[{"path":"TASK.md","digest":"a5bf72fec6ab54eb15027731936541c75d1b570ff6f4aefae071570765736310"}]}
+      ],
+      "implementation_sequence": ["24.2f", "24.2g", "24.2h"],
+      "resume_patch24_3_after": "stdlib_s1_12",
+      "rejected_states": ["partial", "extra", "substituted", "path_drifted", "near_miss", "unrelated"],
+      "boundary": {
+        "changes_compiler_runtime_or_stdlib_source": false,
+        "changes_accepted_Gust_program_meaning": false,
+        "adds_or_changes_MIR_ABI_layout_or_runtime_symbols": false,
+        "changes_backend_route_default_or_fallback": false,
+        "changes_bootstrap_route_or_seed": false,
+        "edits_stdlib": false,
+        "begins_patch24_3": false
+      }
+    },
     "boundary": {
       "changes_compiler_runtime_or_stdlib_source": false,
       "changes_accepted_Gust_program_meaning": false,
