@@ -37,11 +37,13 @@ unblocking S1.5. Phase 20 later resolved CR-5's generic resource floor and
 Patch 20.16d landed protected-access liveness. The first reusable S1.8 probe
 then exposed CR-15: OD-2 forbids the user-written generic functions that the
 selected module API would otherwise require, so a bounded compiler-owned
-derivation must land before S1.8 resumes.
+derivation had to land before S1.8 resumed. Cranelift Patch 24.0f closed that
+authority and handed the selected backend-neutral module surface back to this
+lane; S1.8 now consumes it without reopening OD-2.
 
-| Delivered (8) | Blocked (4) | Depends on the rest (1) |
+| Delivered (9) | Ready in roadmap order (3) | Depends on the rest (1) |
 | --- | --- | --- |
-| S1.0, S1.1, S1.2, S1.3, S1.4, S1.5, S1.6, S1.7 | S1.8, S1.9, S1.10, S1.11 — CR-15 | S1.12 closure |
+| S1.0, S1.1, S1.2, S1.3, S1.4, S1.5, S1.6, S1.7, S1.8 | S1.9, S1.10, S1.11 | S1.12 closure |
 
 The lane does not idle at a blocked patch. It records the shared-zone defect and
 takes the next independent item. That is why S1.6 was delivered while S1.4 and
@@ -59,7 +61,7 @@ This is a scheduling fact, not an objection to the two-lane model.
 - [x] Patch S1.5 — Clone Arena Destination Normalization — DONE
 - [x] Patch S1.6 — Stdlib Composition Regression Program — DONE
 - [x] Patch S1.7 — MutexGuard Prerequisite Audit — DONE
-- [ ] Patch S1.8 — MutexGuard Prototype
+- [x] Patch S1.8 — MutexGuard Prototype — DONE
 - [ ] Patch S1.9 — MutexGuard Scope and Resource Tests
 - [ ] Patch S1.10 — MutexGuard Fiber Contention Tests
 - [ ] Patch S1.11 — Realistic Example Migration
@@ -144,7 +146,7 @@ current would re-open work that is done.
 | --- | --- |
 | `str == str` typechecks and emits invalid C | **Closed** by S1.1 (#74). Both compilers now reject `==` and `!=` on `str` with a byte-identical diagnostic naming `std.str_eq`. Making `==` *mean* content equality is still open as CR-1. |
 | A method call on a reference receiver fails resolution | **Closed** by S1.3 (#86). |
-| `defer` has no AST/typechecker representation | **Superseded.** `defer` is an AST node; Phase 20 subsequently resolved CR-5's destructor, opacity, acquisition, and cleanup floor. The current MutexGuard blocker is the OD-2-compatible compiler-owned derivation recorded as CR-15. |
+| `defer` has no AST/typechecker representation | **Superseded.** `defer` is an AST node; Phase 20 subsequently resolved CR-5's destructor, opacity, acquisition, and cleanup floor. Cranelift Patch 24.0f then closed CR-15's OD-2-compatible compiler-owned derivation, which S1.8 now consumes. |
 | Rust and self-hosted brand matching diverge | **Closed by deletion.** PR #137 removed the deprecated Rust prototype on 2026-08-21; D-2 is recorded as closed in `docs/SHARED_SEMANTIC_ZONE.md`. Phase 19 subsequently closed CR-2/D-1. |
 
 Still open from that baseline: the `exit(1)` bounds policy (CR-3, unscheduled).
@@ -766,10 +768,11 @@ is the module-level `sync.lock` / `sync.get` API. User-defined extension-method
 ergonomics such as `mutex.ScopedLock()` are explicitly deferred for later and
 are not part of CR-15 or S1.8.
 
-**Owner: Cranelift lane; unscheduled.** S1.8 through S1.11 remain blocked until
-that lane lands a generic, backend-neutral derivation authority and hands the
-checked surface back. This request authorizes no Stdlib or compiler
-implementation by itself.
+**Resolved 2026-09-03 by Cranelift Patch 24.0f / PR #310.** The checked
+generic, backend-neutral derivation authority is merged and its post-merge
+handoff is effective. S1.8 consumes the selected surface; arbitrary generic
+functions, backend-specific lowering, and Mutex-spelling authority remain
+outside the accepted contract.
 
 ## Verification Policy
 
@@ -1159,7 +1162,7 @@ handed to the Cranelift lane.
 
 ### Patch S1.8 — MutexGuard Prototype
 
-*Blocked by CR-15. CR-5's resource floor is resolved.*
+*Delivered after the merged Patch 24.0f CR-15 handoff.*
 
 **Purpose**
 
@@ -1200,7 +1203,7 @@ unlock are unchanged and remain explicit unsafe primitives.
 
 ### Patch S1.9 — MutexGuard Scope and Resource Tests
 
-*Blocked by CR-15 through S1.8.*
+*Sequenced after S1.8.*
 
 **Purpose**
 
@@ -1231,7 +1234,7 @@ rejected at compile time, or is recorded as an explicit documented limitation.
 
 ### Patch S1.10 — MutexGuard Fiber Contention Tests
 
-*Blocked by CR-15 through S1.8.*
+*Sequenced after S1.9.*
 
 **Purpose**
 
@@ -1258,7 +1261,7 @@ guard, and the shared-counter result is exact.
 
 ### Patch S1.11 — Realistic Example Migration
 
-*Blocked by CR-15 through S1.8.*
+*Sequenced after S1.10.*
 
 **Purpose**
 
@@ -1327,20 +1330,19 @@ refusing to let S1.12 be marked `DONE` while anything below is outstanding.
 | S1.5 | owned, referenced, field, and helper Clone destinations normalize without representation leakage |
 | S1.6 | application-shaped `Vector`/`HashMap`/`Clone` composition, with explicit native deferral |
 | S1.7 | the resource prerequisites re-verified; CR-5 made concrete |
+| S1.8 | safe `sync.lock` / `sync.get` prototype over an opaque linear guard, with both-backend behavior |
 
 ### Outstanding, with owners
 
 | patch | blocked by | owner |
 | --- | --- | --- |
-| S1.8 MutexGuard prototype | CR-15 | Cranelift lane |
-| S1.9 MutexGuard scope tests | CR-15 through S1.8 | Cranelift lane |
-| S1.10 MutexGuard fiber tests | CR-15 through S1.8 | Cranelift lane |
-| S1.11 realistic migration | CR-15 through S1.8 | Cranelift lane |
+| S1.9 MutexGuard scope tests | next roadmap row | Stdlib lane |
+| S1.10 MutexGuard fiber tests | S1.9 | Stdlib lane |
+| S1.11 realistic migration | S1.10 | Stdlib lane |
 | S1.12 closure | all of the above | Stdlib lane |
 
-No deferral here is unowned. CR-11 through CR-13 are resolved. CR-15 has a
-seven-point report, a checked minimal witness, an operator-selected
-compiler-owned derivation direction, and a named owner; it is not yet scheduled.
+No deferral here is unowned. CR-11 through CR-13 and CR-15 are resolved; the
+remaining rows are ordinary Stdlib work sequenced by this roadmap.
 
 ### Residue — what a normal program still cannot express safely
 
@@ -1351,16 +1353,14 @@ Recording this is the point of the phase, not an apology for it.
   compiler-owned (`VISION.md` §16). Users write `std.str_eq(a, b)`.
 - **An out-of-range string index kills the process**, not the request, which
   `VISION.md` §34 forbids. CR-3, and filed as issue #91.
-- **No reusable safe MutexGuard surface exists.** The generic Resource,
-  destructor, opacity, cleanup, and protected-access liveness floor has landed,
-  but OD-2 forbids the user-written generic `lock`/`get` functions the selected
-  library shape would otherwise require. CR-15 assigns a bounded compiler-owned
-  derivation to the Cranelift lane without reopening general generic functions.
+- **The safe MutexGuard prototype now exists.** S1.8 exposes the selected
+  `sync.lock` / `sync.get` surface through an opaque linear guard. S1.9 through
+  S1.11 still own its complete control-flow, contention, and migration evidence.
 - **References carry no mutability and are not analysed for aliasing.** Two `&T`
   arguments may alias one value and both write through it (`VISION.md` §26).
 - **Raw Mutex access remains explicitly unsafe.** Patch 20.16d preserved the
-  existing raw primitives and requires an `unsafe` block. Until CR-15 and S1.8
-  land, safe application code has no scoped acquisition/accessor spelling.
+  existing raw primitives and requires an `unsafe` block. S1.8 adds the safe
+  scoped spelling without changing or hiding that low-level form.
 
 ### What closure requires
 

@@ -222,6 +222,13 @@ derivation over reopening OD-2. `TASK_STDLIB.md` CR-15 and the checked fixtures
 `tests/stdlib_s1_mutex_guard_generic_derivation_{module,rejected}.gst` are the
 current authority; no Mutex-specific backend rule is permitted.
 
+**Current correction 2026-09-03.** Cranelift Patch 24.0f closed that exact CR-15
+authority and handed it back to the Stdlib lane. S1.8 now implements the
+selected module as an opaque linear guard whose private destructor unlocks once
+at scope exit; `sync.get` exposes only guard-rooted protected access. Both
+retained backends execute the same two-acquisition behavior without a new
+runtime symbol or Mutex-specific backend rule.
+
 ---
 
 ## Reproduction

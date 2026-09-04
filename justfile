@@ -23212,13 +23212,14 @@ guard-stdlib-s1-resource-prerequisites:
     }
 
     # S1.7 remains historical evidence, while the live roadmap must distinguish
-    # the resolved resource floor from the current OD-2 derivation blocker.
+    # the resolved resource floor and derivation handoff from the S1.8 library
+    # implementation that consumes them.
     rg -n -F 'Status: re-verified 2026-08-19 by Patch S1.7' STEP52_RESOURCE_SEMANTICS.md >/dev/null
     rg -n -F '### CR-5 — Generic resource semantics sufficient for a scoped guard — **RESOLVED 2026-08-24**' "$roadmap" >/dev/null
     rg -n -F '### CR-15 — Compiler-owned derivation for the generic MutexGuard surface' "$roadmap" >/dev/null
-    rg -n -F '*Blocked by CR-15. CR-5'"'"'s resource floor is resolved.*' "$roadmap" >/dev/null
+    rg -n -F '**Resolved 2026-09-03 by Cranelift Patch 24.0f / PR #310.**' "$roadmap" >/dev/null
     for status in \
-      '- [ ] Patch S1.8 — MutexGuard Prototype' \
+      '- [x] Patch S1.8 — MutexGuard Prototype — DONE' \
       '- [ ] Patch S1.9 — MutexGuard Scope and Resource Tests' \
       '- [ ] Patch S1.10 — MutexGuard Fiber Contention Tests' \
       '- [ ] Patch S1.11 — Realistic Example Migration'
@@ -23231,9 +23232,25 @@ guard-stdlib-s1-resource-prerequisites:
     rg -n -F 'User-written generic functions are not available initially.' "$vision" >/dev/null
     rg -n -F 'This does not reopen OD-2.' "$vision" >/dev/null
     require_cr15_contract "$roadmap" "$shared" "$vision"
-    rg -n -F 'reusable guard blocked on CR-15' "$foundations" >/dev/null
-    rg -n -F 'Current correction 2026-08-24.' "$findings" >/dev/null
+    rg -n -F 'Resolved by Phase 24.0f and consumed by S1.8.' "$foundations" >/dev/null
+    rg -n -F 'Current correction 2026-09-03.' "$findings" >/dev/null
     rg -n -F 'User-defined extension-method' "$roadmap" >/dev/null
+
+    python3 - "$registry" <<'PY'
+    import json
+    import sys
+
+    closure = json.load(open(sys.argv[1])).get("phase24_cr15_closure", {})
+    assert closure.get("contract_version") == "phase24_cr15_closure_v1"
+    assert closure.get("status") == "ready_for_merge_and_checked_post_merge_stdlib_handoff"
+    assert closure.get("stdlib_handoff") == {
+        "status": "effective_only_after_closure_pr_merge_and_current_main_rederivation",
+        "unblocked_rows": ["S1.8", "S1.9", "S1.10", "S1.11"],
+        "compiler_contract": "generic_backend_neutral_protected_Resource_guard_derivation",
+        "stdlib_implementation_owned_by": "Stdlib lane",
+        "task_stdlib_edited_by_this_patch": False,
+    }
+    PY
 
     # Prove the assertions are file-specific rather than another union search.
     contract_probe_root="$(mktemp -d)"
@@ -23258,11 +23275,9 @@ guard-stdlib-s1-resource-prerequisites:
     rg -n -F 'func lock(mutex: &std.Mutex[T, ctx]) MutexGuard[T, ctx]' "$module" >/dev/null
     rg -n -F 'func get(owner: &MutexGuard[T, ctx]) &T' "$module" >/dev/null
 
-    # This guard has two exact states. Before Patch 24.0c, pin the rejected
-    # generic-substitution gap. Once the owning derivation authority is present,
-    # accept only its validated v1 contract and require the same witness to
-    # compile. S1.8 remains inactive above until a later checked Patch 24.0f
-    # closure/handoff successor deliberately replaces that boundary.
+    # This historical prerequisite guard still recognizes the predecessor and
+    # Patch 24.0c states. In the live successor it additionally pins the exact
+    # 24.0f closure above and requires the selected module witness to compile.
     mkdir -p build/guards/stdlib_s1_resource_prerequisites
     make gust >build/guards/stdlib_s1_resource_prerequisites/build.log 2>&1
     output="build/guards/stdlib_s1_resource_prerequisites/generic-derivation.output"
@@ -23302,7 +23317,7 @@ guard-stdlib-s1-resource-prerequisites:
         ;;
     esac
 
-    echo "✅ CR-15 prerequisite state is exact and S1.8 remains inactive pending Patch 24.0f handoff."
+    echo "✅ CR-15 prerequisite and closure states are exact; S1.8 consumes the checked handoff."
 
 # Stdlib lane, Phase S1. Appended at the end for the same reason as the other S1
 # guards: several guards extract recipe bodies with sed ranges bounded by the
@@ -24032,3 +24047,13 @@ guard-cranelift-phase23-close:
     just guard-cranelift-phase23-historical-full-qualification-contract
     python3 scripts/cranelift_registry.py validate
     python3 scripts/phase23_closure.py --check
+
+# Stdlib lane, Patch S1.8. Appended at the physical end so every previously
+# registered recipe-body and line identity remains stable.
+guard-stdlib-s1-mutex-guard:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking the safe S1 MutexGuard prototype..."
+    python3 scripts/phase24_cr15_closure.py validate
+    just guard-cranelift-phase20-unsafe-mutex-migration-contract
+    bash scripts/stdlib_s1_mutex_guard_parity.sh

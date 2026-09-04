@@ -1,35 +1,27 @@
-name: Stdlib S1 Resource Prerequisites
-
-# Pins the completed handoff: CR-5's resource floor and CR-15's bounded compiler
-# derivation are resolved, and S1.8 consumes the selected MutexGuard surface.
+name: Stdlib S1 MutexGuard
 
 on:
   pull_request:
     paths:
-      - 'compiler/typechecker.gst'
-      - 'compiler/lexer.gst'
-      - 'STEP52_RESOURCE_SEMANTICS.md'
       - 'TASK_STDLIB.md'
-      - 'docs/SHARED_SEMANTIC_ZONE.md'
       - 'docs/STDLIB_FOUNDATIONS.md'
       - 'docs/STDLIB_SURFACE_FINDINGS.md'
-      - 'docs/VISION.md'
+      - 'tests/stdlib_s1_mutex_guard.gst'
       - 'tests/stdlib_s1_mutex_guard_generic_derivation_*.gst'
+      - 'scripts/stdlib_s1_mutex_guard_parity.sh'
       - 'justfile'
-      - '.github/workflows/stdlib-s1-resource-prerequisites.yml'
+      - '.github/workflows/stdlib-s1-mutex-guard.yml'
   push:
     branches: [main]
     paths:
-      - 'compiler/typechecker.gst'
-      - 'STEP52_RESOURCE_SEMANTICS.md'
       - 'TASK_STDLIB.md'
-      - 'docs/SHARED_SEMANTIC_ZONE.md'
       - 'docs/STDLIB_FOUNDATIONS.md'
       - 'docs/STDLIB_SURFACE_FINDINGS.md'
-      - 'docs/VISION.md'
+      - 'tests/stdlib_s1_mutex_guard.gst'
       - 'tests/stdlib_s1_mutex_guard_generic_derivation_*.gst'
+      - 'scripts/stdlib_s1_mutex_guard_parity.sh'
       - 'justfile'
-      - '.github/workflows/stdlib-s1-resource-prerequisites.yml'
+      - '.github/workflows/stdlib-s1-mutex-guard.yml'
   workflow_dispatch:
 
 permissions:
@@ -40,12 +32,13 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
-  resource-prerequisites:
+  mutex-guard:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
       - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - name: guard-stdlib-s1-resource-prerequisites
-        run: just guard-stdlib-s1-resource-prerequisites
+      - run: make gust
+      - name: guard-stdlib-s1-mutex-guard
+        run: just guard-stdlib-s1-mutex-guard
