@@ -159,6 +159,61 @@ def render(closure: dict) -> str:
     return "\n".join(lines)
 
 
+SEED_SUCCESSOR_TRANSITIONS = ("phase24_2f_seed_transition",)
+
+
+def _seed_transition(registry: dict, key: str) -> dict:
+    convergence = registry.get("phase22_default_route_seed_convergence", {})
+    transition = convergence.get(key)
+    require(isinstance(transition, dict), f"{key} is missing")
+    identities = transition.get("accepted_live_seed_identities")
+    require(isinstance(identities, list) and len(identities) == 2 and
+            [row.get("state") for row in identities] ==
+            ["pre_publication", "post_publication"],
+            f"{key} does not declare exactly a pre/post identity pair")
+    require(len({(row["line_count"], row["seed_digest"])
+                 for row in identities}) == 2,
+            f"{key} identities are not distinct")
+    require(transition.get("seed_pr_policy") == "gust_v4_c_only" and
+            transition.get("partial_or_unregistered_identity") == "rejected",
+            f"{key} seed publication policy drifted")
+    diff = transition.get("generated_seed_diff", {})
+    require(diff.get("current_lines") - diff.get("previous_lines") ==
+            diff.get("line_delta") and
+            diff.get("insertions") - diff.get("deletions") ==
+            diff.get("line_delta"),
+            f"{key} generated seed line delta is inconsistent")
+    require(diff.get("previous_lines") == identities[0]["line_count"] and
+            diff.get("current_lines") == identities[1]["line_count"],
+            f"{key} generated seed diff does not match its identities")
+    return transition
+
+
+def registered_post_publication_identity(registry: dict, key: str) -> dict:
+    identity = _seed_transition(registry, key)["accepted_live_seed_identities"][1]
+    return {"line_count": identity["line_count"],
+            "seed_digest": identity["seed_digest"]}
+
+
+def accepted_live_seed_identities(registry: dict) -> list[dict]:
+    """Every seed identity the repository has explicitly registered.
+
+    CR-15's published fixed point, plus the pre/post pair of each declared
+    successor transition. A successor is only consulted when it is named in
+    SEED_SUCCESSOR_TRANSITIONS, so adding a block to the registry cannot widen
+    what this guard accepts on its own.
+    """
+    accepted = [registered_post_publication_identity(
+        registry, "phase24_cr15_seed_transition")]
+    for key in SEED_SUCCESSOR_TRANSITIONS:
+        for row in _seed_transition(registry, key)["accepted_live_seed_identities"]:
+            identity = {"line_count": row["line_count"],
+                        "seed_digest": row["seed_digest"]}
+            if identity not in accepted:
+                accepted.append(identity)
+    return accepted
+
+
 def validate() -> dict:
     registry, closure = load()
     require(closure.get("contract_version") == "phase24_cr15_closure_v1",
@@ -192,22 +247,31 @@ def validate() -> dict:
                 value.get("status") == status,
                 f"{key} is not complete")
 
-    seed_digest = hashlib.sha256(SEED.read_bytes()).hexdigest()
-    seed_lines = len(SEED.read_text(encoding="utf-8").splitlines())
+    # CR-15's own published seed is a historical fact about Patch 24.0e, so it is
+    # pinned against CR-15's registered post-publication identity rather than
+    # against whatever seed happens to be on disk. Reading the live seed here was
+    # a latent defect: evidence() runs `make bootstrap`, which overwrites
+    # gust_v4.c, between its two validate() calls, so any patch that legitimately
+    # moves the seed failed this assertion before its seed patch could land.
+    cr15_post = registered_post_publication_identity(
+        registry, "phase24_cr15_seed_transition")
     require(closure.get("bootstrap") == {
         "seed_path": "gust_v4.c",
-        "seed_digest": seed_digest,
-        "line_count": seed_lines,
+        "seed_digest": cr15_post["seed_digest"],
+        "line_count": cr15_post["line_count"],
         "fixed_point": "stage2_stage3_byte_identical",
         "publication_pr": 307,
         "bootstrap_route": "retained_explicit_mir_to_c_until_phase25",
     }, "bootstrap closure evidence drifted")
-    seed_transition = registry["phase22_default_route_seed_convergence"][
-        "phase24_cr15_seed_transition"]
-    post_seed = seed_transition["accepted_live_seed_identities"][1]
-    require(post_seed == {"state": "post_publication", "line_count": seed_lines,
-                          "seed_digest": seed_digest},
-            "live seed is not the registered CR-15 fixed point")
+
+    # The live seed must still be an exactly registered identity. Anything not
+    # registered - including an unannounced regeneration - is rejected.
+    seed_digest = hashlib.sha256(SEED.read_bytes()).hexdigest()
+    seed_lines = len(SEED.read_text(encoding="utf-8").splitlines())
+    live_identity = {"line_count": seed_lines, "seed_digest": seed_digest}
+    accepted = accepted_live_seed_identities(registry)
+    require(live_identity in accepted,
+            "live seed is not a registered seed identity: " + repr(live_identity))
 
     historical = closure.get("authoritative_historical_full", {})
     require(historical == {

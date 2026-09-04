@@ -24057,3 +24057,28 @@ guard-stdlib-s1-mutex-guard:
     python3 scripts/phase24_cr15_closure.py validate
     just guard-cranelift-phase20-unsafe-mutex-migration-contract
     bash scripts/stdlib_s1_mutex_guard_parity.sh
+
+# Cranelift lane, Patch 24.2f. Treat a successful direct-identifier binding of
+# an existing linear Resource identity as an implicit single-owner transfer.
+guard-cranelift-phase24-resource-implicit-transfer-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔐 Checking generic implicit linear-Resource transfer authority..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase24-resource-implicit-transfer-contract | grep -F $'guard-cranelift-phase24-resource-implicit-transfer-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase24_resource_implicit_transfer.py validate
+
+guard-cranelift-phase24-resource-implicit-transfer-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Exercising implicit Resource transfer through both retained paths..."
+    make gust
+    make phase10-native-package
+    just guard-cranelift-phase24-resource-implicit-transfer-contract
+    just guard_step52_resource_use_after_move_enforcement
+    just guard_step52_resource_move_assignment_transfer
+    just guard_step52_resource_double_close_enforcement
+    just guard_step52_resource_close_after_move_enforcement
+    just guard_step52_resource_scope_exit_cleanup_boundary
+    python3 scripts/phase24_resource_implicit_transfer.py evidence

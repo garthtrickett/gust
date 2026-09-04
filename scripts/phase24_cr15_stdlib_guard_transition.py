@@ -439,6 +439,66 @@ def s1_9_resource_assignment_roadmap_successor(registry: dict) -> dict:
     return successor
 
 
+def s1_9_resource_assignment_implementation_successor(
+        registry: dict) -> dict:
+    roadmap = s1_9_resource_assignment_roadmap_successor(registry)
+    successor = roadmap.get("implementation_successor")
+    require(isinstance(successor, dict),
+            "S1.9 Resource-assignment implementation successor is missing")
+    expected = {
+        "contract_version":
+        "phase24_s1_9_resource_assignment_implementation_v1",
+        "status": "patch24_2f_implementation",
+        "authority_base_main":
+        "6e5aaa671b705c71866cc30d719c70d5cd316b59",
+        "predecessor_justfile_digest":
+        "8cd6f74b95c4e576168ea861288fa40ed918328d4e43428975466f902c0f843f",
+        "live_justfile_successor_digest":
+        "bd05a2b8a5f79ac4a82b7edd0d63d845c7693d196038974ebce0f108e7db9732",
+        "added_recipes": [
+            "guard-cranelift-phase24-resource-implicit-transfer-contract",
+            "guard-cranelift-phase24-resource-implicit-transfer-evidence",
+        ],
+        "boundary": {
+            "changes_compiler_source": True,
+            "changes_accepted_Gust_program_meaning": True,
+            "adds_or_changes_MIR_ABI_layout_or_runtime_symbols": False,
+            "changes_backend_route_default_or_fallback": False,
+            "changes_bootstrap_route_or_seed": False,
+            "edits_stdlib": False,
+            "begins_patch24_3": False,
+        },
+    }
+    require({key: successor.get(key) for key in expected} == expected,
+            "S1.9 Resource-assignment implementation successor drifted")
+    transition = successor.get("consumer_inventory_transition")
+    require(isinstance(transition, dict) and
+            transition.get("contract_version") ==
+            "phase24_s1_9_resource_assignment_implementation_consumer_transition_v1" and
+            transition.get("status") == "patch24_2f_implementation" and
+            transition.get("authority_base_main") ==
+            "6e5aaa671b705c71866cc30d719c70d5cd316b59" and
+            transition.get("registered_changed_paths") == [
+                ".github/workflows/pr-fast.yml",
+                "compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md",
+                "compiler/typechecker.gst",
+                "scripts/cranelift_test_levels.json",
+                "scripts/phase24_cr15_closure.py",
+                "scripts/phase24_resource_implicit_transfer.py",
+            ] and
+            transition.get("added_text_surfaces") == [
+                "scripts/phase24_resource_implicit_transfer.py"] and
+            transition.get("unchanged_fields") == [
+                "invocation_count", "invocation_manifest_digest",
+                "structural_surface_count", "structural_manifest_digest",
+                "invocation_selection_counts", "unclassified_count",
+            ] and
+            transition.get("partial_extra_or_substituted_surface") ==
+            "rejected",
+            "Patch 24.2f consumer inventory transition drifted")
+    return successor
+
+
 def classify_s1_9_resource_assignment_roadmap(
         successor: dict, live: list[dict[str, object]]) -> str | None:
     matches = [row["state"] for row in successor["accepted_states"]
@@ -561,6 +621,19 @@ def s1_8_state(value: dict, registry: dict | None = None) -> str:
                 "provider docs Stdlib post-state identity drifted")
         stdlib_row["digest"] = stdlib_transition["pre_digest"]
     state = classify_s1_8_manifest(coordinated, live)
+    if state is None:
+        implementation = s1_9_resource_assignment_implementation_successor(
+            registry)
+        implementation_coordinated = copy.deepcopy(coordinated)
+        for row in implementation_coordinated["accepted_states"][1]["files"]:
+            if row["path"] == "justfile":
+                require(row.get("digest") ==
+                        implementation["predecessor_justfile_digest"],
+                        "Patch 24.2f justfile predecessor identity drifted")
+                row["digest"] = implementation[
+                    "live_justfile_successor_digest"]
+        s1_8_falsifier_self_test(implementation_coordinated)
+        state = classify_s1_8_manifest(implementation_coordinated, live)
     require(state is not None,
             "live Stdlib surface is neither exact pre-S1.8 nor exact post-S1.8 state")
     return state
@@ -780,6 +853,22 @@ def normalize_phase22_invocations(
                 "partial_extra_or_substituted_invocation") == "rejected",
             "S1.8 coordination invocation successor drifted")
         added = coordination_transition.get("current_invocation")
+        # Patch 24.2f registers its own successor link: admitting the exact
+        # Patch 24.2f justfile digest in the characterization guard moved this
+        # observation driver five lines down. The projection below still
+        # removes the row, so the closed Phase 22 summary is unchanged.
+        implementation_transition = (
+            s1_9_resource_assignment_implementation_successor(registry)
+            .get("phase22_invocation_transition", {}))
+        require(
+            implementation_transition.get("contract_version") ==
+            "phase24_s1_9_resource_assignment_implementation_phase22_invocation_transition_v1" and
+            implementation_transition.get("previous_invocation") == added and
+            implementation_transition.get("summary_unchanged") is True and
+            implementation_transition.get(
+                "partial_extra_or_substituted_invocation") == "rejected",
+            "Patch 24.2f invocation successor drifted")
+        added = implementation_transition.get("current_invocation")
         matches = [row for row in normalized if all(
             row.get(field) == added.get(field) for field in (
                 "path", "line", "recipe", "compiler_token", "selection",
@@ -845,10 +934,23 @@ def normalize_phase23_text_surfaces(
     if state == "s1_8_successor":
         transition = s1_successor["phase23_text_surface_transition"]
         expected_current = copy.deepcopy(transition["current_rows"])
+        # The justfile has two registered identities in this state: the exact
+        # post-S1.8 digest, and the exact Patch 24.2f successor that adds the
+        # two implicit-transfer recipes. Pin to whichever is live and reject
+        # everything else, rather than re-reading the file as its own expected
+        # value, which would make the comparison below unfalsifiable.
+        live_justfile_digest = digest_bytes(JUSTFILE.read_bytes())
+        registered_justfile_digests = (
+            coordination["justfile_state_digests"]["post_s1_8"],
+            s1_9_resource_assignment_implementation_successor(
+                registry)["live_justfile_successor_digest"],
+        )
+        require(live_justfile_digest in registered_justfile_digests,
+                "live justfile is not an exact registered post-S1.8 or "
+                "Patch 24.2f successor state")
         for row in expected_current:
             if row["path"] == "justfile":
-                row["digest"] = coordination[
-                    "justfile_state_digests"]["post_s1_8"]
+                row["digest"] = live_justfile_digest
         by_live_path = {str(row["path"]): row for row in rows}
         require([by_live_path.get(path) for path in transition["changed_paths"]] ==
                 expected_current,
@@ -880,6 +982,26 @@ def normalize_phase23_text_surfaces(
     if roadmap_state == "post_roadmap_amendment":
         by_path["TASK.md"]["digest"] = roadmap_states[
             "pre_roadmap_amendment"]["digest"]
+    implementation = s1_9_resource_assignment_implementation_successor(
+        registry)
+    transition = implementation["consumer_inventory_transition"]
+    changed_paths = transition["registered_changed_paths"]
+    changed_rows = [row for row in rows if row["path"] in changed_paths]
+    require(changed_rows == transition["current_changed_text_surfaces"],
+            "Patch 24.2f changed text surfaces are partial or substituted")
+    other_digest = digest_bytes(json.dumps(
+        [row for row in rows if row["path"] not in changed_paths],
+        sort_keys=True, separators=(",", ":")).encode())
+    require(other_digest ==
+            transition["unchanged_other_text_surface_manifest_digest"],
+            f"Patch 24.2f changed an unregistered text surface: {other_digest}")
+    replacements = {
+        row["path"]: copy.deepcopy(row)
+        for row in transition["previous_changed_text_surfaces"]
+    }
+    added = set(transition["added_text_surfaces"])
+    rows = [replacements.get(row["path"], row) for row in rows
+            if row["path"] not in added]
     canonical = value.get("canonical_phase23_text_surfaces", [])
     require([row.get("path") for row in canonical] == [
         "justfile", "scripts/phase22_opening.py",
@@ -942,7 +1064,11 @@ def normalized_owner_file_digest(
     elif state == "s1_8_successor":
         successor = s1_8_successor(value)
         coordination = s1_8_coordination_successor(registry, successor)
-        expected = coordination["justfile_state_digests"]["post_s1_8"]
+        implementation_digest = s1_9_resource_assignment_implementation_successor(
+            registry)["live_justfile_successor_digest"]
+        expected = (implementation_digest
+                    if digest == implementation_digest
+                    else coordination["justfile_state_digests"]["post_s1_8"])
     require(digest == expected, "live-C justfile owner identity drifted")
     return value["pre_relay_justfile_digest"]
 

@@ -4272,6 +4272,23 @@
               "implementation_sequence":["24.2f","24.2g","24.2h"],
               "resume_patch24_3_after":"stdlib_s1_12",
               "rejected_states":["partial","extra","substituted","path_drifted","near_miss","unrelated"],
+              "implementation_successor":{
+                "type":"object",
+                "additionalProperties":false,
+                "required":["contract_version","status","authority_base_main","predecessor_justfile_digest","live_justfile_successor_digest","added_recipes","consumer_inventory_transition","site_manifest_transition","phase22_invocation_transition","boundary"],
+                "properties":{
+                  "contract_version":{"const":"phase24_s1_9_resource_assignment_implementation_v1"},
+                  "status":{"const":"patch24_2f_implementation"},
+                  "authority_base_main":{"const":"6e5aaa671b705c71866cc30d719c70d5cd316b59"},
+                  "predecessor_justfile_digest":{"const":"8cd6f74b95c4e576168ea861288fa40ed918328d4e43428975466f902c0f843f"},
+                  "live_justfile_successor_digest":{"const":"bd05a2b8a5f79ac4a82b7edd0d63d845c7693d196038974ebce0f108e7db9732"},
+                  "added_recipes":{"const":["guard-cranelift-phase24-resource-implicit-transfer-contract","guard-cranelift-phase24-resource-implicit-transfer-evidence"]},
+                  "consumer_inventory_transition":{"type":"object"},
+                  "site_manifest_transition":{"type":"object","additionalProperties":false,"required":["contract_version","cause","line_delta","window_digests_unchanged","moves","selector_order_unchanged","partial_extra_or_substituted_site"],"properties":{"contract_version":{"const":"phase24_s1_9_resource_assignment_implementation_site_manifest_transition_v1"},"cause":{"const":"patch24_2f_typechecker_net_line_delta"},"line_delta":{"const":-3},"window_digests_unchanged":{"const":true},"moves":{"type":"array"},"selector_order_unchanged":{"const":true},"partial_extra_or_substituted_site":{"const":"rejected"}}},
+                  "phase22_invocation_transition":{"type":"object","additionalProperties":false,"required":["contract_version","previous_invocation","current_invocation","summary_unchanged","partial_extra_or_substituted_invocation"],"properties":{"contract_version":{"const":"phase24_s1_9_resource_assignment_implementation_phase22_invocation_transition_v1"},"previous_invocation":{"type":"object"},"current_invocation":{"type":"object"},"summary_unchanged":{"const":true},"partial_extra_or_substituted_invocation":{"const":"rejected"}}},
+                  "boundary":{"const":{"changes_compiler_source":true,"changes_accepted_Gust_program_meaning":true,"adds_or_changes_MIR_ABI_layout_or_runtime_symbols":false,"changes_backend_route_default_or_fallback":false,"changes_bootstrap_route_or_seed":false,"edits_stdlib":false,"begins_patch24_3":false}}
+                }
+              },
               "boundary":{"changes_compiler_runtime_or_stdlib_source":false,"changes_accepted_Gust_program_meaning":false,"adds_or_changes_MIR_ABI_layout_or_runtime_symbols":false,"changes_backend_route_default_or_fallback":false,"changes_bootstrap_route_or_seed":false,"edits_stdlib":false,"begins_patch24_3":false}
             }
           },

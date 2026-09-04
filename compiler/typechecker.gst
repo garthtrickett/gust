@@ -2213,18 +2213,11 @@ func typechecker_get_template_elem_type(struct_name: str, field_name: str, env: 
 func env_report_linear_resource_use_after_move(env: *TypeEnvironment[ctx], name: str, span: token.Span, ctx: &Arena) {
     unsafe {
         mut tracked_lookup := (*env).open_linear_resources.Get(name);
-        if tracked_lookup.Ok {
-            if env_open_linear_resource_is_moved(env, name, ctx) == 1 {
-                mut msg := std.Concat("Semantic Error: LinearResourceUseAfterMove: resource '", name);
-                msg = std.Concat(msg, "' cannot be used after move");
-                report_error(2, msg, span, env, ctx);
-            } else {
-                if (*env).moved_vars.Get(name).Ok {
-                    mut msg := std.Concat("Semantic Error: LinearResourceUseAfterMove: resource '", name);
-                    msg = std.Concat(msg, "' cannot be used after move");
-                    report_error(2, msg, span, env, ctx);
-                }
-            }
+        if ((*env).resource_value_identities.Get(name).Ok && (*env).moved_vars.Get(name).Ok) ||
+           (tracked_lookup.Ok && (env_open_linear_resource_is_moved(env, name, ctx) == 1 || (*env).moved_vars.Get(name).Ok)) {
+            mut msg := std.Concat("Semantic Error: LinearResourceUseAfterMove: resource '", name);
+            msg = std.Concat(msg, "' cannot be used after move");
+            report_error(2, msg, span, env, ctx);
         }
     }
 }
@@ -2838,11 +2831,12 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             }
             mut t := scope_lookup(scope, resolved_name, ctx);
 
+            env_report_linear_resource_use_after_move(env, resolved_name, expr.Identifier.span, ctx);
+
             // Check if resolved_name is moved
             if (*env).moved_vars.Get(resolved_name).Ok {
                 report_error(2, std.Concat("Semantic Error: Use of moved variable ", resolved_name), expr.Identifier.span, env, ctx);
             }
-            env_report_linear_resource_use_after_move(env, resolved_name, expr.Identifier.span, ctx);
 
              // Check variable origins
                     mut lookup_orig := (*env).variable_origins.Get(resolved_name);
@@ -13793,7 +13787,10 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             env_track_resource_declaration_if_applicable(env, name, ctx);
             env_register_resource_storage(env, name, ctx);
             if val_idx != empty[Index[ast.Expression[ctx], ctx]] {
-                env_bind_resource_expression(env, name, val_idx, ctx);
+                mut resource_bound := env_bind_resource_expression(env, name, val_idx, ctx);
+                if resource_bound == 1 && ctx[val_idx].tag == 0 { // Identifier
+                    (*env).moved_vars.Insert(ctx[val_idx].Identifier.name, 1);
+                }
             }
 
             if (*env).current_function_local_vars != empty[Index[OriginSet[ctx], ctx]] {
