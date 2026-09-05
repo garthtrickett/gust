@@ -82,20 +82,29 @@ work three times, once for 38 minutes.
 
 ## Monitor rules
 
-1. **One cron heartbeat, twenty minutes.** Choose the interval from the slowest
-   thing you wait on: a full CI population here takes ~40 minutes, so a 20-minute
-   tick sees every state change at least twice.
+1. **One cron heartbeat, ten minutes.**
 
-   **Shortening it is usually the wrong lever.** The tick is only load-bearing
-   when a lane goes idle *without* telling you — every lane that ends a turn
-   wakes you through `notifyOnFinish`. Halving the cadence doubles the ticks to
-   buy half a stall on the few occasions it matters. It also does not help when
-   *you* are the bottleneck: a turn that overruns twenty minutes makes the next
-   tick fire immediately behind it, which has happened.
+   **A fire is DROPPED if you are mid-turn at the slot boundary. It does not
+   queue.** Measured 2026-09-05: three of ~14 slots lost in one session, every
+   one while a turn was running, plus two doubles ~40 seconds apart as a slot
+   landed just after a long turn ended. **The configured cron is therefore an
+   upper bound on frequency, not the cadence you get.**
 
-   Push detection to where the knowledge is instead - lane rule 6. The lane knows
-   how long its build takes. Tighten your own cadence only while a lane has an
-   outstanding waiting statement, and relax it when nothing is waiting.
+   That inverts the obvious reasoning. A ten-minute cron is not "poll harder" —
+   it raises the probability a fire lands at all. Gaps stretch to 40 and 60
+   minutes *precisely when you are busiest*, which is exactly when a lane is
+   most likely to be stranded. Choosing a cadence you would be happy with if it
+   always fired leaves you with a much worse one in practice.
+
+   **The corollary matters as much as the cadence: keep ticks short.** A long
+   turn costs the next fire. Report what changed and stop; do not do project
+   work inside a tick when it can wait for a prompted turn.
+
+   None of this makes the tick the primary mechanism. It is still a fallback —
+   every lane that ends a turn wakes you through `notifyOnFinish`, and the tick
+   only matters when a lane goes idle *without* telling you. Push detection to
+   where the knowledge is (lane rule 6); the lane knows how long its build takes
+   and you do not.
 2. **Each tick, poll what emits no events:** open PRs and their exact-head
    `event=="pull_request"` populations, background task output files, the
    process table, worktree dirty state, pending permissions, disk.
