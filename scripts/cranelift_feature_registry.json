@@ -7931,7 +7931,8 @@
          "tests/"
         ],
         "exact_paths": [
-         "TASK_STDLIB.md"
+         "TASK_STDLIB.md",
+         "docs/PINNED_MANIFEST_RETIREMENT.md"
         ],
         "reason": "the four artefacts a Stdlib patch is made of, plus its roadmap and its documents. Stated as an explicit scope rather than read off the scanner's owner field, because owner_for_path assigns every docs/ path to the Cranelift lane and changing it would move rows the closed manifests pin.",
         "outside_scope": "rejected"
@@ -8072,6 +8073,20 @@
          "reason": "no phase silently loses its exit gate. The floor is 6 against 8 live sections so the Phase 27 amendment, which removes one, does not trip the guard it is landing under."
         }
        ],
+       "appended_document_markers": [
+        {
+         "path": "docs/PINNED_MANIFEST_RETIREMENT.md",
+         "required_markers": [
+          "## Option A — drop it with nothing in its place — **REJECTED**",
+          "## Option B — replace by class of thing — **ADOPTED**",
+          "Rejected 2026-09-05, and recorded with its reasoning so it is not re-proposed.",
+          "**The technique is wrong. The obligations are not.** Drop the mechanism, keep",
+          "**A relaxation that cannot fail is a deleted test.**"
+         ],
+         "reason": "the document that retires the pins names the very patterns the manifest scans for, so it enrols itself and could not be added until admitted here - the self-referential trap this whole class fix exists to break. It is admitted as an appended surface and held to the decisions it records: that Option A was rejected and why, that Option B was adopted, and the rule that every relaxation must be provably falsifiable. A decision recorded without its reasoning gets re-proposed; a rejected option kept without its reasoning gets re-litigated."
+        }
+       ],
+       "appended_document_marker_removal": "rejected",
        "unprojected_living_row": "rejected",
        "structural_rule_violation": "rejected",
        "roadmap_projected_row": {
