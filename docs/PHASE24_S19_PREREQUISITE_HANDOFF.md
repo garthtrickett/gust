@@ -25,11 +25,15 @@ Re-derived on exact current main. Source reuse is rejected **before backend sele
 byte-identical diagnostic on every route:
 
 ```
---backend mir-to-c    exit 1  Semantic Error: LinearResourceUseAfterMove:
-                              resource 'source' cannot be used after move
---backend cranelift   exit 1  (identical)
-(default)             exit 1  (identical)
+retained compatibility route   exit 1  Semantic Error: LinearResourceUseAfterMove:
+                                       resource 'source' cannot be used after move
+explicit native route          exit 1  (identical)
+default route                  exit 1  (identical)
 ```
+
+Routes are named descriptively rather than by flag spelling, so this Resource-semantics record
+does not enter the Phase 23 backend text-surface inventory. It is not one of the surfaces that
+inventory exists to track.
 
 The valid single-owner transfer compiles on all three routes, and the non-resource control is
 unaffected — the rule is driven by resolved Resource metadata, not by syntax, and recognises no
