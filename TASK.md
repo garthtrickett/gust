@@ -126,9 +126,9 @@ Stdlib handoff are complete.
 - [x] Patch 24.1a — Universal TCS Semantic Decision Authority — DONE
 - [x] Patch 24.2 — Compiler-Recognized Semantic Spelling Inventory — DONE
 - [x] Patch 24.2e — S1.9 Resource-Assignment Prerequisite Amendment — DONE
-- [ ] Patch 24.2f — Generic Implicit Linear-Resource Assignment Transfer
-- [ ] Patch 24.2g — Resource-Assignment Bootstrap Seed Reconvergence
-- [ ] Patch 24.2h — S1.9 Prerequisite Closure and Stdlib Handoff
+- [x] Patch 24.2f — Generic Implicit Linear-Resource Assignment Transfer — DONE
+- [x] Patch 24.2g — Resource-Assignment Bootstrap Seed Reconvergence — DONE
+- [x] Patch 24.2h — S1.9 Prerequisite Closure and Stdlib Handoff — DONE
 - [ ] Patch 24.3 — Filename-Independent Typechecker Correction
 - [ ] Patch 24.3a — Preflight Bootstrap Seed Reconvergence
 - [ ] Patch 24.4 — Opening-Preflight Closure

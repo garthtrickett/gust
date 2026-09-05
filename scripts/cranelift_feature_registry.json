@@ -7757,6 +7757,21 @@
       }
     },
     "s1_9_resource_assignment_roadmap_successor": {
+      "roadmap_living_surface": {
+        "contract_version": "phase24_2n_cranelift_roadmap_living_surface_v1",
+        "status": "patch24_2n_roadmap_evolution",
+        "authority_base_main": "5185fbc4cc6ca537736f9a9f1af2dfe59e174ad1",
+        "rationale": "TASK.md is the Cranelift roadmap and every patch ticks a status row in it, so byte-pinning it forbids this lane from recording its own merged patches. Patches 24.2f-24.2h merged and the roadmap still reported them unstarted. This is the same freeze Patch 24.2i lifted for TASK_STDLIB.md; the landed roadmap record is held by content instead of by bytes.",
+        "path": "TASK.md",
+        "required_markers": [
+          "- [x] Patch 24.2e — S1.9 Resource-Assignment Prerequisite Amendment — DONE",
+          "## Patch 24.2f — Generic Implicit Linear-Resource Assignment Transfer",
+          "## Patch 24.2g — Resource-Assignment Bootstrap Seed Reconvergence",
+          "## Patch 24.2h — S1.9 Prerequisite Closure and Stdlib Handoff",
+          "## Patch 24.3 — Filename-Independent Typechecker Correction"
+        ],
+        "unregistered_living_surface": "rejected"
+      },
       "contract_version": "phase24_s1_9_resource_assignment_roadmap_v1",
       "status": "patch24_2e_complete",
       "authority_base_main": "db13122a9235c4ecc865bff6c275c7bf3946769b",
