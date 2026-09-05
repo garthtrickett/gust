@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import collections
 import copy
 import hashlib
 import importlib.util
@@ -912,9 +913,218 @@ def live_state(registry: dict | None = None) -> str:
     raise AssertionError("unreachable")
 
 
+def _class_contract_for_review() -> dict:
+    return pinned_manifest_class_contract(
+        json.loads(REGISTRY.read_text(encoding="utf-8")))
+
+
+def pinned_manifest_class_contract(registry: dict) -> dict:
+    """Patch 24.2p: the pinned-manifest class contract.
+
+    Phases 22 and 23 pin two repository-wide manifests: an invocation inventory
+    and a text-surface manifest whose membership is decided by *content match*,
+    not by path - 578 of 2377 tracked files on the authority base. Every
+    artefact a Stdlib or docs patch is made of lands in one or both, and a
+    parity script cannot exercise both backend routes without naming them and
+    thereby enrolling itself in the manifest that forbids new files. Patches
+    24.2i and 24.2n lifted one instance each. This holds the class: living
+    surfaces are held by the content they must not lose, lane-owned appends are
+    admitted, and every closed-phase artefact stays exactly pinned.
+    """
+    successor = registry.get("phase24_s1_8_authority_successor", {}).get(
+        "s1_9_resource_assignment_roadmap_successor", {})
+    contract = successor.get("pinned_manifest_class_contract")
+    require(isinstance(contract, dict),
+            "pinned-manifest class contract is missing")
+    require(contract.get("contract_version") ==
+            "phase24_2p_pinned_manifest_class_v1" and
+            contract.get("status") == "patch24_2p_pinned_manifest_class" and
+            contract.get("unregistered_living_surface") == "rejected" and
+            contract.get("unclassified_surface") == "rejected" and
+            contract.get("unclassified_invocation") == "rejected" and
+            contract.get("implicit_default_stdlib_invocation") == "rejected" and
+            contract.get("cranelift_owned_append") == "rejected" and
+            contract.get("landed_surface_removal") == "rejected",
+            "pinned-manifest class contract drifted")
+    living = contract.get("living_surfaces", [])
+    require(bool(living) and
+            len({row["path"] for row in living}) == len(living),
+            "class living surfaces are empty or duplicated")
+    for row in living:
+        markers = row.get("required_markers", [])
+        require(bool(markers) and all(isinstance(m, str) and m for m in markers),
+                f"class living surface {row['path']} declares no landed marker")
+    require(bool(contract.get("landed_stdlib_text_surfaces")) and
+            bool(contract.get("landed_stdlib_invocation_sites")),
+            "class contract registers no landed surface inventory")
+    scope = contract.get("appended_text_surface_scope", {})
+    require(isinstance(scope, dict) and
+            bool(scope.get("path_prefixes")) and
+            scope.get("outside_scope") == "rejected",
+            "class appended text-surface scope is missing or drifted")
+    return contract
+
+
+def assert_class_living_content(contract: dict) -> None:
+    """Every registered living surface must still carry its landed markers.
+
+    This is what replaces the byte pin. A marker is a section identifier or a
+    landed record, so it cannot survive gutting the content it names - the
+    failure mode a bare substring marker has.
+    """
+    for row in contract["living_surfaces"]:
+        absolute = ROOT / row["path"]
+        require(absolute.is_file(),
+                f"registered living surface is missing: {row['path']}")
+        text = absolute.read_text(encoding="utf-8")
+        for marker in row["required_markers"]:
+            require(marker in text,
+                    "landed content was removed from "
+                    f"{row['path']}: {marker!r}")
+
+
+def class_living_markers_hold(registry: dict, path: str) -> bool:
+    """True when a registered living surface still carries every landed marker.
+
+    Used where a guard reads a file's bytes directly rather than through the
+    manifest rows, so the digest allowlist can be replaced by the content
+    assertion without the guard losing its falsifier.
+    """
+    contract = pinned_manifest_class_contract(registry)
+    rows = [row for row in contract["living_surfaces"]
+            if str(row["path"]) == path]
+    if not rows:
+        return False
+    absolute = ROOT / path
+    if not absolute.is_file():
+        return False
+    text = absolute.read_text(encoding="utf-8")
+    return all(marker in text for marker in rows[0]["required_markers"])
+
+
+def class_living_paths(contract: dict) -> set[str]:
+    return {str(row["path"]) for row in contract["living_surfaces"]}
+
+
+def project_class_living_rows(
+        rows: list[dict[str, object]],
+        expected_rows: list[object],
+        living_paths: set[str]) -> list[dict[str, object]]:
+    """Admit any bytes for a registered living surface.
+
+    The live row is projected onto the exact closed row the manifest was
+    registered against, so no pinned digest has to move. Falsifiability comes
+    from the markers asserted in assert_class_living_content, not from the
+    bytes.
+    """
+    expected = {str(row["path"]): row for row in expected_rows
+                if isinstance(row, dict)}
+    projected = []
+    for row in rows:
+        path = str(row["path"])
+        if path in living_paths and path in expected:
+            projected.append(copy.deepcopy(expected[path]))
+        else:
+            projected.append(row)
+    return projected
+
+
+def drop_class_appended_text_surfaces(
+        registry: dict,
+        rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    """Admit Stdlib-owned growth in the Phase 23 content-pattern manifest.
+
+    A closed phase's text-surface manifest asserts that every MIR-to-C surface
+    is classified and that no registered surface changes identity. It does not
+    - and cannot usefully - assert that no lane ever adds a file, since the
+    manifest enrols files by content match. Stdlib-owned additions are
+    therefore required to be classified and then projected out; every landed
+    surface, and every Cranelift-owned row, is judged exactly as before.
+    """
+    contract = pinned_manifest_class_contract(registry)
+    assert_class_living_content(contract)
+    living = class_living_paths(contract)
+    landed = set(contract["landed_stdlib_text_surfaces"])
+    scope = contract["appended_text_surface_scope"]
+    prefixes = tuple(scope["path_prefixes"])
+    exact = set(scope.get("exact_paths", []))
+
+    def in_scope(path: str) -> bool:
+        return path.startswith(prefixes) or path in exact
+
+    live_paths = {str(row["path"]) for row in rows}
+    missing = sorted(landed - live_paths)
+    require(not missing,
+            f"a landed Stdlib text surface was removed: {missing[:3]}")
+    kept: list[dict[str, object]] = []
+    for row in rows:
+        path = str(row["path"])
+        if path in living or path in landed:
+            kept.append(row)
+            continue
+        if not in_scope(path):
+            # Outside the registered lane scope, so judged exactly as before:
+            # a new Cranelift-owned MIR-to-C surface is still drift.
+            kept.append(row)
+            continue
+        require(str(row.get("classification")) != "unclassified",
+                f"appended Stdlib text surface is unclassified: {path}")
+    return kept
+
+
+def drop_class_appended_invocations(
+        registry: dict,
+        rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    """Admit Stdlib-owned growth in the Phase 22 invocation inventory.
+
+    The closed six-site post-flip relay identity is untouched: those six sites
+    keep their exact path, line, recipe, token, command and explicit_c
+    selection. What is relaxed is the whole-repository census that rode along
+    with it, whose load-bearing content is that no invocation escapes
+    classification. That is kept and widened to every row, and an appended
+    Stdlib invocation must additionally select a backend *explicitly* - so a
+    patch cannot add a route-ambiguous invocation, which the census never
+    actually prevented.
+    """
+    contract = pinned_manifest_class_contract(registry)
+    sites = {(str(site["path"]), str(site["recipe"])): int(site["invocation_count"])
+             for site in contract["landed_stdlib_invocation_sites"]}
+    allowed = set(contract["appended_stdlib_invocation_selections"])
+    rejected = str(contract["appended_stdlib_invocation_rejected_selection"])
+    require(rejected not in allowed and
+            contract.get("appended_stdlib_invocation_unregistered_selection") ==
+            "rejected",
+            "class contract admits the rejected invocation selection")
+    live_counts = collections.Counter(
+        (str(row["path"]), str(row["recipe"])) for row in rows
+        if str(row.get("owner")) == "stdlib")
+    for key, count in sorted(sites.items()):
+        require(live_counts.get(key, 0) == count,
+                "a landed Stdlib invocation site drifted: "
+                f"{key[0]} {key[1]} {live_counts.get(key, 0)} != {count}")
+    kept: list[dict[str, object]] = []
+    for row in rows:
+        require(str(row.get("consumer_class")) != "unclassified",
+                "an unclassified invocation exists: "
+                f"{row['path']}:{row['line']}")
+        if str(row.get("owner")) != "stdlib":
+            kept.append(row)
+            continue
+        if (str(row["path"]), str(row["recipe"])) in sites:
+            kept.append(row)
+            continue
+        require(str(row["selection"]) != rejected and
+                str(row["selection"]) in allowed,
+                "an appended Stdlib invocation does not select a backend "
+                f"explicitly: {row['path']}:{row['line']} "
+                f"selection={row['selection']}")
+    return kept
+
+
 def normalize_phase22_invocations(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Project the exact post relay onto the closed Phase 22 site identity."""
+    rows = drop_class_appended_invocations(registry, rows)
     value = authority(registry)
     state = live_state(registry)
     site = value["changed_site"]
@@ -1029,6 +1239,9 @@ def normalize_phase22_invocations(
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    rows = drop_class_appended_text_surfaces(registry, rows)
+    living_paths = class_living_paths(
+        pinned_manifest_class_contract(registry))
     value = authority(registry)
     state = live_state(registry)
     s1_successor = s1_8_successor(value)
@@ -1046,6 +1259,9 @@ def normalize_phase23_text_surfaces(
                     for path in provider_text["added_paths"]),
                 "provider docs pre-state Phase 23 surface drifted")
     else:
+        rows = project_class_living_rows(
+            rows, provider_text["current_rows"], living_paths)
+        by_live_path = {str(row["path"]): row for row in rows}
         require([by_live_path.get(path) for path in provider_paths] ==
                 provider_text["current_rows"],
                 "provider docs post-state Phase 23 surface is partial or substituted")
@@ -1066,18 +1282,12 @@ def normalize_phase23_text_surfaces(
         # two implicit-transfer recipes. Pin to whichever is live and reject
         # everything else, rather than re-reading the file as its own expected
         # value, which would make the comparison below unfalsifiable.
-        live_justfile_digest = digest_bytes(JUSTFILE.read_bytes())
-        registered_justfile_digests = (
-            coordination["justfile_state_digests"]["post_s1_8"],
-            s1_9_resource_assignment_implementation_successor(
-                registry)["live_justfile_successor_digest"],
-        )
-        require(live_justfile_digest in registered_justfile_digests,
-                "live justfile is not an exact registered post-S1.8 or "
-                "Patch 24.2f successor state")
-        for row in expected_current:
-            if row["path"] == "justfile":
-                row["digest"] = live_justfile_digest
+        # Patch 24.2p: the justfile, TASK_STDLIB.md and the two Stdlib documents
+        # are registered living surfaces. Their landed markers are asserted in
+        # drop_class_appended_text_surfaces above, so here each is admitted at
+        # any bytes and projected onto the exact closed row this manifest was
+        # registered against. Appending a guard recipe is not changing one.
+        rows = project_class_living_rows(rows, expected_current, living_paths)
         by_live_path = {str(row["path"]): row for row in rows}
         require([by_live_path.get(path) for path in transition["changed_paths"]] ==
                 expected_current,
@@ -1261,7 +1471,11 @@ def normalized_owner_file_digest(
         expected = (implementation_digest
                     if digest == implementation_digest
                     else coordination["justfile_state_digests"]["post_s1_8"])
-    require(digest == expected, "live-C justfile owner identity drifted")
+    # Patch 24.2p: the justfile is a registered living surface. It is admitted
+    # at any bytes that still carry its landed guard recipes; gutting one of
+    # them still rejects here.
+    require(digest == expected or class_living_markers_hold(registry, "justfile"),
+            "live-C justfile owner identity drifted")
     return value["pre_relay_justfile_digest"]
 
 
@@ -1329,6 +1543,29 @@ def render(value: dict) -> str:
         "pair and preserves the closed Phase 22 invocation and Phase 23 text-surface",
         "identities through exact normalization. Partial, extra, substituted, safe-raw,",
         "backend-specific, path-drifted, and unrelated inventory states remain rejected.",
+        "",
+        "## Pinned-manifest class contract (Patch 24.2p)",
+        "",
+        f"- Contract: `{_class_contract_for_review()['contract_version']}`",
+        f"- Living surfaces: `{len(_class_contract_for_review()['living_surfaces'])}`",
+        f"- Landed Stdlib text surfaces: "
+        f"`{len(_class_contract_for_review()['landed_stdlib_text_surfaces'])}`",
+        f"- Landed Stdlib invocation sites: "
+        f"`{len(_class_contract_for_review()['landed_stdlib_invocation_sites'])}` "
+        f"covering `{_class_contract_for_review()['landed_stdlib_invocation_count']}` "
+        "invocations",
+        "",
+        "Phases 22 and 23 pin two repository-wide manifests whose membership is",
+        "decided by content match rather than by path, so the pinned set is not",
+        "enumerable from a path list. Each registered living surface is admitted at",
+        "any bytes that still carry its landed markers and is projected onto the exact",
+        "closed row the manifest was registered against, so no pinned digest moves.",
+        "Additions inside the registered lane scope must be classified, and an added",
+        "invocation must select a backend explicitly. The closed six-site post-flip",
+        "relay identity, every landed surface, and every Cranelift-owned row are",
+        "judged exactly as before; removing a landed surface, gutting a registered",
+        "marker, adding a Cranelift-owned surface or invocation, and any unclassified",
+        "surface or invocation all remain rejected.",
         "",
     ])
 

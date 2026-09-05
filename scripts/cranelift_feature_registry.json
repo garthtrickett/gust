@@ -7757,6 +7757,209 @@
       }
     },
     "s1_9_resource_assignment_roadmap_successor": {
+      "pinned_manifest_class_contract": {
+       "contract_version": "phase24_2p_pinned_manifest_class_v1",
+       "status": "patch24_2p_pinned_manifest_class",
+       "authority_base_main": "96029e009e233d509bdf2f0ca98e977e074eda1c",
+       "closes_issue": 288,
+       "rationale": "The Phase 22 invocation inventory and the Phase 23 content-pattern text-surface manifest pin 578 of 2377 tracked files by whole-file digest, selected by content match rather than by path, so the blocked set is not enumerable from a path list. Every artefact a Stdlib or docs patch is made of - a justfile guard recipe, a CI workflow, a parity script, fixtures, and the documents that describe them - lands in one or both manifests, and a parity script cannot exercise both backend routes without naming them and thereby enrolling itself in the manifest that forbids new files. Patches 24.2i and 24.2n each lifted one instance. This registers the class: living surfaces are held by the content they must not lose instead of by bytes, and lane-owned appends are admitted while every closed-phase artefact stays exactly pinned.",
+       "living_surfaces": [
+        {
+         "path": "TASK_STDLIB.md",
+         "required_markers": [
+          "- [x] Patch S1.8 \u2014 MutexGuard Prototype \u2014 DONE"
+         ],
+         "reason": "S1.8 must remain closed in the Stdlib roadmap; later rows may be ticked freely"
+        },
+        {
+         "path": "justfile",
+         "required_markers": [
+          "guard-stdlib-s1-mutex-guard:",
+          "guard-stdlib-s1-resource-prerequisites:"
+         ],
+         "reason": "S1.8's guard recipes must remain invocable; later guard recipes may be appended freely"
+        },
+        {
+         "path": "docs/STDLIB_FOUNDATIONS.md",
+         "required_markers": [
+          "**B. `MutexGuard` is blocked on destructor declaration, not on design.**"
+         ],
+         "reason": "the MutexGuard foundation narrative must survive; the document may otherwise evolve"
+        },
+        {
+         "path": "docs/STDLIB_SURFACE_FINDINGS.md",
+         "required_markers": [
+          "F6 \u2014 MutexGuard is blocked by documented, unfinished prerequisites"
+         ],
+         "reason": "the F6 finding must survive; the document may otherwise evolve"
+        },
+        {
+         "path": "docs/VISION.md",
+         "required_markers": [
+          "**Distribution \u2014 open, with a provider-led candidate (OD-10).**",
+          "| OD-10 | **Distribution for the product path** |"
+         ],
+         "reason": "the provider-led distribution claim and its OD-10 register row must survive; the row prefix is stable under resolution and dies only if the row is deleted"
+        },
+        {
+         "path": "docs/HTTP_RPC_ARCHITECTURE.md",
+         "required_markers": [
+          "# HTTP server and typed RPC architecture",
+          "## `gustrpc`"
+         ],
+         "reason": "the document added by the provider-docs patch must retain its title and its gustrpc contract section"
+        }
+       ],
+       "landed_stdlib_text_surfaces": [
+        "TASK_STDLIB.md",
+        "scripts/stdlib_s1_branded_collections_parity.sh",
+        "scripts/stdlib_s1_clone_destination_parity.sh",
+        "scripts/stdlib_s1_composition_parity.sh",
+        "scripts/stdlib_s1_mutex_guard_parity.sh",
+        "tests/compile_tests.rs",
+        "tests/cranelift/phase15_close_contract.tsv",
+        "tests/cranelift/phase15_close_review.txt",
+        "tests/cranelift/phase15_destructor_scheduling_contract.tsv",
+        "tests/cranelift/phase15_destructor_scheduling_review.txt",
+        "tests/cranelift/phase15_failure_cleanup_contract.tsv",
+        "tests/cranelift/phase15_failure_cleanup_review.txt",
+        "tests/cranelift/phase15_manual_close_contract.tsv",
+        "tests/cranelift/phase15_manual_close_review.txt",
+        "tests/cranelift/phase15_move_state_contract.tsv",
+        "tests/cranelift/phase15_move_state_review.txt",
+        "tests/cranelift/phase15_resource_authority_contract.tsv",
+        "tests/cranelift/phase15_resource_authority_review.txt",
+        "tests/cranelift/phase15_resource_cfg_contract.tsv",
+        "tests/cranelift/phase15_resource_cfg_review.txt",
+        "tests/cranelift/phase15_resource_composition_contract.tsv",
+        "tests/cranelift/phase15_resource_composition_review.txt",
+        "tests/cranelift/phase15_resource_mir_contract.tsv",
+        "tests/cranelift/phase15_resource_mir_review.txt",
+        "tests/cranelift/phase15_resource_reassignment_contract.tsv",
+        "tests/cranelift/phase15_resource_reassignment_review.txt",
+        "tests/cranelift/phase15_scope_exit_cleanup_contract.tsv",
+        "tests/cranelift/phase15_specialized_resource_contract.tsv",
+        "tests/cranelift/phase15_specialized_resource_review.txt",
+        "tests/cranelift/phase16_abi_authority_contract.tsv",
+        "tests/cranelift/phase16_abi_authority_review.txt",
+        "tests/cranelift/phase16_abi_composition_contract.tsv",
+        "tests/cranelift/phase16_abi_composition_review.txt",
+        "tests/cranelift/phase16_aggregate_parameter_contract.tsv",
+        "tests/cranelift/phase16_aggregate_parameter_review.txt",
+        "tests/cranelift/phase16_aggregate_result_contract.tsv",
+        "tests/cranelift/phase16_aggregate_result_review.txt",
+        "tests/cranelift/phase16_call_mir_contract.tsv",
+        "tests/cranelift/phase16_call_mir_review.txt",
+        "tests/cranelift/phase16_close_contract.tsv",
+        "tests/cranelift/phase16_close_review.txt",
+        "tests/cranelift/phase16_cross_module_abi_contract.tsv",
+        "tests/cranelift/phase16_cross_module_abi_review.txt",
+        "tests/cranelift/phase16_direct_call_agreement_contract.tsv",
+        "tests/cranelift/phase16_direct_call_agreement_review.txt",
+        "tests/cranelift/phase16_dynamic_stack_contract.tsv",
+        "tests/cranelift/phase16_dynamic_stack_review.txt",
+        "tests/cranelift/phase16_fat_pointer_abi_contract.tsv",
+        "tests/cranelift/phase16_fat_pointer_abi_review.txt",
+        "tests/cranelift/phase16_resource_aggregate_abi_contract.tsv",
+        "tests/cranelift/phase16_resource_aggregate_abi_review.txt",
+        "tests/cranelift/phase16_typed_indirect_call_contract.tsv",
+        "tests/cranelift/phase16_typed_indirect_call_review.txt",
+        "tests/cranelift/phase16_unsized_abi_contract.tsv",
+        "tests/cranelift/phase16_unsized_abi_review.txt",
+        "tests/cranelift/phase17_close_contract.tsv",
+        "tests/cranelift/phase17_close_review.txt",
+        "tests/cranelift/phase17_composition_review.txt",
+        "tests/cranelift/phase17_gust_runtime_review.txt",
+        "tests/cranelift/phase17_runtime_authority_review.txt",
+        "tests/cranelift/phase17_runtime_import_review.txt",
+        "tests/cranelift/phase17_shim_elimination_review.txt",
+        "tests/e2e_codegen_assertions.gst",
+        "tests/stdlib_s1_branded_collections_explicit.gst",
+        "tests/stdlib_s1_branded_collections_inferred.gst",
+        "tests/stdlib_s1_clone_destination_explicit.gst",
+        "tests/stdlib_s1_clone_destination_inferred.gst",
+        "tests/test_runner.gst"
+       ],
+       "landed_stdlib_invocation_sites": [
+        {
+         "path": "justfile",
+         "recipe": "guard-stdlib-s1-collection-receivers",
+         "invocation_count": 4
+        },
+        {
+         "path": "justfile",
+         "recipe": "guard-stdlib-s1-resource-prerequisites",
+         "invocation_count": 1
+        },
+        {
+         "path": "justfile",
+         "recipe": "guard-stdlib-s1-str-equality-diagnostic",
+         "invocation_count": 3
+        },
+        {
+         "path": "scripts/stdlib_s1_branded_collections_parity.sh",
+         "recipe": "none",
+         "invocation_count": 6
+        },
+        {
+         "path": "scripts/stdlib_s1_clone_destination_parity.sh",
+         "recipe": "none",
+         "invocation_count": 6
+        },
+        {
+         "path": "scripts/stdlib_s1_composition_parity.sh",
+         "recipe": "none",
+         "invocation_count": 3
+        },
+        {
+         "path": "tests/e2e_codegen_assertions.gst",
+         "recipe": "none",
+         "invocation_count": 4
+        },
+        {
+         "path": "tests/test_runner.gst",
+         "recipe": "none",
+         "invocation_count": 2
+        }
+       ],
+       "landed_stdlib_invocation_count": 29,
+       "appended_text_surface_scope": {
+        "path_prefixes": [
+         ".github/workflows/stdlib-",
+         "docs/STDLIB_",
+         "scripts/stdlib_",
+         "tests/"
+        ],
+        "exact_paths": [
+         "TASK_STDLIB.md"
+        ],
+        "reason": "the four artefacts a Stdlib patch is made of, plus its roadmap and its documents. Stated as an explicit scope rather than read off the scanner's owner field, because owner_for_path assigns every docs/ path to the Cranelift lane and changing it would move rows the closed manifests pin.",
+        "outside_scope": "rejected"
+       },
+       "appended_stdlib_invocation_selections": [
+        "explicit_c",
+        "explicit_cranelift",
+        "explicit_invalid_or_parser_probe"
+       ],
+       "appended_stdlib_invocation_rejected_selection": "implicit_default",
+       "appended_stdlib_invocation_reason": "the guarantee being preserved is that no added invocation relies on the default route, so the test is that --backend is present, not that its value is a literal. A parity harness selects the route through a variable - ./gust --backend \"$route\" - which selection() reports as explicit_invalid_or_parser_probe because the value is not a literal backend name. That is still an explicit selection and never reaches the default route. Stated as an allowlist rather than a denylist so it fails closed: selection() returns a closed set of four literals today (scripts/phase22_opening.py), but a later patch adding a fifth must register it here rather than be admitted silently. Note that explicit_invalid_or_parser_probe is a catch-all within that set - it also covers genuinely malformed input such as --backend=bogus - which is admitted because it too passes --backend and so cannot reach the default route.",
+       "appended_stdlib_invocation_unregistered_selection": "rejected",
+       "unregistered_living_surface": "rejected",
+       "unclassified_surface": "rejected",
+       "unclassified_invocation": "rejected",
+       "implicit_default_stdlib_invocation": "rejected",
+       "cranelift_owned_append": "rejected",
+       "landed_surface_removal": "rejected",
+       "boundary": {
+        "changes_compiler_source": false,
+        "changes_accepted_Gust_program_meaning": false,
+        "adds_or_changes_MIR_ABI_layout_or_runtime_symbols": false,
+        "changes_backend_route_default_or_fallback": false,
+        "changes_bootstrap_route_or_seed": false,
+        "changes_six_site_post_flip_relay_identity": false,
+        "begins_patch24_3": false
+       }
+      },
       "roadmap_living_surface": {
         "contract_version": "phase24_2n_cranelift_roadmap_living_surface_v1",
         "status": "patch24_2n_roadmap_evolution",
