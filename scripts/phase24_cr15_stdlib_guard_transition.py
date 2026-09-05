@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import collections
 import copy
+import re
 import hashlib
 import importlib.util
 import json
@@ -957,6 +958,24 @@ def pinned_manifest_class_contract(registry: dict) -> dict:
     require(bool(contract.get("landed_stdlib_text_surfaces")) and
             bool(contract.get("landed_stdlib_invocation_sites")),
             "class contract registers no landed surface inventory")
+    living_rows = contract.get("living_projected_rows", [])
+    require(bool(living_rows) and
+            len({str(r["path"]) for r in living_rows}) == len(living_rows) and
+            contract.get("unprojected_living_row") == "rejected" and
+            contract.get("structural_rule_violation") == "rejected",
+            "class living projected rows are missing, duplicated, or drifted")
+    for row in living_rows:
+        markers = row.get("required_markers", [])
+        require(bool(markers) and all(isinstance(m, str) and m for m in markers) and
+                isinstance(row.get("digest"), str) and
+                isinstance(row.get("match_counts"), dict),
+                f"living projected row {row.get('path')!r} is incomplete")
+    for rule in contract.get("structural_rules", []):
+        require(rule.get("unit") in ("line", "section") and
+                bool(rule.get("unit_pattern")) and
+                bool(rule.get("must_contain_any")) and
+                int(rule.get("minimum_units", 0)) > 0,
+                f"structural rule {rule.get('id')!r} is incomplete")
     scope = contract.get("appended_text_surface_scope", {})
     require(isinstance(scope, dict) and
             bool(scope.get("path_prefixes")) and
@@ -1029,6 +1048,73 @@ def project_class_living_rows(
     return projected
 
 
+def assert_class_structural_rules(contract: dict) -> None:
+    """Patch 24.2r: invariants a substring marker cannot express.
+
+    "Every rule row carries a status" and "every phase section carries an exit
+    gate" are properties of a document's shape, not of any one line. They catch
+    a status softened into prose and a vanished row while staying indifferent to
+    a status honestly changing - which is the progress these documents exist to
+    record. The minimum_units floor is load-bearing rather than decorative: a
+    rule of the form "every unit satisfies P" is vacuously true of zero units,
+    so without a floor, deleting every unit would pass the rule written to catch
+    exactly that.
+    """
+    for rule in contract.get("structural_rules", []):
+        absolute = ROOT / str(rule["path"])
+        require(absolute.is_file(),
+                f"structural-rule surface is missing: {rule['path']}")
+        text = absolute.read_text(encoding="utf-8")
+        pattern = str(rule["unit_pattern"])
+        if rule["unit"] == "line":
+            units = [line for line in text.splitlines()
+                     if re.search(pattern, line)]
+        else:
+            units = [part for part in re.split(r"(?m)^## ", text)
+                     if re.match(pattern, part)]
+        wanted = list(rule["must_contain_any"])
+        offenders = [u.splitlines()[0][:60] for u in units
+                     if not any(token in u for token in wanted)]
+        require(not offenders,
+                f"{rule['path']} violates {rule['id']}: {offenders[:3]}")
+        require(len(units) >= int(rule["minimum_units"]),
+                f"{rule['path']} fell below the {rule['id']} floor: "
+                f"{len(units)} < {rule['minimum_units']}")
+
+
+def project_class_living_documents(
+        contract: dict,
+        rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    """Hold the docs lane's living documents by content, not by bytes.
+
+    Each registered document is admitted at any bytes that still carry its
+    landed markers and satisfy its structural rules, then projected onto the
+    exact closed manifest row it was registered against - so no pinned digest
+    moves and the closed-phase evidence is unchanged.
+    """
+    registered = {str(row["path"]): row for row in contract["living_projected_rows"]}
+    for path, row in sorted(registered.items()):
+        absolute = ROOT / path
+        require(absolute.is_file(), f"living document is missing: {path}")
+        text = absolute.read_text(encoding="utf-8")
+        for marker in row["required_markers"]:
+            require(marker in text,
+                    f"landed content was removed from {path}: {marker!r}")
+    assert_class_structural_rules(contract)
+    projected: list[dict[str, object]] = []
+    for row in rows:
+        path = str(row["path"])
+        if path in registered:
+            replacement = copy.deepcopy(row)
+            replacement["digest"] = str(registered[path]["digest"])
+            replacement["match_counts"] = copy.deepcopy(
+                registered[path]["match_counts"])
+            projected.append(replacement)
+        else:
+            projected.append(row)
+    return projected
+
+
 def drop_class_appended_text_surfaces(
         registry: dict,
         rows: list[dict[str, object]]) -> list[dict[str, object]]:
@@ -1043,6 +1129,7 @@ def drop_class_appended_text_surfaces(
     """
     contract = pinned_manifest_class_contract(registry)
     assert_class_living_content(contract)
+    rows = project_class_living_documents(contract, rows)
     living = class_living_paths(contract)
     landed = set(contract["landed_stdlib_text_surfaces"])
     scope = contract["appended_text_surface_scope"]
