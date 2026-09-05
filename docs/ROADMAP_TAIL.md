@@ -174,7 +174,10 @@ Phase 26.1 completes gated raw pointers, non-laundering provenance, explicit FFI
 ownership and escape contracts, ABI layout enforcement, and isolated FFI
 allocation arenas. Phase 26.2 completes generalized linear-resource semantics.
 Phase 26.3 adds `with ctx` and function-level `using ctx` as one pre-semantic
-desugaring mechanism. The full plan, ordering, status snapshot, and stable legacy
+desugaring mechanism. Phase 26.4 closes the one-way ledger's rule 45 by
+making `Option[T]` the only spelling of absence, migrating
+`map.Get`/`LookupResult_T` and removing the `empty[T]` sentinel as one
+inseparable row. The full plan, ordering, status snapshot, and stable legacy
 identifier policy live in `docs/PHASES_26_AND_27.md`.
 
 **Exit gate:** every Phase 26 increment has focused positive and negative
@@ -187,14 +190,14 @@ and resource-authority contexts.
 **Purpose:** remove the obsolete paths made unnecessary by the completed safety
 model rather than carrying two ways to express the same operation indefinitely.
 
-Migrate legacy lookup results to `Option[T]`, remove `empty[T]` sentinel
-semantics, replace `open_directories` with generalized resources, finish explicit
-subscript mutation, audit safe collection and string surfaces, and consolidate
-compiler statement and expression representations into sum types. The detailed
-27.1–27.6 sequence is in `docs/PHASES_26_AND_27.md`.
+Replace `open_directories` with generalized resources, finish explicit subscript
+mutation, audit safe collection and string surfaces, and consolidate compiler
+statement and expression representations into sum types. The detailed 27.3–27.6
+sequence is in `docs/PHASES_26_AND_27.md`. The `Option[T]` migration and
+`empty[T]` removal moved to Phase 26.4, which carries the ledger obligation.
 
-**Exit gate:** all six consolidation rows are complete, the one-way ledger has
-no remaining violation owned by this phase, bootstrap converges, and the
+**Exit gate:** all four remaining consolidation rows are complete, the one-way
+ledger has no remaining violation owned by this phase, bootstrap converges, and the
 consolidated compiler output is promoted through the repository's seed policy.
 
 ## Post-Phase 27 — technical launch and outreach

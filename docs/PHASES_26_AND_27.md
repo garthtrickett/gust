@@ -15,7 +15,7 @@ decisions; this document owns execution order and patch planning.
 > labels such as `STEP51_*`, `STEP52_*`, `guard_step51_*`, `guard_step52_*`, and
 > "Step 5.2Q" keep their names. They are stable implementation and historical
 > identifiers, not current roadmap numbering. New human-facing planning uses
-> Phase 26.1, 26.2, 26.3, and Phase 27.
+> Phase 26.1, 26.2, 26.3, 26.4, and Phase 27.
 
 **Placement:** the operator directed on 2026-08-20 that this work occur after
 the Cranelift migration completes and C is deprecated. Renumbering it after the
@@ -139,6 +139,12 @@ rejection foundations were verified live on 2026-08-20.
 > cannot work when the compiler being migrated is also the compiler enforcing
 > the new rule.
 
+**Raw null inside safe boundaries** belongs here rather than with absence.
+Restricting it is a gated-raw-pointer obligation — it is about what a pointer may
+be, not about how absence is spelled — so it travels with 26.1's staging rather
+than with Phase 26.4. It was previously written as the third clause of 27.2,
+which conflated the two.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
@@ -207,12 +213,39 @@ principle to shadowing: prefer a diagnostic to clever inference.
 
 ---
 
+## Phase 26.4 — one spelling of absence
+
+Closes `docs/ONE_WAY_LEDGER.md` rule 45, **VIOLATED** — `empty[T]` competes with
+`Option[T]` as a second spelling of absence. Moved out of Phase 27 because it is
+a correctness obligation with a named ledger owner, and filing it under "delete
+the old ways" priced it as cleanup.
+
+| Step | Work |
+| --- | --- |
+| 26.4a | Migrate `map.Get`/`LookupResult_T` to `map.get_opt`/`Option[T]` file by file, bootstrapping after each rather than as one pass |
+| 26.4b | Remove `empty[T]` sentinel parsing and synthesized `LookupResult_T` |
+
+**These two are one row, not two, and cannot be separated.** You cannot remove
+the synthesized `LookupResult_T` while callers still use it, so a gating removal
+paired with an optional migration would be a gate that can never close. Rule 45's
+violation is *"a second sentinel alongside `Option[T]`"* — deleting one spelling
+while call sites still use the other does not discharge it.
+
+The file-by-file bootstrap rule follows the same discipline as 26.1's A→B→C
+staging: never change the compiler's own idiom in one pass. A failure here is not
+merely a test failure; it can leave the compiler unable to rebuild itself.
+
+**Exit gate:** `map.Get`/`LookupResult_T` and `empty[T]` sentinel parsing are
+gone, `Option[T]` is the only spelling of absence, rule 45 reads `HOLDS` with a
+reproduction, and bootstrap converges after each file rather than once at the
+end.
+
+---
+
 ## Phase 27 — consolidation
 
 | Step | Work |
 | --- | --- |
-| 27.1 | Migrate `map.Get`/`LookupResult_T` to `map.get_opt`/`Option[T]` file by file, bootstrapping after each rather than as one pass |
-| 27.2 | Remove `empty[T]` sentinel parsing and synthesized `LookupResult_T`; restrict raw null within safe boundaries |
 | 27.3 | Delete `open_directories` from `TypeEnvironment`; directories become `Resource[ctx, Directory]` |
 | 27.4 | Delete split LHS/RHS subscript codegen branches: subscripts are read-only copies and mutation uses explicit references; keep parser LHS validation robust |
 | 27.5 | Audit the stdlib safety surface so raw-pointer work does not leak through `std.Vector`, `std.HashMap`, or `std.String` |
@@ -256,16 +289,16 @@ not current completion authority for Phases 26 or 27.
 | 26.2A — `#[linear]` opt-in | parsed in `parser.gst`, carried as `is_linear_resource`, and registered through linear metadata | exists |
 | 26.2D — cleanup validation | invoked on two paths in the self-hosted compiler | partly live (`STEP52` items Q/R) |
 | 26.2 — destructor declaration | one built-in destructor and no source syntax to declare another | missing at the snapshot (`TASK_STDLIB.md` CR-5) |
-| 27.1 — `Option` migration | `get_opt` present in compiler modules while `LookupResult` remained in `typechecker.gst` | partly migrated |
-| 27.2 — `empty[T]` removal | 130 uses in `typechecker.gst` alone | not started |
+| 26.4a — `Option` migration | `get_opt` present in compiler modules while `LookupResult` remained in `typechecker.gst` | partly migrated |
+| 26.4b — `empty[T]` removal | 130 uses in `typechecker.gst` alone | not started |
 | 27.3 — purge `open_directories` | still present with a `legacy_freeze` test entry | frozen, not purged |
 
-Phase 27.2 closes the `docs/ONE_WAY_LEDGER.md` violation where `empty[T]`
+Phase 26.4 closes the `docs/ONE_WAY_LEDGER.md` violation where `empty[T]`
 competes with `Option[T]` as a second spelling of absence. Phase 27.3 closes the
 remaining `open_directories` migration item in
 `STEP52_RESOURCE_SEMANTICS.md`.
 
-Phase 27.1's file-by-file bootstrap rule follows the same discipline as Phase
+Phase 26.4's file-by-file bootstrap rule follows the same discipline as Phase
 26.1's A→B→C sequence: never change the compiler's own idiom in one pass. A
 failure here is not merely a test failure; it can leave the compiler unable to
 build itself.
