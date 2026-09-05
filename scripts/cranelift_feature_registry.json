@@ -7961,7 +7961,7 @@
           "authoritative for *whether it holds*.",
           "every `VIOLATED` row names its owner."
          ],
-         "reason": "the ledger must record honest progress, so no count and no individual status is pinned. The markers hold the status vocabulary, the reproduction requirement, and the rule that every VIOLATED row names an owner - the obligation behind rule 45's remediation pointer, which the Phase 27 amendment must re-point."
+         "reason": "the ledger must record honest progress, so no count and no individual status is pinned. The markers hold the status vocabulary, the reproduction requirement, and the rule that every VIOLATED row names an owner. Rule 45's remediation pointer was re-pointed to Phase 26.4 by #340; the Phase 27 amendment re-derived that no VIOLATED row names Phase 27 by subject as well as by number, and carried that check forward into the launch gate at wider scope, so retiring the phase could not discharge it by making it vacuous."
         },
         {
          "path": "docs/ROADMAP_TAIL.md",
@@ -7978,7 +7978,7 @@
           "is supported in full, or the launch is delayed.",
           "The launch is an evidence and relationship checkpoint, not another compiler"
          ],
-         "reason": "the tail's obligations are protected, not its phase enumeration. The launch dependency, the delay-rather-than-lower rule, and the not-another-phase rule all survive re-keying Phase 27 to Phase 26."
+         "reason": "the tail's obligations are protected, not its phase enumeration. The launch dependency, the delay-rather-than-lower rule, and the not-another-phase rule all survived re-keying Phase 27 to Phase 26, which landed on 2026-09-05: every one of these five markers is unchanged across that edit, which is the evidence the choice of marker was right."
         },
         {
          "path": "docs/CRANELIFT_LAUNCH.md",
@@ -7995,9 +7995,15 @@
           "## 2. Claim ladder",
           "The post-tail launch targets **Level 3**.",
           "normal supported bootstrap no longer requires generated C or a host C compiler",
-          "| 4 | Gust is the first project in a precisely defined historical category."
+          "| 4 | Gust is the first project in a precisely defined historical category.",
+          "- the stdlib safety surface is audited: no raw-pointer work leaks through",
+          "`std.Vector`, `std.HashMap`, or `std.String`;",
+          "- the compiler output this launch describes is promoted through the seed policy:",
+          "converging stage 2 against stage 3;",
+          "- no `VIOLATED` row in `docs/ONE_WAY_LEDGER.md` names the C-retirement tail or",
+          "`docs/OPPORTUNISTIC_CLEANUP.md` as its remediation owner;"
          ],
-         "reason": "the launch gate and claim ladder are the project's credibility surface. The 'every Phase 20-27 status row' line is deliberately not a marker because the Phase 27 amendment must re-key it; a marker on a line a patch must edit rebuilds the wall one level down."
+         "reason": "the launch gate and claim ladder are the project's credibility surface. The Phase 27 amendment has now re-keyed the enumeration from 'every Phase 20-27 status row' to 20-26 and stated the surviving obligations directly, so the last six markers hold those obligations rather than the count that used to imply them. The enumeration line itself stays deliberately unmarkered for the reason it always was: a marker on a line a future patch must edit rebuilds the wall one level down, and adding or retiring a phase is ordinary roadmap work. Falsifiability for the enumeration comes instead from launch_gate_obligations, which deletes each obligation's bullet and requires the marker set to fail."
         },
         {
          "path": "docs/MESSAGING.md",
@@ -8042,7 +8048,7 @@
          "required_markers": [
           "do not start the rollout early."
          ],
-         "reason": "its only Phase 27 tie is a formatting-rollout gate; one honest marker rather than manufactured ceremony."
+         "reason": "its only Phase 27 tie was a formatting-rollout gate, re-keyed by the Phase 27 amendment to the launch gate itself; one honest marker rather than manufactured ceremony, and it is unchanged across that edit."
         }
        ],
        "structural_rules": [
@@ -8070,7 +8076,7 @@
           "**Exit gate:**"
          ],
          "minimum_units": 6,
-         "reason": "no phase silently loses its exit gate. The floor is 6 against 8 live sections so the Phase 27 amendment, which removes one, does not trip the guard it is landing under."
+         "reason": "no phase silently loses its exit gate. The floor was set at 6 against 8 live sections so the Phase 27 amendment, which removes one, would not trip the guard it landed under. That amendment has landed and 7 sections remain, each carrying an exit gate. The floor stays at 6 rather than being ratcheted to 7: the headroom is what lets an honest retirement happen without the guard having to be edited in the same patch, which is the pattern that turns a guard into a wall."
         }
        ],
        "appended_document_markers": [
@@ -8084,9 +8090,96 @@
           "**A relaxation that cannot fail is a deleted test.**"
          ],
          "reason": "the document that retires the pins names the very patterns the manifest scans for, so it enrols itself and could not be added until admitted here - the self-referential trap this whole class fix exists to break. It is admitted as an appended surface and held to the decisions it records: that Option A was rejected and why, that Option B was adopted, and the rule that every relaxation must be provably falsifiable. A decision recorded without its reasoning gets re-proposed; a rejected option kept without its reasoning gets re-litigated."
+        },
+        {
+         "path": "docs/OPPORTUNISTIC_CLEANUP.md",
+         "required_markers": [
+          "## The rule for this document",
+          "**Nothing here is a launch obligation.**",
+          "## The four Phase 27 rows, adjudicated individually",
+          "### 27.3 \u2014 delete `open_directories` from `TypeEnvironment` \u2014 cleanup",
+          "### 27.4 \u2014 delete split LHS/RHS subscript codegen branches \u2014 cleanup",
+          "### 27.5 \u2014 audit the stdlib safety surface \u2014 **launch obligation**",
+          "### 27.6 \u2014 sum-type consolidation and seed promotion \u2014 **split**",
+          "## What the launch gate demanded before and after",
+          "**Clause (b) came back stronger, and that is a change, not a hold.**",
+          "**Three rows were deliberately dropped as launch obligations.**"
+         ],
+         "reason": "the register that receives whatever the Phase 27 retirement did not promote to a launch obligation. Its markers are the four per-row adjudication headings, the before/after table, and the two sentences that state what the patch did rather than merely what it moved - that clause (b) came back stronger, and that three rows were dropped deliberately. A retirement whose reasoning is not held by anything gets re-litigated the first time someone asks why the launch gate no longer mentions a phase; holding each row's heading individually is what stops the four being re-collapsed into one sweep. The document is written to avoid the Phase 23 content-pattern spellings so it does not self-enrol - verified by scanning rather than by inspection, which is the trap docs/PINNED_MANIFEST_RETIREMENT.md met."
         }
        ],
        "appended_document_marker_removal": "rejected",
+       "launch_gate_obligations": [
+        {
+         "id": "stdlib_safety_surface_audit",
+         "former_phase_row": "27.5",
+         "disposition": "launch_obligation",
+         "bullet_prefix": "- the stdlib safety surface is audited: no raw-pointer work leaks through",
+         "markers": [
+          "- the stdlib safety surface is audited: no raw-pointer work leaks through",
+          "`std.Vector`, `std.HashMap`, or `std.String`;"
+         ],
+         "reason": "AGENTS.md forbids adding a raw-pointer workaround inside a safe stdlib surface, but that rule constrains new code only; nothing asserts the property for the code already there. The launch advertises exactly that surface, so the audit is a launch obligation rather than tidying. Left inside a retired phase it would have been discharged by the phase disappearing."
+        },
+        {
+         "id": "seed_policy_promotion",
+         "former_phase_row": "27.6",
+         "disposition": "launch_obligation",
+         "bullet_prefix": "- the compiler output this launch describes is promoted through the seed policy:",
+         "markers": [
+          "- the compiler output this launch describes is promoted through the seed policy:",
+          "converging stage 2 against stage 3;"
+         ],
+         "reason": "Phase 27.6 was two obligations under one number. The sum-type refactor is cleanup; the seed promotion is what makes the Level-3 claim checkable, because 'the self-hosted compiler builds and bootstraps through the native path' is only verifiable if the committed seed is the one generated from the merged compiler sources. Restated as a property of the seed rather than as 'promote the consolidated result', so it is not hostage to a refactor that is now explicitly optional - written the old way, no refactor means no consolidated result and the obligation evaporates silently."
+        },
+        {
+         "id": "ledger_remediation_owner",
+         "former_phase_row": "27_exit_clause_b",
+         "disposition": "launch_obligation_widened",
+         "bullet_prefix": "- no `VIOLATED` row in `docs/ONE_WAY_LEDGER.md` names the C-retirement tail or",
+         "markers": [
+          "- no `VIOLATED` row in `docs/ONE_WAY_LEDGER.md` names the C-retirement tail or",
+          "`docs/OPPORTUNISTIC_CLEANUP.md` as its remediation owner;"
+         ],
+         "reason": "Phase 27's exit gate had four clauses and only one concerned its rows. Clause (b) read 'no remaining ledger violation owned by this phase'; scoped to a phase, it is discharged by the phase ceasing to exist rather than by evidence, so retiring Phase 27 would have deleted a check by making it vacuous. It is restated over the whole tail AND over docs/OPPORTUNISTIC_CLEANUP.md, because a demoted row is exactly where a future violation attaches unnoticed: the row still has a name and nothing gates on it any more. This is a RAISE, not a hold, and is recorded as one so nobody has to reconstruct later whether the bar moved. Clause (c), bootstrap convergence, needed no restatement - Phase 26's own exit gate still requires a converged Cranelift-native bootstrap and Phase 26 remains inside the re-keyed enumeration."
+        }
+       ],
+       "launch_gate_obligation_removal": "rejected",
+       "retired_census_spelling": "- every Phase 20\u201327 status row",
+       "retired_census_spelling_reason": "the census is forbidden as a gate item, not as a subject. The leading bullet is load-bearing: docs/CRANELIFT_LAUNCH.md quotes the old wording in prose to explain why it was replaced, and a check that forbade the words outright would forbid recording what was changed - which is how a correction loses its reasoning and gets re-proposed.",
+       "phase27_row_dispositions": [
+        {
+         "row": "27.3",
+         "work": "delete open_directories from TypeEnvironment",
+         "disposition": "opportunistic_cleanup",
+         "destination": "docs/OPPORTUNISTIC_CLEANUP.md",
+         "reason": "removes an older second mechanism for a capability generalized resources already provide. No clause of the claim ladder, the no-fallback guarantee, the bootstrap claim or the safe stdlib surface depends on which internal registry the typechecker uses to track open directories, and the observable behaviour of a Gust program is identical either way. Re-derived rather than inherited: it owns no ONE_WAY_LEDGER violation. Row 34 (Host access, VIOLATED) is adjacent in subject but concerns ambient os.* authority and its remediation column reads 'unowned - closes with section 0.7 Track A'."
+        },
+        {
+         "row": "27.4",
+         "work": "delete split LHS/RHS subscript codegen branches",
+         "disposition": "opportunistic_cleanup",
+         "destination": "docs/OPPORTUNISTIC_CLEANUP.md",
+         "reason": "stronger than 27.3. The safety property here - direct subscript writes require unsafe or an explicit write API - is enforced today by the UnsafeSubscriptWrite diagnostic and by parser LHS validation, both of which 27.4 explicitly preserves. It deletes duplicate lowering sitting behind an enforcement that already holds, so its absence removes no guarantee. Its 'keep parser LHS validation robust' clause is a constraint on the cleanup rather than an obligation created by it, and travels with the row."
+        },
+        {
+         "row": "27.5",
+         "work": "audit the stdlib safety surface",
+         "disposition": "launch_obligation",
+         "destination": "docs/CRANELIFT_LAUNCH.md",
+         "obligation_id": "stdlib_safety_surface_audit",
+         "reason": "operator-required, and independently correct - see the launch_gate_obligations record. Roadmap home: Phase 26.5."
+        },
+        {
+         "row": "27.6",
+         "work": "sum-type consolidation and seed promotion",
+         "disposition": "split",
+         "destination": "docs/CRANELIFT_LAUNCH.md and docs/OPPORTUNISTIC_CLEANUP.md",
+         "obligation_id": "seed_policy_promotion",
+         "reason": "two obligations under one number, separated deliberately. The Statement/Expression enum refactor and the migration of tag tests to match are internal representation cleanup and gate nothing; the seed promotion is a launch obligation. Roadmap homes: Phase 26.6 for the promotion, docs/OPPORTUNISTIC_CLEANUP.md for the refactor."
+        }
+       ],
+       "unadjudicated_phase27_row": "rejected",
        "unprojected_living_row": "rejected",
        "structural_rule_violation": "rejected",
        "roadmap_projected_row": {

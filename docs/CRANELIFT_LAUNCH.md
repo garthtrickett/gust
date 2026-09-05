@@ -4,8 +4,9 @@
 
 This document defines Gust's coordinated external technical-credibility launch.
 It creates no compiler work and authorizes no outreach. The launch begins only
-after Phase 27 and every preceding checkpoint in `docs/ROADMAP_TAIL.md` are
-closed with authoritative merged-main evidence. Earlier individualized research
+after Phase 26 and every preceding checkpoint in `docs/ROADMAP_TAIL.md` are
+closed with authoritative merged-main evidence, and after the obligations §1
+states directly are satisfied. Earlier individualized research
 and operator-approved contact is governed separately by
 `docs/EVIDENCE_LED_OUTREACH.md`.
 
@@ -21,7 +22,7 @@ one clear, durable claim instead of a sequence of nearly-finished announcements.
 Before outreach begins, verify from then-current authority rather than from a
 dated handoff:
 
-- every Phase 20–27 status row and intervening assurance checkpoint is closed;
+- every Phase 20–26 status row and intervening assurance checkpoint is closed;
 - the final implementation is merged to `main`;
 - the exact merged-main `Cranelift Historical Full` run is successful with its
   complete registry-derived job population;
@@ -31,11 +32,38 @@ dated handoff:
 - the native compiler build/run and bootstrap claims have exact artifact hashes
   and a reproducible transcript;
 - no selected native route silently falls back to C;
+- the stdlib safety surface is audited: no raw-pointer work leaks through
+  `std.Vector`, `std.HashMap`, or `std.String`;
+- the compiler output this launch describes is promoted through the seed policy:
+  `gust_v4.c` regenerated from the merged `compiler/*.gst`, with `make bootstrap`
+  converging stage 2 against stage 3;
+- no `VIOLATED` row in `docs/ONE_WAY_LEDGER.md` names the C-retirement tail or
+  `docs/OPPORTUNISTIC_CLEANUP.md` as its remediation owner;
 - all material review conversations are resolved; and
 - the Rust adapter and runtime boundary is described honestly.
 
 If any item is missing, delay outreach or lower the claim. Do not reinterpret an
 unfinished gate as a messaging problem.
+
+### Why three of these are stated rather than counted
+
+The first item used to read *“every Phase 20–27 status row”*. That is a
+**phase-number census**: it never named what it required, it counted phases and
+inherited whatever their exit gates happened to demand. Phase 27 has since been
+retired and its consolidation rows adjudicated one at a time in
+`docs/OPPORTUNISTIC_CLEANUP.md`, so re-keying the census to `20–26` on its own
+would have dropped that phase's obligations without anyone deciding to.
+
+Three obligations were therefore lifted out of the retired phase and stated
+here as themselves — the stdlib safety-surface audit, the seed promotion, and
+the ledger-owner rule. The clause-by-clause before/after that shows nothing was
+lost is in `docs/OPPORTUNISTIC_CLEANUP.md`.
+
+This is the same correction the repository has now made five times over: a
+census of a proxy replaced by an assertion of the property. A count of closed
+phases, a count of backend invocations, and a whole-file digest all failed the
+same way, and the fix was the same each time — **assert the property, do not
+count the proxy.** Expect the next census to appear somewhere new.
 
 ## 2. Claim ladder
 

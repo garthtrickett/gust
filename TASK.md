@@ -134,6 +134,7 @@ Stdlib handoff are complete.
 - [x] Patch 24.2p — Pinned-Manifest Class Contract — DONE
 - [ ] Patch 24.2q — str Content Equality in the Operator Set
 - [x] Patch 24.2s — Pinned-Manifest Retirement Contract — DONE
+- [x] Patch 24.2t — Launch-Gate Obligations and Phase 27 Retirement — DONE
 - [ ] Patch 24.3 — Filename-Independent Typechecker Correction
 - [ ] Patch 24.3a — Preflight Bootstrap Seed Reconvergence
 - [ ] Patch 24.3b — Pinned-Manifest Retirement

@@ -16,8 +16,9 @@ does not preselect any of those decisions.
 technical-launch checkpoint recorded in `docs/ROADMAP_TAIL.md`. That Level-3
 compiler launch explicitly does not claim production readiness, and this future
 record neither delays nor authorizes it. Phase 28 begins only after Phase 24
-opening preflight, Phase 24 backend retirement, Phase 24.5, Phase 25, Phase 26,
-and Phase 27 close on merged `main`. The active Phase 24 order remains
+opening preflight, Phase 24 backend retirement, Phase 24.5, Phase 25, and
+Phase 26 close on merged `main` and the launch gate in
+`docs/CRANELIFT_LAUNCH.md` §1 is satisfied. The active Phase 24 order remains
 24.2f → 24.2g → 24.2h → Stdlib S1.9–S1.12 → 24.3 → 24.3a → 24.4. This future
 record neither bypasses that order nor authorizes Stdlib S1.9–S1.12, Phase 24
 backend retirement, or any later phase. Phase 28 must re-derive the then-current
@@ -26,8 +27,8 @@ separately packaged, and it consumes the generalized resource/drop authority
 settled by Phase 26 rather than inventing a mutex- or channel-specific lifetime.
 It also depends on the separately routed structured-runtime work in issue #101
 and the subsequent containment correction in issue #91. It neither absorbs nor
-reorders those issue scopes; if either remains open after Phase 27, Phase 28
-waits for its authority before opening.
+reorders those issue scopes; if either remains open when the tail closes, Phase
+28 waits for its authority before opening.
 
 ## Verified Current Production-Shape Gaps
 

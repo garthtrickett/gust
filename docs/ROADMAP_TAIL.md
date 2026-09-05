@@ -1,7 +1,7 @@
-# Roadmap tail — Phases 20 to 27
+# Roadmap tail — Phases 20 to 26
 
 `TASK.md` and `TASK_STDLIB.md` hold the active lane roadmaps. This document
-preserves the remaining arc through Phase 27 without competing with them.
+preserves the remaining arc through Phase 26 without competing with them.
 
 **What this document is.** The roadmap tail as recorded, so the C-retirement
 priority declared in `docs/VISION_RECONCILIATION.md` §7 has a written plan behind
@@ -185,25 +185,30 @@ evidence, stable diagnostics, the full compiler suite, and a converged
 Cranelift-native bootstrap; implicit context remains unavailable in unsafe, FFI,
 and resource-authority contexts.
 
-## Phase 27 — Consolidation
+## Phase 27 (retired)
 
-**Purpose:** remove the obsolete paths made unnecessary by the completed safety
-model rather than carrying two ways to express the same operation indefinitely.
+Phase 27 was a consolidation phase: remove the obsolete paths made unnecessary
+by the completed safety model. Its four rows were not one thing, and grouping
+them under a phase number meant the launch gate inherited all four by counting
+rather than by naming any of them.
 
-Replace `open_directories` with generalized resources, finish explicit subscript
-mutation, audit safe collection and string surfaces, and consolidate compiler
-statement and expression representations into sum types. The detailed 27.3–27.6
-sequence is in `docs/PHASES_26_AND_27.md`. The `Option[T]` migration and
-`empty[T]` removal moved to Phase 26.4, which carries the ledger obligation.
+Two were properties the launch rests on and are now stated directly in
+`docs/CRANELIFT_LAUNCH.md` §1 — the stdlib safety-surface audit, and the
+promotion of the compiler output through the repository's seed policy. Two were
+deletions of paths obsoleted by work that has already landed, and are recorded
+in `docs/OPPORTUNISTIC_CLEANUP.md`, which gates nothing. The row-by-row
+adjudication and the clause-by-clause before/after of the launch gate are in
+that document. Phase 26.4 took the `Option[T]` migration and `empty[T]` removal
+earlier, because they carried the ledger obligation.
 
-**Exit gate:** all four remaining consolidation rows are complete, the one-way
-ledger has no remaining violation owned by this phase, bootstrap converges, and the
-consolidated compiler output is promoted through the repository's seed policy.
+No exit gate is recorded here, because there is no phase left to exit. The
+obligations that were riding on this one are stated where they are checked.
 
-## Post-Phase 27 — technical launch and outreach
+## Post-tail — technical launch and outreach
 
-After Phase 27 **and every preceding tail checkpoint** are closed on merged
-`main`, execute `docs/CRANELIFT_LAUNCH.md`. No earlier Phase 20–26 milestone
+After Phase 26 **and every preceding tail checkpoint** are closed on merged
+`main`, and the obligations stated in `docs/CRANELIFT_LAUNCH.md` §1 are
+satisfied, execute `docs/CRANELIFT_LAUNCH.md`. No earlier Phase 20–26 milestone
 triggers the coordinated public outreach campaign independently. Each
 authoritative milestone may still trigger the evidence-card and recipient review in
 `docs/EVIDENCE_LED_OUTREACH.md`; any resulting contact is narrow, private where
@@ -246,7 +251,7 @@ deferred feature migration
                       → generated-C removal  (Phase 24)
                         → bootstrap C removal (Phase 25)
                           → systems safety/resources (Phase 26)
-                            → consolidation (Phase 27)
+                            → launch gate obligations (post-tail)
 ```
 
 Three claims about how early each outcome is reachable, recorded as stated:
@@ -257,7 +262,7 @@ Three claims about how early each outcome is reachable, recorded as stated:
 | The MIR-to-C implementation can be deleted | after Phase 24 |
 | Gust can claim its normal supported bootstrap does not require a host C compiler | after Phase 25 |
 | Post-C-transition safety, FFI, resources, and implicit context are complete | after Phase 26 |
-| The superseded compiler and stdlib paths are removed | after Phase 27 |
+| The superseded compiler and stdlib paths are removed | unscheduled — `docs/OPPORTUNISTIC_CLEANUP.md` |
 
 **Read these as ordering claims rather than dates.** None has a duration attached
 and this document does not supply one; the value is that each outcome is pinned
