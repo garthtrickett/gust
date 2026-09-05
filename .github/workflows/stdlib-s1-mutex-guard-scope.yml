@@ -1,0 +1,40 @@
+name: Stdlib S1 MutexGuard Scope
+
+on:
+  pull_request:
+    paths:
+      - 'TASK_STDLIB.md'
+      - 'docs/STDLIB_MUTEX_GUARD_SCOPE.md'
+      - 'tests/stdlib_s1_mutex_guard_scope*.gst'
+      - 'scripts/stdlib_s1_mutex_guard_scope_parity.sh'
+      - 'justfile'
+      - '.github/workflows/stdlib-s1-mutex-guard-scope.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'TASK_STDLIB.md'
+      - 'docs/STDLIB_MUTEX_GUARD_SCOPE.md'
+      - 'tests/stdlib_s1_mutex_guard_scope*.gst'
+      - 'scripts/stdlib_s1_mutex_guard_scope_parity.sh'
+      - 'justfile'
+      - '.github/workflows/stdlib-s1-mutex-guard-scope.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  mutex-guard-scope:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: make gust
+      - name: guard-stdlib-s1-mutex-guard-scope
+        run: just guard-stdlib-s1-mutex-guard-scope
