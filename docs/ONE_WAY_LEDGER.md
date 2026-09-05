@@ -126,7 +126,7 @@ evidence.
 | 33 | Channel ownership | VIOLATED | issue #101 — same root cause |
 | 34 | Host access | VIOLATED | unowned — closes with §0.7 Track A |
 | 29 | Overflow | VIOLATED | issue #103 — new |
-| 45 | One spelling of absence | VIOLATED | `docs/PHASES_26_AND_27.md` Phase 27.2 — after the C-retirement tail |
+| 45 | One spelling of absence | VIOLATED | `docs/PHASES_26_AND_27.md` Phase 26.4 — after the C-retirement tail |
 | 14 | Mutation | DEFERRED | `TASK_STDLIB.md` CR-6 — rule withdrawn, unscheduled |
 
 Six of the seven violations have a written coordination owner; host access is
