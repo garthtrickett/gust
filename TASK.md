@@ -129,6 +129,10 @@ Stdlib handoff are complete.
 - [x] Patch 24.2f — Generic Implicit Linear-Resource Assignment Transfer — DONE
 - [x] Patch 24.2g — Resource-Assignment Bootstrap Seed Reconvergence — DONE
 - [x] Patch 24.2h — S1.9 Prerequisite Closure and Stdlib Handoff — DONE
+- [x] Patch 24.2i — Stdlib Roadmap Living Surface — DONE
+- [x] Patch 24.2n — Cranelift Roadmap Living Surface — DONE
+- [x] Patch 24.2p — Pinned-Manifest Class Contract — DONE
+- [ ] Patch 24.2q — str Content Equality in the Operator Set
 - [ ] Patch 24.3 — Filename-Independent Typechecker Correction
 - [ ] Patch 24.3a — Preflight Bootstrap Seed Reconvergence
 - [ ] Patch 24.4 — Opening-Preflight Closure
@@ -573,6 +577,68 @@ invocation, adding an invocation that does not select a backend explicitly, and
 any unclassified surface or invocation all still fail; the closed six-site
 post-flip relay identity is unchanged; issue #288 is closed.
 
+## Patch 24.2q — str Content Equality in the Operator Set
+
+**Purpose:** define `==` and `!=` on `str` as content equality in the
+compiler-owned operator set, lowering to the existing `std_str_eq` semantics
+through canonical MIR, so new internal and user code can compare text with the
+operator the language already teaches.
+
+**Scope and non-goals:**
+
+- **Additive by construction.** `std.str_eq` remains public, supported,
+  inventoried runtime surface: not deprecated, not removed, not warned on. Every
+  existing call site keeps working unchanged.
+- **The existing internal call sites are not touched.** Measured on the
+  authority base: 3,850 `std.str_eq` matches across 893 `compiler/*.gst` files,
+  1,602 of them in the `std.str_eq(a, b) == 1` form (`grep -o`, recursive; a
+  line-based count gives 3,482 and 1,536, which is the same data counted per
+  line rather than per match).
+- **Migrating those call sites is deferred, not cancelled.** It is a decision
+  nobody has taken yet rather than a door closed here, and it is an order of
+  magnitude larger than this patch. It gates nothing: not 24.2q, 24.3, 24.3a or
+  24.4. The known cost of deferring is that the compiler's own source teaches
+  the superseded idiom — 1,602 sites reading `std.str_eq(a, b) == 1` while the
+  documentation teaches `a == b`. Whoever takes it opens its own row.
+- No new operator, no user-level operator overloading, no general equality
+  protocol, and no change to `src/runtime/strings.c` if `std_str_eq` is reused.
+
+**Steps:**
+
+- Replace the `str`-operand rejection at `compiler/typechecker.gst:3184-3189`
+  with content equality for `==` and `!=` when both operands are `str`, leaving
+  a genuine type error when only one is.
+- Lower through canonical MIR to the existing `std_str_eq` runtime symbol,
+  declared in `src/runtime/core_headers.h` and defined in
+  `src/runtime/strings.c`. Do not teach one backend about `str` equality:
+  MIR-to-C and Cranelift agree, or the feature defers in both.
+- Correct the stale comment at `compiler/typechecker.gst:3183`. It directs the
+  reader to a `STR_EQUALITY_DIAGNOSTIC` twin in the retired Rust prototype tree,
+  which was removed with that prototype, so the comment now points at nothing.
+  The retired path is deliberately not repeated here: Patch 19.7's absence
+  contract forbids this roadmap from citing retired compiler inputs, and naming
+  one in order to disown it reads identically to the guard.
+- Do not use `str ==` inside `compiler/*.gst` in this patch. The committed seed
+  implements the old typechecker, so stage 1 would reject it; the idiom becomes
+  available to compiler sources only after Patch 24.3a reconverges the seed.
+- Carry a positive source test, a compile-fail test for a mismatched operand, a
+  runtime test distinguishing equal content at different addresses from unequal
+  content, a MIR-to-C test, and a Cranelift differential test.
+
+**Exit Gate:** `a == b` and `a != b` on `str` compare content on both backends
+with identical accepted meaning, diagnostics, and artifacts; `std.str_eq`
+continues to work unchanged at every existing call site; **no program accepted
+before this patch changes meaning**, because the prior behaviour was a clean
+compile-time rejection rather than a wrong answer; explicit no-fallback remains;
+`make gust` passes; and the bootstrap seed is left to Patch 24.3a rather than
+reconverged here.
+
+**Authority:** scheduled by the operator. Because it changes the meaning of no
+program that compiles today, it sets no semantic precedent requiring a
+`docs/VISION.md` §0.15 OD-register decision. `docs/VISION.md` §16 and
+`TASK_STDLIB.md` both place the operator set in the Cranelift lane, so the
+Stdlib lane cannot implement it.
+
 ## Patch 24.3 — Filename-Independent Typechecker Correction
 
 **Purpose:** remove source-filename control over accepted meaning using only the
@@ -611,6 +677,12 @@ self-hosted typechecker correction, in an isolated seed-only publication.
 - Publish only `gust_v4.c`. If the seed is already byte-identical, record the
   checked no-diff fixed point in preflight authority rather than manufacture a
   seed commit.
+- Attribute the seed diff per patch. This reconvergence absorbs the seed
+  movement of both Patch 24.2q and Patch 24.3, so record the diff produced at
+  merged Patch 24.2q `main` and at merged Patch 24.3 `main` separately. Two
+  builds, one publication: this preserves the per-patch attribution Patch 24.2g
+  established with its 254-line proof without a second seed-only trio, and an
+  unattributed combined diff does not satisfy this step.
 
 **Exit Gate:** bootstrap reaches a byte-identical fixed point; the rebuilt
 compiler preserves both supported paths and Patch 24.3 behaviour; a changed
