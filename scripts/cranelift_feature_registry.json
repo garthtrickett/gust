@@ -6642,7 +6642,7 @@
           },
           {
             "path": "docs/STDLIB_FOUNDATIONS.md",
-            "required_markers": ["MutexGuard"],
+            "required_markers": ["**B. `MutexGuard` is blocked on destructor declaration, not on design.**"],
             "reason": "the MutexGuard foundation narrative must survive; the document may otherwise evolve"
           },
           {
