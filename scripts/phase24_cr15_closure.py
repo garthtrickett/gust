@@ -167,12 +167,18 @@ def _seed_transition(registry: dict, key: str) -> dict:
     transition = convergence.get(key)
     require(isinstance(transition, dict), f"{key} is missing")
     identities = transition.get("accepted_live_seed_identities")
-    require(isinstance(identities, list) and len(identities) == 2 and
-            [row.get("state") for row in identities] ==
-            ["pre_publication", "post_publication"],
-            f"{key} does not declare exactly a pre/post identity pair")
+    # A transition is either in flight, declaring a distinct pre/post pair, or
+    # landed and collapsed to the single published identity. Both shapes are
+    # exact; a collapsed transition no longer admits its superseded seed.
+    require(isinstance(identities, list) and identities and
+            [row.get("state") for row in identities] in (
+                ["pre_publication", "post_publication"],
+                ["post_publication"],
+            ),
+            f"{key} declares neither an exact pre/post pair nor a collapsed "
+            "landed identity")
     require(len({(row["line_count"], row["seed_digest"])
-                 for row in identities}) == 2,
+                 for row in identities}) == len(identities),
             f"{key} identities are not distinct")
     require(transition.get("seed_pr_policy") == "gust_v4_c_only" and
             transition.get("partial_or_unregistered_identity") == "rejected",
@@ -183,9 +189,11 @@ def _seed_transition(registry: dict, key: str) -> dict:
             diff.get("insertions") - diff.get("deletions") ==
             diff.get("line_delta"),
             f"{key} generated seed line delta is inconsistent")
-    require(diff.get("previous_lines") == identities[0]["line_count"] and
-            diff.get("current_lines") == identities[1]["line_count"],
-            f"{key} generated seed diff does not match its identities")
+    require(diff.get("current_lines") == identities[-1]["line_count"],
+            f"{key} generated seed diff does not match its landed identity")
+    if len(identities) == 2:
+        require(diff.get("previous_lines") == identities[0]["line_count"],
+                f"{key} generated seed diff does not match its pre identity")
     return transition
 
 
@@ -196,21 +204,30 @@ def registered_post_publication_identity(registry: dict, key: str) -> dict:
 
 
 def accepted_live_seed_identities(registry: dict) -> list[dict]:
-    """Every seed identity the repository has explicitly registered.
+    """The seed identities the repository currently accepts.
 
-    CR-15's published fixed point, plus the pre/post pair of each declared
-    successor transition. A successor is only consulted when it is named in
+    Each registered transition supersedes the one before it, exactly as the
+    Phase 22 convergence chain behaves: the accepted set is the newest declared
+    transition's identities, not the union of every identity ever published. A
+    transition still in flight declares a pre/post pair, so both its outgoing
+    and incoming seed are accepted across the publication; once it has landed
+    and collapsed, only the published identity remains and the superseded seed
+    is rejected. A successor is only consulted when it is named in
     SEED_SUCCESSOR_TRANSITIONS, so adding a block to the registry cannot widen
     what this guard accepts on its own.
     """
-    accepted = [registered_post_publication_identity(
-        registry, "phase24_cr15_seed_transition")]
+    newest = None
     for key in SEED_SUCCESSOR_TRANSITIONS:
-        for row in _seed_transition(registry, key)["accepted_live_seed_identities"]:
-            identity = {"line_count": row["line_count"],
-                        "seed_digest": row["seed_digest"]}
-            if identity not in accepted:
-                accepted.append(identity)
+        newest = _seed_transition(registry, key)
+    if newest is None:
+        return [registered_post_publication_identity(
+            registry, "phase24_cr15_seed_transition")]
+    accepted: list[dict] = []
+    for row in newest["accepted_live_seed_identities"]:
+        identity = {"line_count": row["line_count"],
+                    "seed_digest": row["seed_digest"]}
+        if identity not in accepted:
+            accepted.append(identity)
     return accepted
 
 

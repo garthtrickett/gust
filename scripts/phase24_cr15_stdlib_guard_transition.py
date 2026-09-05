@@ -994,8 +994,7 @@ def normalize_phase23_text_surfaces(
     if isinstance(auth, dict):
         require(auth.get("contract_version") ==
                 "phase24_2g_auth_seed_identity_successor_v1" and
-                auth.get("status") ==
-                "patch24_2g_auth_seed_identity_authority" and
+                auth.get("status") == "patch24_2g_closure_landed" and
                 auth.get("registered_changed_paths") == [
                     "gust_v4.c",
                     "scripts/phase22_default_route_seed_convergence.py",
