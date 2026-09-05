@@ -43,8 +43,31 @@ why that matters anywhere in the repository:
 `docs/SHARED_SEMANTIC_ZONE.md` D-3 already says the miscompile is closed while the
 semantics are not — *"rejecting an operator is not deciding what it means"* — and
 tracks the remainder as **CR-1**. **This plan is a request for CR-1**, and the
-leakage framing belongs in that CR: the current state is not neutral, it forces
-every user to know a compiler-internal spelling.
+framing has been carried into that CR.
+
+**Corrected 2026-09-04 while carrying it there.** The closing clause used to read
+*"the current state is not neutral, it forces every user to know a
+compiler-internal spelling."* Both halves fail on checking, and the CR now
+records the corrected version:
+
+- `std.str_eq` is **not compiler-internal**. It is public, inventoried Stdlib
+  surface — `std_str_eq` in `src/runtime/strings.c`, declared in
+  `src/runtime/core_headers.h`, registered under feature
+  `p17_allocation_string_runtime`, and listed in
+  `docs/STDLIB_SURFACE_INVENTORY.md`. The self-hosted compiler is its heaviest
+  caller, which makes it well-exercised rather than private.
+- Users are **not required to know it in advance**. The S1.1 diagnostic supplies
+  the exact call form at the exact site — `Semantic Error: str does not support
+  '==' or '!='. Use std.str_eq(a, b) to compare text.` — pinned by
+  `guard-stdlib-s1-str-equality-diagnostic`.
+
+What survives is the real argument, and it is enough to justify CR-1 without
+overstating it: **the compiler-owned operator set is incomplete for `str`**, so
+every text comparison reads as a call rather than as `==`, unlike every other
+comparable type. That is ergonomics debt, not a correctness hazard and not
+leakage of a hidden API. Recorded rather than silently reworded because the
+overstated version was this document's headline argument for scheduling CR-1,
+and the operator schedules from it.
 
 **The byte-length decision is also worth recording as decided rather than
 assumed:** `Len` is **byte length, not codepoint length**, because sockets,

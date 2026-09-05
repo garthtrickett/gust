@@ -212,8 +212,15 @@ Cranelift lane, not by this roadmap.
 
 1. **Intended behaviour:** `if command == "PING"` compares contents; `!=` is its
    negation.
-2. **Existing limitation:** the typechecker accepts `str == str` and codegen
-   emits `==` over two `Slice_unsigned_char` values, which is not valid C.
+2. **Existing limitation:** `==` and `!=` have no meaning on `str`, so the
+   compiler rejects them and content comparison must be written as the call
+   `std.str_eq(a, b)`. **The original miscompile is closed and is no longer the
+   limitation** — Patch S1.1 (#74) replaced it with a stable diagnostic, as
+   `docs/SHARED_SEMANTIC_ZONE.md` D-3 records. Restated 2026-09-04; the previous
+   wording ("the typechecker accepts `str == str` and codegen emits `==` over
+   two `Slice_unsigned_char` values, which is not valid C") described the
+   pre-S1.1 state and would send the implementing lane looking for a defect that
+   is no longer present.
 3. **Smallest generic change:** define `==` and `!=` on `str` as content
    equality in the compiler-owned operator set, lowering to the existing
    `std_str_eq` semantics through canonical MIR. No new operator, no user-level
@@ -229,6 +236,34 @@ Cranelift lane, not by this roadmap.
 work by default even though the motivation is ergonomic. Patch S1.1 delivers the
 non-semantic half — a stable diagnostic — so the miscompile stops immediately
 whether or not CR-1 is scheduled.
+
+**What this CR is actually worth — stated 2026-09-04, and corrected against
+evidence.** `docs/STDLIB_FOUNDATIONS.md` §1.1 directs its argument here, as the
+sharpest statement of why CR-1 matters: *"Users should not have to remember
+`std.str_eq(name, "PING")`. That is implementation leakage."* The Stdlib lane
+records the argument as directed, and records that **two of its premises do not
+survive checking**:
+
+- **`std.str_eq` is not compiler-internal.** It is public, inventoried Stdlib
+  surface: `std_str_eq` is defined in `src/runtime/strings.c`, declared in
+  `src/runtime/core_headers.h`, registered under feature
+  `p17_allocation_string_runtime`, and listed in
+  `docs/STDLIB_SURFACE_INVENTORY.md`. That the self-hosted compiler is its
+  heaviest caller makes it well-exercised, not private. Nothing internal is
+  leaking.
+- **Users are not required to remember it.** The S1.1 diagnostic names the exact
+  call form at the exact site: `Semantic Error: str does not support '==' or
+  '!='. Use std.str_eq(a, b) to compare text.` It is pinned by
+  `guard-stdlib-s1-str-equality-diagnostic`.
+
+The corrected case is narrower and still sound, and it is the one the operator
+should schedule from: **the compiler-owned operator set is incomplete for
+`str`.** Every text comparison in every user program reads as a call rather than
+as `==`, unlike every other comparable type. That is a completeness and
+ergonomics argument about the operator set — not a claim that users are forced
+onto an unsupported or hidden API, which they are not. CR-1's priority should be
+weighed on that basis: today's state is safe, diagnosed, and documented, so this
+is an ergonomics debt rather than a correctness hazard.
 
 ### CR-2 — Brand identity from types, not identifier spelling
 
