@@ -23220,7 +23220,7 @@ guard-stdlib-s1-resource-prerequisites:
     rg -n -F '**Resolved 2026-09-03 by Cranelift Patch 24.0f / PR #310.**' "$roadmap" >/dev/null
     for status in \
       '- [x] Patch S1.8 — MutexGuard Prototype — DONE' \
-      '- [ ] Patch S1.9 — MutexGuard Scope and Resource Tests' \
+      '- [x] Patch S1.9 — MutexGuard Scope and Resource Tests — DONE' \
       '- [ ] Patch S1.10 — MutexGuard Fiber Contention Tests' \
       '- [ ] Patch S1.11 — Realistic Example Migration'
     do
