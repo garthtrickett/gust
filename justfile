@@ -23218,13 +23218,30 @@ guard-stdlib-s1-resource-prerequisites:
     rg -n -F '### CR-5 — Generic resource semantics sufficient for a scoped guard — **RESOLVED 2026-08-24**' "$roadmap" >/dev/null
     rg -n -F '### CR-15 — Compiler-owned derivation for the generic MutexGuard surface' "$roadmap" >/dev/null
     rg -n -F '**Resolved 2026-09-03 by Cranelift Patch 24.0f / PR #310.**' "$roadmap" >/dev/null
+    # Rows whose *completed* state is load-bearing here: S1.8 published the
+    # prototype this guard describes, and S1.9 published the scope matrix that
+    # consumes it. Asserting them done is a real claim.
     for status in \
       '- [x] Patch S1.8 — MutexGuard Prototype — DONE' \
-      '- [x] Patch S1.9 — MutexGuard Scope and Resource Tests — DONE' \
-      '- [ ] Patch S1.10 — MutexGuard Fiber Contention Tests' \
-      '- [ ] Patch S1.11 — Realistic Example Migration'
+      '- [x] Patch S1.9 — MutexGuard Scope and Resource Tests — DONE'
     do
       rg -n -F -- "$status" "$roadmap" >/dev/null
+    done
+
+    # Rows that must remain *tracked*, in either state. The obligation this
+    # guard serves is that the roadmap still carries them — not that they are
+    # unfinished. Pinning `- [ ]` here made the guard reject its own lane's
+    # completed work: S1.9 ticked its box and this recipe failed with a silent
+    # exit 1, which is the same self-inflicted pinning defect the Cranelift
+    # lane spent fourteen patches retiring. Matching either state lets S1.10,
+    # S1.11 and S1.12 each tick their own row without editing this guard,
+    # while deleting or renaming a row still fails.
+    for tracked_row in \
+      '^- \[[ x]\] Patch S1\.10 — MutexGuard Fiber Contention Tests' \
+      '^- \[[ x]\] Patch S1\.11 — Realistic Example Migration' \
+      '^- \[[ x]\] Patch S1\.12 — Phase S1 Closure'
+    do
+      rg -n -e "$tracked_row" "$roadmap" >/dev/null
     done
 
     # OD-2 stays categorical: this correction selects derivation and must never
@@ -24092,3 +24109,12 @@ guard-stdlib-s1-mutex-guard-scope:
     python3 scripts/phase24_cr15_closure.py validate
     just guard-stdlib-s1-mutex-guard
     bash scripts/stdlib_s1_mutex_guard_scope_parity.sh
+
+# Stdlib lane, Patch S1.10. Appended after S1.9 so the predecessor recipes and
+# compiler-owned authority remain byte-stable.
+guard-stdlib-s1-mutex-guard-fibers:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking S1 MutexGuard fiber contention..."
+    just guard-stdlib-s1-mutex-guard-scope
+    bash scripts/stdlib_s1_mutex_guard_fibers_parity.sh

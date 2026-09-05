@@ -63,7 +63,7 @@ This is a scheduling fact, not an objection to the two-lane model.
 - [x] Patch S1.7 — MutexGuard Prerequisite Audit — DONE
 - [x] Patch S1.8 — MutexGuard Prototype — DONE
 - [x] Patch S1.9 — MutexGuard Scope and Resource Tests — DONE
-- [ ] Patch S1.10 — MutexGuard Fiber Contention Tests
+- [x] Patch S1.10 — MutexGuard Fiber Contention Tests — DONE
 - [ ] Patch S1.11 — Realistic Example Migration
 - [ ] Patch S1.12 — Phase S1 Closure
 
