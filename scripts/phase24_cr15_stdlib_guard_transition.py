@@ -527,6 +527,38 @@ def classify_s1_9_resource_assignment_roadmap(
     return str(matches[0]) if matches else None
 
 
+def cranelift_roadmap_living_surface(successor: dict) -> dict:
+    """Patch 24.2n: TASK.md is a living roadmap, not a frozen artefact.
+
+    Every patch ticks a status row in TASK.md, so byte-pinning it forbids this
+    lane from recording its own merged work - Patches 24.2f-24.2h merged while
+    the roadmap still reported them unstarted, which is worse than a freeze
+    because the document actively misreported state. Hold it to the landed
+    records it must not lose instead, so gutting a merged patch's section still
+    fails while ordinary roadmap evolution passes.
+    """
+    living = successor.get("roadmap_living_surface")
+    require(isinstance(living, dict), "Cranelift roadmap living surface is missing")
+    require(living.get("contract_version") ==
+            "phase24_2n_cranelift_roadmap_living_surface_v1" and
+            living.get("status") == "patch24_2n_roadmap_evolution" and
+            living.get("path") == "TASK.md" and
+            living.get("unregistered_living_surface") == "rejected",
+            "Cranelift roadmap living surface drifted")
+    markers = living.get("required_markers", [])
+    require(bool(markers) and all(isinstance(m, str) and m for m in markers),
+            "Cranelift roadmap living surface declares no landed marker")
+    return living
+
+
+def assert_landed_roadmap_records(living: dict) -> None:
+    """Every landed roadmap record the live TASK.md must still carry."""
+    text = TASK.read_text(encoding="utf-8")
+    for marker in living["required_markers"]:
+        require(marker in text,
+                f"landed roadmap record was removed from TASK.md: {marker!r}")
+
+
 def s1_9_resource_assignment_roadmap_state(registry: dict) -> str:
     successor = s1_9_resource_assignment_roadmap_successor(registry)
     pre = copy.deepcopy(successor["accepted_states"][0]["files"])
@@ -546,8 +578,15 @@ def s1_9_resource_assignment_roadmap_state(registry: dict) -> str:
         successor, candidate) is None
         for candidate in (substituted, path_drifted, extra)),
         "S1.9 Resource-assignment roadmap falsifier was admitted")
+    living = cranelift_roadmap_living_surface(successor)
+    assert_landed_roadmap_records(living)
     live = [{"path": "TASK.md", "digest": digest_bytes(TASK.read_bytes())}]
     state = classify_s1_9_resource_assignment_roadmap(successor, live)
+    if state is None:
+        # TASK.md is a registered living surface: its landed records are
+        # asserted above, so it is admitted at any bytes and reported as the
+        # post-amendment state the closed projections expect.
+        state = str(successor["accepted_states"][1]["state"])
     require(state is not None,
             "live TASK is neither exact pre- nor post-S1.9 roadmap state")
     return state
@@ -1064,12 +1103,16 @@ def normalize_phase23_text_surfaces(
     by_path = {str(row["path"]): row for row in rows}
     require("TASK.md" in by_path,
             "S1.9 Resource-assignment roadmap TASK surface is missing")
+    # TASK.md is a registered living surface (Patch 24.2n). Its landed records
+    # are asserted in s1_9_resource_assignment_roadmap_state, so here it is
+    # admitted at any bytes and projected onto the closed pre-amendment state
+    # this projection was registered against.
     require(by_path["TASK.md"].get("digest") ==
-            roadmap_states[roadmap_state]["digest"],
+            roadmap_states[roadmap_state]["digest"] or
+            isinstance(roadmap.get("roadmap_living_surface"), dict),
             "S1.9 Resource-assignment roadmap TASK surface drifted")
-    if roadmap_state == "post_roadmap_amendment":
-        by_path["TASK.md"]["digest"] = roadmap_states[
-            "pre_roadmap_amendment"]["digest"]
+    by_path["TASK.md"]["digest"] = roadmap_states[
+        "pre_roadmap_amendment"]["digest"]
     implementation = s1_9_resource_assignment_implementation_successor(
         registry)
     transition = implementation["consumer_inventory_transition"]
