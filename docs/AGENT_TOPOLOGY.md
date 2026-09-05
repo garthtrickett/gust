@@ -12,7 +12,7 @@ observation, sections 2 onward are argument.
 Updated 2026-08-22 after the operator retired the separate `Check In` monitor
 role. The durable topology is now **three persistent lane agents only**:
 Cranelift, Stdlib, and docs/vision. The docs/vision agent performs registrar
-checks when its Paseo heartbeat resumes it every fifteen minutes. The heartbeat
+checks when its Paseo heartbeat resumes it every twenty minutes. The heartbeat
 is a trigger attached to that existing agent; it is not a fourth agent and
 grants no authority.
 
@@ -262,7 +262,7 @@ What matters for topology:
   accumulated context is a real asset — which is exactly why §8 insists it must
   never be the *only* copy of anything.
 - **A heartbeat can resume an existing agent.** The active registrar heartbeat
-  resumes docs/vision every fifteen minutes. It creates no fourth agent. Because
+  resumes docs/vision every twenty minutes. It creates no fourth agent. Because
   that agent has continuity, every check must deliberately re-derive its claims
   from disk and the relevant API rather than trusting conversational memory.
 - **Permission mode is per agent.** Regardless of the mode currently selected,
@@ -282,11 +282,18 @@ The last point is the one to be careful with, and §8 states the rule.
 ## 5. The docs/vision registrar heartbeat
 
 There is no monitor agent. Paseo resumes the existing docs/vision lane every
-fifteen minutes, and that lane performs the registrar check before continuing
+twenty minutes, and that lane performs the registrar check before continuing
 its documentation work. The check observes Cranelift and Stdlib, their active
 worktrees and PRs, and the roadmaps that govern them. It reports meaningful
-changes and uses a direct Paseo message only when a lane is stopped or claims to
-be blocked and specific, verified context can help it continue.
+changes and uses a direct Paseo message when a lane is stopped, claims to be
+blocked, or a change it is waiting on has occurred — a CI population resolving
+or going red, a background task it awaits completing, or a named trigger firing.
+
+`docs/EVENT_DRIVEN_MONITORING.md` states the full arrangement: polling happens
+in one place and every other wake is caused by a real change. It also records
+the primitive a lane must not rely on — a completing background task does not
+resume an *idle* agent, which stranded finished work three times — and the
+sentence that makes a waiting lane distinguishable from a stalled one.
 
 The heartbeat changes *when* docs/vision looks; it changes neither ownership nor
 authority. Docs/vision may not edit another lane's files, decide semantics,
