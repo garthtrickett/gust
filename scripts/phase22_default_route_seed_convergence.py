@@ -196,7 +196,7 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
     require(transfer_transition == {
         "contract_version":
             "phase24_2f_resource_transfer_seed_reconvergence_transition_v1",
-        "status": "ready_for_seed_publication",
+        "status": "landed_post_publication",
         "predecessor_seed_authority":
             "phase24_cr15_seed_reconvergence_transition_v1",
         "authority_base_main": "6e5aaa671b705c71866cc30d719c70d5cd316b59",
@@ -204,12 +204,6 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
             "phase24_s1_9_resource_assignment_implementation_v1",
         ],
         "accepted_live_seed_identities": [
-            {
-                "state": "pre_publication",
-                "line_count": 65789,
-                "seed_digest":
-                    "706430d05010521657d44e0ee2afa2580afb71f1f5e8ca54a88f6e34f1a2e8d9",
-            },
             {
                 "state": "post_publication",
                 "line_count": 65784,
@@ -226,31 +220,38 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
         },
         "seed_pr_policy": "gust_v4_c_only",
         "partial_or_unregistered_identity": "rejected",
-        "closure_transition": "collapse_to_post_publication_after_seed_merge",
+        "closure_transition": "collapsed_to_post_publication",
+        "landed_seed_evidence": {
+            "pull_request": 327,
+            "head_sha": "da7526be64aaedabcd917d05f0c7b989daa69fe1",
+            "merge_main_sha": "38c794ec804f00c5ba2477b8212f56505bf7d94f",
+            "merged_at": "2026-09-05T00:21:30Z",
+            "event": "pull_request",
+            "workflow_population": 35,
+            "successful_workflows": 35,
+            "unfinished_workflows": 0,
+            "non_success_workflows": 0,
+            "unresolved_non_outdated_review_threads": 0,
+            "changed_paths": ["gust_v4.c"],
+        },
     }, "Patch 24.2f seed transition drifted")
     transfer_identities = transfer_transition["accepted_live_seed_identities"]
-    require([row["state"] for row in transfer_identities] ==
-            ["pre_publication", "post_publication"],
-            "Patch 24.2f seed transition state order drifted")
-    require(len({(row["line_count"], row["seed_digest"])
-                 for row in transfer_identities}) == 2,
-            "Patch 24.2f seed transition identities are not distinct")
+    require(len(transfer_identities) == 1 and
+            transfer_identities[0]["state"] == "post_publication",
+            "Patch 24.2f seed transition did not collapse to the landed identity")
     transfer_diff = transfer_transition["generated_seed_diff"]
     require(transfer_diff["current_lines"] - transfer_diff["previous_lines"] ==
             transfer_diff["line_delta"] and
             transfer_diff["insertions"] - transfer_diff["deletions"] ==
             transfer_diff["line_delta"],
             "Patch 24.2f seed line delta is inconsistent")
-    # The chain must be continuous: this transition starts from the seed CR-15
-    # published. Compare identity only - the same seed is CR-15's
-    # post_publication and this transition's pre_publication.
-    require({key: transfer_identities[0][key]
-             for key in ("line_count", "seed_digest")} ==
-            {key: identities[1][key] for key in ("line_count", "seed_digest")},
+    # The chain must still be continuous after the collapse: this transition's
+    # recorded diff starts from the seed CR-15 published and ends at the single
+    # landed identity that remains.
+    require(transfer_diff["previous_lines"] == identities[1]["line_count"],
             "Patch 24.2f seed transition does not start from the CR-15 fixed point")
-    require(transfer_diff["previous_lines"] == transfer_identities[0]["line_count"] and
-            transfer_diff["current_lines"] == transfer_identities[1]["line_count"],
-            "Patch 24.2f seed diff does not match its own identities")
+    require(transfer_diff["current_lines"] == transfer_identities[0]["line_count"],
+            "Patch 24.2f seed diff does not match its own landed identity")
     return transfer_identities
 
 
@@ -286,9 +287,6 @@ def regeneration_is_accepted(record: dict, committed: dict, regenerated: dict) -
         for row in accepted_live_seed_identities(record)
     }
     return (
-        committed == identities["pre_publication"] and
-        regenerated == identities["post_publication"]
-    ) or (
         committed == identities["post_publication"] and
         regenerated == identities["post_publication"]
     )
@@ -301,7 +299,7 @@ def validate_regeneration(record: dict) -> None:
     committed = seed_identity(committed_seed)
     regenerated = seed_identity(SEED.read_bytes())
     require(regeneration_is_accepted(record, committed, regenerated),
-            "bootstrap result is not the exact registered deprecation fixed point")
+            "bootstrap result is not the exact landed post-publication fixed point")
 
 
 def validate() -> dict:
