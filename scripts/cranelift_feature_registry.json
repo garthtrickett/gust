@@ -6616,6 +6616,52 @@
           "tests/stdlib_s1_mutex_guard.gst",
           "tests/stdlib_s1_mutex_guard_generic_derivation_module.gst"
         ],
+      "landed_living_surface_collapse": {
+        "contract_version": "phase24_2i_stdlib_landed_living_surface_v1",
+        "status": "patch24_2i_stdlib_roadmap_evolution",
+        "authority_base_main": "9bc80d1392005c05d66de5e28ae0e24d049d2f36",
+        "rationale": "Stdlib S1.8 published and merged on 2026-09-04, so byte-pinning the documents the Stdlib lane must keep editing no longer proves anything about S1.8 and only freezes its roadmap. S1.8's own deliverables stay exactly pinned; the living documents are held to the landed content they must not lose.",
+        "landed_publication": "stdlib_s1_8",
+        "pinned_deliverable_paths": [
+          ".github/workflows/stdlib-s1-mutex-guard.yml",
+          ".github/workflows/stdlib-s1-resource-prerequisites.yml",
+          "scripts/stdlib_s1_mutex_guard_parity.sh",
+          "tests/stdlib_s1_mutex_guard.gst",
+          "tests/stdlib_s1_mutex_guard_generic_derivation_module.gst"
+        ],
+        "living_surfaces": [
+          {
+            "path": "TASK_STDLIB.md",
+            "required_markers": ["- [x] Patch S1.8 — MutexGuard Prototype — DONE"],
+            "reason": "S1.8 must remain closed in the Stdlib roadmap; later rows may be ticked freely"
+          },
+          {
+            "path": "justfile",
+            "required_markers": ["guard-stdlib-s1-mutex-guard:", "guard-stdlib-s1-resource-prerequisites:"],
+            "reason": "S1.8's guard recipes must remain invocable; later Stdlib recipes may be added freely"
+          },
+          {
+            "path": "docs/STDLIB_FOUNDATIONS.md",
+            "required_markers": ["MutexGuard"],
+            "reason": "the MutexGuard foundation narrative must survive; the document may otherwise evolve"
+          },
+          {
+            "path": "docs/STDLIB_SURFACE_FINDINGS.md",
+            "required_markers": ["F6 — MutexGuard is blocked by documented, unfinished prerequisites"],
+            "reason": "the F6 finding must survive; the document may otherwise evolve"
+          }
+        ],
+        "unregistered_living_surface": "rejected",
+        "boundary": {
+          "changes_compiler_source": false,
+          "changes_accepted_Gust_program_meaning": false,
+          "adds_or_changes_MIR_ABI_layout_or_runtime_symbols": false,
+          "changes_backend_route_default_or_fallback": false,
+          "changes_bootstrap_route_or_seed": false,
+          "edits_stdlib": false,
+          "begins_patch24_3": false
+        }
+      },
         "accepted_states": [
           {
             "state": "pre_s1_8",

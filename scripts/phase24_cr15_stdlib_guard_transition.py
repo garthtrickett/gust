@@ -379,6 +379,9 @@ def provider_docs_falsifier_self_test(successor: dict) -> None:
             "or extra state was admitted")
 
 
+LIVING_SURFACE_COLLAPSE: dict = {}
+
+
 def provider_docs_state(coordination: dict) -> str:
     successor = provider_docs_successor(coordination)
     provider_docs_falsifier_self_test(successor)
@@ -392,7 +395,23 @@ def provider_docs_state(coordination: dict) -> str:
             })
         else:
             live.append({"path": path, "absent": True})
+    # A path Patch 24.2i registered as a landed living surface is admitted at
+    # any bytes and projected onto the state this closed transition was
+    # registered against; its landed content is asserted separately. Every
+    # other provider doc still has to match a registered state exactly.
     state = classify_exact_file_manifest(successor, live)
+    if state is None:
+        collapse = LIVING_SURFACE_COLLAPSE.get("living_surfaces", [])
+        living_paths = {row["path"] for row in collapse}
+        if living_paths:
+            for candidate in successor["accepted_states"]:
+                projected = [
+                    dict(candidate_row) if row["path"] in living_paths else row
+                    for row, candidate_row in zip(live, candidate["files"])
+                ]
+                if classify_exact_file_manifest(successor, projected) is not None:
+                    state = str(candidate["state"])
+                    break
     require(state is not None,
             "live provider docs surface is neither exact pre- nor post-state")
     return state
@@ -580,16 +599,68 @@ def s1_8_falsifier_self_test(successor: dict) -> None:
             "S1.8 partial, substituted, path-drifted, or extra state was admitted")
 
 
+def landed_living_surface_collapse(successor: dict) -> dict:
+    """Patch 24.2i: Stdlib S1.8 has landed, so its living documents unfreeze.
+
+    Byte-pinning TASK_STDLIB.md and the justfile stopped proving anything about
+    S1.8 the moment S1.8 merged; all it did was forbid the Stdlib lane from
+    ticking its own next checkbox or adding its next guard recipe. S1.8's own
+    deliverables stay exactly pinned. Each living document is instead held to
+    the landed content it must not lose, so removing an S1.8 recipe, fixture or
+    DONE row still fails while ordinary roadmap evolution passes.
+    """
+    collapse = successor.get("landed_living_surface_collapse")
+    require(isinstance(collapse, dict), "S1.8 landed living-surface collapse is missing")
+    require(collapse.get("contract_version") ==
+            "phase24_2i_stdlib_landed_living_surface_v1" and
+            collapse.get("status") == "patch24_2i_stdlib_roadmap_evolution" and
+            collapse.get("landed_publication") == "stdlib_s1_8" and
+            collapse.get("unregistered_living_surface") == "rejected",
+            "S1.8 landed living-surface collapse drifted")
+    living = collapse.get("living_surfaces", [])
+    pinned = collapse.get("pinned_deliverable_paths", [])
+    require(sorted(pinned + [row["path"] for row in living]) ==
+            successor["changed_paths"],
+            "landed living-surface collapse does not partition the S1.8 manifest")
+    require(len({row["path"] for row in living}) == len(living) and living,
+            "landed living-surface paths are duplicated or empty")
+    for row in living:
+        markers = row.get("required_markers", [])
+        require(bool(markers) and all(isinstance(m, str) and m for m in markers),
+                f"living surface {row['path']} declares no landed marker")
+    return collapse
+
+
+def assert_landed_living_content(collapse: dict) -> None:
+    """Every registered living surface must still carry its landed markers."""
+    for row in collapse["living_surfaces"]:
+        absolute = ROOT / row["path"]
+        require(absolute.is_file(), f"living surface {row['path']} is missing")
+        text = absolute.read_text(encoding="utf-8")
+        for marker in row["required_markers"]:
+            require(marker in text,
+                    f"Stdlib S1.8 landed content was removed from {row['path']}: "
+                    f"{marker!r}")
+
+
 def s1_8_state(value: dict, registry: dict | None = None) -> str:
     if registry is None:
         registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     successor = s1_8_successor(value)
     s1_8_falsifier_self_test(successor)
+    # Populated before provider_docs_state runs, since that check consults the
+    # registered living surfaces and only receives the coordination record.
+    _collapse = landed_living_surface_collapse(successor)
+    assert_landed_living_content(_collapse)
+    LIVING_SURFACE_COLLAPSE.clear()
+    LIVING_SURFACE_COLLAPSE.update(_collapse)
     coordination = s1_8_coordination_successor(registry, successor)
     workflow = s1_8_workflow_prerequisite_successor(
         coordination, successor)
     provider = provider_docs_successor(coordination)
     provider_state = provider_docs_state(coordination)
+    collapse = landed_living_surface_collapse(successor)
+    living_paths = {row["path"] for row in collapse["living_surfaces"]}
     live: list[dict[str, object]] = []
     for path in successor["changed_paths"]:
         absolute = ROOT / path
@@ -597,6 +668,7 @@ def s1_8_state(value: dict, registry: dict | None = None) -> str:
             live.append({"path": path, "digest": digest_bytes(absolute.read_bytes())})
         else:
             live.append({"path": path, "absent": True})
+
     coordinated = copy.deepcopy(successor)
     coordinated["accepted_states"] = coordinated_s1_8_states(
         successor, coordination, workflow)
@@ -617,9 +689,25 @@ def s1_8_state(value: dict, registry: dict | None = None) -> str:
         stdlib_row = next(
             row for row in live
             if row["path"] == stdlib_transition["path"])
-        require(stdlib_row.get("digest") == stdlib_transition["post_digest"],
+        # A registered living surface has already been checked for its landed
+        # content, so it is admitted at any bytes and projected onto the closed
+        # pre-state the provider-docs transition was registered against. An
+        # unregistered path still has to match exactly.
+        require(stdlib_transition["path"] in living_paths or
+                stdlib_row.get("digest") == stdlib_transition["post_digest"],
                 "provider docs Stdlib post-state identity drifted")
         stdlib_row["digest"] = stdlib_transition["pre_digest"]
+    # A living surface has already been checked for its landed content, so its
+    # exact bytes are projected onto the registered post-S1.8 identity. S1.8's
+    # own deliverables are untouched here and still compare byte-for-byte.
+    post_files = {row["path"]: row
+                  for row in coordinated["accepted_states"][1]["files"]}
+    for row in live:
+        if (row["path"] in living_paths and "digest" in row and
+                row["path"] != provider["stdlib_surface_transition"]["path"]):
+            registered = post_files.get(row["path"], {})
+            if "digest" in registered:
+                row["digest"] = registered["digest"]
     state = classify_s1_8_manifest(coordinated, live)
     if state is None:
         implementation = s1_9_resource_assignment_implementation_successor(
