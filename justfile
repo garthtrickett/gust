@@ -23220,7 +23220,7 @@ guard-stdlib-s1-resource-prerequisites:
     rg -n -F '**Resolved 2026-09-03 by Cranelift Patch 24.0f / PR #310.**' "$roadmap" >/dev/null
     for status in \
       '- [x] Patch S1.8 — MutexGuard Prototype — DONE' \
-      '- [ ] Patch S1.9 — MutexGuard Scope and Resource Tests' \
+      '- [x] Patch S1.9 — MutexGuard Scope and Resource Tests — DONE' \
       '- [ ] Patch S1.10 — MutexGuard Fiber Contention Tests' \
       '- [ ] Patch S1.11 — Realistic Example Migration'
     do
@@ -24082,3 +24082,13 @@ guard-cranelift-phase24-resource-implicit-transfer-evidence:
     just guard_step52_resource_close_after_move_enforcement
     just guard_step52_resource_scope_exit_cleanup_boundary
     python3 scripts/phase24_resource_implicit_transfer.py evidence
+
+# Stdlib lane, Patch S1.9. Appended after S1.8 so the predecessor recipe and
+# compiler-owned authority remain byte-stable.
+guard-stdlib-s1-mutex-guard-scope:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking S1 MutexGuard scope and resource behavior..."
+    python3 scripts/phase24_cr15_closure.py validate
+    just guard-stdlib-s1-mutex-guard
+    bash scripts/stdlib_s1_mutex_guard_scope_parity.sh
