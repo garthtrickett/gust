@@ -146,7 +146,7 @@ def validate_static(value: dict) -> None:
             "implementation_successor", {})
     accepted_justfile_digests.append(
         implementation.get("live_justfile_successor_digest"))
-    require(digest(JUSTFILE.read_bytes()) in accepted_justfile_digests,
+    require(justfile_admitted(registry, accepted_justfile_digests),
             "live justfile successor digest drifted")
     require(value.get("review_view") == REVIEW.relative_to(ROOT).as_posix(),
             "review view drifted")
@@ -571,6 +571,32 @@ def main() -> None:
         evidence(value)
     else:
         print("phase24_filename_behavior_characterization: ok")
+
+
+def justfile_admitted(registry: dict, accepted_digests: list) -> bool:
+    """Patch 24.2p: the justfile is a registered living surface.
+
+    An appended guard recipe is not a changed one, so the exact-digest
+    allowlist is no longer the right question to ask of a file every Stdlib
+    patch must extend. Admit it at any bytes that still carry the landed guard
+    recipes the class contract names; removing one still rejects.
+
+    Defined below the Patch 24.1 observation driver on purpose: that driver's
+    line number is itself pinned by the Phase 22 invocation inventory, so this
+    patch keeps its net line delta above it at zero rather than adding another
+    link to the successor chain it exists to retire.
+    """
+    if digest(JUSTFILE.read_bytes()) in accepted_digests:
+        return True
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "phase24_cr15_guard_transition",
+        ROOT / "scripts/phase24_cr15_stdlib_guard_transition.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return bool(module.class_living_markers_hold(registry, "justfile"))
+
 
 
 if __name__ == "__main__":

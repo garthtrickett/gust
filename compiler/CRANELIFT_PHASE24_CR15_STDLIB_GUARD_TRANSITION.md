@@ -37,3 +37,22 @@ state is accepted. The successor adds one internal explicit-unsafe Lock/Unlock
 pair and preserves the closed Phase 22 invocation and Phase 23 text-surface
 identities through exact normalization. Partial, extra, substituted, safe-raw,
 backend-specific, path-drifted, and unrelated inventory states remain rejected.
+
+## Pinned-manifest class contract (Patch 24.2p)
+
+- Contract: `phase24_2p_pinned_manifest_class_v1`
+- Living surfaces: `6`
+- Landed Stdlib text surfaces: `68`
+- Landed Stdlib invocation sites: `8` covering `29` invocations
+
+Phases 22 and 23 pin two repository-wide manifests whose membership is
+decided by content match rather than by path, so the pinned set is not
+enumerable from a path list. Each registered living surface is admitted at
+any bytes that still carry its landed markers and is projected onto the exact
+closed row the manifest was registered against, so no pinned digest moves.
+Additions inside the registered lane scope must be classified, and an added
+invocation must select a backend explicitly. The closed six-site post-flip
+relay identity, every landed surface, and every Cranelift-owned row are
+judged exactly as before; removing a landed surface, gutting a registered
+marker, adding a Cranelift-owned surface or invocation, and any unclassified
+surface or invocation all remain rejected.

@@ -546,6 +546,33 @@ Resource transfer, preserves exactly one destination cleanup through both
 retained paths, is bootstrap-converged and review-clean, and carries a durable
 S1.9 handoff without changing Stdlib-owned files or beginning Patch 24.3.
 
+## Patch 24.2p — Pinned-Manifest Class Contract — DONE
+
+**Purpose:** retire the pinned-manifest guard family as a class rather than as a
+sixth instance, so a lane can publish an ordinary patch without a closed phase
+reporting drift.
+
+**Steps:**
+
+- Enumerate every pin that holds a living surface, by explicit path *and* by
+  content pattern, and what each does to the two live reproductions — Stdlib
+  PR #332 and PR #333 — before writing any code.
+- Register one class contract consulted by both scanners: living surfaces held
+  by the landed markers they must not lose, an explicit lane append scope, the
+  landed Stdlib text surfaces and invocation sites, and an explicit-selection
+  requirement on appended invocations.
+- Project each living surface onto the exact closed row its manifest was
+  registered against, so no pinned digest moves, and project registered lane
+  appends out of the closed manifests.
+- Run the inversion on every relaxed surface, since a relaxation that cannot
+  fail is a deleted test.
+
+**Exit Gate:** the #332 and #333 shapes both pass; gutting any registered
+marker, removing a landed surface, adding a Cranelift-owned surface or
+invocation, adding an invocation that does not select a backend explicitly, and
+any unclassified surface or invocation all still fail; the closed six-site
+post-flip relay identity is unchanged; issue #288 is closed.
+
 ## Patch 24.3 — Filename-Independent Typechecker Correction
 
 **Purpose:** remove source-filename control over accepted meaning using only the
