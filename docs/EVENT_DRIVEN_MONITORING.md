@@ -64,16 +64,38 @@ work three times, once for 38 minutes.
    times in 24 hours, each a measurement taken in one scope and applied in
    another. **Lanes caught every one.** That is the arrangement working, not
    failing, and it only works if you re-derive.
-6. **If you need self-triggering,** arm a heartbeat with a *condition* that
-   deletes itself once satisfied. One lane used this to merge a PR on a fully
-   green population, record the merged SHA, and retire its own heartbeat. It is
-   the only lane-side event mechanism that works.
+6. **For a known wait, arm a self-deleting conditional heartbeat.** This is the
+   expected practice, not a last resort. You know you started a five-minute
+   build; the monitor does not. Arm a heartbeat with the *condition* you are
+   waiting on, act when it is met, and **delete it in the same turn**. One lane
+   used exactly this to merge a PR on a fully green population, record the merged
+   SHA, and retire its own heartbeat.
+
+   This is not the standing five-minute self-pulse, and the difference is the
+   whole point: it is **conditional**, **scoped to one wait**, and **removes
+   itself**. A permanent unconditional pulse duplicates the monitor forever; this
+   costs one turn, when the thing you are waiting for actually happens.
+
+   Match its interval to what you are waiting on: a local build is 5-8 minutes, a
+   full CI population here is ~40. Polling a 40-minute population every five
+   minutes is waste with extra steps.
 
 ## Monitor rules
 
-1. **One cron heartbeat.** Choose the interval from the slowest thing you wait
-   on, not from a habit: a full CI population here takes ~40 minutes, so a
-   20-minute tick sees every state change at least twice. Shorter buys nothing.
+1. **One cron heartbeat, twenty minutes.** Choose the interval from the slowest
+   thing you wait on: a full CI population here takes ~40 minutes, so a 20-minute
+   tick sees every state change at least twice.
+
+   **Shortening it is usually the wrong lever.** The tick is only load-bearing
+   when a lane goes idle *without* telling you — every lane that ends a turn
+   wakes you through `notifyOnFinish`. Halving the cadence doubles the ticks to
+   buy half a stall on the few occasions it matters. It also does not help when
+   *you* are the bottleneck: a turn that overruns twenty minutes makes the next
+   tick fire immediately behind it, which has happened.
+
+   Push detection to where the knowledge is instead - lane rule 6. The lane knows
+   how long its build takes. Tighten your own cadence only while a lane has an
+   outstanding waiting statement, and relax it when nothing is waiting.
 2. **Each tick, poll what emits no events:** open PRs and their exact-head
    `event=="pull_request"` populations, background task output files, the
    process table, worktree dirty state, pending permissions, disk.
