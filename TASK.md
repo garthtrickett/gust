@@ -612,9 +612,12 @@ operator the language already teaches.
   declared in `src/runtime/core_headers.h` and defined in
   `src/runtime/strings.c`. Do not teach one backend about `str` equality:
   MIR-to-C and Cranelift agree, or the feature defers in both.
-- Correct the stale comment at `compiler/typechecker.gst:3183`, which cites
-  `STR_EQUALITY_DIAGNOSTIC in src/typechecker/visitor.rs` — a path retired with
-  the Rust compiler and absent from the tree.
+- Correct the stale comment at `compiler/typechecker.gst:3183`. It directs the
+  reader to a `STR_EQUALITY_DIAGNOSTIC` twin in the retired Rust prototype tree,
+  which was removed with that prototype, so the comment now points at nothing.
+  The retired path is deliberately not repeated here: Patch 19.7's absence
+  contract forbids this roadmap from citing retired compiler inputs, and naming
+  one in order to disown it reads identically to the guard.
 - Do not use `str ==` inside `compiler/*.gst` in this patch. The committed seed
   implements the old typechecker, so stage 1 would reject it; the idiom becomes
   available to compiler sources only after Patch 24.3a reconverges the seed.
