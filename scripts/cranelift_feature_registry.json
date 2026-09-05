@@ -7944,6 +7944,136 @@
        "appended_stdlib_invocation_rejected_selection": "implicit_default",
        "appended_stdlib_invocation_reason": "the guarantee being preserved is that no added invocation relies on the default route, so the test is that --backend is present, not that its value is a literal. A parity harness selects the route through a variable - ./gust --backend \"$route\" - which selection() reports as explicit_invalid_or_parser_probe because the value is not a literal backend name. That is still an explicit selection and never reaches the default route. Stated as an allowlist rather than a denylist so it fails closed: selection() returns a closed set of four literals today (scripts/phase22_opening.py), but a later patch adding a fifth must register it here rather than be admitted silently. Note that explicit_invalid_or_parser_probe is a catch-all within that set - it also covers genuinely malformed input such as --backend=bogus - which is admitted because it too passes --backend and so cannot reach the default route.",
        "appended_stdlib_invocation_unregistered_selection": "rejected",
+       "living_projected_rows": [
+        {
+         "path": "docs/ONE_WAY_LEDGER.md",
+         "digest": "0eb8b00ea42f8e2e5031537f68f466a8c7ae62a330e79cb29f9a8da2f8484355",
+         "match_counts": {
+          "explicit_backend_spelling": 0,
+          "mir_to_c_name": 6,
+          "generated_c_contract": 6
+         },
+         "required_markers": [
+          "## Status vocabulary",
+          "| **VIOLATED** | The compiler or runtime does the rejected thing. |",
+          "A row's `Status` is a claim about the compiler and must have a reproduction.",
+          "authoritative for *whether it holds*.",
+          "every `VIOLATED` row names its owner."
+         ],
+         "reason": "the ledger must record honest progress, so no count and no individual status is pinned. The markers hold the status vocabulary, the reproduction requirement, and the rule that every VIOLATED row names an owner - the obligation behind rule 45's remediation pointer, which the Phase 27 amendment must re-point."
+        },
+        {
+         "path": "docs/ROADMAP_TAIL.md",
+         "digest": "e9f58c7d148462cefd23c04f1ae9b6340cf5e124ae1de04faa29f8cfd2df1b62",
+         "match_counts": {
+          "explicit_backend_spelling": 1,
+          "mir_to_c_name": 9,
+          "generated_c_contract": 7
+         },
+         "required_markers": [
+          "**Make the safe path convenient rather than making the type system more",
+          "execute `docs/CRANELIFT_LAUNCH.md`.",
+          "triggers the coordinated public outreach campaign independently.",
+          "is supported in full, or the launch is delayed.",
+          "The launch is an evidence and relationship checkpoint, not another compiler"
+         ],
+         "reason": "the tail's obligations are protected, not its phase enumeration. The launch dependency, the delay-rather-than-lower rule, and the not-another-phase rule all survive re-keying Phase 27 to Phase 26."
+        },
+        {
+         "path": "docs/CRANELIFT_LAUNCH.md",
+         "digest": "bda6136488adcef578e258b415056455da4b4ac12cfcc1b799733fbd4a832f98",
+         "match_counts": {
+          "explicit_backend_spelling": 0,
+          "mir_to_c_name": 1,
+          "generated_c_contract": 4
+         },
+         "required_markers": [
+          "## 1. Launch gate",
+          "- no selected native route silently falls back to C;",
+          "If any item is missing, delay outreach or lower the claim.",
+          "## 2. Claim ladder",
+          "The post-tail launch targets **Level 3**.",
+          "normal supported bootstrap no longer requires generated C or a host C compiler",
+          "| 4 | Gust is the first project in a precisely defined historical category."
+         ],
+         "reason": "the launch gate and claim ladder are the project's credibility surface. The 'every Phase 20-27 status row' line is deliberately not a marker because the Phase 27 amendment must re-key it; a marker on a line a patch must edit rebuilds the wall one level down."
+        },
+        {
+         "path": "docs/MESSAGING.md",
+         "digest": "51b17a529c2cc8beccf9e1bab7fc5e68ad8cee0eecd81964f1cbbdd8a5dc5db9",
+         "match_counts": {
+          "explicit_backend_spelling": 0,
+          "mir_to_c_name": 0,
+          "generated_c_contract": 1
+         },
+         "required_markers": [
+          "## 3. The claim, and its exact boundary",
+          "**Say `enforce`, `check`, `reject`. Never say `prove`.**",
+          "## 6. What not to say",
+          "\u00a779. Enforce, check, reject."
+         ],
+         "reason": "the claim boundary and the prohibition list. Say enforce/check/reject, never prove."
+        },
+        {
+         "path": "docs/EVIDENCE_LED_OUTREACH.md",
+         "digest": "0944ba85444cacf26e25a3b5331028493012393051d741f411792dcaa85a9d27",
+         "match_counts": {
+          "explicit_backend_spelling": 0,
+          "mir_to_c_name": 1,
+          "generated_c_contract": 0
+         },
+         "required_markers": [
+          "## Milestone evidence gate",
+          "Before drafting outreach, produce this evidence card:",
+          "Claims not supported:",
+          "## Anti-synthetic writing rules"
+         ],
+         "reason": "the milestone evidence gate and the card field that forces stating what is not supported."
+        },
+        {
+         "path": "GEMINI.md",
+         "digest": "ed08aafce077804fab4adb88a49f2a6754e31cce8d6818fb461b3219d77a623c",
+         "match_counts": {
+          "explicit_backend_spelling": 0,
+          "mir_to_c_name": 0,
+          "generated_c_contract": 7
+         },
+         "required_markers": [
+          "do not start the rollout early."
+         ],
+         "reason": "its only Phase 27 tie is a formatting-rollout gate; one honest marker rather than manufactured ceremony."
+        }
+       ],
+       "structural_rules": [
+        {
+         "path": "docs/ONE_WAY_LEDGER.md",
+         "id": "every_rule_row_carries_a_status",
+         "unit": "line",
+         "unit_pattern": "^\\| \\d+ \\|",
+         "must_contain_any": [
+          "HOLDS",
+          "PARTIAL",
+          "VIOLATED",
+          "ABSENT",
+          "DEFERRED"
+         ],
+         "minimum_units": 50,
+         "reason": "a status cannot be softened into prose and a rule row cannot vanish. Indifferent to any status changing, which is the progress the ledger exists to record. The minimum_units floor is load-bearing: 'every unit satisfies P' is vacuously true of zero units, so without it deleting every rule row would pass a rule written to catch exactly that."
+        },
+        {
+         "path": "docs/ROADMAP_TAIL.md",
+         "id": "every_phase_section_carries_an_exit_gate",
+         "unit": "section",
+         "unit_pattern": "Phase \\d+ \u2014",
+         "must_contain_any": [
+          "**Exit gate:**"
+         ],
+         "minimum_units": 6,
+         "reason": "no phase silently loses its exit gate. The floor is 6 against 8 live sections so the Phase 27 amendment, which removes one, does not trip the guard it is landing under."
+        }
+       ],
+       "unprojected_living_row": "rejected",
+       "structural_rule_violation": "rejected",
        "roadmap_projected_row": {
         "path": "TASK.md",
         "match_counts": {
