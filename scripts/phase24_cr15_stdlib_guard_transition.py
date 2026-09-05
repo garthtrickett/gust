@@ -958,6 +958,12 @@ def pinned_manifest_class_contract(registry: dict) -> dict:
     require(bool(contract.get("landed_stdlib_text_surfaces")) and
             bool(contract.get("landed_stdlib_invocation_sites")),
             "class contract registers no landed surface inventory")
+    require(contract.get("appended_document_marker_removal") == "rejected",
+            "appended-document marker contract drifted")
+    for doc in contract.get("appended_document_markers", []):
+        markers = doc.get("required_markers", [])
+        require(bool(markers) and all(isinstance(m, str) and m for m in markers),
+                f"appended document {doc.get('path')!r} declares no marker")
     living_rows = contract.get("living_projected_rows", [])
     require(bool(living_rows) and
             len({str(r["path"]) for r in living_rows}) == len(living_rows) and
@@ -1100,6 +1106,19 @@ def project_class_living_documents(
         for marker in row["required_markers"]:
             require(marker in text,
                     f"landed content was removed from {path}: {marker!r}")
+    # Patch 24.2s: an appended document is projected out of the closed manifest
+    # rather than onto a closed row - it has none, being new - so it is held to
+    # its markers alone. The retirement contract names the manifest's own scan
+    # patterns, so it enrols itself and is unaddable until admitted here.
+    for doc in contract.get("appended_document_markers", []):
+        absolute = ROOT / str(doc["path"])
+        require(absolute.is_file(),
+                f"appended document is missing: {doc['path']}")
+        text = absolute.read_text(encoding="utf-8")
+        for marker in doc["required_markers"]:
+            require(marker in text,
+                    f"recorded decision was removed from {doc['path']}: "
+                    f"{marker!r}")
     assert_class_structural_rules(contract)
     projected: list[dict[str, object]] = []
     for row in rows:

@@ -133,8 +133,10 @@ Stdlib handoff are complete.
 - [x] Patch 24.2n — Cranelift Roadmap Living Surface — DONE
 - [x] Patch 24.2p — Pinned-Manifest Class Contract — DONE
 - [ ] Patch 24.2q — str Content Equality in the Operator Set
+- [x] Patch 24.2s — Pinned-Manifest Retirement Contract — DONE
 - [ ] Patch 24.3 — Filename-Independent Typechecker Correction
 - [ ] Patch 24.3a — Preflight Bootstrap Seed Reconvergence
+- [ ] Patch 24.3b — Pinned-Manifest Retirement
 - [ ] Patch 24.4 — Opening-Preflight Closure
 
 Status rows are machine-parsed. Keep each row as
@@ -639,6 +641,50 @@ program that compiles today, it sets no semantic precedent requiring a
 `TASK_STDLIB.md` both place the operator set in the Cranelift lane, so the
 Stdlib lane cannot implement it.
 
+## Patch 24.2s — Pinned-Manifest Retirement Contract — DONE
+
+**Purpose:** record the operator's adopted replacement for the pinned-manifest
+guard family, and schedule the remaining sweep as a roadmap row rather than an
+intention.
+
+**Steps:**
+
+- Publish `docs/PINNED_MANIFEST_RETIREMENT.md` recording Option B as adopted and
+  Option A as rejected *with its reasoning*, so neither is re-litigated.
+- Admit that document to the manifest. It names the scan patterns it describes,
+  so it enrols itself and is unaddable until admitted — the self-referential trap
+  this class fix exists to break, met one last time by the document about it.
+- Schedule Patch 24.3b with a machine-parsed Status row and a clause in Patch
+  24.4's Exit Gate, because a closure that can pass without it is how the
+  survivors quietly become permanent.
+
+**Exit Gate:** the contract is published and held to the decisions it records;
+Patch 24.3b is a Status row and a 24.4 gate clause rather than a note; and no
+guard is relaxed here.
+
+## Patch 24.3b — Pinned-Manifest Retirement
+
+**Purpose:** finish retiring the pinned-manifest guard family across the whole
+manifest — not only the surfaces that were blocking work — by applying the five
+mechanisms recorded in `docs/PINNED_MANIFEST_RETIREMENT.md`.
+
+**Steps:**
+
+- Classify every surviving manifest row against the five-class table: generated
+  artifact, living document, growing inventory, structural property, behavioural
+  guarantee.
+- Apply the matching mechanism to each. All five exist already: Patches 24.2p,
+  24.2q and 24.2r shipped them, so this is application rather than design.
+- Prove the inversion for every pin retired. A relaxation that cannot fail is a
+  deleted test.
+- Keep the whole-file digest where it is the correct mechanism, notably the
+  bootstrap seed, whose audit chain is the reason Option A was rejected.
+
+**Exit Gate:** every surviving manifest row carries the mechanism matching what
+it protects; every retirement has a proved inversion; the six-site post-flip
+relay identity, the no-fallback guarantee and the seed digest are unchanged; and
+no closed phase's evidence became silently rewritable.
+
 ## Patch 24.3 — Filename-Independent Typechecker Correction
 
 **Purpose:** remove source-filename control over accepted meaning using only the
@@ -713,6 +759,10 @@ converged; the exact-main Historical population and closure PR are fully green;
 all review threads are resolved; CR-15 remains complete and handed off; and
 Phase 24 backend retirement, Phase 24.5, Phase 25, Stdlib implementation, and
 Web Slice 1 remain inactive.
+
+Patch 24.4 does not close while Patch 24.3b is unstarted. The pinned-manifest
+survivors become permanent exactly by a closure that does not look at them,
+which is how five instances of this defect accumulated one at a time.
 
 ## Recommended Implementation Order
 
