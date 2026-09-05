@@ -7944,6 +7944,16 @@
        "appended_stdlib_invocation_rejected_selection": "implicit_default",
        "appended_stdlib_invocation_reason": "the guarantee being preserved is that no added invocation relies on the default route, so the test is that --backend is present, not that its value is a literal. A parity harness selects the route through a variable - ./gust --backend \"$route\" - which selection() reports as explicit_invalid_or_parser_probe because the value is not a literal backend name. That is still an explicit selection and never reaches the default route. Stated as an allowlist rather than a denylist so it fails closed: selection() returns a closed set of four literals today (scripts/phase22_opening.py), but a later patch adding a fifth must register it here rather than be admitted silently. Note that explicit_invalid_or_parser_probe is a catch-all within that set - it also covers genuinely malformed input such as --backend=bogus - which is admitted because it too passes --backend and so cannot reach the default route.",
        "appended_stdlib_invocation_unregistered_selection": "rejected",
+       "roadmap_projected_row": {
+        "path": "TASK.md",
+        "match_counts": {
+         "explicit_backend_spelling": 0,
+         "mir_to_c_name": 117,
+         "generated_c_contract": 27
+        },
+        "reason": "Patch 24.2n projected TASK.md's digest onto the closed pre-amendment state but left its match_counts live, so the roadmap was only half unfrozen: editable only while never changing how many times it says MIR-to-C. Most Cranelift roadmap rows discuss backend parity, so that trap fires on the first ordinary row, and it had held only by luck. Project the whole content-derived row, which is the treatment every other registered living surface already receives. The path-derived fields - classification, owner, current_route, deprecation_action, removal_phase, falsifier - do not vary with content and are left alone.",
+        "unprojected_match_counts": "rejected"
+       },
        "unregistered_living_surface": "rejected",
        "unclassified_surface": "rejected",
        "unclassified_invocation": "rejected",

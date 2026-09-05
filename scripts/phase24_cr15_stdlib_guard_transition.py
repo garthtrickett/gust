@@ -1323,6 +1323,16 @@ def normalize_phase23_text_surfaces(
             "S1.9 Resource-assignment roadmap TASK surface drifted")
     by_path["TASK.md"]["digest"] = roadmap_states[
         "pre_roadmap_amendment"]["digest"]
+    # Patch 24.2q: Patch 24.2n projected the digest but left match_counts live,
+    # so TASK.md was editable only while its MIR-to-C mention count never moved -
+    # a trap that fires on the first ordinary row about backend parity. Project
+    # the whole content-derived row, as every other living surface already gets.
+    projected = pinned_manifest_class_contract(registry)["roadmap_projected_row"]
+    require(str(projected["path"]) == "TASK.md" and
+            projected.get("unprojected_match_counts") == "rejected",
+            "roadmap projected-row contract drifted")
+    by_path["TASK.md"]["match_counts"] = copy.deepcopy(
+        projected["match_counts"])
     implementation = s1_9_resource_assignment_implementation_successor(
         registry)
     transition = implementation["consumer_inventory_transition"]
