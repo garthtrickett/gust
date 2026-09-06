@@ -1,0 +1,42 @@
+name: Stdlib S1 MutexGuard Fibers
+
+on:
+  pull_request:
+    paths:
+      - 'TASK_STDLIB.md'
+      - 'docs/STDLIB_MUTEX_GUARD_FIBERS.md'
+      - 'tests/stdlib_s1_mutex_guard_fibers.gst'
+      - 'tests/e2e_mutex_concurrency.gst'
+      - 'scripts/stdlib_s1_mutex_guard_fibers_parity.sh'
+      - 'justfile'
+      - '.github/workflows/stdlib-s1-mutex-guard-fibers.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'TASK_STDLIB.md'
+      - 'docs/STDLIB_MUTEX_GUARD_FIBERS.md'
+      - 'tests/stdlib_s1_mutex_guard_fibers.gst'
+      - 'tests/e2e_mutex_concurrency.gst'
+      - 'scripts/stdlib_s1_mutex_guard_fibers_parity.sh'
+      - 'justfile'
+      - '.github/workflows/stdlib-s1-mutex-guard-fibers.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  mutex-guard-fibers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: make gust
+      - name: guard-stdlib-s1-mutex-guard-fibers
+        run: just guard-stdlib-s1-mutex-guard-fibers
