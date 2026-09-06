@@ -7745,7 +7745,7 @@
             {"path":"docs/STDLIB_FOUNDATIONS.md","digest":"33b8eedb1fbf96a14507c7a4fb706c5e9587ccaebdddb7112fba7859234ee843"},
             {"path":"docs/STRATEGY_REVIEW.md","digest":"cd882fc8f21e7fd933f1cf30a14eafa3afce0698d684a3500303b5a490cac04d"},
             {"path":"docs/SUPPLIER_ADAPTER_STRATEGY.md","digest":"7cf8092730ebbae8379bf60594ac87b64096ce83b8d54100b6c1449e6154f38e"},
-            {"path":"docs/VISION.md","digest":"f59e6cce2c5d54f2cd80a3c9825cec3c763c7628ae4394ae75c8c98defceb797"},
+            {"path":"docs/VISION.md","digest":"798b239d0c03073bc48b07b0b9cdef6ace935dfff2a1823065ed6f8d5eb4a28f"},
             {"path":"docs/WASM_DOM_ARCHITECTURE.md","digest":"469199960c3ee91892e6e5a1955a4ee3a7b7693832557bc40efab3c3324f83e5"},
             {"path":"docs/WEB_SLICE_0.md","digest":"a7b0e582247d08143771e3d526e35d2f84d1646c403fef1803746ec117a61957"}
           ]
@@ -7772,7 +7772,7 @@
         "current_rows": [
           {"path":"docs/HTTP_RPC_ARCHITECTURE.md","digest":"8cc69acc0abccb86152f5b2c3b50fa614719724c4ab1f994a8298a00dac609ad","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":1,"generated_c_contract":0},"classification":"production_or_release_migration","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"review_claims_in_23_8_and_23_12","removal_phase":"24_or_25_as_claim_requires","falsifier":"live_documentation_claim_is_missing_or_changes_identity"},
           {"path":"docs/STDLIB_FOUNDATIONS.md","digest":"33b8eedb1fbf96a14507c7a4fb706c5e9587ccaebdddb7112fba7859234ee843","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":3,"generated_c_contract":0},"classification":"production_or_release_migration","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"review_claims_in_23_8_and_23_12","removal_phase":"24_or_25_as_claim_requires","falsifier":"live_documentation_claim_is_missing_or_changes_identity"},
-          {"path":"docs/VISION.md","digest":"f59e6cce2c5d54f2cd80a3c9825cec3c763c7628ae4394ae75c8c98defceb797","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":1,"generated_c_contract":0},"classification":"production_or_release_migration","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"review_claims_in_23_8_and_23_12","removal_phase":"24_or_25_as_claim_requires","falsifier":"live_documentation_claim_is_missing_or_changes_identity"}
+          {"path":"docs/VISION.md","digest":"798b239d0c03073bc48b07b0b9cdef6ace935dfff2a1823065ed6f8d5eb4a28f","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":1,"generated_c_contract":0},"classification":"production_or_release_migration","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"review_claims_in_23_8_and_23_12","removal_phase":"24_or_25_as_claim_requires","falsifier":"live_documentation_claim_is_missing_or_changes_identity"}
         ],
         "closed_phase_projection": "canonical_pre_provider_docs_identity",
         "partial_extra_or_substituted_surface": "rejected"
