@@ -1,8 +1,12 @@
-# Phases 26 and 27 — systems safety, implicit context, and consolidation
+# Phase 26 — systems safety, implicit context, and consolidation
 
 This is the canonical plan for Phase 26 — gated raw pointers and FFI, generalized
-linear resources, and implicit context — and Phase 27, the consolidation that
-follows it. It combines the former `PHASES_5_AND_6.md` plan with the ordering,
+linear resources, implicit context, and the consolidation work that follows.
+Phase 27 was retired on 2026-09-05; the rows that were properties rather than
+tidying became Phases 26.5 and 26.6, and the rest moved to
+`docs/OPPORTUNISTIC_CLEANUP.md`. **The filename is deliberately unchanged**:
+guards, workflows, and `docs/ONE_WAY_LEDGER.md` reference this path, and renaming
+it would churn them for no gain. It combines the former `PHASES_5_AND_6.md` plan with the ordering,
 status, and placement rationale formerly held in `UNSAFE_FFI_SEQUENCE.md`.
 
 `STEP51_DEFERRED_UNSAFE_SEMANTICS.md` and
@@ -15,7 +19,8 @@ decisions; this document owns execution order and patch planning.
 > labels such as `STEP51_*`, `STEP52_*`, `guard_step51_*`, `guard_step52_*`, and
 > "Step 5.2Q" keep their names. They are stable implementation and historical
 > identifiers, not current roadmap numbering. New human-facing planning uses
-> Phase 26.1, 26.2, 26.3, 26.4, and Phase 27.
+> Phase 26.1 through 26.6. Phase 27 is retired and is not current numbering
+> either.
 
 **Placement:** the operator directed on 2026-08-20 that this work occur after
 the Cranelift migration completes and C is deprecated. Renumbering it after the
@@ -218,7 +223,8 @@ principle to shadowing: prefer a diagnostic to clever inference.
 Closes `docs/ONE_WAY_LEDGER.md` rule 45, **VIOLATED** — `empty[T]` competes with
 `Option[T]` as a second spelling of absence. Moved out of Phase 27 because it is
 a correctness obligation with a named ledger owner, and filing it under "delete
-the old ways" priced it as cleanup.
+the old ways" priced it as cleanup. Phases 26.5 and 26.6 below were moved for the
+same reason, and the move retired the phase entirely.
 
 | Step | Work |
 | --- | --- |
@@ -242,14 +248,63 @@ end.
 
 ---
 
-## Phase 27 — consolidation
+## Phase 26.5 — the stdlib safety surface is audited
 
 | Step | Work |
 | --- | --- |
-| 27.3 | Delete `open_directories` from `TypeEnvironment`; directories become `Resource[ctx, Directory]` |
-| 27.4 | Delete split LHS/RHS subscript codegen branches: subscripts are read-only copies and mutation uses explicit references; keep parser LHS validation robust |
-| 27.5 | Audit the stdlib safety surface so raw-pointer work does not leak through `std.Vector`, `std.HashMap`, or `std.String` |
-| 27.6 | Refactor `Statement` and `Expression` into true sum-type enums, migrate tag tests to `match`, and promote the consolidated result as the next bootstrap seed |
+| 26.5 | Audit the stdlib safety surface so raw-pointer work does not leak through `std.Vector`, `std.HashMap`, or `std.String` |
+
+Formerly Phase 27.5. Moved for the same reason as 26.4: it is a safety property,
+not tidying, and it is one of the things `docs/CRANELIFT_LAUNCH.md` advertises.
+The repository already forbids *adding* a raw-pointer workaround inside a safe
+stdlib surface; nothing asserts the property for the code already there, and this
+audit is the only thing that does.
+
+**Exit gate:** every raw-pointer use reachable from `std.Vector`, `std.HashMap`
+and `std.String` is either behind `unsafe`, behind an explicitly unsafe API, or
+removed; the audit records what it examined, not merely that it passed.
+
+---
+
+## Phase 26.6 — the compiler output is promoted through the seed policy
+
+| Step | Work |
+| --- | --- |
+| 26.6 | Regenerate `gust_v4.c` from the merged `compiler/*.gst` under the repository's seed policy, in its own commit and pull request |
+
+Formerly the second half of Phase 27.6. **The two halves of that row were
+separated deliberately.** The sum-type refactor of `Statement` and `Expression`
+is cleanup and lives in `docs/OPPORTUNISTIC_CLEANUP.md`; the seed promotion is a
+property the Level-3 claim rests on, because "the self-hosted compiler builds and
+bootstraps through the native path" is only checkable if the committed seed is
+the one generated from the merged compiler sources.
+
+Written as *"promote the consolidated result"* the obligation was hostage to a
+refactor that is now optional — no refactor, no consolidated result, no
+obligation. Written as a property of the seed it holds either way.
+
+`AGENTS.md` requires seed regeneration in its own commit and pull request with no
+other change. That rule governs this row; it is not relaxed by the row existing.
+
+**Exit gate:** `make bootstrap` converges with stage 2 byte-identical to stage 3,
+the committed `gust_v4.c` is that output, and the regeneration landed as its own
+pull request.
+
+---
+
+## Phase 27 — retired
+
+Phase 27 was *"remove the obsolete paths made unnecessary by the completed safety
+model"*. Its four rows were adjudicated individually on 2026-09-05 rather than
+retired as a block: 27.5 became Phase 26.5, the seed half of 27.6 became Phase
+26.6, and 27.3, 27.4 and the sum-type half of 27.6 moved to
+`docs/OPPORTUNISTIC_CLEANUP.md`, which gates nothing.
+
+The reason the phase could not simply be re-keyed is recorded in that document:
+`docs/CRANELIFT_LAUNCH.md` §1 demanded *"every Phase 20–27 status row is
+closed"*, so it inherited Phase 27's four-clause exit gate by counting rather
+than by naming any part of it. Deleting the phase number would have deleted four
+obligations without anyone deciding to.
 
 ---
 
@@ -279,7 +334,7 @@ The older Phase 19 brand-resolution dependency is moot by Phase 26.
 ## Status snapshot from 2026-08-20
 
 This table preserves the original live audit; it is evidence about foundations,
-not current completion authority for Phases 26 or 27.
+not current completion authority for Phase 26.
 
 | Item | Evidence | State |
 | --- | --- | --- |
@@ -291,12 +346,13 @@ not current completion authority for Phases 26 or 27.
 | 26.2 — destructor declaration | one built-in destructor and no source syntax to declare another | missing at the snapshot (`TASK_STDLIB.md` CR-5) |
 | 26.4a — `Option` migration | `get_opt` present in compiler modules while `LookupResult` remained in `typechecker.gst` | partly migrated |
 | 26.4b — `empty[T]` removal | 130 uses in `typechecker.gst` alone | not started |
-| 27.3 — purge `open_directories` | still present with a `legacy_freeze` test entry | frozen, not purged |
+| `open_directories` purge (was 27.3) | still present with a `legacy_freeze` test entry | frozen, not purged — now `docs/OPPORTUNISTIC_CLEANUP.md` |
 
 Phase 26.4 closes the `docs/ONE_WAY_LEDGER.md` violation where `empty[T]`
-competes with `Option[T]` as a second spelling of absence. Phase 27.3 closes the
-remaining `open_directories` migration item in
-`STEP52_RESOURCE_SEMANTICS.md`.
+competes with `Option[T]` as a second spelling of absence. The remaining
+`open_directories` migration item in `STEP52_RESOURCE_SEMANTICS.md` is closed by
+the cleanup row that was Phase 27.3, which gates nothing — see
+`docs/OPPORTUNISTIC_CLEANUP.md` for why that is not a launch obligation.
 
 Phase 26.4's file-by-file bootstrap rule follows the same discipline as Phase
 26.1's A→B→C sequence: never change the compiler's own idiom in one pass. A

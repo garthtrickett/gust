@@ -18,6 +18,7 @@ REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 REVIEW = ROOT / "compiler/CRANELIFT_PHASE24_CR15_STDLIB_GUARD_TRANSITION.md"
 JUSTFILE = ROOT / "justfile"
 TASK = ROOT / "TASK.md"
+LAUNCH_GATE = ROOT / "docs/CRANELIFT_LAUNCH.md"
 GUARD = "guard-cranelift-phase24-cr15-stdlib-guard-transition"
 
 
@@ -982,6 +983,36 @@ def pinned_manifest_class_contract(registry: dict) -> dict:
                 bool(rule.get("must_contain_any")) and
                 int(rule.get("minimum_units", 0)) > 0,
                 f"structural rule {rule.get('id')!r} is incomplete")
+    require(contract.get("launch_gate_obligation_removal") == "rejected" and
+            contract.get("unadjudicated_phase27_row") == "rejected" and
+            isinstance(contract.get("retired_census_spelling"), str) and
+            bool(contract.get("retired_census_spelling")),
+            "launch-gate obligation contract drifted")
+    obligations = contract.get("launch_gate_obligations", [])
+    require(len(obligations) >= 3 and
+            len({str(row["id"]) for row in obligations}) == len(obligations),
+            "launch-gate obligations are missing or duplicated")
+    for obligation in obligations:
+        require(bool(obligation.get("markers")) and
+                bool(obligation.get("bullet_prefix")) and
+                bool(obligation.get("reason")) and
+                obligation.get("disposition") in (
+                    "launch_obligation", "launch_obligation_widened"),
+                f"launch obligation {obligation.get('id')!r} is incomplete")
+    dispositions = contract.get("phase27_row_dispositions", [])
+    require([str(row["row"]) for row in dispositions] ==
+            ["27.3", "27.4", "27.5", "27.6"],
+            "the four Phase 27 rows are not each adjudicated")
+    stated = {str(row["id"]) for row in obligations}
+    for row in dispositions:
+        require(row.get("disposition") in (
+                    "launch_obligation", "opportunistic_cleanup", "split") and
+                bool(row.get("reason")) and bool(row.get("destination")),
+                f"Phase 27 row {row.get('row')!r} is not adjudicated")
+        require(row["disposition"] == "opportunistic_cleanup" or
+                str(row.get("obligation_id")) in stated,
+                f"Phase 27 row {row.get('row')!r} claims an obligation "
+                "the launch gate does not state")
     scope = contract.get("appended_text_surface_scope", {})
     require(isinstance(scope, dict) and
             bool(scope.get("path_prefixes")) and
@@ -1054,6 +1085,71 @@ def project_class_living_rows(
     return projected
 
 
+def gut_launch_gate_bullet(text: str, prefix: str) -> str:
+    """Delete one launch-gate item the way a reader deleting it would.
+
+    A bullet is its own line plus every following two-space continuation line,
+    so this removes the obligation as written rather than removing the marker
+    strings. That distinction is the whole value of the check below.
+    """
+    lines = text.splitlines(keepends=True)
+    starts = [index for index, line in enumerate(lines)
+              if line.startswith(prefix)]
+    require(len(starts) == 1,
+            f"launch-gate item is missing or duplicated: {prefix!r}")
+    start = starts[0]
+    end = start + 1
+    while end < len(lines) and lines[end].startswith("  "):
+        end += 1
+    return "".join(lines[:start] + lines[end:])
+
+
+def assert_launch_gate_obligations(contract: dict) -> None:
+    """Patch 24.2t: a stated obligation nothing can falsify is a comment.
+
+    `docs/CRANELIFT_LAUNCH.md` demanded "every Phase 20-27 status row ... is
+    closed". That is a phase-number census - the same shape as "there are
+    exactly 319 invocations", and as a whole-file digest standing in for tamper
+    detection. It inherited Phase 27's four-clause exit gate by counting rather
+    than by naming any part of it, so re-keying the count to 20-26 would have
+    dropped four obligations without anyone deciding to. Two were promoted to
+    stated obligations, one exit clause was restated at wider scope, and the
+    rest were adjudicated into `docs/OPPORTUNISTIC_CLEANUP.md`.
+
+    Each surviving obligation is asserted here, and each assertion is proved to
+    fail when the obligation is removed. The removal deletes the whole bullet
+    rather than the marker strings, which is what keeps the check from being
+    circular: if a marker were registered against a neighbouring line, gutting
+    the obligation would leave it standing and the last assertion fires.
+    """
+    rows = [row for row in contract["living_projected_rows"]
+            if str(row["path"]) == "docs/CRANELIFT_LAUNCH.md"]
+    require(len(rows) == 1,
+            "the launch gate is not a registered living surface")
+    registered = [str(marker) for marker in rows[0]["required_markers"]]
+    text = LAUNCH_GATE.read_text(encoding="utf-8")
+    census = str(contract["retired_census_spelling"])
+    require(census not in text,
+            f"the retired phase-number census was reintroduced: {census!r}")
+    for obligation in contract["launch_gate_obligations"]:
+        name = obligation["id"]
+        markers = [str(marker) for marker in obligation["markers"]]
+        require(all(marker in registered for marker in markers),
+                f"launch obligation {name!r} is stated but not held by a "
+                "registered marker")
+        for marker in markers:
+            require(text.count(marker) == 1,
+                    f"launch obligation {name!r} marker is missing or "
+                    f"duplicated: {marker!r}")
+        gutted = gut_launch_gate_bullet(text, str(obligation["bullet_prefix"]))
+        require(any(marker not in gutted for marker in registered),
+                f"deleting launch obligation {name!r} left every marker "
+                "standing, so the gate would still pass without it")
+        require(not any(marker in gutted for marker in markers),
+                f"launch obligation {name!r} is markered outside the bullet it "
+                "names, so a gutting would survive it")
+
+
 def assert_class_structural_rules(contract: dict) -> None:
     """Patch 24.2r: invariants a substring marker cannot express.
 
@@ -1088,18 +1184,20 @@ def assert_class_structural_rules(contract: dict) -> None:
                 f"{len(units)} < {rule['minimum_units']}")
 
 
-def project_class_living_documents(
-        contract: dict,
-        rows: list[dict[str, object]]) -> list[dict[str, object]]:
-    """Hold the docs lane's living documents by content, not by bytes.
+def assert_class_document_content(contract: dict) -> None:
+    """Every content assertion this contract makes about a living document.
 
-    Each registered document is admitted at any bytes that still carry its
-    landed markers and satisfy its structural rules, then projected onto the
-    exact closed manifest row it was registered against - so no pinned digest
-    moves and the closed-phase evidence is unchanged.
+    Extracted from project_class_living_documents so the module that owns the
+    contract can assert it directly. Before Patch 24.2t these checks ran only
+    when a *consumer* scanned text surfaces, so `Cranelift Phase 24 CR-15
+    Stdlib Guard Transition` could pass while asserting nothing about the six
+    documents it registers - coverage survived incidentally, through the Phase
+    23 opening guard's `docs/**` filter, rather than by design. An assertion
+    reachable only through another guard's import is one refactor away from
+    being reachable through nothing.
     """
-    registered = {str(row["path"]): row for row in contract["living_projected_rows"]}
-    for path, row in sorted(registered.items()):
+    for path, row in sorted(
+            {str(row["path"]): row for row in contract["living_projected_rows"]}.items()):
         absolute = ROOT / path
         require(absolute.is_file(), f"living document is missing: {path}")
         text = absolute.read_text(encoding="utf-8")
@@ -1120,6 +1218,21 @@ def project_class_living_documents(
                     f"recorded decision was removed from {doc['path']}: "
                     f"{marker!r}")
     assert_class_structural_rules(contract)
+    assert_launch_gate_obligations(contract)
+
+
+def project_class_living_documents(
+        contract: dict,
+        rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    """Hold the docs lane's living documents by content, not by bytes.
+
+    Each registered document is admitted at any bytes that still carry its
+    landed markers and satisfy its structural rules, then projected onto the
+    exact closed manifest row it was registered against - so no pinned digest
+    moves and the closed-phase evidence is unchanged.
+    """
+    assert_class_document_content(contract)
+    registered = {str(row["path"]): row for row in contract["living_projected_rows"]}
     projected: list[dict[str, object]] = []
     for row in rows:
         path = str(row["path"])
@@ -1597,6 +1710,8 @@ def normalized_owner_file_digest(
 
 def validate() -> tuple[dict, str]:
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    assert_class_living_content(pinned_manifest_class_contract(registry))
+    assert_class_document_content(pinned_manifest_class_contract(registry))
     value = authority(registry)
     state = live_state(registry)
     s1_9_resource_assignment_roadmap_state(registry)

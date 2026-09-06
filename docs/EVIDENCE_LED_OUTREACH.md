@@ -516,7 +516,8 @@ untouched until later. Do not manufacture outreach because a review occurred.
 Phase closure triggers a **review**, not automatic contact. Phase 20–26 may
 justify narrow private technical drafts under this protocol, but they do not
 trigger the coordinated public Cranelift campaign. That campaign begins only
-after Phase 27 and the complete tail close.
+after Phase 26, the complete tail, and the obligations stated in
+`docs/CRANELIFT_LAUNCH.md` §1 close.
 
 ## Compact standing instruction
 

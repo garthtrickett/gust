@@ -119,7 +119,7 @@ git diff --check
 * **No Formatting Churn:** Do not run repo-wide formatting until Phase 4B after Phases 26/27. Formatting rollout should happen as a dedicated formatting-only commit so compiler safety work remains easy to bisect and patch.
 * **Targets:** Use `make report_phase4_formatter_tools` to report formatter binary availability in the current shell. It must not format files and must not be wired into `make test` during Phase 4A.
 * **Deferred Phase 4B Work:** Complete `topiary/languages.ncl`, write the Gust Topiary query file, enable `treefmt.toml` formatter blocks, add formatter golden/sample checks, and only then perform a controlled repo-wide formatting rollout.
-* **Status:** Phase 4B has not happened. With the former Phases 5/6 renumbered after the C-retirement tail, this gate now opens after Phase 27. `treefmt.toml` remains a commented-out scaffold and `topiary/queries/gust.scm` remains a placeholder; do not start the rollout early.
+* **Status:** Phase 4B has not happened. With the former Phases 5/6 renumbered after the C-retirement tail, this gate now opens after the C-retirement tail closes and the launch gate in `docs/CRANELIFT_LAUNCH.md` §1 is satisfied. `treefmt.toml` remains a commented-out scaffold and `topiary/queries/gust.scm` remains a placeholder; do not start the rollout early.
 
 ### H. Phase 26.1 Raw Pointer Safety Inventory Discipline
 * **Legacy Target Names:** Existing `step51` filenames, recipes, guards, fixtures, and historical labels keep their names. They predate the renumbering and are compatibility identifiers for Phase 26.1, not a separate Phase 5 roadmap.

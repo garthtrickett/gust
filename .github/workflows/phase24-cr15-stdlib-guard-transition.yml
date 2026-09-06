@@ -4,6 +4,15 @@ on:
   pull_request:
     paths:
       - 'justfile'
+      - 'TASK.md'
+      - 'GEMINI.md'
+      - 'docs/CRANELIFT_LAUNCH.md'
+      - 'docs/EVIDENCE_LED_OUTREACH.md'
+      - 'docs/MESSAGING.md'
+      - 'docs/ONE_WAY_LEDGER.md'
+      - 'docs/OPPORTUNISTIC_CLEANUP.md'
+      - 'docs/PINNED_MANIFEST_RETIREMENT.md'
+      - 'docs/ROADMAP_TAIL.md'
       - 'scripts/cranelift_feature_registry.json'
       - 'scripts/cranelift_feature_registry.schema.json'
       - 'scripts/phase22_opening.py'
@@ -17,6 +26,15 @@ on:
     branches: [main]
     paths:
       - 'justfile'
+      - 'TASK.md'
+      - 'GEMINI.md'
+      - 'docs/CRANELIFT_LAUNCH.md'
+      - 'docs/EVIDENCE_LED_OUTREACH.md'
+      - 'docs/MESSAGING.md'
+      - 'docs/ONE_WAY_LEDGER.md'
+      - 'docs/OPPORTUNISTIC_CLEANUP.md'
+      - 'docs/PINNED_MANIFEST_RETIREMENT.md'
+      - 'docs/ROADMAP_TAIL.md'
       - 'scripts/cranelift_feature_registry.json'
       - 'scripts/cranelift_feature_registry.schema.json'
       - 'scripts/phase22_opening.py'
