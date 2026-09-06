@@ -24118,3 +24118,13 @@ guard-stdlib-s1-mutex-guard-fibers:
     echo "🔒 Checking S1 MutexGuard fiber contention..."
     just guard-stdlib-s1-mutex-guard-scope
     bash scripts/stdlib_s1_mutex_guard_fibers_parity.sh
+
+# Stdlib lane, Patch S1.11. Appended after S1.10 so the predecessor recipes and
+# compiler-owned authority remain byte-stable. The append lands far below the
+# highest ordinary invocation row, so it moves no pinned invocation site.
+guard-stdlib-s1-migration:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Checking S1 realistic example migration..."
+    just guard-stdlib-s1-mutex-guard-fibers
+    bash scripts/stdlib_s1_migration_parity.sh

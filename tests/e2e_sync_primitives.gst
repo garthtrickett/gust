@@ -1,3 +1,5 @@
+import "stdlib_s1_mutex_guard_generic_derivation_module.gst" as sync;
+
 type Counter struct {
     count: int
 }
@@ -7,14 +9,35 @@ type Pipeline[ctx] struct {
     chan: std.Channel[int, ctx]
 }
 
-func producer(p: *Pipeline[ctx]) { 
+// Each helper takes exactly one acquisition and releases it by scope exit.
+// Migrated from manual Lock()/Unlock() pairs: there is no unlock call to
+// forget, and no path out of these functions that skips it.
+func set_count(mutex: &std.Mutex[Counter, ctx], value: int) {
+    mut owner := sync.lock(mutex);
+    mut counter := sync.get(&owner);
+    counter.count = value;
+}
+
+func add_to_count(mutex: &std.Mutex[Counter, ctx], value: int) {
+    mut owner := sync.lock(mutex);
+    mut counter := sync.get(&owner);
+    counter.count = counter.count + value;
+}
+
+func read_count(mutex: &std.Mutex[Counter, ctx]) int {
+    mut owner := sync.lock(mutex);
+    mut counter := sync.get(&owner);
+    return counter.count;
+}
+
+func producer(p: *Pipeline[ctx]) {
     mut i := 0;
     while i < 5 {
         unsafe {
             (*p).chan.Send(i);
         }
         i = i + 1;
-    } 
+    }
 }
 
 func consumer(p: *Pipeline[ctx]) {
@@ -23,9 +46,7 @@ func consumer(p: *Pipeline[ctx]) {
         mut val := 0;
         unsafe {
             val = (*p).chan.Recv();
-            mut val_ptr := (*p).mutex.Lock();
-            (*val_ptr).count = (*val_ptr).count + val;
-            (*p).mutex.Unlock();
+            add_to_count(&(*p).mutex, val);
         }
         i = i + 1;
     }
@@ -40,11 +61,7 @@ func main() {
     p.mutex = std.MutexNew(ctx);
     p.chan = std.ChannelNew(ctx);
 
-    unsafe {
-        mut val_ptr := p.mutex.Lock();
-        (*val_ptr).count = 0;
-        p.mutex.Unlock();
-    }
+    set_count(&p.mutex, 0);
 
     std.Spawn(producer, &p);
     std.Spawn(consumer, &p);
@@ -52,18 +69,10 @@ func main() {
     mut loop_active := 1;
     while loop_active == 1 {
         std.Yield();
-        unsafe {
-            mut val_ptr := p.mutex.Lock();
-            if (*val_ptr).count == 10 {
-                loop_active = 0;
-            }
-            p.mutex.Unlock();
+        if read_count(&p.mutex) == 10 {
+            loop_active = 0;
         }
     }
 
-    unsafe {
-        mut val_ptr := p.mutex.Lock();
-        os.LogInt((*val_ptr).count); 
-        p.mutex.Unlock();
-    }
+    os.LogInt(read_count(&p.mutex));
 }
