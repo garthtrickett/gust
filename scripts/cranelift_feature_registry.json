@@ -6600,6 +6600,40 @@
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
         }
       ],
+      "s1_11_raw_mutex_removal_successor": {
+       "contract_version": "phase24_s1_11_raw_mutex_removal_v1",
+       "status": "cr21_registered_awaiting_stdlib_s1_11",
+       "authority_base_main": "eb6b6cf2e85e008d092ddfb34fe61af046a6ea58",
+       "purpose": "CR-21. S1.11 migrates a transitional raw-Mutex test to the scoped guard, which REMOVES call sites. Every predecessor in this chain adds one, so removal had no mechanism and this successor is it. The registry row lands here and the source edit lands in the Stdlib patch, so main is valid in BOTH states and each is exact - see independent_path_states on the 24.2g-auth successor for the same shape.",
+       "removed_call_site": {
+        "path": "tests/e2e_sync_primitives.gst",
+        "role": "transitional_sync_test",
+        "lock_calls": 4,
+        "unlock_calls": 4
+       },
+       "removal_reason": "the scoped guard releases at scope exit, so the four Lock/Unlock pairs and their four manual cleanup paths go to zero. Observable is identical - both forms exit 0 and print 10, measured on this base by the Stdlib lane. The two survivors of the unsafe reduction are channel Send/Recv and the spawn-argument dereference, neither a mutex operation, so no incidental unsafe change rides along.",
+       "previous_totals": {
+        "lock_calls": 17,
+        "unlock_calls": 17,
+        "calls": 34
+       },
+       "current_totals": {
+        "lock_calls": 13,
+        "unlock_calls": 13,
+        "calls": 26
+       },
+       "previous_transitional_test_coverage": [
+        "tests/e2e_mutex_concurrency.gst",
+        "tests/e2e_sync_primitives.gst"
+       ],
+       "current_transitional_test_coverage": [
+        "tests/e2e_mutex_concurrency.gst"
+       ],
+       "retained_transitional_reason": "tests/e2e_mutex_concurrency.gst is NOT migrated and must not be. It is Patch S1.10 without-guard baseline asserting 300, so migrating it would break guard-stdlib-s1-mutex-guard-fibers, merged the same day in #341. The transitional set dropping two to one is the migration this contract exists to track; dropping it to zero would destroy S1.10 evidence.",
+       "safe_raw_calls_added": 0,
+       "partial_extra_or_substituted_call_site": "rejected",
+       "coverage_literal_note": "transitional_test_coverage was compared against a hardcoded list literal in scripts/phase20_unsafe_mutex_migration.py, not driven from this registry. Editing the stored value alone would have failed that require. The literal is now the pre-migration branch of a two-state check, so the stored value and the enforced value cannot diverge again."
+      },
       "s1_8_inventory_successor": {
         "contract_version": "phase24_stdlib_s1_8_inventory_successor_v1",
         "status": "ready_for_exact_stdlib_s1_8_publication",
