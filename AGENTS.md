@@ -455,6 +455,60 @@ carries a positive source test, a negative compile-fail test, a runtime behaviou
 test, a MIR-to-C test, a Cranelift differential test when the feature is within
 the supported cohort, and resource and brand misuse tests.
 
+### Relaxing or retiring a guard
+
+A patch that loosens a guard, retires a pin, or re-anchors a frozen coordinate
+carries a different burden of proof from a patch that adds behaviour. It must show
+not only that the guards pass, but that they can still fail.
+
+**Enumerate the pinned set before pushing.** Discovering pins one at a time costs a
+CI cycle each. Apply the real edit locally, run every validator, and collect the
+failures in one pass. Enumerate across both mechanisms — explicit path pins and
+content-pattern pins — because the latter are not enumerable from a path list.
+Distinct failure messages mean distinct pins; one message repeated across many
+guards usually means a single short-circuiting assertion, and relaxing it may
+expose another underneath.
+
+**Stored is not enforced.** Before trusting a pin — or fearing it — find the site
+that compares it. A frozen coordinate that no validator ever compares to a live
+scan is display data, not a check, and treating it as a constraint costs real work.
+
+**Run the inversion.** Ask "can the old state still get through?", not only "do the
+guards still pass?" **A relaxation that cannot fail is a deleted test.** For each
+conjunct removed, construct the mutation it used to catch and prove the relaxed
+guard still rejects it. Cover the retirement itself: if a field is being dropped
+from an anchor, assert that re-admitting it fails.
+
+**Prove the harness is testing the patched code.** Commit the patch before writing
+a harness that reverts the tree between cases. `git checkout -- .` reverts an
+uncommitted patch along with each mutation, and every result is then a measurement
+of the unpatched guard. Such a run does not look broken: the positives fail for the
+old reason, and the inversions pass because the stricter old code rejected them.
+Gate the harness on the patch being in effect before the first case and abort if it
+is absent. When a result looks wrong, read the failure *string* first — pre-patch
+wording means the code under test was never loaded.
+
+**Anchor on the meaning, not the coordinate.** A line number, a byte offset, or a
+frozen index standing in for a property is a fact with a shelf life: it is correct
+until someone edits above it, and then it is silently wrong. Where a guard needs to
+identify a site, anchor it on what makes the site that site — recipe, command,
+symbol, obligation — and record the *reason* a constraint holds rather than the
+number it currently evaluates to. "Safe because the only row this moves is projected
+away" survives a renumbering; "safe because 23218 > 23209" does not.
+
+**Report three outcomes from a rejection harness, not two.** `ACCEPTED`,
+`REJECTED (expected assertion)`, and `REJECTED (different assertion)` are three
+different results, and a harness that folds the last two together is unreliable
+rather than merely weak — which of the two it reports depends on whether you
+guessed the message text. Match on exit status for the verdict and on message text
+only to label *which* check fired; never let a substring miss turn a rejection into
+a reported hole. The failure direction is arbitrary: the same bug that raises a
+false alarm can just as easily report a real hole as closed.
+
+The same discipline applies to any probe used as evidence: **prove the mechanism
+moved before reading the outcome.** A probe that could not have failed proves
+nothing, however green it is.
+
 ### Bootstrap seed
 
 `gust_v4.c` is the committed, converged C seed of the self-hosted compiler (see
