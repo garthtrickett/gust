@@ -61,7 +61,19 @@ int os_ArenaAlloc(os_Arena* arena, size_t size) {
     os_Arena_Validate(arena);
     size_t total_size = 8 + 8 + size + 8;
     if (arena->Offset + total_size > arena->Capacity) {
-        printf("Fatal Error: Out of Arena Capacity (exceeded 4GB Limit)!\n");
+        // stderr, flushed, and carrying the numbers. This message used to be a
+        // bare string on stdout via printf; abort() terminates without flushing
+        // stdio and stdout is fully buffered whenever redirected - which every
+        // automated caller does, including make and CI - so the diagnostic the
+        // program had already produced was destroyed on the way out and callers
+        // saw only SIGABRT. The request size and current occupancy distinguish
+        // gradual exhaustion from a single oversized request, which are
+        // different defects with different fixes.
+        fprintf(stderr,
+                "Fatal Error: Out of Arena Capacity: requested %zu bytes, "
+                "%zu of %zu already in use\n",
+                size, (size_t)arena->Offset, (size_t)arena->Capacity);
+        fflush(NULL);
         abort();
     }
     size_t header_offset = arena->Offset;
@@ -80,7 +92,19 @@ int os_ArenaAlloc(os_Arena* arena, size_t size) {
     return (int)(uint32_t)payload_offset;
 #else
     if (arena->Offset + size > arena->Capacity) {
-        printf("Fatal Error: Out of Arena Capacity (exceeded 4GB Limit)!\n");
+        // stderr, flushed, and carrying the numbers. This message used to be a
+        // bare string on stdout via printf; abort() terminates without flushing
+        // stdio and stdout is fully buffered whenever redirected - which every
+        // automated caller does, including make and CI - so the diagnostic the
+        // program had already produced was destroyed on the way out and callers
+        // saw only SIGABRT. The request size and current occupancy distinguish
+        // gradual exhaustion from a single oversized request, which are
+        // different defects with different fixes.
+        fprintf(stderr,
+                "Fatal Error: Out of Arena Capacity: requested %zu bytes, "
+                "%zu of %zu already in use\n",
+                size, (size_t)arena->Offset, (size_t)arena->Capacity);
+        fflush(NULL);
         abort();
     }
     size_t assigned_offset = arena->Offset;
