@@ -196,6 +196,53 @@ def s1_8_transition(registry: dict) -> tuple[dict, str] | None:
     return successor, module.s1_8_state(value)
 
 
+def s1_11_removal_successor(registry: dict) -> dict | None:
+    """CR-21: the only successor in this chain that REMOVES call sites.
+
+    Every predecessor adds one and computes current = previous + [added], so a
+    migration that retires a transitional test had no mechanism at all. This is
+    that mechanism, kept to the same shape: previous_* retains the pinned state
+    so nothing is forgotten, and anything partial, extra or substituted rejects.
+    """
+    successor = registry.get("phase24_cr15_opening", {}).get(
+        "stdlib_guard_transition", {}).get("s1_11_raw_mutex_removal_successor")
+    if not isinstance(successor, dict):
+        return None
+    require(successor.get("contract_version") ==
+            "phase24_s1_11_raw_mutex_removal_v1" and
+            successor.get("partial_extra_or_substituted_call_site") ==
+            "rejected" and
+            successor.get("safe_raw_calls_added") == 0 and
+            isinstance(successor.get("removed_call_site"), dict),
+            "S1.11 raw Mutex removal successor drifted")
+    removed = successor["removed_call_site"]
+    require(sorted(removed) == ["lock_calls", "path", "role", "unlock_calls"],
+            "S1.11 removed call site shape drifted")
+    previous = successor["previous_totals"]
+    current = successor["current_totals"]
+    # The removal must account for exactly the removed site and nothing else,
+    # so a hand-edited total cannot quietly retire a second file.
+    require(current == {
+        "lock_calls": previous["lock_calls"] - removed["lock_calls"],
+        "unlock_calls": previous["unlock_calls"] - removed["unlock_calls"],
+        "calls": previous["calls"] - removed["lock_calls"] -
+        removed["unlock_calls"],
+    }, "S1.11 removal totals do not account for exactly the removed site")
+    require(removed["path"] in successor["previous_transitional_test_coverage"],
+            "S1.11 removed a call site that was never transitional")
+    require(successor["current_transitional_test_coverage"] ==
+            [path for path in successor["previous_transitional_test_coverage"]
+             if path != removed["path"]],
+            "S1.11 transitional coverage does not drop exactly the migrated "
+            "test")
+    # Patch S1.10's without-guard baseline asserts 300 and must survive. An
+    # empty transitional set would mean the baseline was migrated too.
+    require(successor["current_transitional_test_coverage"],
+            "S1.11 emptied the transitional raw Mutex set; the S1.10 baseline "
+            "must remain")
+    return successor
+
+
 def validate() -> tuple[dict, list[MethodCall]]:
     scanner_self_test()
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
@@ -280,6 +327,44 @@ def validate() -> tuple[dict, list[MethodCall]]:
             expected_total_lock_calls = raw["current_totals"]["lock_calls"]
             expected_total_unlock_calls = raw["current_totals"]["unlock_calls"]
             expected_total_calls = raw["current_totals"]["calls"]
+    frozen_coverage = [
+        "tests/e2e_mutex_concurrency.gst",
+        "tests/e2e_sync_primitives.gst",
+    ]
+    expected_coverage = frozen_coverage
+    s1_11 = s1_11_removal_successor(registry)
+    if s1_11 is not None:
+        removed = s1_11["removed_call_site"]
+        require(s1_11["previous_totals"] == {
+            "lock_calls": expected_total_lock_calls,
+            "unlock_calls": expected_total_unlock_calls,
+            "calls": expected_total_calls,
+        }, "S1.11 raw Mutex predecessor totals drifted")
+        require(s1_11["previous_transitional_test_coverage"] ==
+                frozen_coverage,
+                "S1.11 transitional predecessor coverage drifted")
+        require(any(row["path"] == removed["path"] and
+                    row["lock_calls"] == removed["lock_calls"] and
+                    row["unlock_calls"] == removed["unlock_calls"]
+                    for row in expected_call_sites),
+                "S1.11 removed a call site the contract does not pin")
+        # Two registered states, because the registry row lands in the
+        # Cranelift patch and the source edit lands in the Stdlib patch. Main
+        # is valid holding either; anything between them is drift.
+        live_row = actual.get(removed["path"])
+        pinned_row = {"Lock": removed["lock_calls"],
+                      "Unlock": removed["unlock_calls"]}
+        require(live_row == pinned_row or live_row is None,
+                "S1.11 migrated raw Mutex site is partial or substituted: "
+                f"{removed['path']}={live_row!r}")
+        if live_row is None:
+            expected_call_sites = [row for row in expected_call_sites
+                                   if row["path"] != removed["path"]]
+            expected_total_lock_calls = s1_11["current_totals"]["lock_calls"]
+            expected_total_unlock_calls = \
+                s1_11["current_totals"]["unlock_calls"]
+            expected_total_calls = s1_11["current_totals"]["calls"]
+            expected_coverage = s1_11["current_transitional_test_coverage"]
     expected = {
         row["path"]: {"Lock": row["lock_calls"],
                       "Unlock": row["unlock_calls"]}
@@ -299,10 +384,18 @@ def validate() -> tuple[dict, list[MethodCall]]:
             "raw Mutex Unlock inventory drifted")
     require(len(calls) == expected_total_calls,
             "raw Mutex total call inventory drifted")
-    require(authority.get("transitional_test_coverage") == [
-        "tests/e2e_mutex_concurrency.gst",
-        "tests/e2e_sync_primitives.gst",
-    ], "transitional raw Mutex test classification drifted")
+    # The frozen authority record never changes; what a migration moves is the
+    # EFFECTIVE set. Comparing the effective set against the live inventory is
+    # what makes the removal mechanism non-optional: migrating a transitional
+    # test without registering the removal leaves the effective set naming a
+    # file that carries no raw calls, and that fails here.
+    require(authority.get("transitional_test_coverage") == frozen_coverage,
+            "transitional raw Mutex test classification drifted")
+    require(expected_coverage ==
+            [path for path in frozen_coverage if path in actual],
+            "the effective transitional raw Mutex set does not match the live "
+            "inventory; a transitional test was migrated without a registered "
+            "removal, or a registered removal did not happen")
 
     typechecker = TYPECHECKER.read_text(encoding="utf-8")
     codegen = CODEGEN.read_text(encoding="utf-8")
