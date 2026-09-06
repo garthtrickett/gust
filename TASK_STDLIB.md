@@ -385,7 +385,7 @@ function without touching a Cranelift-owned file.
 Phase S1 as scoped needs no new `std.*` symbol. The protocol exists so that the
 first patch which does need one already knows the answer.
 
-### CR-6 — The borrow model, or a restatement of it
+### CR-6 — The borrow model, or a restatement of it — **DEFERRED to Phase 26.1, 2026-09-06**
 
 1. **Intended behaviour:** `&T[ctx]` is a shared immutable borrow; `inout T[ctx]`
    is exclusive mutation; shared mutable references are rejected. That is what
@@ -412,6 +412,21 @@ corrected to match. Enforcement is deferred and unscheduled — it is a containm
 property, so taking it up later needs a design decision and real enforcement, not
 a wording change. Nothing in the Stdlib lane waits on it, and S1.3 shipped
 without it.
+
+**Deferred 2026-09-06 to Phase 26.1, with a named owning phase.** The
+documentation half was resolved 2026-08-19; what remained was enforcement, which
+was recorded as "deferred and unscheduled" and therefore had no owner. Phase 26
+is "Systems safety, resources, and implicit context", and 26.1 is its containment
+increment — gated raw pointers, non-laundering provenance, explicit FFI. That is
+where restricting mutation through `&T` and enforcing non-aliasing belongs. It is
+not 26.2, which is generalized linear-resource semantics and a different concern.
+
+Corroboration rather than assertion: `docs/VISION.md`'s OD-9 row already names
+`TASK_STDLIB.md` CR-6 as blocked-on evidence, so the dependency is recorded in
+the register independently of this deferral.
+
+Deferral with a named owner is a terminal state under the Phase S1 closure gate.
+It is not resolution, and nothing here decides the borrow model.
 
 ### CR-5 — Generic resource semantics sufficient for a scoped guard — **RESOLVED 2026-08-24**
 
@@ -486,7 +501,7 @@ semantics: the selected reusable `MutexGuard[T, ctx]` module surface requires a
 generic function shape which OD-2 deliberately excludes. That narrower current
 gap is CR-15.
 
-### CR-7 — No roadmap owns the demo deliverable
+### CR-7 — No roadmap owns the demo deliverable — **RESOLVED 2026-09-06**
 
 1. **Intended behaviour:** `VISION.md` §0.7 names four Track A items — `uses`
    clauses, effect checking across the call graph, typed Postgres query
@@ -516,6 +531,19 @@ Testing OD-9 before that is fixed measures the wrong thing.
 
 This CR carries no authorization. It exists so that "the demo is unowned" is
 recorded somewhere a lane will read, rather than rediscovered per agent.
+
+**Resolved 2026-09-06 by operator ruling.** Track A gets a real roadmap as a
+named owner, **kept idle**, with an explicit activation trigger: it activates
+when demo prerequisite rows 2, 5 and 9 have *named owners* and row 10 is
+scheduled.
+
+This closes the CR as *owned*, not as *done*. The scheduling gap it existed to
+record — that `VISION.md` §0.7's four Track A items had no lane and no patch
+sequence — is closed by the roadmap existing and having an owner. The items
+themselves remain undelivered, and this CR makes no claim otherwise.
+
+The roadmap is **`TASK_TRACK_A.md`**, published as PR #351 — inactive, with the
+activation trigger written into it.
 
 ### CR-8 — Concurrency is detached, which is the rejected model
 
@@ -554,7 +582,22 @@ This is a report, not a patch. Nothing in Phase S1 is blocked on it. It is filed
 because the gap between §20 and `std.Spawn` is invisible from either roadmap:
 §20 reads as though it describes the implementation, and it does not.
 
-### CR-9 — OD-3 was decided by implementation
+**Narrowed 2026-09-06 by the OD-1 ruling.** `docs/VISION.md` records **OD-1 as
+RESOLVED — transparent suspension**, with the *"unless a fatal blocker is hit"*
+escape removed. The commitment is now firm, so this CR no longer tracks
+**whether** suspension is transparent — only **how** the current detached
+`std.Spawn` surface is reconciled with it.
+
+**OD-4 became load-bearing as a result.** With the escape clause gone, OD-4's
+WASM stack-switching payload cost is the only remaining route by which the
+transparent-suspension commitment could be found unaffordable. That makes OD-4 a
+dependency of this CR's eventual answer rather than an independent question, and
+it is worth knowing before anyone schedules the reconciliation.
+
+Ownership is unchanged: Cranelift lane, per `docs/SHARED_SEMANTIC_ZONE.md`. The
+Stdlib lane still must not add a scope-like wrapper over `std.Spawn`.
+
+### CR-9 — OD-3 was decided by implementation — **RESOLVED 2026-09-06**
 
 1. **Intended behaviour:** `VISION.md` §27 marks shared ownership an open
    decision (OD-3) and says Gust "may provide" an explicit compiler-owned
@@ -577,6 +620,21 @@ because the gap between §20 and `std.Spawn` is invisible from either roadmap:
 
 Precedent: CR-6 was resolved the same way — `VISION.md` §26 described a borrow
 model that was never implemented and was corrected to the one that exists.
+
+**Resolved 2026-09-06 by the OD-3 ruling.** `docs/VISION.md` records **OD-3 as
+RESOLVED — ratify what shipped**: `std.Rc` is the answer for shared ownership,
+and the register was catching up to the implementation rather than the
+implementation pre-empting the register.
+
+That removes the discrepancy this CR existed to record. CR-9 reported that an
+open decision had a shipped implementation — `std.Rc`, `std.RcNew` and
+`std.RcNode` were already registered names while §27 still marked shared
+ownership open. With OD-3 ratified there is no longer a discrepancy to track.
+
+In consequence `docs/ONE_WAY_LEDGER.md` row 17 moved **VIOLATED → DEFERRED**, and
+the ledger's stated and measured counts now agree exactly: 10 HOLDS, 9 PARTIAL,
+6 VIOLATED, 2 DEFERRED, 18 ABSENT. Neither document is edited by this lane; both
+are cited as landed.
 
 ### CR-5 and CR-10 shared one absent primitive — **RESOLVED 2026-08-24**
 
@@ -808,6 +866,157 @@ generic, backend-neutral derivation authority is merged and its post-merge
 handoff is effective. S1.8 consumes the selected surface; arbitrary generic
 functions, backend-specific lowering, and Mutex-spelling authority remain
 outside the accepted contract.
+
+### CR-16 — Register the S1.9 raw double-unlock call site
+
+1. **Intended behaviour:** the Stdlib lane can ship a compile-fail fixture
+   containing an explicit-`unsafe` raw `mutex.Unlock()`, so S1.9's raw
+   double-unlock limitation is pinned by a fixture rather than by prose alone.
+2. **Existing limitation:** `guard-cranelift-phase20-unsafe-mutex-migration-contract`
+   pins the exact set of raw `Mutex` call sites and their per-file counts. The
+   fixture is an unregistered site, so the contract reports drift.
+3. **Smallest generic change:** one nested successor of the shape S1.8 already
+   received, adding `tests/stdlib_s1_mutex_guard_scope_raw_double_unlock.gst`
+   with `{lock_calls: 0, unlock_calls: 1}`.
+4. **Affected:** `scripts/cranelift_feature_registry.json` only. Cranelift-owned;
+   this lane changed none of it.
+5. **MIR-to-C:** none. 6. **Cranelift:** theirs, because the registry is.
+   7. **Bootstrap:** none.
+
+**Totals re-derived against `0fcfdfe1`, 2026-09-06 — and they are unchanged.**
+The live inventory is still `{lock 17, unlock 17, calls 34}` and the contract
+validates clean.
+
+**Why, since "use the older figures" otherwise reads as an oversight.** The two
+halves of one change land in *different patches*: CR-21's registry row merged as
+Patch 24.3e, while S1.11's **source** migration is held in PR #348, kept red on
+purpose as the only live reproduction of CR-19. The registry has therefore run
+*ahead* of the live tree, and the removal has not taken effect on disk.
+
+**Use `{17,17,34}` as the predecessor until #348 merges; it becomes `{13,13,26}`
+only then.** Registering against the post-migration figures today would be wrong.
+This is stated as an **event** rather than a value deliberately — a value goes
+stale silently, whereas "when #348 merges" names the moment the answer changes.
+
+The open question raised when filing is **answered**: the contract carries no
+implicit balance expectation. `compiler/phase20_mutex_lock_safe_invalid.gst` is
+already `L1 U0` and `compiler/phase20_mutex_unlock_safe_invalid.gst` is `L0 U1`,
+so a deliberately unbalanced row has precedent.
+
+The limitation itself is fully documented in `docs/STDLIB_MUTEX_GUARD_SCOPE.md`;
+only its pinning fixture is deferred. The fixture is preserved **outside the
+repository**, because the contract counts untracked files on disk.
+
+### CR-17 — Superseded by CR-18
+
+Filed when ~20 guards pinned the `justfile` and an invocation inventory as exact
+whole-surface states. Superseded the same day by CR-18, which established the
+general claim with a second, distinct mechanism. **One correction is preserved
+rather than dropped:** CR-17 counted 20 failures as the class. **19 were.**
+`Stdlib S1 Resource Prerequisites` was Stdlib-owned and a genuine defect in that
+patch — `guard-stdlib-s1-resource-prerequisites` hardcoded `- [ ] Patch S1.9` and
+so rejected its own lane's completed work with a silent exit 1.
+
+### CR-18 — The pinned-manifest class — **RESOLVED 2026-09-05 by Patch 24.2p**
+
+Established that the Stdlib lane could not publish work of **any** shape — not
+code, not a recipe, not a fixture, not a documentation sentence — via two
+distinct mechanisms: explicit path pins on the `justfile` and invocation
+inventory, and **content-pattern pins** that enrolled any file merely mentioning
+MIR-to-C and stored a whole-file digest of it. Two minimal, correct,
+structurally unlandable PRs were the reproductions.
+
+Retired as a class rather than one guard at a time: 578 pinned manifest rows
+across 2377 tracked files, three mechanisms. **One piece of its evidence is
+withdrawn as vacuous:** "zero drift across all fifteen `cross_lane_relay` sites"
+was true but meaningless, because those coordinates are never compared to a live
+scan. The conclusion stands on the other two grounds.
+
+### CR-19 — Multi-module programs are never analysed and answer `supported`
+
+1. **Intended behaviour:** a program the native route cannot lower is classified
+   deferred with an `unsupported_native_capability` diagnostic, uniformly.
+2. **Existing limitation:** `mir_native_parameter_argument_scan_deferred` bails
+   before examining anything when a program is multi-module, returning an empty
+   model that reads downstream as `supported`. The program then fails canonical
+   MIR verification instead of deferring.
+3. **Smallest generic change:** the bail-out clause must handle multi-module
+   programs. **A conjunction over all functions does not work** — see below.
+4. **Affected:** the generic native capability planner. Cranelift-owned.
+5. **MIR-to-C:** unaffected. 6. **Cranelift:** theirs. 7. **Bootstrap:** none.
+
+**A rejected fix, kept because the reasoning is instructive.** This CR originally
+proposed making the capability decision "the conjunction over every function
+reaching full-program lowering". That is **wrong**: the scan is *existential*, so
+a conjunction is strictly weaker — it would require every function to defer, and
+the guard helpers legitimately do not. The existing loop would have found the
+deferring function if it had run at all. Implementing the proposal as filed would
+have produced a green guard for the wrong reason.
+
+**The wrong answer is not "this lowers fine" — it is "I did not look", reported
+in the shape of an answer.** A monotonicity argument settles it without reading
+any lowering: S1.11's migration only *added* functions and left every
+pre-existing signature byte-identical, and an existential scan over a superset
+cannot flip `deferred` → `supported`.
+
+**Measured population:** of 98 multi-module cases, 95 compile successfully today,
+**2 are genuinely misclassified**, 0 fail with a real deferral reason. The two are
+`tests/e2e_sync_primitives.gst` and `compiler/typechecker_origins_test_entry.gst`
+— the latter already carrying a per-file carve-out in
+`phase21_complete_guard_suite.py` for exactly this shape. **That carve-out was
+concealing the only other instance in the corpus**, so it hid the population size
+rather than merely papering over one case.
+
+**Scheduled to Phase 24 closure alongside Patch 24.3b**, and phase-sized for a
+reason that is not blast radius: `typechecker_origins_test_entry.gst` has a
+single parameterless `main()`, so the parameter scan cannot defer it under any
+repair of the bail-out. Fixing the bail-out alone would fix one instance, leave
+the other untouched, and keep its carve-out load-bearing — closing the ticket
+while resolving half the defect.
+
+**Blocking.** Filed non-blocking against S1.10, which recorded the Cranelift fiber
+route as deferred coverage and did not need it. S1.11 migrates a file whose
+deferral stage is *pinned* by Phase 21, so the misclassification now has a
+consumer. PR #348 is held open and red as the only live evidence.
+
+### CR-20 — A line number used as a proxy for a location — **RESOLVED 2026-09-06 by Patch 24.3c**
+
+The Phase 22 relay site was pinned by absolute line number in a living file, so
+any insertion above it — including in an unrelated recipe — registered as drift.
+S1.10 could not publish, because it *must* edit
+`guard-stdlib-s1-resource-prerequisites` (which pinned `- [ ] Patch S1.10`) and
+editing it shifted the pinned site. Two requirements, individually reasonable,
+jointly impossible.
+
+Re-anchored on **recipe + command**. A line-neutral workaround was written,
+verified green, and **rejected**: it bought one patch by re-arming the trap for
+S1.11, and purchased line-neutrality by deleting the comment that stops someone
+tidying the guard back into a state pin.
+
+**Working constraint recorded, because the number was twice mislabelled:** the
+highest *ordinary* stored invocation row is **23176**. The higher values — 23258,
+23270, 23285 — belong to the relay chain, which is immunized by the projection.
+State the mechanism, not the number: *the only invocation row an edit moves is
+the relay row, whose line is projected away before hashing.*
+
+### CR-21 — Register the S1.11 raw-Mutex migration — **RESOLVED 2026-09-06 by Patch 24.3e**
+
+S1.11 converts a transitional raw-Mutex test to the scoped guard, which
+necessarily changes the pinned inventory. Established by enumeration **before
+writing**: exactly nine files contain a raw `Lock`/`Unlock`, all nine were
+already registered call sites, and there is no `examples/` directory — so no
+unpinned candidate existed.
+
+Registered as a removal successor: `tests/e2e_sync_primitives.gst` `L4 U4` →
+absent, totals `{17,17,34}` → `{13,13,26}`, transitional coverage two → one. The
+guard now accepts exactly two states — the file at its pinned counts, or absent.
+
+**Two facts worth carrying:** a `transitional_test_coverage` list that reads as
+registry data is enforced against a **hardcoded literal** in
+`phase20_unsafe_mutex_migration.py`; and an inversion showed the guard *accepted*
+an absent successor with a migrated source, which was fixed by hoisting the
+effective-set check. The removal has **not** taken effect on disk, because the
+source migration is held in PR #348.
 
 ## Verification Policy
 
