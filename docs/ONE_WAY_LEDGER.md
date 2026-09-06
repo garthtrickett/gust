@@ -81,7 +81,7 @@ when the backend does.
 | 14 | Mutation | One reference form, `&T[ctx]`, which carries no mutability | *(restricting mutation through references: withdrawn, unscheduled)* | **DEFERRED** — E6 |
 | 15 | Cleanup | `defer`, LIFO, plus registered destructors | manual close; finalizers; fallible destructors | **PARTIAL** — E7 |
 | 16 | Resources | Linear, propagating transitively | ad-hoc handle discipline | **PARTIAL** — E7 |
-| 17 | Shared ownership | Decided case-by-case; open as OD-3 | unrestricted interior mutability | **VIOLATED** — E8 |
+| 17 | Shared ownership | *(case-by-case shared ownership: ratified as `std.Rc`, OD-3 resolved 2026-09-06)* | unrestricted interior mutability | **DEFERRED** — E8 |
 | 18 | Suspension | Transparent; no function colouring | coloured `async`; Promises; raw futures | **ABSENT** — OD-1 direction set 2026-08-20, E9 |
 | 19 | Concurrency | Structured scopes, owned tasks, linear handles | detached spawn; actors as universal model | **VIOLATED** — E9 |
 | 20 | Background work | Supervisor (long-lived) / job (durable) | fire-and-forget in request code | **ABSENT** — E16 |
@@ -111,7 +111,7 @@ when the backend does.
 | 43 | Editions | Source compatibility within an edition; editions are the controlled escape hatch | silent meaning changes | **ABSENT** — E25 |
 | 44 | Opacity | A value can be made unprintable and unloggable by its type | secrets leaking into logs and errors | **ABSENT** — E26 |
 
-Counts: 10 `HOLDS`, 9 `PARTIAL`, 7 `VIOLATED`, 1 `DEFERRED`, 18 `ABSENT`.
+Counts: 10 `HOLDS`, 9 `PARTIAL`, 6 `VIOLATED`, 2 `DEFERRED`, 18 `ABSENT`.
 
 **Compliance: 10 of 45 rules implemented and enforced — 22%.** Counted at
 `eb6b6cf2`, 2026-09-06. Prior figure: none recorded; this is the first stamped
@@ -139,7 +139,7 @@ evidence.
 | Row | Rule | Status | Owner |
 | --- | --- | --- | --- |
 | 6 | Panic scope | VIOLATED | `TASK_STDLIB.md` CR-3, issue #91 — unscheduled |
-| 17 | Shared ownership | VIOLATED | `TASK_STDLIB.md` CR-9 — new |
+| 17 | Shared ownership | DEFERRED | `TASK_STDLIB.md` CR-9 — **resolved** by the OD-3 ratification, 2026-09-06 |
 | 19 | Concurrency | VIOLATED | `TASK_STDLIB.md` CR-8, issue #101 — new |
 | 33 | Channel ownership | VIOLATED | issue #101 — same root cause |
 | 34 | Host access | VIOLATED | unowned — closes with §0.7 Track A |
@@ -147,9 +147,16 @@ evidence.
 | 45 | One spelling of absence | VIOLATED | `docs/PHASES_26_AND_27.md` Phase 26.4 — after the C-retirement tail |
 | 14 | Mutation | DEFERRED | `TASK_STDLIB.md` CR-6 — rule withdrawn, unscheduled |
 
-Six of the seven violations have a written coordination owner; host access is
-unowned, and mutation was withdrawn rather than left as an unowned violation.
-None of those rows is currently scheduled. Brand identity is no longer in this
+Five of the six violations have a written coordination owner; host access is
+unowned, and mutation and shared ownership were withdrawn rather than left as
+violations. None of those rows is currently scheduled.
+
+**Row 17 moved `VIOLATED` → `DEFERRED` on 2026-09-06**, following the operator's
+OD-3 ruling to ratify what shipped: `std.Rc` is the answer, so the rule was
+withdrawn from `docs/VISION.md` to match the implementation — which is precisely
+this vocabulary's definition of `DEFERRED` rather than a defect going unfixed.
+`docs/VISION.md` moved first; this file followed, because the register is
+authoritative for *what the rule is* and this one for *whether it holds*. Brand identity is no longer in this
 table: Phase 19 closed D-1, while the narrower CR-11 and CR-12 defects remain
 captured by row 36's `PARTIAL` score.
 
