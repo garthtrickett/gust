@@ -1344,10 +1344,21 @@ def relay_site_anchor(registry: dict) -> dict:
     """Patch 24.3c: the contract for anchoring the relay site without a coordinate.
 
     Carries the reachability boundary as a tripwire. Layer 1 - this re-anchor -
-    is sufficient ONLY for an edit below `highest_invocation_row_line`, which is
-    where every Stdlib guard recipe and every end-of-file append lives. An edit
-    ABOVE it moves other invocation rows and reaches a further five comparison
-    sites and two generated reviews, none of which this patch touches.
+    is sufficient ONLY for an edit below `highest_ordinary_invocation_row_line`,
+    which is where every Stdlib guard recipe and every end-of-file append lives.
+    An edit ABOVE it moves other invocation rows and reaches a further five
+    comparison sites and two generated reviews, none of which this patch touches.
+
+    Patch 24.3d: scope against `highest_ordinary_invocation_row_line` (23176),
+    NOT `highest_invocation_row_line` (23258). The latter names the relay row -
+    the one row this contract immunizes by projecting its line away before the
+    invocation manifest is hashed - so it over-restricts by 82 lines. Both
+    over-restrict and neither under-protects, so nothing was ever wrongly
+    admitted; the 24.3c value carried the wrong label, not a wrong number.
+
+    The ordering below is the inversion: a tree that swaps the two values, or
+    drops the ordinary boundary, is rejected rather than silently scoped against
+    the relay coordinate again.
     """
     contract = pinned_manifest_class_contract(registry)
     anchor = contract.get("relay_site_anchor")
@@ -1357,8 +1368,18 @@ def relay_site_anchor(registry: dict) -> dict:
             anchor.get("rejected_selection") == "implicit_default" and
             anchor.get("drifted_site") == "rejected" and
             isinstance(anchor.get("highest_invocation_row_line"), int) and
+            isinstance(anchor.get("highest_ordinary_invocation_row_line"), int) and
             bool(anchor.get("unretired_coordinates_owner")),
             "relay site anchor contract drifted")
+    # Patch 24.3d. The ordinary boundary is the live constraint and the relay
+    # coordinate is the immunized row above it, so ordinary < relay is what
+    # makes the pair mean anything. Swapping them would scope every future edit
+    # against the relay row again - the exact conflation this patch corrects -
+    # and would do it silently, because both values would still be ints.
+    require(anchor["highest_ordinary_invocation_row_line"] <
+            anchor["highest_invocation_row_line"],
+            "relay site anchor boundary pair is inverted: the ordinary "
+            "invocation row must sit above the immunized relay row")
     require(anchor.get("anchor_fields") ==
             ["path", "recipe", "compiler_token", "command", "selection"],
             "relay site anchor fields drifted")
