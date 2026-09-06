@@ -113,6 +113,24 @@ when the backend does.
 
 Counts: 10 `HOLDS`, 9 `PARTIAL`, 7 `VIOLATED`, 1 `DEFERRED`, 18 `ABSENT`.
 
+**Compliance: 10 of 45 rules implemented and enforced — 22%.** Counted at
+`eb6b6cf2`, 2026-09-06. Prior figure: none recorded; this is the first stamped
+reading, and the next phase closure should record its own beside it so the
+direction of travel is visible and not only the level.
+
+Reproduction, and a trap in it:
+
+```
+sed '20,30d' docs/ONE_WAY_LEDGER.md \
+  | grep -oE '\*\*(HOLDS|PARTIAL|VIOLATED|ABSENT|DEFERRED)\*\*' | sort | uniq -c
+```
+
+The `sed` is not optional. Grepping the whole file counts the **Status
+vocabulary** legend as five extra rows and reports 11/50 instead of 10/45 — one
+inflated row per status. An external review made exactly that error on
+2026-09-06 and also read the table above as absent, proposing that both be
+created. Both already existed at the commit it was pinned to.
+
 Row 27 remains the declared implementation priority. The active Phase 20
 roadmap continues that backend work and separately schedules the CR-11 and CR-12
 defects that limit row 36; an activated roadmap is direction, not completed
