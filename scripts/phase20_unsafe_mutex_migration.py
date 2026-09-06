@@ -365,6 +365,19 @@ def validate() -> tuple[dict, list[MethodCall]]:
                 s1_11["current_totals"]["unlock_calls"]
             expected_total_calls = s1_11["current_totals"]["calls"]
             expected_coverage = s1_11["current_transitional_test_coverage"]
+    # Ordered BEFORE the call-site comparison deliberately. That comparison
+    # already rejects this state, so this require was dead where it first sat -
+    # reachable in principle, shadowed in practice, the same shape as the
+    # unreachable re-admission check recorded against #344. It is hoisted rather
+    # than deleted because the shadowing assertion reports "classification
+    # drifted" and dumps the whole inventory, while this one names the cause and
+    # the remedy for the state most likely to occur: the Stdlib migration
+    # landing before, or without, the registry row registered here.
+    require(expected_coverage ==
+            [path for path in frozen_coverage if path in actual],
+            "the effective transitional raw Mutex set does not match the live "
+            "inventory; a transitional test was migrated without a registered "
+            "removal, or a registered removal did not happen")
     expected = {
         row["path"]: {"Lock": row["lock_calls"],
                       "Unlock": row["unlock_calls"]}
@@ -391,11 +404,6 @@ def validate() -> tuple[dict, list[MethodCall]]:
     # file that carries no raw calls, and that fails here.
     require(authority.get("transitional_test_coverage") == frozen_coverage,
             "transitional raw Mutex test classification drifted")
-    require(expected_coverage ==
-            [path for path in frozen_coverage if path in actual],
-            "the effective transitional raw Mutex set does not match the live "
-            "inventory; a transitional test was migrated without a registered "
-            "removal, or a registered removal did not happen")
 
     typechecker = TYPECHECKER.read_text(encoding="utf-8")
     codegen = CODEGEN.read_text(encoding="utf-8")
