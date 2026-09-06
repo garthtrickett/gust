@@ -1340,6 +1340,33 @@ def drop_class_appended_invocations(
     return kept
 
 
+def relay_site_anchor(registry: dict) -> dict:
+    """Patch 24.3c: the contract for anchoring the relay site without a coordinate.
+
+    Carries the reachability boundary as a tripwire. Layer 1 - this re-anchor -
+    is sufficient ONLY for an edit below `highest_invocation_row_line`, which is
+    where every Stdlib guard recipe and every end-of-file append lives. An edit
+    ABOVE it moves other invocation rows and reaches a further five comparison
+    sites and two generated reviews, none of which this patch touches.
+    """
+    contract = pinned_manifest_class_contract(registry)
+    anchor = contract.get("relay_site_anchor")
+    require(isinstance(anchor, dict), "relay site anchor contract is missing")
+    require(anchor.get("contract_version") == "phase24_3c_relay_site_anchor_v1" and
+            anchor.get("retired_anchor_field") == "line" and
+            anchor.get("rejected_selection") == "implicit_default" and
+            anchor.get("drifted_site") == "rejected" and
+            isinstance(anchor.get("highest_invocation_row_line"), int) and
+            bool(anchor.get("unretired_coordinates_owner")),
+            "relay site anchor contract drifted")
+    require(anchor.get("anchor_fields") ==
+            ["path", "recipe", "compiler_token", "command", "selection"],
+            "relay site anchor fields drifted")
+    require("line" not in anchor["anchor_fields"],
+            "the retired coordinate was re-admitted as an anchor field")
+    return anchor
+
+
 def normalize_phase22_invocations(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Project the exact post relay onto the closed Phase 22 site identity."""
@@ -1347,12 +1374,7 @@ def normalize_phase22_invocations(
     value = authority(registry)
     state = live_state(registry)
     site = value["changed_site"]
-    line_key = ("pre_relay_line" if state == "pre_relay"
-                else "post_relay_line")
-    expected_line = site[line_key]
-    if state == "s1_8_successor":
-        expected_line = s1_8_successor(value)[
-            "phase22_invocation_transition"]["post_line"]
+    anchor = relay_site_anchor(registry)
     matches = [
         row for row in rows
         if row.get("path") == site["path"] and
@@ -1361,10 +1383,23 @@ def normalize_phase22_invocations(
     ]
     require(len(matches) == 1, "relay site is missing, duplicated, or substituted")
     match = matches[0]
-    require(match.get("line") == expected_line and
-            match.get("selection") == site["selection"] and
-            match.get("command") == site["command"],
-            "relay site command, route, or location drifted")
+    # Patch 24.3c: anchor on what the pin MEANS - the recipe that owns the site
+    # and the exact command it runs - rather than on where it happens to sit.
+    # `line` was an absolute coordinate used as a proxy for a location, so it
+    # broke on any insertion above it, including one in an unrelated recipe:
+    # Stdlib S1.10 could not edit its own guard recipe without failing seven
+    # guards, all reporting this one assertion. recipe + command + selection is
+    # what the check was always trying to say, and the evidence is that it is
+    # stable across exactly the edit that moved the coordinate.
+    require(match.get("command") == site["command"] and
+            match.get("selection") == site["selection"],
+            "relay site command or route drifted")
+    # The no-fallback guarantee, asserted rather than left implied. Relaxing this
+    # manifest is lane work ONLY while it never admits an implicit_default
+    # invocation, so that condition is a check rather than a promise in prose.
+    require(site["selection"] != anchor["rejected_selection"] and
+            match.get("selection") != anchor["rejected_selection"],
+            "relay site would admit an implicit_default invocation")
     normalized = copy.deepcopy(rows)
     target = next(
         row for row in normalized
@@ -1372,6 +1407,15 @@ def normalize_phase22_invocations(
         row.get("recipe") == site["recipe"] and
         row.get("compiler_token") == site["compiler_token"]
     )
+    # KEEP THIS. It projects this row's live line onto the frozen coordinate
+    # before the invocation manifest is hashed, which is why re-anchoring above
+    # does not move invocation_manifest_digest for this row.
+    #
+    # It immunizes EXACTLY ONE ROW. Measured, because an earlier reading of this
+    # line claimed the digest was immunized in general and that is false: a
+    # justfile edit above other invocations still moves the digest
+    # (f27c56c4... -> aaaf12d4...). Retiring the remaining coordinates is
+    # Patch 24.3b's; see relay_site_anchor.unretired_coordinates_owner.
     target["line"] = site["pre_relay_line"]
     characterization = registry.get(
         "phase24_filename_behavior_characterization", {})

@@ -8109,6 +8109,41 @@
         }
        ],
        "appended_document_marker_removal": "rejected",
+       "relay_site_anchor": {
+        "contract_version": "phase24_3c_relay_site_anchor_v1",
+        "status": "patch24_3c_line_coordinate_retirement",
+        "anchor_fields": [
+         "path",
+         "recipe",
+         "compiler_token",
+         "command",
+         "selection"
+        ],
+        "retired_anchor_field": "line",
+        "retired_reason": "an absolute line number used as a proxy for a location. The relay site's recipe, command, compiler token and explicit route were all unchanged by Stdlib S1.10; only the coordinate moved, and that broke seven guards through this single assertion. A coordinate is not what the pin means - the site is identified by the recipe that owns it and the command it runs, and those are stable across exactly the edit that moved the line. This is a RE-ANCHOR, not a relaxation: the surviving conjuncts are strictly the ones that carry the guarantee.",
+        "rejected_selection": "implicit_default",
+        "rejected_selection_reason": "the relay manifest guards the no-fallback guarantee under the Level-3 launch claim in docs/CRANELIFT_LAUNCH.md. Re-anchoring is lane work ONLY while it never admits an implicit_default invocation; admitting one would trade away that guarantee and is the operator's call, not this lane's. Asserted here so the condition cannot drift silently: the site keeps selection explicit_c and its --backend mir-to-c command verbatim.",
+        "line_projection": "target_line_set_to_pre_relay_line_before_hashing",
+        "line_projection_scope": "exactly_one_row",
+        "line_projection_reason": "KEEP the projection. It is why re-anchoring does not move invocation_manifest_digest for the relay row. It immunizes ONE row and no more - measured, f27c56c4 -> aaaf12d4 for a justfile edit above other invocations. An earlier reading of this code claimed the digest was immunized in general; that claim was wrong in scope and is recorded here so it is not repeated.",
+        "highest_invocation_row_line": 23258,
+        "highest_invocation_row_reason": "THE TRIPWIRE. 23258 is the highest line among all 59 justfile invocation rows in a 24094-line file. An edit BELOW it moves no invocation row, so this re-anchor is sufficient. An edit ABOVE it moves other rows and reaches five further comparison sites plus two generated reviews that render coordinates. Every Stdlib guard recipe and every end-of-file append is below the boundary, which is why layer 1 covers the whole class of Stdlib edits rather than one patch. If you are editing the justfile above this line and a guard fails on a digest or a stale review, that is the unretired remainder, not a regression in this patch.",
+        "unretired_coordinates_owner": "24.3b",
+        "unretired_comparison_sites": [
+         "scripts/phase23_mir_to_c_deprecation_opening.py inventory equality carrying invocation_manifest_digest",
+         "scripts/phase23_mir_to_c_frozen_surface.py Patch 24.0c current_live_c_case_surface",
+         "scripts/phase23_mir_to_c_frozen_surface.py policy_accepts registered frozen surface",
+         "scripts/phase23_cross_feature_qualification.py its own Patch 24.0c current_live_c_case_surface",
+         "scripts/phase23_cross_feature_qualification.py per-field frozen C comparison on case_id_manifest_digest"
+        ],
+        "unretired_generated_reviews": [
+         "compiler/CRANELIFT_PHASE22_EXPLICIT_C_MIGRATION.md renders row['line'] as a table column",
+         "compiler/CRANELIFT_PHASE23_MIR_TO_C_FROZEN_SURFACE.md keys case_id on path:line:recipe"
+        ],
+        "unretired_review_note": "de-coordinate rather than regenerate. Both live under compiler/ and are Cranelift-owned, so a Stdlib patch can never regenerate them; regenerating leaves the coordinate embedded and re-arms the trap. Measured constraint for the frozen-surface review: dropping line from case_id collides on 2 of 178 explicit_c rows - scripts/phase21_resource_sync_native_source.sh and scripts/phase21_selected_compiler_module_qualification.py, each running the same command twice in one file with no enclosing recipe - so it needs an occurrence ordinal, not a plain field drop.",
+        "unmeasured_coordinate": "scripts/phase22_opening.py asserts row['line'] == 33 on tests/e2e_codegen_assertions.gst inside a falsifier self-test. No probe moved that file, so it is UNMEASURED rather than inert. It uses next(), so a shift raises StopIteration and the guard crashes instead of failing with a diagnostic that names the cause. tests/ is inside the Stdlib append scope, so it is reachable by the lane this patch serves.",
+        "drifted_site": "rejected"
+       },
        "launch_gate_obligations": [
         {
          "id": "stdlib_safety_surface_audit",
