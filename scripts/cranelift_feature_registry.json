@@ -8083,6 +8083,23 @@
           "do not start the rollout early."
          ],
          "reason": "its only Phase 27 tie was a formatting-rollout gate, re-keyed by the Phase 27 amendment to the launch gate itself; one honest marker rather than manufactured ceremony, and it is unchanged across that edit."
+        },
+        {
+         "path": "AGENTS.md",
+         "digest": "29a835a5da2c8e9ed917239f43ded8fab22b08b06e6f329a11e1f6ca4b0e58b0",
+         "match_counts": {
+          "explicit_backend_spelling": 0,
+          "mir_to_c_name": 5,
+          "generated_c_contract": 0
+         },
+         "required_markers": [
+          "### Relaxing or retiring a guard",
+          "**Enumerate the pinned set before pushing.**",
+          "**Stored is not enforced.**",
+          "A relaxation that cannot fail is a deleted test.",
+          "**Report three outcomes from a rejection harness, not two.**"
+         ],
+         "reason": "AGENTS.md enrols itself in the Phase 23 content-pattern manifest - it spells MIR-to-C five times - but carries no row of its own, so it sat only inside unchanged_other_text_surface_manifest_digest and any edit read as an unregistered text surface change. Measured on eb6b6cf2: one distinct message and one digest across 4 failing validators, 59 passing. Registered here rather than by bumping that aggregate, because a one-off digest bump would freeze it again and charge the next editor the same cost; this is the mechanism Patch 24.2r built for exactly this case. The markers hold obligations, not contents: that the subsection exists, and the rules whose absence has actually cost CI cycles. The rules may be reworded and a seventh added without touching a marker - deliberately, because a marker on a line a planned patch must edit rebuilds the wall one level down. Verified on a root file BEFORE registering: a marker-preserving edit to TASK_STDLIB.md is admitted and a marker-breaking one is rejected, so the route reaches files outside docs/."
         }
        ],
        "structural_rules": [
