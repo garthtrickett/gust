@@ -125,3 +125,28 @@ point of the exercise rather than a side effect: a launch gate that carries
 obsolete-path deletions cannot be read as a statement about the product, and a
 reader cannot tell which of its items are load-bearing. They remain worth doing;
 they are recorded here rather than deleted.
+
+---
+
+## Duplicate helper bodies in the self-hosted compiler
+
+**Added 2026-09-06 from an external review, verified independently. Cleanup, not a
+launch obligation** — the same rule as everything else in this document.
+
+| What | Count | Evidence |
+| --- | --- | --- |
+| `*_field_is_safe` | 13 definitions | `grep -h "^func .*_field_is_safe" compiler/*.gst \| wc -l` |
+| `*_align_up` | 3 definitions | bodies byte-identical: `grep -A6 "func .*_align_up" compiler/*.gst \| grep -c "remainder := value - quotient"` returns 3 |
+
+Byte-identical bodies, so collapsing them is pure deletion with no behaviour to
+preserve. **Do it when a patch is already in one of these files**; do not open a
+patch for it.
+
+**Two related findings are deliberately not here.** The 93 hand-rolled
+`_identity` string builders carry a correctness consequence — there is no single
+definition of the `:field=` serialization, so the sites can diverge and a
+divergence is a silent MIR identity collision — and the 247 `*_empty_*`
+constructors may be irreducible without generics over the table types. Neither is
+a while-you-are-here edit, and both are governed by whether the one-way rule binds
+the compiler's own implementation, registered as **OD-17**. They belong in a
+scheduled patch once that resolves, not in this document.
