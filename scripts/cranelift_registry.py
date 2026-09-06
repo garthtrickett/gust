@@ -88,6 +88,7 @@ TOP_FIELDS = {
     "phase23_historical_full_qualification",
     "phase23_closure",
     "phase24_cr15_opening",
+    "phase24_identity_format_ledger",
     "phase24_cr15_derivation",
     "phase24_cr15_qualification",
     "phase24_cr15_seed_authority_consumer_transition",
