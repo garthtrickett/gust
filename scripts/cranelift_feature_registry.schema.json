@@ -85,6 +85,7 @@
     "phase23_historical_full_qualification",
     "phase23_closure",
     "phase24_cr15_opening",
+    "phase24_identity_format_ledger",
     "phase24_cr15_derivation",
     "phase24_cr15_qualification",
     "phase24_cr15_seed_authority_consumer_transition",
@@ -3879,6 +3880,88 @@
             }
           }
         }
+      },
+      "phase24_identity_format_ledger": {
+       "type": "object",
+       "additionalProperties": false,
+       "required": [
+        "contract_version",
+        "status",
+        "authority_base_main",
+        "definition",
+        "target_size",
+        "growth",
+        "scope",
+        "population_note",
+        "stage2_entry_obligation",
+    "why_not_a_carve_out",
+        "previous_sites",
+        "current_sites"
+       ],
+       "properties": {
+        "contract_version": {
+         "const": "phase24_identity_format_ledger_v1"
+        },
+        "status": {
+         "type": "string",
+         "minLength": 1
+        },
+        "authority_base_main": {
+         "type": "string",
+         "minLength": 1
+        },
+        "definition": {
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "path",
+          "begin",
+          "field"
+         ],
+         "properties": {
+          "path": {
+           "type": "string"
+          },
+          "begin": {
+           "type": "string"
+          },
+          "field": {
+           "type": "string"
+          }
+         }
+        },
+        "target_size": {
+         "const": 0
+        },
+        "growth": {
+         "const": "rejected"
+        },
+        "scope": {
+         "type": "string",
+         "minLength": 1
+        },
+        "population_note": {
+         "type": "string",
+         "minLength": 1
+        },
+        "stage2_entry_obligation": {"type": "string", "minLength": 1},
+    "why_not_a_carve_out": {
+         "type": "string",
+         "minLength": 1
+        },
+        "previous_sites": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        },
+        "current_sites": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        }
+       }
       },
       "phase24_cr15_derivation": {
         "type": "object",

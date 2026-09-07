@@ -252,7 +252,74 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
             "Patch 24.2f seed transition does not start from the CR-15 fixed point")
     require(transfer_diff["current_lines"] == transfer_identities[0]["line_count"],
             "Patch 24.2f seed diff does not match its own landed identity")
-    return transfer_identities
+
+    # Patch 24.3a. CR-a Stage 1 adds the single MIR identity definition to
+    # compiler/mir_layout.gst, so the seed moves again and the Patch 24.2f
+    # landed identity becomes this chain's pre-publication identity. Registered
+    # here before the seed-only publication, for the same reason Patch 24.2f
+    # was: that publication must contain gust_v4.c and nothing else, so it
+    # cannot carry the registration that would let it land green.
+    stage1_transition = record.get("phase24_cra_stage1_seed_transition")
+    require(stage1_transition == {
+        "contract_version":
+            "phase24_cra_stage1_identity_format_seed_reconvergence_transition_v1",
+        "status": "ready_for_seed_publication",
+        "predecessor_seed_authority":
+            "phase24_2f_resource_transfer_seed_reconvergence_transition_v1",
+        "authority_base_main": "6b657cb42f485207480d295a86a248630a1a12fa",
+        "accounted_compiler_authorities": [
+            "phase24_identity_format_ledger_v1",
+        ],
+        "accepted_live_seed_identities": [
+            {
+                "state": "pre_publication",
+                "line_count": 65784,
+                "seed_digest":
+                    "3f898b4bf34172fb0be90c5a78e8d07b8e319c74bee7a383d2f176267d09bf58",
+            },
+            {
+                "state": "post_publication",
+                "line_count": 65800,
+                "seed_digest":
+                    "7373a957f3e55f0a9d60c1a17e84c7776158a43e3b933af5dd047b72ca990abf",
+            },
+        ],
+        "generated_seed_diff": {
+            "previous_lines": 65784,
+            "current_lines": 65800,
+            "insertions": 16,
+            "deletions": 0,
+            "line_delta": 16,
+        },
+        "seed_pr_policy": "gust_v4_c_only",
+        "partial_or_unregistered_identity": "rejected",
+        "closure_transition": "collapse_to_post_publication_after_seed_merge",
+    }, "Patch 24.3a seed transition drifted")
+    stage1_identities = stage1_transition["accepted_live_seed_identities"]
+    require([row["state"] for row in stage1_identities] ==
+            ["pre_publication", "post_publication"],
+            "Patch 24.3a seed transition state order drifted")
+    require(len({(row["line_count"], row["seed_digest"])
+                 for row in stage1_identities}) == 2,
+            "Patch 24.3a seed transition identities are not distinct")
+    stage1_diff = stage1_transition["generated_seed_diff"]
+    require(stage1_diff["current_lines"] - stage1_diff["previous_lines"] ==
+            stage1_diff["line_delta"] and
+            stage1_diff["insertions"] - stage1_diff["deletions"] ==
+            stage1_diff["line_delta"],
+            "Patch 24.3a seed line delta is inconsistent")
+    # The chain stays continuous: this transition's pre-publication identity is
+    # exactly what Patch 24.2f landed, and its diff ends at its own post state.
+    require(stage1_identities[0] == {
+        "state": "pre_publication",
+        "line_count": transfer_identities[0]["line_count"],
+        "seed_digest": transfer_identities[0]["seed_digest"],
+    }, "Patch 24.3a does not start from the Patch 24.2f landed identity")
+    require(stage1_diff["previous_lines"] == transfer_identities[0]["line_count"],
+            "Patch 24.3a seed diff does not start from the Patch 24.2f fixed point")
+    require(stage1_diff["current_lines"] == stage1_identities[1]["line_count"],
+            "Patch 24.3a seed diff does not match its own post-publication identity")
+    return stage1_identities
 
 
 def accepted_live_seed_line_counts(record: dict) -> set[int]:
@@ -286,7 +353,15 @@ def regeneration_is_accepted(record: dict, committed: dict, regenerated: dict) -
         }
         for row in accepted_live_seed_identities(record)
     }
+    # Two accepted shapes while the seed publication is still pending: the
+    # compiler branch, whose committed seed is still the pre-publication
+    # identity but which regenerates to the post-publication one, and the
+    # published state, where both are the post-publication identity. Any other
+    # pairing - including a regenerated seed that is neither - rejects.
     return (
+        committed == identities["pre_publication"] and
+        regenerated == identities["post_publication"]
+    ) or (
         committed == identities["post_publication"] and
         regenerated == identities["post_publication"]
     )
