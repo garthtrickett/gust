@@ -144,3 +144,71 @@ removes the property is detected."*
 Residual risk: a marker too weak to notice a gutting. Real, and the reason markers
 are chosen deliberately and inverted. Content **added** rather than removed is not
 caught — that is what review is for, and always was.
+
+## Discharged early: the Phase 26/27 docs consumer successor
+
+**Landed ahead of Patch 24.3b, 2026-09-07.** Sequencing call, not a change of
+scope: this row-set blocked #353, CR-b and CR-c, and leaving it to Phase 24
+closure meant three lanes each rediscovering it mid-patch. It is retired here
+under 24.3b's own rule — enumerate the pinned set, then prove the inversion for
+every relaxation — and 24.3b keeps the rest of the sweep.
+
+### What was retired, and why each was unsatisfiable rather than merely awkward
+
+`phase24_s1_8_authority_successor.phase26_27_docs_consumer_successor` held two
+values that are compared against the live tree:
+
+| Field | Value | Bumped since PR #318? |
+| --- | --- | --- |
+| `current_inventory` | 575 rows, `32bd1313…` | **never** |
+| `unchanged_other_text_surface_manifest_digest` | `5cebbb41…` | **never** |
+
+Both are byte-identical at `ecaccf05` (the successor's admission), `0e9f3fd4`
+(the Patch 24.2f manifest moves) and `d8226a6f`. They mean *"the tree as of the
+docs migration,"* not *"the tree now."* Bumping either asserts that the
+post-#318 docs inventory contains whatever unrelated change a later patch made,
+which is false; that was attempted once and reverted.
+
+**Measured cost:** 583 tracked files enrol by content pattern, giving 575
+manifest rows, of which **21 are editable** — the Patch 24.2p/24.2q/24.2r living
+surfaces plus the registered changed paths. The remaining **~554 enrolled
+surfaces were frozen at the PR #318 state**, including `compiler/mir.gst`,
+`compiler/mir_layout.gst` and eleven `compiler/CRANELIFT_PHASE*.md` authority
+documents.
+
+**Retired, with the reason stated here rather than silently:**
+
+- the `inventory == live_inventory` conjunct of the accepted-live-state check;
+- the whole `unchanged_other_text_surface_manifest_digest` check.
+
+### What still discharges the obligation
+
+The requirement — *"no unregistered enrolled surface changed"* — is unchanged and
+is enforced by `phase24_cr15_stdlib_guard_transition.py`, whose equivalent digest
+**is** maintained and is bumped by each patch that moves a surface. It runs
+inside `scan_text_surfaces()`, so it is reached before any of the checks above.
+The two retired pins were a second, unmaintained copy of a check that already
+has a maintained one; what was lost is the *frozen baseline*, not the guarantee.
+
+**Retirement by deleting the successor node would have been wrong.** The code
+falls through to the coordination successor, which carries its own frozen
+`current_inventory` — deleting the tail promotes an older freeze. The terminal
+comparison is rescoped; the node and its twenty other assertions stay.
+
+### What is retained, and proved still able to fail
+
+`scripts/phase24_docs_successor_retirement_inversions.py` constructs a violation
+per retained assertion and requires the guard to reject it: fifteen registry
+cases and five live-tree cases.
+
+The case that matters is **L01**. Changing a registered PR #318 document *and*
+registering that change at the maintained digest satisfies every whole-tree
+obligation, so only the retained per-row half can reject it — and it does.
+Without the registration step the run stops earlier and proves nothing about
+this check, which is why the bump is part of the case.
+
+**Stated honestly:** six of the nine registered documents are also Patch 24.2r
+living surfaces and are projected to frozen rows before this check sees them, so
+it can only speak about the other three. That is 24.2r's deliberate design and
+is not changed here — but the retained check is narrower than its name suggests,
+and a later reader should not assume all nine are covered.
