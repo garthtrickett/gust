@@ -190,13 +190,13 @@ func verify_field_safety(table: array_slice.MirArraySliceTable[ctx], layout_tabl
         fail("Array/slice field safety: canonical array layout missing");
     }
 
-    arrays[0] = array_slice.mir_array_slice_make_array_value(
+    arrays.Set(0, array_slice.mir_array_slice_make_array_value(
         std.Concat(original.array_id, "\n"),
         array_layout.array_layout,
         original.elements,
         original.lifetime_region,
         ctx
-    );
+    ));
     ctx.Set(table.arrays, arrays);
     if array_slice.mir_array_slice_table_is_valid(table, layout_table, ctx) != 0 {
         fail("Array/slice field safety: array_id carrying a newline was accepted");
@@ -204,7 +204,7 @@ func verify_field_safety(table: array_slice.MirArraySliceTable[ctx], layout_tabl
 
     // Restoring the clean value must restore validity: that is what makes the
     // rejection above attributable to the poisoned field and nothing else.
-    arrays[0] = original;
+    arrays.Set(0, original);
     ctx.Set(table.arrays, arrays);
     if array_slice.mir_array_slice_table_is_valid(table, layout_table, ctx) == 0 {
         fail("Array/slice field safety: restoring the clean array_id did not restore validity");
