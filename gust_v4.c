@@ -2115,6 +2115,8 @@ Slice_unsigned_char mir_integer_conversion__mir_integer_conversion_witness(mir_i
 int mir_integer_conversion__mir_integer_conversion_wrap_i32(int value);
 int mir_integer_conversion__mir_integer_conversion_wrap_u32(int value);
 Slice_unsigned_char mir_integer_conversion__mir_serialize_integer_conversion_table_for_request(mir_integer_conversion__MirIntegerConversionTable table, mir_layout__MirLayoutTable layout_table, os_Arena* ctx);
+Slice_unsigned_char mir_layout__mir_identity_begin(Slice_unsigned_char kind, os_Arena* ctx);
+Slice_unsigned_char mir_layout__mir_identity_field(Slice_unsigned_char identity, Slice_unsigned_char key, Slice_unsigned_char value, os_Arena* ctx);
 int mir_layout__mir_layout_alignment_is_valid(int alignment);
 Slice_unsigned_char mir_layout__mir_layout_append_field(Slice_unsigned_char output, Slice_unsigned_char key, Slice_unsigned_char value, os_Arena* ctx);
 mir_layout__MirElementStrideQuery mir_layout__mir_layout_element_stride(mir_layout__MirLayoutTable table, Slice_unsigned_char type_id, Slice_unsigned_char target_id, os_Arena* ctx);
@@ -29013,6 +29015,20 @@ mir_layout__MirLayoutTable mir_layout__mir_layout_make_table(mir_layout__MirTarg
     table.layouts = mir_layout__mir_layout_empty_type_layout_vector(ctx);
     table.memory_accesses = mir_layout__mir_layout_empty_memory_access_vector(ctx);
     return table;
+}
+
+Slice_unsigned_char mir_layout__mir_identity_begin(Slice_unsigned_char kind, os_Arena* ctx) {
+    Slice_unsigned_char identity = (({ Slice_unsigned_char _s1 = kind; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)":", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    identity = (({ Slice_unsigned_char _s1 = identity; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"v1", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    return std_Clone_str(ctx, identity);
+}
+
+Slice_unsigned_char mir_layout__mir_identity_field(Slice_unsigned_char identity, Slice_unsigned_char key, Slice_unsigned_char value, os_Arena* ctx) {
+    Slice_unsigned_char updated = (({ Slice_unsigned_char _s1 = identity; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)":", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    updated = (({ Slice_unsigned_char _s1 = updated; Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    updated = (({ Slice_unsigned_char _s1 = updated; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"=", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    updated = (({ Slice_unsigned_char _s1 = updated; Slice_unsigned_char _s2 = value; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    return std_Clone_str(ctx, updated);
 }
 
 Slice_unsigned_char mir_layout__mir_layout_identity(Slice_unsigned_char type_id, Slice_unsigned_char target_id, Slice_unsigned_char representation_kind, int size, int alignment, int element_stride, os_Arena* ctx) {
