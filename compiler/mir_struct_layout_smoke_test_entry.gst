@@ -175,6 +175,23 @@ func write_target_artifacts(target_triple: str, object_format: str, layout_table
     }
 }
 
+// mir_struct_layout_declared_fields writes the identities it owns back
+// through the Index it is handed, so the probe must never pass the table's own
+// field vector: doing so rewrites the live layout's field ids and the witness
+// comes out empty. Each rebuild below gets a private copy.
+func copy_struct_fields(source: Index[std.Vector[structs.MirStructField[ctx], ctx], ctx], ctx: &Arena) Index[std.Vector[structs.MirStructField[ctx], ctx], ctx] {
+    mut source_fields: std.Vector[structs.MirStructField[ctx], ctx] := ctx[source];
+    mut copy_index := structs.mir_struct_empty_field_vector(ctx);
+    mut copied: std.Vector[structs.MirStructField[ctx], ctx] := ctx[copy_index];
+    mut field_index := 0;
+    while field_index < len(source_fields) {
+        copied.Push(source_fields[field_index]);
+        field_index = field_index + 1;
+    }
+    ctx.Set(copy_index, copied);
+    return copy_index;
+}
+
 // CR-b.2a field-safety probe. struct_type_id feeds both the layout identity
 // and every field identity, so the poisoned layout is rebuilt through
 // mir_struct_layout_declared_fields, which owns those identities. That keeps
@@ -192,7 +209,7 @@ func verify_field_safety(table: structs.MirStructTable[ctx], layout_table: layou
         original.target_id,
         original.target_triple,
         original.nesting_depth,
-        original.fields,
+        copy_struct_fields(original.fields, ctx),
         ctx
     );
     if structs.mir_struct_layout_is_valid(table, layout_table, clean, ctx) == 0 {
@@ -204,7 +221,7 @@ func verify_field_safety(table: structs.MirStructTable[ctx], layout_table: layou
         original.target_id,
         original.target_triple,
         original.nesting_depth,
-        original.fields,
+        copy_struct_fields(original.fields, ctx),
         ctx
     );
     if structs.mir_struct_layout_is_valid(table, layout_table, poisoned, ctx) != 0 {

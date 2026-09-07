@@ -331,7 +331,7 @@ func main() {
     // reaches the validator through mir_resource_reassignment_table_with_entry,
     // so this exercises the real call site rather than the shared predicate.
     mut poisoned_reassign := replacement_reassign;
-    poisoned_reassign.reassignment_id = std.Concat(replacement_reassign.reassignment_id, "\n");
+    poisoned_reassign.reassignment_id = std.Clone(ctx, std.Concat(replacement_reassign.reassignment_id, "\n"));
     mut poisoned_table_reassign := reassignment.mir_resource_reassignment_table_with_entry(
         reassignment.mir_resource_reassignment_make_empty_table(ctx),
         poisoned_reassign,
