@@ -1205,3 +1205,10 @@ func mir_enum_witness(table: MirEnumTable[ctx], layout_table: layout.MirLayoutTa
     }
     return std.Clone(ctx, output);
 }
+
+// INVERSION I1 (CI): a new hand-rolled MIR identity site. This branch must FAIL
+// the sealing guard, and the failure must come from a workflow that TRIGGERED on
+// this compiler/*.gst change. Delete this branch once it has gone red.
+func ci_inversion_new_hand_rolled_site() str {
+    return "inversion_kind:v1:field=x";
+}
