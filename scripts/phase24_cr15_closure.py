@@ -159,7 +159,13 @@ def render(closure: dict) -> str:
     return "\n".join(lines)
 
 
-SEED_SUCCESSOR_TRANSITIONS = ("phase24_2f_seed_transition",)
+SEED_SUCCESSOR_TRANSITIONS = (
+    "phase24_2f_seed_transition",
+    # Patch 24.3a. Named explicitly because this guard consults a successor
+    # only when it is listed here, so a registry block alone cannot widen
+    # what the live seed is allowed to be.
+    "phase24_cra_stage1_seed_transition",
+)
 
 
 def _seed_transition(registry: dict, key: str) -> dict:
