@@ -194,18 +194,18 @@ func verify_field_safety(table: enums.MirEnumTable[ctx], layout_table: layout.Mi
                 if enums.mir_enum_layout_is_valid(table, layout_table, enum_layout, ctx) == 0 {
                     fail("Enum field safety: canonical layout rejected before poisoning");
                 }
-                variants[variant_index] = enums.mir_enum_make_fieldless_variant(
+                variants.Set(variant_index, enums.mir_enum_make_fieldless_variant(
                     variant.enum_type_id,
                     std.Concat(variant.variant_name, "\n"),
                     variant.declaration_index,
                     variant.discriminant,
                     ctx
-                );
+                ));
                 ctx.Set(enum_layout.variants, variants);
                 if enums.mir_enum_layout_is_valid(table, layout_table, enum_layout, ctx) != 0 {
                     fail("Enum field safety: variant_name carrying a newline was accepted");
                 }
-                variants[variant_index] = variant;
+                variants.Set(variant_index, variant);
                 ctx.Set(enum_layout.variants, variants);
                 if enums.mir_enum_layout_is_valid(table, layout_table, enum_layout, ctx) == 0 {
                     fail("Enum field safety: restoring the clean variant_name did not restore validity");

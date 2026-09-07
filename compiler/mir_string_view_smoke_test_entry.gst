@@ -187,17 +187,17 @@ func verify_field_safety(table: string_view.MirStringViewTable[ctx], layout_tabl
     }
     mut original := literals[0];
 
-    literals[0] = string_view.mir_string_view_make_literal(
+    literals.Set(0, string_view.mir_string_view_make_literal(
         std.Concat(original.symbol_name, "\n"),
         original.bytes_hex,
         ctx
-    );
+    ));
     ctx.Set(table.literals, literals);
     if string_view.mir_string_view_table_is_valid(table, layout_table, ctx) != 0 {
         fail("String view field safety: symbol_name carrying a newline was accepted");
     }
 
-    literals[0] = original;
+    literals.Set(0, original);
     ctx.Set(table.literals, literals);
     if string_view.mir_string_view_table_is_valid(table, layout_table, ctx) == 0 {
         fail("String view field safety: restoring the clean symbol_name did not restore validity");
