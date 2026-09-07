@@ -48,6 +48,18 @@ GUARD = "guard-cranelift-phase24-identity-format-ledger"
 # Fixtures, not builders. See scan_sites().
 EXEMPT_SUFFIX = "_smoke_test_entry.gst"
 
+WORKFLOW = ROOT / ".github/workflows/phase24-identity-format-ledger.yml"
+PR_WORKFLOW = ROOT / ".github/workflows/pr-fast.yml"
+RECIPE = "guard-cranelift-phase24-identity-format-ledger-contract"
+
+# Every path this guard READS, and therefore every path its trigger must list.
+# Kept beside the code that opens them so the two cannot drift apart.
+READ_PATHS = (
+    "compiler/*.gst",                          # scan_sites() and definition.path
+    "scripts/cranelift_feature_registry.json",  # REGISTRY
+    "scripts/phase24_identity_format_ledger.py",  # this guard
+)
+
 # The hand-rolled form this patch retires. Two shapes, and BOTH are needed:
 #
 #   ":target="                 a continuation literal, colon-first
@@ -124,7 +136,41 @@ def scan_sites() -> list[str]:
     return sorted(sites)
 
 
+def check_reachable() -> None:
+    """The guard must actually RUN on the files it pins.
+
+    This guard shipped in #353 with no just recipe and no workflow, so it had
+    never executed once; it merged at 109/109 green because nothing invoked it.
+    That is the #340 defect - merged without the guard that pins those files
+    ever running - and a passing suite is exactly what it looks like.
+
+    Checking the guard is not checking that the guard runs, so the trigger is
+    asserted here rather than left as a fact about a YAML file someone got
+    right once. cranelift_test_levels.py already pins the recipe against the
+    test-level policy, but it compares the justfile to the policy: when a guard
+    is absent from BOTH, the two agree and the inventory passes. It cannot see
+    a guard script that no recipe mentions, which is why this one survived.
+
+    The path list is the load-bearing half. A workflow that runs but is never
+    triggered by the files it protects has the same defect one level up - the
+    seed-convergence workflow pins gust_v4.c and does not trigger on
+    compiler/*.gst, the only path that can move it.
+    """
+    require(WORKFLOW.exists(),
+            f"the guard has no workflow: {WORKFLOW.name}")
+    workflow = WORKFLOW.read_text(encoding="utf-8")
+    for path in READ_PATHS:
+        require(f"'{path}'" in workflow,
+                "the workflow trigger omits a path this guard reads, so the "
+                f"guard would not run on a change to it: {path}")
+    require(f"just {RECIPE}" in workflow,
+            f"{WORKFLOW.name} does not invoke {RECIPE}")
+    require(f"just {RECIPE}" in PR_WORKFLOW.read_text(encoding="utf-8"),
+            f"pr-fast.yml does not invoke {RECIPE}")
+
+
 def validate() -> dict:
+    check_reachable()
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     ledger = registry.get("phase24_identity_format_ledger")
     require(isinstance(ledger, dict), "identity format ledger is missing")

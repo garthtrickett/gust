@@ -23873,6 +23873,19 @@ guard-cranelift-phase24-semantic-spelling-inventory-contract:
     just guard-cranelift-phase24-filename-behavior-characterization-contract
     python3 scripts/phase24_semantic_spelling_inventory.py full
 
+# Cranelift lane, CR-a Stage 1. Seal the MIR identity format: exactly one
+# definition of "<kind>:v1(:<field>=<value>)*", and a shrink-only ledger of the
+# sites still hand-rolling it. The guard shipped in #353 with no recipe and no
+# workflow, so it had never executed; this recipe is what makes the seal real.
+guard-cranelift-phase24-identity-format-ledger-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔎 Checking Phase 24 MIR identity format ledger..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase24-identity-format-ledger-contract | grep -F $'guard-cranelift-phase24-identity-format-ledger-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase24_identity_format_ledger.py validate
+
 guard-cranelift-phase23-issue-health-opening-evidence:
     #!/usr/bin/env bash
     set -euo pipefail
