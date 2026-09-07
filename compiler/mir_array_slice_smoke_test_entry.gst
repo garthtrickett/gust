@@ -174,6 +174,43 @@ func write_target_artifacts(target_triple: str, object_format: str, layout_table
     }
 }
 
+// CR-b.2a field-safety probe. Builds an otherwise-valid array value whose
+// array_id carries a newline, through this module's own constructor, and
+// requires this module's own table validator to reject it. The shared
+// predicate is never called directly: proving the helper works would prove
+// nothing about this call site.
+func verify_field_safety(table: array_slice.MirArraySliceTable[ctx], layout_table: layout.MirLayoutTable[ctx], ctx: &Arena) {
+    mut arrays: std.Vector[array_slice.MirArrayValue[ctx], ctx] := ctx[table.arrays];
+    if len(arrays) == 0 {
+        fail("Array/slice field safety: canonical table carried no array values");
+    }
+    mut original := arrays[0];
+    mut array_layout := array_slice.mir_array_slice_array_layout(table, original.array_layout_id, ctx);
+    if array_layout.found == 0 {
+        fail("Array/slice field safety: canonical array layout missing");
+    }
+
+    arrays[0] = array_slice.mir_array_slice_make_array_value(
+        std.Concat(original.array_id, "\n"),
+        array_layout.array_layout,
+        original.elements,
+        original.lifetime_region,
+        ctx
+    );
+    ctx.Set(table.arrays, arrays);
+    if array_slice.mir_array_slice_table_is_valid(table, layout_table, ctx) != 0 {
+        fail("Array/slice field safety: array_id carrying a newline was accepted");
+    }
+
+    // Restoring the clean value must restore validity: that is what makes the
+    // rejection above attributable to the poisoned field and nothing else.
+    arrays[0] = original;
+    ctx.Set(table.arrays, arrays);
+    if array_slice.mir_array_slice_table_is_valid(table, layout_table, ctx) == 0 {
+        fail("Array/slice field safety: restoring the clean array_id did not restore validity");
+    }
+}
+
 func main() {
     mut ctx := os.Arena.New();
     defer ctx.Free();
@@ -205,6 +242,7 @@ func main() {
         }
         verify_canonical_mir(table, layout_table, ctx);
         verify_negatives(ctx);
+        verify_field_safety(table, layout_table, ctx);
         write_target_artifacts(
             target_triple,
             target.object_format,
