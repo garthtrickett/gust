@@ -177,20 +177,54 @@ func write_target_artifacts(target_triple: str, object_format: str, layout_table
 // CR-b.2a field-safety probe. Builds an otherwise-valid array value whose
 // array_id carries a newline, through this module's own constructor, and
 // requires this module's own table validator to reject it. The shared
-// predicate is never called directly: proving the helper works would prove
-// nothing about this call site.
+// predicate is never called directly.
+//
+// array_id is a cross-referenced key: slices resolve source_array_id and
+// operations resolve array_id against the array table. Poisoning an array
+// that anything references makes the validator reject it for a dangling
+// reference instead, which looks identical from outside and survives the
+// field-safety guard being deleted. The probe therefore poisons only an
+// array no slice and no operation names.
+func unreferenced_array_index(table: array_slice.MirArraySliceTable[ctx], ctx: &Arena) int {
+    mut arrays: std.Vector[array_slice.MirArrayValue[ctx], ctx] := ctx[table.arrays];
+    mut slices: std.Vector[array_slice.MirSliceValue[ctx], ctx] := ctx[table.slices];
+    mut operations: std.Vector[array_slice.MirArraySliceOperation[ctx], ctx] := ctx[table.operations];
+    mut candidate := 0;
+    while candidate < len(arrays) {
+        mut referenced := 0;
+        mut slice_index := 0;
+        while slice_index < len(slices) {
+            if std.str_eq(slices[slice_index].source_array_id, arrays[candidate].array_id) == 1 {
+                referenced = 1;
+            }
+            slice_index = slice_index + 1;
+        }
+        mut operation_index := 0;
+        while operation_index < len(operations) {
+            if std.str_eq(operations[operation_index].array_id, arrays[candidate].array_id) == 1 {
+                referenced = 1;
+            }
+            operation_index = operation_index + 1;
+        }
+        if referenced == 0 { return candidate; }
+        candidate = candidate + 1;
+    }
+    return 0 - 1;
+}
+
 func verify_field_safety(table: array_slice.MirArraySliceTable[ctx], layout_table: layout.MirLayoutTable[ctx], ctx: &Arena) {
     mut arrays: std.Vector[array_slice.MirArrayValue[ctx], ctx] := ctx[table.arrays];
-    if len(arrays) == 0 {
-        fail("Array/slice field safety: canonical table carried no array values");
+    mut target := unreferenced_array_index(table, ctx);
+    if target < 0 {
+        fail("Array/slice field safety: every array is referenced, no clean poison target");
     }
-    mut original := arrays[0];
+    mut original := arrays[target];
     mut array_layout := array_slice.mir_array_slice_array_layout(table, original.array_layout_id, ctx);
     if array_layout.found == 0 {
         fail("Array/slice field safety: canonical array layout missing");
     }
 
-    arrays.Set(0, array_slice.mir_array_slice_make_array_value(
+    arrays.Set(target, array_slice.mir_array_slice_make_array_value(
         std.Concat(original.array_id, "\n"),
         array_layout.array_layout,
         original.elements,
@@ -204,7 +238,7 @@ func verify_field_safety(table: array_slice.MirArraySliceTable[ctx], layout_tabl
 
     // Restoring the clean value must restore validity: that is what makes the
     // rejection above attributable to the poisoned field and nothing else.
-    arrays.Set(0, original);
+    arrays.Set(target, original);
     ctx.Set(table.arrays, arrays);
     if array_slice.mir_array_slice_table_is_valid(table, layout_table, ctx) == 0 {
         fail("Array/slice field safety: restoring the clean array_id did not restore validity");
