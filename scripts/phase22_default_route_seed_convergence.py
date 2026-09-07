@@ -263,7 +263,7 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
     require(stage1_transition == {
         "contract_version":
             "phase24_cra_stage1_identity_format_seed_reconvergence_transition_v1",
-        "status": "ready_for_seed_publication",
+        "status": "landed_post_publication",
         "predecessor_seed_authority":
             "phase24_2f_resource_transfer_seed_reconvergence_transition_v1",
         "authority_base_main": "6b657cb42f485207480d295a86a248630a1a12fa",
@@ -271,12 +271,6 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
             "phase24_identity_format_ledger_v1",
         ],
         "accepted_live_seed_identities": [
-            {
-                "state": "pre_publication",
-                "line_count": 65784,
-                "seed_digest":
-                    "3f898b4bf34172fb0be90c5a78e8d07b8e319c74bee7a383d2f176267d09bf58",
-            },
             {
                 "state": "post_publication",
                 "line_count": 65800,
@@ -293,15 +287,28 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
         },
         "seed_pr_policy": "gust_v4_c_only",
         "partial_or_unregistered_identity": "rejected",
-        "closure_transition": "collapse_to_post_publication_after_seed_merge",
+        "closure_transition": "collapsed_to_post_publication",
+        "landed_seed_evidence": {
+            "pull_request": 358,
+            "head_sha": "6341cf79daf4475fcb9802c0eab8c617f0d3ff49",
+            "merge_main_sha": "00715c9639c978b97a1dfe1787cbc89c4e2fb69f",
+            "merged_at": "2026-09-07T12:50:20Z",
+            "event": "pull_request",
+            "workflow_population": 35,
+            "successful_workflows": 35,
+            "unfinished_workflows": 0,
+            "non_success_workflows": 0,
+            "unresolved_non_outdated_review_threads": 0,
+            "changed_paths": ["gust_v4.c"],
+        },
     }, "Patch 24.3a seed transition drifted")
     stage1_identities = stage1_transition["accepted_live_seed_identities"]
-    require([row["state"] for row in stage1_identities] ==
-            ["pre_publication", "post_publication"],
-            "Patch 24.3a seed transition state order drifted")
-    require(len({(row["line_count"], row["seed_digest"])
-                 for row in stage1_identities}) == 2,
-            "Patch 24.3a seed transition identities are not distinct")
+    # Collapsed: the publication landed, so the superseded pre-publication seed
+    # is no longer accepted anywhere. One terminal identity, and the next seed
+    # movement must register itself exactly as this one did.
+    require(len(stage1_identities) == 1 and
+            stage1_identities[0]["state"] == "post_publication",
+            "Patch 24.3a seed transition did not collapse to the landed identity")
     stage1_diff = stage1_transition["generated_seed_diff"]
     require(stage1_diff["current_lines"] - stage1_diff["previous_lines"] ==
             stage1_diff["line_delta"] and
@@ -310,15 +317,10 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
             "Patch 24.3a seed line delta is inconsistent")
     # The chain stays continuous: this transition's pre-publication identity is
     # exactly what Patch 24.2f landed, and its diff ends at its own post state.
-    require(stage1_identities[0] == {
-        "state": "pre_publication",
-        "line_count": transfer_identities[0]["line_count"],
-        "seed_digest": transfer_identities[0]["seed_digest"],
-    }, "Patch 24.3a does not start from the Patch 24.2f landed identity")
     require(stage1_diff["previous_lines"] == transfer_identities[0]["line_count"],
             "Patch 24.3a seed diff does not start from the Patch 24.2f fixed point")
-    require(stage1_diff["current_lines"] == stage1_identities[1]["line_count"],
-            "Patch 24.3a seed diff does not match its own post-publication identity")
+    require(stage1_diff["current_lines"] == stage1_identities[0]["line_count"],
+            "Patch 24.3a seed diff does not match its own landed identity")
     return stage1_identities
 
 
@@ -359,9 +361,6 @@ def regeneration_is_accepted(record: dict, committed: dict, regenerated: dict) -
     # published state, where both are the post-publication identity. Any other
     # pairing - including a regenerated seed that is neither - rejects.
     return (
-        committed == identities["pre_publication"] and
-        regenerated == identities["post_publication"]
-    ) or (
         committed == identities["post_publication"] and
         regenerated == identities["post_publication"]
     )
