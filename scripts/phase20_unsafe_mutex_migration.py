@@ -243,6 +243,42 @@ def s1_11_removal_successor(registry: dict) -> dict | None:
     return successor
 
 
+def s1_9_double_unlock_successor(registry: dict) -> dict | None:
+    """CR-16: register the S1.9 raw double-unlock fixture's call site.
+
+    The registry row lands in the Cranelift patch and the fixture lands in the
+    Stdlib patch, so main is valid with the fixture absent or present and
+    anything else rejects - the same two-state shape as the S1.11 removal.
+
+    No predecessor totals are stored. This successor sits downstream of that
+    removal, whose effect is conditional on whether the S1.11 source migration
+    has landed, so the running totals read {17,17,34} today and {13,13,26} once
+    #348 merges. Pinning either would make this row reject the other state, so
+    the predecessor is derived and only this successor's own delta is asserted.
+    """
+    successor = registry.get("phase24_cr15_opening", {}).get(
+        "stdlib_guard_transition", {}).get("s1_9_raw_double_unlock_successor")
+    if not isinstance(successor, dict):
+        return None
+    require(successor.get("contract_version") ==
+            "phase24_s1_9_raw_double_unlock_v1" and
+            successor.get("partial_extra_or_substituted_call_site") ==
+            "rejected" and
+            successor.get("safe_raw_calls_added") == 0 and
+            isinstance(successor.get("added_call_site"), dict),
+            "S1.9 raw double-unlock successor drifted")
+    added = successor["added_call_site"]
+    require(sorted(added) == ["lock_calls", "path", "role", "unlock_calls"],
+            "S1.9 added call site shape drifted")
+    # A double-unlock fixture unlocks without locking. The contract carries no
+    # implicit balance expectation - phase20_mutex_lock_safe_invalid.gst is
+    # L1 U0 and phase20_mutex_unlock_safe_invalid.gst is L0 U1 - but the shape
+    # of THIS site is exact, so a fixture that also locks is not this row.
+    require(added["lock_calls"] == 0 and added["unlock_calls"] == 1,
+            "S1.9 double-unlock site is not the registered zero-lock "
+            "one-unlock shape")
+    return successor
+
 def validate() -> tuple[dict, list[MethodCall]]:
     scanner_self_test()
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
@@ -378,6 +414,29 @@ def validate() -> tuple[dict, list[MethodCall]]:
             "the effective transitional raw Mutex set does not match the live "
             "inventory; a transitional test was migrated without a registered "
             "removal, or a registered removal did not happen")
+    s1_9 = s1_9_double_unlock_successor(registry)
+    if s1_9 is not None:
+        added = s1_9["added_call_site"]
+        require(all(row["path"] != added["path"]
+                    for row in expected_call_sites),
+                "S1.9 double-unlock call site is already pinned by an earlier "
+                "successor")
+        live_row = actual.get(added["path"])
+        pinned_row = {"Lock": added["lock_calls"],
+                      "Unlock": added["unlock_calls"]}
+        require(live_row == pinned_row or live_row is None,
+                "S1.9 raw double-unlock fixture is partial or substituted: "
+                f"{added['path']}={live_row!r}")
+        # The fixture's Unlock must sit inside explicit unsafe. That is not
+        # re-checked here: a safe raw call anywhere already fails the exact
+        # enforcement-negative comparison above, which is why this successor
+        # records safe_raw_calls_added as 0 rather than asserting it twice.
+        if live_row is not None:
+            expected_call_sites = expected_call_sites + [added]
+            expected_total_lock_calls += added["lock_calls"]
+            expected_total_unlock_calls += added["unlock_calls"]
+            expected_total_calls += (added["lock_calls"] +
+                                     added["unlock_calls"])
     expected = {
         row["path"]: {"Lock": row["lock_calls"],
                       "Unlock": row["unlock_calls"]}
