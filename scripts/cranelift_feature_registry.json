@@ -6634,6 +6634,22 @@
        "partial_extra_or_substituted_call_site": "rejected",
        "coverage_literal_note": "transitional_test_coverage was compared against a hardcoded list literal in scripts/phase20_unsafe_mutex_migration.py, not driven from this registry. Editing the stored value alone would have failed that require. The literal is now the pre-migration branch of a two-state check, so the stored value and the enforced value cannot diverge again."
       },
+      "s1_9_raw_double_unlock_successor": {
+        "contract_version": "phase24_s1_9_raw_double_unlock_v1",
+        "status": "cr16_registered_awaiting_stdlib_fixture",
+        "authority_base_main": "d8226a6fa5ef83b2d8ea83c32df41051a0a91a0e",
+        "purpose": "CR-16. S1.9's raw double-unlock limitation is pinned by prose in docs/STDLIB_MUTEX_GUARD_SCOPE.md alone. This registers the call site of the compile-fail fixture that pins it, so the Stdlib lane can ship the fixture without the contract reporting drift. The registry row lands in this Cranelift patch and the fixture lands in the Stdlib patch, so main is valid with the fixture absent or present and anything else rejects - the same two-state shape as s1_11_raw_mutex_removal_successor.",
+        "added_call_site": {
+          "path": "tests/stdlib_s1_mutex_guard_scope_raw_double_unlock.gst",
+          "role": "stdlib_s1_9_raw_double_unlock_compile_fail_fixture",
+          "lock_calls": 0,
+          "unlock_calls": 1
+        },
+        "unbalanced_call_site_reason": "A double-unlock fixture unlocks without locking, so the row is deliberately unbalanced. The contract carries no implicit balance expectation and there is precedent in both directions: compiler/phase20_mutex_lock_safe_invalid.gst is L1 U0 and compiler/phase20_mutex_unlock_safe_invalid.gst is L0 U1.",
+        "derived_predecessor_reason": "No predecessor totals are stored here, deliberately. This successor sits downstream of s1_11_raw_mutex_removal_successor, whose effect is conditional on whether the S1.11 source migration has landed: the running totals read {17,17,34} today and {13,13,26} once PR #348 merges. A stored predecessor would pin one of those and make this row reject the other, so the guard derives the predecessor from the running inventory and asserts only this successor's own delta. Every field stored here is enforced by scripts/phase20_unsafe_mutex_migration.py; none is a record kept beside the check.",
+        "safe_raw_calls_added": 0,
+        "partial_extra_or_substituted_call_site": "rejected"
+      },
       "s1_8_inventory_successor": {
         "contract_version": "phase24_stdlib_s1_8_inventory_successor_v1",
         "status": "ready_for_exact_stdlib_s1_8_publication",
