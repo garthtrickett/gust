@@ -1,0 +1,67 @@
+name: Cranelift Phase 24 Identity Format Ledger
+
+# The paths below are DERIVED from what the guard actually reads, not copied
+# from a sibling. scripts/phase24_identity_format_ledger.py opens:
+#
+#   scripts/cranelift_feature_registry.json    REGISTRY (line 45)
+#   compiler/*.gst                             COMPILER.glob("*.gst") (line 92)
+#   compiler/mir_layout.gst                    registry definition.path (line 139)
+#
+# and the recipe additionally runs cranelift_test_levels.py validate/level and
+# cranelift_registry.py validate, which read the test-level policy, the registry
+# and its schema. Every one of those is listed.
+#
+# compiler/*.gst is the load-bearing entry: it is the only path that can add a
+# hand-rolled identity site, which is the whole thing this guard forbids. A
+# trigger that omitted it would leave the guard running but never on the change
+# it exists to reject. Both the flat and the recursive spelling are listed
+# because the guard's glob is non-recursive and 'compiler/**/*.gst' alone is not
+# worth depending on to match compiler/foo.gst.
+
+on:
+  pull_request:
+    paths:
+      - 'compiler/*.gst'
+      - 'compiler/**/*.gst'
+      - 'scripts/phase24_identity_format_ledger.py'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.py'
+      - 'scripts/cranelift_test_levels.json'
+      - '.github/workflows/phase24-identity-format-ledger.yml'
+      - '.github/workflows/pr-fast.yml'
+      - 'justfile*'
+  push:
+    branches: [main]
+    paths:
+      - 'compiler/*.gst'
+      - 'compiler/**/*.gst'
+      - 'scripts/phase24_identity_format_ledger.py'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/cranelift_test_levels.py'
+      - 'scripts/cranelift_test_levels.json'
+      - '.github/workflows/phase24-identity-format-ledger.yml'
+      - '.github/workflows/pr-fast.yml'
+      - 'justfile*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  ledger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: guard-cranelift-phase24-identity-format-ledger-contract
+        run: just guard-cranelift-phase24-identity-format-ledger-contract

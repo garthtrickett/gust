@@ -521,6 +521,9 @@ jobs:
       - name: Phase 24 generic implicit linear-Resource transfer
         run: just guard-cranelift-phase24-resource-implicit-transfer-contract
 
+      - name: Phase 24 MIR identity format ledger seal
+        run: just guard-cranelift-phase24-identity-format-ledger-contract
+
       - name: Phase 23 MIR evidence-owner repair
         run: just guard-cranelift-phase23-mir-evidence-owner-contract
 
