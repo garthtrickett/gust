@@ -136,11 +136,85 @@ launch obligation** — the same rule as everything else in this document.
 | What | Count | Evidence |
 | --- | --- | --- |
 | `*_field_is_safe` | 13 definitions | `grep -h "^func .*_field_is_safe" compiler/*.gst \| wc -l` |
-| `*_align_up` | 3 definitions | bodies byte-identical: `grep -A6 "func .*_align_up" compiler/*.gst \| grep -c "remainder := value - quotient"` returns 3 |
+| `*_align_up` | 3 definitions | `grep -h "^func .*_align_up" compiler/*.gst \| wc -l` |
 
-Byte-identical bodies, so collapsing them is pure deletion with no behaviour to
-preserve. **Do it when a patch is already in one of these files**; do not open a
-patch for it.
+**Corrected 2026-09-07 at `00715c96`, by two lanes measuring independently. The
+two counts above hold. The identity claim that stood beside them did not, and it
+was the load-bearing half.**
+
+This section read *"bodies byte-identical, so collapsing them is pure deletion
+with no behaviour to preserve"*, and cited for `align_up`:
+`grep -A6 "func .*_align_up" compiler/*.gst | grep -c "remainder := value - quotient"`
+returning 3.
+
+**That grep returns 3 whether or not the bodies agree.** All three share the
+`remainder` line; they differ on the line *above* it, which the check never
+looked at. Agreement with it was not weak evidence of byte-identity — it was
+none, and it read as conclusive.
+
+| Symbol | Definitions | Agree | Differ |
+| --- | --- | --- | --- |
+| the `field_is_safe` role | **15** | 12 | 3 |
+| `*_align_up` | 3 | 2 | 1 |
+
+**`align_up` is not collapsible, and this document should not have said it was.**
+
+    // mir_array_slice.gst:262, mir_enum.gst:197
+    if alignment <= 0 { return 0; }
+    // mir_struct_layout.gst:146
+    if alignment <= 0 { return 0 - 1; }
+
+Everything below that line is identical in all three. Collapsing them changes
+the value at `mir_struct_layout.gst:241`, where `field.offset` is assigned from
+it with no prior guard on `field.alignment`. The validator paths reject a
+non-positive alignment before they call it, so the divergence is unreachable
+*there*; nobody has shown it unreachable in the constructor, and that proof is
+the precondition for treating this as pure deletion. Three further encodings of
+the same error case live in
+`compiler/experiments/cranelift/src/main.rs:7286,9903,10994` as `Option<usize>`,
+adjudicated by `scripts/phase14_{struct,enum,array_slice}_differential.sh` — so
+a change here is gated on that differential, not on this document.
+**Deferred, deliberately.**
+
+**The `field_is_safe` population is 15, not 13.** The evidence grep is
+name-scoped, and two helpers carry the same role under a spelling it cannot see:
+`mir_aggregate_parameter_field_safe` and `mir_call_field_safe` are `_field_safe`,
+not `_field_is_safe`. They are identical to each other and **not** to the other
+twelve — they reject a third character:
+
+    if std.str_find(value, ";") != 0 - 1 { return 0; }
+
+A third exception, `mir_runtime_field_is_safe`, takes one parameter instead of
+two and has no `allow_empty` at all. The fifteen fall into **three** behaviour
+classes, not one. This is the failure CR-a recorded for the `_identity`
+builders, in the same shape: the name was a proxy for the role, and it failed
+silently.
+
+**Safe to collapse: the twelve that agree.** Do it when a patch is already in one
+of these files; do not open a patch for it. The other three are excluded by
+behaviour, not by cost.
+
+**`docs/VISION.md` still carries the uncorrected claim, and no patch can fix it
+in place today.** The OD-17 row repeats *"3 byte-identical `align_up`"* as a
+measurement. Correcting it was attempted here and reverted: `docs/VISION.md` is
+one of twelve provider docs pinned by
+`phase24_s1_8_authority_successor.provider_docs_consumer_successor` to **exactly
+two accepted digests**, a pre- and a post-state. Any third digest is rejected by
+construction, so an ordinary edit cannot land. Eleven of the twelve are frozen
+this way; only `docs/STDLIB_FOUNDATIONS.md` is admitted at any bytes, via the
+S1.8 living-surface collapse.
+
+The successor's `status` is `ready_for_exact_provider_docs_rebase` and it names
+`owning_docs_pull_request: 320`, which **merged on 2026-09-04**; its recorded
+`owning_docs_exact_head_sha` is not an ancestor of `main`. The tree already sits
+at the post-state, so **this is a record of a completed transition still enforced
+as a constraint on the present** — the defect class Patch 24.3b owns. Advancing
+the pair to make room for this correction would assert that PR #320's provider
+docs rebase contains it, which is false; that bump was written and reverted, for
+the same reason the `current_inventory` bump was in #353.
+
+**Until that successor is retired or `docs/VISION.md` is registered as a living
+surface, this document is the correction of record for OD-17's tally.**
 
 **Two related findings are deliberately not here.** The 93 hand-rolled
 `_identity` string builders carry a correctness consequence — there is no single
