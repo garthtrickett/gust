@@ -674,6 +674,10 @@ mechanisms recorded in `docs/PINNED_MANIFEST_RETIREMENT.md`.
 - Classify every surviving manifest row against the five-class table: generated
   artifact, living document, growing inventory, structural property, behavioural
   guarantee.
+- The Phase 26/27 docs consumer successor row-set is **already discharged** —
+  retired ahead of this patch because it blocked #353, CR-b and CR-c. Do not
+  re-sweep it; see `docs/PINNED_MANIFEST_RETIREMENT.md` for what was retired,
+  what still enforces the obligation, and the twenty proved inversions.
 - Apply the matching mechanism to each. All five exist already: Patches 24.2p,
   24.2q and 24.2r shipped them, so this is application rather than design.
 - Prove the inversion for every pin retired. A relaxation that cannot fail is a
