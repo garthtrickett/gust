@@ -175,6 +175,43 @@ func write_target_artifacts(target_triple: str, object_format: str, layout_table
     }
 }
 
+// CR-b.2a field-safety probe. struct_type_id feeds both the layout identity
+// and every field identity, so the poisoned layout is rebuilt through
+// mir_struct_layout_declared_fields, which owns those identities. That keeps
+// the object otherwise valid and leaves the field-safety check as the only
+// gate that can reject it -- the clean rebuild below proves the round trip.
+func verify_field_safety(table: structs.MirStructTable[ctx], layout_table: layout.MirLayoutTable[ctx], ctx: &Arena) {
+    mut layouts: std.Vector[structs.MirStructLayout[ctx], ctx] := ctx[table.layouts];
+    if len(layouts) == 0 {
+        fail("Struct field safety: canonical table carried no layouts");
+    }
+    mut original := layouts[0];
+
+    mut clean := structs.mir_struct_layout_declared_fields(
+        original.struct_type_id,
+        original.target_id,
+        original.target_triple,
+        original.nesting_depth,
+        original.fields,
+        ctx
+    );
+    if structs.mir_struct_layout_is_valid(table, layout_table, clean, ctx) == 0 {
+        fail("Struct field safety: cleanly rebuilt layout rejected before poisoning");
+    }
+
+    mut poisoned := structs.mir_struct_layout_declared_fields(
+        std.Concat(original.struct_type_id, "\n"),
+        original.target_id,
+        original.target_triple,
+        original.nesting_depth,
+        original.fields,
+        ctx
+    );
+    if structs.mir_struct_layout_is_valid(table, layout_table, poisoned, ctx) != 0 {
+        fail("Struct field safety: struct_type_id carrying a newline was accepted");
+    }
+}
+
 func main() {
     mut ctx := os.Arena.New();
     defer ctx.Free();
@@ -207,6 +244,7 @@ func main() {
         }
         verify_canonical_mir(table, layout_table, ctx);
         verify_negatives(table, ctx);
+        verify_field_safety(table, layout_table, ctx);
         write_target_artifacts(
             target_triple,
             target.object_format,
