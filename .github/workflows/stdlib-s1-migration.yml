@@ -1,0 +1,42 @@
+name: Stdlib S1 Migration
+
+on:
+  pull_request:
+    paths:
+      - 'TASK_STDLIB.md'
+      - 'docs/STDLIB_S1_MIGRATION.md'
+      - 'tests/e2e_sync_primitives.gst'
+      - 'scripts/stdlib_s1_migration_parity.sh'
+      - 'scripts/phase20_unsafe_mutex_migration.py'
+      - 'justfile'
+      - '.github/workflows/stdlib-s1-migration.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'TASK_STDLIB.md'
+      - 'docs/STDLIB_S1_MIGRATION.md'
+      - 'tests/e2e_sync_primitives.gst'
+      - 'scripts/stdlib_s1_migration_parity.sh'
+      - 'scripts/phase20_unsafe_mutex_migration.py'
+      - 'justfile'
+      - '.github/workflows/stdlib-s1-migration.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  migration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: make gust
+      - name: guard-stdlib-s1-migration
+        run: just guard-stdlib-s1-migration
