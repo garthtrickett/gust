@@ -324,6 +324,28 @@ func main() {
     if reassignment_validation_reassign.valid == 0 {
         fail(std.Concat("Phase 15.4 reassignment table rejected: ", reassignment_validation_reassign.reason_code));
     }
+
+    // CR-b.2a field-safety probe. The assertion above is this probe's control:
+    // the same entry, the same resource and authority tables, validated clean.
+    // Only reassignment_id changes below, and it must be rejected. The entry
+    // reaches the validator through mir_resource_reassignment_table_with_entry,
+    // so this exercises the real call site rather than the shared predicate.
+    mut poisoned_reassign := replacement_reassign;
+    poisoned_reassign.reassignment_id = std.Clone(ctx, std.Concat(replacement_reassign.reassignment_id, "\n"));
+    mut poisoned_table_reassign := reassignment.mir_resource_reassignment_table_with_entry(
+        reassignment.mir_resource_reassignment_make_empty_table(ctx),
+        poisoned_reassign,
+        ctx
+    );
+    mut poisoned_validation_reassign := reassignment.mir_resource_reassignment_validate(
+        poisoned_table_reassign,
+        resource_table_reassign,
+        authority_table_reassign,
+        ctx
+    );
+    if poisoned_validation_reassign.valid != 0 {
+        fail("Phase 15.4 reassignment field safety: reassignment_id carrying a newline was accepted");
+    }
     mut reassignment_c_emission_reassign := reassignment_mir_to_c.mir_resource_reassignment_to_c_source(
         reassignment_table_reassign,
         resource_table_reassign,

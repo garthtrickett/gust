@@ -175,6 +175,60 @@ func write_target_artifacts(target_triple: str, object_format: str, layout_table
     }
 }
 
+// mir_struct_layout_declared_fields writes the identities it owns back
+// through the Index it is handed, so the probe must never pass the table's own
+// field vector: doing so rewrites the live layout's field ids and the witness
+// comes out empty. Each rebuild below gets a private copy.
+func copy_struct_fields(source: Index[std.Vector[structs.MirStructField[ctx], ctx], ctx], ctx: &Arena) Index[std.Vector[structs.MirStructField[ctx], ctx], ctx] {
+    mut source_fields: std.Vector[structs.MirStructField[ctx], ctx] := ctx[source];
+    mut copy_index := structs.mir_struct_empty_field_vector(ctx);
+    mut copied: std.Vector[structs.MirStructField[ctx], ctx] := ctx[copy_index];
+    mut field_index := 0;
+    while field_index < len(source_fields) {
+        copied.Push(source_fields[field_index]);
+        field_index = field_index + 1;
+    }
+    ctx.Set(copy_index, copied);
+    return copy_index;
+}
+
+// CR-b.2a field-safety probe. struct_type_id feeds both the layout identity
+// and every field identity, so the poisoned layout is rebuilt through
+// mir_struct_layout_declared_fields, which owns those identities. That keeps
+// the object otherwise valid and leaves the field-safety check as the only
+// gate that can reject it -- the clean rebuild below proves the round trip.
+func verify_field_safety(table: structs.MirStructTable[ctx], layout_table: layout.MirLayoutTable[ctx], ctx: &Arena) {
+    mut layouts: std.Vector[structs.MirStructLayout[ctx], ctx] := ctx[table.layouts];
+    if len(layouts) == 0 {
+        fail("Struct field safety: canonical table carried no layouts");
+    }
+    mut original := layouts[0];
+
+    mut clean := structs.mir_struct_layout_declared_fields(
+        original.struct_type_id,
+        original.target_id,
+        original.target_triple,
+        original.nesting_depth,
+        copy_struct_fields(original.fields, ctx),
+        ctx
+    );
+    if structs.mir_struct_layout_is_valid(table, layout_table, clean, ctx) == 0 {
+        fail("Struct field safety: cleanly rebuilt layout rejected before poisoning");
+    }
+
+    mut poisoned := structs.mir_struct_layout_declared_fields(
+        std.Concat(original.struct_type_id, "\n"),
+        original.target_id,
+        original.target_triple,
+        original.nesting_depth,
+        copy_struct_fields(original.fields, ctx),
+        ctx
+    );
+    if structs.mir_struct_layout_is_valid(table, layout_table, poisoned, ctx) != 0 {
+        fail("Struct field safety: struct_type_id carrying a newline was accepted");
+    }
+}
+
 func main() {
     mut ctx := os.Arena.New();
     defer ctx.Free();
@@ -207,6 +261,7 @@ func main() {
         }
         verify_canonical_mir(table, layout_table, ctx);
         verify_negatives(table, ctx);
+        verify_field_safety(table, layout_table, ctx);
         write_target_artifacts(
             target_triple,
             target.object_format,

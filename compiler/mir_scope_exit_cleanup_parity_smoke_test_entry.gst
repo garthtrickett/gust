@@ -371,6 +371,8 @@ func main() {
         fail(std.Concat("Phase 15.5 cleanup planning rejected: ", plan_result_scope.reason_code));
     }
 
+    verify_scope_field_safety(ctx_scope);
+
     mut authority_table_scope := authority_table_scope_pre;
     mut resource_table_scope := resource_table_scope_pre;
     mut apply_scope_index := 0;
@@ -473,4 +475,33 @@ func main() {
         fail("Phase 15.5 scope-exit cleanup artifacts could not be written");
     }
     os.LogStr("SUCCESS: Phase 15.5 normal scope-exit cleanup parity smoke passed");
+}
+
+// CR-b.2a field-safety probe. A minimal, otherwise-valid scope table (one
+// selected function-body root at depth 0) is built through this module's own
+// constructors, then rebuilt with scope_id carrying a newline. The clean table
+// is the control: it must validate, so the rejection below is attributable to
+// the poisoned field alone. The shared predicate is never called directly.
+func verify_scope_field_safety(ctx: &Arena) {
+    mut clean_scope_table := cleanup.mir_scope_exit_cleanup_make_scope_table(ctx);
+    clean_scope_table = cleanup.mir_scope_exit_cleanup_table_with_scope(
+        clean_scope_table,
+        make_scope("scope:phase15:field-safety:root", "", "function_body", "compiler/phase15_scope_exit_source.gst:1:1", "scope.field-safety.exit", "scope.field-safety.point", 0, 1, ctx),
+        ctx
+    );
+    mut clean_scope_validation := cleanup.mir_scope_exit_cleanup_scope_table_validate(clean_scope_table, ctx);
+    if clean_scope_validation.valid == 0 {
+        fail(std.Concat("Phase 15.5 scope field safety: clean control scope rejected: ", clean_scope_validation.reason_code));
+    }
+
+    mut poisoned_scope_table := cleanup.mir_scope_exit_cleanup_make_scope_table(ctx);
+    poisoned_scope_table = cleanup.mir_scope_exit_cleanup_table_with_scope(
+        poisoned_scope_table,
+        make_scope(std.Concat("scope:phase15:field-safety:root", "\n"), "", "function_body", "compiler/phase15_scope_exit_source.gst:1:1", "scope.field-safety.exit", "scope.field-safety.point", 0, 1, ctx),
+        ctx
+    );
+    mut poisoned_scope_validation := cleanup.mir_scope_exit_cleanup_scope_table_validate(poisoned_scope_table, ctx);
+    if poisoned_scope_validation.valid != 0 {
+        fail("Phase 15.5 scope field safety: scope_id carrying a newline was accepted");
+    }
 }

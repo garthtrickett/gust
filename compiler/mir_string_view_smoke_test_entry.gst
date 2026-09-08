@@ -177,6 +177,33 @@ func write_target_artifacts(target_triple: str, object_format: str, layout_table
     }
 }
 
+// CR-b.2a field-safety probe. literal_id is derived from encoding and
+// bytes_hex, not from symbol_name, so poisoning symbol_name leaves every
+// other invariant intact and only the field-safety check can reject.
+func verify_field_safety(table: string_view.MirStringViewTable[ctx], layout_table: layout.MirLayoutTable[ctx], ctx: &Arena) {
+    mut literals: std.Vector[string_view.MirStringLiteralStorage[ctx], ctx] := ctx[table.literals];
+    if len(literals) == 0 {
+        fail("String view field safety: canonical table carried no literals");
+    }
+    mut original := literals[0];
+
+    literals.Set(0, string_view.mir_string_view_make_literal(
+        std.Concat(original.symbol_name, "\n"),
+        original.bytes_hex,
+        ctx
+    ));
+    ctx.Set(table.literals, literals);
+    if string_view.mir_string_view_table_is_valid(table, layout_table, ctx) != 0 {
+        fail("String view field safety: symbol_name carrying a newline was accepted");
+    }
+
+    literals.Set(0, original);
+    ctx.Set(table.literals, literals);
+    if string_view.mir_string_view_table_is_valid(table, layout_table, ctx) == 0 {
+        fail("String view field safety: restoring the clean symbol_name did not restore validity");
+    }
+}
+
 func main() {
     mut ctx := os.Arena.New();
     defer ctx.Free();
@@ -206,6 +233,7 @@ func main() {
         }
         verify_canonical_mir(table, layout_table, ctx);
         verify_negatives(ctx);
+        verify_field_safety(table, layout_table, ctx);
         write_target_artifacts(
             target_triple,
             target.object_format,

@@ -175,6 +175,52 @@ func write_target_artifacts(target_triple: str, object_format: str, layout_table
     }
 }
 
+// CR-b.2a field-safety probe. variant_name is guarded inside
+// mir_enum_layout_is_valid, which mir_enum_table_is_valid delegates to; the
+// probe targets the layout validator so the rejection is attributable to the
+// poisoned field rather than to the variant lookups a poisoned name would
+// also break. The shared predicate is never called directly.
+func verify_field_safety(table: enums.MirEnumTable[ctx], layout_table: layout.MirLayoutTable[ctx], ctx: &Arena) {
+    mut layouts: std.Vector[enums.MirEnumLayout[ctx], ctx] := ctx[table.layouts];
+    mut poisoned_any := 0;
+    mut layout_index := 0;
+    while layout_index < len(layouts) {
+        mut enum_layout := layouts[layout_index];
+        mut variants: std.Vector[enums.MirEnumVariant[ctx], ctx] := ctx[enum_layout.variants];
+        mut variant_index := 0;
+        while variant_index < len(variants) {
+            mut variant := variants[variant_index];
+            if variant.has_payload == 0 && poisoned_any == 0 {
+                if enums.mir_enum_layout_is_valid(table, layout_table, enum_layout, ctx) == 0 {
+                    fail("Enum field safety: canonical layout rejected before poisoning");
+                }
+                variants.Set(variant_index, enums.mir_enum_make_fieldless_variant(
+                    variant.enum_type_id,
+                    std.Concat(variant.variant_name, "\n"),
+                    variant.declaration_index,
+                    variant.discriminant,
+                    ctx
+                ));
+                ctx.Set(enum_layout.variants, variants);
+                if enums.mir_enum_layout_is_valid(table, layout_table, enum_layout, ctx) != 0 {
+                    fail("Enum field safety: variant_name carrying a newline was accepted");
+                }
+                variants.Set(variant_index, variant);
+                ctx.Set(enum_layout.variants, variants);
+                if enums.mir_enum_layout_is_valid(table, layout_table, enum_layout, ctx) == 0 {
+                    fail("Enum field safety: restoring the clean variant_name did not restore validity");
+                }
+                poisoned_any = 1;
+            }
+            variant_index = variant_index + 1;
+        }
+        layout_index = layout_index + 1;
+    }
+    if poisoned_any == 0 {
+        fail("Enum field safety: canonical table carried no fieldless variant to poison");
+    }
+}
+
 func main() {
     mut ctx := os.Arena.New();
     defer ctx.Free();
@@ -207,6 +253,7 @@ func main() {
         }
         verify_canonical_mir(table, layout_table, ctx);
         verify_negatives(table, ctx);
+        verify_field_safety(table, layout_table, ctx);
         write_target_artifacts(
             target_triple,
             target.object_format,
