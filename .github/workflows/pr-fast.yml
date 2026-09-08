@@ -643,6 +643,9 @@ jobs:
       - name: Phase 17 cross-feature runtime composition
         run: just guard-cranelift-phase17-composition-contract
 
+      - name: Full-program bundle validation smoke
+        run: just guard-mir-native-full-program-bundle-validation-smoke
+
   guard:
     name: guard / ${{ matrix.shard }}
     runs-on: ubuntu-latest
