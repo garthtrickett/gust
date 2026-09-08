@@ -4178,7 +4178,7 @@
         {"path":"scripts/phase22_default_route_seed_convergence.py","digest":"03fc5d332de685ce9b370cc81e798b566244ef8b09eaaf8579384bd75067cdec","match_counts":{"explicit_backend_spelling":4,"mir_to_c_name":12,"generated_c_contract":6},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
         {"path":"scripts/phase24_cr15_closure.py","digest":"a990cd1b4406a516f6e11967f5f8f2004afd7f3cb0a5a3ac89dab72228c9877c","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":2,"generated_c_contract":0},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"}
       ],
-      "unchanged_other_text_surface_manifest_digest": "07c505df272a98ac6e1ce3a8dcdfaf1e788478a7697dafb0dab3ad4a01867a82",
+      "unchanged_other_text_surface_manifest_digest": "623c116934bcd3c32f849ffc93f693323a001d69078247d49121fb6e988f37f3",
       "partial_extra_or_substituted_surface": "rejected",
       "boundary": {
         "changes_compiler_source": false,
