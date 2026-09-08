@@ -7429,6 +7429,37 @@
       "begins_patch24_1_or_backend_retirement": false
     }
   },
+  "phase24_cr19_multi_module_analysis": {
+    "contract_version": "phase24_cr19_multi_module_analysis_v1",
+    "status": "patch24_cr19_bundle_validation_complete",
+    "predecessor_authority": "phase21_complete_guard_suite_v1",
+    "defect": "the planner answered supported for a bundle it had not validated",
+    "repair": "the two worker bundle checks are decided in the planner, which the capability contract names as the decision owner",
+    "bail_outs_relaxed": "none; all thirteen single-module gates are unchanged",
+    "successor_class": [
+     "CR-22",
+     "CR-23",
+     "CR-24"
+    ],
+    "phase21_complete_suite_transition": {
+      "status": "exact_phase24_cr19_bundle_validation_overlay",
+      "deferred_runner_fixtures": [
+        "compiler/typechecker_origins_test_entry.gst"
+      ],
+      "required_native_case_delta": 0,
+      "classified_deferral_delta": 0,
+      "reason_count_deltas": {
+        "inconsistent_abi_equivalent_import_signature": -1,
+        "deferred_p14_full_program_inconsistent_runtime_signature": 1,
+        "deferred_p14_full_program_unnameable_call": 0
+      },
+      "reason_code_registration": "definitional: these codes are introduced by this patch and are knowable a priori, unlike the counts",
+      "unnameable_call_zero_note": "registered at zero deliberately. Its only instance is the #348 post-image, which does not exist on main and is excluded from the corpus by construction; the code must still be registered or the per-case membership check rejects it.",
+      "figures_source": "pending: the suite exits at the per-case reason check before printing required=/deferrals=, so the counts are registered at zero and confirmed by the run this overlay unblocks",
+      "sweep_prediction": "totals unchanged; one reason bucket replaces another",
+      "sweep_prediction_head_sha": "c573e9bd"
+    }
+  },
   "phase24_filename_behavior_characterization": {
     "contract_version": "phase24_filename_behavior_characterization_v1",
     "status": "patch24_1_complete_observational_decision_open",

@@ -177,6 +177,23 @@ def phase23_guard_defer_transition(registry: dict, cases: list[dict]) -> dict:
     return transition
 
 
+def phase24_cr19_transition(registry: dict, cases: list[dict]) -> dict:
+    """The CR-19 planner-side bundle-validation overlay."""
+    record = registry.get("phase24_cr19_multi_module_analysis", {})
+    transition = record.get("phase21_complete_suite_transition", {})
+    require(transition.get("status") ==
+            "exact_phase24_cr19_bundle_validation_overlay",
+            "Patch 24 CR-19 complete-suite transition drifted")
+    require(isinstance(transition.get("reason_count_deltas"), dict) and
+            isinstance(transition.get("required_native_case_delta"), int) and
+            isinstance(transition.get("classified_deferral_delta"), int),
+            "CR-19 overlay deltas are malformed")
+    paths = {case["path"] for case in cases}
+    require(set(transition.get("deferred_runner_fixtures", [])) <= paths,
+            "CR-19 overlay fixture drifted from the runner inventory")
+    return transition
+
+
 def validate() -> dict:
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     predecessor = registry.get("phase21_native_rebuild_reproducibility", {})
@@ -201,6 +218,7 @@ def validate() -> dict:
 
     cases = runner_cases()
     phase23_guard_defer_transition(registry, cases)
+    phase24_cr19_transition(registry, cases)
     inventory = record.get("inventory", {})
     observed = {
         "total": len(cases),
@@ -585,14 +603,8 @@ def qualify_case(deadline: float, native_compiler: Path, env: dict[str, str],
         combined = (native.stdout + native.stderr).decode(errors="replace")
         matches = re.findall(r"reason_code=([^ ]+)", combined)
         reason = matches[-1] if matches else ""
-        if reason == "supported" and case["path"] == \
-                "compiler/typechecker_origins_test_entry.gst":
-            reason = "inconsistent_abi_equivalent_import_signature"
-            require("inconsistent signatures" in combined,
-                    "ABI-equivalent import-signature deferral drifted")
-        else:
-            require("expected_failure_stage=before_driver_discovery" in combined,
-                    f"deferral failure stage drifted: {case['path']}")
+        require("expected_failure_stage=before_driver_discovery" in combined,
+                f"deferral failure stage drifted: {case['path']}")
         require(reason in compile_reasons and
                 no_failed_artifacts(case_dir, native_output),
                 f"unclassified native compile deferral: {case['path']}")
@@ -673,8 +685,17 @@ def evidence() -> None:
     deferral_count = 0
     corpus_started = time.monotonic()
     cases = runner_cases()
-    transition = phase23_guard_defer_transition(
-        json.loads(REGISTRY.read_text(encoding="utf-8")), cases)
+    _registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    transitions = [
+        phase23_guard_defer_transition(_registry, cases),
+        phase24_cr19_transition(_registry, cases),
+    ]
+    # The per-case check asks whether a reason is registered at all, so it must
+    # see reasons a successor introduces -- not only the frozen Phase 21 set.
+    composed_reasons = dict(classification["compile_deferral_reason_counts"])
+    for _overlay in transitions:
+        for _reason, _delta in _overlay["reason_count_deltas"].items():
+            composed_reasons[_reason] = composed_reasons.get(_reason, 0) + _delta
     shard_base, shard_roots = create_shards(
         deadline, record["execution_shards"]["count"])
     executors = [concurrent.futures.ThreadPoolExecutor(max_workers=1)
@@ -686,7 +707,7 @@ def evidence() -> None:
             futures.append(executors[shard_index].submit(
                 qualify_case, deadline, native_compiler, env, output, case,
                 index, shard_roots[shard_index], oracle_rows, runtime_rows,
-                classification["compile_deferral_reason_counts"],
+                composed_reasons,
             ))
         for future in futures:
             disposition, reason = future.result()
@@ -704,21 +725,21 @@ def evidence() -> None:
             executor.shutdown(wait=True, cancel_futures=True)
         remove_shards(shard_base, shard_roots)
 
-    expected_reason_counts = dict(classification["compile_deferral_reason_counts"])
-    for reason, delta in transition["reason_count_deltas"].items():
-        expected_reason_counts[reason] += delta
+    expected_reason_counts = dict(composed_reasons)
     expected_reason_counts = {
         reason: count for reason, count in expected_reason_counts.items()
         if count != 0
     }
     require(reason_counts == expected_reason_counts,
             f"compile deferral population drifted: {reason_counts}")
+    required_delta = sum(o["required_native_case_delta"] for o in transitions)
+    deferral_delta = sum(o["classified_deferral_delta"] for o in transitions)
     require(required_count ==
             classification["required_native_case_count"] +
-            transition["required_native_case_delta"] + len(resolved_runtime) and
+            required_delta + len(resolved_runtime) and
             deferral_count ==
             classification["total_classified_deferral_count"] +
-            transition["classified_deferral_delta"] - len(resolved_runtime),
+            deferral_delta - len(resolved_runtime),
             "complete classified population count drifted")
     corpus_ms = int((time.monotonic() - corpus_started) * 1000)
     require(corpus_ms <= budgets["max_corpus_suite_ms"],
