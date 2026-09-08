@@ -22,9 +22,6 @@ wrong_type_source="compiler/phase11_direct_call_wrong_type_source.gst"
 aggregate_parameter_source="compiler/phase13_parameter_argument_aggregate_parameter_source.gst"
 aggregate_return_source="compiler/phase13_parameter_argument_aggregate_return_source.gst"
 target_abi_source="compiler/phase13_parameter_argument_target_abi_source.gst"
-multi_module_source="tests/phase13_parameter_argument_multi_module_source.gst"
-multi_module_helper="tests/phase13_parameter_argument_multi_module_helper_source.gst"
-multi_module_scalar_entry_source="tests/phase13_parameter_argument_multi_module_scalar_entry_source.gst"
 build_root="build/guards/cranelift_phase13_parameter_argument"
 cargo_target="$build_root/cargo-target"
 
@@ -45,9 +42,7 @@ for required_file in \
   "$selected_source" "$repeated_source" "$join_source" "$loop_source" \
   "$direct_source" "$imported_source" "$wrong_arity_source" \
   "$wrong_type_source" "$aggregate_parameter_source" \
-  "$aggregate_return_source" "$target_abi_source" \
-  "$multi_module_source" "$multi_module_helper" \
-  "$multi_module_scalar_entry_source" src/runtime.c ./gust
+  "$aggregate_return_source" "$target_abi_source" src/runtime.c ./gust
 do
   if [ ! -e "$required_file" ]; then
     echo "Phase 13.6 parameter/argument evidence is missing $required_file" >&2
@@ -58,32 +53,6 @@ if [ ! -x ./gust ]; then
   echo "Phase 13.6 parameter/argument evidence requires the rebuilt ./gust compiler." >&2
   exit 1
 fi
-
-# The multi-module fixture must stay outside the MIR-to-C text surface. This is
-# an obligation, not a snapshot: the score is recomputed, so the fixture may be
-# edited freely as long as it does not start enrolling. It cannot be stated in
-# the fixture itself -- the sentence that states it would enrol the file.
-python3 - "$multi_module_source" "$multi_module_helper" <<'EOF_ENROL'
-import pathlib, sys
-sys.path.insert(0, "scripts")
-from phase23_mir_to_c_deprecation_opening import SURFACE_PATTERNS
-
-# Control first: an instrument that cannot fire proves nothing about a zero.
-probe = "exercised through the MIR-to-C oracle"
-if not any(r.search(probe) for r in SURFACE_PATTERNS.values()):
-    print("Phase 13.6 enrolment control did not fire; the check is inert.",
-          file=sys.stderr)
-    raise SystemExit(1)
-
-for path in sys.argv[1:]:
-    text = pathlib.Path(path).read_text(encoding="utf-8")
-    hits = {name: len(r.findall(text)) for name, r in SURFACE_PATTERNS.items()}
-    if any(hits.values()):
-        print(f"Phase 13.6 multi-module fixture entered the text surface: "
-              f"{path} {hits}. Registering it moves text_surface_count; keep "
-              f"the prose out of the fixture instead.", file=sys.stderr)
-        raise SystemExit(1)
-EOF_ENROL
 
 rm -rf "$build_root"
 mkdir -p "$build_root"
@@ -286,6 +255,18 @@ assert_preserved_pre_driver_failure() {
     echo "Unsupported or invalid Phase 13.6 parameter case unexpectedly compiled: $case_name" >&2
     exit 1
   fi
+  if [ "$decision" = "supported" ]; then
+    cat "$case_dir/compiler.stdout" "$case_dir/compiler.stderr" \
+      >"$case_dir/compiler.combined"
+    rg -n -F "$expected" "$case_dir/compiler.combined" >/dev/null
+    if [ ! -e "$poison_marker" ]; then
+      cat "$case_dir/compiler.combined" >&2
+      echo "Phase 13.6 multi-module control stopped before driver discovery: $case_name" >&2
+      echo "The entry-module scan is over-broad: it deferred a program whose entry has no deferrable signature." >&2
+      exit 1
+    fi
+    return 0
+  fi
   if [ -e "$poison_marker" ]; then
     echo "Phase 13.6 pre-driver failure reached driver discovery: $case_name" >&2
     exit 1
@@ -337,52 +318,65 @@ assert_preserved_pre_driver_failure \
   "$target_abi_source" target-dependent-abi \
   deferred_p13_parameter_argument_target_dependent_abi deferred
 
-# A multi-module program must reach the same parameter/return ABI scan a
-# single-module one does. This fixture is the scalar-entry control plus
-# one reference-parameter function and nothing else, so if it stops deferring,
-# that parameter is the only thing that can have caused it. Before the repair the
-# scan refused to look at it and the planner answered `supported` for a program
-# it never examined.
-# The control for the opposite error. Its claim is about the capability
-# decision, not about producing a runnable binary, so it is asserted directly
-# rather than through run_positive_case: this is the only case here that lowers
-# via the full-program owner, which links against a runtime package the guard's
-# cargo-target does not carry.
-assert_capability_supported() {
-  local source_path="$1"
-  local case_name="$2"
-  local case_dir="$build_root/$case_name"
-  mkdir -p "$case_dir"
-  rm -f "$poison_marker"
+# --- CR-19: multi-module coverage -------------------------------------------
+# Appended below every pinned compiler invocation deliberately. The Phase 22
+# opening review renders this file's invocation sites by absolute line number,
+# so an insertion above line 249 shifts all four and reports drift even though
+# nothing about them changed. This section adds no invocation of its own and
+# moves none of theirs.
+multi_module_source="tests/phase13_parameter_argument_multi_module_source.gst"
+multi_module_helper="tests/phase13_parameter_argument_multi_module_helper_source.gst"
+multi_module_scalar_entry_source="tests/phase13_parameter_argument_multi_module_scalar_entry_source.gst"
 
-  set +e
-  GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
-  GUST_PHASE13_PARAMETER_POISON_MARKER="$poison_marker" \
-  GUST_NATIVE_BACKEND_DRIVER="$poison_driver_abs" \
-    ./gust --backend cranelift -o "$case_dir/output" "$source_path" \
-      >"$case_dir/compiler.stdout" 2>"$case_dir/compiler.stderr"
-  set -e
-  cat "$case_dir/compiler.stdout" "$case_dir/compiler.stderr" \
-    >"$case_dir/compiler.combined"
-
-  rg -n -F 'decision=supported' "$case_dir/compiler.combined" >/dev/null
-  if [ ! -e "$poison_marker" ]; then
-    cat "$case_dir/compiler.combined" >&2
-    echo "Phase 13.6 multi-module control stopped before driver discovery: $case_name" >&2
-    echo "The entry-module scan is over-broad: it deferred a program whose entry has no deferrable signature." >&2
+for required_file in \
+  "$multi_module_source" "$multi_module_helper" \
+  "$multi_module_scalar_entry_source"
+do
+  if [ ! -e "$required_file" ]; then
+    echo "Phase 13.6 multi-module evidence is missing $required_file" >&2
     exit 1
   fi
-}
+done
 
+# These fixtures must stay outside the MIR-to-C text surface. Recomputed rather
+# than pinned, so the obligation is checked and the fixture stays editable. It
+# cannot be stated in the fixture: the sentence stating it would enrol the file.
+python3 - "$multi_module_source" "$multi_module_helper" \
+  "$multi_module_scalar_entry_source" <<'EOF_ENROL'
+import pathlib, sys
+sys.path.insert(0, "scripts")
+from phase23_mir_to_c_deprecation_opening import SURFACE_PATTERNS
+
+probe = "exercised through the MIR-to-C oracle"
+if not any(r.search(probe) for r in SURFACE_PATTERNS.values()):
+    print("Phase 13.6 enrolment control did not fire; the check is inert.",
+          file=sys.stderr)
+    raise SystemExit(1)
+
+for path in sys.argv[1:]:
+    text = pathlib.Path(path).read_text(encoding="utf-8")
+    hits = {name: len(r.findall(text)) for name, r in SURFACE_PATTERNS.items()}
+    if any(hits.values()):
+        print(f"Phase 13.6 multi-module fixture entered the text surface: "
+              f"{path} {hits}. Keep the prose out of the fixture instead.",
+              file=sys.stderr)
+        raise SystemExit(1)
+EOF_ENROL
+
+# A multi-module program must reach the same parameter/return ABI scan a
+# single-module one does. Before the entry-module repair the scan refused to
+# look at it and the planner answered `supported` for a program it never
+# examined.
 assert_preserved_pre_driver_failure \
   "$multi_module_source" multi-module-reference-parameter \
   deferred_p13_parameter_argument_target_dependent_abi deferred
 
-# Scanning the whole import closure instead of the entry module would defer this
-# too, because the helper it shares with the subject carries an aggregate
-# parameter. It must stay supported, or the repair has become over-broad.
-assert_capability_supported \
-  "$multi_module_scalar_entry_source" multi-module-scalar-entry
+# The control for the opposite error. It shares the subject's helper, which
+# carries an aggregate parameter, so scanning the whole import closure instead
+# of the entry module would defer it too. It must stay supported.
+assert_preserved_pre_driver_failure \
+  "$multi_module_scalar_entry_source" multi-module-scalar-entry \
+  "decision=supported" supported
 
 python3 "$family_runner" differential-rows direct-calls |
   rg -n -F 'p13_parameterized_local_call_branch_source_route' >/dev/null
