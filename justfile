@@ -83,8 +83,8 @@ guard-pr-fast-ci-surface:
       fi
     done
 
-    if [ "$(rg -c -F 'bash scripts/install-just-ci.sh "$HOME/.local/bin"' "$workflow")" != "4" ]; then
-      echo "PR Fast must install pinned just in its build, Level 1, static native, and Phase 20 parity jobs."
+    if [ "$(rg -c -F 'bash scripts/install-just-ci.sh "$HOME/.local/bin"' "$workflow")" != "5" ]; then
+      echo "PR Fast must install pinned just in its build, Level 1, static native, Phase 20 parity, and manifest enforcement jobs."
       exit 1
     fi
 
@@ -24131,3 +24131,14 @@ guard-stdlib-s1-mutex-guard-fibers:
     echo "🔒 Checking S1 MutexGuard fiber contention..."
     just guard-stdlib-s1-mutex-guard-scope
     bash scripts/stdlib_s1_mutex_guard_fibers_parity.sh
+
+# The PR Fast guards that need no build, so the `manifest` job can run them
+# outside the trusted-actor gate. Everything else in that workflow needs the
+# 60-minute compile and stays gated. Named here rather than spelled out in the
+# workflow on purpose: the workflow is a pinned text surface and the guard
+# names it would have to carry enrol it further into the manifest it checks.
+guard-pr-fast-manifest-enforcement:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📄 Running the build-independent PR fast manifest guards..."
+    just guard-cranelift-phase23-mir-to-c-deprecation-opening-contract
