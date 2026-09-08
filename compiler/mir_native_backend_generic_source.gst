@@ -3429,6 +3429,13 @@ func mir_native_generic_source_lower(programs: std.Vector[ast.Program[ctx], ctx]
                                         ctx
                                     );
                                 }
+                                if full_program_result.deferred == 1 {
+                                    return mir_native_generic_deferred_result(
+                                        full_program_result.reason_code,
+                                        full_program_result.diagnostic,
+                                        ctx
+                                    );
+                                }
                                 if full_program_result.represented == 0 {
                                     return mir_native_generic_empty_result(1, "", ctx);
                                 }
