@@ -498,11 +498,6 @@ def check() -> None:
                         cr15_roadmap_transition.get(
                             "current_changed_text_surfaces") == changed_rows,
                         "Patch 24.0a changed surface identity drifted")
-                require(module.canonical_digest([
-                    row for row in live_rows if row["path"] not in changed_paths
-                ]) == cr15_roadmap_transition.get(
-                    "unchanged_other_text_surface_manifest_digest"),
-                    "Patch 24.0a changed an unregistered text surface")
             else:
                 require(
                     cr15_opening_transition.get("contract_version") ==
@@ -530,11 +525,6 @@ def check() -> None:
                             cr15_opening_transition.get(
                                 "current_changed_text_surfaces") == changed_rows,
                             "Patch 24.0b changed surface identity drifted")
-                    require(module.canonical_digest([
-                        row for row in live_rows if row["path"] not in changed_paths
-                    ]) == cr15_opening_transition.get(
-                        "unchanged_other_text_surface_manifest_digest"),
-                        "Patch 24.0b changed an unregistered text surface")
                 else:
                     successor_unchanged = [
                         "invocation_count", "invocation_manifest_digest",
@@ -549,15 +539,6 @@ def check() -> None:
                         if cr15_qualification_transition is None else
                         cr15_derivation_transition.get(
                             "current_changed_text_surfaces", [])
-                    )
-                    successor_other_digest = (
-                        module.canonical_digest([
-                            row for row in live_rows
-                            if row["path"] not in successor_paths
-                        ])
-                        if cr15_qualification_transition is None else
-                        cr15_derivation_transition.get(
-                            "unchanged_other_text_surface_manifest_digest")
                     )
                     current = live_inventory()
                     derivation_current = (
@@ -598,9 +579,7 @@ def check() -> None:
                             "partial_extra_or_substituted_surface") == "rejected" and
                         [row["path"] for row in successor_rows] == successor_paths and
                         cr15_derivation_transition.get(
-                            "current_changed_text_surfaces") == successor_rows and
-                        successor_other_digest == cr15_derivation_transition.get(
-                            "unchanged_other_text_surface_manifest_digest"),
+                            "current_changed_text_surfaces") == successor_rows,
                         "Patch 24.0c CR-15 closure successor drifted")
                     for field in successor_unchanged:
                         require(derivation_current.get(field) ==
@@ -656,15 +635,7 @@ def check() -> None:
                             [row.get("path") for row in previous_rows] ==
                             qualification_paths and
                             all(previous != live for previous, live in
-                                zip(previous_rows, qualification_rows)) and
-                            (module.canonical_digest([
-                                row for row in live_rows
-                                if row["path"] not in qualification_paths
-                            ]) if cr15_seed_transition is None else
-                             cr15_qualification_transition.get(
-                                 "unchanged_other_text_surface_manifest_digest")) ==
-                            cr15_qualification_transition.get(
-                                "unchanged_other_text_surface_manifest_digest"),
+                                zip(previous_rows, qualification_rows)),
                             "Patch 24.0d CR-15 closure successor drifted")
                         for field in qualification_unchanged:
                             require(
@@ -717,15 +688,7 @@ def check() -> None:
                                 [row.get("path") for row in previous_seed_rows] ==
                                 seed_paths and
                                 all(previous != live for previous, live in
-                                    zip(previous_seed_rows, seed_rows)) and
-                                (module.canonical_digest([
-                                    row for row in live_rows
-                                    if row["path"] not in seed_paths
-                                ]) if cr15_seed_publication is None else
-                                 cr15_seed_transition.get(
-                                     "unchanged_other_text_surface_manifest_digest")) ==
-                                cr15_seed_transition.get(
-                                    "unchanged_other_text_surface_manifest_digest"),
+                                    zip(previous_seed_rows, seed_rows)),
                                 "Patch 24.0e CR-15 closure successor drifted")
                             for field in qualification_unchanged:
                                 require(

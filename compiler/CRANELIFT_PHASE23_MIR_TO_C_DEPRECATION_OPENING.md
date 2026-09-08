@@ -8,7 +8,6 @@ Do not edit by hand.
 - Status: `patch23_7_complete`
 - Observed main: `f328b30d107467811f8eabfd1dc14e17136187f1`
 - Text surfaces: `566`
-- Text manifest: `2029e1fca630e5644b2630942fae831a569328a863aea203d9504a34c15bcc4d`
 - Executable compiler invocations: `316`
 - Invocation manifest: `97a1535de0d7e52edff46019b529935d143f5a3c3d6013ad2ecab76ad4fbf32f`
 - Structural surfaces: `15`
@@ -560,7 +559,7 @@ Do not edit by hand.
 | `scripts/phase22_stability_qualification.py` | `594420daf66181307a76e969902151a82b2fa41abb1b6480ce07178f8e013824` | `explicit_backend_spelling=0, mir_to_c_name=1, generated_c_contract=0` | `archive_candidate` | `cranelift` | `map_to_live_lane_or_archive_in_23_10_and_23_11` | `24` | `active_evidence_surface_is_missing_or_changes_identity` |
 | `scripts/phase23_assurance_envelopes.json` | `eaff0471a4cdd86ef1e2537c4a4c9e277dd9139be1866f9f19a67f7e7591f639` | `explicit_backend_spelling=0, mir_to_c_name=2, generated_c_contract=1` | `archive_candidate` | `cranelift` | `map_to_live_lane_or_archive_in_23_10_and_23_11` | `24` | `active_evidence_surface_is_missing_or_changes_identity` |
 | `scripts/phase23_assurance_manifests.json` | `96190019287d104d2fb113062e3641bce449c739644536285b48b85ea45f296b` | `explicit_backend_spelling=0, mir_to_c_name=2, generated_c_contract=0` | `archive_candidate` | `cranelift` | `map_to_live_lane_or_archive_in_23_10_and_23_11` | `24` | `active_evidence_surface_is_missing_or_changes_identity` |
-| `scripts/phase23_closure.py` | `6418dbe7c24814230c9149846add5913a917fb799019d3fe7e94752cadd99a88` | `explicit_backend_spelling=0, mir_to_c_name=24, generated_c_contract=0` | `archive_candidate` | `cranelift` | `map_to_live_lane_or_archive_in_23_10_and_23_11` | `24` | `active_evidence_surface_is_missing_or_changes_identity` |
+| `scripts/phase23_closure.py` | `c1fd0e38edcb335124e5241757ef2ba697c88825cecf7192875a73232a10cc72` | `explicit_backend_spelling=0, mir_to_c_name=24, generated_c_contract=0` | `archive_candidate` | `cranelift` | `map_to_live_lane_or_archive_in_23_10_and_23_11` | `24` | `active_evidence_surface_is_missing_or_changes_identity` |
 | `scripts/phase23_historical_full_qualification.py` | `8908ed2056577de54c31bb8772630b31da36e551e805e5979954295b2c8505e8` | `explicit_backend_spelling=0, mir_to_c_name=2, generated_c_contract=0` | `archive_candidate` | `cranelift` | `map_to_live_lane_or_archive_in_23_10_and_23_11` | `24` | `active_evidence_surface_is_missing_or_changes_identity` |
 | `scripts/phase23_issue_health_opening.py` | `5966bc2cb1375eca1691febee772b5695c10410f3e31062cbe8ed82623f89a1f` | `explicit_backend_spelling=3, mir_to_c_name=4, generated_c_contract=0` | `archive_candidate` | `cranelift` | `map_to_live_lane_or_archive_in_23_10_and_23_11` | `24` | `active_evidence_surface_is_missing_or_changes_identity` |
 | `scripts/phase23_mir_evidence_owner.py` | `8c81ff582317aecf76b4b4c7d97a8a69a9dc8bc6c2baa55363a076fa1e96a99e` | `explicit_backend_spelling=0, mir_to_c_name=4, generated_c_contract=0` | `archive_candidate` | `cranelift` | `map_to_live_lane_or_archive_in_23_10_and_23_11` | `24` | `active_evidence_surface_is_missing_or_changes_identity` |
@@ -654,7 +653,6 @@ explicit successor when they intentionally migrate or archive a surface.
 - Generated-C backend removal is Phase 24; bootstrap-C retirement is Phase 25.
 - Ordinary compilation emits no deprecation notice.
 - Post-deprecation text surfaces: `566`
-- Post-deprecation text manifest: `7d7e61b089b9f0573c6cb490ffab09bdf0a1fbf87ee0628d49adea7ae117c4a8`
 - Post-deprecation invocations: `316`
 - Post-deprecation invocation manifest: `97a1535de0d7e52edff46019b529935d143f5a3c3d6013ad2ecab76ad4fbf32f`
 - Unclassified: `0`
@@ -665,7 +663,7 @@ explicit successor when they intentionally migrate or archive a surface.
 - Status: `landed_post_publication`
 - Authority base main: `2204239042b3e19283dc400d212445a72aff1f50`
 - Partial or mismatched state: `rejected`
-- Accepted `post_publication` pair: seed `af8a283c9ef4dbe621f78729e89a4c7270c0b740aeb7164af57fa953e5f29924`, text manifest `6ee29149e1afba58a8407416effa561714ccb774ccaa074496ba1a9714683fec`
+- Accepted `post_publication` pair: seed `af8a283c9ef4dbe621f78729e89a4c7270c0b740aeb7164af57fa953e5f29924`
 
 ### Patch 23.8a landed seed evidence
 
@@ -683,7 +681,6 @@ explicit successor when they intentionally migrate or archive a surface.
 - Status: `patch23_9_complete`
 - Authority base main: `05b2545ce21688577834d5914137c81be7c99de5`
 - Current text surfaces: `566`
-- Current text manifest: `c0792ffe4ce7506ff5fede547bee6e36935753fe83839a2dee5e2ed5e4882eaf`
 - Current invocations: `316`
 - Current invocation manifest: `97a1535de0d7e52edff46019b529935d143f5a3c3d6013ad2ecab76ad4fbf32f`
 - Invocation identities, structural surfaces, classifications, and route selections are unchanged.
@@ -696,7 +693,6 @@ explicit successor when they intentionally migrate or archive a surface.
 - Status: `patch23_10_complete`
 - Authority base main: `7178ee245d6d340329f6b5614dbf8be12fe8d273`
 - Current text surfaces: `567`
-- Current text manifest: `bf36e9d615a9ae0e7ed87819a6a6a5747914dbc18e8b8801ef29f86f9223a250`
 - Current invocations: `316`
 - Current invocation manifest: `38dd7844248df6e5713c92196bae672d80fca3b89e7a2a15d0b0db675df2bce6`
 - Invocation count, structural surfaces, route selections, and zero-unclassified status are unchanged.
@@ -709,7 +705,6 @@ explicit successor when they intentionally migrate or archive a surface.
 - Status: `patch23_11_complete`
 - Authority base main: `7941bceb2ed62bca97917ad241290caf5fd97bf6`
 - Current text surfaces: `567`
-- Current text manifest: `b09feb3d91ab333851210bf0e263eb832f540bb2ac087b7728a2ef75627f1aed`
 - Current invocations: `317`
 - Current invocation manifest: `11033cb9e521bd434269a00aa0a287650ce58f488c129b1d8a088b93b53a7655`
 - Live explicit-C invocations: `178` (unchanged)
@@ -722,7 +717,6 @@ explicit successor when they intentionally migrate or archive a surface.
 - Status: `patch23_12_complete`
 - Authority base main: `c2b6ec8c4a3650e704541ebd00b57020783f1def`
 - Current text surfaces: `567`
-- Current text manifest: `ad472de1f9b96cd28db6ad6a794927c244c498f7e6f2f34aaaacde39a92470b3`
 - Current invocations: `318`
 - Current invocation manifest: `f27c56c4865a333647c4af6f770bb2f81cca8e4e7a909e2e3221035ff8ae42b0`
 - Explicit-C invocations: `178`
@@ -736,7 +730,6 @@ explicit successor when they intentionally migrate or archive a surface.
 - Status: `patch23_13_complete`
 - Authority base main: `9b89296b25d2ab0cf1963ea1d1707139149d0576`
 - Current text surfaces: `567`
-- Current text manifest: `123206380d6d07516e05d3557d3a033f1cac516cd0d093cafebbdf276a13935e`
 - Current invocations: `318`
 - Current invocation manifest: `f27c56c4865a333647c4af6f770bb2f81cca8e4e7a909e2e3221035ff8ae42b0`
 - Explicit-C invocations: `178`

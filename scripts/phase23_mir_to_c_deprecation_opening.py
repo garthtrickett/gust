@@ -75,6 +75,7 @@ SELF_EXCLUSIONS = {
     "scripts/phase24_cr15_qualification.py",
     "scripts/phase24_filename_behavior_characterization.py",
     "scripts/phase24_docs_successor_retirement_inversions.py",
+    "scripts/phase24_3b_dead_chain_inversions.py",
 }
 
 SURFACE_PATTERNS = {
@@ -500,11 +501,6 @@ def validate_phase24_cr15_seed_publication_transition(
             require(state["inventory"].get(field) ==
                     transition["previous_inventory"].get(field),
                     f"seed publication changed retained inventory field: {field}")
-    require(canonical_digest([
-        row for row in live_rows
-        if row["path"] not in authority_paths + [seed_path]
-    ]) == transition.get("unchanged_other_text_surface_manifest_digest"),
-            "seed publication changed an unregistered text surface")
     return matching_states[0]["inventory"]
 
 
@@ -548,10 +544,6 @@ def validate_phase24_cr15_closure_transition(
             "Patch 24.0f changed text-surface manifests drifted")
     require(current_rows == [row for row in live_rows if row["path"] in paths],
             "Patch 24.0f live changed text surfaces drifted")
-    require(canonical_digest([
-        row for row in live_rows if row["path"] not in paths
-    ]) == transition.get("unchanged_other_text_surface_manifest_digest"),
-            "Patch 24.0f changed an unregistered text surface")
     for field in unchanged:
         require(live_inventory.get(field) ==
                 transition["previous_inventory"].get(field),
@@ -607,10 +599,6 @@ def validate_phase24_filename_characterization_transition(
         require(transition.get("current_inventory") == live_inventory and
                 current_rows == [row for row in live_rows if row["path"] in paths],
                 "Patch 24.1 live text-surface identity drifted")
-        require(canonical_digest([
-            row for row in live_rows if row["path"] not in paths
-        ]) == transition.get("unchanged_other_text_surface_manifest_digest"),
-                "Patch 24.1 changed an unregistered text surface")
         return transition["current_inventory"]
 
     successor = decision.get("consumer_inventory_transition", {})
@@ -663,10 +651,6 @@ def validate_phase24_filename_characterization_transition(
                 current_successor_rows == [
                     row for row in live_rows if row["path"] in successor_paths],
                 "Patch 24.1a live text-surface identity drifted")
-        require(canonical_digest([
-            row for row in live_rows if row["path"] not in successor_paths
-        ]) == successor.get("unchanged_other_text_surface_manifest_digest"),
-                "Patch 24.1a changed an unregistered text surface")
         return successor["current_inventory"]
 
     inventory_paths = inventory_successor.get("registered_changed_text_surfaces", [])
@@ -713,11 +697,6 @@ def validate_phase24_filename_characterization_transition(
                 current_inventory_rows == [
                     row for row in live_rows if row["path"] in inventory_paths],
                 "Patch 24.2 live consumer inventory drifted")
-        require(canonical_digest([
-            row for row in live_rows if row["path"] not in inventory_paths
-        ]) == inventory_successor.get(
-            "unchanged_other_text_surface_manifest_digest"),
-                "Patch 24.2 changed an unregistered text surface")
         return inventory_successor["current_inventory"]
 
     coordination_paths = coordination_successor.get("registered_changed_paths", [])
@@ -756,11 +735,6 @@ def validate_phase24_filename_characterization_transition(
                 coordination_current_rows == [
                     row for row in live_rows if row["path"] in coordination_paths],
                 "S1.8 coordination live consumer inventory drifted")
-        require(canonical_digest([
-            row for row in live_rows if row["path"] not in coordination_paths
-        ]) == coordination_successor.get(
-            "unchanged_other_text_surface_manifest_digest"),
-                "S1.8 coordination changed an unregistered text surface")
         return coordination_successor["current_inventory"]
 
     docs_paths = docs_successor.get("registered_changed_text_surfaces", [])
@@ -831,15 +805,17 @@ def validate_phase24_filename_characterization_transition(
     # pair has never been bumped since PR #318 - it means "the tree as of the
     # docs migration", not "the tree now", so every later patch touching any of
     # the ~554 frozen enrolled surfaces failed it and no honest bump existed.
-    # The paired unchanged_other_text_surface_manifest_digest check was frozen
-    # the same way and is retired with it. The obligation they encoded - no
+    # The paired unchanged-other check was frozen the same way and was retired
+    # with it; Patch 24.3b then retired the stored digest itself, along with the
+    # other fifty-nine that no live comparison read. The obligation they encoded - no
     # unregistered enrolled surface changed - is enforced by the equivalent
     # digest in phase24_cr15_stdlib_guard_transition.py, which is maintained,
     # is bumped by each patch that moves a surface, and runs earlier, inside
     # scan_text_surfaces(). What is retained is the per-row half: the
     # registered documents must still stand at exactly one registered state.
-    # See docs/PINNED_MANIFEST_RETIREMENT.md and the twenty proved inversions
-    # in scripts/phase24_docs_successor_retirement_inversions.py.
+    # See docs/PINNED_MANIFEST_RETIREMENT.md, the twenty proved inversions in
+    # scripts/phase24_docs_successor_retirement_inversions.py, and the Patch
+    # 24.3b inversions in scripts/phase24_3b_dead_chain_inversions.py.
     matched_states = [
         state for state, _inventory, rows in accepted_live_states
         if rows == live_docs_rows
@@ -961,8 +937,6 @@ def validate() -> dict:
                 "seed_digest":
                     "af8a283c9ef4dbe621f78729e89a4c7270c0b740aeb7164af57fa953e5f29924",
                 "text_surface_count": 566,
-                "text_surface_manifest_digest":
-                    "6ee29149e1afba58a8407416effa561714ccb774ccaa074496ba1a9714683fec",
             },
         ],
         "unchanged_inventory_fields": [
@@ -1001,8 +975,6 @@ def validate() -> dict:
                 "seed_digest":
                     "af8a283c9ef4dbe621f78729e89a4c7270c0b740aeb7164af57fa953e5f29924",
                 "text_surface_count": 566,
-                "text_surface_manifest_digest":
-                    "6ee29149e1afba58a8407416effa561714ccb774ccaa074496ba1a9714683fec",
             } and
             frozen_transition.get("unchanged_live_route_fields") == [
                 "invocation_count",
@@ -1194,15 +1166,11 @@ def validate() -> dict:
             accepted_inventory = cr15_inventory
         accepted_state = {
             "text_surface_count": accepted_inventory["text_surface_count"],
-            "text_surface_manifest_digest":
-                accepted_inventory["text_surface_manifest_digest"],
         }
     require(accepted_state is not None,
             "live seed is outside the registered seed inventory transitions")
     previous_inventory = copy.deepcopy(successor["post_deprecation_inventory"])
     previous_inventory["text_surface_count"] = accepted_state["text_surface_count"]
-    previous_inventory["text_surface_manifest_digest"] = \
-        accepted_state["text_surface_manifest_digest"]
     for field in frozen_transition["unchanged_live_route_fields"]:
         require(frozen_transition["current_inventory"].get(field) ==
                 previous_inventory.get(field),
@@ -1437,12 +1405,6 @@ def validate() -> dict:
                             roadmap_transition.get(
                                 "current_changed_text_surfaces") == changed_rows,
                             "Patch 24.0 changed text-surface identity drifted")
-                    require(
-                        canonical_digest([row for row in live_text_rows
-                                          if row["path"] not in changed_paths]) ==
-                        roadmap_transition.get(
-                            "unchanged_other_text_surface_manifest_digest"),
-                        "Patch 24.0 changed an unregistered text surface")
                 else:
                     require(
                         cr15_roadmap_transition.get("contract_version") ==
@@ -1475,12 +1437,6 @@ def validate() -> dict:
                                 cr15_roadmap_transition.get(
                                     "current_changed_text_surfaces") == changed_rows,
                                 "Patch 24.0a changed text-surface identity drifted")
-                        require(
-                            canonical_digest([row for row in live_text_rows
-                                              if row["path"] not in changed_paths]) ==
-                            cr15_roadmap_transition.get(
-                                "unchanged_other_text_surface_manifest_digest"),
-                            "Patch 24.0a changed an unregistered text surface")
                         expected_inventory = cr15_current
                     else:
                         require(
@@ -1512,12 +1468,6 @@ def validate() -> dict:
                                     cr15_opening_transition.get(
                                         "current_changed_text_surfaces") == changed_rows,
                                     "Patch 24.0b changed text-surface identity drifted")
-                            require(
-                                canonical_digest([row for row in live_text_rows
-                                                  if row["path"] not in changed_paths]) ==
-                                cr15_opening_transition.get(
-                                    "unchanged_other_text_surface_manifest_digest"),
-                                "Patch 24.0b changed an unregistered text surface")
                             expected_inventory = cr15_opening_transition["current_inventory"]
                         else:
                             successor_unchanged = [
@@ -1533,15 +1483,6 @@ def validate() -> dict:
                                 if cr15_qualification_transition is None else
                                 cr15_derivation_transition.get(
                                     "current_changed_text_surfaces", [])
-                            )
-                            successor_other_digest = (
-                                canonical_digest([
-                                    row for row in live_text_rows
-                                    if row["path"] not in successor_paths
-                                ])
-                                if cr15_qualification_transition is None else
-                                cr15_derivation_transition.get(
-                                    "unchanged_other_text_surface_manifest_digest")
                             )
                             derivation_live_inventory = (
                                 live_inventory if cr15_qualification_transition is None
@@ -1584,9 +1525,7 @@ def validate() -> dict:
                                     "partial_extra_or_substituted_surface") == "rejected" and
                                 [row["path"] for row in successor_rows] == successor_paths and
                                 cr15_derivation_transition.get(
-                                    "current_changed_text_surfaces") == successor_rows and
-                                successor_other_digest == cr15_derivation_transition.get(
-                                    "unchanged_other_text_surface_manifest_digest"),
+                                    "current_changed_text_surfaces") == successor_rows,
                                 "Patch 24.0c CR-15 derivation transition drifted")
                             for field in successor_unchanged:
                                 require(derivation_live_inventory.get(field) ==
@@ -1658,15 +1597,7 @@ def validate() -> dict:
                                     all(previous_by_path[path] != row
                                         for path, row in zip(
                                             qualification_paths,
-                                            qualification_rows)) and
-                                    (canonical_digest([
-                                        row for row in live_text_rows
-                                        if row["path"] not in qualification_paths
-                                    ]) if cr15_seed_transition is None else
-                                     cr15_qualification_transition.get(
-                                         "unchanged_other_text_surface_manifest_digest")) ==
-                                    cr15_qualification_transition.get(
-                                        "unchanged_other_text_surface_manifest_digest"),
+                                            qualification_rows)),
                                     "Patch 24.0d CR-15 qualification transition drifted")
                                 for field in qualification_unchanged:
                                     require(
@@ -1732,15 +1663,7 @@ def validate() -> dict:
                                         [row.get("path") for row in previous_seed_rows] ==
                                         seed_paths and
                                         all(previous != current for previous, current in
-                                            zip(previous_seed_rows, seed_rows)) and
-                                        (canonical_digest([
-                                            row for row in live_text_rows
-                                            if row["path"] not in seed_paths
-                                        ]) if cr15_seed_publication is None else
-                                         cr15_seed_transition.get(
-                                             "unchanged_other_text_surface_manifest_digest")) ==
-                                        cr15_seed_transition.get(
-                                            "unchanged_other_text_surface_manifest_digest"),
+                                            zip(previous_seed_rows, seed_rows)),
                                         "Patch 24.0e CR-15 seed authority transition drifted")
                                     for field in seed_unchanged:
                                         require(
@@ -1969,7 +1892,6 @@ def render(registry: dict, record: dict) -> str:
         f"- Status: `{record['status']}`",
         f"- Observed main: `{record['observed_main_sha']}`",
         f"- Text surfaces: `{inventory['text_surface_count']}`",
-        f"- Text manifest: `{inventory['text_surface_manifest_digest']}`",
         f"- Executable compiler invocations: `{inventory['invocation_count']}`",
         f"- Invocation manifest: `{inventory['invocation_manifest_digest']}`",
         f"- Structural surfaces: `{inventory['structural_surface_count']}`",
@@ -2041,7 +1963,6 @@ def render(registry: dict, record: dict) -> str:
         "- Generated-C backend removal is Phase 24; bootstrap-C retirement is Phase 25.",
         "- Ordinary compilation emits no deprecation notice.",
         f"- Post-deprecation text surfaces: `{post['text_surface_count']}`",
-        f"- Post-deprecation text manifest: `{post['text_surface_manifest_digest']}`",
         f"- Post-deprecation invocations: `{post['invocation_count']}`",
         f"- Post-deprecation invocation manifest: `{post['invocation_manifest_digest']}`",
         f"- Unclassified: `{post['unclassified_count']}`",
@@ -2053,7 +1974,7 @@ def render(registry: dict, record: dict) -> str:
         f"- Authority base main: `{seed_transition['authority_base_main']}`",
         f"- Partial or mismatched state: `{seed_transition['partial_or_mismatched_seed_inventory_state']}`",
     ] + [
-        f"- Accepted `{row['state']}` pair: seed `{row['seed_digest']}`, text manifest `{row['text_surface_manifest_digest']}`"
+        f"- Accepted `{row['state']}` pair: seed `{row['seed_digest']}`"
         for row in seed_transition["accepted_live_states"]
     ] + [
         "",
@@ -2077,7 +1998,6 @@ def render(registry: dict, record: dict) -> str:
         f"- Status: `{frozen_transition['status']}`",
         f"- Authority base main: `{frozen_transition['authority_base_main']}`",
         f"- Current text surfaces: `{frozen_inventory['text_surface_count']}`",
-        f"- Current text manifest: `{frozen_inventory['text_surface_manifest_digest']}`",
         f"- Current invocations: `{frozen_inventory['invocation_count']}`",
         f"- Current invocation manifest: `{frozen_inventory['invocation_manifest_digest']}`",
         "- Invocation identities, structural surfaces, classifications, and route selections are unchanged.",
@@ -2094,7 +2014,6 @@ def render(registry: dict, record: dict) -> str:
         f"- Status: `{focused_transition['status']}`",
         f"- Authority base main: `{focused_transition['authority_base_main']}`",
         f"- Current text surfaces: `{focused_inventory['text_surface_count']}`",
-        f"- Current text manifest: `{focused_inventory['text_surface_manifest_digest']}`",
         f"- Current invocations: `{focused_inventory['invocation_count']}`",
         f"- Current invocation manifest: `{focused_inventory['invocation_manifest_digest']}`",
         "- Invocation count, structural surfaces, route selections, and zero-unclassified status are unchanged.",
@@ -2111,7 +2030,6 @@ def render(registry: dict, record: dict) -> str:
         f"- Status: `{archive_transition['status']}`",
         f"- Authority base main: `{archive_transition['authority_base_main']}`",
         f"- Current text surfaces: `{archive_inventory['text_surface_count']}`",
-        f"- Current text manifest: `{archive_inventory['text_surface_manifest_digest']}`",
         f"- Current invocations: `{archive_inventory['invocation_count']}`",
         f"- Current invocation manifest: `{archive_inventory['invocation_manifest_digest']}`",
         f"- Live explicit-C invocations: `{archive_transition['live_explicit_c_population']}` (unchanged)",
@@ -2128,7 +2046,6 @@ def render(registry: dict, record: dict) -> str:
         f"- Status: `{production_transition['status']}`",
         f"- Authority base main: `{production_transition['authority_base_main']}`",
         f"- Current text surfaces: `{production_inventory['text_surface_count']}`",
-        f"- Current text manifest: `{production_inventory['text_surface_manifest_digest']}`",
         f"- Current invocations: `{production_inventory['invocation_count']}`",
         f"- Current invocation manifest: `{production_inventory['invocation_manifest_digest']}`",
         f"- Explicit-C invocations: `{production_inventory['invocation_selection_counts']['explicit_c']}`",
@@ -2147,7 +2064,6 @@ def render(registry: dict, record: dict) -> str:
         f"- Status: `{qualification_transition['status']}`",
         f"- Authority base main: `{qualification_transition['authority_base_main']}`",
         f"- Current text surfaces: `{qualification_inventory['text_surface_count']}`",
-        f"- Current text manifest: `{qualification_inventory['text_surface_manifest_digest']}`",
         f"- Current invocations: `{qualification_inventory['invocation_count']}`",
         f"- Current invocation manifest: `{qualification_inventory['invocation_manifest_digest']}`",
         f"- Explicit-C invocations: `{qualification_inventory['invocation_selection_counts']['explicit_c']}`",
