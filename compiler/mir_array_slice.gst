@@ -251,13 +251,6 @@ func mir_array_slice_table_is_legacy_empty(table: MirArraySliceTable[ctx], ctx: 
     return 0;
 }
 
-func mir_array_slice_field_is_safe(value: str, allow_empty: int) int {
-    if allow_empty == 0 && len(value) == 0 { return 0; }
-    if std.str_find(value, "\n") != 0 - 1 { return 0; }
-    if std.str_find(value, "\r") != 0 - 1 { return 0; }
-    return 1;
-}
-
 func mir_array_slice_align_up(value: int, alignment: int) int {
     if alignment <= 0 { return 0; }
     mut quotient := value / alignment;
@@ -768,7 +761,7 @@ func mir_array_slice_table_is_valid(table: MirArraySliceTable[ctx], layout_table
            std.str_eq(value.element_type_id, array_layout.array_layout.element_type_id) == 0 ||
            len(elements) != array_layout.array_layout.element_count ||
            std.str_eq(value.lifetime_region, "function:main") == 0 ||
-           mir_array_slice_field_is_safe(value.array_id, 0) == 0
+           layout.mir_layout_field_is_safe(value.array_id, 0) == 0
         {
             return 0;
         }

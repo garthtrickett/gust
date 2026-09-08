@@ -177,13 +177,6 @@ func mir_string_view_table_is_legacy_empty(table: MirStringViewTable[ctx], ctx: 
     return 0;
 }
 
-func mir_string_view_field_is_safe(value: str, allow_empty: int) int {
-    if allow_empty == 0 && len(value) == 0 { return 0; }
-    if std.str_find(value, "\n") != 0 - 1 { return 0; }
-    if std.str_find(value, "\r") != 0 - 1 { return 0; }
-    return 1;
-}
-
 func mir_string_view_hex_nibble(value: int) int {
     if value >= 48 && value <= 57 { return value - 48; }
     if value >= 65 && value <= 70 { return value - 65 + 10; }
@@ -616,8 +609,8 @@ func mir_string_view_table_is_valid(table: MirStringViewTable[ctx], layout_table
     mut literal_index := 0;
     while literal_index < len(literals) {
         mut literal := literals[literal_index];
-        if mir_string_view_field_is_safe(literal.literal_id, 0) == 0 ||
-           mir_string_view_field_is_safe(literal.symbol_name, 0) == 0 ||
+        if layout.mir_layout_field_is_safe(literal.literal_id, 0) == 0 ||
+           layout.mir_layout_field_is_safe(literal.symbol_name, 0) == 0 ||
            std.str_eq(literal.encoding, "utf8") == 0 ||
            mir_string_view_hex_is_valid(literal.bytes_hex) == 0 ||
            literal.byte_length != len(literal.bytes_hex) / 2 ||

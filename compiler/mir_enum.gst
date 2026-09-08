@@ -186,13 +186,6 @@ func mir_enum_table_is_legacy_empty(table: MirEnumTable[ctx], ctx: &Arena) int {
     return 0;
 }
 
-func mir_enum_field_is_safe(value: str, allow_empty: int) int {
-    if allow_empty == 0 && len(value) == 0 { return 0; }
-    if std.str_find(value, "\n") != 0 - 1 { return 0; }
-    if std.str_find(value, "\r") != 0 - 1 { return 0; }
-    return 1;
-}
-
 func mir_enum_align_up(value: int, alignment: int) int {
     if alignment <= 0 { return 0; }
     mut quotient := value / alignment;
@@ -619,7 +612,7 @@ func mir_enum_layout_is_valid(table: MirEnumTable[ctx], layout_table: layout.Mir
     if std.str_eq(value.target_id, table.target_id) == 0 ||
        std.str_eq(value.target_triple, table.target_triple) == 0 ||
        std.str_eq(value.representation_kind, "explicit_tag_and_payload") == 0 ||
-       mir_enum_field_is_safe(value.enum_type_id, 0) == 0 ||
+       layout.mir_layout_field_is_safe(value.enum_type_id, 0) == 0 ||
        value.tag_offset != 0 ||
        value.variant_count <= 0 ||
        value.size <= 0 || value.alignment <= 0
@@ -653,9 +646,9 @@ func mir_enum_layout_is_valid(table: MirEnumTable[ctx], layout_table: layout.Mir
         mut variant := variants[index];
         if variant.declaration_index != index ||
            std.str_eq(variant.enum_type_id, value.enum_type_id) == 0 ||
-           mir_enum_field_is_safe(variant.variant_name, 0) == 0 ||
-           mir_enum_field_is_safe(variant.payload_type_id, 0) == 0 ||
-           mir_enum_field_is_safe(variant.payload_layout_id, 0) == 0 ||
+           layout.mir_layout_field_is_safe(variant.variant_name, 0) == 0 ||
+           layout.mir_layout_field_is_safe(variant.payload_type_id, 0) == 0 ||
+           layout.mir_layout_field_is_safe(variant.payload_layout_id, 0) == 0 ||
            variant.discriminant < 0 ||
            variant.payload_alignment <= 0
         {
@@ -776,8 +769,8 @@ func mir_enum_table_is_valid(table: MirEnumTable[ctx], layout_table: layout.MirL
            len(payload_values) != variant_query.variant.payload_element_count ||
            std.str_eq(value.enum_type_id, layout_query.enum_layout.enum_type_id) == 0 ||
            std.str_eq(value.storage_region, "function:main") == 0 ||
-           mir_enum_field_is_safe(value.value_id, 0) == 0 ||
-           mir_enum_field_is_safe(value.flow_origin, 0) == 0
+           layout.mir_layout_field_is_safe(value.value_id, 0) == 0 ||
+           layout.mir_layout_field_is_safe(value.flow_origin, 0) == 0
         {
             return 0;
         }
@@ -796,7 +789,7 @@ func mir_enum_table_is_valid(table: MirEnumTable[ctx], layout_table: layout.MirL
            std.str_eq(operation.target_id, table.target_id) == 0 ||
            operation.expect_success != 1 ||
            std.str_eq(operation.expected_reason_code, "enum_valid") == 0 ||
-           mir_enum_field_is_safe(operation.operation_name, 0) == 0
+           layout.mir_layout_field_is_safe(operation.operation_name, 0) == 0
         {
             return 0;
         }

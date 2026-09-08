@@ -135,13 +135,6 @@ func mir_struct_empty_int_vector(ctx: &Arena) Index[std.Vector[int, ctx], ctx] {
     return index;
 }
 
-func mir_struct_field_is_safe(value: str, allow_empty: int) int {
-    if allow_empty == 0 && len(value) == 0 { return 0; }
-    if std.str_find(value, "\n") != 0 - 1 { return 0; }
-    if std.str_find(value, "\r") != 0 - 1 { return 0; }
-    return 1;
-}
-
 func mir_struct_align_up(value: int, alignment: int) int {
     if alignment <= 0 { return 0 - 1; }
     mut quotient := value / alignment;
@@ -573,7 +566,7 @@ func mir_struct_layout_is_valid(table: MirStructTable[ctx], layout_table: layout
     if mir_struct_align_up(value.size, value.alignment) != value.size { return 0; }
     if std.str_eq(value.target_id, table.target_id) == 0 || std.str_eq(value.target_triple, table.target_triple) == 0 { return 0; }
     if std.str_eq(value.representation_kind, "declaration_order_struct") == 0 { return 0; }
-    if mir_struct_field_is_safe(value.struct_type_id, 0) == 0 { return 0; }
+    if layout.mir_layout_field_is_safe(value.struct_type_id, 0) == 0 { return 0; }
     mut fields: std.Vector[MirStructField[ctx], ctx] := ctx[value.fields];
     if len(fields) != value.field_count { return 0; }
 
@@ -584,8 +577,8 @@ func mir_struct_layout_is_valid(table: MirStructTable[ctx], layout_table: layout
     while index < len(fields) {
         mut field := fields[index];
         if field.declaration_index != index || field.size <= 0 || field.alignment <= 0 || field.alignment > value.alignment { return 0; }
-        if mir_struct_field_is_safe(field.field_id, 0) == 0 || mir_struct_field_is_safe(field.field_name, 0) == 0 ||
-           mir_struct_field_is_safe(field.type_id, 0) == 0 || mir_struct_field_is_safe(field.layout_id, 0) == 0 { return 0; }
+        if layout.mir_layout_field_is_safe(field.field_id, 0) == 0 || layout.mir_layout_field_is_safe(field.field_name, 0) == 0 ||
+           layout.mir_layout_field_is_safe(field.type_id, 0) == 0 || layout.mir_layout_field_is_safe(field.layout_id, 0) == 0 { return 0; }
         if std.str_eq(field.field_id, mir_struct_field_identity(value.struct_type_id, field.field_name, index, ctx)) == 0 { return 0; }
 
         // Field storage must be exactly what the layout authority owns.
@@ -657,8 +650,8 @@ func mir_struct_table_is_valid(table: MirStructTable[ctx], layout_table: layout.
         mut leaves: std.Vector[MirStructLeaf[ctx], ctx] := ctx[mir_struct_leaves(table, value.layout_id, ctx)];
         mut scalars: std.Vector[int, ctx] := ctx[value.scalar_values];
         if len(scalars) != len(leaves) || len(leaves) == 0 { return 0; }
-        if mir_struct_field_is_safe(value.value_id, 0) == 0 ||
-           mir_struct_field_is_safe(value.flow_origin, 0) == 0 ||
+        if layout.mir_layout_field_is_safe(value.value_id, 0) == 0 ||
+           layout.mir_layout_field_is_safe(value.flow_origin, 0) == 0 ||
            std.str_eq(value.storage_region, "function:main") == 0
         {
             return 0;
@@ -683,8 +676,8 @@ func mir_struct_table_is_valid(table: MirStructTable[ctx], layout_table: layout.
            std.str_eq(operation.target_id, table.target_id) == 0 ||
            operation.expect_success != 1 ||
            std.str_eq(operation.expected_reason_code, "struct_operation_valid") == 0 ||
-           mir_struct_field_is_safe(operation.operation_name, 0) == 0 ||
-           mir_struct_field_is_safe(operation.value_id, 0) == 0
+           layout.mir_layout_field_is_safe(operation.operation_name, 0) == 0 ||
+           layout.mir_layout_field_is_safe(operation.value_id, 0) == 0
         {
             return 0;
         }
