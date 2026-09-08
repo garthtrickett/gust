@@ -57,6 +57,32 @@ if [ ! -x ./gust ]; then
   exit 1
 fi
 
+# The multi-module fixture must stay outside the MIR-to-C text surface. This is
+# an obligation, not a snapshot: the score is recomputed, so the fixture may be
+# edited freely as long as it does not start enrolling. It cannot be stated in
+# the fixture itself -- the sentence that states it would enrol the file.
+python3 - "$multi_module_source" "$multi_module_helper" <<'EOF_ENROL'
+import pathlib, sys
+sys.path.insert(0, "scripts")
+from phase23_mir_to_c_deprecation_opening import SURFACE_PATTERNS
+
+# Control first: an instrument that cannot fire proves nothing about a zero.
+probe = "exercised through the MIR-to-C oracle"
+if not any(r.search(probe) for r in SURFACE_PATTERNS.values()):
+    print("Phase 13.6 enrolment control did not fire; the check is inert.",
+          file=sys.stderr)
+    raise SystemExit(1)
+
+for path in sys.argv[1:]:
+    text = pathlib.Path(path).read_text(encoding="utf-8")
+    hits = {name: len(r.findall(text)) for name, r in SURFACE_PATTERNS.items()}
+    if any(hits.values()):
+        print(f"Phase 13.6 multi-module fixture entered the text surface: "
+              f"{path} {hits}. Registering it moves text_surface_count; keep "
+              f"the prose out of the fixture instead.", file=sys.stderr)
+        raise SystemExit(1)
+EOF_ENROL
+
 rm -rf "$build_root"
 mkdir -p "$build_root"
 
