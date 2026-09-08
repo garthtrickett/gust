@@ -24142,3 +24142,10 @@ guard-pr-fast-manifest-enforcement:
     set -euo pipefail
     echo "📄 Running the build-independent PR fast manifest guards..."
     just guard-cranelift-phase23-mir-to-c-deprecation-opening-contract
+
+# CR-19. Appended: the justfile is keyed on line numbers by the Patch 24.0c
+# manifest, so a mid-file insert breaks digests while the count stays right.
+# Delegates to the existing `guard` recipe, so it adds no compiler invocation row
+# to the Phase 22 inventory.
+guard-mir-native-full-program-bundle-validation-smoke:
+    just guard compiler/mir_native_full_program_bundle_validation_smoke_test_entry.gst
