@@ -73,6 +73,74 @@ jobs:
           if-no-files-found: error
 
 
+  manifest:
+    # Deliberately ungated and build-independent. Every other job in this
+    # workflow needs `build`, and `build` is restricted to the trusted Codex
+    # actor on codex/** for cost and untrusted-fork reasons (AGENTS.md, the
+    # `codex/` prefix section; CI_THROUGHPUT.md, runner table). That gate is
+    # correct for a 60-minute compile. It was not correct for the text-surface
+    # manifest: when the gate is false the whole workflow skips, and a skipped
+    # job reads as a pass, so the manifest guards stopped enforcing without
+    # ever reporting that they had. The guards below are pure Python and need
+    # no build, so they run for every actor on every branch; the final step
+    # then states, as a failure rather than a silence, whether the gated
+    # guards ran at all. `codex-trusted-ci.yml` already fails rather than
+    # skips on this same condition -- this makes PR Fast agree with it.
+    name: text-surface manifest enforcement
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: build
+    if: always()
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install guard tools
+        run: |
+          bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+          bash scripts/install-just-ci.sh "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Build-independent manifest guards
+        run: just guard-pr-fast-manifest-enforcement
+
+      - name: Report whether the gated guard jobs ran
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+          HEAD_REF: ${{ github.head_ref || github.ref_name }}
+          ACTOR: ${{ github.actor }}
+          EXPECTED_ACTOR: ${{ vars.CODEX_GITHUB_ACTOR }}
+        run: |
+          set -euo pipefail
+          case "$BUILD_RESULT" in
+            success)
+              echo "build ran: the gated guard jobs in this workflow are live."
+              exit 0
+              ;;
+            failure|cancelled)
+              echo "build reported '$BUILD_RESULT'. That job carries its own"
+              echo "red; this one only reports the gate, so it does not add a"
+              echo "second failure for the same cause."
+              exit 0
+              ;;
+          esac
+          echo "The build job was skipped, so Level 1 contracts, the guard"
+          echo "shards, the Phase 20 parity job and the final diff check did"
+          echo "not run. They did not pass -- nothing evaluated them."
+          echo
+          echo "  head ref        : $HEAD_REF"
+          echo "  actor           : $ACTOR"
+          echo "  expected actor  : ${EXPECTED_ACTOR:-<unset>}"
+          echo
+          echo "The gate needs a codex/ branch prefix, a non-empty"
+          echo "CODEX_GITHUB_ACTOR repository variable, and an exact actor"
+          echo "match. Whichever of those is false above is why."
+          echo
+          echo "The manifest guards in this job ran regardless and passed."
+          echo "Everything else in PR Fast is unverified on this run."
+          exit 1
+
   level1:
     name: Level 1 contracts
     runs-on: ubuntu-latest
