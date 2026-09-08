@@ -22,6 +22,8 @@ wrong_type_source="compiler/phase11_direct_call_wrong_type_source.gst"
 aggregate_parameter_source="compiler/phase13_parameter_argument_aggregate_parameter_source.gst"
 aggregate_return_source="compiler/phase13_parameter_argument_aggregate_return_source.gst"
 target_abi_source="compiler/phase13_parameter_argument_target_abi_source.gst"
+multi_module_source="tests/phase13_parameter_argument_multi_module_source.gst"
+multi_module_helper="tests/phase13_parameter_argument_multi_module_helper_source.gst"
 build_root="build/guards/cranelift_phase13_parameter_argument"
 cargo_target="$build_root/cargo-target"
 
@@ -42,7 +44,8 @@ for required_file in \
   "$selected_source" "$repeated_source" "$join_source" "$loop_source" \
   "$direct_source" "$imported_source" "$wrong_arity_source" \
   "$wrong_type_source" "$aggregate_parameter_source" \
-  "$aggregate_return_source" "$target_abi_source" src/runtime.c ./gust
+  "$aggregate_return_source" "$target_abi_source" \
+  "$multi_module_source" "$multi_module_helper" src/runtime.c ./gust
 do
   if [ ! -e "$required_file" ]; then
     echo "Phase 13.6 parameter/argument evidence is missing $required_file" >&2
@@ -306,7 +309,17 @@ assert_preserved_pre_driver_failure \
   "$target_abi_source" target-dependent-abi \
   deferred_p13_parameter_argument_target_dependent_abi deferred
 
+# A multi-module program must reach the same parameter/return ABI scan a
+# single-module one does. This fixture is the aggregate-parameter negative plus
+# one import and nothing else, so if it stops deferring, being multi-module is
+# the only thing that can have caused it. Before the entry-module repair the
+# scan refused to look at it and the planner answered `supported` for a program
+# it never examined.
+assert_preserved_pre_driver_failure \
+  "$multi_module_source" multi-module-aggregate-parameter \
+  deferred_p13_parameter_argument_aggregate_parameter deferred
+
 python3 "$family_runner" differential-rows direct-calls |
   rg -n -F 'p13_parameterized_local_call_branch_source_route' >/dev/null
 
-echo "✅ Phase 13.6 parameter/argument evidence passed: ordered three-parameter identities, direct and imported multi-argument calls, repeated/expression/CFG/loop composition, six malformed MIR contracts, source type failures, and three precise ABI deferrals."
+echo "✅ Phase 13.6 parameter/argument evidence passed: ordered three-parameter identities, direct and imported multi-argument calls, repeated/expression/CFG/loop composition, six malformed MIR contracts, source type failures, three precise ABI deferrals, and the same aggregate-parameter deferral reached through a multi-module program."
