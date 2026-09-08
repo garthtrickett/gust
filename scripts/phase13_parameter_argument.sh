@@ -35,7 +35,6 @@ positive_cases=(
   "$loop_source|7|call-result-loop-state|0"
   "$direct_source|48|inherited-direct-multi-argument|0"
   "$imported_source|42|inherited-imported-multi-argument|0"
-  "$multi_module_scalar_entry_source|42|multi-module-scalar-entry|0"
 )
 
 for required_file in \
@@ -344,9 +343,46 @@ assert_preserved_pre_driver_failure \
 # that parameter is the only thing that can have caused it. Before the repair the
 # scan refused to look at it and the planner answered `supported` for a program
 # it never examined.
+# The control for the opposite error. Its claim is about the capability
+# decision, not about producing a runnable binary, so it is asserted directly
+# rather than through run_positive_case: this is the only case here that lowers
+# via the full-program owner, which links against a runtime package the guard's
+# cargo-target does not carry.
+assert_capability_supported() {
+  local source_path="$1"
+  local case_name="$2"
+  local case_dir="$build_root/$case_name"
+  mkdir -p "$case_dir"
+  rm -f "$poison_marker"
+
+  set +e
+  GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
+  GUST_PHASE13_PARAMETER_POISON_MARKER="$poison_marker" \
+  GUST_NATIVE_BACKEND_DRIVER="$poison_driver_abs" \
+    ./gust --backend cranelift -o "$case_dir/output" "$source_path" \
+      >"$case_dir/compiler.stdout" 2>"$case_dir/compiler.stderr"
+  set -e
+  cat "$case_dir/compiler.stdout" "$case_dir/compiler.stderr" \
+    >"$case_dir/compiler.combined"
+
+  rg -n -F 'decision=supported' "$case_dir/compiler.combined" >/dev/null
+  if [ ! -e "$poison_marker" ]; then
+    cat "$case_dir/compiler.combined" >&2
+    echo "Phase 13.6 multi-module control stopped before driver discovery: $case_name" >&2
+    echo "The entry-module scan is over-broad: it deferred a program whose entry has no deferrable signature." >&2
+    exit 1
+  fi
+}
+
 assert_preserved_pre_driver_failure \
   "$multi_module_source" multi-module-reference-parameter \
   deferred_p13_parameter_argument_target_dependent_abi deferred
+
+# Scanning the whole import closure instead of the entry module would defer this
+# too, because the helper it shares with the subject carries an aggregate
+# parameter. It must stay supported, or the repair has become over-broad.
+assert_capability_supported \
+  "$multi_module_scalar_entry_source" multi-module-scalar-entry
 
 python3 "$family_runner" differential-rows direct-calls |
   rg -n -F 'p13_parameterized_local_call_branch_source_route' >/dev/null
