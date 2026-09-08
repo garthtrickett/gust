@@ -31,6 +31,16 @@ OTHER_ENROLLED = "compiler/mir_layout.gst"
 NEW_SURFACE = "compiler/phase24_inversion_probe_surface.md"
 SUBSTITUTE_SURFACE = "compiler/mir_layout_substituted.gst"
 
+# The registered PR #318 document L01 perturbs.
+REGISTERED_DOC = "docs/RUST_PROTOTYPE_REMOVAL.md"
+
+# Every tracked path this suite writes to, so that restore() can put each one
+# back from bytes it saved rather than from HEAD.  CREATED_PATHS exist only
+# while a case runs and are absent from HEAD.
+PERTURBED_PATHS = (REGISTERED_DOC, OTHER_ENROLLED,
+                   "scripts/cranelift_feature_registry.json")
+CREATED_PATHS = (NEW_SURFACE, SUBSTITUTE_SURFACE)
+
 DRIFTED = "Phase 26/27 docs consumer successor drifted"
 FROZEN_ROW = "Phase 26/27 docs changed a frozen row beyond file identity"
 LIVE_STATE = "Phase 26/27 docs live state is partial, extra, or substituted"
@@ -195,7 +205,7 @@ def apply_tree_case(kind: str) -> None:
         # The three registered PR #318 documents that are not also Patch 24.2r
         # living surfaces are the ones this check can speak about; the other
         # six are projected to frozen rows by that earlier, deliberate design.
-        target = ROOT / "docs/RUST_PROTOTYPE_REMOVAL.md"
+        target = ROOT / REGISTERED_DOC
         target.write_bytes(target.read_bytes() + b"\n<!-- inv -->\n")
         bump_24_2f()
     elif kind == "other-enrolled-edit":
@@ -213,15 +223,41 @@ def apply_tree_case(kind: str) -> None:
         raise AssertionError(f"unknown tree case: {kind}")
 
 
-def restore() -> None:
-    """Return the worktree to HEAD, including index-only and created paths."""
-    for created in (NEW_SURFACE, SUBSTITUTE_SURFACE):
-        git("rm", "-q", "--force", "--ignore-unmatch", created)
+def snapshot() -> dict[str, bytes]:
+    """Save the bytes of every path a case will perturb, before it runs."""
+    return {path: (ROOT / path).read_bytes() for path in PERTURBED_PATHS}
+
+
+def restore(saved: dict[str, bytes]) -> None:
+    """Undo exactly the paths this suite perturbs, from the saved bytes.
+
+    This must never widen to the worktree.  An earlier version restored with
+    `git reset HEAD -- .` followed by `git checkout -- .`, which discards every
+    uncommitted change in the tree, not just the ones this suite made - on
+    2026-09-08 it destroyed an unrelated lane's in-progress fix while printing
+    20/20 PASS.  The lost edit was the smaller cost: any measurement taken
+    after such a run was taken against a silently rewound tree, and the suite
+    reported success either way, so a wrong result looked exactly like a right
+    one.  Restoring per path from saved bytes cannot reach anything the suite
+    did not itself write, and the index reset is likewise path-scoped.
+    """
+    for created in CREATED_PATHS:
         path = ROOT / created
         if path.exists():
             path.unlink()
-    git("reset", "-q", "HEAD", "--", ".")
-    git("checkout", "--", ".")
+        git("reset", "-q", "HEAD", "--", created)
+    for path, original in saved.items():
+        (ROOT / path).write_bytes(original)
+        git("reset", "-q", "HEAD", "--", path)
+
+
+def unrestored(saved: dict[str, bytes]) -> list[str]:
+    """Name every path restore() failed to return to its saved bytes."""
+    missed = [path for path, original in saved.items()
+              if (ROOT / path).read_bytes() != original]
+    missed += [created for created in CREATED_PATHS
+               if (ROOT / created).exists()]
+    return sorted(missed)
 
 
 def main() -> int:
@@ -251,10 +287,15 @@ def main() -> int:
         return 1
 
     for name, kind, expected in TREE_CASES:
+        saved = snapshot()
         apply_tree_case(kind)
         code, message = run_guard()
-        REGISTRY.write_bytes(original)
-        restore()
+        restore(saved)
+        missed = unrestored(saved)
+        if missed:
+            print("CONTROL FAILED: restore() left these paths perturbed: "
+                  f"{', '.join(missed)}")
+            return 1
         ok = code != 0 and expected in message
         failures += 0 if ok else 1
         print(f"[{'PASS' if ok else 'FAIL'}] {name}", flush=True)
