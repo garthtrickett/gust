@@ -510,13 +510,6 @@ def validate_transitions(value: dict) -> None:
             ] and
             consumer.get("partial_extra_or_substituted_surface") == "rejected",
             "Phase 23 consumer transition drifted")
-    require(consumer.get("previous_inventory", {}).get(
-                "text_surface_manifest_digest") ==
-            "750a79c58822a4fb410b5fe906cb9c10f694f9f613e305cc05a820f42b24aac8" and
-            consumer.get("current_inventory", {}).get(
-                "text_surface_manifest_digest") ==
-            "62554b494475af54f9dc4fc8bb5973fe6631657b5ef424cf32b0d686c2037970",
-            "Phase 23 consumer inventory identities drifted")
 
 
 def evidence(value: dict) -> None:

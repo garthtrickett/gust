@@ -1625,19 +1625,28 @@ def normalize_phase23_text_surfaces(
     # Patch 24.2f state. Both are exact registered states; anything else rejects.
     auth = registry.get("phase22_default_route_seed_convergence", {}).get(
         "phase24_2g_auth_seed_identity_successor")
-    auth_paths: list[str] = []
-    if isinstance(auth, dict):
-        require(auth.get("contract_version") ==
-                "phase24_2g_auth_seed_identity_successor_v1" and
-                auth.get("status") == "patch24_2g_closure_landed" and
-                auth.get("registered_changed_paths") == [
-                    "gust_v4.c",
-                    "scripts/phase22_default_route_seed_convergence.py",
-                    "scripts/phase24_cr15_closure.py"] and
-                auth.get("added_text_surfaces") == [] and
-                auth.get("partial_extra_or_substituted_surface") == "rejected",
-                "Patch 24.2g-auth seed identity successor drifted")
-        auth_paths = auth["registered_changed_paths"]
+    # Patch 24.3b: this successor carries the one stored aggregate manifest
+    # digest that is compared against a value derived from the live tree, so it
+    # is the one the retirement kept. The guard used to fall back to the S1.9
+    # implementation successor's copy when this one was absent; that copy was
+    # retired with the other fifty-nine, so the successor is now required to be
+    # present. The requirement is asserted here, where the successor is read,
+    # not where the digest is used: everything below is derived from
+    # auth_paths, so a check placed further down could never be the one that
+    # fires - the inversion for a missing successor proved exactly that.
+    require(isinstance(auth, dict),
+            "Patch 24.2g-auth seed identity successor is missing")
+    require(auth.get("contract_version") ==
+            "phase24_2g_auth_seed_identity_successor_v1" and
+            auth.get("status") == "patch24_2g_closure_landed" and
+            auth.get("registered_changed_paths") == [
+                "gust_v4.c",
+                "scripts/phase22_default_route_seed_convergence.py",
+                "scripts/phase24_cr15_closure.py"] and
+            auth.get("added_text_surfaces") == [] and
+            auth.get("partial_extra_or_substituted_surface") == "rejected",
+            "Patch 24.2g-auth seed identity successor drifted")
+    auth_paths: list[str] = auth["registered_changed_paths"]
     union_paths = changed_paths + [
         path for path in auth_paths if path not in changed_paths]
     # A path registered by Patch 24.2g-auth is judged by that successor instead,
@@ -1676,10 +1685,7 @@ def normalize_phase23_text_surfaces(
     other_digest = digest_bytes(json.dumps(
         [row for row in rows if row["path"] not in scope],
         sort_keys=True, separators=(",", ":")).encode())
-    expected_other = (auth["unchanged_other_text_surface_manifest_digest"]
-                      if auth_paths
-                      else transition["unchanged_other_text_surface_manifest_digest"])
-    require(other_digest == expected_other,
+    require(other_digest == auth["unchanged_other_text_surface_manifest_digest"],
             f"Patch 24.2f changed an unregistered text surface: {other_digest}")
     replacements = {
         row["path"]: copy.deepcopy(row)

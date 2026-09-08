@@ -3113,7 +3113,7 @@
                   "authority_base_main": "2204239042b3e19283dc400d212445a72aff1f50",
                   "seed_path": "gust_v4.c",
                   "accepted_live_states": [
-                    {"state": "post_publication", "seed_digest": "af8a283c9ef4dbe621f78729e89a4c7270c0b740aeb7164af57fa953e5f29924", "text_surface_count": 566, "text_surface_manifest_digest": "6ee29149e1afba58a8407416effa561714ccb774ccaa074496ba1a9714683fec"}
+                    {"state": "post_publication", "seed_digest": "af8a283c9ef4dbe621f78729e89a4c7270c0b740aeb7164af57fa953e5f29924", "text_surface_count": 566}
                   ],
                   "unchanged_inventory_fields": ["invocation_count", "invocation_manifest_digest", "structural_surface_count", "structural_manifest_digest", "classification_counts", "invocation_selection_counts", "unclassified_count"],
                   "partial_or_mismatched_seed_inventory_state": "rejected",
@@ -3762,7 +3762,7 @@
           "phase24_opening_preflight_roadmap_transition": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_changed_paths","previous_changed_text_surfaces","current_changed_text_surfaces","unchanged_other_text_surface_manifest_digest","unchanged_fields","partial_extra_or_substituted_surface"],
+            "required": ["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_changed_paths","previous_changed_text_surfaces","current_changed_text_surfaces","unchanged_fields","partial_extra_or_substituted_surface"],
             "properties": {
               "contract_version": {"const": "phase24_opening_preflight_roadmap_transition_v1"},
               "status": {"const": "patch24_0_complete"},
@@ -3772,7 +3772,6 @@
               "registered_changed_paths": {"const": ["TASK.md","scripts/phase23_closure.py"]},
               "previous_changed_text_surfaces": {"type": "array", "minItems": 2, "maxItems": 2},
               "current_changed_text_surfaces": {"type": "array", "minItems": 2, "maxItems": 2},
-              "unchanged_other_text_surface_manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
               "unchanged_fields": {"const": ["text_surface_count","invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","classification_counts","invocation_selection_counts","unclassified_count"]},
               "partial_extra_or_substituted_surface": {"const": "rejected"}
             }
@@ -3780,7 +3779,7 @@
           "phase24_cr15_roadmap_amendment_transition": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_changed_paths","previous_changed_text_surfaces","current_changed_text_surfaces","unchanged_other_text_surface_manifest_digest","unchanged_fields","partial_extra_or_substituted_surface"],
+            "required": ["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_changed_paths","previous_changed_text_surfaces","current_changed_text_surfaces","unchanged_fields","partial_extra_or_substituted_surface"],
             "properties": {
               "contract_version": {"const": "phase24_cr15_roadmap_amendment_transition_v1"},
               "status": {"const": "patch24_0a_complete"},
@@ -3790,7 +3789,6 @@
               "registered_changed_paths": {"const": ["TASK.md","scripts/phase23_closure.py"]},
               "previous_changed_text_surfaces": {"type": "array", "minItems": 2, "maxItems": 2},
               "current_changed_text_surfaces": {"type": "array", "minItems": 2, "maxItems": 2},
-              "unchanged_other_text_surface_manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
               "unchanged_fields": {"const": ["text_surface_count","invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","classification_counts","invocation_selection_counts","unclassified_count"]},
               "partial_extra_or_substituted_surface": {"const": "rejected"}
             }
@@ -3798,7 +3796,7 @@
           "phase24_cr15_opening_transition": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_changed_paths","previous_changed_text_surfaces","current_changed_text_surfaces","unchanged_other_text_surface_manifest_digest","unchanged_fields","partial_extra_or_substituted_surface"],
+            "required": ["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_changed_paths","previous_changed_text_surfaces","current_changed_text_surfaces","unchanged_fields","partial_extra_or_substituted_surface"],
             "properties": {
               "contract_version": {"const": "phase24_cr15_opening_transition_v1"},
               "status": {"const": "patch24_0b_complete_inert"},
@@ -3808,7 +3806,6 @@
               "registered_changed_paths": {"const": ["TASK.md","scripts/phase23_closure.py"]},
               "previous_changed_text_surfaces": {"type": "array", "minItems": 2, "maxItems": 2},
               "current_changed_text_surfaces": {"type": "array", "minItems": 2, "maxItems": 2},
-              "unchanged_other_text_surface_manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
               "unchanged_fields": {"const": ["text_surface_count","invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","classification_counts","invocation_selection_counts","unclassified_count"]},
               "partial_extra_or_substituted_surface": {"const": "rejected"}
             }
@@ -4010,7 +4007,7 @@
           "consumer_inventory_transition": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_changed_paths","current_changed_text_surfaces","live_justfile_successor_digest","unchanged_other_text_surface_manifest_digest","unchanged_fields","partial_extra_or_substituted_surface"],
+            "required": ["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_changed_paths","current_changed_text_surfaces","live_justfile_successor_digest","unchanged_fields","partial_extra_or_substituted_surface"],
             "properties": {
               "contract_version": {"const": "phase24_cr15_derivation_consumer_transition_v1"},
               "status": {"const": "patch24_0c_complete"},
@@ -4020,7 +4017,6 @@
               "registered_changed_paths": {"type": "array", "minItems": 12, "maxItems": 12, "uniqueItems": true},
               "current_changed_text_surfaces": {"type": "array", "minItems": 12, "maxItems": 12},
               "live_justfile_successor_digest": {"const": "84792d72c720a64bcd4d7df089e99684a36587daf031d808ec50f58ae5b0ecd1"},
-              "unchanged_other_text_surface_manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
               "unchanged_fields": {"const": ["invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","invocation_selection_counts","unclassified_count"]},
               "partial_extra_or_substituted_surface": {"const": "rejected"}
             }
@@ -4095,7 +4091,7 @@
       "phase24_cr15_seed_authority_consumer_transition": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_changed_paths","previous_changed_text_surfaces","current_changed_text_surfaces","unchanged_other_text_surface_manifest_digest","unchanged_fields","partial_extra_or_substituted_surface","seed_publication_transition"],
+        "required": ["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_changed_paths","previous_changed_text_surfaces","current_changed_text_surfaces","unchanged_fields","partial_extra_or_substituted_surface","seed_publication_transition"],
         "properties": {
           "contract_version": {"const":"phase24_cr15_seed_authority_consumer_transition_v1"},
           "status": {"const":"ready_for_seed_publication"},
@@ -4105,13 +4101,12 @@
           "registered_changed_paths": {"const":["compiler/CRANELIFT_PHASE22_DEFAULT_ROUTE_SEED_CONVERGENCE.md","scripts/cranelift_registry.py","scripts/phase22_default_route_seed_convergence.py","scripts/phase23_closure.py"]},
           "previous_changed_text_surfaces": {"type":"array","minItems":4,"maxItems":4},
           "current_changed_text_surfaces": {"type":"array","minItems":4,"maxItems":4},
-          "unchanged_other_text_surface_manifest_digest": {"type":"string","pattern":"^[0-9a-f]{64}$"},
           "unchanged_fields": {"const":["text_surface_count","invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","classification_counts","invocation_selection_counts","unclassified_count"]},
           "partial_extra_or_substituted_surface": {"const":"rejected"},
           "seed_publication_transition": {
             "type":"object",
             "additionalProperties":false,
-            "required":["contract_version","status","authority_base_main","previous_inventory","registered_authority_changed_paths","previous_authority_text_surfaces","current_authority_text_surfaces","seed_path","accepted_live_states","unchanged_other_text_surface_manifest_digest","unchanged_fields","partial_extra_or_substituted_surface"],
+            "required":["contract_version","status","authority_base_main","previous_inventory","registered_authority_changed_paths","previous_authority_text_surfaces","current_authority_text_surfaces","seed_path","accepted_live_states","unchanged_fields","partial_extra_or_substituted_surface"],
             "properties":{
               "contract_version":{"const":"phase24_cr15_seed_publication_consumer_transition_v1"},
               "status":{"const":"ready_for_seed_publication"},
@@ -4122,7 +4117,6 @@
               "current_authority_text_surfaces":{"type":"array","minItems":1,"maxItems":1},
               "seed_path":{"const":"gust_v4.c"},
               "accepted_live_states":{"type":"array","minItems":2,"maxItems":2},
-              "unchanged_other_text_surface_manifest_digest":{"type":"string","pattern":"^[0-9a-f]{64}$"},
               "unchanged_fields":{"const":["text_surface_count","invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","classification_counts","invocation_selection_counts","unclassified_count"]},
               "partial_extra_or_substituted_surface":{"const":"rejected"}
             }
@@ -4140,7 +4134,7 @@
           "live_justfile_successor_digest": {"const":"2d5aa99bafb59f662c0b6d33925570ca5cfbf22a66bc45b4af707b9ff59faa6c"},
           "consumer_inventory_transition": {
             "type":"object","additionalProperties":false,
-            "required":["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_changed_paths","previous_changed_text_surfaces","current_changed_text_surfaces","unchanged_other_text_surface_manifest_digest","unchanged_fields","added_text_surface_count","partial_extra_or_substituted_surface"],
+            "required":["contract_version","status","authority_base_main","previous_inventory","current_inventory","registered_changed_paths","previous_changed_text_surfaces","current_changed_text_surfaces","unchanged_fields","added_text_surface_count","partial_extra_or_substituted_surface"],
             "properties": {
               "contract_version":{"const":"phase24_cr15_closure_consumer_transition_v1"},
               "status":{"const":"patch24_0f_ready_for_merge"},
@@ -4150,7 +4144,6 @@
               "registered_changed_paths":{"const":[".github/workflows/pr-fast.yml","TASK.md","docs/PHASE24_CR15_CLOSURE.md","docs/SHARED_SEMANTIC_ZONE.md","scripts/cranelift_registry.py","scripts/cranelift_test_levels.json","scripts/phase23_closure.py","scripts/phase24_cr15_closure.py"]},
               "previous_changed_text_surfaces":{"type":"array","minItems":6,"maxItems":6},
               "current_changed_text_surfaces":{"type":"array","minItems":8,"maxItems":8},
-              "unchanged_other_text_surface_manifest_digest":{"type":"string","pattern":"^[0-9a-f]{64}$"},
               "unchanged_fields":{"const":["invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","invocation_selection_counts","unclassified_count"]},
               "added_text_surface_count":{"const":2},
               "partial_extra_or_substituted_surface":{"const":"rejected"}
@@ -4297,12 +4290,11 @@
               },
               "consumer_inventory_transition": {
                 "contract_version":"phase24_universal_tcs_decision_consumer_transition_v1",
-                "previous_inventory":{"text_surface_count":574,"text_surface_manifest_digest":"62554b494475af54f9dc4fc8bb5973fe6631657b5ef424cf32b0d686c2037970","invocation_count":318,"invocation_manifest_digest":"f27c56c4865a333647c4af6f770bb2f81cca8e4e7a909e2e3221035ff8ae42b0","structural_surface_count":15,"structural_manifest_digest":"b7cd89cf9619d7bc28ecdbafaf6b616534fd68d9728ef47b85629f0531c8a22a","classification_counts":{"archive_candidate":474,"bootstrap_phase25":10,"focused_live_oracle":4,"historical_only":73,"production_or_release_migration":28},"invocation_selection_counts":{"explicit_c":178,"explicit_cranelift":119,"explicit_invalid_or_parser_probe":3,"implicit_default":18},"unclassified_count":0},
-                "current_inventory":{"text_surface_count":574,"text_surface_manifest_digest":"fd678bd0c032e4034bfdadfa55f9d17fe453c2b7b409bc9ce26fdd66c08197a8","invocation_count":318,"invocation_manifest_digest":"f27c56c4865a333647c4af6f770bb2f81cca8e4e7a909e2e3221035ff8ae42b0","structural_surface_count":15,"structural_manifest_digest":"b7cd89cf9619d7bc28ecdbafaf6b616534fd68d9728ef47b85629f0531c8a22a","classification_counts":{"archive_candidate":474,"bootstrap_phase25":10,"focused_live_oracle":4,"historical_only":73,"production_or_release_migration":28},"invocation_selection_counts":{"explicit_c":178,"explicit_cranelift":119,"explicit_invalid_or_parser_probe":3,"implicit_default":18},"unclassified_count":0},
+                "previous_inventory":{"text_surface_count":574,"invocation_count":318,"invocation_manifest_digest":"f27c56c4865a333647c4af6f770bb2f81cca8e4e7a909e2e3221035ff8ae42b0","structural_surface_count":15,"structural_manifest_digest":"b7cd89cf9619d7bc28ecdbafaf6b616534fd68d9728ef47b85629f0531c8a22a","classification_counts":{"archive_candidate":474,"bootstrap_phase25":10,"focused_live_oracle":4,"historical_only":73,"production_or_release_migration":28},"invocation_selection_counts":{"explicit_c":178,"explicit_cranelift":119,"explicit_invalid_or_parser_probe":3,"implicit_default":18},"unclassified_count":0},
+                "current_inventory":{"text_surface_count":574,"invocation_count":318,"invocation_manifest_digest":"f27c56c4865a333647c4af6f770bb2f81cca8e4e7a909e2e3221035ff8ae42b0","structural_surface_count":15,"structural_manifest_digest":"b7cd89cf9619d7bc28ecdbafaf6b616534fd68d9728ef47b85629f0531c8a22a","classification_counts":{"archive_candidate":474,"bootstrap_phase25":10,"focused_live_oracle":4,"historical_only":73,"production_or_release_migration":28},"invocation_selection_counts":{"explicit_c":178,"explicit_cranelift":119,"explicit_invalid_or_parser_probe":3,"implicit_default":18},"unclassified_count":0},
                 "registered_changed_text_surfaces":["TASK.md","docs/VISION.md"],
                 "previous_changed_text_surfaces":[{"path":"TASK.md","digest":"5b6e9990fc9a26adeac2eeb6e6363dbb4ac54612b2260df788f036fb60bb14a9","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":117,"generated_c_contract":27},"classification":"production_or_release_migration","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"review_claims_in_23_8_and_23_12","removal_phase":"24_or_25_as_claim_requires","falsifier":"live_documentation_claim_is_missing_or_changes_identity"},{"path":"docs/VISION.md","digest":"eb6eef22fa5a84e316b1055a4938d2d4e9588bb3d0446af55ede80be996d3ca4","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":1,"generated_c_contract":0},"classification":"production_or_release_migration","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"review_claims_in_23_8_and_23_12","removal_phase":"24_or_25_as_claim_requires","falsifier":"live_documentation_claim_is_missing_or_changes_identity"}],
                 "current_changed_text_surfaces":[{"path":"TASK.md","digest":"870c4f185459ba482e31cc74af6e8f3d00f48ef26f4e25e9689bd27e4fde26b6","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":117,"generated_c_contract":27},"classification":"production_or_release_migration","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"review_claims_in_23_8_and_23_12","removal_phase":"24_or_25_as_claim_requires","falsifier":"live_documentation_claim_is_missing_or_changes_identity"},{"path":"docs/VISION.md","digest":"0205d0ae10240cc3608c515ccd3e0d2e361469d11fc555b882f790596a086d18","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":1,"generated_c_contract":0},"classification":"production_or_release_migration","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"review_claims_in_23_8_and_23_12","removal_phase":"24_or_25_as_claim_requires","falsifier":"live_documentation_claim_is_missing_or_changes_identity"}],
-                "unchanged_other_text_surface_manifest_digest":"64cdd65771ef58f6e1ce7ff278d6f86de4998bb9236ec28f1f7cb2f5d492cf70",
                 "unchanged_fields":["text_surface_count","invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","classification_counts","invocation_selection_counts","unclassified_count"],
                 "partial_extra_or_substituted_surface":"rejected"
               },
@@ -4405,7 +4397,7 @@
           "consumer_inventory_transition": {
             "type":"object",
             "additionalProperties":false,
-            "required":["contract_version","previous_inventory","current_inventory","registered_changed_text_surfaces","added_text_surfaces","previous_changed_text_surfaces","current_changed_text_surfaces","unchanged_other_text_surface_manifest_digest","unchanged_fields","partial_extra_or_substituted_surface"],
+            "required":["contract_version","previous_inventory","current_inventory","registered_changed_text_surfaces","added_text_surfaces","previous_changed_text_surfaces","current_changed_text_surfaces","unchanged_fields","partial_extra_or_substituted_surface"],
             "properties": {
               "contract_version":{"const":"phase24_semantic_spelling_consumer_transition_v1"},
               "previous_inventory":{"type":"object"},
@@ -4414,7 +4406,6 @@
               "added_text_surfaces":{"const":["compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md"]},
               "previous_changed_text_surfaces":{"type":"array","minItems":4,"maxItems":4},
               "current_changed_text_surfaces":{"type":"array","minItems":5,"maxItems":5},
-              "unchanged_other_text_surface_manifest_digest":{"type":"string","pattern":"^[0-9a-f]{64}$"},
               "unchanged_fields":{"const":["invocation_count","invocation_manifest_digest","structural_surface_count","structural_manifest_digest","invocation_selection_counts","unclassified_count"]},
               "partial_extra_or_substituted_surface":{"const":"rejected"}
             }
