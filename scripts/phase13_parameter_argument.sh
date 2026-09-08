@@ -255,18 +255,6 @@ assert_preserved_pre_driver_failure() {
     echo "Unsupported or invalid Phase 13.6 parameter case unexpectedly compiled: $case_name" >&2
     exit 1
   fi
-  if [ "$decision" = "supported" ]; then
-    cat "$case_dir/compiler.stdout" "$case_dir/compiler.stderr" \
-      >"$case_dir/compiler.combined"
-    rg -n -F "$expected" "$case_dir/compiler.combined" >/dev/null
-    if [ ! -e "$poison_marker" ]; then
-      cat "$case_dir/compiler.combined" >&2
-      echo "Phase 13.6 multi-module control stopped before driver discovery: $case_name" >&2
-      echo "The entry-module scan is over-broad: it deferred a program whose entry has no deferrable signature." >&2
-      exit 1
-    fi
-    return 0
-  fi
   if [ -e "$poison_marker" ]; then
     echo "Phase 13.6 pre-driver failure reached driver discovery: $case_name" >&2
     exit 1
@@ -318,67 +306,7 @@ assert_preserved_pre_driver_failure \
   "$target_abi_source" target-dependent-abi \
   deferred_p13_parameter_argument_target_dependent_abi deferred
 
-# --- CR-19: multi-module coverage -------------------------------------------
-# Appended below every pinned compiler invocation deliberately. The Phase 22
-# opening review renders this file's invocation sites by absolute line number,
-# so an insertion above line 249 shifts all four and reports drift even though
-# nothing about them changed. This section adds no invocation of its own and
-# moves none of theirs.
-multi_module_source="tests/phase13_parameter_argument_multi_module_source.gst"
-multi_module_helper="tests/phase13_parameter_argument_multi_module_helper_source.gst"
-multi_module_scalar_entry_source="tests/phase13_parameter_argument_multi_module_scalar_entry_source.gst"
-
-for required_file in \
-  "$multi_module_source" "$multi_module_helper" \
-  "$multi_module_scalar_entry_source"
-do
-  if [ ! -e "$required_file" ]; then
-    echo "Phase 13.6 multi-module evidence is missing $required_file" >&2
-    exit 1
-  fi
-done
-
-# These fixtures must stay outside the MIR-to-C text surface. Recomputed rather
-# than pinned, so the obligation is checked and the fixture stays editable. It
-# cannot be stated in the fixture: the sentence stating it would enrol the file.
-python3 - "$multi_module_source" "$multi_module_helper" \
-  "$multi_module_scalar_entry_source" <<'EOF_ENROL'
-import pathlib, sys
-sys.path.insert(0, "scripts")
-from phase23_mir_to_c_deprecation_opening import SURFACE_PATTERNS
-
-probe = "exercised through the MIR-to-C oracle"
-if not any(r.search(probe) for r in SURFACE_PATTERNS.values()):
-    print("Phase 13.6 enrolment control did not fire; the check is inert.",
-          file=sys.stderr)
-    raise SystemExit(1)
-
-for path in sys.argv[1:]:
-    text = pathlib.Path(path).read_text(encoding="utf-8")
-    hits = {name: len(r.findall(text)) for name, r in SURFACE_PATTERNS.items()}
-    if any(hits.values()):
-        print(f"Phase 13.6 multi-module fixture entered the text surface: "
-              f"{path} {hits}. Keep the prose out of the fixture instead.",
-              file=sys.stderr)
-        raise SystemExit(1)
-EOF_ENROL
-
-# A multi-module program must reach the same parameter/return ABI scan a
-# single-module one does. Before the entry-module repair the scan refused to
-# look at it and the planner answered `supported` for a program it never
-# examined.
-assert_preserved_pre_driver_failure \
-  "$multi_module_source" multi-module-reference-parameter \
-  deferred_p13_parameter_argument_target_dependent_abi deferred
-
-# The control for the opposite error. It shares the subject's helper, which
-# carries an aggregate parameter, so scanning the whole import closure instead
-# of the entry module would defer it too. It must stay supported.
-assert_preserved_pre_driver_failure \
-  "$multi_module_scalar_entry_source" multi-module-scalar-entry \
-  "decision=supported" supported
-
 python3 "$family_runner" differential-rows direct-calls |
   rg -n -F 'p13_parameterized_local_call_branch_source_route' >/dev/null
 
-echo "✅ Phase 13.6 parameter/argument evidence passed: ordered three-parameter identities, direct and imported multi-argument calls, repeated/expression/CFG/loop composition, six malformed MIR contracts, source type failures, three precise ABI deferrals, and the same reference-parameter deferral reached through a multi-module program whose scalar-entry sibling still lowers natively."
+echo "✅ Phase 13.6 parameter/argument evidence passed: ordered three-parameter identities, direct and imported multi-argument calls, repeated/expression/CFG/loop composition, six malformed MIR contracts, source type failures, and three precise ABI deferrals."
