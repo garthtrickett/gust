@@ -339,7 +339,7 @@ assert_preserved_pre_driver_failure \
   deferred_p13_parameter_argument_target_dependent_abi deferred
 
 # A multi-module program must reach the same parameter/return ABI scan a
-# single-module one does. This fixture is the aggregate-parameter negative plus
+# single-module one does. This fixture is the scalar-entry control plus
 # one reference-parameter function and nothing else, so if it stops deferring,
 # that parameter is the only thing that can have caused it. Before the repair the
 # scan refused to look at it and the planner answered `supported` for a program
