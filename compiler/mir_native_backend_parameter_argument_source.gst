@@ -194,15 +194,34 @@ func mir_native_parameter_argument_scan_deferred(
     ctx: &Arena
 ) MirNativeParameterArgumentModel[ctx] {
     mut model := mir_native_parameter_argument_empty_model(ctx);
-    if len(programs) != 1 ||
-       len(module_paths) != 1 ||
-       len(module_prefixes) != 1 ||
-       std.str_eq(module_prefixes[0], "") == 0
+    if len(programs) == 0 ||
+       len(programs) != len(module_paths) ||
+       len(programs) != len(module_prefixes)
     {
         return model;
     }
 
-    mut program := programs[0];
+    // The entry module is the one the driver gave an empty prefix. Locating it
+    // rather than demanding a single module is the whole of this repair: a
+    // multi-module program now gets the same parameter/return ABI scan a
+    // single-module one always got, so it can defer instead of being announced
+    // as `supported` without having been examined.
+    mut entry_index := 0 - 1;
+    mut prefix_index := 0;
+    while prefix_index < len(module_prefixes) {
+        if std.str_eq(module_prefixes[prefix_index], "") == 1 {
+            if entry_index >= 0 {
+                return model;
+            }
+            entry_index = prefix_index;
+        }
+        prefix_index = prefix_index + 1;
+    }
+    if entry_index < 0 {
+        return model;
+    }
+
+    mut program := programs[entry_index];
     mut statements: std.Vector[ast.Statement[ctx], ctx] :=
         ctx[program.statements];
     mut index := 0;
@@ -221,7 +240,7 @@ func mir_native_parameter_argument_scan_deferred(
                         );
                     if parameter_class == 1 {
                         model.source_path =
-                            std.Clone(ctx, module_paths[0]);
+                            std.Clone(ctx, module_paths[entry_index]);
                         return mir_native_parameter_argument_deferred_model(
                             model,
                             "deferred_p13_parameter_argument_aggregate_parameter",
@@ -231,7 +250,7 @@ func mir_native_parameter_argument_scan_deferred(
                     }
                     if parameter_class == 2 {
                         model.source_path =
-                            std.Clone(ctx, module_paths[0]);
+                            std.Clone(ctx, module_paths[entry_index]);
                         return mir_native_parameter_argument_deferred_model(
                             model,
                             "deferred_p13_parameter_argument_target_dependent_abi",
@@ -245,7 +264,7 @@ func mir_native_parameter_argument_scan_deferred(
                 mut return_class :=
                     mir_native_parameter_argument_type_class(return_type, ctx);
                 if return_class == 1 {
-                    model.source_path = std.Clone(ctx, module_paths[0]);
+                    model.source_path = std.Clone(ctx, module_paths[entry_index]);
                     return mir_native_parameter_argument_deferred_model(
                         model,
                         "deferred_p13_parameter_argument_aggregate_return",
@@ -254,7 +273,7 @@ func mir_native_parameter_argument_scan_deferred(
                     );
                 }
                 if return_class == 2 && return_type.tag != 3 {
-                    model.source_path = std.Clone(ctx, module_paths[0]);
+                    model.source_path = std.Clone(ctx, module_paths[entry_index]);
                     return mir_native_parameter_argument_deferred_model(
                         model,
                         "deferred_p13_parameter_argument_target_dependent_abi",
