@@ -556,8 +556,13 @@ def validate_phase24_cr15_closure_transition(
 
 
 def validate_phase24_filename_characterization_transition(
-        registry: dict, live_inventory: dict, live_rows: list[dict]) -> dict:
-    """Accept only the observational Patch 24.1 TASK successor."""
+        registry: dict, live_inventory: dict,
+        live_rows: list[dict]) -> dict | None:
+    """Accept only the observational Patch 24.1 TASK successor.
+
+    Returns the registered inventory the live tree is required to equal, or
+    `None` when the successor it reaches registers no such value.
+    """
     value = registry.get("phase24_filename_behavior_characterization", {})
     transition = value.get("consumer_inventory_transition", {})
     decision = value.get("decision_authority_successor")
@@ -826,7 +831,16 @@ def validate_phase24_filename_characterization_transition(
         require(docs_successor["current_inventory"].get(field) ==
                 docs_successor["previous_inventory"].get(field),
                 f"Phase 26/27 docs changed retained inventory field: {field}")
-    return live_inventory
+    # No registered whole-tree inventory expectation exists at this successor.
+    # Its stored pair was frozen at PR #318 and was retired above; Patch 24.3b
+    # then retired the stored digest itself, so the pair no longer carries
+    # `text_surface_manifest_digest` and its two halves are now byte-equal -
+    # nothing here can be compared with a live nine-field summary.  This used
+    # to `return live_inventory`, which made the caller's
+    # `expected_inventory == live_inventory` a comparison of one object with
+    # itself: it executed on every run and could not fail.  Report the absence
+    # rather than manufacture an expectation.
+    return None
 
 
 def validate_identity_falsifiers(expected: dict[str, object]) -> None:
@@ -1140,12 +1154,14 @@ def validate() -> dict:
     }
     accepted_state = accepted_by_seed.get(live_seed_digest)
     cr15_closure_inventory = None
+    cr15_closure_reached = False
     if accepted_state is None:
         if isinstance(registry.get(
                 "phase24_filename_behavior_characterization"), dict):
             cr15_inventory = validate_phase24_filename_characterization_transition(
                 registry, live_inventory, scan_text_surfaces())
             cr15_closure_inventory = cr15_inventory
+            cr15_closure_reached = True
             seed_publication = registry[
                 "phase24_cr15_seed_authority_consumer_transition"][
                     "seed_publication_transition"]
@@ -1155,6 +1171,7 @@ def validate() -> dict:
             cr15_inventory = validate_phase24_cr15_closure_transition(
                 registry, live_inventory, scan_text_surfaces())
             cr15_closure_inventory = cr15_inventory
+            cr15_closure_reached = True
             seed_publication = registry[
                 "phase24_cr15_seed_authority_consumer_transition"][
                     "seed_publication_transition"]
@@ -1674,15 +1691,24 @@ def validate() -> dict:
                                     expected_inventory = cr15_seed_transition[
                                         "current_inventory"]
                                     if cr15_seed_publication is not None:
-                                        if cr15_closure_inventory is not None:
+                                        if cr15_closure_reached:
                                             expected_inventory = cr15_closure_inventory
                                         else:
                                             expected_inventory = (
                                                 validate_phase24_cr15_seed_publication_transition(
                                                     registry, live_inventory, live_text_rows)
                                             )
-    require(expected_inventory == live_inventory,
-            "live Phase 23 MIR-to-C inventory is not the exact registered successor")
+    # `None` reaches here only from the Phase 26/27 docs successor, whose
+    # whole-tree inventory pin was deliberately retired; the obligation it
+    # encoded is carried by the maintained digest in
+    # scripts/phase24_cr15_stdlib_guard_transition.py, which runs earlier
+    # inside scan_text_surfaces().  Every other successor still supplies a
+    # registered inventory, and the check below still rejects a live tree that
+    # differs from it.  See docs/PINNED_MANIFEST_RETIREMENT.md and the
+    # inversions in scripts/phase24_docs_successor_retirement_inversions.py.
+    if expected_inventory is not None:
+        require(expected_inventory == live_inventory,
+                "live Phase 23 MIR-to-C inventory is not the exact registered successor")
     require(live_inventory["unclassified_count"] == 0,
             "consumer or artifact remains unclassified")
     validate_identity_falsifiers(live_inventory)
