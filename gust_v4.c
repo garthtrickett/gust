@@ -1944,7 +1944,6 @@ int mir_array_slice__mir_array_slice_empty_slice_layout_vector(os_Arena* ctx);
 int mir_array_slice__mir_array_slice_empty_slice_vector(os_Arena* ctx);
 mir_array_slice__MirArraySliceEvaluation mir_array_slice__mir_array_slice_evaluate(mir_array_slice__MirArraySliceTable table, mir_array_slice__MirArraySliceOperation operation, os_Arena* ctx);
 mir_array_slice__MirArraySliceEvaluation mir_array_slice__mir_array_slice_evaluation(int success, int value, int address_offset, int result_start, int result_length, Slice_unsigned_char reason_code, os_Arena* ctx);
-int mir_array_slice__mir_array_slice_field_is_safe(Slice_unsigned_char value, int allow_empty);
 mir_layout__MirLayoutTable mir_array_slice__mir_array_slice_layout_table(mir_layout__MirLayoutTable layout_table, os_Arena* ctx);
 mir_array_slice__MirArrayLayout mir_array_slice__mir_array_slice_make_array_layout(Slice_unsigned_char target_id, Slice_unsigned_char target_triple, Slice_unsigned_char array_type_id, Slice_unsigned_char element_type_id, Slice_unsigned_char element_layout_id, int element_size, int element_alignment, int element_count, int nesting_depth, os_Arena* ctx);
 mir_array_slice__MirArrayValue mir_array_slice__mir_array_slice_make_array_value(Slice_unsigned_char array_id, mir_array_slice__MirArrayLayout array_layout, int elements, Slice_unsigned_char lifetime_region, os_Arena* ctx);
@@ -1983,7 +1982,6 @@ int mir_enum__mir_enum_empty_value_vector(os_Arena* ctx);
 int mir_enum__mir_enum_empty_variant_vector(os_Arena* ctx);
 mir_enum__MirEnumEvaluation mir_enum__mir_enum_evaluate(mir_enum__MirEnumTable table, mir_enum__MirEnumOperation operation, os_Arena* ctx);
 mir_enum__MirEnumEvaluation mir_enum__mir_enum_evaluation(int success, int value, int offset, int tag, int arm_index, Slice_unsigned_char reason_code, os_Arena* ctx);
-int mir_enum__mir_enum_field_is_safe(Slice_unsigned_char value, int allow_empty);
 mir_enum__MirEnumLayout mir_enum__mir_enum_layout_declared_variants(Slice_unsigned_char target_id, Slice_unsigned_char target_triple, Slice_unsigned_char enum_type_id, Slice_unsigned_char discriminant_assignment, Slice_unsigned_char tag_type_id, Slice_unsigned_char tag_layout_id, int tag_width, int tag_alignment, int declared_variants, os_Arena* ctx);
 Slice_unsigned_char mir_enum__mir_enum_layout_identity(Slice_unsigned_char target_id, Slice_unsigned_char enum_type_id, Slice_unsigned_char tag_type_id, int tag_width, int payload_offset, int size, int alignment, int variant_count, os_Arena* ctx);
 int mir_enum__mir_enum_layout_is_valid(mir_enum__MirEnumTable table, mir_layout__MirLayoutTable layout_table, mir_enum__MirEnumLayout value, os_Arena* ctx);
@@ -2329,8 +2327,12 @@ int mir_native_backend_full_program_source__mir_native_full_program_flatten_bloc
 int mir_native_backend_full_program_source__mir_native_full_program_flatten_expression(int expression_index, int nodes_index, typechecker__TypeEnvironment* env, os_Arena* ctx);
 int mir_native_backend_full_program_source__mir_native_full_program_flatten_statement(ast__Statement statement, int nodes_index, typechecker__TypeEnvironment* env, os_Arena* ctx);
 int mir_native_backend_full_program_source__mir_native_full_program_function_index(std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramFunction functions, Slice_unsigned_char qualified_name, os_Arena* ctx);
+Slice_unsigned_char mir_native_backend_full_program_source__mir_native_full_program_inline_call_name(std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramNode nodes, mir_native_backend_full_program_source__MirNativeFullProgramNode node, os_Arena* ctx);
+std_Vector_str mir_native_backend_full_program_source__mir_native_full_program_inline_call_names(os_Arena* ctx);
 int mir_native_backend_full_program_source__mir_native_full_program_integer_width(int value);
 mir_native_backend_full_program_source__MirNativeFullProgramModel mir_native_backend_full_program_source__mir_native_full_program_invalid(mir_native_backend_full_program_source__MirNativeFullProgramModel model, Slice_unsigned_char diagnostic, os_Arena* ctx);
+int mir_native_backend_full_program_source__mir_native_full_program_is_inline_call(std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramNode nodes, mir_native_backend_full_program_source__MirNativeFullProgramNode node, os_Arena* ctx);
+int mir_native_backend_full_program_source__mir_native_full_program_is_runtime_call(std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramNode nodes, std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramFunction functions, mir_native_backend_full_program_source__MirNativeFullProgramNode node, os_Arena* ctx);
 mir_native_backend_full_program_source__MirNativeFullProgramNode mir_native_backend_full_program_source__mir_native_full_program_make_node(Slice_unsigned_char kind, Slice_unsigned_char type_identity, Slice_unsigned_char text_operand, Slice_unsigned_char second_text_operand, int integer_operand, int second_integer_operand, int source_line, int source_column, int source_start_offset, int source_end_offset, os_Arena* ctx);
 int mir_native_backend_full_program_source__mir_native_full_program_merge_guard_defer_mask(int left, int right);
 mir_native_backend_full_program_source__MirNativeFullProgramNode mir_native_backend_full_program_source__mir_native_full_program_node_with_child(mir_native_backend_full_program_source__MirNativeFullProgramNode node, int child_index, os_Arena* ctx);
@@ -2338,14 +2340,19 @@ int mir_native_backend_full_program_source__mir_native_full_program_push_node(in
 Slice_unsigned_char mir_native_backend_full_program_source__mir_native_full_program_qualified_name(Slice_unsigned_char prefix, Slice_unsigned_char name, os_Arena* ctx);
 int mir_native_backend_full_program_source__mir_native_full_program_resource_cleanup_expression(typechecker__ResourceCleanupAction action, int source_line, int source_column, int source_start_offset, int source_end_offset, int nodes_index, typechecker__TypeEnvironment* env, os_Arena* ctx);
 int mir_native_backend_full_program_source__mir_native_full_program_resource_storage_node(Slice_unsigned_char storage_name, int source_line, int source_column, int source_start_offset, int source_end_offset, int nodes_index, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char mir_native_backend_full_program_source__mir_native_full_program_runtime_call_spec(std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramNode nodes, mir_native_backend_full_program_source__MirNativeFullProgramNode node, os_Arena* ctx);
+Slice_unsigned_char mir_native_backend_full_program_source__mir_native_full_program_runtime_signature_conflict(mir_native_backend_full_program_source__MirNativeFullProgramModel model, os_Arena* ctx);
+Slice_unsigned_char mir_native_backend_full_program_source__mir_native_full_program_runtime_symbol(mir_native_backend_full_program_source__MirNativeFullProgramNode node, os_Arena* ctx);
 Slice_unsigned_char mir_native_backend_full_program_source__mir_native_full_program_serialize_function_row(int function_index, mir_native_backend_full_program_source__MirNativeFullProgramFunction function, os_Arena* ctx);
 Slice_unsigned_char mir_native_backend_full_program_source__mir_native_full_program_serialize_model(mir_native_backend_full_program_source__MirNativeFullProgramModel model, std_Vector_str module_paths, std_Vector_str module_prefixes, os_Arena* ctx);
 Slice_unsigned_char mir_native_backend_full_program_source__mir_native_full_program_serialize_module_row(int module_index, Slice_unsigned_char module_path, Slice_unsigned_char module_prefix, os_Arena* ctx);
 Slice_unsigned_char mir_native_backend_full_program_source__mir_native_full_program_serialize_node_row(int node_index, mir_native_backend_full_program_source__MirNativeFullProgramNode node, os_Arena* ctx);
 mir_native_backend_full_program_source__MirNativeFullProgramSourceResult mir_native_backend_full_program_source__mir_native_full_program_source_lower(std_Vector_ast__Program programs, std_Vector_str module_paths, std_Vector_str module_prefixes, typechecker__TypeEnvironment* env, os_Arena* ctx);
 Slice_unsigned_char mir_native_backend_full_program_source__mir_native_full_program_storage_root(Slice_unsigned_char storage_name, os_Arena* ctx);
+int mir_native_backend_full_program_source__mir_native_full_program_symbol_is_unnameable(Slice_unsigned_char symbol);
 Slice_unsigned_char mir_native_backend_full_program_source__mir_native_full_program_type_identity(ast__Type value_type, typechecker__TypeEnvironment* env, os_Arena* ctx);
 int mir_native_backend_full_program_source__mir_native_full_program_type_is_initial_scalar(ast__Type value_type, typechecker__TypeEnvironment* env, os_Arena* ctx);
+Slice_unsigned_char mir_native_backend_full_program_source__mir_native_full_program_unnameable_call_diagnostic(mir_native_backend_full_program_source__MirNativeFullProgramModel model, os_Arena* ctx);
 Slice_unsigned_char mir_native_backend_full_program_source__mir_native_full_program_utf8_hex(Slice_unsigned_char value, os_Arena* ctx);
 int mir_native_backend_full_program_source__mir_native_full_program_write_integer(unsigned char* destination, int cursor, int value);
 int mir_native_backend_full_program_source__mir_native_full_program_write_text(unsigned char* destination, int cursor, Slice_unsigned_char value);
@@ -2786,7 +2793,6 @@ int mir_string_view__mir_string_view_empty_operation_vector(os_Arena* ctx);
 int mir_string_view__mir_string_view_empty_view_vector(os_Arena* ctx);
 mir_string_view__MirStringViewEvaluation mir_string_view__mir_string_view_evaluate(mir_string_view__MirStringViewTable table, mir_string_view__MirStringViewOperation operation, os_Arena* ctx);
 mir_string_view__MirStringViewEvaluation mir_string_view__mir_string_view_evaluation(int success, int value, int result_start, int result_length, Slice_unsigned_char reason_code, os_Arena* ctx);
-int mir_string_view__mir_string_view_field_is_safe(Slice_unsigned_char value, int allow_empty);
 int mir_string_view__mir_string_view_hex_byte(Slice_unsigned_char value, int byte_index);
 int mir_string_view__mir_string_view_hex_is_valid(Slice_unsigned_char value);
 int mir_string_view__mir_string_view_hex_nibble(int value);
@@ -2825,7 +2831,6 @@ mir_struct_layout__MirStructEvaluation mir_struct_layout__mir_struct_evaluate(mi
 mir_struct_layout__MirStructEvaluation mir_struct_layout__mir_struct_evaluation(int success, int value, int offset, Slice_unsigned_char reason_code, os_Arena* ctx);
 mir_struct_layout__MirStructFieldQuery mir_struct_layout__mir_struct_field(mir_struct_layout__MirStructTable table, Slice_unsigned_char layout_id, Slice_unsigned_char field_name, os_Arena* ctx);
 Slice_unsigned_char mir_struct_layout__mir_struct_field_identity(Slice_unsigned_char struct_type_id, Slice_unsigned_char field_name, int declaration_index, os_Arena* ctx);
-int mir_struct_layout__mir_struct_field_is_safe(Slice_unsigned_char value, int allow_empty);
 mir_struct_layout__MirStructFieldLayoutQuery mir_struct_layout__mir_struct_field_layout(mir_struct_layout__MirStructTable table, mir_layout__MirLayoutTable layout_table, Slice_unsigned_char type_id, Slice_unsigned_char layout_id, os_Arena* ctx);
 int mir_struct_layout__mir_struct_fields_of(os_Arena* ctx);
 mir_struct_layout__MirStructLayoutQuery mir_struct_layout__mir_struct_layout(mir_struct_layout__MirStructTable table, Slice_unsigned_char layout_id, os_Arena* ctx);
@@ -6767,8 +6772,10 @@ struct mir_native_backend_full_program_source__MirNativeFullProgramNode {
 
 struct mir_native_backend_full_program_source__MirNativeFullProgramSourceResult {
     mir__MirProgramBundle bundle;
+    int deferred;
     Slice_unsigned_char diagnostic;
     int invalid;
+    Slice_unsigned_char reason_code;
     int represented;
 };
 
@@ -9982,6 +9989,8 @@ void* mir_native_backend_full_program_source__mir_native_full_program_empty_enum
 void* mir_native_backend_full_program_source__mir_native_full_program_empty_int_vector_pthread_wrapper(void* arg);
 void* mir_native_backend_full_program_source__mir_native_full_program_empty_model_pthread_wrapper(void* arg);
 void* mir_native_backend_full_program_source__mir_native_full_program_integer_width_pthread_wrapper(void* arg);
+void* mir_native_backend_full_program_source__mir_native_full_program_inline_call_names_pthread_wrapper(void* arg);
+void* mir_native_backend_full_program_source__mir_native_full_program_symbol_is_unnameable_pthread_wrapper(void* arg);
 void* mir_native_backend_resource_sync_source__mir_native_resource_sync_empty_int_vector_pthread_wrapper(void* arg);
 void* mir_native_backend_resource_sync_source__mir_native_resource_sync_empty_model_pthread_wrapper(void* arg);
 void* mir_native_backend_resource_sync_source__mir_native_resource_sync_empty_effect_pthread_wrapper(void* arg);
@@ -39500,19 +39509,6 @@ int mir_string_view__mir_string_view_table_is_legacy_empty(mir_string_view__MirS
     return 0;
 }
 
-int mir_string_view__mir_string_view_field_is_safe(Slice_unsigned_char value, int allow_empty) {
-    if (((allow_empty == 0) && (value.len == 0))) {
-    return 0;
-    }
-    if ((std_str_find(value, ((Slice_unsigned_char){ (unsigned char*)"\n", 1 })) != (0 - 1))) {
-    return 0;
-    }
-    if ((std_str_find(value, ((Slice_unsigned_char){ (unsigned char*)"\r", 1 })) != (0 - 1))) {
-    return 0;
-    }
-    return 1;
-}
-
 int mir_string_view__mir_string_view_hex_nibble(int value) {
     if (((value >= 48) && (value <= 57))) {
     return (value - 48);
@@ -39944,7 +39940,7 @@ int mir_string_view__mir_string_view_table_is_valid(mir_string_view__MirStringVi
     while ((literal_index < literals.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     mir_string_view__MirStringLiteralStorage literal = (*({ if (literal_index < 0 || literal_index >= literals.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(literals.data[literal_index]); }));
-    if ((((((((((mir_string_view__mir_string_view_field_is_safe(literal.literal_id, 0) == 0) || (mir_string_view__mir_string_view_field_is_safe(literal.symbol_name, 0) == 0)) || (std_str_eq(literal.encoding, ((Slice_unsigned_char){ (unsigned char*)"utf8", 4 })) == 0)) || (mir_string_view__mir_string_view_hex_is_valid(literal.bytes_hex) == 0)) || (literal.byte_length != (literal.bytes_hex.len / 2))) || (std_str_eq(literal.storage_kind, ((Slice_unsigned_char){ (unsigned char*)"static_read_only_literal", 24 })) == 0)) || (std_str_eq(literal.lifetime_region, ((Slice_unsigned_char){ (unsigned char*)"static_program", 14 })) == 0)) || (std_str_eq(literal.semantic_length_authority, table.semantic_length_authority) == 0)) || (std_str_eq(literal.embedded_nul_policy, table.embedded_nul_policy) == 0))) {
+    if ((((((((((mir_layout__mir_layout_field_is_safe(literal.literal_id, 0) == 0) || (mir_layout__mir_layout_field_is_safe(literal.symbol_name, 0) == 0)) || (std_str_eq(literal.encoding, ((Slice_unsigned_char){ (unsigned char*)"utf8", 4 })) == 0)) || (mir_string_view__mir_string_view_hex_is_valid(literal.bytes_hex) == 0)) || (literal.byte_length != (literal.bytes_hex.len / 2))) || (std_str_eq(literal.storage_kind, ((Slice_unsigned_char){ (unsigned char*)"static_read_only_literal", 24 })) == 0)) || (std_str_eq(literal.lifetime_region, ((Slice_unsigned_char){ (unsigned char*)"static_program", 14 })) == 0)) || (std_str_eq(literal.semantic_length_authority, table.semantic_length_authority) == 0)) || (std_str_eq(literal.embedded_nul_policy, table.embedded_nul_policy) == 0))) {
     return 0;
     }
     Slice_unsigned_char expected_literal_id = mir_string_view__mir_string_literal_identity(literal.encoding, literal.bytes_hex, ctx);
@@ -40367,19 +40363,6 @@ int mir_array_slice__mir_array_slice_table_is_legacy_empty(mir_array_slice__MirA
     return 1;
     }
     return 0;
-}
-
-int mir_array_slice__mir_array_slice_field_is_safe(Slice_unsigned_char value, int allow_empty) {
-    if (((allow_empty == 0) && (value.len == 0))) {
-    return 0;
-    }
-    if ((std_str_find(value, ((Slice_unsigned_char){ (unsigned char*)"\n", 1 })) != (0 - 1))) {
-    return 0;
-    }
-    if ((std_str_find(value, ((Slice_unsigned_char){ (unsigned char*)"\r", 1 })) != (0 - 1))) {
-    return 0;
-    }
-    return 1;
 }
 
 int mir_array_slice__mir_array_slice_align_up(int value, int alignment) {
@@ -40866,7 +40849,7 @@ int mir_array_slice__mir_array_slice_table_is_valid(mir_array_slice__MirArraySli
     mir_array_slice__MirArrayValue value = (*({ if (array_index < 0 || array_index >= arrays.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(arrays.data[array_index]); }));
     mir_array_slice__MirArrayLayoutQuery array_layout = mir_array_slice__mir_array_slice_array_layout(table, value.array_layout_id, ctx);
     std_Vector_int elements = (*((std_Vector_int*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(value.elements))));
-    if ((((((array_layout.found == 0) || (std_str_eq(value.element_type_id, array_layout.array_layout.element_type_id) == 0)) || (elements.len != array_layout.array_layout.element_count)) || (std_str_eq(value.lifetime_region, ((Slice_unsigned_char){ (unsigned char*)"function:main", 13 })) == 0)) || (mir_array_slice__mir_array_slice_field_is_safe(value.array_id, 0) == 0))) {
+    if ((((((array_layout.found == 0) || (std_str_eq(value.element_type_id, array_layout.array_layout.element_type_id) == 0)) || (elements.len != array_layout.array_layout.element_count)) || (std_str_eq(value.lifetime_region, ((Slice_unsigned_char){ (unsigned char*)"function:main", 13 })) == 0)) || (mir_layout__mir_layout_field_is_safe(value.array_id, 0) == 0))) {
     return 0;
     }
     array_index = (array_index + 1);
@@ -41344,19 +41327,6 @@ void* mir_struct_layout__mir_struct_empty_int_vector_pthread_wrapper(void* arg) 
     return NULL;
 }
 
-int mir_struct_layout__mir_struct_field_is_safe(Slice_unsigned_char value, int allow_empty) {
-    if (((allow_empty == 0) && (value.len == 0))) {
-    return 0;
-    }
-    if ((std_str_find(value, ((Slice_unsigned_char){ (unsigned char*)"\n", 1 })) != (0 - 1))) {
-    return 0;
-    }
-    if ((std_str_find(value, ((Slice_unsigned_char){ (unsigned char*)"\r", 1 })) != (0 - 1))) {
-    return 0;
-    }
-    return 1;
-}
-
 int mir_struct_layout__mir_struct_align_up(int value, int alignment) {
     if ((alignment <= 0)) {
     return (0 - 1);
@@ -41827,7 +41797,7 @@ int mir_struct_layout__mir_struct_layout_is_valid(mir_struct_layout__MirStructTa
     if ((std_str_eq(value.representation_kind, ((Slice_unsigned_char){ (unsigned char*)"declaration_order_struct", 24 })) == 0)) {
     return 0;
     }
-    if ((mir_struct_layout__mir_struct_field_is_safe(value.struct_type_id, 0) == 0)) {
+    if ((mir_layout__mir_layout_field_is_safe(value.struct_type_id, 0) == 0)) {
     return 0;
     }
     std_Vector_mir_struct_layout__MirStructField fields = (*((std_Vector_mir_struct_layout__MirStructField*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(value.fields))));
@@ -41844,7 +41814,7 @@ int mir_struct_layout__mir_struct_layout_is_valid(mir_struct_layout__MirStructTa
     if (((((field.declaration_index != index) || (field.size <= 0)) || (field.alignment <= 0)) || (field.alignment > value.alignment))) {
     return 0;
     }
-    if (((((mir_struct_layout__mir_struct_field_is_safe(field.field_id, 0) == 0) || (mir_struct_layout__mir_struct_field_is_safe(field.field_name, 0) == 0)) || (mir_struct_layout__mir_struct_field_is_safe(field.type_id, 0) == 0)) || (mir_struct_layout__mir_struct_field_is_safe(field.layout_id, 0) == 0))) {
+    if (((((mir_layout__mir_layout_field_is_safe(field.field_id, 0) == 0) || (mir_layout__mir_layout_field_is_safe(field.field_name, 0) == 0)) || (mir_layout__mir_layout_field_is_safe(field.type_id, 0) == 0)) || (mir_layout__mir_layout_field_is_safe(field.layout_id, 0) == 0))) {
     return 0;
     }
     if ((std_str_eq(field.field_id, mir_struct_layout__mir_struct_field_identity(value.struct_type_id, field.field_name, index, ctx)) == 0)) {
@@ -41938,7 +41908,7 @@ int mir_struct_layout__mir_struct_table_is_valid(mir_struct_layout__MirStructTab
     if (((scalars.len != leaves.len) || (leaves.len == 0))) {
     return 0;
     }
-    if ((((mir_struct_layout__mir_struct_field_is_safe(value.value_id, 0) == 0) || (mir_struct_layout__mir_struct_field_is_safe(value.flow_origin, 0) == 0)) || (std_str_eq(value.storage_region, ((Slice_unsigned_char){ (unsigned char*)"function:main", 13 })) == 0))) {
+    if ((((mir_layout__mir_layout_field_is_safe(value.value_id, 0) == 0) || (mir_layout__mir_layout_field_is_safe(value.flow_origin, 0) == 0)) || (std_str_eq(value.storage_region, ((Slice_unsigned_char){ (unsigned char*)"function:main", 13 })) == 0))) {
     return 0;
     }
     int leaf_index = 1;
@@ -41963,7 +41933,7 @@ int mir_struct_layout__mir_struct_table_is_valid(mir_struct_layout__MirStructTab
     while ((index < operations.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     mir_struct_layout__MirStructOperation operation = (*({ if (index < 0 || index >= operations.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(operations.data[index]); }));
-    if (((((((mir_struct_layout__mir_struct_operation_kind_is_valid(operation.kind) == 0) || (std_str_eq(operation.target_id, table.target_id) == 0)) || (operation.expect_success != 1)) || (std_str_eq(operation.expected_reason_code, ((Slice_unsigned_char){ (unsigned char*)"struct_operation_valid", 22 })) == 0)) || (mir_struct_layout__mir_struct_field_is_safe(operation.operation_name, 0) == 0)) || (mir_struct_layout__mir_struct_field_is_safe(operation.value_id, 0) == 0))) {
+    if (((((((mir_struct_layout__mir_struct_operation_kind_is_valid(operation.kind) == 0) || (std_str_eq(operation.target_id, table.target_id) == 0)) || (operation.expect_success != 1)) || (std_str_eq(operation.expected_reason_code, ((Slice_unsigned_char){ (unsigned char*)"struct_operation_valid", 22 })) == 0)) || (mir_layout__mir_layout_field_is_safe(operation.operation_name, 0) == 0)) || (mir_layout__mir_layout_field_is_safe(operation.value_id, 0) == 0))) {
     return 0;
     }
     if ((std_str_eq(operation.operation_id, mir_struct_layout__mir_struct_operation_identity(operation.target_id, operation.operation_name, operation.kind, ctx)) == 0)) {
@@ -42394,19 +42364,6 @@ int mir_enum__mir_enum_table_is_legacy_empty(mir_enum__MirEnumTable table, os_Ar
     return 0;
 }
 
-int mir_enum__mir_enum_field_is_safe(Slice_unsigned_char value, int allow_empty) {
-    if (((allow_empty == 0) && (value.len == 0))) {
-    return 0;
-    }
-    if ((std_str_find(value, ((Slice_unsigned_char){ (unsigned char*)"\n", 1 })) != (0 - 1))) {
-    return 0;
-    }
-    if ((std_str_find(value, ((Slice_unsigned_char){ (unsigned char*)"\r", 1 })) != (0 - 1))) {
-    return 0;
-    }
-    return 1;
-}
-
 int mir_enum__mir_enum_align_up(int value, int alignment) {
     if ((alignment <= 0)) {
     return 0;
@@ -42809,7 +42766,7 @@ mir_enum__MirEnumEvaluation mir_enum__mir_enum_evaluate(mir_enum__MirEnumTable t
 }
 
 int mir_enum__mir_enum_layout_is_valid(mir_enum__MirEnumTable table, mir_layout__MirLayoutTable layout_table, mir_enum__MirEnumLayout value, os_Arena* ctx) {
-    if (((((((((std_str_eq(value.target_id, table.target_id) == 0) || (std_str_eq(value.target_triple, table.target_triple) == 0)) || (std_str_eq(value.representation_kind, ((Slice_unsigned_char){ (unsigned char*)"explicit_tag_and_payload", 24 })) == 0)) || (mir_enum__mir_enum_field_is_safe(value.enum_type_id, 0) == 0)) || (value.tag_offset != 0)) || (value.variant_count <= 0)) || (value.size <= 0)) || (value.alignment <= 0))) {
+    if (((((((((std_str_eq(value.target_id, table.target_id) == 0) || (std_str_eq(value.target_triple, table.target_triple) == 0)) || (std_str_eq(value.representation_kind, ((Slice_unsigned_char){ (unsigned char*)"explicit_tag_and_payload", 24 })) == 0)) || (mir_layout__mir_layout_field_is_safe(value.enum_type_id, 0) == 0)) || (value.tag_offset != 0)) || (value.variant_count <= 0)) || (value.size <= 0)) || (value.alignment <= 0))) {
     return 0;
     }
     if (((std_str_eq(value.discriminant_assignment, ((Slice_unsigned_char){ (unsigned char*)"explicit", 8 })) == 0) && (std_str_eq(value.discriminant_assignment, ((Slice_unsigned_char){ (unsigned char*)"compiler_assigned", 17 })) == 0))) {
@@ -42830,7 +42787,7 @@ int mir_enum__mir_enum_layout_is_valid(mir_enum__MirEnumTable table, mir_layout_
     while ((index < variants.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     mir_enum__MirEnumVariant variant = (*({ if (index < 0 || index >= variants.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(variants.data[index]); }));
-    if ((((((((variant.declaration_index != index) || (std_str_eq(variant.enum_type_id, value.enum_type_id) == 0)) || (mir_enum__mir_enum_field_is_safe(variant.variant_name, 0) == 0)) || (mir_enum__mir_enum_field_is_safe(variant.payload_type_id, 0) == 0)) || (mir_enum__mir_enum_field_is_safe(variant.payload_layout_id, 0) == 0)) || (variant.discriminant < 0)) || (variant.payload_alignment <= 0))) {
+    if ((((((((variant.declaration_index != index) || (std_str_eq(variant.enum_type_id, value.enum_type_id) == 0)) || (mir_layout__mir_layout_field_is_safe(variant.variant_name, 0) == 0)) || (mir_layout__mir_layout_field_is_safe(variant.payload_type_id, 0) == 0)) || (mir_layout__mir_layout_field_is_safe(variant.payload_layout_id, 0) == 0)) || (variant.discriminant < 0)) || (variant.payload_alignment <= 0))) {
     return 0;
     }
     Slice_unsigned_char expected_variant_id = mir_enum__mir_enum_variant_identity(variant.enum_type_id, variant.variant_name, variant.declaration_index, variant.discriminant, ctx);
@@ -42942,7 +42899,7 @@ int mir_enum__mir_enum_table_is_valid(mir_enum__MirEnumTable table, mir_layout__
     }
     mir_enum__MirEnumVariantQuery variant_query = mir_enum__mir_enum_variant_of(layout_query.enum_layout, value.variant_name, ctx);
     std_Vector_int payload_values = (*((std_Vector_int*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(value.payload_values))));
-    if ((((((((variant_query.found == 0) || (variant_query.variant.discriminant != value.discriminant)) || (payload_values.len != variant_query.variant.payload_element_count)) || (std_str_eq(value.enum_type_id, layout_query.enum_layout.enum_type_id) == 0)) || (std_str_eq(value.storage_region, ((Slice_unsigned_char){ (unsigned char*)"function:main", 13 })) == 0)) || (mir_enum__mir_enum_field_is_safe(value.value_id, 0) == 0)) || (mir_enum__mir_enum_field_is_safe(value.flow_origin, 0) == 0))) {
+    if ((((((((variant_query.found == 0) || (variant_query.variant.discriminant != value.discriminant)) || (payload_values.len != variant_query.variant.payload_element_count)) || (std_str_eq(value.enum_type_id, layout_query.enum_layout.enum_type_id) == 0)) || (std_str_eq(value.storage_region, ((Slice_unsigned_char){ (unsigned char*)"function:main", 13 })) == 0)) || (mir_layout__mir_layout_field_is_safe(value.value_id, 0) == 0)) || (mir_layout__mir_layout_field_is_safe(value.flow_origin, 0) == 0))) {
     return 0;
     }
     int duplicate_value = (value_index + 1);
@@ -42959,7 +42916,7 @@ int mir_enum__mir_enum_table_is_valid(mir_enum__MirEnumTable table, mir_layout__
     while ((operation_index < operations.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     mir_enum__MirEnumOperation operation = (*({ if (operation_index < 0 || operation_index >= operations.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(operations.data[operation_index]); }));
-    if ((((((mir_enum__mir_enum_operation_kind_is_valid(operation.kind) == 0) || (std_str_eq(operation.target_id, table.target_id) == 0)) || (operation.expect_success != 1)) || (std_str_eq(operation.expected_reason_code, ((Slice_unsigned_char){ (unsigned char*)"enum_valid", 10 })) == 0)) || (mir_enum__mir_enum_field_is_safe(operation.operation_name, 0) == 0))) {
+    if ((((((mir_enum__mir_enum_operation_kind_is_valid(operation.kind) == 0) || (std_str_eq(operation.target_id, table.target_id) == 0)) || (operation.expect_success != 1)) || (std_str_eq(operation.expected_reason_code, ((Slice_unsigned_char){ (unsigned char*)"enum_valid", 10 })) == 0)) || (mir_layout__mir_layout_field_is_safe(operation.operation_name, 0) == 0))) {
     return 0;
     }
     Slice_unsigned_char expected_id = mir_enum__mir_enum_operation_identity(operation.target_id, operation.operation_name, operation.kind, ctx);
@@ -53814,12 +53771,12 @@ Slice_unsigned_char mir_native_backend_full_program_source__mir_native_full_prog
 int mir_native_backend_full_program_source__mir_native_full_program_resource_storage_node(Slice_unsigned_char storage_name, int source_line, int source_column, int source_start_offset, int source_end_offset, int nodes_index, typechecker__TypeEnvironment* env, os_Arena* ctx) {
     Slice_unsigned_char root = mir_native_backend_full_program_source__mir_native_full_program_storage_root(storage_name, ctx);
     {
-    LookupResult_ast__Type _guard_res_root_type_lookup_569_9 = {0};
-    _guard_res_root_type_lookup_569_9 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), root, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), root, 1); } res; });
-    if (!_guard_res_root_type_lookup_569_9.Ok) {
+    LookupResult_ast__Type _guard_res_root_type_lookup_571_9 = {0};
+    _guard_res_root_type_lookup_571_9 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), root, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), root, 1); } res; });
+    if (!_guard_res_root_type_lookup_571_9.Ok) {
         return (0 - 1);
     }
-    ast__Type root_type_lookup = _guard_res_root_type_lookup_569_9.Val;
+    ast__Type root_type_lookup = _guard_res_root_type_lookup_571_9.Val;
     Slice_unsigned_char root_type = mir_native_backend_full_program_source__mir_native_full_program_type_identity(root_type_lookup, env, ctx);
     if (((root_type.len == 0) || (std_str_eq(root_type, ((Slice_unsigned_char){ (unsigned char*)"Unknown", 7 })) == 1))) {
     return (0 - 1);
@@ -53844,19 +53801,19 @@ int mir_native_backend_full_program_source__mir_native_full_program_resource_sto
     if ((resolved_storage_type.tag != 8)) {
     return (0 - 1);
     }
-    LookupResult_typechecker__StructLayout _guard_res_layout_lookup_600_13 = {0};
-    _guard_res_layout_lookup_600_13 = ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_registry), resolved_storage_type.Struct.struct_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_registry), resolved_storage_type.Struct.struct_name, 1); } res; });
-    if (!_guard_res_layout_lookup_600_13.Ok) {
+    LookupResult_typechecker__StructLayout _guard_res_layout_lookup_602_13 = {0};
+    _guard_res_layout_lookup_602_13 = ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_registry), resolved_storage_type.Struct.struct_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_registry), resolved_storage_type.Struct.struct_name, 1); } res; });
+    if (!_guard_res_layout_lookup_602_13.Ok) {
         return (0 - 1);
     }
-    typechecker__StructLayout layout_lookup = _guard_res_layout_lookup_600_13.Val;
+    typechecker__StructLayout layout_lookup = _guard_res_layout_lookup_602_13.Val;
     Slice_unsigned_char field_name = std_str_slice(storage_name, field_start, field_end);
-    LookupResult_ast__Type _guard_res_field_lookup_608_13 = {0};
-    _guard_res_field_lookup_608_13 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&(layout_lookup.fields), field_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(layout_lookup.fields), field_name, 1); } res; });
-    if (!_guard_res_field_lookup_608_13.Ok) {
+    LookupResult_ast__Type _guard_res_field_lookup_610_13 = {0};
+    _guard_res_field_lookup_610_13 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&(layout_lookup.fields), field_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(layout_lookup.fields), field_name, 1); } res; });
+    if (!_guard_res_field_lookup_610_13.Ok) {
         return (0 - 1);
     }
-    ast__Type field_lookup = _guard_res_field_lookup_608_13.Val;
+    ast__Type field_lookup = _guard_res_field_lookup_610_13.Val;
     storage_type = field_lookup;
     cursor = field_end;
     }
@@ -54283,12 +54240,12 @@ mir_native_backend_full_program_source__MirNativeFullProgramModel mir_native_bac
     while ((layout_index < layout_names.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     Slice_unsigned_char name = (*({ if (layout_index < 0 || layout_index >= layout_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(layout_names.data[layout_index]); }));
-    LookupResult_typechecker__StructLayout _guard_res_registry_layout_1233_13 = {0};
-    _guard_res_registry_layout_1233_13 = ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_registry), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_registry), name, 1); } res; });
-    if (!_guard_res_registry_layout_1233_13.Ok) {
+    LookupResult_typechecker__StructLayout _guard_res_registry_layout_1235_13 = {0};
+    _guard_res_registry_layout_1235_13 = ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_registry), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_registry), name, 1); } res; });
+    if (!_guard_res_registry_layout_1235_13.Ok) {
         return mir_native_backend_full_program_source__mir_native_full_program_invalid(updated, ((Slice_unsigned_char){ (unsigned char*)"Native backend canonical MIR verification failed: full-program layout registry changed during canonicalization", 110 }), ctx);
     }
-    typechecker__StructLayout registry_layout = _guard_res_registry_layout_1233_13.Val;
+    typechecker__StructLayout registry_layout = _guard_res_registry_layout_1235_13.Val;
     mir_native_backend_full_program_source__MirNativeFullProgramLayout value = ((mir_native_backend_full_program_source__MirNativeFullProgramLayout){ .brand = ((Slice_unsigned_char){ NULL, 0 }), .erased_name = ((Slice_unsigned_char){ NULL, 0 }), .field_names = 0xFFFFFFFF, .field_types = 0xFFFFFFFF, .is_packed = 0, .is_repr_c = 0, .layout_abi = ((Slice_unsigned_char){ NULL, 0 }), .name = ((Slice_unsigned_char){ NULL, 0 }) });
     value.name = std_Clone_str(ctx, name);
     value.erased_name = codegen__codegen_get_erased_struct_name(name, env, ctx);
@@ -54336,12 +54293,12 @@ mir_native_backend_full_program_source__MirNativeFullProgramModel mir_native_bac
     int field_index = 0;
     while ((field_index < field_names.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
-    LookupResult_ast__Type _guard_res_field_type_1291_17 = {0};
-    _guard_res_field_type_1291_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&(registry_layout.fields), (*({ if (field_index < 0 || field_index >= field_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(field_names.data[field_index]); })), 1); if (res.Ok) { res.Val = *os_HashMapRef(&(registry_layout.fields), (*({ if (field_index < 0 || field_index >= field_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(field_names.data[field_index]); })), 1); } res; });
-    if (!_guard_res_field_type_1291_17.Ok) {
+    LookupResult_ast__Type _guard_res_field_type_1293_17 = {0};
+    _guard_res_field_type_1293_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&(registry_layout.fields), (*({ if (field_index < 0 || field_index >= field_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(field_names.data[field_index]); })), 1); if (res.Ok) { res.Val = *os_HashMapRef(&(registry_layout.fields), (*({ if (field_index < 0 || field_index >= field_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(field_names.data[field_index]); })), 1); } res; });
+    if (!_guard_res_field_type_1293_17.Ok) {
         return mir_native_backend_full_program_source__mir_native_full_program_invalid(updated, ((Slice_unsigned_char){ (unsigned char*)"Native backend canonical MIR verification failed: full-program layout field changed during canonicalization", 107 }), ctx);
     }
-    ast__Type field_type = _guard_res_field_type_1291_17.Val;
+    ast__Type field_type = _guard_res_field_type_1293_17.Val;
     os_VectorPush(&(field_types), mir_native_backend_full_program_source__mir_native_full_program_type_identity(field_type, env, ctx));
     field_index = (field_index + 1);
     }
@@ -54356,12 +54313,12 @@ mir_native_backend_full_program_source__MirNativeFullProgramModel mir_native_bac
     int enum_index = 0;
     while ((enum_index < enum_names.len)) {
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
-    LookupResult_std_Vector_str _guard_res_enum_variants_1319_13 = {0};
-    _guard_res_enum_variants_1319_13 = ({ LookupResult_std_Vector_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).enum_registry), (*({ if (enum_index < 0 || enum_index >= enum_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(enum_names.data[enum_index]); })), 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).enum_registry), (*({ if (enum_index < 0 || enum_index >= enum_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(enum_names.data[enum_index]); })), 1); } res; });
-    if (!_guard_res_enum_variants_1319_13.Ok) {
+    LookupResult_std_Vector_str _guard_res_enum_variants_1321_13 = {0};
+    _guard_res_enum_variants_1321_13 = ({ LookupResult_std_Vector_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).enum_registry), (*({ if (enum_index < 0 || enum_index >= enum_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(enum_names.data[enum_index]); })), 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).enum_registry), (*({ if (enum_index < 0 || enum_index >= enum_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(enum_names.data[enum_index]); })), 1); } res; });
+    if (!_guard_res_enum_variants_1321_13.Ok) {
         return mir_native_backend_full_program_source__mir_native_full_program_invalid(updated, ((Slice_unsigned_char){ (unsigned char*)"Native backend canonical MIR verification failed: full-program enum registry changed during canonicalization", 108 }), ctx);
     }
-    std_Vector_str enum_variants = _guard_res_enum_variants_1319_13.Val;
+    std_Vector_str enum_variants = _guard_res_enum_variants_1321_13.Val;
     mir_native_backend_full_program_source__MirNativeFullProgramEnum enumeration = ((mir_native_backend_full_program_source__MirNativeFullProgramEnum){ .erased_name = ((Slice_unsigned_char){ NULL, 0 }), .name = ((Slice_unsigned_char){ NULL, 0 }), .variants = 0xFFFFFFFF });
     enumeration.name = std_Clone_str(ctx, (*({ if (enum_index < 0 || enum_index >= enum_names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(enum_names.data[enum_index]); })));
     enumeration.erased_name = codegen__codegen_get_erased_struct_name(enumeration.name, env, ctx);
@@ -55080,10 +55037,220 @@ mir__MirProgramBundle mir_native_backend_full_program_source__mir_native_full_pr
     return mir__mir_program_bundle_with_module(bundle, module, ctx);
 }
 
+Slice_unsigned_char mir_native_backend_full_program_source__mir_native_full_program_inline_call_name(std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramNode nodes, mir_native_backend_full_program_source__MirNativeFullProgramNode node, os_Arena* ctx) {
+    if ((std_str_eq(node.kind, ((Slice_unsigned_char){ (unsigned char*)"Call", 4 })) == 0)) {
+    return std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"", 0 }));
+    }
+    std_Vector_int children = (*((std_Vector_int*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(node.children))));
+    if ((children.len == 0)) {
+    return std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"", 0 }));
+    }
+    mir_native_backend_full_program_source__MirNativeFullProgramNode callee = (*({ if ((*({ if (0 < 0 || 0 >= children.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(children.data[0]); })) < 0 || (*({ if (0 < 0 || 0 >= children.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(children.data[0]); })) >= nodes.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(nodes.data[(*({ if (0 < 0 || 0 >= children.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(children.data[0]); }))]); }));
+    if ((std_str_eq(callee.kind, ((Slice_unsigned_char){ (unsigned char*)"FieldOrMethodSelect", 19 })) == 1)) {
+    return std_Clone_str(ctx, callee.text_operand);
+    }
+    if (((std_str_eq(node.text_operand, ((Slice_unsigned_char){ (unsigned char*)"len", 3 })) == 1) || (std_str_eq(node.second_text_operand, ((Slice_unsigned_char){ (unsigned char*)"len", 3 })) == 1))) {
+    return std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"len", 3 }));
+    }
+    if (((std_str_eq(node.text_operand, ((Slice_unsigned_char){ (unsigned char*)"os_ArenaAlloc", 13 })) == 1) || (std_str_eq(node.text_operand, ((Slice_unsigned_char){ (unsigned char*)"os.ArenaAlloc", 13 })) == 1))) {
+    return std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ArenaAlloc", 10 }));
+    }
+    return std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"", 0 }));
+}
+
+std_Vector_str mir_native_backend_full_program_source__mir_native_full_program_inline_call_names(os_Arena* ctx) {
+    std_Vector_str names = ((struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Concat", 6 })));
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Format", 6 })));
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"FormatInt", 9 })));
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"VectorNew", 9 })));
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"HashMapNew", 10 })));
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"PoolNew", 7 })));
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"GraphNew", 8 })));
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"len", 3 })));
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Set", 3 })));
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"get_ref", 7 })));
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Push", 4 })));
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Pop", 3 })));
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Clear", 5 })));
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Get", 3 })));
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"get_opt", 7 })));
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Insert", 6 })));
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Remove", 6 })));
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Keys", 4 })));
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Contains", 8 })));
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"AddNode", 7 })));
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"AddEdge", 7 })));
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"GetNode", 7 })));
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"ArenaAlloc", 10 })));
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"New", 3 })));
+    os_VectorPush(&(names), std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"Free", 4 })));
+    return names;
+}
+
+void* mir_native_backend_full_program_source__mir_native_full_program_inline_call_names_pthread_wrapper(void* arg) {
+    mir_native_backend_full_program_source__mir_native_full_program_inline_call_names((os_Arena*)(uintptr_t)arg);
+    return NULL;
+}
+
+int mir_native_backend_full_program_source__mir_native_full_program_is_inline_call(std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramNode nodes, mir_native_backend_full_program_source__MirNativeFullProgramNode node, os_Arena* ctx) {
+    Slice_unsigned_char name = mir_native_backend_full_program_source__mir_native_full_program_inline_call_name(nodes, node, ctx);
+    if ((name.len == 0)) {
+    return 0;
+    }
+    std_Vector_str names = mir_native_backend_full_program_source__mir_native_full_program_inline_call_names(ctx);
+    int index = 0;
+    while ((index < names.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    if ((std_str_eq((*({ if (index < 0 || index >= names.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(names.data[index]); })), name) == 1)) {
+    return 1;
+    }
+    index = (index + 1);
+    }
+    return 0;
+}
+
+Slice_unsigned_char mir_native_backend_full_program_source__mir_native_full_program_runtime_symbol(mir_native_backend_full_program_source__MirNativeFullProgramNode node, os_Arena* ctx) {
+    Slice_unsigned_char candidate = node.second_text_operand;
+    if ((candidate.len == 0)) {
+    candidate = node.text_operand;
+    }
+    if ((std_str_eq(candidate, ((Slice_unsigned_char){ (unsigned char*)"std_Clone", 9 })) == 1)) {
+    return std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"std_Clone_str", 13 }));
+    }
+    if ((std_str_eq(candidate, ((Slice_unsigned_char){ (unsigned char*)"os_Exit", 7 })) == 1)) {
+    return std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"exit", 4 }));
+    }
+    if ((std_str_eq(candidate, ((Slice_unsigned_char){ (unsigned char*)"os_ArenaValidate", 16 })) == 1)) {
+    return std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"os_Arena_Validate", 17 }));
+    }
+    return std_Clone_str(ctx, candidate);
+}
+
+int mir_native_backend_full_program_source__mir_native_full_program_symbol_is_unnameable(Slice_unsigned_char symbol) {
+    if ((symbol.len == 0)) {
+    return 1;
+    }
+    if ((symbol.len < 2)) {
+    return 0;
+    }
+    if ((std_str_eq(std_str_slice(symbol, (symbol.len - 2), symbol.len), ((Slice_unsigned_char){ (unsigned char*)"__", 2 })) == 1)) {
+    return 1;
+    }
+    return 0;
+}
+
+void* mir_native_backend_full_program_source__mir_native_full_program_symbol_is_unnameable_pthread_wrapper(void* arg) {
+    mir_native_backend_full_program_source__mir_native_full_program_symbol_is_unnameable(*(Slice_unsigned_char*)arg);
+    return NULL;
+}
+
+int mir_native_backend_full_program_source__mir_native_full_program_is_runtime_call(std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramNode nodes, std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramFunction functions, mir_native_backend_full_program_source__MirNativeFullProgramNode node, os_Arena* ctx) {
+    if ((std_str_eq(node.kind, ((Slice_unsigned_char){ (unsigned char*)"Call", 4 })) == 0)) {
+    return 0;
+    }
+    if ((mir_native_backend_full_program_source__mir_native_full_program_is_inline_call(nodes, node, ctx) == 1)) {
+    return 0;
+    }
+    if ((mir_native_backend_full_program_source__mir_native_full_program_function_index(functions, node.second_text_operand, ctx) >= 0)) {
+    return 0;
+    }
+    return 1;
+}
+
+Slice_unsigned_char mir_native_backend_full_program_source__mir_native_full_program_runtime_call_spec(std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramNode nodes, mir_native_backend_full_program_source__MirNativeFullProgramNode node, os_Arena* ctx) {
+    Slice_unsigned_char spec = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
+    std_Vector_int children = (*((std_Vector_int*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(node.children))));
+    int index = 1;
+    while ((index < children.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    Slice_unsigned_char value_type = (*({ if ((*({ if (index < 0 || index >= children.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(children.data[index]); })) < 0 || (*({ if (index < 0 || index >= children.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(children.data[index]); })) >= nodes.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(nodes.data[(*({ if (index < 0 || index >= children.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(children.data[index]); }))]); })).type_identity;
+    if ((std_str_eq(value_type, ((Slice_unsigned_char){ (unsigned char*)"Arena", 5 })) == 1)) {
+    value_type = ((Slice_unsigned_char){ (unsigned char*)"Reference(Arena, None)", 22 });
+    }
+    spec = (({ Slice_unsigned_char _s1 = spec; Slice_unsigned_char _s2 = value_type; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    spec = (({ Slice_unsigned_char _s1 = spec; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"|", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    index = (index + 1);
+    }
+    spec = (({ Slice_unsigned_char _s1 = spec; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"->", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    spec = (({ Slice_unsigned_char _s1 = spec; Slice_unsigned_char _s2 = node.type_identity; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    return std_Clone_str(ctx, spec);
+}
+
+Slice_unsigned_char mir_native_backend_full_program_source__mir_native_full_program_unnameable_call_diagnostic(mir_native_backend_full_program_source__MirNativeFullProgramModel model, os_Arena* ctx) {
+    std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramNode nodes = (*((std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramNode*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(model.nodes))));
+    std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramFunction functions = (*((std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramFunction*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(model.functions))));
+    int index = 0;
+    while ((index < nodes.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    mir_native_backend_full_program_source__MirNativeFullProgramNode node = (*({ if (index < 0 || index >= nodes.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(nodes.data[index]); }));
+    if ((mir_native_backend_full_program_source__mir_native_full_program_is_runtime_call(nodes, functions, node, ctx) == 1)) {
+    Slice_unsigned_char symbol = mir_native_backend_full_program_source__mir_native_full_program_runtime_symbol(node, ctx);
+    if ((mir_native_backend_full_program_source__mir_native_full_program_symbol_is_unnameable(symbol) == 1)) {
+    Slice_unsigned_char message = ((Slice_unsigned_char){ (unsigned char*)"Native backend full-program deferral: a call at line ", 53 });
+    message = (({ Slice_unsigned_char _s1 = message; Slice_unsigned_char _s2 = (({ int _val = node.source_line; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, "%d", _val); ((Slice_unsigned_char){ (unsigned char*)_buf, _len }); })); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    message = (({ Slice_unsigned_char _s1 = message; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" column ", 8 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    message = (({ Slice_unsigned_char _s1 = message; Slice_unsigned_char _s2 = (({ int _val = node.source_column; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, "%d", _val); ((Slice_unsigned_char){ (unsigned char*)_buf, _len }); })); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    message = (({ Slice_unsigned_char _s1 = message; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" has no callee identity: it is neither a generic inline nor a declared function", 79 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    return std_Clone_str(ctx, message);
+    }
+    }
+    index = (index + 1);
+    }
+    return std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"", 0 }));
+}
+
+Slice_unsigned_char mir_native_backend_full_program_source__mir_native_full_program_runtime_signature_conflict(mir_native_backend_full_program_source__MirNativeFullProgramModel model, os_Arena* ctx) {
+    std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramNode nodes = (*((std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramNode*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(model.nodes))));
+    std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramFunction functions = (*((std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramFunction*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(model.functions))));
+    std_Vector_str symbols = ((struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    std_Vector_str specs = ((struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
+    int index = 0;
+    while ((index < nodes.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    mir_native_backend_full_program_source__MirNativeFullProgramNode node = (*({ if (index < 0 || index >= nodes.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(nodes.data[index]); }));
+    if ((mir_native_backend_full_program_source__mir_native_full_program_is_runtime_call(nodes, functions, node, ctx) == 1)) {
+    Slice_unsigned_char symbol = mir_native_backend_full_program_source__mir_native_full_program_runtime_symbol(node, ctx);
+    if ((((mir_native_backend_full_program_source__mir_native_full_program_symbol_is_unnameable(symbol) == 0) && (std_str_eq(symbol, ((Slice_unsigned_char){ (unsigned char*)"os_ScratchAlloc", 15 })) == 0)) && (std_str_eq(symbol, ((Slice_unsigned_char){ (unsigned char*)"os_ArenaAlloc", 13 })) == 0))) {
+    Slice_unsigned_char spec = mir_native_backend_full_program_source__mir_native_full_program_runtime_call_spec(nodes, node, ctx);
+    int seen = (0 - 1);
+    int probe = 0;
+    while ((probe < symbols.len)) {
+        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
+    if ((std_str_eq((*({ if (probe < 0 || probe >= symbols.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(symbols.data[probe]); })), symbol) == 1)) {
+    seen = probe;
+    }
+    probe = (probe + 1);
+    }
+    if ((seen >= 0)) {
+    if ((std_str_eq((*({ if (seen < 0 || seen >= specs.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(specs.data[seen]); })), spec) == 0)) {
+    Slice_unsigned_char message = ((Slice_unsigned_char){ (unsigned char*)"Native backend full-program deferral: runtime symbol ", 53 });
+    message = (({ Slice_unsigned_char _s1 = message; Slice_unsigned_char _s2 = symbol; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    message = (({ Slice_unsigned_char _s1 = message; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" is called with inconsistent signatures; first ", 47 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    message = (({ Slice_unsigned_char _s1 = message; Slice_unsigned_char _s2 = (*({ if (seen < 0 || seen >= specs.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(specs.data[seen]); })); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    message = (({ Slice_unsigned_char _s1 = message; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)", then ", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    message = (({ Slice_unsigned_char _s1 = message; Slice_unsigned_char _s2 = spec; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    message = (({ Slice_unsigned_char _s1 = message; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" at line ", 9 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    message = (({ Slice_unsigned_char _s1 = message; Slice_unsigned_char _s2 = (({ int _val = node.source_line; char* _buf = (char*)os_ScratchAlloc(16); int _len = snprintf(_buf, 16, "%d", _val); ((Slice_unsigned_char){ (unsigned char*)_buf, _len }); })); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    return std_Clone_str(ctx, message);
+    }
+    } else {
+    os_VectorPush(&(symbols), symbol);
+    os_VectorPush(&(specs), spec);
+    }
+    }
+    }
+    index = (index + 1);
+    }
+    return std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"", 0 }));
+}
+
 mir_native_backend_full_program_source__MirNativeFullProgramSourceResult mir_native_backend_full_program_source__mir_native_full_program_source_lower(std_Vector_ast__Program programs, std_Vector_str module_paths, std_Vector_str module_prefixes, typechecker__TypeEnvironment* env, os_Arena* ctx) {
-    mir_native_backend_full_program_source__MirNativeFullProgramSourceResult result = ((mir_native_backend_full_program_source__MirNativeFullProgramSourceResult){ .bundle = ((mir__MirProgramBundle){ .entry_symbol = ((Slice_unsigned_char){ NULL, 0 }), .modules = 0xFFFFFFFF }), .diagnostic = ((Slice_unsigned_char){ NULL, 0 }), .invalid = 0, .represented = 0 });
+    mir_native_backend_full_program_source__MirNativeFullProgramSourceResult result = ((mir_native_backend_full_program_source__MirNativeFullProgramSourceResult){ .bundle = ((mir__MirProgramBundle){ .entry_symbol = ((Slice_unsigned_char){ NULL, 0 }), .modules = 0xFFFFFFFF }), .deferred = 0, .diagnostic = ((Slice_unsigned_char){ NULL, 0 }), .invalid = 0, .reason_code = ((Slice_unsigned_char){ NULL, 0 }), .represented = 0 });
     result.represented = 0;
     result.invalid = 0;
+    result.deferred = 0;
+    result.reason_code = std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"", 0 }));
     result.diagnostic = std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"", 0 }));
     result.bundle = mir__mir_make_program_bundle(((Slice_unsigned_char){ (unsigned char*)"invalid", 7 }), ctx);
     if ((module_paths.len != programs.len)) {
@@ -55097,6 +55264,22 @@ mir_native_backend_full_program_source__MirNativeFullProgramSourceResult mir_nat
     return result;
     }
     if ((model.represented == 0)) {
+    return result;
+    }
+    Slice_unsigned_char unnameable = mir_native_backend_full_program_source__mir_native_full_program_unnameable_call_diagnostic(model, ctx);
+    if ((unnameable.len > 0)) {
+    result.represented = 0;
+    result.deferred = 1;
+    result.reason_code = std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"deferred_p14_full_program_unnameable_call", 41 }));
+    result.diagnostic = unnameable;
+    return result;
+    }
+    Slice_unsigned_char conflict = mir_native_backend_full_program_source__mir_native_full_program_runtime_signature_conflict(model, ctx);
+    if ((conflict.len > 0)) {
+    result.represented = 0;
+    result.deferred = 1;
+    result.reason_code = std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"deferred_p14_full_program_inconsistent_runtime_signature", 56 }));
+    result.diagnostic = conflict;
     return result;
     }
     result.bundle = mir_native_backend_full_program_source__mir_native_full_program_emit_bundle(model, module_paths, module_prefixes, ctx);
@@ -64484,6 +64667,9 @@ mir_native_backend_generic_source__MirNativeGenericSourceResult mir_native_backe
     mir_native_backend_full_program_source__MirNativeFullProgramSourceResult full_program_result = mir_native_backend_full_program_source__mir_native_full_program_source_lower(programs, module_paths, module_prefixes, env, ctx);
     if ((full_program_result.invalid == 1)) {
     return mir_native_backend_generic_source__mir_native_generic_empty_result(3, full_program_result.diagnostic, ctx);
+    }
+    if ((full_program_result.deferred == 1)) {
+    return mir_native_backend_generic_source__mir_native_generic_deferred_result(full_program_result.reason_code, full_program_result.diagnostic, ctx);
     }
     if ((full_program_result.represented == 0)) {
     return mir_native_backend_generic_source__mir_native_generic_empty_result(1, ((Slice_unsigned_char){ (unsigned char*)"", 0 }), ctx);
