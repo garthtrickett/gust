@@ -145,8 +145,8 @@ Stdlib handoff are complete.
 - [x] Patch 24.2s — Pinned-Manifest Retirement Contract — DONE
 - [x] Patch 24.2t — Launch-Gate Obligations and Phase 27 Retirement — DONE
 - [x] Patch 24.2u — CR-19 Full-Program Bundle Validation — DONE
-- [ ] Patch 24.2v — CR-19 Seed Publication Authority
-- [ ] Patch 24.2w — CR-19 Bootstrap Seed Publication
+- [x] Patch 24.2v — CR-19 Seed Publication Authority — DONE
+- [x] Patch 24.2w — CR-19 Bootstrap Seed Publication — DONE
 - [ ] Patch 24.2x — CR-19 Transition Closure and Stdlib Handoff
 - [ ] Patch 24.3 — Filename-Independent Typechecker Correction
 - [ ] Patch 24.3a — Preflight Bootstrap Seed Reconvergence
