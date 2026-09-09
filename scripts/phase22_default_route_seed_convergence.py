@@ -329,7 +329,7 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
         "contract_version": "phase24_cr19_bundle_validation_seed_reconvergence_transition_v1",
         "status": "ready_for_seed_publication",
         "predecessor_seed_authority": "phase24_cra_stage1_identity_format_seed_reconvergence_transition_v1",
-        "authority_base_main": "1018ec38bb944e5cb0be1c8c2519b1bb5e97c37b",
+        "authority_base_main": "fd9023cc3585f4ccee1689e9a57a3224e514ae12",
         "accounted_compiler_authorities": [
             "phase24_cr19_multi_module_analysis_v1"
         ],
@@ -341,20 +341,39 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
             },
             {
                 "state": "post_publication",
-                "line_count": 66042,
-                "seed_digest": "e94bbf7623cbe6a9423d05762546c1b32c7240d8e19e16123e5ddfe6d87b9e13"
+                "line_count": 65986,
+                "seed_digest": "0bb8d3ccea011275366356baa07ee0619d13979fa00fc91ee97eb05718f27539"
             }
         ],
         "generated_seed_diff": {
             "previous_lines": 65800,
-            "current_lines": 66042,
-            "insertions": 267,
-            "deletions": 25,
-            "line_delta": 242
+            "current_lines": 65986,
+            "insertions": 277,
+            "deletions": 91,
+            "line_delta": 186
         },
         "seed_pr_policy": "gust_v4_c_only",
         "partial_or_unregistered_identity": "rejected",
-        "closure_transition": "collapse_to_post_publication_after_seed_merge"
+        "closure_transition": "collapse_to_post_publication_after_seed_merge",
+        "pending_post_supersession": {
+            "status": "supersedes_unpublished_cr19_only_fixed_point",
+            "unpublished_source_pull_request": 371,
+            "unpublished_source_merge": "fd9023cc3585f4ccee1689e9a57a3224e514ae12",
+            "unpublished_seed_identity": {
+                "line_count": 66042,
+                "seed_digest": "e94bbf7623cbe6a9423d05762546c1b32c7240d8e19e16123e5ddfe6d87b9e13"
+            },
+            "superseding_patch": "CR-b.2b",
+            "superseding_pull_request": 366,
+            "attribution_diff": {
+                "previous_lines": 66042,
+                "current_lines": 65986,
+                "insertions": 10,
+                "deletions": 66,
+                "line_delta": -56
+            },
+            "committed_seed_remains": "pre_publication_identity_A"
+        }
     }, "CR-19 seed transition drifted")
     bundle_identities = bundle_transition["accepted_live_seed_identities"]
     require([row["state"] for row in bundle_identities] ==
@@ -377,6 +396,21 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
     require(bundle_diff["previous_lines"] == bundle_identities[0]["line_count"] and
             bundle_diff["current_lines"] == bundle_identities[1]["line_count"],
             "CR-19 seed diff does not match its exact pre/post identities")
+    supersession = bundle_transition["pending_post_supersession"]
+    unpublished = supersession["unpublished_seed_identity"]
+    require(all(unpublished != {
+        "line_count": row["line_count"], "seed_digest": row["seed_digest"]
+    } for row in bundle_identities),
+            "CR-b.2b still accepts the unpublished CR-19-only seed")
+    attribution = supersession["attribution_diff"]
+    require(attribution["previous_lines"] == unpublished["line_count"] and
+            attribution["current_lines"] == bundle_identities[1]["line_count"],
+            "CR-b.2b attribution does not connect unpublished B to final C")
+    require(attribution["current_lines"] - attribution["previous_lines"] ==
+            attribution["line_delta"] and
+            attribution["insertions"] - attribution["deletions"] ==
+            attribution["line_delta"],
+            "CR-b.2b attribution line delta is inconsistent")
     return bundle_identities
 
 
