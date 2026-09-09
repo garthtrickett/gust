@@ -97,7 +97,7 @@ grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" "$build_dir/raw
   >"$build_dir/raw-double-unlock.c-check.log" 2>&1
 # Native compilation confirms accepted source on the already-qualified scope
 # cohort. Creating the executable is evidence; executing it would double unlock.
-./gust --backend cranelift -o "$build_dir/raw-double-unlock.bin" "$raw_fixture" \
+./build/phase10-package/bin/gust --backend cranelift -o "$build_dir/raw-double-unlock.bin" "$raw_fixture" \
   >"$build_dir/raw-double-unlock.native.log" 2>&1
 test -s "$build_dir/raw-double-unlock.bin"
 
