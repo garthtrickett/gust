@@ -72,6 +72,15 @@ intrinsic-ID implementation, native-command decomposition, registry or CI
 consolidation, edits to `TASK_STDLIB.md`, Stdlib implementation, Web Slice 1,
 or another operator-owned semantic/product decision.
 
+On 2026-09-08 the operator explicitly activated continuation of the Cranelift
+lane to finish CR-19 in PR #371, then complete seed authorization, isolated seed
+publication, and transition collapse before releasing Stdlib S1.11. The operator
+reaffirmed continuation on 2026-09-09. Patches 24.2u–24.2x below record that bounded
+compiler-owned authority. The separately authorized CR-b.2b PR #366 remains an
+atomic prerequisite before the final seed publication; it is not folded into
+PR #371. This authorization does not activate backend retirement or another
+semantic/product decision.
+
 ## Preflight Boundary
 
 In scope:
@@ -135,6 +144,10 @@ Stdlib handoff are complete.
 - [ ] Patch 24.2q — str Content Equality in the Operator Set
 - [x] Patch 24.2s — Pinned-Manifest Retirement Contract — DONE
 - [x] Patch 24.2t — Launch-Gate Obligations and Phase 27 Retirement — DONE
+- [ ] Patch 24.2u — CR-19 Full-Program Bundle Validation
+- [ ] Patch 24.2v — CR-19 Seed Publication Authority
+- [ ] Patch 24.2w — CR-19 Bootstrap Seed Publication
+- [ ] Patch 24.2x — CR-19 Transition Closure and Stdlib Handoff
 - [ ] Patch 24.3 — Filename-Independent Typechecker Correction
 - [ ] Patch 24.3a — Preflight Bootstrap Seed Reconvergence
 - [ ] Patch 24.3b — Pinned-Manifest Retirement
@@ -662,6 +675,88 @@ intention.
 **Exit Gate:** the contract is published and held to the decisions it records;
 Patch 24.3b is a Status row and a 24.4 gate clause rather than a note; and no
 guard is relaxed here.
+
+## Patch 24.2u — CR-19 Full-Program Bundle Validation
+
+**Purpose:** make the native capability planner validate the full-program bundle
+before reporting support, using the worker's existing unnameable-call and
+runtime-signature consistency conditions. This is the explicitly activated
+compiler-owned CR-19 prerequisite, separate from the filename preflight.
+
+**Steps:**
+
+- Preserve all thirteen single-module gates. The abandoned scan relaxation
+  deferred the valid 42-module compiler and is not an authorized repair.
+- Report `deferred_p14_full_program_unnameable_call` or
+  `deferred_p14_full_program_inconsistent_runtime_signature` before driver
+  discovery when the corresponding full-program condition fails.
+- Preserve native compilation of the full compiler and module-import positive
+  control. Exercise both malformed-bundle instances, with the held S1.11
+  post-image explicitly separate from the runner corpus.
+- Wire the predicate smoke into PR Fast, with runtime-alias, inline-call, and
+  internal-function controls and independently failing mutations.
+- Take counts and reason membership from the actual Phase 21 differential
+  suite, update affected generated inventories and text-surface registrations,
+  and pre-register only the measured committed-seed to this patch's fixed-point
+  transition. Do not publish generated seed bytes in this capability PR.
+
+**Exit Gate:** both malformed-bundle instances defer with their distinct reasons
+without driver invocation or an output artifact; valid full-program controls
+remain native; the predicate controls and mutations pass; bootstrap converges
+at stage-2/stage-3 byte identity; exact seed consumers accept only the registered
+pair and reject unrelated identities; all generated reviews and required
+exact-head workflows pass; and review conversations are resolved. No new MIR
+meaning, ABI/layout/runtime symbol, accepted-program semantic rule, fallback,
+Stdlib source, or single-module scan relaxation is introduced.
+
+## Patch 24.2v — CR-19 Seed Publication Authority
+
+**Purpose:** authorize the final measured seed text surface before publishing
+that seed alone.
+
+**Steps:**
+
+- After Patch 24.2u merges, rebase the separately authorized PR #366, rerun its
+  six existing field-safety probes, and measure its fixed point in its own PR.
+- Keep A as the actually committed seed. Record the #371-only fixed point B
+  as unpublished attribution, measure B-to-C and actual A-to-C movement, and
+  supersede pending B with exactly A/C. Never claim B was committed or admit
+  a three-identity window.
+- After that atomic prerequisite merges, register the final A/C seed text
+  surfaces through the existing authorization-window mechanism. Preserve
+  independent exact guard-script identities and rejection of unregistered rows.
+
+**Exit Gate:** the compiler and text-surface consumers agree on exact A/C,
+#371 and #366 remain separate validated publications, the actual supersession
+and authorization-window controls pass, and no seed bytes are published here.
+
+## Patch 24.2w — CR-19 Bootstrap Seed Publication
+
+**Purpose:** publish only the final generated seed qualified by Patch 24.2v.
+
+**Steps:** regenerate from exact merged source main, require stage-2/stage-3 byte
+identity with the registered final seed, and publish `gust_v4.c` alone. Preserve
+per-capability attribution and both retained compiler routes.
+
+**Exit Gate:** the seed is the sole changed PR path, matches the registered fixed
+point, passes required exact-head workflows and review gates, and changes no
+bootstrap route or unrelated source.
+
+## Patch 24.2x — CR-19 Transition Closure and Stdlib Handoff
+
+**Purpose:** collapse the publication window to its actual landed seed and issue
+the checked compiler handoff before Stdlib S1.11 resumes.
+
+**Steps:** re-derive exact source, seed, and authorization publications from
+current main; retire the superseded pre-publication identity; rerun both bundle
+deferrals, native compiler/control, seed-consumer, and predecessor contracts;
+record exact CI and review evidence; and mark this prerequisite sequence DONE.
+Send the checked correction to the Stdlib owner rather than editing its roadmap.
+
+**Exit Gate:** only the landed seed is accepted, closure workflows and review
+conversations are green/resolved, and the durable compiler handoff plus
+coordinator release permit S1.11. Patch 24.3 remains paused until Stdlib S1.12;
+Phase 24 preflight closure still needs then-current Historical Full evidence.
 
 ## Patch 24.3b — Pinned-Manifest Retirement
 

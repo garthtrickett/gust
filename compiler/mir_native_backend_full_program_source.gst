@@ -78,6 +78,8 @@ type MirNativeFullProgramModel[ctx] struct {
 type MirNativeFullProgramSourceResult[ctx] struct {
     represented: int,
     invalid: int,
+    deferred: int,
+    reason_code: str,
     diagnostic: str,
     bundle: mir.MirProgramBundle[ctx]
 }
@@ -2340,10 +2342,271 @@ func mir_native_full_program_emit_bundle(model: MirNativeFullProgramModel[ctx], 
     return mir.mir_program_bundle_with_module(bundle, module, ctx);
 }
 
+func mir_native_full_program_inline_call_name(
+    nodes: std.Vector[MirNativeFullProgramNode[ctx], ctx],
+    node: MirNativeFullProgramNode[ctx],
+    ctx: &Arena
+) str {
+    if std.str_eq(node.kind, "Call") == 0 {
+        return std.Clone(ctx, "");
+    }
+    mut children: std.Vector[int, ctx] := ctx[node.children];
+    if len(children) == 0 {
+        return std.Clone(ctx, "");
+    }
+    mut callee := nodes[children[0]];
+    if std.str_eq(callee.kind, "FieldOrMethodSelect") == 1 {
+        return std.Clone(ctx, callee.text_operand);
+    }
+    if std.str_eq(node.text_operand, "len") == 1 ||
+       std.str_eq(node.second_text_operand, "len") == 1
+    {
+        return std.Clone(ctx, "len");
+    }
+    if std.str_eq(node.text_operand, "os_ArenaAlloc") == 1 ||
+       std.str_eq(node.text_operand, "os.ArenaAlloc") == 1
+    {
+        return std.Clone(ctx, "ArenaAlloc");
+    }
+    return std.Clone(ctx, "");
+}
+
+func mir_native_full_program_inline_call_names(
+    ctx: &Arena
+) std.Vector[str, ctx] {
+    mut names: std.Vector[str, ctx] := std.VectorNew(ctx);
+    names.Push(std.Clone(ctx, "Concat"));
+    names.Push(std.Clone(ctx, "Format"));
+    names.Push(std.Clone(ctx, "FormatInt"));
+    names.Push(std.Clone(ctx, "VectorNew"));
+    names.Push(std.Clone(ctx, "HashMapNew"));
+    names.Push(std.Clone(ctx, "PoolNew"));
+    names.Push(std.Clone(ctx, "GraphNew"));
+    names.Push(std.Clone(ctx, "len"));
+    names.Push(std.Clone(ctx, "Set"));
+    names.Push(std.Clone(ctx, "get_ref"));
+    names.Push(std.Clone(ctx, "Push"));
+    names.Push(std.Clone(ctx, "Pop"));
+    names.Push(std.Clone(ctx, "Clear"));
+    names.Push(std.Clone(ctx, "Get"));
+    names.Push(std.Clone(ctx, "get_opt"));
+    names.Push(std.Clone(ctx, "Insert"));
+    names.Push(std.Clone(ctx, "Remove"));
+    names.Push(std.Clone(ctx, "Keys"));
+    names.Push(std.Clone(ctx, "Contains"));
+    names.Push(std.Clone(ctx, "AddNode"));
+    names.Push(std.Clone(ctx, "AddEdge"));
+    names.Push(std.Clone(ctx, "GetNode"));
+    names.Push(std.Clone(ctx, "ArenaAlloc"));
+    names.Push(std.Clone(ctx, "New"));
+    names.Push(std.Clone(ctx, "Free"));
+    return names;
+}
+
+func mir_native_full_program_is_inline_call(
+    nodes: std.Vector[MirNativeFullProgramNode[ctx], ctx],
+    node: MirNativeFullProgramNode[ctx],
+    ctx: &Arena
+) int {
+    mut name := mir_native_full_program_inline_call_name(nodes, node, ctx);
+    if len(name) == 0 {
+        return 0;
+    }
+    mut names := mir_native_full_program_inline_call_names(ctx);
+    mut index := 0;
+    while index < len(names) {
+        if std.str_eq(names[index], name) == 1 {
+            return 1;
+        }
+        index = index + 1;
+    }
+    return 0;
+}
+
+func mir_native_full_program_runtime_symbol(
+    node: MirNativeFullProgramNode[ctx],
+    ctx: &Arena
+) str {
+    mut candidate := node.second_text_operand;
+    if len(candidate) == 0 {
+        candidate = node.text_operand;
+    }
+    if std.str_eq(candidate, "std_Clone") == 1 {
+        return std.Clone(ctx, "std_Clone_str");
+    }
+    if std.str_eq(candidate, "os_Exit") == 1 {
+        return std.Clone(ctx, "exit");
+    }
+    if std.str_eq(candidate, "os_ArenaValidate") == 1 {
+        return std.Clone(ctx, "os_Arena_Validate");
+    }
+    return std.Clone(ctx, candidate);
+}
+
+func mir_native_full_program_symbol_is_unnameable(symbol: str) int {
+    if len(symbol) == 0 {
+        return 1;
+    }
+    if len(symbol) < 2 {
+        return 0;
+    }
+    if std.str_eq(std.str_slice(symbol, len(symbol) - 2, len(symbol)), "__") == 1 {
+        return 1;
+    }
+    return 0;
+}
+
+// A call the worker will have to resolve itself: not inlined, and not one of the
+// program's own functions.
+func mir_native_full_program_is_runtime_call(
+    nodes: std.Vector[MirNativeFullProgramNode[ctx], ctx],
+    functions: std.Vector[MirNativeFullProgramFunction[ctx], ctx],
+    node: MirNativeFullProgramNode[ctx],
+    ctx: &Arena
+) int {
+    if std.str_eq(node.kind, "Call") == 0 {
+        return 0;
+    }
+    if mir_native_full_program_is_inline_call(nodes, node, ctx) == 1 {
+        return 0;
+    }
+    if mir_native_full_program_function_index(
+           functions, node.second_text_operand, ctx
+       ) >= 0
+    {
+        return 0;
+    }
+    return 1;
+}
+
+func mir_native_full_program_runtime_call_spec(
+    nodes: std.Vector[MirNativeFullProgramNode[ctx], ctx],
+    node: MirNativeFullProgramNode[ctx],
+    ctx: &Arena
+) str {
+    mut spec := "";
+    mut children: std.Vector[int, ctx] := ctx[node.children];
+    mut index := 1;
+    while index < len(children) {
+        mut value_type := nodes[children[index]].type_identity;
+        if std.str_eq(value_type, "Arena") == 1 {
+            value_type = "Reference(Arena, None)";
+        }
+        spec = std.Concat(spec, value_type);
+        spec = std.Concat(spec, "|");
+        index = index + 1;
+    }
+    spec = std.Concat(spec, "->");
+    spec = std.Concat(spec, node.type_identity);
+    return std.Clone(ctx, spec);
+}
+
+// CHECK 1 of 2 -- a call the compiler emitted with no callee identity.
+//
+// The worker rejects this too, but only after the planner has already printed
+// decision=supported, so the program is announced lowerable and then dies. The
+// worker's own message interpolates the empty name and reads "full-program call
+// has neither generic inline nor function authority" -- a diagnostic with no
+// identity, for a call with no identity. This one names the source position
+// instead, because that is what a reader can act on.
+func mir_native_full_program_unnameable_call_diagnostic(
+    model: MirNativeFullProgramModel[ctx],
+    ctx: &Arena
+) str {
+    mut nodes: std.Vector[MirNativeFullProgramNode[ctx], ctx] := ctx[model.nodes];
+    mut functions: std.Vector[MirNativeFullProgramFunction[ctx], ctx] :=
+        ctx[model.functions];
+    mut index := 0;
+    while index < len(nodes) {
+        mut node := nodes[index];
+        if mir_native_full_program_is_runtime_call(
+               nodes, functions, node, ctx
+           ) == 1
+        {
+            mut symbol := mir_native_full_program_runtime_symbol(node, ctx);
+            if mir_native_full_program_symbol_is_unnameable(symbol) == 1 {
+                mut message := "Native backend full-program deferral: a call at line ";
+                message = std.Concat(message, std.FormatInt(node.source_line));
+                message = std.Concat(message, " column ");
+                message = std.Concat(message, std.FormatInt(node.source_column));
+                message = std.Concat(
+                    message,
+                    " has no callee identity: it is neither a generic inline nor a declared function"
+                );
+                return std.Clone(ctx, message);
+            }
+        }
+        index = index + 1;
+    }
+    return std.Clone(ctx, "");
+}
+
+// CHECK 2 of 2 -- one runtime symbol called with two different signatures.
+// Kept separate from check 1 so each can be removed independently: an inversion
+// covering both at once would not distinguish which one rejects which program.
+func mir_native_full_program_runtime_signature_conflict(
+    model: MirNativeFullProgramModel[ctx],
+    ctx: &Arena
+) str {
+    mut nodes: std.Vector[MirNativeFullProgramNode[ctx], ctx] := ctx[model.nodes];
+    mut functions: std.Vector[MirNativeFullProgramFunction[ctx], ctx] :=
+        ctx[model.functions];
+    mut symbols: std.Vector[str, ctx] := std.VectorNew(ctx);
+    mut specs: std.Vector[str, ctx] := std.VectorNew(ctx);
+    mut index := 0;
+    while index < len(nodes) {
+        mut node := nodes[index];
+        if mir_native_full_program_is_runtime_call(
+               nodes, functions, node, ctx
+           ) == 1
+        {
+            mut symbol := mir_native_full_program_runtime_symbol(node, ctx);
+            if mir_native_full_program_symbol_is_unnameable(symbol) == 0 &&
+               std.str_eq(symbol, "os_ScratchAlloc") == 0 &&
+               std.str_eq(symbol, "os_ArenaAlloc") == 0
+            {
+                mut spec :=
+                    mir_native_full_program_runtime_call_spec(nodes, node, ctx);
+                mut seen := 0 - 1;
+                mut probe := 0;
+                while probe < len(symbols) {
+                    if std.str_eq(symbols[probe], symbol) == 1 {
+                        seen = probe;
+                    }
+                    probe = probe + 1;
+                }
+                if seen >= 0 {
+                    if std.str_eq(specs[seen], spec) == 0 {
+                        mut message := "Native backend full-program deferral: runtime symbol ";
+                        message = std.Concat(message, symbol);
+                        message = std.Concat(
+                            message,
+                            " is called with inconsistent signatures; first "
+                        );
+                        message = std.Concat(message, specs[seen]);
+                        message = std.Concat(message, ", then ");
+                        message = std.Concat(message, spec);
+                        message = std.Concat(message, " at line ");
+                        message = std.Concat(message, std.FormatInt(node.source_line));
+                        return std.Clone(ctx, message);
+                    }
+                } else {
+                    symbols.Push(symbol);
+                    specs.Push(spec);
+                }
+            }
+        }
+        index = index + 1;
+    }
+    return std.Clone(ctx, "");
+}
+
 func mir_native_full_program_source_lower(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) MirNativeFullProgramSourceResult[ctx] {
     mut result: MirNativeFullProgramSourceResult[ctx];
     result.represented = 0;
     result.invalid = 0;
+    result.deferred = 0;
+    result.reason_code = std.Clone(ctx, "");
     result.diagnostic = std.Clone(ctx, "");
     result.bundle = mir.mir_make_program_bundle("invalid", ctx);
 
@@ -2363,6 +2626,36 @@ func mir_native_full_program_source_lower(programs: std.Vector[ast.Program[ctx],
         return result;
     }
     if model.represented == 0 {
+        return result;
+    }
+
+    // The planner must not answer `supported` for a bundle it has not
+    // validated. Both conditions are ones the worker rejects, but the
+    // worker runs after the decision is printed, so the program is
+    // announced lowerable and then dies.
+    mut unnameable :=
+        mir_native_full_program_unnameable_call_diagnostic(model, ctx);
+    if len(unnameable) > 0 {
+        result.represented = 0;
+        result.deferred = 1;
+        result.reason_code = std.Clone(
+            ctx,
+            "deferred_p14_full_program_unnameable_call"
+        );
+        result.diagnostic = unnameable;
+        return result;
+    }
+
+    mut conflict :=
+        mir_native_full_program_runtime_signature_conflict(model, ctx);
+    if len(conflict) > 0 {
+        result.represented = 0;
+        result.deferred = 1;
+        result.reason_code = std.Clone(
+            ctx,
+            "deferred_p14_full_program_inconsistent_runtime_signature"
+        );
+        result.diagnostic = conflict;
         return result;
     }
 
