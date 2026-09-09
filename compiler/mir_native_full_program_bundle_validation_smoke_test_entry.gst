@@ -145,5 +145,32 @@ func main() {
         fail("CR-19 smoke: os_ScratchAlloc must be skipped");
     }
 
+    // Inline authority owns this call before runtime-symbol lookup.
+    mut inline_model := model_with_call("len", "", "Int", "Int", ctx);
+    mut inline_nodes: std.Vector[fullprog.MirNativeFullProgramNode[ctx], ctx] := ctx[inline_model.nodes];
+    mut no_functions: std.Vector[fullprog.MirNativeFullProgramFunction[ctx], ctx] := ctx[inline_model.functions];
+    mut inline_node := inline_nodes[2];
+    if fullprog.mir_native_full_program_is_runtime_call(inline_nodes, no_functions, inline_node, ctx) != 0 {
+        fail("CR-19 smoke: inline calls must skip runtime validation");
+    }
+    inline_node.text_operand = "ordinary_runtime";
+    if fullprog.mir_native_full_program_is_runtime_call(inline_nodes, no_functions, inline_node, ctx) != 1 {
+        fail("CR-19 smoke: removing inline authority must expose the runtime call");
+    }
+
+    // An internal function's qualified identity supplies separate authority.
+    mut internal_model := model_with_call("local_call", "declared_function", "Int", "Int", ctx);
+    mut internal_nodes: std.Vector[fullprog.MirNativeFullProgramNode[ctx], ctx] := ctx[internal_model.nodes];
+    mut functions: std.Vector[fullprog.MirNativeFullProgramFunction[ctx], ctx] := ctx[internal_model.functions];
+    mut declared: fullprog.MirNativeFullProgramFunction[ctx];
+    declared.qualified_name = "declared_function";
+    functions.Push(declared);
+    if fullprog.mir_native_full_program_is_runtime_call(internal_nodes, functions, internal_nodes[2], ctx) != 0 {
+        fail("CR-19 smoke: internal functions must skip runtime validation");
+    }
+    if fullprog.mir_native_full_program_is_runtime_call(internal_nodes, no_functions, internal_nodes[2], ctx) != 1 {
+        fail("CR-19 smoke: removing function authority must expose the runtime call");
+    }
+
     os.LogStr("CR-19 full-program bundle validation smoke passed");
 }

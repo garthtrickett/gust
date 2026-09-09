@@ -321,7 +321,63 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
             "Patch 24.3a seed diff does not start from the Patch 24.2f fixed point")
     require(stage1_diff["current_lines"] == stage1_identities[0]["line_count"],
             "Patch 24.3a seed diff does not match its own landed identity")
-    return stage1_identities
+    # CR-19 registers its own exact fixed point before the seed-only PR.
+    # A later capability must replace this pending post identity explicitly;
+    # an unpublished intermediate seed is never a committed pre identity.
+    bundle_transition = record.get("phase24_cr19_seed_transition")
+    require(bundle_transition == {
+        "contract_version": "phase24_cr19_bundle_validation_seed_reconvergence_transition_v1",
+        "status": "ready_for_seed_publication",
+        "predecessor_seed_authority": "phase24_cra_stage1_identity_format_seed_reconvergence_transition_v1",
+        "authority_base_main": "1018ec38bb944e5cb0be1c8c2519b1bb5e97c37b",
+        "accounted_compiler_authorities": [
+            "phase24_cr19_multi_module_analysis_v1"
+        ],
+        "accepted_live_seed_identities": [
+            {
+                "state": "pre_publication",
+                "line_count": 65800,
+                "seed_digest": "7373a957f3e55f0a9d60c1a17e84c7776158a43e3b933af5dd047b72ca990abf"
+            },
+            {
+                "state": "post_publication",
+                "line_count": 66042,
+                "seed_digest": "e94bbf7623cbe6a9423d05762546c1b32c7240d8e19e16123e5ddfe6d87b9e13"
+            }
+        ],
+        "generated_seed_diff": {
+            "previous_lines": 65800,
+            "current_lines": 66042,
+            "insertions": 267,
+            "deletions": 25,
+            "line_delta": 242
+        },
+        "seed_pr_policy": "gust_v4_c_only",
+        "partial_or_unregistered_identity": "rejected",
+        "closure_transition": "collapse_to_post_publication_after_seed_merge"
+    }, "CR-19 seed transition drifted")
+    bundle_identities = bundle_transition["accepted_live_seed_identities"]
+    require([row["state"] for row in bundle_identities] ==
+            ["pre_publication", "post_publication"],
+            "CR-19 seed transition state order drifted")
+    require(len({(row["line_count"], row["seed_digest"])
+                 for row in bundle_identities}) == 2,
+            "CR-19 seed transition identities are not distinct")
+    require(bundle_identities[0] == {
+        "state": "pre_publication",
+        "line_count": stage1_identities[0]["line_count"],
+        "seed_digest": stage1_identities[0]["seed_digest"],
+    }, "CR-19 does not start from the committed CR-a Stage 1 identity")
+    bundle_diff = bundle_transition["generated_seed_diff"]
+    require(bundle_diff["current_lines"] - bundle_diff["previous_lines"] ==
+            bundle_diff["line_delta"] and
+            bundle_diff["insertions"] - bundle_diff["deletions"] ==
+            bundle_diff["line_delta"],
+            "CR-19 seed line delta is inconsistent")
+    require(bundle_diff["previous_lines"] == bundle_identities[0]["line_count"] and
+            bundle_diff["current_lines"] == bundle_identities[1]["line_count"],
+            "CR-19 seed diff does not match its exact pre/post identities")
+    return bundle_identities
 
 
 def accepted_live_seed_line_counts(record: dict) -> set[int]:
@@ -361,6 +417,9 @@ def regeneration_is_accepted(record: dict, committed: dict, regenerated: dict) -
     # published state, where both are the post-publication identity. Any other
     # pairing - including a regenerated seed that is neither - rejects.
     return (
+        committed == identities["pre_publication"] and
+        regenerated == identities["post_publication"]
+    ) or (
         committed == identities["post_publication"] and
         regenerated == identities["post_publication"]
     )

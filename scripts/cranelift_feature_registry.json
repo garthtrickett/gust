@@ -4148,6 +4148,37 @@
         "changed_paths": ["gust_v4.c"]
       }
     },
+    "phase24_cr19_seed_transition": {
+      "contract_version": "phase24_cr19_bundle_validation_seed_reconvergence_transition_v1",
+      "status": "ready_for_seed_publication",
+      "predecessor_seed_authority": "phase24_cra_stage1_identity_format_seed_reconvergence_transition_v1",
+      "authority_base_main": "1018ec38bb944e5cb0be1c8c2519b1bb5e97c37b",
+      "accounted_compiler_authorities": [
+        "phase24_cr19_multi_module_analysis_v1"
+      ],
+      "accepted_live_seed_identities": [
+        {
+          "state": "pre_publication",
+          "line_count": 65800,
+          "seed_digest": "7373a957f3e55f0a9d60c1a17e84c7776158a43e3b933af5dd047b72ca990abf"
+        },
+        {
+          "state": "post_publication",
+          "line_count": 66042,
+          "seed_digest": "e94bbf7623cbe6a9423d05762546c1b32c7240d8e19e16123e5ddfe6d87b9e13"
+        }
+      ],
+      "generated_seed_diff": {
+        "previous_lines": 65800,
+        "current_lines": 66042,
+        "insertions": 267,
+        "deletions": 25,
+        "line_delta": 242
+      },
+      "seed_pr_policy": "gust_v4_c_only",
+      "partial_or_unregistered_identity": "rejected",
+      "closure_transition": "collapse_to_post_publication_after_seed_merge"
+    },
     "phase24_2g_auth_seed_identity_successor": {
       "contract_version": "phase24_2g_auth_seed_identity_successor_v1",
       "status": "patch24_2g_closure_landed",
@@ -4175,8 +4206,8 @@
       ],
       "current_changed_text_surfaces": [
         {"path":"gust_v4.c","digest":"7373a957f3e55f0a9d60c1a17e84c7776158a43e3b933af5dd047b72ca990abf","match_counts":{"explicit_backend_spelling":4,"mir_to_c_name":107,"generated_c_contract":186},"classification":"bootstrap_phase25","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"preserve_exact_C_bootstrap_dependency","removal_phase":"25","falsifier":"bootstrap_surface_is_missing_changed_or_reclassified"},
-        {"path":"scripts/phase22_default_route_seed_convergence.py","digest":"03fc5d332de685ce9b370cc81e798b566244ef8b09eaaf8579384bd75067cdec","match_counts":{"explicit_backend_spelling":4,"mir_to_c_name":12,"generated_c_contract":6},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
-        {"path":"scripts/phase24_cr15_closure.py","digest":"a990cd1b4406a516f6e11967f5f8f2004afd7f3cb0a5a3ac89dab72228c9877c","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":2,"generated_c_contract":0},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"}
+        {"path":"scripts/phase22_default_route_seed_convergence.py","digest":"a58db1476dbefce9486d7d45bc9e54136c80b7accdfc33beb9b21f4c454a6ce2","match_counts":{"explicit_backend_spelling":4,"mir_to_c_name":12,"generated_c_contract":6},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
+        {"path":"scripts/phase24_cr15_closure.py","digest":"982d1a7fff17ae5126427659fffa11e1a0010309fbbf318ea9650a5b4869beb8","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":2,"generated_c_contract":0},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"}
       ],
       "unchanged_other_text_surface_manifest_digest": "52916e5aba94854e332f212f904628fcef87be21cac8d43c66c5c6b7b287a907",
       "partial_extra_or_substituted_surface": "rejected",

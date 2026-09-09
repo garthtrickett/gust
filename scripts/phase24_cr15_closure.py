@@ -165,6 +165,7 @@ SEED_SUCCESSOR_TRANSITIONS = (
     # only when it is listed here, so a registry block alone cannot widen
     # what the live seed is allowed to be.
     "phase24_cra_stage1_seed_transition",
+    "phase24_cr19_seed_transition",
 )
 
 
