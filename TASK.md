@@ -723,9 +723,13 @@ that seed alone.
 
 ### Separate CR-b.2b prerequisite — PR #366
 
-**Status:** active, pending exact-head qualification and merge. This is the
-separately authorized consolidation prerequisite; its capability PR precedes
-the final seed text-surface authorization PR.
+**Status:** DONE. PR #366 merged as
+`6594ea0dbeb6f90edf4b39a5ab0b2ae483dbd33e` after all 111 exact-head
+pull-request workflows and the Trusted Gate passed at `7531b977`; no review
+conversations remained. The six unchanged probes and fresh bootstrap passed.
+The authoritative Phase 21 suite (run `34315298976`) measured 197 required
+native cases and 129 deferrals. This is the current main population; the
+held S1.11 post-image still requires its separate measured admission.
 
 **Purpose:** replace six concordant field-safety implementations with calls to
 the existing `mir_layout_field_is_safe`, preserving their validation behaviour.
