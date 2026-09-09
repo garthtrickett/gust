@@ -88,6 +88,13 @@ done
 raw_fixture="tests/stdlib_s1_mutex_guard_scope_raw_double_unlock.gst"
 ./gust --backend mir-to-c "$raw_fixture" >"$build_dir/raw-double-unlock.log" 2>&1
 python3 scripts/stdlib_s1_raw_double_unlock.py "$build_dir/raw-double-unlock.log"
+# Keep the runner's generated-C filtering, but stop at the C compiler's syntax
+# check. Its normal positive path would execute the resulting program.
+cat src/runtime.c >"$build_dir/raw-double-unlock.c"
+grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" "$build_dir/raw-double-unlock.log" \
+  >>"$build_dir/raw-double-unlock.c"
+"${CC:-cc}" -fsyntax-only -pthread -Isrc "$build_dir/raw-double-unlock.c" \
+  >"$build_dir/raw-double-unlock.c-check.log" 2>&1
 # Native compilation confirms accepted source on the already-qualified scope
 # cohort. Creating the executable is evidence; executing it would double unlock.
 ./gust --backend cranelift -o "$build_dir/raw-double-unlock.bin" "$raw_fixture" \

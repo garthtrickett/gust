@@ -80,6 +80,7 @@ residue rather than changing unsafe semantics. The existing scope guard:
 - inspects the generated entry function before its explicit return for exactly
   one raw unlock followed by exactly one cleanup of the guard owner;
 - confirms that the emitted destructor itself calls the raw unlock once;
+- checks the generated C with the host compiler in syntax-only mode;
 - requires native compilation to produce an artifact, without executing it.
 
 **This program must never run.** The generic positive runner executes its
