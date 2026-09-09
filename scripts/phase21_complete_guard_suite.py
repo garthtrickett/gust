@@ -194,6 +194,195 @@ def phase24_cr19_transition(registry: dict, cases: list[dict]) -> dict:
     return transition
 
 
+def _admission_block_is_exact(admission: dict) -> None:
+    require(admission == {
+        "contract_version": "phase24_cr19_post_image_admission_v1",
+        "status": "exact_cr19_post_image_admission",
+        "authority_base_main": "e7f77e32f057ec3d3a8534343f2c3e958ad59610",
+        "admitted_source_states": [
+            {
+                "state": "main_fixture",
+                "fixture_path": "tests/e2e_sync_primitives.gst",
+                "fixture_blob": "4f4497882d4bcb710ea1212041938cf0064c3995",
+            },
+            {
+                "state": "held_post_image",
+                "fixture_path": "tests/e2e_sync_primitives.gst",
+                "fixture_blob": "14a31b2a959e56b03e9270eabf9e520a0ed3c928",
+            },
+        ],
+        "measured_post_reason_deltas": {
+            "deferred_p13_parameter_argument_target_dependent_abi": -1,
+            "deferred_p14_full_program_unnameable_call": 1,
+        },
+        "measured_post_reasoned_deferral_total": 119,
+        "measurement_evidence": {
+            "run_id": 34327601797,
+            "event": "workflow_dispatch",
+            "head_sha": "e214f94bbf162bb681e77f6b979d7726736fdee9",
+            "completed_at": "2026-09-09T08:45:46.909838Z",
+            "runner_cases": 326,
+            "all_case_futures_completed": True,
+            "frozen_map_assertion": "rejected_as_expected_after_shard_cleanup",
+            "log_digest": "b252d891677246115aec3ccc0b579326db057029a3c13fde1da2087b10a4a6cd",
+        },
+        "unregistered_source_state": "rejected",
+        "frozen_record_budgets_oracle_case_set": "unchanged",
+    }, "CR-19 post-image admission drifted")
+
+
+def _main_composed_reason_counts(record: dict, transitions: list[dict]) -> dict:
+    composed = dict(record["classification"]["compile_deferral_reason_counts"])
+    for overlay in transitions:
+        for reason, delta in overlay["reason_count_deltas"].items():
+            composed[reason] = composed.get(reason, 0) + delta
+    return composed
+
+
+def _select_admitted_population(admission: dict, main_composed: dict,
+                                live_blob: str) -> tuple[str, dict]:
+    """Select the terminal reason map for the admitted live source state.
+
+    The main tree keeps the exact frozen-plus-overlay map; the held
+    post-image tree keeps every bucket and moves exactly the two measured
+    reasons. Anything else is not an admitted population.
+    """
+    by_blob = {row["fixture_blob"]: row["state"]
+               for row in admission["admitted_source_states"]}
+    require(live_blob in by_blob,
+            "live fixture is not an admitted suite source state")
+    state = by_blob[live_blob]
+    if state == "main_fixture":
+        return state, {reason: count for reason, count in main_composed.items()
+                       if count != 0}
+    deltas = dict(admission["measured_post_reason_deltas"])
+    require(set(deltas) <= set(main_composed),
+            "admitted post delta names an unregistered reason code")
+    expected = dict(main_composed)
+    for reason, delta in deltas.items():
+        expected[reason] += delta
+    require(all(count >= 0 for count in expected.values()) and
+            sum(deltas.values()) == 0,
+            "admitted post deltas do not preserve the reasoned population")
+    expected = {reason: count for reason, count in expected.items()
+                if count != 0}
+    require(sum(expected.values()) ==
+            admission["measured_post_reasoned_deferral_total"],
+            "admitted post population total drifted")
+    return state, expected
+
+
+def _expect_admission_rejection(label: str, func) -> None:
+    try:
+        func()
+    except SystemExit:
+        return
+    require(False, f"admission inversion did not reject: {label}")
+
+
+def _admission_falsifier_self_test(admission: dict, main_composed: dict) -> None:
+    """Prove the admission rejects what it must and admits what it should.
+
+    Every mutation runs against copies; the live registry is never altered.
+    Both admitted states are exercised by blob, independent of whichever
+    state the live tree holds. Verdicts match on exit status only, never
+    on message text.
+    """
+    main_blob = admission["admitted_source_states"][0]["fixture_blob"]
+    post_blob = admission["admitted_source_states"][1]["fixture_blob"]
+
+    wrong_delta = json.loads(json.dumps(admission))
+    wrong_delta["measured_post_reason_deltas"][
+        "deferred_p13_parameter_argument_target_dependent_abi"] = -2
+    _expect_admission_rejection("wrong post delta",
+                                lambda: _admission_block_is_exact(wrong_delta))
+
+    unknown_code = json.loads(json.dumps(admission))
+    unknown_code["measured_post_reason_deltas"]["deferred_p99_unknown"] = 0
+    _expect_admission_rejection("unknown reason code",
+                                lambda: _admission_block_is_exact(unknown_code))
+    _expect_admission_rejection(
+        "selector-level unknown reason code",
+        lambda: _select_admitted_population(unknown_code, main_composed,
+                                            post_blob))
+
+    substituted = json.loads(json.dumps(admission))
+    substituted["admitted_source_states"][1]["fixture_blob"] = main_blob
+    _expect_admission_rejection("substituted post blob",
+                                lambda: _admission_block_is_exact(substituted))
+
+    _expect_admission_rejection(
+        "unknown live source state",
+        lambda: _select_admitted_population(admission, main_composed,
+                                            "f" * 64))
+
+    state, expected = _select_admitted_population(admission, main_composed,
+                                                  main_blob)
+    require(state == "main_fixture" and
+            expected == {reason: count for reason, count in main_composed.items()
+                         if count != 0},
+            "admitted main population did not restore the frozen map")
+    post_state, post_expected = _select_admitted_population(
+        admission, main_composed, post_blob)
+    require(post_state == "held_post_image" and
+            all(post_expected.get(reason, 0) == main_composed.get(reason, 0) +
+                admission["measured_post_reason_deltas"].get(reason, 0)
+                for reason in set(post_expected) | set(main_composed)) and
+            sum(post_expected.values()) ==
+            admission["measured_post_reasoned_deferral_total"],
+            "admitted post population did not restore the measured map")
+
+
+def phase24_cr19_post_image_admission(registry: dict,
+                                      cases: list[dict]) -> dict:
+    """The compiler-owned exact post-image population admission.
+
+    Recognizes exactly two committed source states by fixture blob - the
+    current main fixture and the held #348 post-image fixture - and selects
+    the terminal reason map each state must produce: the frozen-plus-overlay
+    map on main, that map moved by exactly the measured post deltas on the
+    post image. Corpus shards are detached worktrees of git HEAD, so a tree
+    whose HEAD fixture blob is admitted carries source/shard agreement by
+    construction; a dirty-root substitution never reaches a shard. The
+    frozen Phase 21 record, budgets, oracle requirements, and case set are
+    untouched: only the terminal map assertion becomes state-selected.
+    """
+    record = registry.get("phase21_complete_guard_suite")
+    require(isinstance(record, dict), "Patch 21.17 authority is missing")
+    admission = registry.get("phase24_cr19_multi_module_analysis", {}).get(
+        "phase21_complete_suite_post_image_admission", {})
+    _admission_block_is_exact(admission)
+    paths = {case["path"] for case in cases}
+    for row in admission["admitted_source_states"]:
+        require(row["fixture_path"] in paths,
+                "admitted fixture drifted from the runner inventory")
+    require(len({row["fixture_blob"]
+                 for row in admission["admitted_source_states"]}) == 2,
+            "admitted source states are not distinct")
+    blobs = [row["fixture_blob"] for row in admission["admitted_source_states"]]
+    live_blob = subprocess.check_output(
+        ["git", "rev-parse", "HEAD:tests/e2e_sync_primitives.gst"],
+        cwd=ROOT, text=True).strip()
+    require(live_blob in blobs,
+            "live fixture is not an admitted suite source state")
+    # The measurement post commit must still carry the admitted post blob:
+    # provenance for the registered deltas, not a second accepted state.
+    measurement = admission["measurement_evidence"]
+    post_commit_blob = subprocess.check_output(
+        ["git", "rev-parse",
+         measurement["head_sha"] + ":tests/e2e_sync_primitives.gst"],
+        cwd=ROOT, text=True).strip()
+    require(post_commit_blob == blobs[1],
+            "measurement post commit does not carry the admitted post fixture")
+    transitions = [phase23_guard_defer_transition(registry, cases),
+                   phase24_cr19_transition(registry, cases)]
+    main_composed = _main_composed_reason_counts(record, transitions)
+    _admission_falsifier_self_test(admission, main_composed)
+    state, expected = _select_admitted_population(admission, main_composed,
+                                                  live_blob)
+    return {"live_state": state, "expected_reason_counts": expected}
+
+
 def validate() -> dict:
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     predecessor = registry.get("phase21_native_rebuild_reproducibility", {})
@@ -219,6 +408,7 @@ def validate() -> dict:
     cases = runner_cases()
     phase23_guard_defer_transition(registry, cases)
     phase24_cr19_transition(registry, cases)
+    phase24_cr19_post_image_admission(registry, cases)
     inventory = record.get("inventory", {})
     observed = {
         "total": len(cases),
@@ -725,12 +915,13 @@ def evidence() -> None:
             executor.shutdown(wait=True, cancel_futures=True)
         remove_shards(shard_base, shard_roots)
 
-    expected_reason_counts = dict(composed_reasons)
-    expected_reason_counts = {
-        reason: count for reason, count in expected_reason_counts.items()
-        if count != 0
-    }
-    require(reason_counts == expected_reason_counts,
+    # The terminal map is state-selected by the compiler-owned admission:
+    # the frozen-plus-overlay map on the main fixture, that map moved by
+    # exactly the measured post deltas on the held post image. Totals are
+    # preserved by the admission (deltas sum to zero), so the count
+    # assertion below stands unchanged on both states.
+    admitted = phase24_cr19_post_image_admission(_registry, cases)
+    require(reason_counts == admitted["expected_reason_counts"],
             f"compile deferral population drifted: {reason_counts}")
     required_delta = sum(o["required_native_case_delta"] for o in transitions)
     deferral_delta = sum(o["classified_deferral_delta"] for o in transitions)
