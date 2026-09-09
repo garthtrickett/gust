@@ -4236,7 +4236,7 @@
         {"path":"scripts/phase22_default_route_seed_convergence.py","digest":"459a26c7e6cfa0bb5980e0db7462c078dd4de0bf039ed54cfda6b1844401aa64","match_counts":{"explicit_backend_spelling":4,"mir_to_c_name":12,"generated_c_contract":6},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
         {"path":"scripts/phase24_cr15_closure.py","digest":"a6988dc755e0edd887c4e3445b54a6daa556426ddf650f94284800009af2f465","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":2,"generated_c_contract":0},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"}
       ],
-      "unchanged_other_text_surface_manifest_digest": "52916e5aba94854e332f212f904628fcef87be21cac8d43c66c5c6b7b287a907",
+      "unchanged_other_text_surface_manifest_digest": "eb4a11ad8f3668e4c6004b41576ad76b209f60bac5c72ffdfb82579873ca5532",
       "partial_extra_or_substituted_surface": "rejected",
       "boundary": {
         "changes_compiler_source": false,
@@ -7517,6 +7517,40 @@
       "figures_head_sha": "490e85b0cad4de3c4276623074b6e865250ef1b4",
       "sweep_prediction": "totals unchanged; one reason bucket replaces another",
       "sweep_prediction_head_sha": "601c98af"
+    },
+    "phase21_complete_suite_post_image_admission": {
+      "contract_version": "phase24_cr19_post_image_admission_v1",
+      "status": "exact_cr19_post_image_admission",
+      "authority_base_main": "e7f77e32f057ec3d3a8534343f2c3e958ad59610",
+      "admitted_source_states": [
+        {
+          "state": "main_fixture",
+          "fixture_path": "tests/e2e_sync_primitives.gst",
+          "fixture_blob": "4f4497882d4bcb710ea1212041938cf0064c3995"
+        },
+        {
+          "state": "held_post_image",
+          "fixture_path": "tests/e2e_sync_primitives.gst",
+          "fixture_blob": "14a31b2a959e56b03e9270eabf9e520a0ed3c928"
+        }
+      ],
+      "measured_post_reason_deltas": {
+        "deferred_p13_parameter_argument_target_dependent_abi": -1,
+        "deferred_p14_full_program_unnameable_call": 1
+      },
+      "measured_post_reasoned_deferral_total": 119,
+      "measurement_evidence": {
+        "run_id": 34327601797,
+        "event": "workflow_dispatch",
+        "head_sha": "e214f94bbf162bb681e77f6b979d7726736fdee9",
+        "completed_at": "2026-09-09T08:45:46.909838Z",
+        "runner_cases": 326,
+        "all_case_futures_completed": true,
+        "frozen_map_assertion": "rejected_as_expected_after_shard_cleanup",
+        "log_digest": "b252d891677246115aec3ccc0b579326db057029a3c13fde1da2087b10a4a6cd"
+      },
+      "unregistered_source_state": "rejected",
+      "frozen_record_budgets_oracle_case_set": "unchanged"
     }
   },
   "phase24_filename_behavior_characterization": {
