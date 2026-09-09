@@ -7,6 +7,7 @@
 
 import "mir_resource_authority.gst" as authority;
 import "mir_resource_value.gst" as resource_mir;
+import "mir_layout.gst" as layout;
 
 type MirResourceReassignment[ctx] struct {
     reassignment_id: str,
@@ -168,13 +169,6 @@ func mir_validate_resource_reassignment_transition(resolution_policy: str, mutab
     return mir_resource_reassignment_transition_validation(1, "resource_reassignment_transition_valid", ctx);
 }
 
-func mir_resource_reassignment_field_is_safe(value: str, allow_empty: int) int {
-    if allow_empty == 0 && len(value) == 0 { return 0; }
-    if std.str_find(value, "\n") != 0 - 1 { return 0; }
-    if std.str_find(value, "\r") != 0 - 1 { return 0; }
-    return 1;
-}
-
 func mir_resource_reassignment_cleanup_count(table: MirResourceReassignmentTable[ctx], cleanup_id: str, ctx: &Arena) int {
     mut entries: std.Vector[MirResourceReassignment[ctx], ctx] := ctx[table.entries];
     mut count := 0;
@@ -201,13 +195,13 @@ func mir_resource_reassignment_validate(table: MirResourceReassignmentTable[ctx]
     mut entry_index := 0;
     while entry_index < len(entries) {
         mut entry := entries[entry_index];
-        if mir_resource_reassignment_field_is_safe(entry.reassignment_id, 0) == 0 ||
-           mir_resource_reassignment_field_is_safe(entry.storage_id, 0) == 0 ||
-           mir_resource_reassignment_field_is_safe(entry.old_resource_id, 0) == 0 ||
-           mir_resource_reassignment_field_is_safe(entry.replacement_resource_id, 0) == 0 ||
-           mir_resource_reassignment_field_is_safe(entry.cleanup_obligation_id, 0) == 0 ||
-           mir_resource_reassignment_field_is_safe(entry.source_location, 0) == 0 ||
-           mir_resource_reassignment_field_is_safe(entry.observable_effect, 0) == 0
+        if layout.mir_layout_field_is_safe(entry.reassignment_id, 0) == 0 ||
+           layout.mir_layout_field_is_safe(entry.storage_id, 0) == 0 ||
+           layout.mir_layout_field_is_safe(entry.old_resource_id, 0) == 0 ||
+           layout.mir_layout_field_is_safe(entry.replacement_resource_id, 0) == 0 ||
+           layout.mir_layout_field_is_safe(entry.cleanup_obligation_id, 0) == 0 ||
+           layout.mir_layout_field_is_safe(entry.source_location, 0) == 0 ||
+           layout.mir_layout_field_is_safe(entry.observable_effect, 0) == 0
         {
             return mir_resource_reassignment_validation(0, "resource_reassignment_metadata_missing", ctx);
         }

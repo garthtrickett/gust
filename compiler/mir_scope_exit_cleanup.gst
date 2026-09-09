@@ -7,6 +7,7 @@
 
 import "mir_resource_authority.gst" as authority;
 import "mir_resource_value.gst" as resource_mir;
+import "mir_layout.gst" as layout;
 
 type MirResourceScope[ctx] struct {
     scope_id: str,
@@ -228,13 +229,6 @@ func mir_scope_exit_cleanup_plan_result(valid: int, reason_code: str, plan: MirS
     return plan_result;
 }
 
-func mir_scope_exit_cleanup_field_is_safe(value: str, allow_empty: int) int {
-    if allow_empty == 0 && len(value) == 0 { return 0; }
-    if std.str_find(value, "\n") != 0 - 1 { return 0; }
-    if std.str_find(value, "\r") != 0 - 1 { return 0; }
-    return 1;
-}
-
 func mir_scope_exit_cleanup_scope_kind_selected(scope_kind: str) int {
     if std.str_eq(scope_kind, "block_scope") == 1 { return 1; }
     if std.str_eq(scope_kind, "function_body") == 1 { return 1; }
@@ -322,10 +316,10 @@ func mir_scope_exit_cleanup_scope_table_validate(table: MirResourceScopeTable[ct
     mut scope_validate_index := 0;
     while scope_validate_index < len(scopes_validate) {
         mut scope_validate_value := scopes_validate[scope_validate_index];
-        if mir_scope_exit_cleanup_field_is_safe(scope_validate_value.scope_id, 0) == 0 ||
-           mir_scope_exit_cleanup_field_is_safe(scope_validate_value.source_location, 0) == 0 ||
-           mir_scope_exit_cleanup_field_is_safe(scope_validate_value.scope_exit_id, 0) == 0 ||
-           mir_scope_exit_cleanup_field_is_safe(scope_validate_value.exit_program_point, 0) == 0 ||
+        if layout.mir_layout_field_is_safe(scope_validate_value.scope_id, 0) == 0 ||
+           layout.mir_layout_field_is_safe(scope_validate_value.source_location, 0) == 0 ||
+           layout.mir_layout_field_is_safe(scope_validate_value.scope_exit_id, 0) == 0 ||
+           layout.mir_layout_field_is_safe(scope_validate_value.exit_program_point, 0) == 0 ||
            scope_validate_value.depth < 0 ||
            scope_validate_value.exit_sequence <= 0 ||
            mir_scope_exit_cleanup_scope_kind_selected(scope_validate_value.scope_kind) == 0
@@ -365,12 +359,12 @@ func mir_scope_exit_cleanup_scope_table_validate(table: MirResourceScopeTable[ct
     mut binding_validate_index := 0;
     while binding_validate_index < len(bindings_validate) {
         mut binding_validate_value := bindings_validate[binding_validate_index];
-        if mir_scope_exit_cleanup_field_is_safe(binding_validate_value.scope_id, 0) == 0 ||
-           mir_scope_exit_cleanup_field_is_safe(binding_validate_value.resource_id, 0) == 0 ||
-           mir_scope_exit_cleanup_field_is_safe(binding_validate_value.value_id, 0) == 0 ||
-           mir_scope_exit_cleanup_field_is_safe(binding_validate_value.carrier_id, 0) == 0 ||
-           mir_scope_exit_cleanup_field_is_safe(binding_validate_value.declaration_id, 0) == 0 ||
-           mir_scope_exit_cleanup_field_is_safe(binding_validate_value.source_location, 0) == 0 ||
+        if layout.mir_layout_field_is_safe(binding_validate_value.scope_id, 0) == 0 ||
+           layout.mir_layout_field_is_safe(binding_validate_value.resource_id, 0) == 0 ||
+           layout.mir_layout_field_is_safe(binding_validate_value.value_id, 0) == 0 ||
+           layout.mir_layout_field_is_safe(binding_validate_value.carrier_id, 0) == 0 ||
+           layout.mir_layout_field_is_safe(binding_validate_value.declaration_id, 0) == 0 ||
+           layout.mir_layout_field_is_safe(binding_validate_value.source_location, 0) == 0 ||
            binding_validate_value.declaration_order <= 0 ||
            len(mir_scope_exit_cleanup_scope_by_id(table, binding_validate_value.scope_id, ctx).scope_id) == 0
         {

@@ -144,7 +144,7 @@ Stdlib handoff are complete.
 - [ ] Patch 24.2q — str Content Equality in the Operator Set
 - [x] Patch 24.2s — Pinned-Manifest Retirement Contract — DONE
 - [x] Patch 24.2t — Launch-Gate Obligations and Phase 27 Retirement — DONE
-- [ ] Patch 24.2u — CR-19 Full-Program Bundle Validation
+- [x] Patch 24.2u — CR-19 Full-Program Bundle Validation — DONE
 - [ ] Patch 24.2v — CR-19 Seed Publication Authority
 - [ ] Patch 24.2w — CR-19 Bootstrap Seed Publication
 - [ ] Patch 24.2x — CR-19 Transition Closure and Stdlib Handoff
@@ -678,6 +678,13 @@ guard is relaxed here.
 
 ## Patch 24.2u — CR-19 Full-Program Bundle Validation
 
+**Completion:** PR #371 merged as `fd9023cc3585f4ccee1689e9a57a3224e514ae12`.
+Exact head `d9873d9139c40be9405f1a00c3e4cacb6417291a` passed all 137 required
+PR workflows and the Trusted Gate, with its review conversation resolved.
+Phase 21 suite run `34308880945` measured 197 native cases and 129 deferrals;
+CR15 closure run `34308880944` verified bootstrap convergence and the exact
+A-to-B seed transition. The generated B seed remains unpublished.
+
 **Purpose:** make the native capability planner validate the full-program bundle
 before reporting support, using the worker's existing unnameable-call and
 runtime-signature consistency conditions. This is the explicitly activated
@@ -713,6 +720,31 @@ Stdlib source, or single-module scan relaxation is introduced.
 
 **Purpose:** authorize the final measured seed text surface before publishing
 that seed alone.
+
+### Separate CR-b.2b prerequisite — PR #366
+
+**Status:** active, pending exact-head qualification and merge. This is the
+separately authorized consolidation prerequisite; its capability PR precedes
+the final seed text-surface authorization PR.
+
+**Purpose:** replace six concordant field-safety implementations with calls to
+the existing `mir_layout_field_is_safe`, preserving their validation behaviour.
+
+**Steps:** rebase onto merged Patch 24.2u; verify token concordance and the
+canonical module's lack of imports; redirect the 36 call sites in array/slice,
+enum, resource reassignment, scope-exit cleanup, string-view, and struct-layout
+modules; rerun all six unchanged CR-b.2a probes; and measure the new bootstrap
+fixed point. Keep the five other concordant copies without prior probes and
+the predicates with different conditions outside this patch.
+
+**Exit Gate:** the canonical helper and all six probes remain unchanged; the
+probes pass against freshly built consolidated sources; bootstrap converges;
+actual committed A-to-C and unpublished B-to-C attribution are recorded;
+the exact pending A/C registration rejects B and unrelated identities; and
+required exact-head workflows and review gates pass. No seed bytes, new
+validation rule, MIR/ABI change, or broader consolidation is included.
+
+### Final seed authorization
 
 **Steps:**
 
