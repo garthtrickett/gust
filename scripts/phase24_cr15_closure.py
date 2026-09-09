@@ -205,7 +205,9 @@ def _seed_transition(registry: dict, key: str) -> dict:
 
 
 def registered_post_publication_identity(registry: dict, key: str) -> dict:
-    identity = _seed_transition(registry, key)["accepted_live_seed_identities"][1]
+    # The landed identity is the last one in both shapes: the post half of an
+    # in-flight pre/post pair, or the single identity of a collapsed landing.
+    identity = _seed_transition(registry, key)["accepted_live_seed_identities"][-1]
     return {"line_count": identity["line_count"],
             "seed_digest": identity["seed_digest"]}
 

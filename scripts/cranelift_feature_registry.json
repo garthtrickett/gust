@@ -4150,18 +4150,13 @@
     },
     "phase24_cr19_seed_transition": {
       "contract_version": "phase24_cr19_bundle_validation_seed_reconvergence_transition_v1",
-      "status": "ready_for_seed_publication",
+      "status": "landed_post_publication",
       "predecessor_seed_authority": "phase24_cra_stage1_identity_format_seed_reconvergence_transition_v1",
       "authority_base_main": "fd9023cc3585f4ccee1689e9a57a3224e514ae12",
       "accounted_compiler_authorities": [
         "phase24_cr19_multi_module_analysis_v1"
       ],
       "accepted_live_seed_identities": [
-        {
-          "state": "pre_publication",
-          "line_count": 65800,
-          "seed_digest": "7373a957f3e55f0a9d60c1a17e84c7776158a43e3b933af5dd047b72ca990abf"
-        },
         {
           "state": "post_publication",
           "line_count": 65986,
@@ -4177,9 +4172,22 @@
       },
       "seed_pr_policy": "gust_v4_c_only",
       "partial_or_unregistered_identity": "rejected",
-      "closure_transition": "collapse_to_post_publication_after_seed_merge",
+      "closure_transition": "collapsed_to_post_publication",
+      "landed_seed_evidence": {
+        "pull_request": 374,
+        "head_sha": "7fb7ef4c416235306301452565ee1d7d4135847b",
+        "merge_main_sha": "0f6cd3fc562cff02c7b41a0168fff138aa38be17",
+        "merged_at": "2026-09-09T09:41:05Z",
+        "event": "pull_request",
+        "workflow_population": 35,
+        "successful_workflows": 35,
+        "unfinished_workflows": 0,
+        "non_success_workflows": 0,
+        "unresolved_non_outdated_review_threads": 0,
+        "changed_paths": ["gust_v4.c"]
+      },
       "pending_post_supersession": {
-        "status": "supersedes_unpublished_cr19_only_fixed_point",
+        "status": "supersession_closed_B_never_committed_C_landed",
         "unpublished_source_pull_request": 371,
         "unpublished_source_merge": "fd9023cc3585f4ccee1689e9a57a3224e514ae12",
         "unpublished_seed_identity": {
@@ -4195,7 +4203,7 @@
           "deletions": 66,
           "line_delta": -56
         },
-        "committed_seed_remains": "pre_publication_identity_A"
+        "committed_seed_remains": "preregistration_state_A_superseded_by_landed_C"
       }
     },
     "phase24_2g_auth_seed_identity_successor": {
@@ -4225,8 +4233,8 @@
       ],
       "current_changed_text_surfaces": [
         {"path":"gust_v4.c","digest":"0bb8d3ccea011275366356baa07ee0619d13979fa00fc91ee97eb05718f27539","match_counts":{"explicit_backend_spelling":4,"mir_to_c_name":107,"generated_c_contract":186},"classification":"bootstrap_phase25","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"preserve_exact_C_bootstrap_dependency","removal_phase":"25","falsifier":"bootstrap_surface_is_missing_changed_or_reclassified"},
-        {"path":"scripts/phase22_default_route_seed_convergence.py","digest":"efeb289dd63a9e820af1b5aa9a465b2ef0665d70256c0c0d7aae2708c1d278b3","match_counts":{"explicit_backend_spelling":4,"mir_to_c_name":12,"generated_c_contract":6},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
-        {"path":"scripts/phase24_cr15_closure.py","digest":"982d1a7fff17ae5126427659fffa11e1a0010309fbbf318ea9650a5b4869beb8","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":2,"generated_c_contract":0},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"}
+        {"path":"scripts/phase22_default_route_seed_convergence.py","digest":"459a26c7e6cfa0bb5980e0db7462c078dd4de0bf039ed54cfda6b1844401aa64","match_counts":{"explicit_backend_spelling":4,"mir_to_c_name":12,"generated_c_contract":6},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
+        {"path":"scripts/phase24_cr15_closure.py","digest":"a6988dc755e0edd887c4e3445b54a6daa556426ddf650f94284800009af2f465","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":2,"generated_c_contract":0},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"}
       ],
       "unchanged_other_text_surface_manifest_digest": "52916e5aba94854e332f212f904628fcef87be21cac8d43c66c5c6b7b287a907",
       "partial_extra_or_substituted_surface": "rejected",

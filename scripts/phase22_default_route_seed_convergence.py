@@ -321,24 +321,22 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
             "Patch 24.3a seed diff does not start from the Patch 24.2f fixed point")
     require(stage1_diff["current_lines"] == stage1_identities[0]["line_count"],
             "Patch 24.3a seed diff does not match its own landed identity")
-    # CR-19 registers its own exact fixed point before the seed-only PR.
-    # A later capability must replace this pending post identity explicitly;
-    # an unpublished intermediate seed is never a committed pre identity.
+    # CR-19 has landed and collapsed: the seed-only publication carried the
+    # exact post identity, so the pre-publication seed is no longer accepted
+    # anywhere. One terminal identity, and the next seed movement must register
+    # itself exactly as this one did. The unpublished intermediate seed was
+    # never a committed identity; its attribution to the landed seed is kept
+    # below as history, not as an accepted state.
     bundle_transition = record.get("phase24_cr19_seed_transition")
     require(bundle_transition == {
         "contract_version": "phase24_cr19_bundle_validation_seed_reconvergence_transition_v1",
-        "status": "ready_for_seed_publication",
+        "status": "landed_post_publication",
         "predecessor_seed_authority": "phase24_cra_stage1_identity_format_seed_reconvergence_transition_v1",
         "authority_base_main": "fd9023cc3585f4ccee1689e9a57a3224e514ae12",
         "accounted_compiler_authorities": [
             "phase24_cr19_multi_module_analysis_v1"
         ],
         "accepted_live_seed_identities": [
-            {
-                "state": "pre_publication",
-                "line_count": 65800,
-                "seed_digest": "7373a957f3e55f0a9d60c1a17e84c7776158a43e3b933af5dd047b72ca990abf"
-            },
             {
                 "state": "post_publication",
                 "line_count": 65986,
@@ -354,9 +352,22 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
         },
         "seed_pr_policy": "gust_v4_c_only",
         "partial_or_unregistered_identity": "rejected",
-        "closure_transition": "collapse_to_post_publication_after_seed_merge",
+        "closure_transition": "collapsed_to_post_publication",
+        "landed_seed_evidence": {
+            "pull_request": 374,
+            "head_sha": "7fb7ef4c416235306301452565ee1d7d4135847b",
+            "merge_main_sha": "0f6cd3fc562cff02c7b41a0168fff138aa38be17",
+            "merged_at": "2026-09-09T09:41:05Z",
+            "event": "pull_request",
+            "workflow_population": 35,
+            "successful_workflows": 35,
+            "unfinished_workflows": 0,
+            "non_success_workflows": 0,
+            "unresolved_non_outdated_review_threads": 0,
+            "changed_paths": ["gust_v4.c"]
+        },
         "pending_post_supersession": {
-            "status": "supersedes_unpublished_cr19_only_fixed_point",
+            "status": "supersession_closed_B_never_committed_C_landed",
             "unpublished_source_pull_request": 371,
             "unpublished_source_merge": "fd9023cc3585f4ccee1689e9a57a3224e514ae12",
             "unpublished_seed_identity": {
@@ -372,30 +383,29 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
                 "deletions": 66,
                 "line_delta": -56
             },
-            "committed_seed_remains": "pre_publication_identity_A"
+            "committed_seed_remains": "preregistration_state_A_superseded_by_landed_C"
         }
     }, "CR-19 seed transition drifted")
     bundle_identities = bundle_transition["accepted_live_seed_identities"]
     require([row["state"] for row in bundle_identities] ==
-            ["pre_publication", "post_publication"],
+            ["post_publication"],
             "CR-19 seed transition state order drifted")
     require(len({(row["line_count"], row["seed_digest"])
-                 for row in bundle_identities}) == 2,
+                 for row in bundle_identities}) == len(bundle_identities),
             "CR-19 seed transition identities are not distinct")
-    require(bundle_identities[0] == {
-        "state": "pre_publication",
-        "line_count": stage1_identities[0]["line_count"],
-        "seed_digest": stage1_identities[0]["seed_digest"],
-    }, "CR-19 does not start from the committed CR-a Stage 1 identity")
     bundle_diff = bundle_transition["generated_seed_diff"]
     require(bundle_diff["current_lines"] - bundle_diff["previous_lines"] ==
             bundle_diff["line_delta"] and
             bundle_diff["insertions"] - bundle_diff["deletions"] ==
             bundle_diff["line_delta"],
             "CR-19 seed line delta is inconsistent")
-    require(bundle_diff["previous_lines"] == bundle_identities[0]["line_count"] and
-            bundle_diff["current_lines"] == bundle_identities[1]["line_count"],
-            "CR-19 seed diff does not match its exact pre/post identities")
+    # The chain stays continuous after the collapse: this transition's recorded
+    # diff starts from exactly what CR-a Stage 1 landed and ends at the single
+    # landed identity that remains.
+    require(bundle_diff["previous_lines"] == stage1_identities[0]["line_count"],
+            "CR-19 seed diff does not start from the landed CR-a Stage 1 identity")
+    require(bundle_diff["current_lines"] == bundle_identities[0]["line_count"],
+            "CR-19 seed diff does not match its collapsed landed identity")
     supersession = bundle_transition["pending_post_supersession"]
     unpublished = supersession["unpublished_seed_identity"]
     require(all(unpublished != {
@@ -404,8 +414,8 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
             "CR-b.2b still accepts the unpublished CR-19-only seed")
     attribution = supersession["attribution_diff"]
     require(attribution["previous_lines"] == unpublished["line_count"] and
-            attribution["current_lines"] == bundle_identities[1]["line_count"],
-            "CR-b.2b attribution does not connect unpublished B to final C")
+            attribution["current_lines"] == bundle_identities[0]["line_count"],
+            "CR-b.2b attribution does not connect unpublished B to landed C")
     require(attribution["current_lines"] - attribution["previous_lines"] ==
             attribution["line_delta"] and
             attribution["insertions"] - attribution["deletions"] ==
@@ -445,15 +455,10 @@ def regeneration_is_accepted(record: dict, committed: dict, regenerated: dict) -
         }
         for row in accepted_live_seed_identities(record)
     }
-    # Two accepted shapes while the seed publication is still pending: the
-    # compiler branch, whose committed seed is still the pre-publication
-    # identity but which regenerates to the post-publication one, and the
-    # published state, where both are the post-publication identity. Any other
-    # pairing - including a regenerated seed that is neither - rejects.
+    # Collapsed: the publication landed, so only the landed identity remains
+    # and only a regeneration of that identity to itself is accepted. Any
+    # other pairing - including the retired pre-publication seed - rejects.
     return (
-        committed == identities["pre_publication"] and
-        regenerated == identities["post_publication"]
-    ) or (
         committed == identities["post_publication"] and
         regenerated == identities["post_publication"]
     )
@@ -546,7 +551,7 @@ def validate() -> dict:
     live_seed_identity = seed_identity(seed_bytes)
     require(live_seed_identity_is_accepted(
         record, live_seed_identity["line_count"], live_seed_identity["seed_digest"]),
-            "committed seed is neither exact pre-publication nor post-publication identity")
+            "committed seed is not the exact landed post-publication identity")
     help_fragments = [
         "cranelift  Compile to one native executable (default).",
         "fallback to MIR-to-C.",
