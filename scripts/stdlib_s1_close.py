@@ -80,22 +80,29 @@ def validate_roadmap(text):
 
 def validate_historical(citation, run):
     require(str(run.get("id")) == citation[0] and run.get("head_sha") == citation[1],
-            "Level 3 citation differs from latest main run")
+            "Level 3 citation differs from the cited run")
+    validate_successful_historical(run)
+
+
+def validate_successful_historical(run):
     require(run.get("head_branch") == "main" and
             run.get("path") == ".github/workflows/cranelift-historical-full.yml" and
             run.get("status") == "completed" and run.get("conclusion") == "success",
-            "Latest main Historical Full has not completed successfully")
+            "Main Historical Full has not completed successfully")
 
 
-def latest_historical():
-    url = (f"https://api.github.com/repos/{REPO}/actions/workflows/"
-           "cranelift-historical-full.yml/runs?branch=main&per_page=1")
+def github_api(path):
+    url = f"https://api.github.com/repos/{REPO}/actions/{path}"
     headers = {"Accept": "application/vnd.github+json", "User-Agent": "gust-stdlib-s1-close"}
     token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
     if token:
         headers["Authorization"] = f"Bearer {token}"
     with urlopen(Request(url, headers=headers), timeout=30) as response:
-        runs = json.load(response)["workflow_runs"]
+        return json.load(response)
+
+
+def latest_historical():
+    runs = github_api("workflows/cranelift-historical-full.yml/runs?branch=main&per_page=1")["workflow_runs"]
     require(len(runs) == 1, "No main Historical Full run exists")
     return runs[0]
 
@@ -103,7 +110,11 @@ def latest_historical():
 def main():
     pending, citation = validate_roadmap((ROOT / "TASK_STDLIB.md").read_text())
     if citation:
-        validate_historical(citation, latest_historical())
+        validate_historical(citation, github_api(f"runs/{citation[0]}"))
+        # The closure citation is historical. A later successful nightly must
+        # not force every future PR to rewrite it, but a new red/queued run
+        # cannot be hidden behind the older green citation.
+        validate_successful_historical(latest_historical())
     print(f"S1 closure bookkeeping: {len(pending)} pending patches; every CR accounted for")
 
 

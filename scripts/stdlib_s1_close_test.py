@@ -10,7 +10,7 @@ from pathlib import Path
 import re
 import unittest
 
-from stdlib_s1_close import validate_historical, validate_roadmap
+from stdlib_s1_close import validate_historical, validate_roadmap, validate_successful_historical
 
 
 class ClosureTests(unittest.TestCase):
@@ -33,6 +33,15 @@ class ClosureTests(unittest.TestCase):
 
     def test_closed_positive(self):
         validate_historical(self.citation, self.run)
+
+    def test_newer_green_does_not_invalidate_closure_citation(self):
+        validate_historical(self.citation, self.run)
+        validate_successful_historical({**self.run, "id": 67890, "head_sha": "b" * 40})
+
+    def test_newer_failure_cannot_hide_behind_old_green(self):
+        validate_historical(self.citation, self.run)
+        with self.assertRaisesRegex(ValueError, "not completed successfully"):
+            validate_successful_historical({**self.run, "id": 67890, "conclusion": "failure"})
 
     def test_missing_and_duplicate_requests(self):
         for number in (1, 16, 19, 21):

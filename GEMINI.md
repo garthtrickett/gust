@@ -220,6 +220,26 @@ rebuild
 # reopen helix
 ```
 
+### L. Scoped MutexGuard usage
+
+The delivered safe synchronization prototype uses module-level `sync.lock(&mutex)`
+and `sync.get(&owner)`. Acquisition returns one opaque, move-only guard;
+protected references remain rooted in that live guard, and scope exit performs
+cleanup automatically. The scope suite covers early/error return, nested scope,
+explicit move, helper transfer and a legal returned guard. Use the safe module
+for ordinary protected access; no manual unlock is required.
+
+Raw `Mutex.Lock` / `Mutex.Unlock` remain explicit-unsafe primitives. An unsafe
+raw unlock does not discharge the guard's cleanup obligation: mixing it with a
+live guard still emits both unlock paths. The CR-16 limitation witness is
+compile-only and must never be passed to an execution runner. `&T` still has no
+immutability or general non-aliasing guarantee (CR-6, Phase 26.1).
+
+Fiber contention is qualified on MIR-to-C; native source-route limitations
+remain explicit. The safe module does not choose a fallback backend. S1.12's
+closure report must keep this coverage boundary distinct from supported
+non-fiber MutexGuard parity.
+
 ## Agent execution
 
 Operational policy for agents — lanes, ownership boundaries, the shared

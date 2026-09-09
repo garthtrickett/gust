@@ -986,6 +986,10 @@ programs skipping the single-module scan, not the corrected defect population.
 The older 98-case claim and its 95 + 2 + 0 arithmetic are withdrawn. Neither
 those figures nor the 328-case sweep supplies Phase 21 registration counts;
 those must come from the authoritative Phase 21 suite at the published HEAD.
+The Cranelift/coordinator recovery records run `34230275680` at `490e85b0` as
+197 required cases and 129 deferrals, 326 total. That is the suite measurement;
+the older 192/134 closure-summary figures are not. Re-measure after the compiler
+lane's next publication; this dated result is not a claim about its next HEAD.
 
 **Blocking S1.11; Cranelift-owned Phase 24 transition.** PR #348 remains the
 unchanged red reproduction. Release requires #371 compiler source and
@@ -1677,11 +1681,12 @@ Recording this is the point of the phase, not an apology for it.
 
 ### Level 3 evidence
 
-The closure guard requires the following row to identify the latest main
-Historical Full run and verifies its ID, SHA, workflow, branch and completed
-success against GitHub. An old green run cannot conceal a newer failure or
-pending run. Populate only at actual closure; recovery observations above are
-not a closure citation.
+At closure, record the latest main Historical Full run below. The guard verifies
+that cited run's ID, SHA, workflow, branch and completed success against GitHub,
+and separately requires the latest main run to have completed successfully. An
+old green run cannot conceal a newer failure or pending run; a later green run
+does not require rewriting the historical closure citation. Populate only at
+actual closure; recovery observations above are not a closure citation.
 
 | workflow | run ID | head SHA | status | conclusion |
 | --- | --- | --- | --- | --- |
