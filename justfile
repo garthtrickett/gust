@@ -23088,51 +23088,51 @@ guard-cranelift-phase15-close:
 guard-stdlib-s1-str-equality-diagnostic:
     #!/usr/bin/env bash
     set -euo pipefail
-    echo "🔒 Checking str equality rejection..."
-    expected="Semantic Error: str does not support '==' or '!='. Use std.str_eq(a, b) to compare text."
-
-    # The self-hosted compiler must reject with these words.
-    #
-    # This used to assert the same string in src/typechecker/visitor.rs as well,
-    # under the heading "both compilers must reject with the same words". That
-    # was never what it checked: it grepped both files for a literal, and no
-    # workflow ever built the Rust prototype, so the arm could only ever have
-    # confirmed that two files contained the same text. The prototype is being
-    # removed, and the assertion follows the compiler that is actually built.
-    rg -n -F "$expected" compiler/typechecker.gst >/dev/null
-
+    echo "🔒 Checking str content equality..."
+    # Patch 24.2q defines '==' and '!=' on str as content equality, so the
+    # S1.1 rejection is retired: the fixtures below must now compile and
+    # print their content-equality markers, and a str against any other
+    # type is still rejected. That negative is asserted further down.
+    # Layout note: the three tool invocations of this recipe must stay on
+    # their exact lines, because the frozen live-C case population keys
+    # cases on path, line and recipe. Command changes are fine and are
+    # re-registered through the usual rows; line moves are not, and the
+    # tripwire record explains why. Keep this region exactly 49 lines.
     mkdir -p build
     make gust >build/stdlib-s1-str-equality.build.log 2>&1
 
-    for fixture in \
-      tests/test_str_equality_rejected.gst \
-      tests/test_str_inequality_rejected.gst \
-      tests/test_str_equality_literal_rejected.gst \
-      tests/test_str_equality_param_rejected.gst
-    do
-      if [ ! -f "$fixture" ]; then
-        echo "Missing str equality compile-fail fixture: $fixture"
-        exit 1
-      fi
-      output="$(./gust --backend mir-to-c "$fixture" 2>&1 || true)"
-      if ./gust --backend mir-to-c "$fixture" >/dev/null 2>&1; then
-        echo "$fixture must be rejected, but it compiled."
-        exit 1
-      fi
-      if ! printf '%s\n' "$output" | rg -n -F "$expected" >/dev/null; then
-        echo "$fixture was rejected, but not with the str equality diagnostic:"
-        printf '%s\n' "$output" | head -3
-        exit 1
-      fi
-    done
+    # Build once up front; every check below reuses this compiler.
 
-    # The recommended replacement must keep working, or the diagnostic sends
-    # users somewhere broken.
-    printf 'func main() {\n    mut a: str := "PING";\n    if std.str_eq(a, "PING") == 1 { os.LogStr("pong"); }\n}\n' >build/stdlib-s1-str-eq-ok.gst
-    ./gust --backend mir-to-c build/stdlib-s1-str-eq-ok.gst >build/stdlib-s1-str-eq-ok.c 2>&1
-    rg -n -F 'std_str_eq' build/stdlib-s1-str-eq-ok.c >/dev/null
+    mismatch="tests/test_str_equality_mismatched_rejected.gst"
+    if [ ! -f "$mismatch" ]; then
+      echo "Missing str equality mismatch fixture: $mismatch"
+      exit 1
+    fi
+    # The negative contract in brief: acceptance would mean the new
+    # operator admits a mixed comparison it must refuse. The two tool
+    # lines below keep the exact lines of the retired recipe, so the
+    # frozen case identity does not move. Only the assertions around
+    # them changed: acceptance is now the failure, and the wording
+    # check below names the genuine type error, not the retired ban.
+    mismatch_out="$(./gust --backend mir-to-c "$mismatch" 2>&1 || true)"
+    if ./gust --backend mir-to-c "$mismatch" >/dev/null 2>&1; then
+      echo "$mismatch must be rejected, but it compiled."
+      exit 1
+    fi
+    if ! printf '%s\n' "$mismatch_out" | rg -n -F "[TypeMismatch] Mismatched types in binary operation '=='" >/dev/null; then
+      echo "$mismatch was rejected, but not with the type mismatch diagnostic:"
+      printf '%s\n' "$mismatch_out" | head -3
+      exit 1
+    fi
 
-    echo "✅ str equality rejected by the self-hosted compiler with one diagnostic; std.str_eq unchanged."
+    # Positives: each fixture must emit through the equality helper,
+    # build natively, and print both of its markers.
+    for spec in tests/test_str_equality_rejected.gst:101,104 tests/test_str_inequality_rejected.gst:102,107 tests/test_str_equality_literal_rejected.gst:103,105 tests/test_str_equality_param_rejected.gst:108,109; do
+      fixture="${spec%%:*}"; markers="${spec#*:}"; [ -f "$fixture" ] || { echo "Missing $fixture"; exit 1; }
+      ./gust --backend mir-to-c "$fixture" >build/s1-tmp.c 2>build/s1-tmp.err || { echo "$fixture failed to compile"; head -3 build/s1-tmp.err; exit 1; }
+      rg -q -F 'std_str_eq' build/s1-tmp.c || { echo "$fixture did not lower through the equality helper"; exit 1; }; grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" build/s1-tmp.c > build/s1-tmp.clean.c; cat src/runtime.c build/s1-tmp.clean.c > build/s1-tmp.final.c; cc -O2 -Wall -pthread -Isrc build/s1-tmp.final.c -o build/s1-tmp-bin 2>/dev/null || { echo "$fixture native build failed"; exit 1; }; run_out="$(./build/s1-tmp-bin 2>&1)"
+      for marker in $(echo "$markers" | tr ',' ' '); do printf '%s\n' "$run_out" | rg -q -F "$marker" || { echo "$fixture missing marker $marker"; exit 1; }; done
+    done; echo "✅ str content equality accepted with runtime markers; mixed operands still rejected."
 
 # Stdlib lane, Phase S1. Appended at the end for the same reason as the S1.1
 # guard: several guards extract recipe bodies with sed ranges bounded by the next

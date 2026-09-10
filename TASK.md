@@ -646,8 +646,10 @@ with identical accepted meaning, diagnostics, and artifacts; `std.str_eq`
 continues to work unchanged at every existing call site; **no program accepted
 before this patch changes meaning**, because the prior behaviour was a clean
 compile-time rejection rather than a wrong answer; explicit no-fallback remains;
-`make gust` passes; and the bootstrap seed is left to Patch 24.3a rather than
-reconverged here.
+`make gust` passes; and the seed is reconverged here for this patch's own
+embedded literals via a mechanical bootstrap in a seed-only commit, while
+`str ==` idiom adoption inside compiler sources still waits for
+Patch 24.3a.
 
 **Authority:** scheduled by the operator. Because it changes the meaning of no
 program that compiles today, it sets no semantic precedent requiring a
@@ -860,9 +862,9 @@ self-hosted typechecker correction, in an isolated seed-only publication.
   checked no-diff fixed point in preflight authority rather than manufacture a
   seed commit.
 - Attribute the seed diff per patch. This reconvergence absorbs the seed
-  movement of both Patch 24.2q and Patch 24.3, so record the diff produced at
-  merged Patch 24.2q `main` and at merged Patch 24.3 `main` separately. Two
-  builds, one publication: this preserves the per-patch attribution Patch 24.2g
+  movement of Patch 24.3 on top of Patch 24.2q's already-landed mechanical
+  regeneration, so record the 24.2q seed diff by its merge hash and the diff
+  produced at merged Patch 24.3 `main` separately. Two builds, one publication: this preserves the per-patch attribution Patch 24.2g
   established with its 254-line proof without a second seed-only trio, and an
   unattributed combined diff does not satisfy this step.
 

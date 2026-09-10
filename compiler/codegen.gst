@@ -1792,6 +1792,26 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
         }
         
         if tag == 10 { // Binary
+            mut bin_op := ctx[expr_idx].Binary.op;
+            if std.str_eq(bin_op, "==") == 1 || std.str_eq(bin_op, "!=") == 1 {
+                mut bin_left_t := codegen_get_expression_type(ctx[expr_idx].Binary.left, env, ctx);
+                mut bin_right_t := codegen_get_expression_type(ctx[expr_idx].Binary.right, env, ctx);
+                if bin_left_t.tag == 5 && bin_right_t.tag == 5 { // Str
+                    mut bin_left_str := codegen_generate_expression(ctx[expr_idx].Binary.left, env, ctx);
+                    mut bin_right_str := codegen_generate_expression(ctx[expr_idx].Binary.right, env, ctx);
+                    // Content equality through the existing std_str_eq
+                    // symbol: identical to the std.str_eq(a, b) == 1 idiom.
+                    mut bin_res := std.Concat("(std_str_eq(", bin_left_str);
+                    bin_res = std.Concat(bin_res, ", ");
+                    bin_res = std.Concat(bin_res, bin_right_str);
+                    if std.str_eq(bin_op, "==") == 1 {
+                        bin_res = std.Concat(bin_res, ") == 1)");
+                    } else {
+                        bin_res = std.Concat(bin_res, ") == 0)");
+                    }
+                    return std.Clone(ctx, bin_res);
+                }
+            }
             mut left_str := codegen_generate_expression(ctx[expr_idx].Binary.left, env, ctx);
             mut right_str := codegen_generate_expression(ctx[expr_idx].Binary.right, env, ctx);
             mut res := std.Concat("(", left_str);

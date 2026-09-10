@@ -1248,6 +1248,7 @@ impl<'a> FullProgramCompiler<'a> {
             );
         }
         self.declare_helper("memcpy", &["Ptr", "Ptr", "I64"], "Ptr")?;
+        self.declare_helper("memcmp", &["Ptr", "Ptr", "I64"], "I32")?;
         self.declare_helper(
             "os_HashMapRef_impl",
             &["Ptr", "Ptr", "I32", "I64", "I64"],
@@ -2317,6 +2318,84 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         Ok(Evaluated::Scalar(cast))
     }
 
+    fn lower_str_equality(
+        &mut self,
+        builder: &mut FunctionBuilder<'_>,
+        node: &Node,
+        negated: bool,
+    ) -> Result<Evaluated, Box<dyn Error>> {
+        // Content equality with the exact std_str_eq decision procedure:
+        // unequal lengths differ; empty views are equal; otherwise the
+        // leading bytes decide via memcmp. MIR-to-C emits the same
+        // procedure as a std_str_eq call, so both backends agree case for
+        // case. The result is an Int 0/1 like every other comparison.
+        let left_eval = self.lower_expression(builder, node.children[0], None)?;
+        let left = self.evaluated_place(builder, left_eval, "Str")?;
+        let right_eval = self.lower_expression(builder, node.children[1], None)?;
+        let right = self.evaluated_place(builder, right_eval, "Str")?;
+        let left_data = builder.ins().load(
+            self.pointer_type(),
+            MemFlags::trusted(),
+            left.address,
+            0,
+        );
+        let left_len = builder
+            .ins()
+            .load(types::I32, MemFlags::trusted(), left.address, 8);
+        let right_data = builder.ins().load(
+            self.pointer_type(),
+            MemFlags::trusted(),
+            right.address,
+            0,
+        );
+        let right_len = builder
+            .ins()
+            .load(types::I32, MemFlags::trusted(), right.address, 8);
+        let differing = builder.create_block();
+        let check_empty = builder.create_block();
+        let compare_bytes = builder.create_block();
+        let ready = builder.create_block();
+        builder.append_block_param(ready, types::I32);
+        let len_eq = builder
+            .ins()
+            .icmp(IntCC::Equal, left_len, right_len);
+        builder
+            .ins()
+            .brif(len_eq, check_empty, &[], differing, &[]);
+        builder.switch_to_block(differing);
+        let zero = builder.ins().iconst(types::I32, 0);
+        builder.ins().jump(ready, &[zero.into()]);
+        builder.switch_to_block(check_empty);
+        let empty = builder.ins().icmp_imm(IntCC::Equal, left_len, 0);
+        let one = builder.ins().iconst(types::I32, 1);
+        builder
+            .ins()
+            .brif(empty, ready, &[one.into()], compare_bytes, &[]);
+        builder.switch_to_block(compare_bytes);
+        let len64 = builder.ins().uextend(types::I64, left_len);
+        let memcmp_fn = self
+            .runtime
+            .get("memcmp")
+            .ok_or_else(|| invalid("memcmp import missing"))?
+            .clone();
+        let memcmp_ref = self.module.declare_func_in_func(memcmp_fn.id, builder.func);
+        let call = builder
+            .ins()
+            .call(memcmp_ref, &[left_data, right_data, len64]);
+        let cmp = builder.inst_results(call)[0];
+        let zero32 = builder.ins().iconst(types::I32, 0);
+        let bytes_eq = builder.ins().icmp(IntCC::Equal, cmp, zero32);
+        let bytes32 = builder.ins().uextend(types::I32, bytes_eq);
+        builder.ins().jump(ready, &[bytes32.into()]);
+        builder.switch_to_block(ready);
+        let decided = builder.block_params(ready)[0];
+        let mut result = decided;
+        if negated {
+            result = builder.ins().icmp_imm(IntCC::Equal, decided, 0);
+        }
+        Ok(Evaluated::Scalar(result))
+    }
+
     fn lower_binary(
         &mut self,
         builder: &mut FunctionBuilder<'_>,
@@ -2324,6 +2403,12 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
     ) -> Result<Evaluated, Box<dyn Error>> {
         let left_node = &self.program.nodes[node.children[0]];
         let right_node = &self.program.nodes[node.children[1]];
+        if matches!(node.text.as_str(), "==" | "!=")
+            && left_node.ty == "Str"
+            && right_node.ty == "Str"
+        {
+            return self.lower_str_equality(builder, node, node.text.as_str() == "!=");
+        }
         let left_eval = self.lower_expression(builder, node.children[0], None)?;
         let mut left = self.scalar(builder, left_eval, &left_node.ty)?;
         if matches!(node.text.as_str(), "&&" | "||") {
