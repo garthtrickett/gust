@@ -16516,12 +16516,6 @@ ast__Type typechecker__check_expression_internal(int expr_idx, typechecker__Type
     t_bool.tag = 2;
     return t_bool;
     }
-    if (((std_str_eq(op, ((Slice_unsigned_char){ (unsigned char*)"==", 2 })) == 1) || (std_str_eq(op, ((Slice_unsigned_char){ (unsigned char*)"!=", 2 })) == 1))) {
-    if (((left_type.tag == 5) || (right_type.tag == 5))) {
-    Slice_unsigned_char str_eq_msg = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: str does not support '==' or '!='. Use std.str_eq(a, b) to compare text.", 88 });
-    typechecker__report_error(2, str_eq_msg, typechecker__get_expression_span(expr.Binary.left, ctx), env, ctx);
-    }
-    }
     if ((typechecker__types_match(left_type, right_type, ctx) == 0)) {
     int is_ptr_arith = 0;
     if (((((std_str_eq(op, ((Slice_unsigned_char){ (unsigned char*)"+", 1 })) == 1) || (std_str_eq(op, ((Slice_unsigned_char){ (unsigned char*)"-", 1 })) == 1)) && (left_type.tag == 9)) && ((right_type.tag == 0) || (right_type.tag == 1)))) {
@@ -18159,12 +18153,12 @@ ast__Type typechecker__check_expression_internal(int expr_idx, typechecker__Type
     return dummy;
     }
     resolved_func = concrete_func;
-    LookupResult_typechecker__FunctionSignature _guard_res_concrete_sig_4936_21 = {0};
-    _guard_res_concrete_sig_4936_21 = ({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_registry), resolved_func, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_registry), resolved_func, 1); } res; });
-    if (!_guard_res_concrete_sig_4936_21.Ok) {
+    LookupResult_typechecker__FunctionSignature _guard_res_concrete_sig_4932_21 = {0};
+    _guard_res_concrete_sig_4932_21 = ({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_registry), resolved_func, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_registry), resolved_func, 1); } res; });
+    if (!_guard_res_concrete_sig_4932_21.Ok) {
         return dummy;
     }
-    typechecker__FunctionSignature concrete_sig = _guard_res_concrete_sig_4936_21.Val;
+    typechecker__FunctionSignature concrete_sig = _guard_res_concrete_sig_4932_21.Val;
     sig = concrete_sig;
     ast__Expression identifier = ((ast__Expression){ .tag = 0 });
     identifier.tag = 0;
@@ -21407,21 +21401,21 @@ int typechecker__env_function_is_validated_resource_destructor(typechecker__Type
 
 int typechecker__env_private_function_access_allowed(typechecker__TypeEnvironment* env, Slice_unsigned_char name, int compiler_cleanup_invocation, os_Arena* ctx) {
     {
-    LookupResult_typechecker__FunctionSignature _guard_res_sig_8467_9 = {0};
-    _guard_res_sig_8467_9 = ({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_registry), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_registry), name, 1); } res; });
-    if (!_guard_res_sig_8467_9.Ok) {
+    LookupResult_typechecker__FunctionSignature _guard_res_sig_8463_9 = {0};
+    _guard_res_sig_8463_9 = ({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_registry), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_registry), name, 1); } res; });
+    if (!_guard_res_sig_8463_9.Ok) {
         return 1;
     }
-    typechecker__FunctionSignature sig = _guard_res_sig_8467_9.Val;
+    typechecker__FunctionSignature sig = _guard_res_sig_8463_9.Val;
     if ((sig.is_private == 0)) {
     return 1;
     }
-    LookupResult_str _guard_res_owner_8473_9 = {0};
-    _guard_res_owner_8473_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_declaration_module), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_declaration_module), name, 1); } res; });
-    if (!_guard_res_owner_8473_9.Ok) {
+    LookupResult_str _guard_res_owner_8469_9 = {0};
+    _guard_res_owner_8469_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_declaration_module), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_declaration_module), name, 1); } res; });
+    if (!_guard_res_owner_8469_9.Ok) {
         return 0;
     }
-    Slice_unsigned_char owner = _guard_res_owner_8473_9.Val;
+    Slice_unsigned_char owner = _guard_res_owner_8469_9.Val;
     if ((std_str_eq(owner, (*(env)).current_prefix) == 1)) {
     return 1;
     }
@@ -22539,12 +22533,12 @@ int typechecker__env_resource_storage_field_order(typechecker__TypeEnvironment* 
     return (0 - 1);
     }
     Slice_unsigned_char root = typechecker__env_resource_storage_root(storage_name, ctx);
-    LookupResult_ast__Type _guard_res_root_type_lookup_9592_9 = {0};
-    _guard_res_root_type_lookup_9592_9 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), root, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), root, 1); } res; });
-    if (!_guard_res_root_type_lookup_9592_9.Ok) {
+    LookupResult_ast__Type _guard_res_root_type_lookup_9588_9 = {0};
+    _guard_res_root_type_lookup_9588_9 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), root, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), root, 1); } res; });
+    if (!_guard_res_root_type_lookup_9588_9.Ok) {
         return (0 - 1);
     }
-    ast__Type root_type_lookup = _guard_res_root_type_lookup_9592_9.Val;
+    ast__Type root_type_lookup = _guard_res_root_type_lookup_9588_9.Val;
     ast__Type root_type = typechecker__env_resolve_type(env, root_type_lookup, ctx);
     if ((root_type.tag != 8)) {
     return (0 - 1);
@@ -22844,12 +22838,12 @@ int typechecker__env_bind_resource_identity(typechecker__TypeEnvironment* env, S
     if (((storage_name.len == 0) || (identity.len == 0))) {
     return 0;
     }
-    LookupResult_typechecker__ResourceAcquisitionObligation _guard_res_obligation_lookup_9897_9 = {0};
-    _guard_res_obligation_lookup_9897_9 = ({ LookupResult_typechecker__ResourceAcquisitionObligation res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_acquisition_obligations), identity, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_acquisition_obligations), identity, 1); } res; });
-    if (!_guard_res_obligation_lookup_9897_9.Ok) {
+    LookupResult_typechecker__ResourceAcquisitionObligation _guard_res_obligation_lookup_9893_9 = {0};
+    _guard_res_obligation_lookup_9893_9 = ({ LookupResult_typechecker__ResourceAcquisitionObligation res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_acquisition_obligations), identity, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_acquisition_obligations), identity, 1); } res; });
+    if (!_guard_res_obligation_lookup_9893_9.Ok) {
         return 0;
     }
-    typechecker__ResourceAcquisitionObligation obligation_lookup = _guard_res_obligation_lookup_9897_9.Val;
+    typechecker__ResourceAcquisitionObligation obligation_lookup = _guard_res_obligation_lookup_9893_9.Val;
     *os_HashMapRef(&((*(env)).resource_value_identities), std_Clone_str(ctx, storage_name), 1) = std_Clone_str(ctx, identity);
     typechecker__ResourceAcquisitionObligation obligation = obligation_lookup;
     Slice_unsigned_char root = typechecker__env_resource_storage_root(storage_name, ctx);
@@ -22900,12 +22894,12 @@ int typechecker__env_bind_resource_expression(typechecker__TypeEnvironment* env,
 
 int typechecker__env_resource_obligation_set_state(typechecker__TypeEnvironment* env, Slice_unsigned_char identity, int state, os_Arena* ctx) {
     {
-    LookupResult_typechecker__ResourceAcquisitionObligation _guard_res_lookup_9966_9 = {0};
-    _guard_res_lookup_9966_9 = ({ LookupResult_typechecker__ResourceAcquisitionObligation res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_acquisition_obligations), identity, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_acquisition_obligations), identity, 1); } res; });
-    if (!_guard_res_lookup_9966_9.Ok) {
+    LookupResult_typechecker__ResourceAcquisitionObligation _guard_res_lookup_9962_9 = {0};
+    _guard_res_lookup_9962_9 = ({ LookupResult_typechecker__ResourceAcquisitionObligation res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_acquisition_obligations), identity, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_acquisition_obligations), identity, 1); } res; });
+    if (!_guard_res_lookup_9962_9.Ok) {
         return 0;
     }
-    typechecker__ResourceAcquisitionObligation lookup = _guard_res_lookup_9966_9.Val;
+    typechecker__ResourceAcquisitionObligation lookup = _guard_res_lookup_9962_9.Val;
     typechecker__ResourceAcquisitionObligation obligation = lookup;
     obligation.state = state;
     *os_HashMapRef(&((*(env)).resource_acquisition_obligations), std_Clone_str(ctx, identity), 1) = obligation;
@@ -22930,12 +22924,12 @@ typechecker__ExpressionProvenance typechecker__env_expression_provenance_rooted_
     return prov;
     }
     {
-    LookupResult_str _guard_res_identity_9996_9 = {0};
-    _guard_res_identity_9996_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_value_identities), resource_storage_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_value_identities), resource_storage_name, 1); } res; });
-    if (!_guard_res_identity_9996_9.Ok) {
+    LookupResult_str _guard_res_identity_9992_9 = {0};
+    _guard_res_identity_9992_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_value_identities), resource_storage_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_value_identities), resource_storage_name, 1); } res; });
+    if (!_guard_res_identity_9992_9.Ok) {
         return prov;
     }
-    Slice_unsigned_char identity = _guard_res_identity_9996_9.Val;
+    Slice_unsigned_char identity = _guard_res_identity_9992_9.Val;
     if ((typechecker__env_resource_obligation_is_pending(env, identity, ctx) == 0)) {
     return prov;
     }
@@ -23022,12 +23016,12 @@ int typechecker__env_transfer_resource_return_expression(typechecker__TypeEnviro
 
 int typechecker__env_resource_destructor_matches_obligation(typechecker__TypeEnvironment* env, Slice_unsigned_char resolved_func, Slice_unsigned_char identity, os_Arena* ctx) {
     {
-    LookupResult_typechecker__ResourceAcquisitionObligation _guard_res_lookup_10090_9 = {0};
-    _guard_res_lookup_10090_9 = ({ LookupResult_typechecker__ResourceAcquisitionObligation res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_acquisition_obligations), identity, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_acquisition_obligations), identity, 1); } res; });
-    if (!_guard_res_lookup_10090_9.Ok) {
+    LookupResult_typechecker__ResourceAcquisitionObligation _guard_res_lookup_10086_9 = {0};
+    _guard_res_lookup_10086_9 = ({ LookupResult_typechecker__ResourceAcquisitionObligation res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_acquisition_obligations), identity, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_acquisition_obligations), identity, 1); } res; });
+    if (!_guard_res_lookup_10086_9.Ok) {
         return 0;
     }
-    typechecker__ResourceAcquisitionObligation lookup = _guard_res_lookup_10090_9.Val;
+    typechecker__ResourceAcquisitionObligation lookup = _guard_res_lookup_10086_9.Val;
     Slice_unsigned_char destructor_name = lookup.destructor_name;
     if ((destructor_name.len == 0)) {
     return 0;
@@ -24443,30 +24437,30 @@ int typechecker__typechecker_type_names(ast__Type t, Slice_unsigned_char name, o
 
 int typechecker__typechecker_protected_guard_shape(Slice_unsigned_char name, typechecker__TypeEnvironment* env, Slice_unsigned_char* payload, Slice_unsigned_char* brand, os_Arena* ctx) {
     {
-    LookupResult_typechecker__StructTemplate _guard_res_t_11493_9 = {0};
-    _guard_res_t_11493_9 = ({ LookupResult_typechecker__StructTemplate res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_templates), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_templates), name, 1); } res; });
-    if (!_guard_res_t_11493_9.Ok) {
+    LookupResult_typechecker__StructTemplate _guard_res_t_11489_9 = {0};
+    _guard_res_t_11489_9 = ({ LookupResult_typechecker__StructTemplate res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_templates), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_templates), name, 1); } res; });
+    if (!_guard_res_t_11489_9.Ok) {
         return 0;
     }
-    typechecker__StructTemplate t = _guard_res_t_11493_9.Val;
-    LookupResult_int _guard_res_linear_11494_9 = {0};
-    _guard_res_linear_11494_9 = ({ LookupResult_int res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_linear_resource), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_linear_resource), name, 1); } res; });
-    if (!_guard_res_linear_11494_9.Ok) {
+    typechecker__StructTemplate t = _guard_res_t_11489_9.Val;
+    LookupResult_int _guard_res_linear_11490_9 = {0};
+    _guard_res_linear_11490_9 = ({ LookupResult_int res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_linear_resource), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_linear_resource), name, 1); } res; });
+    if (!_guard_res_linear_11490_9.Ok) {
         return 0;
     }
-    int linear = _guard_res_linear_11494_9.Val;
-    LookupResult_int _guard_res_opaque_11495_9 = {0};
-    _guard_res_opaque_11495_9 = ({ LookupResult_int res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_declared_opaque), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_declared_opaque), name, 1); } res; });
-    if (!_guard_res_opaque_11495_9.Ok) {
+    int linear = _guard_res_linear_11490_9.Val;
+    LookupResult_int _guard_res_opaque_11491_9 = {0};
+    _guard_res_opaque_11491_9 = ({ LookupResult_int res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_declared_opaque), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_declared_opaque), name, 1); } res; });
+    if (!_guard_res_opaque_11491_9.Ok) {
         return 0;
     }
-    int opaque = _guard_res_opaque_11495_9.Val;
-    LookupResult_str _guard_res_destructor_11496_9 = {0};
-    _guard_res_destructor_11496_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_declared_destructor), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_declared_destructor), name, 1); } res; });
-    if (!_guard_res_destructor_11496_9.Ok) {
+    int opaque = _guard_res_opaque_11491_9.Val;
+    LookupResult_str _guard_res_destructor_11492_9 = {0};
+    _guard_res_destructor_11492_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_declared_destructor), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_declared_destructor), name, 1); } res; });
+    if (!_guard_res_destructor_11492_9.Ok) {
         return 0;
     }
-    Slice_unsigned_char destructor = _guard_res_destructor_11496_9.Val;
+    Slice_unsigned_char destructor = _guard_res_destructor_11492_9.Val;
     std_Vector_str g = (*((std_Vector_str*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(t.generics))));
     if ((((((linear != 1) || (opaque != 1)) || (destructor.len == 0)) || (t.brand_parameter_index < 0)) || (t.brand_parameter_index >= g.len))) {
     return 0;
@@ -24548,12 +24542,12 @@ int typechecker__typechecker_protected_resource_role(Slice_unsigned_char name, t
     return 0;
     }
     (*(guard_name)) = std_Clone_str(ctx, n);
-    LookupResult_str _guard_res_d_11521_9 = {0};
-    _guard_res_d_11521_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_declared_destructor), n, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_declared_destructor), n, 1); } res; });
-    if (!_guard_res_d_11521_9.Ok) {
+    LookupResult_str _guard_res_d_11517_9 = {0};
+    _guard_res_d_11517_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_declared_destructor), n, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_declared_destructor), n, 1); } res; });
+    if (!_guard_res_d_11517_9.Ok) {
         return 0;
     }
-    Slice_unsigned_char d = _guard_res_d_11521_9.Val;
+    Slice_unsigned_char d = _guard_res_d_11517_9.Val;
     Slice_unsigned_char dn = d;
     if ((std_str_find(dn, ((Slice_unsigned_char){ (unsigned char*)"__", 2 })) == (0 - 1))) {
     dn = (({ Slice_unsigned_char _s1 = prefix; Slice_unsigned_char _s2 = dn; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -24628,12 +24622,12 @@ int typechecker__typechecker_bind_protected_application(ast__Type formal, ast__T
     if ((typechecker__typechecker_matches_template_prefix(actual.Struct.struct_name, template_name) == 0)) {
     return 0;
     }
-    LookupResult_typechecker__StructTemplate _guard_res_template_11542_9 = {0};
-    _guard_res_template_11542_9 = ({ LookupResult_typechecker__StructTemplate res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_templates), template_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_templates), template_name, 1); } res; });
-    if (!_guard_res_template_11542_9.Ok) {
+    LookupResult_typechecker__StructTemplate _guard_res_template_11538_9 = {0};
+    _guard_res_template_11538_9 = ({ LookupResult_typechecker__StructTemplate res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_templates), template_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_templates), template_name, 1); } res; });
+    if (!_guard_res_template_11538_9.Ok) {
         return 0;
     }
-    typechecker__StructTemplate template = _guard_res_template_11542_9.Val;
+    typechecker__StructTemplate template = _guard_res_template_11538_9.Val;
     Slice_unsigned_char suffix = std_str_slice(actual.Struct.struct_name, (template_name.len + 1), actual.Struct.struct_name.len);
     std_Vector_ast__Type values = ((struct std_Vector_ast__Type){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx });
     if (((template.brand_parameter_index >= 0) && (actual.Struct.brand != 0xFFFFFFFF))) {
@@ -24786,12 +24780,12 @@ int typechecker__typechecker_clone_protected_block(int block_idx, std_HashMap_st
 
 Slice_unsigned_char typechecker__typechecker_instantiate_protected_resource(Slice_unsigned_char source_name, std_Vector_ast__Type actuals, typechecker__TypeEnvironment* env, os_Arena* ctx) {
     {
-    LookupResult_typechecker__ProtectedResourceFunction _guard_res_source_11609_9 = {0};
-    _guard_res_source_11609_9 = ({ LookupResult_typechecker__ProtectedResourceFunction res = {0}; res.Ok = os_HashMapContains(&((*(env)).protected_resource_functions), source_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).protected_resource_functions), source_name, 1); } res; });
-    if (!_guard_res_source_11609_9.Ok) {
+    LookupResult_typechecker__ProtectedResourceFunction _guard_res_source_11605_9 = {0};
+    _guard_res_source_11605_9 = ({ LookupResult_typechecker__ProtectedResourceFunction res = {0}; res.Ok = os_HashMapContains(&((*(env)).protected_resource_functions), source_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).protected_resource_functions), source_name, 1); } res; });
+    if (!_guard_res_source_11605_9.Ok) {
         return ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     }
-    typechecker__ProtectedResourceFunction source = _guard_res_source_11609_9.Val;
+    typechecker__ProtectedResourceFunction source = _guard_res_source_11605_9.Val;
     if (((typechecker__typechecker_protected_quartet(env, source.guard_name, ctx) == 0) || (source.signature.params.len != actuals.len))) {
     return ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     }
@@ -25376,9 +25370,9 @@ int typechecker__env_validate_resource_declaration(typechecker__TypeEnvironment*
     }
     Slice_unsigned_char type_name = typechecker__env_resolve_namespaced_ident(env, stmt.StructDecl.name, ctx);
     Slice_unsigned_char destructor_name = typechecker__env_resolve_namespaced_ident(env, declared_destructor, ctx);
-    LookupResult_typechecker__FunctionSignature _guard_res_sig_12134_9 = {0};
-    _guard_res_sig_12134_9 = ({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_registry), destructor_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_registry), destructor_name, 1); } res; });
-    if (!_guard_res_sig_12134_9.Ok) {
+    LookupResult_typechecker__FunctionSignature _guard_res_sig_12130_9 = {0};
+    _guard_res_sig_12130_9 = ({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_registry), destructor_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_registry), destructor_name, 1); } res; });
+    if (!_guard_res_sig_12130_9.Ok) {
         Slice_unsigned_char missing_msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [ResourceDestructorMissing] Declared destructor '", 65 }); Slice_unsigned_char _s2 = declared_destructor; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     missing_msg = (({ Slice_unsigned_char _s1 = missing_msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' for resource type '", 21 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     missing_msg = (({ Slice_unsigned_char _s1 = missing_msg; Slice_unsigned_char _s2 = type_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -25386,10 +25380,10 @@ int typechecker__env_validate_resource_declaration(typechecker__TypeEnvironment*
     typechecker__report_error(2, missing_msg, stmt.StructDecl.span, env, ctx);
     return 0;
     }
-    typechecker__FunctionSignature sig = _guard_res_sig_12134_9.Val;
-    LookupResult_str _guard_res_type_owner_12143_9 = {0};
-    _guard_res_type_owner_12143_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_declaration_module), type_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_declaration_module), type_name, 1); } res; });
-    if (!_guard_res_type_owner_12143_9.Ok) {
+    typechecker__FunctionSignature sig = _guard_res_sig_12130_9.Val;
+    LookupResult_str _guard_res_type_owner_12139_9 = {0};
+    _guard_res_type_owner_12139_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_declaration_module), type_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_declaration_module), type_name, 1); } res; });
+    if (!_guard_res_type_owner_12139_9.Ok) {
         Slice_unsigned_char owner_msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [ResourceDestructorModuleMismatch] Destructor '", 63 }); Slice_unsigned_char _s2 = destructor_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     owner_msg = (({ Slice_unsigned_char _s1 = owner_msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' must be declared in the same module as resource type '", 56 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     owner_msg = (({ Slice_unsigned_char _s1 = owner_msg; Slice_unsigned_char _s2 = type_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -25397,10 +25391,10 @@ int typechecker__env_validate_resource_declaration(typechecker__TypeEnvironment*
     typechecker__report_error(2, owner_msg, stmt.StructDecl.span, env, ctx);
     return 0;
     }
-    Slice_unsigned_char type_owner = _guard_res_type_owner_12143_9.Val;
-    LookupResult_str _guard_res_destructor_owner_12151_9 = {0};
-    _guard_res_destructor_owner_12151_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_declaration_module), destructor_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_declaration_module), destructor_name, 1); } res; });
-    if (!_guard_res_destructor_owner_12151_9.Ok) {
+    Slice_unsigned_char type_owner = _guard_res_type_owner_12139_9.Val;
+    LookupResult_str _guard_res_destructor_owner_12147_9 = {0};
+    _guard_res_destructor_owner_12147_9 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_declaration_module), destructor_name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_declaration_module), destructor_name, 1); } res; });
+    if (!_guard_res_destructor_owner_12147_9.Ok) {
         Slice_unsigned_char missing_owner_msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [ResourceDestructorModuleMismatch] Destructor '", 63 }); Slice_unsigned_char _s2 = destructor_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     missing_owner_msg = (({ Slice_unsigned_char _s1 = missing_owner_msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' must be declared in the same module as resource type '", 56 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     missing_owner_msg = (({ Slice_unsigned_char _s1 = missing_owner_msg; Slice_unsigned_char _s2 = type_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -25408,7 +25402,7 @@ int typechecker__env_validate_resource_declaration(typechecker__TypeEnvironment*
     typechecker__report_error(2, missing_owner_msg, stmt.StructDecl.span, env, ctx);
     return 0;
     }
-    Slice_unsigned_char destructor_owner = _guard_res_destructor_owner_12151_9.Val;
+    Slice_unsigned_char destructor_owner = _guard_res_destructor_owner_12147_9.Val;
     if ((std_str_eq(type_owner, destructor_owner) == 0)) {
     Slice_unsigned_char different_owner_msg = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"Semantic Error: [ResourceDestructorModuleMismatch] Destructor '", 63 }); Slice_unsigned_char _s2 = destructor_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     different_owner_msg = (({ Slice_unsigned_char _s1 = different_owner_msg; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"' must be declared in the same module as resource type '", 56 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -26879,22 +26873,22 @@ errors__Result_int typechecker__check_statement_impl(int stmt_idx, typechecker__
     }
     typechecker__scope_insert(scope, std_Clone_str(ctx, name), resolved_explicit, ctx);
     *os_HashMapRef(&((*(env)).variable_types), std_Clone_str(ctx, name), 1) = resolved_explicit;
-    LookupResult_ast__Type _guard_res_lookup_type_explicit_13752_17 = {0};
-    _guard_res_lookup_type_explicit_13752_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), name, 1); } res; });
-    if (!_guard_res_lookup_type_explicit_13752_17.Ok) {
+    LookupResult_ast__Type _guard_res_lookup_type_explicit_13748_17 = {0};
+    _guard_res_lookup_type_explicit_13748_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), name, 1); } res; });
+    if (!_guard_res_lookup_type_explicit_13748_17.Ok) {
         return res;
     }
-    ast__Type lookup_type_explicit = _guard_res_lookup_type_explicit_13752_17.Val;
+    ast__Type lookup_type_explicit = _guard_res_lookup_type_explicit_13748_17.Val;
     val_type = lookup_type_explicit;
     } else {
     typechecker__scope_insert(scope, std_Clone_str(ctx, name), val_type, ctx);
     *os_HashMapRef(&((*(env)).variable_types), std_Clone_str(ctx, name), 1) = val_type;
-    LookupResult_ast__Type _guard_res_lookup_type_13759_17 = {0};
-    _guard_res_lookup_type_13759_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), name, 1); } res; });
-    if (!_guard_res_lookup_type_13759_17.Ok) {
+    LookupResult_ast__Type _guard_res_lookup_type_13755_17 = {0};
+    _guard_res_lookup_type_13755_17 = ({ LookupResult_ast__Type res = {0}; res.Ok = os_HashMapContains(&((*(env)).variable_types), name, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).variable_types), name, 1); } res; });
+    if (!_guard_res_lookup_type_13755_17.Ok) {
         return res;
     }
-    ast__Type lookup_type = _guard_res_lookup_type_13759_17.Val;
+    ast__Type lookup_type = _guard_res_lookup_type_13755_17.Val;
     val_type = lookup_type;
     }
     Slice_unsigned_char declaration_arena_identity = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
@@ -34128,6 +34122,24 @@ Slice_unsigned_char codegen__codegen_generate_expression(int expr_idx, typecheck
     return std_Clone_str(ctx, res);
     }
     if ((tag == 10)) {
+    Slice_unsigned_char bin_op = (*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr_idx)))).Binary.op;
+    if (((std_str_eq(bin_op, ((Slice_unsigned_char){ (unsigned char*)"==", 2 })) == 1) || (std_str_eq(bin_op, ((Slice_unsigned_char){ (unsigned char*)"!=", 2 })) == 1))) {
+    ast__Type bin_left_t = codegen__codegen_get_expression_type((*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr_idx)))).Binary.left, env, ctx);
+    ast__Type bin_right_t = codegen__codegen_get_expression_type((*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr_idx)))).Binary.right, env, ctx);
+    if (((bin_left_t.tag == 5) && (bin_right_t.tag == 5))) {
+    Slice_unsigned_char bin_left_str = codegen__codegen_generate_expression((*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr_idx)))).Binary.left, env, ctx);
+    Slice_unsigned_char bin_right_str = codegen__codegen_generate_expression((*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr_idx)))).Binary.right, env, ctx);
+    Slice_unsigned_char bin_res = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"(std_str_eq(", 12 }); Slice_unsigned_char _s2 = bin_left_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    bin_res = (({ Slice_unsigned_char _s1 = bin_res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)", ", 2 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    bin_res = (({ Slice_unsigned_char _s1 = bin_res; Slice_unsigned_char _s2 = bin_right_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    if ((std_str_eq(bin_op, ((Slice_unsigned_char){ (unsigned char*)"==", 2 })) == 1)) {
+    bin_res = (({ Slice_unsigned_char _s1 = bin_res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)") == 1)", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    } else {
+    bin_res = (({ Slice_unsigned_char _s1 = bin_res; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)") == 0)", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    }
+    return std_Clone_str(ctx, bin_res);
+    }
+    }
     Slice_unsigned_char left_str = codegen__codegen_generate_expression((*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr_idx)))).Binary.left, env, ctx);
     Slice_unsigned_char right_str = codegen__codegen_generate_expression((*((ast__Expression*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(expr_idx)))).Binary.right, env, ctx);
     Slice_unsigned_char res = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"(", 1 }); Slice_unsigned_char _s2 = left_str; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -35771,12 +35783,12 @@ Slice_unsigned_char codegen__codegen_resource_cleanup_c_function_name(Slice_unsi
 Slice_unsigned_char codegen__codegen_generate_resource_cleanup_plan(Slice_unsigned_char kind, token__Span span, typechecker__TypeEnvironment* env, os_Arena* ctx) {
     {
     Slice_unsigned_char key = typechecker__resource_cleanup_plan_key(((typechecker__TypeEnvironment*)env), kind, span, ctx);
-    LookupResult_Index_std_Vector_typechecker__ResourceCleanupAction _guard_res_plan_lookup_3459_9 = {0};
-    _guard_res_plan_lookup_3459_9 = ({ LookupResult_Index_std_Vector_typechecker__ResourceCleanupAction res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_cleanup_plans), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_cleanup_plans), key, 1); } res; });
-    if (!_guard_res_plan_lookup_3459_9.Ok) {
+    LookupResult_Index_std_Vector_typechecker__ResourceCleanupAction _guard_res_plan_lookup_3479_9 = {0};
+    _guard_res_plan_lookup_3479_9 = ({ LookupResult_Index_std_Vector_typechecker__ResourceCleanupAction res = {0}; res.Ok = os_HashMapContains(&((*(env)).resource_cleanup_plans), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).resource_cleanup_plans), key, 1); } res; });
+    if (!_guard_res_plan_lookup_3479_9.Ok) {
         return ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     }
-    int plan_lookup = _guard_res_plan_lookup_3459_9.Val;
+    int plan_lookup = _guard_res_plan_lookup_3479_9.Val;
     std_Vector_typechecker__ResourceCleanupAction actions = (*((std_Vector_typechecker__ResourceCleanupAction*)((char*)ctx->BaseAddress + (size_t)(uint32_t)(plan_lookup))));
     Slice_unsigned_char generated = ((Slice_unsigned_char){ (unsigned char*)"", 0 });
     int i = 0;
@@ -36646,14 +36658,14 @@ Slice_unsigned_char codegen__codegen_generate(std_Vector_ast__Program programs, 
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     Slice_unsigned_char key = (*({ if (i_fwd < 0 || i_fwd >= erased_struct_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(erased_struct_keys.data[i_fwd]); }));
     if ((((((((std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"std_Vector_str", 14 })) == 0) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"os_Dir", 6 })) == 0)) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"os_DirEntry", 11 })) == 0)) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"os_ProcessResult", 16 })) == 0)) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_Dir", 19 })) == 0)) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_DirEntry", 24 })) == 0)) && (std_str_find(key, ((Slice_unsigned_char){ (unsigned char*)"CastResult_", 11 })) == (0 - 1)))) {
-    LookupResult_str _guard_res_orig_key_4425_17 = {0};
-    _guard_res_orig_key_4425_17 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(erased_to_original), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(erased_to_original), key, 1); } res; });
-    if (!_guard_res_orig_key_4425_17.Ok) {
+    LookupResult_str _guard_res_orig_key_4445_17 = {0};
+    _guard_res_orig_key_4445_17 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(erased_to_original), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(erased_to_original), key, 1); } res; });
+    if (!_guard_res_orig_key_4445_17.Ok) {
         os_LogStr((({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"🚨 CRITICAL COMPILER BUG: erased_to_original.Get failed for key: ", 67 }); Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
     exit(1);
     return std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"", 0 }));
     }
-    Slice_unsigned_char orig_key = _guard_res_orig_key_4425_17.Val;
+    Slice_unsigned_char orig_key = _guard_res_orig_key_4445_17.Val;
     Slice_unsigned_char fwd = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"typedef struct ", 15 }); Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     fwd = (({ Slice_unsigned_char _s1 = fwd; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" ", 1 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     fwd = (({ Slice_unsigned_char _s1 = fwd; Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -36721,14 +36733,14 @@ Slice_unsigned_char codegen__codegen_generate(std_Vector_ast__Program programs, 
         if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }
     Slice_unsigned_char key = (*({ if (i < 0 || i >= erased_struct_keys.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(erased_struct_keys.data[i]); }));
     if (((((((std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"std_Vector_str", 14 })) == 0) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"os_Dir", 6 })) == 0)) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"os_DirEntry", 11 })) == 0)) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"os_ProcessResult", 16 })) == 0)) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_Dir", 19 })) == 0)) && (std_str_eq(key, ((Slice_unsigned_char){ (unsigned char*)"LookupResult_os_DirEntry", 24 })) == 0))) {
-    LookupResult_str _guard_res_orig_key_4509_17 = {0};
-    _guard_res_orig_key_4509_17 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(erased_to_original), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(erased_to_original), key, 1); } res; });
-    if (!_guard_res_orig_key_4509_17.Ok) {
+    LookupResult_str _guard_res_orig_key_4529_17 = {0};
+    _guard_res_orig_key_4529_17 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(erased_to_original), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(erased_to_original), key, 1); } res; });
+    if (!_guard_res_orig_key_4529_17.Ok) {
         os_LogStr((({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"🚨 CRITICAL COMPILER BUG: erased_to_original.Get failed for key: ", 67 }); Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
     exit(1);
     return std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"", 0 }));
     }
-    Slice_unsigned_char orig_key = _guard_res_orig_key_4509_17.Val;
+    Slice_unsigned_char orig_key = _guard_res_orig_key_4529_17.Val;
     int is_template_instance = 0;
     if ((std_str_find(key, ((Slice_unsigned_char){ (unsigned char*)"_", 1 })) != (0 - 1))) {
     is_template_instance = 1;
@@ -36895,14 +36907,14 @@ Slice_unsigned_char codegen__codegen_generate(std_Vector_ast__Program programs, 
     t_struct.Struct.brand = 0xFFFFFFFF;
     int has_bool = codegen__codegen_has_boolean_fields(t_struct, env, ctx);
     if ((has_bool == 1)) {
-    LookupResult_str _guard_res_orig_key_4678_17 = {0};
-    _guard_res_orig_key_4678_17 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(erased_to_original), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(erased_to_original), key, 1); } res; });
-    if (!_guard_res_orig_key_4678_17.Ok) {
+    LookupResult_str _guard_res_orig_key_4698_17 = {0};
+    _guard_res_orig_key_4698_17 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(erased_to_original), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(erased_to_original), key, 1); } res; });
+    if (!_guard_res_orig_key_4698_17.Ok) {
         os_LogStr((({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"🚨 CRITICAL COMPILER BUG: erased_to_original.Get failed for key: ", 67 }); Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
     exit(1);
     return std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"", 0 }));
     }
-    Slice_unsigned_char orig_key = _guard_res_orig_key_4678_17.Val;
+    Slice_unsigned_char orig_key = _guard_res_orig_key_4698_17.Val;
     std_Option_typechecker__StructLayout layout_lookup = ({ std_Option_typechecker__StructLayout _gust_map_get_opt_result = {0}; int _gust_map_get_opt_ok = os_HashMapContains(&((*(env)).struct_registry), orig_key, 1); if (_gust_map_get_opt_ok) { _gust_map_get_opt_result.tag = std_Option_typechecker__StructLayout_Tag__Some; _gust_map_get_opt_result.Some.val = *os_HashMapRef(&((*(env)).struct_registry), orig_key, 1); } else { _gust_map_get_opt_result.tag = std_Option_typechecker__StructLayout_Tag__None; } _gust_map_get_opt_result; });
     switch (layout_lookup.tag) {
         case std_Option_typechecker__StructLayout_Tag__Some: {
