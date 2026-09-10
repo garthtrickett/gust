@@ -41,9 +41,9 @@ derivation had to land before S1.8 resumed. Cranelift Patch 24.0f closed that
 authority and handed the selected backend-neutral module surface back to this
 lane; S1.8 now consumes it without reopening OD-2.
 
-| Delivered (9) | Ready in roadmap order (3) | Depends on the rest (1) |
+| Delivered (12) | Blocked on compiler handoff (0) | Closing (1) |
 | --- | --- | --- |
-| S1.0, S1.1, S1.2, S1.3, S1.4, S1.5, S1.6, S1.7, S1.8 | S1.9, S1.10, S1.11 | S1.12 closure |
+| S1.0–S1.11 | — | S1.12 closure |
 
 The lane does not idle at a blocked patch. It records the shared-zone defect and
 takes the next independent item. That is why S1.6 was delivered while S1.4 and
@@ -65,7 +65,7 @@ This is a scheduling fact, not an objection to the two-lane model.
 - [x] Patch S1.9 — MutexGuard Scope and Resource Tests — DONE
 - [x] Patch S1.10 — MutexGuard Fiber Contention Tests — DONE
 - [x] Patch S1.11 — Realistic Example Migration — DONE
-- [ ] Patch S1.12 — Phase S1 Closure
+- [x] Patch S1.12 — Phase S1 Closure — DONE
 
 Status rows are machine-parsed, exactly as the Cranelift guards parse `TASK.md`
 (`scripts/phase15_close.py:51` matches `^- \[x\] Patch 15\.(\d+).+— DONE$`).
@@ -144,7 +144,7 @@ current would re-open work that is done.
 
 | Defect in the baseline | State |
 | --- | --- |
-| `str == str` typechecks and emits invalid C | **Closed** by S1.1 (#74). Both compilers now reject `==` and `!=` on `str` with a byte-identical diagnostic naming `std.str_eq`. Making `==` *mean* content equality is still open as CR-1. |
+| `str == str` typechecks and emits invalid C | **Closed** by S1.1 (#74), then **superseded** 2026-09-10: Cranelift Patch 24.2q (#377, merge `2b8417a7`) defines `==`/`!=` on `str` as content equality through `std_str_eq` semantics, retiring the S1.1 rejection. CR-1 resolved. |
 | A method call on a reference receiver fails resolution | **Closed** by S1.3 (#86). |
 | `defer` has no AST/typechecker representation | **Superseded.** `defer` is an AST node; Phase 20 subsequently resolved CR-5's destructor, opacity, acquisition, and cleanup floor. Cranelift Patch 24.0f then closed CR-15's OD-2-compatible compiler-owned derivation, which S1.8 now consumes. |
 | Rust and self-hosted brand matching diverge | **Closed by deletion.** PR #137 removed the deprecated Rust prototype on 2026-08-21; D-2 is recorded as closed in `docs/SHARED_SEMANTIC_ZONE.md`. Phase 19 subsequently closed CR-2/D-1. |
@@ -236,6 +236,14 @@ Cranelift lane, not by this roadmap.
 work by default even though the motivation is ergonomic. Patch S1.1 delivers the
 non-semantic half — a stable diagnostic — so the miscompile stops immediately
 whether or not CR-1 is scheduled.
+
+**RESOLVED 2026-09-10 by Cranelift Patch 24.2q (#377, merge `2b8417a7`).**
+`==` and `!=` on `str` are content equality lowering through `std_str_eq`
+semantics, with Cranelift parity; the S1.1 rejection is retired and the
+repurposed `guard-stdlib-s1-str-equality-diagnostic` asserts the new contract
+(str pairs compile and print content-equality markers; mismatched operands are
+still rejected). No TASK_STDLIB, workflow, or registry edit was needed for the
+guard itself. D-3's semantic half is closed with this.
 
 **What this CR is actually worth — stated 2026-09-04, and corrected against
 evidence.** `docs/STDLIB_FOUNDATIONS.md` §1.1 directs its argument here, as the
@@ -867,10 +875,10 @@ handoff is effective. S1.8 consumes the selected surface; arbitrary generic
 functions, backend-specific lowering, and Mutex-spelling authority remain
 outside the accepted contract.
 
-### CR-16 — Register the S1.9 raw double-unlock call site
+### CR-16 — Register the S1.9 raw double-unlock call site — **RESOLVED by Phase 24 / #357**
 
-1. **Intended behaviour:** the Stdlib lane can ship a compile-fail fixture
-   containing an explicit-`unsafe` raw `mutex.Unlock()`, so S1.9's raw
+1. **Intended behaviour:** the Stdlib lane can ship a compile-pass/code-generation
+   witness containing an explicit-`unsafe` raw `mutex.Unlock()`, so S1.9's raw
    double-unlock limitation is pinned by a fixture rather than by prose alone.
 2. **Existing limitation:** `guard-cranelift-phase20-unsafe-mutex-migration-contract`
    pins the exact set of raw `Mutex` call sites and their per-file counts. The
@@ -883,29 +891,41 @@ outside the accepted contract.
 5. **MIR-to-C:** none. 6. **Cranelift:** theirs, because the registry is.
    7. **Bootstrap:** none.
 
-**Totals re-derived against `0fcfdfe1`, 2026-09-06 — and they are unchanged.**
-The live inventory is still `{lock 17, unlock 17, calls 34}` and the contract
-validates clean.
+**Totals re-derived against `1018ec38`, 2026-09-08.** The owning scanner's
+`complete_inventory()` finds nine files and `{lock 17, unlock 17, calls 34}`.
+It includes tracked and untracked nonignored Gust files and masks comments and
+literals. No holdout fixture was copied into the repository. This is a fresh
+inventory measurement; the numerical agreement with the filed totals is not
+inherited evidence.
 
-**Why, since "use the older figures" otherwise reads as an oversight.** The two
-halves of one change land in *different patches*: CR-21's registry row merged as
-Patch 24.3e, while S1.11's **source** migration is held in PR #348, kept red on
-purpose as the only live reproduction of CR-19. The registry has therefore run
-*ahead* of the live tree, and the removal has not taken effect on disk.
+CR-21's removal successor landed before #348's source migration, so the live
+source still contains `tests/e2e_sync_primitives.gst` at `L4 U4`. If that exact
+removal is the only inventory change, it yields `{13,13,26}`; admitting CR-16's
+`L0 U1` witness would then yield `{13,14,27}`. Re-run the owning scanner at each
+admission rather than using either projection as an observed count.
 
-**Use `{17,17,34}` as the predecessor until #348 merges; it becomes `{13,13,26}`
-only then.** Registering against the post-migration figures today would be wrong.
-This is stated as an **event** rather than a value deliberately — a value goes
-stale silently, whereas "when #348 merges" names the moment the answer changes.
+**Witness correction:** the explicit-unsafe program is accepted today. Its
+fixture must assert compilation and emitted raw unlock plus scoped cleanup,
+not expect rejection of the documented limitation. Do not execute a double
+unlock to establish this property. Any decision to reject this unsafe program
+is a separate generic semantic change owned by Cranelift.
 
 The open question raised when filing is **answered**: the contract carries no
 implicit balance expectation. `compiler/phase20_mutex_lock_safe_invalid.gst` is
 already `L1 U0` and `compiler/phase20_mutex_unlock_safe_invalid.gst` is `L0 U1`,
 so a deliberately unbalanced row has precedent.
 
-The limitation itself is fully documented in `docs/STDLIB_MUTEX_GUARD_SCOPE.md`;
-only its pinning fixture is deferred. The fixture is preserved **outside the
-repository**, because the contract counts untracked files on disk.
+**Registration resolved:** PR #357, merged as
+`6b657cb42f485207480d295a86a248630a1a12fa`, is an ancestor of `1018ec38`.
+The live `s1_9_raw_double_unlock_successor` admits the exact `L0 U1` fixture,
+with its predecessor derived before or after S1.11's removal. Its purpose/role
+still says compile-fail; that historical misdescription does not require rejecting
+valid explicit-unsafe source. The compiler registry is unchanged by this patch.
+
+S1.12 owns the remaining compile-only/generated-cleanup witness as a check of
+its documented residue. Registration is resolved; delivery and validation of the
+Stdlib witness are not implied by that resolution. The original holdout stays
+outside the repository as historical evidence.
 
 ### CR-17 — Superseded by CR-18
 
@@ -932,52 +952,72 @@ withdrawn as vacuous:** "zero drift across all fifteen `cross_lane_relay` sites"
 was true but meaningless, because those coordinates are never compared to a live
 scan. The conclusion stands on the other two grounds.
 
-### CR-19 — Multi-module programs are never analysed and answer `supported`
+### CR-19 — Native support reported before full-program bundle validation
 
 1. **Intended behaviour:** a program the native route cannot lower is classified
-   deferred with an `unsupported_native_capability` diagnostic, uniformly.
-2. **Existing limitation:** `mir_native_parameter_argument_scan_deferred` bails
-   before examining anything when a program is multi-module, returning an empty
-   model that reads downstream as `supported`. The program then fails canonical
-   MIR verification instead of deferring.
-3. **Smallest generic change:** the bail-out clause must handle multi-module
-   programs. **A conjunction over all functions does not work** — see below.
-4. **Affected:** the generic native capability planner. Cranelift-owned.
-5. **MIR-to-C:** unaffected. 6. **Cranelift:** theirs. 7. **Bootstrap:** none.
+   deferred with an `unsupported_native_capability` diagnostic before driver
+   discovery. Valid full-program bundles retain native support.
+2. **Existing limitation:** the native planner reported supported before
+   validating its full-program bundle. Two observed malformed-bundle paths now
+   require explicit deferral: `deferred_p14_full_program_unnameable_call` and
+   `deferred_p14_full_program_inconsistent_runtime_signature`.
+3. **Smallest generic change:** validate the full-program bundle before reporting
+   support. Relaxing single-module signature scans is abandoned because it
+   deferred the valid 42-module `compiler/test_runner_entry.gst` native compiler.
+   This is a planner correction, not a request for native fiber lowering.
+4. **Affected:** generic native planner and bundle validation, compiler-owned
+   capability registration, focused native fixtures, generated evidence, and
+   transition/collapse guards. The Stdlib lane owns this request text only.
+5. **MIR-to-C:** source semantics unchanged; remains the differential oracle.
+6. **Cranelift:** yes; unsupported bundles defer honestly, valid bundles remain
+   supported. No per-file carve-out or fallback is an acceptable repair.
+7. **Bootstrap:** yes; buildable compiler source and generated seed must be
+   qualified and published separately by the Cranelift lane.
 
-**A rejected fix, kept because the reasoning is instructive.** This CR originally
-proposed making the capability decision "the conjunction over every function
-reaching full-program lowering". That is **wrong**: the scan is *existential*, so
-a conjunction is strictly weaker — it would require every function to defer, and
-the guard helpers legitimately do not. The existing loop would have found the
-deferring function if it had run at all. Implementing the proposal as filed would
-have produced a green guard for the wrong reason.
+**Corrected evidence scope, 2026-09-08, from the Cranelift handoff.** At
+predecessor baseline `bd514253`, one supported-then-worker-failure case was
+observed on main: `compiler/typechecker_origins_test_entry.gst`. There are two
+including #348's post-image of `tests/e2e_sync_primitives.gst`. That file has no
+imports on the baseline and becomes multi-module under the migration.
 
-**The wrong answer is not "this lowers fine" — it is "I did not look", reported
-in the shape of an answer.** A monotonicity argument settles it without reading
-any lowering: S1.11's migration only *added* functions and left every
-pre-existing signature byte-identical, and an existential scan over a superset
-cannot flip `deferred` → `supported`.
+The 328-case before/after sweep consists of 326 runner cases plus
+`compiler/test_runner_entry.gst` and
+`compiler/phase11_module_import_main_source.gst`. Exactly one changed: origins
+became an inconsistent-runtime-signature deferral. The native compiler and
+module-import positive controls remained supported. **The #348 post-image is
+excluded by construction.** A separate triple demonstrated its unnameable-call
+deferral with the poison driver not invoked. These are Cranelift-lane
+measurements, not newly executed Stdlib checks.
 
-**Measured population:** of 98 multi-module cases, 95 compile successfully today,
-**2 are genuinely misclassified**, 0 fail with a real deferral reason. The two are
-`tests/e2e_sync_primitives.gst` and `compiler/typechecker_origins_test_entry.gst`
-— the latter already carrying a per-file carve-out in
-`phase21_complete_guard_suite.py` for exactly this shape. **That carve-out was
-concealing the only other instance in the corpus**, so it hid the population size
-rather than merely papering over one case.
+The historical **99 multi-module cases on main / 100 including #348** count
+programs skipping the single-module scan, not the corrected defect population.
+The older 98-case claim and its 95 + 2 + 0 arithmetic are withdrawn. Neither
+those figures nor the 328-case sweep supplies Phase 21 registration counts;
+those must come from the authoritative Phase 21 suite at the published HEAD.
+The Cranelift/coordinator recovery records run `34230275680` at `490e85b0` as
+197 required cases and 129 deferrals, 326 total. That is the suite measurement;
+the older 192/134 closure-summary figures are not. Re-measure after the compiler
+lane's next publication; this dated result is not a claim about its next HEAD.
 
-**Scheduled to Phase 24 closure alongside Patch 24.3b**, and phase-sized for a
-reason that is not blast radius: `typechecker_origins_test_entry.gst` has a
-single parameterless `main()`, so the parameter scan cannot defer it under any
-repair of the bail-out. Fixing the bail-out alone would fix one instance, leave
-the other untouched, and keep its carve-out load-bearing — closing the ticket
-while resolving half the defect.
+**Blocking S1.11; Cranelift-owned Phase 24 transition.** PR #348 remains the
+unchanged red reproduction. Release requires #371 compiler source and
+pre-registration green and merged; #366 separately rebased and its six probes
+rerun before the seed; a recorded authorization window; seed-only publication
+with the exact fixed point; compiler transition collapse and checked handoff;
+and coordinator verification of the release gate. Then the Stdlib lane rebases
+#348, checks its focused semantics, publishes and merges only on exact-HEAD
+success and resolved reviews. **#371 merging alone does not resolve CR-19.**
 
-**Blocking.** Filed non-blocking against S1.10, which recorded the Cranelift fiber
-route as deferred coverage and did not need it. S1.11 migrates a file whose
-deferral stage is *pinned* by Phase 21, so the misclassification now has a
-consumer. PR #348 is held open and red as the only live evidence.
+**RESOLVED 2026-09-10 by the checked 24.2x handoff.** Admission PR #376
+merged as `a92a8ca` (109/109 PR + TrustedGate, normal merge, no admin);
+main-fixture CompleteSuite run `34350463080` passed 197 required / 129
+deferrals at `b575e342`; post-image run `34406668772` passed the same at
+`6926bda1` (parent `a92a8ca`, sole delta the held fixture); coordinator
+released Stdlib S1.11 on that verified handoff. The Stdlib lane rebased #348
+(`9c2ed29b` → `5757e56a`) onto `a92a8ca`, re-ran the focused
+guard-stdlib-s1-migration chain green locally, published, monitored 107/107
+exact-head PR workflows plus TrustedGate to success, and merged normally as
+`fe9b0cf3`. No test relaxation and no Stdlib registry workaround at any step.
 
 ### CR-20 — A line number used as a proxy for a location — **RESOLVED 2026-09-06 by Patch 24.3c**
 
@@ -1558,8 +1598,8 @@ claim of a complete standard library.
 
 ## Closure gate
 
-Phase S1 cannot close yet. This section records exactly what gates it, and
-`guard-stdlib-s1-close` enforces that the record stays accurate — including
+Phase S1 closes with this patch. This section records exactly what gated it,
+and `guard-stdlib-s1-close` enforces that the record stays accurate — including
 refusing to let S1.12 be marked `DONE` while anything below is outstanding.
 
 ### Delivered
@@ -1567,7 +1607,7 @@ refusing to let S1.12 be marked `DONE` while anything below is outstanding.
 | patch | what it delivered |
 | --- | --- |
 | S1.0 | `docs/STDLIB_SURFACE_INVENTORY.md`, generated from the compiler |
-| S1.1 | `str == str` rejected with one self-hosted frontend diagnostic |
+| S1.1 | `str == str` miscompile stopped with a stable diagnostic (#74); superseded 2026-09-10 by 24.2q content equality (see CR-1) |
 | S1.2 | the string surface pinned, 33 values asserted in order |
 | S1.3 | collection methods resolve through a reference receiver |
 | S1.4 | inferred and explicit branded collections emit byte-identical canonical C and behaviour |
@@ -1575,31 +1615,58 @@ refusing to let S1.12 be marked `DONE` while anything below is outstanding.
 | S1.6 | application-shaped `Vector`/`HashMap`/`Clone` composition, with explicit native deferral |
 | S1.7 | the resource prerequisites re-verified; CR-5 made concrete |
 | S1.8 | safe `sync.lock` / `sync.get` prototype over an opaque linear guard, with both-backend behavior |
+| S1.9 | seven scope/transfer forms and five safe misuse classes; unsafe double unlock documented (#332) |
+| S1.10 | fiber contention and exact counters 302/300 on MIR-to-C; native coverage deferred (#341) |
+| S1.11 | sync-primitives example migrated to the scoped guard; four manual cleanup paths removed; observable 10 unchanged (#348) |
 
 ### Outstanding, with owners
 
 | patch | blocked by | owner |
 | --- | --- | --- |
-| S1.9 MutexGuard scope tests | next roadmap row | Stdlib lane |
-| S1.10 MutexGuard fiber tests | S1.9 | Stdlib lane |
-| S1.11 realistic migration | S1.10 | Stdlib lane |
-| S1.12 closure | all of the above | Stdlib lane |
 
-No deferral here is unowned. CR-11 through CR-13 and CR-15 are resolved; the
-remaining rows are ordinary Stdlib work sequenced by this roadmap.
+No patch remains blocked. S1.11 delivered via #348 on the verified CR-19
+handoff (see CR-19); S1.12 closes the phase with the evidence cited below.
+
+### Coordination dispositions
+
+This table summarizes the requests above without turning a deferral into a
+claim of implementation. A new request requires its own row; the closure guard
+derives the request set from the section headings.
+
+| request | disposition | owner | owning phase or successor |
+| --- | --- | --- | --- |
+| CR-1 | RESOLVED | Cranelift lane | Phase 24.2q (#377 2b8417a7) |
+| CR-2 | RESOLVED | Cranelift lane | Phase 19 |
+| CR-3 | DEFERRED | Cranelift lane | Post-Phase 25 structured runtime, after #101; issue #91 |
+| CR-4 | RESOLVED | Cranelift admission / Stdlib proposal | Phase 17 symbol protocol |
+| CR-5 | RESOLVED | Cranelift lane | Phase 20 |
+| CR-6 | DEFERRED | Cranelift lane | Phase 26.1; enforcement remains undelivered |
+| CR-7 | RESOLVED | Track A roadmap owner | Track A INACTIVE; rows 2/5/9 owned and row 10 scheduled before activation |
+| CR-8 | DEFERRED | Cranelift lane | Post-Phase 25 structured runtime; issue #101, OD-1/OD-11 |
+| CR-9 | RESOLVED | Operator | Phase S1 coordination; OD-3 ratification 2026-09-06 |
+| CR-10 | RESOLVED | Cranelift lane | Phase 20 ownership/opacity floor |
+| CR-11 | RESOLVED | Cranelift lane | Phase 20.3a |
+| CR-12 | RESOLVED | Cranelift lane | Phase 20.3 |
+| CR-13 | RESOLVED | Cranelift lane | Phase 20.5 |
+| CR-14 | DEFERRED | Cranelift lane | Post-Phase 25 language ergonomics; issue #102, before OD-9 |
+| CR-15 | RESOLVED | Cranelift lane | Phase 24.0f |
+| CR-16 | RESOLVED | Cranelift registration / Stdlib witness | Phase 24 / #357 admission; Phase S1.12 residue witness |
+| CR-17 | SUPERSEDED | Cranelift lane | CR-18 |
+| CR-18 | RESOLVED | Cranelift lane | Phase 24.2p |
+| CR-19 | RESOLVED | Cranelift lane | Phase 24.2x admission a92a8ca; main/post qualification; #348 merged fe9b0cf3 |
+| CR-20 | RESOLVED | Cranelift lane | Phase 24.3c |
+| CR-21 | RESOLVED | Cranelift lane | Phase 24.3e registration; source delivered by S1.11 (#348 fe9b0cf3) |
 
 ### Residue — what a normal program still cannot express safely
 
 Recording this is the point of the phase, not an apology for it.
 
-- **`command == "PING"` does not work.** S1.1 turned the miscompile into a
-  diagnostic, but content equality is CR-1, and operator semantics are
-  compiler-owned (`VISION.md` §16). Users write `std.str_eq(a, b)`.
 - **An out-of-range string index kills the process**, not the request, which
   `VISION.md` §34 forbids. CR-3, and filed as issue #91.
 - **The safe MutexGuard prototype now exists.** S1.8 exposes the selected
-  `sync.lock` / `sync.get` surface through an opaque linear guard. S1.9 through
-  S1.11 still own its complete control-flow, contention, and migration evidence.
+  `sync.lock` / `sync.get` surface through an opaque linear guard. S1.9 and S1.10
+  delivered control-flow and fiber evidence; S1.11 migrated the realistic
+  example (#348).
 - **References carry no mutability and are not analysed for aliasing.** Two `&T`
   arguments may alias one value and both write through it (`VISION.md` §26).
 - **Raw Mutex access remains explicitly unsafe.** Patch 20.16d preserved the
@@ -1620,21 +1687,25 @@ Recording this is the point of the phase, not an apology for it.
    Level 3 suite — `Cranelift Historical Full` is the sole owner — so closure
    inherits its state rather than being independent of it.
 
-   **Observed 2026-08-20:** the most recent *completed* run on `main` is
-   `32330451344`, **conclusion `failure`**, terminated 07:23:17Z — its
-   `Level 3 full history` job failed, six sibling jobs succeeded, and
-   `Level 3 declared-target completion` was skipped.
+   **Recovery observation, 2026-09-08:** latest main run
+   [34203226149](https://github.com/garthtrickett/gust/actions/runs/34203226149)
+   at `bd51425385b4ff5150c4c63872dbb4dad7beab8e` completed with conclusion
+   `success`; all 18 jobs completed successfully. This supersedes the August
+   failing-run snapshot. It is not qualification of current `1018ec38` or of
+   the pending semantic/seed transition. Re-read the latest main run at closure.
 
-   This is not a stale result or a one-off. Paginating the entire retained
-   window — **34 concluded runs from 2026-07-21 to 2026-08-20, a full month** —
-   gives **32 `failure`, 2 `cancelled`, and zero `success` at any depth**. There
-   is therefore no green Level 3 evidence available to cite, rather than merely
-   an out-of-date one.
+### Level 3 evidence
 
-   Recorded here rather than asserting the suite is available: a suite that
-   exists and fails satisfies an availability check exactly, which is why the
-   requirement is phrased as *not failing* rather than *present*. The diagnosis
-   belongs to the Cranelift lane; Phase S1 may not close on top of it.
+At closure, record the latest main Historical Full run below. The guard verifies
+that cited run's ID, SHA, workflow, branch and completed success against GitHub,
+and separately requires the latest main run to have completed successfully. An
+old green run cannot conceal a newer failure or pending run; a later green run
+does not require rewriting the historical closure citation. Populate only at
+actual closure; recovery observations above are not a closure citation.
+
+| workflow | run ID | head SHA | status | conclusion |
+| --- | --- | --- | --- | --- |
+| Cranelift Historical Full | 34454122610 | a92a8cac73854808d597d3e9e975389280311743 | completed | success |
 
 Phase S1 closure will not claim a complete standard library, a text or Unicode
 API, networking, or production readiness.

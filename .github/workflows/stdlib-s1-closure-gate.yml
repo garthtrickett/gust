@@ -9,12 +9,16 @@ on:
     paths:
       - 'TASK_STDLIB.md'
       - 'justfile'
+      - 'scripts/stdlib_s1_close.py'
+      - 'scripts/stdlib_s1_close_test.py'
       - '.github/workflows/stdlib-s1-closure-gate.yml'
   push:
     branches: [main]
     paths:
       - 'TASK_STDLIB.md'
       - 'justfile'
+      - 'scripts/stdlib_s1_close.py'
+      - 'scripts/stdlib_s1_close_test.py'
   workflow_dispatch:
 
 permissions:

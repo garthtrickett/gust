@@ -21,6 +21,7 @@ for path in "$positive" \
   tests/stdlib_s1_mutex_guard_scope_use_after_move_rejected.gst \
   tests/stdlib_s1_mutex_guard_scope_two_owners_rejected.gst \
   tests/stdlib_s1_mutex_guard_scope_fabricated_rejected.gst \
+  tests/stdlib_s1_mutex_guard_scope_raw_double_unlock.gst \
   docs/STDLIB_MUTEX_GUARD_SCOPE.md
 do
   if [ ! -f "$path" ]; then
@@ -28,6 +29,8 @@ do
     exit 1
   fi
 done
+
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/stdlib_s1_raw_double_unlock_test.py
 
 rm -rf "$build_dir"
 mkdir -p "$build_dir"
@@ -80,4 +83,22 @@ for spec in "${negative_specs[@]}"; do
   compile_fail_on_route cranelift "$fixture" "$diagnostic" "$label"
 done
 
-echo "guard-stdlib-s1-mutex-guard-scope: ok (7 control-flow forms; 5 compile-fail classes; MIR-to-C and Cranelift parity)"
+# CR-16 is an explicit-unsafe limitation, not a rejection expectation. Compile
+# directly: run-gust-file.sh executes positive fixtures and must not run this one.
+raw_fixture="tests/stdlib_s1_mutex_guard_scope_raw_double_unlock.gst"
+./gust --backend mir-to-c "$raw_fixture" >"$build_dir/raw-double-unlock.log" 2>&1
+python3 scripts/stdlib_s1_raw_double_unlock.py "$build_dir/raw-double-unlock.log"
+# Keep the runner's generated-C filtering, but stop at the C compiler's syntax
+# check. Its normal positive path would execute the resulting program.
+cat src/runtime.c >"$build_dir/raw-double-unlock.c"
+grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" "$build_dir/raw-double-unlock.log" \
+  >>"$build_dir/raw-double-unlock.c"
+"${CC:-cc}" -fsyntax-only -pthread -Isrc "$build_dir/raw-double-unlock.c" \
+  >"$build_dir/raw-double-unlock.c-check.log" 2>&1
+# Native compilation confirms accepted source on the already-qualified scope
+# cohort. Creating the executable is evidence; executing it would double unlock.
+./build/phase10-package/bin/gust --backend cranelift -o "$build_dir/raw-double-unlock.bin" "$raw_fixture" \
+  >"$build_dir/raw-double-unlock.native.log" 2>&1
+test -s "$build_dir/raw-double-unlock.bin"
+
+echo "guard-stdlib-s1-mutex-guard-scope: ok (7 control-flow forms; 5 compile-fail classes; MIR-to-C and Cranelift parity; CR-16 compile-only witness)"

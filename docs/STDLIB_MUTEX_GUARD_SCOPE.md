@@ -24,10 +24,9 @@ The focused guard requires rejection before execution for:
 - placing one acquisition into two owner fields;
 - constructing or initializing the opaque guard outside its module.
 
-The final roadmap misuse case is the raw double unlock. It is **documented
-below from a live-compiler probe rather than pinned by a fixture in this patch**,
-for the reason given in that section. S1.9 does not add a Mutex-specific compiler
-rule.
+The final roadmap misuse case is the raw double unlock. S1.9 documented the
+accepted explicit-unsafe limitation; S1.12 adds a compile-only witness after
+CR-16 registration. Neither patch adds a Mutex-specific compiler rule.
 
 ## Raw double-unlock limitation
 
@@ -65,19 +64,31 @@ Closing it would require a Mutex-aware compiler rule, which is neither this
 lane's to write nor, on current evidence, obviously correct: `unsafe` exists
 precisely so the compiler stops arguing.
 
-### Why no fixture pins this in S1.9
+### Registration and compile-only witness
 
-A fixture asserting the above must contain a raw `mutex.Unlock()` call. The raw
-`Mutex.Lock`/`Unlock` inventory across the repository is byte-pinned by the
-Cranelift-owned `guard-cranelift-phase20-unsafe-mutex-migration-contract`, whose
-authority lives in `scripts/cranelift_feature_registry.json`. Adding the fixture
-adds the 35th raw call site and fails that guard:
+S1.9 initially could not add its raw-unlock fixture because the compiler-owned
+raw-Mutex inventory rejected the unregistered `L0 U1` site. PR #357, merged as
+`6b657cb42f485207480d295a86a248630a1a12fa`, registered that exact successor.
+It derives predecessor totals from the live tree, supporting both sides of the
+S1.11 removal. CR-16's registration request is resolved.
 
-    raw Mutex call-site classification drifted: actual={... 'tests/stdlib_s1_mutex_guard_scope_raw_double_unlock.gst': {'Lock': 0, 'Unlock': 1}}
+S1.12 consumes that admission with
+`tests/stdlib_s1_mutex_guard_scope_raw_double_unlock.gst`, rechecking the phase's
+residue rather than changing unsafe semantics. The existing scope guard:
 
-Removing the fixture returns the inventory to its pinned state and the contract
-passes, so this is the sole cause. Registering a new raw call site is a
-Cranelift-owned registry successor — the same shape as the one S1.8 received —
-and `AGENTS.md` makes that a coordination request rather than a local edit. The
-fixture is preserved and lands in a follow-up once that row exists. The
-limitation itself is fully recorded here, which is what the roadmap directed.
+- requires MIR-to-C compilation to succeed;
+- inspects the generated entry function before its explicit return for exactly
+  one raw unlock followed by exactly one cleanup of the guard owner;
+- confirms that the emitted destructor itself calls the raw unlock once;
+- checks the generated C with the host compiler in syntax-only mode;
+- requires native compilation to produce an artifact, without executing it.
+
+**This program must never run.** The generic positive runner executes its
+fixtures, so this witness uses direct compilation commands. Inversions ensure
+that a declaration, the destructor's own raw call, or an unreachable cleanup
+suffix after `return` cannot substitute for the two calls in the entry path.
+
+The compiler registry's historical `compile_fail` role label is not a semantic
+expectation. Requiring this accepted explicit-unsafe program to reject would
+misstate the documented limitation. The registry is unchanged by the Stdlib
+patch; the original holdout outside the repository remains historical evidence.

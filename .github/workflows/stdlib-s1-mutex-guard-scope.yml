@@ -7,6 +7,8 @@ on:
       - 'docs/STDLIB_MUTEX_GUARD_SCOPE.md'
       - 'tests/stdlib_s1_mutex_guard_scope*.gst'
       - 'scripts/stdlib_s1_mutex_guard_scope_parity.sh'
+      - 'scripts/stdlib_s1_raw_double_unlock.py'
+      - 'scripts/stdlib_s1_raw_double_unlock_test.py'
       - 'justfile'
       - '.github/workflows/stdlib-s1-mutex-guard-scope.yml'
   push:
@@ -16,6 +18,8 @@ on:
       - 'docs/STDLIB_MUTEX_GUARD_SCOPE.md'
       - 'tests/stdlib_s1_mutex_guard_scope*.gst'
       - 'scripts/stdlib_s1_mutex_guard_scope_parity.sh'
+      - 'scripts/stdlib_s1_raw_double_unlock.py'
+      - 'scripts/stdlib_s1_raw_double_unlock_test.py'
       - 'justfile'
       - '.github/workflows/stdlib-s1-mutex-guard-scope.yml'
   workflow_dispatch:
