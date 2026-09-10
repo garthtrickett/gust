@@ -144,7 +144,7 @@ current would re-open work that is done.
 
 | Defect in the baseline | State |
 | --- | --- |
-| `str == str` typechecks and emits invalid C | **Closed** by S1.1 (#74). Both compilers now reject `==` and `!=` on `str` with a byte-identical diagnostic naming `std.str_eq`. Making `==` *mean* content equality is still open as CR-1. |
+| `str == str` typechecks and emits invalid C | **Closed** by S1.1 (#74), then **superseded** 2026-09-10: Cranelift Patch 24.2q (#377, merge `2b8417a7`) defines `==`/`!=` on `str` as content equality through `std_str_eq` semantics, retiring the S1.1 rejection. CR-1 resolved. |
 | A method call on a reference receiver fails resolution | **Closed** by S1.3 (#86). |
 | `defer` has no AST/typechecker representation | **Superseded.** `defer` is an AST node; Phase 20 subsequently resolved CR-5's destructor, opacity, acquisition, and cleanup floor. Cranelift Patch 24.0f then closed CR-15's OD-2-compatible compiler-owned derivation, which S1.8 now consumes. |
 | Rust and self-hosted brand matching diverge | **Closed by deletion.** PR #137 removed the deprecated Rust prototype on 2026-08-21; D-2 is recorded as closed in `docs/SHARED_SEMANTIC_ZONE.md`. Phase 19 subsequently closed CR-2/D-1. |
@@ -236,6 +236,14 @@ Cranelift lane, not by this roadmap.
 work by default even though the motivation is ergonomic. Patch S1.1 delivers the
 non-semantic half — a stable diagnostic — so the miscompile stops immediately
 whether or not CR-1 is scheduled.
+
+**RESOLVED 2026-09-10 by Cranelift Patch 24.2q (#377, merge `2b8417a7`).**
+`==` and `!=` on `str` are content equality lowering through `std_str_eq`
+semantics, with Cranelift parity; the S1.1 rejection is retired and the
+repurposed `guard-stdlib-s1-str-equality-diagnostic` asserts the new contract
+(str pairs compile and print content-equality markers; mismatched operands are
+still rejected). No TASK_STDLIB, workflow, or registry edit was needed for the
+guard itself. D-3's semantic half is closed with this.
 
 **What this CR is actually worth — stated 2026-09-04, and corrected against
 evidence.** `docs/STDLIB_FOUNDATIONS.md` §1.1 directs its argument here, as the
@@ -1599,7 +1607,7 @@ refusing to let S1.12 be marked `DONE` while anything below is outstanding.
 | patch | what it delivered |
 | --- | --- |
 | S1.0 | `docs/STDLIB_SURFACE_INVENTORY.md`, generated from the compiler |
-| S1.1 | `str == str` rejected with one self-hosted frontend diagnostic |
+| S1.1 | `str == str` miscompile stopped with a stable diagnostic (#74); superseded 2026-09-10 by 24.2q content equality (see CR-1) |
 | S1.2 | the string surface pinned, 33 values asserted in order |
 | S1.3 | collection methods resolve through a reference receiver |
 | S1.4 | inferred and explicit branded collections emit byte-identical canonical C and behaviour |
@@ -1627,7 +1635,7 @@ derives the request set from the section headings.
 
 | request | disposition | owner | owning phase or successor |
 | --- | --- | --- | --- |
-| CR-1 | SCHEDULED | Cranelift lane | Phase 24.2q, operator/coordinator placement |
+| CR-1 | RESOLVED | Cranelift lane | Phase 24.2q (#377 2b8417a7) |
 | CR-2 | RESOLVED | Cranelift lane | Phase 19 |
 | CR-3 | DEFERRED | Cranelift lane | Post-Phase 25 structured runtime, after #101; issue #91 |
 | CR-4 | RESOLVED | Cranelift admission / Stdlib proposal | Phase 17 symbol protocol |
@@ -1653,14 +1661,12 @@ derives the request set from the section headings.
 
 Recording this is the point of the phase, not an apology for it.
 
-- **`command == "PING"` does not work.** S1.1 turned the miscompile into a
-  diagnostic, but content equality is CR-1, and operator semantics are
-  compiler-owned (`VISION.md` §16). Users write `std.str_eq(a, b)`.
 - **An out-of-range string index kills the process**, not the request, which
   `VISION.md` §34 forbids. CR-3, and filed as issue #91.
 - **The safe MutexGuard prototype now exists.** S1.8 exposes the selected
   `sync.lock` / `sync.get` surface through an opaque linear guard. S1.9 and S1.10
-  delivered control-flow and fiber evidence; S1.11 migration remains held on CR-19.
+  delivered control-flow and fiber evidence; S1.11 migrated the realistic
+  example (#348).
 - **References carry no mutability and are not analysed for aliasing.** Two `&T`
   arguments may alias one value and both write through it (`VISION.md` §26).
 - **Raw Mutex access remains explicitly unsafe.** Patch 20.16d preserved the
