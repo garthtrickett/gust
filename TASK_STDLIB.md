@@ -41,9 +41,9 @@ derivation had to land before S1.8 resumed. Cranelift Patch 24.0f closed that
 authority and handed the selected backend-neutral module surface back to this
 lane; S1.8 now consumes it without reopening OD-2.
 
-| Delivered (11) | Blocked on compiler handoff (1) | Preparation only (1) |
+| Delivered (12) | Blocked on compiler handoff (0) | Closing (1) |
 | --- | --- | --- |
-| S1.0–S1.10 | S1.11 (#348; CR-19) | S1.12 closure |
+| S1.0–S1.11 | — | S1.12 closure |
 
 The lane does not idle at a blocked patch. It records the shared-zone defect and
 takes the next independent item. That is why S1.6 was delivered while S1.4 and
@@ -65,7 +65,7 @@ This is a scheduling fact, not an objection to the two-lane model.
 - [x] Patch S1.9 — MutexGuard Scope and Resource Tests — DONE
 - [x] Patch S1.10 — MutexGuard Fiber Contention Tests — DONE
 - [x] Patch S1.11 — Realistic Example Migration — DONE
-- [ ] Patch S1.12 — Phase S1 Closure
+- [x] Patch S1.12 — Phase S1 Closure — DONE
 
 Status rows are machine-parsed, exactly as the Cranelift guards parse `TASK.md`
 (`scripts/phase15_close.py:51` matches `^- \[x\] Patch 15\.(\d+).+— DONE$`).
@@ -1000,6 +1000,17 @@ and coordinator verification of the release gate. Then the Stdlib lane rebases
 #348, checks its focused semantics, publishes and merges only on exact-HEAD
 success and resolved reviews. **#371 merging alone does not resolve CR-19.**
 
+**RESOLVED 2026-09-10 by the checked 24.2x handoff.** Admission PR #376
+merged as `a92a8ca` (109/109 PR + TrustedGate, normal merge, no admin);
+main-fixture CompleteSuite run `34350463080` passed 197 required / 129
+deferrals at `b575e342`; post-image run `34406668772` passed the same at
+`6926bda1` (parent `a92a8ca`, sole delta the held fixture); coordinator
+released Stdlib S1.11 on that verified handoff. The Stdlib lane rebased #348
+(`9c2ed29b` → `5757e56a`) onto `a92a8ca`, re-ran the focused
+guard-stdlib-s1-migration chain green locally, published, monitored 107/107
+exact-head PR workflows plus TrustedGate to success, and merged normally as
+`fe9b0cf3`. No test relaxation and no Stdlib registry workaround at any step.
+
 ### CR-20 — A line number used as a proxy for a location — **RESOLVED 2026-09-06 by Patch 24.3c**
 
 The Phase 22 relay site was pinned by absolute line number in a living file, so
@@ -1579,8 +1590,8 @@ claim of a complete standard library.
 
 ## Closure gate
 
-Phase S1 cannot close yet. This section records exactly what gates it, and
-`guard-stdlib-s1-close` enforces that the record stays accurate — including
+Phase S1 closes with this patch. This section records exactly what gated it,
+and `guard-stdlib-s1-close` enforces that the record stays accurate — including
 refusing to let S1.12 be marked `DONE` while anything below is outstanding.
 
 ### Delivered
@@ -1598,17 +1609,15 @@ refusing to let S1.12 be marked `DONE` while anything below is outstanding.
 | S1.8 | safe `sync.lock` / `sync.get` prototype over an opaque linear guard, with both-backend behavior |
 | S1.9 | seven scope/transfer forms and five safe misuse classes; unsafe double unlock documented (#332) |
 | S1.10 | fiber contention and exact counters 302/300 on MIR-to-C; native coverage deferred (#341) |
+| S1.11 | sync-primitives example migrated to the scoped guard; four manual cleanup paths removed; observable 10 unchanged (#348) |
 
 ### Outstanding, with owners
 
 | patch | blocked by | owner |
 | --- | --- | --- |
-| S1.11 realistic migration | CR-19 semantic/seed/collapse handoff | Stdlib lane |
-| S1.12 closure | all of the above | Stdlib lane |
 
-S1.11 remains blocked on the compiler-owned CR-19 handoff. S1.12 may prepare
-its documentation and residue checks independently, but cannot publish out of
-sequence or declare closure while S1.11 or CR-19 remains outstanding.
+No patch remains blocked. S1.11 delivered via #348 on the verified CR-19
+handoff (see CR-19); S1.12 closes the phase with the evidence cited below.
 
 ### Coordination dispositions
 
@@ -1636,9 +1645,9 @@ derives the request set from the section headings.
 | CR-16 | RESOLVED | Cranelift registration / Stdlib witness | Phase 24 / #357 admission; Phase S1.12 residue witness |
 | CR-17 | SUPERSEDED | Cranelift lane | CR-18 |
 | CR-18 | RESOLVED | Cranelift lane | Phase 24.2p |
-| CR-19 | BLOCKING | Cranelift lane | Phase 24 semantic/seed/collapse handoff; #371 alone is insufficient |
+| CR-19 | RESOLVED | Cranelift lane | Phase 24.2x admission a92a8ca; main/post qualification; #348 merged fe9b0cf3 |
 | CR-20 | RESOLVED | Cranelift lane | Phase 24.3c |
-| CR-21 | RESOLVED | Cranelift lane | Phase 24.3e registration; source delivery remains S1.11 |
+| CR-21 | RESOLVED | Cranelift lane | Phase 24.3e registration; source delivered by S1.11 (#348 fe9b0cf3) |
 
 ### Residue — what a normal program still cannot express safely
 
@@ -1690,6 +1699,7 @@ actual closure; recovery observations above are not a closure citation.
 
 | workflow | run ID | head SHA | status | conclusion |
 | --- | --- | --- | --- | --- |
+| Cranelift Historical Full | 34454122610 | a92a8cac73854808d597d3e9e975389280311743 | completed | success |
 
 Phase S1 closure will not claim a complete standard library, a text or Unicode
 API, networking, or production readiness.
