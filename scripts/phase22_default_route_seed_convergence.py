@@ -421,7 +421,66 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
             attribution["insertions"] - attribution["deletions"] ==
             attribution["line_delta"],
             "CR-b.2b attribution line delta is inconsistent")
-    return bundle_identities
+    # Patch 24.2q moves the seed again for str content equality, so the
+    # collapsed CR-19 post-publication identity becomes this transition's
+    # pre-publication identity. Registered here with the seed bytes in the
+    # same patch because the movement is mechanical reconvergence of this
+    # patch's own embedded literals, not a separate publication; the seed
+    # bytes themselves ship in the seed-only commit, preserving attribution.
+    strata_transition = record.get("phase24_2q_seed_transition")
+    require(strata_transition == {
+        "contract_version": "phase24_2q_str_equality_seed_reconvergence_transition_v1",
+        "status": "ready_for_seed_publication",
+        "predecessor_seed_authority": "phase24_cr19_bundle_validation_seed_reconvergence_transition_v1",
+        "authority_base_main": "a92a8cac73854808d597d3e9e975389280311743",
+        "accounted_compiler_authorities": [
+            "phase24_2q_str_content_equality_v1"
+        ],
+        "accepted_live_seed_identities": [
+            {
+                "state": "pre_publication",
+                "line_count": 65986,
+                "seed_digest": "0bb8d3ccea011275366356baa07ee0619d13979fa00fc91ee97eb05718f27539"
+            },
+            {
+                "state": "post_publication",
+                "line_count": 65998,
+                "seed_digest": "a1ba675a1c244af0a77485d48a5865833eee896a4a2b746ea5728e20f590eebb"
+            }
+        ],
+        "generated_seed_diff": {
+            "previous_lines": 65986,
+            "current_lines": 65998,
+            "insertions": 114,
+            "deletions": 102,
+            "line_delta": 12
+        },
+        "seed_pr_policy": "gust_v4_c_only",
+        "partial_or_unregistered_identity": "rejected",
+        "closure_transition": "collapse_to_post_publication_after_seed_merge"
+    }, "Patch 24.2q seed transition drifted")
+    strata_identities = strata_transition["accepted_live_seed_identities"]
+    require([row["state"] for row in strata_identities] ==
+            ["pre_publication", "post_publication"],
+            "Patch 24.2q seed transition state order drifted")
+    require(len({(row["line_count"], row["seed_digest"])
+                 for row in strata_identities}) == 2,
+            "Patch 24.2q seed transition identities are not distinct")
+    require(strata_identities[0] == {
+        "state": "pre_publication",
+        "line_count": bundle_identities[0]["line_count"],
+        "seed_digest": bundle_identities[0]["seed_digest"],
+    }, "Patch 24.2q does not start from the landed CR-19 identity")
+    strata_diff = strata_transition["generated_seed_diff"]
+    require(strata_diff["current_lines"] - strata_diff["previous_lines"] ==
+            strata_diff["line_delta"] and
+            strata_diff["insertions"] - strata_diff["deletions"] ==
+            strata_diff["line_delta"],
+            "Patch 24.2q seed line delta is inconsistent")
+    require(strata_diff["previous_lines"] == strata_identities[0]["line_count"] and
+            strata_diff["current_lines"] == strata_identities[1]["line_count"],
+            "Patch 24.2q seed diff does not match its exact pre/post identities")
+    return strata_identities
 
 
 def accepted_live_seed_line_counts(record: dict) -> set[int]:

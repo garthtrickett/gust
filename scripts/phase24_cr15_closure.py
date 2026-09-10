@@ -166,6 +166,7 @@ SEED_SUCCESSOR_TRANSITIONS = (
     # what the live seed is allowed to be.
     "phase24_cra_stage1_seed_transition",
     "phase24_cr19_seed_transition",
+    "phase24_2q_seed_transition",
 )
 
 
