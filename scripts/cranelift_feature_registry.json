@@ -7759,7 +7759,7 @@
       "source_file_count": 1076,
       "site_count": 1754,
       "semantic_site_count": 983,
-      "semantic_manifest_digest": "88cd82c7b60f116b58fb423d1fae0170b4b261f38eab2e1b549a3d6a6927d288",
+      "semantic_manifest_digest": "3bdd29ad0c3f01a83574f2c3018b6a42fd4b4f78af37a2a70d7b145eaea22fce",
       "classification_counts": {
         "semantic_or_intrinsic_recognition": 983,
         "diagnostic": 5,
@@ -7770,14 +7770,14 @@
         "non_decision_comparison": 8
       },
       "partition_manifest_digests": {
-        "diagnostic": "fc5d2f09477eeab8e88b6234e5298dd5a5d97c8661c9b61389b150203f085d93",
+        "diagnostic": "881540d74001df3e92c8e94e40997723af4b045d39679cadfa8c9ea43a2cf16c",
         "serialization": "cd26d44606f736374209054c0fc91d72f950946ad84fad1a5e6efb6c7fc4f5b9",
-        "mangling_or_generated_name": "b207be66d80efa654b96de622785bcf94ade0c6e580586e8d3f397d419b03f01",
+        "mangling_or_generated_name": "b7eec05abb5aa6523d56ebca635261fd1d553fedf9d5e09b85c30d72981ae3ae",
         "comment": "fcc2bb945c9d5a1bcf92721a2abe030136801bee6ad1ae680aa199cdb2122b02",
         "fixture_or_evidence": "ebc99fcbf9471eee32e00cc224a7891d5bc0189d88758c2a8726f511e016b197",
         "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
       },
-      "complete_manifest_digest": "83e9eb1f09c3e2d54260f8366ded0fd91770fabf6ad44e130b42476f4b861f2f",
+      "complete_manifest_digest": "e4b1916bc6757374dc9035e230653069e5834fa42d245bb6bd4ce7f6b3ad41f1",
       "unknown_site_count": 0
     },
     "consumer_inventory_transition": {
