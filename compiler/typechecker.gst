@@ -3179,9 +3179,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             // '==' and '!=' on str compare content, not view identity (Patch
             // 24.2q). Both backends lower str comparisons through the
             // existing std_str_eq semantics and yield Int like every other
-            // binary comparison. A str against any other type falls through
-            // to the type mismatch below, which is the genuine error for a
-            // mixed comparison.
+            // binary comparison; the generated C is identical to the
+            // user-written std.str_eq idiom. A str against any other type
+            // falls through to the type mismatch below, which is the
+            // genuine error for a mixed comparison.
 
             if types_match(left_type, right_type, ctx) == 0 {
                 mut is_ptr_arith := 0;
