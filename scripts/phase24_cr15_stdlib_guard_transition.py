@@ -1018,6 +1018,45 @@ def pinned_manifest_class_contract(registry: dict) -> dict:
             bool(scope.get("path_prefixes")) and
             scope.get("outside_scope") == "rejected",
             "class appended text-surface scope is missing or drifted")
+    retirement = contract.get("phase24_3b_coordinate_retirement")
+    require(isinstance(retirement, dict),
+            "24.3b coordinate retirement contract is missing")
+    require(retirement.get("contract_version") ==
+            "phase24_3b_coordinate_retirement_v1" and
+            retirement.get("status") == "patch24_3b_complete" and
+            retirement.get("discharges") ==
+            "relay_site_anchor.unretired_coordinates_owner" and
+            retirement.get("retired_coordinate") == "line" and
+            retirement.get("readmission") == "rejected" and
+            retirement.get("census_verdict") ==
+            "retained_tripwire_with_registration_drill",
+            "24.3b coordinate retirement contract drifted")
+    require(retirement.get("invocation_digest_fields") == [
+                "path", "recipe", "compiler_token", "selection",
+                "consumer_class", "owner", "command",
+            ] and
+            "line" not in retirement["invocation_digest_fields"],
+            "24.3b invocation digest fields drifted")
+    require(sorted(retirement.get("live_c_digest_fields", [])) == sorted([
+                "case_key", "path", "recipe", "owner", "selection",
+                "consumer_class", "compiler_token", "command_digest",
+                "owner_file_digest", "complete_case_digest",
+            ]) and
+            "line" not in retirement["live_c_digest_fields"] and
+            "case_id" not in retirement["live_c_digest_fields"],
+            "24.3b live-C digest fields drifted")
+    require(retirement.get("observation_match_fields") == [
+                "path", "recipe", "compiler_token", "selection",
+                "consumer_class", "owner", "expected_artifact",
+                "expected_transition", "falsifier", "command",
+            ] and
+            "line" not in retirement["observation_match_fields"],
+            "24.3b observation match fields drifted")
+    require(retirement.get("opening_review_inventory_columns") == [
+                "Path", "Recipe", "Selection", "Class", "Owner",
+                "Expected artifact", "Expected transition", "Falsifier",
+            ],
+            "24.3b opening review columns drifted")
     return contract
 
 
@@ -1490,9 +1529,16 @@ def normalize_phase22_invocations(
                 "partial_extra_or_substituted_invocation") == "rejected",
             "Patch 24.2f invocation successor drifted")
         added = implementation_transition.get("current_invocation")
+        # Patch 24.3b: match on what the observation driver IS, not where it
+        # sits. `line` was the last coordinate in this match: any edit above
+        # the driver in its host file failed every guard with the message
+        # below, and the repair was a new successor link recording the same
+        # row at a new line. The chain above stays as the history of those
+        # moves; the match itself no longer needs one. Duplicates still fail:
+        # two rows with the same meaning match twice.
         matches = [row for row in normalized if all(
             row.get(field) == added.get(field) for field in (
-                "path", "line", "recipe", "compiler_token", "selection",
+                "path", "recipe", "compiler_token", "selection",
                 "consumer_class", "owner", "expected_artifact",
                 "expected_transition", "falsifier", "command"))]
         require(len(matches) == 1,
@@ -1679,9 +1725,54 @@ def normalize_phase23_text_surfaces(
                     "Patch 24.2g-auth changed text surfaces are partial or "
                     f"substituted: {path}")
             auth_pre_rows[path] = pre_by_path[path]
+    # Patch 24.3b: this patch's own moved surfaces are judged by its own
+    # successor, the way Patch 24.2g-auth judges its own. Extending the Patch
+    # 24.2f registration instead would rewrite what that closed record claims
+    # 24.2f registered, so the scope gains a third source rather than a wider
+    # 24.2f. Every combination of pre/post identity across the three sources
+    # is an exact registered state; anything else rejects.
+    retirement = registry.get(
+        "phase24_s1_8_authority_successor", {}).get(
+            "s1_9_resource_assignment_roadmap_successor", {}).get(
+                "coordinate_retirement_successor", {})
+    require(isinstance(retirement, dict) and
+            retirement.get("contract_version") ==
+            "phase24_3b_coordinate_retirement_text_surface_successor_v1" and
+            retirement.get("status") == "patch24_3b_complete" and
+            retirement.get("authority_base_main") ==
+            "f2fd96adad7ca0a08dcc7ae78a5a52aeba74904b" and
+            retirement.get("registered_changed_paths") == [
+                "scripts/phase22_opening.py",
+                "compiler/CRANELIFT_PHASE22_OPENING.md",
+            ] and
+            retirement.get("added_text_surfaces") == [] and
+            retirement.get("partial_extra_or_substituted_surface") ==
+            "rejected",
+            "Patch 24.3b coordinate retirement successor drifted")
+    retire_paths: list[str] = retirement["registered_changed_paths"]
+    retire_pre_rows: dict[str, dict] = {}
+    retire_pre_by_path = {row["path"]: row
+                          for row in retirement["previous_changed_text_surfaces"]}
+    retire_post_by_path = {row["path"]: row
+                           for row in retirement["current_changed_text_surfaces"]}
+    require(sorted(retire_pre_by_path) == sorted(retire_paths) and
+            sorted(retire_post_by_path) == sorted(retire_paths),
+            "Patch 24.3b registered paths and rows disagree")
+    retire_live_by_path = {row["path"]: row for row in rows
+                           if row["path"] in retire_paths}
+    require(sorted(retire_live_by_path) == sorted(retire_paths),
+            "Patch 24.3b registered text surface is missing")
+    for path in retire_paths:
+        live_row = retire_live_by_path[path]
+        require(live_row in (retire_pre_by_path[path],
+                             retire_post_by_path[path]),
+                "Patch 24.3b changed text surfaces are partial or "
+                f"substituted: {path}")
+        retire_pre_rows[path] = retire_pre_by_path[path]
     # The auth paths are excluded from the unchanged-other digest in every state,
     # so that digest does not depend on which of them has landed yet.
-    scope = union_paths
+    scope = union_paths + [
+        path for path in retire_paths if path not in union_paths]
     other_digest = digest_bytes(json.dumps(
         [row for row in rows if row["path"] not in scope],
         sort_keys=True, separators=(",", ":")).encode())
@@ -1699,9 +1790,17 @@ def normalize_phase23_text_surfaces(
     for path, row in auth_pre_rows.items():
         if path not in replacements:
             replacements[path] = copy.deepcopy(row)
+    # Project each retired path back onto its pre-patch row for the same
+    # reason: downstream projections predate this patch and expect the
+    # pre-patch row, not this successor's. No retired path overlaps the
+    # earlier sources, so the guard is structural rather than load-bearing.
+    for path, row in retire_pre_rows.items():
+        if path not in replacements:
+            replacements[path] = copy.deepcopy(row)
     added = set(transition["added_text_surfaces"])
     if auth_paths:
         added |= set(auth["added_text_surfaces"])
+    added |= set(retirement["added_text_surfaces"])
     rows = [replacements.get(row["path"], row) for row in rows
             if row["path"] not in added]
     canonical = value.get("canonical_phase23_text_surfaces", [])

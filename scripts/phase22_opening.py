@@ -435,11 +435,22 @@ def validate_landed_relay_command_substitution_rejection(
     )
     for old, new in substitutions:
         probe = copy.deepcopy(rows)
-        target = next(
+        # Patch 24.3b: find the probe row by what it IS, not where it sits.
+        # The old lookup pinned `line == 33`, so any edit above that fixture
+        # broke the harness instead of the guard. The fixture token below is
+        # present in exactly one row before mutation; duplicates fail loud,
+        # and a substitution that no longer applies fails rather than
+        # passing vacuously on a no-op replace.
+        candidates = [
             row for row in probe
             if row["path"] == "tests/e2e_codegen_assertions.gst" and
-            row["line"] == 33
-        )
+            "codegen_helper_pod_move.gst" in str(row["command"])
+        ]
+        require(len(candidates) == 1,
+                "landed relay probe row is missing or duplicated")
+        target = candidates[0]
+        require(old in str(target["command"]),
+                f"probe substitution no longer applies: {old}")
         target["command"] = str(target["command"]).replace(old, new)
         try:
             validate_post_flip_relay_transition(registry, probe)
@@ -662,11 +673,16 @@ def render(record: dict, rows: list[dict[str, object]], registry: dict) -> str:
             f"- `{site['path']}:{site['line']}` — `{site['command']}`"
         )
     lines += ["", "## Landed successor executable invocation inventory", ""]
-    lines.append("| Path | Line | Recipe | Selection | Class | Owner | Expected artifact | Expected transition | Falsifier |")
-    lines.append("| --- | ---: | --- | --- | --- | --- | --- | --- | --- |")
+    # Patch 24.3b: the inventory table names what each row IS, not where it
+    # sits. The Line column made every insertion above a row rewrite this
+    # generated review; each row stays identified by path, recipe, selection
+    # and command. The relay section above keeps its stored coordinates:
+    # that record is frozen evidence, not a live scan.
+    lines.append("| Path | Recipe | Selection | Class | Owner | Expected artifact | Expected transition | Falsifier |")
+    lines.append("| --- | --- | --- | --- | --- | --- | --- | --- |")
     for row in projected_rows:
         lines.append(
-            f"| `{row['path']}` | {row['line']} | `{row['recipe']}` | "
+            f"| `{row['path']}` | `{row['recipe']}` | "
             f"`{row['selection']}` | `{row['consumer_class']}` | "
             f"`{row['owner']}` | `{row['expected_artifact']}` | "
             f"`{row['expected_transition']}` | "

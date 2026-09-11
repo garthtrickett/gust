@@ -4267,7 +4267,7 @@
         {"path":"scripts/phase22_default_route_seed_convergence.py","digest":"99e4c562dfd3a20a7387923bdf0c77ba30ba9ee4b9c9b7e7fe5264957395e32a","match_counts":{"explicit_backend_spelling":4,"mir_to_c_name":12,"generated_c_contract":6},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
         {"path":"scripts/phase24_cr15_closure.py","digest":"99988cf543f4703eceeaff93c5c2840691340059c7678486a3c1a8eae8889a07","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":2,"generated_c_contract":0},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"}
       ],
-      "unchanged_other_text_surface_manifest_digest": "0600c00c0efb11af75a58a2cad02347eb827e31090dedb85bd277d39bb9a32ce",
+      "unchanged_other_text_surface_manifest_digest": "d6aba24683a496e7c080914c572724905b8799a028ffb1cef852cc2d87f28eb6",
       "partial_extra_or_substituted_surface": "rejected",
       "boundary": {
         "changes_compiler_source": false,
@@ -5487,7 +5487,7 @@
       "current_live_c_case_surface": {
         "count": 178,
         "complete_identity_manifest_digest": "982b643143070c04b653eb0ae70efdc0fbfd5cc2ed664dfe33d1c5491f3fc6ab",
-        "case_id_manifest_digest": "29d1e0b2d3f29d30d6f67081a9ee7d10d029fd7f1613afad495fce0defe6ae1e",
+        "case_id_manifest_digest": "65f463c939ea914cb4722938aaff5802b62c1ac7a9b36abcb047ce32b36cac8f",
         "owner_contract_count": 64,
         "owner_contract_manifest_digest": "cd3582ca7fb1330d06521748c666aba83be75977ab5dd5530afc2a5c3a3382e9",
         "owner_counts": {"cranelift":152,"stdlib":26},
@@ -5903,7 +5903,7 @@
       "previous_live_c_case_surface": {
         "count": 178,
         "complete_identity_manifest_digest": "982b643143070c04b653eb0ae70efdc0fbfd5cc2ed664dfe33d1c5491f3fc6ab",
-        "case_id_manifest_digest": "29d1e0b2d3f29d30d6f67081a9ee7d10d029fd7f1613afad495fce0defe6ae1e",
+        "case_id_manifest_digest": "65f463c939ea914cb4722938aaff5802b62c1ac7a9b36abcb047ce32b36cac8f",
         "owner_contract_count": 64,
         "owner_contract_manifest_digest": "cd3582ca7fb1330d06521748c666aba83be75977ab5dd5530afc2a5c3a3382e9",
         "owner_counts": {"cranelift":152,"stdlib":26},
@@ -5913,7 +5913,7 @@
       "current_live_c_case_surface": {
         "count": 178,
         "complete_identity_manifest_digest": "623eff3a33e0ad24423f7eec6e8e069d1d105f8c0509a93915d8cf82bdfed3e3",
-        "case_id_manifest_digest": "29d1e0b2d3f29d30d6f67081a9ee7d10d029fd7f1613afad495fce0defe6ae1e",
+        "case_id_manifest_digest": "65f463c939ea914cb4722938aaff5802b62c1ac7a9b36abcb047ce32b36cac8f",
         "owner_contract_count": 64,
         "owner_contract_manifest_digest": "365f55e3049cadcd2264e147eaaf27c8918d0357cd925879d41cad896df894ff",
         "owner_counts": {"cranelift":152,"stdlib":26},
@@ -6180,7 +6180,7 @@
       "previous_live_c_case_surface": {
         "count": 178,
         "complete_identity_manifest_digest": "623eff3a33e0ad24423f7eec6e8e069d1d105f8c0509a93915d8cf82bdfed3e3",
-        "case_id_manifest_digest": "29d1e0b2d3f29d30d6f67081a9ee7d10d029fd7f1613afad495fce0defe6ae1e",
+        "case_id_manifest_digest": "65f463c939ea914cb4722938aaff5802b62c1ac7a9b36abcb047ce32b36cac8f",
         "owner_contract_count": 64,
         "owner_contract_manifest_digest": "365f55e3049cadcd2264e147eaaf27c8918d0357cd925879d41cad896df894ff",
         "owner_counts": {"cranelift":152,"stdlib":26},
@@ -6190,7 +6190,7 @@
       "current_live_c_case_surface": {
         "count": 178,
         "complete_identity_manifest_digest": "f1ae6a46b34a5fef71742d22e33623ba432459e43b7dc8051d4cbcfc7a7d25da",
-        "case_id_manifest_digest": "29d1e0b2d3f29d30d6f67081a9ee7d10d029fd7f1613afad495fce0defe6ae1e",
+        "case_id_manifest_digest": "65f463c939ea914cb4722938aaff5802b62c1ac7a9b36abcb047ce32b36cac8f",
         "owner_contract_count": 64,
         "owner_contract_manifest_digest": "afb578b04882f39dac4e0ea6314ad81715f8c0be8bba28a565203c18d281981c",
         "owner_counts": {"cranelift":152,"stdlib":26},
@@ -6692,7 +6692,7 @@
         {
           "path": "scripts/phase22_opening.py",
           "digest": "cd62a233193281c00ad7f85ea92bc917fc4f0b55db968aab67dcb5e7f8ec5446",
-          "accepted_live_digests": ["88daff9c82fd440887b1933920bb6d4721ab3a60ef226159cca84a62c890949d"],
+          "accepted_live_digests": ["88daff9c82fd440887b1933920bb6d4721ab3a60ef226159cca84a62c890949d","0e479c6991d89e085e9177aaa393e4752ff1fbc576d19845f286fca0b9b04ec1"],
           "match_counts": {"explicit_backend_spelling":2,"mir_to_c_name":12,"generated_c_contract":11},
           "classification": "archive_candidate",
           "owner": "cranelift",
@@ -7127,7 +7127,7 @@
       "authority_base_main": "c37024afa580d1e03c5ff70150ed0ae7518a9648",
       "previous_live_c_case_surface": {
         "count": 178,
-        "case_id_manifest_digest": "29d1e0b2d3f29d30d6f67081a9ee7d10d029fd7f1613afad495fce0defe6ae1e",
+        "case_id_manifest_digest": "65f463c939ea914cb4722938aaff5802b62c1ac7a9b36abcb047ce32b36cac8f",
         "complete_identity_manifest_digest": "f1ae6a46b34a5fef71742d22e33623ba432459e43b7dc8051d4cbcfc7a7d25da",
         "owner_contract_count": 64,
         "owner_contract_manifest_digest": "afb578b04882f39dac4e0ea6314ad81715f8c0be8bba28a565203c18d281981c",
@@ -7137,8 +7137,8 @@
       },
       "current_live_c_case_surface": {
         "count": 178,
-        "case_id_manifest_digest": "29d1e0b2d3f29d30d6f67081a9ee7d10d029fd7f1613afad495fce0defe6ae1e",
-        "complete_identity_manifest_digest": "c45fc41435e62410a3d761c1bbaa33e9d7a41345e2db98084ef19869392010c6",
+        "case_id_manifest_digest": "65f463c939ea914cb4722938aaff5802b62c1ac7a9b36abcb047ce32b36cac8f",
+        "complete_identity_manifest_digest": "da5a3bcc4e0ce749b0b953b3d78dbb6de7c42876818ab0d31798cd2ef01b6adf",
         "owner_contract_count": 64,
         "owner_contract_manifest_digest": "afb578b04882f39dac4e0ea6314ad81715f8c0be8bba28a565203c18d281981c",
         "owner_counts": {"cranelift":152,"stdlib":26},
@@ -8500,9 +8500,65 @@
         ],
         "unretired_review_note": "de-coordinate rather than regenerate. Both live under compiler/ and are Cranelift-owned, so a Stdlib patch can never regenerate them; regenerating leaves the coordinate embedded and re-arms the trap. Measured constraint for the frozen-surface review: dropping line from case_id collides on 2 of 178 explicit_c rows - scripts/phase21_resource_sync_native_source.sh and scripts/phase21_selected_compiler_module_qualification.py, each running the same command twice in one file with no enclosing recipe - so it needs an occurrence ordinal, not a plain field drop.",
         "unmeasured_coordinate": "scripts/phase22_opening.py asserts row['line'] == 33 on tests/e2e_codegen_assertions.gst inside a falsifier self-test. No probe moved that file, so it is UNMEASURED rather than inert. It uses next(), so a shift raises StopIteration and the guard crashes instead of failing with a diagnostic that names the cause. tests/ is inside the Stdlib append scope, so it is reachable by the lane this patch serves.",
-        "drifted_site": "rejected"
-       },
-       "launch_gate_obligations": [
+         "drifted_site": "rejected"
+        },
+        "phase24_3b_coordinate_retirement": {
+         "contract_version": "phase24_3b_coordinate_retirement_v1",
+         "status": "patch24_3b_complete",
+         "discharges": "relay_site_anchor.unretired_coordinates_owner",
+         "retired_coordinate": "line",
+         "retirement_reason": "An absolute source line used as a proxy for a location. Insertions above a row moved it, failing guards and generated reviews whose meaning had not changed; the repair was a new registration recording the same row at a new line. Meaning keys (path, recipe, command and their digests) are stable across exactly the edit that moved the coordinate.",
+         "invocation_digest_fields": [
+          "path",
+          "recipe",
+          "compiler_token",
+          "selection",
+          "consumer_class",
+          "owner",
+          "command"
+         ],
+         "live_c_digest_fields": [
+          "case_key",
+          "path",
+          "recipe",
+          "owner",
+          "selection",
+          "consumer_class",
+          "compiler_token",
+          "command_digest",
+          "owner_file_digest",
+          "complete_case_digest"
+         ],
+         "live_c_key_note": "Stored key names are kept so every transition, schema row and review keeps its shape; case_id_manifest_digest now hashes the line-free case identity. Twin rows that share path, recipe and command are interchangeable by meaning; deletion still moves every count.",
+         "observation_match_fields": [
+          "path",
+          "recipe",
+          "compiler_token",
+          "selection",
+          "consumer_class",
+          "owner",
+          "expected_artifact",
+          "expected_transition",
+          "falsifier",
+          "command"
+         ],
+         "opening_review_inventory_columns": [
+          "Path",
+          "Recipe",
+          "Selection",
+          "Class",
+          "Owner",
+          "Expected artifact",
+          "Expected transition",
+          "Falsifier"
+         ],
+         "opening_review_relay_evidence": "retained_with_stored_coordinates",
+         "migration_review_verdict": "retained_frozen_evidence_shift_stable_by_measurement",
+         "readmission": "rejected",
+         "census_verdict": "retained_tripwire_with_registration_drill",
+         "census_reason": "Counts are the only pin on the lane-owned rows; lane growth rotates them through registration and other-lane growth through the append scope. The per-row meaning pins widened by this patch carry identity; the census carries the population."
+        },
+        "launch_gate_obligations": [
         {
          "id": "stdlib_safety_surface_audit",
          "former_phase_row": "27.5",
@@ -8693,6 +8749,24 @@
           "edits_stdlib": false,
           "begins_patch24_3": false
         }
+      },
+      "coordinate_retirement_successor": {
+        "contract_version": "phase24_3b_coordinate_retirement_text_surface_successor_v1",
+        "status": "patch24_3b_complete",
+        "authority_base_main": "f2fd96adad7ca0a08dcc7ae78a5a52aeba74904b",
+          "registered_changed_paths": ["scripts/phase22_opening.py","compiler/CRANELIFT_PHASE22_OPENING.md"],
+          "added_text_surfaces": [],
+          "previous_changed_text_surfaces": [
+            {"path":"scripts/phase22_opening.py","digest":"88daff9c82fd440887b1933920bb6d4721ab3a60ef226159cca84a62c890949d","match_counts":{"explicit_backend_spelling":2,"mir_to_c_name":12,"generated_c_contract":11},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
+            {"path":"compiler/CRANELIFT_PHASE22_OPENING.md","digest":"09b87097b939fb7f1244a539349e2406586e3f89c6375f33cc22cbedbfdd03d9","match_counts":{"explicit_backend_spelling":6,"mir_to_c_name":16,"generated_c_contract":9},"classification":"historical_only","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"preserve_as_historical_evidence","removal_phase":"not_removed_by_phase23","falsifier":"historical_record_is_reclassified_as_live_support"}
+          ],
+          "current_changed_text_surfaces": [
+            {"path":"scripts/phase22_opening.py","digest":"0e479c6991d89e085e9177aaa393e4752ff1fbc576d19845f286fca0b9b04ec1","match_counts":{"explicit_backend_spelling":2,"mir_to_c_name":12,"generated_c_contract":11},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
+            {"path":"compiler/CRANELIFT_PHASE22_OPENING.md","digest":"11019322c96a0ed0ebf79540bb044d77eeec5acb4dc245b35b7536e0a2dc1208","match_counts":{"explicit_backend_spelling":6,"mir_to_c_name":16,"generated_c_contract":9},"classification":"historical_only","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"preserve_as_historical_evidence","removal_phase":"not_removed_by_phase23","falsifier":"historical_record_is_reclassified_as_live_support"}
+          ],
+          "partial_extra_or_substituted_surface": "rejected",
+          "aggregate_rotation_previous": "0600c00c0efb11af75a58a2cad02347eb827e31090dedb85bd277d39bb9a32ce",
+          "aggregate_rotation_reason": "Scope gains this patch's moved surfaces, so excluded rows leave the aggregate input and the stored value is recomputed, not relaxed. Same drill as the str-equality moves. The rotated value keeps every reader and inversion working unchanged."
       },
       "boundary": {
         "changes_compiler_runtime_or_stdlib_source": false,
