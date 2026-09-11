@@ -847,6 +847,13 @@ passes; and no new semantic choice, MIR/ABI/runtime change, or broader refactor
 was required. If this cannot be satisfied from existing authority, stop rather
 than publish a rule.
 
+**Status 2026-09-11 (operator-approved AMEND/CLOSE):** stopped per the gate.
+Removing the three branches fires the universal checks on the compiler's own
+sources (`WriteWriteHazard` at `typechecker.gst:8151` on fresh-struct field
+init) and exhausts the 4 GiB arena on the `test_runner_entry` closure, while
+old-rules stage 1 passes clean; full evidence in the coordination report.
+Refine-analysis and source-migration explicitly NOT taken: out of charter.
+
 ## Patch 24.3a — Preflight Bootstrap Seed Reconvergence
 
 **Purpose:** reconverge the generated bootstrap seed after the final
@@ -890,9 +897,11 @@ all later architecture phases inactive.
   placeholders, mark every preflight row DONE, publish the atomic closure PR,
   and write a terminal lane state after merge.
 
-**Exit Gate:** no accepted or rejected Gust meaning depends on a filename
-substring; both former branch behaviours were characterized before correction;
-the concrete spelling inventory is complete and report-only; bootstrap is
+**Exit Gate:** the filename-selected behaviours were characterized before any
+correction attempt (Patch 24.1 evidence stands as the record); the universal
+rule is carried as future work — refine-analysis and source-migration
+explicitly NOT taken here as out of charter (see the 24.3 status note); the
+concrete spelling inventory is complete and report-only; bootstrap is
 converged; the exact-main Historical population and closure PR are fully green;
 all review threads are resolved; CR-15 remains complete and handed off; and
 Phase 24 backend retirement, Phase 24.5, Phase 25, Stdlib implementation, and
