@@ -108,6 +108,42 @@ def capability_rows(registry: dict) -> list[dict[str, object]]:
     return rows
 
 
+# Patch 24.3b: the live-C digests cover what a case MEANS, not where it
+# sits. `case_id` keeps its `path:line:recipe` form as display and lookup
+# identity, but the digest inputs project the coordinate away:
+# LIVE_C_DIGEST_FIELDS plus the derived line-free case_key. The key alone
+# would collide on two twin pairs that run the same command twice in one
+# file with no enclosing recipe; the command and owner digests travel with
+# it, so an insertion above a row moves no digest while a meaning change
+# still does. The class contract mirrors the field list: re-admitting `line`
+# without updating the contract fails the retirement check rather than
+# silently re-pinning coordinates.
+LIVE_C_DIGEST_FIELDS = (
+    "path",
+    "recipe",
+    "owner",
+    "selection",
+    "consumer_class",
+    "compiler_token",
+    "command_digest",
+    "owner_file_digest",
+    "complete_case_digest",
+)
+
+
+def live_c_digest_rows(
+        rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    projected = []
+    for row in rows:
+        digest_row = {
+            field: row[field] for field in LIVE_C_DIGEST_FIELDS
+        }
+        digest_row["case_key"] = (
+            f"{row['path']}:{row['recipe'] or 'direct'}")
+        projected.append(digest_row)
+    return projected
+
+
 def live_c_case_rows() -> list[dict[str, object]]:
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     transition = None
@@ -129,7 +165,6 @@ def live_c_case_rows() -> list[dict[str, object]]:
         require(owner_path.is_file(), f"live-C owner path is missing: {path}")
         complete = {
             "path": path,
-            "line": line,
             "recipe": recipe,
             "compiler_token": row["compiler_token"],
             "selection": row["selection"],
@@ -155,7 +190,14 @@ def live_c_case_rows() -> list[dict[str, object]]:
             ),
             "complete_case_digest": canonical_digest(complete),
         })
-    rows.sort(key=lambda row: str(row["case_id"]))
+    # Patch 24.3b: meaning order, not coordinate order. Sorting by the
+    # line-bearing case_id string flips survivors when lines cross a decimal
+    # boundary (lexicographic "10" < "9"), moving the digest on a pure shift.
+    rows.sort(key=lambda row: (
+        str(row["path"]), str(row["recipe"]),
+        str(row["compiler_token"]), str(row["command_digest"]),
+        str(row["consumer_class"]), str(row["owner"]),
+    ))
     require(rows, "live explicit-C case surface is empty")
     require(len({row["case_id"] for row in rows}) == len(rows),
             "live explicit-C case IDs are not unique")
@@ -205,11 +247,15 @@ def live_c_summary(rows: list[dict[str, object]]) -> dict[str, object]:
     owner_contracts = sorted({
         (str(row["path"]), str(row["owner_file_digest"])) for row in rows
     })
+    # Patch 24.3b: the stored key name `case_id_manifest_digest` is kept so
+    # every transition, schema row and review keeps its shape; what it hashes
+    # is the line-free case identity. See the class contract record.
+    digest_rows = live_c_digest_rows(rows)
     return {
         "count": len(rows),
-        "complete_identity_manifest_digest": canonical_digest(rows),
+        "complete_identity_manifest_digest": canonical_digest(digest_rows),
         "case_id_manifest_digest": canonical_digest(
-            [row["case_id"] for row in rows]
+            [row["case_key"] for row in digest_rows]
         ),
         "owner_contract_count": len(owner_contracts),
         "owner_contract_manifest_digest": canonical_digest(owner_contracts),
@@ -311,14 +357,29 @@ def validate_mutations(record: dict, registry: dict) -> None:
         "live_c_case_surface": live_c_summary(cases[1:]),
     }))
     case_substitution = copy.deepcopy(cases)
-    case_substitution[0]["case_id"] = \
-        str(case_substitution[0]["case_id"]) + ":substituted"
+    # Patch 24.3b: substitute MEANING, not the coordinate. case_id keeps the
+    # line for identity, so mutating it no longer reaches any digest; moving
+    # the recipe does, which is what this probe was always trying to say.
+    case_substitution[0]["recipe"] = \
+        str(case_substitution[0]["recipe"]) + "_substituted"
     probes.append(("same-count live-C case substitution", {
         **expected,
         "live_c_case_surface": live_c_summary(case_substitution),
     }))
     for name, probe in probes:
         require(not policy_accepts(record, probe), f"accepted {name}")
+    # Patch 24.3b: the retired coordinate must stay retired. A whole-tree
+    # insertion above every case moves every line and its case_id string and
+    # must NOT move the surface; if it does, `line` crept back into a digest.
+    line_shift = copy.deepcopy(cases)
+    for row in line_shift:
+        row["line"] = int(row["line"]) + 1
+        row["case_id"] = (
+            f"{row['path']}:{row['line']}:{row['recipe'] or 'direct'}")
+    require(policy_accepts(record, {
+        **expected,
+        "live_c_case_surface": live_c_summary(line_shift),
+    }), "rejected line-shifted live-C surface: a digest still pins coordinates")
 
     weakened = copy.deepcopy(record)
     weakened["capability_surface"]["count"] -= 1
@@ -602,9 +663,19 @@ def render(record: dict, registry: dict) -> str:
         "| Case | Owner | Class | Compiler | Command identity | Owner-file identity | Complete identity |",
         "| --- | --- | --- | --- | --- | --- | --- |",
     ]
+    # Patch 24.3b: the Case column names what the row IS, not where it sits.
+    # Rendering the line-bearing case_id made every insertion above a case
+    # rewrite this generated review. The line-free case key collides on two
+    # twin pairs that run the same command twice in one file with no
+    # enclosing recipe, so twins take an occurrence ordinal. The order is the
+    # meaning sort above, so ordinals survive any line shift.
+    seen: dict[str, int] = {}
     for row in cases:
+        key = f"{row['path']}:{row['recipe'] or 'direct'}"
+        seen[key] = seen.get(key, 0) + 1
+        display = key if seen[key] == 1 else f"{key}~{seen[key]}"
         lines.append(
-            f"| `{row['case_id']}` | `{row['owner']}` | "
+            f"| `{display}` | `{row['owner']}` | "
             f"`{row['consumer_class']}` | `{row['compiler_token']}` | "
             f"`{row['command_digest']}` | `{row['owner_file_digest']}` | "
             f"`{row['complete_case_digest']}` |"

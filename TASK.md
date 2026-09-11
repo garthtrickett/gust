@@ -823,6 +823,24 @@ it protects; every retirement has a proved inversion; the six-site post-flip
 relay identity, the no-fallback guarantee and the seed digest are unchanged; and
 no closed phase's evidence became silently rewritable.
 
+**Status 2026-09-11 — implemented, pending publication:** retires the remaining
+`line` coordinates owned by this patch (`relay_site_anchor` names 24.3b).
+A one-line justfile-top insertion failed three sites pre-patch (opening review
+stale; xf/fro 24.0c transitions) and passes everywhere post-patch. Retired:
+invocation-manifest digest input, both live-C case digests (plus meaning sort),
+observation-driver match fields, opening-review inventory Line column (regen),
+frozen-surface review Case column (line-free keys with twin ordinals; regen),
+relay probe lookup. Kept with record: seed digest, relay identity, no-fallback,
+census counts (tripwire on lane-owned rows; growth via registration/append
+scope), case_id strings, migration review (frozen evidence, shift-stable by
+probe), 24.1 site coordinates (frozen observation, moves registered),
+removal-phase rows (phase23 authority). Rotated with provenance: both live-C
+digests (value rotation preserving every == link) and the unchanged-other
+aggregate (scope gains the moved surfaces; same drill as the str-equality
+moves). Inversions: 11/11 in
+`scripts/phase24_3b_coordinate_retirement_inversions.py` plus in-guard
+line-shift acceptance in both digest falsifiers.
+
 ## Patch 24.3 — Filename-Independent Typechecker Correction
 
 **Purpose:** remove source-filename control over accepted meaning using only the

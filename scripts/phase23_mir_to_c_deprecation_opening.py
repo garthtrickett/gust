@@ -76,6 +76,7 @@ SELF_EXCLUSIONS = {
     "scripts/phase24_filename_behavior_characterization.py",
     "scripts/phase24_docs_successor_retirement_inversions.py",
     "scripts/phase24_3b_dead_chain_inversions.py",
+    "scripts/phase24_3b_coordinate_retirement_inversions.py",
 }
 
 SURFACE_PATTERNS = {
@@ -423,6 +424,33 @@ def scan_invocations() -> list[dict[str, object]]:
     ]
 
 
+# Patch 24.3b: the manifest digest covers what an invocation row MEANS, not
+# where it sits. `line` is a coordinate: any insertion above a row moves it,
+# so hashing it turns an unrelated edit into manifest drift. The rows keep
+# their lines for display and for the meaning-anchored checks downstream;
+# only the digest input projects the coordinate away. INVOCATION_DIGEST_FIELDS
+# is the allowlist the class contract mirrors: re-admitting `line` here
+# without updating the contract fails the retirement check rather than
+# silently re-pinning coordinates.
+INVOCATION_DIGEST_FIELDS = (
+    "path",
+    "recipe",
+    "compiler_token",
+    "selection",
+    "consumer_class",
+    "owner",
+    "command",
+)
+
+
+def invocation_digest_rows(
+        rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    return [
+        {field: row[field] for field in INVOCATION_DIGEST_FIELDS}
+        for row in rows
+    ]
+
+
 def inventory_summary() -> dict[str, object]:
     text_rows = scan_text_surfaces()
     invocation_rows = scan_invocations()
@@ -434,7 +462,8 @@ def inventory_summary() -> dict[str, object]:
         "text_surface_count": len(text_rows),
         "text_surface_manifest_digest": canonical_digest(text_rows),
         "invocation_count": len(invocation_rows),
-        "invocation_manifest_digest": canonical_digest(invocation_rows),
+        "invocation_manifest_digest": canonical_digest(
+            invocation_digest_rows(invocation_rows)),
         "structural_surface_count": len(structural_rows),
         "structural_manifest_digest": canonical_digest(structural_rows),
         "classification_counts": dict(sorted(classes.items())),
@@ -857,8 +886,19 @@ def validate_identity_falsifiers(expected: dict[str, object]) -> None:
             "same-count text path substitution was accepted")
     command_substitution = copy.deepcopy(invocation_rows)
     command_substitution[0]["command"] = str(command_substitution[0]["command"]) + " --substituted"
-    require(canonical_digest(command_substitution) != expected["invocation_manifest_digest"],
+    require(canonical_digest(invocation_digest_rows(command_substitution)) !=
+            expected["invocation_manifest_digest"],
             "same-count invocation command substitution was accepted")
+    # Patch 24.3b: the retired coordinate must stay retired. A whole-tree
+    # insertion above every row moves every line and must NOT move the
+    # digest; if it does, `line` crept back into the digest input.
+    line_shift = copy.deepcopy(invocation_rows)
+    for row in line_shift:
+        row["line"] = int(row["line"]) + 1
+    require(canonical_digest(invocation_digest_rows(line_shift)) ==
+            expected["invocation_manifest_digest"],
+            "line-shifted inventory was rejected: "
+            "the digest still pins coordinates")
 
 
 def projected_text_surfaces(
