@@ -823,8 +823,12 @@ it protects; every retirement has a proved inversion; the six-site post-flip
 relay identity, the no-fallback guarantee and the seed digest are unchanged; and
 no closed phase's evidence became silently rewritable.
 
-**Status 2026-09-11 — implemented, pending publication:** retires the remaining
-`line` coordinates owned by this patch (`relay_site_anchor` names 24.3b).
+**Status 2026-09-11 — DONE:** merged as `31b49779` (PR #382, exact head
+`e44fa382`, 110/110 PR workflows + Trusted Gate green, zero threads).
+Retired the `line` coordinates owned by this patch; kept seed, relay,
+no-fallback, census counts, case_id strings, migration review, 24.1 sites
+and removal-phase rows with record; rotated both live-C digests and the
+unchanged-other aggregate with provenance; inversions 11/11.
 A one-line justfile-top insertion failed three sites pre-patch (opening review
 stale; xf/fro 24.0c transitions) and passes everywhere post-patch. Retired:
 invocation-manifest digest input, both live-C case digests (plus meaning sort),
