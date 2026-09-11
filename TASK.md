@@ -149,7 +149,7 @@ Stdlib handoff are complete.
 - [x] Patch 24.2w — CR-19 Bootstrap Seed Publication — DONE
 - [x] Patch 24.2x — CR-19 Transition Closure and Stdlib Handoff — DONE
 - [ ] Patch 24.3 — Filename-Independent Typechecker Correction
-- [ ] Patch 24.3a — Preflight Bootstrap Seed Reconvergence
+- [x] Patch 24.3a — Preflight Bootstrap Seed Reconvergence — DONE
 - [ ] Patch 24.3b — Pinned-Manifest Retirement
 - [ ] Patch 24.4 — Opening-Preflight Closure
 
@@ -878,6 +878,16 @@ self-hosted typechecker correction, in an isolated seed-only publication.
 **Exit Gate:** bootstrap reaches a byte-identical fixed point; the rebuilt
 compiler preserves both supported paths and Patch 24.3 behaviour; a changed
 seed is the sole PR path; and no Phase 25 bootstrap-route work is introduced.
+
+**Status 2026-09-11 — checked no-diff fixed point:** `make bootstrap` exit 0
+at merged `main` 2a91c35a; stage2 == stage3 == committed `gust_v4.c`
+(65998 lines, SHA256
+`a1ba675a1c244af0a77485d48a5865833eee896a4a2b746ea5728e20f590eebb`);
+no seed commit manufactured. Filename-invariance re-verified through the
+rebuilt compiler: all 4 witness pairs byte-identical to the characterized
+observations (8/8). Attribution: 24.2q seed movement landed as merge
+2b8417a7 (seed commit `c78933b5`: `0bb8d3cc`/65986 → `a1ba675a`/65998);
+Patch 24.3 has no movement (amended, no source change).
 
 ## Patch 24.4 — Opening-Preflight Closure
 
