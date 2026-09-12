@@ -6,8 +6,8 @@
 
 Status: `patch24_11_complete`
 Authority base: `b7b1713cd65630b14ae92e46afd393990928a2e2`
-Rows: `70`
-Digest: `479a29a0ae6b3bbc0e711a6ffa3d91280ebbbbcbab34f969f2108bd1d665e9f8`
+Rows: `104`
+Digest: `75e701814217ba938cefa124fb2a31cb16aedb3d79e04ce6558f23c49774c54f`
 
 ## Bootstrap-entry decision
 
@@ -44,13 +44,41 @@ Digest: `479a29a0ae6b3bbc0e711a6ffa3d91280ebbbbcbab34f969f2108bd1d665e9f8`
 
 - guard-cranelift-differential-family (convert)
 - guard-cranelift-phase11-block-parameter-loop-parity (convert)
+- guard-cranelift-phase11-close (retire)
 - guard-cranelift-phase11-direct-call-abi-parity (convert)
 - guard-cranelift-phase11-local-state-parity (convert)
 - guard-cranelift-phase11-metadata-diagnostic-parity (convert)
 - guard-cranelift-phase11-module-import-runtime-parity (convert)
 - guard-cranelift-phase11-scalar-expression-parity (convert)
 - guard-cranelift-phase11-structured-cfg-parity (convert)
+- guard-cranelift-phase13-composition-differential (retire)
+- guard-cranelift-phase13-source-metadata-parity (retire)
+- guard-cranelift-phase14-composition-differential (retire)
+- guard-cranelift-phase15-resource-composition-differential (retire)
+- guard-cranelift-phase16-composition-differential (retire)
+- guard-cranelift-phase19-classification-parity (retire)
+- guard-cranelift-phase19-composition-parity (retire)
+- guard-cranelift-phase19-gust-name-list-removed-parity (retire)
+- guard-cranelift-phase19-rename-invariance (retire)
+- guard-cranelift-phase19-representation-parity (retire)
+- guard-cranelift-phase19-rule-convergence-parity (retire)
+- guard-cranelift-phase19-type-naming-parity (retire)
+- guard-cranelift-phase21-collection-string-native-source-parity (convert)
 - guard-cranelift-phase21-cranelift-built-compiler-programs-evidence (retire)
+- guard-cranelift-phase21-cross-tenant-capability-evidence (convert)
+- guard-cranelift-phase21-filesystem-allocation-native-source-parity (convert)
+- guard-cranelift-phase21-inert-scoped-query-records-evidence (convert)
+- guard-cranelift-phase21-od8-adversarial-verdict-evidence (convert)
+- guard-cranelift-phase21-opening-evidence (convert)
+- guard-cranelift-phase21-per-root-obligations-evidence (convert)
+- guard-cranelift-phase21-residue-migration-authority-evidence (convert)
+- guard-cranelift-phase21-resource-sync-native-source-parity (convert)
+- guard-cranelift-phase21-trusted-scope-provenance-evidence (convert)
+- guard-cranelift-phase21-typed-query-noop-surface-evidence (convert)
+- guard-cranelift-phase22-default-native-package-evidence (retire)
+- guard-cranelift-phase22-explicit-c-migration-evidence (retire)
+- guard-cranelift-phase22-native-implicit-output-evidence (retire)
+- guard-cranelift-phase22-opening-evidence (retire)
 - guard-cranelift-phase23-mir-to-c-focused-live-contract (retire)
 - guard-cranelift-phase23-mir-to-c-focused-live-evidence (retire)
 - guard-mir-feature-if-else-return-int-preservation (convert)
@@ -59,6 +87,7 @@ Digest: `479a29a0ae6b3bbc0e711a6ffa3d91280ebbbbcbab34f969f2108bd1d665e9f8`
 - guard-mir-feature-return-int-preservation (convert)
 - phase21-cranelift-built-compiler-programs.yml (retire)
 - phase23-mir-to-c-focused-live.yml (retire)
+- scripts/cranelift_ci_family.py :: ["just", runner["static_guard"]] (convert)
 - scripts/phase23_mir_to_c_focused_live.py (retire)
 - sh-family:early-differential (retire)
 - sh-family:phase15-16-composition (retire)
@@ -124,9 +153,14 @@ Digest: `479a29a0ae6b3bbc0e711a6ffa3d91280ebbbbcbab34f969f2108bd1d665e9f8`
 
 ### stdlib-coordination
 
+- guard-stdlib-s1-branded-collections (migrate)
+- guard-stdlib-s1-clone-destination (migrate)
 - guard-stdlib-s1-collection-receivers (migrate)
+- guard-stdlib-s1-composition (migrate)
 - guard-stdlib-s1-migration (migrate)
+- guard-stdlib-s1-mutex-guard-scope (migrate)
 - guard-stdlib-s1-resource-prerequisites (migrate)
 - guard-stdlib-s1-str-equality-diagnostic (migrate)
+- guard-stdlib-s1-str-surface (migrate)
 - sh-family:stdlib-parity (migrate)
 - sh-family:stdlib-runner-pinned (migrate)

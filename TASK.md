@@ -256,12 +256,15 @@ since made stale.
 **Exit Gate:** the inventory is complete with an owning patch per row; every
 row carries a live falsifier; nothing is removed or retired here.
 
-**Status 2026-09-12 — DONE:** 70 rows across bootstrap, compiler, runner,
+**Status 2026-09-12 — DONE:** 104 rows across bootstrap, compiler, runner,
 parity, test-suite, coordination, pin, workflow, registry, package/docs,
-fixture, and script classes with owning patch and live falsifier each; the
-bootstrap-entry decision (`--backend bootstrap-emitter`, help-unadvertised,
-24.13 lands) is recorded in registry authority; no removal or retirement
-in this patch.
+fixture, and script classes with owning patch and live falsifier each
+(24.12:54, 24.16:12, 24.15:11, 24.13:9, stdlib-coordination:11, 25:4,
+24.14:3), including direct C-harness callers and the ci-family dispatch
+that the spelling sweep cannot see; the
+bootstrap-entry decision (`--backend bootstrap-emitter`,
+help-unadvertised, 24.13 lands) is recorded in registry authority; no
+removal or retirement in this patch.
 
 ## Patch 24.12 — Frozen Expected-Behaviour Oracle Replacement
 

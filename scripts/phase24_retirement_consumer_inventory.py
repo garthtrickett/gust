@@ -345,6 +345,76 @@ RECIPE_ROWS = [
      '\'./gust --backend c "$source_fixture"\'', "24.16", "retire", True),
     ("guard-cranelift-phase13-close",
      '\'./gust --backend c "$source_fixture"\'', "24.16", "retire", True),
+    # Direct C-harness callers: these recipes invoke a harness that executes
+    # live C, so the harness retirement/conversion rewrites them too. Pure
+    # dispatchers to registered rows (e.g. phase13 family parity calling
+    # phase11 parity) carry no C of their own and need no row.
+    ("guard-cranelift-phase11-close",
+     "scripts/phase13_registry_differential.sh", "24.12", "retire", True),
+    ("guard-cranelift-phase13-composition-differential",
+     "scripts/phase13_registry_differential.sh", "24.12", "retire", True),
+    ("guard-cranelift-phase13-source-metadata-parity",
+     "scripts/phase13_source_metadata.sh", "24.12", "retire", True),
+    ("guard-cranelift-phase14-composition-differential",
+     "scripts/phase14_composition_differential.sh", "24.12", "retire", True),
+    ("guard-cranelift-phase15-resource-composition-differential",
+     "scripts/phase15_resource_composition_parity.sh", "24.12", "retire", True),
+    ("guard-cranelift-phase16-composition-differential",
+     "scripts/phase16_abi_composition_parity.sh", "24.12", "retire", True),
+    ("guard-cranelift-phase19-classification-parity",
+     "scripts/phase19_classification_parity.sh", "24.12", "retire", True),
+    ("guard-cranelift-phase19-composition-parity",
+     "scripts/phase19_composition_parity.sh", "24.12", "retire", True),
+    ("guard-cranelift-phase19-gust-name-list-removed-parity",
+     "scripts/phase19_gust_name_list_removed_parity.sh", "24.12", "retire", True),
+    ("guard-cranelift-phase19-rename-invariance",
+     "scripts/phase19_rename_invariance.sh", "24.12", "retire", True),
+    ("guard-cranelift-phase19-representation-parity",
+     "scripts/phase19_representation_parity.sh", "24.12", "retire", True),
+    ("guard-cranelift-phase19-rule-convergence-parity",
+     "scripts/phase19_rule_convergence_parity.sh", "24.12", "retire", True),
+    ("guard-cranelift-phase19-type-naming-parity",
+     "scripts/phase19_type_naming_parity.sh", "24.12", "retire", True),
+    ("guard-cranelift-phase21-collection-string-native-source-parity",
+     "scripts/phase21_collection_string_native_source.sh", "24.12", "convert", True),
+    ("guard-cranelift-phase21-cross-tenant-capability-evidence",
+     "scripts/phase21_cross_tenant_capability.sh", "24.12", "convert", True),
+    ("guard-cranelift-phase21-filesystem-allocation-native-source-parity",
+     "scripts/phase21_filesystem_allocation_native_source.sh", "24.12", "convert", True),
+    ("guard-cranelift-phase21-inert-scoped-query-records-evidence",
+     "scripts/phase21_inert_scoped_query_records.sh", "24.12", "convert", True),
+    ("guard-cranelift-phase21-od8-adversarial-verdict-evidence",
+     "scripts/phase21_od8_adversarial_verdict.sh", "24.12", "convert", True),
+    ("guard-cranelift-phase21-opening-evidence",
+     "scripts/phase21_opening.sh", "24.12", "convert", True),
+    ("guard-cranelift-phase21-per-root-obligations-evidence",
+     "scripts/phase21_per_root_obligations.sh", "24.12", "convert", True),
+    ("guard-cranelift-phase21-residue-migration-authority-evidence",
+     "scripts/phase21_opening.sh", "24.12", "convert", True),
+    ("guard-cranelift-phase21-resource-sync-native-source-parity",
+     "scripts/phase21_resource_sync_native_source.sh", "24.12", "convert", True),
+    ("guard-cranelift-phase21-trusted-scope-provenance-evidence",
+     "scripts/phase21_trusted_scope_provenance.sh", "24.12", "convert", True),
+    ("guard-cranelift-phase21-typed-query-noop-surface-evidence",
+     "scripts/phase21_typed_query_noop_surface.sh", "24.12", "convert", True),
+    ("guard-cranelift-phase22-default-native-package-evidence",
+     "scripts/phase22_default_native_package.sh", "24.12", "retire", True),
+    ("guard-cranelift-phase22-explicit-c-migration-evidence",
+     "scripts/phase22_explicit_c_migration.sh", "24.12", "retire", True),
+    ("guard-cranelift-phase22-native-implicit-output-evidence",
+     "scripts/phase22_native_implicit_output.sh", "24.12", "retire", True),
+    ("guard-cranelift-phase22-opening-evidence",
+     "scripts/phase22_opening.sh", "24.12", "retire", True),
+    ("guard-stdlib-s1-branded-collections",
+     "scripts/stdlib_s1_branded_collections_parity.sh", "stdlib-coordination", "migrate", True),
+    ("guard-stdlib-s1-clone-destination",
+     "scripts/stdlib_s1_clone_destination_parity.sh", "stdlib-coordination", "migrate", True),
+    ("guard-stdlib-s1-composition",
+     "scripts/stdlib_s1_composition_parity.sh", "stdlib-coordination", "migrate", True),
+    ("guard-stdlib-s1-mutex-guard-scope",
+     "scripts/stdlib_s1_mutex_guard_scope_parity.sh", "stdlib-coordination", "migrate", True),
+    ("guard-stdlib-s1-str-surface",
+     'bash scripts/run-gust-file.sh "$fixture"', "stdlib-coordination", "migrate", True),
 ]
 
 WORKFLOW_ROWS = [
@@ -406,6 +476,8 @@ FILE_ROWS = [
      "24.14", "migrate"),
     ("scripts/run-gust-file.sh",
      'RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-mir-to-c}"', "24.13", "migrate"),
+    ("scripts/cranelift_ci_family.py",
+     '["just", runner["static_guard"]]', "24.12", "convert"),
     ("tests/test_runner.gst",
      'std.Concat("./gust --backend mir-to-c ", path)', "24.13", "migrate"),
     ("tests/e2e_codegen_assertions.gst",
@@ -473,6 +545,48 @@ def liveness() -> tuple[set[str], set[str]]:
                   "make-test-guards", "make-test-guards-policy"}
     return set(module.reachable(edges, roots)), named | set(
         module.reachable(edges, make_roots))
+
+
+HARNESS_CALL = re.compile(r"bash (scripts/[A-Za-z0-9_.-]+\.sh)")
+
+# Recipes invoking the shared runner with an explicit non-C route. Verified
+# clean by inspection (both pin GUST_RUNNER_ROUTE=cranelift on the invoking
+# line); the check below re-verifies that pin rather than trusting this list.
+CLEAN_RUNNER_CALLERS = {"gt-one-gst", "guard"}
+
+
+def check_harness_callers(bodies: dict[str, str],
+                          registered: set[str]) -> None:
+    """Every direct C-harness invocation belongs to a registered row.
+
+    The spelling sweep cannot see transitive execution: a recipe that calls
+    a C-executing harness without naming a backend still runs live C. This
+    closes that gap. The two developer entries invoking the shared runner
+    with an explicit cranelift route are admitted by their verified pin,
+    not by name.
+    """
+    sh_with_c = set()
+    for path in (ROOT / "scripts").glob("*.sh"):
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        if BACKEND_SPELLING.search(text):
+            sh_with_c.add(path.name)
+    for recipe, body in bodies.items():
+        for match in HARNESS_CALL.finditer(body):
+            harness = match.group(1)
+            if harness == "scripts/run-gust-file.sh":
+                if recipe in CLEAN_RUNNER_CALLERS:
+                    line = next(line for line in body.split("\n")
+                                if "run-gust-file.sh" in line)
+                    require("GUST_RUNNER_ROUTE=cranelift" in line,
+                            f"runner caller lost its explicit route: {recipe}")
+                    continue
+            if harness.split("/")[-1] not in sh_with_c:
+                continue
+            require(recipe in registered,
+                    f"unregistered C-harness caller: {recipe} -> {harness}")
 
 
 def check_sweep() -> dict[str, int]:
@@ -560,6 +674,8 @@ def validate() -> dict:
     require(counts == expected_sweep(),
             f"live C sweep moved without inventory update: "
             f"{sorted(set(counts) ^ set(expected_sweep()))}")
+    check_harness_callers(
+        bodies, {recipe for recipe, _, _, _, _ in RECIPE_ROWS})
 
     rows = ([{"id": recipe, "owner_patch": owner, "action": action}
              for recipe, _, owner, action, _ in RECIPE_ROWS]

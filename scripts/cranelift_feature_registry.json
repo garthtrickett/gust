@@ -4267,7 +4267,7 @@
         {"path":"scripts/phase22_default_route_seed_convergence.py","digest":"99e4c562dfd3a20a7387923bdf0c77ba30ba9ee4b9c9b7e7fe5264957395e32a","match_counts":{"explicit_backend_spelling":4,"mir_to_c_name":12,"generated_c_contract":6},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
         {"path":"scripts/phase24_cr15_closure.py","digest":"99988cf543f4703eceeaff93c5c2840691340059c7678486a3c1a8eae8889a07","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":2,"generated_c_contract":0},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"}
       ],
-      "unchanged_other_text_surface_manifest_digest": "86da6cbe6722876256b9f9ec4ca039465c13771d15aef76b41be90fdb407d9e1",
+      "unchanged_other_text_surface_manifest_digest": "8306ad219c513b7d2490470970654ccbb390890f5b0e6334d63c5516eee63b79",
       "partial_extra_or_substituted_surface": "rejected",
       "boundary": {
         "changes_compiler_source": false,
@@ -23329,6 +23329,171 @@
         "action": "retire"
       },
       {
+        "id": "guard-cranelift-phase11-close",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "guard-cranelift-phase13-composition-differential",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "guard-cranelift-phase13-source-metadata-parity",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "guard-cranelift-phase14-composition-differential",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "guard-cranelift-phase15-resource-composition-differential",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "guard-cranelift-phase16-composition-differential",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "guard-cranelift-phase19-classification-parity",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "guard-cranelift-phase19-composition-parity",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "guard-cranelift-phase19-gust-name-list-removed-parity",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "guard-cranelift-phase19-rename-invariance",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "guard-cranelift-phase19-representation-parity",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "guard-cranelift-phase19-rule-convergence-parity",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "guard-cranelift-phase19-type-naming-parity",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "guard-cranelift-phase21-collection-string-native-source-parity",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "guard-cranelift-phase21-cross-tenant-capability-evidence",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "guard-cranelift-phase21-filesystem-allocation-native-source-parity",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "guard-cranelift-phase21-inert-scoped-query-records-evidence",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "guard-cranelift-phase21-od8-adversarial-verdict-evidence",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "guard-cranelift-phase21-opening-evidence",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "guard-cranelift-phase21-per-root-obligations-evidence",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "guard-cranelift-phase21-residue-migration-authority-evidence",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "guard-cranelift-phase21-resource-sync-native-source-parity",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "guard-cranelift-phase21-trusted-scope-provenance-evidence",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "guard-cranelift-phase21-typed-query-noop-surface-evidence",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "guard-cranelift-phase22-default-native-package-evidence",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "guard-cranelift-phase22-explicit-c-migration-evidence",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "guard-cranelift-phase22-native-implicit-output-evidence",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "guard-cranelift-phase22-opening-evidence",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "guard-stdlib-s1-branded-collections",
+        "owner_patch": "stdlib-coordination",
+        "action": "migrate"
+      },
+      {
+        "id": "guard-stdlib-s1-clone-destination",
+        "owner_patch": "stdlib-coordination",
+        "action": "migrate"
+      },
+      {
+        "id": "guard-stdlib-s1-composition",
+        "owner_patch": "stdlib-coordination",
+        "action": "migrate"
+      },
+      {
+        "id": "guard-stdlib-s1-mutex-guard-scope",
+        "owner_patch": "stdlib-coordination",
+        "action": "migrate"
+      },
+      {
+        "id": "guard-stdlib-s1-str-surface",
+        "owner_patch": "stdlib-coordination",
+        "action": "migrate"
+      },
+      {
         "id": "phase23-mir-to-c-focused-live.yml",
         "owner_patch": "24.12",
         "action": "retire"
@@ -23444,6 +23609,11 @@
         "action": "migrate"
       },
       {
+        "id": "scripts/cranelift_ci_family.py :: [\"just\", runner[\"static_guard\"]]",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
         "id": "tests/test_runner.gst :: std.Concat(\"./gust --backend mir-to-c \",",
         "owner_patch": "24.13",
         "action": "migrate"
@@ -23534,7 +23704,7 @@
         "action": "retire"
       }
     ],
-    "row_count": 70,
-    "inventory_digest": "479a29a0ae6b3bbc0e711a6ffa3d91280ebbbbcbab34f969f2108bd1d665e9f8"
+    "row_count": 104,
+    "inventory_digest": "75e701814217ba938cefa124fb2a31cb16aedb3d79e04ce6558f23c49774c54f"
   }
 }
