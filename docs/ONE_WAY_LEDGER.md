@@ -34,7 +34,11 @@ defect, and every `VIOLATED` row names its owner.
 **Ledger-wide evidence was verified 2026-08-20 against `b47d0049` (`main`).**
 D-1 and the resulting counts were refreshed 2026-08-22 against
 `f9c1cf412f9705519fe78ac8fea174c7e75c3bc2`; the Phase 19 closure claim is at
-`docs/PHASE19_CLOSURE.md:6-17`. Other row-level citations remain pinned to the
+`docs/PHASE19_CLOSURE.md:6-17`. **Rows 13 and 30 were re-scored 2026-09-12
+against `a341b69a`**: row 13 because Patch 24.2q changed the rule it measures,
+row 30 because OD-17 (resolved 2026-09-06) makes the compiler's own sources
+subject to the rule; the dated addenda in E5 and E12 carry the reproductions.
+The measured figures in E22 and E25 were re-taken at the same commit. Other row-level citations remain pinned to the
 commit named in their evidence block rather than being silently presented as a
 new full-ledger audit.
 
@@ -77,7 +81,7 @@ when the backend does.
 | 10 | Derivation | Bounded compiler-owned derivation | user macros; arbitrary compile-time execution; build scripts | **HOLDS** — E4 |
 | 11 | Operators | Compiler-owned operator set | user overloading | **HOLDS** — E4 |
 | 12 | Conversions | Explicit; only lossless widening implicit | implicit narrowing or lossy conversion | **ABSENT** — E15, vacuous |
-| 13 | String equality | `std.str_eq` | `==` over `str` | **HOLDS** — E5 |
+| 13 | String equality | `==` and `!=` on `str` are content equality (Patch 24.2q) | a second public spelling alongside the operator | **PARTIAL** — E5 |
 | 14 | Mutation | One reference form, `&T[ctx]`, which carries no mutability | *(restricting mutation through references: withdrawn, unscheduled)* | **DEFERRED** — E6 |
 | 15 | Cleanup | `defer`, LIFO, plus registered destructors | manual close; finalizers; fallible destructors | **PARTIAL** — E7 |
 | 16 | Resources | Linear, propagating transitively | ad-hoc handle discipline | **PARTIAL** — E7 |
@@ -94,7 +98,7 @@ when the backend does.
 | 27 | Backend | Cranelift native — **the declared current priority** | generated C as a supported backend | **PARTIAL** — E17 |
 | 28 | Integer types | Fixed-width `i32`, `u32`, `i64`, `u64`, `isize`, `usize` | a single unsized integer | **ABSENT** — E11 |
 | 29 | Overflow | Traps by default in all builds; wrapping/saturating/checked are named operations | silent wraparound | **VIOLATED** — E11 |
-| 30 | Exhaustiveness | All enum matching is exhaustive | unhandled variants | **HOLDS** — E12 |
+| 30 | Exhaustiveness | All enum matching is exhaustive | unhandled variants | **PARTIAL** — E12 |
 | 31 | Copy vs move | A struct is copyable when every field is and the type is *explicitly marked* copyable | inferred copyability | **PARTIAL** — E13 |
 | 32 | Null | Safe references are non-null; absence is `Option[T]` | `null` in safe code | **HOLDS** — E14 |
 | 45 | One spelling of absence | `Option[T]` | a second sentinel alongside it | **VIOLATED** — E14 |
@@ -111,12 +115,18 @@ when the backend does.
 | 43 | Editions | Source compatibility within an edition; editions are the controlled escape hatch | silent meaning changes | **ABSENT** — E25 |
 | 44 | Opacity | A value can be made unprintable and unloggable by its type | secrets leaking into logs and errors | **ABSENT** — E26 |
 
-Counts: 10 `HOLDS`, 9 `PARTIAL`, 6 `VIOLATED`, 2 `DEFERRED`, 18 `ABSENT`.
+Counts: 8 `HOLDS`, 11 `PARTIAL`, 6 `VIOLATED`, 2 `DEFERRED`, 18 `ABSENT`.
 
-**Compliance: 10 of 45 rules implemented and enforced — 22%.** Counted at
-`eb6b6cf2`, 2026-09-06. Prior figure: none recorded; this is the first stamped
-reading, and the next phase closure should record its own beside it so the
-direction of travel is visible and not only the level.
+**Compliance: 8 of 45 rules implemented and enforced — 18%.** Counted at
+`a341b69a`, 2026-09-12, after the Phase 24 opening preflight closed. **Prior
+figure: 10 of 45 — 22% — at `eb6b6cf2`, 2026-09-06.** The two-row drop is not a
+compiler regression: nothing that held on 2026-09-06 stopped holding. Row 13
+moved because the operator changed the rule — `==` on `str` is now content
+equality, which is what issue #133 asked for — and the old spelling was left in
+place beside it; row 30 moved because OD-17 now scores the compiler's own
+sources, which encode their largest sum types as tagged structs outside the
+exhaustiveness check. Both are scored in the compiler's disfavour on purpose:
+a ledger that only ever rises is not measuring anything.
 
 Reproduction, and a trap in it:
 
@@ -319,6 +329,32 @@ This row was `VIOLATED` when the reconciliation was drafted — codegen emitted 
 `==` over two `Slice_unsigned_char` structs, which is not valid C. It is now
 `HOLDS` for the rejection. Making `==` *mean* content equality remains open as
 `TASK_STDLIB.md` CR-1.
+
+**Re-scored 2026-09-12 at `a341b69a` — `PARTIAL`.** Cranelift Patch 24.2q
+(#377, merge `2b8417a7`, 2026-09-10) resolved CR-1: `==` and `!=` on `str` are
+content equality, lowered through `std_str_eq` on both retained compiler paths,
+and the S1.1 rejection is gone. The fixtures that used to prove the rejection
+were repurposed to prove acceptance and the runtime result —
+`tests/test_str_equality_rejected.gst` now asserts `a == a` and `a != b` on
+`"PING"`/`"PONG"`, and `tests/test_str_content_equality.gst` is the positive
+suite. That is the better half of #133 delivered, and the rule row above now
+names the operator as the one way, because it is.
+
+What keeps the row off `HOLDS` is the second spelling. `std.str_eq` is still a
+public safe-surface symbol (`docs/STDLIB_SURFACE_INVENTORY.md`, `std_str_eq`
+row), and under OD-17 the compiler's own idiom counts:
+
+```
+$ grep -ho 'std\.str_eq(' compiler/*.gst | wc -l
+3866
+```
+
+Two ways to compare strings exist, one of them used 3,866 times in the
+reference corpus and the other essentially nowhere in it. The remaining half of
+#133 — *without exposing `std.str_eq`* — and the compiler-source idiom adoption
+(named in the 24.2q ruling as waiting for 24.3a, which closed as a no-diff
+fixed point without doing it) are the remediation; owner Cranelift per
+`docs/ISSUE_ROADMAP.md`, unscheduled.
 
 ### E6 — one reference form, and it is mutable (row 14)
 
@@ -614,6 +650,32 @@ The live compiler checks it and names the missing variant. §31's rationale —
 error" — is one of the few containment-shaped claims in the document that the
 compiler actually makes good on today.
 
+**Re-scored 2026-09-12 at `a341b69a` under OD-17 — `PARTIAL`.** The check
+above is real and unchanged; what changed is who the rule applies to. OD-17
+(resolved 2026-09-06) binds the self-hosted compiler to this ledger, and the
+compiler's largest sum types — `Statement`, `Expression`, `Type` — are not
+`enum`s. They are structs with an integer `tag`, dispatched by comparison
+chains that the exhaustiveness check never sees:
+
+```
+$ grep -hE '^\s*match\b' compiler/*.gst | wc -l
+50
+$ grep -hE '\.tag\s*(==|!=)' compiler/*.gst | wc -l
+1635
+$ grep -hnE '\.tag\s*==' compiler/typechecker.gst | head -2
+1333:        if t.tag == 9 { // RawPointer
+1363:        if t.tag == 11 { // Reference
+```
+
+A missing arm in a 1,635-site comparison chain is exactly the "unhandled
+variant" the rejected column names, and the comment carrying the variant's
+name is the only thing that says which case `9` is. `PARTIAL` rather than
+`VIOLATED` because the rule is enforced wherever an `enum` is actually used;
+the compiler sidesteps it by representation rather than defeating it. The
+remediation is already written down and deliberately not a launch obligation:
+`docs/OPPORTUNISTIC_CLEANUP.md` § 27.6, the `Statement`/`Expression` enum
+refactor and `match` migration. Owner Cranelift, opportunistic.
+
 ### E13 — copyability is inferred, never declared (row 31)
 
 `docs/VISION.md` §23: "A user-defined struct is copyable only when every field is
@@ -894,6 +956,19 @@ compiler currently miscompiles" outside the shared zone.
 design rather than backend: 21 (effects), 4 (`Result` and `?`), 3 (`Option`
 without `unsafe`), 19 (structured concurrency), 28 (fixed-width integers), and
 the platform rows in E16. A native backend does not write any of those.
+
+**Where this stands 2026-09-12 at `a341b69a` — still `PARTIAL`, further along.**
+Phase 23 closed on 2026-09-02 (`docs/PHASE23_CLOSURE.md`): `--backend c` and
+`--backend mir-to-c` are accepted, byte-identical, and deprecated; MIR-to-C is
+out of the default CI matrices with one focused live compatibility lane left,
+and no supported production, package, or release workflow requires it. The
+Phase 24 opening preflight closed on 2026-09-12
+(`docs/PHASE24_PREFLIGHT_CLOSURE.md`), and the backend-retirement roadmap was
+activated the same day (PR #387, merge `b7b1713c`; `TASK.md` Patches
+24.10–24.18, inventory first). The row moves to `HOLDS` only when a retirement
+closure can say *Gust no longer emits C as a compiler backend*; until then both
+backends still exist in the driver and the bootstrap seed `gust_v4.c` is still
+generated C under Phase 25's ownership.
 
 ### E18 — `Channel.Send` does not transfer ownership (row 33)
 
@@ -1230,6 +1305,12 @@ repository.** Measured at `b47d0049`:
 | parity / differential guards | 82 |
 | CI workflows | 66 |
 
+Re-measured 2026-09-12 at `a341b69a` with the Maintenance commands: 303 test
+programs; 135 negative by name, of which 122 are `*reject*`; 598 `guard-`
+recipes; 114 parity / differential guards; 146 CI workflows; the compiler is
+894 `.gst` files and 120,432 lines. The negative share is now **45%**, and
+every figure grew — the direction the paragraph below predicts.
+
 Roughly **44% of the test corpus is negative** — programs asserted *not* to
 compile, such as `test_arena_get_ref_brand_mismatch_rejected.gst`. Plus a
 differential-oracle regime between MIR-to-C and Cranelift, per-phase closure
@@ -1435,7 +1516,9 @@ func typechecker_log_trace(emoji: str, message: str, ctx: &Arena) {
 
 An empty body, with **40 call sites** that all compile to nothing. That is
 compiler debug logging which has been stubbed out, not an execution trace, and it
-records nothing about a *program's* run in any case.
+records nothing about a *program's* run in any case. (Re-measured 2026-09-12 at
+`a341b69a`: 15 call sites. The stub is unchanged; callers were deleted. The
+finding is the same.)
 
 Worth noting what the stub implies rather than only that it is empty: the
 instrumentation *points* exist and are maintained through bootstrap, so they map
