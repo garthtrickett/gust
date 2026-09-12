@@ -150,8 +150,8 @@ Stdlib handoff are complete.
 - [x] Patch 24.2x — CR-19 Transition Closure and Stdlib Handoff — DONE
 - [ ] Patch 24.3 — Filename-Independent Typechecker Correction
 - [x] Patch 24.3a — Preflight Bootstrap Seed Reconvergence — DONE
-- [ ] Patch 24.3b — Pinned-Manifest Retirement
-- [ ] Patch 24.4 — Opening-Preflight Closure
+- [x] Patch 24.3b — Pinned-Manifest Retirement — DONE
+- [x] Patch 24.4 — Opening-Preflight Closure — DONE
 
 Status rows are machine-parsed. Keep each row as
 `- [ ] Patch 24.N — <Title>` or `- [x] Patch 24.N — <Title> — DONE`; an

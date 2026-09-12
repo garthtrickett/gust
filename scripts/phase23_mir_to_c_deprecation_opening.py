@@ -77,6 +77,7 @@ SELF_EXCLUSIONS = {
     "scripts/phase24_docs_successor_retirement_inversions.py",
     "scripts/phase24_3b_dead_chain_inversions.py",
     "scripts/phase24_3b_coordinate_retirement_inversions.py",
+    "scripts/phase24_preflight_closure.py",
 }
 
 SURFACE_PATTERNS = {

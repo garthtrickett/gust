@@ -90,6 +90,7 @@
     "phase24_cr15_qualification",
     "phase24_cr15_seed_authority_consumer_transition",
     "phase24_cr15_closure",
+    "phase24_preflight_closure",
     "phase24_cr19_multi_module_analysis",
     "phase24_filename_behavior_characterization",
     "phase24_semantic_spelling_inventory",
@@ -4235,6 +4236,114 @@
               "changes_bootstrap_route_or_seed":false,
               "edits_stdlib":false,
               "begins_patch24_1_or_backend_retirement":false
+            }
+          }
+        }
+      },
+      "phase24_preflight_closure": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["version","status","authority_owner","wording","authoritative_latest_historical_full","characterization_authority","spelling_authority","universal_rule_future_work","no_fallback_authority","bootstrap_authority","pinned_manifest_closure","cr15_handoff","unresolved_material_findings","non_claims","boundary"],
+        "properties": {
+          "version": {"const":"phase24_preflight_closure_v1"},
+          "status": {"const":"patch24_4_opening_preflight_closed"},
+          "authority_owner": {"const":"scripts/cranelift_feature_registry.json"},
+          "wording": {"type":"string","minLength":1},
+          "authoritative_latest_historical_full": {
+            "type":"object","additionalProperties":false,
+            "required":["workflow","run_id","event","head_branch","head_sha","status","conclusion","successful_jobs","total_jobs","unfinished_jobs","non_success_jobs","created_at","completed_at","stale_citation_rejected"],
+            "properties": {
+              "workflow": {"const":"Cranelift Historical Full"},
+              "run_id": {"type":"integer","minimum":1},
+              "event": {"const":"workflow_dispatch"},
+              "head_branch": {"const":"main"},
+              "head_sha": {"const":"4fcee4b42e80298ce686c54b5b16700e08919a52"},
+              "status": {"const":"completed"},
+              "conclusion": {"const":"success"},
+              "successful_jobs": {"type":"integer","minimum":1},
+              "total_jobs": {"type":"integer","minimum":1},
+              "unfinished_jobs": {"const":0},
+              "non_success_jobs": {"const":0},
+              "created_at": {"type":"string","minLength":1},
+              "completed_at": {"type":"string","minLength":1},
+              "stale_citation_rejected": {"const":"a92a8ca"}
+            }
+          },
+          "characterization_authority": {
+            "type":"object","additionalProperties":false,
+            "required":["record","witness_pairs","recorded_observations_hold","evidence_command"],
+            "properties": {
+              "record": {"const":"phase24_filename_behavior_characterization"},
+              "witness_pairs": {"const":4},
+              "recorded_observations_hold": {"const":"8_of_8"},
+              "evidence_command": {"const":"phase24_filename_behavior_characterization evidence"}
+            }
+          },
+          "spelling_authority": {
+            "type":"object","additionalProperties":false,
+            "required":["record","classification"],
+            "properties": {
+              "record": {"const":"phase24_semantic_spelling_inventory"},
+              "classification": {"const":"report_only_complete"}
+            }
+          },
+          "universal_rule_future_work": {
+            "type":"object","additionalProperties":false,
+            "required":["record","patch_24_3_roadmap","refine_analysis","source_migration"],
+            "properties": {
+              "record": {"const":"Patch 24.3 amend/close (PR #380)"},
+              "patch_24_3_roadmap": {"const":"UNCHECKED"},
+              "refine_analysis": {"const":"not_taken"},
+              "source_migration": {"const":"not_taken"}
+            }
+          },
+          "no_fallback_authority": {
+            "type":"object","additionalProperties":false,
+            "required":["default_route","fallback"],
+            "properties": {
+              "default_route": {"const":"cranelift"},
+              "fallback": {"const":"forbidden"}
+            }
+          },
+          "bootstrap_authority": {
+            "type":"object","additionalProperties":false,
+            "required":["seed","seed_digest","seed_lines","fixed_point"],
+            "properties": {
+              "seed": {"const":"gust_v4.c"},
+              "seed_digest": {"const":"a1ba675a1c244af0a77485d48a5865833eee896a4a2b746ea5728e20f590eebb"},
+              "seed_lines": {"const":65998},
+              "fixed_point": {"const":"stage2_stage3_byte_identity"}
+            }
+          },
+          "pinned_manifest_closure": {
+            "type":"object","additionalProperties":false,
+            "required":["record","status"],
+            "properties": {
+              "record": {"const":"phase24_3b_coordinate_retirement"},
+              "status": {"const":"patch24_3b_complete_merged_31b49779"}
+            }
+          },
+          "cr15_handoff": {
+            "type":"object","additionalProperties":false,
+            "required":["record","status"],
+            "properties": {
+              "record": {"const":"phase24_cr15_closure"},
+              "status": {"const":"complete_handed_off"}
+            }
+          },
+          "unresolved_material_findings": {"const":0},
+          "non_claims": {"type":"array","minItems":5,"maxItems":5},
+          "boundary": {
+            "type":"object","additionalProperties":false,
+            "required":["changes_accepted_Gust_meaning","adds_or_changes_MIR_operations","changes_ABI_layout_runtime_symbols_target_or_linker","changes_backend_route_default_or_fallback","changes_bootstrap_route_or_seed","edits_stdlib","activates_later_phases"],
+            "properties": {
+              "changes_accepted_Gust_meaning": {"const":false},
+              "adds_or_changes_MIR_operations": {"const":false},
+              "changes_ABI_layout_runtime_symbols_target_or_linker": {"const":false},
+              "changes_backend_route_default_or_fallback": {"const":false},
+              "changes_bootstrap_route_or_seed": {"const":false},
+              "edits_stdlib": {"const":false},
+              "activates_later_phases": {"const":false}
             }
           }
         }
