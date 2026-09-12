@@ -112,7 +112,7 @@ Out of scope:
 ## Status
 
 - [x] Patch 24.10 — Retirement Roadmap Activation — DONE
-- [ ] Patch 24.11 — Generated-C Consumer and Route Inventory
+- [x] Patch 24.11 — Generated-C Consumer and Route Inventory — DONE
 - [ ] Patch 24.12 — Frozen Expected-Behaviour Oracle Replacement
 - [ ] Patch 24.13 — Backend-Selection and Publication-Path Removal
 - [ ] Patch 24.14 — C Toolchain Discovery, Error, and Temp-File Removal
@@ -255,6 +255,13 @@ since made stale.
 
 **Exit Gate:** the inventory is complete with an owning patch per row; every
 row carries a live falsifier; nothing is removed or retired here.
+
+**Status 2026-09-12 — DONE:** 70 rows across bootstrap, compiler, runner,
+parity, test-suite, coordination, pin, workflow, registry, package/docs,
+fixture, and script classes with owning patch and live falsifier each; the
+bootstrap-entry decision (`--backend bootstrap-emitter`, help-unadvertised,
+24.13 lands) is recorded in registry authority; no removal or retirement
+in this patch.
 
 ## Patch 24.12 — Frozen Expected-Behaviour Oracle Replacement
 

@@ -1,0 +1,62 @@
+name: Cranelift Phase 24 Retirement Consumer Inventory
+
+on:
+  pull_request:
+    paths:
+      - 'TASK.md'
+      - 'README.md'
+      - 'Makefile'
+      - 'compiler/test_runner_entry.gst'
+      - 'compiler/test_runner_bootstrap_bridge_entry.gst'
+      - 'compiler/experiments/cranelift/README.md'
+      - 'docs/PHASE24_RETIREMENT_CONSUMER_INVENTORY.md'
+      - 'scripts/run-gust-file.sh'
+      - 'scripts/phase24_retirement_consumer_inventory.py'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/guard_reachability.py'
+      - 'scripts/*.sh'
+      - 'tests/*.gst'
+      - 'justfile*'
+      - '.github/workflows/phase24-retirement-consumer-inventory.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'TASK.md'
+      - 'README.md'
+      - 'Makefile'
+      - 'compiler/test_runner_entry.gst'
+      - 'compiler/test_runner_bootstrap_bridge_entry.gst'
+      - 'compiler/experiments/cranelift/README.md'
+      - 'docs/PHASE24_RETIREMENT_CONSUMER_INVENTORY.md'
+      - 'scripts/run-gust-file.sh'
+      - 'scripts/phase24_retirement_consumer_inventory.py'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/guard_reachability.py'
+      - 'scripts/*.sh'
+      - 'tests/*.gst'
+      - 'justfile*'
+      - '.github/workflows/phase24-retirement-consumer-inventory.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: just guard-cranelift-phase24-retirement-consumer-inventory-contract

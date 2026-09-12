@@ -36,6 +36,8 @@ ALLOWLIST = ROOT / "scripts" / "fixture_reachability_allowlist.json"
 RECIPE_HEAD = re.compile(r"^([a-zA-Z0-9_-]+)([^:]*):(.*)$")
 NON_EXECUTING_INVENTORIES = {
     "compiler/CRANELIFT_PHASE23_MIR_TO_C_DEPRECATION_OPENING.md",
+    "scripts/phase24_retirement_consumer_inventory.py",
+    "docs/PHASE24_RETIREMENT_CONSUMER_INVENTORY.md",
 }
 
 

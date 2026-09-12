@@ -23790,6 +23790,18 @@ guard-cranelift-phase24-semantic-spelling-inventory-contract:
     just guard-cranelift-phase24-filename-behavior-characterization-contract
     python3 scripts/phase24_semantic_spelling_inventory.py full
 
+# Cranelift lane, Patch 24.11. Pin the generated-C consumer and route
+# inventory: every remaining live C route with its owning removal patch.
+guard-cranelift-phase24-retirement-consumer-inventory-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "📋 Checking the Phase 24 generated-C consumer and route inventory..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase24-retirement-consumer-inventory-contract | grep -F $'guard-cranelift-phase24-retirement-consumer-inventory-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase24_retirement_consumer_inventory.py validate
+    python3 scripts/phase24_retirement_consumer_inventory.py check-review
+
 # Cranelift lane, CR-a Stage 1. Seal the MIR identity format: exactly one
 # definition of "<kind>:v1(:<field>=<value>)*", and a shrink-only ledger of the
 # sites still hand-rolling it. The guard shipped in #353 with no recipe and no

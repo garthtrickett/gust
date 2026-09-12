@@ -91,6 +91,7 @@
     "phase24_cr15_seed_authority_consumer_transition",
     "phase24_cr15_closure",
     "phase24_preflight_closure",
+    "phase24_retirement_consumer_inventory",
     "phase24_cr19_multi_module_analysis",
     "phase24_filename_behavior_characterization",
     "phase24_semantic_spelling_inventory",
@@ -4238,6 +4239,21 @@
               "begins_patch24_1_or_backend_retirement":false
             }
           }
+        }
+      },
+      "phase24_retirement_consumer_inventory": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["version","status","authority_base_main","authority_owner","bootstrap_entry_decision","rows","row_count","inventory_digest"],
+        "properties": {
+          "version": {"const":"phase24_retirement_consumer_inventory_v1"},
+          "status": {"const":"patch24_11_complete"},
+          "authority_base_main": {"const":"b7b1713cd65630b14ae92e46afd393990928a2e2"},
+          "authority_owner": {"const":"scripts/cranelift_feature_registry.json"},
+          "bootstrap_entry_decision": {"type":"object"},
+          "rows": {"type":"array","minItems":1,"items":{"type":"object","additionalProperties":false,"required":["id","owner_patch","action"],"properties":{"id":{"type":"string","minLength":1},"owner_patch":{"type":"string","minLength":1},"action":{"type":"string","minLength":1}}}},
+          "row_count": {"type":"integer","minimum":1},
+          "inventory_digest": {"type":"string","pattern":"^[0-9a-f]{64}$"}
         }
       },
       "phase24_preflight_closure": {

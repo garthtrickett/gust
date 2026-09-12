@@ -4267,7 +4267,7 @@
         {"path":"scripts/phase22_default_route_seed_convergence.py","digest":"99e4c562dfd3a20a7387923bdf0c77ba30ba9ee4b9c9b7e7fe5264957395e32a","match_counts":{"explicit_backend_spelling":4,"mir_to_c_name":12,"generated_c_contract":6},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
         {"path":"scripts/phase24_cr15_closure.py","digest":"99988cf543f4703eceeaff93c5c2840691340059c7678486a3c1a8eae8889a07","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":2,"generated_c_contract":0},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"}
       ],
-      "unchanged_other_text_surface_manifest_digest": "431981d95cc41abba0c42e077f7d959ca04150b2f932b6da9e397f622f89a4a7",
+      "unchanged_other_text_surface_manifest_digest": "86da6cbe6722876256b9f9ec4ca039465c13771d15aef76b41be90fdb407d9e1",
       "partial_extra_or_substituted_surface": "rejected",
       "boundary": {
         "changes_compiler_source": false,
@@ -8786,7 +8786,7 @@
             {"path":".github/workflows/pr-fast.yml","digest":"a0a5c558345c51362772ba177eefb3186492d558da2449ae7cce73dde9e692cc","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":8,"generated_c_contract":1},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
             {"path":"compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md","digest":"30c9b87f8f48508d7d506f08518e1f2d699e73c9f1ec0ef492308be4397910bc","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":0,"generated_c_contract":184},"classification":"historical_only","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"preserve_as_historical_evidence","removal_phase":"not_removed_by_phase23","falsifier":"historical_record_is_reclassified_as_live_support"},
             {"path":"compiler/typechecker.gst","digest":"e1519d3debbfd2fa03b65c3713142c3f4ccbf0fcfb419d9b5f9b9feea9867737","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":0,"generated_c_contract":1},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
-            {"path":"scripts/cranelift_test_levels.json","digest":"a78e0625553d1fa51ae550317f767837c227085642e4f6e5b1d1f1a62d37da6e","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":30,"generated_c_contract":0},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
+            {"path":"scripts/cranelift_test_levels.json","digest":"6730050c97564d3f4d54211fb7851520d48f6d50f0a022fe320ef520c287753a","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":30,"generated_c_contract":0},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
             {"path":"scripts/phase24_cr15_closure.py","digest":"095aa735c7e9b36866c26c1be0a9369f137ecb2ba45fa6abdccf84fdd72670bf","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":2,"generated_c_contract":0},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
             {"path":"scripts/phase24_resource_implicit_transfer.py","digest":"8c0a310927781779ea4ab92cd6cc859065b94cf2b5b616af757419650ba0904c","match_counts":{"explicit_backend_spelling":2,"mir_to_c_name":4,"generated_c_contract":0},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"}
           ],
@@ -23146,4 +23146,395 @@
       "negative_current_fixture": "compiler/p17_complete_runtime_differential_deferred_source.gst"
     }
   ]
+,
+  "phase24_retirement_consumer_inventory": {
+    "version": "phase24_retirement_consumer_inventory_v1",
+    "status": "patch24_11_complete",
+    "authority_base_main": "b7b1713cd65630b14ae92e46afd393990928a2e2",
+    "authority_owner": "scripts/cranelift_feature_registry.json",
+    "bootstrap_entry_decision": {
+      "status": "patch24_11_decided_patch24_13_lands",
+      "current_state": "no_distinct_internal_entry",
+      "current_callers": {
+        "makefile_cli_spelling_callers": [
+          "Makefile:55",
+          "Makefile:112",
+          "Makefile:143",
+          "Makefile:241",
+          "Makefile:245"
+        ],
+        "selection": "user-facing --backend mir-to-c",
+        "dispatch": "compiler/test_runner_entry.gst:99-113",
+        "emitter": "compiler/test_runner_entry.gst:456"
+      },
+      "selected_entry": "--backend bootstrap-emitter",
+      "selected_dispatch": "existing MirToC tag, new spelling branch only",
+      "rejected": {
+        "environment_variable": "invisible to review and spoofable; Phase 10 precedent keeps explicit selection explicit",
+        "entry_file_gating": "filename-selected meaning, rejected by the preflight invariant",
+        "keeping_mir_to_c_for_bootstrap": "leaves a user-facing spelling reaching the emitter after removal; the 24.13 falsifier could not distinguish bootstrap from ordinary use"
+      },
+      "advertised_in_help": false,
+      "falsifiers": [
+        "--backend mir-to-c and --backend c reject with unknown backend",
+        "help output names no C backend",
+        "exactly the five Makefile caller lines use the internal spelling and no other tracked file does",
+        "bootstrap still converges stage2==stage3 through the entry"
+      ]
+    },
+    "rows": [
+      {
+        "id": "guard-cranelift-phase11-scalar-expression-parity",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "guard-cranelift-phase11-local-state-parity",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "guard-cranelift-phase11-structured-cfg-parity",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "guard-cranelift-phase11-block-parameter-loop-parity",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "guard-cranelift-phase11-direct-call-abi-parity",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "guard-cranelift-phase11-module-import-runtime-parity",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "guard-cranelift-phase11-metadata-diagnostic-parity",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "guard-mir-feature-return-int-preservation",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "guard-mir-feature-local-binding-read-preservation",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "guard-mir-feature-if-else-return-int-preservation",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "guard-mir-feature-local-binding-read-provenance-metadata-preservation",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "guard-cranelift-differential-family",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "guard-cranelift-phase23-mir-to-c-focused-live-contract",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "guard-cranelift-phase23-mir-to-c-focused-live-evidence",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "guard-cranelift-phase21-cranelift-built-compiler-programs-evidence",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "make-test-suite",
+        "owner_patch": "24.13",
+        "action": "migrate"
+      },
+      {
+        "id": "make-test-suite-parallel",
+        "owner_patch": "24.13",
+        "action": "migrate"
+      },
+      {
+        "id": "run-step52-positive-batch",
+        "owner_patch": "24.16",
+        "action": "retire"
+      },
+      {
+        "id": "guard-positive",
+        "owner_patch": "24.13",
+        "action": "migrate"
+      },
+      {
+        "id": "guard-compile-pass",
+        "owner_patch": "24.16",
+        "action": "retire"
+      },
+      {
+        "id": "guard-compile-fail",
+        "owner_patch": "24.16",
+        "action": "retire"
+      },
+      {
+        "id": "guard-stdlib-s1-str-equality-diagnostic",
+        "owner_patch": "stdlib-coordination",
+        "action": "migrate"
+      },
+      {
+        "id": "guard-stdlib-s1-collection-receivers",
+        "owner_patch": "stdlib-coordination",
+        "action": "migrate"
+      },
+      {
+        "id": "guard-stdlib-s1-resource-prerequisites",
+        "owner_patch": "stdlib-coordination",
+        "action": "migrate"
+      },
+      {
+        "id": "guard-stdlib-s1-migration",
+        "owner_patch": "stdlib-coordination",
+        "action": "migrate"
+      },
+      {
+        "id": "guard-cranelift-phase10-backend-selection-contract",
+        "owner_patch": "24.13",
+        "action": "retire"
+      },
+      {
+        "id": "guard-cranelift-phase10-opening-contract",
+        "owner_patch": "24.15",
+        "action": "retire"
+      },
+      {
+        "id": "guard-cranelift-phase12-5-close",
+        "owner_patch": "24.16",
+        "action": "retire"
+      },
+      {
+        "id": "guard-cranelift-phase13-close",
+        "owner_patch": "24.16",
+        "action": "retire"
+      },
+      {
+        "id": "phase23-mir-to-c-focused-live.yml",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "phase23-mir-to-c-frozen-surface.yml",
+        "owner_patch": "24.15",
+        "action": "update"
+      },
+      {
+        "id": "phase23-mir-to-c-archived-corpus.yml",
+        "owner_patch": "24.15",
+        "action": "update"
+      },
+      {
+        "id": "phase23-mir-to-c-deprecation-opening.yml",
+        "owner_patch": "24.16",
+        "action": "retire"
+      },
+      {
+        "id": "phase23-mir-evidence-owner.yml",
+        "owner_patch": "24.16",
+        "action": "retire"
+      },
+      {
+        "id": "phase21-cranelift-built-compiler-programs.yml",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "phase24-cr15-stdlib-guard-transition.yml",
+        "owner_patch": "24.16",
+        "action": "retire"
+      },
+      {
+        "id": "pr-fast.yml",
+        "owner_patch": "24.16",
+        "action": "retire"
+      },
+      {
+        "id": "phase23_mir_to_c_deprecation_opening",
+        "owner_patch": "24.15",
+        "action": "retire"
+      },
+      {
+        "id": "phase23_mir_to_c_frozen_surface",
+        "owner_patch": "24.15",
+        "action": "retire"
+      },
+      {
+        "id": "phase23_mir_to_c_focused_live",
+        "owner_patch": "24.15",
+        "action": "retire"
+      },
+      {
+        "id": "phase23_mir_to_c_archived_corpus",
+        "owner_patch": "24.15",
+        "action": "update"
+      },
+      {
+        "id": "compiler/test_runner_entry.gst ::     MirToC,",
+        "owner_patch": "24.13",
+        "action": "retire"
+      },
+      {
+        "id": "compiler/test_runner_entry.gst :: std.str_eq(backend_name, \"mir-to-c\")",
+        "owner_patch": "24.13",
+        "action": "retire"
+      },
+      {
+        "id": "compiler/test_runner_entry.gst :: gust --backend mir-to-c <source.gst>",
+        "owner_patch": "24.13",
+        "action": "retire"
+      },
+      {
+        "id": "compiler/test_runner_entry.gst :: the MIR-to-C backend does not accept -o",
+        "owner_patch": "24.14",
+        "action": "retire"
+      },
+      {
+        "id": "compiler/test_runner_entry.gst :: mut c_code := codegen.codegen_generate(p",
+        "owner_patch": "25",
+        "action": "survive"
+      },
+      {
+        "id": "compiler/codegen.gst :: func codegen_generate(programs: std.Vect",
+        "owner_patch": "25",
+        "action": "survive"
+      },
+      {
+        "id": "compiler/test_runner_bootstrap_bridge_entry.gst :: mut c_code := codegen.codegen_generate(p",
+        "owner_patch": "25",
+        "action": "survive"
+      },
+      {
+        "id": "compiler/test_runner_bootstrap_bridge_entry.gst :: Usage: gust-bootstrap-bridge [--backend ",
+        "owner_patch": "25",
+        "action": "survive"
+      },
+      {
+        "id": "Makefile :: build/gust_final.c",
+        "owner_patch": "24.14",
+        "action": "migrate"
+      },
+      {
+        "id": "Makefile :: CC=\"${CC}\" CFLAGS=\"${CFLAGS}\" INCLUDES=\"",
+        "owner_patch": "24.14",
+        "action": "migrate"
+      },
+      {
+        "id": "scripts/run-gust-file.sh :: RUNNER_ROUTE=\"${GUST_RUNNER_ROUTE:-mir-t",
+        "owner_patch": "24.13",
+        "action": "migrate"
+      },
+      {
+        "id": "tests/test_runner.gst :: std.Concat(\"./gust --backend mir-to-c \",",
+        "owner_patch": "24.13",
+        "action": "migrate"
+      },
+      {
+        "id": "tests/e2e_codegen_assertions.gst :: \"./gust --backend mir-to-c tests/codegen",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "README.md :: selected explicitly with `--backend c`",
+        "owner_patch": "24.15",
+        "action": "retire"
+      },
+      {
+        "id": "compiler/experiments/cranelift/README.md :: Explicit `--backend c` / `--backend mir-",
+        "owner_patch": "24.15",
+        "action": "retire"
+      },
+      {
+        "id": "sh-family:early-differential",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "sh-family:phase15-16-composition",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "sh-family:phase19-parity",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "sh-family:phase20-evidence",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "sh-family:phase21-native-qualification",
+        "owner_patch": "24.12",
+        "action": "convert"
+      },
+      {
+        "id": "sh-family:phase22-flip-evidence",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "sh-family:stdlib-parity",
+        "owner_patch": "stdlib-coordination",
+        "action": "migrate"
+      },
+      {
+        "id": "sh-family:stdlib-runner-pinned",
+        "owner_patch": "stdlib-coordination",
+        "action": "migrate"
+      },
+      {
+        "id": "smoke-fixtures",
+        "owner_patch": "24.16",
+        "action": "retire"
+      },
+      {
+        "id": "scripts/phase23_mir_to_c_focused_live.py",
+        "owner_patch": "24.12",
+        "action": "retire"
+      },
+      {
+        "id": "scripts/phase23_mir_to_c_archived_corpus.py",
+        "owner_patch": "24.15",
+        "action": "update"
+      },
+      {
+        "id": "scripts/phase23_mir_to_c_frozen_surface.py",
+        "owner_patch": "24.15",
+        "action": "retire"
+      },
+      {
+        "id": "scripts/phase23_mir_to_c_deprecation_opening.py",
+        "owner_patch": "24.16",
+        "action": "retire"
+      },
+      {
+        "id": "scripts/phase23_production_release_audit.py",
+        "owner_patch": "24.16",
+        "action": "retire"
+      }
+    ],
+    "row_count": 70,
+    "inventory_digest": "479a29a0ae6b3bbc0e711a6ffa3d91280ebbbbcbab34f969f2108bd1d665e9f8"
+  }
 }
