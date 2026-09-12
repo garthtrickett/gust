@@ -46,3 +46,24 @@ intrinsic IDs, native bootstrap, or backend retirement.
   live comparison reads the rotated value); per-transition text-surface
   rows record era states and are not live-compared.
 - No unmerged semantic changes remain on this lane.
+
+## Vision-lane verification of the terminal record (2026-09-12)
+
+Re-derived independently from GitHub and git on 2026-09-12 ~03:30 UTC by the
+docs/vision lane, without resuming Cranelift work. Every claim above holds,
+with one count relabelled:
+
+- Exact PR head `6b6afac0…` carries **109 `pull_request` workflow runs, all
+  `completed success`, plus one `push`-triggered `Codex Trusted Gate`, also
+  `completed success` — 110 runs in total.** The line above that reads
+  "110/110 `pull_request` workflows … including Codex Trusted Gate" counts
+  the push run inside the pull_request total; the population and the verdict
+  are unchanged.
+- PR #384 merged as `37b1bf8f` at 2026-09-12T01:40:11Z with zero review
+  threads; PR #385 (this record) merged as `093c0fc9` at 02:31:43Z.
+- Historical Full `34656598379`: `workflow_dispatch`, exact head `4fcee4b4`,
+  `completed success`, 18/18 jobs, 2026-09-11T23:04:00Z–2026-09-12T00:19:32Z.
+- The scheduled nightly on the closure merge had not yet fired at
+  verification time; the latest scheduled run was `34577854352` on
+  `2a91c35a`, `success`. The first post-closure nightly is the standing
+  Level-3 signal named above.
