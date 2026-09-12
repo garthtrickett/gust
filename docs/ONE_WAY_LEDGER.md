@@ -963,8 +963,9 @@ Phase 23 closed on 2026-09-02 (`docs/PHASE23_CLOSURE.md`): `--backend c` and
 out of the default CI matrices with one focused live compatibility lane left,
 and no supported production, package, or release workflow requires it. The
 Phase 24 opening preflight closed on 2026-09-12
-(`docs/PHASE24_PREFLIGHT_CLOSURE.md`), and the backend-retirement roadmap is
-drafted in `TASK.md` (PR #387). The row moves to `HOLDS` only when a retirement
+(`docs/PHASE24_PREFLIGHT_CLOSURE.md`), and the backend-retirement roadmap was
+activated the same day (PR #387, merge `b7b1713c`; `TASK.md` Patches
+24.10–24.18, inventory first). The row moves to `HOLDS` only when a retirement
 closure can say *Gust no longer emits C as a compiler backend*; until then both
 backends still exist in the driver and the bootstrap seed `gust_v4.c` is still
 generated C under Phase 25's ownership.
