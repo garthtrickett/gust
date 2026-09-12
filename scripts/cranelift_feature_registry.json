@@ -4267,7 +4267,7 @@
         {"path":"scripts/phase22_default_route_seed_convergence.py","digest":"99e4c562dfd3a20a7387923bdf0c77ba30ba9ee4b9c9b7e7fe5264957395e32a","match_counts":{"explicit_backend_spelling":4,"mir_to_c_name":12,"generated_c_contract":6},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"},
         {"path":"scripts/phase24_cr15_closure.py","digest":"99988cf543f4703eceeaff93c5c2840691340059c7678486a3c1a8eae8889a07","match_counts":{"explicit_backend_spelling":0,"mir_to_c_name":2,"generated_c_contract":0},"classification":"archive_candidate","owner":"cranelift","current_route":"tracked_MIR_to_C_or_generated_C_surface","deprecation_action":"map_to_live_lane_or_archive_in_23_10_and_23_11","removal_phase":"24","falsifier":"active_evidence_surface_is_missing_or_changes_identity"}
       ],
-      "unchanged_other_text_surface_manifest_digest": "d6aba24683a496e7c080914c572724905b8799a028ffb1cef852cc2d87f28eb6",
+      "unchanged_other_text_surface_manifest_digest": "431981d95cc41abba0c42e077f7d959ca04150b2f932b6da9e397f622f89a4a7",
       "partial_extra_or_substituted_surface": "rejected",
       "boundary": {
         "changes_compiler_source": false,
@@ -7516,6 +7516,79 @@
       "changes_bootstrap_route_or_seed": false,
       "edits_stdlib": false,
       "begins_patch24_1_or_backend_retirement": false
+    }
+  },
+  "phase24_preflight_closure": {
+    "version": "phase24_preflight_closure_v1",
+    "status": "patch24_4_opening_preflight_closed",
+    "authority_owner": "scripts/cranelift_feature_registry.json",
+    "wording": "Filename-selected behaviours are characterized with paired pre-change evidence, the universal rule is decided authority carried as future work, and compiler-recognized concrete semantic spellings are completely classified.",
+    "authoritative_latest_historical_full": {
+      "workflow": "Cranelift Historical Full",
+      "run_id": 34656598379,
+      "event": "workflow_dispatch",
+      "head_branch": "main",
+      "head_sha": "4fcee4b42e80298ce686c54b5b16700e08919a52",
+      "status": "completed",
+      "conclusion": "success",
+      "successful_jobs": 18,
+      "total_jobs": 18,
+      "unfinished_jobs": 0,
+      "non_success_jobs": 0,
+      "created_at": "2026-09-11T23:04:00Z",
+      "completed_at": "2026-09-12T00:19:32Z",
+      "stale_citation_rejected": "a92a8ca"
+    },
+    "characterization_authority": {
+      "record": "phase24_filename_behavior_characterization",
+      "witness_pairs": 4,
+      "recorded_observations_hold": "8_of_8",
+      "evidence_command": "phase24_filename_behavior_characterization evidence"
+    },
+    "spelling_authority": {
+      "record": "phase24_semantic_spelling_inventory",
+      "classification": "report_only_complete"
+    },
+    "universal_rule_future_work": {
+      "record": "Patch 24.3 amend/close (PR #380)",
+      "patch_24_3_roadmap": "UNCHECKED",
+      "refine_analysis": "not_taken",
+      "source_migration": "not_taken"
+    },
+    "no_fallback_authority": {
+      "default_route": "cranelift",
+      "fallback": "forbidden"
+    },
+    "bootstrap_authority": {
+      "seed": "gust_v4.c",
+      "seed_digest": "a1ba675a1c244af0a77485d48a5865833eee896a4a2b746ea5728e20f590eebb",
+      "seed_lines": 65998,
+      "fixed_point": "stage2_stage3_byte_identity"
+    },
+    "pinned_manifest_closure": {
+      "record": "phase24_3b_coordinate_retirement",
+      "status": "patch24_3b_complete_merged_31b49779"
+    },
+    "cr15_handoff": {
+      "record": "phase24_cr15_closure",
+      "status": "complete_handed_off"
+    },
+    "unresolved_material_findings": 0,
+    "non_claims": [
+      "Phase 24 removes the compiler C-emitting backend or either explicit C spelling.",
+      "Phase 24 removes retained C runtime objects, the host C compiler, or the Phase 25 bootstrap chain.",
+      "Phase 24 removes the filename-selected typechecker branches; they still select, which is why the Patch 24.3 row stays unchecked.",
+      "Phase 24 assigns intrinsic IDs or changes any dispatch.",
+      "Phase 24 activates Phase 24 backend retirement, Phase 24.5, Phase 25, Stdlib implementation, or Web Slice 1."
+    ],
+    "boundary": {
+      "changes_accepted_Gust_meaning": false,
+      "adds_or_changes_MIR_operations": false,
+      "changes_ABI_layout_runtime_symbols_target_or_linker": false,
+      "changes_backend_route_default_or_fallback": false,
+      "changes_bootstrap_route_or_seed": false,
+      "edits_stdlib": false,
+      "activates_later_phases": false
     }
   },
   "phase24_cr19_multi_module_analysis": {

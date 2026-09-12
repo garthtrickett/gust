@@ -20,6 +20,8 @@ on:
       - 'scripts/phase23_mir_to_c_frozen_surface.py'
       - 'scripts/phase23_production_release_audit.py'
       - 'scripts/phase24_cr15_stdlib_guard_transition.py'
+      - 'scripts/phase24_preflight_closure.py'
+      - 'docs/PHASE24_PREFLIGHT_CLOSURE.md'
       - 'compiler/CRANELIFT_PHASE24_CR15_STDLIB_GUARD_TRANSITION.md'
       - '.github/workflows/phase24-cr15-stdlib-guard-transition.yml'
   push:
@@ -42,6 +44,8 @@ on:
       - 'scripts/phase23_mir_to_c_frozen_surface.py'
       - 'scripts/phase23_production_release_audit.py'
       - 'scripts/phase24_cr15_stdlib_guard_transition.py'
+      - 'scripts/phase24_preflight_closure.py'
+      - 'docs/PHASE24_PREFLIGHT_CLOSURE.md'
       - 'compiler/CRANELIFT_PHASE24_CR15_STDLIB_GUARD_TRANSITION.md'
       - '.github/workflows/phase24-cr15-stdlib-guard-transition.yml'
   workflow_dispatch:
@@ -77,3 +81,5 @@ jobs:
           python3 scripts/phase23_cross_feature_qualification.py validate
           python3 scripts/phase23_cross_feature_qualification.py check-review
           python3 scripts/phase23_closure.py --check
+          python3 scripts/phase24_preflight_closure.py validate
+          python3 scripts/phase24_preflight_closure.py check-review
