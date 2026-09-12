@@ -13,12 +13,13 @@
 Workflow, Monitoring, Merge, Phase Completion, Runner, Issue Intake, and Git
 Authorization policies are defined in `AGENTS.md`. Shared semantic ownership is
 defined in `docs/SHARED_SEMANTIC_ZONE.md`. The Phase 24 backend-retirement
-roadmap below is the Cranelift roadmap. It is DRAFTED but INACTIVE: on
-2026-09-12 the operator authorized drafting this roadmap now, with the Patch
-24.3 filename-independent correction carried as future work rather than as a
-prerequisite. This is not activation of retirement implementation; no
-implementation patch begins until the operator explicitly activates this
-roadmap.
+roadmap below is the active Cranelift roadmap. On 2026-09-12 the operator
+explicitly activated it through Patch 24.18 completion, authorizing the
+Cranelift completion loop subject to the patch boundaries, stop conditions,
+and seed-only publication rules stated in this document. Drafting was
+authorized earlier the same day, with the Patch 24.3 filename-independent
+correction carried as future work rather than as a prerequisite; that carry
+remains in force. Later phases still need their own activation.
 
 Retirement removes MIR-to-C from the active compiler. Backend selection for C
 and the generated-C publication paths go; the last live differential lane is
@@ -60,6 +61,14 @@ decomposition, registry or CI consolidation), Phase 25 bootstrap-route work,
 edits to `TASK_STDLIB.md`, Stdlib implementation, Web Slice 1, or another
 operator-owned semantic/product decision.
 
+On 2026-09-12 the operator explicitly activated this roadmap through Patch
+24.18, conditional on the bootstrap-entry amendment landing in the activation
+PR. The Cranelift completion loop is authorized subject to the patch
+boundaries, stop conditions, and seed-only publication rules stated in this
+document. The activation does not authorize Phase 24.5 consolidation, Phase
+25 bootstrap-route work, edits to `TASK_STDLIB.md`, Stdlib implementation,
+Web Slice 1, or another operator-owned semantic/product decision.
+
 ## Retirement Boundary
 
 In scope:
@@ -84,7 +93,8 @@ Out of scope:
 
 - claiming the repository contains no C: retained C runtime components, the
   host-C bootstrap chain, `gust_v4.c`, and the five explicit bootstrap callers
-  remain owned by Phase 25;
+  remain owned by Phase 25; deleting the MIR-to-C emitter implementation
+  itself is Phase 25, after the native bootstrap replaces it;
 - assigning intrinsic IDs, replacing recognized spellings, splitting
   TypeEnvironment or function-checking state, decomposing the native command,
   refactoring the registry/CI topology, or beginning any native-bootstrap
@@ -101,7 +111,7 @@ Out of scope:
 
 ## Status
 
-- [ ] Patch 24.10 — Retirement Roadmap Activation
+- [x] Patch 24.10 — Retirement Roadmap Activation — DONE
 - [ ] Patch 24.11 — Generated-C Consumer and Route Inventory
 - [ ] Patch 24.12 — Frozen Expected-Behaviour Oracle Replacement
 - [ ] Patch 24.13 — Backend-Selection and Publication-Path Removal
@@ -128,6 +138,16 @@ patch can be mistaken for Phase 24.5 consolidation work.
   reference corpus plus frozen expected-behaviour tests carry parity after
   Patch 24.12, and no removal patch begins until that replacement is green.
   Absence of C execution never counts as parity success.
+- The MIR-to-C emitter implementation survives this phase as bootstrap-only
+  machinery. It is not user-selectable and not a compiler backend: it is
+  reachable only by the Phase-25-owned bootstrap chain through an explicit
+  internal entry. No such entry exists today — all five Makefile bootstrap
+  callers (`Makefile:55,112,143,241,245`) reach the emitter through the same
+  user-facing `--backend mir-to-c` selection
+  (`compiler/test_runner_entry.gst:99-113`, emitting at `:456`) that Patch
+  24.13 deletes — so Patch 24.11 decides the entry from inventory and Patch
+  24.13 lands it with a falsifier proving ordinary `gust` cannot reach it.
+  Deleting the emitter is Phase 25, after the native bootstrap replaces it.
 - `gust_v4.c`, the five explicit bootstrap callers, the `make gust` /
   `make bootstrap` host-C chain, and the host C compiler requirement stay
   owned by Phase 25 throughout this phase.
@@ -201,12 +221,16 @@ bootstrap artifacts, or later-phase activation.
   machinery.
 - Keep the completed preflight text below as an immutable record.
 
-**Exit Gate:** the roadmap and its draft authorization are mechanically
-reviewable; no implementation work is authorized until the operator activates
-this roadmap, so every retirement row stays unchecked; preflight closure and
+**Exit Gate:** the roadmap and its activation are mechanically
+reviewable; the operator activated this roadmap on 2026-09-12, so Patch 24.10
+checks at merge while later rows stay unchecked until their patches land;
+preflight closure and
 its exact retained-route inventory remain green; no compiler, backend,
 runtime, bootstrap, Stdlib, or accepted-program behaviour changes; and the
 roadmap PR's exact-head workflows and review gates pass.
+
+**Status 2026-09-12 — DONE:** operator activated through Patch 24.18 with
+the bootstrap-entry amendment in this PR; Patch 24.3 carry remains in force.
 
 ## Patch 24.11 — Generated-C Consumer and Route Inventory
 
@@ -220,6 +244,10 @@ since made stale.
   implementation entry point, accepted capability, active caller, guard,
   registry row, workflow, command, package/release reference, fixture, and
   generated artifact.
+- Inventory the bootstrap chain's emitter entry explicitly: the five Makefile
+  callers and the user-facing selection spelling they use today, and where
+  the explicit internal bootstrap-only entry will attach. The entry decision
+  is recorded here; Patch 24.13 lands it.
 - Flag bootstrap-adjacent uses as Phase-25-owned: inventoried here, removed
   only by Phase 25.
 - Classify each row by the removal or retirement patch that will take it out,
@@ -256,12 +284,18 @@ paths from the active compiler.
 
 - Delete the `--backend c` / `--backend mir-to-c` selection and the
   generated-C publication paths.
+- Land the explicit internal bootstrap-only emitter entry decided by Patch
+  24.11, with a falsifier proving ordinary `gust` cannot reach it: unknown
+  backend spellings and retired spellings reject, and only the bootstrap
+  chain's entry reaches the emitter.
 - Requests for the retired backend reject with a stable diagnostic naming the
   removal; they do not fall back, retry through C, or select by environment.
 - Keep default and explicit Cranelift identity observably identical.
 
 **Exit Gate:** no accepted C spelling and no publication path remain;
-retired-backend requests reject explicitly without fallback; Cranelift-route
+retired-backend requests reject explicitly without fallback; the
+Phase-25-owned bootstrap callers still converge stage2==stage3 through the
+explicit internal entry after selection removal; Cranelift-route
 programs are unaffected; `make gust` passes; and a moved seed reconverges in
 a separate seed-only PR, or the checked no-diff fixed point stands.
 
@@ -280,7 +314,9 @@ C-specific error classes and temporary files that exist only to serve it.
   backend-accurate.
 
 **Exit Gate:** no normal compilation, test, or package route discovers or
-invokes a C compiler for backend purposes; C-specific errors and temp files
+invokes a C compiler for backend purposes; the bootstrap chain's host-C use
+(assembling generated stage files with the host C compiler) is excepted by
+name and stays Phase-25-owned; C-specific errors and temp files
 are absent; `make gust` passes; and a moved seed reconverges in a separate
 seed-only PR, or the checked no-diff fixed point stands.
 
@@ -420,8 +456,7 @@ Workflow, Monitoring, Merge, Phase Completion, Runner, Issue Intake, and Git
 Authorization policies are defined in `AGENTS.md`. Shared semantic ownership is
 defined in `docs/SHARED_SEMANTIC_ZONE.md`. This section is the immutable
 opening-preflight completion record; the Phase 24 backend-retirement roadmap
-above is the Cranelift roadmap (drafted; retirement implementation awaits
-operator activation). It is not activation of Phase 24 backend retirement.
+above is the active Cranelift roadmap.
 
 The preflight removes accepted or rejected Gust meaning selected by source-file
 name fragments before any backend is retired or compiler structure is changed.
@@ -1450,8 +1485,7 @@ Workflow, Monitoring, Merge, Phase Completion, Runner, Issue Intake, and Git
 Authorization policies are defined in `AGENTS.md`. Shared semantic ownership is
 defined in `docs/SHARED_SEMANTIC_ZONE.md`. This section is the immutable Phase
 23 completion record; the Phase 24 backend-retirement roadmap above is the
-Cranelift roadmap (drafted; retirement implementation awaits operator
-activation).
+active Cranelift roadmap.
 
 Phase 23 stops presenting MIR-to-C as a normal supported production backend
 while preserving one frozen, explicit, live compatibility and differential lane
@@ -2066,8 +2100,7 @@ claims.
 Workflow, Monitoring, Merge, Phase Completion, Runner, and Git Authorization
 policies are defined in `AGENTS.md`. Shared semantic ownership is defined in
 `docs/SHARED_SEMANTIC_ZONE.md`. This section is the immutable Phase 22 record;
-the Phase 24 backend-retirement roadmap above is the Cranelift roadmap
-(drafted; retirement implementation awaits operator activation).
+the Phase 24 backend-retirement roadmap above is the active Cranelift roadmap.
 
 Phase 22 changes the compiler's default route from MIR-to-C to Cranelift while
 retaining MIR-to-C as the semantic oracle and an explicit supported backend.
@@ -2489,8 +2522,7 @@ closure PR merges. Phase 23 remains inactive.
 Workflow, Monitoring, Merge, Phase Completion, Runner, and Git Authorization
 policies were defined in `AGENTS.md`. Shared semantic ownership was defined in
 `docs/SHARED_SEMANTIC_ZONE.md`. This section is the immutable Phase 21 record;
-the Phase 24 backend-retirement roadmap above is the Cranelift roadmap
-(drafted; retirement implementation awaits operator activation).
+the Phase 24 backend-retirement roadmap above is the active Cranelift roadmap.
 
 Phase 21 has two serial tracks because both require the single compiler-semantic
 writer. Track A implements and attacks the operator-selected OD-8 provenance

@@ -4,10 +4,9 @@
 after its closure PR merges and current `main` is re-derived. The
 Phase 24 opening preflight **closed on 2026-09-12** (Patch 24.4, PR #384 merged
 as `37b1bf8f`; terminal record in `GUST_LANE_STATE.md`, generated closure in
-`docs/PHASE24_PREFLIGHT_CLOSURE.md`). No compiler roadmap is active for
-implementation. The Phase 24 backend-retirement roadmap is drafted in `TASK.md`
-but inactive until the operator explicitly activates it. Phase 24.5 and Phase
-25 remain inactive and each needs a fresh operator activation with its own
+`docs/PHASE24_PREFLIGHT_CLOSURE.md`). Phase 24 backend retirement is the active
+Cranelift roadmap (`TASK.md`), activated 2026-09-12. Phase 24.5 and Phase 25
+remain inactive and each needs a fresh operator activation with its own
 `TASK.md` boundary.
 
 Patch 24.1 characterized every filename-selected typechecker branch. On
