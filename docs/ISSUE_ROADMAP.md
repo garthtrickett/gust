@@ -1,9 +1,9 @@
 # GitHub issue roadmap
 
 **Status:** repository-wide routing index
-**Last audited:** 2026-09-12
+**Last audited:** 2026-09-13
 **Audited GitHub repository:** `garthtrickett/gust`
-**Audited main:** `a341b69a10170f874a85253b219c61f272481413`
+**Audited main:** `8aa9922e` (Patch 24.11 merge; #390 filed against it)
 
 This file gives every open GitHub issue an owned place in Gust's Markdown
 roadmap. It prevents an issue from being technically well reported but absent
@@ -56,6 +56,7 @@ change a VISION decision, or widen the active Phase 22 boundary.
 | --- | --- | --- | --- |
 | [#133 — Define `str ==` and `!=` as content equality](https://github.com/garthtrickett/gust/issues/133) | **Half delivered; Cranelift owner.** The equality half landed: Cranelift Patch 24.2q (#377, merge `2b8417a7`, 2026-09-10) makes `==`/`!=` on `str` content equality on both retained compiler paths, with positive coverage in `tests/test_str_content_equality.gst` and the repurposed `tests/test_str_equality_*` fixtures, and `TASK_STDLIB.md` CR-1 is resolved. The row narrows to the issue's second clause, *without exposing `std.str_eq`*: the symbol remains public safe surface and the compiler still calls it 3,866 times (`docs/ONE_WAY_LEDGER.md` E5, row 13 `PARTIAL`). | Post-Phase 25 language-ergonomics roadmap unless separately activated earlier; the compiler-source idiom adoption may ride any patch already in the file. | Close when `std.str_eq` is no longer offered as safe surface (or an operator ruling keeps it and says why) and the compiler sources use the operator, with `make gust` and the bootstrap fixed point green. Do not reintroduce a retired C backend merely to preserve the issue's historical parity wording. |
 | [#325 — Registry records `std_Mutex_Alloc`/`std_Channel_Alloc` as `returns_explicit_error`; both `exit(1)`](https://github.com/garthtrickett/gust/issues/325) | **Registry-truth defect; Cranelift owner.** Filed 2026-09-04 against `6e5aaa67`: `scripts/cranelift_feature_registry.json` records `failure_form: returns_explicit_error` for two runtime symbols whose source prints to stdout and calls `exit(1)` on pool exhaustion (`src/runtime/fiber.c`), while holding the pool lock. The registry row is wrong today regardless of when the behaviour changes. Same family as #91. | Registry correction: next Cranelift patch already in the registry, or a standalone row-only fix. Behaviour change: `docs/PHASE28_RUNTIME_PRODUCTION_SHAPE.md` Patch 28.4 (inactive). | Independent of every other row. Close the registry half when the two rows describe the measured behaviour, cited to `src/runtime/fiber.c` at the audited main; close the behaviour half only under Phase 28.4 with a contained-failure test on the supported backend. |
+| [#390 — `guard_reachability` treats a forbidding `rg -e` pattern as a call edge; `phase11-metadata-diagnostic-parity` is orphaned but reported live](https://github.com/garthtrickett/gust/issues/390) | **Evidence-tooling defect; Cranelift owner.** Filed 2026-09-13 during Patch 24.12 prep against `8aa9922e`: the only reference to `guard-cranelift-phase11-metadata-diagnostic-parity` outside its own recipe (`justfile:12780`) is a negative assertion at `justfile:18608` that *forbids* calling it, which the reachability parser reads as a call edge. The guard is orphaned and red on its native arm, yet the merged 24.11 inventory scores its row `live`. The same block can produce false edges for `differential-family`, `historical-full`, and `phase9g-close`. | Phase 24 Patch 24.16 residue audit (the inventory row), with the parser fix as its own Cranelift patch whenever a patch is already in `scripts/guard_reachability.py`; 24.12 does not depend on the module. | Independent of 24.12–24.15. Close when the parser distinguishes negative assertions from invocations with a falsifier that fails on the `justfile:18608` shape, the 24.11 inventory row is re-scored, and the orphaned guard is either wired to a caller or retired with its live invariant named. |
 | [#102 — Safe enum variant construction / `Option`](https://github.com/garthtrickett/gust/issues/102) | **Deferred generic semantic change; Cranelift owner.** `TASK_STDLIB.md` CR-14 establishes that an `Option`-only helper is forbidden. | Post-Phase 25 language-ergonomics roadmap, after CR-15 handoff; before the OD-9 demo experiment. | Implement generic enum-variant construction for user enums and `Option`, with no representation-field spelling in ordinary source. Close on safe construction, match/destructuring, diagnostics, and bootstrap evidence. |
 | [#108 — `os.System` and builtins bypass the unsafe gate](https://github.com/garthtrickett/gust/issues/108) | **Policy decision then implementation; operator decides privileged set, Cranelift owns compiler enforcement.** | Post-Phase 25 safety-semantics/effects roadmap. | First decide whether to gate only process execution or a broader host surface. Preserve wrap-before-enforce bootstrap sequencing. Close only when the selected builtins require the chosen explicit authority and ordinary compiler/bootstrap use remains qualified. |
 | [#103 — Numeric model absent and overflow is not trapping](https://github.com/garthtrickett/gust/issues/103) | **Deferred language semantics; Cranelift owner.** The numeric tower and the core overflow rule must not be conflated. | Post-Phase 25 safety-semantics roadmap; split overflow from later numeric/time library surface when promoted. | Close the overflow portion only after the language has a defined, tested overflow contract across the supported backend and bootstrap. Keep wider fixed-width, decimal, money, and time work open or separately roadmapped until delivered. |
@@ -64,10 +65,10 @@ change a VISION decision, or widen the active Phase 22 boundary.
 
 ## Audit result
 
-All seven GitHub issues open on 2026-09-12 (#325, #133, #108, #103, #102, #101,
-#91) are represented above. #325 was filed on 2026-09-04 and had no row until
-this audit, which is the intake defect this file exists to prevent; it is
-registered now. Issues #110, #240, and #105 qualified for closure on their
+All eight GitHub issues open on 2026-09-13 (#390, #325, #133, #108, #103,
+#102, #101, #91) are represented above. #325 was filed on 2026-09-04 and had no
+row until the 2026-09-12 audit, which is the intake defect this file exists to
+prevent; #390 was registered the day it was filed. Issues #110, #240, and #105 qualified for closure on their
 audited current-main revisions; the remaining issues did not:
 
 - #133's equality half is delivered by 24.2q; its `std.str_eq` clause is not;
