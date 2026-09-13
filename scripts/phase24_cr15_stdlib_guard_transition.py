@@ -1870,12 +1870,21 @@ def normalize_phase23_text_surfaces(
             retirement.get("partial_extra_or_substituted_surface") ==
             "rejected",
             "Patch 24.3b coordinate retirement successor drifted")
-    retire_paths: list[str] = retirement["registered_changed_paths"]
+    # A path this patch also moved is judged by this patch's successor, which
+    # already projected it back above; leaving it here would compare the
+    # projected row against Patch 24.3b's pair and pass for the wrong reason.
+    retire_paths: list[str] = [
+        path for path in retirement["registered_changed_paths"]
+        if path not in oracle_paths]
     retire_pre_rows: dict[str, dict] = {}
-    retire_pre_by_path = {row["path"]: row
-                          for row in retirement["previous_changed_text_surfaces"]}
-    retire_post_by_path = {row["path"]: row
-                           for row in retirement["current_changed_text_surfaces"]}
+    retire_pre_by_path = {
+        row["path"]: row
+        for row in retirement["previous_changed_text_surfaces"]
+        if row["path"] in retire_paths}
+    retire_post_by_path = {
+        row["path"]: row
+        for row in retirement["current_changed_text_surfaces"]
+        if row["path"] in retire_paths}
     require(sorted(retire_pre_by_path) == sorted(retire_paths) and
             sorted(retire_post_by_path) == sorted(retire_paths),
             "Patch 24.3b registered paths and rows disagree")
@@ -1892,8 +1901,12 @@ def normalize_phase23_text_surfaces(
         retire_pre_rows[path] = retire_pre_by_path[path]
     # The auth paths are excluded from the unchanged-other digest in every state,
     # so that digest does not depend on which of them has landed yet.
+    # Scope uses Patch 24.3b's full registered set, not the subset it still
+    # judges: a path handed to the Patch 24.12 successor is still one the
+    # pinned unchanged-other digest was computed without.
     scope = union_paths + [
-        path for path in retire_paths if path not in union_paths]
+        path for path in retirement["registered_changed_paths"]
+        if path not in union_paths]
     other_digest = digest_bytes(json.dumps(
         [row for row in rows if row["path"] not in scope],
         sort_keys=True, separators=(",", ":")).encode())

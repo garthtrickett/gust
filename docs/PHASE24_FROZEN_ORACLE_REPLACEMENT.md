@@ -158,6 +158,9 @@ spelling that now carries it.
 - `guard-cranelift-phase11-close` on `scripts/phase13_registry_differential.sh`: `cmp -s "$case_dir/default.c" "$case_dir/explicit.c"` -> `cmp -s "$case_dir/mir-to-c.stdout" "$case_dir/native.stdout"`
 - `guard-cranelift-phase11-close` on `scripts/phase13_registry_differential.sh`: `mir-to-c-program` -> `mir-to-c.status`
 - `guard-cranelift-phase12-5-close` on `scripts/phase13_registry_differential.sh`: `./gust --backend c "$source_fixture"` -> `python3 scripts/phase24_frozen_oracle.py materialize`
+- `guard-cranelift-phase14-close` on `scripts/phase13_registry_differential.sh`: `./gust --backend c "$source_fixture"` -> `python3 scripts/phase24_frozen_oracle.py materialize`
+- `guard-cranelift-phase14-close` on `scripts/phase13_registry_differential.sh`: `./gust --backend mir-to-c "$source_fixture"` -> `"$source_fixture" "$case_dir/mir-to-c" --kind exec`
+- `guard-cranelift-phase14-close` on `scripts/phase13_registry_differential.sh`: `cmp -s "$case_dir/default.c" "$case_dir/explicit.c"` -> `cmp -s "$case_dir/mir-to-c.stdout" "$case_dir/native.stdout"`
 - `guard-cranelift-phase12-5-close` on `scripts/phase13_registry_differential.sh`: `./gust --backend mir-to-c "$source_fixture"` -> `"$source_fixture" "$case_dir/mir-to-c" --kind exec`
 - `guard-cranelift-phase12-5-close` on `scripts/phase13_registry_differential.sh`: `cmp -s "$case_dir/default.c" "$case_dir/explicit.c"` -> `cmp -s "$case_dir/mir-to-c.stdout" "$case_dir/native.stdout"`
 

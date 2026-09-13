@@ -4404,6 +4404,9 @@
                 "guard": {
                   "type": "string"
                 },
+                "host": {
+                  "type": "string"
+                },
                 "now": {
                   "type": "string"
                 },

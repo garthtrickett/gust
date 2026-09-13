@@ -341,6 +341,38 @@ def phase22_relay_inventory_rows(
     return [row for row in rows if row not in excluded]
 
 
+def effective_relay_inventory(registry: dict, landed_authority: dict) -> dict:
+    """The pinned post-relay census, advanced by each registered successor.
+
+    Same shape and same reason as the CR-15 census successor: Patch 24.12
+    removes 107 explicit-C invocations, so the closed record's total stops
+    describing the tree. The two censuses are filtered differently (this one
+    drops the relay-inventory rows first), so they carry different totals, but
+    the reduction is the same removal and has to be the same size — if they
+    disagree, one of them is measuring something else.
+    """
+    pinned = landed_authority.get("exact_invocation_inventory")
+    successor = registry.get("phase24_frozen_oracle_replacement", {}).get(
+        "phase22_invocation_successor")
+    if successor is None:
+        return pinned
+    previous = successor.get("previous_relay_inventory")
+    current = successor.get("current_relay_inventory")
+    require(previous == pinned and isinstance(current, dict),
+            "Patch 24.12 post-relay inventory successor drifted")
+    require(current["total"] < previous["total"] and
+            current["unclassified_count"] == previous["unclassified_count"] ==
+            0,
+            "Patch 24.12 did not reduce a fully classified post-relay census")
+    removed = previous["total"] - current["total"]
+    require(removed == successor.get("removed_invocation_count") ==
+            previous["selection_counts"]["explicit_c"] -
+            current["selection_counts"]["explicit_c"],
+            "the post-relay census reduction is not the registered "
+            "explicit-C removal")
+    return current
+
+
 def validate_post_flip_relay_transition(
         registry: dict, rows: list[dict[str, object]]) -> tuple[str, dict]:
     """Require the exact landed six-site post-relay state."""
@@ -392,7 +424,7 @@ def validate_post_flip_relay_transition(
     summary = scan_summary(rows)
     require({str(row["selection"]) for row in live_sites.values()} ==
             {"explicit_c"} and
-            summary == landed_authority.get("exact_invocation_inventory"),
+            summary == effective_relay_inventory(registry, landed_authority),
             "live invocation scan is not the exact landed six-site post-relay state")
     return "landed_post_relay", landed_authority
 
@@ -612,7 +644,11 @@ def render(record: dict, rows: list[dict[str, object]], registry: dict) -> str:
     rows = phase22_relay_inventory_rows(registry, live_rows)
     opening_inventory = record["invocation_inventory"]
     _, landed_authority = validate_post_flip_relay_transition(registry, live_rows)
-    inventory = landed_authority["exact_invocation_inventory"]
+    # The review reports the census this tree actually has, advanced by any
+    # registered successor, so its header and its table describe the same
+    # state. `validate` compares these markers against the live scan, so a
+    # pinned header here would report 306 invocations above a 199-row table.
+    inventory = effective_relay_inventory(registry, landed_authority)
     projected_rows = transition_projection_rows(rows, registry)
     handoff = record["native_capability_handoff"]
     stability = record["stability_qualification"]

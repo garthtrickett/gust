@@ -222,6 +222,27 @@ LIVE_C_PRESENCE_ASSERTIONS_REWRITTEN = (
         "now": "python3 scripts/phase24_frozen_oracle.py materialize",
     },
     {
+        "guard": "guard-cranelift-phase14-close",
+        "host": "scripts/phase14_closure.py",
+        "target": "scripts/phase13_registry_differential.sh",
+        "was": "./gust --backend c \"$source_fixture\"",
+        "now": "python3 scripts/phase24_frozen_oracle.py materialize",
+    },
+    {
+        "guard": "guard-cranelift-phase14-close",
+        "host": "scripts/phase14_closure.py",
+        "target": "scripts/phase13_registry_differential.sh",
+        "was": "./gust --backend mir-to-c \"$source_fixture\"",
+        "now": "\"$source_fixture\" \"$case_dir/mir-to-c\" --kind exec",
+    },
+    {
+        "guard": "guard-cranelift-phase14-close",
+        "host": "scripts/phase14_closure.py",
+        "target": "scripts/phase13_registry_differential.sh",
+        "was": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"",
+        "now": "cmp -s \"$case_dir/mir-to-c.stdout\" \"$case_dir/native.stdout\"",
+    },
+    {
         "guard": "guard-cranelift-phase12-5-close",
         "target": "scripts/phase13_registry_differential.sh",
         "was": "./gust --backend mir-to-c \"$source_fixture\"",
@@ -730,8 +751,14 @@ def check_presence_rewrites() -> None:
     (or the rewrite was cosmetic and the guard would still pass on an
     unconverted harness).
     """
-    just = JUSTFILE.read_text(encoding="utf-8")
     for row in LIVE_C_PRESENCE_ASSERTIONS_REWRITTEN:
+        # A presence assertion lives in the justfile unless it says otherwise;
+        # the Phase 14 closure keeps its copy in Python.
+        host_path = ROOT / str(row.get("host", "justfile"))
+        require(host_path.is_file(),
+                f"a rewritten presence assertion names a missing host: "
+                f"{row.get('host', 'justfile')}")
+        host = host_path.read_text(encoding="utf-8")
         target = ROOT / str(row["target"])
         require(target.is_file(),
                 f"a rewritten presence assertion names a missing harness: "
@@ -743,12 +770,12 @@ def check_presence_rewrites() -> None:
         require(row["was"] not in body,
                 f"{row['guard']}'s old live-C spelling is back in "
                 f"{row['target']}: {row['was']}")
-        require(row["now"] in just,
+        require(row["now"] in host,
                 f"{row['guard']} was not rewritten to the new spelling: "
                 f"{row['now']}")
-        require(f"'{row['was']}'" not in just,
-                f"a live-C presence assertion survives in the justfile: "
-                f"{row['was']}")
+        require(f"'{row['was']}'" not in host,
+                f"a live-C presence assertion survives in "
+                f"{row.get('host', 'justfile')}: {row['was']}")
 
 
 def check_frozen_only_cases(vectors: dict) -> None:
