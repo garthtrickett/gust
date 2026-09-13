@@ -13343,10 +13343,16 @@ guard-cranelift-phase13-close:
       exit 1
     fi
 
-    rg -n -F './gust --backend c "$source_fixture"' "$differential_harness" >/dev/null
-    rg -n -F './gust --backend mir-to-c "$source_fixture"' \
+    # Patch 24.12 replaced this harness's live-C arm with the frozen
+    # expected-behaviour oracle. The obligation is unchanged — every
+    # differential case still drives a MIR-to-C observation and a live native
+    # one and compares them byte for byte — so the closure guard asserts the
+    # spellings that now carry it.
+    rg -n -F 'python3 scripts/phase24_frozen_oracle.py materialize' \
       "$differential_harness" >/dev/null
-    rg -n -F 'cmp -s "$case_dir/default.c" "$case_dir/explicit.c"' \
+    rg -n -F '"$source_fixture" "$case_dir/mir-to-c" --kind exec' \
+      "$differential_harness" >/dev/null
+    rg -n -F 'cmp -s "$case_dir/mir-to-c.stdout" "$case_dir/native.stdout"' \
       "$differential_harness" >/dev/null
     rg -n -F 'assert_preserved_output "$deferred_output" "$deferred_output.expected"' \
       "$capability_evidence" >/dev/null
@@ -18241,10 +18247,10 @@ guard-cranelift-phase11-route-retirement-ci:
       'case_kind'
       'owner_entry_id'
       'ci_family'
-      'default.c'
-      'explicit.c'
-      'cmp -s "$case_dir/default.c" "$case_dir/explicit.c"'
-      'mir-to-c-program'
+      'phase24_frozen_oracle.py materialize'
+      'workdir "$case_dir/mir-workdir"'
+      'cmp -s "$case_dir/mir-to-c.stdout" "$case_dir/native.stdout"'
+      'mir-to-c.status'
       'native-program'
       'runtime stdout bytes differ'
       'runtime stderr bytes differ'
@@ -18316,7 +18322,7 @@ guard-cranelift-phase11-close:
 
     python3 "$registry_validator" validate
     python3 "$registry_validator" verify-phase11-closure
-    rg -n -F 'cmp -s "$case_dir/default.c" "$case_dir/explicit.c"' \
+    rg -n -F 'cmp -s "$case_dir/mir-to-c.stdout" "$case_dir/native.stdout"' \
       "$differential_harness" >/dev/null
     # And the shim must still delegate to it, so the wiring cannot rot silently.
     rg -n -F 'exec bash scripts/phase13_registry_differential.sh' \
@@ -19497,9 +19503,14 @@ guard-cranelift-phase12-5-close:
     fi
     rg -n -x -F '        run: just guard-cranelift-phase12-5-close' "$pr_workflow" >/dev/null
 
-    rg -n -F './gust --backend c "$source_fixture"' "$differential_harness" >/dev/null
-    rg -n -F './gust --backend mir-to-c "$source_fixture"' "$differential_harness" >/dev/null
-    rg -n -F 'cmp -s "$case_dir/default.c" "$case_dir/explicit.c"' "$differential_harness" >/dev/null
+    # Patch 24.12 replaced this harness's live-C arm with the frozen
+    # expected-behaviour oracle. The obligation is unchanged — every
+    # differential case still drives a MIR-to-C observation and a live native
+    # one and compares them byte for byte — so the closure guard asserts the
+    # spellings that now carry it.
+    rg -n -F 'python3 scripts/phase24_frozen_oracle.py materialize' "$differential_harness" >/dev/null
+    rg -n -F '"$source_fixture" "$case_dir/mir-to-c" --kind exec' "$differential_harness" >/dev/null
+    rg -n -F 'cmp -s "$case_dir/mir-to-c.stdout" "$case_dir/native.stdout"' "$differential_harness" >/dev/null
 
     close_body="$(sed -n '/^guard-cranelift-phase12-5-close:/,/^guard-cranelift-phase12-5-opening-contract:/p' justfile)"
     if printf '%s\n' "$close_body" | rg -n -e '^[[:space:]]+just guard-cranelift-historical-full([[:space:]]|$)' -e '^[[:space:]]+just guard-cranelift-differential-family([[:space:]]|$)' -e '^[[:space:]]+just guard-cranelift-phase11-close([[:space:]]|$)' -e '^[[:space:]]+just guard-cranelift-phase(9g|10)-close([[:space:]]|$)' >/dev/null; then
@@ -21961,24 +21972,19 @@ guard-mir-feature-return-int-preservation:
     just guard-mir-feature-registry-surface
     feature_fixture="compiler/mir_feature_return_int_preservation_source.gst"
     build_dir="build/guards/mir_feature_return_int_preservation"
-    old_c="$build_dir/old_ast_to_c_return_int.c"
-    old_final_c="$build_dir/old_ast_to_c_return_int_final.c"
-    old_binary="$build_dir/old_ast_to_c_return_int_bin"
     mkdir -p "$build_dir"
     rg -n -F 'func return_one() int' "$feature_fixture" >/dev/null
     rg -n -F 'return 1;' "$feature_fixture" >/dev/null
     rg -n -F 'os.Exit(result);' "$feature_fixture" >/dev/null
-    echo "  ↳ old AST-to-C native behavior"
-    ./gust --backend mir-to-c "$feature_fixture" | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > "$old_c"
-    cat src/runtime.c "$old_c" > "$old_final_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
-    INCLUDES_VAL="${INCLUDES:--Isrc}"
-    "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL "$old_final_c" -o "$old_binary"
-    set +e
-    "$old_binary"
-    old_status="$?"
-    set -e
+    echo "  ↳ old AST-to-C native behavior (frozen, Patch 24.12)"
+    python3 scripts/phase24_frozen_oracle.py materialize \
+      "$feature_fixture" "$build_dir/frozen" --kind exec
+    if [ -s "$build_dir/frozen.compile.stderr" ]; then
+      cat "$build_dir/frozen.compile.stderr" >&2
+      echo "Frozen oracle records compiler diagnostics for $feature_fixture"
+      exit 1
+    fi
+    old_status="$(cat "$build_dir/frozen.status")"
     if [ "$old_status" != "1" ]; then
       echo "Expected old AST-to-C return-int fixture to exit with status 1, got $old_status"
       exit 1
@@ -21999,25 +22005,20 @@ guard-mir-feature-local-binding-read-preservation:
     just guard-mir-feature-registry-surface
     feature_fixture="compiler/mir_feature_local_binding_read_preservation_source.gst"
     build_dir="build/guards/mir_feature_local_binding_read_preservation"
-    old_c="$build_dir/old_ast_to_c_local_binding_read.c"
-    old_final_c="$build_dir/old_ast_to_c_local_binding_read_final.c"
-    old_binary="$build_dir/old_ast_to_c_local_binding_read_bin"
     mkdir -p "$build_dir"
     rg -n -F 'func local_binding_read() int' "$feature_fixture" >/dev/null
     rg -n -F 'mut value := 2;' "$feature_fixture" >/dev/null
     rg -n -F 'return value;' "$feature_fixture" >/dev/null
     rg -n -F 'os.Exit(result);' "$feature_fixture" >/dev/null
-    echo "  ↳ old AST-to-C native behavior"
-    ./gust --backend mir-to-c "$feature_fixture" | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > "$old_c"
-    cat src/runtime.c "$old_c" > "$old_final_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
-    INCLUDES_VAL="${INCLUDES:--Isrc}"
-    "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL "$old_final_c" -o "$old_binary"
-    set +e
-    "$old_binary"
-    old_status="$?"
-    set -e
+    echo "  ↳ old AST-to-C native behavior (frozen, Patch 24.12)"
+    python3 scripts/phase24_frozen_oracle.py materialize \
+      "$feature_fixture" "$build_dir/frozen" --kind exec
+    if [ -s "$build_dir/frozen.compile.stderr" ]; then
+      cat "$build_dir/frozen.compile.stderr" >&2
+      echo "Frozen oracle records compiler diagnostics for $feature_fixture"
+      exit 1
+    fi
+    old_status="$(cat "$build_dir/frozen.status")"
     if [ "$old_status" != "2" ]; then
       echo "Expected old AST-to-C local binding/read fixture to exit with status 2, got $old_status"
       exit 1
@@ -22038,26 +22039,21 @@ guard-mir-feature-if-else-return-int-preservation:
     just guard-mir-feature-registry-surface
     feature_fixture="compiler/mir_feature_if_else_return_int_preservation_source.gst"
     build_dir="build/guards/mir_feature_if_else_return_int_preservation"
-    old_c="$build_dir/old_ast_to_c_if_else_return_int.c"
-    old_final_c="$build_dir/old_ast_to_c_if_else_return_int_final.c"
-    old_binary="$build_dir/old_ast_to_c_if_else_return_int_bin"
     mkdir -p "$build_dir"
     rg -n -F 'func if_else_return_int() int' "$feature_fixture" >/dev/null
     rg -n -F 'if true {' "$feature_fixture" >/dev/null
     rg -n -F 'return 1;' "$feature_fixture" >/dev/null
     rg -n -F 'return 2;' "$feature_fixture" >/dev/null
     rg -n -F 'os.Exit(result);' "$feature_fixture" >/dev/null
-    echo "  ↳ old AST-to-C native behavior"
-    ./gust --backend mir-to-c "$feature_fixture" | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > "$old_c"
-    cat src/runtime.c "$old_c" > "$old_final_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
-    INCLUDES_VAL="${INCLUDES:--Isrc}"
-    "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL "$old_final_c" -o "$old_binary"
-    set +e
-    "$old_binary"
-    old_status="$?"
-    set -e
+    echo "  ↳ old AST-to-C native behavior (frozen, Patch 24.12)"
+    python3 scripts/phase24_frozen_oracle.py materialize \
+      "$feature_fixture" "$build_dir/frozen" --kind exec
+    if [ -s "$build_dir/frozen.compile.stderr" ]; then
+      cat "$build_dir/frozen.compile.stderr" >&2
+      echo "Frozen oracle records compiler diagnostics for $feature_fixture"
+      exit 1
+    fi
+    old_status="$(cat "$build_dir/frozen.status")"
     if [ "$old_status" != "1" ]; then
       echo "Expected old AST-to-C if/else return-int fixture to exit with status 1, got $old_status"
       exit 1
@@ -22078,25 +22074,20 @@ guard-mir-feature-local-binding-read-provenance-metadata-preservation:
     just guard-mir-feature-registry-surface
     feature_fixture="compiler/mir_feature_local_binding_read_provenance_metadata_preservation_source.gst"
     build_dir="build/guards/mir_feature_local_binding_read_provenance_metadata_preservation"
-    old_c="$build_dir/old_ast_to_c_local_binding_read_provenance_metadata.c"
-    old_final_c="$build_dir/old_ast_to_c_local_binding_read_provenance_metadata_final.c"
-    old_binary="$build_dir/old_ast_to_c_local_binding_read_provenance_metadata_bin"
     mkdir -p "$build_dir"
     rg -n -F 'func local_binding_read_provenance_metadata() int' "$feature_fixture" >/dev/null
     rg -n -F 'mut value := 2;' "$feature_fixture" >/dev/null
     rg -n -F 'return value;' "$feature_fixture" >/dev/null
     rg -n -F 'os.Exit(result);' "$feature_fixture" >/dev/null
-    echo "  ↳ old AST-to-C native behavior"
-    ./gust --backend mir-to-c "$feature_fixture" | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > "$old_c"
-    cat src/runtime.c "$old_c" > "$old_final_c"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
-    INCLUDES_VAL="${INCLUDES:--Isrc}"
-    "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL "$old_final_c" -o "$old_binary"
-    set +e
-    "$old_binary"
-    old_status="$?"
-    set -e
+    echo "  ↳ old AST-to-C native behavior (frozen, Patch 24.12)"
+    python3 scripts/phase24_frozen_oracle.py materialize \
+      "$feature_fixture" "$build_dir/frozen" --kind exec
+    if [ -s "$build_dir/frozen.compile.stderr" ]; then
+      cat "$build_dir/frozen.compile.stderr" >&2
+      echo "Frozen oracle records compiler diagnostics for $feature_fixture"
+      exit 1
+    fi
+    old_status="$(cat "$build_dir/frozen.status")"
     if [ "$old_status" != "2" ]; then
       echo "Expected old AST-to-C local binding/read provenance metadata fixture to exit with status 2, got $old_status"
       exit 1
@@ -24008,3 +23999,27 @@ guard-stdlib-s1-migration:
     echo "🔒 Checking S1 realistic example migration..."
     just guard-stdlib-s1-mutex-guard-fibers
     bash scripts/stdlib_s1_migration_parity.sh
+
+# Cranelift lane, Patch 24.12. The frozen expected-behaviour oracle that takes
+# over the retired backend's role as the parity oracle. The contract guard
+# validates the vector manifest against the registry and the immutable 23.11
+# archived corpus, and asserts the exit gate: zero parity guards with a native
+# arm execute live C. The evidence guard proves the frozen vectors can still
+# fail — a frozen test that cannot fail is a deleted test.
+guard-cranelift-phase24-frozen-oracle-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧊 Checking the Phase 24 frozen expected-behaviour oracle..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase24-frozen-oracle-contract | grep -F $'guard-cranelift-phase24-frozen-oracle-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase24_frozen_oracle.py validate
+    python3 scripts/phase24_frozen_oracle.py check-review
+
+guard-cranelift-phase24-frozen-oracle-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧪 Replaying Phase 24 frozen-oracle falsifiability evidence..."
+    just guard-cranelift-phase24-frozen-oracle-contract
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase24-frozen-oracle-evidence | grep -F $'guard-cranelift-phase24-frozen-oracle-evidence\t2\t' >/dev/null
+    python3 scripts/phase24_frozen_oracle.py mutation-evidence

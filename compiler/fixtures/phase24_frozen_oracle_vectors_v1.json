@@ -21,6 +21,18 @@
   },
   "oracle_route": "explicit_--backend_mir-to-c",
   "source_commit": "8aa9922eb40ad404647a86f865f0790ab37a3589",
+  "supplementary_capture": {
+   "fixtures": [
+    "compiler/mir_feature_if_else_return_int_preservation_source.gst",
+    "compiler/mir_feature_local_binding_read_preservation_source.gst",
+    "compiler/mir_feature_local_binding_read_provenance_metadata_preservation_source.gst"
+   ],
+   "reuses": "capture_vectors.py:capture",
+   "source_commit": "8b07c028951f0c255386eaa3ba26a9fe802a3149",
+   "tool": "gust-pending/p2412-prep/capture_supplement.py",
+   "tool_sha256": "8775e6526e3e49040ee6063ec66d10b8eee2e5f7038f5d8d55d5c8ebbc6112ad",
+   "why": "the main fixture list missed the mir_feature preservation sources built by the guard-mir-feature-* recipes"
+  },
   "target": "x86_64-unknown-linux-gnu"
  },
  "format": "gust.phase24.frozen_oracle_vectors.v1",
@@ -344,6 +356,111 @@
    "side_effects": [],
    "source_fixture": "compiler/mir_abi_composition_parity_smoke_test_entry.gst",
    "source_sha256": "0ee2f0b9e5e485d0eab0ad4ebbe1e1ff6ec78ccb5ab7075a091a3d120e8e019f",
+   "workdir_sensitive": false
+  },
+  "compiler/mir_feature_if_else_return_int_preservation_source.gst": {
+   "archived_corpus_case": null,
+   "compile": {
+    "exit": 0,
+    "stderr": {
+     "hex": "",
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "size": 0
+    },
+    "stdout": {
+     "sha256": "c2ab47ac5031d6a62271b5aca275f13628d0a965ea84ec01082c8941ca668586",
+     "size": 1498
+    }
+   },
+   "execution": {
+    "exit": 1,
+    "stderr": {
+     "hex": "",
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "size": 0
+    },
+    "stdout": {
+     "hex": "",
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "size": 0
+    }
+   },
+   "kind": "exec",
+   "link_extras": [],
+   "provenance": "captured_live_while_green",
+   "side_effects": [],
+   "source_fixture": "compiler/mir_feature_if_else_return_int_preservation_source.gst",
+   "source_sha256": "9cd5ae3bad08a81e2b6e1a1d737e73e95e4d63c5398bb43723836bc383d22fe7",
+   "workdir_sensitive": false
+  },
+  "compiler/mir_feature_local_binding_read_preservation_source.gst": {
+   "archived_corpus_case": null,
+   "compile": {
+    "exit": 0,
+    "stderr": {
+     "hex": "",
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "size": 0
+    },
+    "stdout": {
+     "sha256": "3ee35482ce772422ac381093f4a192a7f90daea177cf3b2f5c7fcfafa0866969",
+     "size": 1475
+    }
+   },
+   "execution": {
+    "exit": 2,
+    "stderr": {
+     "hex": "",
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "size": 0
+    },
+    "stdout": {
+     "hex": "",
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "size": 0
+    }
+   },
+   "kind": "exec",
+   "link_extras": [],
+   "provenance": "captured_live_while_green",
+   "side_effects": [],
+   "source_fixture": "compiler/mir_feature_local_binding_read_preservation_source.gst",
+   "source_sha256": "efea8c135591e6a9e5da509ee7192e7e38af4231f10615d93e086adcacfeb011",
+   "workdir_sensitive": false
+  },
+  "compiler/mir_feature_local_binding_read_provenance_metadata_preservation_source.gst": {
+   "archived_corpus_case": null,
+   "compile": {
+    "exit": 0,
+    "stderr": {
+     "hex": "",
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "size": 0
+    },
+    "stdout": {
+     "sha256": "52a49f58d2c9850a6f6cb1dab7603a5e410ae09a015b02923814969e5b73ce63",
+     "size": 1535
+    }
+   },
+   "execution": {
+    "exit": 2,
+    "stderr": {
+     "hex": "",
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "size": 0
+    },
+    "stdout": {
+     "hex": "",
+     "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+     "size": 0
+    }
+   },
+   "kind": "exec",
+   "link_extras": [],
+   "provenance": "captured_live_while_green",
+   "side_effects": [],
+   "source_fixture": "compiler/mir_feature_local_binding_read_provenance_metadata_preservation_source.gst",
+   "source_sha256": "94db57a93a6408355f495d2fd88214bd1ef222e17935642109c8bf4b76c95cde",
    "workdir_sensitive": false
   },
   "compiler/mir_feature_return_int_preservation_source.gst": {
