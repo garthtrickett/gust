@@ -18,6 +18,7 @@ LEVELS = ROOT / "scripts/cranelift_test_levels.json"
 PR_FAST = ROOT / ".github/workflows/pr-fast.yml"
 WORKFLOW = ROOT / ".github/workflows/phase21-scheduler-main-result.yml"
 JUSTFILE = ROOT / "justfile"
+HARNESS = ROOT / "scripts/phase20_long_lived_concurrent.sh"
 GUARD_L1 = "guard-cranelift-phase21-scheduler-main-result-contract"
 GUARD_L2 = "guard-cranelift-phase21-scheduler-main-result-evidence"
 
@@ -106,6 +107,24 @@ def validate() -> None:
     require(f"just {GUARD_L1}" in workflow and f"just {GUARD_L2}" in workflow,
             "workflow does not execute both Patch 21.17a owners")
 
+    # Patch 24.12 converted the harness this guard replays, so replay() reads
+    # a frozen MIR-to-C observation instead of executing one. That contract
+    # is between two files, and nothing else checks the seam: this guard
+    # names no backend spelling, so the 24.12 inventory (which scans
+    # scripts/*.sh) and its no-live-C check both look straight past it. It
+    # broke exactly that way once -- the harness stopped building
+    # `mir-to-c-program`, this file went on requiring it, and the guard still
+    # passed on any tree with a stale build/ directory. Assert the seam from
+    # this side, in both directions.
+    harness = HARNESS.read_text(encoding="utf-8")
+    require("phase24_frozen_oracle.py materialize" in harness and
+            '"$build_root/mir-to-c" --kind exec' in harness,
+            "the long-lived harness no longer materializes the frozen "
+            "MIR-to-C observation that replay() reads")
+    require("mir-to-c-program" not in harness,
+            "the long-lived harness builds a live-C program again; replay() "
+            "would compare the frozen arm against a tree that has both")
+
 
 def replay() -> None:
     validate()
@@ -116,40 +135,65 @@ def replay() -> None:
     )
 
     build = ROOT / "build/guards/phase20_long_lived_concurrent_full"
-    programs = {
-        "mir-to-c": build / "mir-to-c-program",
-        "cranelift": build / "native-program",
-    }
     expected_status = EXPECTED["expected_exit_status"]
     replays = EXPECTED["focused_replays_per_backend"]
+
+    # Patch 24.12 froze this harness's MIR-to-C arm, so there is no
+    # `mir-to-c-program` to replay: phase20_long_lived_concurrent.sh now
+    # materializes the frozen vector's observation instead, under the same
+    # GUST_PHASE20_LONG_LIVED_CYCLES the native replays below run with. The
+    # recording is read once. Serving it 32 times would compare a file to
+    # itself, which is why the harness stopped doing that for its own
+    # resource arm; the determinism evidence Patch 21.17a rests on is the
+    # native replay loop, and that is still live.
+    frozen = {
+        "status": build / "mir-to-c.status",
+        "stdout": build / "mir-to-c.stdout",
+        "stderr": build / "mir-to-c.stderr",
+    }
+    for name, path in frozen.items():
+        require(path.is_file(),
+                f"frozen MIR-to-C {name} observable is missing")
+    mir_to_c = (
+        int(frozen["status"].read_text(encoding="utf-8").strip()),
+        frozen["stdout"].read_bytes(),
+        frozen["stderr"].read_bytes(),
+    )
+    require(mir_to_c[0] == expected_status,
+            f"frozen MIR-to-C observation returned {mir_to_c[0]}, "
+            f"expected {expected_status}")
+    require(not mir_to_c[1] and not mir_to_c[2],
+            "frozen MIR-to-C observation carries an observable stream")
+
+    program = build / "native-program"
+    require(program.is_file(), "focused cranelift executable is missing")
     env = os.environ.copy()
     env["GUST_PHASE20_LONG_LIVED_CYCLES"] = "128"
-    observations: dict[str, tuple[int, bytes, bytes]] = {}
-    for backend, program in programs.items():
-        require(program.is_file(), f"focused {backend} executable is missing")
-        for run in range(1, replays + 1):
-            result = subprocess.run(
-                [str(program)],
-                cwd=ROOT,
-                env=env,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                timeout=30,
-                check=False,
-            )
-            observation = (result.returncode, result.stdout, result.stderr)
-            require(result.returncode == expected_status,
-                    f"{backend} replay {run} returned {result.returncode}, "
-                    f"expected {expected_status}")
-            require(not result.stdout and not result.stderr,
-                    f"{backend} replay {run} produced an observable stream")
-            if backend in observations:
-                require(observation == observations[backend],
-                        f"{backend} replay {run} was nondeterministic")
-            else:
-                observations[backend] = observation
-    require(observations["mir-to-c"] == observations["cranelift"],
-            "MIR-to-C and Cranelift focused observations diverged")
+    first: tuple[int, bytes, bytes] | None = None
+    for run in range(1, replays + 1):
+        result = subprocess.run(
+            [str(program)],
+            cwd=ROOT,
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=30,
+            check=False,
+        )
+        observation = (result.returncode, result.stdout, result.stderr)
+        require(result.returncode == expected_status,
+                f"cranelift replay {run} returned {result.returncode}, "
+                f"expected {expected_status}")
+        require(not result.stdout and not result.stderr,
+                f"cranelift replay {run} produced an observable stream")
+        if first is None:
+            first = observation
+        else:
+            require(observation == first,
+                    f"cranelift replay {run} was nondeterministic")
+        require(observation == mir_to_c,
+                f"cranelift replay {run} diverged from the frozen MIR-to-C "
+                f"observation")
 
 
 def main() -> None:
