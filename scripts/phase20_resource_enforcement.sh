@@ -42,20 +42,12 @@ python3 scripts/phase20_resource_enforcement.py validate
 rm -rf "$build_root"
 mkdir -p "$build_root"
 
-./gust --backend mir-to-c "$positive" >"$build_root/default.c" 2>"$build_root/default.stderr"
-./gust --backend mir-to-c "$positive" \
-  >"$build_root/explicit.c" 2>"$build_root/explicit.stderr"
-test ! -s "$build_root/default.stderr"
-test ! -s "$build_root/explicit.stderr"
-cmp -s "$build_root/default.c" "$build_root/explicit.c"
-
-cat src/runtime.c "$build_root/default.c" >"$build_root/final.c"
-"${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-  "$build_root/final.c" -o "$build_root/program"
-set +e
-"$build_root/program" >"$build_root/stdout" 2>"$build_root/stderr"
-positive_status="$?"
-set -e
+python3 scripts/phase24_frozen_oracle.py materialize \
+  "$positive" "$build_root/frozen" --kind exec
+test ! -s "$build_root/frozen.compile.stderr"
+positive_status="$(cat "$build_root/frozen.status")"
+cp "$build_root/frozen.stdout" "$build_root/stdout"
+cp "$build_root/frozen.stderr" "$build_root/stderr"
 test "$positive_status" = 47
 test ! -s "$build_root/stdout"
 test ! -s "$build_root/stderr"
@@ -64,11 +56,13 @@ index=0
 for negative in "${negatives[@]}"; do
   stem="$(basename "$negative" .gst)"
   set +e
-  ./gust --backend mir-to-c "$negative" >"$build_root/$stem.default.log" 2>&1
-  default_status="$?"
-  ./gust --backend mir-to-c "$negative" \
-    >"$build_root/$stem.mir-to-c.log" 2>&1
-  explicit_status="$?"
+  set -e
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$negative" "$build_root/$stem.default" --kind reject
+  cp "$build_root/$stem.default.log" "$build_root/$stem.mir-to-c.log"
+  default_status="$(cat "$build_root/$stem.default.status")"
+  explicit_status="$default_status"
+  set +e
   ./gust --backend cranelift -o "$build_root/$stem.native" "$negative" \
     >"$build_root/$stem.cranelift.log" 2>&1
   native_status="$?"

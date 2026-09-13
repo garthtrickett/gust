@@ -169,6 +169,24 @@ NOT_REPAIRED = (
         "owner": "24.16",
         "tracked_by": "https://github.com/garthtrickett/gust/issues/390",
     },
+    {
+        "guard": "guard-cranelift-phase20-resource-enforcement-parity",
+        "state": "red_and_orphaned",
+        "cause": "asserts exactly one 'Semantic Error:' line in the compiler "
+                 "diagnostics for phase20_resource_destructor_arity_invalid, "
+                 "and the compiler emits three (test 3 = 1)",
+        "why_ci_is_green": "not workflow-reachable and no recipe calls it; "
+                           "PR Fast on main 8aa9922e is success (push run "
+                           "34695365766) and never reaches it",
+        "reproduce": "bash scripts/phase20_resource_enforcement.sh",
+        "frozen_from_a_red_run": False,
+        "frozen_how": "the frozen reject log matches the live compiler byte "
+                      "for byte; the guard fails at a later count assertion "
+                      "that failed identically before conversion, verified by "
+                      "running the pre-conversion script from bf3875bc",
+        "scope": "not_repaired_out_of_retirement_scope",
+        "owner": "24.16",
+    },
 )
 
 # Parity harnesses that no longer select the C backend themselves but still
