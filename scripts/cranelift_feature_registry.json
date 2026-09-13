@@ -23148,14 +23148,13 @@
   ]
 ,
   "phase24_retirement_consumer_inventory": {
-    "version": "phase24_retirement_consumer_inventory_v1",
-    "status": "patch24_11_complete",
     "authority_base_main": "b7b1713cd65630b14ae92e46afd393990928a2e2",
     "authority_owner": "scripts/cranelift_feature_registry.json",
     "bootstrap_entry_decision": {
-      "status": "patch24_11_decided_patch24_13_lands",
-      "current_state": "no_distinct_internal_entry",
+      "advertised_in_help": false,
       "current_callers": {
+        "dispatch": "compiler/test_runner_entry.gst:99-113",
+        "emitter": "compiler/test_runner_entry.gst:456",
         "makefile_cli_spelling_callers": [
           "Makefile:55",
           "Makefile:112",
@@ -23163,548 +23162,1031 @@
           "Makefile:241",
           "Makefile:245"
         ],
-        "selection": "user-facing --backend mir-to-c",
-        "dispatch": "compiler/test_runner_entry.gst:99-113",
-        "emitter": "compiler/test_runner_entry.gst:456"
+        "selection": "user-facing --backend mir-to-c"
       },
-      "selected_entry": "--backend bootstrap-emitter",
-      "selected_dispatch": "existing MirToC tag, new spelling branch only",
-      "rejected": {
-        "environment_variable": "invisible to review and spoofable; Phase 10 precedent keeps explicit selection explicit",
-        "entry_file_gating": "filename-selected meaning, rejected by the preflight invariant",
-        "keeping_mir_to_c_for_bootstrap": "leaves a user-facing spelling reaching the emitter after removal; the 24.13 falsifier could not distinguish bootstrap from ordinary use"
-      },
-      "advertised_in_help": false,
+      "current_state": "no_distinct_internal_entry",
       "falsifiers": [
         "--backend mir-to-c and --backend c reject with unknown backend",
         "help output names no C backend",
         "exactly the five Makefile caller lines use the internal spelling and no other tracked file does",
         "bootstrap still converges stage2==stage3 through the entry"
-      ]
+      ],
+      "rejected": {
+        "entry_file_gating": "filename-selected meaning, rejected by the preflight invariant",
+        "environment_variable": "invisible to review and spoofable; Phase 10 precedent keeps explicit selection explicit",
+        "keeping_mir_to_c_for_bootstrap": "leaves a user-facing spelling reaching the emitter after removal; the 24.13 falsifier could not distinguish bootstrap from ordinary use"
+      },
+      "selected_dispatch": "existing MirToC tag, new spelling branch only",
+      "selected_entry": "--backend bootstrap-emitter",
+      "status": "patch24_11_decided_patch24_13_lands"
     },
+    "inventory_digest": "3b3807839d191fd824eaf1636b336b89c1466e7b9dadb0355009d3fd21554167",
+    "row_count": 107,
     "rows": [
       {
+        "action": "convert",
         "id": "guard-cranelift-phase11-scalar-expression-parity",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "guard-cranelift-phase11-local-state-parity",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "guard-cranelift-phase11-structured-cfg-parity",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "guard-cranelift-phase11-block-parameter-loop-parity",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "guard-cranelift-phase11-direct-call-abi-parity",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "guard-cranelift-phase11-module-import-runtime-parity",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "guard-cranelift-phase11-metadata-diagnostic-parity",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "guard-mir-feature-return-int-preservation",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "guard-mir-feature-local-binding-read-preservation",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "guard-mir-feature-if-else-return-int-preservation",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "guard-mir-feature-local-binding-read-provenance-metadata-preservation",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "guard-cranelift-differential-family",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "retire",
         "id": "guard-cranelift-phase23-mir-to-c-focused-live-contract",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "retire",
         "id": "guard-cranelift-phase23-mir-to-c-focused-live-evidence",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "retire",
         "id": "guard-cranelift-phase21-cranelift-built-compiler-programs-evidence",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "migrate",
         "id": "make-test-suite",
-        "owner_patch": "24.13",
-        "action": "migrate"
+        "owner_patch": "24.13"
       },
       {
+        "action": "migrate",
         "id": "make-test-suite-parallel",
-        "owner_patch": "24.13",
-        "action": "migrate"
+        "owner_patch": "24.13"
       },
       {
+        "action": "retire",
         "id": "run-step52-positive-batch",
-        "owner_patch": "24.16",
-        "action": "retire"
+        "owner_patch": "24.16"
       },
       {
+        "action": "migrate",
         "id": "guard-positive",
-        "owner_patch": "24.13",
-        "action": "migrate"
+        "owner_patch": "24.13"
       },
       {
+        "action": "retire",
         "id": "guard-compile-pass",
-        "owner_patch": "24.16",
-        "action": "retire"
+        "owner_patch": "24.16"
       },
       {
+        "action": "retire",
         "id": "guard-compile-fail",
-        "owner_patch": "24.16",
-        "action": "retire"
+        "owner_patch": "24.16"
       },
       {
+        "action": "migrate",
         "id": "guard-stdlib-s1-str-equality-diagnostic",
-        "owner_patch": "stdlib-coordination",
-        "action": "migrate"
+        "owner_patch": "stdlib-coordination"
       },
       {
+        "action": "migrate",
         "id": "guard-stdlib-s1-collection-receivers",
-        "owner_patch": "stdlib-coordination",
-        "action": "migrate"
+        "owner_patch": "stdlib-coordination"
       },
       {
+        "action": "migrate",
         "id": "guard-stdlib-s1-resource-prerequisites",
-        "owner_patch": "stdlib-coordination",
-        "action": "migrate"
+        "owner_patch": "stdlib-coordination"
       },
       {
+        "action": "migrate",
         "id": "guard-stdlib-s1-migration",
-        "owner_patch": "stdlib-coordination",
-        "action": "migrate"
+        "owner_patch": "stdlib-coordination"
       },
       {
+        "action": "retire",
         "id": "guard-cranelift-phase10-backend-selection-contract",
-        "owner_patch": "24.13",
-        "action": "retire"
+        "owner_patch": "24.13"
       },
       {
+        "action": "retire",
         "id": "guard-cranelift-phase10-opening-contract",
-        "owner_patch": "24.15",
-        "action": "retire"
+        "owner_patch": "24.15"
       },
       {
+        "action": "rewrite",
         "id": "guard-cranelift-phase12-5-close",
-        "owner_patch": "24.16",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "rewrite",
         "id": "guard-cranelift-phase13-close",
-        "owner_patch": "24.16",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "retire",
         "id": "guard-cranelift-phase11-close",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "retire",
         "id": "guard-cranelift-phase13-composition-differential",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "retire",
         "id": "guard-cranelift-phase13-source-metadata-parity",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "retire",
         "id": "guard-cranelift-phase14-composition-differential",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "retire",
         "id": "guard-cranelift-phase15-resource-composition-differential",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "retire",
         "id": "guard-cranelift-phase16-composition-differential",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "retire",
         "id": "guard-cranelift-phase19-classification-parity",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "retire",
         "id": "guard-cranelift-phase19-composition-parity",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "retire",
         "id": "guard-cranelift-phase19-gust-name-list-removed-parity",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "retire",
         "id": "guard-cranelift-phase19-rename-invariance",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "guard-cranelift-phase19-representation-parity",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "retire",
         "id": "guard-cranelift-phase19-rule-convergence-parity",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "retire",
         "id": "guard-cranelift-phase19-type-naming-parity",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "guard-cranelift-phase21-collection-string-native-source-parity",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "guard-cranelift-phase21-cross-tenant-capability-evidence",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "guard-cranelift-phase21-filesystem-allocation-native-source-parity",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "guard-cranelift-phase21-inert-scoped-query-records-evidence",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "guard-cranelift-phase21-od8-adversarial-verdict-evidence",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "guard-cranelift-phase21-opening-evidence",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "guard-cranelift-phase21-per-root-obligations-evidence",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "guard-cranelift-phase21-residue-migration-authority-evidence",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "guard-cranelift-phase21-resource-sync-native-source-parity",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "guard-cranelift-phase21-trusted-scope-provenance-evidence",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "guard-cranelift-phase21-typed-query-noop-surface-evidence",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "retire",
         "id": "guard-cranelift-phase22-default-native-package-evidence",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "retire",
         "id": "guard-cranelift-phase22-explicit-c-migration-evidence",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "retire",
         "id": "guard-cranelift-phase22-native-implicit-output-evidence",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "retire",
         "id": "guard-cranelift-phase22-opening-evidence",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "migrate",
         "id": "guard-stdlib-s1-branded-collections",
-        "owner_patch": "stdlib-coordination",
-        "action": "migrate"
+        "owner_patch": "stdlib-coordination"
       },
       {
+        "action": "migrate",
         "id": "guard-stdlib-s1-clone-destination",
-        "owner_patch": "stdlib-coordination",
-        "action": "migrate"
+        "owner_patch": "stdlib-coordination"
       },
       {
+        "action": "migrate",
         "id": "guard-stdlib-s1-composition",
-        "owner_patch": "stdlib-coordination",
-        "action": "migrate"
+        "owner_patch": "stdlib-coordination"
       },
       {
+        "action": "migrate",
         "id": "guard-stdlib-s1-mutex-guard-scope",
-        "owner_patch": "stdlib-coordination",
-        "action": "migrate"
+        "owner_patch": "stdlib-coordination"
       },
       {
+        "action": "migrate",
         "id": "guard-stdlib-s1-str-surface",
-        "owner_patch": "stdlib-coordination",
-        "action": "migrate"
+        "owner_patch": "stdlib-coordination"
       },
       {
+        "action": "retire",
         "id": "phase23-mir-to-c-focused-live.yml",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "update",
         "id": "phase23-mir-to-c-frozen-surface.yml",
-        "owner_patch": "24.15",
-        "action": "update"
+        "owner_patch": "24.15"
       },
       {
+        "action": "update",
         "id": "phase23-mir-to-c-archived-corpus.yml",
-        "owner_patch": "24.15",
-        "action": "update"
+        "owner_patch": "24.15"
       },
       {
+        "action": "retire",
         "id": "phase23-mir-to-c-deprecation-opening.yml",
-        "owner_patch": "24.16",
-        "action": "retire"
+        "owner_patch": "24.16"
       },
       {
+        "action": "retire",
         "id": "phase23-mir-evidence-owner.yml",
-        "owner_patch": "24.16",
-        "action": "retire"
+        "owner_patch": "24.16"
       },
       {
+        "action": "retire",
         "id": "phase21-cranelift-built-compiler-programs.yml",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "retire",
         "id": "phase24-cr15-stdlib-guard-transition.yml",
-        "owner_patch": "24.16",
-        "action": "retire"
+        "owner_patch": "24.16"
       },
       {
+        "action": "retire",
         "id": "pr-fast.yml",
-        "owner_patch": "24.16",
-        "action": "retire"
+        "owner_patch": "24.16"
       },
       {
+        "action": "retire",
         "id": "phase23_mir_to_c_deprecation_opening",
-        "owner_patch": "24.15",
-        "action": "retire"
+        "owner_patch": "24.15"
       },
       {
+        "action": "retire",
         "id": "phase23_mir_to_c_frozen_surface",
-        "owner_patch": "24.15",
-        "action": "retire"
+        "owner_patch": "24.15"
       },
       {
+        "action": "retire",
         "id": "phase23_mir_to_c_focused_live",
-        "owner_patch": "24.15",
-        "action": "retire"
+        "owner_patch": "24.15"
       },
       {
+        "action": "update",
         "id": "phase23_mir_to_c_archived_corpus",
-        "owner_patch": "24.15",
-        "action": "update"
+        "owner_patch": "24.15"
       },
       {
+        "action": "retire",
         "id": "compiler/test_runner_entry.gst ::     MirToC,",
-        "owner_patch": "24.13",
-        "action": "retire"
+        "owner_patch": "24.13"
       },
       {
+        "action": "retire",
         "id": "compiler/test_runner_entry.gst :: std.str_eq(backend_name, \"mir-to-c\")",
-        "owner_patch": "24.13",
-        "action": "retire"
+        "owner_patch": "24.13"
       },
       {
+        "action": "retire",
         "id": "compiler/test_runner_entry.gst :: gust --backend mir-to-c <source.gst>",
-        "owner_patch": "24.13",
-        "action": "retire"
+        "owner_patch": "24.13"
       },
       {
+        "action": "retire",
         "id": "compiler/test_runner_entry.gst :: the MIR-to-C backend does not accept -o",
-        "owner_patch": "24.14",
-        "action": "retire"
+        "owner_patch": "24.14"
       },
       {
+        "action": "survive",
         "id": "compiler/test_runner_entry.gst :: mut c_code := codegen.codegen_generate(p",
-        "owner_patch": "25",
-        "action": "survive"
+        "owner_patch": "25"
       },
       {
+        "action": "survive",
         "id": "compiler/codegen.gst :: func codegen_generate(programs: std.Vect",
-        "owner_patch": "25",
-        "action": "survive"
+        "owner_patch": "25"
       },
       {
+        "action": "survive",
         "id": "compiler/test_runner_bootstrap_bridge_entry.gst :: mut c_code := codegen.codegen_generate(p",
-        "owner_patch": "25",
-        "action": "survive"
+        "owner_patch": "25"
       },
       {
+        "action": "survive",
         "id": "compiler/test_runner_bootstrap_bridge_entry.gst :: Usage: gust-bootstrap-bridge [--backend ",
-        "owner_patch": "25",
-        "action": "survive"
+        "owner_patch": "25"
       },
       {
+        "action": "migrate",
         "id": "Makefile :: build/gust_final.c",
-        "owner_patch": "24.14",
-        "action": "migrate"
+        "owner_patch": "24.14"
       },
       {
+        "action": "migrate",
         "id": "Makefile :: CC=\"${CC}\" CFLAGS=\"${CFLAGS}\" INCLUDES=\"",
-        "owner_patch": "24.14",
-        "action": "migrate"
+        "owner_patch": "24.14"
       },
       {
+        "action": "migrate",
         "id": "scripts/run-gust-file.sh :: RUNNER_ROUTE=\"${GUST_RUNNER_ROUTE:-mir-t",
-        "owner_patch": "24.13",
-        "action": "migrate"
+        "owner_patch": "24.13"
       },
       {
+        "action": "convert",
         "id": "scripts/cranelift_ci_family.py :: [\"just\", runner[\"static_guard\"]]",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "migrate",
         "id": "tests/test_runner.gst :: std.Concat(\"./gust --backend mir-to-c \",",
-        "owner_patch": "24.13",
-        "action": "migrate"
+        "owner_patch": "24.13"
       },
       {
+        "action": "convert",
         "id": "tests/e2e_codegen_assertions.gst :: \"./gust --backend mir-to-c tests/codegen",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
+        "action": "retire",
         "id": "README.md :: selected explicitly with `--backend c`",
-        "owner_patch": "24.15",
-        "action": "retire"
+        "owner_patch": "24.15"
       },
       {
+        "action": "retire",
         "id": "compiler/experiments/cranelift/README.md :: Explicit `--backend c` / `--backend mir-",
-        "owner_patch": "24.15",
-        "action": "retire"
+        "owner_patch": "24.15"
       },
       {
+        "action": "convert",
         "id": "sh-family:early-differential",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "sh-family:phase15-16-composition",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "convert",
         "id": "sh-family:phase19-parity",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "retire",
+        "id": "sh-family:phase19-parity:deferred-to-24.12a",
+        "owner_patch": "24.12a"
+      },
+      {
+        "action": "convert",
         "id": "sh-family:phase20-evidence",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "retire",
+        "id": "sh-family:phase20-evidence:deferred-to-24.12a",
+        "owner_patch": "24.12a"
+      },
+      {
+        "action": "convert",
         "id": "sh-family:phase21-native-qualification",
-        "owner_patch": "24.12",
-        "action": "convert"
+        "owner_patch": "24.12"
       },
       {
-        "id": "sh-family:phase22-flip-evidence",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "action": "retire",
+        "id": "sh-family:phase21-native-qualification:deferred-to-24.12a",
+        "owner_patch": "24.12a"
       },
       {
+        "action": "retire",
+        "id": "sh-family:phase22-flip-evidence:deferred-to-24.13",
+        "owner_patch": "24.13"
+      },
+      {
+        "action": "migrate",
         "id": "sh-family:stdlib-parity",
-        "owner_patch": "stdlib-coordination",
-        "action": "migrate"
+        "owner_patch": "stdlib-coordination"
       },
       {
+        "action": "migrate",
         "id": "sh-family:stdlib-runner-pinned",
-        "owner_patch": "stdlib-coordination",
-        "action": "migrate"
+        "owner_patch": "stdlib-coordination"
       },
       {
+        "action": "retire",
         "id": "smoke-fixtures",
-        "owner_patch": "24.16",
-        "action": "retire"
+        "owner_patch": "24.16"
       },
       {
+        "action": "retire",
         "id": "scripts/phase23_mir_to_c_focused_live.py",
-        "owner_patch": "24.12",
-        "action": "retire"
+        "owner_patch": "24.12"
       },
       {
+        "action": "update",
         "id": "scripts/phase23_mir_to_c_archived_corpus.py",
-        "owner_patch": "24.15",
-        "action": "update"
+        "owner_patch": "24.15"
       },
       {
+        "action": "retire",
         "id": "scripts/phase23_mir_to_c_frozen_surface.py",
-        "owner_patch": "24.15",
-        "action": "retire"
+        "owner_patch": "24.15"
       },
       {
+        "action": "retire",
         "id": "scripts/phase23_mir_to_c_deprecation_opening.py",
-        "owner_patch": "24.16",
-        "action": "retire"
+        "owner_patch": "24.16"
       },
       {
+        "action": "retire",
         "id": "scripts/phase23_production_release_audit.py",
-        "owner_patch": "24.16",
-        "action": "retire"
+        "owner_patch": "24.16"
       }
     ],
-    "row_count": 104,
-    "inventory_digest": "75e701814217ba938cefa124fb2a31cb16aedb3d79e04ce6558f23c49774c54f"
+    "status": "patch24_11_complete",
+    "version": "phase24_retirement_consumer_inventory_v1"
+  },
+  "phase24_frozen_oracle_replacement": {
+    "archived_corpus_linked_vectors": 34,
+    "authority_owner": "scripts/cranelift_feature_registry.json",
+    "emitter_only_assertions_removed": 50,
+    "emitter_only_assertions_removed_digest": "2cae1ec6388203c645c36131e98ad3abc3be5358d0f748a506d7f15f70091ae1",
+    "env_parameterised_fixtures": [
+      "compiler/phase20_cross_feature_qualification_source.gst",
+      "compiler/phase20_long_lived_concurrent_source.gst"
+    ],
+    "excluded_emitter_only_loci": [
+      "scripts/phase19_classification_parity.sh",
+      "scripts/phase19_gust_name_list_removed_parity.sh",
+      "scripts/phase19_rename_invariance.sh",
+      "scripts/phase19_rule_convergence_parity.sh",
+      "scripts/phase19_type_naming_parity.sh",
+      "scripts/phase20_resource_declaration_migration.sh",
+      "scripts/phase21_inert_scoped_query_records.sh"
+    ],
+    "excluded_emitter_only_owner": "24.12a",
+    "frozen_loci": [
+      "scripts/phase12_5_route_architecture.sh",
+      "scripts/phase13_broader_imported_runtime_calls.sh",
+      "scripts/phase13_capability_deferral.sh",
+      "scripts/phase13_direct_call_graph.sh",
+      "scripts/phase13_general_loop.sh",
+      "scripts/phase13_multiple_locals_assignments.sh",
+      "scripts/phase13_nested_structured_cfg.sh",
+      "scripts/phase13_parameter_argument.sh",
+      "scripts/phase13_registry_differential.sh",
+      "scripts/phase13_scalar_expression.sh",
+      "scripts/phase13_source_metadata.sh",
+      "scripts/phase14_composition_differential.sh",
+      "scripts/phase15_resource_composition_parity.sh",
+      "scripts/phase16_abi_composition_parity.sh",
+      "scripts/phase19_composition_parity.sh",
+      "scripts/phase19_representation_parity.sh",
+      "scripts/phase20_arena_free.sh",
+      "scripts/phase20_contextual_generic_constructor.sh",
+      "scripts/phase20_cross_feature_qualification.sh",
+      "scripts/phase20_exact_brand_boundary.sh",
+      "scripts/phase20_generic_guard_prerequisites.sh",
+      "scripts/phase20_inert_resource_surface.sh",
+      "scripts/phase20_long_lived_concurrent.sh",
+      "scripts/phase20_nested_brand_annotation.sh",
+      "scripts/phase20_protected_access_liveness.sh",
+      "scripts/phase20_resource_acquisition.sh",
+      "scripts/phase20_resource_enforcement.sh",
+      "scripts/phase20_resource_scope_cleanup.sh",
+      "scripts/phase20_stdlib_runtime_differential.sh",
+      "scripts/phase20_whole_program_corpus.sh",
+      "scripts/phase21_collection_string_native_source.sh",
+      "scripts/phase21_cross_tenant_capability.sh",
+      "scripts/phase21_filesystem_allocation_native_source.sh",
+      "scripts/phase21_od8_adversarial_verdict.sh",
+      "scripts/phase21_opening.sh",
+      "scripts/phase21_per_root_obligations.sh",
+      "scripts/phase21_resource_sync_native_source.sh",
+      "scripts/phase21_trusted_scope_provenance.sh",
+      "scripts/phase21_typed_query_noop_surface.sh"
+    ],
+    "frozen_only_cases": [
+      {
+        "case": "unscoped_join",
+        "locus": "scripts/phase21_per_root_obligations.sh",
+        "reproduce": "python3 scripts/phase21_per_root_obligations.py positive-cases",
+        "source_fixture": "compiler/phase21_unscoped_join_positive.gst",
+        "why": "its positive-cases row registers native_exit '-'"
+      },
+      {
+        "case": "branch_return_alias_flow",
+        "locus": "scripts/phase21_per_root_obligations.sh",
+        "reproduce": "python3 scripts/phase21_per_root_obligations.py positive-cases",
+        "source_fixture": "compiler/phase21_query_value_flow_positive.gst",
+        "why": "its positive-cases row registers native_exit '-'"
+      },
+      {
+        "case": "joins/scoped_primary_unscoped_lookup",
+        "locus": "scripts/phase21_od8_adversarial_verdict.sh",
+        "reproduce": "python3 scripts/phase21_od8_adversarial_verdict.py positive-cases",
+        "source_fixture": "compiler/phase21_unscoped_join_positive.gst",
+        "why": "its positive-cases row registers native_exit '-'"
+      },
+      {
+        "case": "queries_as_values/fully_discharged_branch_alias_return",
+        "locus": "scripts/phase21_od8_adversarial_verdict.sh",
+        "reproduce": "python3 scripts/phase21_od8_adversarial_verdict.py positive-cases",
+        "source_fixture": "compiler/phase21_query_value_flow_positive.gst",
+        "why": "its positive-cases row registers native_exit '-'"
+      },
+      {
+        "case": "outside_query_use",
+        "locus": "scripts/phase21_trusted_scope_provenance.sh",
+        "reproduce": "python3 scripts/phase21_trusted_scope_provenance.py nonforgeability-cases",
+        "source_fixture": "compiler/phase21_trusted_scope_outside_query_invalid.gst",
+        "why": "the nonforgeability-cases loop has no Cranelift arm at all"
+      },
+      {
+        "case": "reserved_intrinsic_redefinition",
+        "locus": "scripts/phase21_trusted_scope_provenance.sh",
+        "reproduce": "python3 scripts/phase21_trusted_scope_provenance.py nonforgeability-cases",
+        "source_fixture": "compiler/phase21_trusted_scope_reserved_intrinsic_invalid.gst",
+        "why": "the nonforgeability-cases loop has no Cranelift arm at all"
+      }
+    ],
+    "frozen_recipes": [
+      "guard-cranelift-phase11-scalar-expression-parity",
+      "guard-cranelift-phase11-local-state-parity",
+      "guard-cranelift-phase11-structured-cfg-parity",
+      "guard-cranelift-phase11-block-parameter-loop-parity",
+      "guard-cranelift-phase11-direct-call-abi-parity",
+      "guard-cranelift-phase11-module-import-runtime-parity",
+      "guard-cranelift-phase11-metadata-diagnostic-parity",
+      "guard-mir-feature-return-int-preservation",
+      "guard-mir-feature-local-binding-read-preservation",
+      "guard-mir-feature-if-else-return-int-preservation",
+      "guard-mir-feature-local-binding-read-provenance-metadata-preservation"
+    ],
+    "live_c_presence_assertions_rewritten": [
+      {
+        "guard": "guard-cranelift-phase13-close",
+        "now": "python3 scripts/phase24_frozen_oracle.py materialize",
+        "target": "scripts/phase13_registry_differential.sh",
+        "was": "./gust --backend c \"$source_fixture\""
+      },
+      {
+        "guard": "guard-cranelift-phase13-close",
+        "now": "\"$source_fixture\" \"$case_dir/mir-to-c\" --kind exec",
+        "target": "scripts/phase13_registry_differential.sh",
+        "was": "./gust --backend mir-to-c \"$source_fixture\""
+      },
+      {
+        "guard": "guard-cranelift-phase13-close",
+        "now": "cmp -s \"$case_dir/mir-to-c.stdout\" \"$case_dir/native.stdout\"",
+        "target": "scripts/phase13_registry_differential.sh",
+        "was": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\""
+      },
+      {
+        "guard": "guard-cranelift-phase11-close",
+        "now": "phase24_frozen_oracle.py materialize",
+        "target": "scripts/phase13_registry_differential.sh",
+        "was": "default.c"
+      },
+      {
+        "guard": "guard-cranelift-phase11-close",
+        "now": "workdir \"$case_dir/mir-workdir\"",
+        "target": "scripts/phase13_registry_differential.sh",
+        "was": "explicit.c"
+      },
+      {
+        "guard": "guard-cranelift-phase11-close",
+        "now": "cmp -s \"$case_dir/mir-to-c.stdout\" \"$case_dir/native.stdout\"",
+        "target": "scripts/phase13_registry_differential.sh",
+        "was": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\""
+      },
+      {
+        "guard": "guard-cranelift-phase11-close",
+        "now": "mir-to-c.status",
+        "target": "scripts/phase13_registry_differential.sh",
+        "was": "mir-to-c-program"
+      },
+      {
+        "guard": "guard-cranelift-phase12-5-close",
+        "now": "python3 scripts/phase24_frozen_oracle.py materialize",
+        "target": "scripts/phase13_registry_differential.sh",
+        "was": "./gust --backend c \"$source_fixture\""
+      },
+      {
+        "guard": "guard-cranelift-phase12-5-close",
+        "now": "\"$source_fixture\" \"$case_dir/mir-to-c\" --kind exec",
+        "target": "scripts/phase13_registry_differential.sh",
+        "was": "./gust --backend mir-to-c \"$source_fixture\""
+      },
+      {
+        "guard": "guard-cranelift-phase12-5-close",
+        "now": "cmp -s \"$case_dir/mir-to-c.stdout\" \"$case_dir/native.stdout\"",
+        "target": "scripts/phase13_registry_differential.sh",
+        "was": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\""
+      }
+    ],
+    "not_repaired": [
+      {
+        "cause": "reads registry[\"phase13\"][\"entries\"]; no top-level phase13 key exists at HEAD, HEAD~50 or HEAD~200",
+        "frozen_from_a_red_run": false,
+        "frozen_how": "its four positive cases run before the break and were observed green; the fifth case fixture compiler/phase11_structured_cfg_deferred_loop_source.gst is derived from the immutable 23.11 corpus case p13_general_loop_backedge_source_route",
+        "guard": "guard-cranelift-phase11-structured-cfg-parity",
+        "owner": "24.16",
+        "reproduce": "just guard-cranelift-phase11-structured-cfg-parity",
+        "scope": "not_repaired_out_of_retirement_scope",
+        "state": "red_on_its_dynamic_path",
+        "why_ci_is_green": "its sole caller guard-cranelift-phase13-nested-structured-cfg-parity sets PHASE11_STRUCTURED_CFG_SKIP_DYNAMIC=1, so the branch is never reached; PR Fast on main 8aa9922e is success (push run 34695365766)"
+      },
+      {
+        "cause": "dies at the bare rg -F 'metadata_0_policy: recognized_preserved' capture.bundle under set -e in the native_boundary case; nothing in the justfile invokes the guard \u2014 it appears twice, as its own recipe head and inside an `rg -e` pattern in guard-cranelift-phase11-close that forbids the call, and guard_reachability scores the second as a caller (issue #390)",
+        "frozen_from_a_red_run": false,
+        "frozen_how": "only its C arm converts (a rejection of the type-error fixture, captured from the compiler); the native red stays visible exactly as today",
+        "guard": "guard-cranelift-phase11-metadata-diagnostic-parity",
+        "owner": "24.16",
+        "reproduce": "just guard-cranelift-phase11-metadata-diagnostic-parity",
+        "scope": "not_repaired_out_of_retirement_scope",
+        "state": "red_and_orphaned",
+        "tracked_by": "https://github.com/garthtrickett/gust/issues/390",
+        "why_ci_is_green": "no recipe, workflow or make target executes it; PR Fast on main 8aa9922e is success (push run 34695365766) and never reaches it"
+      },
+      {
+        "cause": "asserts exactly one 'Semantic Error:' line in the compiler diagnostics for phase20_resource_destructor_arity_invalid, and the compiler emits three (test 3 = 1)",
+        "frozen_from_a_red_run": false,
+        "frozen_how": "the frozen reject log matches the live compiler byte for byte; the guard fails at a later count assertion that failed identically before conversion, verified by running the pre-conversion script from bf3875bc",
+        "guard": "guard-cranelift-phase20-resource-enforcement-parity",
+        "owner": "24.16",
+        "reproduce": "bash scripts/phase20_resource_enforcement.sh",
+        "scope": "not_repaired_out_of_retirement_scope",
+        "state": "red_and_orphaned",
+        "why_ci_is_green": "not workflow-reachable and no recipe calls it; PR Fast on main 8aa9922e is success (push run 34695365766) and never reaches it"
+      }
+    ],
+    "poisoned_route_probes": {
+      "scripts/phase12_5_route_architecture.sh": 1
+    },
+    "runner_mediated_residue": {
+      "scripts/phase15_resource_composition_parity.sh": 3,
+      "scripts/phase16_abi_composition_parity.sh": 2
+    },
+    "runner_residue_owner": "24.13",
+    "status": "patch24_12_complete",
+    "vector_count": 237,
+    "vector_ids": [
+      "compiler/future/p15_complete_resource_differential_source.gst",
+      "compiler/future/p16_complete_abi_differential_source.gst",
+      "compiler/future/p20_cr11_explicit_graph_annotation_current.gst",
+      "compiler/future/p20_cr12_wrong_brand_clone_current.gst",
+      "compiler/future/p20_cr13_free_receiver_reuse_current.gst",
+      "compiler/future/p20_issue106_bound_directory_current.gst",
+      "compiler/future/p20_issue106_unbound_directory_current.gst",
+      "compiler/future/phase14_resource_cleanup_source.gst",
+      "compiler/mir_abi_composition_parity_smoke_test_entry.gst",
+      "compiler/mir_feature_if_else_return_int_preservation_source.gst",
+      "compiler/mir_feature_local_binding_read_preservation_source.gst",
+      "compiler/mir_feature_local_binding_read_provenance_metadata_preservation_source.gst",
+      "compiler/mir_feature_return_int_preservation_source.gst",
+      "compiler/mir_resource_composition_parity_smoke_test_entry.gst",
+      "compiler/mir_resource_composition_state_smoke_test_entry.gst",
+      "compiler/parser_phase20_inert_resource_surface_test_entry.gst",
+      "compiler/parser_phase21_typed_query_noop_surface_test_entry.gst",
+      "compiler/phase10_runtime_boundary_source.gst",
+      "compiler/phase10_scalar_return_source.gst",
+      "compiler/phase11_block_parameter_countdown_loop_source.gst",
+      "compiler/phase11_block_parameter_non_final_join_source.gst",
+      "compiler/phase11_block_parameter_stride_loop_source.gst",
+      "compiler/phase11_declared_external_import_source.gst",
+      "compiler/phase11_direct_call_nested_source.gst",
+      "compiler/phase11_direct_call_recursion_source.gst",
+      "compiler/phase11_direct_call_wrong_arity_source.gst",
+      "compiler/phase11_direct_call_wrong_type_source.gst",
+      "compiler/phase11_local_state_branch_update_source.gst",
+      "compiler/phase11_local_state_independent_locals_source.gst",
+      "compiler/phase11_local_state_invalid_local_source.gst",
+      "compiler/phase11_local_state_read_after_write_source.gst",
+      "compiler/phase11_local_state_straight_line_source.gst",
+      "compiler/phase11_local_state_uninitialized_read_source.gst",
+      "compiler/phase11_module_import_main_source.gst",
+      "compiler/phase11_scalar_add_source.gst",
+      "compiler/phase11_scalar_literal_source.gst",
+      "compiler/phase11_scalar_local_read_source.gst",
+      "compiler/phase11_scalar_positive_predicate_source.gst",
+      "compiler/phase11_scalar_unsupported_multiply_source.gst",
+      "compiler/phase11_structured_cfg_deferred_loop_source.gst",
+      "compiler/phase11_structured_cfg_independent_jumps_source.gst",
+      "compiler/phase11_structured_cfg_nested_source.gst",
+      "compiler/phase11_structured_cfg_three_predecessor_join_source.gst",
+      "compiler/phase12_5_route_novel_source.gst",
+      "compiler/phase12_5_route_unsupported_source.gst",
+      "compiler/phase12_5_route_variant_source.gst",
+      "compiler/phase13_branch_local_structured_cfg_source.gst",
+      "compiler/phase13_composition_cfg_source.gst",
+      "compiler/phase13_composition_locals_source.gst",
+      "compiler/phase13_composition_resource_metadata_source.gst",
+      "compiler/phase13_direct_call_graph_source.gst",
+      "compiler/phase13_direct_call_mutual_recursion_source.gst",
+      "compiler/phase13_early_return_structured_cfg_source.gst",
+      "compiler/phase13_loop_body_control_flow_deferred_source.gst",
+      "compiler/phase13_loop_condition_deferred_source.gst",
+      "compiler/phase13_loop_early_return_deferred_source.gst",
+      "compiler/phase13_loop_nested_deferred_source.gst",
+      "compiler/phase13_loop_non_decreasing_invalid_source.gst",
+      "compiler/phase13_multiple_locals_assignments_source.gst",
+      "compiler/phase13_multiple_locals_call_sequence_source.gst",
+      "compiler/phase13_multiple_locals_duplicate_source.gst",
+      "compiler/phase13_multiple_locals_invalid_join_source.gst",
+      "compiler/phase13_multiple_locals_type_mismatch_source.gst",
+      "compiler/phase13_nested_condition_structured_cfg_source.gst",
+      "compiler/phase13_nested_structured_cfg_negative_source.gst",
+      "compiler/phase13_nested_structured_cfg_source.gst",
+      "compiler/phase13_parameter_argument_aggregate_parameter_source.gst",
+      "compiler/phase13_parameter_argument_aggregate_return_source.gst",
+      "compiler/phase13_parameter_argument_branch_source.gst",
+      "compiler/phase13_parameter_argument_join_source.gst",
+      "compiler/phase13_parameter_argument_loop_source.gst",
+      "compiler/phase13_parameter_argument_repeated_source.gst",
+      "compiler/phase13_parameter_argument_target_abi_source.gst",
+      "compiler/phase13_resource_cleanup_deferred_source.gst",
+      "compiler/phase13_runtime_add_i32_source.gst",
+      "compiler/phase13_runtime_add_one_source.gst",
+      "compiler/phase13_runtime_module_main_source.gst",
+      "compiler/phase13_runtime_multiple_calls_source.gst",
+      "compiler/phase13_runtime_predicate_branch_source.gst",
+      "compiler/phase13_runtime_wrong_arity_source.gst",
+      "compiler/phase13_runtime_wrong_type_source.gst",
+      "compiler/phase13_scalar_arithmetic_comparison_source.gst",
+      "compiler/phase13_scalar_invalid_operand_source.gst",
+      "compiler/phase13_scalar_layout_deferred_source.gst",
+      "compiler/phase13_scalar_nested_mixed_source.gst",
+      "compiler/phase13_scalar_subtract_source.gst",
+      "compiler/phase13_scalar_unsupported_conversion_source.gst",
+      "compiler/phase13_scalar_unsupported_divide_source.gst",
+      "compiler/phase13_sequential_structured_cfg_source.gst",
+      "compiler/phase13_source_resource_metadata_source.gst",
+      "compiler/phase13_structured_cfg_condition_deferred_source.gst",
+      "compiler/phase13_structured_cfg_short_circuit_deferred_source.gst",
+      "compiler/phase14_aggregate_transport_source.gst",
+      "compiler/phase14_all_target_layout_evidence_source.gst",
+      "compiler/phase14_array_slice_source.gst",
+      "compiler/phase14_enum_source.gst",
+      "compiler/phase14_integer_conversion_source.gst",
+      "compiler/phase14_pointer_nullability_source.gst",
+      "compiler/phase14_pointer_sized_integer_layout_source.gst",
+      "compiler/phase14_primitive_scalar_layout_source.gst",
+      "compiler/phase14_stack_slot_addressable_source.gst",
+      "compiler/phase14_string_view_source.gst",
+      "compiler/phase14_struct_source.gst",
+      "compiler/phase14_target_layout_model_source.gst",
+      "compiler/phase14_typed_memory_access_source.gst",
+      "compiler/phase19_argument_representation_a_source.gst",
+      "compiler/phase19_argument_representation_b_source.gst",
+      "compiler/phase19_classification_source.gst",
+      "compiler/phase19_classification_test_entry.gst",
+      "compiler/phase19_cross_feature_composition_source.gst",
+      "compiler/phase19_name_list_removed_ctx_source.gst",
+      "compiler/phase19_name_list_removed_region_source.gst",
+      "compiler/phase19_rename_invariance_brand_source.gst",
+      "compiler/phase19_rename_invariance_renamed_source.gst",
+      "compiler/phase19_type_naming_explicit_source.gst",
+      "compiler/phase19_type_naming_inferred_source.gst",
+      "compiler/phase20_arena_free_alias_invalid.gst",
+      "compiler/phase20_arena_free_allocation_invalid.gst",
+      "compiler/phase20_arena_free_deferred_repeat_invalid.gst",
+      "compiler/phase20_arena_free_field_invalid.gst",
+      "compiler/phase20_arena_free_live_source.gst",
+      "compiler/phase20_arena_free_parameter_invalid.gst",
+      "compiler/phase20_arena_free_repeat_invalid.gst",
+      "compiler/phase20_arena_free_write_invalid.gst",
+      "compiler/phase20_component_allocation_source.gst",
+      "compiler/phase20_component_collections_source.gst",
+      "compiler/phase20_component_filesystem_source.gst",
+      "compiler/phase20_component_strings_source.gst",
+      "compiler/phase20_component_threading_source.gst",
+      "compiler/phase20_contextual_generic_constructor_cross_template_invalid.gst",
+      "compiler/phase20_contextual_generic_constructor_explicit.gst",
+      "compiler/phase20_contextual_generic_constructor_inferred.gst",
+      "compiler/phase20_contextual_generic_constructor_wrong_brand_invalid.gst",
+      "compiler/phase20_cross_feature_qualification_source.gst",
+      "compiler/phase20_directory_external_construction_invalid.gst",
+      "compiler/phase20_directory_external_field_invalid.gst",
+      "compiler/phase20_exact_brand_alias_invalid.gst",
+      "compiler/phase20_exact_brand_assignment_invalid.gst",
+      "compiler/phase20_exact_brand_boundary_source.gst",
+      "compiler/phase20_exact_brand_call_invalid.gst",
+      "compiler/phase20_exact_brand_field_invalid.gst",
+      "compiler/phase20_exact_brand_return_invalid.gst",
+      "compiler/phase20_generic_guard_prerequisites_source.gst",
+      "compiler/phase20_generic_resource_destructor_wrong_brand_invalid.gst",
+      "compiler/phase20_generic_resource_destructor_wrong_type_invalid.gst",
+      "compiler/phase20_inert_resource_surface_source.gst",
+      "compiler/phase20_long_lived_concurrent_source.gst",
+      "compiler/phase20_long_lived_resource_source.gst",
+      "compiler/phase20_mutex_lock_safe_invalid.gst",
+      "compiler/phase20_mutex_unlock_safe_invalid.gst",
+      "compiler/phase20_nested_brand_annotation_invalid.gst",
+      "compiler/phase20_nested_brand_annotation_source.gst",
+      "compiler/phase20_protected_access_after_close_invalid.gst",
+      "compiler/phase20_protected_access_ambiguous_invalid.gst",
+      "compiler/phase20_protected_access_argument_invalid.gst",
+      "compiler/phase20_protected_access_return_invalid.gst",
+      "compiler/phase20_protected_access_source.gst",
+      "compiler/phase20_protected_access_storage_invalid.gst",
+      "compiler/phase20_resource_acquisition_callee_drop_invalid.gst",
+      "compiler/phase20_resource_acquisition_conditional_close_invalid.gst",
+      "compiler/phase20_resource_acquisition_directory_discarded_invalid.gst",
+      "compiler/phase20_resource_acquisition_directory_source.gst",
+      "compiler/phase20_resource_acquisition_loop_close_invalid.gst",
+      "compiler/phase20_resource_acquisition_match_close_invalid.gst",
+      "compiler/phase20_resource_acquisition_path_transfer_source.gst",
+      "compiler/phase20_resource_acquisition_source.gst",
+      "compiler/phase20_resource_acquisition_user_discarded_invalid.gst",
+      "compiler/phase20_resource_destructor_arity_invalid.gst",
+      "compiler/phase20_resource_destructor_borrowed_invalid.gst",
+      "compiler/phase20_resource_destructor_extern_invalid.gst",
+      "compiler/phase20_resource_destructor_missing_invalid.gst",
+      "compiler/phase20_resource_destructor_owner_invalid.gst",
+      "compiler/phase20_resource_destructor_result_invalid.gst",
+      "compiler/phase20_resource_destructor_unsafe_invalid.gst",
+      "compiler/phase20_resource_destructor_wrong_type_invalid.gst",
+      "compiler/phase20_resource_empty_forge_invalid.gst",
+      "compiler/phase20_resource_enforcement_source.gst",
+      "compiler/phase20_resource_external_construction_invalid.gst",
+      "compiler/phase20_resource_external_field_invalid.gst",
+      "compiler/phase20_resource_private_call_invalid.gst",
+      "compiler/phase20_resource_private_reference_invalid.gst",
+      "compiler/phase20_resource_scope_cleanup_source.gst",
+      "compiler/phase20_whole_program_scalar_source.gst",
+      "compiler/phase21_allocation_native_source_outside_cohort.gst",
+      "compiler/phase21_allocation_native_source_variant.gst",
+      "compiler/phase21_collection_native_source_outside_cohort.gst",
+      "compiler/phase21_collection_native_source_variant.gst",
+      "compiler/phase21_collection_native_unrepresented_log_expression.gst",
+      "compiler/phase21_cross_tenant_capability_positive.gst",
+      "compiler/phase21_cross_tenant_forged_invalid.gst",
+      "compiler/phase21_cross_tenant_helper_invalid.gst",
+      "compiler/phase21_cross_tenant_nested_nontransitive_invalid.gst",
+      "compiler/phase21_cross_tenant_ordinary_scoped_positive.gst",
+      "compiler/phase21_cross_tenant_outside_marker_invalid.gst",
+      "compiler/phase21_cross_tenant_predicate_validation_invalid.gst",
+      "compiler/phase21_cross_tenant_redefinition_invalid.gst",
+      "compiler/phase21_cross_tenant_reexport_invalid.gst",
+      "compiler/phase21_cross_tenant_wrong_arity_invalid.gst",
+      "compiler/phase21_filesystem_native_source_outside_cohort.gst",
+      "compiler/phase21_filesystem_native_source_variant.gst",
+      "compiler/phase21_join_obligation_missing_invalid.gst",
+      "compiler/phase21_join_sibling_isolation_invalid.gst",
+      "compiler/phase21_nested_aggregate_positive.gst",
+      "compiler/phase21_nested_obligation_missing_invalid.gst",
+      "compiler/phase21_od8_dynamic_column_invalid.gst",
+      "compiler/phase21_od8_dynamic_shape_invalid.gst",
+      "compiler/phase21_od8_trusted_scope_copy_invalid.gst",
+      "compiler/phase21_od8_trusted_scope_return_launder_invalid.gst",
+      "compiler/phase21_od8_trusted_scope_store_invalid.gst",
+      "compiler/phase21_od8_unscoped_primary_scoped_join_invalid.gst",
+      "compiler/phase21_per_root_obligations_positive.gst",
+      "compiler/phase21_query_shape_trusted_baseline.gst",
+      "compiler/phase21_query_shape_untrusted_baseline.gst",
+      "compiler/phase21_query_value_branch_invalid.gst",
+      "compiler/phase21_query_value_flow_positive.gst",
+      "compiler/phase21_query_value_unresolved_invalid.gst",
+      "compiler/phase21_resource_sync_computed_token_source.gst",
+      "compiler/phase21_resource_sync_renamed_source.gst",
+      "compiler/phase21_string_native_embedded_newline.gst",
+      "compiler/phase21_string_native_source_outside_cohort.gst",
+      "compiler/phase21_string_native_source_variant.gst",
+      "compiler/phase21_string_native_unrepresented_log_expression.gst",
+      "compiler/phase21_trusted_scope_absent_invalid.gst",
+      "compiler/phase21_trusted_scope_arbitrary_invalid.gst",
+      "compiler/phase21_trusted_scope_cast_invalid.gst",
+      "compiler/phase21_trusted_scope_forged_invalid.gst",
+      "compiler/phase21_trusted_scope_outside_query_invalid.gst",
+      "compiler/phase21_trusted_scope_positive.gst",
+      "compiler/phase21_trusted_scope_reserved_intrinsic_invalid.gst",
+      "compiler/phase21_trusted_scope_syntax_only_invalid.gst",
+      "compiler/phase21_trusted_scope_wrong_identity_invalid.gst",
+      "compiler/phase21_typed_query_noop_surface.gst",
+      "compiler/phase21_unscoped_join_positive.gst",
+      "compiler/typed_query_semantic_records_forge_invalid.gst",
+      "compiler/typed_query_semantic_records_private_constructor_invalid.gst",
+      "compiler/typed_query_semantic_records_test_entry.gst",
+      "tests/test_multi_parser_errors_rejected.gst"
+    ],
+    "vectors_digest": "7dcc9065a74bdde8b0fbdde077e104e447a6892b24931147c41b86b9580ba56b",
+    "version": "phase24_frozen_oracle_replacement_v1"
   }
 }

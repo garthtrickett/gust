@@ -1,0 +1,62 @@
+name: Cranelift Phase 24 Frozen Expected-Behaviour Oracle
+
+on:
+  pull_request:
+    paths:
+      - 'TASK.md'
+      - 'compiler/fixtures/phase24_frozen_oracle_vectors_v1.json'
+      - 'compiler/fixtures/phase24_emitter_only_assertions_removed_v1.json'
+      - 'compiler/fixtures/phase23_mir_to_c_reference_corpus_v1.json'
+      - 'docs/PHASE24_FROZEN_ORACLE_REPLACEMENT.md'
+      - 'scripts/phase24_frozen_oracle.py'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/*.sh'
+      - 'justfile*'
+      - '.github/workflows/phase24-frozen-oracle.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'TASK.md'
+      - 'compiler/fixtures/phase24_frozen_oracle_vectors_v1.json'
+      - 'compiler/fixtures/phase24_emitter_only_assertions_removed_v1.json'
+      - 'compiler/fixtures/phase23_mir_to_c_reference_corpus_v1.json'
+      - 'docs/PHASE24_FROZEN_ORACLE_REPLACEMENT.md'
+      - 'scripts/phase24_frozen_oracle.py'
+      - 'scripts/cranelift_feature_registry.json'
+      - 'scripts/cranelift_feature_registry.schema.json'
+      - 'scripts/cranelift_test_levels.json'
+      - 'scripts/cranelift_registry.py'
+      - 'scripts/*.sh'
+      - 'justfile*'
+      - '.github/workflows/phase24-frozen-oracle.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: just guard-cranelift-phase24-frozen-oracle-contract
+
+  evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: contract
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: just guard-cranelift-phase24-frozen-oracle-evidence

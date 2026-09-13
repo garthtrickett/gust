@@ -95,6 +95,7 @@ TOP_FIELDS = {
     "phase24_cr15_closure",
     "phase24_preflight_closure",
     "phase24_retirement_consumer_inventory",
+    "phase24_frozen_oracle_replacement",
     "phase24_cr19_multi_module_analysis",
     "phase24_filename_behavior_characterization",
     "phase24_semantic_spelling_inventory",
