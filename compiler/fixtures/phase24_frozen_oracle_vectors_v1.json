@@ -7,6 +7,11 @@
   "capture_tool_sha256": "4e0c0f76b941099f51382833aa5649b786d4a64c37d74365a4313fbec841d175",
   "cc": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
   "cflags": "-O0 -w -pthread -Isrc",
+  "env_capture_tool_sha256": "c5b56cea74f173a1e4b2bf484370e41772c2f983be9475c78b1399cfdb049dc5",
+  "env_parameterised_fixtures": [
+   "compiler/phase20_cross_feature_qualification_source.gst",
+   "compiler/phase20_long_lived_concurrent_source.gst"
+  ],
   "normalized_environment": {
    "GUST_RUNNER_SKIP_BUILD": "1",
    "LANG": "C",
@@ -4342,6 +4347,35 @@
      "size": 6777
     }
    },
+   "env_parameterised": true,
+   "env_variants": {
+    "GUST_PHASE20_LONG_LIVED_CYCLES=128": {
+     "exit": 47,
+     "stderr": {
+      "hex": "",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+     },
+     "stdout": {
+      "hex": "",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+     }
+    },
+    "GUST_PHASE20_LONG_LIVED_CYCLES=8": {
+     "exit": 47,
+     "stderr": {
+      "hex": "",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+     },
+     "stdout": {
+      "hex": "",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+     }
+    }
+   },
    "execution": {
     "exit": 90,
     "stderr": {
@@ -4668,6 +4702,35 @@
     "stdout": {
      "sha256": "3c6c238b3539b20463c63b1525778230563a0fb278bdf204b5b9da5473081afd",
      "size": 1600
+    }
+   },
+   "env_parameterised": true,
+   "env_variants": {
+    "GUST_PHASE20_LONG_LIVED_CYCLES=128": {
+     "exit": 47,
+     "stderr": {
+      "hex": "",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+     },
+     "stdout": {
+      "hex": "",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+     }
+    },
+    "GUST_PHASE20_LONG_LIVED_CYCLES=8": {
+     "exit": 47,
+     "stderr": {
+      "hex": "",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+     },
+     "stdout": {
+      "hex": "",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+     }
     }
    },
    "execution": {

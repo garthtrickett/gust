@@ -280,7 +280,8 @@ def check_vector(vector_id: str, vectors: dict) -> dict:
 
 
 def materialize(vector_id: str, prefix: Path, expect_kind: str | None,
-                workdir: Path | None = None) -> None:
+                workdir: Path | None = None,
+                env_key: str | None = None) -> None:
     """Write one frozen vector's observables where a guard expects them.
 
     `workdir` reconstructs the frozen side-effect tree for the harnesses
@@ -321,6 +322,29 @@ def materialize(vector_id: str, prefix: Path, expect_kind: str | None,
     # A working-directory sensitive fixture was frozen under both
     # conventions; serve the one this call site actually uses. Asking for a
     # workdir is the call site saying "I run the arm from a sandbox".
+    # A fixture whose C arm is parameterised by the environment (the
+    # long-lived concurrency guard runs it under a cycle count) is frozen
+    # once per environment the harness actually uses. The call site passes
+    # the same assignment it sets, so the frozen side and the live native
+    # side are compared under identical conditions.
+    require(env_key is not None or not vector.get("env_parameterised"),
+            f"env-parameterised vector served without an environment: "
+            f"{vector_id} — failing closed rather than replaying the run "
+            f"captured with the variable unset")
+    if env_key is not None:
+        variants = vector.get("env_variants") or {}
+        require(vector.get("env_parameterised") is True,
+                f"an environment was requested for a vector frozen without "
+                f"one: {vector_id}")
+        require(env_key in variants,
+                f"no frozen vector for {vector_id} under environment "
+                f"'{env_key}' — failing closed, there is no live-C fallback")
+        execution = variants[env_key]
+        Path(f"{prefix}.status").write_text(
+            f"{execution['exit']}\n", encoding="utf-8")
+        Path(f"{prefix}.stdout").write_bytes(record_bytes(execution["stdout"]))
+        Path(f"{prefix}.stderr").write_bytes(record_bytes(execution["stderr"]))
+        return
     if workdir is not None and vector.get("workdir_sensitive"):
         require("execution_workdir" in vector,
                 f"workdir-sensitive vector has no frozen sandbox run: "
@@ -463,15 +487,23 @@ def check_no_live_c() -> None:
 # ---------------------------------------------------------------------------
 
 def _materialize_from(vector_id: str, table: dict, prefix: Path,
-                      kind: str | None = None) -> None:
+                      kind: str | None = None,
+                      env_key: str | None = None) -> None:
     saved = VECTORS.read_text(encoding="utf-8")
     payload = json.loads(saved)
     payload["vectors"] = table
     VECTORS.write_text(json.dumps(payload), encoding="utf-8")
     try:
-        materialize(vector_id, prefix, kind)
+        materialize(vector_id, prefix, kind, None, env_key)
     finally:
         VECTORS.write_text(saved, encoding="utf-8")
+
+
+def _served_block(slot: dict, kind: str, env_key: str | None) -> dict:
+    """The record `materialize` will actually replay for this call shape."""
+    if env_key is not None:
+        return slot["env_variants"][env_key]
+    return slot["compile"] if kind == "reject" else slot["execution"]
 
 
 def validate_mutations(vectors: dict) -> int:
@@ -487,7 +519,12 @@ def validate_mutations(vectors: dict) -> int:
         root = Path(raw)
         for vector_id, vector in sorted(table.items()):
             prefix = root / "good"
-            _materialize_from(vector_id, table, prefix)
+            # An environment-parameterised vector is never served without an
+            # environment, so its falsifiability has to be demonstrated the
+            # way the guard actually asks for it.
+            env_key = (sorted(vector["env_variants"])[0]
+                       if vector.get("env_parameterised") else None)
+            _materialize_from(vector_id, table, prefix, env_key=env_key)
             kind = vector["kind"]
             observed = "status" if kind == "reject" else "status"
             good_status = Path(f"{prefix}.{observed}").read_bytes()
@@ -496,31 +533,54 @@ def validate_mutations(vectors: dict) -> int:
             ).read_bytes()
 
             mutated = copy.deepcopy(table)
-            slot = mutated[vector_id]
-            block = slot["compile"] if kind == "reject" else slot["execution"]
+            block = _served_block(mutated[vector_id], kind, env_key)
             block["exit"] = int(block["exit"]) + 1
-            _materialize_from(vector_id, mutated, root / "exit")
+            _materialize_from(vector_id, mutated, root / "exit",
+                              env_key=env_key)
             require(Path(f"{root / 'exit'}.status").read_bytes() != good_status,
                     f"exit-status mutation is invisible: {vector_id}")
 
             mutated = copy.deepcopy(table)
-            slot = mutated[vector_id]
-            stream = slot["compile"]["stdout"] if kind == "reject" \
-                else slot["execution"]["stdout"]
+            stream = _served_block(mutated[vector_id], kind, env_key)["stdout"]
             tampered = bytes.fromhex(str(stream["hex"])) + b"tampered"
             stream["hex"] = tampered.hex()
             stream["size"] = len(tampered)
             stream["sha256"] = digest_bytes(tampered)
-            _materialize_from(vector_id, mutated, root / "out")
+            _materialize_from(vector_id, mutated, root / "out",
+                              env_key=env_key)
             require(Path(
                 f"{root / 'out'}.log" if kind == "reject"
                 else f"{root / 'out'}.stdout").read_bytes() != good_out,
                 f"stdout mutation is invisible: {vector_id}")
 
+            if env_key is not None:
+                # Two more ways an environment-parameterised vector could be
+                # served wrongly and look fine: dropping the environment (and
+                # silently replaying the unset run), or asking for one that
+                # was never frozen.
+                try:
+                    _materialize_from(vector_id, table, root / "noenv")
+                    fail(f"an env-parameterised vector was replayed without "
+                         f"an environment: {vector_id}")
+                except SystemExit as error:
+                    require("served without an environment" in str(error),
+                            f"a missing environment failed for the wrong "
+                            f"reason: {vector_id}")
+                try:
+                    _materialize_from(vector_id, table, root / "badenv",
+                                      env_key="NO_SUCH_VARIABLE=1")
+                    fail(f"an unfrozen environment was replayed anyway: "
+                         f"{vector_id}")
+                except SystemExit as error:
+                    require("failing closed" in str(error),
+                            f"an unfrozen environment failed for the wrong "
+                            f"reason: {vector_id}")
+
             mutated = copy.deepcopy(table)
             mutated[vector_id]["source_sha256"] = "0" * 64
             try:
-                _materialize_from(vector_id, mutated, root / "moved")
+                _materialize_from(vector_id, mutated, root / "moved",
+                                  env_key=env_key)
                 fail(f"a moved source fixture was replayed anyway: {vector_id}")
             except SystemExit as error:
                 require("moved without a re-freeze" in str(error),
@@ -531,7 +591,8 @@ def validate_mutations(vectors: dict) -> int:
             mutated[vector_id]["kind"] = (
                 "reject" if kind == "exec" else "exec")
             try:
-                _materialize_from(vector_id, mutated, root / "kind", kind)
+                _materialize_from(vector_id, mutated, root / "kind", kind,
+                                  env_key)
                 fail(f"a changed vector kind was replayed anyway: {vector_id}")
             except SystemExit as error:
                 # Either check may catch it first and both are correct
@@ -596,6 +657,43 @@ def validate() -> dict:
     require(node.get("frozen_loci") == list(FROZEN_LOCI) and
             node.get("frozen_recipes") == list(FROZEN_RECIPES),
             "registered frozen locus set drifted")
+    # Environment-parameterised vectors must declare every environment a
+    # call site may ask for, and must not silently fall back to the unset
+    # capture: the long-lived concurrency fixture exits 90 with its cycle
+    # count unset and 47 with it set, so serving the wrong one would freeze
+    # an expectation the guard never produced.
+    parameterised = []
+    for vector_id, vector in sorted(table.items()):
+        variants = vector.get("env_variants")
+        flagged = bool(vector.get("env_parameterised"))
+        require(flagged == (variants is not None),
+                f"env_parameterised and env_variants disagree: {vector_id}")
+        if variants is None:
+            continue
+        parameterised.append(str(vector["source_fixture"]))
+        require(isinstance(variants, dict) and variants,
+                f"env-parameterised vector has no variants: {vector_id}")
+        require(vector["kind"] == "exec",
+                f"only an executing vector can be environment "
+                f"parameterised: {vector_id}")
+        for key, variant in sorted(variants.items()):
+            require("=" in key,
+                    f"env variant key is not KEY=VALUE: {vector_id} {key}")
+            for field in ("exit", "stdout", "stderr"):
+                require(field in variant,
+                        f"env variant is malformed: {vector_id} {key}")
+            record_bytes(variant["stdout"])
+            record_bytes(variant["stderr"])
+    authority = vectors["capture_authority"]
+    require(authority.get("env_parameterised_fixtures") == parameterised,
+            "the registered environment-parameterised fixture set drifted")
+    require(bool(authority.get("env_capture_tool_sha256")) ==
+            bool(parameterised),
+            "environment variants exist without naming the tool that "
+            "captured them")
+    require(node.get("env_parameterised_fixtures") == parameterised,
+            "registered environment-parameterised fixtures drifted")
+
     require(node.get("runner_mediated_residue") ==
             dict(RUNNER_MEDIATED_RESIDUE) and
             node.get("runner_residue_owner") == RUNNER_RESIDUE_OWNER,
@@ -724,13 +822,17 @@ def main() -> None:
     parser.add_argument("prefix", nargs="?")
     parser.add_argument("--kind", choices=("exec", "reject"), default=None)
     parser.add_argument("--workdir", default=None)
+    parser.add_argument("--env", default=None,
+                        help="KEY=VALUE the call site sets when running the "
+                             "arm; selects the frozen variant for it")
     args = parser.parse_args()
 
     if args.command == "materialize":
         require(bool(args.vector_id) and bool(args.prefix),
                 "materialize needs a vector id and an output prefix")
         materialize(args.vector_id, Path(args.prefix), args.kind,
-                    Path(args.workdir) if args.workdir else None)
+                    Path(args.workdir) if args.workdir else None,
+                    args.env)
         return
     if args.command == "mutation-evidence":
         checked = validate_mutations(load_vectors())
