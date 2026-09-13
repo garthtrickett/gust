@@ -24137,6 +24137,43 @@
     "poisoned_route_probes": {
       "scripts/phase12_5_route_architecture.sh": 1
     },
+    "production_audit_transition": {
+      "authority_base_main": "8aa9922eb40ad404647a86f865f0790ab37a3589",
+      "change_reason": "patch24_12_converted_parity_guards_stop_invoking_the_C_backend_so_the_repository_explicit_C_and_retained_test_surface_counts_fall_by_the_registered_removal",
+      "contract_version": "phase24_12_frozen_oracle_production_audit_transition_v1",
+      "current_audit": {
+        "active_non_bootstrap_live_c_lane_count": 1,
+        "active_non_bootstrap_live_c_owner": "phase23_mir_to_c_focused_live",
+        "non_bootstrap_retained_test_surface_count": 66,
+        "phase25_bootstrap_explicit_c_count": 5,
+        "repository_explicit_c_count": 71,
+        "repository_invocation_count": 211,
+        "supported_production_or_release_explicit_c_count": 0,
+        "supported_surface_count": 6,
+        "supported_surface_manifest_digest": "d42f0663249e8ac61f939a6b802eb3ce5078a7aad7bc34da588ba6bafc23c2e0",
+        "unknown_downstream_count": 0
+      },
+      "partial_extra_or_substituted_audit": "rejected",
+      "previous_audit": {
+        "active_non_bootstrap_live_c_lane_count": 1,
+        "active_non_bootstrap_live_c_owner": "phase23_mir_to_c_focused_live",
+        "non_bootstrap_retained_test_surface_count": 173,
+        "phase25_bootstrap_explicit_c_count": 5,
+        "repository_explicit_c_count": 178,
+        "repository_invocation_count": 318,
+        "supported_production_or_release_explicit_c_count": 0,
+        "supported_surface_count": 6,
+        "supported_surface_manifest_digest": "d42f0663249e8ac61f939a6b802eb3ce5078a7aad7bc34da588ba6bafc23c2e0",
+        "unknown_downstream_count": 0
+      },
+      "reduced_fields": [
+        "non_bootstrap_retained_test_surface_count",
+        "repository_explicit_c_count",
+        "repository_invocation_count"
+      ],
+      "removed_invocation_count": 107,
+      "status": "patch24_12_complete"
+    },
     "runner_mediated_residue": {
       "scripts/phase15_resource_composition_parity.sh": 3,
       "scripts/phase16_abi_composition_parity.sh": 2

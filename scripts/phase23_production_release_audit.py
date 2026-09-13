@@ -197,6 +197,9 @@ def validate() -> tuple[dict, dict[str, object]]:
         "production_audit_transition")
     derivation_transition = registry.get("phase24_cr15_derivation", {}).get(
         "production_audit_transition")
+    retirement_transition = registry.get(
+        "phase24_frozen_oracle_replacement", {}).get(
+            "production_audit_transition")
     if closure_transition is None:
         validate_mutations(record, summary)
     else:
@@ -238,7 +241,9 @@ def validate() -> tuple[dict, dict[str, object]]:
                 "c37024afa580d1e03c5ff70150ed0ae7518a9648" and
                 derivation_transition.get("previous_audit") ==
                 closure_transition["current_audit"] and
-                derivation_transition.get("current_audit") == summary and
+                derivation_transition.get("current_audit") ==
+                (summary if retirement_transition is None
+                 else retirement_transition.get("previous_audit")) and
                 derivation_transition.get("unchanged_fields") == unchanged and
                 derivation_transition.get("change_reason") ==
                 "CR15_derivation_preserved_the_production_audit_through_exact_relay_projection" and
@@ -250,6 +255,53 @@ def validate() -> tuple[dict, dict[str, object]]:
                         derivation_transition["previous_audit"].get(field),
                         f"Patch 24.0c changed production audit field: {field}")
             effective["audit"] = derivation_transition["current_audit"]
+        # Patch 24.12 is the first successor to move these counts rather than
+        # preserve them: converting a parity guard removes the invocation it
+        # used to make. Three fields go down by exactly the number of live-C
+        # cases the frozen-surface transition registers as removed, every
+        # other field is held, and the audit's own mutation evidence then runs
+        # against the moved state rather than the closed one.
+        if retirement_transition is not None:
+            require(derivation_transition is not None,
+                    "the Patch 24.12 production audit successor has no "
+                    "registered predecessor")
+            previous = retirement_transition.get("previous_audit", {})
+            current = retirement_transition.get("current_audit", {})
+            reduced = retirement_transition.get("reduced_fields", [])
+            require(retirement_transition.get("contract_version") ==
+                    "phase24_12_frozen_oracle_production_audit_transition_v1"
+                    and retirement_transition.get("status") ==
+                    "patch24_12_complete" and
+                    retirement_transition.get("authority_base_main") ==
+                    "8aa9922eb40ad404647a86f865f0790ab37a3589" and
+                    previous == derivation_transition["current_audit"] and
+                    current == summary and
+                    sorted(reduced) == [
+                        "non_bootstrap_retained_test_surface_count",
+                        "repository_explicit_c_count",
+                        "repository_invocation_count"] and
+                    retirement_transition.get(
+                        "partial_extra_or_substituted_audit") == "rejected",
+                    "Patch 24.12 production audit transition drifted")
+            removed = retirement_transition.get("removed_invocation_count")
+            surface = registry.get(
+                "phase24_frozen_oracle_replacement", {}).get(
+                    "frozen_surface_transition", {})
+            require(removed == surface.get("removed_case_count"),
+                    "the production audit and the frozen-surface transition "
+                    "disagree about how many live-C cases Patch 24.12 removed")
+            for field in reduced:
+                require(previous[field] - current[field] == removed,
+                        f"Patch 24.12 production audit field moved by "
+                        f"something other than the registered removal: "
+                        f"{field}")
+            for field in unchanged:
+                if field in reduced:
+                    continue
+                require(current.get(field) == previous.get(field),
+                        f"Patch 24.12 changed an unregistered production "
+                        f"audit field: {field}")
+            effective["audit"] = current
         validate_mutations(effective, summary)
     require(record.get("timelines") == {
         "phase24": "remove_generated_C_backend_and_explicit_C_publication_routes",

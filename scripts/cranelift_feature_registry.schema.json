@@ -4445,6 +4445,9 @@
             },
             "type": "object"
           },
+          "production_audit_transition": {
+            "type": "object"
+          },
           "runner_mediated_residue": {
             "additionalProperties": {
               "minimum": 1,
@@ -4489,6 +4492,7 @@
           "not_repaired",
           "phase22_invocation_successor",
           "poisoned_route_probes",
+          "production_audit_transition",
           "runner_mediated_residue",
           "runner_residue_owner",
           "status",

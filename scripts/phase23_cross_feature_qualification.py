@@ -578,6 +578,14 @@ def validate_transition(record: dict, registry: dict) -> None:
                 "Patch 23.15 frozen surface successor drifted")
         if derivation_frozen is not None:
             live_frozen = current_frozen_surface(registry)
+            # Patch 24.12 converts the parity guards, so the live surface is no
+            # longer 24.0c's. Its successor is registered once, in the frozen
+            # oracle node, and read here rather than duplicated: this guard and
+            # scripts/phase23_mir_to_c_frozen_surface.py are asserting the same
+            # link in the same chain.
+            retirement_frozen = registry.get(
+                "phase24_frozen_oracle_replacement", {}).get(
+                    "frozen_surface_transition")
             require(
                 derivation_frozen.get("contract_version") ==
                 "phase24_cr15_derivation_frozen_surface_transition_v1" and
@@ -587,7 +595,9 @@ def validate_transition(record: dict, registry: dict) -> None:
                 derivation_frozen.get("previous_live_c_case_surface") ==
                 closure_frozen["current_live_c_case_surface"] and
                 derivation_frozen.get("current_live_c_case_surface") ==
-                live_frozen and
+                (live_frozen if retirement_frozen is None
+                 else retirement_frozen.get(
+                     "previous_live_c_case_surface")) and
                 derivation_frozen.get("unchanged_fields") ==
                 surface["unchanged_fields"] and
                 derivation_frozen.get("change_reason") ==
@@ -595,10 +605,30 @@ def validate_transition(record: dict, registry: dict) -> None:
                 derivation_frozen.get("partial_or_unregistered_surface") ==
                 "rejected",
                 "Patch 24.0c frozen surface successor drifted")
+            if retirement_frozen is not None:
+                require(
+                    retirement_frozen.get("contract_version") ==
+                    "phase24_frozen_oracle_frozen_surface_transition_v1" and
+                    retirement_frozen.get("status") ==
+                    "patch24_12_complete" and
+                    retirement_frozen.get(
+                        "previous_live_c_case_surface") ==
+                    derivation_frozen["current_live_c_case_surface"] and
+                    retirement_frozen.get("current_live_c_case_surface") ==
+                    live_frozen and
+                    retirement_frozen.get(
+                        "partial_or_unregistered_surface") == "rejected",
+                    "Patch 24.12 frozen surface successor drifted")
+            # Compare the two ends of the link 24.0c registered, not the live
+            # surface against 24.0c's start: with a successor in the chain the
+            # live surface belongs to the successor, and reading it here would
+            # blame 24.0c for a later patch's change.
             for field in surface["unchanged_fields"]:
-                require(live_frozen.get(field) ==
-                        derivation_frozen["previous_live_c_case_surface"].get(field),
-                        f"Patch 24.0c changed frozen C field: {field}")
+                require(
+                    derivation_frozen["current_live_c_case_surface"].get(field)
+                    == derivation_frozen[
+                        "previous_live_c_case_surface"].get(field),
+                    f"Patch 24.0c changed frozen C field: {field}")
 
 
 def validate() -> dict:
