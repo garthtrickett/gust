@@ -10604,29 +10604,13 @@ guard-cranelift-phase11-scalar-expression-parity:
       local case_dir="$build_dir/$case_name"
       mkdir -p "$case_dir"
 
-      ./gust --backend mir-to-c "$source_path" \
-        >"$case_dir/default.c" 2>"$case_dir/default.compiler.stderr"
-      ./gust --backend mir-to-c "$source_path" \
-        >"$case_dir/explicit.c" 2>"$case_dir/explicit.compiler.stderr"
-      if [ -s "$case_dir/default.compiler.stderr" ] ||
-         [ -s "$case_dir/explicit.compiler.stderr" ]; then
-        echo "MIR-to-C compilation emitted diagnostics for $case_name."
-        cat "$case_dir/default.compiler.stderr" "$case_dir/explicit.compiler.stderr"
+      python3 scripts/phase24_frozen_oracle.py materialize \
+        "$source_path" "$case_dir/mir-to-c" --kind exec
+      if [ -s "$case_dir/mir-to-c.compile.stderr" ]; then
+        echo "Frozen oracle records compiler diagnostics for $case_name."
+        cat "$case_dir/mir-to-c.compile.stderr"
         exit 1
       fi
-      if ! cmp -s "$case_dir/default.c" "$case_dir/explicit.c"; then
-        echo "Default and explicit MIR-to-C output differ for $case_name."
-        diff -u "$case_dir/default.c" "$case_dir/explicit.c" || true
-        exit 1
-      fi
-
-      cat src/runtime.c "$case_dir/default.c" >"$case_dir/mir-to-c.final.c"
-      "$CC_BIN" $CFLAGS_VAL -Isrc \
-        "$case_dir/mir-to-c.final.c" \
-        -o "$case_dir/mir-to-c-program"
-      execute_and_capture \
-        "$case_dir/mir-to-c-program" \
-        "$case_dir/mir-to-c"
 
       GUST_NATIVE_BACKEND_DRIVER="$driver_abs" \
         ./gust --backend cranelift \
@@ -10676,20 +10660,13 @@ guard-cranelift-phase11-scalar-expression-parity:
 
     negative_dir="$build_dir/unsupported-division"
     mkdir -p "$negative_dir"
-    ./gust --backend mir-to-c "$negative_source" \
-      >"$negative_dir/default.c" 2>"$negative_dir/default.compiler.stderr"
-    if [ -s "$negative_dir/default.compiler.stderr" ]; then
-      echo "MIR-to-C rejected the current unselected division source."
-      cat "$negative_dir/default.compiler.stderr"
+    python3 scripts/phase24_frozen_oracle.py materialize \
+      "$negative_source" "$negative_dir/mir-to-c" --kind exec
+    if [ -s "$negative_dir/mir-to-c.compile.stderr" ]; then
+      echo "Frozen oracle records the unselected division source as rejected."
+      cat "$negative_dir/mir-to-c.compile.stderr"
       exit 1
     fi
-    cat src/runtime.c "$negative_dir/default.c" >"$negative_dir/default.final.c"
-    "$CC_BIN" $CFLAGS_VAL -Isrc \
-      "$negative_dir/default.final.c" \
-      -o "$negative_dir/mir-to-c-program"
-    execute_and_capture \
-      "$negative_dir/mir-to-c-program" \
-      "$negative_dir/mir-to-c"
     if [ "$(cat "$negative_dir/mir-to-c.status")" != "8" ]; then
       echo "Unselected division MIR-to-C program must exit 8."
       exit 1
@@ -10894,29 +10871,16 @@ guard-cranelift-phase11-local-state-parity:
       local case_dir="$build_dir/$case_name"
       mkdir -p "$case_dir"
 
-      set +e
-      ./gust --backend mir-to-c "$source_path" \
-        >"$case_dir/default.c" 2>"$case_dir/default.compiler.stderr"
-      default_compile_status="$?"
-      ./gust --backend mir-to-c "$source_path" \
-        >"$case_dir/explicit.c" 2>"$case_dir/explicit.compiler.stderr"
-      explicit_compile_status="$?"
-      set -e
-      if [ "$default_compile_status" != "0" ] ||
-         [ "$explicit_compile_status" != "0" ]; then
-        echo "MIR-to-C compilation failed for local-state case $case_name: default=$default_compile_status explicit=$explicit_compile_status"
-        cat "$case_dir/default.compiler.stderr" "$case_dir/explicit.compiler.stderr"
+      python3 scripts/phase24_frozen_oracle.py materialize \
+        "$source_path" "$case_dir/mir-to-c" --kind exec
+      if [ "$(cat "$case_dir/mir-to-c.compile.status")" != "0" ]; then
+        echo "Frozen oracle records a failed compilation for local-state case $case_name."
+        cat "$case_dir/mir-to-c.compile.stderr"
         exit 1
       fi
-      if [ -s "$case_dir/default.compiler.stderr" ] ||
-         [ -s "$case_dir/explicit.compiler.stderr" ]; then
-        echo "MIR-to-C compilation emitted diagnostics for local-state case $case_name."
-        cat "$case_dir/default.compiler.stderr" "$case_dir/explicit.compiler.stderr"
-        exit 1
-      fi
-      if ! cmp -s "$case_dir/default.c" "$case_dir/explicit.c"; then
-        echo "Default and explicit MIR-to-C output differ for local-state case $case_name."
-        diff -u "$case_dir/default.c" "$case_dir/explicit.c" || true
+      if [ -s "$case_dir/mir-to-c.compile.stderr" ]; then
+        echo "Frozen oracle records compiler diagnostics for local-state case $case_name."
+        cat "$case_dir/mir-to-c.compile.stderr"
         exit 1
       fi
 
@@ -11221,29 +11185,16 @@ guard-cranelift-phase11-structured-cfg-parity:
       local case_dir="$build_dir/$case_name"
       mkdir -p "$case_dir"
 
-      set +e
-      ./gust --backend mir-to-c "$source_path" \
-        >"$case_dir/default.c" 2>"$case_dir/default.compiler.stderr"
-      default_compile_status="$?"
-      ./gust --backend mir-to-c "$source_path" \
-        >"$case_dir/explicit.c" 2>"$case_dir/explicit.compiler.stderr"
-      explicit_compile_status="$?"
-      set -e
-      if [ "$default_compile_status" != "0" ] ||
-         [ "$explicit_compile_status" != "0" ]; then
-        echo "MIR-to-C compilation failed for structured-CFG case $case_name: default=$default_compile_status explicit=$explicit_compile_status"
-        cat "$case_dir/default.compiler.stderr" "$case_dir/explicit.compiler.stderr"
+      python3 scripts/phase24_frozen_oracle.py materialize \
+        "$source_path" "$case_dir/mir-to-c" --kind exec
+      if [ "$(cat "$case_dir/mir-to-c.compile.status")" != "0" ]; then
+        echo "Frozen oracle records a failed compilation for structured-CFG case $case_name."
+        cat "$case_dir/mir-to-c.compile.stderr"
         exit 1
       fi
-      if [ -s "$case_dir/default.compiler.stderr" ] ||
-         [ -s "$case_dir/explicit.compiler.stderr" ]; then
-        echo "MIR-to-C compilation emitted diagnostics for structured-CFG case $case_name."
-        cat "$case_dir/default.compiler.stderr" "$case_dir/explicit.compiler.stderr"
-        exit 1
-      fi
-      if ! cmp -s "$case_dir/default.c" "$case_dir/explicit.c"; then
-        echo "Default and explicit MIR-to-C output differ for structured-CFG case $case_name."
-        diff -u "$case_dir/default.c" "$case_dir/explicit.c" || true
+      if [ -s "$case_dir/mir-to-c.compile.stderr" ]; then
+        echo "Frozen oracle records compiler diagnostics for structured-CFG case $case_name."
+        cat "$case_dir/mir-to-c.compile.stderr"
         exit 1
       fi
 
@@ -11681,31 +11632,16 @@ guard-cranelift-phase11-block-parameter-loop-parity:
       mkdir -p "$case_dir"
       echo "▶ Phase 11 block-parameter case: $case_name"
 
-      set +e
-      ./gust --backend mir-to-c "$source_path" \
-        >"$case_dir/default.c" \
-        2>"$case_dir/default.compiler.stderr"
-      local default_compile_status="$?"
-      ./gust --backend mir-to-c "$source_path" \
-        >"$case_dir/explicit.c" \
-        2>"$case_dir/explicit.compiler.stderr"
-      local explicit_compile_status="$?"
-      set -e
-      if [ "$default_compile_status" != "0" ] ||
-         [ "$explicit_compile_status" != "0" ]; then
-        echo "MIR-to-C compilation failed for block-parameter case $case_name: default=$default_compile_status explicit=$explicit_compile_status"
-        cat "$case_dir/default.compiler.stderr" "$case_dir/explicit.compiler.stderr"
+      python3 scripts/phase24_frozen_oracle.py materialize \
+        "$source_path" "$case_dir/mir-to-c" --kind exec
+      if [ "$(cat "$case_dir/mir-to-c.compile.status")" != "0" ]; then
+        echo "Frozen oracle records a failed compilation for block-parameter case $case_name."
+        cat "$case_dir/mir-to-c.compile.stderr"
         exit 1
       fi
-      if [ -s "$case_dir/default.compiler.stderr" ] ||
-         [ -s "$case_dir/explicit.compiler.stderr" ]; then
-        echo "MIR-to-C compilation emitted diagnostics for block-parameter case $case_name."
-        cat "$case_dir/default.compiler.stderr" "$case_dir/explicit.compiler.stderr"
-        exit 1
-      fi
-      if ! cmp -s "$case_dir/default.c" "$case_dir/explicit.c"; then
-        echo "Default and explicit MIR-to-C output differ for block-parameter case $case_name."
-        diff -u "$case_dir/default.c" "$case_dir/explicit.c" || true
+      if [ -s "$case_dir/mir-to-c.compile.stderr" ]; then
+        echo "Frozen oracle records compiler diagnostics for block-parameter case $case_name."
+        cat "$case_dir/mir-to-c.compile.stderr"
         exit 1
       fi
 
@@ -12124,14 +12060,10 @@ guard-cranelift-phase11-direct-call-abi-parity:
 
     case_dir="$build_dir/nested-direct-call"
     mkdir -p "$case_dir"
-    ./gust --backend mir-to-c "$positive_source" >"$case_dir/default.c" 2>"$case_dir/default.compiler.stderr"
-    ./gust --backend mir-to-c "$positive_source" >"$case_dir/explicit.c" 2>"$case_dir/explicit.compiler.stderr"
-    test ! -s "$case_dir/default.compiler.stderr"
-    test ! -s "$case_dir/explicit.compiler.stderr"
-    cmp -s "$case_dir/default.c" "$case_dir/explicit.c"
-    cat src/runtime.c "$case_dir/default.c" >"$case_dir/mir-to-c.final.c"
-    "$CC_BIN" $CFLAGS_VAL -Isrc "$case_dir/mir-to-c.final.c" -o "$case_dir/mir-to-c-program"
-    execute_and_capture "$case_dir/mir-to-c-program" "$case_dir/mir-to-c"
+    python3 scripts/phase24_frozen_oracle.py materialize \
+      "$positive_source" "$case_dir/mir-to-c" --kind exec
+    test ! -s "$case_dir/mir-to-c.compile.stderr"
+    test "$(cat "$case_dir/mir-to-c.compile.status")" = "0"
     GUST_NATIVE_BACKEND_DRIVER="$driver_abs" \
       ./gust --backend cranelift -o "$case_dir/native-program" "$positive_source" \
       >"$case_dir/native.compiler.stdout" 2>"$case_dir/native.compiler.stderr"
@@ -12453,31 +12385,16 @@ guard-cranelift-phase11-module-import-runtime-parity:
       mkdir -p "$case_dir"
       echo "▶ Phase 11 module/import/runtime case: $name"
 
-      set +e
-      ./gust --backend mir-to-c "$source_path" \
-        >"$case_dir/default.c" \
-        2>"$case_dir/default.compiler.stderr"
-      local default_compile_status="$?"
-      ./gust --backend mir-to-c "$source_path" \
-        >"$case_dir/explicit.c" \
-        2>"$case_dir/explicit.compiler.stderr"
-      local explicit_compile_status="$?"
-      set -e
-      if [ "$default_compile_status" != "0" ] ||
-         [ "$explicit_compile_status" != "0" ]; then
-        echo "MIR-to-C compilation failed for module/import/runtime case $name: default=$default_compile_status explicit=$explicit_compile_status"
-        cat "$case_dir/default.compiler.stderr" "$case_dir/explicit.compiler.stderr"
+      python3 scripts/phase24_frozen_oracle.py materialize \
+        "$source_path" "$case_dir/mir-to-c" --kind exec
+      if [ "$(cat "$case_dir/mir-to-c.compile.status")" != "0" ]; then
+        echo "Frozen oracle records a failed compilation for module/import/runtime case $name."
+        cat "$case_dir/mir-to-c.compile.stderr"
         exit 1
       fi
-      if [ -s "$case_dir/default.compiler.stderr" ] ||
-         [ -s "$case_dir/explicit.compiler.stderr" ]; then
-        echo "MIR-to-C compilation emitted diagnostics for module/import/runtime case $name."
-        cat "$case_dir/default.compiler.stderr" "$case_dir/explicit.compiler.stderr"
-        exit 1
-      fi
-      if ! cmp -s "$case_dir/default.c" "$case_dir/explicit.c"; then
-        echo "Default and explicit MIR-to-C output differ for module/import/runtime case $name."
-        diff -u "$case_dir/default.c" "$case_dir/explicit.c" || true
+      if [ -s "$case_dir/mir-to-c.compile.stderr" ]; then
+        echo "Frozen oracle records compiler diagnostics for module/import/runtime case $name."
+        cat "$case_dir/mir-to-c.compile.stderr"
         exit 1
       fi
 
@@ -13050,9 +12967,12 @@ guard-cranelift-phase11-metadata-diagnostic-parity:
     # before backend selection. Compare the class we assign and the stable source
     # location rather than prose.
     echo "▶ Phase 11 diagnostic case: source-type-error"
+    python3 scripts/phase24_frozen_oracle.py materialize \
+      "$type_error_source" "$build_dir/type.default" --kind reject
+    cp "$build_dir/type.default.compile.stdout" "$build_dir/type.default.stdout"
+    cp "$build_dir/type.default.compile.stderr" "$build_dir/type.default.stderr"
+    default_status="$(cat "$build_dir/type.default.compile.status")"
     set +e
-    ./gust --backend mir-to-c "$type_error_source" >"$build_dir/type.default.stdout" 2>"$build_dir/type.default.stderr"
-    default_status="$?"
     ./gust --backend cranelift -o "$build_dir/type.native.output" "$type_error_source" >"$build_dir/type.native.stdout" 2>"$build_dir/type.native.stderr"
     native_status="$?"
     set -e

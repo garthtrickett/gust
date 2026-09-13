@@ -84,17 +84,15 @@ default_c="$build_root/default.c"
 explicit_c="$build_root/explicit.c"
 default_stderr="$build_root/default.stderr"
 explicit_stderr="$build_root/explicit.stderr"
-./gust --backend mir-to-c "$supported_source" >"$default_c" 2>"$default_stderr"
-./gust --backend mir-to-c "$supported_source" \
-  >"$explicit_c" 2>"$explicit_stderr"
-if [ -s "$default_stderr" ] || [ -s "$explicit_stderr" ]; then
-  cat "$default_stderr" "$explicit_stderr" >&2
-  echo "Default or explicit MIR-to-C emitted unexpected diagnostics." >&2
-  exit 1
-fi
-if ! cmp -s "$default_c" "$explicit_c"; then
-  diff -u "$default_c" "$explicit_c" >&2 || true
-  echo "Default and explicit MIR-to-C no longer share one oracle path." >&2
+# Patch 24.12: the two-spelling emit determinism check asserted a property
+# of the backend being retired, and had no native counterpart. What remains
+# live is that the frozen oracle still accepts this source without
+# diagnostics, which the native arm below is compared against.
+python3 scripts/phase24_frozen_oracle.py materialize \
+  "$supported_source" "$(dirname "$default_c")/frozen" --kind exec
+if [ -s "$(dirname "$default_c")/frozen.compile.stderr" ]; then
+  cat "$(dirname "$default_c")/frozen.compile.stderr" >&2
+  echo "Frozen oracle records diagnostics for the supported source." >&2
   exit 1
 fi
 
