@@ -66,16 +66,28 @@ roadmap authority.
 
 ## What this patch does and does not claim
 
-After this patch **no parity guard with a native arm selects the C
-backend**: the spelling is gone from all 39
+After this patch **no parity harness or recipe with a native arm
+selects the C backend**: the spelling is gone from all 39
 harnesses and 11 recipes above.
 
-That is the gate, stated exactly. 7
-further parity harnesses still execute live C and are listed below:
-they have no native arm, so freezing both of their source arms would
+Read that as the population it was measured over, not as a
+repository-wide statement. The Patch 24.11 consumer inventory
+discovers execution loci by globbing `scripts/*.sh` together with
+the Makefile, the justfile fragments and a named set of entry
+fixtures. A parity guard implemented in Python runs both backends
+through `subprocess` and is invisible to that census, so this patch
+neither converted nor counted one. Those guards are outside this
+patch and still need an owner before the unqualified gate can
+close.
+
+Within that population 7 further
+parity harnesses still execute live C and are listed below: they
+have no native arm, so freezing both of their source arms would
 leave a comparison that can never fail. Patch
 `24.12a` retires them, and that is where the original
-"zero parity guards execute live C" gate closes.
+"zero parity guards execute live C" gate closes **for the
+measured population**. It does not close outright until the Python
+guards named above have an owner too.
 
 Two of them still *reach* live C through the shared runner's default
 route (`scripts/run-gust-file.sh`), which is Patch

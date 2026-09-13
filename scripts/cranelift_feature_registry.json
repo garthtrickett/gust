@@ -24765,6 +24765,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "df1bd11cac8547ac93b1c1856510f2aa3757106ec706fd14e8c2bdaf54e55221",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 21
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_scheduler_main_result.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "6dadd77bd23a00bd879eead95f96ca5cbcdc0f6f7352d2d04a3acbae40824d2d",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -25414,6 +25429,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "2ad8d1df6a88b25d214e6a423822188742c9e40336a9d580a78773cada6d6e75",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 5
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_scheduler_main_result.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "e2ff711ddb612793116951d29ea324a9e895da59f7580a54de0823210454f0ba",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -25525,6 +25555,7 @@
         "scripts/phase21_od8_adversarial_verdict.sh",
         "scripts/phase21_opening.sh",
         "scripts/phase21_per_root_obligations.sh",
+        "scripts/phase21_scheduler_main_result.py",
         "scripts/phase21_trusted_scope_provenance.sh",
         "scripts/phase21_typed_query_noop_surface.sh",
         "scripts/phase22_opening.py",
