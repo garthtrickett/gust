@@ -24248,7 +24248,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "351e0c75a208da859e5a7546dfd82ca1300f5007a2f8a744b37afd366388fc75",
+          "digest": "0abf497590c322c77f5173b4ea1411394f1df130f73254b588f8348b429e65b4",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -24785,7 +24785,7 @@
           "removal_phase": "24"
         }
       ],
-      "live_justfile_successor_digest": "4a520b6d4623ae0f15598e9cf7c0e4190ea79b3f4b65db004489b349b62a910d",
+      "live_justfile_successor_digest": "1a81cf4a526bca5ddc5097341cb48cc0888a7c9c381a06e63476889d399c51e7",
       "partial_extra_or_substituted_surface": "rejected",
       "previous_changed_text_surfaces": [
         {
