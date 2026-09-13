@@ -283,6 +283,13 @@ def check() -> None:
                 f"closure changed frozen explicit-C field: {field}")
     if derivation_frozen_transition is not None:
         current_frozen = live_frozen_surface(registry)
+        # Patch 24.12's successor is registered once in the frozen oracle node
+        # and read here; this guard asserts the same chain link as
+        # phase23_mir_to_c_frozen_surface.py and phase23_cross_feature_
+        # qualification.py, so it must not carry its own copy of it.
+        retirement_frozen = registry.get(
+            "phase24_frozen_oracle_replacement", {}).get(
+                "frozen_surface_transition")
         require(
             derivation_frozen_transition.get("contract_version") ==
             "phase24_cr15_derivation_frozen_surface_transition_v1" and
@@ -292,7 +299,8 @@ def check() -> None:
             derivation_frozen_transition.get("previous_live_c_case_surface") ==
             frozen_transition["current_live_c_case_surface"] and
             derivation_frozen_transition.get("current_live_c_case_surface") ==
-            current_frozen and
+            (current_frozen if retirement_frozen is None
+             else retirement_frozen.get("previous_live_c_case_surface")) and
             derivation_frozen_transition.get("unchanged_fields") ==
             frozen_unchanged and
             derivation_frozen_transition.get("change_reason") ==
@@ -300,11 +308,28 @@ def check() -> None:
             derivation_frozen_transition.get("partial_or_unregistered_surface") ==
             "rejected",
             "Patch 24.0c frozen-surface closure successor drifted")
+        # The two ends of the link 24.0c registered, not the live surface
+        # against 24.0c's start: with a successor in the chain the live
+        # surface belongs to the successor.
         for field in frozen_unchanged:
-            require(current_frozen.get(field) ==
+            require(derivation_frozen_transition[
+                        "current_live_c_case_surface"].get(field) ==
                     derivation_frozen_transition[
                         "previous_live_c_case_surface"].get(field),
                     f"Patch 24.0c changed frozen explicit-C field: {field}")
+        if retirement_frozen is not None:
+            require(
+                retirement_frozen.get("contract_version") ==
+                "phase24_frozen_oracle_frozen_surface_transition_v1" and
+                retirement_frozen.get("status") == "patch24_12_complete" and
+                retirement_frozen.get("previous_live_c_case_surface") ==
+                derivation_frozen_transition[
+                    "current_live_c_case_surface"] and
+                retirement_frozen.get("current_live_c_case_surface") ==
+                current_frozen and
+                retirement_frozen.get("partial_or_unregistered_surface") ==
+                "rejected",
+                "Patch 24.12 frozen-surface closure successor drifted")
 
     production = registry["phase23_production_release_audit"]
     require(closure.get("production_release_authority") == {
@@ -356,6 +381,9 @@ def check() -> None:
                 f"closure changed production audit field: {field}")
     if derivation_production_transition is not None:
         current_audit = production_module.scan()
+        retirement_production = registry.get(
+            "phase24_frozen_oracle_replacement", {}).get(
+                "production_audit_transition")
         require(
             derivation_production_transition.get("contract_version") ==
             "phase24_cr15_derivation_production_audit_transition_v1" and
@@ -366,7 +394,8 @@ def check() -> None:
             derivation_production_transition.get("previous_audit") ==
             production_transition["current_audit"] and
             derivation_production_transition.get("current_audit") ==
-            current_audit and
+            (current_audit if retirement_production is None
+             else retirement_production.get("previous_audit")) and
             derivation_production_transition.get("unchanged_fields") ==
             production_unchanged and
             derivation_production_transition.get("change_reason") ==
@@ -375,9 +404,30 @@ def check() -> None:
                 "partial_extra_or_substituted_audit") == "rejected",
             "Patch 24.0c production-audit closure successor drifted")
         for field in production_unchanged:
-            require(current_audit.get(field) ==
-                    derivation_production_transition["previous_audit"].get(field),
+            require(derivation_production_transition["current_audit"].get(field)
+                    == derivation_production_transition[
+                        "previous_audit"].get(field),
                     f"Patch 24.0c changed production audit field: {field}")
+        if retirement_production is not None:
+            reduced = set(retirement_production.get("reduced_fields", []))
+            require(
+                retirement_production.get("contract_version") ==
+                "phase24_12_frozen_oracle_production_audit_transition_v1" and
+                retirement_production.get("status") ==
+                "patch24_12_complete" and
+                retirement_production.get("previous_audit") ==
+                derivation_production_transition["current_audit"] and
+                retirement_production.get("current_audit") == current_audit and
+                retirement_production.get(
+                    "partial_extra_or_substituted_audit") == "rejected",
+                "Patch 24.12 production-audit closure successor drifted")
+            for field in production_unchanged:
+                if field in reduced:
+                    continue
+                require(retirement_production["current_audit"].get(field) ==
+                        retirement_production["previous_audit"].get(field),
+                        f"Patch 24.12 changed an unregistered production "
+                        f"audit field: {field}")
 
     require(closure.get("bootstrap_authority") == {
         "route": "explicit_mir_to_c_and_host_c",
