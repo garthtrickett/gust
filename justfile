@@ -10884,21 +10884,6 @@ guard-cranelift-phase11-local-state-parity:
         exit 1
       fi
 
-      cat src/runtime.c "$case_dir/default.c" >"$case_dir/mir-to-c.final.c"
-      if ! "$CC_BIN" $CFLAGS_VAL -Isrc \
-        "$case_dir/mir-to-c.final.c" \
-        -o "$case_dir/mir-to-c-program" \
-        >"$case_dir/mir-to-c.link.stdout" \
-        2>"$case_dir/mir-to-c.link.stderr"
-      then
-        echo "MIR-to-C C compilation failed for local-state case $case_name."
-        cat "$case_dir/mir-to-c.link.stdout" "$case_dir/mir-to-c.link.stderr"
-        exit 1
-      fi
-      execute_and_capture \
-        "$case_dir/mir-to-c-program" \
-        "$case_dir/mir-to-c"
-
       set +e
       GUST_NATIVE_BACKEND_DRIVER="$driver_abs" \
         ./gust --backend cranelift \
@@ -11197,19 +11182,6 @@ guard-cranelift-phase11-structured-cfg-parity:
         cat "$case_dir/mir-to-c.compile.stderr"
         exit 1
       fi
-
-      cat src/runtime.c "$case_dir/default.c" >"$case_dir/mir-to-c.final.c"
-      if ! "$CC_BIN" $CFLAGS_VAL -Isrc \
-        "$case_dir/mir-to-c.final.c" \
-        -o "$case_dir/mir-to-c-program" \
-        >"$case_dir/mir-to-c.link.stdout" \
-        2>"$case_dir/mir-to-c.link.stderr"
-      then
-        echo "MIR-to-C C compilation failed for structured-CFG case $case_name."
-        cat "$case_dir/mir-to-c.link.stdout" "$case_dir/mir-to-c.link.stderr"
-        exit 1
-      fi
-      execute_and_capture "$case_dir/mir-to-c-program" "$case_dir/mir-to-c"
 
       set +e
       GUST_NATIVE_BACKEND_DRIVER="$driver_abs" \
@@ -11644,19 +11616,6 @@ guard-cranelift-phase11-block-parameter-loop-parity:
         cat "$case_dir/mir-to-c.compile.stderr"
         exit 1
       fi
-
-      cat src/runtime.c "$case_dir/default.c" >"$case_dir/mir-to-c.final.c"
-      if ! "$CC_BIN" $CFLAGS_VAL -Isrc \
-        "$case_dir/mir-to-c.final.c" \
-        -o "$case_dir/mir-to-c-program" \
-        >"$case_dir/mir-to-c.link.stdout" \
-        2>"$case_dir/mir-to-c.link.stderr"
-      then
-        echo "MIR-to-C C compilation failed for block-parameter case $case_name."
-        cat "$case_dir/mir-to-c.link.stdout" "$case_dir/mir-to-c.link.stderr"
-        exit 1
-      fi
-      execute_and_capture "$case_dir/mir-to-c-program" "$case_dir/mir-to-c"
 
       set +e
       GUST_NATIVE_BACKEND_DRIVER="$driver_abs" \
@@ -12397,19 +12356,6 @@ guard-cranelift-phase11-module-import-runtime-parity:
         cat "$case_dir/mir-to-c.compile.stderr"
         exit 1
       fi
-
-      cat src/runtime.c "$case_dir/default.c" >"$case_dir/mir-to-c.final.c"
-      if ! "$CC_BIN" $CFLAGS_VAL -Isrc \
-        "$case_dir/mir-to-c.final.c" \
-        -o "$case_dir/mir-to-c-program" \
-        >"$case_dir/mir-to-c.link.stdout" \
-        2>"$case_dir/mir-to-c.link.stderr"
-      then
-        echo "MIR-to-C C compilation failed for module/import/runtime case $name."
-        cat "$case_dir/mir-to-c.link.stdout" "$case_dir/mir-to-c.link.stderr"
-        exit 1
-      fi
-      execute_and_capture "$case_dir/mir-to-c-program" "$case_dir/mir-to-c"
 
       set +e
       GUST_NATIVE_BACKEND_DRIVER="$driver_abs" \

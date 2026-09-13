@@ -80,18 +80,14 @@ assert_no_mir_to_c_fallback() {
   fi
 }
 
-default_c="$build_root/default.c"
-explicit_c="$build_root/explicit.c"
-default_stderr="$build_root/default.stderr"
-explicit_stderr="$build_root/explicit.stderr"
 # Patch 24.12: the two-spelling emit determinism check asserted a property
 # of the backend being retired, and had no native counterpart. What remains
 # live is that the frozen oracle still accepts this source without
 # diagnostics, which the native arm below is compared against.
 python3 scripts/phase24_frozen_oracle.py materialize \
-  "$supported_source" "$(dirname "$default_c")/frozen" --kind exec
-if [ -s "$(dirname "$default_c")/frozen.compile.stderr" ]; then
-  cat "$(dirname "$default_c")/frozen.compile.stderr" >&2
+  "$supported_source" "$build_root/frozen" --kind exec
+if [ -s "$build_root/frozen.compile.stderr" ]; then
+  cat "$build_root/frozen.compile.stderr" >&2
   echo "Frozen oracle records diagnostics for the supported source." >&2
   exit 1
 fi
