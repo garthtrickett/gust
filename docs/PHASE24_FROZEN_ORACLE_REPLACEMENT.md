@@ -84,10 +84,11 @@ Within that population 7 further
 parity harnesses still execute live C and are listed below: they
 have no native arm, so freezing both of their source arms would
 leave a comparison that can never fail. Patch
-`24.12a` retires them, and that is where the original
-"zero parity guards execute live C" gate closes **for the
-measured population**. It does not close outright until the Python
-guards named above have an owner too.
+`24.12a` retires them. The unqualified "zero parity
+guards execute live C" gate does **not** close there: the Python
+guards named above outlive it. Patch `24.12b`
+converts those eight and widens the measured population to include
+`scripts/*.py`, and that is where the unqualified gate closes.
 
 Two of them still *reach* live C through the shared runner's default
 route (`scripts/run-gust-file.sh`), which is Patch

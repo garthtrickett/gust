@@ -115,8 +115,15 @@ FROZEN_LOCI = (
 # local's spelling does not change the generated C") are invariants *about the
 # emitter being retired*. They die with it, which is what the Immutable
 # Contract's "a guard that exists only to serve the retired backend is removed
-# with it, not carried" describes. Patch 24.12a retires them, and that is
-# where the original "zero parity guards execute live C" gate closes.
+# with it, not carried" describes. Patch 24.12a retires them.
+#
+# It is not where the unqualified "zero parity guards execute live C" gate
+# closes, and this comment used to say it was. That closure moved to Patch
+# 24.12b by coordinator ruling: the population both this patch and the 24.11
+# inventory measure is the shell one, and 8 parity guards written in Python
+# run both backends in one function and compare them. Retiring these seven
+# leaves those eight, so 24.12a cannot close a gate stated over every parity
+# guard. 24.12b converts them and widens the population to see them.
 #
 # The criterion is checked, not asserted: `check_native_arm_split` below
 # measures each harness and fails if any row is on the wrong side.
@@ -132,6 +139,8 @@ EXCLUDED_EMITTER_ONLY_LOCI = (
     "scripts/phase21_inert_scoped_query_records.sh",
 )
 EXCLUDED_OWNER = "24.12a"
+# Where the unqualified gate closes. Not 24.12a: see the note above.
+UNQUALIFIED_GATE_OWNER = "24.12b"
 
 # A harness has a native arm when it runs one of these live, directly or
 # through a harness it delegates to.
@@ -1172,10 +1181,11 @@ def render(node: dict) -> str:
         "parity harnesses still execute live C and are listed below: they",
         "have no native arm, so freezing both of their source arms would",
         "leave a comparison that can never fail. Patch",
-        f"`{EXCLUDED_OWNER}` retires them, and that is where the original",
-        "\"zero parity guards execute live C\" gate closes **for the",
-        "measured population**. It does not close outright until the Python",
-        "guards named above have an owner too.",
+        f"`{EXCLUDED_OWNER}` retires them. The unqualified \"zero parity",
+        "guards execute live C\" gate does **not** close there: the Python",
+        f"guards named above outlive it. Patch `{UNQUALIFIED_GATE_OWNER}`",
+        "converts those eight and widens the measured population to include",
+        "`scripts/*.py`, and that is where the unqualified gate closes.",
         "",
         "Two of them still *reach* live C through the shared runner's default",
         "route (`scripts/run-gust-file.sh`), which is Patch",

@@ -115,6 +115,7 @@ Out of scope:
 - [x] Patch 24.11 — Generated-C Consumer and Route Inventory — DONE
 - [x] Patch 24.12 — Frozen Expected-Behaviour Oracle Replacement — DONE
 - [ ] Patch 24.12a — Emitter-Only Parity Guard Retirement
+- [ ] Patch 24.12b — Python Parity Guard Conversion
 - [ ] Patch 24.13 — Backend-Selection and Publication-Path Removal
 - [ ] Patch 24.14 — C Toolchain Discovery, Error, and Temp-File Removal
 - [ ] Patch 24.15 — Package, Documentation, and Registry Retirement
@@ -293,8 +294,17 @@ preserve a comparison. Such a harness compiles two *source* arms through C and
 compares the generated C text, or the C program's exit, to each other;
 freezing both sides leaves a tautology that can never fail — a deleted test
 wearing a conversion's clothes, and worse than a deletion because it still
-looks like coverage. Those harnesses are Patch 24.12a's to retire, and that is
-where the original "zero parity guards execute live C" gate closes.
+looks like coverage. Those harnesses are Patch 24.12a's to retire.
+
+The unqualified "zero parity guards execute live C" gate does not close there.
+Patch 24.12's population — the one the Patch 24.11 inventory enumerates — is
+`scripts/*.sh` plus the Makefile, the justfile fragments and a named set of
+entry fixtures. Eight parity guards written in Python run both backends inside
+a single function and compare them, and are invisible to that census; all
+twenty-three recipes reaching them are workflow-reachable and run in CI today.
+Retiring the seven emitter-only harnesses leaves those eight, so the gate
+closes at Patch 24.12b, which converts them and widens the population to see
+them.
 
 **Status 2026-09-13 — DONE:** 39 parity harnesses and 11 justfile recipes
 converted to the frozen oracle, with 237 vectors (34 derived from the
@@ -331,10 +341,53 @@ the emitter being retired, which is why Patch 24.12 could not convert them.
 - Re-measure the excluded set afterwards: the registered count must be zero
   and no converted harness may have lost its native arm.
 
-**Exit Gate:** zero parity guards execute live C — the unqualified form of
-the Patch 24.12 gate; every removed guard's registry row, recipe, level and
-workflow reference is gone with it; the Patch 24.12 exclusion register is
-empty; no converted guard was weakened to get there.
+**Exit Gate:** the Patch 24.12 exclusion register is empty and no parity
+harness without a native arm remains; every removed guard's registry row,
+recipe, level and workflow reference is gone with it; no converted guard was
+weakened to get there. This does **not** close the unqualified "zero parity
+guards execute live C" gate — that is Patch 24.12b's, and claiming it here
+would state something this patch's own measurement cannot support.
+
+## Patch 24.12b — Python Parity Guard Conversion
+
+**Purpose:** convert the parity guards that Patch 24.12's population could not
+see, and widen that population so it can.
+
+Patch 24.12 converted every parity harness its measurement enumerated. That
+measurement is `phase24_retirement_consumer_inventory.check_sweep()`, which
+builds its loci from `scripts/*.sh` plus the Makefile, the justfile fragments
+and a named set of entry fixtures, and `phase24_frozen_oracle.check_no_live_c`,
+which iterates a registered locus tuple and so can only catch a *registered*
+harness reacquiring live C. Neither can see a guard written in Python that
+drives both backends through `subprocess`. Eight do, comparing the two arms
+inside a single function.
+
+**Steps:**
+
+- Widen the gate's population to include `scripts/*.py`. This is part of the
+  patch, not a follow-up: a gate that cannot see a population cannot close
+  over it.
+- Convert the eight to the frozen oracle, each keeping its native arm live:
+  `phase20_generated_mir_scale`,
+  `phase21_compiler_support_native_qualification`,
+  `phase21_selected_compiler_module_qualification`,
+  `phase22_default_route_flip`, `phase22_preflip_default_cohort`,
+  `phase24_cr15_derivation`, `phase24_cr15_qualification`,
+  `phase24_resource_implicit_transfer`.
+- State which of the thirteen Python guards that invoke the retired backend
+  were converted and why the rest are out, as a criterion the validator
+  measures — the way Patch 24.12 measured its 39/7 split — not as a list.
+- Give them inventory rows. None of the thirteen has one today.
+- Carry the tracked-`.pyc` fix: `git rm --cached scripts/__pycache__/*` and a
+  `.gitignore` entry. A tracked `.pyc` is evidence to any guard that greps
+  tracked files, which is how four CI reds happened on Patch 24.12. It takes
+  eleven paths out of the tracked-file census, so it belongs in a patch
+  already paying the text-surface toll.
+
+**Exit Gate:** zero parity guards execute live C — the unqualified form of the
+Patch 24.12 gate, now measured over a population that includes `scripts/*.py`;
+every converted guard still runs its native arm live and compares it byte for
+byte; the conversion criterion is measured rather than asserted.
 
 ## Patch 24.13 — Backend-Selection and Publication-Path Removal
 
@@ -461,6 +514,7 @@ Web Slice 1 remain inactive pending fresh activation.
 → 24.11 consumer and route inventory
 → 24.12 frozen oracle replacement
 → 24.12a emitter-only parity guard retirement
+→ 24.12b python parity guard conversion
 → 24.13 backend-selection and publication-path removal
 → 24.14 C toolchain discovery, error, and temp-file removal
 → 24.15 package, documentation, and registry retirement
@@ -471,7 +525,10 @@ Web Slice 1 remain inactive pending fresh activation.
 Patch 24.12 must land before any removal patch begins: the oracle role is
 replaced before the oracle goes. Patch 24.12a follows it and precedes 24.13,
 because it removes guards rather than converting them and the conversion must
-be green first. Patch 24.11 must complete its inventory before 24.13 removes
+be green first. Patch 24.12b must land before 24.13 removes backend selection:
+the eight Python parity guards it converts still invoke the retired backend,
+and all twenty-three recipes reaching them run in CI, so removing the backend
+first breaks them. This is an ordering constraint, not a preference. Patch 24.11 must complete its inventory before 24.13 removes
 what it lists. A seed cannot share a PR with
 compiler-source changes; reconverge it alone where 24.13 or 24.14 moves it.
 Patch 24.17 runs only after the final removal and retirement mains exist. No
