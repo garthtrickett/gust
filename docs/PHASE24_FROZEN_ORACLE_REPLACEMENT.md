@@ -5,9 +5,9 @@
      update the script and regenerate. -->
 
 Status: `patch24_12_complete`
-Vectors: `237`
+Vectors: `253`
 Archived-corpus linked vectors: `34`
-Digest: `7dcc9065a74bdde8b0fbdde077e104e447a6892b24931147c41b86b9580ba56b`
+Digest: `577f03ff1d8b51ee790bda036798c4cca66261b13a8302bf2549953072b2836d`
 
 The retired backend was the semantic oracle for the parity guards.
 It is no longer executed by any of them. Parity is carried by the
@@ -232,8 +232,8 @@ cannot miss them.
 
 ## Frozen vectors
 
-`237` vectors, pinned by content as
-`7dcc9065a74bdde8b0fbdde077e104e447a6892b24931147c41b86b9580ba56b`. The manifest itself is
+`253` vectors, pinned by content as
+`577f03ff1d8b51ee790bda036798c4cca66261b13a8302bf2549953072b2836d`. The manifest itself is
 `compiler/fixtures/phase24_frozen_oracle_vectors_v1.json`; it is not enumerated in the registry,
 because that would put every frozen fixture path into a file the
 Phase 12.5 route architecture guard requires its probe fixtures to

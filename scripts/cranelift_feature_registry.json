@@ -25626,8 +25626,8 @@
       ],
       "status": "patch24_12_complete"
     },
-    "vector_count": 237,
-    "vectors_digest": "7dcc9065a74bdde8b0fbdde077e104e447a6892b24931147c41b86b9580ba56b",
+    "vector_count": 253,
+    "vectors_digest": "577f03ff1d8b51ee790bda036798c4cca66261b13a8302bf2549953072b2836d",
     "version": "phase24_frozen_oracle_replacement_v1"
   }
 }
