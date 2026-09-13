@@ -12,33 +12,24 @@ python3 scripts/phase20_nested_brand_annotation.py validate
 rm -rf "$build_root"
 mkdir -p "$build_root"
 
-./gust --backend mir-to-c "$positive" >"$build_root/default.c" 2>"$build_root/default.compiler.stderr"
-./gust --backend mir-to-c "$positive" \
-  >"$build_root/explicit.c" 2>"$build_root/explicit.compiler.stderr"
-test ! -s "$build_root/default.compiler.stderr"
-test ! -s "$build_root/explicit.compiler.stderr"
-cmp -s "$build_root/default.c" "$build_root/explicit.c"
-
-cat src/runtime.c "$build_root/default.c" >"$build_root/mir-to-c.final.c"
-"${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-  "$build_root/mir-to-c.final.c" -o "$build_root/mir-to-c-program"
-set +e
-"$build_root/mir-to-c-program" \
-  >"$build_root/mir-to-c.stdout" 2>"$build_root/mir-to-c.stderr"
-mir_status="$?"
-set -e
+python3 scripts/phase24_frozen_oracle.py materialize \
+  "$positive" "$build_root/mir-to-c" --kind exec
+test ! -s "$build_root/mir-to-c.compile.stderr"
+mir_status="$(cat "$build_root/mir-to-c.status")"
 test "$mir_status" = 20
 
-./gust --backend mir-to-c "$issue" >"$build_root/issue.c" 2>"$build_root/issue.stderr"
-test ! -s "$build_root/issue.stderr"
-if rg -n 'Brand Nesting|Declared Void|TypeMismatch' "$build_root/issue.c" >/dev/null; then
-  echo "CR-11 accepted fixture retained a semantic diagnostic" >&2
-  exit 1
-fi
+# Patch 24.12: grepping the emitted C for a leaked semantic diagnostic is an
+# assertion about the retired emitter's output text with no native
+# counterpart. What stays live is that the frozen oracle accepts the CR-11
+# fixture cleanly.
+python3 scripts/phase24_frozen_oracle.py materialize \
+  "$issue" "$build_root/issue" --kind exec
+test ! -s "$build_root/issue.compile.stderr"
 
 set +e
-./gust --backend mir-to-c "$negative" >"$build_root/negative.log" 2>&1
-negative_status="$?"
+python3 scripts/phase24_frozen_oracle.py materialize \
+  "$negative" "$build_root/negative" --kind reject
+negative_status="$(cat "$build_root/negative.status")"
 set -e
 test "$negative_status" -ne 0
 test "$(rg -c 'Semantic Error: Brand Nesting\.' "$build_root/negative.log")" = 1

@@ -11,21 +11,10 @@ python3 scripts/phase20_protected_access_liveness.py validate
 rm -rf "$build_root"
 mkdir -p "$build_root"
 
-./gust --backend mir-to-c "$positive" >"$build_root/default.c" 2>"$build_root/default.compiler.stderr"
-./gust --backend mir-to-c "$positive" \
-  >"$build_root/explicit.c" 2>"$build_root/explicit.compiler.stderr"
-test ! -s "$build_root/default.compiler.stderr"
-test ! -s "$build_root/explicit.compiler.stderr"
-cmp -s "$build_root/default.c" "$build_root/explicit.c"
-
-cat src/runtime.c "$build_root/default.c" >"$build_root/final.c"
-"${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-  "$build_root/final.c" -o "$build_root/mir-to-c-program"
-set +e
-"$build_root/mir-to-c-program" \
-  >"$build_root/mir-to-c.stdout" 2>"$build_root/mir-to-c.stderr"
-mir_status="$?"
-set -e
+python3 scripts/phase24_frozen_oracle.py materialize \
+  "$positive" "$build_root/mir-to-c" --kind exec
+test ! -s "$build_root/mir-to-c.compile.stderr"
+mir_status="$(cat "$build_root/mir-to-c.status")"
 test "$mir_status" = 72
 printf '1\n2\n9\n3\n4\n13\n5\n6\n0\n21\n22\n23\n24\n72\n' \
   >"$build_root/expected.stdout"
@@ -38,10 +27,12 @@ test ! -s "$build_root/mir-to-c.stderr"
 while IFS=$'\t' read -r fixture diagnostic; do
   name="$(basename "$fixture" .gst)"
   set +e
-  ./gust --backend mir-to-c "$fixture" \
-    >"$build_root/$name.stdout" 2>"$build_root/$name.stderr"
-  status="$?"
   set -e
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$fixture" "$build_root/$name" --kind reject
+  cp "$build_root/$name.compile.stdout" "$build_root/$name.stdout"
+  cp "$build_root/$name.compile.stderr" "$build_root/$name.stderr"
+  status="$(cat "$build_root/$name.status")"
   test "$status" -ne 0
   rg -F "[$diagnostic]" "$build_root/$name.stdout" "$build_root/$name.stderr" >/dev/null
 done <<'EOF'

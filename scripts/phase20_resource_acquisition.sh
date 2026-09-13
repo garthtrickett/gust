@@ -31,23 +31,12 @@ run_mir_to_c_positive() {
   local stem="$2"
   local expected_status="$3"
 
-  ./gust --backend mir-to-c "$source" >"$build_root/$stem.default.c" \
-    2>"$build_root/$stem.default.stderr"
-  ./gust --backend mir-to-c "$source" >"$build_root/$stem.explicit.c" \
-    2>"$build_root/$stem.explicit.stderr"
-  test ! -s "$build_root/$stem.default.stderr"
-  test ! -s "$build_root/$stem.explicit.stderr"
-  cmp -s "$build_root/$stem.default.c" "$build_root/$stem.explicit.c"
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$source" "$build_root/$stem" --kind exec
+  test ! -s "$build_root/$stem.compile.stderr"
 
-  cat src/runtime.c "$build_root/$stem.default.c" \
-    >"$build_root/$stem.final.c"
-  "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-    "$build_root/$stem.final.c" -o "$build_root/$stem.program"
-  set +e
-  "$build_root/$stem.program" >"$build_root/$stem.stdout" \
-    2>"$build_root/$stem.stderr"
-  local status="$?"
-  set -e
+  local status
+  status="$(cat "$build_root/$stem.status")"
   test "$status" = "$expected_status"
   test ! -s "$build_root/$stem.stdout"
   test ! -s "$build_root/$stem.stderr"
@@ -89,11 +78,13 @@ index=0
 for negative in "${negatives[@]}"; do
   stem="$(basename "$negative" .gst)"
   set +e
-  ./gust --backend mir-to-c "$negative" >"$build_root/$stem.default.log" 2>&1
-  default_status="$?"
-  ./gust --backend mir-to-c "$negative" \
-    >"$build_root/$stem.mir-to-c.log" 2>&1
-  explicit_status="$?"
+  set -e
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$negative" "$build_root/$stem.default" --kind reject
+  cp "$build_root/$stem.default.log" "$build_root/$stem.mir-to-c.log"
+  default_status="$(cat "$build_root/$stem.default.status")"
+  explicit_status="$default_status"
+  set +e
   ./gust --backend cranelift -o "$build_root/$stem.native" "$negative" \
     >"$build_root/$stem.cranelift.log" 2>&1
   native_status="$?"

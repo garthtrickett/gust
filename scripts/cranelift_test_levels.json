@@ -24,6 +24,8 @@
     "guard-cranelift-phase24-filename-behavior-characterization-evidence": 2,
     "guard-cranelift-phase24-semantic-spelling-inventory-contract": 1,
     "guard-cranelift-phase24-retirement-consumer-inventory-contract": 1,
+    "guard-cranelift-phase24-frozen-oracle-contract": 1,
+    "guard-cranelift-phase24-frozen-oracle-evidence": 2,
     "guard-cranelift-phase24-identity-format-ledger-contract": 1,
     "guard-cranelift-phase24-cr15-qualification-contract": 1,
     "guard-cranelift-phase24-cr15-qualification-evidence": 2,

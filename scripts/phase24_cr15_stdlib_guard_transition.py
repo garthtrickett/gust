@@ -816,6 +816,64 @@ def filename_characterization_successor_digest(registry: dict) -> str | None:
     return digest
 
 
+def effective_phase22_summary(registry: dict, value: dict) -> dict:
+    """The pinned Phase 22 census, advanced by each registered successor.
+
+    Patch 24.12 is the first patch to reduce this census: converting a parity
+    guard removes the invocation it used to make, so 107 explicit-C rows leave
+    it. Pinning the closed total and editing it in place would rewrite what
+    the closed record claims; the successor states the reduction instead, and
+    the arithmetic has to close.
+    """
+    summary = value["phase22_invocation_summary"]
+    successor = registry.get("phase24_frozen_oracle_replacement", {}).get(
+        "phase22_invocation_successor")
+    if successor is None:
+        return summary
+    previous = successor.get("previous_summary")
+    current = successor.get("current_summary")
+    require(successor.get("contract_version") ==
+            "phase24_12_frozen_oracle_phase22_invocation_successor_v1" and
+            successor.get("status") == "patch24_12_complete" and
+            successor.get("authority_base_main") ==
+            "8aa9922eb40ad404647a86f865f0790ab37a3589" and
+            previous == summary and
+            isinstance(current, dict) and
+            successor.get("partial_or_unregistered_reduction") == "rejected",
+            "Patch 24.12 Phase 22 invocation successor drifted")
+    require(current["total"] < previous["total"] and
+            current["unclassified_count"] == previous["unclassified_count"] ==
+            0,
+            "Patch 24.12 did not reduce a fully classified Phase 22 census")
+    require(successor.get("removed_invocation_count") ==
+            previous["total"] - current["total"] and
+            successor["removed_invocation_count"] ==
+            previous["selection_counts"]["explicit_c"] -
+            current["selection_counts"]["explicit_c"],
+            "the Patch 24.12 census reduction is not entirely explicit-C")
+    oracle = registry.get("phase24_frozen_oracle_replacement", {})
+    surface = oracle.get("frozen_surface_transition", {})
+    require(successor["removed_invocation_count"] ==
+            surface.get("removed_case_count"),
+            "the Phase 22 census and the frozen-surface transition disagree "
+            "about how many live-C cases Patch 24.12 removed")
+    return current
+
+
+def frozen_oracle_successor_digest(registry: dict) -> str | None:
+    """Return the exact Patch 24.12 justfile successor when it is registered."""
+    oracle = registry.get("phase24_frozen_oracle_replacement")
+    if not isinstance(oracle, dict):
+        return None
+    successor = oracle.get("text_surface_successor")
+    if not isinstance(successor, dict):
+        return None
+    digest = successor.get("live_justfile_successor_digest")
+    require(isinstance(digest, str) and len(digest) == 64,
+            "Patch 24.12 justfile successor digest drifted")
+    return digest
+
+
 def validate_static(value: dict) -> None:
     require(value.get("contract_version") ==
             "phase24_cr15_stdlib_guard_transition_v1",
@@ -1697,11 +1755,74 @@ def normalize_phase23_text_surfaces(
         path for path in auth_paths if path not in changed_paths]
     # A path registered by Patch 24.2g-auth is judged by that successor instead,
     # since this patch moves it beyond the identity Patch 24.2f pinned.
-    solely_24_2f = [path for path in changed_paths if path not in auth_paths]
+    # Patch 24.12 adds a fourth source, for the same reason Patch 24.3b added a
+    # third: this patch moves scripts/cranelift_test_levels.json by registering
+    # its own two guards, and widening the closed Patch 24.2f registration
+    # instead would rewrite what that record claims 24.2f registered.
+    oracle_surface = registry.get("phase24_frozen_oracle_replacement", {}).get(
+        "text_surface_successor")
+    oracle_paths: list[str] = []
+    if oracle_surface is not None:
+        require(oracle_surface.get("contract_version") ==
+                "phase24_12_frozen_oracle_text_surface_successor_v1" and
+                oracle_surface.get("status") == "patch24_12_complete" and
+                oracle_surface.get("authority_base_main") ==
+                "8aa9922eb40ad404647a86f865f0790ab37a3589" and
+                isinstance(oracle_surface.get("added_text_surfaces"),
+                           list) and
+                isinstance(oracle_surface.get("removed_text_surfaces"),
+                           list) and
+                oracle_surface.get("partial_extra_or_substituted_surface") ==
+                "rejected",
+                "Patch 24.12 text surface successor drifted")
+        oracle_paths = list(oracle_surface["registered_changed_paths"])
+    solely_24_2f = [path for path in changed_paths
+                    if path not in auth_paths and path not in oracle_paths]
     changed_rows = [row for row in rows if row["path"] in solely_24_2f]
     require(changed_rows == [row for row in transition["current_changed_text_surfaces"]
                              if row["path"] in solely_24_2f],
             "Patch 24.2f changed text surfaces are partial or substituted")
+    oracle_pre_rows: dict[str, dict] = {}
+    if oracle_paths:
+        oracle_pre = {row["path"]: row for row
+                      in oracle_surface["previous_changed_text_surfaces"]}
+        oracle_post = {row["path"]: row for row
+                       in oracle_surface["current_changed_text_surfaces"]}
+        require(sorted(oracle_pre) == sorted(oracle_paths) and
+                sorted(oracle_post) == sorted(oracle_paths),
+                "Patch 24.12 registered paths and rows disagree")
+        oracle_live = {row["path"]: row for row in rows
+                       if row["path"] in oracle_paths}
+        require(sorted(oracle_live) == sorted(oracle_paths),
+                "Patch 24.12 registered text surface is missing")
+        for path in oracle_paths:
+            require(oracle_live[path] in (oracle_pre[path], oracle_post[path]),
+                    "Patch 24.12 changed text surfaces are partial or "
+                    f"substituted: {path}")
+            oracle_pre_rows[path] = oracle_pre[path]
+        # Patch 24.12 is the first patch to move the census in all three
+        # directions at once: it edits 41 tracked surfaces, adds 5, and takes
+        # 4 out entirely — a converted parity harness stops matching any
+        # tracked MIR-to-C token, so it stops enrolling. The pinned
+        # unchanged-other digest is computed further down over exactly these
+        # rows, so the projection has to happen here, before it: every
+        # registered path goes back to its pre-patch row, every added path is
+        # dropped, and every removed path is put back. What is checked is that
+        # the registered state is the live one; what is projected is the
+        # closed state the downstream digests were registered against.
+        oracle_added = set(oracle_surface["added_text_surfaces"])
+        live_paths = {row["path"] for row in rows}
+        require(oracle_added <= live_paths,
+                "a text surface Patch 24.12 registered as added is not there")
+        removed = oracle_surface["removed_text_surfaces"]
+        removed_paths = {row["path"] for row in removed}
+        require(not (removed_paths & live_paths),
+                "a text surface Patch 24.12 registered as removed still "
+                "enrols")
+        rows = [oracle_pre_rows.get(row["path"], row) for row in rows
+                if row["path"] not in oracle_added]
+        rows = sorted(rows + [copy.deepcopy(row) for row in removed],
+                      key=lambda row: str(row["path"]))
     auth_pre_rows: dict[str, dict] = {}
     if auth_paths:
         # Each registered path is judged independently: the guard script lands in
@@ -1749,12 +1870,21 @@ def normalize_phase23_text_surfaces(
             retirement.get("partial_extra_or_substituted_surface") ==
             "rejected",
             "Patch 24.3b coordinate retirement successor drifted")
-    retire_paths: list[str] = retirement["registered_changed_paths"]
+    # A path this patch also moved is judged by this patch's successor, which
+    # already projected it back above; leaving it here would compare the
+    # projected row against Patch 24.3b's pair and pass for the wrong reason.
+    retire_paths: list[str] = [
+        path for path in retirement["registered_changed_paths"]
+        if path not in oracle_paths]
     retire_pre_rows: dict[str, dict] = {}
-    retire_pre_by_path = {row["path"]: row
-                          for row in retirement["previous_changed_text_surfaces"]}
-    retire_post_by_path = {row["path"]: row
-                           for row in retirement["current_changed_text_surfaces"]}
+    retire_pre_by_path = {
+        row["path"]: row
+        for row in retirement["previous_changed_text_surfaces"]
+        if row["path"] in retire_paths}
+    retire_post_by_path = {
+        row["path"]: row
+        for row in retirement["current_changed_text_surfaces"]
+        if row["path"] in retire_paths}
     require(sorted(retire_pre_by_path) == sorted(retire_paths) and
             sorted(retire_post_by_path) == sorted(retire_paths),
             "Patch 24.3b registered paths and rows disagree")
@@ -1771,8 +1901,12 @@ def normalize_phase23_text_surfaces(
         retire_pre_rows[path] = retire_pre_by_path[path]
     # The auth paths are excluded from the unchanged-other digest in every state,
     # so that digest does not depend on which of them has landed yet.
+    # Scope uses Patch 24.3b's full registered set, not the subset it still
+    # judges: a path handed to the Patch 24.12 successor is still one the
+    # pinned unchanged-other digest was computed without.
     scope = union_paths + [
-        path for path in retire_paths if path not in union_paths]
+        path for path in retirement["registered_changed_paths"]
+        if path not in union_paths]
     other_digest = digest_bytes(json.dumps(
         [row for row in rows if row["path"] not in scope],
         sort_keys=True, separators=(",", ":")).encode())
@@ -1797,10 +1931,14 @@ def normalize_phase23_text_surfaces(
     for path, row in retire_pre_rows.items():
         if path not in replacements:
             replacements[path] = copy.deepcopy(row)
+    for path, row in oracle_pre_rows.items():
+        if path not in replacements:
+            replacements[path] = copy.deepcopy(row)
     added = set(transition["added_text_surfaces"])
     if auth_paths:
         added |= set(auth["added_text_surfaces"])
     added |= set(retirement["added_text_surfaces"])
+
     rows = [replacements.get(row["path"], row) for row in rows
             if row["path"] not in added]
     canonical = value.get("canonical_phase23_text_surfaces", [])
@@ -1824,6 +1962,9 @@ def normalize_phase23_text_surfaces(
             if successor is not None:
                 accepted.append(successor)
             successor = filename_characterization_successor_digest(registry)
+            if successor is not None:
+                accepted.append(successor)
+            successor = frozen_oracle_successor_digest(registry)
             if successor is not None:
                 accepted.append(successor)
         require(live.get("digest") in accepted,
@@ -1893,7 +2034,8 @@ def validate() -> tuple[dict, str]:
     opening = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(opening)
     rows = opening.scan_invocations()
-    require(opening.scan_summary(rows) == value["phase22_invocation_summary"],
+    require(opening.scan_summary(rows) ==
+            effective_phase22_summary(registry, value),
             "effective Phase 22 aggregate drifted")
     return value, state
 

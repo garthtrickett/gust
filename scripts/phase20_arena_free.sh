@@ -31,21 +31,10 @@ python3 scripts/phase20_arena_free.py validate
 rm -rf "$build_root"
 mkdir -p "$build_root"
 
-./gust --backend mir-to-c "$positive" >"$build_root/default.c" 2>"$build_root/default.compiler.stderr"
-./gust --backend mir-to-c "$positive" \
-  >"$build_root/explicit.c" 2>"$build_root/explicit.compiler.stderr"
-test ! -s "$build_root/default.compiler.stderr"
-test ! -s "$build_root/explicit.compiler.stderr"
-cmp -s "$build_root/default.c" "$build_root/explicit.c"
-
-cat src/runtime.c "$build_root/default.c" >"$build_root/mir-to-c.final.c"
-"${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-  "$build_root/mir-to-c.final.c" -o "$build_root/mir-to-c-program"
-set +e
-"$build_root/mir-to-c-program" \
-  >"$build_root/mir-to-c.stdout" 2>"$build_root/mir-to-c.stderr"
-mir_status="$?"
-set -e
+python3 scripts/phase24_frozen_oracle.py materialize \
+  "$positive" "$build_root/mir-to-c" --kind exec
+test ! -s "$build_root/mir-to-c.compile.stderr"
+mir_status="$(cat "$build_root/mir-to-c.status")"
 test "$mir_status" = 37
 test ! -s "$build_root/mir-to-c.stdout"
 test ! -s "$build_root/mir-to-c.stderr"
@@ -54,10 +43,13 @@ i=0
 for negative in "${negatives[@]}"; do
   name="$(basename "$negative" .gst)"
   set +e
-  ./gust --backend mir-to-c "$negative" >"$build_root/$name.default.log" 2>&1
-  default_status="$?"
-  ./gust --backend mir-to-c "$negative" >"$build_root/$name.mir-to-c.log" 2>&1
-  explicit_status="$?"
+  set -e
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$negative" "$build_root/$name.default" --kind reject
+  cp "$build_root/$name.default.log" "$build_root/$name.mir-to-c.log"
+  default_status="$(cat "$build_root/$name.default.status")"
+  explicit_status="$default_status"
+  set +e
   ./gust --backend cranelift -o "$build_root/$name.native" "$negative" \
     >"$build_root/$name.cranelift.log" 2>&1
   native_status="$?"

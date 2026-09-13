@@ -8,36 +8,31 @@ python3 scripts/phase20_resource_scope_cleanup.py validate
 rm -rf "$build_root"
 mkdir -p "$build_root"
 
-./gust --backend mir-to-c "$source_fixture" >"$build_root/default.c" 2>"$build_root/default.stderr"
-./gust --backend mir-to-c "$source_fixture" >"$build_root/explicit.c" 2>"$build_root/explicit.stderr"
-test ! -s "$build_root/default.stderr"
-test ! -s "$build_root/explicit.stderr"
-cmp -s "$build_root/default.c" "$build_root/explicit.c"
-
-cat src/runtime.c "$build_root/default.c" >"$build_root/final.c"
-"${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-  "$build_root/final.c" -o "$build_root/program"
-"$build_root/program" >"$build_root/stdout" 2>"$build_root/stderr"
+python3 scripts/phase24_frozen_oracle.py materialize \
+  "$source_fixture" "$build_root/frozen" --kind exec
+test ! -s "$build_root/frozen.compile.stderr"
+cp "$build_root/frozen.stdout" "$build_root/stdout"
+cp "$build_root/frozen.stderr" "$build_root/stderr"
 test ! -s "$build_root/stderr"
 printf '2\n1\n4\n3\n5\n9\n6\n7\n8\n10\n' >"$build_root/expected.stdout"
 cmp -s "$build_root/expected.stdout" "$build_root/stdout"
 
-./gust --backend mir-to-c compiler/future/p20_issue106_unbound_directory_current.gst \
-  >"$build_root/unbound-directory.c" 2>"$build_root/unbound-directory.stderr"
-test ! -s "$build_root/unbound-directory.stderr"
-rg -F 'if (opt_dir.Ok) { os_CloseDir(opt_dir.Val); }' \
-  "$build_root/unbound-directory.c" >/dev/null
-
-./gust --backend mir-to-c compiler/future/p20_issue106_bound_directory_current.gst \
-  >"$build_root/bound-directory.c" 2>"$build_root/bound-directory.stderr"
-test ! -s "$build_root/bound-directory.stderr"
-rg -F 'os_CloseDir(d);' "$build_root/bound-directory.c" >/dev/null
-
-./gust --backend mir-to-c compiler/phase20_resource_acquisition_callee_drop_invalid.gst \
-  >"$build_root/callee.c" 2>"$build_root/callee.stderr"
-test ! -s "$build_root/callee.stderr"
-rg -F 'phase20_resource_enforcement_module__destroy_handle(handle);' \
-  "$build_root/callee.c" >/dev/null
+# Patch 24.12: three assertions about the generated C text were removed here
+# — that the emitter closes an unbound directory handle, closes a bound one,
+# and calls the callee-side destructor. Each inspects emitted C for a
+# specific spelling, which is an invariant of the retired emitter with no
+# native counterpart. What remains live is that the frozen oracle still
+# accepts each source without diagnostics.
+for frozen_source in \
+  compiler/future/p20_issue106_unbound_directory_current.gst \
+  compiler/future/p20_issue106_bound_directory_current.gst \
+  compiler/phase20_resource_acquisition_callee_drop_invalid.gst
+do
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$frozen_source" "$build_root/$(basename "$frozen_source" .gst)" \
+    --kind exec
+  test ! -s "$build_root/$(basename "$frozen_source" .gst).compile.stderr"
+done
 
 successor_source="$(python3 scripts/phase20_resource_scope_cleanup.py successor-native-case)"
 if test -n "$successor_source"; then

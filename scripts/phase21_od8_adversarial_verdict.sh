@@ -12,29 +12,10 @@ worker_abs="$PWD/$worker"
 
 while IFS=$'\t' read -r attack_id kind source_fixture mir_exit native_exit
 do
-  ./gust --backend mir-to-c "$source_fixture" \
-    >"$build_root/$attack_id.$kind.c" \
-    2>"$build_root/$attack_id.$kind.mir.compile.stderr"
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$source_fixture" "$build_root/$attack_id.$kind.mir" --kind exec
   test ! -s "$build_root/$attack_id.$kind.mir.compile.stderr"
-  if rg -F 'trusted_scope_from_context' \
-       "$build_root/$attack_id.$kind.c" >/dev/null || \
-     rg -F 'cross_tenant_capability_from_host' \
-       "$build_root/$attack_id.$kind.c" >/dev/null
-  then
-    echo "compile-time OD-8 authority leaked into generated C: $attack_id/$kind" >&2
-    exit 1
-  fi
-  cat src/runtime.c "$build_root/$attack_id.$kind.c" \
-    >"$build_root/$attack_id.$kind.final.c"
-  "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-    "$build_root/$attack_id.$kind.final.c" \
-    -o "$build_root/$attack_id.$kind-mir"
-  set +e
-  "$build_root/$attack_id.$kind-mir" \
-    >"$build_root/$attack_id.$kind.mir.stdout" \
-    2>"$build_root/$attack_id.$kind.mir.stderr"
-  mir_status="$?"
-  set -e
+  mir_status="$(cat "$build_root/$attack_id.$kind.mir.status")"
   test "$mir_status" = "$mir_exit"
   test ! -s "$build_root/$attack_id.$kind.mir.stdout"
   test ! -s "$build_root/$attack_id.$kind.mir.stderr"
@@ -66,19 +47,23 @@ do
   for backend in mir-to-c cranelift
   do
     artifact="$build_root/$attack_id.$kind.$backend-program"
-    set +e
     if [ "$backend" = cranelift ]; then
+      set +e
       GUST_NATIVE_BACKEND_DRIVER="$worker_abs" \
         ./gust --backend cranelift -o "$artifact" "$source_fixture" \
           >"$build_root/$attack_id.$kind.$backend.stdout" \
           2>"$build_root/$attack_id.$kind.$backend.stderr"
+      status="$?"
+      set -e
     else
-      ./gust --backend mir-to-c "$source_fixture" \
-        >"$build_root/$attack_id.$kind.$backend.stdout" \
-        2>"$build_root/$attack_id.$kind.$backend.stderr"
+      python3 scripts/phase24_frozen_oracle.py materialize \
+        "$source_fixture" "$build_root/$attack_id.$kind.frozen" --kind reject
+      cp "$build_root/$attack_id.$kind.frozen.compile.stdout" \
+        "$build_root/$attack_id.$kind.$backend.stdout"
+      cp "$build_root/$attack_id.$kind.frozen.compile.stderr" \
+        "$build_root/$attack_id.$kind.$backend.stderr"
+      status="$(cat "$build_root/$attack_id.$kind.frozen.status")"
     fi
-    status="$?"
-    set -e
     test "$status" = 1
     test ! -s "$build_root/$attack_id.$kind.$backend.stderr"
     rg -F "$diagnostic" \

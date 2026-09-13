@@ -14,26 +14,23 @@ python3 scripts/phase20_generic_guard_prerequisites.py validate
 rm -rf "$build_root"
 mkdir -p "$build_root"
 
-./gust --backend mir-to-c "$positive" \
-  >"$build_root/mir-to-c.c" 2>"$build_root/mir-to-c.compiler.stderr"
-test ! -s "$build_root/mir-to-c.compiler.stderr"
-cat src/runtime.c "$build_root/mir-to-c.c" >"$build_root/mir-to-c.final.c"
-"${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-  "$build_root/mir-to-c.final.c" -o "$build_root/mir-to-c-program"
+python3 scripts/phase24_frozen_oracle.py materialize \
+  "$positive" "$build_root/mir-to-c" --kind exec
+test ! -s "$build_root/mir-to-c.compile.stderr"
 set +e
-"$build_root/mir-to-c-program" \
-  >"$build_root/mir-to-c.stdout" 2>"$build_root/mir-to-c.stderr"
-mir_status="$?"
+mir_status="$(cat "$build_root/mir-to-c.status")"
 set -e
 test "$mir_status" = 37
 
 for negative in "${negatives[@]}"; do
   name="$(basename "$negative" .gst)"
   set +e
-  ./gust --backend mir-to-c "$negative" \
-    >"$build_root/$name.stdout" 2>"$build_root/$name.stderr"
-  status="$?"
   set -e
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$negative" "$build_root/$name" --kind reject
+  cp "$build_root/$name.compile.stdout" "$build_root/$name.stdout"
+  cp "$build_root/$name.compile.stderr" "$build_root/$name.stderr"
+  status="$(cat "$build_root/$name.status")"
   test "$status" -ne 0
   rg -F '[ResourceDestructorSignature]' \
     "$build_root/$name.stdout" "$build_root/$name.stderr" >/dev/null
