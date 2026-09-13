@@ -4462,13 +4462,6 @@
             "minimum": 1,
             "type": "integer"
           },
-          "vector_ids": {
-            "items": {
-              "type": "string"
-            },
-            "minItems": 1,
-            "type": "array"
-          },
           "vectors_digest": {
             "pattern": "^[0-9a-f]{64}$",
             "type": "string"
@@ -4498,7 +4491,6 @@
           "status",
           "text_surface_successor",
           "vector_count",
-          "vector_ids",
           "vectors_digest",
           "version"
         ],

@@ -990,11 +990,18 @@ def validate() -> dict:
     require(linked == node.get("archived_corpus_linked_vectors"),
             "registered archived-corpus linkage drifted")
 
-    require(node.get("vector_ids") == ids,
-            "registered frozen manifest drifted from the vector file")
+    # The manifest is pinned by content, not by an id list. Listing the ids
+    # in the registry would put every frozen fixture path into
+    # scripts/cranelift_feature_registry.json, and the Phase 12.5 route
+    # architecture guard requires its two probe fixtures to stay out of that
+    # file precisely so a probe cannot be mistaken for a registered historical
+    # case. The digest pins strictly more than the ids would.
     require(node.get("vector_count") == len(ids) and
             node.get("vectors_digest") == canonical_digest(table),
             "registered frozen counts drifted")
+    require("vector_ids" not in node,
+            "the registry must not enumerate frozen fixture paths; the "
+            "Phase 12.5 route probes have to stay out of it")
 
     check_no_live_c()
     check_native_arm_split()
@@ -1242,10 +1249,17 @@ def render(node: dict) -> str:
         if "tracked_by" in row:
             lines.append(f"- Tracked by: {row['tracked_by']}")
         lines.append("")
-    lines += ["## Frozen vectors", ""]
-    for vector_id in node["vector_ids"]:
-        lines.append(f"- `{vector_id}`")
-    lines.append("")
+    lines += [
+        "## Frozen vectors",
+        "",
+        f"`{node['vector_count']}` vectors, pinned by content as",
+        f"`{node['vectors_digest']}`. The manifest itself is",
+        f"`{VECTORS.relative_to(ROOT)}`; it is not enumerated in the registry,",
+        "because that would put every frozen fixture path into a file the",
+        "Phase 12.5 route architecture guard requires its probe fixtures to",
+        "stay out of.",
+        "",
+    ]
     return "\n".join(lines)
 
 
