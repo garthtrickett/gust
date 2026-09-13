@@ -17,12 +17,9 @@ while IFS=$'\t' read -r witness_id source_fixture expected_exit
 do
   case_root="$build_root/witness-$witness_id"
   mkdir -p "$case_root"
-  ./gust --backend mir-to-c "$source_fixture" \
-    >"$case_root/mir-to-c.c" 2>"$case_root/mir-to-c.compile.stderr"
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$source_fixture" "$case_root/mir-to-c" --kind exec
   test ! -s "$case_root/mir-to-c.compile.stderr"
-  cat src/runtime.c "$case_root/mir-to-c.c" >"$case_root/mir-to-c.final.c"
-  "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-    "$case_root/mir-to-c.final.c" -o "$case_root/mir-to-c-program"
 
   GUST_NATIVE_BACKEND_DRIVER="$worker_abs" \
     ./gust --backend cranelift -o "$case_root/native-program" \
@@ -31,10 +28,8 @@ do
   test ! -s "$case_root/native.compile.stdout"
   test ! -s "$case_root/native.compile.stderr"
 
+  mir_status="$(cat "$case_root/mir-to-c.status")"
   set +e
-  "$case_root/mir-to-c-program" >"$case_root/mir-to-c.stdout" \
-    2>"$case_root/mir-to-c.stderr"
-  mir_status="$?"
   "$case_root/native-program" >"$case_root/native.stdout" \
     2>"$case_root/native.stderr"
   native_status="$?"
@@ -61,9 +56,9 @@ while IFS=$'\t' read -r category source_fixture decision reason_code \
 do
   case_root="$build_root/residue-$category"
   mkdir -p "$case_root"
-  ./gust --backend mir-to-c "$source_fixture" \
-    >"$case_root/mir-to-c.c" 2>"$case_root/mir-to-c.stderr"
-  test ! -s "$case_root/mir-to-c.stderr"
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$source_fixture" "$case_root/mir-to-c" --kind exec
+  test ! -s "$case_root/mir-to-c.compile.stderr"
   set +e
   GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
   GUST_PHASE21_POISON_MARKER="$poison_marker" \

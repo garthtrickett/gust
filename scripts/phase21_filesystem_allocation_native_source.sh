@@ -202,17 +202,10 @@ do
   case_dir="$build_root/$case_id"
   mkdir -p "$case_dir"
 
-  ./gust --backend mir-to-c "$source_fixture" >"$case_dir/default.c" \
-    2>"$case_dir/default.compile.stderr"
-  ./gust --backend mir-to-c "$source_fixture" >"$case_dir/explicit.c" \
-    2>"$case_dir/explicit.compile.stderr"
-  test ! -s "$case_dir/default.compile.stderr"
-  test ! -s "$case_dir/explicit.compile.stderr"
-  cmp -s "$case_dir/default.c" "$case_dir/explicit.c"
-  cat src/runtime.c "$case_dir/explicit.c" >"$case_dir/oracle.final.c"
-  "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-    "$case_dir/oracle.final.c" -o "$case_dir/oracle"
-  execute_in_case_dir "$case_dir" oracle oracle
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$source_fixture" "$case_dir/oracle" --kind exec \
+    --workdir "$case_dir"
+  test ! -s "$case_dir/oracle.compile.stderr"
 
   REAL_DRIVER="$real_driver" CAPTURE_PREFIX="$PWD/$case_dir/capture" \
   GUST_NATIVE_BACKEND_DRIVER="$capture_driver" \
@@ -272,13 +265,10 @@ while IFS=$'\t' read -r rejected_id source_fixture expected_stage oracle_stdout_
 do
   case_dir="$build_root/$rejected_id"
   mkdir -p "$case_dir"
-  ./gust --backend mir-to-c "$source_fixture" >"$case_dir/oracle.c" \
-    2>"$case_dir/oracle.compile.stderr"
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$source_fixture" "$case_dir/oracle" --kind exec \
+    --workdir "$case_dir"
   test ! -s "$case_dir/oracle.compile.stderr"
-  cat src/runtime.c "$case_dir/oracle.c" >"$case_dir/oracle.final.c"
-  "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-    "$case_dir/oracle.final.c" -o "$case_dir/oracle"
-  execute_in_case_dir "$case_dir" oracle oracle
   printf '%s\n' "$oracle_exit" >"$case_dir/expected.status"
   python3 -c 'import sys; sys.stdout.buffer.write(bytes.fromhex(sys.argv[1]))' \
     "$oracle_stdout_hex" >"$case_dir/expected.stdout"
