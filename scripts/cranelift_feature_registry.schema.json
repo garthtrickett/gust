@@ -4336,6 +4336,67 @@
             "minItems": 1,
             "type": "array"
           },
+          "frozen_surface_transition": {
+            "additionalProperties": false,
+            "properties": {
+              "authority_base_main": {
+                "const": "8aa9922eb40ad404647a86f865f0790ab37a3589"
+              },
+              "change_reason": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "contract_version": {
+                "const": "phase24_frozen_oracle_frozen_surface_transition_v1"
+              },
+              "current_live_c_case_surface": {
+                "type": "object"
+              },
+              "partial_or_unregistered_surface": {
+                "const": "rejected"
+              },
+              "previous_live_c_case_surface": {
+                "type": "object"
+              },
+              "removed_case_count": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "removed_from": {
+                "additionalProperties": {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "minProperties": 1,
+                "type": "object"
+              },
+              "retained_case_count": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "status": {
+                "const": "patch24_12_complete"
+              },
+              "unchanged_fields": {
+                "maxItems": 0,
+                "type": "array"
+              }
+            },
+            "required": [
+              "authority_base_main",
+              "change_reason",
+              "contract_version",
+              "current_live_c_case_surface",
+              "partial_or_unregistered_surface",
+              "previous_live_c_case_surface",
+              "removed_case_count",
+              "removed_from",
+              "retained_case_count",
+              "status",
+              "unchanged_fields"
+            ],
+            "type": "object"
+          },
           "live_c_presence_assertions_rewritten": {
             "items": {
               "additionalProperties": false,
@@ -4371,6 +4432,9 @@
             "minItems": 1,
             "type": "array"
           },
+          "phase22_invocation_successor": {
+            "type": "object"
+          },
           "poisoned_route_probes": {
             "additionalProperties": {
               "minimum": 1,
@@ -4390,6 +4454,9 @@
           },
           "status": {
             "const": "patch24_12_complete"
+          },
+          "text_surface_successor": {
+            "type": "object"
           },
           "vector_count": {
             "minimum": 1,
@@ -4421,12 +4488,15 @@
           "frozen_loci",
           "frozen_only_cases",
           "frozen_recipes",
+          "frozen_surface_transition",
           "live_c_presence_assertions_rewritten",
           "not_repaired",
+          "phase22_invocation_successor",
           "poisoned_route_probes",
           "runner_mediated_residue",
           "runner_residue_owner",
           "status",
+          "text_surface_successor",
           "vector_count",
           "vector_ids",
           "vectors_digest",
