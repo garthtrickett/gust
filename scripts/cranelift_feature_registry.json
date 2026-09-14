@@ -23949,6 +23949,7 @@
     "status": "patch24_12a_complete",
     "text_surface_successor": {
       "added_text_surfaces": [
+        "scripts/phase19_brand_authority_parity.sh",
         "scripts/phase19_closure.py"
       ],
       "authority_base_main": "b7a028df1534918ac8123300c9cb777eb529dc81",
@@ -24048,7 +24049,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "0eb49c1fbb97657c484e22d3d0239c073da332421b2232a5e555d8858de26095",
+          "digest": "64f05906807b5201a9076eb1bee1c81a5c9eae8fa4ccfd1ed177b7e8b5d897de",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 31,

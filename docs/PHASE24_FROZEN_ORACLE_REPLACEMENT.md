@@ -80,7 +80,7 @@ neither converted nor counted one. Those guards are outside this
 patch and still need an owner before the unqualified gate can
 close.
 
-Within that population 7 further
+Within that population 0 further
 parity harnesses still execute live C and are listed below: they
 have no native arm, so freezing both of their source arms would
 leave a comparison that can never fail. Patch
@@ -123,13 +123,6 @@ or through a harness it delegates to. `validate` fails if any row
 below acquires one, or if any converted harness turns out to lack
 one.
 
-- `scripts/phase19_classification_parity.sh`
-- `scripts/phase19_gust_name_list_removed_parity.sh`
-- `scripts/phase19_rename_invariance.sh`
-- `scripts/phase19_rule_convergence_parity.sh`
-- `scripts/phase19_type_naming_parity.sh`
-- `scripts/phase20_resource_declaration_migration.sh`
-- `scripts/phase21_inert_scoped_query_records.sh`
 
 ## The one live-C spelling that is not a C arm
 

@@ -14,7 +14,6 @@ on:
       - 'scripts/cranelift_test_levels.json'
       - 'scripts/phase19_brand_authority.py'
       - 'scripts/phase19_brand_authority_parity.sh'
-      - 'scripts/phase19_rename_invariance.sh'
       - '.github/workflows/phase19-brand-authority.yml'
       - '.github/workflows/pr-fast.yml'
       - 'justfile'
