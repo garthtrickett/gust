@@ -12,21 +12,10 @@ worker_abs="$PWD/$worker"
 
 while IFS=$'\t' read -r kind source_fixture mir_exit native_exit
 do
-  ./gust --backend mir-to-c "$source_fixture" >"$build_root/$kind.c" \
-    2>"$build_root/$kind.mir.compile.stderr"
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$source_fixture" "$build_root/$kind.mir" --kind exec
   test ! -s "$build_root/$kind.mir.compile.stderr"
-  if rg -F 'trusted_scope_from_context' "$build_root/$kind.c" >/dev/null; then
-    echo "trusted compile-time intrinsic leaked into generated C for $kind" >&2
-    exit 1
-  fi
-  cat src/runtime.c "$build_root/$kind.c" >"$build_root/$kind.final.c"
-  "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-    "$build_root/$kind.final.c" -o "$build_root/$kind-mir"
-  set +e
-  "$build_root/$kind-mir" >"$build_root/$kind.mir.stdout" \
-    2>"$build_root/$kind.mir.stderr"
-  mir_status="$?"
-  set -e
+  mir_status="$(cat "$build_root/$kind.mir.status")"
   test "$mir_status" = "$mir_exit"
 
   if [ "$native_exit" != "-" ]; then
@@ -51,19 +40,23 @@ while IFS=$'\t' read -r kind source_fixture root_kind binding
 do
   for backend in mir-to-c cranelift
   do
-    set +e
     if [ "$backend" = cranelift ]; then
+      set +e
       GUST_NATIVE_BACKEND_DRIVER="$worker_abs" \
         ./gust --backend cranelift -o "$build_root/$kind-native" \
           "$source_fixture" >"$build_root/$kind.$backend.stdout" \
           2>"$build_root/$kind.$backend.stderr"
+      status="$?"
+      set -e
     else
-      ./gust --backend mir-to-c "$source_fixture" \
-        >"$build_root/$kind.$backend.stdout" \
-        2>"$build_root/$kind.$backend.stderr"
+      python3 scripts/phase24_frozen_oracle.py materialize \
+        "$source_fixture" "$build_root/$kind.frozen" --kind reject
+      cp "$build_root/$kind.frozen.compile.stdout" \
+        "$build_root/$kind.$backend.stdout"
+      cp "$build_root/$kind.frozen.compile.stderr" \
+        "$build_root/$kind.$backend.stderr"
+      status="$(cat "$build_root/$kind.frozen.status")"
     fi
-    status="$?"
-    set -e
     test "$status" = 1
     test ! -s "$build_root/$kind.$backend.stderr"
     rg -F 'Semantic Error: [TenantScopeProvenance] error: query lacks trusted tenant-scope provenance' \

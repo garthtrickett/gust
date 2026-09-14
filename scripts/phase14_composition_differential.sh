@@ -125,39 +125,17 @@ do
   case_dir="$build_root/$safe_case_id"
   mkdir -p "$case_dir"
 
-  if ! ./gust --backend mir-to-c "$source_fixture" \
-      >"$case_dir/default.c" \
-      2>"$case_dir/default.compiler.stderr"; then
-    cat "$case_dir/default.compiler.stderr" >&2
-    fail_case "default MIR-to-C compilation failed"
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$source_fixture" "$case_dir/mir-to-c" --kind exec \
+    --workdir "$case_dir/mir-workdir"
+  if [ "$(cat "$case_dir/mir-to-c.compile.status")" != "0" ]; then
+    cat "$case_dir/mir-to-c.compile.stderr" >&2
+    fail_case "frozen oracle records a failed compilation"
   fi
-  if ! ./gust --backend mir-to-c "$source_fixture" \
-      >"$case_dir/explicit.c" \
-      2>"$case_dir/explicit.compiler.stderr"; then
-    cat "$case_dir/explicit.compiler.stderr" >&2
-    fail_case "explicit MIR-to-C compilation failed"
+  if [ -s "$case_dir/mir-to-c.compile.stderr" ]; then
+    cat "$case_dir/mir-to-c.compile.stderr" >&2
+    fail_case "frozen oracle records compiler diagnostics"
   fi
-  if [ -s "$case_dir/default.compiler.stderr" ] ||
-     [ -s "$case_dir/explicit.compiler.stderr" ]; then
-    cat "$case_dir/default.compiler.stderr" \
-        "$case_dir/explicit.compiler.stderr" >&2
-    fail_case "successful MIR-to-C compilation emitted diagnostics"
-  fi
-  if ! cmp -s "$case_dir/default.c" "$case_dir/explicit.c"; then
-    diff -u "$case_dir/default.c" "$case_dir/explicit.c" >&2 || true
-    fail_case "default and explicit MIR-to-C output are not byte-identical"
-  fi
-
-  cat src/runtime.c "$case_dir/default.c" >"$case_dir/mir-to-c.final.c"
-  if ! "$CC_BIN" $CFLAGS_VAL -Isrc \
-      "$case_dir/mir-to-c.final.c" \
-      -o "$case_dir/mir-to-c-program"; then
-    fail_case "emitted C did not build"
-  fi
-  execute_and_capture \
-    "$case_dir/mir-to-c-program" \
-    "$case_dir/mir-to-c" \
-    "$case_dir/mir-workdir"
 
   if ! GUST_NATIVE_BACKEND_DRIVER="$driver_abs" \
       ./gust --backend cranelift \

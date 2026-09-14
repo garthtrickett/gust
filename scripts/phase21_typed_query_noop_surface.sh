@@ -13,16 +13,13 @@ just guard-positive \
 
 surface_root="$build_root/complete-surface"
 mkdir -p "$surface_root"
-./gust --backend mir-to-c compiler/phase21_typed_query_noop_surface.gst \
-  >"$surface_root/generated.c" 2>"$surface_root/compile.stderr"
-test ! -s "$surface_root/compile.stderr"
-cat src/runtime.c "$surface_root/generated.c" >"$surface_root/final.c"
-"${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-  "$surface_root/final.c" -o "$surface_root/program"
-set +e
-"$surface_root/program" >"$surface_root/stdout" 2>"$surface_root/stderr"
-surface_status="$?"
-set -e
+python3 scripts/phase24_frozen_oracle.py materialize \
+  compiler/phase21_typed_query_noop_surface.gst "$surface_root/frozen" \
+  --kind exec
+test ! -s "$surface_root/frozen.compile.stderr"
+cp "$surface_root/frozen.stdout" "$surface_root/stdout"
+cp "$surface_root/frozen.stderr" "$surface_root/stderr"
+surface_status="$(cat "$surface_root/frozen.status")"
 test "$surface_status" = 37
 test ! -s "$surface_root/stdout"
 test ! -s "$surface_root/stderr"
@@ -38,12 +35,9 @@ do
   case_name="$(basename "$source_fixture" .gst)"
   case_root="$build_root/$case_name"
   mkdir -p "$case_root"
-  ./gust --backend mir-to-c "$source_fixture" \
-    >"$case_root/generated.c" 2>"$case_root/mir-to-c.compile.stderr"
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$source_fixture" "$case_root/mir-to-c" --kind exec
   test ! -s "$case_root/mir-to-c.compile.stderr"
-  cat src/runtime.c "$case_root/generated.c" >"$case_root/final.c"
-  "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-    "$case_root/final.c" -o "$case_root/mir-to-c-program"
   GUST_NATIVE_BACKEND_DRIVER="$worker_abs" \
     ./gust --backend cranelift -o "$case_root/native-program" \
       "$source_fixture" >"$case_root/native.compile.stdout" \
@@ -51,10 +45,8 @@ do
   test ! -s "$case_root/native.compile.stdout"
   test ! -s "$case_root/native.compile.stderr"
 
+  mir_status="$(cat "$case_root/mir-to-c.status")"
   set +e
-  "$case_root/mir-to-c-program" >"$case_root/mir-to-c.stdout" \
-    2>"$case_root/mir-to-c.stderr"
-  mir_status="$?"
   "$case_root/native-program" >"$case_root/native.stdout" \
     2>"$case_root/native.stderr"
   native_status="$?"

@@ -19,18 +19,10 @@ worker="build/gust-native-backend"
 rm -rf "$build_root"
 mkdir -p "$build_root"
 
-"$gust_compiler" --backend mir-to-c "$source_fixture" \
-  >"$build_root/source.c" 2>"$build_root/source.compiler.stderr"
-test ! -s "$build_root/source.compiler.stderr"
-rg -F 'tiny_host_add_i32(value, 12)' "$build_root/source.c" >/dev/null
-rg -F 'destroy_cross_feature_resource(inner)' "$build_root/source.c" >/dev/null
-rg -F 'destroy_cross_feature_resource(outer)' "$build_root/source.c" >/dev/null
-rg -F 'os_Arena_Free(&(destination))' "$build_root/source.c" >/dev/null
-rg -F 'os_Arena_Free(&(origin))' "$build_root/source.c" >/dev/null
-cat src/runtime.c "$concurrent_probe" "$probe" \
-  "$build_root/source.c" >"$build_root/source.final.c"
-"${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-  "$build_root/source.final.c" -o "$build_root/mir-to-c-program"
+python3 scripts/phase24_frozen_oracle.py materialize \
+  "$source_fixture" "$build_root/mir-to-c" --kind exec \
+  --env "GUST_PHASE20_LONG_LIVED_CYCLES=$cycles"
+test ! -s "$build_root/mir-to-c.compile.stderr"
 
 if [ ! -x "$worker" ]; then
   make "$worker"
@@ -45,11 +37,8 @@ fi
   src/runtime.c "$concurrent_probe" "$probe" \
   "$build_root/native.o" -o "$build_root/native-program"
 
+mir_status="$(cat "$build_root/mir-to-c.status")"
 set +e
-GUST_PHASE20_LONG_LIVED_CYCLES="$cycles" timeout 30s \
-  "$build_root/mir-to-c-program" >"$build_root/mir-to-c.stdout" \
-  2>"$build_root/mir-to-c.stderr"
-mir_status="$?"
 GUST_PHASE20_LONG_LIVED_CYCLES="$cycles" timeout 30s \
   "$build_root/native-program" >"$build_root/native.stdout" \
   2>"$build_root/native.stderr"
@@ -78,9 +67,9 @@ while IFS=$'\t' read -r category residue_source decision reason_code \
 do
   case_root="$build_root/residue-$category"
   mkdir -p "$case_root"
-  "$gust_compiler" --backend mir-to-c "$residue_source" \
-    >"$case_root/mir-to-c.c" 2>"$case_root/mir-to-c.stderr"
-  test ! -s "$case_root/mir-to-c.stderr"
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$residue_source" "$case_root/mir-to-c" --kind exec
+  test ! -s "$case_root/mir-to-c.compile.stderr"
   set +e
   GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
   GUST_PHASE20_POISON_MARKER="$poison_marker" \

@@ -1,0 +1,308 @@
+{
+ "check": "scripts/phase24_frozen_oracle.py validate asserts every `probe` is absent from its `locus`, so a row that claims a removal that did not happen fails.",
+ "format": "gust.phase24.emitter_only_assertions_removed.v1",
+ "patch": "24.12",
+ "removals": [
+  {
+   "assertion": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"",
+   "kind": "generated_c_determinism",
+   "locus": "justfile",
+   "probe": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\""
+  },
+  {
+   "assertion": "if ! cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"; then",
+   "kind": "generated_c_determinism",
+   "locus": "justfile",
+   "probe": "if ! cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"; then"
+  },
+  {
+   "assertion": "if ! cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"; then",
+   "kind": "generated_c_determinism",
+   "locus": "justfile",
+   "probe": "if ! cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"; then"
+  },
+  {
+   "assertion": "if ! cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"; then",
+   "kind": "generated_c_determinism",
+   "locus": "justfile",
+   "probe": "if ! cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"; then"
+  },
+  {
+   "assertion": "if ! cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"; then",
+   "kind": "generated_c_determinism",
+   "locus": "justfile",
+   "probe": "if ! cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"; then"
+  },
+  {
+   "assertion": "if ! cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"; then",
+   "kind": "generated_c_determinism",
+   "locus": "justfile",
+   "probe": "if ! cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"; then"
+  },
+  {
+   "assertion": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase13_broader_imported_runtime_calls.sh",
+   "probe": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\""
+  },
+  {
+   "assertion": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase13_direct_call_graph.sh",
+   "probe": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\""
+  },
+  {
+   "assertion": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase13_general_loop.sh",
+   "probe": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\""
+  },
+  {
+   "assertion": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase13_multiple_locals_assignments.sh",
+   "probe": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\""
+  },
+  {
+   "assertion": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase13_nested_structured_cfg.sh",
+   "probe": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\""
+  },
+  {
+   "assertion": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase13_parameter_argument.sh",
+   "probe": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\""
+  },
+  {
+   "assertion": "if ! cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"; then",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase13_registry_differential.sh",
+   "probe": "if ! cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"; then"
+  },
+  {
+   "assertion": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase13_scalar_expression.sh",
+   "probe": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\""
+  },
+  {
+   "assertion": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase13_source_metadata.sh",
+   "probe": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\""
+  },
+  {
+   "assertion": "if ! cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"; then",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase14_composition_differential.sh",
+   "probe": "if ! cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"; then"
+  },
+  {
+   "assertion": "cmp \"$build_dir/default.c\" \"$build_dir/explicit.c\"",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase15_resource_composition_parity.sh",
+   "probe": "cmp \"$build_dir/default.c\" \"$build_dir/explicit.c\""
+  },
+  {
+   "assertion": "cmp -s \"$build_dir/default.c\" \"$build_dir/explicit.c\"",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase16_abi_composition_parity.sh",
+   "probe": "cmp -s \"$build_dir/default.c\" \"$build_dir/explicit.c\""
+  },
+  {
+   "assertion": "cmp -s \"$build_dir/default.c\" \"$build_dir/explicit.c\"",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase19_composition_parity.sh",
+   "probe": "cmp -s \"$build_dir/default.c\" \"$build_dir/explicit.c\""
+  },
+  {
+   "assertion": "if rg -n -e 'os_Dir_origin' -e 'os_DirEntry_origin' -e 'LookupResult_os_Dir_origin' -e 'LookupResult_os_DirEntry_origin' \"$build_dir/explicit.c\" >/dev/null; then",
+   "kind": "generated_c_text",
+   "locus": "scripts/phase19_composition_parity.sh",
+   "probe": "if rg -n -e 'os_Dir_origin' -e 'os_DirEntry_origin' \\"
+  },
+  {
+   "assertion": "cmp -s \"$build_dir/a.normalized.c\" \"$build_dir/b.normalized.c\" || {",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase19_representation_parity.sh",
+   "probe": "cmp -s \"$build_dir/a.normalized.c\" \"$build_dir/b.normalized.c\" || {"
+  },
+  {
+   "assertion": "if rg -n 'phase19_argument_length\\(&[ab]\\)' \"$build_dir/a.c\" \"$build_dir/b.c\" >/dev/null; then",
+   "kind": "generated_c_text",
+   "locus": "scripts/phase19_representation_parity.sh",
+   "probe": "if rg -n 'phase19_argument_length\\(&[ab]\\)' \"$build_dir/a.c\" \"$build_dir/b.c\" >/dev/null; then"
+  },
+  {
+   "assertion": "cmp -s \"$build_root/default.c\" \"$build_root/explicit.c\"",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase20_arena_free.sh",
+   "probe": "cmp -s \"$build_root/default.c\" \"$build_root/explicit.c\""
+  },
+  {
+   "assertion": "cmp -s \"$build_root/inferred.c\" \"$build_root/explicit.c\"",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase20_contextual_generic_constructor.sh",
+   "probe": "cmp -s \"$build_root/inferred.c\" \"$build_root/explicit.c\""
+  },
+  {
+   "assertion": "if rg -F '_Any' \"$build_root/inferred.c\" >/dev/null; then",
+   "kind": "generated_c_text",
+   "locus": "scripts/phase20_contextual_generic_constructor.sh",
+   "probe": "if rg -F '_Any' \"$build_root/inferred.c\" >/dev/null; then"
+  },
+  {
+   "assertion": "rg -F 'std_Channel_int make_contextual_channel(os_Arena* ctx)' \"$build_root/inferred.c\" >/dev/null",
+   "kind": "generated_c_text",
+   "locus": "scripts/phase20_contextual_generic_constructor.sh",
+   "probe": "rg -F 'std_Channel_int make_contextual_channel(os_Arena* ctx)' \\"
+  },
+  {
+   "assertion": "rg -F 'std_Vector_int make_contextual_vector(os_Arena* ctx)' \"$build_root/inferred.c\" >/dev/null",
+   "kind": "generated_c_text",
+   "locus": "scripts/phase20_contextual_generic_constructor.sh",
+   "probe": "rg -F 'std_Vector_int make_contextual_vector(os_Arena* ctx)' \\"
+  },
+  {
+   "assertion": "rg -F 'destroy_cross_feature_resource(inner)' \"$build_root/source.c\" >/dev/null",
+   "kind": "generated_c_text",
+   "locus": "scripts/phase20_cross_feature_qualification.sh",
+   "probe": "rg -F 'destroy_cross_feature_resource(inner)' \"$build_root/source.c\" >/dev/null"
+  },
+  {
+   "assertion": "rg -F 'destroy_cross_feature_resource(outer)' \"$build_root/source.c\" >/dev/null",
+   "kind": "generated_c_text",
+   "locus": "scripts/phase20_cross_feature_qualification.sh",
+   "probe": "rg -F 'destroy_cross_feature_resource(outer)' \"$build_root/source.c\" >/dev/null"
+  },
+  {
+   "assertion": "rg -F 'os_Arena_Free(&(destination))' \"$build_root/source.c\" >/dev/null",
+   "kind": "generated_c_text",
+   "locus": "scripts/phase20_cross_feature_qualification.sh",
+   "probe": "rg -F 'os_Arena_Free(&(destination))' \"$build_root/source.c\" >/dev/null"
+  },
+  {
+   "assertion": "rg -F 'os_Arena_Free(&(origin))' \"$build_root/source.c\" >/dev/null",
+   "kind": "generated_c_text",
+   "locus": "scripts/phase20_cross_feature_qualification.sh",
+   "probe": "rg -F 'os_Arena_Free(&(origin))' \"$build_root/source.c\" >/dev/null"
+  },
+  {
+   "assertion": "rg -F 'tiny_host_add_i32(value, 12)' \"$build_root/source.c\" >/dev/null",
+   "kind": "generated_c_text",
+   "locus": "scripts/phase20_cross_feature_qualification.sh",
+   "probe": "rg -F 'tiny_host_add_i32(value, 12)' \"$build_root/source.c\" >/dev/null"
+  },
+  {
+   "assertion": "cmp -s \"$build_root/default.c\" \"$build_root/explicit.c\"",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase20_exact_brand_boundary.sh",
+   "probe": "cmp -s \"$build_root/default.c\" \"$build_root/explicit.c\""
+  },
+  {
+   "assertion": "cmp -s \"$build_root/default.log\" \"$build_root/explicit.log\"",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase20_inert_resource_surface.sh",
+   "probe": "cmp -s \"$build_root/default.log\" \"$build_root/explicit.log\""
+  },
+  {
+   "assertion": "cmp -s \"$build_root/default.c\" \"$build_root/explicit.c\"",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase20_nested_brand_annotation.sh",
+   "probe": "cmp -s \"$build_root/default.c\" \"$build_root/explicit.c\""
+  },
+  {
+   "assertion": "if rg -n 'Brand Nesting|Declared Void|TypeMismatch' \"$build_root/issue.c\" >/dev/null; then",
+   "kind": "generated_c_text",
+   "locus": "scripts/phase20_nested_brand_annotation.sh",
+   "probe": "if rg -n 'Brand Nesting|Declared Void|TypeMismatch' \"$build_root/issue.c\" >/dev/null; then"
+  },
+  {
+   "assertion": "cmp -s \"$build_root/default.c\" \"$build_root/explicit.c\"",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase20_protected_access_liveness.sh",
+   "probe": "cmp -s \"$build_root/default.c\" \"$build_root/explicit.c\""
+  },
+  {
+   "assertion": "cmp -s \"$build_root/$stem.default.c\" \"$build_root/$stem.explicit.c\"",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase20_resource_acquisition.sh",
+   "probe": "cmp -s \"$build_root/$stem.default.c\" \"$build_root/$stem.explicit.c\""
+  },
+  {
+   "assertion": "cmp -s \"$build_root/default.c\" \"$build_root/explicit.c\"",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase20_resource_enforcement.sh",
+   "probe": "cmp -s \"$build_root/default.c\" \"$build_root/explicit.c\""
+  },
+  {
+   "assertion": "cmp -s \"$build_root/default.c\" \"$build_root/explicit.c\"",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase20_resource_scope_cleanup.sh",
+   "probe": "cmp -s \"$build_root/default.c\" \"$build_root/explicit.c\""
+  },
+  {
+   "assertion": "rg -F 'if (opt_dir.Ok) { os_CloseDir(opt_dir.Val); }' \"$build_root/unbound-directory.c\" >/dev/null",
+   "kind": "generated_c_text",
+   "locus": "scripts/phase20_resource_scope_cleanup.sh",
+   "probe": "rg -F 'if (opt_dir.Ok) { os_CloseDir(opt_dir.Val); }' \\"
+  },
+  {
+   "assertion": "rg -F 'os_CloseDir(d);' \"$build_root/bound-directory.c\" >/dev/null",
+   "kind": "generated_c_text",
+   "locus": "scripts/phase20_resource_scope_cleanup.sh",
+   "probe": "rg -F 'os_CloseDir(d);' \"$build_root/bound-directory.c\" >/dev/null"
+  },
+  {
+   "assertion": "rg -F 'phase20_resource_enforcement_module__destroy_handle(handle);' \"$build_root/callee.c\" >/dev/null",
+   "kind": "generated_c_text",
+   "locus": "scripts/phase20_resource_scope_cleanup.sh",
+   "probe": "rg -F 'phase20_resource_enforcement_module__destroy_handle(handle);' \\"
+  },
+  {
+   "assertion": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase21_collection_string_native_source.sh",
+   "probe": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\""
+  },
+  {
+   "assertion": "cmp -s \"$rejected_dir/default.c\" \"$rejected_dir/explicit.c\"",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase21_collection_string_native_source.sh",
+   "probe": "cmp -s \"$rejected_dir/default.c\" \"$rejected_dir/explicit.c\""
+  },
+  {
+   "assertion": "if rg -F 'cross_tenant_capability_from_host' \"$build_root/$kind.c\" >/dev/null; then",
+   "kind": "generated_c_text",
+   "locus": "scripts/phase21_cross_tenant_capability.sh",
+   "probe": "if rg -F 'cross_tenant_capability_from_host' \"$build_root/$kind.c\" >/dev/null; then"
+  },
+  {
+   "assertion": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\"",
+   "kind": "generated_c_determinism",
+   "locus": "scripts/phase21_filesystem_allocation_native_source.sh",
+   "probe": "cmp -s \"$case_dir/default.c\" \"$case_dir/explicit.c\""
+  },
+  {
+   "assertion": "if rg -F 'trusted_scope_from_context' \"$build_root/$attack_id.$kind.c\" >/dev/null || rg -F 'cross_tenant_capability_from_host' \"$build_root/$attack_id.$kind.c\" >/dev/null",
+   "kind": "generated_c_text",
+   "locus": "scripts/phase21_od8_adversarial_verdict.sh",
+   "probe": "if rg -F 'trusted_scope_from_context' \\"
+  },
+  {
+   "assertion": "if rg -F 'trusted_scope_from_context' \"$build_root/$kind.c\" >/dev/null; then",
+   "kind": "generated_c_text",
+   "locus": "scripts/phase21_per_root_obligations.sh",
+   "probe": "if rg -F 'trusted_scope_from_context' \"$build_root/$kind.c\" >/dev/null; then"
+  },
+  {
+   "assertion": "if rg -F 'trusted_scope_from_context' \"$build_root/positive.c\" >/dev/null; then",
+   "kind": "generated_c_text",
+   "locus": "scripts/phase21_trusted_scope_provenance.sh",
+   "probe": "if rg -F 'trusted_scope_from_context' \"$build_root/positive.c\" >/dev/null; then"
+  }
+ ],
+ "why": "Each row inspected the retired emitter's output and had no native counterpart: either a determinism comparison between two identical MIR-to-C invocations of the same source, or an assertion about the text of the generated C. Freezing both sides would have made them tautologies, so they go with the emitter rather than being carried as coverage that can no longer fail. Recorded here so the Patch 24.16 residue audit can see exactly what was dropped and why."
+}

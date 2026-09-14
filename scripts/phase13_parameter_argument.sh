@@ -150,20 +150,14 @@ run_positive_case() {
   local native_driver="$driver_abs"
   mkdir -p "$case_dir"
 
-  ./gust --backend mir-to-c "$source_path" \
-    >"$case_dir/default.c" \
-    2>"$case_dir/default.compiler.stderr"
-  ./gust --backend mir-to-c "$source_path" \
-    >"$case_dir/explicit.c" \
-    2>"$case_dir/explicit.compiler.stderr"
-  test ! -s "$case_dir/default.compiler.stderr"
-  test ! -s "$case_dir/explicit.compiler.stderr"
-  cmp -s "$case_dir/default.c" "$case_dir/explicit.c"
-
-  cat src/runtime.c "$case_dir/default.c" >"$case_dir/mir-to-c.final.c"
-  "$CC_BIN" $CFLAGS_VAL -Isrc "$case_dir/mir-to-c.final.c" \
-    -o "$case_dir/mir-to-c-program"
-  execute_and_capture "$case_dir/mir-to-c-program" "$case_dir/mir-to-c"
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$source_path" "$case_dir/mir-to-c" --kind exec
+  if [ "$(cat "$case_dir/mir-to-c.compile.status")" != "0" ]; then
+    cat "$case_dir/mir-to-c.compile.stderr" >&2
+    echo "Frozen oracle records a failed compilation for $case_name." >&2
+    exit 1
+  fi
+  test ! -s "$case_dir/mir-to-c.compile.stderr"
 
   if [ "$capture" = "1" ]; then
     native_driver="$capture_driver_abs"

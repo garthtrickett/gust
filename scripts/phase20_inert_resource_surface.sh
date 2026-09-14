@@ -10,20 +10,16 @@ just guard-positive "$metadata_fixture" phase20_inert_resource_surface_metadata
 
 rm -rf "$build_root"
 mkdir -p "$build_root"
+python3 scripts/phase24_frozen_oracle.py materialize \
+  "$transition_fixture" "$build_root/default" --kind reject
+default_status="$(cat "$build_root/default.status")"
 set +e
-./gust --backend mir-to-c "$transition_fixture" >"$build_root/default.log" 2>&1
-default_status="$?"
-./gust --backend mir-to-c "$transition_fixture" \
-  >"$build_root/explicit.log" 2>&1
-explicit_status="$?"
 ./gust --backend cranelift -o "$build_root/native" "$transition_fixture" \
   >"$build_root/cranelift.log" 2>&1
 native_status="$?"
 set -e
 test "$default_status" -ne 0
-test "$explicit_status" = "$default_status"
 test "$native_status" = "$default_status"
-cmp -s "$build_root/default.log" "$build_root/explicit.log"
 cmp -s "$build_root/default.log" "$build_root/cranelift.log"
 test "$(rg -c 'Semantic Error:' "$build_root/default.log")" = 3
 for diagnostic in OpaqueConstruction OpaqueRepresentationAccess PrivateDeclarationAccess; do

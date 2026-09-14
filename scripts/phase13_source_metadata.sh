@@ -93,15 +93,9 @@ run_positive_case() {
   local case_dir="$build_root/$name"
   mkdir -p "$case_dir"
 
-  ./gust --backend mir-to-c "$source" >"$case_dir/default.c" 2>"$case_dir/default.stderr"
-  ./gust --backend mir-to-c "$source" >"$case_dir/explicit.c" 2>"$case_dir/explicit.stderr"
-  test ! -s "$case_dir/default.stderr"
-  test ! -s "$case_dir/explicit.stderr"
-  cmp -s "$case_dir/default.c" "$case_dir/explicit.c"
-
-  cat src/runtime.c "$case_dir/default.c" >"$case_dir/mir-to-c.final.c"
-  "$CC_BIN" $CFLAGS_VAL -Isrc "$case_dir/mir-to-c.final.c" -o "$case_dir/mir-to-c"
-  execute_and_capture "$case_dir/mir-to-c" "$case_dir/mir"
+  python3 scripts/phase24_frozen_oracle.py materialize "$source" "$case_dir/mir" --kind exec
+  test "$(cat "$case_dir/mir.compile.status")" = 0
+  test ! -s "$case_dir/mir.compile.stderr"
 
   REAL_DRIVER="$driver_abs" \
   CAPTURE_PREFIX="$case_dir/capture" \

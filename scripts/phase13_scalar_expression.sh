@@ -91,36 +91,14 @@ run_positive_case() {
   local case_dir="$build_root/$case_name"
   mkdir -p "$case_dir"
 
-  if ! ./gust --backend mir-to-c "$source_path" \
-      >"$case_dir/default.c" \
-      2>"$case_dir/default.compiler.stderr"; then
-    cat "$case_dir/default.compiler.stderr" >&2
-    echo "Default MIR-to-C compilation failed for $case_name." >&2
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$source_path" "$case_dir/mir-to-c" --kind exec
+  if [ "$(cat "$case_dir/mir-to-c.compile.status")" != "0" ]; then
+    cat "$case_dir/mir-to-c.compile.stderr" >&2
+    echo "Frozen oracle records a failed compilation for $case_name." >&2
     exit 1
   fi
-  if ! ./gust --backend mir-to-c "$source_path" \
-      >"$case_dir/explicit.c" \
-      2>"$case_dir/explicit.compiler.stderr"; then
-    cat "$case_dir/explicit.compiler.stderr" >&2
-    echo "Explicit MIR-to-C compilation failed for $case_name." >&2
-    exit 1
-  fi
-  if [ -s "$case_dir/default.compiler.stderr" ] ||
-     [ -s "$case_dir/explicit.compiler.stderr" ]; then
-    cat "$case_dir/default.compiler.stderr" \
-        "$case_dir/explicit.compiler.stderr" >&2
-    echo "Successful MIR-to-C compilation emitted diagnostics for $case_name." >&2
-    exit 1
-  fi
-  cmp -s "$case_dir/default.c" "$case_dir/explicit.c"
-
-  cat src/runtime.c "$case_dir/default.c" >"$case_dir/mir-to-c.final.c"
-  "$CC_BIN" $CFLAGS_VAL -Isrc \
-    "$case_dir/mir-to-c.final.c" \
-    -o "$case_dir/mir-to-c-program"
-  execute_and_capture \
-    "$case_dir/mir-to-c-program" \
-    "$case_dir/mir-to-c"
+  test ! -s "$case_dir/mir-to-c.compile.stderr"
 
   if ! GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
       GUST_NATIVE_BACKEND_DRIVER="$driver_abs" \

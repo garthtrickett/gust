@@ -299,6 +299,9 @@ def policy_accepts(record: dict, summary: dict[str, object]) -> bool:
     expected_live = registry.get("phase24_cr15_derivation", {}).get(
         "frozen_surface_transition", {}).get(
         "current_live_c_case_surface", expected_live)
+    expected_live = registry.get("phase24_frozen_oracle_replacement", {}).get(
+        "frozen_surface_transition", {}).get(
+        "current_live_c_case_surface", expected_live)
     return (
         record.get("capability_surface") == summary["capability_surface"] and
         expected_live == summary["live_c_case_surface"] and
@@ -502,6 +505,9 @@ def validate() -> tuple[dict, dict[str, object]]:
         "frozen_surface_transition")
     derivation_transition = registry.get("phase24_cr15_derivation", {}).get(
         "frozen_surface_transition")
+    retirement_transition = registry.get(
+        "phase24_frozen_oracle_replacement", {}).get(
+            "frozen_surface_transition")
     if closure_transition is None:
         require(qualification_transition["current_live_c_case_surface"] ==
                 summary["live_c_case_surface"],
@@ -542,7 +548,10 @@ def validate() -> tuple[dict, dict[str, object]]:
                 derivation_transition.get("previous_live_c_case_surface") ==
                 closure_transition["current_live_c_case_surface"] and
                 derivation_transition.get("current_live_c_case_surface") ==
-                summary["live_c_case_surface"] and
+                (summary["live_c_case_surface"]
+                 if retirement_transition is None
+                 else retirement_transition.get(
+                     "previous_live_c_case_surface")) and
                 derivation_transition.get("unchanged_fields") ==
                 closure_unchanged and
                 derivation_transition.get("change_reason") ==
@@ -554,6 +563,57 @@ def validate() -> tuple[dict, dict[str, object]]:
                 require(derivation_transition["current_live_c_case_surface"].get(field) ==
                         derivation_transition["previous_live_c_case_surface"].get(field),
                         f"Patch 24.0c changed frozen live-C field: {field}")
+        # Patch 24.12 is the first successor that deliberately *shrinks* this
+        # population: every converted parity guard stops executing live C, so
+        # the previous transitions' "nothing changed" shape would be a lie
+        # here. It registers the reduction itself instead — how many cases
+        # went, and from which files — and the files must be exactly the ones
+        # the conversion touched.
+        if retirement_transition is not None:
+            require(derivation_transition is not None,
+                    "the Patch 24.12 frozen-surface successor has no "
+                    "registered predecessor")
+            previous = retirement_transition.get(
+                "previous_live_c_case_surface", {})
+            current = retirement_transition.get(
+                "current_live_c_case_surface", {})
+            require(retirement_transition.get("contract_version") ==
+                    "phase24_frozen_oracle_frozen_surface_transition_v1" and
+                    retirement_transition.get("status") ==
+                    "patch24_12_complete" and
+                    retirement_transition.get("authority_base_main") ==
+                    "8aa9922eb40ad404647a86f865f0790ab37a3589" and
+                    previous ==
+                    derivation_transition["current_live_c_case_surface"] and
+                    current == summary["live_c_case_surface"] and
+                    retirement_transition.get("unchanged_fields") == [] and
+                    retirement_transition.get("change_reason") ==
+                    "patch24_12_replaced_the_live_explicit_C_parity_arms_with_"
+                    "the_frozen_expected_behaviour_oracle_so_the_registered_"
+                    "population_shrinks_by_design" and
+                    retirement_transition.get(
+                        "partial_or_unregistered_surface") == "rejected",
+                    "Patch 24.12 frozen live-C transition drifted")
+            removed_from = retirement_transition.get("removed_from", {})
+            require(isinstance(removed_from, dict) and removed_from,
+                    "Patch 24.12 registered no source for its reduction")
+            require(current["count"] < previous["count"],
+                    "Patch 24.12 did not reduce the live explicit-C surface")
+            require(retirement_transition.get("removed_case_count") ==
+                    previous["count"] - current["count"] and
+                    retirement_transition.get("retained_case_count") ==
+                    current["count"] and
+                    sum(removed_from.values()) ==
+                    retirement_transition["removed_case_count"],
+                    "Patch 24.12 reduction arithmetic does not close")
+            oracle = registry.get("phase24_frozen_oracle_replacement", {})
+            converted = set(oracle.get("frozen_loci", [])) | {"justfile"}
+            stray = sorted(set(removed_from) - converted)
+            require(not stray,
+                    f"live explicit-C cases vanished from files Patch 24.12 "
+                    f"did not convert: {stray}")
+            require(all(count > 0 for count in removed_from.values()),
+                    "a registered Patch 24.12 reduction removes no cases")
     validate_mutations(record, registry)
     require(record.get("explicit_c_byte_authority") ==
             registry["phase23_mir_to_c_deprecation_opening"]
@@ -623,6 +683,9 @@ def render(record: dict, registry: dict) -> str:
                 "frozen_surface_transition"]["current_live_c_case_surface"],
         )
     live = registry.get("phase24_cr15_derivation", {}).get(
+        "frozen_surface_transition", {}).get(
+            "current_live_c_case_surface", live)
+    live = registry.get("phase24_frozen_oracle_replacement", {}).get(
         "frozen_surface_transition", {}).get(
             "current_live_c_case_surface", live)
     lines = [

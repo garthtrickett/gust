@@ -151,6 +151,137 @@ BOOTSTRAP_ENTRY_DECISION = {
 # are migrated by the Stdlib lane with the 23.11 corpus provided by 24.12.
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Rows a later patch has already taken out of live state.
+#
+# Every row's falsifier is "this row is still live". That is the right check
+# while the row is live and exactly the wrong one afterwards: the moment a
+# removal or conversion patch lands, an unrevised inventory asserts the work
+# never happened, and the guard that was meant to prove progress blocks it
+# instead. So a taken-out row records the patch that took it and what must be
+# true now, and its falsifier inverts — putting the C route back fails just as
+# loudly as never removing it did.
+#
+# Residual counts are explicit rather than assumed zero: the phase12.5 route
+# harness keeps one `--backend mir-to-c` spelling, a probe asserting the route
+# is *refused*, which compiles and runs nothing and so has no observable to
+# freeze.
+# ---------------------------------------------------------------------------
+
+TAKEN_OUT_BY = "24.12"
+FROZEN_ORACLE_CALL = "phase24_frozen_oracle.py materialize"
+
+# recipe id -> what Patch 24.12 did to it
+TAKEN_OUT_RECIPES = {
+    "guard-cranelift-phase11-scalar-expression-parity": "convert",
+    "guard-cranelift-phase11-local-state-parity": "convert",
+    "guard-cranelift-phase11-structured-cfg-parity": "convert",
+    "guard-cranelift-phase11-block-parameter-loop-parity": "convert",
+    "guard-cranelift-phase11-direct-call-abi-parity": "convert",
+    "guard-cranelift-phase11-module-import-runtime-parity": "convert",
+    "guard-cranelift-phase11-metadata-diagnostic-parity": "convert",
+    "guard-mir-feature-return-int-preservation": "convert",
+    "guard-mir-feature-local-binding-read-preservation": "convert",
+    "guard-mir-feature-if-else-return-int-preservation": "convert",
+    "guard-mir-feature-local-binding-read-provenance-metadata-preservation": "convert",
+    # These two are closure guards that `rg -F` for the exact
+    # live-C spellings inside the Phase 13 differential harness,
+    # so converting that harness made them red. 24.16 was to
+    # retire them; 24.12 had to rewrite them to the spelling that
+    # now carries the same obligation, so it owns them.
+    "guard-cranelift-phase12-5-close": "rewrite",
+    "guard-cranelift-phase13-close": "rewrite",
+}
+
+# harness path -> live `--backend` spellings it may still carry
+TAKEN_OUT_HARNESSES = {
+    "scripts/phase12_5_route_architecture.sh": 1,
+    "scripts/phase13_broader_imported_runtime_calls.sh": 0,
+    "scripts/phase13_capability_deferral.sh": 0,
+    "scripts/phase13_direct_call_graph.sh": 0,
+    "scripts/phase13_general_loop.sh": 0,
+    "scripts/phase13_multiple_locals_assignments.sh": 0,
+    "scripts/phase13_nested_structured_cfg.sh": 0,
+    "scripts/phase13_parameter_argument.sh": 0,
+    "scripts/phase13_registry_differential.sh": 0,
+    "scripts/phase13_scalar_expression.sh": 0,
+    "scripts/phase13_source_metadata.sh": 0,
+    "scripts/phase14_composition_differential.sh": 0,
+    "scripts/phase15_resource_composition_parity.sh": 0,
+    "scripts/phase16_abi_composition_parity.sh": 0,
+    "scripts/phase19_composition_parity.sh": 0,
+    "scripts/phase19_representation_parity.sh": 0,
+    "scripts/phase20_arena_free.sh": 0,
+    "scripts/phase20_contextual_generic_constructor.sh": 0,
+    "scripts/phase20_cross_feature_qualification.sh": 0,
+    "scripts/phase20_exact_brand_boundary.sh": 0,
+    "scripts/phase20_generic_guard_prerequisites.sh": 0,
+    "scripts/phase20_inert_resource_surface.sh": 0,
+    "scripts/phase20_long_lived_concurrent.sh": 0,
+    "scripts/phase20_nested_brand_annotation.sh": 0,
+    "scripts/phase20_protected_access_liveness.sh": 0,
+    "scripts/phase20_resource_acquisition.sh": 0,
+    "scripts/phase20_resource_enforcement.sh": 0,
+    "scripts/phase20_resource_scope_cleanup.sh": 0,
+    "scripts/phase20_stdlib_runtime_differential.sh": 0,
+    "scripts/phase20_whole_program_corpus.sh": 0,
+    "scripts/phase21_collection_string_native_source.sh": 0,
+    "scripts/phase21_cross_tenant_capability.sh": 0,
+    "scripts/phase21_filesystem_allocation_native_source.sh": 0,
+    "scripts/phase21_od8_adversarial_verdict.sh": 0,
+    "scripts/phase21_opening.sh": 0,
+    "scripts/phase21_per_root_obligations.sh": 0,
+    "scripts/phase21_resource_sync_native_source.sh": 0,
+    "scripts/phase21_trusted_scope_provenance.sh": 0,
+    "scripts/phase21_typed_query_noop_surface.sh": 0,
+}
+
+# harness path -> (patch that owns it instead, why 24.12 did not)
+DEFERRED_HARNESSES = {
+    "scripts/phase19_classification_parity.sh":
+        ("24.12a", "no native arm: both arms are MIR-to-C, so freezing "
+                   "them leaves a tautology"),
+    "scripts/phase19_gust_name_list_removed_parity.sh":
+        ("24.12a", "no native arm: both arms are MIR-to-C, so freezing "
+                   "them leaves a tautology"),
+    "scripts/phase19_rename_invariance.sh":
+        ("24.12a", "no native arm: both arms are MIR-to-C, so freezing "
+                   "them leaves a tautology"),
+    "scripts/phase19_rule_convergence_parity.sh":
+        ("24.12a", "no native arm: both arms are MIR-to-C, so freezing "
+                   "them leaves a tautology"),
+    "scripts/phase19_type_naming_parity.sh":
+        ("24.12a", "no native arm: both arms are MIR-to-C, so freezing "
+                   "them leaves a tautology"),
+    "scripts/phase20_resource_declaration_migration.sh":
+        ("24.12a", "no native arm: both arms are MIR-to-C, so freezing "
+                   "them leaves a tautology"),
+    "scripts/phase21_inert_scoped_query_records.sh":
+        ("24.12a", "no native arm: both arms are MIR-to-C, so freezing "
+                   "them leaves a tautology"),
+    "scripts/phase22_default_native_package.sh":
+        ("24.13", "it asserts that the explicit C selection still "
+                  "works, so it cannot outlive the selection 24.13 "
+                  "removes"),
+    "scripts/phase22_explicit_c_migration.sh":
+        ("24.13", "it asserts that the explicit C selection still "
+                  "works, so it cannot outlive the selection 24.13 "
+                  "removes"),
+    "scripts/phase22_native_implicit_output.sh":
+        ("24.13", "it asserts that the explicit C selection still "
+                  "works, so it cannot outlive the selection 24.13 "
+                  "removes"),
+    "scripts/phase22_opening.sh":
+        ("24.13", "it asserts that the explicit C selection still "
+                  "works, so it cannot outlive the selection 24.13 "
+                  "removes"),
+    "scripts/phase22_postflip_qualification.sh":
+        ("24.13", "it asserts that the explicit C selection still "
+                  "works, so it cannot outlive the selection 24.13 "
+                  "removes"),
+}
+
+
 SWEEP_LOCI = ["Makefile", "justfile", "justfile-step51",
               "compiler/test_runner_entry.gst"]
 
@@ -160,7 +291,10 @@ SWEEP_LOCI = ["Makefile", "justfile", "justfile-step51",
 SWEEP_COUNTS = {
     "Makefile": 5,
     "compiler/test_runner_entry.gst": 2,
-    "justfile": 38,
+    # 38 before Patch 24.12; the conversion took 22 out (7 phase11 and 4
+    # mir-feature parity recipes, and the live-C literals three closure
+    # guards required the Phase 13 differential harness to still contain).
+    "justfile": 16,
     "justfile-step51": 3,
     "tests/e2e_codegen_assertions.gst": 4,
     "tests/test_runner.gst": 2,
@@ -369,8 +503,12 @@ RECIPE_ROWS = [
      "scripts/phase19_gust_name_list_removed_parity.sh", "24.12", "retire", True),
     ("guard-cranelift-phase19-rename-invariance",
      "scripts/phase19_rename_invariance.sh", "24.12", "retire", True),
+    # Corrected in Patch 24.12: it sits in a `retire` family but keeps real
+    # native evidence — it delegates to phase16_call_mir_parity.sh, which
+    # compares the MIR-to-C witness against the explicit Cranelift consumer —
+    # so it converts rather than being retired.
     ("guard-cranelift-phase19-representation-parity",
-     "scripts/phase19_representation_parity.sh", "24.12", "retire", True),
+     "scripts/phase19_representation_parity.sh", "24.12", "convert", True),
     ("guard-cranelift-phase19-rule-convergence-parity",
      "scripts/phase19_rule_convergence_parity.sh", "24.12", "retire", True),
     ("guard-cranelift-phase19-type-naming-parity",
@@ -611,12 +749,56 @@ def check_sweep() -> dict[str, int]:
     return counts
 
 
+def family_rows() -> list[dict[str, str]]:
+    """One row per family, split where a family's files went different ways.
+
+    A family-level verdict is too coarse the moment one of its files is
+    handled by a different patch — which is exactly what Patch 24.12 found in
+    `phase21-native-qualification`, marked `convert` while containing a
+    harness with no native arm. So a family whose files split emits one row
+    per destination, and the row set says what actually happened rather than
+    what the family average was.
+    """
+    rows: list[dict[str, str]] = []
+    for name, family in SH_FAMILIES.items():
+        files = list(family["files"])
+        taken = [path for path in files if path in TAKEN_OUT_HARNESSES]
+        deferred: dict[str, list[str]] = {}
+        for path in files:
+            if path in TAKEN_OUT_HARNESSES:
+                continue
+            if path in DEFERRED_HARNESSES:
+                deferred.setdefault(DEFERRED_HARNESSES[path][0],
+                                    []).append(path)
+        if not taken and not deferred:
+            rows.append({"id": f"sh-family:{name}",
+                         "owner_patch": family["owner_patch"],
+                         "action": family["action"]})
+            continue
+        if taken:
+            rows.append({"id": f"sh-family:{name}",
+                         "owner_patch": TAKEN_OUT_BY,
+                         "action": "convert"})
+        for owner in sorted(deferred):
+            rows.append({"id": f"sh-family:{name}:deferred-to-{owner}",
+                         "owner_patch": owner,
+                         "action": "retire"})
+    return rows
+
+
 def expected_sweep() -> dict[str, int]:
     expected = dict(SWEEP_COUNTS)
     for family in SH_FAMILIES.values():
         if family.get("match") == "route":
             continue
         expected.update(family["files"])
+    # check_sweep only reports loci with at least one hit, so a converted
+    # harness must leave the expectation entirely rather than sit at zero.
+    for path, residual in TAKEN_OUT_HARNESSES.items():
+        if residual:
+            expected[path] = residual
+        else:
+            expected.pop(path, None)
     return expected
 
 
@@ -640,8 +822,16 @@ def validate() -> dict:
 
     for recipe, needle, owner, action, is_live in RECIPE_ROWS:
         require(recipe in bodies, f"inventoried recipe is missing: {recipe}")
-        require(needle in bodies[recipe],
-                f"inventoried recipe lost its C route: {recipe}")
+        if recipe in TAKEN_OUT_RECIPES:
+            require(needle not in bodies[recipe],
+                    f"a recipe Patch {TAKEN_OUT_BY} took out has its C route "
+                    f"back: {recipe}")
+            require(FROZEN_ORACLE_CALL in bodies[recipe],
+                    f"a recipe Patch {TAKEN_OUT_BY} took out does not reach "
+                    f"the frozen oracle: {recipe}")
+        else:
+            require(needle in bodies[recipe],
+                    f"inventoried recipe lost its C route: {recipe}")
         require((recipe in live) == is_live,
                 f"recipe liveness changed without inventory update: {recipe}")
     for workflow, needle, owner, action in WORKFLOW_ROWS:
@@ -661,8 +851,21 @@ def validate() -> dict:
                 hits = text.count("mir-to-c")
             else:
                 hits = len(BACKEND_SPELLING.findall(text))
-            require(hits == count,
-                    f"harness family drifted: {path}")
+            if path in TAKEN_OUT_HARNESSES:
+                require(hits == TAKEN_OUT_HARNESSES[path],
+                        f"a harness Patch {TAKEN_OUT_BY} converted carries "
+                        f"{hits} live C spellings, "
+                        f"{TAKEN_OUT_HARNESSES[path]} registered: {path}")
+                require(FROZEN_ORACLE_CALL in text,
+                        f"a harness Patch {TAKEN_OUT_BY} converted does not "
+                        f"reach the frozen oracle: {path}")
+            else:
+                require(hits == count,
+                        f"harness family drifted: {path}")
+                require(path not in DEFERRED_HARNESSES or hits > 0,
+                        f"a harness deferred to "
+                        f"{DEFERRED_HARNESSES.get(path, ('', ''))[0]} lost "
+                        f"its C route outside that patch: {path}")
     for path in SMOKE_FIXTURES:
         require((ROOT / path).is_file(),
                 f"inventoried smoke fixture is missing: {path}")
@@ -677,7 +880,10 @@ def validate() -> dict:
     check_harness_callers(
         bodies, {recipe for recipe, _, _, _, _ in RECIPE_ROWS})
 
-    rows = ([{"id": recipe, "owner_patch": owner, "action": action}
+    rows = ([{"id": recipe,
+              "owner_patch": TAKEN_OUT_BY if recipe in TAKEN_OUT_RECIPES
+                             else owner,
+              "action": TAKEN_OUT_RECIPES.get(recipe, action)}
              for recipe, _, owner, action, _ in RECIPE_ROWS]
             + [{"id": workflow, "owner_patch": owner, "action": action}
                for workflow, _, owner, action in WORKFLOW_ROWS]
@@ -686,16 +892,14 @@ def validate() -> dict:
             + [{"id": f"{path} :: {needle[:40]}", "owner_patch": owner,
                  "action": action}
                for path, needle, owner, action in FILE_ROWS]
-            + [{"id": f"sh-family:{name}", "owner_patch": family["owner_patch"],
-                "action": family["action"]} for name, family in
-               SH_FAMILIES.items()]
+            + family_rows()
             + [{"id": "smoke-fixtures", "owner_patch": "24.16",
                 "action": "retire"}]
             + [{"id": path, "owner_patch": owner, "action": action}
                for path, owner, action in SCRIPT_ROWS])
     owners = sorted({row["owner_patch"] for row in rows})
-    require(owners == ["24.12", "24.13", "24.14", "24.15", "24.16", "25",
-                       "stdlib-coordination"],
+    require(owners == ["24.12", "24.12a", "24.13", "24.14", "24.15", "24.16",
+                       "25", "stdlib-coordination"],
             f"inventory owner set drifted: {owners}")
     require(node.get("rows") == rows, "registered inventory rows drifted")
     require(node.get("row_count") == len(rows) and

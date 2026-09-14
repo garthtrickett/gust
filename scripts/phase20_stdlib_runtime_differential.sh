@@ -26,9 +26,9 @@ do
   case_dir="$build_root/$category"
   mkdir -p "$case_dir"
 
-  ./gust --backend mir-to-c "$source_fixture" \
-    >"$case_dir/mir-to-c.c" 2>"$case_dir/mir-to-c.stderr"
-  test ! -s "$case_dir/mir-to-c.stderr"
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$source_fixture" "$case_dir/mir-to-c" --kind exec
+  test ! -s "$case_dir/mir-to-c.compile.stderr"
 
   set +e
   GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \

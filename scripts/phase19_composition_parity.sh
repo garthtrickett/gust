@@ -17,29 +17,17 @@ fi
 rm -rf "$build_dir"
 mkdir -p "$build_dir"
 
-./gust --backend mir-to-c "$source_fixture" >"$build_dir/default.c" 2>"$build_dir/default.stderr"
-./gust --backend mir-to-c "$source_fixture" >"$build_dir/explicit.c" 2>"$build_dir/explicit.stderr"
-test ! -s "$build_dir/default.stderr"
-test ! -s "$build_dir/explicit.stderr"
-cmp -s "$build_dir/default.c" "$build_dir/explicit.c"
-
-# The resource ABI is runtime-owned. A caller's arena spelling must not leak
-# into the generated C type or helper names.
-if rg -n -e 'os_Dir_origin' -e 'os_DirEntry_origin' \
-     -e 'LookupResult_os_Dir_origin' -e 'LookupResult_os_DirEntry_origin' \
-     "$build_dir/explicit.c" >/dev/null; then
-  echo "A source arena spelling leaked into the canonical native resource ABI." >&2
-  exit 1
-fi
-
-cat src/runtime.c "$build_dir/explicit.c" >"$build_dir/final.c"
-"${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-  "$build_dir/final.c" -o "$build_dir/mir-to-c-program"
-if "$build_dir/mir-to-c-program" >"$build_dir/runtime.stdout" 2>"$build_dir/runtime.stderr"; then
-  actual_status=0
-else
-  actual_status=$?
-fi
+# Patch 24.12: the emit-determinism check and the generated-C arena-spelling
+# leak check both asserted properties of the retired emitter's output text,
+# with no native counterpart, so they are removed rather than frozen on both
+# sides. The behavioural comparison below is preserved against frozen
+# observables.
+python3 scripts/phase24_frozen_oracle.py materialize \
+  "$source_fixture" "$build_dir/mir-to-c" --kind exec
+test ! -s "$build_dir/mir-to-c.compile.stderr"
+cp "$build_dir/mir-to-c.stdout" "$build_dir/runtime.stdout"
+cp "$build_dir/mir-to-c.stderr" "$build_dir/runtime.stderr"
+actual_status="$(cat "$build_dir/mir-to-c.status")"
 if [ "$actual_status" != "$expected_status" ]; then
   echo "Phase 19.11 MIR-to-C returned $actual_status, expected $expected_status." >&2
   exit 1

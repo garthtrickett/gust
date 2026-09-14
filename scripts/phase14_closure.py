@@ -372,14 +372,19 @@ def validate_static_architecture(registry: dict) -> None:
         and "mir_native_backend_route_decision_is_valid" in capability_source,
         "unsupported native cases no longer stop at the early deferral boundary",
     )
+    # Patch 24.12 replaced this harness's live-C arm with the frozen
+    # expected-behaviour oracle. The obligation is unchanged — every
+    # differential case still drives a MIR-to-C observation and a live native
+    # one and compares them byte for byte — so the witness is the spelling
+    # that now carries it.
     for token in (
-        './gust --backend c "$source_fixture"',
-        './gust --backend mir-to-c "$source_fixture"',
-        'cmp -s "$case_dir/default.c" "$case_dir/explicit.c"',
+        'python3 scripts/phase24_frozen_oracle.py materialize',
+        '"$source_fixture" "$case_dir/mir-to-c" --kind exec',
+        'cmp -s "$case_dir/mir-to-c.stdout" "$case_dir/native.stdout"',
     ):
         require(
             token in differential_harness,
-            f"MIR-to-C explicit-alias differential witness is missing {token}",
+            f"MIR-to-C differential witness is missing {token}",
         )
     for token in (
         'assert_preserved_output "$deferred_output" "$deferred_output.expected"',

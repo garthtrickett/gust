@@ -29,30 +29,22 @@ for arm in a b; do
   source_path="$a_source"
   local_name="a"
   if [ "$arm" = "b" ]; then source_path="$b_source"; local_name="b"; fi
-  ./gust --backend mir-to-c "$source_path" >"$build_dir/$arm.c" 2>"$build_dir/$arm.compiler.stderr"
-  test ! -s "$build_dir/$arm.compiler.stderr"
-  sed "s/\\b$local_name\\b/LOCAL/g" "$build_dir/$arm.c" >"$build_dir/$arm.normalized.c"
-  cat src/runtime.c "$build_dir/$arm.c" >"$build_dir/$arm.final.c"
-  "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc "$build_dir/$arm.final.c" -o "$build_dir/$arm.program"
-  set +e
-  "$build_dir/$arm.program"
-  status=$?
-  set -e
+  python3 scripts/phase24_frozen_oracle.py materialize "$source_path" "$build_dir/$arm" --kind exec
+  test ! -s "$build_dir/$arm.compile.stderr"
+  status="$(cat "$build_dir/$arm.status")"
   if [ "$status" != "7" ]; then
     echo "Phase 19.5 $arm arm returned $status, expected 7." >&2
     exit 1
   fi
 done
 
-cmp -s "$build_dir/a.normalized.c" "$build_dir/b.normalized.c" || {
-  diff -u "$build_dir/a.normalized.c" "$build_dir/b.normalized.c" >&2 || true
-  echo "Renaming a by-value str local changed generated C." >&2
-  exit 1
-}
-if rg -n 'phase19_argument_length\(&[ab]\)' "$build_dir/a.c" "$build_dir/b.c" >/dev/null; then
-  echo "MIR-to-C prepended address-of to a by-value str source expression." >&2
-  exit 1
-fi
+# Patch 24.12: two assertions about the generated C text were removed here,
+# both invariants of the retired emitter with no native counterpart:
+# renaming a by-value str local must not change the emitted C, and MIR-to-C
+# must not prepend address-of to a by-value str source expression. Freezing
+# either would have compared a frozen digest against itself. The
+# representation evidence that survives is the MIR-to-C witness compared
+# against the explicit Cranelift consumer below.
 
 # The Phase 16 parity driver now carries the Phase 19.5 representation fields.
 # It compares the compiler MIR-to-C witness with the explicit Cranelift consumer

@@ -19,29 +19,19 @@ python3 scripts/phase20_exact_brand_boundary.py validate
 rm -rf "$build_root"
 mkdir -p "$build_root"
 
-./gust --backend mir-to-c "$positive" >"$build_root/default.c" 2>"$build_root/default.compiler.stderr"
-./gust --backend mir-to-c "$positive" \
-  >"$build_root/explicit.c" 2>"$build_root/explicit.compiler.stderr"
-test ! -s "$build_root/default.compiler.stderr"
-test ! -s "$build_root/explicit.compiler.stderr"
-cmp -s "$build_root/default.c" "$build_root/explicit.c"
-
-cat src/runtime.c "$build_root/default.c" >"$build_root/mir-to-c.final.c"
-"${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-  "$build_root/mir-to-c.final.c" -o "$build_root/mir-to-c-program"
-set +e
-"$build_root/mir-to-c-program" \
-  >"$build_root/mir-to-c.stdout" 2>"$build_root/mir-to-c.stderr"
-mir_status="$?"
-set -e
+python3 scripts/phase24_frozen_oracle.py materialize \
+  "$positive" "$build_root/mir-to-c" --kind exec
+test ! -s "$build_root/mir-to-c.compile.stderr"
+mir_status="$(cat "$build_root/mir-to-c.status")"
 test "$mir_status" = 23
 
 for negative in "${negatives[@]}"; do
   name="$(basename "$negative" .gst)"
   set +e
-  ./gust --backend mir-to-c "$negative" >"$build_root/$name.log" 2>&1
-  status="$?"
   set -e
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$negative" "$build_root/$name" --kind reject
+  status="$(cat "$build_root/$name.status")"
   test "$status" -ne 0
   test "$(rg -c 'Semantic Error:' "$build_root/$name.log")" = 1
   rg -F 'TypeMismatch' "$build_root/$name.log" >/dev/null || \

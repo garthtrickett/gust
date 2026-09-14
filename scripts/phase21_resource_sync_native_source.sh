@@ -93,11 +93,10 @@ capture="$PWD/$capture"
 while IFS=$'\t' read -r id source stdout_hex expected_exit; do
   dir="$build_root/$id"
   mkdir -p "$dir"
-  ./gust --backend mir-to-c "$source" >"$dir/oracle.c" 2>"$dir/oracle.compile.stderr"
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$source" "$dir/oracle" --kind exec
   test ! -s "$dir/oracle.compile.stderr"
-  cat src/runtime.c "$dir/oracle.c" >"$dir/oracle.final.c"
-  "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc "$dir/oracle.final.c" -o "$dir/oracle"
-  "$dir/oracle" >"$dir/oracle.stdout" 2>"$dir/oracle.stderr"
+  test "$(cat "$dir/oracle.status")" = 0
   REAL_DRIVER="$driver" CAPTURE_PREFIX="$PWD/$dir/capture" \
     GUST_NATIVE_BACKEND_DRIVER="$capture" \
     ./gust --backend cranelift -o "$dir/native" "$source" \
@@ -126,11 +125,10 @@ done < <(python3 scripts/phase21_resource_sync_native_source.py case-lines)
 while IFS=$'\t' read -r id source stage stdout_hex expected_exit; do
   dir="$build_root/$id"
   mkdir -p "$dir"
-  ./gust --backend mir-to-c "$source" >"$dir/oracle.c" 2>"$dir/oracle.compile.stderr"
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$source" "$dir/oracle" --kind exec
   test ! -s "$dir/oracle.compile.stderr"
-  cat src/runtime.c "$dir/oracle.c" >"$dir/oracle.final.c"
-  "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc "$dir/oracle.final.c" -o "$dir/oracle"
-  "$dir/oracle" >"$dir/oracle.stdout" 2>"$dir/oracle.stderr"
+  test "$(cat "$dir/oracle.status")" = 0
   python3 -c 'import sys; sys.stdout.buffer.write(bytes.fromhex(sys.argv[1]))' \
     "$stdout_hex" >"$dir/expected.stdout"
   cmp -s "$dir/expected.stdout" "$dir/oracle.stdout"

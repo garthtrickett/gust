@@ -12,26 +12,17 @@ worker_abs="$PWD/$worker"
 
 while IFS=$'\t' read -r kind source_fixture mir_exit native_exit
 do
-  ./gust --backend mir-to-c "$source_fixture" >"$build_root/$kind.c" \
-    2>"$build_root/$kind.mir.compile.stderr"
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$source_fixture" "$build_root/$kind.mir" --kind exec
   test ! -s "$build_root/$kind.mir.compile.stderr"
-  if rg -F 'cross_tenant_capability_from_host' "$build_root/$kind.c" >/dev/null; then
-    echo "compile-time host capability leaked into generated C for $kind" >&2
-    exit 1
-  fi
-  cat src/runtime.c "$build_root/$kind.c" >"$build_root/$kind.final.c"
-  "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-    "$build_root/$kind.final.c" -o "$build_root/$kind-mir"
   GUST_NATIVE_BACKEND_DRIVER="$worker_abs" \
     ./gust --backend cranelift -o "$build_root/$kind-native" \
       "$source_fixture" >"$build_root/$kind.native.compile.stdout" \
       2>"$build_root/$kind.native.compile.stderr"
   test ! -s "$build_root/$kind.native.compile.stdout"
   test ! -s "$build_root/$kind.native.compile.stderr"
+  mir_status="$(cat "$build_root/$kind.mir.status")"
   set +e
-  "$build_root/$kind-mir" >"$build_root/$kind.mir.stdout" \
-    2>"$build_root/$kind.mir.stderr"
-  mir_status="$?"
   "$build_root/$kind-native" >"$build_root/$kind.native.stdout" \
     2>"$build_root/$kind.native.stderr"
   native_status="$?"
@@ -46,19 +37,23 @@ while IFS=$'\t' read -r kind source_fixture diagnostic_class
 do
   for backend in mir-to-c cranelift
   do
-    set +e
     if [ "$backend" = cranelift ]; then
+      set +e
       GUST_NATIVE_BACKEND_DRIVER="$worker_abs" \
         ./gust --backend cranelift -o "$build_root/$kind-native" \
           "$source_fixture" >"$build_root/$kind.$backend.stdout" \
           2>"$build_root/$kind.$backend.stderr"
+      status="$?"
+      set -e
     else
-      ./gust --backend mir-to-c "$source_fixture" \
-        >"$build_root/$kind.$backend.stdout" \
-        2>"$build_root/$kind.$backend.stderr"
+      python3 scripts/phase24_frozen_oracle.py materialize \
+        "$source_fixture" "$build_root/$kind.frozen" --kind reject
+      cp "$build_root/$kind.frozen.compile.stdout" \
+        "$build_root/$kind.$backend.stdout"
+      cp "$build_root/$kind.frozen.compile.stderr" \
+        "$build_root/$kind.$backend.stderr"
+      status="$(cat "$build_root/$kind.frozen.status")"
     fi
-    status="$?"
-    set -e
     test "$status" = 1
     test ! -s "$build_root/$kind.$backend.stderr"
     rg -F "[$diagnostic_class]" "$build_root/$kind.$backend.stdout" >/dev/null

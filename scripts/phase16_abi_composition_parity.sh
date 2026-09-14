@@ -9,9 +9,12 @@ mkdir -p "$build_dir"
 rm -f "$request" "$expected"
 XDG_RUNTIME_DIR=/tmp TMPDIR=/tmp bash scripts/run-gust-file.sh compiler/future/p16_complete_abi_differential_source.gst
 test -s to.log
-./gust --backend mir-to-c compiler/future/p16_complete_abi_differential_source.gst >"$build_dir/default.c"
-./gust --backend mir-to-c compiler/future/p16_complete_abi_differential_source.gst >"$build_dir/explicit.c"
-cmp -s "$build_dir/default.c" "$build_dir/explicit.c"
+# Patch 24.12: see phase15 — emit determinism is an emitter property, not a
+# live invariant, so it is removed rather than frozen on both sides.
+python3 scripts/phase24_frozen_oracle.py materialize \
+  compiler/future/p16_complete_abi_differential_source.gst \
+  "$build_dir/frozen" --kind exec
+test ! -s "$build_dir/frozen.compile.stderr"
 XDG_RUNTIME_DIR=/tmp TMPDIR=/tmp bash scripts/run-gust-file.sh compiler/mir_abi_composition_parity_smoke_test_entry.gst
 grep -F 'SUCCESS: Phase 16.13 ABI composition parity smoke passed' to.log >/dev/null
 test -s "$request" && test -s "$expected"

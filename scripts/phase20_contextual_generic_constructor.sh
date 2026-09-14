@@ -15,38 +15,28 @@ python3 scripts/phase20_contextual_generic_constructor.py validate
 rm -rf "$build_root"
 mkdir -p "$build_root"
 
-./gust --backend mir-to-c "$inferred" >"$build_root/inferred.c" 2>"$build_root/inferred.stderr"
-./gust --backend mir-to-c "$explicit" \
-  >"$build_root/explicit.c" 2>"$build_root/explicit.stderr"
-test ! -s "$build_root/inferred.stderr"
-test ! -s "$build_root/explicit.stderr"
-cmp -s "$build_root/inferred.c" "$build_root/explicit.c"
-
-rg -F 'std_Channel_int make_contextual_channel(os_Arena* ctx)' \
-  "$build_root/inferred.c" >/dev/null
-rg -F 'std_Vector_int make_contextual_vector(os_Arena* ctx)' \
-  "$build_root/inferred.c" >/dev/null
-if rg -F '_Any' "$build_root/inferred.c" >/dev/null; then
-  echo "contextual constructor output retained an _Any specialization" >&2
-  exit 1
-fi
-
-cat src/runtime.c "$build_root/inferred.c" >"$build_root/mir-to-c.final.c"
-"${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-  "$build_root/mir-to-c.final.c" -o "$build_root/mir-to-c-program"
-set +e
-"$build_root/mir-to-c-program" \
-  >"$build_root/mir-to-c.stdout" 2>"$build_root/mir-to-c.stderr"
-mir_status="$?"
-set -e
+# Patch 24.12: the inferred/explicit emit comparison and the three
+# generated-C shape assertions (specialized constructor names present, no
+# _Any specialization retained) are properties of the retired emitter's
+# output text with no native counterpart, so they go with the backend rather
+# than being frozen on both sides. Note the two sources are *different*
+# fixtures, so each carries its own frozen vector.
+python3 scripts/phase24_frozen_oracle.py materialize \
+  "$inferred" "$build_root/mir-to-c" --kind exec
+python3 scripts/phase24_frozen_oracle.py materialize \
+  "$explicit" "$build_root/explicit-arm" --kind exec
+test ! -s "$build_root/mir-to-c.compile.stderr"
+test ! -s "$build_root/explicit-arm.compile.stderr"
+mir_status="$(cat "$build_root/mir-to-c.status")"
 test "$mir_status" = 31
 
 for negative in "${negatives[@]}"; do
   name="$(basename "$negative" .gst)"
   set +e
-  ./gust --backend mir-to-c "$negative" >"$build_root/$name.log" 2>&1
-  status="$?"
   set -e
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$negative" "$build_root/$name" --kind reject
+  status="$(cat "$build_root/$name.status")"
   test "$status" -ne 0
   rg -F 'TypeMismatch' "$build_root/$name.log" >/dev/null
 done

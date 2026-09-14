@@ -6,8 +6,8 @@
 
 Status: `patch24_11_complete`
 Authority base: `b7b1713cd65630b14ae92e46afd393990928a2e2`
-Rows: `104`
-Digest: `75e701814217ba938cefa124fb2a31cb16aedb3d79e04ce6558f23c49774c54f`
+Rows: `107`
+Digest: `3b3807839d191fd824eaf1636b336b89c1466e7b9dadb0355009d3fd21554167`
 
 ## Bootstrap-entry decision
 
@@ -27,8 +27,8 @@ Digest: `75e701814217ba938cefa124fb2a31cb16aedb3d79e04ce6558f23c49774c54f`
 
 ### Rejected
 
-- `environment_variable`: invisible to review and spoofable; Phase 10 precedent keeps explicit selection explicit
 - `entry_file_gating`: filename-selected meaning, rejected by the preflight invariant
+- `environment_variable`: invisible to review and spoofable; Phase 10 precedent keeps explicit selection explicit
 - `keeping_mir_to_c_for_bootstrap`: leaves a user-facing spelling reaching the emitter after removal; the 24.13 falsifier could not distinguish bootstrap from ordinary use
 
 ### Falsifiers
@@ -51,6 +51,8 @@ Digest: `75e701814217ba938cefa124fb2a31cb16aedb3d79e04ce6558f23c49774c54f`
 - guard-cranelift-phase11-module-import-runtime-parity (convert)
 - guard-cranelift-phase11-scalar-expression-parity (convert)
 - guard-cranelift-phase11-structured-cfg-parity (convert)
+- guard-cranelift-phase12-5-close (rewrite)
+- guard-cranelift-phase13-close (rewrite)
 - guard-cranelift-phase13-composition-differential (retire)
 - guard-cranelift-phase13-source-metadata-parity (retire)
 - guard-cranelift-phase14-composition-differential (retire)
@@ -60,7 +62,7 @@ Digest: `75e701814217ba938cefa124fb2a31cb16aedb3d79e04ce6558f23c49774c54f`
 - guard-cranelift-phase19-composition-parity (retire)
 - guard-cranelift-phase19-gust-name-list-removed-parity (retire)
 - guard-cranelift-phase19-rename-invariance (retire)
-- guard-cranelift-phase19-representation-parity (retire)
+- guard-cranelift-phase19-representation-parity (convert)
 - guard-cranelift-phase19-rule-convergence-parity (retire)
 - guard-cranelift-phase19-type-naming-parity (retire)
 - guard-cranelift-phase21-collection-string-native-source-parity (convert)
@@ -89,13 +91,18 @@ Digest: `75e701814217ba938cefa124fb2a31cb16aedb3d79e04ce6558f23c49774c54f`
 - phase23-mir-to-c-focused-live.yml (retire)
 - scripts/cranelift_ci_family.py :: ["just", runner["static_guard"]] (convert)
 - scripts/phase23_mir_to_c_focused_live.py (retire)
-- sh-family:early-differential (retire)
-- sh-family:phase15-16-composition (retire)
-- sh-family:phase19-parity (retire)
-- sh-family:phase20-evidence (retire)
+- sh-family:early-differential (convert)
+- sh-family:phase15-16-composition (convert)
+- sh-family:phase19-parity (convert)
+- sh-family:phase20-evidence (convert)
 - sh-family:phase21-native-qualification (convert)
-- sh-family:phase22-flip-evidence (retire)
 - tests/e2e_codegen_assertions.gst :: "./gust --backend mir-to-c tests/codegen (convert)
+
+### 24.12a
+
+- sh-family:phase19-parity:deferred-to-24.12a (retire)
+- sh-family:phase20-evidence:deferred-to-24.12a (retire)
+- sh-family:phase21-native-qualification:deferred-to-24.12a (retire)
 
 ### 24.13
 
@@ -107,6 +114,7 @@ Digest: `75e701814217ba938cefa124fb2a31cb16aedb3d79e04ce6558f23c49774c54f`
 - make-test-suite (migrate)
 - make-test-suite-parallel (migrate)
 - scripts/run-gust-file.sh :: RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-mir-t (migrate)
+- sh-family:phase22-flip-evidence:deferred-to-24.13 (retire)
 - tests/test_runner.gst :: std.Concat("./gust --backend mir-to-c ", (migrate)
 
 ### 24.14
@@ -133,8 +141,6 @@ Digest: `75e701814217ba938cefa124fb2a31cb16aedb3d79e04ce6558f23c49774c54f`
 
 - guard-compile-fail (retire)
 - guard-compile-pass (retire)
-- guard-cranelift-phase12-5-close (retire)
-- guard-cranelift-phase13-close (retire)
 - phase23-mir-evidence-owner.yml (retire)
 - phase23-mir-to-c-deprecation-opening.yml (retire)
 - phase24-cr15-stdlib-guard-transition.yml (retire)

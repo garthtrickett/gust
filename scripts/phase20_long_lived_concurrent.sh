@@ -19,13 +19,10 @@ worker="build/gust-native-backend"
 rm -rf "$build_root"
 mkdir -p "$build_root"
 
-"$gust_compiler" --backend mir-to-c "$runtime_source" \
-  >"$build_root/runtime.c" 2>"$build_root/runtime.compiler.stderr"
-test ! -s "$build_root/runtime.compiler.stderr"
-cat src/runtime.c "$probe" "$build_root/runtime.c" \
-  >"$build_root/runtime.final.c"
-"${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-  "$build_root/runtime.final.c" -o "$build_root/mir-to-c-program"
+python3 scripts/phase24_frozen_oracle.py materialize \
+  "$runtime_source" "$build_root/mir-to-c" --kind exec \
+  --env "GUST_PHASE20_LONG_LIVED_CYCLES=$cycles"
+test ! -s "$build_root/mir-to-c.compile.stderr"
 
 if [ ! -x "$worker" ]; then
   make "$worker"
@@ -40,11 +37,8 @@ fi
   src/runtime.c "$probe" "$build_root/native.o" \
   -o "$build_root/native-program"
 
+mir_status="$(cat "$build_root/mir-to-c.status")"
 set +e
-GUST_PHASE20_LONG_LIVED_CYCLES="$cycles" timeout 30s \
-  "$build_root/mir-to-c-program" >"$build_root/mir-to-c.stdout" \
-  2>"$build_root/mir-to-c.stderr"
-mir_status="$?"
 GUST_PHASE20_LONG_LIVED_CYCLES="$cycles" timeout 30s \
   "$build_root/native-program" >"$build_root/native.stdout" \
   2>"$build_root/native.stderr"
@@ -57,12 +51,9 @@ cmp -s "$build_root/mir-to-c.stderr" "$build_root/native.stderr"
 test ! -s "$build_root/mir-to-c.stdout"
 test ! -s "$build_root/mir-to-c.stderr"
 
-"$gust_compiler" --backend mir-to-c "$resource_source" \
-  >"$build_root/resource.c" 2>"$build_root/resource.compiler.stderr"
-test ! -s "$build_root/resource.compiler.stderr"
-cat src/runtime.c "$build_root/resource.c" >"$build_root/resource.final.c"
-"${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-  "$build_root/resource.final.c" -o "$build_root/resource-program"
+python3 scripts/phase24_frozen_oracle.py materialize \
+  "$resource_source" "$build_root/resource" --kind exec
+test ! -s "$build_root/resource.compile.stderr"
 : >"$build_root/resource.expected"
 for token in $(seq 1 16); do
   printf '%s\n%s\n%s\n%s\n' \
@@ -70,14 +61,13 @@ for token in $(seq 1 16); do
     "$((token + 300))" "$token" \
     >>"$build_root/resource.expected"
 done
-for run in $(seq 1 "$resource_runs"); do
-  timeout 30s "$build_root/resource-program" \
-    >"$build_root/resource.$run.stdout" \
-    2>"$build_root/resource.$run.stderr"
-  cmp -s "$build_root/resource.expected" \
-    "$build_root/resource.$run.stdout"
-  test ! -s "$build_root/resource.$run.stderr"
-done
+# The repeated-run evidence lives on the native side now: the frozen arm is
+# one recorded run by construction, so re-serving it N times would prove
+# nothing. Every live native run below is still compared against both the
+# computed expectation and this frozen stdout.
+test "$(cat "$build_root/resource.status")" = 0
+cmp -s "$build_root/resource.expected" "$build_root/resource.stdout"
+test ! -s "$build_root/resource.stderr"
 
 poison="$build_root/poison-driver"
 poison_marker="$build_root/poison-driver.invoked"
@@ -130,7 +120,7 @@ if test "$full_compiler_live" = 1; then
       2>"$build_root/resource-native.$run.stderr"
     cmp -s "$build_root/resource.expected" \
       "$build_root/resource-native.$run.stdout"
-    cmp -s "$build_root/resource.$run.stdout" \
+    cmp -s "$build_root/resource.stdout" \
       "$build_root/resource-native.$run.stdout"
     test ! -s "$build_root/resource-native.$run.stderr"
   done

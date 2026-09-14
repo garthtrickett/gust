@@ -92,6 +92,7 @@
     "phase24_cr15_closure",
     "phase24_preflight_closure",
     "phase24_retirement_consumer_inventory",
+    "phase24_frozen_oracle_replacement",
     "phase24_cr19_multi_module_analysis",
     "phase24_filename_behavior_characterization",
     "phase24_semantic_spelling_inventory",
@@ -4255,6 +4256,252 @@
           "row_count": {"type":"integer","minimum":1},
           "inventory_digest": {"type":"string","pattern":"^[0-9a-f]{64}$"}
         }
+      },
+      "phase24_frozen_oracle_replacement": {
+        "additionalProperties": false,
+        "properties": {
+          "archived_corpus_linked_vectors": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "authority_owner": {
+            "const": "scripts/cranelift_feature_registry.json"
+          },
+          "emitter_only_assertions_removed": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "emitter_only_assertions_removed_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "env_parameterised_fixtures": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "excluded_emitter_only_loci": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "excluded_emitter_only_owner": {
+            "const": "24.12a"
+          },
+          "frozen_loci": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "frozen_only_cases": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "case": {
+                  "type": "string"
+                },
+                "locus": {
+                  "type": "string"
+                },
+                "reproduce": {
+                  "type": "string"
+                },
+                "source_fixture": {
+                  "type": "string"
+                },
+                "why": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "case",
+                "locus",
+                "reproduce",
+                "source_fixture",
+                "why"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "frozen_recipes": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "frozen_surface_transition": {
+            "additionalProperties": false,
+            "properties": {
+              "authority_base_main": {
+                "const": "8aa9922eb40ad404647a86f865f0790ab37a3589"
+              },
+              "change_reason": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "contract_version": {
+                "const": "phase24_frozen_oracle_frozen_surface_transition_v1"
+              },
+              "current_live_c_case_surface": {
+                "type": "object"
+              },
+              "partial_or_unregistered_surface": {
+                "const": "rejected"
+              },
+              "previous_live_c_case_surface": {
+                "type": "object"
+              },
+              "removed_case_count": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "removed_from": {
+                "additionalProperties": {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "minProperties": 1,
+                "type": "object"
+              },
+              "retained_case_count": {
+                "minimum": 0,
+                "type": "integer"
+              },
+              "status": {
+                "const": "patch24_12_complete"
+              },
+              "unchanged_fields": {
+                "maxItems": 0,
+                "type": "array"
+              }
+            },
+            "required": [
+              "authority_base_main",
+              "change_reason",
+              "contract_version",
+              "current_live_c_case_surface",
+              "partial_or_unregistered_surface",
+              "previous_live_c_case_surface",
+              "removed_case_count",
+              "removed_from",
+              "retained_case_count",
+              "status",
+              "unchanged_fields"
+            ],
+            "type": "object"
+          },
+          "live_c_presence_assertions_rewritten": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "guard": {
+                  "type": "string"
+                },
+                "host": {
+                  "type": "string"
+                },
+                "now": {
+                  "type": "string"
+                },
+                "target": {
+                  "type": "string"
+                },
+                "was": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "guard",
+                "now",
+                "target",
+                "was"
+              ],
+              "type": "object"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "not_repaired": {
+            "items": {
+              "type": "object"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "phase22_invocation_successor": {
+            "type": "object"
+          },
+          "poisoned_route_probes": {
+            "additionalProperties": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "type": "object"
+          },
+          "production_audit_transition": {
+            "type": "object"
+          },
+          "runner_mediated_residue": {
+            "additionalProperties": {
+              "minimum": 1,
+              "type": "integer"
+            },
+            "type": "object"
+          },
+          "runner_residue_owner": {
+            "const": "24.13"
+          },
+          "status": {
+            "const": "patch24_12_complete"
+          },
+          "text_surface_successor": {
+            "type": "object"
+          },
+          "vector_count": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "vectors_digest": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "version": {
+            "const": "phase24_frozen_oracle_replacement_v1"
+          }
+        },
+        "required": [
+          "archived_corpus_linked_vectors",
+          "authority_owner",
+          "emitter_only_assertions_removed",
+          "emitter_only_assertions_removed_digest",
+          "env_parameterised_fixtures",
+          "excluded_emitter_only_loci",
+          "excluded_emitter_only_owner",
+          "frozen_loci",
+          "frozen_only_cases",
+          "frozen_recipes",
+          "frozen_surface_transition",
+          "live_c_presence_assertions_rewritten",
+          "not_repaired",
+          "phase22_invocation_successor",
+          "poisoned_route_probes",
+          "production_audit_transition",
+          "runner_mediated_residue",
+          "runner_residue_owner",
+          "status",
+          "text_surface_successor",
+          "vector_count",
+          "vectors_digest",
+          "version"
+        ],
+        "type": "object"
       },
       "phase24_preflight_closure": {
         "type": "object",

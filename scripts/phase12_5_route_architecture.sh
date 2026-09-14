@@ -62,24 +62,18 @@ compile_mir_to_c_oracle() {
   local source_path="$1"
   local case_dir="$2"
 
-  if ! ./gust --backend mir-to-c "$source_path" \
-      >"$case_dir/oracle.c" \
-      2>"$case_dir/oracle.compiler.stderr"; then
-    cat "$case_dir/oracle.compiler.stderr" >&2
-    echo "MIR-to-C oracle compilation failed for $source_path" >&2
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$source_path" "$case_dir/oracle" --kind exec
+  if [ "$(cat "$case_dir/oracle.compile.status")" != "0" ]; then
+    cat "$case_dir/oracle.compile.stderr" >&2
+    echo "Frozen oracle records a failed compilation for $source_path" >&2
     exit 1
   fi
-  if [ -s "$case_dir/oracle.compiler.stderr" ]; then
-    cat "$case_dir/oracle.compiler.stderr" >&2
-    echo "MIR-to-C oracle emitted diagnostics for $source_path" >&2
+  if [ -s "$case_dir/oracle.compile.stderr" ]; then
+    cat "$case_dir/oracle.compile.stderr" >&2
+    echo "Frozen oracle records diagnostics for $source_path" >&2
     exit 1
   fi
-
-  cat src/runtime.c "$case_dir/oracle.c" >"$case_dir/oracle.final.c"
-  "$CC_BIN" $CFLAGS_VAL -Isrc \
-    "$case_dir/oracle.final.c" \
-    -o "$case_dir/oracle-program"
-  execute_and_capture "$case_dir/oracle-program" "$case_dir/oracle"
 }
 
 compare_native_to_oracle() {

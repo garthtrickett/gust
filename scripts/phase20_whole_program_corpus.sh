@@ -12,8 +12,6 @@ if [ ! -x "$worker" ]; then
   make build/gust-native-backend
 fi
 worker_abs="$(cd "$(dirname "$worker")" && pwd)/$(basename "$worker")"
-cc_bin="${CC:-cc}"
-cflags="${CFLAGS:--O0 -w -pthread}"
 
 execute_and_capture() {
   local binary="$1"
@@ -40,12 +38,10 @@ do
   case_dir="$build_root/$case_id"
   mkdir -p "$case_dir"
 
-  ./gust --backend mir-to-c "$source_fixture" \
-    >"$case_dir/program.c" 2>"$case_dir/mir.compiler.stderr"
-  test ! -s "$case_dir/mir.compiler.stderr"
-  cat src/runtime.c "$case_dir/program.c" >"$case_dir/program.final.c"
-  "$cc_bin" $cflags -Isrc "$case_dir/program.final.c" \
-    -o "$case_dir/mir-program"
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$source_fixture" "$case_dir/mir" --kind exec \
+    --workdir "$case_dir/mir-workdir"
+  test ! -s "$case_dir/mir.compile.stderr"
 
   recording_driver="$case_dir/recording-driver"
   captured_request="$case_dir/captured.request"
@@ -87,8 +83,6 @@ WRAPPER
     exit 1
   fi
 
-  execute_and_capture "$case_dir/mir-program" "$case_dir/mir" \
-    "$case_dir/mir-workdir"
   execute_and_capture "$case_dir/native-program" "$case_dir/native" \
     "$case_dir/native-workdir"
   test "$(cat "$case_dir/mir.status")" = "$exit_status"
@@ -124,10 +118,10 @@ do
   test "$normalization" = none
   case_dir="$build_root/$case_id"
   mkdir -p "$case_dir"
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$source_fixture" "$case_dir/mir" --kind reject
+  mir_status="$(cat "$case_dir/mir.status")"
   set +e
-  ./gust --backend mir-to-c "$source_fixture" \
-    >"$case_dir/mir.compiler.stdout" 2>"$case_dir/mir.compiler.stderr"
-  mir_status="$?"
   GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
   GUST_P20_POISON_MARKER="$poison_marker" \
   GUST_NATIVE_BACKEND_DRIVER="$poison_abs" \
@@ -140,10 +134,10 @@ do
   test "$native_status" = "$compile_status"
   test ! -e "$poison_marker"
   test ! -e "$case_dir/native-program"
-  cmp -s "$case_dir/mir.compiler.stdout" "$case_dir/native.compiler.stdout"
-  cmp -s "$case_dir/mir.compiler.stderr" "$case_dir/native.compiler.stderr"
-  rg -F "$diagnostic" "$case_dir/mir.compiler.stdout" \
-    "$case_dir/mir.compiler.stderr" >/dev/null
+  cmp -s "$case_dir/mir.compile.stdout" "$case_dir/native.compiler.stdout"
+  cmp -s "$case_dir/mir.compile.stderr" "$case_dir/native.compiler.stderr"
+  rg -F "$diagnostic" "$case_dir/mir.compile.stdout" \
+    "$case_dir/mir.compile.stderr" >/dev/null
   test "$resource_state" = rejected_before_runtime_no_live_owner
   echo "✅ Patch 20.12 failure case passed: $case_id"
 done < <(python3 scripts/phase20_whole_program_corpus.py failure-cases)

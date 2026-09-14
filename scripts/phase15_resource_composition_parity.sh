@@ -10,9 +10,15 @@ mkdir -p "$build_dir"
 
 XDG_RUNTIME_DIR=/tmp TMPDIR=/tmp bash scripts/run-gust-file.sh compiler/future/p15_complete_resource_differential_source.gst
 grep -F 'SUCCESS: Phase 15.13 composed resource source passed' to.log >/dev/null
-./gust --backend mir-to-c compiler/future/p15_complete_resource_differential_source.gst >"$build_dir/default.c"
-./gust --backend mir-to-c compiler/future/p15_complete_resource_differential_source.gst >"$build_dir/explicit.c"
-cmp "$build_dir/default.c" "$build_dir/explicit.c"
+# Patch 24.12: the two-spelling emit-determinism check asserted a property
+# of the retired emitter and had no native counterpart, so it goes with the
+# backend rather than being served frozen bytes on both sides. What stays
+# live is that the frozen oracle still accepts this source cleanly; the
+# witness comparison below is unchanged.
+python3 scripts/phase24_frozen_oracle.py materialize \
+  compiler/future/p15_complete_resource_differential_source.gst \
+  "$build_dir/frozen" --kind exec
+test ! -s "$build_dir/frozen.compile.stderr"
 
 XDG_RUNTIME_DIR=/tmp TMPDIR=/tmp bash scripts/run-gust-file.sh compiler/mir_resource_composition_state_smoke_test_entry.gst
 grep -F 'SUCCESS: Phase 15.13 resource composition state policy passed' to.log >/dev/null

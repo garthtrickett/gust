@@ -94,18 +94,9 @@ do
   case_dir="$build_root/$case_id"
   mkdir -p "$case_dir"
 
-  ./gust --backend mir-to-c "$source_fixture" >"$case_dir/default.c" \
-    2>"$case_dir/default.compile.stderr"
-  ./gust --backend mir-to-c "$source_fixture" >"$case_dir/explicit.c" \
-    2>"$case_dir/explicit.compile.stderr"
-  test ! -s "$case_dir/default.compile.stderr"
-  test ! -s "$case_dir/explicit.compile.stderr"
-  cmp -s "$case_dir/default.c" "$case_dir/explicit.c"
-
-  cat src/runtime.c "$case_dir/explicit.c" >"$case_dir/oracle.final.c"
-  "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-    "$case_dir/oracle.final.c" -o "$case_dir/oracle"
-  execute_and_capture "$case_dir/oracle" "$case_dir/oracle"
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$source_fixture" "$case_dir/oracle" --kind exec
+  test ! -s "$case_dir/oracle.compile.stderr"
 
   REAL_DRIVER="$real_driver" CAPTURE_PREFIX="$case_dir/capture" \
   GUST_NATIVE_BACKEND_DRIVER="$capture_driver" \
@@ -158,19 +149,9 @@ do
   rejected_dir="$build_root/$rejected_id"
   mkdir -p "$rejected_dir"
 
-  ./gust --backend mir-to-c "$rejected_source" >"$rejected_dir/default.c" \
-    2>"$rejected_dir/default.compile.stderr"
-  ./gust --backend mir-to-c "$rejected_source" \
-    >"$rejected_dir/explicit.c" \
-    2>"$rejected_dir/explicit.compile.stderr"
-  test ! -s "$rejected_dir/default.compile.stderr"
-  test ! -s "$rejected_dir/explicit.compile.stderr"
-  cmp -s "$rejected_dir/default.c" "$rejected_dir/explicit.c"
-  cat src/runtime.c "$rejected_dir/explicit.c" \
-    >"$rejected_dir/oracle.final.c"
-  "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-    "$rejected_dir/oracle.final.c" -o "$rejected_dir/oracle"
-  execute_and_capture "$rejected_dir/oracle" "$rejected_dir/oracle"
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$rejected_source" "$rejected_dir/oracle" --kind exec
+  test ! -s "$rejected_dir/oracle.compile.stderr"
   printf '%s\n' "$oracle_exit" >"$rejected_dir/oracle.expected.status"
   python3 -c 'import sys; sys.stdout.buffer.write(bytes.fromhex(sys.argv[1]))' \
     "$oracle_stdout_hex" >"$rejected_dir/oracle.expected.stdout"
