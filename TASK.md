@@ -459,6 +459,35 @@ retirement debris survives across features.
 
 **Steps:**
 
+- Land the `guard_reachability.py` fixes for issues #390 and #393 **before**
+  the reachability re-run, not alongside it. Both are defects in the same
+  module and ride one patch: #390 is the justfile parser reading an `rg -e`
+  pattern as an invocation, #393 is `registry_named()` dropping a guard from
+  the orphan report when its name merely appears as a substring of
+  `scripts/cranelift_feature_registry.json` or
+  `scripts/cranelift_test_levels.json`. Measured on `b7a028df` and controlled
+  against `cranelift_ci_family.py`, every `scripts/` file and every workflow:
+  **97 guard recipes are unreachable from any workflow, 20 are reported as
+  orphans, 51 are suppressed by the level file alone, and 43 of those are
+  executed by nothing.** Until both land, this re-run reports 20 orphans and
+  passes while 43 recipes run nowhere — the audit's own instrument returns a
+  plausible number instead of an error, and the exit gate below would be
+  discharged without ever having been tested.
+- Re-baseline `scripts/guard_reachability_allowlist.json` afterwards by
+  justifying or removing each newly visible entry. The orphan count jumps from
+  20 toward 97, and a bulk accept re-hides exactly what this audit exists to
+  find. Most of the 43 are `*-native-smoke` recipes — `add-i32`, `branch`,
+  `conditional-branch`, `extern-call-i32`, `identity-i32`, the
+  `mir-block-graph-*` bundles, `return-int`,
+  `mir-to-c-differential-native-smoke` — so they bear on the phase's premise:
+  Phase 24 removes the C backend on the grounds that the native route is
+  qualified, and part of that evidence is guards nothing runs. The sharpest
+  case is `guard-cranelift-phase20-resource-enforcement-parity`, one of Patch
+  24.12's three registered NOT_REPAIRED reds: it is named 0 times in the
+  feature registry and once in the level file, so a bare level assignment is
+  the only thing keeping a known-red, never-executed guard off the orphan
+  list. A survivor like that names no live invariant and the exit gate below
+  should say so.
 - Re-run consumer, guard, fixture, workflow, command, and registry
   reachability over the post-removal tree; every surviving evidence owner
   must protect a still-live invariant.
