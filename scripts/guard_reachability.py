@@ -22,6 +22,7 @@ import argparse
 import json
 import pathlib
 import re
+import subprocess
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -110,6 +111,108 @@ def parse_justfile(text):
     return edges, parameterised
 
 
+def _recipe_bodies(text):
+    """Recipe name -> body lines. Shared so the dispatch model and the call
+    graph cannot drift apart; `parse_justfile`'s two-value signature is public
+    (phase24_retirement_consumer_inventory.liveness unpacks it) and must not
+    change to expose this."""
+    bodies = {}
+    current = None
+    for line in text.split("\n"):
+        if line[:1] in (" ", "\t"):
+            if current:
+                bodies[current].append(line)
+            continue
+        if line.startswith("#") or not line.strip() or ":=" in line:
+            continue
+        match = RECIPE_HEAD.match(line)
+        if not match:
+            continue
+        current = match.group(1)
+        bodies[current] = []
+    return bodies
+
+
+SINGLE_QUOTED = re.compile(r"'[^']*'")
+DISPATCH = re.compile(r'just\s+"\$\{?(\w+)')
+ARRAY_OPEN = re.compile(r"^\s*(\w+)=\(\s*$")
+PY_SOURCE = re.compile(r"python3\s+(scripts/[A-Za-z0-9_.-]+\.py)\s+([a-z][a-z0-9-]*)")
+
+
+def _run_name_source(script, subcommand):
+    """Ask an authority script for the names it dispatches, or return None."""
+    try:
+        out = subprocess.run([sys.executable, script, subcommand],
+                             capture_output=True, text=True, timeout=120,
+                             cwd=str(ROOT))
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if out.returncode != 0:
+        return None
+    return [line.strip() for line in out.stdout.split("\n") if line.strip()]
+
+
+def dynamic_edges(text, known):
+    """Resolve `just "$var"` dispatch into real edges (issue #393).
+
+    `parse_justfile` only sees literal `just <name>`, so every dynamically
+    dispatched guard is invisible to it -- and `registry_named`'s substring
+    match has been silently standing in for the missing model.
+
+    Each dispatching body is resolved by unioning every name source it
+    contains: literal bash arrays, and the output of any authority script it
+    invokes (`cranelift_test_levels.py list-native`,
+    `phase15/16/17_*.py individual-guards`). The union **over-approximates**:
+    a body that filters its list through `rg` before dispatching gets edges to
+    the unfiltered set. That is the safe direction for a reachability claim --
+    it can only make a guard look live, never dead -- and it is recorded here
+    rather than tuned away, because the filters are themselves computed.
+
+    Raises if a body dispatches but offers no resolvable source. An
+    unmodelled dispatch site must fail loudly rather than silently contribute
+    nothing, which is exactly how #393 went unnoticed.
+    """
+    cache = {}
+    extra = {}
+    for recipe, body in _recipe_bodies(text).items():
+        text = "\n".join(body)
+        # Only single-quoted spans are blanked here, not all quoted spans:
+        # a real dispatch *is* `just "$guard_recipe"` (double-quoted variable),
+        # while the assertion that forbids one wraps the whole call in single
+        # quotes (`rg -n -F 'just "$guard_recipe"'`, justfile:1834). Reusing
+        # strip_quoted would blank the variable itself and resolve nothing --
+        # it silently reported 0 dispatch sites when there are 7.
+        targets = {m.group(1) for m in DISPATCH.finditer(SINGLE_QUOTED.sub(" ", text))}
+        if not targets:
+            continue
+        names = set()
+        in_array = False
+        for line in body:
+            if ARRAY_OPEN.match(line):
+                in_array = True
+                continue
+            if in_array:
+                if line.strip() == ")":
+                    in_array = False
+                elif NAME.fullmatch(line.strip()):
+                    names.add(line.strip())
+        for script, sub in PY_SOURCE.findall(text):
+            key = (script, sub)
+            if key not in cache:
+                cache[key] = _run_name_source(script, sub)
+            if cache[key]:
+                names.update(cache[key])
+        resolved = {n for n in names if n in known}
+        if not resolved:
+            raise SystemExit(
+                f"guard_reachability: recipe {recipe!r} dispatches "
+                f"`just \"${sorted(targets)[0]}\"` but no name source in its "
+                f"body could be resolved. Issue #393: an unmodelled dispatch "
+                f"site must fail here, not silently contribute no edges.")
+        extra[recipe] = sorted(resolved)
+    return extra
+
+
 def workflow_roots(edges):
     roots = set()
     for path in sorted(WORKFLOWS.glob("*.y*ml")):
@@ -185,14 +288,64 @@ def selftest_quoted_is_not_a_call():
             "is being read as a call edge again (issue #390)")
 
 
+def selftest_dispatch_is_modelled():
+    """Fail if dynamic dispatch stops producing edges (issue #393).
+
+    Asserts both directions on a synthetic fixture: a resolvable source must
+    yield edges, and an unresolvable dispatch must raise rather than quietly
+    contribute nothing -- silence is how #393 survived.
+    """
+    sample = "\n".join([
+        "dispatcher:",
+        "    guards=(",
+        "      guard-alpha",
+        "      guard-beta",
+        "    )",
+        "    for g in \"${guards[@]}\"; do",
+        "      just \"$g\"",
+        "    done",
+        "guard-alpha:",
+        "guard-beta:",
+    ])
+    edges, _ = parse_justfile(sample)
+    resolved = dynamic_edges(sample, set(edges))
+    if sorted(resolved.get("dispatcher", [])) != ["guard-alpha", "guard-beta"]:
+        raise SystemExit(
+            "guard_reachability selftest: dynamic dispatch is no longer "
+            "resolved into edges (issue #393); got "
+            f"{resolved.get('dispatcher')}")
+    blind = "\n".join([
+        "blind:",
+        "    for g in \"${mystery[@]}\"; do",
+        "      just \"$g\"",
+        "    done",
+        "guard-alpha:",
+    ])
+    blind_edges, _ = parse_justfile(blind)
+    try:
+        dynamic_edges(blind, set(blind_edges))
+    except SystemExit:
+        return
+    raise SystemExit(
+        "guard_reachability selftest: an unresolvable dispatch site no "
+        "longer fails (issue #393); it must not silently contribute nothing")
+
+
 def main():
     selftest_quoted_is_not_a_call()
+    selftest_dispatch_is_modelled()
     parser = argparse.ArgumentParser()
     parser.add_argument("--list", action="store_true",
                         help="print the current orphans and exit 0")
     args = parser.parse_args()
 
-    edges, parameterised = parse_justfile("\n".join(justfile_sources(JUSTFILE)))
+    justfile_text = "\n".join(justfile_sources(JUSTFILE))
+    edges, parameterised = parse_justfile(justfile_text)
+    # Issue #393: fold dynamically dispatched guards into the graph. Without
+    # this the graph is literal-call-only and `registry_named`'s substring
+    # match stands in for the missing model -- two unsound parts cancelling.
+    for recipe, dispatched in dynamic_edges(justfile_text, set(edges)).items():
+        edges[recipe].extend(dispatched)
     # A recipe that takes arguments cannot be a gate on its own -- something has
     # to supply the arguments -- so only argument-free recipes are checked.
     guards = {r for r in edges if r.startswith("guard-") and r not in parameterised}
