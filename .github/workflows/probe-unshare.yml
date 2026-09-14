@@ -29,8 +29,13 @@ jobs:
           done
           printf 'unshare binary: %s\n' "$(command -v unshare || echo ABSENT)"
 
+      # `shell: bash` is NOT plain bash -- GitHub maps it to
+      # `bash --noprofile --norc -e -o pipefail {0}`. Attempt 2 assumed
+      # otherwise, so `NS_OUT=$(unshare ...)` aborted at that line under -e and
+      # the captured error was discarded unread. An explicit shell string is the
+      # only way to actually drop -e.
       - name: Bind-mount a scratch manifest over a tracked one
-        shell: bash            # no -e: every path must reach a RESULT line
+        shell: bash --noprofile --norc {0}
         run: |
           TRACKED=scripts/cranelift_test_levels.json
           echo "--- setup ---"
@@ -61,21 +66,43 @@ jobs:
           echo "--- outside namespace, before ---"
           /tmp/reader.sh
 
-          echo "--- inside namespace ---"
-          NS_OUT=$(unshare --map-root-user --mount -- bash -c \
-            "mount --bind /tmp/mutated.json $PWD/$TRACKED && cd $PWD && /tmp/reader.sh" 2>&1)
+          # Decomposed, because "unshare failed" has at least three causes
+          # and they need different answers. Each sub-probe reports its own rc
+          # and its own output to a file, so nothing is lost to a variable.
+          echo "--- can we create a user namespace at all? ---"
+          unshare --map-root-user --mount -- true >/tmp/ns1.out 2>&1
+          NS1=$?
+          echo "userns rc=$NS1"; cat /tmp/ns1.out
+
+          echo "--- can we bind-mount inside it? ---"
+          unshare --map-root-user --mount -- \
+            bash -c "mount --bind /tmp/mutated.json $PWD/$TRACKED" \
+            >/tmp/ns2.out 2>&1
+          NS2=$?
+          echo "bindmount rc=$NS2"; cat /tmp/ns2.out
+
+          echo "--- does a subprocess tree see the shadowed file? ---"
+          unshare --map-root-user --mount -- \
+            bash -c "mount --bind /tmp/mutated.json $PWD/$TRACKED && cd $PWD && /tmp/reader.sh" \
+            >/tmp/ns3.out 2>&1
           NS_RC=$?
-          echo "$NS_OUT"
-          echo "unshare rc=$NS_RC"
+          echo "full rc=$NS_RC"; cat /tmp/ns3.out
+          NS_OUT=$(cat /tmp/ns3.out)
 
           echo "--- outside namespace, after ---"
           /tmp/reader.sh
           AFTER_SHA=$(sha256sum "$TRACKED" | cut -d' ' -f1)
-          echo "AFTER_SHA=$AFTER_SHA"
+          echo "AFTER_SHA matches original: $([ "$AFTER_SHA" = "$ORIG_SHA" ] && echo yes || echo NO)"
 
           echo "--- verdict ---"
+          if [ "$NS1" -ne 0 ]; then
+            echo "RESULT: USERNS_UNAVAILABLE (rc=$NS1)"; exit 1
+          fi
+          if [ "$NS2" -ne 0 ]; then
+            echo "RESULT: BIND_MOUNT_REFUSED (userns ok, mount rc=$NS2)"; exit 1
+          fi
           if [ "$NS_RC" -ne 0 ]; then
-            echo "RESULT: UNSHARE_UNAVAILABLE (rc=$NS_RC)"; exit 1
+            echo "RESULT: READER_FAILED (mount ok, rc=$NS_RC)"; exit 1
           fi
           if ! printf '%s' "$NS_OUT" | grep -q "marker = MUTATED"; then
             echo "RESULT: MOUNT_DID_NOT_TAKE (namespace entered, file not shadowed)"
