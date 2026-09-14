@@ -58,6 +58,27 @@ def justfile_sources(path, seen=None):
     return out
 
 
+QUOTED = re.compile(r"'[^']*'|\"[^\"]*\"")
+
+
+def strip_quoted(line):
+    """Blank out quoted spans so a searched-for name is not read as a call.
+
+    Issue #390: `parse_justfile` matched `just <recipe>` anywhere in a body,
+    including inside the *pattern* of an assertion that forbids or requires a
+    call -- `rg -n -F 'just guard-x' "$body"` -- and inside bash arrays of
+    expected tokens (`justfile:105-111`). Both are text about a call, not a
+    call, and reading them as edges makes an orphan look reachable.
+
+    Blanking quoted spans is sound here because no recipe invokes `just` from
+    inside a quoted string: there is no `bash -c "just ..."` and no
+    `xargs just` in any justfile source. A real call is always unquoted, and
+    its quoted *arguments* (`just guard-x "{{shard}}"`) are untouched because
+    only the argument span is blanked, not the call.
+    """
+    return QUOTED.sub(lambda m: " " * len(m.group(0)), line)
+
+
 def parse_justfile(text):
     """Return ({recipe: [recipes it reaches]}, {recipes that take parameters})."""
     edges = {}
@@ -82,9 +103,10 @@ def parse_justfile(text):
         bodies[current] = []
     # A recipe may also shell out to `just other-recipe`, which is an edge too.
     for recipe, body in bodies.items():
-        for call in JUST_CALL.finditer("\n".join(body)):
-            if call.group(1) in edges:
-                edges[recipe].append(call.group(1))
+        for line in body:
+            for call in JUST_CALL.finditer(strip_quoted(line)):
+                if call.group(1) in edges:
+                    edges[recipe].append(call.group(1))
     return edges, parameterised
 
 
@@ -116,7 +138,55 @@ def registry_named(names):
     return {n for n in names if any(n in blob for blob in blobs)}
 
 
+def selftest_quoted_is_not_a_call():
+    """Fail if a searched-for name is read as a call edge again (issue #390).
+
+    This asserts on `parse_justfile` directly rather than through the report,
+    because the report cannot see the difference: every recipe this repair
+    makes unreachable is currently absorbed by `registry_named`, so the
+    aggregate output is byte-identical before and after the fix. Measured on
+    `b7a028df`: reachable falls 591 -> 584 and the guard still prints
+    "unreachable: 20 (20 known, 0 new)". Asserting here is the only place the
+    correction is observable -- the two unsound parts cancel everywhere else,
+    which is issue #395's mechanism and why #390 must not be judged by whether
+    the summary moved.
+
+    The fixture is synthetic on purpose: a live-justfile assertion would drift
+    the moment a recipe is renamed, and start passing for the wrong reason.
+    """
+    sample = "\n".join([
+        "guard-a:",
+        "    just guard-real",
+        "    rg -n -F 'just guard-forbidden' \"$body\"",
+        "    tokens=( 'just guard-token' )",
+        "    just guard-with-arg \"{{shard}}\"",
+        "guard-real:",
+        "guard-forbidden:",
+        "guard-token:",
+        "guard-with-arg:",
+    ])
+    edges, _ = parse_justfile(sample)
+    reached = edges["guard-a"]
+    if "guard-real" not in reached:
+        raise SystemExit(
+            "guard_reachability selftest: an unquoted `just` call stopped "
+            "being an edge; the repair is over-broad")
+    if "guard-with-arg" not in reached:
+        raise SystemExit(
+            "guard_reachability selftest: a call with a quoted argument "
+            "stopped being an edge; only the argument may be blanked")
+    if "guard-forbidden" in reached:
+        raise SystemExit(
+            "guard_reachability selftest: a name inside an rg pattern is "
+            "being read as a call edge again (issue #390)")
+    if "guard-token" in reached:
+        raise SystemExit(
+            "guard_reachability selftest: a name inside a quoted array token "
+            "is being read as a call edge again (issue #390)")
+
+
 def main():
+    selftest_quoted_is_not_a_call()
     parser = argparse.ArgumentParser()
     parser.add_argument("--list", action="store_true",
                         help="print the current orphans and exit 0")
