@@ -23955,10 +23955,17 @@
         "guard-cranelift-phase11-block-parameter-loop-parity",
         "guard-cranelift-phase11-direct-call-abi-parity",
         "guard-cranelift-phase11-local-state-parity",
+        "guard-cranelift-phase11-metadata-diagnostic-parity",
         "guard-cranelift-phase11-module-import-runtime-parity",
         "guard-cranelift-phase11-scalar-expression-parity",
         "guard-cranelift-phase11-structured-cfg-parity",
-        "guard-cranelift-phase13-source-metadata-parity"
+        "guard-cranelift-phase13-composition-differential",
+        "guard-cranelift-phase13-source-metadata-parity",
+        "guard-cranelift-phase14-composition-differential",
+        "guard-mir-feature-if-else-return-int-preservation",
+        "guard-mir-feature-local-binding-read-preservation",
+        "guard-mir-feature-local-binding-read-provenance-metadata-preservation",
+        "guard-mir-feature-return-int-preservation"
       ],
       "owner": "24.16"
     },

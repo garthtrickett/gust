@@ -920,14 +920,41 @@ ACTION_DISAGREES_WITH_OUTCOME = (
     "guard-cranelift-phase22-opening-evidence",
 )
 
+# Issues #390 and #393, Patch 24.15a: seven entries join this register as a
+# consequence of repairing the reachability instrument, not of any change in
+# the guards themselves. Before the repair each looked reachable, because
+# `liveness()` read a recipe name it was merely searching for as a call edge
+# (#390) and could not model dynamic guard dispatch (#393). Every `just
+# <name>` occurrence of the four `guard-mir-feature-*-preservation` recipes
+# sits inside an `rg -n -F` assertion pattern -- justfile:1355-1370 and
+# :1507-1522 -- and is a search for the name, not a call of it.
+#
+# Measured on this tree after the repair, all seven are absent from both the
+# workflow and the `make` populations and present only in registry naming,
+# which is exactly this register's predicate.
+#
+# They are registered here rather than re-scored to `is_live=False`. On main
+# the same repair does move four of them to False, because main has no
+# CI-family registry naming for them; this tree is Patch 24.12a's, where that
+# naming exists, so `recipe in live` stays True and re-scoring the rows would
+# make them contradict what `liveness()` measures here. That is the coupling
+# the 24.15a split could not satisfy: the repair and this register have to
+# land in one tree.
 IS_LIVE_WITH_NO_EXECUTION_ROUTE = (
     "guard-cranelift-phase11-block-parameter-loop-parity",
     "guard-cranelift-phase11-direct-call-abi-parity",
     "guard-cranelift-phase11-local-state-parity",
+    "guard-cranelift-phase11-metadata-diagnostic-parity",
     "guard-cranelift-phase11-module-import-runtime-parity",
     "guard-cranelift-phase11-scalar-expression-parity",
     "guard-cranelift-phase11-structured-cfg-parity",
+    "guard-cranelift-phase13-composition-differential",
     "guard-cranelift-phase13-source-metadata-parity",
+    "guard-cranelift-phase14-composition-differential",
+    "guard-mir-feature-if-else-return-int-preservation",
+    "guard-mir-feature-local-binding-read-preservation",
+    "guard-mir-feature-local-binding-read-provenance-metadata-preservation",
+    "guard-mir-feature-return-int-preservation",
 )
 
 # Issue #396, Patch 24.15a. `HARNESS_CALL` needs the literal path straight
