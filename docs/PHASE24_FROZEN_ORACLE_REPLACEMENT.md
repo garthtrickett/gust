@@ -230,6 +230,74 @@ cannot miss them.
 - What is frozen: the frozen reject log matches the live compiler byte for byte; the guard fails at a later count assertion that failed identically before conversion, verified by running the pre-conversion script from bf3875bc
 - Scope: `not_repaired_out_of_retirement_scope` (owner `24.16`)
 
+## End-to-end mutation evidence
+
+`validate_mutations` tampers with every vector and asserts the
+materialized bytes move with it. That proves `materialize`
+transcribes its input faithfully, which is the first arrow of
+`vector -> materialize -> guard reads artifacts -> guard asserts`,
+and it is not the same claim as "a converted guard would fail if
+the vector were wrong".
+
+Two ways that could go wrong are rejected before those mutations
+run, because the evidence guard runs the contract first. Both were
+confirmed by mutating the harness rather than by reading it:
+
+- dropping the re-pointed comparison from
+  `scripts/phase13_registry_differential.sh` fails
+  `check_presence_rewrites`;
+- removing that harness's native arm fails
+  `check_native_arm_split`.
+
+Neither covers an assertion that is present and does not fire. That
+needs a guard run against a wrong vector, which is what
+`scripts/phase24_frozen_oracle_e2e_mutation.py`
+does: it shadows the frozen manifest with a bind mount inside a
+mount namespace, runs the guard on the tampered copy and then on the
+pristine one, and requires it to fail and then pass. Fail alone is
+not enough — a guard that is red for an unrelated reason also fails
+on a mutated vector, which would let a dead guard certify the loop
+closed. A failure that does not name the assertion under test is
+reported as its own verdict rather than counted as evidence.
+
+### `guard-cranelift-phase11-generic-canonical-mir-route` — FAILS THEN PASSES
+
+- Consumer: `scripts/phase13_registry_differential.sh`
+- Vector: `compiler/phase14_struct_composition_source.gst`
+- Mutation: `execution.stdout 0B -> 8B`
+- Assertion required to fire: `runtime stdout bytes differ` (`cmp -s "$case_dir/mir-to-c.stdout" "$case_dir/native.stdout"`)
+- Legs: mutate `rc=1`, pass `rc=0`
+- Measured: `2026-09-14T05:21:01Z`
+- Why this pairing: the guard runs `bash "$differential_harness" all`, so it executes the harness this patch rewrote, and the mutation targets the comparison the rewrite re-pointed rather than the status comparison beside it that the rewrite never touched
+
+### Consumers found blind
+
+The probe is not free of findings, and the first candidate it ran
+was one. These are recorded rather than dropped:
+
+- `guard-cranelift-phase13-capability-deferral-contract` — DOES NOT FAIL. Mutation `execution.exit 49 -> 50` on `compiler/phase12_5_route_novel_source.gst`; build/guards/cranelift_phase13_capability_deferral/frozen.status read back as 50 after the leg, so the tampered expectation did reach the guard. Cause: it requests a full execution record with --kind exec and the only later use of that prefix is a test that compile stderr is empty; frozen.status, frozen.stdout and frozen.stderr are never read. Scope: not inert — materialize still fails it closed on a moved source fixture — but blind to every frozen execution expectation. Tracked by #407.
+
+### What this does not claim
+
+1 of the `253`
+vectors was driven end-to-end through a real guard. That proves the
+sampled guards compare what they materialize and says nothing about
+the rest. The sample was chosen by risk — a guard that executes the
+harness rewritten in this patch, mutating the comparison the rewrite
+re-pointed — not by convenience.
+
+None of the four closure guards rewritten in this patch (phase11-close, phase12-5-close, phase13-close, phase14-close) consumes a vector: two assert the text of the materialize call and two never mention it. Whether a re-pointed closure assertion still fires therefore cannot be tested by mutating a vector. check_presence_rewrites covers their presence-and-absence obligation; a weakened one needs separate evidence and does not have it here.
+
+The probe is committed and runnable but is wired into no workflow.
+It depends on unprivileged user namespaces, for which this
+repository has no precedent, and `require_namespace_support` fails
+loudly rather than skipping, so placing it in CI is a decision that
+waits on measuring namespace availability on a runner. Until then
+the rows above attest to a measured past state; what keeps them
+honest is that `validate` checks each one against the probe and
+against the harness it names, so a row cannot outlive the assertion
+it describes.
+
 ## Frozen vectors
 
 `253` vectors, pinned by content as

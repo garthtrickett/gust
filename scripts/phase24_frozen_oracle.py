@@ -27,6 +27,7 @@ from __future__ import annotations
 import argparse
 import copy
 import hashlib
+import importlib.util
 import json
 import re
 import sys
@@ -992,6 +993,180 @@ def validate_mutations(vectors: dict) -> int:
     return checked
 
 
+# ---------------------------------------------------------------------------
+# End-to-end mutation evidence: the arrow `validate_mutations` cannot reach.
+#
+# `validate_mutations` above tampers with a vector, materializes it, and
+# asserts the bytes moved. That proves `materialize` transcribes its input
+# faithfully — the first arrow of
+#
+#     vector -> materialize -> guard reads artifacts -> guard asserts
+#
+# and it stops there. Nothing in that function invokes a guard, so on its own
+# it cannot tell a guard that compares what it materializes from one that
+# materializes a record and reads none of it.
+#
+# Two of the ways that could go wrong are caught before this file's mutations
+# ever run, because the evidence guard runs the contract first:
+# `check_presence_rewrites` fails if a converted harness loses the comparison
+# it was re-pointed to, and `check_native_arm_split` fails if it stops
+# executing its native side. Both were confirmed by mutation, each failing on
+# its own assertion rather than on some other one.
+#
+# What neither of those covers is an assertion that is present and does not
+# fire. Only running a guard against a wrong vector answers that, so
+# scripts/phase24_frozen_oracle_e2e_mutation.py does exactly that, and the
+# measured result is recorded below rather than described. The rows are
+# checked against the probe and against the harnesses they name, so a sample
+# entry cannot quietly stop meaning what it says.
+# ---------------------------------------------------------------------------
+
+E2E_PROBE = ROOT / "scripts/phase24_frozen_oracle_e2e_mutation.py"
+E2E_PASSING_VERDICT = "FAILS THEN PASSES"
+
+E2E_MUTATION_EVIDENCE = (
+    {
+        "guard": "guard-cranelift-phase11-generic-canonical-mir-route",
+        "harness": "scripts/phase13_registry_differential.sh",
+        "vector": "compiler/phase14_struct_composition_source.gst",
+        "mutate": "stdout",
+        "mutation": "execution.stdout 0B -> 8B",
+        "expect": "runtime stdout bytes differ",
+        "comparison":
+            'cmp -s "$case_dir/mir-to-c.stdout" "$case_dir/native.stdout"',
+        "verdict": E2E_PASSING_VERDICT,
+        "mutate_leg_rc": 1,
+        "pass_leg_rc": 0,
+        "measured": "2026-09-14T05:21:01Z",
+        "why": "the guard runs `bash \"$differential_harness\" all`, so it "
+               "executes the harness this patch rewrote, and the mutation "
+               "targets the comparison the rewrite re-pointed rather than "
+               "the status comparison beside it that the rewrite never "
+               "touched",
+    },
+)
+
+# Consumers the probe ran and found blind. Kept because a probe whose findings
+# are dropped is a probe nobody can audit, and because this one was the first
+# candidate tested — the class it was built to detect was not empty.
+E2E_BLIND_CONSUMERS = (
+    {
+        "guard": "guard-cranelift-phase13-capability-deferral-contract",
+        "harness": "scripts/phase13_capability_deferral.sh",
+        "vector": "compiler/phase12_5_route_novel_source.gst",
+        "mutation": "execution.exit 49 -> 50",
+        "verdict": "DOES NOT FAIL",
+        "control": "build/guards/cranelift_phase13_capability_deferral/"
+                   "frozen.status read back as 50 after the leg, so the "
+                   "tampered expectation did reach the guard",
+        "cause": "it requests a full execution record with --kind exec and "
+                 "the only later use of that prefix is a test that compile "
+                 "stderr is empty; frozen.status, frozen.stdout and "
+                 "frozen.stderr are never read",
+        "residual": "not inert — materialize still fails it closed on a "
+                    "moved source fixture — but blind to every frozen "
+                    "execution expectation",
+        "tracked_by": "#407",
+    },
+)
+
+# What vector mutation cannot reach at all, stated so the sample is not read
+# as covering it.
+E2E_UNCOVERED = (
+    "None of the four closure guards rewritten in this patch "
+    "(phase11-close, phase12-5-close, phase13-close, phase14-close) consumes "
+    "a vector: two assert the text of the materialize call and two never "
+    "mention it. Whether a re-pointed closure assertion still fires therefore "
+    "cannot be tested by mutating a vector. check_presence_rewrites covers "
+    "their presence-and-absence obligation; a weakened one needs separate "
+    "evidence and does not have it here."
+)
+
+
+def load_e2e_probe_sample() -> tuple[dict, ...]:
+    """The probe's own sample, read from the probe rather than restated.
+
+    Importing it is the point: a row here that has drifted from the entry the
+    probe actually ran is a record of a measurement nobody made.
+    """
+    require(E2E_PROBE.is_file(),
+            f"the end-to-end mutation probe is missing: "
+            f"{E2E_PROBE.relative_to(ROOT)}; the evidence rows below record "
+            f"runs of a file that is no longer here")
+    spec = importlib.util.spec_from_file_location(
+        "phase24_frozen_oracle_e2e_mutation", E2E_PROBE)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return tuple(module.SAMPLE)
+
+
+def check_e2e_mutation_evidence(vectors: dict) -> None:
+    just = JUSTFILE.read_text(encoding="utf-8")
+    sample = load_e2e_probe_sample()
+    keyed = {(str(entry["guard"]), str(entry["vector"])): entry
+             for entry in sample}
+
+    for row in E2E_MUTATION_EVIDENCE:
+        key = (row["guard"], row["vector"])
+        require(key in keyed,
+                f"an end-to-end evidence row records a run the probe no "
+                f"longer performs: {row['guard']} on {row['vector']}")
+        entry = keyed[key]
+        for field in ("mutate", "expect"):
+            require(entry[field] == row[field],
+                    f"the probe and the recorded result disagree about "
+                    f"{field} for {row['guard']}: {entry[field]!r} vs "
+                    f"{row[field]!r}")
+        require(row["verdict"] == E2E_PASSING_VERDICT,
+                f"an end-to-end evidence row records a verdict that is not a "
+                f"pass: {row['guard']} -> {row['verdict']}")
+        require(row["mutate_leg_rc"] != 0 and row["pass_leg_rc"] == 0,
+                f"an end-to-end evidence row is not a fails-then-passes "
+                f"pair: {row['guard']} "
+                f"(mutate={row['mutate_leg_rc']}, pass={row['pass_leg_rc']})")
+        require(f"{row['guard']}:" in just,
+                f"an end-to-end evidence row names a guard the justfile does "
+                f"not define: {row['guard']}")
+        harness = ROOT / str(row["harness"])
+        require(harness.is_file(),
+                f"an end-to-end evidence row names a missing harness: "
+                f"{row['harness']}")
+        body = harness.read_text(encoding="utf-8")
+        # The two halves of the assertion the probe required to fire. Losing
+        # either turns the recorded pass into a statement about code that is
+        # no longer there.
+        require(row["comparison"] in body,
+                f"the comparison {row['guard']} was measured to fail on is "
+                f"gone from {row['harness']}: {row['comparison']}")
+        require(row["expect"] in body,
+                f"{row['harness']} no longer emits the failure the probe "
+                f"matched on, so the recorded verdict cannot be reproduced: "
+                f"{row['expect']}")
+        vector = vectors["vectors"].get(str(row["vector"]))
+        require(vector is not None,
+                f"an end-to-end evidence row mutates a vector that is no "
+                f"longer frozen: {row['vector']}")
+        require(vector.get("archived_corpus_case") is None,
+                f"{row['vector']} is now archived-corpus linked, so "
+                f"check_corpus_identity would reject the probe's mutation "
+                f"before the guard ever saw it and the recorded pass would "
+                f"be about the oracle rather than about the guard")
+
+    for row in E2E_BLIND_CONSUMERS:
+        require(f"{row['guard']}:" in just,
+                f"a recorded blind consumer names a guard the justfile does "
+                f"not define: {row['guard']}")
+        require((ROOT / str(row["harness"])).is_file(),
+                f"a recorded blind consumer names a missing harness: "
+                f"{row['harness']}")
+        require(str(row["vector"]) in vectors["vectors"],
+                f"a recorded blind consumer names a vector that is no longer "
+                f"frozen: {row['vector']}")
+        require(row.get("tracked_by"),
+                f"a blind consumer is recorded with no issue tracking it: "
+                f"{row['guard']}")
+
+
 def validate() -> dict:
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     node = registry.get("phase24_frozen_oracle_replacement")
@@ -1125,6 +1300,7 @@ def validate() -> dict:
             "the guard recipes are no longer defined in the justfile")
     check_contract_runs_unconditionally()
     check_workflow_triggers_on_fixtures(vectors)
+    check_e2e_mutation_evidence(vectors)
     return node
 
 
@@ -1301,6 +1477,91 @@ def render(node: dict) -> str:
         if "tracked_by" in row:
             lines.append(f"- Tracked by: {row['tracked_by']}")
         lines.append("")
+    lines += [
+        "## End-to-end mutation evidence",
+        "",
+        "`validate_mutations` tampers with every vector and asserts the",
+        "materialized bytes move with it. That proves `materialize`",
+        "transcribes its input faithfully, which is the first arrow of",
+        "`vector -> materialize -> guard reads artifacts -> guard asserts`,",
+        "and it is not the same claim as \"a converted guard would fail if",
+        "the vector were wrong\".",
+        "",
+        "Two ways that could go wrong are rejected before those mutations",
+        "run, because the evidence guard runs the contract first. Both were",
+        "confirmed by mutating the harness rather than by reading it:",
+        "",
+        "- dropping the re-pointed comparison from",
+        "  `scripts/phase13_registry_differential.sh` fails",
+        "  `check_presence_rewrites`;",
+        "- removing that harness's native arm fails",
+        "  `check_native_arm_split`.",
+        "",
+        "Neither covers an assertion that is present and does not fire. That",
+        "needs a guard run against a wrong vector, which is what",
+        f"`{E2E_PROBE.relative_to(ROOT)}`",
+        "does: it shadows the frozen manifest with a bind mount inside a",
+        "mount namespace, runs the guard on the tampered copy and then on the",
+        "pristine one, and requires it to fail and then pass. Fail alone is",
+        "not enough — a guard that is red for an unrelated reason also fails",
+        "on a mutated vector, which would let a dead guard certify the loop",
+        "closed. A failure that does not name the assertion under test is",
+        "reported as its own verdict rather than counted as evidence.",
+        "",
+    ]
+    for row in E2E_MUTATION_EVIDENCE:
+        lines += [
+            f"### `{row['guard']}` — {row['verdict']}",
+            "",
+            f"- Consumer: `{row['harness']}`",
+            f"- Vector: `{row['vector']}`",
+            f"- Mutation: `{row['mutation']}`",
+            f"- Assertion required to fire: `{row['expect']}`"
+            f" (`{row['comparison']}`)",
+            f"- Legs: mutate `rc={row['mutate_leg_rc']}`, "
+            f"pass `rc={row['pass_leg_rc']}`",
+            f"- Measured: `{row['measured']}`",
+            f"- Why this pairing: {row['why']}",
+            "",
+        ]
+    lines += [
+        "### Consumers found blind",
+        "",
+        "The probe is not free of findings, and the first candidate it ran",
+        "was one. These are recorded rather than dropped:",
+        "",
+    ]
+    for row in E2E_BLIND_CONSUMERS:
+        lines += [
+            f"- `{row['guard']}` — {row['verdict']}. "
+            f"Mutation `{row['mutation']}` on `{row['vector']}`; "
+            f"{row['control']}. Cause: {row['cause']}. "
+            f"Scope: {row['residual']}. Tracked by {row['tracked_by']}.",
+        ]
+    lines += [
+        "",
+        "### What this does not claim",
+        "",
+        f"{len(E2E_MUTATION_EVIDENCE)} of the `{node['vector_count']}`",
+        "vectors was driven end-to-end through a real guard. That proves the",
+        "sampled guards compare what they materialize and says nothing about",
+        "the rest. The sample was chosen by risk — a guard that executes the",
+        "harness rewritten in this patch, mutating the comparison the rewrite",
+        "re-pointed — not by convenience.",
+        "",
+        E2E_UNCOVERED,
+        "",
+        "The probe is committed and runnable but is wired into no workflow.",
+        "It depends on unprivileged user namespaces, for which this",
+        "repository has no precedent, and `require_namespace_support` fails",
+        "loudly rather than skipping, so placing it in CI is a decision that",
+        "waits on measuring namespace availability on a runner. Until then",
+        "the rows above attest to a measured past state; what keeps them",
+        "honest is that `validate` checks each one against the probe and",
+        "against the harness it names, so a row cannot outlive the assertion",
+        "it describes.",
+        "",
+    ]
     lines += [
         "## Frozen vectors",
         "",
