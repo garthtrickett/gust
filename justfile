@@ -16079,13 +16079,6 @@ guard-cranelift-phase18-target-authority-parity:
     just guard-cranelift-phase18-target-authority-contract
     bash scripts/phase18_target_authority_parity.sh
 
-guard-cranelift-phase19-rename-invariance:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    python3 scripts/cranelift_test_levels.py validate
-    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-rename-invariance | grep -F $'guard-cranelift-phase19-rename-invariance\t3\t' >/dev/null
-    bash scripts/phase19_rename_invariance.sh
-
 guard-cranelift-phase19-spelling-inventory:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -16127,15 +16120,6 @@ guard-cranelift-phase19-type-naming-contract:
     python3 scripts/phase19_type_naming.py validate
     python3 scripts/phase19_type_naming.py check-review
 
-guard-cranelift-phase19-type-naming-parity:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    echo "🧪 Running Phase 19 canonical branded type naming parity..."
-    python3 scripts/cranelift_test_levels.py validate
-    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-type-naming-parity | grep -F $'guard-cranelift-phase19-type-naming-parity\t2\t' >/dev/null
-    just guard-cranelift-phase19-type-naming-contract
-    bash scripts/phase19_type_naming_parity.sh
-
 guard-cranelift-phase19-classification-contract:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -16146,15 +16130,6 @@ guard-cranelift-phase19-classification-contract:
     python3 scripts/cranelift_registry.py validate
     python3 scripts/phase19_classification.py validate
     python3 scripts/phase19_classification.py check-review
-
-guard-cranelift-phase19-classification-parity:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    echo "🧪 Running Phase 19 type-derived classification parity..."
-    python3 scripts/cranelift_test_levels.py validate
-    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-classification-parity | grep -F $'guard-cranelift-phase19-classification-parity\t2\t' >/dev/null
-    just guard-cranelift-phase19-classification-contract
-    bash scripts/phase19_classification_parity.sh
 
 guard-cranelift-phase19-representation-contract:
     #!/usr/bin/env bash
@@ -16188,15 +16163,6 @@ guard-cranelift-phase19-rule-convergence:
     python3 scripts/phase19_rule_convergence.py validate
     python3 scripts/phase19_rule_convergence.py check-review
 
-guard-cranelift-phase19-rule-convergence-parity:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    echo "🧪 Running Phase 19 self-hosted spelling-rule case parity..."
-    python3 scripts/cranelift_test_levels.py validate
-    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-rule-convergence-parity | grep -F $'guard-cranelift-phase19-rule-convergence-parity\t2\t' >/dev/null
-    just guard-cranelift-phase19-rule-convergence
-    bash scripts/phase19_rule_convergence_parity.sh
-
 guard-cranelift-phase19-retired-prototype-absent:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -16219,15 +16185,6 @@ guard-cranelift-phase19-gust-name-list-removed:
     python3 scripts/cranelift_registry.py validate
     python3 scripts/phase19_gust_name_list_removed.py validate
     python3 scripts/phase19_gust_name_list_removed.py check-review
-
-guard-cranelift-phase19-gust-name-list-removed-parity:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    echo "🧪 Running Phase 19 spelling-independent template-role parity..."
-    python3 scripts/cranelift_test_levels.py validate
-    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase19-gust-name-list-removed-parity | grep -F $'guard-cranelift-phase19-gust-name-list-removed-parity\t2\t' >/dev/null
-    just guard-cranelift-phase19-gust-name-list-removed
-    bash scripts/phase19_gust_name_list_removed_parity.sh
 
 guard-cranelift-phase19-seed-convergence:
     #!/usr/bin/env bash
@@ -16443,7 +16400,6 @@ guard-cranelift-phase20-resource-declaration-migration-contract:
     python3 scripts/cranelift_registry.py validate
     python3 scripts/phase20_resource_declaration_migration.py validate
     python3 scripts/phase20_resource_declaration_migration.py check-review
-    scripts/phase20_resource_declaration_migration.sh
     just guard-cranelift-phase13-source-metadata-contract
     just guard-cranelift-phase15-resource-metadata-contract
     just guard-cranelift-phase15-specialized-resource-contract
@@ -16918,13 +16874,6 @@ guard-cranelift-phase21-inert-scoped-query-records-contract:
     python3 scripts/cranelift_registry.py validate
     python3 scripts/phase21_inert_scoped_query_records.py validate
     python3 scripts/phase21_inert_scoped_query_records.py check-review
-
-guard-cranelift-phase21-inert-scoped-query-records-evidence:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    echo "🧪 Replaying Phase 21 inert record, non-forgeability, and semantic-delta evidence..."
-    just guard-cranelift-phase21-inert-scoped-query-records-contract
-    bash scripts/phase21_inert_scoped_query_records.sh
 
 guard-cranelift-phase21-typed-query-noop-surface-contract:
     #!/usr/bin/env bash
@@ -18144,7 +18093,6 @@ guard-cranelift-historical-full:
       fi
 
       just guard-cranelift-phase11-generic-canonical-mir-route
-      just guard-cranelift-phase19-rename-invariance
       just guard-cranelift-phase11-close
     }
 

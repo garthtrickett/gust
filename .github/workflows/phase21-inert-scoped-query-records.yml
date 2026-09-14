@@ -65,15 +65,3 @@ jobs:
       - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: guard-cranelift-phase21-inert-scoped-query-records-contract
         run: just guard-cranelift-phase21-inert-scoped-query-records-contract
-
-  evidence:
-    needs: contract
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4
-      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
-      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - run: make gust
-      - name: guard-cranelift-phase21-inert-scoped-query-records-evidence
-        run: just guard-cranelift-phase21-inert-scoped-query-records-evidence

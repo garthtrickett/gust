@@ -4281,11 +4281,16 @@
             },
             "type": "array"
           },
+          "emitter_only_residue": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
           "excluded_emitter_only_loci": {
             "items": {
               "type": "string"
             },
-            "minItems": 1,
             "type": "array"
           },
           "excluded_emitter_only_owner": {
@@ -4482,6 +4487,7 @@
           "emitter_only_assertions_removed",
           "emitter_only_assertions_removed_digest",
           "env_parameterised_fixtures",
+          "emitter_only_residue",
           "excluded_emitter_only_loci",
           "excluded_emitter_only_owner",
           "frozen_loci",

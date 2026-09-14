@@ -119,6 +119,7 @@ Out of scope:
 - [ ] Patch 24.13 — Backend-Selection and Publication-Path Removal
 - [ ] Patch 24.14 — C Toolchain Discovery, Error, and Temp-File Removal
 - [ ] Patch 24.15 — Package, Documentation, and Registry Retirement
+- [ ] Patch 24.15a — Reachability Instrument Repair
 - [ ] Patch 24.16 — Cross-Feature Residue Audit
 - [ ] Patch 24.17 — Exact-Main Historical Full Qualification
 - [ ] Patch 24.18 — Phase 24 Closure and Terminal State
@@ -338,15 +339,36 @@ the emitter being retired, which is why Patch 24.12 could not convert them.
   rows, test-level assignments, and workflow wiring.
 - Regenerate the closed PHASE19/PHASE20/PHASE21 authority digests that pin
   them, in-patch, per the Patch 24.0 precedent.
-- Re-measure the excluded set afterwards: the registered count must be zero
-  and no converted harness may have lost its native arm.
+- Re-measure the excluded set afterwards, by discovery rather than by
+  iterating the register: an empty tuple makes the old loop vacuous, so the
+  criterion becomes a sweep over `scripts/*.sh` for harnesses that execute
+  live C with no native arm. The registered count must be zero and the
+  measured population must equal the registered residue and its owner.
+- Record where Phase 19's closure evidence went. Four of its five
+  `rename_invariance_families` lose their guard here; three are user-route
+  emitter-text properties and are retired, but `type_derived_classification`
+  drove its witness over `compiler/test_runner_entry.gst`, so its invariant
+  bears on the bootstrap seed and is **transferred** to Phase 25 rather than
+  retired. Annotate the closure claim without re-wording it and route
+  re-examination to Patch 24.16.
 
-**Exit Gate:** the Patch 24.12 exclusion register is empty and no parity
-harness without a native arm remains; every removed guard's registry row,
-recipe, level and workflow reference is gone with it; no converted guard was
-weakened to get there. This does **not** close the unqualified "zero parity
-guards execute live C" gate — that is Patch 24.12b's, and claiming it here
-would state something this patch's own measurement cannot support.
+**Exit Gate:** the Patch 24.12 exclusion register is empty, and the shell
+harnesses that still execute live C without a native arm are exactly the
+registered `EMITTER_ONLY_RESIDUE` and its owner; every removed guard's
+registry row, recipe, level and workflow reference is gone with it; no
+converted guard was weakened to get there.
+
+The residue is measured, not assumed, and is not zero. Replacing the
+exclusion register's loop with a discovery sweep over `scripts/*.sh` found
+one harness this patch was never given:
+`scripts/phase22_explicit_c_migration.sh`, emitter-only and already deferred
+to Patch 24.13. Registering it with its owner is the honest form of the
+gate; rounding it to zero would make the emptied register vacuous, which is
+the defect this phase keeps finding.
+
+This does **not** close the unqualified "zero parity guards execute live C"
+gate — that is Patch 24.12b's, and claiming it here would state something
+this patch's own measurement cannot support.
 
 ## Patch 24.12b — Python Parity Guard Conversion
 
@@ -452,6 +474,55 @@ documentation, and the registry.
 generated-C backend; every surviving evidence row protects a still-live
 invariant.
 
+## Patch 24.15a — Reachability Instrument Repair
+
+**Purpose:** repair the three defects in `scripts/guard_reachability.py` and
+its callers before Patch 24.16 measures anything with them.
+
+A patch cannot both repair an instrument and be the audit that trusts it. If
+these rode 24.16, that audit's own before/after baseline would be taken on
+the broken tool — which is the defect in #393 one level up, a declared value
+standing in for a measured one. So the repair lands first, as its own patch,
+and 24.16 starts from an instrument whose output means what it says.
+
+**Steps:**
+
+- **#390** — `parse_justfile` reads a forbidding `rg -e '^\s+just <recipe>'`
+  pattern as a call edge, so a guard asserting that a contract must *not*
+  replay Level 2 or 3 evidence is recorded as calling it. Measured at
+  justfile:18480 against `guard-cranelift-phase11-metadata-diagnostic-parity`,
+  whose name appears nowhere in PR Fast's 9,543 log lines.
+- **#393** — `registry_named()` drops a guard from the orphan report when its
+  name merely appears as a substring of `scripts/cranelift_feature_registry.json`
+  or `scripts/cranelift_test_levels.json`. Measured on `b7a028df`: 97 guard
+  recipes unreachable from any workflow, 20 reported as orphans, 51 suppressed
+  by the level file alone, 43 of those executed by nothing. Three call sites;
+  `fixture_reachability.py` inherits it and is fixed for free, with measured
+  exposure of zero today.
+- **#395** — parsing each justfile fragment separately drops every cross-file
+  call edge, because `parse_justfile` only records a `just <recipe>` call when
+  the callee is a key in that same parse. Measured: 74 recipes recovered by
+  parsing the concatenation, 65 with truncated edge sets, and zero edges the
+  per-file parse had that the concatenated one lacks. **Patch 24.12a already
+  landed this fix in `phase24_retirement_consumer_inventory.liveness()`**, out
+  of necessity — it was rewriting that function to separate the three liveness
+  signals, and the split is meaningless on a truncated graph. Lift that change
+  into this patch rather than redoing it, and check no other caller builds the
+  graph per file.
+- Re-baseline `scripts/guard_reachability_allowlist.json`, justifying or
+  removing each newly visible entry. The orphan count jumps from 20 toward 97;
+  a bulk accept re-hides exactly what Patch 24.16 exists to find.
+
+**Exit Gate:** each of the three defects has a test that fails on the old
+behaviour; the orphan report is derived from execution rather than mention;
+the allowlist re-baseline names a reason per entry; and no reachability
+consumer still builds its graph one fragment at a time.
+
+**Boundary:** instrument repair only. Adjudicating the rows the repaired
+instrument re-scores — including the ones Patch 24.12a registered as
+`stale_row_scoring` — is Patch 24.16's, and is a different job with a
+different falsifier.
+
 ## Patch 24.16 — Cross-Feature Residue Audit
 
 **Purpose:** prove no active route references the retired backend and no
@@ -459,35 +530,30 @@ retirement debris survives across features.
 
 **Steps:**
 
-- Land the `guard_reachability.py` fixes for issues #390 and #393 **before**
-  the reachability re-run, not alongside it. Both are defects in the same
-  module and ride one patch: #390 is the justfile parser reading an `rg -e`
-  pattern as an invocation, #393 is `registry_named()` dropping a guard from
-  the orphan report when its name merely appears as a substring of
-  `scripts/cranelift_feature_registry.json` or
-  `scripts/cranelift_test_levels.json`. Measured on `b7a028df` and controlled
-  against `cranelift_ci_family.py`, every `scripts/` file and every workflow:
-  **97 guard recipes are unreachable from any workflow, 20 are reported as
-  orphans, 51 are suppressed by the level file alone, and 43 of those are
-  executed by nothing.** Until both land, this re-run reports 20 orphans and
-  passes while 43 recipes run nowhere — the audit's own instrument returns a
-  plausible number instead of an error, and the exit gate below would be
-  discharged without ever having been tested.
-- Re-baseline `scripts/guard_reachability_allowlist.json` afterwards by
-  justifying or removing each newly visible entry. The orphan count jumps from
-  20 toward 97, and a bulk accept re-hides exactly what this audit exists to
-  find. Most of the 43 are `*-native-smoke` recipes — `add-i32`, `branch`,
-  `conditional-branch`, `extern-call-i32`, `identity-i32`, the
-  `mir-block-graph-*` bundles, `return-int`,
+- Require Patch 24.15a to have landed first. This audit measures with
+  `guard_reachability.py`, so it cannot also be the patch that repairs it —
+  its own baseline would be taken on the broken tool. Until 24.15a lands,
+  this re-run reports 20 orphans and passes while 43 guard recipes are
+  executed by nothing: the instrument returns a plausible number instead of
+  an error and the exit gate below is discharged without ever being tested.
+- Adjudicate what the repaired instrument makes visible, which is this
+  patch's job and not 24.15a's. Most of the 43 are `*-native-smoke` recipes
+  — `add-i32`, `branch`, `conditional-branch`, `extern-call-i32`,
+  `identity-i32`, the `mir-block-graph-*` bundles, `return-int`,
   `mir-to-c-differential-native-smoke` — so they bear on the phase's premise:
   Phase 24 removes the C backend on the grounds that the native route is
   qualified, and part of that evidence is guards nothing runs. The sharpest
   case is `guard-cranelift-phase20-resource-enforcement-parity`, one of Patch
-  24.12's three registered NOT_REPAIRED reds: it is named 0 times in the
-  feature registry and once in the level file, so a bare level assignment is
-  the only thing keeping a known-red, never-executed guard off the orphan
-  list. A survivor like that names no live invariant and the exit gate below
-  should say so.
+  24.12's three registered NOT_REPAIRED reds: named 0 times in the feature
+  registry and once in the level file, so a bare level assignment is the only
+  thing keeping a known-red, never-executed guard off the orphan list. A
+  survivor like that names no live invariant.
+- Adjudicate the rows Patch 24.12a registered rather than fixed: the
+  `stale_row_scoring` residue in the retirement inventory — 13 rows whose
+  `action` disagrees with what happened to their harness, and 7 scored
+  `is_live` on a bare mention — and the Phase 19 `evidence_disposition`,
+  where four of five `rename_invariance_families` lost their guard and one
+  remains live.
 - Re-run consumer, guard, fixture, workflow, command, and registry
   reachability over the post-removal tree; every surviving evidence owner
   must protect a still-live invariant.
@@ -547,6 +613,7 @@ Web Slice 1 remain inactive pending fresh activation.
 → 24.13 backend-selection and publication-path removal
 → 24.14 C toolchain discovery, error, and temp-file removal
 → 24.15 package, documentation, and registry retirement
+→ 24.15a reachability instrument repair
 → 24.16 cross-feature residue audit
 → 24.17 Historical Full qualification
 → 24.18 closure and terminal state.
@@ -560,6 +627,7 @@ and all twenty-three recipes reaching them run in CI, so removing the backend
 first breaks them. This is an ordering constraint, not a preference. Patch 24.11 must complete its inventory before 24.13 removes
 what it lists. A seed cannot share a PR with
 compiler-source changes; reconverge it alone where 24.13 or 24.14 moves it.
+Patch 24.15a precedes 24.16 because 24.16 audits with the instrument 24.15a repairs, and a patch cannot be both the repair and the audit that trusts it.
 Patch 24.17 runs only after the final removal and retirement mains exist. No
 later phase is activated by completing this sequence.
 

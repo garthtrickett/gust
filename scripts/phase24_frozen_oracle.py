@@ -130,15 +130,21 @@ FROZEN_LOCI = (
 # measures each harness and fails if any row is on the wrong side.
 # ---------------------------------------------------------------------------
 
-EXCLUDED_EMITTER_ONLY_LOCI = (
-    "scripts/phase19_classification_parity.sh",
-    "scripts/phase19_gust_name_list_removed_parity.sh",
-    "scripts/phase19_rename_invariance.sh",
-    "scripts/phase19_rule_convergence_parity.sh",
-    "scripts/phase19_type_naming_parity.sh",
-    "scripts/phase20_resource_declaration_migration.sh",
-    "scripts/phase21_inert_scoped_query_records.sh",
-)
+# Patch 24.12a retired all seven. The register is empty and stays empty.
+EXCLUDED_EMITTER_ONLY_LOCI: tuple[str, ...] = ()
+
+# What an empty register must not become is a vacuous one. The loop below
+# used to iterate this tuple, so emptying it would turn the criterion into a
+# test that passes because there is nothing to test -- the exact shape of
+# defect this phase keeps finding. So 24.12a replaces it with a discovery
+# sweep over the same population 24.11 inventories (`scripts/*.sh`), and
+# measuring it turned up one harness that is emitter-only and is not 24.12's
+# to have excluded: the explicit-C migration evidence, which the inventory
+# already defers to 24.13. Registered here with its owner rather than
+# rounded down to zero.
+EMITTER_ONLY_RESIDUE = {
+    "scripts/phase22_explicit_c_migration.sh": "24.13",
+}
 EXCLUDED_OWNER = "24.12a"
 # Where the unqualified gate closes. Not 24.12a: see the note above.
 UNQUALIFIED_GATE_OWNER = "24.12b"
@@ -713,17 +719,30 @@ def check_native_arm_split() -> None:
         require(has_native_arm(locus),
                 f"a converted parity harness has no native arm, so freezing "
                 f"its C side leaves nothing live to compare against: {locus}")
-    for locus in EXCLUDED_EMITTER_ONLY_LOCI:
-        path = ROOT / locus
-        require(path.is_file(),
-                f"an excluded emitter-only harness is missing: {locus}")
-        require(not has_native_arm(locus),
-                f"an excluded harness grew a native arm and is now "
-                f"convertible rather than {EXCLUDED_OWNER}'s to retire: "
-                f"{locus}")
-        require(BACKEND_SPELLING.search(path.read_text(encoding="utf-8")),
-                f"an excluded emitter-only harness no longer executes C, so "
-                f"it was converted or changed outside this patch: {locus}")
+    # Measured, not registered: every shell harness that still spells a live
+    # C backend and cannot compare it against a native arm. Patch 24.12a
+    # emptied the exclusion register, so this population must be exactly the
+    # residue another patch owns -- a new emitter-only harness, or a
+    # converted one that loses its native arm, fails here rather than being
+    # absorbed by an empty tuple.
+    measured = sorted(
+        path.relative_to(ROOT).as_posix()
+        for path in (ROOT / "scripts").glob("*.sh")
+        if BACKEND_SPELLING.search(
+            path.read_text(encoding="utf-8", errors="replace"))
+        and not has_native_arm(path.relative_to(ROOT).as_posix()))
+    require(measured == sorted(EMITTER_ONLY_RESIDUE),
+            f"the emitter-only shell population moved: measured {measured}, "
+            f"registered {sorted(EMITTER_ONLY_RESIDUE)}")
+    require(not EXCLUDED_EMITTER_ONLY_LOCI,
+            f"Patch {EXCLUDED_OWNER} retired the exclusion register; a locus "
+            f"is back in it: {list(EXCLUDED_EMITTER_ONLY_LOCI)}")
+    for locus, owner in sorted(EMITTER_ONLY_RESIDUE.items()):
+        require((ROOT / locus).is_file(),
+                f"registered emitter-only residue is missing: {locus}")
+        require(owner != EXCLUDED_OWNER,
+                f"residue owned by {EXCLUDED_OWNER} should have been retired "
+                f"by it: {locus}")
     overlap = set(FROZEN_LOCI) & set(EXCLUDED_EMITTER_ONLY_LOCI)
     require(not overlap, f"a harness is both converted and excluded: "
                          f"{sorted(overlap)}")
@@ -1223,6 +1242,8 @@ def validate() -> dict:
             list(EXCLUDED_EMITTER_ONLY_LOCI) and
             node.get("excluded_emitter_only_owner") == EXCLUDED_OWNER,
             "the registered emitter-only exclusion set drifted")
+    require(node.get("emitter_only_residue") == dict(EMITTER_ONLY_RESIDUE),
+            "the registered emitter-only residue drifted")
     require(node.get("poisoned_route_probes") == dict(POISONED_ROUTE_PROBES),
             "the registered route-unavailability probe set drifted")
     removals = check_emitter_only_removals()
