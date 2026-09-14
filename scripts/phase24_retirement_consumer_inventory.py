@@ -300,14 +300,23 @@ RECIPE_ROWS = [
      './gust --backend mir-to-c "$source_path"', "24.12", "convert", True),
     ("guard-cranelift-phase11-metadata-diagnostic-parity",
      './gust --backend mir-to-c "$type_error_source"', "24.12", "convert", True),
+    # Re-scored is_live=False by Patch 24.15a, not by any change in
+    # behaviour: these four were never called. Their only `just
+    # guard-mir-feature-*-preservation` occurrences in the justfile are
+    # inside `rg -n -F` assertion patterns (justfile:1355, :1507), which the
+    # pre-repair parser read as call edges (issue #390). The guards are
+    # unchanged; the instrument that scored them stopped being wrong. Whether
+    # each is wired to a caller or retired with its live invariant named is
+    # issue #390's close condition and Patch 24.16's to adjudicate -- this
+    # row only stops asserting a liveness that was never true.
     ("guard-mir-feature-return-int-preservation",
-     './gust --backend mir-to-c "$feature_fixture"', "24.12", "convert", True),
+     './gust --backend mir-to-c "$feature_fixture"', "24.12", "convert", False),
     ("guard-mir-feature-local-binding-read-preservation",
-     './gust --backend mir-to-c "$feature_fixture"', "24.12", "convert", True),
+     './gust --backend mir-to-c "$feature_fixture"', "24.12", "convert", False),
     ("guard-mir-feature-if-else-return-int-preservation",
-     './gust --backend mir-to-c "$feature_fixture"', "24.12", "convert", True),
+     './gust --backend mir-to-c "$feature_fixture"', "24.12", "convert", False),
     ("guard-mir-feature-local-binding-read-provenance-metadata-preservation",
-     './gust --backend mir-to-c "$feature_fixture"', "24.12", "convert", True),
+     './gust --backend mir-to-c "$feature_fixture"', "24.12", "convert", False),
     ("guard-cranelift-differential-family",
      "cranelift_ci_family.py run", "24.12", "convert", True),
     ("guard-cranelift-phase23-mir-to-c-focused-live-contract",
