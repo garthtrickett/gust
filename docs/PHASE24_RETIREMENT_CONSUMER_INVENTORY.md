@@ -6,8 +6,8 @@
 
 Status: `patch24_11_complete`
 Authority base: `b7b1713cd65630b14ae92e46afd393990928a2e2`
-Rows: `107`
-Digest: `3b3807839d191fd824eaf1636b336b89c1466e7b9dadb0355009d3fd21554167`
+Rows: `98`
+Digest: `898dc586d99195171dc8e7cb3552fc7bf2b6bb4019802be16105d3a32af4edfd`
 
 ## Bootstrap-entry decision
 
@@ -58,18 +58,12 @@ Digest: `3b3807839d191fd824eaf1636b336b89c1466e7b9dadb0355009d3fd21554167`
 - guard-cranelift-phase14-composition-differential (retire)
 - guard-cranelift-phase15-resource-composition-differential (retire)
 - guard-cranelift-phase16-composition-differential (retire)
-- guard-cranelift-phase19-classification-parity (retire)
 - guard-cranelift-phase19-composition-parity (retire)
-- guard-cranelift-phase19-gust-name-list-removed-parity (retire)
-- guard-cranelift-phase19-rename-invariance (retire)
 - guard-cranelift-phase19-representation-parity (convert)
-- guard-cranelift-phase19-rule-convergence-parity (retire)
-- guard-cranelift-phase19-type-naming-parity (retire)
 - guard-cranelift-phase21-collection-string-native-source-parity (convert)
 - guard-cranelift-phase21-cranelift-built-compiler-programs-evidence (retire)
 - guard-cranelift-phase21-cross-tenant-capability-evidence (convert)
 - guard-cranelift-phase21-filesystem-allocation-native-source-parity (convert)
-- guard-cranelift-phase21-inert-scoped-query-records-evidence (convert)
 - guard-cranelift-phase21-od8-adversarial-verdict-evidence (convert)
 - guard-cranelift-phase21-opening-evidence (convert)
 - guard-cranelift-phase21-per-root-obligations-evidence (convert)
@@ -97,12 +91,6 @@ Digest: `3b3807839d191fd824eaf1636b336b89c1466e7b9dadb0355009d3fd21554167`
 - sh-family:phase20-evidence (convert)
 - sh-family:phase21-native-qualification (convert)
 - tests/e2e_codegen_assertions.gst :: "./gust --backend mir-to-c tests/codegen (convert)
-
-### 24.12a
-
-- sh-family:phase19-parity:deferred-to-24.12a (retire)
-- sh-family:phase20-evidence:deferred-to-24.12a (retire)
-- sh-family:phase21-native-qualification:deferred-to-24.12a (retire)
 
 ### 24.13
 

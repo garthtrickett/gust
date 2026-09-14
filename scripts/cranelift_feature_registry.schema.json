@@ -92,6 +92,7 @@
     "phase24_cr15_closure",
     "phase24_preflight_closure",
     "phase24_retirement_consumer_inventory",
+    "phase24_12a_emitter_only_retirement",
     "phase24_frozen_oracle_replacement",
     "phase24_cr19_multi_module_analysis",
     "phase24_filename_behavior_characterization",
@@ -4257,7 +4258,10 @@
           "inventory_digest": {"type":"string","pattern":"^[0-9a-f]{64}$"}
         }
       },
-      "phase24_frozen_oracle_replacement": {
+      "phase24_12a_emitter_only_retirement": {
+      "type": "object"
+    },
+    "phase24_frozen_oracle_replacement": {
         "additionalProperties": false,
         "properties": {
           "archived_corpus_linked_vectors": {
@@ -4281,11 +4285,16 @@
             },
             "type": "array"
           },
+          "emitter_only_residue": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
           "excluded_emitter_only_loci": {
             "items": {
               "type": "string"
             },
-            "minItems": 1,
             "type": "array"
           },
           "excluded_emitter_only_owner": {
@@ -4448,6 +4457,15 @@
           "production_audit_transition": {
             "type": "object"
           },
+          "runner_default_route": {
+            "type": "string"
+          },
+          "runner_default_unpinned_callers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "runner_mediated_residue": {
             "additionalProperties": {
               "minimum": 1,
@@ -4482,6 +4500,7 @@
           "emitter_only_assertions_removed",
           "emitter_only_assertions_removed_digest",
           "env_parameterised_fixtures",
+          "emitter_only_residue",
           "excluded_emitter_only_loci",
           "excluded_emitter_only_owner",
           "frozen_loci",
@@ -4493,6 +4512,8 @@
           "phase22_invocation_successor",
           "poisoned_route_probes",
           "production_audit_transition",
+          "runner_default_route",
+          "runner_default_unpinned_callers",
           "runner_mediated_residue",
           "runner_residue_owner",
           "status",

@@ -302,6 +302,10 @@ def policy_accepts(record: dict, summary: dict[str, object]) -> bool:
     expected_live = registry.get("phase24_frozen_oracle_replacement", {}).get(
         "frozen_surface_transition", {}).get(
         "current_live_c_case_surface", expected_live)
+    expected_live = registry.get(
+        "phase24_12a_emitter_only_retirement", {}).get(
+        "frozen_surface_transition", {}).get(
+        "current_live_c_case_surface", expected_live)
     return (
         record.get("capability_surface") == summary["capability_surface"] and
         expected_live == summary["live_c_case_surface"] and
@@ -508,6 +512,9 @@ def validate() -> tuple[dict, dict[str, object]]:
     retirement_transition = registry.get(
         "phase24_frozen_oracle_replacement", {}).get(
             "frozen_surface_transition")
+    emitter_only_transition = registry.get(
+        "phase24_12a_emitter_only_retirement", {}).get(
+            "frozen_surface_transition")
     if closure_transition is None:
         require(qualification_transition["current_live_c_case_surface"] ==
                 summary["live_c_case_surface"],
@@ -585,7 +592,10 @@ def validate() -> tuple[dict, dict[str, object]]:
                     "8aa9922eb40ad404647a86f865f0790ab37a3589" and
                     previous ==
                     derivation_transition["current_live_c_case_surface"] and
-                    current == summary["live_c_case_surface"] and
+                    current == (
+                        emitter_only_transition["previous_live_c_case_surface"]
+                        if emitter_only_transition is not None
+                        else summary["live_c_case_surface"]) and
                     retirement_transition.get("unchanged_fields") == [] and
                     retirement_transition.get("change_reason") ==
                     "patch24_12_replaced_the_live_explicit_C_parity_arms_with_"
@@ -614,6 +624,56 @@ def validate() -> tuple[dict, dict[str, object]]:
                     f"did not convert: {stray}")
             require(all(count > 0 for count in removed_from.values()),
                     "a registered Patch 24.12 reduction removes no cases")
+        # Patch 24.12a shrinks the population again, by retiring the seven
+        # emitter-only harnesses whose cases 24.12 could not convert. It is
+        # the tail, so it is the one that must equal the live scan; 24.12's
+        # "current" above becomes a link rather than the end of the chain.
+        if emitter_only_transition is not None:
+            require(retirement_transition is not None,
+                    "the Patch 24.12a frozen-surface successor has no "
+                    "registered predecessor")
+            previous = emitter_only_transition.get(
+                "previous_live_c_case_surface", {})
+            current = emitter_only_transition.get(
+                "current_live_c_case_surface", {})
+            require(emitter_only_transition.get("contract_version") ==
+                    "phase24_12a_frozen_surface_transition_v1" and
+                    emitter_only_transition.get("status") ==
+                    "patch24_12a_complete" and
+                    previous ==
+                    retirement_transition["current_live_c_case_surface"] and
+                    current == summary["live_c_case_surface"] and
+                    emitter_only_transition.get("unchanged_fields") == [] and
+                    emitter_only_transition.get(
+                        "partial_or_unregistered_surface") == "rejected",
+                    "Patch 24.12a frozen live-C transition drifted")
+            removed_from = emitter_only_transition.get("removed_from", {})
+            require(isinstance(removed_from, dict) and removed_from,
+                    "Patch 24.12a registered no source for its reduction")
+            require(current["count"] < previous["count"],
+                    "Patch 24.12a did not reduce the live explicit-C surface")
+            require(emitter_only_transition.get("removed_case_count") ==
+                    previous["count"] - current["count"] and
+                    emitter_only_transition.get("retained_case_count") ==
+                    current["count"] and
+                    sum(removed_from.values()) ==
+                    emitter_only_transition["removed_case_count"],
+                    "Patch 24.12a reduction arithmetic does not close")
+            # Every case must have left a harness this patch actually
+            # retired, and each of those must really be gone.
+            retired = set(registry.get(
+                "phase24_retirement_consumer_inventory", {}).get(
+                    "retired", {}).get("harnesses", []))
+            stray = sorted(set(removed_from) - retired)
+            require(not stray,
+                    f"live explicit-C cases vanished from files Patch 24.12a "
+                    f"did not retire: {stray}")
+            for locus in removed_from:
+                require(not (ROOT / locus).exists(),
+                        f"Patch 24.12a counted a reduction from a harness "
+                        f"that still exists: {locus}")
+            require(all(count > 0 for count in removed_from.values()),
+                    "a registered Patch 24.12a reduction removes no cases")
     validate_mutations(record, registry)
     require(record.get("explicit_c_byte_authority") ==
             registry["phase23_mir_to_c_deprecation_opening"]

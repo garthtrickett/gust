@@ -158,17 +158,47 @@ def validate() -> dict:
             TASK.read_text(encoding="utf-8"),
             "TASK.md does not mark Patch 21.2 DONE")
 
+    # Patch 24.12a retired the Level 2 evidence recipe. Its only substance
+    # was scripts/phase21_inert_scoped_query_records.sh, whose two arms were
+    # both MIR-to-C, so what it compared was a property of the emitter being
+    # retired. The Level 1 contract is untouched and still carries this
+    # patch's live invariant: it validates the registry authority and its
+    # generated review, and names no backend at all.
+    #
+    # Asserted in the inverse rather than dropped. A clause that simply
+    # stopped mentioning the evidence guard would say nothing about it, and
+    # an assertion that says nothing is the inert-field failure this phase
+    # keeps finding. These fail if the retired guard comes back.
     levels = json.loads(LEVELS.read_text(encoding="utf-8"))["guards"]
-    require(levels.get(GUARD_L1) == 1 and levels.get(GUARD_L2) == 2,
-            "Patch 21.2 guard levels drifted")
+    require(levels.get(GUARD_L1) == 1,
+            "Patch 21.2 Level 1 contract level drifted")
+    require(GUARD_L2 not in levels,
+            f"Patch 24.12a retired the Level 2 evidence guard, but it has a "
+            f"test level again: {GUARD_L2}")
     justfile = JUSTFILE.read_text(encoding="utf-8")
-    require(f"{GUARD_L1}:" in justfile and f"{GUARD_L2}:" in justfile,
-            "Patch 21.2 just guards are missing")
+    require(f"{GUARD_L1}:" in justfile,
+            "Patch 21.2 Level 1 contract recipe is missing")
+    require(f"\n{GUARD_L2}:" not in justfile,
+            f"Patch 24.12a retired the Level 2 evidence recipe, but it is "
+            f"back in the justfile: {GUARD_L2}")
+    require(not (ROOT / "scripts/phase21_inert_scoped_query_records.sh")
+            .exists(),
+            "Patch 24.12a retired the inert-record harness, but it is back")
     require(f"just {GUARD_L1}" in PR_FAST.read_text(encoding="utf-8"),
             "PR Fast does not own the Level 1 Patch 21.2 contract")
     workflow = WORKFLOW.read_text(encoding="utf-8")
-    require(f"just {GUARD_L1}" in workflow and f"just {GUARD_L2}" in workflow,
-            "dedicated Patch 21.2 workflow does not own both guards")
+    require(f"just {GUARD_L1}" in workflow,
+            "dedicated Patch 21.2 workflow does not own the Level 1 contract")
+    require(f"just {GUARD_L2}" not in workflow,
+            f"Patch 24.12a retired the Level 2 evidence guard, but the "
+            f"dedicated workflow still runs it: {GUARD_L2}")
+    # The dedicated workflow is not left half-emptied: removing the evidence
+    # job leaves one real job that runs the Level 1 contract, which is where
+    # this patch's live invariant is. Asserted so it cannot decay into a
+    # workflow that dispatches nothing.
+    require(workflow.count("runs-on:") == 1,
+            "the dedicated Patch 21.2 workflow no longer has exactly one "
+            "job after the Level 2 evidence job was retired")
     return record
 
 

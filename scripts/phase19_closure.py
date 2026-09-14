@@ -171,6 +171,16 @@ def check() -> None:
     ) is None, "identifier spelling still participates in a semantic decision")
 
     levels = json.loads(LEVELS.read_text(encoding="utf-8"))["guards"]
+    JUSTFILE_TEXT = (ROOT / "justfile").read_text(encoding="utf-8")
+    # The closure status is deliberately not re-worded by a retirement patch,
+    # so the annotation is what keeps the weakened support visible and owned.
+    disposition = closure.get("evidence_disposition")
+    require(isinstance(disposition, dict) and
+            disposition.get("by") == "24.12a" and
+            disposition.get("reexamine_at") == "24.16" and
+            disposition.get("note"),
+            "the Phase 19 evidence disposition is missing, unowned, or "
+            "unrouted")
     families = closure.get("rename_invariance_families")
     require(isinstance(families, list) and len(families) == 5,
             "rename-invariance family inventory must contain five families")
@@ -178,6 +188,34 @@ def check() -> None:
     for family in families:
         require(family["id"] not in ids, f"duplicate rename family {family['id']}")
         ids.add(family["id"])
+        # Patch 24.12a removed the guard for four of these five families, and
+        # the two dispositions are not interchangeable. Three compared the
+        # generated C of standalone fixtures through the user-facing route,
+        # so the property goes with the route: `retired`. The fourth drove
+        # its witness over compiler/test_runner_entry.gst, the bootstrap
+        # entry, so a legacy spelling that changed a resolved-type answer
+        # would move the seed -- and the bootstrap emitter outlives Phase 24.
+        # That one is `transferred`, and it must name where to. Either way
+        # the family stays as the record of what Phase 19 proved and asserts
+        # the inverse, so a removed guard cannot return as unrun coverage.
+        if family.get("disposition"):
+            require(family["guard_removed_by"] == "24.12a" and
+                    family.get("disposition_reason"),
+                    f"{family['id']} lost its guard without a patch and "
+                    f"reason")
+            require(family["disposition"] in ("retired", "transferred"),
+                    f"{family['id']} has an unknown disposition: "
+                    f"{family['disposition']}")
+            require((family["disposition"] == "transferred") ==
+                    bool(family.get("transferred_to")),
+                    f"{family['id']} is transferred without an owner, or "
+                    f"names an owner without being transferred")
+            require(family["guard"] not in levels,
+                    f"{family['id']} lost its guard but still has a test "
+                    f"level")
+            require(f"\n{family['guard']}:" not in JUSTFILE_TEXT,
+                    f"{family['id']} lost its guard but its recipe is back")
+            continue
         require(levels.get(family["guard"]) == family["level"],
                 f"{family['id']} guard level drifted")
         require(len(family["fixtures"]) >= 2, f"{family['id']} lacks paired evidence")
@@ -185,8 +223,12 @@ def check() -> None:
             require((ROOT / fixture).is_file(), f"rename fixture is missing: {fixture}")
     justfile = JUSTFILE.read_text(encoding="utf-8")
     run_phase11 = justfile.split("    run_phase11() {", 1)[1].split("\n    }", 1)[0]
-    require("just guard-cranelift-phase19-rename-invariance" in run_phase11,
-            "Level 3 rename invariance is not owned by the phase11 historical shard")
+    # Patch 24.12a retired the Level 3 rename-invariance guard, so the
+    # historical shard must no longer call it. Asserting the absence keeps
+    # this from being a check that simply stopped meaning anything.
+    require("just guard-cranelift-phase19-rename-invariance" not in run_phase11,
+            "the retired Level 3 rename-invariance guard is back in the "
+            "phase11 historical shard")
     require("phase11) run_phase11" in justfile and "phase11)" in HISTORICAL.read_text(encoding="utf-8"),
             "Cranelift Historical Full does not route the rename-invariance shard")
 
