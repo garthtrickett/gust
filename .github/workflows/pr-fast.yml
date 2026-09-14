@@ -60,6 +60,17 @@ jobs:
       - name: PR fast CI surface guard
         run: just guard-pr-fast-ci-surface
 
+      # The frozen oracle compares each of its 253 vectors against the digest of
+      # the source fixture it was captured from, and a vector is only sound if
+      # that source has not moved. Until this step existed, the only workflow
+      # that ran the check was paths-filtered on the vector manifest and the
+      # tooling -- not on a single one of the 253 fixtures -- so editing a
+      # fixture triggered nothing that checked its digest. Placed here rather
+      # than appended: it is pure digest comparison, measured at 2.0-2.4s, so it
+      # fails fast ahead of the build rather than after it.
+      - name: Frozen oracle contract
+        run: just guard-cranelift-phase24-frozen-oracle-contract
+
       - name: Build Gust
         run: make gust
 

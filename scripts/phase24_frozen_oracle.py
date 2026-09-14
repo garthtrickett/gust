@@ -1122,7 +1122,8 @@ def validate() -> dict:
     require(levels.get(GUARD_L2) == 2, "L2 test-level assignment drifted")
     just = JUSTFILE.read_text(encoding="utf-8")
     require(f"{GUARD_L1}:" in just and f"{GUARD_L2}:" in just,
-            "just guard reachability drifted")
+            "the guard recipes are no longer defined in the justfile")
+    check_contract_runs_unconditionally()
     return node
 
 
@@ -1312,6 +1313,97 @@ def render(node: dict) -> str:
     ]
     return "\n".join(lines)
 
+
+
+# ---------------------------------------------------------------------------
+# The digest check has to be reachable without a paths filter.
+#
+# `check_vector` compares each of the 253 frozen vectors against the digest of
+# the source it was captured from, and a vector is only sound if that source
+# has not moved. But the contract guard that runs it was invoked from exactly
+# one workflow, `phase24-frozen-oracle.yml`, and that workflow's paths filter
+# lists the vector manifest and the tooling — not one of the 253 fixtures. So
+# editing a fixture triggered nothing that checked its digest, and the fixture
+# drifted from its frozen expectation with CI green.
+#
+# The fix is not to enumerate 253 paths into the filter: that is a second
+# instance of the same defect, an enumeration claiming coverage over a
+# population it does not contain, needing hand-maintenance forever. It is to
+# run the contract from a workflow that has no filter to forget. This assertion
+# is what keeps it there — without it the fix is a state, not an invariant, and
+# the next person to add a paths filter recreates the hole silently.
+#
+# Parsed by indentation rather than with PyYAML deliberately: no script in
+# scripts/ imports yaml and PR Fast does not install it, so a yaml dependency
+# here would make the oracle's own contract unrunnable in the workflow this
+# check exists to put it in.
+# ---------------------------------------------------------------------------
+
+WORKFLOW_DIR = ROOT / ".github/workflows"
+
+
+def _indent(line: str) -> int:
+    return len(line) - len(line.lstrip(" "))
+
+
+def unconditional_pr_workflows() -> list[Path]:
+    """Workflows that run on every pull request, with no paths filter.
+
+    `pull_request:` with no sub-keys is the trap here: it parses as `None` and
+    means "every pull request", which is indistinguishable from an absent key
+    if you test for a mapping and skip falsey values. That mistake produced two
+    different wrong answers during this patch — one derivation said there were
+    no unconditional workflows, another said five. Treating `None` as "no paths
+    filter", which is what it means, gives two.
+    """
+    found: list[Path] = []
+    for path in sorted(WORKFLOW_DIR.glob("*.y*ml")):
+        lines = path.read_text(encoding="utf-8").split("\n")
+        trigger: list[str] = []
+        depth = None
+        for line in lines:
+            if depth is None:
+                if re.match(r"^(on|\"on\"|'on'):", line):
+                    depth = 0
+                continue
+            if line.strip() == "" or line.lstrip().startswith("#"):
+                continue
+            if _indent(line) <= depth:
+                break
+            trigger.append(line)
+        if depth is None:
+            continue
+        pr_indent = None
+        filtered = False
+        for line in trigger:
+            if pr_indent is None:
+                if re.match(r"^\s*pull_request:", line):
+                    pr_indent = _indent(line)
+                continue
+            if _indent(line) <= pr_indent:
+                break                      # the pull_request block ended
+            if re.match(r"^\s*paths(-ignore)?:", line):
+                filtered = True
+                break
+        if pr_indent is not None and not filtered:
+            found.append(path)
+    return found
+
+
+def check_contract_runs_unconditionally() -> None:
+    unconditional = unconditional_pr_workflows()
+    require(unconditional,
+            "no workflow triggers on pull_request without a paths filter, so "
+            "nothing can validate the frozen digests unconditionally")
+    runners = [path.name for path in unconditional
+               if f"just {GUARD_L1}" in path.read_text(encoding="utf-8")]
+    require(runners,
+            f"{GUARD_L1} is not invoked by any workflow that runs on every "
+            f"pull request (unfiltered workflows: "
+            f"{', '.join(p.name for p in unconditional)}). Every frozen "
+            f"vector's source_sha256 is then checked only when a paths filter "
+            f"happens to match, and a fixture can drift from the digest it was "
+            f"frozen against with CI green.")
 
 def check_review(node: dict) -> None:
     require(VIEW.read_text(encoding="utf-8") == render(node),
