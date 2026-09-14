@@ -23731,7 +23731,7 @@
         "guard-cranelift-phase22-native-implicit-output-evidence",
         "guard-cranelift-phase22-opening-evidence"
       ],
-      "is_live_scored_on_mention": [
+      "is_live_with_no_execution_route": [
         "guard-cranelift-phase11-block-parameter-loop-parity",
         "guard-cranelift-phase11-direct-call-abi-parity",
         "guard-cranelift-phase11-local-state-parity",
