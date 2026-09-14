@@ -930,6 +930,75 @@ IS_LIVE_WITH_NO_EXECUTION_ROUTE = (
     "guard-cranelift-phase13-source-metadata-parity",
 )
 
+# Issue #396, Patch 24.15a. `HARNESS_CALL` needs the literal path straight
+# after `bash`, so a recipe naming its harness any other way is never required
+# to have a row. The fix is NOT to enumerate the known indirection forms:
+# measured on this tree, a repair that "resolves single-assignment variables"
+# would recover 27 double-quoted and 2 single-quoted assignments and still
+# miss 14 harnesses invoked as bare executables -- while reporting itself
+# complete. Distinct harnesses by form:
+#
+#     bash <literal path>      105   matched by HARNESS_CALL
+#     var="scripts/x.sh"        27   missed (the form #396 names)
+#     var='scripts/x.sh'         2   missed (single quotes)
+#     scripts/x.sh (no bash)    14   missed -- not indirection at all; the
+#                                    path is literal, there is simply no
+#                                    `bash` in front of it
+#
+# So assert the inverse instead: every `scripts/*.sh` reference in a recipe
+# body must be matched by one of the registered forms below. A new form fails
+# here rather than silently contributing no row, which is exactly how this
+# blind spot survived. This pins the *forms*, not the rows -- adjudicating the
+# rows the repaired sweep then demands is Patch 24.16's.
+HARNESS_REFERENCE = re.compile(r"scripts/[A-Za-z0-9_.-]+\.sh")
+HARNESS_REFERENCE_FORMS = (
+    ("bash <literal path>",
+     re.compile(r"\bbash\s+scripts/[A-Za-z0-9_.-]+\.sh")),
+    ("assignment to a variable",
+     re.compile(r"""=\s*['"]?scripts/[A-Za-z0-9_.-]+\.sh""")),
+    ("invoked as a bare executable",
+     re.compile(r"^\s*(?:\S+=\S+\s+)*scripts/[A-Za-z0-9_.-]+\.sh(?:\s|$)")),
+    ("named in a comment (text about a call, not a call)",
+     re.compile(r"^\s*#")),
+    ("continuation argument to a command on an earlier line",
+     re.compile(r"^\s*(?:\"\$[A-Za-z_]\w*\"\s+)+scripts/[A-Za-z0-9_.-]+\.sh")),
+)
+
+
+def _inside_quotes(line: str, offset: int) -> bool:
+    """Is `offset` within a balanced quoted span on this line?"""
+    for match in re.finditer(r"'[^']*'|\"[^\"]*\"", line):
+        if match.start() < offset < match.end():
+            return True
+    return False
+
+
+def check_harness_reference_forms(bodies: dict[str, str]) -> int:
+    """Fail if a harness is named in a form the sweep does not account for."""
+    unaccounted = []
+    for recipe, body in sorted(bodies.items()):
+        for line in body.split("\n"):
+            for hit in HARNESS_REFERENCE.finditer(line):
+                if _inside_quotes(line, hit.start()):
+                    # Text about a call, not a call: an rg pattern or an
+                    # array of expected tokens. Checked positionally, not by
+                    # regex -- a pattern like ['"][^'"]*scripts/ also matches
+                    # a path that merely follows a *closing* quote, which
+                    # silently accepted every novel form during development.
+                    continue
+                if any(pattern.search(line) for _, pattern in
+                       HARNESS_REFERENCE_FORMS):
+                    break
+                unaccounted.append(f"{recipe}: {line.strip()[:88]}")
+                break
+    require(not unaccounted,
+            "a harness is referenced in a form the sweep does not account "
+            "for (issue #396); register the form in "
+            "HARNESS_REFERENCE_FORMS or the reference will never demand a "
+            "row:\n  " + "\n  ".join(unaccounted[:8]))
+    return len(HARNESS_REFERENCE_FORMS)
+
+
 HARNESS_CALL = re.compile(r"bash (scripts/[A-Za-z0-9_.-]+\.sh)")
 
 # Recipes invoking the shared runner with an explicit non-C route. Verified
@@ -1372,6 +1441,10 @@ def validate() -> dict:
     require(counts == expected_sweep(),
             f"live C sweep moved without inventory update: "
             f"{sorted(set(counts) ^ set(expected_sweep()))}")
+    # Issue #396: pin the reference forms before trusting the sweep that
+    # reads them. An unaccounted form fails here rather than silently
+    # exempting its recipe from ever needing a row.
+    check_harness_reference_forms(bodies)
     check_harness_callers(
         bodies, {recipe for recipe, _, _, _, _ in RECIPE_ROWS})
 
