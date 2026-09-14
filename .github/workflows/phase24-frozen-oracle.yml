@@ -5,6 +5,10 @@ on:
     paths:
       - 'TASK.md'
       - 'compiler/fixtures/phase24_frozen_oracle_vectors_v1.json'
+      - 'compiler/*.gst'
+      - 'compiler/**/*.gst'
+      - 'tests/*.gst'
+      - 'tests/**/*.gst'
       - 'compiler/fixtures/phase24_emitter_only_assertions_removed_v1.json'
       - 'compiler/fixtures/phase23_mir_to_c_reference_corpus_v1.json'
       - 'docs/PHASE24_FROZEN_ORACLE_REPLACEMENT.md'
@@ -21,6 +25,10 @@ on:
     paths:
       - 'TASK.md'
       - 'compiler/fixtures/phase24_frozen_oracle_vectors_v1.json'
+      - 'compiler/*.gst'
+      - 'compiler/**/*.gst'
+      - 'tests/*.gst'
+      - 'tests/**/*.gst'
       - 'compiler/fixtures/phase24_emitter_only_assertions_removed_v1.json'
       - 'compiler/fixtures/phase23_mir_to_c_reference_corpus_v1.json'
       - 'docs/PHASE24_FROZEN_ORACLE_REPLACEMENT.md'

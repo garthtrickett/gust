@@ -1124,6 +1124,7 @@ def validate() -> dict:
     require(f"{GUARD_L1}:" in just and f"{GUARD_L2}:" in just,
             "the guard recipes are no longer defined in the justfile")
     check_contract_runs_unconditionally()
+    check_workflow_triggers_on_fixtures(vectors)
     return node
 
 
@@ -1404,6 +1405,105 @@ def check_contract_runs_unconditionally() -> None:
             f"vector's source_sha256 is then checked only when a paths filter "
             f"happens to match, and a fixture can drift from the digest it was "
             f"frozen against with CI green.")
+
+
+# ---------------------------------------------------------------------------
+# The dedicated workflow has to fire for the files the digest check reads.
+#
+# `check_contract_runs_unconditionally` above puts the digest check on every
+# pull request through PR Fast, which is the guarantee that does not depend on
+# a list. This check covers the dedicated workflow, whose Level 2 evidence job
+# PR Fast does not run: a fixture-only pull request should trigger it and did
+# not, because the paths filter named the vector manifest and the tooling and
+# not one of the 253 sources those vectors are digests of.
+#
+# What matters is that the patterns are checked against the population rather
+# than asserted over it. An enumeration claiming coverage it does not have is
+# the defect this patch keeps finding, so the filter is compared against every
+# `source_fixture` in the manifest, and a fixture in a directory no pattern
+# reaches fails here — when it is added, not the first time it silently drifts.
+# ---------------------------------------------------------------------------
+
+def workflow_pull_request_paths(path: Path) -> list[str]:
+    """The `paths:` entries under this workflow's `pull_request:` trigger."""
+    depth = None
+    trigger: list[str] = []
+    for line in path.read_text(encoding="utf-8").split("\n"):
+        if depth is None:
+            if re.match(r"^(on|\"on\"|'on'):", line):
+                depth = 0
+            continue
+        if line.strip() == "" or line.lstrip().startswith("#"):
+            continue
+        if _indent(line) <= depth:
+            break
+        trigger.append(line)
+    pr_indent = None
+    paths_indent = None
+    found: list[str] = []
+    for line in trigger:
+        if pr_indent is None:
+            if re.match(r"^\s*pull_request:", line):
+                pr_indent = _indent(line)
+            continue
+        if _indent(line) <= pr_indent:
+            break                          # the pull_request block ended
+        if paths_indent is None:
+            if re.match(r"^\s*paths:", line):
+                paths_indent = _indent(line)
+            continue
+        if _indent(line) <= paths_indent:
+            break                          # the paths list ended
+        entry = line.strip()
+        if entry.startswith("- "):
+            found.append(entry[2:].strip().strip("'\""))
+    return found
+
+
+def filter_pattern_matches(pattern: str, candidate: str) -> bool:
+    """GitHub's filter-pattern semantics for the subset this filter uses.
+
+    `*` stops at a path separator and `**` does not, which is the whole
+    difference that decides whether `compiler/future/` is covered. `**` may
+    also match zero segments, so `a/**/b.gst` matches `a/b.gst`; the filter
+    lists the bare `a/*.gst` form alongside it anyway, so coverage does not
+    rest on that reading of the pattern.
+    """
+    parts: list[str] = []
+    segments = pattern.split("/")
+    for index, segment in enumerate(segments):
+        last = index == len(segments) - 1
+        if segment == "**":
+            # Whole segments, including none, and it carries its own trailing
+            # separator so `a/**/b` still matches `a/b`.
+            parts.append(".*" if last else "(?:[^/]+/)*")
+            continue
+        parts.append("".join("[^/]*" if char == "*" else re.escape(char)
+                             for char in segment))
+        if not last:
+            parts.append("/")
+    return re.fullmatch("".join(parts), candidate) is not None
+
+
+def check_workflow_triggers_on_fixtures(vectors: dict) -> None:
+    patterns = workflow_pull_request_paths(WORKFLOW)
+    require(patterns,
+            f"{WORKFLOW.name} has no pull_request paths filter to read. If it "
+            f"was removed the workflow now runs on every pull request, which "
+            f"is safe, but this check no longer measures anything and should "
+            f"be retired rather than left passing vacuously.")
+    sources = {str(vector["source_fixture"])
+               for vector in vectors["vectors"].values()}
+    uncovered = sorted(source for source in sources
+                       if not any(filter_pattern_matches(pattern, source)
+                                  for pattern in patterns))
+    require(not uncovered,
+            f"{len(uncovered)} of {len(sources)} frozen source fixtures are "
+            f"outside {WORKFLOW.name}'s pull_request paths filter, so editing "
+            f"one triggers nothing that checks its digest: "
+            f"{', '.join(uncovered[:5])}"
+            f"{f' (+{len(uncovered) - 5} more)' if len(uncovered) > 5 else ''}")
+
 
 def check_review(node: dict) -> None:
     require(VIEW.read_text(encoding="utf-8") == render(node),
