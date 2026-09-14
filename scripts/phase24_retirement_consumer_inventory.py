@@ -977,6 +977,17 @@ IS_LIVE_WITH_NO_EXECUTION_ROUTE = (
 # here rather than silently contributing no row, which is exactly how this
 # blind spot survived. This pins the *forms*, not the rows -- adjudicating the
 # rows the repaired sweep then demands is Patch 24.16's.
+#
+# Every form must match at the reference, not merely somewhere on its line.
+# An earlier version of this check skipped any reference sitting inside quotes
+# before testing the forms at all, on the argument that a quoted path is text
+# about a call. The prevailing idiom in this justfile is
+# `evidence_script="scripts/x.sh"` -- quoted -- so the skip took out the very
+# form #396 is about: the "assignment to a variable" pattern was exercised by
+# 0 of 169 references and could have been deleted without failing anything,
+# and a genuinely novel quoted form such as `echo "scripts/new.sh"` was
+# accepted in silence. Tested instead of skipped, the same 169 references are
+# all accounted for and the assignment form carries 37 of them.
 HARNESS_REFERENCE = re.compile(r"scripts/[A-Za-z0-9_.-]+\.sh")
 HARNESS_REFERENCE_FORMS = (
     ("bash <literal path>",
@@ -985,19 +996,33 @@ HARNESS_REFERENCE_FORMS = (
      re.compile(r"""=\s*['"]?scripts/[A-Za-z0-9_.-]+\.sh""")),
     ("invoked as a bare executable",
      re.compile(r"^\s*(?:\S+=\S+\s+)*scripts/[A-Za-z0-9_.-]+\.sh(?:\s|$)")),
+    # Spans the whole line deliberately: "the line is a comment" is a property
+    # of the line, and the span has to reach the reference for the overlap
+    # test below to see it.
     ("named in a comment (text about a call, not a call)",
-     re.compile(r"^\s*#")),
+     re.compile(r"^\s*#.*")),
     ("continuation argument to a command on an earlier line",
      re.compile(r"^\s*(?:\"\$[A-Za-z_]\w*\"\s+)+scripts/[A-Za-z0-9_.-]+\.sh")),
 )
 
 
-def _inside_quotes(line: str, offset: int) -> bool:
-    """Is `offset` within a balanced quoted span on this line?"""
-    for match in re.finditer(r"'[^']*'|\"[^\"]*\"", line):
-        if match.start() < offset < match.end():
-            return True
-    return False
+def _accounting_form(line: str, offset: int) -> str | None:
+    """The registered form whose own match covers this reference, or None.
+
+    Overlap, not a bare line-level `search`. A line can hold a registered form
+    and a novel one at once -- `bash scripts/a.sh && cp scripts/b.sh /tmp` --
+    and under a line-level test the first launders the second. Requiring the
+    form's match to span the reference is what makes each reference answer for
+    itself, and it is also what lets a quoted reference be *tested* rather
+    than skipped: `evidence_script="scripts/x.sh"` is covered because the
+    assignment pattern reaches through the quote to the path, while
+    `echo "scripts/new.sh"` is covered by nothing and fails.
+    """
+    for name, pattern in HARNESS_REFERENCE_FORMS:
+        for match in pattern.finditer(line):
+            if match.start() <= offset < match.end():
+                return name
+    return None
 
 
 def check_harness_reference_forms(bodies: dict[str, str]) -> int:
@@ -1006,18 +1031,9 @@ def check_harness_reference_forms(bodies: dict[str, str]) -> int:
     for recipe, body in sorted(bodies.items()):
         for line in body.split("\n"):
             for hit in HARNESS_REFERENCE.finditer(line):
-                if _inside_quotes(line, hit.start()):
-                    # Text about a call, not a call: an rg pattern or an
-                    # array of expected tokens. Checked positionally, not by
-                    # regex -- a pattern like ['"][^'"]*scripts/ also matches
-                    # a path that merely follows a *closing* quote, which
-                    # silently accepted every novel form during development.
-                    continue
-                if any(pattern.search(line) for _, pattern in
-                       HARNESS_REFERENCE_FORMS):
+                if _accounting_form(line, hit.start()) is None:
+                    unaccounted.append(f"{recipe}: {line.strip()[:88]}")
                     break
-                unaccounted.append(f"{recipe}: {line.strip()[:88]}")
-                break
     require(not unaccounted,
             "a harness is referenced in a form the sweep does not account "
             "for (issue #396); register the form in "
