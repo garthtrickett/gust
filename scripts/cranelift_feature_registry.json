@@ -23752,6 +23752,11 @@
           "why": "still runs ./gust --backend mir-to-c as its registered route-unavailability probe, and the recipe that calls it names it through a variable, so #396 kept it off the rows this inventory requires. Adjudicating the row the repaired instrument demands is the residue audit's."
         },
         {
+          "owner": "24.16",
+          "surface": "scripts/phase24_3b_coordinate_retirement_inversions.py",
+          "why": "a chain consumer nothing executes. It reads the frozen-surface chain five times (:71, :120, :158, :185, :265, each loading phase23_mir_to_c_frozen_surface.py, with :120 and :185 invoking its validate), but every reference to it in the tree is non-executing: TASK.md prose and a path list in phase23_mir_to_c_deprecation_opening.py:79. No justfile recipe, workflow or Makefile target names it. It is kept off the orphan report by 4 mentions in the feature registry -- issue #393's defect in a population one ring out, since it is not a guard recipe so guard_reachability never considered it and it appears in neither the orphan list nor the allowlist. A script that reads a chain and is executed by nothing protects nothing today; whether to wire it to a caller or retire it is a residue judgement, not Patch 24.12a's to make mid-patch."
+        },
+        {
           "owner": "24.13",
           "surface": "compiler/phase10_help.txt",
           "why": "the pinned expected output of the `gust --help` contract (.github/workflows/heavy-guards.yml:45-46, justfile:10126, grepped again at justfile:21674-21675). It advertises --backend <mir-to-c|c|cranelift>. Patch 24.13 removes the selection, which changes --help, which breaks this fixture -- so it is a consequence of selection removal and 24.13's to update, not 24.15's package-and-documentation retirement. Unowned, it falls between them."
@@ -24049,19 +24054,34 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "64f05906807b5201a9076eb1bee1c81a5c9eae8fa4ccfd1ed177b7e8b5d897de",
+          "digest": "9788451dd075b22660a0616f7ae9a81ec15f583e382fcfa7cc8e3cb9808cec0b",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 25
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase23_closure.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "25658d5879aa560aafc4578a0117f13a444775b36b18602bd14052dce74d6cf0",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 31,
             "generated_c_contract": 7,
-            "mir_to_c_name": 73
+            "mir_to_c_name": 75
           },
           "owner": "cranelift",
           "path": "scripts/phase24_retirement_consumer_inventory.py",
           "removal_phase": "24"
         }
       ],
-      "live_justfile_successor_digest": "1f76f3f26a1945459ec1d1589501036bb6f8668ae838000be6dfa658e3d8e53b",
+      "live_justfile_successor_digest": "e004607b70a062b3bac2c2427e1bd77d4291b69f330c11d1bfcd731367d25890",
       "partial_extra_or_substituted_surface": "rejected",
       "previous_changed_text_surfaces": [
         {
@@ -24158,6 +24178,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "2df074e9ce8b9b81203764c2ee70c4d82fb7418481c1b279899a82a8293f75f3",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 25
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase23_closure.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "1c64c03f174ead3ae1d908fe6774091a54c32c1e3a237e5f62604bd0c156dae0",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -24177,6 +24212,7 @@
         "scripts/cranelift_test_levels.json",
         "scripts/phase21_inert_scoped_query_records.py",
         "scripts/phase22_opening.py",
+        "scripts/phase23_closure.py",
         "scripts/phase24_retirement_consumer_inventory.py"
       ],
       "removed_text_surfaces": [
