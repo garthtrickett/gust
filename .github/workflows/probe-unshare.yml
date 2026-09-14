@@ -1,9 +1,15 @@
 name: Probe — user-namespace bind mount availability
 
 # Throwaway. Answers one question for Patch 24.12 finding (b): can an
-# end-to-end mutation probe shadow the tracked frozen-vectors manifest with a
-# scratch copy inside a mount namespace, so that a guard's subprocess tree
-# reads the mutated bytes while the tracked file is never written?
+# end-to-end mutation probe shadow a tracked JSON manifest with a scratch copy
+# inside a mount namespace, so a guard's subprocess tree reads the mutated
+# bytes while the tracked file is never written?
+#
+# This branch is cut from main, so it uses a tracked manifest that exists there.
+# The real target (compiler/fixtures/phase24_frozen_oracle_vectors_v1.json) is
+# added by PR #392 and is absent here -- the first attempt asserted its presence
+# under `bash -e` and died in 8ms without emitting a verdict, which is why every
+# step below reports what it found before acting on it.
 on:
   push:
     branches: ['probe/**']
@@ -21,59 +27,71 @@ jobs:
                    kernel.apparmor_restrict_unprivileged_userns; do
             printf '%s = %s\n' "$k" "$(sysctl -n $k 2>&1)"
           done
+          printf 'unshare binary: %s\n' "$(command -v unshare || echo ABSENT)"
 
-      - name: Bind-mount a scratch manifest over the tracked one
+      - name: Bind-mount a scratch manifest over a tracked one
+        shell: bash            # no -e: every path must reach a RESULT line
         run: |
-          set -euo pipefail
-          TRACKED=compiler/fixtures/phase24_frozen_oracle_vectors_v1.json
-          test -f "$TRACKED"
+          TRACKED=scripts/cranelift_test_levels.json
+          echo "--- setup ---"
+          echo "PWD=$PWD"
+          echo "TRACKED=$TRACKED exists=$([ -f "$TRACKED" ] && echo yes || echo no)"
+          if [ ! -f "$TRACKED" ]; then
+            echo "RESULT: SETUP_FAILED (tracked file absent)"; exit 1
+          fi
           ORIG_SHA=$(sha256sum "$TRACKED" | cut -d' ' -f1)
-          python3 - "$TRACKED" <<'PY'
-          import json, sys
-          d = json.load(open(sys.argv[1]))
-          k = sorted(d["vectors"])[0]
-          d["vectors"][k]["execution"]["exit"] = 4242
-          json.dump(d, open("/tmp/mutated.json", "w"))
-          print("mutated vector:", k)
-          PY
+          echo "ORIG_SHA=$ORIG_SHA"
+
+          python3 -c "
+          import json
+          d = json.load(open('$TRACKED'))
+          d['__probe_marker__'] = 'MUTATED'
+          json.dump(d, open('/tmp/mutated.json','w'))
+          print('wrote /tmp/mutated.json')
+          " || { echo "RESULT: SETUP_FAILED (could not build scratch manifest)"; exit 1; }
 
           # A subprocess tree, because that is what `just -> bash -> python3` is.
-          cat > /tmp/reader.sh <<'EOF'
-          #!/bin/bash
-          python3 -c "
-          import json,sys
-          d=json.load(open('compiler/fixtures/phase24_frozen_oracle_vectors_v1.json'))
-          k=sorted(d['vectors'])[0]
-          print('SUBPROCESS SEES exit =', d['vectors'][k]['execution'].get('exit'))
-          "
-          EOF
+          printf '%s\n' \
+            '#!/bin/bash' \
+            "python3 -c \"import json;print('SUBPROCESS SEES marker =', json.load(open('$TRACKED')).get('__probe_marker__'))\"" \
+            > /tmp/reader.sh
           chmod +x /tmp/reader.sh
+          echo "reader.sh exists=$([ -x /tmp/reader.sh ] && echo yes || echo no)"
 
           echo "--- outside namespace, before ---"
           /tmp/reader.sh
 
           echo "--- inside namespace ---"
-          NS_RC=0
-          unshare --map-root-user --mount -- bash -c \
-            "mount --bind /tmp/mutated.json $TRACKED && cd $PWD && /tmp/reader.sh" \
-            || NS_RC=$?
+          NS_OUT=$(unshare --map-root-user --mount -- bash -c \
+            "mount --bind /tmp/mutated.json $PWD/$TRACKED && cd $PWD && /tmp/reader.sh" 2>&1)
+          NS_RC=$?
+          echo "$NS_OUT"
           echo "unshare rc=$NS_RC"
 
           echo "--- outside namespace, after ---"
           /tmp/reader.sh
           AFTER_SHA=$(sha256sum "$TRACKED" | cut -d' ' -f1)
+          echo "AFTER_SHA=$AFTER_SHA"
 
           echo "--- verdict ---"
           if [ "$NS_RC" -ne 0 ]; then
-            echo "RESULT: UNSHARE_UNAVAILABLE"; exit 1
+            echo "RESULT: UNSHARE_UNAVAILABLE (rc=$NS_RC)"; exit 1
+          fi
+          if ! printf '%s' "$NS_OUT" | grep -q "marker = MUTATED"; then
+            echo "RESULT: MOUNT_DID_NOT_TAKE (namespace entered, file not shadowed)"
+            exit 1
           fi
           if [ "$ORIG_SHA" != "$AFTER_SHA" ]; then
             echo "RESULT: TRACKED_FILE_WAS_MODIFIED"; exit 1
           fi
-          echo "RESULT: BIND_MOUNT_USABLE (tracked file digest unchanged: $ORIG_SHA)"
+          echo "RESULT: BIND_MOUNT_USABLE (tracked digest unchanged: $ORIG_SHA)"
 
       - name: Git must agree the tree is clean
+        if: always()
         run: |
-          git status --porcelain -- compiler/fixtures/
-          test -z "$(git status --porcelain -- compiler/fixtures/)"
-          echo "RESULT: TREE_CLEAN"
+          git status --porcelain
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "RESULT: TREE_CLEAN"
+          else
+            echo "RESULT: TREE_DIRTY"; exit 1
+          fi
