@@ -24186,11 +24186,27 @@
         "compiler/fixtures/phase24_emitter_only_assertions_removed_v1.json",
         "compiler/fixtures/phase24_frozen_oracle_vectors_v1.json",
         "docs/PHASE24_FROZEN_ORACLE_REPLACEMENT.md",
-        "scripts/phase24_frozen_oracle.py"
+        "scripts/phase24_frozen_oracle.py",
+        "scripts/phase24_frozen_oracle_e2e_mutation.py"
       ],
       "authority_base_main": "8aa9922eb40ad404647a86f865f0790ab37a3589",
       "contract_version": "phase24_12_frozen_oracle_text_surface_successor_v1",
       "current_changed_text_surfaces": [
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "3b3c0c51c2c761928c58fcd82367000e9e0993b34213e12c780f8a3205f8ebe4",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 8
+          },
+          "owner": "cranelift",
+          "path": ".github/workflows/pr-fast.yml",
+          "removal_phase": "24"
+        },
         {
           "classification": "historical_only",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
@@ -24856,6 +24872,21 @@
       "partial_extra_or_substituted_surface": "rejected",
       "previous_changed_text_surfaces": [
         {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "a0a5c558345c51362772ba177eefb3186492d558da2449ae7cce73dde9e692cc",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 8
+          },
+          "owner": "cranelift",
+          "path": ".github/workflows/pr-fast.yml",
+          "removal_phase": "24"
+        },
+        {
           "classification": "historical_only",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_as_historical_evidence",
@@ -25517,6 +25548,7 @@
         }
       ],
       "registered_changed_paths": [
+        ".github/workflows/pr-fast.yml",
         "compiler/CRANELIFT_PHASE22_OPENING.md",
         "docs/PHASE24_RETIREMENT_CONSUMER_INVENTORY.md",
         "scripts/cranelift_registry.py",
