@@ -9332,93 +9332,114 @@
     ]
   },
   "phase19_closure": {
-    "version": "phase19_closure_v1",
-    "status": "phase19_closed_brand_identity_and_value_representation",
-    "authority_owner": "scripts/cranelift_feature_registry.json",
-    "wording": "Phase 19 closes identifier-spelling authority over brand identity and value representation. Canonical branded identity, arena and container classification, and call argument representation now follow compiler-owned type records; the converged seed and compiler self-compilation differential account for every compiler-source change. Authoritative Historical Full run 32586399260 completed successfully on the exact merged main commit.",
     "authoritative_historical_full": {
-      "workflow": "Cranelift Historical Full",
-      "run_id": 32586399260,
+      "conclusion": "success",
       "event": "workflow_dispatch",
       "head_branch": "main",
       "head_sha": "a95e40d8f1cd4e6d31212e98105026d38b488c9b",
+      "run_id": 32586399260,
       "status": "completed",
-      "conclusion": "success",
       "successful_jobs": 17,
-      "total_jobs": 17
+      "total_jobs": 17,
+      "workflow": "Cranelift Historical Full"
     },
-    "resolved_defects": [
-      {
-        "id": "D-1",
-        "disposition": "removed_from_shared_semantic_zone_and_recorded_in_task"
-      },
-      {
-        "id": "CR-2",
-        "disposition": "compiler_semantics_resolved_and_stdlib_patches_released_from_cr2_with_current_blockers_preserved"
-      }
-    ],
-    "rename_invariance_families": [
-      {
-        "id": "brand_identity",
-        "guard": "guard-cranelift-phase19-rename-invariance",
-        "level": 3,
-        "fixtures": [
-          "compiler/phase19_rename_invariance_brand_source.gst",
-          "compiler/phase19_rename_invariance_renamed_source.gst"
-        ]
-      },
-      {
-        "id": "canonical_type_naming",
-        "guard": "guard-cranelift-phase19-type-naming-parity",
-        "level": 2,
-        "fixtures": [
-          "compiler/phase19_type_naming_explicit_source.gst",
-          "compiler/phase19_type_naming_inferred_source.gst"
-        ]
-      },
-      {
-        "id": "type_derived_classification",
-        "guard": "guard-cranelift-phase19-classification-parity",
-        "level": 2,
-        "fixtures": [
-          "compiler/phase19_classification_test_entry.gst",
-          "compiler/phase19_classification_source.gst"
-        ]
-      },
-      {
-        "id": "argument_representation",
-        "guard": "guard-cranelift-phase19-representation-parity",
-        "level": 2,
-        "fixtures": [
-          "compiler/phase19_argument_representation_a_source.gst",
-          "compiler/phase19_argument_representation_b_source.gst"
-        ]
-      },
-      {
-        "id": "name_list_removal",
-        "guard": "guard-cranelift-phase19-gust-name-list-removed-parity",
-        "level": 2,
-        "fixtures": [
-          "compiler/phase19_name_list_removed_ctx_source.gst",
-          "compiler/phase19_name_list_removed_region_source.gst"
-        ]
-      }
-    ],
-    "residue": [
-      {
-        "id": "generic_source_cranelift_parameter_argument_abi",
-        "owner": "phase13_generic_source_to_mir",
-        "disposition": "explicitly_deferred_before_driver_discovery_without_c_fallback",
-        "reason_code": "deferred_p13_parameter_argument_target_dependent_abi"
-      }
-    ],
+    "authority_owner": "scripts/cranelift_feature_registry.json",
+    "evidence_disposition": {
+      "by": "24.12a",
+      "families_total": 5,
+      "guards_live": 1,
+      "guards_removed": 4,
+      "note": "Patch 24.12a removed the guard for four of the five families this closure's status rests on, leaving one live. The status string is deliberately unchanged: a retirement patch must not restate a closed phase's conclusion. Whether a claim standing on one live family still holds is Patch 24.16's to judge, under its gate that every survivor names its live invariant.",
+      "reexamine_at": "24.16"
+    },
     "non_claims": [
       "Phase 19 provides a general lifetime system.",
       "Phase 19 provides arbitrary brand algebra or new brand syntax.",
       "The generic-source composition fixture is supported by Cranelift.",
       "The MIR-to-C semantic oracle or explicit Cranelift no-fallback policy has been retired."
     ],
-    "view_derivation": "the_closure_view_is_generated_from_this_block"
+    "rename_invariance_families": [
+      {
+        "disposition": "retired",
+        "disposition_reason": "both arms compile standalone fixtures through the user-facing MIR-to-C route and compare the generated C text; the property is of that text, so it does not outlive the route. Measured: this harness named no compiler source, only compiler/phase19_* fixtures.",
+        "fixtures": [
+          "compiler/phase19_rename_invariance_brand_source.gst",
+          "compiler/phase19_rename_invariance_renamed_source.gst"
+        ],
+        "guard": "guard-cranelift-phase19-rename-invariance",
+        "guard_removed_by": "24.12a",
+        "id": "brand_identity",
+        "level": 3
+      },
+      {
+        "disposition": "retired",
+        "disposition_reason": "both arms compile standalone fixtures through the user-facing MIR-to-C route and compare the generated C text; the property is of that text, so it does not outlive the route. Measured: this harness named no compiler source, only compiler/phase19_* fixtures.",
+        "fixtures": [
+          "compiler/phase19_type_naming_explicit_source.gst",
+          "compiler/phase19_type_naming_inferred_source.gst"
+        ],
+        "guard": "guard-cranelift-phase19-type-naming-parity",
+        "guard_removed_by": "24.12a",
+        "id": "canonical_type_naming",
+        "level": 2
+      },
+      {
+        "disposition": "transferred",
+        "disposition_reason": "not user-route-only. Its compatibility-override witness compiled compiler/test_runner_entry.gst -- the bootstrap entry -- so a legacy spelling that changed a resolved-type answer would move the generated C the seed is built from. The assertion itself lives in the compiler and terminates generation, and the bootstrap still lowers that entry through MIR-to-C after Phase 24, so the invariant survives with the bootstrap emitter under Phase 25 ownership. What Patch 24.12a removed is the guard that drove it, not the invariant.",
+        "fixtures": [
+          "compiler/phase19_classification_test_entry.gst",
+          "compiler/phase19_classification_source.gst"
+        ],
+        "guard": "guard-cranelift-phase19-classification-parity",
+        "guard_removed_by": "24.12a",
+        "id": "type_derived_classification",
+        "level": 2,
+        "transferred_to": "25"
+      },
+      {
+        "fixtures": [
+          "compiler/phase19_argument_representation_a_source.gst",
+          "compiler/phase19_argument_representation_b_source.gst"
+        ],
+        "guard": "guard-cranelift-phase19-representation-parity",
+        "id": "argument_representation",
+        "level": 2
+      },
+      {
+        "disposition": "retired",
+        "disposition_reason": "both arms compile standalone fixtures through the user-facing MIR-to-C route and compare the generated C text; the property is of that text, so it does not outlive the route. Measured: this harness named no compiler source, only compiler/phase19_* fixtures.",
+        "fixtures": [
+          "compiler/phase19_name_list_removed_ctx_source.gst",
+          "compiler/phase19_name_list_removed_region_source.gst"
+        ],
+        "guard": "guard-cranelift-phase19-gust-name-list-removed-parity",
+        "guard_removed_by": "24.12a",
+        "id": "name_list_removal",
+        "level": 2
+      }
+    ],
+    "residue": [
+      {
+        "disposition": "explicitly_deferred_before_driver_discovery_without_c_fallback",
+        "id": "generic_source_cranelift_parameter_argument_abi",
+        "owner": "phase13_generic_source_to_mir",
+        "reason_code": "deferred_p13_parameter_argument_target_dependent_abi"
+      }
+    ],
+    "resolved_defects": [
+      {
+        "disposition": "removed_from_shared_semantic_zone_and_recorded_in_task",
+        "id": "D-1"
+      },
+      {
+        "disposition": "compiler_semantics_resolved_and_stdlib_patches_released_from_cr2_with_current_blockers_preserved",
+        "id": "CR-2"
+      }
+    ],
+    "status": "phase19_closed_brand_identity_and_value_representation",
+    "version": "phase19_closure_v1",
+    "view_derivation": "the_closure_view_is_generated_from_this_block",
+    "wording": "Phase 19 closes identifier-spelling authority over brand identity and value representation. Canonical branded identity, arena and container classification, and call argument representation now follow compiler-owned type records; the converged seed and compiler self-compilation differential account for every compiler-source change. Authoritative Historical Full run 32586399260 completed successfully on the exact merged main commit."
   },
   "opening_snapshots": {
     "phase20": {
@@ -23180,8 +23201,28 @@
       "selected_entry": "--backend bootstrap-emitter",
       "status": "patch24_11_decided_patch24_13_lands"
     },
-    "inventory_digest": "3b3807839d191fd824eaf1636b336b89c1466e7b9dadb0355009d3fd21554167",
-    "row_count": 107,
+    "inventory_digest": "898dc586d99195171dc8e7cb3552fc7bf2b6bb4019802be16105d3a32af4edfd",
+    "retired": {
+      "by": "24.12a",
+      "harnesses": [
+        "scripts/phase19_classification_parity.sh",
+        "scripts/phase19_gust_name_list_removed_parity.sh",
+        "scripts/phase19_rename_invariance.sh",
+        "scripts/phase19_rule_convergence_parity.sh",
+        "scripts/phase19_type_naming_parity.sh",
+        "scripts/phase20_resource_declaration_migration.sh",
+        "scripts/phase21_inert_scoped_query_records.sh"
+      ],
+      "recipes": [
+        "guard-cranelift-phase19-classification-parity",
+        "guard-cranelift-phase19-gust-name-list-removed-parity",
+        "guard-cranelift-phase19-rename-invariance",
+        "guard-cranelift-phase19-rule-convergence-parity",
+        "guard-cranelift-phase19-type-naming-parity",
+        "guard-cranelift-phase21-inert-scoped-query-records-evidence"
+      ]
+    },
+    "row_count": 98,
     "rows": [
       {
         "action": "convert",
@@ -23360,37 +23401,12 @@
       },
       {
         "action": "retire",
-        "id": "guard-cranelift-phase19-classification-parity",
-        "owner_patch": "24.12"
-      },
-      {
-        "action": "retire",
         "id": "guard-cranelift-phase19-composition-parity",
-        "owner_patch": "24.12"
-      },
-      {
-        "action": "retire",
-        "id": "guard-cranelift-phase19-gust-name-list-removed-parity",
-        "owner_patch": "24.12"
-      },
-      {
-        "action": "retire",
-        "id": "guard-cranelift-phase19-rename-invariance",
         "owner_patch": "24.12"
       },
       {
         "action": "convert",
         "id": "guard-cranelift-phase19-representation-parity",
-        "owner_patch": "24.12"
-      },
-      {
-        "action": "retire",
-        "id": "guard-cranelift-phase19-rule-convergence-parity",
-        "owner_patch": "24.12"
-      },
-      {
-        "action": "retire",
-        "id": "guard-cranelift-phase19-type-naming-parity",
         "owner_patch": "24.12"
       },
       {
@@ -23406,11 +23422,6 @@
       {
         "action": "convert",
         "id": "guard-cranelift-phase21-filesystem-allocation-native-source-parity",
-        "owner_patch": "24.12"
-      },
-      {
-        "action": "convert",
-        "id": "guard-cranelift-phase21-inert-scoped-query-records-evidence",
         "owner_patch": "24.12"
       },
       {
@@ -23649,29 +23660,14 @@
         "owner_patch": "24.12"
       },
       {
-        "action": "retire",
-        "id": "sh-family:phase19-parity:deferred-to-24.12a",
-        "owner_patch": "24.12a"
-      },
-      {
         "action": "convert",
         "id": "sh-family:phase20-evidence",
         "owner_patch": "24.12"
       },
       {
-        "action": "retire",
-        "id": "sh-family:phase20-evidence:deferred-to-24.12a",
-        "owner_patch": "24.12a"
-      },
-      {
         "action": "convert",
         "id": "sh-family:phase21-native-qualification",
         "owner_patch": "24.12"
-      },
-      {
-        "action": "retire",
-        "id": "sh-family:phase21-native-qualification:deferred-to-24.12a",
-        "owner_patch": "24.12a"
       },
       {
         "action": "retire",
@@ -23719,6 +23715,33 @@
         "owner_patch": "24.16"
       }
     ],
+    "stale_row_scoring": {
+      "action_disagrees_with_outcome": [
+        "guard-cranelift-phase11-close",
+        "guard-cranelift-phase12-5-close",
+        "guard-cranelift-phase13-close",
+        "guard-cranelift-phase13-composition-differential",
+        "guard-cranelift-phase13-source-metadata-parity",
+        "guard-cranelift-phase14-composition-differential",
+        "guard-cranelift-phase15-resource-composition-differential",
+        "guard-cranelift-phase16-composition-differential",
+        "guard-cranelift-phase19-composition-parity",
+        "guard-cranelift-phase22-default-native-package-evidence",
+        "guard-cranelift-phase22-explicit-c-migration-evidence",
+        "guard-cranelift-phase22-native-implicit-output-evidence",
+        "guard-cranelift-phase22-opening-evidence"
+      ],
+      "is_live_scored_on_mention": [
+        "guard-cranelift-phase11-block-parameter-loop-parity",
+        "guard-cranelift-phase11-direct-call-abi-parity",
+        "guard-cranelift-phase11-local-state-parity",
+        "guard-cranelift-phase11-module-import-runtime-parity",
+        "guard-cranelift-phase11-scalar-expression-parity",
+        "guard-cranelift-phase11-structured-cfg-parity",
+        "guard-cranelift-phase13-source-metadata-parity"
+      ],
+      "owner": "24.16"
+    },
     "status": "patch24_11_complete",
     "version": "phase24_retirement_consumer_inventory_v1"
   },
@@ -23727,19 +23750,14 @@
     "authority_owner": "scripts/cranelift_feature_registry.json",
     "emitter_only_assertions_removed": 50,
     "emitter_only_assertions_removed_digest": "2cae1ec6388203c645c36131e98ad3abc3be5358d0f748a506d7f15f70091ae1",
+    "emitter_only_residue": {
+      "scripts/phase22_explicit_c_migration.sh": "24.13"
+    },
     "env_parameterised_fixtures": [
       "compiler/phase20_cross_feature_qualification_source.gst",
       "compiler/phase20_long_lived_concurrent_source.gst"
     ],
-    "excluded_emitter_only_loci": [
-      "scripts/phase19_classification_parity.sh",
-      "scripts/phase19_gust_name_list_removed_parity.sh",
-      "scripts/phase19_rename_invariance.sh",
-      "scripts/phase19_rule_convergence_parity.sh",
-      "scripts/phase19_type_naming_parity.sh",
-      "scripts/phase20_resource_declaration_migration.sh",
-      "scripts/phase21_inert_scoped_query_records.sh"
-    ],
+    "excluded_emitter_only_loci": [],
     "excluded_emitter_only_owner": "24.12a",
     "frozen_loci": [
       "scripts/phase12_5_route_architecture.sh",

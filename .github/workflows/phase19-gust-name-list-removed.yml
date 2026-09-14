@@ -53,14 +53,3 @@ jobs:
       - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: guard-cranelift-phase19-gust-name-list-removed
         run: just guard-cranelift-phase19-gust-name-list-removed
-
-  parity:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
-      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - run: make gust
-      - name: guard-cranelift-phase19-gust-name-list-removed-parity
-        run: just guard-cranelift-phase19-gust-name-list-removed-parity

@@ -238,27 +238,6 @@ TAKEN_OUT_HARNESSES = {
 
 # harness path -> (patch that owns it instead, why 24.12 did not)
 DEFERRED_HARNESSES = {
-    "scripts/phase19_classification_parity.sh":
-        ("24.12a", "no native arm: both arms are MIR-to-C, so freezing "
-                   "them leaves a tautology"),
-    "scripts/phase19_gust_name_list_removed_parity.sh":
-        ("24.12a", "no native arm: both arms are MIR-to-C, so freezing "
-                   "them leaves a tautology"),
-    "scripts/phase19_rename_invariance.sh":
-        ("24.12a", "no native arm: both arms are MIR-to-C, so freezing "
-                   "them leaves a tautology"),
-    "scripts/phase19_rule_convergence_parity.sh":
-        ("24.12a", "no native arm: both arms are MIR-to-C, so freezing "
-                   "them leaves a tautology"),
-    "scripts/phase19_type_naming_parity.sh":
-        ("24.12a", "no native arm: both arms are MIR-to-C, so freezing "
-                   "them leaves a tautology"),
-    "scripts/phase20_resource_declaration_migration.sh":
-        ("24.12a", "no native arm: both arms are MIR-to-C, so freezing "
-                   "them leaves a tautology"),
-    "scripts/phase21_inert_scoped_query_records.sh":
-        ("24.12a", "no native arm: both arms are MIR-to-C, so freezing "
-                   "them leaves a tautology"),
     "scripts/phase22_default_native_package.sh":
         ("24.13", "it asserts that the explicit C selection still "
                   "works, so it cannot outlive the selection 24.13 "
@@ -308,7 +287,7 @@ SWEEP_COUNTS = {
 SH_FAMILIES = {
     "early-differential": {
         "owner_patch": "24.12",
-        "action": "retire",
+        "action": "convert",
         "files": {
             "scripts/phase12_5_route_architecture.sh": 2,
             "scripts/phase13_broader_imported_runtime_calls.sh": 2,
@@ -326,7 +305,7 @@ SH_FAMILIES = {
     },
     "phase15-16-composition": {
         "owner_patch": "24.12",
-        "action": "retire",
+        "action": "convert",
         "files": {
             "scripts/phase15_resource_composition_parity.sh": 2,
             "scripts/phase16_abi_composition_parity.sh": 2,
@@ -334,20 +313,15 @@ SH_FAMILIES = {
     },
     "phase19-parity": {
         "owner_patch": "24.12",
-        "action": "retire",
+        "action": "convert",
         "files": {
-            "scripts/phase19_classification_parity.sh": 1,
             "scripts/phase19_composition_parity.sh": 2,
-            "scripts/phase19_gust_name_list_removed_parity.sh": 1,
-            "scripts/phase19_rename_invariance.sh": 1,
             "scripts/phase19_representation_parity.sh": 1,
-            "scripts/phase19_rule_convergence_parity.sh": 1,
-            "scripts/phase19_type_naming_parity.sh": 1,
         },
     },
     "phase20-evidence": {
         "owner_patch": "24.12",
-        "action": "retire",
+        "action": "convert",
         "files": {
             "scripts/phase20_arena_free.sh": 4,
             "scripts/phase20_contextual_generic_constructor.sh": 3,
@@ -359,7 +333,6 @@ SH_FAMILIES = {
             "scripts/phase20_nested_brand_annotation.sh": 4,
             "scripts/phase20_protected_access_liveness.sh": 3,
             "scripts/phase20_resource_acquisition.sh": 4,
-            "scripts/phase20_resource_declaration_migration.sh": 2,
             "scripts/phase20_resource_enforcement.sh": 4,
             "scripts/phase20_resource_scope_cleanup.sh": 5,
             "scripts/phase20_stdlib_runtime_differential.sh": 1,
@@ -373,7 +346,6 @@ SH_FAMILIES = {
             "scripts/phase21_collection_string_native_source.sh": 4,
             "scripts/phase21_cross_tenant_capability.sh": 2,
             "scripts/phase21_filesystem_allocation_native_source.sh": 3,
-            "scripts/phase21_inert_scoped_query_records.sh": 1,
             "scripts/phase21_od8_adversarial_verdict.sh": 2,
             "scripts/phase21_opening.sh": 2,
             "scripts/phase21_per_root_obligations.sh": 2,
@@ -383,7 +355,7 @@ SH_FAMILIES = {
         },
     },
     "phase22-flip-evidence": {
-        "owner_patch": "24.12",
+        "owner_patch": "24.13",
         "action": "retire",
         "files": {
             "scripts/phase22_default_native_package.sh": 2,
@@ -458,10 +430,17 @@ RECIPE_ROWS = [
      "./gust --backend mir-to-c tests/test_runner.gst", "24.16", "retire", False),
     ("guard-positive",
      './gust --backend mir-to-c "$test_path"', "24.13", "migrate", True),
+    # Re-scored live by Patch 24.12a. Both are reached from a workflow --
+    # guard-cranelift-phase20-arena-free-contract calls them -- and were
+    # scored dead only because liveness() parsed the justfile fragments
+    # separately and lost every cross-file call edge (issue #395). They stay
+    # 24.16/retire: being executed does not make a C consumer permanent, it
+    # means the retirement has to migrate the callers rather than delete a
+    # recipe nothing runs.
     ("guard-compile-pass",
-     './gust --backend mir-to-c "$test_path"', "24.16", "retire", False),
+     './gust --backend mir-to-c "$test_path"', "24.16", "retire", True),
     ("guard-compile-fail",
-     './gust --backend mir-to-c "$test_path"', "24.16", "retire", False),
+     './gust --backend mir-to-c "$test_path"', "24.16", "retire", True),
     ("guard-stdlib-s1-str-equality-diagnostic",
      './gust --backend mir-to-c "$mismatch"', "stdlib-coordination", "migrate", True),
     ("guard-stdlib-s1-collection-receivers",
@@ -495,32 +474,20 @@ RECIPE_ROWS = [
      "scripts/phase15_resource_composition_parity.sh", "24.12", "retire", True),
     ("guard-cranelift-phase16-composition-differential",
      "scripts/phase16_abi_composition_parity.sh", "24.12", "retire", True),
-    ("guard-cranelift-phase19-classification-parity",
-     "scripts/phase19_classification_parity.sh", "24.12", "retire", True),
     ("guard-cranelift-phase19-composition-parity",
      "scripts/phase19_composition_parity.sh", "24.12", "retire", True),
-    ("guard-cranelift-phase19-gust-name-list-removed-parity",
-     "scripts/phase19_gust_name_list_removed_parity.sh", "24.12", "retire", True),
-    ("guard-cranelift-phase19-rename-invariance",
-     "scripts/phase19_rename_invariance.sh", "24.12", "retire", True),
     # Corrected in Patch 24.12: it sits in a `retire` family but keeps real
     # native evidence — it delegates to phase16_call_mir_parity.sh, which
     # compares the MIR-to-C witness against the explicit Cranelift consumer —
     # so it converts rather than being retired.
     ("guard-cranelift-phase19-representation-parity",
      "scripts/phase19_representation_parity.sh", "24.12", "convert", True),
-    ("guard-cranelift-phase19-rule-convergence-parity",
-     "scripts/phase19_rule_convergence_parity.sh", "24.12", "retire", True),
-    ("guard-cranelift-phase19-type-naming-parity",
-     "scripts/phase19_type_naming_parity.sh", "24.12", "retire", True),
     ("guard-cranelift-phase21-collection-string-native-source-parity",
      "scripts/phase21_collection_string_native_source.sh", "24.12", "convert", True),
     ("guard-cranelift-phase21-cross-tenant-capability-evidence",
      "scripts/phase21_cross_tenant_capability.sh", "24.12", "convert", True),
     ("guard-cranelift-phase21-filesystem-allocation-native-source-parity",
      "scripts/phase21_filesystem_allocation_native_source.sh", "24.12", "convert", True),
-    ("guard-cranelift-phase21-inert-scoped-query-records-evidence",
-     "scripts/phase21_inert_scoped_query_records.sh", "24.12", "convert", True),
     ("guard-cranelift-phase21-od8-adversarial-verdict-evidence",
      "scripts/phase21_od8_adversarial_verdict.sh", "24.12", "convert", True),
     ("guard-cranelift-phase21-opening-evidence",
@@ -661,10 +628,18 @@ def liveness() -> tuple[set[str], set[str]]:
             "cannot load the guard reachability module")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    edges: dict[str, list[str]] = {}
-    for text in module.justfile_sources(ROOT / "justfile"):
-        update, _ = module.parse_justfile(text)
-        edges.update(update)
+    # Parse the concatenation, the way guard_reachability.main() does.
+    # Parsing each fragment separately drops every cross-file call edge:
+    # parse_justfile only records `just <recipe>` as an edge when the callee
+    # is a key in that same parse, and the justfile imports five fragments.
+    # The per-file graph found 517 live recipes against the concatenated
+    # graph's 591 -- 74 short, 65 of them with truncated edge sets, and the
+    # per-file parse contributed no edge the concatenated one lacked. It
+    # validated green only because the registry-named set covered the
+    # difference, which is the mechanism issue #393 says is unsound: two
+    # unsound parts cancelling. Issue #395.
+    edges, _ = module.parse_justfile(
+        "\n".join(module.justfile_sources(ROOT / "justfile")))
     roots = set(module.workflow_roots(edges))
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     # The inventory node itself names every row by construction, so it must
@@ -681,9 +656,97 @@ def liveness() -> tuple[set[str], set[str]]:
              if any(name in blob for blob in blobs)}
     make_roots = {"make-test-suite", "make-test-suite-parallel",
                   "make-test-guards", "make-test-guards-policy"}
-    return set(module.reachable(edges, roots)), named | set(
-        module.reachable(edges, make_roots))
+    # Three signals, kept apart. They used to be returned as two, with
+    # registry-named folded into make-reachable, and a row scored live by a
+    # bare mention was then indistinguishable from one something executes.
+    # check_stale_row_scoring below needs to tell them apart.
+    return (set(module.reachable(edges, roots)), named,
+            set(module.reachable(edges, make_roots)))
 
+
+
+# ---------------------------------------------------------------------------
+# Rows this inventory knows are wrong, with an owner, because a known-wrong
+# row nobody owns is how this file acquired 53 failing assertions at 24.11.
+#
+# Two different defects, so two registers and two falsifiers. A patch that
+# fixes one must not be able to believe it has fixed the other.
+#
+#   action_disagrees_with_outcome
+#       The row's `action`/`owner_patch` say something other than what
+#       happened to the harness it calls -- mostly rows still saying
+#       `24.12 retire` about harnesses 24.12 converted.
+#
+#   is_live_scored_on_mention
+#       `liveness()` reimplements guard_reachability.registry_named()'s
+#       substring test inline, over the feature registry *and*
+#       scripts/cranelift_test_levels.json, so a row counts as live when its
+#       name merely appears in either file. These are reachable from no
+#       workflow and from none of the four make-test roots: nothing executes
+#       them, and `require((recipe in live) == is_live)` pins the mis-scoring
+#       as registry authority. That is issue #393's defect, carried
+#       separately in this file -- fixing guard_reachability will not reach
+#       it.
+#
+# Patch 24.12a registers, it does not re-score: flipping `is_live` moves
+# pinned authority that Patch 24.12's conversion evidence rests on.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# What Patch 24.12a took out. The 24.11 per-row falsifier is "this row is
+# still live", which inverts the moment a patch removes the row -- so a
+# removal is recorded and asserted in the inverse rather than deleted
+# quietly. Each of these must now be absent from the justfile and the tree.
+# ---------------------------------------------------------------------------
+
+RETIRED_BY = "24.12a"
+
+RETIRED_RECIPES = (
+    "guard-cranelift-phase19-classification-parity",
+    "guard-cranelift-phase19-gust-name-list-removed-parity",
+    "guard-cranelift-phase19-rename-invariance",
+    "guard-cranelift-phase19-rule-convergence-parity",
+    "guard-cranelift-phase19-type-naming-parity",
+    "guard-cranelift-phase21-inert-scoped-query-records-evidence",
+)
+
+RETIRED_HARNESSES = (
+    "scripts/phase19_classification_parity.sh",
+    "scripts/phase19_gust_name_list_removed_parity.sh",
+    "scripts/phase19_rename_invariance.sh",
+    "scripts/phase19_rule_convergence_parity.sh",
+    "scripts/phase19_type_naming_parity.sh",
+    "scripts/phase20_resource_declaration_migration.sh",
+    "scripts/phase21_inert_scoped_query_records.sh",
+)
+
+STALE_SCORING_OWNER = "24.16"
+
+ACTION_DISAGREES_WITH_OUTCOME = (
+    "guard-cranelift-phase11-close",
+    "guard-cranelift-phase12-5-close",
+    "guard-cranelift-phase13-close",
+    "guard-cranelift-phase13-composition-differential",
+    "guard-cranelift-phase13-source-metadata-parity",
+    "guard-cranelift-phase14-composition-differential",
+    "guard-cranelift-phase15-resource-composition-differential",
+    "guard-cranelift-phase16-composition-differential",
+    "guard-cranelift-phase19-composition-parity",
+    "guard-cranelift-phase22-default-native-package-evidence",
+    "guard-cranelift-phase22-explicit-c-migration-evidence",
+    "guard-cranelift-phase22-native-implicit-output-evidence",
+    "guard-cranelift-phase22-opening-evidence",
+)
+
+IS_LIVE_SCORED_ON_MENTION = (
+    "guard-cranelift-phase11-block-parameter-loop-parity",
+    "guard-cranelift-phase11-direct-call-abi-parity",
+    "guard-cranelift-phase11-local-state-parity",
+    "guard-cranelift-phase11-module-import-runtime-parity",
+    "guard-cranelift-phase11-scalar-expression-parity",
+    "guard-cranelift-phase11-structured-cfg-parity",
+    "guard-cranelift-phase13-source-metadata-parity",
+)
 
 HARNESS_CALL = re.compile(r"bash (scripts/[A-Za-z0-9_.-]+\.sh)")
 
@@ -786,6 +849,110 @@ def family_rows() -> list[dict[str, str]]:
     return rows
 
 
+def row_outcome(recipe: str, bodies: dict[str, str]) -> tuple[str, str] | None:
+    """What actually happened to the harness a row's recipe calls."""
+    body = bodies.get(recipe)
+    if body is None:
+        return None
+    called = set(HARNESS_CALL.findall(body)) | set(
+        re.findall(r"(?:^|\s)(scripts/[A-Za-z0-9_.-]+\.sh)", body))
+    owners = {DEFERRED_HARNESSES[path][0]
+              for path in called if path in DEFERRED_HARNESSES}
+    if owners:
+        return (sorted(owners)[0], "retire")
+    if recipe in TAKEN_OUT_RECIPES or called & set(TAKEN_OUT_HARNESSES):
+        return (TAKEN_OUT_BY, "convert")
+    return None
+
+
+def check_family_actions() -> None:
+    """A family must declare the disposition its files actually took.
+
+    Scope: `SH_FAMILIES` only. The recipe rows have their own defect and
+    their own register; one obligation per assertion.
+
+    `family_rows()` computes the emitted row and never reads this field, so
+    it is inert for every split family -- which is how four families came to
+    declare `retire` about files Patch 24.12 converted, and passed. An
+    unchecked field standing in for a measured one is issue #393's shape one
+    layer up, so Patch 24.12a measures it instead of correcting it once.
+    """
+    for name, family in SH_FAMILIES.items():
+        files = list(family["files"])
+        taken = [path for path in files if path in TAKEN_OUT_HARNESSES]
+        owners = {DEFERRED_HARNESSES[path][0]
+                  for path in files if path in DEFERRED_HARNESSES}
+        if taken:
+            expected = (TAKEN_OUT_BY, "convert")
+        elif owners:
+            require(len(owners) == 1,
+                    f"family {name} defers to more than one owner: "
+                    f"{sorted(owners)}")
+            expected = (sorted(owners)[0], "retire")
+        else:
+            # Nothing in this family moved, so there is no outcome to agree
+            # with and its declared disposition stands on its own authority.
+            continue
+        actual = (family["owner_patch"], family["action"])
+        require(actual == expected,
+                f"family {name} declares {actual[0]}/{actual[1]} but its "
+                f"files went {expected[0]}/{expected[1]}")
+
+
+def check_stale_row_scoring(bodies: dict[str, str], workflow_seen: set[str],
+                            named_seen: set[str],
+                            make_seen: set[str]) -> None:
+    """The two registers of known-wrong rows must match what is measured.
+
+    Each is an equality, not a floor: a row that stops being wrong has to
+    leave its register, and a newly wrong row fails rather than joining
+    silently.
+    """
+    measured_action = sorted(
+        recipe for recipe, needle, owner, action, is_live in RECIPE_ROWS
+        if (outcome := row_outcome(recipe, bodies)) is not None
+        and (owner, action) != outcome)
+    require(measured_action == sorted(ACTION_DISAGREES_WITH_OUTCOME),
+            f"the action-disagreement residue moved: measured "
+            f"{measured_action}, registered "
+            f"{sorted(ACTION_DISAGREES_WITH_OUTCOME)}")
+
+    measured_mention = sorted(
+        recipe for recipe, needle, owner, action, is_live in RECIPE_ROWS
+        if is_live and recipe in named_seen
+        and recipe not in workflow_seen and recipe not in make_seen)
+    require(measured_mention == sorted(IS_LIVE_SCORED_ON_MENTION),
+            f"the mention-scored liveness residue moved: measured "
+            f"{measured_mention}, registered "
+            f"{sorted(IS_LIVE_SCORED_ON_MENTION)}")
+
+    require(STALE_SCORING_OWNER not in ("24.12", "24.12a"),
+            "the stale-row residue must be owned by a patch that can still "
+            "fix it")
+
+
+def build_rows() -> list[dict[str, str]]:
+    """The inventory's rows, derived. Extracted so the projector and the
+    validator cannot drift apart by building them two different ways."""
+    return ([{"id": recipe,
+              "owner_patch": TAKEN_OUT_BY if recipe in TAKEN_OUT_RECIPES
+                             else owner,
+              "action": TAKEN_OUT_RECIPES.get(recipe, action)}
+             for recipe, _, owner, action, _ in RECIPE_ROWS]
+            + [{"id": workflow, "owner_patch": owner, "action": action}
+               for workflow, _, owner, action in WORKFLOW_ROWS]
+            + [{"id": key, "owner_patch": owner, "action": action}
+               for key, owner, action in REGISTRY_ROWS]
+            + [{"id": f"{path} :: {needle[:40]}", "owner_patch": owner,
+                 "action": action}
+               for path, needle, owner, action in FILE_ROWS]
+            + family_rows()
+            + [{"id": "smoke-fixtures", "owner_patch": "24.16",
+                "action": "retire"}]
+            + [{"id": path, "owner_patch": owner, "action": action}
+               for path, owner, action in SCRIPT_ROWS])
+
+
 def expected_sweep() -> dict[str, int]:
     expected = dict(SWEEP_COUNTS)
     for family in SH_FAMILIES.values():
@@ -817,8 +984,19 @@ def validate() -> dict:
             "bootstrap-entry decision drifted")
 
     bodies = recipe_bodies()
-    workflow_seen, named_seen = liveness()
-    live = workflow_seen | named_seen
+    workflow_seen, named_seen, make_seen = liveness()
+    live = workflow_seen | named_seen | make_seen
+    check_family_actions()
+    check_stale_row_scoring(bodies, workflow_seen, named_seen, make_seen)
+    for recipe in RETIRED_RECIPES:
+        require(recipe not in bodies,
+                f"a recipe Patch {RETIRED_BY} retired is back: {recipe}")
+    for harness in RETIRED_HARNESSES:
+        require(not (ROOT / harness).exists(),
+                f"a harness Patch {RETIRED_BY} retired is back: {harness}")
+        require(harness not in DEFERRED_HARNESSES,
+                f"a retired harness is still registered as deferred: "
+                f"{harness}")
 
     for recipe, needle, owner, action, is_live in RECIPE_ROWS:
         require(recipe in bodies, f"inventoried recipe is missing: {recipe}")
@@ -880,31 +1058,32 @@ def validate() -> dict:
     check_harness_callers(
         bodies, {recipe for recipe, _, _, _, _ in RECIPE_ROWS})
 
-    rows = ([{"id": recipe,
-              "owner_patch": TAKEN_OUT_BY if recipe in TAKEN_OUT_RECIPES
-                             else owner,
-              "action": TAKEN_OUT_RECIPES.get(recipe, action)}
-             for recipe, _, owner, action, _ in RECIPE_ROWS]
-            + [{"id": workflow, "owner_patch": owner, "action": action}
-               for workflow, _, owner, action in WORKFLOW_ROWS]
-            + [{"id": key, "owner_patch": owner, "action": action}
-               for key, owner, action in REGISTRY_ROWS]
-            + [{"id": f"{path} :: {needle[:40]}", "owner_patch": owner,
-                 "action": action}
-               for path, needle, owner, action in FILE_ROWS]
-            + family_rows()
-            + [{"id": "smoke-fixtures", "owner_patch": "24.16",
-                "action": "retire"}]
-            + [{"id": path, "owner_patch": owner, "action": action}
-               for path, owner, action in SCRIPT_ROWS])
+    rows = build_rows()
     owners = sorted({row["owner_patch"] for row in rows})
-    require(owners == ["24.12", "24.12a", "24.13", "24.14", "24.15", "24.16",
+    # Patch 24.12a discharged every row it owned, so it leaves this set. A
+    # patch that finishes its rows should stop appearing here; one that
+    # acquires rows must be added deliberately.
+    require(owners == ["24.12", "24.13", "24.14", "24.15", "24.16",
                        "25", "stdlib-coordination"],
             f"inventory owner set drifted: {owners}")
+    require(RETIRED_BY not in owners,
+            f"Patch {RETIRED_BY} still owns inventory rows after retiring "
+            f"everything it was given: {RETIRED_BY}")
     require(node.get("rows") == rows, "registered inventory rows drifted")
     require(node.get("row_count") == len(rows) and
             node.get("inventory_digest") == digest(rows),
             "registered inventory counts drifted")
+    require(node.get("stale_row_scoring") == {
+        "owner": STALE_SCORING_OWNER,
+        "action_disagrees_with_outcome":
+            list(ACTION_DISAGREES_WITH_OUTCOME),
+        "is_live_scored_on_mention": list(IS_LIVE_SCORED_ON_MENTION),
+    }, "the registered stale-row residue drifted")
+    require(node.get("retired") == {
+        "by": RETIRED_BY,
+        "recipes": list(RETIRED_RECIPES),
+        "harnesses": list(RETIRED_HARNESSES),
+    }, "the registered retirement record drifted")
 
     task = TASK.read_text(encoding="utf-8")
     require("- [x] Patch 24.11 — Generated-C Consumer and Route Inventory — DONE"
