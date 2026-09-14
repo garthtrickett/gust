@@ -1,3 +1,4 @@
+# 24.3b inversion probe: simulated above-boundary insertion
 set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
 import 'justfile-reports'
 import 'justfile-step51'

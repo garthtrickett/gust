@@ -755,6 +755,25 @@ UNOWNED_SURFACES = (
                "instrument demands is the residue audit's.",
     },
     {
+        "surface": "scripts/phase24_3b_coordinate_retirement_inversions.py",
+        "owner": "24.16",
+        "why": "a chain consumer nothing executes. It reads the "
+               "frozen-surface chain five times (:71, :120, :158, :185, "
+               ":265, each loading phase23_mir_to_c_frozen_surface.py, with "
+               ":120 and :185 invoking its validate), but every reference to "
+               "it in the tree is non-executing: TASK.md prose and a path "
+               "list in phase23_mir_to_c_deprecation_opening.py:79. No "
+               "justfile recipe, workflow or Makefile target names it. It is "
+               "kept off the orphan report by 4 mentions in the feature "
+               "registry -- issue #393's defect in a population one ring "
+               "out, since it is not a guard recipe so guard_reachability "
+               "never considered it and it appears in neither the orphan "
+               "list nor the allowlist. A script that reads a chain and is "
+               "executed by nothing protects nothing today; whether to wire "
+               "it to a caller or retire it is a residue judgement, not "
+               "Patch 24.12a's to make mid-patch.",
+    },
+    {
         "surface": "compiler/phase10_help.txt",
         "owner": "24.13",
         "why": "the pinned expected output of the `gust --help` contract "
