@@ -14,8 +14,12 @@ reports far too many orphans:
   1. `just <recipe>` written literally in a workflow, plus everything that
      recipe pulls in -- its dependency list and any `just <other>` in its body.
   2. The same, transitively.
-  3. Names carried in the registries that generate CI families, which dispatch
-     guards without ever naming them in YAML.
+  3. The CI families the registries generate, which dispatch guards without
+     ever naming them in YAML. Until Patch 24.15a this source was approximated
+     by testing whether a registry file *mentions* the name; it is now modeled
+     directly, by resolving the `just "$var"` dispatch sites into edges
+     (`dynamic_edges`). A mention is a classification, not a route, and
+     issue #393 is what happens when the two are conflated.
 """
 
 import argparse
@@ -156,8 +160,10 @@ def dynamic_edges(text, known):
     """Resolve `just "$var"` dispatch into real edges (issue #393).
 
     `parse_justfile` only sees literal `just <name>`, so every dynamically
-    dispatched guard is invisible to it -- and `registry_named`'s substring
-    match has been silently standing in for the missing model.
+    dispatched guard is invisible to it -- and `registry_mentioned`'s
+    substring match had been silently standing in for the missing model.
+    This function is now that model, and the exemption it stood in for is
+    gone: see `registry_mentioned` and `main`.
 
     Each dispatching body is resolved by unioning every name source it
     contains: literal bash arrays, and the output of any authority script it
@@ -234,9 +240,33 @@ def reachable(edges, roots):
     return seen
 
 
-def registry_named(names):
-    """Names a registry mentions. Substring matching is deliberate: the
-    registries embed guard names inside larger command strings."""
+def registry_mentioned(names):
+    """Names a CI-family registry mentions. **Diagnostic only. Never
+    subtracted from the orphan set** (issue #393).
+
+    Until Patch 24.15a this was `registry_named`, and `main()` computed
+    `orphans = unreached - registry_named(unreached)`. A guard therefore left
+    the orphan report because its name occurred as a substring of a registry
+    file -- as a level assignment, a historical `frozen_recipes` entry, a
+    `not_repaired` record, or an inventory row that says the guard has no
+    execution route. None of those runs anything, and the last one is
+    circular: the register of guards with no execution route was itself
+    keeping them off the report.
+
+    The exemption was defensible while the graph was literal-call-only,
+    because the registries genuinely do drive execution -- through the
+    `just "$var"` dispatch sites `dynamic_edges` models as of this patch.
+    That model is the exemption's replacement, and `main()` asserts it still
+    contributes rather than assuming it. Measured here once the model was in
+    place: of the 45 names the exemption removed from the report, 28 have no
+    caller at all and 17 are called only by recipes that are themselves
+    unreachable. Zero are the target of a reachable dispatcher. So the
+    substring test survives as a label for Patch 24.16's triage, and stops
+    deciding reachability.
+
+    Substring matching is still deliberate for that labelling purpose: the
+    registries embed guard names inside larger command strings.
+    """
     blobs = [p.read_text() for p in REGISTRIES if p.exists()]
     return {n for n in names if any(n in blob for blob in blobs)}
 
@@ -246,8 +276,9 @@ def selftest_quoted_is_not_a_call():
 
     This asserts on `parse_justfile` directly rather than through the report,
     because the report cannot see the difference: every recipe this repair
-    makes unreachable is currently absorbed by `registry_named`, so the
-    aggregate output is byte-identical before and after the fix. Measured on
+    makes unreachable was, at the time this was written, absorbed by the
+    registry-mention exemption, so the aggregate output is byte-identical
+    before and after the fix. Measured on
     `b7a028df`: reachable falls 591 -> 584 and the guard still prints
     "unreachable: 20 (20 known, 0 new)". Asserting here is the only place the
     correction is observable -- the two unsound parts cancel everywhere else,
@@ -341,17 +372,34 @@ def main():
 
     justfile_text = "\n".join(justfile_sources(JUSTFILE))
     edges, parameterised = parse_justfile(justfile_text)
-    # Issue #393: fold dynamically dispatched guards into the graph. Without
-    # this the graph is literal-call-only and `registry_named`'s substring
-    # match stands in for the missing model -- two unsound parts cancelling.
-    for recipe, dispatched in dynamic_edges(justfile_text, set(edges)).items():
-        edges[recipe].extend(dispatched)
+    # Issue #393: fold dynamically dispatched guards into the graph. This is
+    # the model that the registry-mention exemption used to stand in for, so
+    # it is built before reachability and asserted below, not assumed.
+    dispatched = dynamic_edges(justfile_text, set(edges))
+    for recipe, names in dispatched.items():
+        edges[recipe].extend(names)
     # A recipe that takes arguments cannot be a gate on its own -- something has
     # to supply the arguments -- so only argument-free recipes are checked.
     guards = {r for r in edges if r.startswith("guard-") and r not in parameterised}
     seen = reachable(edges, workflow_roots(edges))
-    unreached = guards - seen
-    orphans = sorted(unreached - registry_named(unreached))
+    # Issue #393: an orphan is a guard no execution route reaches. A registry
+    # mention is not an execution route, so nothing is subtracted here; the
+    # mention count is printed below as a label, not applied as an exemption.
+    orphans = sorted(guards - seen)
+
+    # The exemption's replacement, asserted rather than assumed. Registry
+    # authority reaches guards through `just "$var"` dispatch, and if every
+    # dispatching recipe fell out of the workflow closure that coverage would
+    # silently drop to zero -- which, with the exemption gone, would report
+    # the whole registry-driven population as orphans. Fail here instead.
+    registry_routed = {name for recipe, names in dispatched.items()
+                       if recipe in seen for name in names}
+    if not registry_routed:
+        raise SystemExit(
+            "guard_reachability: no recipe reachable from a workflow "
+            "dispatches a guard through a registry authority. The modeled "
+            "dispatch that replaced issue #393's mention exemption now "
+            "covers nothing, so the orphan report cannot be trusted.")
 
     if args.list:
         for name in orphans:
@@ -364,14 +412,19 @@ def main():
 
     print(f"guard recipes: {len(guards)}")
     print(f"reachable from a workflow: {len(guards & seen)}")
-    print(f"named in a CI-family registry: {len(unreached) - len(orphans)}")
+    print("  reached through modeled registry dispatch: "
+          f"{len(registry_routed & guards & seen)}")
     print(f"unreachable: {len(orphans)} ({len(allowed)} known, {len(new)} new)")
+    print("  merely named in a CI-family registry (a label, not a route): "
+          f"{len(registry_mentioned(set(orphans)))}")
 
     if new:
         print("\nThese guard recipes are reachable from nothing:")
         for name in new:
             print(f"  {name}")
-        print("\nWire each into a workflow or a CI-family registry, or delete it.")
+        print("\nWire each into a workflow, or into a CI family that "
+              "dispatches it, or delete it.")
+        print("Naming it in a registry is not enough -- that is issue #393.")
         print("A guard nothing runs is not coverage.")
         return 1
 

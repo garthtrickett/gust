@@ -8641,6 +8641,23 @@
           "**Report three outcomes from a rejection harness, not two.**"
          ],
          "reason": "AGENTS.md enrols itself in the Phase 23 content-pattern manifest - it spells MIR-to-C five times - but carries no row of its own, so it sat only inside unchanged_other_text_surface_manifest_digest and any edit read as an unregistered text surface change. Measured on eb6b6cf2: one distinct message and one digest across 4 failing validators, 59 passing. Registered here rather than by bumping that aggregate, because a one-off digest bump would freeze it again and charge the next editor the same cost; this is the mechanism Patch 24.2r built for exactly this case. The markers hold obligations, not contents: that the subsection exists, and the rules whose absence has actually cost CI cycles. The rules may be reworded and a seventh added without touching a marker - deliberately, because a marker on a line a planned patch must edit rebuilds the wall one level down. Verified on a root file BEFORE registering: a marker-preserving edit to TASK_STDLIB.md is admitted and a marker-breaking one is rejected, so the route reaches files outside docs/."
+        },
+        {
+         "path": "scripts/guard_reachability_allowlist.json",
+         "digest": "9b23c5d08de4a7f85778aa4188599f2c03d0f082c5c1a8f6e139e63f0c789b15",
+         "match_counts": {
+          "explicit_backend_spelling": 0,
+          "mir_to_c_name": 12,
+          "generated_c_contract": 0
+         },
+         "required_markers": [
+          "This file is a ratchet, not an exemption",
+          "Do not add to this list to silence a",
+          "Check for readers before removing anything here.",
+          "Mention is not execution",
+          "Each carries a per-entry reason below stating the route it lacks"
+         ],
+         "reason": "the guard-reachability ratchet enrols itself in the Phase 23 content-pattern manifest - it names twelve guard-mir-to-c-* recipes - so it carried a row inside unchanged_other_text_surface_manifest_digest and every entry added to it read as an unregistered text-surface change. That makes the one file whose whole purpose is to record newly measured orphans the one file a patch cannot add a measurement to. Measured on e5465826: Patch 24.15a's re-baseline produced one distinct message and one digest across 2 failing validators (phase23_mir_to_c_deprecation_opening and phase23_cross_feature_qualification), 10 passing. Registered here rather than by bumping that aggregate, following the AGENTS.md precedent immediately above: a one-off bump would refreeze the file and charge Patch 24.16 the same cost when it adjudicates these same 45 rows. The markers hold obligations, not contents - that the list is a ratchet rather than an exemption, that it may not be used to silence a new orphan, that entries have readers to check before removal, that mention is not execution, and that each entry states its reason. Names may be added, removed as they are wired or retired, and re-worded around those five obligations, which is exactly the movement Patch 24.16 is required to make."
         }
        ],
        "structural_rules": [

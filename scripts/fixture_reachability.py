@@ -23,10 +23,10 @@ import sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from guard_reachability import (  # noqa: E402
     JUSTFILE,
+    dynamic_edges,
     justfile_sources,
     parse_justfile,
     reachable,
-    registry_named,
     workflow_roots,
 )
 
@@ -61,8 +61,19 @@ def recipes_mentioning(stem, sources):
 
 def unexercised():
     sources = justfile_sources(JUSTFILE)
-    edges, _ = parse_justfile("\n".join(sources))
-    live = reachable(edges, workflow_roots(edges)) | registry_named(set(edges))
+    text = "\n".join(sources)
+    edges, _ = parse_justfile(text)
+    # Issue #393, Patch 24.15a: this used to union in `registry_named(edges)`,
+    # so a recipe whose name a registry merely mentions counted as live and
+    # every fixture it names looked exercised. The registry route is real but
+    # it runs through `just "$var"` dispatch, so model that instead of
+    # substring-matching the file. Measured on this tree, the substitution
+    # changes nothing -- the same three fixtures are reported either way,
+    # which is the zero exposure TASK.md predicts for this caller -- so the
+    # correction lands here while it is free rather than when it is not.
+    for recipe, names in dynamic_edges(text, set(edges)).items():
+        edges[recipe].extend(names)
+    live = reachable(edges, workflow_roots(edges))
     out = []
     for path in sorted(ROOT.glob(FIXTURES)):
         stem = path.stem
