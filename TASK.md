@@ -114,7 +114,7 @@ Out of scope:
 - [x] Patch 24.10 — Retirement Roadmap Activation — DONE
 - [x] Patch 24.11 — Generated-C Consumer and Route Inventory — DONE
 - [x] Patch 24.12 — Frozen Expected-Behaviour Oracle Replacement — DONE
-- [ ] Patch 24.12a — Emitter-Only Parity Guard Retirement
+- [x] Patch 24.12a — Emitter-Only Parity Guard Retirement — DONE
 - [ ] Patch 24.12b — Python Parity Guard Conversion
 - [ ] Patch 24.13 — Backend-Selection and Publication-Path Removal
 - [ ] Patch 24.14 — C Toolchain Discovery, Error, and Temp-File Removal
@@ -369,6 +369,26 @@ the defect this phase keeps finding.
 This does **not** close the unqualified "zero parity guards execute live C"
 gate — that is Patch 24.12b's, and claiming it here would state something
 this patch's own measurement cannot support.
+
+**Status 2026-09-14 — DONE:** the seven emitter-only parity harnesses are
+gone, with the 6 justfile recipes that existed only to reach them, 6
+test-level assignments (Level 2 147 → 142, Level 3 164 → 163), their
+registry rows, and the parity or evidence job in 5 workflows — each of those
+keeping its surviving contract job. The Patch 24.12 exclusion register is
+empty; its criterion is now a discovery sweep over `scripts/*.sh` rather
+than a loop over the register, which an empty tuple would have made vacuous,
+and that sweep measures one emitter-only residue —
+`scripts/phase22_explicit_c_migration.sh`, owned by Patch 24.13 — instead of
+rounding it to zero. Four census chains advance to a 24.12a tail on one
+number each, agreed by four authorities: frozen live-C case surface 71 → 63,
+production audit invocations 211 → 203, Phase 22 post-relay census 199 →
+191, Phase 22 raw census 211 → 203. Phase 19's closure keeps its status
+string and gains an `evidence_disposition` annotation recording 4 removed
+and 1 live, with re-examination routed to Patch 24.16. Instrument defects
+#395 and #396 are registered and routed to the new Patch 24.15a; #395's
+`liveness()` half is fixed here only because this patch rewrites that
+function. The two runner-mediated default-route calls remain Patch 24.13's
+residue and the unqualified gate remains Patch 24.12b's.
 
 ## Patch 24.12b — Python Parity Guard Conversion
 
