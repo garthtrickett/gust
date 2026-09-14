@@ -1,0 +1,79 @@
+name: Probe — user-namespace bind mount availability
+
+# Throwaway. Answers one question for Patch 24.12 finding (b): can an
+# end-to-end mutation probe shadow the tracked frozen-vectors manifest with a
+# scratch copy inside a mount namespace, so that a guard's subprocess tree
+# reads the mutated bytes while the tracked file is never written?
+on:
+  push:
+    branches: ['probe/**']
+
+jobs:
+  unshare-bind-mount:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Report kernel user-namespace policy
+        run: |
+          uname -a
+          for k in kernel.unprivileged_userns_clone user.max_user_namespaces \
+                   kernel.apparmor_restrict_unprivileged_userns; do
+            printf '%s = %s\n' "$k" "$(sysctl -n $k 2>&1)"
+          done
+
+      - name: Bind-mount a scratch manifest over the tracked one
+        run: |
+          set -euo pipefail
+          TRACKED=compiler/fixtures/phase24_frozen_oracle_vectors_v1.json
+          test -f "$TRACKED"
+          ORIG_SHA=$(sha256sum "$TRACKED" | cut -d' ' -f1)
+          python3 - "$TRACKED" <<'PY'
+          import json, sys
+          d = json.load(open(sys.argv[1]))
+          k = sorted(d["vectors"])[0]
+          d["vectors"][k]["execution"]["exit"] = 4242
+          json.dump(d, open("/tmp/mutated.json", "w"))
+          print("mutated vector:", k)
+          PY
+
+          # A subprocess tree, because that is what `just -> bash -> python3` is.
+          cat > /tmp/reader.sh <<'EOF'
+          #!/bin/bash
+          python3 -c "
+          import json,sys
+          d=json.load(open('compiler/fixtures/phase24_frozen_oracle_vectors_v1.json'))
+          k=sorted(d['vectors'])[0]
+          print('SUBPROCESS SEES exit =', d['vectors'][k]['execution'].get('exit'))
+          "
+          EOF
+          chmod +x /tmp/reader.sh
+
+          echo "--- outside namespace, before ---"
+          /tmp/reader.sh
+
+          echo "--- inside namespace ---"
+          NS_RC=0
+          unshare --map-root-user --mount -- bash -c \
+            "mount --bind /tmp/mutated.json $TRACKED && cd $PWD && /tmp/reader.sh" \
+            || NS_RC=$?
+          echo "unshare rc=$NS_RC"
+
+          echo "--- outside namespace, after ---"
+          /tmp/reader.sh
+          AFTER_SHA=$(sha256sum "$TRACKED" | cut -d' ' -f1)
+
+          echo "--- verdict ---"
+          if [ "$NS_RC" -ne 0 ]; then
+            echo "RESULT: UNSHARE_UNAVAILABLE"; exit 1
+          fi
+          if [ "$ORIG_SHA" != "$AFTER_SHA" ]; then
+            echo "RESULT: TRACKED_FILE_WAS_MODIFIED"; exit 1
+          fi
+          echo "RESULT: BIND_MOUNT_USABLE (tracked file digest unchanged: $ORIG_SHA)"
+
+      - name: Git must agree the tree is clean
+        run: |
+          git status --porcelain -- compiler/fixtures/
+          test -z "$(git status --porcelain -- compiler/fixtures/)"
+          echo "RESULT: TREE_CLEAN"
