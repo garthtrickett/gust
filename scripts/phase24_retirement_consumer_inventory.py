@@ -677,16 +677,31 @@ def liveness() -> tuple[set[str], set[str]]:
 #       happened to the harness it calls -- mostly rows still saying
 #       `24.12 retire` about harnesses 24.12 converted.
 #
-#   is_live_scored_on_mention
-#       `liveness()` reimplements guard_reachability.registry_named()'s
-#       substring test inline, over the feature registry *and*
-#       scripts/cranelift_test_levels.json, so a row counts as live when its
-#       name merely appears in either file. These are reachable from no
-#       workflow and from none of the four make-test roots: nothing executes
-#       them, and `require((recipe in live) == is_live)` pins the mis-scoring
-#       as registry authority. That is issue #393's defect, carried
-#       separately in this file -- fixing guard_reachability will not reach
-#       it.
+#   is_live_with_no_execution_route
+#       Scored `live=True` while reachable by **neither** static `just` edges
+#       **nor** any level-driven dynamic dispatcher. No execution route
+#       exists for them at all, and `require((recipe in live) == is_live)`
+#       pins that as registry authority.
+#
+#       These were first registered as "live by mention", on the argument
+#       that a name appearing in scripts/cranelift_test_levels.json is a
+#       classification rather than a caller. **That argument is retracted.**
+#       `guard-cranelift-experimental-backend-suite` (justfile:21892-21911)
+#       runs every recipe `cranelift_test_levels.py list-native` returns, and
+#       of seven `just "$var"` dispatch sites at least four are driven by
+#       that file. For 37 of 53 guards a level entry is precisely what causes
+#       execution, so the level file is the repository's primary dynamic
+#       execution authority and `registry_named` including it is defensible.
+#
+#       Re-derived against the corrected model -- static closure over
+#       workflow roots, unioned with `cranelift_test_levels.py list-native`
+#       and `level <guard>` for the phase15/16/17 complete-evidence guards.
+#       All 7 hold, 0 drop: none is dispatched by the level file.
+#
+#       **Upper bound, not settled.** Three dispatch sites -- justfile:306,
+#       :21967, :22621 -- have sources not yet enumerated. If any dispatches
+#       one of these seven, that row drops. Re-run the model above rather
+#       than inheriting this number.
 #
 # Patch 24.12a registers, it does not re-score: flipping `is_live` moves
 # pinned authority that Patch 24.12's conversion evidence rests on.
@@ -805,7 +820,7 @@ ACTION_DISAGREES_WITH_OUTCOME = (
     "guard-cranelift-phase22-opening-evidence",
 )
 
-IS_LIVE_SCORED_ON_MENTION = (
+IS_LIVE_WITH_NO_EXECUTION_ROUTE = (
     "guard-cranelift-phase11-block-parameter-loop-parity",
     "guard-cranelift-phase11-direct-call-abi-parity",
     "guard-cranelift-phase11-local-state-parity",
@@ -988,10 +1003,10 @@ def check_stale_row_scoring(bodies: dict[str, str], workflow_seen: set[str],
         recipe for recipe, needle, owner, action, is_live in RECIPE_ROWS
         if is_live and recipe in named_seen
         and recipe not in workflow_seen and recipe not in make_seen)
-    require(measured_mention == sorted(IS_LIVE_SCORED_ON_MENTION),
-            f"the mention-scored liveness residue moved: measured "
+    require(measured_mention == sorted(IS_LIVE_WITH_NO_EXECUTION_ROUTE),
+            f"the no-execution-route liveness residue moved: measured "
             f"{measured_mention}, registered "
-            f"{sorted(IS_LIVE_SCORED_ON_MENTION)}")
+            f"{sorted(IS_LIVE_WITH_NO_EXECUTION_ROUTE)}")
 
     require(STALE_SCORING_OWNER not in ("24.12", "24.12a"),
             "the stale-row residue must be owned by a patch that can still "
@@ -1224,7 +1239,7 @@ def validate() -> dict:
         "owner": STALE_SCORING_OWNER,
         "action_disagrees_with_outcome":
             list(ACTION_DISAGREES_WITH_OUTCOME),
-        "is_live_scored_on_mention": list(IS_LIVE_SCORED_ON_MENTION),
+        "is_live_with_no_execution_route": list(IS_LIVE_WITH_NO_EXECUTION_ROUTE),
     }, "the registered stale-row residue drifted")
     require(node.get("unowned_surfaces") == {
         "harness_call_blind_spot_owner": HARNESS_CALL_BLIND_SPOT_OWNER,
