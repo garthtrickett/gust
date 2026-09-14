@@ -256,10 +256,15 @@ def scan_python(rel: str, text: str) -> list[dict]:
             found[key] = dict(file=rel, line=line, polarity=pol,
                               assert_line=assert_line, how=how)
 
-    conditions: list[tuple[ast.AST, int, str]] = []
+    # Carry the assertion node itself, not its line number. Re-finding the
+    # node by `lineno` costs a full tree walk per assertion, which is
+    # quadratic: `scripts/cranelift_registry.py` alone has 1181 `require`
+    # calls over 55632 nodes, and that one file accounted for 65.7M of the
+    # 77.2M node visits a whole run used to make.
+    conditions: list[tuple[ast.AST, ast.AST, str]] = []
     for node in ast.walk(tree):
         if isinstance(node, ast.Assert):
-            conditions.append((node.test, node.lineno, "assert"))
+            conditions.append((node, node.test, "assert"))
             continue
         if not isinstance(node, ast.Call) or not node.args:
             continue
@@ -267,14 +272,13 @@ def scan_python(rel: str, text: str) -> list[dict]:
                 else node.func.attr if isinstance(node.func, ast.Attribute)
                 else None)
         if name in ASSERT_NAMES:
-            conditions.append((node.args[0], node.lineno, name))
+            conditions.append((node, node.args[0], name))
 
-    for cond, lineno, how in conditions:
+    for node, cond, how in conditions:
+        lineno = node.lineno
         for line in _retired_lines(cond):
             record(line, polarity(cond), lineno, how)
-        for carrier, line in loop_carried(
-                next(n for n in ast.walk(tree)
-                     if getattr(n, "lineno", None) == lineno), cond):
+        for carrier, line in loop_carried(node, cond):
             record(line, polarity(cond, carrier), lineno, f"{how}/loop")
 
     return list(found.values())
