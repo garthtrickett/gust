@@ -437,6 +437,35 @@ RUNNER_MEDIATED_RESIDUE = {
     "scripts/phase16_abi_composition_parity.sh": 2,
 }
 RUNNER_RESIDUE_OWNER = "24.13"
+
+# ---------------------------------------------------------------------------
+# The shared runner's own default, which no Phase 24 patch owned.
+#
+# RUNNER_MEDIATED_RESIDUE above records converted harnesses that still reach
+# live C through the runner. This records the runner itself:
+# scripts/run-gust-file.sh:19 is
+# RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-mir-to-c}", so a caller that sets
+# nothing reaches the retired backend *by default rather than by selection*
+# -- the "no fallback, retry-through-C, or environment-selected route"
+# invariant read forwards.
+#
+# Four justfile recipes call the runner. Two pin GUST_RUNNER_ROUTE=cranelift
+# on the invoking line and the inventory re-verifies that pin. The two below
+# do not, and both are live: they are Stdlib-owned guards, so no Phase 24
+# patch was given them, and deleting the spelling in 24.13 breaks both.
+#
+# Registered, not fixed: 24.12a retires emitter-only guards, and a default
+# pointing at a spelling is a selection-removal concern. 24.13 flips the
+# default. If Stdlib pins these explicitly first, 24.13's change becomes a
+# no-op -- the check below then fails and the register has to say so, rather
+# than the row being quietly dropped.
+# ---------------------------------------------------------------------------
+
+RUNNER_DEFAULT_ROUTE = 'RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-mir-to-c}"'
+RUNNER_DEFAULT_UNPINNED_CALLERS = (
+    "guard-stdlib-s1-collection-receivers",
+    "guard-stdlib-s1-str-surface",
+)
 RUNNER_CALL = re.compile(r"bash scripts/run-gust-file\.sh")
 
 BACKEND_SPELLING = re.compile(r"--backend (?:mir-to-c|c(?=[\s\"']|$))")
@@ -865,6 +894,22 @@ def check_no_live_c() -> None:
                         for line in text.split("\n")),
                 f"a converted parity harness acquired an unregistered "
                 f"default-route runner call: {locus}")
+
+    # The runner's default route, and every recipe that takes it by omission.
+    runner = (ROOT / "scripts/run-gust-file.sh").read_text(encoding="utf-8")
+    require(RUNNER_DEFAULT_ROUTE in runner,
+            f"the shared runner's default route changed; "
+            f"{RUNNER_RESIDUE_OWNER} owns that flip and this register has "
+            f"to record it rather than silently agree")
+    unpinned = sorted(
+        recipe for recipe, body in recipe_bodies().items()
+        for line in body.split("\n")
+        if "run-gust-file.sh" in line
+        and "GUST_RUNNER_ROUTE=cranelift" not in line)
+    require(unpinned == sorted(RUNNER_DEFAULT_UNPINNED_CALLERS),
+            f"the set of recipes reaching live C through the runner's "
+            f"default moved: measured {unpinned}, registered "
+            f"{sorted(RUNNER_DEFAULT_UNPINNED_CALLERS)}")
 
     bodies = recipe_bodies()
     for recipe in FROZEN_RECIPES:
@@ -1297,6 +1342,10 @@ def validate() -> dict:
     require(node.get("env_parameterised_fixtures") == parameterised,
             "registered environment-parameterised fixtures drifted")
 
+    require(node.get("runner_default_route") == RUNNER_DEFAULT_ROUTE and
+            node.get("runner_default_unpinned_callers") ==
+            list(RUNNER_DEFAULT_UNPINNED_CALLERS),
+            "the registered runner-default residue drifted")
     require(node.get("runner_mediated_residue") ==
             dict(RUNNER_MEDIATED_RESIDUE) and
             node.get("runner_residue_owner") == RUNNER_RESIDUE_OWNER,

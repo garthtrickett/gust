@@ -200,6 +200,9 @@ def validate() -> tuple[dict, dict[str, object]]:
     retirement_transition = registry.get(
         "phase24_frozen_oracle_replacement", {}).get(
             "production_audit_transition")
+    emitter_only_transition = registry.get(
+        "phase24_12a_emitter_only_retirement", {}).get(
+            "production_audit_transition")
     if closure_transition is None:
         validate_mutations(record, summary)
     else:
@@ -275,7 +278,9 @@ def validate() -> tuple[dict, dict[str, object]]:
                     retirement_transition.get("authority_base_main") ==
                     "8aa9922eb40ad404647a86f865f0790ab37a3589" and
                     previous == derivation_transition["current_audit"] and
-                    current == summary and
+                    current == (summary if emitter_only_transition is None
+                                else emitter_only_transition.get(
+                                    "previous_audit")) and
                     sorted(reduced) == [
                         "non_bootstrap_retained_test_surface_count",
                         "repository_explicit_c_count",
@@ -300,6 +305,50 @@ def validate() -> tuple[dict, dict[str, object]]:
                     continue
                 require(current.get(field) == previous.get(field),
                         f"Patch 24.12 changed an unregistered production "
+                        f"audit field: {field}")
+            effective["audit"] = current
+        # Patch 24.12a moves the same three fields again, by exactly the
+        # number of live-C cases its own frozen-surface successor registers.
+        # Two authorities, one number: if they disagree the chain is wrong
+        # somewhere, which is the whole point of registering it twice.
+        if emitter_only_transition is not None:
+            require(retirement_transition is not None,
+                    "the Patch 24.12a production audit successor has no "
+                    "registered predecessor")
+            previous = emitter_only_transition.get("previous_audit", {})
+            current = emitter_only_transition.get("current_audit", {})
+            reduced = emitter_only_transition.get("reduced_fields", [])
+            require(emitter_only_transition.get("contract_version") ==
+                    "phase24_12a_production_audit_transition_v1" and
+                    emitter_only_transition.get("status") ==
+                    "patch24_12a_complete" and
+                    previous == retirement_transition["current_audit"] and
+                    current == summary and
+                    sorted(reduced) == [
+                        "non_bootstrap_retained_test_surface_count",
+                        "repository_explicit_c_count",
+                        "repository_invocation_count"] and
+                    emitter_only_transition.get(
+                        "partial_extra_or_substituted_audit") == "rejected",
+                    "Patch 24.12a production audit transition drifted")
+            removed = emitter_only_transition.get("removed_invocation_count")
+            surface = registry.get(
+                "phase24_12a_emitter_only_retirement", {}).get(
+                    "frozen_surface_transition", {})
+            require(removed == surface.get("removed_case_count"),
+                    "the Patch 24.12a production audit and frozen-surface "
+                    "transitions disagree about how many live-C cases it "
+                    "removed")
+            for field in reduced:
+                require(previous[field] - current[field] == removed,
+                        f"Patch 24.12a production audit field moved by "
+                        f"something other than the registered removal: "
+                        f"{field}")
+            for field in unchanged:
+                if field in reduced:
+                    continue
+                require(current.get(field) == previous.get(field),
+                        f"Patch 24.12a changed an unregistered production "
                         f"audit field: {field}")
             effective["audit"] = current
         validate_mutations(effective, summary)
