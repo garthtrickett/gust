@@ -370,6 +370,30 @@ def effective_relay_inventory(registry: dict, landed_authority: dict) -> dict:
             current["selection_counts"]["explicit_c"],
             "the post-relay census reduction is not the registered "
             "explicit-C removal")
+    # Patch 24.12a advances the same census again, for the same reason: the
+    # seven retired harnesses take their invocations with them. Each link
+    # asserts the same arithmetic, so a successor that reduces by a different
+    # amount than its own frozen-surface transition registers fails here.
+    emitter_only = registry.get(
+        "phase24_12a_emitter_only_retirement", {}).get(
+            "phase22_invocation_successor")
+    if emitter_only is None:
+        return current
+    previous, current = current, emitter_only.get("current_relay_inventory")
+    require(emitter_only.get("previous_relay_inventory") == previous and
+            isinstance(current, dict),
+            "Patch 24.12a post-relay inventory successor drifted")
+    require(current["total"] < previous["total"] and
+            current["unclassified_count"] == previous["unclassified_count"]
+            == 0,
+            "Patch 24.12a did not reduce a fully classified post-relay "
+            "census")
+    removed = previous["total"] - current["total"]
+    require(removed == emitter_only.get("removed_invocation_count") ==
+            previous["selection_counts"]["explicit_c"] -
+            current["selection_counts"]["explicit_c"],
+            "the Patch 24.12a post-relay census reduction is not the "
+            "registered explicit-C removal")
     return current
 
 

@@ -720,6 +720,54 @@ RETIRED_HARNESSES = (
     "scripts/phase21_inert_scoped_query_records.sh",
 )
 
+# ---------------------------------------------------------------------------
+# Surfaces no row owns, and the instrument blind spot that hid them (#396).
+#
+# check_harness_callers() says it closes the gap where "a recipe that calls a
+# C-executing harness without naming a backend still runs live C". It does
+# not: HARNESS_CALL needs the literal path straight after `bash`, and the
+# prevailing justfile idiom assigns it to a variable first
+# (`evidence_script="scripts/x.sh"` then `bash "$evidence_script"`), so those
+# recipes are never required to have a row.
+#
+# Measured on this tree by this lane: 113 recipes call a harness directly and
+# 10 name one only through a variable, all 10 unrowed. The coordinator
+# measured 25 and 24 on the same tree; the two differ because the count
+# depends on which indirection forms are matched, and pinning that down is
+# part of what Patch 24.15a has to do rather than something to settle by
+# picking a number here.
+#
+# Patch 24.12a registers, it does not repair: the HARNESS_CALL fix rides with
+# #390/#393/#395 in Patch 24.15a, and adjudicating the rows it then demands
+# is Patch 24.16's.
+# ---------------------------------------------------------------------------
+
+HARNESS_CALL_BLIND_SPOT_OWNER = "24.15a"
+
+UNOWNED_SURFACES = (
+    {
+        "surface": "scripts/phase12_5_route_architecture.sh",
+        "owner": "24.16",
+        "why": "still runs ./gust --backend mir-to-c as its registered "
+               "route-unavailability probe, and the recipe that calls it "
+               "names it through a variable, so #396 kept it off the rows "
+               "this inventory requires. Adjudicating the row the repaired "
+               "instrument demands is the residue audit's.",
+    },
+    {
+        "surface": "compiler/phase10_help.txt",
+        "owner": "24.13",
+        "why": "the pinned expected output of the `gust --help` contract "
+               "(.github/workflows/heavy-guards.yml:45-46, justfile:10126, "
+               "grepped again at justfile:21674-21675). It advertises "
+               "--backend <mir-to-c|c|cranelift>. Patch 24.13 removes the "
+               "selection, which changes --help, which breaks this fixture -- "
+               "so it is a consequence of selection removal and 24.13's to "
+               "update, not 24.15's package-and-documentation retirement. "
+               "Unowned, it falls between them.",
+    },
+)
+
 STALE_SCORING_OWNER = "24.16"
 
 ACTION_DISAGREES_WITH_OUTCOME = (
@@ -930,6 +978,28 @@ def check_stale_row_scoring(bodies: dict[str, str], workflow_seen: set[str],
             "the stale-row residue must be owned by a patch that can still "
             "fix it")
 
+    # Each unowned surface must still exist, still lack a row, and still
+    # name an owner that can act. A surface that acquires a row has to leave
+    # this register rather than sit in it as a stale claim.
+    rowed = ({recipe for recipe, _, _, _, _ in RECIPE_ROWS}
+             | {workflow for workflow, _, _, _ in WORKFLOW_ROWS}
+             | {key for key, _, _ in REGISTRY_ROWS}
+             | {path for path, _, _, _ in FILE_ROWS}
+             | {path for path, _, _ in SCRIPT_ROWS})
+    for row in UNOWNED_SURFACES:
+        surface = row["surface"]
+        require((ROOT / surface).exists(),
+                f"a registered unowned surface is missing: {surface}")
+        require(surface not in rowed,
+                f"{surface} now has an inventory row and must leave the "
+                f"unowned register")
+        require(row["owner"] not in ("24.12", "24.12a") and row["why"],
+                f"{surface} is registered without an owner that can act, or "
+                f"without a reason")
+    require(HARNESS_CALL_BLIND_SPOT_OWNER not in ("24.12", "24.12a"),
+            "the harness-caller blind spot must be owned by a patch that can "
+            "still repair it")
+
 
 def build_rows() -> list[dict[str, str]]:
     """The inventory's rows, derived. Extracted so the projector and the
@@ -1079,6 +1149,10 @@ def validate() -> dict:
             list(ACTION_DISAGREES_WITH_OUTCOME),
         "is_live_scored_on_mention": list(IS_LIVE_SCORED_ON_MENTION),
     }, "the registered stale-row residue drifted")
+    require(node.get("unowned_surfaces") == {
+        "harness_call_blind_spot_owner": HARNESS_CALL_BLIND_SPOT_OWNER,
+        "surfaces": [dict(row) for row in UNOWNED_SURFACES],
+    }, "the registered unowned-surface residue drifted")
     require(node.get("retired") == {
         "by": RETIRED_BY,
         "recipes": list(RETIRED_RECIPES),

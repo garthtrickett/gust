@@ -9,7 +9,7 @@ Do not edit by hand.
 - Next patch: `22.2`
 - Observed main: `c157c86674624fd298c2f65e98ed8f4df85cb175`
 - Opening-baseline executable compiler invocations: `269`
-- Live successor executable compiler invocations: `199`
+- Live successor executable compiler invocations: `191`
 - Unclassified invocations: `0`
 - Relay state: `exact_post_relay_only`
 - Landed owning PR: `#264`
@@ -35,11 +35,11 @@ Do not edit by hand.
 
 ## Landed successor invocation summary
 
-- Landed selection `explicit_c`: `66`
+- Landed selection `explicit_c`: `58`
 - Landed selection `explicit_cranelift`: `115`
 - Landed selection `explicit_invalid_or_parser_probe`: `3`
 - Landed selection `implicit_default`: `15`
-- Landed consumer class `already_explicit_or_parser_probe`: `184`
+- Landed consumer class `already_explicit_or_parser_probe`: `176`
 - Landed consumer class `cranelift_C_or_diagnostic_guard`: `2`
 - Landed consumer class `help_surface_probe`: `3`
 - Landed consumer class `intentional_default_selection_probe`: `8`
@@ -136,12 +136,7 @@ Do not edit by hand.
 | `scripts/phase13_source_metadata.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase14_composition_differential.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase15_move_state_parity.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `scripts/phase19_classification_parity.sh` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase19_composition_parity.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `scripts/phase19_gust_name_list_removed_parity.sh` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `scripts/phase19_rename_invariance.sh` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `scripts/phase19_rule_convergence_parity.sh` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `scripts/phase19_type_naming_parity.sh` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase20_arena_free.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase20_arena_free.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase20_contextual_generic_constructor.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
@@ -157,8 +152,6 @@ Do not edit by hand.
 | `scripts/phase20_resource_acquisition.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase20_resource_acquisition.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase20_resource_acquisition.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `scripts/phase20_resource_declaration_migration.sh` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `scripts/phase20_resource_declaration_migration.sh` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase20_resource_enforcement.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase20_resource_enforcement.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase20_resource_scope_cleanup.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
@@ -182,7 +175,6 @@ Do not edit by hand.
 | `scripts/phase21_filesystem_allocation_native_source.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase21_full_compiler_native_qualification.py` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase21_full_compiler_native_qualification.py` | `none` | `implicit_default` | `help_surface_probe` | `cranelift` | `help_text` | `22.6_flip_help_expectation` | `help_expectation_changes_before_the_default_route` |
-| `scripts/phase21_inert_scoped_query_records.sh` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase21_od8_adversarial_verdict.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase21_od8_adversarial_verdict.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase21_opening.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |

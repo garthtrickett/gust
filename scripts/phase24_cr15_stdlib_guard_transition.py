@@ -857,6 +857,39 @@ def effective_phase22_summary(registry: dict, value: dict) -> dict:
             surface.get("removed_case_count"),
             "the Phase 22 census and the frozen-surface transition disagree "
             "about how many live-C cases Patch 24.12 removed")
+    # Patch 24.12a advances the same census, and its reduction must agree
+    # with its own frozen-surface transition the same way 24.12's did. Two
+    # authorities measuring one removal: if they disagree, one is measuring
+    # something else.
+    emitter = registry.get("phase24_12a_emitter_only_retirement", {}).get(
+        "phase22_invocation_successor")
+    if emitter is None:
+        return current
+    previous, current = current, emitter.get("current_summary")
+    require(emitter.get("contract_version") ==
+            "phase24_12a_invocation_successor_v1" and
+            emitter.get("status") == "patch24_12a_complete" and
+            emitter.get("previous_summary") == previous and
+            isinstance(current, dict) and
+            emitter.get("partial_or_unregistered_reduction") == "rejected",
+            "Patch 24.12a Phase 22 invocation successor drifted")
+    require(current["total"] < previous["total"] and
+            current["unclassified_count"] == previous["unclassified_count"]
+            == 0,
+            "Patch 24.12a did not reduce a fully classified Phase 22 census")
+    require(emitter.get("removed_invocation_count") ==
+            previous["total"] - current["total"] and
+            emitter["removed_invocation_count"] ==
+            previous["selection_counts"]["explicit_c"] -
+            current["selection_counts"]["explicit_c"],
+            "the Patch 24.12a census reduction is not entirely explicit-C")
+    emitter_surface = registry.get(
+        "phase24_12a_emitter_only_retirement", {}).get(
+            "frozen_surface_transition", {})
+    require(emitter["removed_invocation_count"] ==
+            emitter_surface.get("removed_case_count"),
+            "the Phase 22 census and the frozen-surface transition disagree "
+            "about how many live-C cases Patch 24.12a removed")
     return current
 
 
@@ -1776,12 +1809,56 @@ def normalize_phase23_text_surfaces(
                 "rejected",
                 "Patch 24.12 text surface successor drifted")
         oracle_paths = list(oracle_surface["registered_changed_paths"])
+    emitter_surface = registry.get(
+        "phase24_12a_emitter_only_retirement", {}).get("text_surface_successor")
+    emitter_paths: list[str] = []
+    if emitter_surface is not None:
+        require(emitter_surface.get("contract_version") ==
+                "phase24_12a_text_surface_successor_v1" and
+                emitter_surface.get("status") == "patch24_12a_complete" and
+                isinstance(emitter_surface.get("added_text_surfaces"), list) and
+                isinstance(emitter_surface.get("removed_text_surfaces"),
+                           list) and
+                emitter_surface.get("partial_extra_or_substituted_surface") ==
+                "rejected",
+                "Patch 24.12a text surface successor drifted")
+        emitter_paths = list(emitter_surface["registered_changed_paths"])
     solely_24_2f = [path for path in changed_paths
                     if path not in auth_paths and path not in oracle_paths]
     changed_rows = [row for row in rows if row["path"] in solely_24_2f]
     require(changed_rows == [row for row in transition["current_changed_text_surfaces"]
                              if row["path"] in solely_24_2f],
             "Patch 24.2f changed text surfaces are partial or substituted")
+    if emitter_paths:
+        emitter_pre = {row["path"]: row for row
+                       in emitter_surface["previous_changed_text_surfaces"]}
+        emitter_post = {row["path"]: row for row
+                        in emitter_surface["current_changed_text_surfaces"]}
+        require(sorted(emitter_pre) == sorted(emitter_paths) and
+                sorted(emitter_post) == sorted(emitter_paths),
+                "Patch 24.12a registered paths and rows disagree")
+        emitter_live = {row["path"]: row for row in rows
+                        if row["path"] in emitter_paths}
+        require(sorted(emitter_live) == sorted(emitter_paths),
+                "Patch 24.12a registered text surface is missing")
+        for path in emitter_paths:
+            require(emitter_live[path] in (emitter_pre[path],
+                                           emitter_post[path]),
+                    "Patch 24.12a changed text surfaces are partial or "
+                    f"substituted: {path}")
+        # Same three directions Patch 24.12 had to handle: every registered
+        # path goes back to its pre-patch row, every added surface is
+        # dropped, and every removed surface is put back -- otherwise the
+        # pinned unchanged-other digest, which is computed over these rows,
+        # sees a tree seven surfaces short.
+        added = set(emitter_surface["added_text_surfaces"])
+        removed = [copy.deepcopy(row)
+                   for row in emitter_surface["removed_text_surfaces"]]
+        rows = [dict(emitter_pre.get(row["path"], row)) for row in rows
+                if row["path"] not in added]
+        rows = sorted(rows + removed, key=lambda row: str(row["path"]))
+        by_path = {row["path"]: row for row in rows}
+
     oracle_pre_rows: dict[str, dict] = {}
     if oracle_paths:
         oracle_pre = {row["path"]: row for row

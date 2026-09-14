@@ -586,6 +586,9 @@ def validate_transition(record: dict, registry: dict) -> None:
             retirement_frozen = registry.get(
                 "phase24_frozen_oracle_replacement", {}).get(
                     "frozen_surface_transition")
+            emitter_frozen = registry.get(
+                "phase24_12a_emitter_only_retirement", {}).get(
+                    "frozen_surface_transition")
             require(
                 derivation_frozen.get("contract_version") ==
                 "phase24_cr15_derivation_frozen_surface_transition_v1" and
@@ -615,10 +618,27 @@ def validate_transition(record: dict, registry: dict) -> None:
                         "previous_live_c_case_surface") ==
                     derivation_frozen["current_live_c_case_surface"] and
                     retirement_frozen.get("current_live_c_case_surface") ==
-                    live_frozen and
+                    (emitter_frozen["previous_live_c_case_surface"]
+                     if emitter_frozen is not None else live_frozen) and
                     retirement_frozen.get(
                         "partial_or_unregistered_surface") == "rejected",
                     "Patch 24.12 frozen surface successor drifted")
+                # Patch 24.12a retires the seven emitter-only harnesses, so
+                # it is the tail and the one that must equal the live scan.
+                if emitter_frozen is not None:
+                    require(
+                        emitter_frozen.get("contract_version") ==
+                        "phase24_12a_frozen_surface_transition_v1" and
+                        emitter_frozen.get("status") ==
+                        "patch24_12a_complete" and
+                        emitter_frozen.get(
+                            "previous_live_c_case_surface") ==
+                        retirement_frozen["current_live_c_case_surface"] and
+                        emitter_frozen.get("current_live_c_case_surface") ==
+                        live_frozen and
+                        emitter_frozen.get(
+                            "partial_or_unregistered_surface") == "rejected",
+                        "Patch 24.12a frozen surface successor drifted")
             # Compare the two ends of the link 24.0c registered, not the live
             # surface against 24.0c's start: with a successor in the chain the
             # live surface belongs to the successor, and reading it here would
