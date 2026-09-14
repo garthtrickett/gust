@@ -1023,6 +1023,13 @@ def build_rows() -> list[dict[str, str]]:
                for path, owner, action in SCRIPT_ROWS])
 
 
+def tracked_text_paths() -> list[str]:
+    """Every tracked file, so a reference sweep cannot be scoped by suffix."""
+    result = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT,
+                            check=True, stdout=subprocess.PIPE)
+    return [p for p in result.stdout.decode().split("\0") if p]
+
+
 def expected_sweep() -> dict[str, int]:
     expected = dict(SWEEP_COUNTS)
     for family in SH_FAMILIES.values():
@@ -1067,6 +1074,57 @@ def validate() -> dict:
         require(harness not in DEFERRED_HARNESSES,
                 f"a retired harness is still registered as deferred: "
                 f"{harness}")
+    # Nothing may still call a retired harness, over every tracked file
+    # rather than one population.
+    #
+    # This exists because deleting the seven left
+    # scripts/phase19_brand_authority_parity.sh -- a *surviving* harness --
+    # calling two of them, and the guard died at exit 127, command not found.
+    # It was missed because one sweep covered scripts/*.py and another
+    # covered justfile recipe bodies, and a shell harness calling another
+    # shell harness is in neither. That is the same defect as #390, #393,
+    # #395 and #396: an enumeration reporting completeness over a population
+    # that excludes the real case. Here it bit the patch rather than the
+    # repo, so the fix is to stop scoping the sweep by file type.
+    #
+    # A guard that dies at 127 proves nothing about the invariant it names,
+    # which is this phase's own "absence never counts as success" rule
+    # arriving as a missing file rather than a skipped test.
+    # Files that record the retirement rather than depend on it. Named
+    # individually, because excluding by suffix is the mistake this sweep
+    # exists to correct.
+    recorders = {
+        "scripts/phase24_retirement_consumer_inventory.py",
+        "docs/PHASE24_RETIREMENT_CONSUMER_INVENTORY.md",
+        "scripts/cranelift_feature_registry.json",
+        # The projected text-surface census. Patch 24.12a's projection puts
+        # removed surfaces back before the pinned unchanged-other digest is
+        # computed over them, so this document lists the retired harnesses by
+        # construction. A mention here is the projection working, not a
+        # dangling reference -- and the census would be seven rows short
+        # without it.
+        "compiler/CRANELIFT_PHASE23_MIR_TO_C_DEPRECATION_OPENING.md",
+        # Inverse-assertion sites: these name a retired harness precisely in
+        # order to require that it is gone. Excluding them is not a hole --
+        # a reference that asserts absence is the opposite of a dangling
+        # call, and their own guards fail if the harness returns.
+        "scripts/phase21_inert_scoped_query_records.py",
+        "scripts/phase19_closure.py",
+    }
+    for path in tracked_text_paths():
+        if path in recorders:
+            continue
+        try:
+            body = read(path)
+        except (OSError, UnicodeDecodeError):
+            # A tracked binary cannot call anything. Skipping it is not a
+            # scoped-by-suffix exclusion: it is the only file class that
+            # cannot hold a reference at all.
+            continue
+        for harness in RETIRED_HARNESSES:
+            require(harness not in body,
+                    f"{path} still references a harness Patch {RETIRED_BY} "
+                    f"retired: {harness}")
 
     for recipe, needle, owner, action, is_live in RECIPE_ROWS:
         require(recipe in bodies, f"inventoried recipe is missing: {recipe}")

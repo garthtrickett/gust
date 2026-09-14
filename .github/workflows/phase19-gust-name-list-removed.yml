@@ -14,10 +14,8 @@ on:
       - 'scripts/cranelift_registry.py'
       - 'scripts/cranelift_test_levels.json'
       - 'scripts/phase19_gust_name_list_removed.py'
-      - 'scripts/phase19_gust_name_list_removed_parity.sh'
       - 'scripts/phase19_retired_prototype_absence.py'
       - 'scripts/phase19_rule_convergence.py'
-      - 'scripts/phase19_rule_convergence_parity.sh'
       - 'docs/SHARED_SEMANTIC_ZONE.md'
       - 'TASK.md'
       - 'justfile'
@@ -33,7 +31,6 @@ on:
       - 'compiler/phase19_name_list_removed_*_source.gst'
       - 'compiler/CRANELIFT_PHASE19_GUST_NAME_LIST_REMOVED.md'
       - 'scripts/phase19_gust_name_list_removed.py'
-      - 'scripts/phase19_gust_name_list_removed_parity.sh'
   workflow_dispatch:
 
 permissions:
