@@ -6,8 +6,8 @@
 
 Status: `patch24_11_complete`
 Authority base: `b7b1713cd65630b14ae92e46afd393990928a2e2`
-Rows: `98`
-Digest: `898dc586d99195171dc8e7cb3552fc7bf2b6bb4019802be16105d3a32af4edfd`
+Rows: `112`
+Digest: `105fb5f67807a4574dfbfb83a6bbddee1b1e6071f78ce5078beb67c788f801df`
 
 ## Bootstrap-entry decision
 
@@ -92,6 +92,15 @@ Digest: `898dc586d99195171dc8e7cb3552fc7bf2b6bb4019802be16105d3a32af4edfd`
 - sh-family:phase21-native-qualification (convert)
 - tests/e2e_codegen_assertions.gst :: "./gust --backend mir-to-c tests/codegen (convert)
 
+### 24.12b
+
+- scripts/phase21_compiler_support_native_qualification.py (convert)
+- scripts/phase21_selected_compiler_module_qualification.py (convert)
+- scripts/phase22_default_route_flip.py (convert)
+- scripts/phase22_preflip_default_cohort.py (convert)
+- scripts/phase24_cr15_derivation.py (convert)
+- scripts/phase24_cr15_qualification.py (convert)
+
 ### 24.13
 
 - compiler/test_runner_entry.gst ::     MirToC, (retire)
@@ -101,6 +110,7 @@ Digest: `898dc586d99195171dc8e7cb3552fc7bf2b6bb4019802be16105d3a32af4edfd`
 - guard-positive (migrate)
 - make-test-suite (migrate)
 - make-test-suite-parallel (migrate)
+- scripts/phase24_frozen_oracle_capture.py (retire)
 - scripts/run-gust-file.sh :: RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-mir-t (migrate)
 - sh-family:phase22-flip-evidence:deferred-to-24.13 (retire)
 - tests/test_runner.gst :: std.Concat("./gust --backend mir-to-c ", (migrate)
@@ -110,6 +120,7 @@ Digest: `898dc586d99195171dc8e7cb3552fc7bf2b6bb4019802be16105d3a32af4edfd`
 - Makefile :: CC="${CC}" CFLAGS="${CFLAGS}" INCLUDES=" (migrate)
 - Makefile :: build/gust_final.c (migrate)
 - compiler/test_runner_entry.gst :: the MIR-to-C backend does not accept -o (retire)
+- scripts/phase21_cranelift_built_compiler_programs.py (retire)
 
 ### 24.15
 
@@ -134,9 +145,18 @@ Digest: `898dc586d99195171dc8e7cb3552fc7bf2b6bb4019802be16105d3a32af4edfd`
 - phase24-cr15-stdlib-guard-transition.yml (retire)
 - pr-fast.yml (retire)
 - run-step52-positive-batch (retire)
+- scripts/phase20_generated_mir_scale.py (materialize)
+- scripts/phase23_issue_health_opening.py (retire)
 - scripts/phase23_mir_to_c_deprecation_opening.py (retire)
 - scripts/phase23_production_release_audit.py (retire)
+- scripts/phase23_same_scope_declaration.py (convert)
+- scripts/phase23_structured_guard_defer_native_admission.py (retire)
+- scripts/phase24_resource_implicit_transfer.py (materialize)
 - smoke-fixtures (retire)
+
+### 24.3
+
+- scripts/phase24_filename_behavior_characterization.py (carry)
 
 ### 25
 
