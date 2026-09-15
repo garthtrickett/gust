@@ -472,14 +472,35 @@ def _backend_removal_successor(registry: dict, previous: dict) -> dict:
     moved = removal.get("reclassified_invocation_count")
     require(isinstance(moved, int) and moved > 0,
             "Patch 24.13 registered a reclassification that moves nothing")
-    require(moved ==
-            previous["selection_counts"].get("explicit_c", 0) -
-            current["selection_counts"].get("explicit_c", 0) and
-            moved ==
-            current["selection_counts"].get("explicit_bootstrap_emitter", 0) -
-            previous["selection_counts"].get("explicit_bootstrap_emitter", 0),
-            "the Patch 24.13 registered move disagrees with the scan: it must "
-            "equal both the explicit-C drop and the bootstrap-entry rise")
+    # Two destinations, not one. This contract first required the explicit-C
+    # drop to equal the bootstrap-entry rise, which was true while the
+    # bootstrap entry was the only place a retired invocation could go. Patch
+    # 24.13 then routed justfile-step51's three generic recipes to the native
+    # backend, so the drop is 5 and the rise is 2 and no single equality can
+    # hold. Measured, not assumed: 56 -> 51 explicit_c, 119 -> 122
+    # explicit_cranelift, 0 -> 2 explicit_bootstrap_emitter, total 196 both
+    # sides.
+    #
+    # Generalised by naming the destinations and requiring the drop to equal
+    # their SUM, which is still exact. Relaxing to `<=` was considered and
+    # rejected for the same reason it was rejected when this contract was
+    # written: it stops distinguishing an invocation that MOVED from one that
+    # vanished, and vanishing is precisely what a removal patch must not do
+    # silently.
+    drop = (previous["selection_counts"].get("explicit_c", 0) -
+            current["selection_counts"].get("explicit_c", 0))
+    destinations = ("explicit_bootstrap_emitter", "explicit_cranelift")
+    rise = sum(current["selection_counts"].get(name, 0) -
+               previous["selection_counts"].get(name, 0)
+               for name in destinations)
+    require(moved == drop and moved == rise,
+            "the Patch 24.13 registered move disagrees with the scan: the "
+            f"registered move is {moved}, the explicit-C drop is {drop}, and "
+            f"the rise across {destinations} is {rise}. They must be equal, "
+            "so an invocation that disappeared cannot pass as one that moved.")
+    require(current["total"] == previous["total"],
+            "Patch 24.13 reclassifies invocations, so the total must be "
+            f"unchanged: {previous['total']} -> {current['total']}")
     return current
 
 
