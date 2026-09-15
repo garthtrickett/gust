@@ -18,7 +18,7 @@
     "stderr_population": {
       "non_empty": 0,
       "note": "v1 recorded 0 non-empty across 421 records (#417); this count is stated so a uniformly empty corpus is visible rather than implicit",
-      "records": 2
+      "records": 47
     }
   },
   "format": "phase24_frozen_oracle_vectors_v2",

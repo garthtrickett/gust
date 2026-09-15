@@ -27279,6 +27279,8 @@
     },
     "vector_count": 253,
     "vectors_digest": "577f03ff1d8b51ee790bda036798c4cca66261b13a8302bf2549953072b2836d",
+    "v2_vector_count": 29,
+    "v2_vectors_digest": "a69b383d5c156b1e9e88ea34b03df827e11f8a142da823e61215865e45a71f2f",
     "version": "phase24_frozen_oracle_replacement_v1"
   }
 }

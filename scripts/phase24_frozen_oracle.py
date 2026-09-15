@@ -511,6 +511,29 @@ PYTHON_RETIRED_ARGV_PENDING_CONVERSION: tuple[str, ...] = (
 # Each exclusion carries the reason it is out, and every reason is a property
 # something else on the tree can contradict -- not an opinion recorded once.
 PYTHON_RETIRED_ARGV_EXCLUSIONS: dict[str, str] = {
+    # The three the literals-only scan could not see. Registered rather than
+    # converted, each for a reason measured on this tree, and all three are
+    # workflow-reachable -- they were executing live C while this guard
+    # reported zero pending conversions.
+    "scripts/phase21_complete_guard_suite.py":
+        "a two-arm parity suite whose oracle arm IS the retired route: "
+        "compile_case builds the argv from a parameter and qualify_case "
+        "passes 'mir-to-c'. Conversion needs a frozen vector per case, and "
+        "only 4 of its 326 runner cases have one -- 322 captures, which is "
+        "not a budget Patch 24.12b holds. Routing it natively instead would "
+        "leave a parity suite comparing the native arm against itself. Owned "
+        "by 24.13, which cannot merge while this suite still executes a "
+        "spelling it removes (#424).",
+    "scripts/phase23_mir_to_c_deprecation_opening.py":
+        "opening record for a closed phase: compile_baseline('mir-to-c') and "
+        "('c') establish the Phase 23 deprecation baseline itself, so the "
+        "retired-route call produces the reference rather than being judged "
+        "against one. Its source has no vector. Same disposition as "
+        "phase23_structured_guard_defer_native_admission.",
+    "scripts/phase24_cr15_opening.py":
+        "opening record for CR-15: its routes list is "
+        "[explicit_c_spellings[0], explicit_native_backend], and the explicit-C "
+        "route is the thing the opening measures. Its witness has no vector.",
     "scripts/phase21_cranelift_built_compiler_programs.py":
         "registered focused_live_oracle: classify_surface returns "
         "focused_live_oracle for this path, the single live lane Patch 23.10 "
@@ -619,6 +642,24 @@ def python_retired_argv_sites() -> dict[str, list[int]]:
                 elif (isinstance(value, str) and value.startswith("--backend=")
                       and value.split("=", 1)[1] in retired):
                     lines.append(node.lineno)
+                elif value == "--backend" and index + 1 < len(elements):
+                    # The backend is chosen by a VARIABLE, so its value is not
+                    # visible here. Recognising only adjacent literals made this
+                    # scan report a file as clean while it executed live C:
+                    # phase21_complete_guard_suite.compile_case builds
+                    # [compiler, "--backend", backend] and qualify_case passes
+                    # "mir-to-c" into it, from three workflows.
+                    #
+                    # Resolving that needs interprocedural dataflow. This check
+                    # does the thing it can defend instead: an argv whose
+                    # backend value cannot be resolved to a literal is
+                    # UNRESOLVED, and unresolved fails -- same direction as the
+                    # rest of this instrument, where a site that cannot be
+                    # classified is a failure rather than a pass. A file that
+                    # genuinely only ever passes a live spelling says so with a
+                    # registered exclusion.
+                    if node.elts[index + 1].__class__ is not ast.Constant:
+                        lines.append(node.lineno)
         if lines:
             found[path.relative_to(ROOT).as_posix()] = sorted(set(lines))
     return found
@@ -1634,6 +1675,23 @@ def validate() -> dict:
     require("vector_ids" not in node,
             "the registry must not enumerate frozen fixture paths; the "
             "Phase 12.5 route probes have to stay out of it")
+
+    # v2 is pinned the same way v1 is. It was not, and the asymmetry was
+    # load-bearing: capture_authority_digest is WRITTEN into each v2 vector and
+    # read by nothing, so a v2 observation could be edited -- keeping its own
+    # size and sha256 fields self-consistent -- and the loader would accept it,
+    # because it checked only the format and collisions against v1. The frozen
+    # corpus is the only oracle the retired backend leaves behind; an
+    # unpinned half of it is a corpus that can be quietly rewritten.
+    if VECTORS_V2.exists():
+        v2_table = json.loads(VECTORS_V2.read_text(encoding="utf-8"))["vectors"]
+        require(node.get("v2_vector_count") == len(v2_table),
+                "registered v2 vector count drifted: registry says "
+                f"{node.get('v2_vector_count')}, the manifest holds "
+                f"{len(v2_table)}")
+        require(node.get("v2_vectors_digest") == canonical_digest(v2_table),
+                "registered v2 vectors digest drifted; a v2 observation was "
+                "edited after capture")
 
     check_no_live_c()
     check_native_arm_split()

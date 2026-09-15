@@ -219,11 +219,20 @@ def main() -> None:
     def empty(record: dict) -> bool:
         return int(record["size"]) == 0
 
-    stderr_records = [block["stderr"]
-                      for vector in vectors.values()
-                      for key in ("compile", "execution")
-                      if (block := vector.get(key))]
-    non_empty = sum(1 for record in stderr_records if not empty(record))
+    def stderr_population(table: dict) -> tuple[int, int]:
+        """Records and non-empty count over WHATEVER vectors are passed.
+
+        Extracted so the header can be derived from the merged table rather
+        than from the current run. Computing it once, before the merge, is how
+        the committed v2 file came to declare 2 records while holding 29.
+        """
+        records = [block["stderr"]
+                   for vector in table.values()
+                   for key in ("compile", "execution")
+                   if (block := vector.get(key))]
+        return len(records), sum(1 for record in records if not empty(record))
+
+    record_count, non_empty = stderr_population(vectors)
 
     revision = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT,
                               capture_output=True, text=True, check=False)
@@ -243,7 +252,7 @@ def main() -> None:
                          "can be captured after it merges",
             "source_commit": revision.stdout.strip(),
             "stderr_population": {
-                "records": len(stderr_records),
+                "records": record_count,
                 "non_empty": non_empty,
                 "note": "v1 recorded 0 non-empty across 421 records (#417); "
                         "this count is stated so a uniformly empty corpus is "
@@ -272,11 +281,18 @@ def main() -> None:
                         f"{identifier}; refusing to overwrite it")
         vectors.update(previous)
         document["vectors"] = dict(sorted(vectors.items()))
+        # Recompute the header over the MERGED table. Without this the
+        # document describes only the vectors this invocation happened to
+        # capture, while carrying every vector captured before it -- which is
+        # how the committed file came to say records=2 over 29 vectors.
+        record_count, non_empty = stderr_population(document["vectors"])
+        document["capture_authority"]["stderr_population"]["records"] = record_count
+        document["capture_authority"]["stderr_population"]["non_empty"] = non_empty
 
     out.write_text(json.dumps(document, indent=2, sort_keys=True) + "\n",
                    encoding="utf-8")
     print(f"{GUARD}: captured {len(document['vectors'])} vectors "
-          f"({non_empty}/{len(stderr_records)} stderr records non-empty)")
+          f"({non_empty}/{record_count} stderr records non-empty)")
 
 
 if __name__ == "__main__":
