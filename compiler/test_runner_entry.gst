@@ -96,11 +96,25 @@ func compiler_parse_invocation(args: std.Vector[str, ctx], ctx: &Arena) Compiler
             }
 
             mut backend_name := args[i + 1];
+            // Patch 24.13: the user-facing generated-C spellings are removed.
+            // They reject with a diagnostic naming the removal rather than
+            // falling through to "unknown backend", so a caller that still
+            // asks for them is told what happened instead of being told the
+            // spelling was never valid.
             if std.str_eq(backend_name, "mir-to-c") == 1 ||
                std.str_eq(backend_name, "c") == 1
             {
+                compiler_invocation_fail(std.Concat(
+                    "the generated-C backend was removed in Phase 24: ",
+                    backend_name));
+            }
+            // Patch 24.11 decided this entry and Patch 24.13 lands it: the
+            // emitter survives as bootstrap-only machinery reachable only
+            // through an explicit internal spelling, which is not advertised
+            // in help and reuses the existing MirToC tag.
+            if std.str_eq(backend_name, "bootstrap-emitter") == 1 {
                 unsafe {
-                    invocation.backend.tag = 0; // MirToC
+                    invocation.backend.tag = 0; // MirToC, bootstrap-only
                 }
             } else if std.str_eq(backend_name, "cranelift") == 1 {
                 unsafe {
