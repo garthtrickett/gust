@@ -6,8 +6,8 @@
 
 Status: `patch24_11_complete`
 Authority base: `b7b1713cd65630b14ae92e46afd393990928a2e2`
-Rows: `112`
-Digest: `105fb5f67807a4574dfbfb83a6bbddee1b1e6071f78ce5078beb67c788f801df`
+Rows: `110`
+Digest: `8d32bf7cc1c00d97de97e33b88e1ae2ad63f445cdb1878154f39fb4f3e3ce9fa`
 
 ## Bootstrap-entry decision
 
@@ -104,14 +104,12 @@ Digest: `105fb5f67807a4574dfbfb83a6bbddee1b1e6071f78ce5078beb67c788f801df`
 ### 24.13
 
 - compiler/test_runner_entry.gst ::     MirToC, (retire)
-- compiler/test_runner_entry.gst :: gust --backend mir-to-c <source.gst> (retire)
 - compiler/test_runner_entry.gst :: std.str_eq(backend_name, "mir-to-c") (retire)
 - guard-cranelift-phase10-backend-selection-contract (retire)
 - guard-positive (migrate)
 - make-test-suite (migrate)
 - make-test-suite-parallel (migrate)
 - scripts/phase24_frozen_oracle_capture.py (retire)
-- scripts/run-gust-file.sh :: RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-mir-t (migrate)
 - sh-family:phase22-flip-evidence:deferred-to-24.13 (retire)
 - tests/test_runner.gst :: std.Concat("./gust --backend mir-to-c ", (migrate)
 
