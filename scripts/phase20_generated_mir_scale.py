@@ -68,6 +68,29 @@ def validate() -> dict:
     require(value.get("route_policy") ==
             "generated_scalars_and_large_function_use_three_way_source_and_direct_mir_agreement_while_large_module_uses_mir_to_c_source_oracle_against_direct_canonical_mir_because_the_source_native_planner_intentionally_rejects_unregistered_call_graph_shapes",
             "Patch 20.14 route policy drifted")
+    # Patch 24.12b (#416): the large_module case is materialized as a tracked
+    # fixture so it can carry a frozen vector. Its oracle is the retired
+    # route -- the registered route_policy above says so, because the
+    # source-native planner intentionally rejects these call-graph shapes --
+    # and Patch 24.13 makes capturing one impossible forever.
+    #
+    # A materialized copy of generated output is a stale copy waiting to
+    # happen, so it is not merely committed: it must still be byte-identical
+    # to what the generator produces from the registered function_count. If
+    # the generator changes and the fixture does not, this fails rather than
+    # letting the frozen vector describe a source that no longer exists.
+    materialized = ROOT / "compiler/phase20_generated_large_module_source.gst"
+    require(materialized.is_file(),
+            "the materialized large_module fixture is missing")
+    large_module_count = {
+        row["id"]: row for row in value["cohorts"]
+    }["large_module"]["function_count"]
+    require(materialized.read_text(encoding="utf-8") ==
+            module_source(large_module_count),
+            "the materialized large_module fixture has drifted from the "
+            "generator; regenerate it or the frozen vector describes a "
+            "source that no longer exists")
+
     require(value.get("normalization_policy") == "none",
             "Patch 20.14 silently permits normalization")
 

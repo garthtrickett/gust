@@ -14,11 +14,11 @@
     },
     "oracle_route": "explicit_retired_backend_spelling",
     "sealed_by": "Patch 24.13 removes backend selection; no vector can be captured after it merges",
-    "source_commit": "d995f64be8fe30cb0e83b4832e539df4e9d7176a",
+    "source_commit": "220f3aba47c1174f1d89cee2200e1fc866fb3e28",
     "stderr_population": {
       "non_empty": 0,
       "note": "v1 recorded 0 non-empty across 421 records (#417); this count is stated so a uniformly empty corpus is visible rather than implicit",
-      "records": 12
+      "records": 2
     }
   },
   "format": "phase24_frozen_oracle_vectors_v2",
@@ -62,6 +62,41 @@
       "side_effects": [],
       "source_fixture": "compiler/parser_reference_access_test_entry.gst",
       "source_sha256": "c946336db2076ed156a1078062a6f95ad03bd102665e6645c3fe4fd399ab4a8e",
+      "workdir_sensitive": false
+    },
+    "compiler/phase20_generated_large_module_source.gst": {
+      "archived_corpus_case": null,
+      "capture_authority_digest": "e4856f72fa2acb2851eed35a226cc184d6d95be1839f0aaab0a9089009f48e5e",
+      "compile": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "sha256": "1ed988147265f49a46359b0338b3bf09df19b8229ff3701847cb9f1f1147a282",
+          "size": 22889
+        }
+      },
+      "execution": {
+        "exit": 64,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        }
+      },
+      "kind": "exec",
+      "provenance": "captured_live_while_green_patch24_12b",
+      "side_effects": [],
+      "source_fixture": "compiler/phase20_generated_large_module_source.gst",
+      "source_sha256": "2bfa17af8cd21f2500aa37ea63115be899f06091655a4f86086f15ce6db4e4a1",
       "workdir_sensitive": false
     },
     "compiler/phase21_selected_codegen_slice.gst": {
