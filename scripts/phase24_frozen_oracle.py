@@ -554,6 +554,43 @@ PYTHON_RETIRED_ARGV_EXCLUSIONS: dict[str, str] = {
 }
 
 
+# Patch 24.12b (#416): fixtures that are modules, not programs.
+#
+# A module has no `main`, so it cannot be captured as an exec vector -- the
+# capture tool's link step fails, correctly, and writes nothing. It does not
+# need one: a module's behaviour is exercised through the source that imports
+# it, and that source carries the vector.
+#
+# Registered as a claim the validator checks rather than a note: each entry
+# must actually be imported by a fixture that has a vector. A module whose
+# importer loses its vector stops being covered, and this fails rather than
+# leaving the module silently uncaptured.
+PYTHON_MODULE_FIXTURES: dict[str, str] = {
+    "compiler/phase21_selected_declaration_module.gst":
+        "compiler/phase21_selected_declaration_source.gst",
+    "compiler/phase22_default_index_initialization_helper.gst":
+        "compiler/phase22_default_index_initialization_source.gst",
+    "compiler/phase24_resource_implicit_transfer_module.gst":
+        "compiler/phase24_resource_implicit_transfer_positive.gst",
+}
+
+
+def check_module_fixture_cover() -> int:
+    """Every registered module is imported by a fixture that has a vector."""
+    servable = load_servable_vectors()["vectors"]
+    for module, importer in PYTHON_MODULE_FIXTURES.items():
+        require((ROOT / module).is_file(),
+                f"a registered module fixture is missing: {module}")
+        require(importer in servable,
+                f"module {module} is registered as covered by {importer}, "
+                f"but that fixture has no frozen vector")
+        body = (ROOT / importer).read_text(encoding="utf-8", errors="replace")
+        require(Path(module).name in body,
+                f"{importer} no longer imports {module}, so the module is "
+                f"not covered by it")
+    return len(PYTHON_MODULE_FIXTURES)
+
+
 def python_retired_argv_sites() -> dict[str, list[int]]:
     """Every scripts/*.py that builds an argv selecting the retired backend.
 
@@ -1644,6 +1681,7 @@ def validate() -> dict:
     # tree rather than read off FROZEN_LOCI. check_no_live_c above iterates a
     # registered tuple and so cannot see a guard that was never registered.
     python_population = check_python_population()
+    check_module_fixture_cover()
     require(node.get("frozen_loci") == list(FROZEN_LOCI) and
             node.get("frozen_recipes") == list(FROZEN_RECIPES),
             "registered frozen locus set drifted")
