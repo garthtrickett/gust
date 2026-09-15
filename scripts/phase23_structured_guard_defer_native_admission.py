@@ -154,20 +154,21 @@ def run(command: list[str], *, env: dict[str, str] | None = None) -> subprocess.
                           stderr=subprocess.PIPE, check=False)
 
 
-def run_oracle(source: Path) -> tuple[int, bytes, bytes]:
-    generated = run([str(GUST), "--backend", "mir-to-c", str(source)])
-    require(generated.returncode == 0, "MIR-to-C oracle did not compile positive")
-    require(generated.stderr == b"", "MIR-to-C oracle emitted compiler stderr")
-    output_c = BUILD / "positive.c"
-    output_c.write_bytes(generated.stdout)
-    final_c = BUILD / "positive.final.c"
-    final_c.write_bytes((ROOT / "src/runtime.c").read_bytes() + generated.stdout)
-    program = BUILD / "positive.c.program"
-    linked = run(["cc", "-O0", "-w", "-pthread", "-Isrc", str(final_c),
-                  "-o", str(program)])
-    require(linked.returncode == 0, "MIR-to-C oracle generated C did not link")
-    observed = run([str(program)])
-    return observed.returncode, observed.stdout, observed.stderr
+# Patch 24.13: run_oracle is retired, not merely unused.
+#
+# It compiled the positive fixture through the MIR-to-C backend, host-compiled
+# the result and ran it, to serve as the differential oracle for run_native.
+# The conversion below dropped the differential -- the native arm is held to
+# the registered observables directly -- which left this function with no
+# callers while it still executed the spelling this patch removes. Dead code
+# that invokes a removed backend is exactly what #424 was filed about: it does
+# not run, so nothing fails, and it survives review as "unused".
+#
+# What it asserted is not lost. MIR_TO_C_COMMAND above still records the argv
+# it built, and the Phase 22 successor manifest still pins that row as this
+# guard's history; the frozen oracle's discharged register asserts that the
+# argv is no longer CONSTRUCTED anywhere in this file. So the record of what
+# the oracle was survives, and the claim that it no longer runs is checked.
 
 
 def run_native(source: Path) -> tuple[int, bytes, bytes, Path]:

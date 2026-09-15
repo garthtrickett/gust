@@ -115,11 +115,18 @@ def scan() -> dict[str, object]:
             "make phase10-native-package",
             "./build/phase10-package/bin/gust",
             "--backend cranelift",
-            # Still present and still audited: the runner keeps an explicit
-            # retired-route branch so a caller that pins it reaches the
-            # compiler and gets the removal diagnostic, rather than this
-            # script rejecting an argument the compiler explains better.
-            "./gust --backend mir-to-c",
+            # Rebased by Patch 24.13, because the earlier marker stopped
+            # being true. It expected the runner to still CALL the retired
+            # backend, on the reasoning that the compiler explains the removal
+            # better than the script could. Once the backend is gone that call
+            # can only reach a rejection, so the runner rejects the route
+            # itself -- and the audit now checks the thing that matters, which
+            # is that the pinned route is still RECOGNISED and refused with a
+            # reason rather than silently aliased to cranelift. A runner that
+            # quietly treated mir-to-c as cranelift would have passed the old
+            # marker's intent and fails these two.
+            '[ "$RUNNER_ROUTE" = "mir-to-c" ]',
+            "which was removed in Phase 24",
             'NATIVE_OUTPUT="build/${TEST_STEM}_bin"',
             "COMPILING GUST WITH CRANELIFT",
         )),
@@ -131,9 +138,24 @@ def scan() -> dict[str, object]:
         )),
     )
     runner = RUNNER.read_text(encoding="utf-8")
-    require(runner.count("--backend mir-to-c") == 1 and
-            runner.count("--backend cranelift") == 1,
-            "shared runner does not expose exactly one explicit route per backend")
+    # Patch 24.13: INVERTED, not relaxed. This required exactly one explicit
+    # route per backend, which was the right shape while both backends
+    # existed. With the generated-C backend removed, the same intent -- the
+    # runner exposes each route exactly once, and no route is ambiguous --
+    # becomes: no mir-to-c INVOCATION at all, still exactly one cranelift
+    # route, and exactly one place where the pinned mir-to-c route VALUE is
+    # refused.
+    #
+    # Keeping the count at 1 by leaving a dead call would satisfy the old
+    # line; dropping the line entirely would let the route be silently aliased
+    # to cranelift. Both are what this asserts against.
+    require(runner.count("--backend mir-to-c") == 0,
+            "the shared runner still invokes the removed backend")
+    require(runner.count("--backend cranelift") == 1,
+            "shared runner does not expose exactly one explicit native route")
+    require(runner.count('[ "$RUNNER_ROUTE" = "mir-to-c" ]') == 1,
+            "the shared runner does not refuse the retired route exactly "
+            "once, so a caller that pins it may be silently aliased")
     require("GUST_RUNNER_ROUTE must be 'mir-to-c' or 'cranelift'" in runner,
             "shared runner does not reject an unknown explicit route")
     # Patch 24.13 (#398): rebased, and the reason is recorded rather than the

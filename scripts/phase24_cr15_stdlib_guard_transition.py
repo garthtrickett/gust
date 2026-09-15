@@ -923,17 +923,44 @@ def effective_phase22_summary(registry: dict, value: dict) -> dict:
             "the Phase 22 census and the frozen-surface transition disagree "
             "about how many live-C cases Patch 24.12b removed")
 
-    # Patch 24.13 continues the chain, and is the first link that RECLASSIFIES
-    # rather than reduces. Every successor above removes invocations, so each
-    # asserts `current["total"] < previous["total"]`; 24.13 removes backend
-    # SELECTION, not invocations -- the callers survive and choose a different
-    # backend -- so its total must be UNCHANGED and the explicit-C drop must
-    # equal the rise across the destinations it moves to.
+    # Patch 24.13 continues the chain, and is the first link that both
+    # RECLASSIFIES and reduces. Every successor above only removes
+    # invocations, so each asserts `current["total"] < previous["total"]`.
+    # 24.13 removes backend SELECTION at some sites -- the caller survives and
+    # chooses a different backend -- and removes the site outright at others,
+    # taking with it the bare `./gust` arm that existed only to compare against
+    # the explicit-C one. So the total neither holds nor simply falls by the
+    # explicit-C drop, and the contract has to split that drop into its fates.
     #
     # Without this link the chain simply stopped at 24.12b and returned a
     # census that predates the removal, so the aggregate compared a live tree
     # against a state two patches old and reported "drifted" without saying
     # which patch was missing.
+    #
+    # This census is the UNFILTERED scan; the Phase 22 relay census drops the
+    # relay-inventory and Phase 23 successor rows before counting. They are
+    # therefore different populations and their counts differ -- measured,
+    # unfiltered: explicit_c 56 -> 31, explicit_bootstrap_emitter 0 -> 9,
+    # explicit_cranelift 119 -> 126, implicit_default 18 -> 14,
+    # explicit_invalid_or_parser_probe 3 -> 3, total 196 -> 183, so 16 moved,
+    # 9 retired, 4 companion arms; relay: 14 moved, 5 retired, 4 companion
+    # arms. Measured on the branch, the relay census is this one minus the
+    # Phase 23 successor rows and the runner's live row, plus one substituted
+    # Phase 22 projection row.
+    #
+    # This contract used to share the relay census's
+    # `reclassified_invocation_count`, which held only while 24.13 was small
+    # enough for both populations to see the same two moves. It cannot be
+    # shared now, and the excess cannot be DERIVED either: the registered
+    # predecessor censuses are aggregates, so the rows the relay census
+    # excluded *then* are not recoverable from them. So the excess is
+    # registered as a measured constant rather than computed, and pinned --
+    # a later patch that changes which rows the relay census drops moves these
+    # two numbers and has to re-measure and say so, which is the property that
+    # matters. The companion-arm count is the one quantity the two censuses
+    # must still agree on outright, because no retired bare arm sits in the
+    # excluded set -- if one ever does, the equality below fails rather than
+    # quietly absorbing it.
     removal = registry.get("phase24_13_backend_removal", {}).get(
         "phase22_invocation_successor")
     if removal is None:
@@ -944,23 +971,58 @@ def effective_phase22_summary(registry: dict, value: dict) -> dict:
             removal.get("partial_or_unregistered_reclassification") ==
             "rejected",
             "Patch 24.13 Phase 22 invocation successor drifted")
-    require(current["total"] == previous["total"] and
-            current["unclassified_count"] == previous["unclassified_count"]
+    require(current["unclassified_count"] == previous["unclassified_count"]
             == 0,
-            "Patch 24.13 reclassifies rather than reduces, so the Phase 22 "
-            f"census total must be unchanged: {previous['total']} -> "
-            f"{current['total']}")
-    moved = removal.get("reclassified_invocation_count")
+            "Patch 24.13 must leave the Phase 22 census fully classified")
+    moved = removal.get("unfiltered_reclassified_invocation_count")
+    retired_c = removal.get("unfiltered_retired_explicit_c_count")
+    retired_companion = removal.get(
+        "unfiltered_retired_companion_default_count")
+    require(all(isinstance(value, int) for value in
+                (moved, retired_c, retired_companion)) and
+            moved > 0 and retired_c > 0,
+            "Patch 24.13 registered a Phase 22 transition that neither moves "
+            "nor retires an explicit-C invocation")
+    destinations = ("explicit_bootstrap_emitter", "explicit_cranelift")
     drop = (previous["selection_counts"].get("explicit_c", 0) -
             current["selection_counts"].get("explicit_c", 0))
     rise = sum(current["selection_counts"].get(name, 0) -
                previous["selection_counts"].get(name, 0)
-               for name in ("explicit_bootstrap_emitter", "explicit_cranelift"))
-    require(isinstance(moved, int) and moved > 0 and moved == drop == rise,
-            f"the Patch 24.13 Phase 22 reclassification does not balance: "
-            f"registered {moved}, explicit-C drop {drop}, destination rise "
-            f"{rise}. An invocation that disappeared must not pass as one "
-            "that moved.")
+               for name in destinations)
+    default_drop = (previous["selection_counts"].get("implicit_default", 0) -
+                    current["selection_counts"].get("implicit_default", 0))
+    require(moved == rise and drop == moved + retired_c and
+            default_drop == retired_companion and
+            previous["total"] - current["total"] ==
+            retired_c + retired_companion,
+            "the Patch 24.13 Phase 22 transition does not balance: registered "
+            f"{moved} moved and {retired_c} retired against an explicit-C "
+            f"drop of {drop} and a destination rise of {rise}, with "
+            f"{default_drop} companion arms against {retired_companion} "
+            f"registered and a total drop of "
+            f"{previous['total'] - current['total']}. An invocation that "
+            "disappeared must not pass as one that moved.")
+    for name in set(previous["selection_counts"]) | set(
+            current["selection_counts"]):
+        if name in {"explicit_c", "implicit_default", *destinations}:
+            continue
+        require(previous["selection_counts"].get(name, 0) ==
+                current["selection_counts"].get(name, 0),
+                f"Patch 24.13 moved a selection it does not claim: {name}")
+    # The two filterings, reconciled rather than assumed equal.
+    relay_moved = removal.get("reclassified_invocation_count")
+    relay_retired = removal.get("retired_explicit_c_count")
+    require(moved - relay_moved ==
+            removal.get("relay_excluded_moved_count") >= 0 and
+            retired_c - relay_retired ==
+            removal.get("relay_excluded_retired_count") >= 0,
+            "the unfiltered and relay censuses disagree by an unregistered "
+            f"amount: {moved} vs {relay_moved} moved, {retired_c} vs "
+            f"{relay_retired} retired")
+    require(retired_companion ==
+            removal.get("retired_companion_default_count"),
+            "a companion default arm was retired inside a relay-excluded row, "
+            "which the two censuses cannot both be measuring")
     return current
 
 
@@ -1474,6 +1536,53 @@ def drop_class_appended_text_surfaces(
 
     live_paths = {str(row["path"]) for row in rows}
     missing = sorted(landed - live_paths)
+    # Patch 24.13: this manifest enrols files by CONTENT, so a file that stops
+    # spelling the retired backend stops producing a row and reads here as a
+    # removal. That is the phase succeeding, not a regression -- but "the file
+    # is gone" and "the file no longer names MIR-to-C" are the same observation
+    # from this vantage point, and only one of them is allowed.
+    #
+    # The successor separates them at the source: each departed path must still
+    # be a file on disk, and must match NO surface pattern. Deleting the file
+    # fails the first check; leaving any retired spelling behind fails the
+    # second; and a path that departed without being registered still fails
+    # below, because only registered departures are discharged here.
+    departures = registry.get("phase24_13_backend_removal", {}).get(
+        "text_surface_departures")
+    if departures is not None and missing:
+        require(departures.get("contract_version") ==
+                "phase24_13_text_surface_departure_v1",
+                "Patch 24.13 text surface departure successor drifted")
+        registered = departures.get("paths", [])
+        # Containment, not equality: this node records every surface that left
+        # the content enrolment, and the landed-Stdlib set is a subset of that.
+        # Both directions still hold -- an unregistered departure fails here,
+        # and every registered departure is proved below to have actually
+        # departed rather than merely being listed.
+        unregistered = [path for path in missing if path not in registered]
+        require(not unregistered,
+                "Patch 24.13 Stdlib text surfaces departed without being "
+                f"registered: {unregistered}")
+        patterns_path = ROOT / "scripts/phase23_mir_to_c_deprecation_opening.py"
+        spec = importlib.util.spec_from_file_location(
+            "phase23_surface_patterns", patterns_path)
+        require(spec is not None and spec.loader is not None,
+                "cannot load the Phase 23 surface patterns")
+        patterns_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(patterns_module)
+        for path in registered:
+            surface = ROOT / path
+            require(surface.is_file(),
+                    "Patch 24.13 registers a Stdlib surface as departed, but "
+                    f"the file was deleted rather than retired: {path}")
+            text = surface.read_text(encoding="utf-8")
+            still = sorted(name for name, pattern
+                           in patterns_module.SURFACE_PATTERNS.items()
+                           if pattern.search(text))
+            require(not still,
+                    f"Patch 24.13 records {path} as having left the MIR-to-C "
+                    f"text surface, but it still matches {still}")
+        missing = []
     require(not missing,
             f"a landed Stdlib text surface was removed: {missing[:3]}")
     kept: list[dict[str, object]] = []
@@ -2145,8 +2254,61 @@ def normalize_phase23_text_surfaces(
     other_digest = digest_bytes(json.dumps(
         [row for row in rows if row["path"] not in scope],
         sort_keys=True, separators=(",", ":")).encode())
-    require(other_digest == auth["unchanged_other_text_surface_manifest_digest"],
-            f"Patch 24.2f changed an unregistered text surface: {other_digest}")
+    pinned_other = auth["unchanged_other_text_surface_manifest_digest"]
+    # Patch 24.13: this pin cannot be met by any live computation any more, and
+    # not because an unregistered surface changed.
+    #
+    # The manifest enrols by CONTENT. Three files stopped matching the patterns
+    # when their retired spellings went, so they produce no row at all -- they
+    # are not "changed others", they are absent from the population the pinned
+    # digest was computed over. Adding them to `scope` does nothing, because a
+    # path with no row is already excluded; the digest moves regardless.
+    #
+    # The successor does not simply re-pin. It reconstructs the ORIGINAL
+    # population by re-inserting each departure's registered previous row and
+    # requires that to reproduce the pinned digest exactly. That uses 24.2f's
+    # own pin as the control: it passes only if the departures are the whole
+    # difference, so any other surface that moved still fails here. The live
+    # remainder is then pinned separately, so the new state is registered too.
+    departures = registry.get("phase24_13_backend_removal", {}).get(
+        "text_surface_departures")
+    successor = (departures or {}).get("unchanged_other_successor")
+    if successor is None:
+        require(other_digest == pinned_other,
+                f"Patch 24.2f changed an unregistered text surface: "
+                f"{other_digest}")
+    else:
+        require(successor.get("contract_version") ==
+                "phase24_13_unchanged_other_successor_v1" and
+                successor.get("previous_unchanged_other_digest") ==
+                pinned_other and
+                successor.get("partial_or_substituted_departure") ==
+                "rejected",
+                "Patch 24.13 unchanged-other successor drifted")
+        departed_paths = list(departures.get("paths", []))
+        live_paths = {row["path"] for row in rows}
+        still_present = [path for path in departed_paths if path in live_paths]
+        require(not still_present,
+                "Patch 24.13 records these surfaces as departed, but they "
+                f"still produce a manifest row: {still_present}")
+        previous_rows = successor.get("departed_previous_rows", [])
+        require(sorted(row["path"] for row in previous_rows) ==
+                sorted(departed_paths),
+                "Patch 24.13 unchanged-other successor does not carry one "
+                "previous row per departed surface")
+        reconstructed = sorted(
+            [row for row in rows if row["path"] not in scope] + previous_rows,
+            key=lambda row: str(row["path"]))
+        require(digest_bytes(json.dumps(
+            reconstructed, sort_keys=True, separators=(",", ":")
+        ).encode()) == pinned_other,
+                "Patch 24.13 restored the departed surfaces but the manifest "
+                "still does not reproduce Patch 24.2f's pinned digest, so "
+                "something other than the departures changed")
+        require(other_digest ==
+                successor.get("current_unchanged_other_digest"),
+                "Patch 24.13 unchanged-other remainder is not the registered "
+                f"one: {other_digest}")
     replacements = {
         row["path"]: copy.deepcopy(row)
         for row in transition["previous_changed_text_surfaces"]
