@@ -131,9 +131,10 @@ build/phase10-package/bin/gust program.gst
 
 The executable defaults to the source path with the final `.gst` removed. Use
 `-o <path>` to choose another path. The C compatibility choices, `--backend c`
-and `--backend mir-to-c`, were **removed in Phase 24** and are now rejected;
-there is no generated-C route to fall back to, and there never was an automatic
-fallback to one. Bootstrap-C retirement is a separate Phase 25 change.
+and `--backend mir-to-c`, were removed in
+Phase 24. Bootstrap-C retirement is a separate Phase 25 change.
+There is no automatic fallback between routes, and there is no longer a
+generated-C route to fall back to.
 
 ### Running the Test Suite
 To verify the compiler's typechecker, code generator, and FFI standard library runtime, execute:

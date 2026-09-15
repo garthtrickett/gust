@@ -94,7 +94,12 @@ def scan() -> dict[str, object]:
         surface("README.md", "user_build_run_install_contract", (
             "build/phase10-package/bin/gust program.gst",
             "make install",
-            "backend removal is scheduled for",
+            # Patch 24.15: the marker was "backend removal is scheduled for".
+            # That is a promise about the future, and the compiler stopped
+            # keeping it at 24.13. Rebased onto the statement of fact, with
+            # the Phase 25 boundary marker kept unchanged beside it so this
+            # audit still fails if a document conflates the two retirements.
+            "were removed in",
             "Phase 24. Bootstrap-C retirement is a separate Phase 25 change",
             "There is no automatic fallback",
         )),
