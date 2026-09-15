@@ -25475,12 +25475,12 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "7abca7125148ce074b9fa0aee1b0906b12f1b6cf27437c0dea112542651a18ac",
+          "digest": "9b23c5d08de4a7f85778aa4188599f2c03d0f082c5c1a8f6e139e63f0c789b15",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
             "generated_c_contract": 0,
-            "mir_to_c_name": 21
+            "mir_to_c_name": 12
           },
           "owner": "cranelift",
           "path": "scripts/guard_reachability_allowlist.json",
