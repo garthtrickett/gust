@@ -24328,7 +24328,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "d60df7b68a31b2dfce6c49f587575e7d2da77e7478d3a4f3683eaecf84c48f46",
+          "digest": "778c896ef76d81105a6423d89ea420536486773a41570fddd37a802eb59f2e35",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 31,
@@ -25379,6 +25379,85 @@
       ],
       "removed_text_surfaces": [],
       "status": "patch24_12b_in_progress"
+    }
+  },
+  "phase24_15a_reachability_repair": {
+    "authority_owner": "phase24_15a_reachability_repair",
+    "text_surface_successor": {
+      "added_text_surfaces": [],
+      "change_reason": "Patch_24_15a_repaired_the_reachability_instrument_and_folded_dynamic_dispatch_into_liveness",
+      "contract_version": "phase24_15a_text_surface_successor_v1",
+      "current_changed_text_surfaces": [
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "7abca7125148ce074b9fa0aee1b0906b12f1b6cf27437c0dea112542651a18ac",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 21
+          },
+          "owner": "cranelift",
+          "path": "scripts/guard_reachability_allowlist.json",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "08ad56350395c549cdeade77fc56802ea40c51939251880c291b574bec10acf5",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 31,
+            "generated_c_contract": 7,
+            "mir_to_c_name": 75
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase24_retirement_consumer_inventory.py",
+          "removal_phase": "24"
+        }
+      ],
+      "partial_extra_or_substituted_surface": "rejected",
+      "previous_changed_text_surfaces": [
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "9b23c5d08de4a7f85778aa4188599f2c03d0f082c5c1a8f6e139e63f0c789b15",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 12
+          },
+          "owner": "cranelift",
+          "path": "scripts/guard_reachability_allowlist.json",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "480bfc320a2bea34b89e71d647f1fbe8776faf5d3698f0de10a3377ab29c9138",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 31,
+            "generated_c_contract": 7,
+            "mir_to_c_name": 75
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase24_retirement_consumer_inventory.py",
+          "removal_phase": "24"
+        }
+      ],
+      "registered_changed_paths": [
+        "scripts/guard_reachability_allowlist.json",
+        "scripts/phase24_retirement_consumer_inventory.py"
+      ],
+      "removed_text_surfaces": [],
+      "status": "patch24_15a_complete"
     }
   },
   "phase24_14_toolchain_removal": {
