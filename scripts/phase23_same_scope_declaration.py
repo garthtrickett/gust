@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import subprocess
 import tempfile
@@ -111,7 +112,26 @@ def run(command: list[str]) -> subprocess.CompletedProcess[bytes]:
 
 def authority() -> dict:
     value = json.loads(REGISTRY.read_text(encoding="utf-8")).get("phase23_same_scope_declaration")
-    require(value == EXPECTED_AUTHORITY, "registry same-scope authority drifted")
+    # Patch 24.13 nests a per-row disposition record under the Phase 22
+    # closed-inventory extension. Patch 23.6's authority is unchanged and is
+    # still compared exactly, so the record is lifted out first and checked on
+    # its own terms rather than widening the comparison to admit extra keys.
+    comparable = copy.deepcopy(value) if isinstance(value, dict) else value
+    retirement = None
+    if isinstance(comparable, dict):
+        extension = comparable.get("phase22_closed_inventory_extension")
+        if isinstance(extension, dict):
+            retirement = extension.pop("phase24_13_retirement", None)
+    require(retirement is None or
+            (retirement.get("contract_version") ==
+             "phase24_13_phase23_executor_retirement_v1" and
+             len(retirement.get("dispositions", [])) ==
+             value["phase22_closed_inventory_extension"].get(
+                 "invocation_count")),
+            "the Patch 24.13 retirement record nested in Patch 23.6's "
+            "closed-inventory extension drifted")
+    require(comparable == EXPECTED_AUTHORITY,
+            "registry same-scope authority drifted")
     return value
 
 

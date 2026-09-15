@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import os
 import shutil
@@ -48,7 +49,25 @@ def deferred_reason_body() -> str:
 
 def validate(value: dict | None = None) -> dict:
     value = authority() if value is None else value
-    require(value == {
+    # Patch 24.13 nests a per-row disposition record under the Phase 22
+    # closed-inventory extension. Patch 23.3a's authority is unchanged and is
+    # still compared exactly below, so the record is lifted out first and
+    # checked on its own terms rather than widening that comparison.
+    comparable = copy.deepcopy(value) if isinstance(value, dict) else value
+    retirement = None
+    if isinstance(comparable, dict):
+        extension = comparable.get("phase22_closed_inventory_extension")
+        if isinstance(extension, dict):
+            retirement = extension.pop("phase24_13_retirement", None)
+    require(retirement is None or
+            (retirement.get("contract_version") ==
+             "phase24_13_phase23_executor_retirement_v1" and
+             len(retirement.get("dispositions", [])) ==
+             value["phase22_closed_inventory_extension"].get(
+                 "invocation_count")),
+            "the Patch 24.13 retirement record nested in Patch 23.3a's "
+            "closed-inventory extension drifted")
+    require(comparable == {
         "contract_version": "phase23_structured_guard_defer_native_admission_v1",
         "status": "patch23_3a_complete",
         "next_patch": "23.3",

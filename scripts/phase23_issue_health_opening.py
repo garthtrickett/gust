@@ -132,6 +132,20 @@ def validate() -> dict:
     successor_commands = successor.get("commands", [])
     successor_metadata = dict(successor)
     successor_metadata.pop("commands", None)
+    # Patch 24.13 nests its per-row disposition record inside this node, which
+    # would otherwise make the exact-dict comparison below fail on an extra
+    # key. Patch 23.1's authority is unchanged and still compared exactly; the
+    # 24.13 record is lifted out and checked on its own terms, so it can
+    # neither slip into that dict unexamined nor be dropped from the node
+    # without this failing.
+    retirement = successor_metadata.pop("phase24_13_retirement", None)
+    require(retirement is None or
+            (retirement.get("contract_version") ==
+             "phase24_13_phase23_executor_retirement_v1" and
+             len(retirement.get("dispositions", [])) ==
+             successor.get("invocation_count")),
+            "the Patch 24.13 retirement record nested in Patch 23.1's "
+            "successor drifted")
     require(successor_metadata == {
         "status": "exact_phase23_extension_excluded_only_from_phase22_relay_identity",
         "owning_patch": "23.1",

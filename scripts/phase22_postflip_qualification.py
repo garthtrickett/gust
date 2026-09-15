@@ -72,14 +72,47 @@ def validate() -> dict:
     }, "delivery contract drifted")
 
     makefile = MAKEFILE.read_text(encoding="utf-8")
+    # Patch 24.13 rebases the last marker. The delivery contract above records
+    # Patch 22's bootstrap_route as explicit_mir_to_c, which stays true OF
+    # PATCH 22; what this loop checks is the live Makefile, and the seed no
+    # longer reaches the emitter through the retired spelling. It reaches it
+    # through the bootstrap-only entry Patch 24.11 created for exactly this
+    # caller, so the marker names that instead.
     for marker in (
         ".DEFAULT_GOAL := phase10-native-package",
         "all: phase10-native-package",
         "phase10-native-package: gust build/gust-native-backend $(PHASE21_RUNTIME_PACKAGE)",
         "install: phase10-native-package",
-        "./gust --backend mir-to-c compiler/test_runner_entry.gst",
+        "./gust --backend bootstrap-emitter compiler/test_runner_entry.gst",
     ):
         require(marker in makefile, f"build/install contract marker missing: {marker}")
+    # Inverted rather than dropped: the rebased marker above would still pass
+    # if the retired spelling were ALSO present on the seed path, so the claim
+    # that it is gone is asserted separately.
+    #
+    # Scoped to the CURRENT compiler, and not by preference. The seed path runs
+    # three compilers: ./build/gust_stage1_bin, which is compiled from
+    # gust_v4.c and therefore predates this patch and still HAS the backend;
+    # ./gust and ./build/gust_stage2_bin, which do not. Requiring the retired
+    # spelling to be absent everywhere would demand that a frozen pre-removal
+    # binary stop accepting an argument it was built with.
+    #
+    # That exemption is bounded and named rather than open: `make bootstrap`
+    # republishes gust_v4.c from build/gust_stage3.c, so the seed becomes a
+    # compiler without the backend and this line has to move with it. Phase 25
+    # owns that republication; until it happens, stage one is the one caller
+    # allowed to spell it.
+    seed_drivers = ("./gust", "./build/gust_stage2_bin")
+    for driver in seed_drivers:
+        for spelling in ("mir-to-c", "c"):
+            marker = f"{driver} --backend {spelling} compiler/test_runner_entry.gst"
+            require(marker not in makefile,
+                    "the Makefile still drives the seed through a spelling "
+                    f"Patch 24.13 removed: {marker}")
+    require("./build/gust_stage1_bin --backend mir-to-c "
+            "compiler/test_runner_entry.gst" in makefile,
+            "the pre-removal stage-one seed step is missing, so this "
+            "exemption no longer describes the Makefile")
 
     readme = README.read_text(encoding="utf-8")
     for marker in (
@@ -99,10 +132,22 @@ def validate() -> dict:
             "historical record" in cranelift_readme,
             "native backend README does not distinguish current status")
     help_text = HELP.read_text(encoding="utf-8")
+    # Patch 24.13 rebases one of these three. "retained semantic oracle" was
+    # the post-flip contract's way of saying the C backend survived the default
+    # flip as an explicitly selectable oracle; this patch removes it, so help
+    # that still advertised it would be advertising a backend the CLI rejects.
+    # The replacement is the stronger statement -- help must say the backend
+    # was REMOVED, and must not describe it as retained.
+    #
+    # The other two are untouched and still checked: cranelift is the default,
+    # and there is still no fallback.
     require("Compile to one native executable (default)." in help_text and
-            "retained semantic oracle" in help_text and
             "fallback to MIR-to-C" in help_text,
             "checked help does not state the post-flip contract")
+    require("REMOVED in Phase 24" in help_text and
+            "retained semantic oracle" not in help_text,
+            "checked help does not state the Patch 24.13 removal, or still "
+            "offers the retired backend as a retained oracle")
 
     required_inputs = record.get("native_workflow_inputs")
     expected_inputs = [
