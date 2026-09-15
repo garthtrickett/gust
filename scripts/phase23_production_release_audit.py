@@ -161,9 +161,44 @@ def scan() -> dict[str, object]:
         "phase25_bootstrap_explicit_c_count": len(bootstrap),
         "non_bootstrap_retained_test_surface_count": len(non_bootstrap),
         "supported_production_or_release_explicit_c_count": 0,
-        "active_non_bootstrap_live_c_lane_count": 1,
-        "active_non_bootstrap_live_c_owner": "phase23_mir_to_c_focused_live",
+        # Patch 24.14: DERIVED, not declared. These were the literals `1` and
+        # "phase23_mir_to_c_focused_live", so the audit whose job is to say
+        # what live C remains asserted one surviving lane regardless of the
+        # tree. Patch 24.14 retires exactly that lane, which would have left
+        # this audit -- and every consumer of it through 24.15, 24.16 and the
+        # closure -- claiming a lane that no longer exists. A declared value
+        # standing in for a measured one is the #393 defect, here in the
+        # instrument the residue audit trusts most.
+        #
+        # A lane is ACTIVE when the script that owns it still builds an argv
+        # selecting the retired backend, which the frozen oracle already
+        # derives from the tree.
+        **_active_live_c_lanes(),
         "unknown_downstream_count": 0,
+    }
+
+
+
+# Registered non-bootstrap live-C lanes, and the script whose retired-backend
+# argv is what makes each one live.
+_LIVE_C_LANES = {
+    "phase23_mir_to_c_focused_live":
+        "scripts/phase21_cranelift_built_compiler_programs.py",
+}
+
+
+def _active_live_c_lanes() -> dict[str, object]:
+    """Which registered live-C lanes still execute the retired backend."""
+    spec = importlib.util.spec_from_file_location(
+        "_frozen_oracle", ROOT / "scripts/phase24_frozen_oracle.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    sites = module.python_retired_argv_sites()
+    active = sorted(lane for lane, owner in _LIVE_C_LANES.items()
+                    if owner in sites)
+    return {
+        "active_non_bootstrap_live_c_lane_count": len(active),
+        "active_non_bootstrap_live_c_owner": active[0] if active else None,
     }
 
 
