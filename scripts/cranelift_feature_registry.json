@@ -24401,6 +24401,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "fd72eb95c8908e347fc4716274177d7941184df1655c532df3e6602e318a569a",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 1,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase24_cr15_derivation.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "e8e1b53bedefc0ec639bdb8ef0209100fb48e4bf25876e9980dc2196bc933a93",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -24449,6 +24464,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "b761acd6a6779fe5a0c8b28923bcd6aadefaae3b520eb0aaaeb1a0d9f7e8ed9c",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 2,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 2
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase24_cr15_derivation.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "287c9e2f7d401d22295de9e291fc6245f1dd6dbea1bfea2ff8a001e05e52d67f",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -24464,6 +24494,7 @@
       "registered_changed_paths": [
         ".gitignore",
         "scripts/cranelift_registry.py",
+        "scripts/phase24_cr15_derivation.py",
         "scripts/phase24_frozen_oracle.py"
       ],
       "removed_text_surfaces": [],
