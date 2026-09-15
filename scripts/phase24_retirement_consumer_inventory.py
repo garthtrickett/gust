@@ -1403,7 +1403,6 @@ MENTION_ONLY_LIVENESS = (
     "guard-cranelift-phase14-struct-parity",
     "guard-cranelift-phase14-structs-enums-parity",
     "guard-cranelift-phase20-resource-acquisition-parity",
-    "guard-cranelift-phase20-resource-enforcement-parity",
     "guard-cranelift-phase9b-close",
     "guard-cranelift-phase9c-close",
     "guard-cranelift-phase9f-opening-contract",
