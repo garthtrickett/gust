@@ -238,12 +238,27 @@ def validate() -> tuple[dict, str]:
             "merged post-relay Stdlib selection set drifted")
 
     entry = ENTRY.read_text(encoding="utf-8")
+    # Patch 24.13 (#398, #402): INVERTED, not deleted.
+    #
+    # These three markers were presence-pins: this closed-phase guard required
+    # the explicit-C help lines and the selection branch to keep existing.
+    # Patch 24.13 removes exactly those lines, so the pins would have broken on
+    # a patch that never edits this file, and the break would have surfaced on
+    # some later unrelated PR. Dropping the clauses would have said nothing.
+    #
+    # They now assert the inverse: the help surface no longer advertises the
+    # retired backend, and the selection branch no longer accepts it. These
+    # fail if the removal is reverted.
     for marker in (
         'os.LogStr("  gust --backend c <source.gst>");',
-        'std.str_eq(backend_name, "c") == 1',
         'os.LogStr("  --backend <mir-to-c|c|cranelift>  Select the backend explicitly.");',
     ):
-        require(marker in entry, f"explicit-C source marker is missing: {marker}")
+        require(marker not in entry,
+                f"Patch 24.13 removed this explicit-C help marker, but it is "
+                f"back: {marker}")
+    require("the generated-C backend was removed in Phase 24" in entry,
+            "the retired backend spellings no longer reject with a diagnostic "
+            "naming the removal")
     require(entry.count("codegen.codegen_generate(programs, module_prefixes, &env, ctx)") == 1,
             "explicit C spellings no longer share one MIR-to-C codegen call")
     bridge = BRIDGE.read_text(encoding="utf-8")

@@ -36,16 +36,14 @@ func compiler_is_help_invocation(args: std.Vector[str, ctx], ctx: &Arena) int {
 func compiler_print_help() {
     os.LogStr("Usage:");
     os.LogStr("  gust <source.gst>");
-    os.LogStr("  gust --backend mir-to-c <source.gst>");
-    os.LogStr("  gust --backend c <source.gst>");
     os.LogStr("  gust --backend cranelift [-o <output>] <source.gst>");
     os.LogStr("");
     os.LogStr("Backends:");
     os.LogStr("  cranelift  Compile to one native executable (default).");
-    os.LogStr("  mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.");
+    os.LogStr("  The generated-C backend was REMOVED in Phase 24; mir-to-c and c are rejected.");
     os.LogStr("  Bootstrap C retirement is separate and deferred to Phase 25.");
     os.LogStr("Options:");
-    os.LogStr("  --backend <mir-to-c|c|cranelift>  Select the backend explicitly.");
+    os.LogStr("  --backend <cranelift>            Select the backend explicitly.");
     os.LogStr("  -o <output>                     Optional Cranelift output; defaults to the source stem.");
     os.LogStr("  -h, --help                      Show this help and exit.");
     os.LogStr("");
