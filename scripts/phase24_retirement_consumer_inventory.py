@@ -586,6 +586,68 @@ WORKFLOW_ROWS = [
      "guard-cranelift-phase23-mir-to-c-focused-live-contract", "24.16", "retire"),
 ]
 
+# ---------------------------------------------------------------------------
+# Patch 24.15's four registry rows, and the disposition they actually get.
+#
+# The roadmap says "retire the generated-C registry rows". Read as deletion
+# that is not implementable and not right:
+#
+#   * phase23_closure indexes all four by contract_version and status
+#     (patch23_7 through patch23_11). Deleting any is a KeyError in frozen
+#     closed-phase evidence, not a retirement.
+#   * They are Phase 23 RECORDS. "As of Patch 23.10 there was one live lane"
+#     stays true no matter what Phase 24 does; a record of a closed phase is
+#     not made wrong by later work.
+#
+# What IS wrong is a closed record asserting a currently-false LIVE state.
+# phase23_mir_to_c_focused_live.route_contract says
+# non_bootstrap_live_lane_count: 1, and Patch 24.14 retired that lane.
+#
+# So the live CLAIMS are retired and the records survive -- the same polarity
+# pair as RETIRED_FILE_SURFACES/REBASED_FILE_SURFACES, one level up. The
+# falsifier is not a list: each retired claim must DISAGREE with what the tree
+# now measures, and the measurement is 24.14's derived lane count rather than
+# a second declaration. A claim that still matches the tree was not retired,
+# and fails here.
+RETIRED_REGISTRY_CLAIMS = {
+    "phase23_mir_to_c_focused_live": (
+        ("route_contract", "non_bootstrap_live_lane_count"),
+        "Patch 24.14 retired the focused live oracle, the single non-bootstrap "
+        "live-C lane Patch 23.10 deliberately retained. The Phase 23 record "
+        "keeps saying one lane existed then; what is retired is the claim that "
+        "one exists now.",
+    ),
+}
+
+
+def check_retired_registry_claims(registry: dict) -> None:
+    """A retired live claim must disagree with what the tree measures."""
+    spec = importlib.util.spec_from_file_location(
+        "_audit", ROOT / "scripts" / "phase23_production_release_audit.py")
+    module = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(module)
+    except SystemExit:
+        pass
+    measured = module.scan()["active_non_bootstrap_live_c_lane_count"]
+
+    for node_key, (path, reason) in RETIRED_REGISTRY_CLAIMS.items():
+        node = registry.get(node_key)
+        require(isinstance(node, dict),
+                f"a retired-claim node must still exist as a closed-phase "
+                f"record: {node_key}")
+        claimed = node
+        for step in path:
+            require(isinstance(claimed, dict) and step in claimed,
+                    f"the retired claim is gone from {node_key}: {path}. The "
+                    "record survives; only the claim is retired, so deleting "
+                    "it asserts nothing.")
+            claimed = claimed[step]
+        require(claimed != measured,
+                f"{node_key}.{'.'.join(path)} still agrees with the tree "
+                f"({claimed} == {measured}), so nothing was retired. {reason}")
+
+
 REGISTRY_ROWS = [
     # Live generated-C registry nodes retired or updated under 24.15. The
     # archived corpus node survives as the parity authority with its live-C
@@ -608,6 +670,20 @@ REGISTRY_ROWS = [
 # FILE_ROWS entries, still owned for later retirement, and still required to be
 # present -- which is why this register names one surface rather than three.
 RETIRED_FILE_SURFACES = [
+    # Patch 24.15: user documentation states removal, not deprecation. These
+    # are the three README passages Phase 23.8 left in the future tense --
+    # "remain accepted through Phase 23", "scheduled for Phase 24" -- which
+    # read as a promise the compiler no longer keeps.
+    # Moved out of FILE_ROWS, where they asserted the C surface was PRESENT.
+    # Leaving them there would have failed; deleting them would have asserted
+    # nothing. Inverted instead, with a companion replacement row below.
+    ("README.md", "selected explicitly with `--backend c`", "24.15"),
+    ("compiler/experiments/cranelift/README.md",
+     "Explicit `--backend c` / `--backend mir-to-c` remains the", "24.15"),
+    ("README.md", "backend removal scheduled for Phase 24", "24.15"),
+    ("README.md", "remain accepted through Phase 23", "24.15"),
+    ("README.md", "The deprecated C backend remains a temporary compatibility "
+     "path", "24.15"),
     ("compiler/test_runner_entry.gst",
      "gust --backend mir-to-c <source.gst>", "24.13"),
     ("scripts/run-gust-file.sh",
@@ -624,6 +700,20 @@ RETIRED_FILE_SURFACES = [
 # diagnostic needs both halves asserted: the old wording gone, and the new
 # wording there. Asserting only the first lets the check be deleted outright.
 REBASED_FILE_SURFACES = [
+    # The other half of the three rows above. Asserting only absence would
+    # pass on a README that says nothing at all about the backend, which is
+    # worse than a stale promise: a reader would not know the route is gone.
+    ("README.md", "was **removed in Phase 24**", "24.15"),
+    # Needle chosen to sit on ONE line: the prose wraps, and a needle that
+    # spans the wrap matches nothing while looking correct.
+    ("README.md", "are rejected with a diagnostic naming the removal", "24.15"),
+    # Removal of the backend is not removal of the bootstrap chain's C, and
+    # the document has to keep saying so or Phase 25's scope silently widens.
+    ("README.md", "their retirement is Phase 25's", "24.15"),
+    ("compiler/experiments/cranelift/README.md",
+     "The generated-C backend was **removed in Phase 24**", "24.15"),
+    ("compiler/experiments/cranelift/README.md",
+     "bootstrap path is separate and survives", "24.15"),
     ("compiler/test_runner_entry.gst",
      "the bootstrap emitter entry does not accept -o", "24.14"),
 ]
@@ -661,10 +751,6 @@ FILE_ROWS = [
      'std.Concat("./gust --backend mir-to-c ", path)', "24.13", "migrate"),
     ("tests/e2e_codegen_assertions.gst",
      '"./gust --backend mir-to-c tests/codegen_helper_pod_move.gst', "24.12", "convert"),
-    ("README.md",
-     "selected explicitly with `--backend c`", "24.15", "retire"),
-    ("compiler/experiments/cranelift/README.md",
-     "Explicit `--backend c` / `--backend mir-to-c`", "24.15", "retire"),
 ]
 
 SMOKE_FIXTURES = sorted([
@@ -1551,6 +1637,7 @@ def validate() -> dict:
     for key, owner, action in REGISTRY_ROWS:
         require(isinstance(registry.get(key), dict),
                 f"inventoried registry node is missing: {key}")
+    check_retired_registry_claims(registry)
     for path, needle, owner, action in FILE_ROWS:
         require(needle in read(path),
                 f"inventoried file lost its C surface: {path}: {needle[:48]}")

@@ -23383,7 +23383,7 @@
       "selected_entry": "--backend bootstrap-emitter",
       "status": "patch24_11_decided_patch24_13_lands"
     },
-    "inventory_digest": "4a9e0a86cfb2b8d970ef89fae310aee7e52e50d5b45beab4d8a9d76c4b1bd831",
+    "inventory_digest": "37fa6d8149a7f7b479353bae6fa65dd882869c53e02f4c0271d2fefc7a436ef8",
     "retired": {
       "by": "24.12a",
       "harnesses": [
@@ -23404,7 +23404,7 @@
         "guard-cranelift-phase21-inert-scoped-query-records-evidence"
       ]
     },
-    "row_count": 109,
+    "row_count": 107,
     "rows": [
       {
         "action": "convert",
@@ -23800,16 +23800,6 @@
         "action": "convert",
         "id": "tests/e2e_codegen_assertions.gst :: \"./gust --backend mir-to-c tests/codegen",
         "owner_patch": "24.12"
-      },
-      {
-        "action": "retire",
-        "id": "README.md :: selected explicitly with `--backend c`",
-        "owner_patch": "24.15"
-      },
-      {
-        "action": "retire",
-        "id": "compiler/experiments/cranelift/README.md :: Explicit `--backend c` / `--backend mir-",
-        "owner_patch": "24.15"
       },
       {
         "action": "convert",
@@ -25379,6 +25369,209 @@
       ],
       "removed_text_surfaces": [],
       "status": "patch24_12b_in_progress"
+    }
+  },
+  "phase24_15_package_docs_registry": {
+    "authority_owner": "phase24_15_package_docs_registry",
+    "production_audit_transition": {
+      "change_reason": "Patch_24_15_stated_removal_in_user_documentation_which_moves_the_supported_surface_digest_and_no_count",
+      "contract_version": "phase24_15_production_audit_transition_v1",
+      "current_audit": {
+        "active_non_bootstrap_live_c_lane_count": 0,
+        "active_non_bootstrap_live_c_owner": null,
+        "non_bootstrap_retained_test_surface_count": 47,
+        "phase25_bootstrap_explicit_c_count": 3,
+        "repository_explicit_c_count": 50,
+        "repository_invocation_count": 195,
+        "supported_production_or_release_explicit_c_count": 0,
+        "supported_surface_count": 6,
+        "supported_surface_manifest_digest": "555dbc45603b1d64dfda0f1d42e11b71053fdf6d9e9016c1f3860dcbcc03e4f2",
+        "unknown_downstream_count": 0
+      },
+      "digest_only": true,
+      "partial_extra_or_substituted_audit": "rejected",
+      "previous_audit": {
+        "active_non_bootstrap_live_c_lane_count": 0,
+        "active_non_bootstrap_live_c_owner": null,
+        "non_bootstrap_retained_test_surface_count": 47,
+        "phase25_bootstrap_explicit_c_count": 3,
+        "repository_explicit_c_count": 50,
+        "repository_invocation_count": 195,
+        "supported_production_or_release_explicit_c_count": 0,
+        "supported_surface_count": 6,
+        "supported_surface_manifest_digest": "15c40817b2350fc72a2dcaa8ba77da69bc323f71df6e41553819e0580da69697",
+        "unknown_downstream_count": 0
+      },
+      "status": "patch24_15_complete"
+    },
+    "text_surface_successor": {
+      "added_text_surfaces": [],
+      "change_reason": "Patch_24_14_rebased_the_C_error_class_and_retired_the_focused_live_oracle",
+      "contract_version": "phase24_15_text_surface_successor_v1",
+      "current_changed_text_surfaces": [
+        {
+          "classification": "production_or_release_migration",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "deprecate_or_migrate_under_23_8_and_23_12",
+          "digest": "b56edd3245d9f4730b7830577ea370332dbafeb14efcede2af9c134d8040f9bb",
+          "falsifier": "production_or_release_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 4,
+            "mir_to_c_name": 2
+          },
+          "owner": "cranelift",
+          "path": "README.md",
+          "removal_phase": "24_or_25_as_registered"
+        },
+        {
+          "classification": "production_or_release_migration",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "deprecate_or_migrate_under_23_8_and_23_12",
+          "digest": "d052d7a0734b79775bef9fee8ab08695b85828af8ab6d56fea123817116aedac",
+          "falsifier": "production_or_release_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 1,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 53
+          },
+          "owner": "cranelift",
+          "path": "compiler/experiments/cranelift/README.md",
+          "removal_phase": "24_or_25_as_registered"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "69c2f2e0e23f5bb32075ba8b77e3aba8bc515419f553bbf9f000592eef80b2ac",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 30
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_test_levels.json",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "f8b2f8274f739e3852ed120579682ccf3adbb7ca8c240d05286525102d7b6b81",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 25
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase23_closure.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "bd50421ec1d1da2f815f5e67df88769e76582c9afd6e2799d77271f9fa3a3624",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 31,
+            "generated_c_contract": 9,
+            "mir_to_c_name": 77
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase24_retirement_consumer_inventory.py",
+          "removal_phase": "24"
+        }
+      ],
+      "partial_extra_or_substituted_surface": "rejected",
+      "previous_changed_text_surfaces": [
+        {
+          "classification": "production_or_release_migration",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "deprecate_or_migrate_under_23_8_and_23_12",
+          "digest": "617e609a7f6f7ee0dd6ff6bdfe482d39ba69eb283f7d769ab6864cb7ec35982a",
+          "falsifier": "production_or_release_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 2,
+            "mir_to_c_name": 2
+          },
+          "owner": "cranelift",
+          "path": "README.md",
+          "removal_phase": "24_or_25_as_registered"
+        },
+        {
+          "classification": "production_or_release_migration",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "deprecate_or_migrate_under_23_8_and_23_12",
+          "digest": "460a13b1e0b812fdd70b9f7fd4337c75c9faa92195bced4fba17078185830726",
+          "falsifier": "production_or_release_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 1,
+            "generated_c_contract": 4,
+            "mir_to_c_name": 53
+          },
+          "owner": "cranelift",
+          "path": "compiler/experiments/cranelift/README.md",
+          "removal_phase": "24_or_25_as_registered"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "e0eb9964fef63c32194c8eeed3dc3ee55ee95ddaef36ac6053ab7f34e9d6dd1f",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 30
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_test_levels.json",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "e9caab02dec9dbac5270f873c8351270196906d4daf7da28ae337d5830e91296",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 25
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase23_closure.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "08ad56350395c549cdeade77fc56802ea40c51939251880c291b574bec10acf5",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 31,
+            "generated_c_contract": 7,
+            "mir_to_c_name": 75
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase24_retirement_consumer_inventory.py",
+          "removal_phase": "24"
+        }
+      ],
+      "registered_changed_paths": [
+        "README.md",
+        "compiler/experiments/cranelift/README.md",
+        "scripts/cranelift_test_levels.json",
+        "scripts/phase23_closure.py",
+        "scripts/phase24_retirement_consumer_inventory.py"
+      ],
+      "removed_text_surfaces": [],
+      "status": "patch24_15_complete"
     }
   },
   "phase24_15a_reachability_repair": {
