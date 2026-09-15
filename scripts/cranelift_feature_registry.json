@@ -25647,6 +25647,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "f59c63bc738811df5e8e84ae165a393da12d3d7ae09dc8ed0c6da830866bd29e",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 3,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 9
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase22_default_route_flip.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "9c0f591e7bd7f8fc66baaa3e27f2274165572d801c8e6f24d1f0f0fa7c430d9b",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -25656,6 +25671,21 @@
           },
           "owner": "cranelift",
           "path": "scripts/phase22_explicit_c_migration.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "135feb486b0ed36ad88e3228b74020d1c5f6d6dbe195d4d79bb1a7f620c27da9",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 3
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase22_native_implicit_output.py",
           "removal_phase": "24"
         },
         {
@@ -25830,6 +25860,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "e53ce2f595a3154ed47b6d3f7d4b97f29d72fd737732aadb05ca47b9c4a90934",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 5,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 10
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase22_default_route_flip.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "9832a0b6ba741c536513103af0e9692f215fe55e31292a76925d6b09586d775c",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -25839,6 +25884,21 @@
           },
           "owner": "cranelift",
           "path": "scripts/phase22_explicit_c_migration.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "f14ebdd4edf8ea36d7567d61288df6f9b85a2f73a2db87dd54d60fd3b7a65060",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 3
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase22_native_implicit_output.py",
           "removal_phase": "24"
         },
         {
@@ -25910,7 +25970,9 @@
         "docs/PHASE24_FROZEN_ORACLE_REPLACEMENT.md",
         "docs/PHASE24_RETIREMENT_CONSUMER_INVENTORY.md",
         "scripts/cranelift_registry.py",
+        "scripts/phase22_default_route_flip.py",
         "scripts/phase22_explicit_c_migration.py",
+        "scripts/phase22_native_implicit_output.py",
         "scripts/phase22_opening.py",
         "scripts/phase24_frozen_oracle.py",
         "scripts/phase24_retirement_consumer_inventory.py",

@@ -340,6 +340,9 @@ def check() -> None:
             conversion_frozen = registry.get(
                 "phase24_12b_python_parity_conversion", {}).get(
                     "frozen_surface_transition")
+            removal_frozen = registry.get(
+                "phase24_13_backend_removal", {}).get(
+                    "frozen_surface_transition")
             if emitter_frozen is not None:
                 require(
                     emitter_frozen.get("contract_version") ==
@@ -361,11 +364,25 @@ def check() -> None:
                         "phase24_12b_frozen_surface_transition_v1" and
                         conversion_frozen.get(
                             "current_live_c_case_surface") ==
-                        current_frozen and
+                        (removal_frozen["previous_live_c_case_surface"]
+                         if removal_frozen is not None
+                         else current_frozen) and
                         conversion_frozen.get(
                             "partial_or_unregistered_surface") == "rejected",
                         "Patch 24.12b frozen-surface closure successor "
                         "drifted")
+                    if removal_frozen is not None:
+                        require(
+                            removal_frozen.get("contract_version") ==
+                            "phase24_13_frozen_surface_transition_v1" and
+                            removal_frozen.get(
+                                "current_live_c_case_surface") ==
+                            current_frozen and
+                            removal_frozen.get(
+                                "partial_or_unregistered_surface") ==
+                            "rejected",
+                            "Patch 24.13 frozen-surface closure successor "
+                            "drifted")
 
     production = registry["phase23_production_release_audit"]
     require(closure.get("production_release_authority") == {
@@ -465,6 +482,9 @@ def check() -> None:
             conversion_production = registry.get(
                 "phase24_12b_python_parity_conversion", {}).get(
                     "production_audit_transition")
+            removal_production = registry.get(
+                "phase24_13_backend_removal", {}).get(
+                    "production_audit_transition")
             if emitter_production is not None:
                 require(
                     emitter_production.get("contract_version") ==
@@ -486,12 +506,25 @@ def check() -> None:
                         conversion_production.get("contract_version") ==
                         "phase24_12b_production_audit_transition_v1" and
                         conversion_production.get("current_audit") ==
-                        current_audit and
+                        (removal_production["previous_audit"]
+                         if removal_production is not None
+                         else current_audit) and
                         conversion_production.get(
                             "partial_extra_or_substituted_audit") ==
                         "rejected",
                         "Patch 24.12b production-audit closure successor "
                         "drifted")
+                    if removal_production is not None:
+                        require(
+                            removal_production.get("contract_version") ==
+                            "phase24_13_production_audit_transition_v1" and
+                            removal_production.get("current_audit") ==
+                            current_audit and
+                            removal_production.get(
+                                "partial_extra_or_substituted_audit") ==
+                            "rejected",
+                            "Patch 24.13 production-audit closure successor "
+                            "drifted")
             for field in production_unchanged:
                 if field in reduced:
                     continue
