@@ -25557,6 +25557,21 @@
           "classification": "historical_only",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "ff2089da7b6567c03807d4f107a6b4f1f8332f6ee9ccce402aced30091b1b439",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 2
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE21_OPENING.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
           "digest": "b865266f4e41b9c43240898f4d5983ab8445f630d6f6d4ebf16fba936c153be0",
           "falsifier": "historical_record_is_reclassified_as_live_support",
           "match_counts": {
@@ -25686,6 +25701,21 @@
           },
           "owner": "cranelift",
           "path": "scripts/phase16_abi_composition_parity.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "1407b45c0e67efb92fe51c7eff6fa257d946c02a58f78f5d62bfbf96ec0f2530",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 2
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_complete_guard_suite.py",
           "removal_phase": "24"
         },
         {
@@ -25860,6 +25890,21 @@
           "classification": "historical_only",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "ba55f9f136cfc21766071cc17d6779b3b588d9d078bb2e345677e57a58316f20",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 2
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE21_OPENING.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
           "digest": "95faddf599a2885a596bb18f8cb0b74da4b317c4839355dae71a5f388fbe53b5",
           "falsifier": "historical_record_is_reclassified_as_live_support",
           "match_counts": {
@@ -25989,6 +26034,21 @@
           },
           "owner": "cranelift",
           "path": "scripts/phase16_abi_composition_parity.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "a086de6f0ae919a1e0925666e080bcf49537900d2dc4ff5fa756272f359678af",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 5
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_complete_guard_suite.py",
           "removal_phase": "24"
         },
         {
@@ -26144,6 +26204,7 @@
       ],
       "registered_changed_paths": [
         "Makefile",
+        "compiler/CRANELIFT_PHASE21_OPENING.md",
         "compiler/CRANELIFT_PHASE22_OPENING.md",
         "compiler/phase10_help.txt",
         "compiler/test_runner_entry.gst",
@@ -26153,6 +26214,7 @@
         "scripts/cranelift_registry.py",
         "scripts/phase15_resource_composition_parity.sh",
         "scripts/phase16_abi_composition_parity.sh",
+        "scripts/phase21_complete_guard_suite.py",
         "scripts/phase21_opening.py",
         "scripts/phase22_default_route_flip.py",
         "scripts/phase22_default_route_seed_convergence.py",
