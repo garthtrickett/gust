@@ -8,8 +8,10 @@ rm -rf "$build_dir"
 rm -f "$request" "$expected"
 mkdir -p "$build_dir"
 
-XDG_RUNTIME_DIR=/tmp TMPDIR=/tmp bash scripts/run-gust-file.sh compiler/future/p15_complete_resource_differential_source.gst
-grep -F 'SUCCESS: Phase 15.13 composed resource source passed' to.log >/dev/null
+# Patch 24.13: this source's native capability is deferred and the retired
+# backend is gone, so the runner can no longer execute it by either route. The
+# frozen vector is the surviving oracle; the SUCCESS assertion moves onto it
+# below rather than being dropped.
 # Patch 24.12: the two-spelling emit-determinism check asserted a property
 # of the retired emitter and had no native counterpart, so it goes with the
 # backend rather than being served frozen bytes on both sides. What stays
@@ -19,6 +21,8 @@ python3 scripts/phase24_frozen_oracle.py materialize \
   compiler/future/p15_complete_resource_differential_source.gst \
   "$build_dir/frozen" --kind exec
 test ! -s "$build_dir/frozen.compile.stderr"
+grep -F 'SUCCESS: Phase 15.13 composed resource source passed' \
+  "$build_dir/frozen.stdout" >/dev/null
 
 XDG_RUNTIME_DIR=/tmp TMPDIR=/tmp bash scripts/run-gust-file.sh compiler/mir_resource_composition_state_smoke_test_entry.gst
 grep -F 'SUCCESS: Phase 15.13 resource composition state policy passed' to.log >/dev/null
