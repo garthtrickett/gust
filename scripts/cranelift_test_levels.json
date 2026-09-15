@@ -310,7 +310,6 @@
     "guard-cranelift-phase20-inert-resource-surface-contract": 1,
     "guard-cranelift-phase20-resource-declaration-migration-contract": 1,
     "guard-cranelift-phase20-resource-enforcement-contract": 1,
-    "guard-cranelift-phase20-resource-enforcement-parity": 2,
     "guard-cranelift-phase20-resource-acquisition-contract": 1,
     "guard-cranelift-phase20-resource-acquisition-parity": 2,
     "guard-cranelift-phase20-resource-scope-cleanup-contract": 1,
