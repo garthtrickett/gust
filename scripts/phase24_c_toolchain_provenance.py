@@ -697,6 +697,38 @@ def inventory_owner(path: str) -> str:
     return ""
 
 
+TEST_SUITE_PASSTHROUGH = (
+    'CC="${CC}" CFLAGS="${CFLAGS}" INCLUDES="${INCLUDES}" just make-test-suite'
+)
+
+
+def check_test_suite_passthrough() -> None:
+    """`make test` hands CC to the suite; 24.14 migrates that row, not deletes it.
+
+    The inventory files this row under `migrate`, and the migration is a
+    RECLASSIFICATION rather than a removal: after the provenance pass, every
+    surviving consumer of this passthrough is a native-route linker, a retained
+    hand-written C source, a script-authored probe, a Phase 17.6 archive, or a
+    layout oracle (#422) -- plus the backend products the inventory still owns
+    by name. None of them is an unowned backend product, which is exactly what
+    validate() asserts globally.
+
+    So the row survives, and deleting the passthrough would break the native
+    route's own linking rather than remove a generated-C route. Pinning it here
+    means a patch that reads "24.14 removes C compiler discovery" literally, and
+    takes this line out, fails with the reason instead of somewhere downstream
+    with a missing binary.
+    """
+    makefile = (ROOT / "Makefile").read_text()
+    require(
+        TEST_SUITE_PASSTHROUGH in makefile,
+        "the test-suite C toolchain passthrough is gone. 24.14 migrates this "
+        "row rather than retiring it: its surviving consumers link Cranelift "
+        "output and compile the retained hand-written runtime, so removing it "
+        "breaks the supported route instead of removing a backend route",
+    )
+
+
 def check_linker_driver() -> None:
     """The native route's linker driver, excepted by name (#401)."""
     path = ROOT / LINKER_DRIVER_FILE
@@ -719,6 +751,7 @@ def validate() -> dict:
     pop = population(report)
 
     check_linker_driver()
+    check_test_suite_passthrough()
 
     require(
         not pop["unresolved"],
