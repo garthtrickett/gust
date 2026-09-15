@@ -222,19 +222,42 @@ def evidence() -> None:
     with tempfile.TemporaryDirectory(prefix="gust-phase24-resource-transfer-") as name:
         temporary = Path(name)
 
-        c_output = compile_c(compiler, POSITIVE)
-        main_start = c_output.index(b"int gust_user_main_impl(")
-        main_end = c_output.index(b"\n}\n\nvoid gust_user_main(", main_start)
-        main_body = c_output[main_start:main_end]
-        cleanup = b"phase24_resource_implicit_transfer_module__retire_ticket(destination);"
-        require(main_body.count(cleanup) == 1 and
-                b"retire_ticket(source);" not in main_body and
-                b"read_ticket(&(destination))" in main_body,
-                "retained C path does not contain exactly one destination cleanup")
-        c_run = execute_c(c_output, runtime, temporary, "positive")
-        require(c_run.returncode == 0 and c_run.stdout == b"71\n" and
-                not c_run.stderr,
-                "retained C path did not execute one destination cleanup")
+        # Patch 24.12b: the behavioural half is served frozen; the
+        # emitter-only half is retired and inverted.
+        #
+        # This arm did two different things through one compile. It inspected
+        # the EMITTED C TEXT -- counting destination cleanups in the generated
+        # main body -- which is a property of the emitter with no native
+        # counterpart, so it is Patch 24.12a's class and cannot be converted.
+        # And it ran the result and compared the output, which is a behaviour
+        # the frozen vector records exactly.
+        #
+        # The cleanup count is not lost coverage in the sense that matters:
+        # what it established is that exactly one destination is retired, and
+        # the native arms below assert the same observable behaviour on the
+        # supported route. What goes is the claim about how the retired
+        # backend spelled it.
+        frozen_prefix = temporary / "frozen-positive"
+        materialized = run([sys.executable,
+                            "scripts/phase24_frozen_oracle.py", "materialize",
+                            POSITIVE.relative_to(ROOT).as_posix(),
+                            str(frozen_prefix), "--kind", "exec"])
+        require(materialized.returncode == 0,
+                f"the frozen oracle refused the positive fixture: "
+                f"{materialized.stderr.decode(errors='replace')[:200]}")
+        require(int(Path(f"{frozen_prefix}.status").read_text().strip()) == 0 and
+                Path(f"{frozen_prefix}.stdout").read_bytes() == b"71\n" and
+                not Path(f"{frozen_prefix}.stderr").read_bytes(),
+                "frozen retained-C path did not execute one destination "
+                "cleanup")
+        # No inverse assertion here, deliberately. The CR-15 guards could
+        # assert the retired spelling was absent from their own source because
+        # every one of their arms had gone. This guard keeps two by design --
+        # compile_c at :153 and the rejection routes at :192 serve sources that
+        # are synthesized per run and so cannot be keyed to a vector. Asserting
+        # absence would be asserting something false, and the population check
+        # already fails if this file's registered disposition stops matching
+        # what it actually contains.
 
         native_results: list[tuple[bytes, subprocess.CompletedProcess[bytes]]] = []
         for label, route in (

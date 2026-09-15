@@ -24686,6 +24686,21 @@
           "owner": "cranelift",
           "path": "scripts/phase24_frozen_oracle.py",
           "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "205e41d81c30909f2977b77f61171bac1e24f32dcfb8db94b94ddfb0e40df244",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 2,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 4
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase24_resource_implicit_transfer.py",
+          "removal_phase": "24"
         }
       ],
       "partial_extra_or_substituted_surface": "rejected",
@@ -24854,6 +24869,21 @@
           "owner": "cranelift",
           "path": "scripts/phase24_frozen_oracle.py",
           "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "8c0a310927781779ea4ab92cd6cc859065b94cf2b5b616af757419650ba0904c",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 2,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 4
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase24_resource_implicit_transfer.py",
+          "removal_phase": "24"
         }
       ],
       "registered_changed_paths": [
@@ -24867,7 +24897,8 @@
         "scripts/phase22_default_route_flip.py",
         "scripts/phase22_opening.py",
         "scripts/phase24_cr15_derivation.py",
-        "scripts/phase24_frozen_oracle.py"
+        "scripts/phase24_frozen_oracle.py",
+        "scripts/phase24_resource_implicit_transfer.py"
       ],
       "removed_text_surfaces": [],
       "status": "patch24_12b_in_progress"
