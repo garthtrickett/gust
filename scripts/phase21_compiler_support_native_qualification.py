@@ -390,6 +390,12 @@ def run_evidence(output: Path) -> None:
             worker.resolve() if full_compiler_live else capture_driver.resolve()
         )
         env["DRIVER_MARKER"] = str(driver_marker.resolve())
+        retired_route = "--backend" + '", "' + "mir-to-c"
+        require(retired_route not in Path(__file__).read_text(encoding="utf-8"),
+                "a live measurement of the retired route is back in "
+                "phase21_compiler_support_native_qualification: its oracle arm "
+                "is served frozen, and a frozen vector carries no elapsed time "
+                "or peak RSS to measure")
         observed_native = measure(
             ["./gust", "--backend", "cranelift", "-o", str(native), source],
             case_root / "cranelift", env,
@@ -438,15 +444,24 @@ def run_evidence(output: Path) -> None:
                     f"{row['id']}: rejection reached the driver or produced an artifact")
             canonical_mir = diagnostic["canonical_mir"]
             native_artifact = diagnostic["artifact"]
-        for backend, observed in (("mir_to_c", oracle),
-                                  ("cranelift", observed_native)):
+        # Patch 24.12b: the mir_to_c budget arm is retired, not re-pointed at
+        # the frozen oracle. A frozen vector records what the retired route
+        # produced, not how long it took or how much memory it used -- you
+        # cannot measure the runtime of a route you no longer run. Leaving the
+        # arm here read `oracle`, which the conversion above stopped binding,
+        # so run_evidence() raised NameError before reaching any assertion.
+        #
+        # The registry's mir_to_c budget row is a closed-phase record and stays
+        # (see the render at the top of this file); what goes is the live
+        # comparison against it.
+        for backend, observed in (("cranelift", observed_native),):
             budget = row["measurement"][backend]
             require(observed["elapsed_ms"] <= budget["max_elapsed_ms"],
                     f"{row['id']} {backend} elapsed {observed['elapsed_ms']}ms exceeds {budget['max_elapsed_ms']}ms")
             require(observed["peak_rss_kib"] <= budget["max_peak_rss_kib"],
                     f"{row['id']} {backend} peak {observed['peak_rss_kib']}KiB exceeds {budget['max_peak_rss_kib']}KiB")
         observations.append({
-            "id": row["id"], "mir_to_c": oracle,
+            "id": row["id"],
             "cranelift": observed_native,
             "canonical_mir": canonical_mir,
             "native_artifact": native_artifact,

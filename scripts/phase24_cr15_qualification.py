@@ -193,8 +193,12 @@ def evidence() -> None:
     compiler = ROOT / "build/phase10-package/bin/gust"
     driver = ROOT / "build/phase10-package/bin/gust-native-backend"
     runtime_package = ROOT / "build/phase10-package/bin/gust-runtime-package.a"
-    runtime = ROOT / "src/runtime.c"
-    for prerequisite in (compiler, driver, runtime_package, runtime):
+    # src/runtime.c was a prerequisite only because the retired host-compile
+    # arm below concatenated it in front of the emitted C. With that arm gone
+    # the requirement is vacuous -- the file is tracked, so it always exists --
+    # and keeping it would tell the next reader this guard still touches the C
+    # runtime. Same shape as the dead `CC_BIN` bindings 24.14 removes.
+    for prerequisite in (compiler, driver, runtime_package):
         require(prerequisite.is_file(), f"missing prerequisite {prerequisite}")
 
     expected_stdout = value["positive_authority"]["expected_stdout"].encode()
@@ -273,18 +277,21 @@ def evidence() -> None:
         require(outputs["inferred"] == outputs["explicit"],
                 "inferred and explicit native output differs")
 
-        for key in ("inferred", "explicit"):
-            c_source = temp / f"{key}.c"
-            c_source.write_bytes(runtime.read_bytes() + c_outputs[key])
-            c_artifact = temp / f"{key}-c"
-            compiled = run(["cc", "-O2", "-Wall", "-pthread", "-Isrc",
-                            str(c_source), "-o", str(c_artifact)])
-            require(compiled.returncode == 0,
-                    f"retained compatibility host compile failed for {key}")
-            executed = run([str(c_artifact)], timeout=20)
-            require(executed.returncode == 0 and
-                    executed.stdout == expected_stdout and not executed.stderr,
-                    f"retained compatibility execution drifted for {key}")
+        # Patch 24.12b: the CONSUMER of the retired emitter arm, retired here
+        # with it. The arm above stopped producing c_outputs; this block still
+        # read it, so `evidence()` raised NameError: name 'c_outputs' is not
+        # defined. It survived local runs because `validate` never calls
+        # `evidence` -- only the packaged-compiler CI job does.
+        #
+        # Inverted rather than deleted. The producer's inverse asserts the
+        # retired argv is absent; this one asserts the host compile that
+        # consumed its output is absent too, because a `cc` line does not
+        # spell the backend and so the first inverse cannot see it coming back.
+        host_compile = '"-O2", "-Wall", "-pthread", "-Isrc"'
+        require(host_compile not in own_source,
+                "the retired emitter-only arm's host C compile is back in "
+                "phase24_cr15_qualification: it compiled and ran C emitted by "
+                "the retired route, and has no native counterpart")
 
         failed_artifact = temp / "must-not-fallback"
         failed_env = os.environ.copy()
