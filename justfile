@@ -9164,7 +9164,7 @@ guard-cranelift-phase10-backend-selection-contract:
     expect_invocation_failure \
       'Compiler invocation error: the MIR-to-C backend does not accept -o' \
       bootstrap-emitter-output \
-      ./gust --backend bootstrap-emitter -o "$output_path" "$source_fixture"
+      env GUST_BOOTSTRAP_EMITTER=1 ./gust --backend bootstrap-emitter -o "$output_path" "$source_fixture"
     if rg -F '"phase22_native_implicit_output"' scripts/cranelift_feature_registry.json >/dev/null; then
       rg -n -F 'invocation.output_path = compiler_native_implicit_output_path(invocation.source_path, ctx);' "$compiler_entry" >/dev/null
     else
@@ -22545,7 +22545,7 @@ run-step52-positive-batch:
     # different phase has not finished. That is a worse trade, and it is
     # reversible: when the Phase 13 capability lands, this becomes a native
     # build.
-    ./gust --backend bootstrap-emitter tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner_step52_positive.c
+    GUST_BOOTSTRAP_EMITTER=1 ./gust --backend bootstrap-emitter tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner_step52_positive.c
     rg -n -F 'compiler/typechecker_resource_declaration_auto_registration_test_entry.gst' build/test_runner_step52_positive.c >/dev/null
     rg -n -F 'compiler/typechecker_resource_assignment_auto_registration_test_entry.gst' build/test_runner_step52_positive.c >/dev/null
     rg -n -F 'compiler/typechecker_resource_move_assignment_transfer_test_entry.gst' build/test_runner_step52_positive.c >/dev/null
@@ -22618,11 +22618,11 @@ make-test-suite:
     just make-test-guards
     mkdir -p build
     echo "⚙️  Compiling native Gust test runner..."
-    ./gust --backend bootstrap-emitter tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
+    GUST_BOOTSTRAP_EMITTER=1 ./gust --backend bootstrap-emitter tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
     cat src/runtime.c build/test_runner.c > build/test_runner_final.c
     CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_final.c -o build/test_runner_bin
     echo "🏃 Running native Gust test runner..."
-    ./build/test_runner_bin
+    GUST_BOOTSTRAP_EMITTER=1 ./build/test_runner_bin
     make test_tree_sitter
 
 make-test-suite-fast-c:
@@ -22658,11 +22658,11 @@ make-test-suite-parallel:
     just make-test-guards-parallel
     mkdir -p build
     echo "⚙️  Compiling native Gust test runner..."
-    ./gust --backend bootstrap-emitter tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
+    GUST_BOOTSTRAP_EMITTER=1 ./gust --backend bootstrap-emitter tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
     cat src/runtime.c build/test_runner.c > build/test_runner_final.c
     CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_final.c -o build/test_runner_bin
     echo "🏃 Running native Gust test runner..."
-    ./build/test_runner_bin
+    GUST_BOOTSTRAP_EMITTER=1 ./build/test_runner_bin
     make test_tree_sitter
 
 check:
