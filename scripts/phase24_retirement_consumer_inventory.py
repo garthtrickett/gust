@@ -586,6 +586,68 @@ WORKFLOW_ROWS = [
      "guard-cranelift-phase23-mir-to-c-focused-live-contract", "24.16", "retire"),
 ]
 
+# ---------------------------------------------------------------------------
+# Patch 24.15's four registry rows, and the disposition they actually get.
+#
+# The roadmap says "retire the generated-C registry rows". Read as deletion
+# that is not implementable and not right:
+#
+#   * phase23_closure indexes all four by contract_version and status
+#     (patch23_7 through patch23_11). Deleting any is a KeyError in frozen
+#     closed-phase evidence, not a retirement.
+#   * They are Phase 23 RECORDS. "As of Patch 23.10 there was one live lane"
+#     stays true no matter what Phase 24 does; a record of a closed phase is
+#     not made wrong by later work.
+#
+# What IS wrong is a closed record asserting a currently-false LIVE state.
+# phase23_mir_to_c_focused_live.route_contract says
+# non_bootstrap_live_lane_count: 1, and Patch 24.14 retired that lane.
+#
+# So the live CLAIMS are retired and the records survive -- the same polarity
+# pair as RETIRED_FILE_SURFACES/REBASED_FILE_SURFACES, one level up. The
+# falsifier is not a list: each retired claim must DISAGREE with what the tree
+# now measures, and the measurement is 24.14's derived lane count rather than
+# a second declaration. A claim that still matches the tree was not retired,
+# and fails here.
+RETIRED_REGISTRY_CLAIMS = {
+    "phase23_mir_to_c_focused_live": (
+        ("route_contract", "non_bootstrap_live_lane_count"),
+        "Patch 24.14 retired the focused live oracle, the single non-bootstrap "
+        "live-C lane Patch 23.10 deliberately retained. The Phase 23 record "
+        "keeps saying one lane existed then; what is retired is the claim that "
+        "one exists now.",
+    ),
+}
+
+
+def check_retired_registry_claims(registry: dict) -> None:
+    """A retired live claim must disagree with what the tree measures."""
+    spec = importlib.util.spec_from_file_location(
+        "_audit", ROOT / "scripts" / "phase23_production_release_audit.py")
+    module = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(module)
+    except SystemExit:
+        pass
+    measured = module.scan()["active_non_bootstrap_live_c_lane_count"]
+
+    for node_key, (path, reason) in RETIRED_REGISTRY_CLAIMS.items():
+        node = registry.get(node_key)
+        require(isinstance(node, dict),
+                f"a retired-claim node must still exist as a closed-phase "
+                f"record: {node_key}")
+        claimed = node
+        for step in path:
+            require(isinstance(claimed, dict) and step in claimed,
+                    f"the retired claim is gone from {node_key}: {path}. The "
+                    "record survives; only the claim is retired, so deleting "
+                    "it asserts nothing.")
+            claimed = claimed[step]
+        require(claimed != measured,
+                f"{node_key}.{'.'.join(path)} still agrees with the tree "
+                f"({claimed} == {measured}), so nothing was retired. {reason}")
+
+
 REGISTRY_ROWS = [
     # Live generated-C registry nodes retired or updated under 24.15. The
     # archived corpus node survives as the parity authority with its live-C
@@ -1575,6 +1637,7 @@ def validate() -> dict:
     for key, owner, action in REGISTRY_ROWS:
         require(isinstance(registry.get(key), dict),
                 f"inventoried registry node is missing: {key}")
+    check_retired_registry_claims(registry)
     for path, needle, owner, action in FILE_ROWS:
         require(needle in read(path),
                 f"inventoried file lost its C surface: {path}: {needle[:48]}")
