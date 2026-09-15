@@ -35,7 +35,8 @@ Do not edit by hand.
 
 ## Landed successor invocation summary
 
-- Landed selection `explicit_c`: `51`
+- Landed selection `explicit_bootstrap_emitter`: `2`
+- Landed selection `explicit_c`: `49`
 - Landed selection `explicit_cranelift`: `115`
 - Landed selection `explicit_invalid_or_parser_probe`: `3`
 - Landed selection `implicit_default`: `15`
@@ -61,8 +62,8 @@ Do not edit by hand.
 | `Makefile` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `Makefile` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `Makefile` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `Makefile` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `Makefile` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
+| `Makefile` | `none` | `explicit_bootstrap_emitter` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
+| `Makefile` | `none` | `explicit_bootstrap_emitter` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `justfile` | `guard-cranelift-phase10-backend-selection-contract` | `implicit_default` | `intentional_default_selection_probe` | `cranelift` | `current_default_route_observation` | `22.6_flip_expectation_only` | `probe_is_migrated_before_the_default_route_changes` |
 | `justfile` | `guard-cranelift-phase10-backend-selection-contract` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `justfile` | `guard-cranelift-phase10-backend-selection-contract` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
