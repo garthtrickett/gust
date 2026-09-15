@@ -472,6 +472,156 @@ BACKEND_SPELLING = re.compile(r"--backend (?:mir-to-c|c(?=[\s\"']|$))")
 RECIPE_HEAD = re.compile(r"^([A-Za-z0-9_-]+)([^:]*):")
 
 
+# ---------------------------------------------------------------------------
+# Patch 24.12b: the Python population, computed rather than enumerated (#415).
+#
+# FROZEN_LOCI above is a registered tuple, so check_no_live_c can only catch a
+# *registered* harness reacquiring live C. A guard written in Python that
+# builds its own argv is invisible to it, and to check_sweep, whose loci are
+# scripts/*.sh plus the Makefile and the justfile fragments.
+#
+# The criterion below is derived from the tree, not listed here. Every
+# scripts/*.py that builds an argv selecting the retired backend must be
+# either converted or carry a registered exclusion with a reason. A file that
+# acquires such an argv later fails this check rather than being silently out
+# of scope -- the inverse form, so it fails on a new site instead of on a list
+# that inherits whichever enumeration was wrong.
+#
+# It over-approximates deliberately: it finds argv *construction*, not proven
+# execution. The narrower form -- requiring the list be passed directly to a
+# subprocess.* call -- was measured and returns 0, because every site on this
+# tree hands its argv to a local helper (`run`, `run_process`, `run_before`).
+# That is #396's indirection defect one language over, and it is why the
+# narrow form is recorded here as rejected rather than used.
+# ---------------------------------------------------------------------------
+
+# Named PENDING, not CONVERTED, because that is the true state. A file in this
+# tuple still builds a retired-backend argv today -- that is exactly why the
+# derivation still finds it. Conversion *removes* the argv, which drops the
+# file out of the derived population, and the staleness check below then
+# requires its row be retired. So the tuple empties itself as the work lands,
+# and "Patch 24.12b is done" is the statement that it is empty. Calling these
+# "converted" while they still execute the retired backend would be the
+# green-but-wrong shape this phase keeps finding.
+PYTHON_RETIRED_ARGV_PENDING_CONVERSION: tuple[str, ...] = (
+    "scripts/phase20_generated_mir_scale.py",
+    "scripts/phase21_compiler_support_native_qualification.py",
+    "scripts/phase21_selected_compiler_module_qualification.py",
+    "scripts/phase22_default_route_flip.py",
+    "scripts/phase22_preflip_default_cohort.py",
+    "scripts/phase24_cr15_derivation.py",
+    "scripts/phase24_cr15_qualification.py",
+    "scripts/phase24_resource_implicit_transfer.py",
+)
+
+# Each exclusion carries the reason it is out, and every reason is a property
+# something else on the tree can contradict -- not an opinion recorded once.
+PYTHON_RETIRED_ARGV_EXCLUSIONS: dict[str, str] = {
+    "scripts/phase21_cranelift_built_compiler_programs.py":
+        "registered focused_live_oracle: classify_surface returns "
+        "focused_live_oracle for this path, the single live lane Patch 23.10 "
+        "deliberately retained. It goes with the backend at 24.13/24.14 "
+        "rather than being converted.",
+    "scripts/phase23_same_scope_declaration.py":
+        "no frozen vector covers its sources. compiler/"
+        "phase23_same_scope_duplicate_current.gst and its positives have no "
+        "entry in the vector set, so converting it needs a *capture*, and "
+        "refreshing the frozen set requires a new vector version and explicit "
+        "roadmap authority that Patch 24.12b does not hold. This is a genuine "
+        "two-arm parity guard (#415) and is excluded on feasibility, not on "
+        "shape: it is the first thing the patch holding that authority "
+        "converts.",
+    "scripts/phase23_issue_health_opening.py":
+        "issue-health probe, not a parity guard: both retired-backend calls "
+        "assert issue #105's diagnostic against literals and neither is "
+        "compared against a native arm.",
+    "scripts/phase23_structured_guard_defer_native_admission.py":
+        "oracle role for a closed Phase 23 record; its retired-backend call "
+        "produces the reference the native admission path is judged against, "
+        "and it carries no vector either.",
+    "scripts/phase24_filename_behavior_characterization.py":
+        "the retired spelling is data in a ROUTES table whose subject *is* "
+        "route-dependent behaviour (Patch 24.1). Removing the row would "
+        "delete the phenomenon under characterization; Patch 24.3 carries the "
+        "correction as future work by operator decision.",
+}
+
+
+def python_retired_argv_sites() -> dict[str, list[int]]:
+    """Every scripts/*.py that builds an argv selecting the retired backend.
+
+    Derived by walking each module's AST for a list or tuple literal whose
+    elements include the ``--backend`` flag followed by a retired spelling,
+    or a single fused ``--backend=<spelling>`` element.
+    """
+    import ast
+
+    retired = {"mir-to-c", "c"}
+    found: dict[str, list[int]] = {}
+    for path in sorted((ROOT / "scripts").glob("*.py")):
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"))
+        except SyntaxError:
+            continue
+        lines: list[int] = []
+        for node in ast.walk(tree):
+            if not isinstance(node, (ast.List, ast.Tuple)):
+                continue
+            elements = [
+                element.value
+                if isinstance(element, ast.Constant)
+                and isinstance(element.value, str) else None
+                for element in node.elts
+            ]
+            for index, value in enumerate(elements):
+                if (value == "--backend" and index + 1 < len(elements)
+                        and elements[index + 1] in retired):
+                    lines.append(node.lineno)
+                elif (isinstance(value, str) and value.startswith("--backend=")
+                      and value.split("=", 1)[1] in retired):
+                    lines.append(node.lineno)
+        if lines:
+            found[path.relative_to(ROOT).as_posix()] = sorted(set(lines))
+    return found
+
+
+def check_python_population() -> dict[str, object]:
+    """Patch 24.12b: the criterion, measured over the live tree."""
+    sites = python_retired_argv_sites()
+    pending = set(PYTHON_RETIRED_ARGV_PENDING_CONVERSION)
+    excluded = set(PYTHON_RETIRED_ARGV_EXCLUSIONS)
+
+    overlap = pending & excluded
+    require(not overlap,
+            "a Python locus is both pending conversion and excluded: "
+            f"{sorted(overlap)}")
+
+    accounted = pending | excluded
+    unaccounted = sorted(set(sites) - accounted)
+    require(not unaccounted,
+            "a scripts/*.py builds a retired-backend argv and is neither "
+            "owned for conversion nor registered as excluded: "
+            f"{unaccounted}")
+
+    # An account that no longer describes the tree is worse than none: it
+    # reads as coverage. Both directions fail.
+    stale = sorted(accounted - set(sites))
+    require(not stale,
+            "a registered Python locus no longer builds a retired-backend "
+            f"argv; retire its row instead of leaving it: {stale}")
+
+    for locus, reason in PYTHON_RETIRED_ARGV_EXCLUSIONS.items():
+        require(len(reason.split()) >= 12,
+                f"a Python exclusion is registered without a reason: {locus}")
+
+    return {
+        "population": len(sites),
+        "pending": len(pending),
+        "excluded": len(excluded),
+        "sites": {locus: list(lines) for locus, lines in sites.items()},
+    }
+
+
 def fail(message: str) -> None:
     raise SystemExit(f"{GUARD_L1}: {message}")
 
@@ -1280,6 +1430,10 @@ def validate() -> dict:
 
     check_no_live_c()
     check_native_arm_split()
+    # Patch 24.12b (#415): the Python half of the population, derived from the
+    # tree rather than read off FROZEN_LOCI. check_no_live_c above iterates a
+    # registered tuple and so cannot see a guard that was never registered.
+    python_population = check_python_population()
     require(node.get("frozen_loci") == list(FROZEN_LOCI) and
             node.get("frozen_recipes") == list(FROZEN_RECIPES),
             "registered frozen locus set drifted")
@@ -1877,11 +2031,19 @@ def main() -> None:
         check_review(node)
         print(f"{GUARD_L1}: review current")
     else:
+        # State the covered counts rather than leaving them implicit: an
+        # unstated split reads as full coverage to anyone who sees "ok"
+        # (#399, the 34-of-253 lesson). The Python population is derived,
+        # so its size is a measurement and belongs in the summary.
+        population = check_python_population()
         print(f"{GUARD_L1}: ok "
               f"({node['vector_count']} vectors, "
               f"{node['archived_corpus_linked_vectors']} archived-corpus "
               f"linked, {len(FROZEN_LOCI)} harnesses and "
-              f"{len(FROZEN_RECIPES)} recipes free of live C)")
+              f"{len(FROZEN_RECIPES)} recipes free of live C; "
+              f"{population['population']} Python loci build a retired-backend "
+              f"argv = {population['pending']} pending conversion + "
+              f"{population['excluded']} registered exclusions)")
 
 
 if __name__ == "__main__":
