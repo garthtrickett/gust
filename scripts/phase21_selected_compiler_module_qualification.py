@@ -555,11 +555,19 @@ def run_evidence(output: Path) -> None:
                 and not driver_marker.exists(),
                 f"{row['id']}: native classification or resource state drifted",
             )
-        check_budget(row, "mir_to_c", oracle)
+        # Patch 24.12b: the mir_to_c budget arm is retired with its producer.
+        # a66e747b converted the oracle arm to the frozen oracle and removed
+        # `oracle = measure(...)`, leaving these three reads, so run_evidence
+        # died on NameError before reaching any assertion. `validate` never
+        # calls it, so only the packaged-compiler CI job reaches this line.
+        #
+        # Not re-pointed at the frozen oracle: a frozen vector records what the
+        # retired route produced, not how long it took or how much memory it
+        # used. The registry's mir_to_c budget row stays as the closed-phase
+        # record it is; what goes is the live comparison against it. Same
+        # disposition as phase21_compiler_support_native_qualification.
         check_budget(row, "cranelift", native)
-        observations.append(
-            {"id": row["id"], "mir_to_c": oracle, "cranelift": native}
-        )
+        observations.append({"id": row["id"], "cranelift": native})
 
     declaration = record["declaration_admission"]
     positive_root = output / "declaration-admission"
