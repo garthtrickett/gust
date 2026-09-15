@@ -118,8 +118,8 @@ Out of scope:
 - [ ] Patch 24.12b — Python Parity Guard Conversion
 - [ ] Patch 24.13 — Backend-Selection and Publication-Path Removal
 - [ ] Patch 24.14 — C Toolchain Discovery, Error, and Temp-File Removal
-- [ ] Patch 24.15 — Package, Documentation, and Registry Retirement
 - [ ] Patch 24.15a — Reachability Instrument Repair
+- [ ] Patch 24.15 — Package, Documentation, and Registry Retirement
 - [ ] Patch 24.16 — Cross-Feature Residue Audit
 - [ ] Patch 24.17 — Exact-Main Historical Full Qualification
 - [ ] Patch 24.18 — Phase 24 Closure and Terminal State
@@ -483,6 +483,13 @@ documentation, and the registry.
 
 **Steps:**
 
+- Require Patch 24.15a to have landed first (#404). This patch retires
+  registry rows and test-level entries, which is what removes the redundancy
+  currently masking `registry_named`'s unsound substring match. Running it
+  first makes the reachability instrument load-bearing at the patch most
+  dependent on it, where it fails by reporting a retired guard as live
+  rather than by erroring — so this patch's own exit gate would be
+  discharged by a plausible number.
 - Remove generated-C backend paths from package contents and install flows;
   help, user documentation, and generated authority state removal, not
   deprecation.
@@ -497,13 +504,22 @@ invariant.
 ## Patch 24.15a — Reachability Instrument Repair
 
 **Purpose:** repair the three defects in `scripts/guard_reachability.py` and
-its callers before Patch 24.16 measures anything with them.
+its callers before Patch 24.15 retires the rows that mask them and Patch
+24.16 measures anything with them.
 
 A patch cannot both repair an instrument and be the audit that trusts it. If
 these rode 24.16, that audit's own before/after baseline would be taken on
 the broken tool — which is the defect in #393 one level up, a declared value
 standing in for a measured one. So the repair lands first, as its own patch,
 and 24.16 starts from an instrument whose output means what it says.
+
+It lands before **24.15** as well, and for a reason 24.15 cannot supply
+itself (#404). The unsound substring match is inert today only because a
+sound signal covers the same population; 24.15's retirements are what remove
+that cover. A tool that fails by reporting a retired guard as *live* is worst
+at the patch whose gate is "every surviving evidence row protects a
+still-live invariant", so 24.15 may not be the first consumer of the
+unrepaired instrument.
 
 **Steps:**
 
@@ -532,6 +548,13 @@ and 24.16 starts from an instrument whose output means what it says.
 - Re-baseline `scripts/guard_reachability_allowlist.json`, justifying or
   removing each newly visible entry. The orphan count jumps from 20 toward 97;
   a bulk accept re-hides exactly what Patch 24.16 exists to find.
+- **#404** — assert the inverse rather than the enumeration: *no recipe may
+  be live solely because an inventory node names it*. It passes today with
+  the 3 known exceptions and fails the moment self-enrolment becomes
+  load-bearing, which is what 24.15 makes possible. Also fix the type defect
+  it records: `liveness()` is annotated as a 2-tuple, documented as three
+  sets, and returns three (587/536/80) — the cause of two plausible wrong
+  intermediates, 90 and then 371.
 
 **Exit Gate:** each of the three defects has a test that fails on the old
 behaviour; the orphan report is derived from execution rather than mention;
@@ -632,8 +655,8 @@ Web Slice 1 remain inactive pending fresh activation.
 → 24.12b python parity guard conversion
 → 24.13 backend-selection and publication-path removal
 → 24.14 C toolchain discovery, error, and temp-file removal
-→ 24.15 package, documentation, and registry retirement
 → 24.15a reachability instrument repair
+→ 24.15 package, documentation, and registry retirement
 → 24.16 cross-feature residue audit
 → 24.17 Historical Full qualification
 → 24.18 closure and terminal state.
@@ -647,7 +670,21 @@ and all twenty-three recipes reaching them run in CI, so removing the backend
 first breaks them. This is an ordering constraint, not a preference. Patch 24.11 must complete its inventory before 24.13 removes
 what it lists. A seed cannot share a PR with
 compiler-source changes; reconverge it alone where 24.13 or 24.14 moves it.
-Patch 24.15a precedes 24.16 because 24.16 audits with the instrument 24.15a repairs, and a patch cannot be both the repair and the audit that trusts it.
+Patch 24.15a precedes **both 24.15 and 24.16**. It precedes 24.16 because
+24.16 audits with the instrument 24.15a repairs, and a patch cannot be both
+the repair and the audit that trusts it. It precedes 24.15 for a different
+reason (#404): `registry_named`'s substring match is unsound, and what has
+hidden the consequence is composition — of the ~547 hits that suppress orphan
+reporting, 513–516 come from the test-levels file, which names nearly
+everything legitimately, so an unsound signal is masked by a sound one over
+the same population, and residual self-enrolment resolves to 3 recipes that
+`make_roots` already covers. **Patch 24.15 removes the mask**, because
+retiring registry rows and level entries is exactly what thins the sound
+signal; the instrument becomes load-bearing at the patch most dependent on
+it, and it fails by reporting a retired guard as *live* rather than by
+erroring. Two independent measurements of that split disagree
+(513/173/66/14 against 516/176/64/11) and are recorded unreconciled rather
+than averaged; the ordering does not depend on which is right.
 Patch 24.17 runs only after the final removal and retirement mains exist. No
 later phase is activated by completing this sequence.
 
