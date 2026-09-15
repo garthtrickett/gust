@@ -355,34 +355,34 @@ def run_evidence(output: Path) -> None:
         case_root = output / row["id"]
         case_root.mkdir(parents=True, exist_ok=True)
         source = row["source_fixture"]
-        oracle_c = case_root / "oracle.c"
-        oracle = measure(
-            ["./gust", "--backend", "mir-to-c", source],
-            case_root / "mir-to-c",
+        # Patch 24.12b: the oracle arm is served from the frozen oracle. It
+        # used to compile this source through the retired route, link the
+        # emitted C with cc and run it; every one of those steps executed the
+        # backend being removed. The observations it produced are frozen, so
+        # what is compared is unchanged -- compile status, run exit, stdout
+        # and stderr, all still checked against the registered row. The native
+        # arm below still runs live.
+        frozen_prefix = case_root / "frozen"
+        materialized = run_process(
+            [sys.executable, "scripts/phase24_frozen_oracle.py", "materialize",
+             source, str(frozen_prefix), "--kind", "exec"],
+            case_root / "frozen.stdout", case_root / "frozen.stderr",
         )
-        require(oracle["status"] == row["oracle"]["compile_exit"],
-                f"{row['id']}: MIR-to-C compile status drifted")
-        oracle_c.write_bytes((case_root / "mir-to-c.stdout").read_bytes())
-        require(oracle_c.stat().st_size > 0 and
-                not (case_root / "mir-to-c.stderr").read_bytes(),
-                f"{row['id']}: MIR-to-C did not emit clean nonempty C")
-        executable = case_root / "oracle"
-        cc = os.environ.get("CC", "cc")
-        status = run_process(
-            [cc, "-O0", "-w", "-pthread", "-Isrc", "-include", "src/runtime.c",
-             str(oracle_c), "-o", str(executable)],
-            case_root / "oracle-link.stdout", case_root / "oracle-link.stderr",
-        )
-        require(status == 0 and executable.is_file(),
-                f"{row['id']}: MIR-to-C output did not link")
-        status = run_process([str(executable)], case_root / "oracle-run.stdout",
-                             case_root / "oracle-run.stderr")
-        require(status == row["oracle"]["run_exit"] and
-                (case_root / "oracle-run.stdout").read_text(encoding="utf-8") ==
+        require(materialized == 0,
+                f"{row['id']}: the frozen oracle refused {source}: "
+                f"{(case_root / 'frozen.stderr').read_text(encoding='utf-8')[:200]}")
+        require(int(Path(f"{frozen_prefix}.compile.status").read_text().strip())
+                == row["oracle"]["compile_exit"],
+                f"{row['id']}: frozen compile status drifted")
+        require(not Path(f"{frozen_prefix}.compile.stderr").read_bytes(),
+                f"{row['id']}: frozen compile emitted stderr")
+        require(int(Path(f"{frozen_prefix}.status").read_text().strip()) ==
+                row["oracle"]["run_exit"] and
+                Path(f"{frozen_prefix}.stdout").read_text(encoding="utf-8") ==
                 row["oracle"]["stdout"] and
-                (case_root / "oracle-run.stderr").read_text(encoding="utf-8") ==
+                Path(f"{frozen_prefix}.stderr").read_text(encoding="utf-8") ==
                 row["oracle"]["stderr"],
-                f"{row['id']}: MIR-to-C runtime oracle drifted")
+                f"{row['id']}: frozen runtime oracle drifted")
 
         native = case_root / "native"
         env = os.environ.copy()
