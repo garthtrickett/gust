@@ -39,6 +39,8 @@ REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 LEVELS = ROOT / "scripts/cranelift_test_levels.json"
 TASK = ROOT / "TASK.md"
 VECTORS = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v1.json"
+# Patch 24.12b (#416): the additive v2 capture, served alongside v1.
+VECTORS_V2 = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v2.json"
 CORPUS = ROOT / "compiler/fixtures/phase23_mir_to_c_reference_corpus_v1.json"
 VIEW = ROOT / "docs/PHASE24_FROZEN_ORACLE_REPLACEMENT.md"
 EMITTER_ONLY_ASSERTIONS_REMOVED = (
@@ -798,6 +800,43 @@ def load_vectors() -> dict:
     return json.loads(_VECTORS_PATH.read_text(encoding="utf-8"))
 
 
+def load_servable_vectors() -> dict:
+    """v1 plus the Patch 24.12b v2 capture, for serving only.
+
+    The two corpora are kept as separate files on purpose. v1 is immutable and
+    its supersession policy forbids refreshing it, so v2 is an *addition*
+    rather than an edit: a source captured for the Python guards cannot
+    silently redefine a v1 observable. Serving unions them; `validate` still
+    measures v1 alone, so the v1 counts this guard reports keep meaning what
+    they meant.
+
+    A v2 vector that collides with a v1 id fails rather than shadowing it --
+    the one direction that would let a new capture overwrite a frozen
+    expectation without anything noticing.
+    """
+    vectors = load_vectors()
+    # During a mutation replay `_materialize_from` repoints _VECTORS_PATH at a
+    # scratch file holding exactly the table under test. That table is already
+    # the complete set to serve, so merging v2 on top of it would re-add the
+    # very vectors being mutated and trip the collision check below. Serving
+    # the scratch verbatim is what makes the v2 arm testable at all.
+    if _VECTORS_PATH != VECTORS:
+        return vectors
+    if not VECTORS_V2.is_file():
+        return vectors
+    second = json.loads(VECTORS_V2.read_text(encoding="utf-8"))
+    require(second.get("format") == "phase24_frozen_oracle_vectors_v2",
+            "the v2 capture file is not a v2 corpus")
+    collisions = sorted(set(second["vectors"]) & set(vectors["vectors"]))
+    require(not collisions,
+            f"a v2 vector would shadow a v1 vector; v1 is immutable and a "
+            f"capture may not redefine it: {collisions}")
+    merged = dict(vectors)
+    merged["vectors"] = dict(vectors["vectors"])
+    merged["vectors"].update(second["vectors"])
+    return merged
+
+
 def load_corpus() -> dict:
     require(CORPUS.is_file(), "archived 23.11 reference corpus is missing")
     return json.loads(CORPUS.read_text(encoding="utf-8"))
@@ -837,8 +876,12 @@ def check_vector(vector_id: str, vectors: dict) -> dict:
     if vector["kind"] == "exec":
         require("execution" in vector,
                 f"exec vector has no frozen execution: {vector_id}")
+    # Provenance is an allowlist, not a free field: an unrecognised value
+    # fails closed. The v2 spelling is listed explicitly rather than relaxed
+    # to a prefix match, so a third capture has to declare itself too.
     require(vector["provenance"] in (
-        "derived_from_archived_corpus_v1", "captured_live_while_green"),
+        "derived_from_archived_corpus_v1", "captured_live_while_green",
+        "captured_live_while_green_patch24_12b"),
         f"frozen vector has an unknown provenance: {vector_id}")
     require(not (vector["provenance"] == "derived_from_archived_corpus_v1"
                  and vector.get("archived_corpus_case") is None),
@@ -857,7 +900,9 @@ def materialize(vector_id: str, prefix: Path, expect_kind: str | None,
     by-product of it: a case that used to write a file must still be
     recorded as writing it.
     """
-    vectors = load_vectors()
+    # Serving resolves v1 and the v2 capture; validate below still measures
+    # v1 alone, so its counts keep meaning what they meant.
+    vectors = load_servable_vectors()
     vector = check_vector(vector_id, vectors)
     if expect_kind is not None:
         require(vector["kind"] == expect_kind,
@@ -2182,13 +2227,21 @@ def main() -> None:
                     args.env)
         return
     if args.command == "mutation-evidence":
+        # v1 and the v2 capture are both proven falsifiable, and the two
+        # counts are reported separately. A capture that is servable but never
+        # mutated is the #399 shape again -- an observable nothing can
+        # contradict -- so v2 does not get to inherit v1's evidence.
         checked = validate_mutations(load_vectors())
+        servable = load_servable_vectors()
+        second = {"vectors": {k: v for k, v in servable["vectors"].items()
+                              if k not in load_vectors()["vectors"]}}
+        captured = validate_mutations(second) if second["vectors"] else 0
         # Patch 24.12b (#412): stderr joins the named arms. It is named here
         # because this line is the only place the covered set is stated, and
         # an arm that runs but is not named reads as absent.
-        print(f"{GUARD_L2}: {checked} frozen vectors are falsifiable "
-              f"(exit, stdout, stderr, moved source, changed kind, "
-              f"unknown id)")
+        print(f"{GUARD_L2}: {checked} v1 + {captured} v2 frozen vectors are "
+              f"falsifiable (exit, stdout, stderr, moved source, changed "
+              f"kind, unknown id)")
         return
 
     node = validate()
