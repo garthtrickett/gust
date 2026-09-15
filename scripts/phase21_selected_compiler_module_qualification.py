@@ -15,6 +15,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent.parent
+VECTORS_V1 = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v1.json"
+VECTORS_V2 = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v2.json"
 REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 TASK = ROOT / "TASK.md"
 REVIEW = ROOT / "compiler/CRANELIFT_PHASE21_SELECTED_COMPILER_MODULE_QUALIFICATION.md"
@@ -340,6 +342,23 @@ def render(record: dict) -> str:
     return "\n".join(lines)
 
 
+def frozen_vector_compile_size(source: str) -> int:
+    """The emitted C's size, from the frozen vector's provenance record.
+
+    The compile stdout of an exec vector is provenance -- recorded with its
+    size and digest, never replayed -- which is exactly what the generated-C
+    byte assertion needs, and is why that assertion survives the conversion
+    instead of being retired with the arm that used to produce it.
+    """
+    for path in (VECTORS_V2, VECTORS_V1):
+        if not path.is_file():
+            continue
+        table = json.loads(path.read_text(encoding="utf-8"))["vectors"]
+        if source in table:
+            return int(table[source]["compile"]["stdout"]["size"])
+    raise SystemExit(f"{GUARD_L2}: no frozen vector for {source}")
+
+
 def run_process(
     command: list[str], stdout: Path, stderr: Path,
     env: dict[str, str] | None = None,
@@ -437,49 +456,44 @@ def run_evidence(output: Path) -> None:
         case_root.mkdir(parents=True, exist_ok=True)
         driver_marker.unlink(missing_ok=True)
         source = row["source_fixture"]
-        oracle = measure(
-            ["./gust", "--backend", "mir-to-c", source],
-            case_root / "mir-to-c",
+        # Patch 24.12b: the oracle arm is served frozen. It compiled the slice
+        # through the retired route, linked the emitted C and ran it. The
+        # vector records all of that: the compile status, the emitted C's size
+        # as provenance, and the executed observation.
+        #
+        # The generated-C byte check is PRESERVED rather than retired, because
+        # the frozen record carries the size. It keeps its original condition:
+        # skipped when the full compiler is live, because the emitted size
+        # tracks the compiler build. Measured before substituting -- three of
+        # the six registered sizes do not match a fresh capture, which is the
+        # condition earning its keep rather than a defect.
+        frozen_prefix = case_root / "frozen"
+        materialized = run_process(
+            [sys.executable, "scripts/phase24_frozen_oracle.py", "materialize",
+             source, str(frozen_prefix), "--kind", "exec"],
+            case_root / "frozen.stdout", case_root / "frozen.stderr",
         )
+        require(materialized == 0,
+                f"{row['id']}: the frozen oracle refused {source}")
         require(
-            oracle["status"] == 0,
-            f"{row['id']}: MIR-to-C compile status drifted",
+            int(Path(f"{frozen_prefix}.compile.status").read_text().strip())
+            == 0,
+            f"{row['id']}: frozen compile status drifted",
         )
-        oracle_c = case_root / "oracle.c"
-        oracle_c.write_bytes(
-            (case_root / "mir-to-c.stdout").read_bytes()
-        )
+        frozen_c_bytes = frozen_vector_compile_size(source)
         require(
-            oracle_c.stat().st_size > 0
+            frozen_c_bytes > 0
             and (
                 full_compiler_live
-                or oracle_c.stat().st_size == row["oracle"]["generated_c_bytes"]
+                or frozen_c_bytes == row["oracle"]["generated_c_bytes"]
             )
-            and not (case_root / "mir-to-c.stderr").read_bytes(),
+            and not Path(f"{frozen_prefix}.compile.stderr").read_bytes(),
             f"{row['id']}: MIR-to-C output bytes or diagnostics drifted",
         )
-        executable = case_root / "oracle"
-        status = run_process(
-            [
-                cc, "-O0", "-w", "-pthread", "-Isrc", "-include",
-                "src/runtime.c", str(oracle_c), "-o", str(executable),
-            ],
-            case_root / "oracle-link.stdout",
-            case_root / "oracle-link.stderr",
-        )
         require(
-            status == 0 and executable.is_file(),
-            f"{row['id']}: MIR-to-C output did not link",
-        )
-        status = run_process(
-            [str(executable)],
-            case_root / "oracle-run.stdout",
-            case_root / "oracle-run.stderr",
-        )
-        require(
-            status == 0
-            and not (case_root / "oracle-run.stdout").read_bytes()
-            and not (case_root / "oracle-run.stderr").read_bytes(),
+            int(Path(f"{frozen_prefix}.status").read_text().strip()) == 0
+            and not Path(f"{frozen_prefix}.stdout").read_bytes()
+            and not Path(f"{frozen_prefix}.stderr").read_bytes(),
             f"{row['id']}: MIR-to-C runtime oracle drifted",
         )
         env = os.environ.copy()
@@ -551,33 +565,25 @@ def run_evidence(output: Path) -> None:
     positive_root = output / "declaration-admission"
     positive_root.mkdir(parents=True, exist_ok=True)
     source = declaration["source_fixture"]
-    oracle_c = positive_root / "oracle.c"
-    status = run_process(
-        ["./gust", "--backend", "mir-to-c", source],
-        oracle_c,
-        positive_root / "oracle.compiler.stderr",
+    # Patch 24.12b: same conversion as the slice loop above -- compile, link
+    # and run collapse into one frozen replay, and the compile-exit and
+    # nonempty-emission assertions are kept against the frozen record.
+    frozen_prefix = positive_root / "frozen"
+    materialized = run_process(
+        [sys.executable, "scripts/phase24_frozen_oracle.py", "materialize",
+         source, str(frozen_prefix), "--kind", "exec"],
+        positive_root / "frozen.stdout", positive_root / "frozen.stderr",
     )
+    require(materialized == 0,
+            f"the frozen oracle refused the declaration witness {source}")
     require(
-        status == declaration["oracle"]["compile_exit"]
-        and oracle_c.stat().st_size > 0
-        and not (positive_root / "oracle.compiler.stderr").read_bytes(),
+        int(Path(f"{frozen_prefix}.compile.status").read_text().strip())
+        == declaration["oracle"]["compile_exit"]
+        and frozen_vector_compile_size(source) > 0
+        and not Path(f"{frozen_prefix}.compile.stderr").read_bytes(),
         "declaration witness MIR-to-C compilation failed",
     )
-    oracle = positive_root / "oracle"
-    status = run_process(
-        [
-            cc, "-O0", "-w", "-pthread", "-Isrc", "-include",
-            "src/runtime.c", str(oracle_c), "-o", str(oracle),
-        ],
-        positive_root / "oracle-link.stdout",
-        positive_root / "oracle-link.stderr",
-    )
-    require(status == 0, "declaration witness MIR-to-C link failed")
-    oracle_status = run_process(
-        [str(oracle)],
-        positive_root / "oracle.stdout",
-        positive_root / "oracle.stderr",
-    )
+    oracle_status = int(Path(f"{frozen_prefix}.status").read_text().strip())
     native = positive_root / "native"
     env = os.environ.copy()
     env["GUST_NATIVE_BACKEND_DRIVER"] = str(worker.resolve())
@@ -599,11 +605,11 @@ def run_evidence(output: Path) -> None:
     require(
         oracle_status == declaration["oracle"]["run_exit"]
         and native_status == declaration["cranelift"]["run_exit"]
-        and (positive_root / "oracle.stdout").read_text(encoding="utf-8")
+        and Path(f"{frozen_prefix}.stdout").read_text(encoding="utf-8")
         == declaration["oracle"]["stdout"]
         and (positive_root / "native.stdout").read_text(encoding="utf-8")
         == declaration["cranelift"]["stdout"]
-        and (positive_root / "oracle.stderr").read_text(encoding="utf-8")
+        and Path(f"{frozen_prefix}.stderr").read_text(encoding="utf-8")
         == declaration["oracle"]["stderr"]
         and (positive_root / "native.stderr").read_text(encoding="utf-8")
         == declaration["cranelift"]["stderr"]

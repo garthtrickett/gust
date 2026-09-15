@@ -149,27 +149,12 @@ def run(command: list[str], *, env: dict[str, str] | None = None,
                           check=False)
 
 
-def compile_c(compiler: Path, source: Path) -> bytes:
-    result = run([str(compiler), "--backend", "mir-to-c", str(source)])
-    require(result.returncode == 0 and not result.stderr and
-            result.stdout.startswith(b"// Transpiled C Code\n#include"),
-            f"explicit MIR-to-C compilation failed for {source.name}: "
-            f"stdout={result.stdout.decode(errors='replace')!r} "
-            f"stderr={result.stderr.decode(errors='replace')!r}")
-    return result.stdout
-
-
-def execute_c(c_output: bytes, runtime: Path, temporary: Path,
-              stem: str) -> subprocess.CompletedProcess[bytes]:
-    c_source = temporary / f"{stem}.c"
-    c_source.write_bytes(runtime.read_bytes() + c_output)
-    artifact = temporary / f"{stem}-c"
-    compiled = run(["cc", "-O2", "-Wall", "-pthread", "-Isrc",
-                    str(c_source), "-o", str(artifact)])
-    require(compiled.returncode == 0,
-            f"host C compilation failed for {stem}: "
-            f"{compiled.stderr.decode(errors='replace')}")
-    return run([str(artifact)], timeout=20)
+# Patch 24.12b: compile_c and execute_c are gone. Both existed only to drive
+# the retired route -- one compiled through it, the other built the emitted C
+# with cc and ran the result -- and both lost their last caller when the
+# positive and non-resource arms were converted to frozen replays. Deleted
+# rather than left unused: a helper that nothing calls still reads as a live
+# retired-backend site to every census that greps this file.
 
 
 def compile_and_execute_native(compiler: Path, source: Path, artifact: Path,
@@ -253,7 +238,7 @@ def evidence() -> None:
         # No inverse assertion here, deliberately. The CR-15 guards could
         # assert the retired spelling was absent from their own source because
         # every one of their arms had gone. This guard keeps two by design --
-        # compile_c at :153 and the rejection routes at :192 serve sources that
+        # assert_pre_backend_rejection below serves sources that
         # are synthesized per run and so cannot be keyed to a vector. Asserting
         # absence would be asserting something false, and the population check
         # already fails if this file's registered disposition stops matching
@@ -311,12 +296,21 @@ def evidence() -> None:
         )
         assert_pre_backend_rejection(compiler, renamed, temporary)
 
-        non_resource_c = execute_c(
-            compile_c(compiler, NON_RESOURCE), runtime, temporary, "non-resource"
-        )
-        require(non_resource_c.returncode == 0 and not non_resource_c.stdout and
-                not non_resource_c.stderr,
-                "unrelated non-Resource copy semantics changed on retained C path")
+        # Patch 24.12b: served frozen, like the positive arm above.
+        non_resource_prefix = temporary / "frozen-non-resource"
+        materialized = run([sys.executable,
+                            "scripts/phase24_frozen_oracle.py", "materialize",
+                            NON_RESOURCE.relative_to(ROOT).as_posix(),
+                            str(non_resource_prefix), "--kind", "exec"])
+        require(materialized.returncode == 0,
+                f"the frozen oracle refused the non-resource fixture: "
+                f"{materialized.stderr.decode(errors='replace')[:200]}")
+        require(int(Path(f"{non_resource_prefix}.status").read_text().strip())
+                == 0
+                and not Path(f"{non_resource_prefix}.stdout").read_bytes()
+                and not Path(f"{non_resource_prefix}.stderr").read_bytes(),
+                "unrelated non-Resource copy semantics changed on retained C "
+                "path")
         _, non_resource_native = compile_and_execute_native(
             compiler, NON_RESOURCE, temporary / "non-resource-native",
             ["--backend", "cranelift"],
