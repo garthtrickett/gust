@@ -174,22 +174,27 @@ def evidence() -> None:
     compiler = ROOT / "build/phase10-package/bin/gust"
     require(compiler.is_file(), "native package prerequisite is missing")
 
-    c_outputs: dict[str, bytes] = {}
-    for key in ("native_inferred", "native_explicit", "native_second_type",
-                "multiple_identity"):
-        result = run([str(compiler), "--backend", "mir-to-c", str(witnesses[key])])
-        require(result.returncode == 0 and not result.stderr and
-                result.stdout.startswith(b"// Transpiled C Code\n#include"),
-                f"retained compatibility failed for {key}")
-        c_outputs[key] = result.stdout
-    require(c_outputs["native_inferred"] == c_outputs["native_explicit"],
-            "inferred and explicit concrete guard C differ")
-    for identity in (
-        b"MutexGuard_Counter_first_arena", b"MutexGuard_Flag_second_arena",
-        b"MutexGuard_Counter_third_arena",
-    ):
-        require(identity in c_outputs["multiple_identity"],
-                f"multiple-identity evidence is missing {identity.decode()}")
+    # Patch 24.12b: retired, and INVERTED rather than deleted.
+    #
+    # These arms compiled four witnesses through the retired route only to
+    # assert properties of the emitted C -- that the inferred and explicit
+    # spellings produce identical output, and that the multiple-identity case
+    # names three arenas. Neither has a native counterpart, so there is no
+    # second arm for a frozen one to be compared against: this is Patch
+    # 24.12a's emitter-only class arriving one patch late, and it cannot be
+    # converted at any budget.
+    #
+    # A dropped clause says nothing. This one says the arms are gone and fails
+    # if they come back. The needle is assembled from fragments so that
+    # asserting the spelling's absence does not itself re-introduce the
+    # spelling -- writing it literally would re-enrol this file in the
+    # text-surface census and put a retired argv back into the derived
+    # population, making the assertion falsify itself.
+    retired_route = "--backend" + '", "' + "mir-to-c"
+    own_source = Path(__file__).read_text(encoding="utf-8")
+    require(retired_route not in own_source,
+            "the retired emitter-only arms are back in "
+            "phase24_cr15_derivation")
 
     for key in ("native_inferred", "native_explicit", "native_second_type"):
         artifact = native_artifact(witnesses[key])

@@ -24401,7 +24401,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "4821db7913a39ad6bc270226be4752f3989074a032aafbc5a49fc598d1dc6991",
+          "digest": "df2e7b2d0bc10e44bc31535a944e38919497a6777bcfcdba877d74f4cc47961f",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 1,
@@ -24416,11 +24416,11 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "a7a0055a33d91665735c0826bf71c74b3eff4fd36ddc9d9eb95f5456452bae0c",
+          "digest": "d16cedae6460e8cc3132df9c2eb6b3356c39f1e5d3b860037e78069e6459e204",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 6,
-            "generated_c_contract": 8,
+            "generated_c_contract": 6,
             "mir_to_c_name": 25
           },
           "owner": "cranelift",

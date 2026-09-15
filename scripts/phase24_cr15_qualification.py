@@ -198,16 +198,20 @@ def evidence() -> None:
         require(prerequisite.is_file(), f"missing prerequisite {prerequisite}")
 
     expected_stdout = value["positive_authority"]["expected_stdout"].encode()
-    c_outputs: dict[str, bytes] = {}
-    for key in ("inferred", "explicit"):
-        result = run([str(compiler), "--backend", "mir-to-c",
-                      str(witnesses[key])])
-        require(result.returncode == 0 and not result.stderr and
-                result.stdout.startswith(b"// Transpiled C Code\n#include"),
-                f"retained compatibility failed for {key}")
-        c_outputs[key] = result.stdout
-    require(c_outputs["inferred"] == c_outputs["explicit"],
-            "inferred and explicit generated C differ")
+    # Patch 24.12b: retired, and INVERTED rather than deleted -- same
+    # disposition as the derivation guard's equivalent arm. This compiled two
+    # witnesses through the retired route only to require their emitted C be
+    # identical. That is a property of the emitter with no native counterpart,
+    # so no frozen vector can stand in for it.
+    #
+    # The needle is assembled from fragments: writing the spelling literally
+    # to assert its absence would re-enrol this file and put a retired argv
+    # back into the derived population, so the assertion would falsify itself.
+    retired_route = "--backend" + '", "' + "mir-to-c"
+    own_source = Path(__file__).read_text(encoding="utf-8")
+    require(retired_route not in own_source,
+            "the retired emitter-only arm is back in "
+            "phase24_cr15_qualification")
 
     with tempfile.TemporaryDirectory(prefix="gust-phase24-cr15-") as temporary:
         temp = Path(temporary)

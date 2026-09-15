@@ -511,8 +511,6 @@ PYTHON_RETIRED_ARGV_PENDING_CONVERSION: tuple[str, ...] = (
     "scripts/phase21_selected_compiler_module_qualification.py",
     "scripts/phase22_default_route_flip.py",
     "scripts/phase22_preflip_default_cohort.py",
-    "scripts/phase24_cr15_derivation.py",
-    "scripts/phase24_cr15_qualification.py",
     "scripts/phase24_resource_implicit_transfer.py",
 )
 
@@ -645,20 +643,7 @@ PYTHON_SOURCE_SYNTHESIS_DISPOSITION: dict[str, str] = {
 #
 # Each entry names the arm, not the file, so the row says what has to happen to
 # it rather than recording that something is wrong somewhere in the guard.
-PYTHON_EMITTER_ONLY_ARMS: dict[str, str] = {
-    "scripts/phase24_cr15_derivation.py":
-        ":182-190 requires the inferred and explicit generated C be equal and "
-        "searches the multiple-identity output for three arena identity "
-        "strings. Both are assertions about the emitter with no native "
-        "counterpart, so they are Patch 24.12a's class arriving one patch "
-        "late; its rejection arms at :209-215 convert normally and are "
-        "captured.",
-    "scripts/phase24_cr15_qualification.py":
-        ":202-208 requires the inferred and explicit generated C be equal, "
-        "with no native counterpart. Same disposition as the derivation "
-        "guard; its four rejection arms at :306-314 convert normally and are "
-        "captured.",
-}
+PYTHON_EMITTER_ONLY_ARMS: dict[str, str] = {}
 
 
 def python_source_synthesis() -> dict[str, list[int]]:
