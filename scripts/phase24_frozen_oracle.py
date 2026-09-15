@@ -608,12 +608,22 @@ def python_retired_argv_sites() -> dict[str, list[int]]:
 # becoming unconvertible.
 PYTHON_SOURCE_SYNTHESIS_DISPOSITION: dict[str, str] = {
     "scripts/phase20_generated_mir_scale.py":
-        "not path-keyable: the entire population is synthesized per run "
-        "(:419-421 constructs and writes each case's .gst), so there is no "
-        "tracked path to key a vector on and no source_sha256 that survives "
-        "the next run. Conversion requires materializing the generated cases "
-        "as tracked fixtures first, which is a different patch with a "
-        "different gate.",
+        "not convertible at all, and materializing its fixtures would not "
+        "help. Two sites, unconvertible for different categorical reasons. "
+        ":419-421 synthesizes every case per run, so there is no tracked path "
+        "to key a vector on and no source_sha256 that survives the next run. "
+        ":627 measures ELAPSED TIME AND PEAK RSS of the retired backend as a "
+        "performance budget -- a frozen vector cannot serve a timing "
+        "measurement, and the thing being measured is the backend itself, "
+        "which ceases to exist. DECIDED: retire both retired-backend arms "
+        "rather than convert them. The guard's purpose is native scale "
+        "qualification and that survives intact -- :548-560 compares three "
+        "arms (retired, cranelift-direct-mir, cranelift-source) against a "
+        "declared expected_exit, so removing the retired arm leaves a genuine "
+        "two-arm native differential plus the declared expectation. The "
+        "retirement itself is scoped work, not a line deletion: the registry "
+        "carries per-cohort budgets keyed on the backend, so those rows go "
+        "with it.",
     "scripts/phase24_resource_implicit_transfer.py":
         "partial: POSITIVE, NON_RESOURCE and REJECTED are tracked and "
         "capturable now; three sources are written into a temp directory "

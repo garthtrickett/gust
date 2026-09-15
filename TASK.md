@@ -409,6 +409,20 @@ inside a single function.
 - Widen the gate's population to include `scripts/*.py`. This is part of the
   patch, not a follow-up: a gate that cannot see a population cannot close
   over it.
+- **Two dispositions are decided here rather than deferred, because both are
+  on the critical path and 24.13 removes the option set.**
+  `scripts/phase20_generated_mir_scale.py`'s two retired-backend arms are
+  **retired, not converted**, and materializing its fixtures would not have
+  helped: one site synthesizes every case per run, and the other measures the
+  *elapsed time and peak RSS of the retired backend itself* as a performance
+  budget, which no frozen vector can serve. The guard's purpose — native scale
+  qualification — survives, because it compares three arms against a declared
+  `expected_exit` and removing the retired one leaves a two-arm native
+  differential. The per-cohort budget rows keyed on the retired backend are
+  retired with it. Second, the **emitter-only arms inside the two CR-15
+  guards** are retired on Patch 24.12a's precedent, each replaced by an
+  inverse assertion rather than deleted, so the record says the arm is gone
+  instead of saying nothing.
 - **Measure the source-resolution split before capturing anything (#416).**
   A frozen vector is keyed by source path and pins `source_sha256`, so the
   oracle's identity model assumes a tracked file. The eight do not divide that
