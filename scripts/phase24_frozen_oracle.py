@@ -506,7 +506,6 @@ RECIPE_HEAD = re.compile(r"^([A-Za-z0-9_-]+)([^:]*):")
 # "converted" while they still execute the retired backend would be the
 # green-but-wrong shape this phase keeps finding.
 PYTHON_RETIRED_ARGV_PENDING_CONVERSION: tuple[str, ...] = (
-    "scripts/phase20_generated_mir_scale.py",
     "scripts/phase24_resource_implicit_transfer.py",
 )
 
@@ -638,29 +637,6 @@ def python_retired_argv_sites() -> dict[str, list[int]]:
 # that starts synthesizing sources later fails this rather than silently
 # becoming unconvertible.
 PYTHON_SOURCE_SYNTHESIS_DISPOSITION: dict[str, str] = {
-    "scripts/phase20_generated_mir_scale.py":
-        "not convertible at all, and materializing its fixtures would not "
-        "help. Two sites, unconvertible for different categorical reasons. "
-        ":419-421 synthesizes every case per run, so there is no tracked path "
-        "to key a vector on and no source_sha256 that survives the next run. "
-        ":627 measures ELAPSED TIME AND PEAK RSS of the retired backend as a "
-        "performance budget -- a frozen vector cannot serve a timing "
-        "measurement, and the thing being measured is the backend itself, "
-        "which ceases to exist. DECIDED, and the two sites take DIFFERENT "
-        "dispositions -- the first draft of this patch got that wrong by "
-        "treating the file as one thing. The TIMING cohort is retired: no "
-        "frozen vector can serve a measurement of a backend that is being "
-        "removed, and its two per-cohort budget rows are retired with it. The "
-        "DIFFERENTIAL arm is NOT retired, because the registered route_policy "
-        "says large_function uses three-way source and direct-MIR agreement "
-        "while large_module uses the retired route as its SOURCE ORACLE "
-        "against direct canonical MIR -- the source-native planner "
-        "intentionally rejects those call-graph shapes. Retiring it would "
-        "leave large_module with one arm and nothing to disagree with. Its "
-        "disposition is capturable-after-materialization and it is on the "
-        "clock: the large_module case must be materialized as a tracked "
-        "fixture and captured before Patch 24.13 seals the corpus, or that "
-        "oracle is gone permanently.",
     "scripts/phase24_resource_implicit_transfer.py":
         "partial: POSITIVE, NON_RESOURCE and REJECTED are tracked and "
         "capturable now; three sources are written into a temp directory "

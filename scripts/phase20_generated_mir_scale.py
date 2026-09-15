@@ -543,20 +543,36 @@ def compile_and_compare(case: dict, worker: Path, output: Path) -> None:
     # Patch 24.13 seals the corpus, so the large_module case must be
     # materialized as a tracked fixture and captured before then, or
     # large_module's oracle is gone permanently.
-    c_path = case_dir / "program.c"
-    c_stderr = case_dir / "mir-to-c.compiler.stderr"
-    status = run_process([GUST, "--backend", "mir-to-c", str(source)],
-                         c_path, c_stderr)
-    require(status == 0 and not c_stderr.read_bytes(),
-            f"{case['id']}: MIR-to-C compilation failed")
-    final_c = case_dir / "program.final.c"
-    final_c.write_bytes((ROOT / "src/runtime.c").read_bytes() + c_path.read_bytes())
-    mir_binary = case_dir / "mir-to-c-program"
-    status = run_process([
-        os.environ.get("CC", "cc"), "-O0", "-w", "-pthread", "-Isrc",
-        str(final_c), "-o", str(mir_binary),
-    ], case_dir / "cc.stdout", case_dir / "cc.stderr")
-    require(status == 0, f"{case['id']}: host C compilation failed")
+    # Patch 24.12b: the retired arm survives only where it is the sole oracle,
+    # and there it is served frozen rather than executed.
+    #
+    # large_module has no second opinion: the registered route_policy says the
+    # source-native planner intentionally rejects its call-graph shapes, so
+    # only the direct-MIR arm runs natively. Its case is now materialized as a
+    # tracked fixture -- validate() requires that fixture stay byte-identical
+    # to the generator -- so a frozen vector covers it.
+    #
+    # Every other cohort keeps TWO native arms, cranelift-source and
+    # cranelift-direct-mir, compared against each other and against the
+    # generator's declared expected_exit. There the retired arm was a third
+    # opinion, not the only one, so it is retired rather than frozen.
+    frozen_observation = None
+    if case["kind"] == "large_module":
+        materialized = "compiler/phase20_generated_large_module_source.gst"
+        frozen_prefix = case_dir / "frozen"
+        status = run_process(
+            [sys.executable, "scripts/phase24_frozen_oracle.py", "materialize",
+             materialized, str(frozen_prefix), "--kind", "exec"],
+            case_dir / "frozen.stdout", case_dir / "frozen.stderr")
+        require(status == 0,
+                f"{case['id']}: the frozen oracle refused {materialized}")
+        require(not Path(f"{frozen_prefix}.compile.stderr").read_bytes(),
+                f"{case['id']}: MIR-to-C compilation failed")
+        frozen_observation = (
+            int(Path(f"{frozen_prefix}.status").read_text().strip()),
+            Path(f"{frozen_prefix}.stdout").read_bytes(),
+            Path(f"{frozen_prefix}.stderr").read_bytes(),
+        )
 
     native_binary = case_dir / "native-program"
     if case["kind"] != "large_module":
@@ -587,10 +603,11 @@ def compile_and_compare(case: dict, worker: Path, output: Path) -> None:
     require(status == 0, f"{case['id']}: generated canonical MIR did not link")
 
     results = {
-        "mir-to-c": execute(mir_binary, case_dir / "mir-to-c"),
         "cranelift-direct-mir": execute(direct_binary,
                                          case_dir / "cranelift-direct-mir"),
     }
+    if frozen_observation is not None:
+        results["mir-to-c-frozen"] = frozen_observation
     if case["kind"] != "large_module":
         results["cranelift-source"] = execute(
             native_binary, case_dir / "cranelift-source")
