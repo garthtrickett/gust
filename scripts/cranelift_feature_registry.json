@@ -24600,20 +24600,20 @@
       "change_reason": "patch24_12b_retired_the_emitter_only_arms_inside_two_surviving_guards_the_flip_guard_spelling_parity_loop_and_the_scale_guard_timing_cohort_so_their_live_explicit_C_cases_go_with_them",
       "contract_version": "phase24_12b_frozen_surface_transition_v1",
       "current_live_c_case_surface": {
-        "case_id_manifest_digest": "e3a712e3509a365863af2b289a21b8a624b23e67682c1015fb61f126909286c8",
-        "complete_identity_manifest_digest": "3ca190e882def85d87f7921e7c0ff5752cb33167663bf942699854e4d3ccbf4d",
+        "case_id_manifest_digest": "4aaaef669b31a24534ab882226ef0f6a7b6745bed49a6c09e4bb67d0fe66513e",
+        "complete_identity_manifest_digest": "88cd8cad6f81617000c857122f4a38f4cfb4c33bed223bae5792290218bdb9d7",
         "consumer_class_counts": {
-          "already_explicit_or_parser_probe": 57
+          "already_explicit_or_parser_probe": 56
         },
-        "count": 57,
-        "owner_contract_count": 18,
-        "owner_contract_manifest_digest": "27bbe337db6a92f622b183591501cf893a637206c61ccf44a550df4e796fd6bb",
+        "count": 56,
+        "owner_contract_count": 17,
+        "owner_contract_manifest_digest": "751bb6ff1a1dd9b30d986087a5f7290a9cfe0f2afda5b2e0679809f7e6ff9211",
         "owner_counts": {
-          "cranelift": 31,
+          "cranelift": 30,
           "stdlib": 26
         },
         "selection_counts": {
-          "explicit_c": 57
+          "explicit_c": 56
         }
       },
       "partial_or_unregistered_surface": "rejected",
@@ -24634,7 +24634,7 @@
           "explicit_c": 63
         }
       },
-      "removed_case_count": 6,
+      "removed_case_count": 7,
       "status": "patch24_12b_in_progress",
       "unchanged_fields": []
     },
@@ -24644,44 +24644,44 @@
       "contract_version": "phase24_12b_invocation_successor_v1",
       "current_relay_inventory": {
         "consumer_class_counts": {
-          "already_explicit_or_parser_probe": 170,
+          "already_explicit_or_parser_probe": 169,
           "cranelift_C_or_diagnostic_guard": 2,
           "help_surface_probe": 3,
           "intentional_default_selection_probe": 8,
           "invocation_parser_probe": 2
         },
         "owner_counts": {
-          "cranelift": 156,
+          "cranelift": 155,
           "stdlib": 29
         },
         "selection_counts": {
-          "explicit_c": 52,
+          "explicit_c": 51,
           "explicit_cranelift": 115,
           "explicit_invalid_or_parser_probe": 3,
           "implicit_default": 15
         },
-        "total": 185,
+        "total": 184,
         "unclassified_count": 0
       },
       "current_summary": {
         "consumer_class_counts": {
-          "already_explicit_or_parser_probe": 179,
+          "already_explicit_or_parser_probe": 178,
           "cranelift_C_or_diagnostic_guard": 5,
           "help_surface_probe": 3,
           "intentional_default_selection_probe": 8,
           "invocation_parser_probe": 2
         },
         "owner_counts": {
-          "cranelift": 168,
+          "cranelift": 167,
           "stdlib": 29
         },
         "selection_counts": {
-          "explicit_c": 57,
+          "explicit_c": 56,
           "explicit_cranelift": 119,
           "explicit_invalid_or_parser_probe": 3,
           "implicit_default": 18
         },
-        "total": 197,
+        "total": 196,
         "unclassified_count": 0
       },
       "partial_or_unregistered_reduction": "rejected",
@@ -24727,7 +24727,7 @@
         "total": 203,
         "unclassified_count": 0
       },
-      "removed_invocation_count": 6,
+      "removed_invocation_count": 7,
       "status": "patch24_12b_in_progress"
     },
     "production_audit_transition": {
@@ -24737,10 +24737,10 @@
       "current_audit": {
         "active_non_bootstrap_live_c_lane_count": 1,
         "active_non_bootstrap_live_c_owner": "phase23_mir_to_c_focused_live",
-        "non_bootstrap_retained_test_surface_count": 52,
+        "non_bootstrap_retained_test_surface_count": 51,
         "phase25_bootstrap_explicit_c_count": 5,
-        "repository_explicit_c_count": 57,
-        "repository_invocation_count": 197,
+        "repository_explicit_c_count": 56,
+        "repository_invocation_count": 196,
         "supported_production_or_release_explicit_c_count": 0,
         "supported_surface_count": 6,
         "supported_surface_manifest_digest": "d42f0663249e8ac61f939a6b802eb3ce5078a7aad7bc34da588ba6bafc23c2e0",
@@ -24807,7 +24807,7 @@
           "classification": "historical_only",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_as_historical_evidence",
-          "digest": "7aea19ef98a669d72b36f1c14d94c1fe07f3c9995174963a229b86077975bc31",
+          "digest": "95faddf599a2885a596bb18f8cb0b74da4b317c4839355dae71a5f388fbe53b5",
           "falsifier": "historical_record_is_reclassified_as_live_support",
           "match_counts": {
             "explicit_backend_spelling": 6,
@@ -25002,7 +25002,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "5050b7ac02fa528d0b3b8815fe02ea65c0f23dc705e6a5da1406fb53dd501c55",
+          "digest": "a9ddb966cdf46a756bd8cb919cf90c2edd11af3e33fbd61580f87ca0267bd5d1",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 6,
@@ -25017,12 +25017,12 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "333e7b7f9fa41546530881a464b8330afa9a8407301b55850402932332d02982",
+          "digest": "c0a594dd11c7e608dbe7ff0222804f56ee1f3d9000cf646355d1df16666a2b48",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
-            "explicit_backend_spelling": 1,
+            "explicit_backend_spelling": 0,
             "generated_c_contract": 0,
-            "mir_to_c_name": 2
+            "mir_to_c_name": 1
           },
           "owner": "cranelift",
           "path": "scripts/phase24_resource_implicit_transfer.py",

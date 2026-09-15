@@ -506,7 +506,6 @@ RECIPE_HEAD = re.compile(r"^([A-Za-z0-9_-]+)([^:]*):")
 # "converted" while they still execute the retired backend would be the
 # green-but-wrong shape this phase keeps finding.
 PYTHON_RETIRED_ARGV_PENDING_CONVERSION: tuple[str, ...] = (
-    "scripts/phase24_resource_implicit_transfer.py",
 )
 
 # Each exclusion carries the reason it is out, and every reason is a property
@@ -636,29 +635,17 @@ def python_retired_argv_sites() -> dict[str, list[int]]:
 # flagged, and the flag is cleared only by a registered disposition. A guard
 # that starts synthesizing sources later fails this rather than silently
 # becoming unconvertible.
-PYTHON_SOURCE_SYNTHESIS_DISPOSITION: dict[str, str] = {
-    "scripts/phase24_resource_implicit_transfer.py":
-        "partial: POSITIVE, NON_RESOURCE and REJECTED are tracked and "
-        "capturable now; three sources are written into a temp directory "
-        "(:256, :270, :279) and one of those is a deliberately renamed copy "
-        "of a tracked module, where materializing the rename may destroy the "
-        "property under test. Capture the tracked three in this patch, since "
-        "Patch 24.13 seals the corpus; route the synthesized three with the "
-        "guard rework, which 24.13 does not block.",
-}
-
-
-# Patch 24.12b: conversion is per call site, not per guard.
-#
-# A guard can hold both a convertible parity arm and an arm that asserts a
-# property of the *emitted C* with no native counterpart. The second kind is
-# what Patch 24.12a retired as "emitter-only", and it cannot be converted --
-# there is no second arm for a frozen one to be compared against. The roadmap's
-# list of eight reads as though a guard were uniformly one or the other.
-#
-# Each entry names the arm, not the file, so the row says what has to happen to
-# it rather than recording that something is wrong somewhere in the guard.
+# Patch 24.12b: conversion is per call site, not per guard. A guard can hold
+# both a convertible parity arm and an arm asserting a property of the EMITTED
+# C with no native counterpart; the second kind is Patch 24.12a's class and
+# cannot be converted. Empty because every such arm in this patch's population
+# has been retired and inverted -- the register stays, with its falsifier, so
+# a future arm has somewhere to be declared rather than being invented ad hoc.
 PYTHON_EMITTER_ONLY_ARMS: dict[str, str] = {}
+
+
+PYTHON_SOURCE_SYNTHESIS_DISPOSITION: dict[str, str] = {
+}
 
 
 def python_source_synthesis() -> dict[str, list[int]]:
