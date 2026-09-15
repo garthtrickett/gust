@@ -409,6 +409,23 @@ inside a single function.
 - Widen the gate's population to include `scripts/*.py`. This is part of the
   patch, not a follow-up: a gate that cannot see a population cannot close
   over it.
+- **Measure the source-resolution split before capturing anything (#416).**
+  A frozen vector is keyed by source path and pins `source_sha256`, so the
+  oracle's identity model assumes a tracked file. The eight do not divide that
+  way and the list does not say so: `scripts/phase20_generated_mir_scale.py`
+  has **no tracked fixtures at all** — its one `.gst` mention, at `:419-421`,
+  constructs and writes each case itself — so no budget discharges the
+  conversion step for it, and
+  `scripts/phase24_resource_implicit_transfer.py` is partial, with three
+  tracked sources and three written into a temp directory, one of them a
+  deliberately renamed module where materializing the rename may destroy the
+  property under test. Classify each locus as capturable as-is, capturable
+  after materialization, or not path-keyable, as a property the validator
+  measures — it fails when a guard starts synthesizing sources — and give the
+  last two a registered disposition rather than a silent omission. Note the
+  interaction with the deadline: materialization and guard rework are **not**
+  blocked by 24.13, but capture is, so the tracked-fixture captures happen
+  here even where the rework lands later.
 - **Capture a frozen vector set v2 covering these guards' sources first
   (#416). This patch is granted that authority explicitly, with the boundary
   below; without it the conversion step is not executable.** Measured at

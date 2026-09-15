@@ -585,6 +585,88 @@ def python_retired_argv_sites() -> dict[str, list[int]]:
     return found
 
 
+# Patch 24.12b (#416): a vector is keyed by source path and pins
+# source_sha256, so the oracle's identity model assumes the source is a
+# tracked file. A guard that *writes* its own .gst sources has nothing to key
+# on, and no budget discharges the conversion step for it. That is a different
+# disposition from "needs a capture", and the roadmap's list of eight does not
+# distinguish them -- so it is measured here rather than inherited.
+#
+# Over-approximating on purpose: any locus that synthesizes a .gst at all is
+# flagged, and the flag is cleared only by a registered disposition. A guard
+# that starts synthesizing sources later fails this rather than silently
+# becoming unconvertible.
+PYTHON_SOURCE_SYNTHESIS_DISPOSITION: dict[str, str] = {
+    "scripts/phase20_generated_mir_scale.py":
+        "not path-keyable: the entire population is synthesized per run "
+        "(:419-421 constructs and writes each case's .gst), so there is no "
+        "tracked path to key a vector on and no source_sha256 that survives "
+        "the next run. Conversion requires materializing the generated cases "
+        "as tracked fixtures first, which is a different patch with a "
+        "different gate.",
+    "scripts/phase24_resource_implicit_transfer.py":
+        "partial: POSITIVE, NON_RESOURCE and REJECTED are tracked and "
+        "capturable now; three sources are written into a temp directory "
+        "(:256, :270, :279) and one of those is a deliberately renamed copy "
+        "of a tracked module, where materializing the rename may destroy the "
+        "property under test. Capture the tracked three in this patch, since "
+        "Patch 24.13 seals the corpus; route the synthesized three with the "
+        "guard rework, which 24.13 does not block.",
+}
+
+
+def python_source_synthesis() -> dict[str, list[int]]:
+    """Loci that write their own .gst sources at run time.
+
+    Detected by walking for a write to a path whose literal or f-string
+    spelling ends in ``.gst``. It over-approximates: a locus that writes any
+    such path is reported, whether or not that source reaches the retired arm.
+    """
+    import ast
+
+    def names_gst(node: ast.AST) -> bool:
+        for child in ast.walk(node):
+            if isinstance(child, ast.Constant) and isinstance(child.value, str):
+                if child.value.endswith(".gst"):
+                    return True
+        return False
+
+    found: dict[str, list[int]] = {}
+    for path in sorted((ROOT / "scripts").glob("*.py")):
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"))
+        except SyntaxError:
+            continue
+        lines: list[int] = []
+        for node in ast.walk(tree):
+            if (isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Attribute)
+                    and node.func.attr in ("write_text", "write_bytes")):
+                target = node.func.value
+                # `<expr>.write_text(...)` where <expr> mentions a .gst name,
+                # or a variable assigned from one -- the assignment form is
+                # caught by scanning the enclosing module for the same name.
+                if names_gst(target):
+                    lines.append(node.lineno)
+        # Catch the two-step form: `p = dir / "x.gst"` then `p.write_text(...)`.
+        gst_vars: set[str] = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign) and names_gst(node.value):
+                for target in node.targets:
+                    if isinstance(target, ast.Name):
+                        gst_vars.add(target.id)
+        for node in ast.walk(tree):
+            if (isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Attribute)
+                    and node.func.attr in ("write_text", "write_bytes")
+                    and isinstance(node.func.value, ast.Name)
+                    and node.func.value.id in gst_vars):
+                lines.append(node.lineno)
+        if lines:
+            found[path.relative_to(ROOT).as_posix()] = sorted(set(lines))
+    return found
+
+
 def check_python_population() -> dict[str, object]:
     """Patch 24.12b: the criterion, measured over the live tree."""
     sites = python_retired_argv_sites()
@@ -614,10 +696,29 @@ def check_python_population() -> dict[str, object]:
         require(len(reason.split()) >= 12,
                 f"a Python exclusion is registered without a reason: {locus}")
 
+    # #416: a locus pending conversion that synthesizes its own .gst sources
+    # cannot be discharged by capturing a vector, because there is no tracked
+    # path to key one on. It needs a registered disposition saying which of
+    # its sources are capturable and where the rest go.
+    synthesis = python_source_synthesis()
+    needs_disposition = sorted(pending & set(synthesis))
+    missing = [locus for locus in needs_disposition
+               if locus not in PYTHON_SOURCE_SYNTHESIS_DISPOSITION]
+    require(not missing,
+            "a locus pending conversion writes its own .gst sources and has "
+            f"no registered disposition: {missing}")
+    for locus, disposition in PYTHON_SOURCE_SYNTHESIS_DISPOSITION.items():
+        require(locus in synthesis,
+                f"a source-synthesis disposition names a locus that no longer "
+                f"synthesizes sources; retire its row instead: {locus}")
+        require(len(disposition.split()) >= 12,
+                f"a source-synthesis disposition has no reason: {locus}")
+
     return {
         "population": len(sites),
         "pending": len(pending),
         "excluded": len(excluded),
+        "synthesizes_sources": sorted(pending & set(python_source_synthesis())),
         "sites": {locus: list(lines) for locus, lines in sites.items()},
     }
 
