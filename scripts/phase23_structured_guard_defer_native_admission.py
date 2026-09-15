@@ -276,12 +276,22 @@ def evidence() -> None:
         shutil.rmtree(BUILD)
     BUILD.mkdir(parents=True)
     source = ROOT / value["fixtures"]["positive"]
-    oracle = run_oracle(source)
+    # Patch 24.13: the oracle arm is retired and the native arm is checked
+    # against the REGISTERED CONTRACT instead of against it.
+    #
+    # The two assertions were doing different work. The first compared native
+    # to MIR-to-C -- a second opinion, which the retirement removes. The second
+    # compared the oracle to value["observables"]["exit_status"], a registered
+    # expectation that was never derived from either backend. Pointing the
+    # native arm at that expectation keeps the assertion that has independent
+    # authority and drops only the differential.
+    #
+    # This is why the guard converts rather than retires: what it ultimately
+    # proves is that the positive fixture produces the registered observables,
+    # and the native route can be held to that directly.
     native = run_native(source)
-    require(oracle == native[:3],
-            "native guard/defer observables differ from MIR-to-C")
-    require(oracle == (value["observables"]["exit_status"], b"", b""),
-            "positive observables differ from registered contract")
+    require(native[:3] == (value["observables"]["exit_status"], b"", b""),
+            "positive native observables differ from registered contract")
     validate_retained_deferral(value)
     validate_retained_declaration_deferral(value)
     check_review(value)
