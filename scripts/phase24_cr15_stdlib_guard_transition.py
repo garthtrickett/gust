@@ -1809,6 +1809,57 @@ def normalize_phase23_text_surfaces(
                 "rejected",
                 "Patch 24.12 text surface successor drifted")
         oracle_paths = list(oracle_surface["registered_changed_paths"])
+    # Patch 24.12b runs first because it is the newest link: it projects the
+    # tree back to its pre-24.12b state, which is what every older successor
+    # below was registered against. Same three directions as 24.12a -- every
+    # registered path goes back to its pre-patch row, every added surface is
+    # dropped, every removed surface is put back.
+    conversion_surface = registry.get(
+        "phase24_12b_python_parity_conversion", {}).get(
+            "text_surface_successor")
+    if conversion_surface is not None:
+        require(conversion_surface.get("contract_version") ==
+                "phase24_12b_text_surface_successor_v1" and
+                isinstance(conversion_surface.get("added_text_surfaces"),
+                           list) and
+                isinstance(conversion_surface.get("removed_text_surfaces"),
+                           list) and
+                conversion_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Patch 24.12b text surface successor drifted")
+        conversion_paths = list(
+            conversion_surface["registered_changed_paths"])
+        conversion_pre = {row["path"]: row for row
+                          in conversion_surface[
+                              "previous_changed_text_surfaces"]}
+        conversion_post = {row["path"]: row for row
+                           in conversion_surface[
+                               "current_changed_text_surfaces"]}
+        require(sorted(conversion_pre) == sorted(conversion_paths) and
+                sorted(conversion_post) == sorted(conversion_paths),
+                "Patch 24.12b registered paths and rows disagree")
+        conversion_live = {row["path"]: row for row in rows
+                           if row["path"] in conversion_paths}
+        require(sorted(conversion_live) == sorted(conversion_paths),
+                "Patch 24.12b registered text surface is missing")
+        for path in conversion_paths:
+            require(conversion_live[path] in (conversion_pre[path],
+                                              conversion_post[path]),
+                    "Patch 24.12b changed text surfaces are partial or "
+                    f"substituted: {path}")
+        conversion_added = set(conversion_surface["added_text_surfaces"])
+        for path in conversion_added:
+            require(any(row["path"] == path for row in rows),
+                    "a text surface Patch 24.12b registered as added is not "
+                    f"there: {path}")
+        conversion_removed = [copy.deepcopy(row) for row
+                              in conversion_surface["removed_text_surfaces"]]
+        rows = [dict(conversion_pre.get(row["path"], row)) for row in rows
+                if row["path"] not in conversion_added]
+        rows = sorted(rows + conversion_removed,
+                      key=lambda row: str(row["path"]))
+        by_path = {row["path"]: row for row in rows}
+
     emitter_surface = registry.get(
         "phase24_12a_emitter_only_retirement", {}).get("text_surface_successor")
     emitter_paths: list[str] = []
