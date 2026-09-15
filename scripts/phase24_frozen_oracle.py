@@ -444,6 +444,21 @@ NOT_REPAIRED = (
 # Kept as an empty register rather than deleted: check_no_live_c below asserts
 # it is empty, so a harness that reacquires a default-route call fails instead
 # of quietly rejoining a set nobody reads.
+# Patch 24.13: emptied, and the flip alone did NOT empty it. Both rows --
+# phase15_resource_composition_parity.sh and phase16_abi_composition_parity.sh
+# -- reached live C through the runner's default, and flipping that default
+# left them with no working route at all rather than with a native one: their
+# `compiler/future/p1{5,6}_complete_*_differential_source.gst` sources have a
+# deferred native capability, and the mir-to-c route this patch removed was the
+# only other one. CI named it as an unconnected source-level route.
+#
+# What discharged the rows was converting that one call in each harness to the
+# frozen oracle, which both were already materializing two lines later. Their
+# remaining runner calls are smoke entries that compile natively today --
+# measured, not assumed, against a built native package.
+#
+# Recorded because "the register is empty" and "the work is done" are different
+# claims, and this patch briefly had the first without the second.
 RUNNER_MEDIATED_RESIDUE: dict[str, int] = {}
 RUNNER_RESIDUE_OWNER = "24.13"
 
@@ -451,12 +466,13 @@ RUNNER_RESIDUE_OWNER = "24.13"
 # The shared runner's own default, which no Phase 24 patch owned.
 #
 # RUNNER_MEDIATED_RESIDUE above records converted harnesses that still reach
-# live C through the runner. This records the runner itself:
-# scripts/run-gust-file.sh:19 is
-# RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-mir-to-c}", so a caller that sets
-# nothing reaches the retired backend *by default rather than by selection*
+# live C through the runner. This records the runner itself: before Patch
+# 24.13, scripts/run-gust-file.sh WAS
+# RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-mir-to-c}", so a caller that set
+# nothing reached the retired backend *by default rather than by selection*
 # -- the "no fallback, retry-through-C, or environment-selected route"
-# invariant read forwards.
+# invariant read forwards. It is cranelift now; the paragraph is kept in the
+# past tense because the register exists to witness that change.
 #
 # Four justfile recipes call the runner. Two pin GUST_RUNNER_ROUTE=cranelift
 # on the invoking line and the inventory re-verifies that pin. The two below
