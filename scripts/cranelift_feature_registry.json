@@ -8096,7 +8096,7 @@
       "semantic_manifest_digest": "3bdd29ad0c3f01a83574f2c3018b6a42fd4b4f78af37a2a70d7b145eaea22fce",
       "semantic_site_count": 983,
       "site_count": 1754,
-      "source_file_count": 1077,
+      "source_file_count": 1080,
       "unknown_site_count": 0
     },
     "review_view": "compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md",
@@ -24822,7 +24822,7 @@
           "classification": "historical_only",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_as_historical_evidence",
-          "digest": "2ecd16ffe4f2977bc677b4d4343732c6150e5d6681b3cb09d9cbea8240c260d5",
+          "digest": "ab21ce9fba8a3ef0b926b38c2f95be377be97b798b3c3ade0ff1c4ffc7d3e995",
           "falsifier": "historical_record_is_reclassified_as_live_support",
           "match_counts": {
             "explicit_backend_spelling": 0,
