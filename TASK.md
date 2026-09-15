@@ -284,7 +284,7 @@ goes, so no removal patch deletes live parity evidence.
 - Prove each frozen test fails on the mutations the live lane used to catch;
   a replacement that cannot fail is a deleted test.
 
-**Exit Gate:** zero parity guards **with a native arm** execute live C; the
+**Exit Gate:** zero parity guards **with a native arm** *select* live C; the
 frozen tests are green and falsified by mutation; the archived corpus plus
 frozen tests are recorded as the parity authority; the harnesses with no
 native arm are registered as deliberately excluded with the measurable
@@ -425,11 +425,46 @@ inside a single function.
   tracked files, which is how four CI reds happened on Patch 24.12. It takes
   eleven paths out of the tracked-file census, so it belongs in a patch
   already paying the text-surface toll.
+- Restore the front-end coverage Patch 24.12a retired with an emitter-only
+  harness (#413). Three of that harness's five arms were backend-neutral — a
+  positive round trip and two `guard-compile-fail` cases whose `OpaqueConstruction`
+  and `PrivateDeclarationAccess` rejections are raised in
+  `compiler/typechecker.gst:12083`/`:12099` before any backend emits. Nothing on
+  the tree compiles the three fixtures now. The expected behaviour is already
+  recorded in `compiler/fixtures/phase24_frozen_oracle_vectors_v1.json`, so this
+  needs a runner, not new goldens; correct the rationale at
+  `scripts/phase21_inert_scoped_query_records.py:160-165` to state what was
+  actually retired.
+- Add the stderr mutation arm the frozen oracle never had (#412).
+  `validate_mutations` mutates exit and stdout and never stderr, while
+  `materialize` freezes stderr on all 253 vectors and 29 of 39 consumers never
+  read one. This is the patch that next touches the oracle; a mutation arm added
+  by a removal patch would be an instrument change riding a removal.
 
-**Exit Gate:** zero parity guards execute live C — the unqualified form of the
-Patch 24.12 gate, now measured over a population that includes `scripts/*.py`;
-every converted guard still runs its native arm live and compares it byte for
-byte; the conversion criterion is measured rather than asserted.
+**Exit Gate:** zero parity guards execute live C **except the runner-mediated
+residue registered to Patch 24.13, named here with its count rather than
+inherited silently** — `scripts/phase15_resource_composition_parity.sh` (3
+calls) and `scripts/phase16_abi_composition_parity.sh` (2), which pin no route
+and so reach the retired backend through `scripts/run-gust-file.sh:19`'s
+default; measured over a population that includes `scripts/*.py`; every
+converted guard still runs its native arm live and compares it byte for byte;
+the conversion criterion is measured rather than asserted.
+
+**Why the gate is qualified (#411).** The unqualified form was false at the
+moment this patch was meant to discharge it. Both harnesses have a native arm
+and execute live C, both are Level 2 and so run on every pull request, and
+neither can be fixed here: pinning them to the native route before 24.13 makes
+that route the default would change what they compare, and would need its own
+evidence that neither guard weakens. The residue is already owned and counted
+(`RUNNER_MEDIATED_RESIDUE`, `scripts/phase24_frozen_oracle.py:435-439`, owner
+`24.13`), so the unqualified gate closed only by inheriting a registered
+exclusion — a gate passing over a population it excludes by registration, which
+is the shape #398, #402 and #403 each found elsewhere. Naming the exception in
+the gate that claims it is the correction; the ordering constraint below is not
+negotiable, so this patch cannot simply run after 24.13.
+
+**The unqualified claim is not left unclaimed.** It moves to Patch 24.13, which
+flips the runner default and so is the patch that actually makes it true.
 
 ## Patch 24.13 — Backend-Selection and Publication-Path Removal
 
@@ -448,7 +483,12 @@ paths from the active compiler.
   removal; they do not fall back, retry through C, or select by environment.
 - Keep default and explicit Cranelift identity observably identical.
 
-**Exit Gate:** no accepted C spelling and no publication path remain;
+**Exit Gate:** **zero parity guards execute live C, unqualified and with no
+registered exception standing in for a live one** — `RUNNER_MEDIATED_RESIDUE`
+is empty and `check_no_live_c` fails if any parity locus reaches
+`scripts/run-gust-file.sh` without a pinned route (#411). This is the claim
+Patch 24.12b's gate defers to this patch, and flipping the runner default is
+what discharges it. No accepted C spelling and no publication path remain;
 retired-backend requests reject explicitly without fallback; the
 Phase-25-owned bootstrap callers still converge stage2==stage3 through the
 explicit internal entry after selection removal; Cranelift-route
