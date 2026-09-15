@@ -795,9 +795,24 @@ def qualify_case(deadline: float, native_compiler: Path, env: dict[str, str],
     case_dir.mkdir()
     native_output = case_dir / "native-program"
     oracle_output = case_dir / "oracle-program"
-    oracle = compile_case(deadline, native_compiler, case, "mir-to-c",
-                          oracle_output, env, cwd)
-    write_logs(case_dir, "oracle-compile", oracle)
+    # Patch 24.13 (#424): THE ORACLE ARM IS RETIRED, and this suite stops
+    # being a parity suite.
+    #
+    # It compiled every case twice -- once through the retired backend, once
+    # native -- and compared them. 24.13 removes the selection that arm used,
+    # so it now fails on the first case. Three dispositions were on the table:
+    # capture the 322 missing vectors, retire the arm, or retire the suite.
+    #
+    # Retiring the arm is chosen because parity WITH A REMOVED BACKEND is not a
+    # live invariant, and Patch 24.16's gate is that every surviving evidence
+    # owner protects one. The C route no longer exists to be parity with.
+    #
+    # What survives is not nothing, and that is why this is not option 3:
+    # expected_execution(case, ...) checks each case against case["expected"],
+    # an INDEPENDENT expectation that was never derived from the oracle. All
+    # 326 cases keep compiling, running, and being checked against it. What is
+    # lost is the differential -- the second opinion -- and that loss is real
+    # and is recorded here rather than absorbed silently.
     native_env = dict(env)
     native_env["GUST_TEST_MIR_TO_C_UNAVAILABLE"] = "1"
 
@@ -805,27 +820,20 @@ def qualify_case(deadline: float, native_compiler: Path, env: dict[str, str],
         native = compile_case(deadline, native_compiler, case, "cranelift",
                               native_output, native_env, cwd)
         write_logs(case_dir, "native-compile", native)
-        require(oracle.returncode != 0 and native.returncode != 0 and
-                oracle.stdout == native.stdout and
-                oracle.stderr == native.stderr and
+        require(native.returncode != 0 and
                 no_failed_artifacts(case_dir, native_output),
-                f"oracle precondition classification drifted: {case['path']}")
+                f"precondition classification drifted: {case['path']}")
         return "deferral", ""
 
     if case["mode"] == 1:
         native = compile_case(deadline, native_compiler, case, "cranelift",
                               native_output, native_env, cwd)
         write_logs(case_dir, "native-compile", native)
-        require(oracle.returncode != 0 and native.returncode != 0 and
-                oracle.stdout == native.stdout and
-                oracle.stderr == native.stderr and
-                case["expected"].encode() in oracle.stdout + oracle.stderr and
+        require(native.returncode != 0 and
+                case["expected"].encode() in native.stdout + native.stderr and
                 no_failed_artifacts(case_dir, native_output),
-                f"compile-fail parity or cleanup drifted: {case['path']}")
+                f"compile-fail rejection or cleanup drifted: {case['path']}")
         return "required", ""
-
-    require(oracle.returncode == 0 and not oracle.stderr,
-            f"MIR-to-C oracle failed unexpectedly: {case['path']}")
     native = compile_case(deadline, native_compiler, case, "cranelift",
                           native_output, native_env, cwd)
     write_logs(case_dir, "native-compile", native)
@@ -840,16 +848,6 @@ def qualify_case(deadline: float, native_compiler: Path, env: dict[str, str],
                 f"unclassified native compile deferral: {case['path']}")
         return "deferral", reason
 
-    compile_c(deadline, oracle.stdout, oracle_output, case["mode"], cwd)
-    prepare_execution(case, cwd)
-    try:
-        oracle_run = run_before(deadline, [str(oracle_output)], cwd=cwd)
-    finally:
-        cleanup_execution(case, cwd)
-    write_logs(case_dir, "oracle-run", oracle_run)
-    require(expected_execution(case, oracle_run),
-            f"MIR-to-C oracle observable drifted: {case['path']}")
-
     prepare_execution(case, cwd)
     try:
         native_run = run_before(deadline, [str(native_output)], cwd=cwd)
@@ -860,13 +858,9 @@ def qualify_case(deadline: float, native_compiler: Path, env: dict[str, str],
         require(not expected_execution(case, native_run),
                 f"runtime deferral was fixed; reclassify {case['path']}")
         return "deferral", ""
-    require(expected_execution(case, native_run) and
-            native_run.returncode == oracle_run.returncode and
-            native_run.stdout == oracle_run.stdout and
-            clean_sanitizer_fiber_exit_warning(native_run.stderr) ==
-            clean_sanitizer_fiber_exit_warning(oracle_run.stderr),
-            f"unexplained native observable divergence: {case['path']}; "
-            f"{observable_mismatch_detail(oracle_run, native_run)}")
+    require(expected_execution(case, native_run),
+            f"native observable drifted from the registered expectation: "
+            f"{case['path']}")
     return "required", ""
 
 
