@@ -1841,9 +1841,45 @@ def normalize_phase23_text_surfaces(
                 "rejected",
                 "Patch 24.12 text surface successor drifted")
         oracle_paths = list(oracle_surface["registered_changed_paths"])
-    # Patch 24.12b runs first because it is the newest link: it projects the
-    # tree back to its pre-24.12b state, which is what every older successor
-    # below was registered against. Same three directions as 24.12a -- every
+    # Patch 24.13 runs before 24.12b for the same reason 24.12b runs before
+    # 24.12a: the newest link projects the tree back to the state the older
+    # successors were registered against, so each hands the next the tree it
+    # expects.
+    removal_surface = registry.get(
+        "phase24_13_backend_removal", {}).get("text_surface_successor")
+    if removal_surface is not None:
+        require(removal_surface.get("contract_version") ==
+                "phase24_13_text_surface_successor_v1" and
+                removal_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Patch 24.13 text surface successor drifted")
+        removal_paths = list(removal_surface["registered_changed_paths"])
+        removal_pre = {row["path"]: row for row
+                       in removal_surface["previous_changed_text_surfaces"]}
+        removal_post = {row["path"]: row for row
+                        in removal_surface["current_changed_text_surfaces"]}
+        require(sorted(removal_pre) == sorted(removal_paths) and
+                sorted(removal_post) == sorted(removal_paths),
+                "Patch 24.13 registered paths and rows disagree")
+        removal_live = {row["path"]: row for row in rows
+                        if row["path"] in removal_paths}
+        require(sorted(removal_live) == sorted(removal_paths),
+                "Patch 24.13 registered text surface is missing")
+        for path in removal_paths:
+            require(removal_live[path] in (removal_pre[path],
+                                           removal_post[path]),
+                    "Patch 24.13 changed text surfaces are partial or "
+                    f"substituted: {path}")
+        removal_added = set(removal_surface["added_text_surfaces"])
+        rows = [dict(removal_pre.get(row["path"], row)) for row in rows
+                if row["path"] not in removal_added]
+        rows = sorted(rows + [copy.deepcopy(r) for r
+                              in removal_surface["removed_text_surfaces"]],
+                      key=lambda row: str(row["path"]))
+        by_path = {row["path"]: row for row in rows}
+
+    # Patch 24.12b runs next: it projects the tree back to its pre-24.12b
+    # state, which is what every older successor below was registered against. Same three directions as 24.12a -- every
     # registered path goes back to its pre-patch row, every added surface is
     # dropped, every removed surface is put back.
     conversion_surface = registry.get(
