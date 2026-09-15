@@ -25509,6 +25509,40 @@
       "reclassified_invocation_count": 2,
       "status": "patch24_13_in_progress"
     },
+    "production_audit_transition": {
+      "change_reason": "patch24_13_removed_backend_selection_and_moved_two_bootstrap_callers_to_the_bootstrap_only_entry",
+      "contract_version": "phase24_13_production_audit_transition_v1",
+      "current_audit": {
+        "active_non_bootstrap_live_c_lane_count": 1,
+        "active_non_bootstrap_live_c_owner": "phase23_mir_to_c_focused_live",
+        "non_bootstrap_retained_test_surface_count": 51,
+        "phase25_bootstrap_explicit_c_count": 3,
+        "repository_explicit_c_count": 54,
+        "repository_invocation_count": 196,
+        "supported_production_or_release_explicit_c_count": 0,
+        "supported_surface_count": 6,
+        "supported_surface_manifest_digest": "15c40817b2350fc72a2dcaa8ba77da69bc323f71df6e41553819e0580da69697",
+        "unknown_downstream_count": 0
+      },
+      "partial_extra_or_substituted_audit": "rejected",
+      "previous_audit": {
+        "active_non_bootstrap_live_c_lane_count": 1,
+        "active_non_bootstrap_live_c_owner": "phase23_mir_to_c_focused_live",
+        "non_bootstrap_retained_test_surface_count": 51,
+        "phase25_bootstrap_explicit_c_count": 5,
+        "repository_explicit_c_count": 56,
+        "repository_invocation_count": 196,
+        "supported_production_or_release_explicit_c_count": 0,
+        "supported_surface_count": 6,
+        "supported_surface_manifest_digest": "d42f0663249e8ac61f939a6b802eb3ce5078a7aad7bc34da588ba6bafc23c2e0",
+        "unknown_downstream_count": 0
+      },
+      "reduced_fields": [
+        "phase25_bootstrap_explicit_c_count",
+        "repository_explicit_c_count"
+      ],
+      "status": "patch24_13_in_progress"
+    },
     "text_surface_successor": {
       "added_text_surfaces": [],
       "change_reason": "patch24_13_removed_backend_selection_updated_the_help_surfaces_inverted_the_presence_pins_and_flipped_the_runner_default",
