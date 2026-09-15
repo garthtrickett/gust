@@ -383,6 +383,33 @@ def check() -> None:
                             "rejected",
                             "Patch 24.13 frozen-surface closure successor "
                             "drifted")
+                        # Raised in review on #421: unlike every earlier link
+                        # in this chain, the 24.13 successor did not assert
+                        # its own arithmetic, so a `removed_case_count` that
+                        # disagreed with its own previous/current pair was
+                        # accepted. It was registered as 2 against a 56 -> 51
+                        # surface -- an undercount of the retirement evidence
+                        # that no check could catch.
+                        #
+                        # Enforced here, in the same shape the 24.12, 24.12a
+                        # and 24.12b links use: the count IS the reduction,
+                        # and it has to be positive, so a successor that
+                        # retires nothing cannot claim to be one.
+                        removed_cases = (
+                            removal_frozen["previous_live_c_case_surface"][
+                                "count"]
+                            - removal_frozen["current_live_c_case_surface"][
+                                "count"])
+                        require(removed_cases ==
+                                removal_frozen.get("removed_case_count") and
+                                removed_cases > 0,
+                                "the Patch 24.13 removed-case count is not "
+                                "the reduction it records: "
+                                f"{removal_frozen['previous_live_c_case_surface']['count']}"
+                                f" -> "
+                                f"{removal_frozen['current_live_c_case_surface']['count']}"
+                                f" against "
+                                f"{removal_frozen.get('removed_case_count')}")
 
     production = registry["phase23_production_release_audit"]
     require(closure.get("production_release_authority") == {
