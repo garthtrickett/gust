@@ -440,6 +440,13 @@ inside a single function.
   `materialize` freezes stderr on all 253 vectors and 29 of 39 consumers never
   read one. This is the patch that next touches the oracle; a mutation arm added
   by a removal patch would be an instrument change riding a removal.
+- **Measure the 10/39 stderr-consumer split as part of the same step, not as a
+  follow-up.** The mutation arm alone proves the oracle *can* reject a wrong
+  stderr; it says nothing about whether any consumer of a given vector would
+  notice. Each vector's consumers must either read the frozen stderr or be
+  registered as not reading it, so a consumer that stops reading it fails rather
+  than shrinking the covered set silently. Adjudicating the registered
+  non-readers is Patch 24.16's, with #407.
 
 **Exit Gate:** zero parity guards execute live C **except the runner-mediated
 residue registered to Patch 24.13, named here with its count rather than
@@ -448,7 +455,10 @@ calls) and `scripts/phase16_abi_composition_parity.sh` (2), which pin no route
 and so reach the retired backend through `scripts/run-gust-file.sh:19`'s
 default; measured over a population that includes `scripts/*.py`; every
 converted guard still runs its native arm live and compares it byte for byte;
-the conversion criterion is measured rather than asserted.
+the conversion criterion is measured rather than asserted; and every frozen
+observable that any consumer compares — stderr included — has a mutation arm
+proving it rejects, with the consumer split registered rather than implied
+(#412).
 
 **Why the gate is qualified (#411).** The unqualified form was false at the
 moment this patch was meant to discharge it. Both harnesses have a native arm
@@ -538,9 +548,26 @@ reconverges in a separate seed-only PR, or the checked no-diff fixed point
 stands.
 
 The linker exception carries an **over-approximating** falsifier, not an
-enumerated one: the retained discovery must be the *only* surviving `CC`/`cc`
-consumer outside the Phase-25 bootstrap chain, so the check fails on a new
-consumer rather than on a list that inherits whichever enumeration was wrong.
+enumerated one — but over-approximating *within the right scope*. The
+assertion is that no surviving `CC`/`cc` consumer **compiles or links C emitted
+as a backend product**, outside the Phase-25 bootstrap chain. It is **not**
+that the retained discovery is the only surviving `CC`/`cc` consumer at all:
+that form is unsatisfiable without deleting valid evidence. Re-derived on this
+tree, **46 `cc` call sites across 44 `scripts/*.sh`** exist, and they include
+native-route linkers that link Cranelift-produced objects —
+`scripts/phase20_arena_free.sh:76` and
+`scripts/phase20_protected_access_liveness.sh:55` both link a `native.o` into a
+`native-program`, and both are live PR Fast Level 2 guards. Those are the
+supported route working, not residue.
+
+**The split is not measured here, and 24.14 must measure it rather than inherit
+a number.** A crude categorisation of the 46 sites by whether the command line
+names a native object or a `.c` file classified only 13 and left 33 ambiguous;
+refining that heuristic until it separated cleanly would be fitting rather than
+measuring, so it is recorded as attempted and rejected. What 24.14 needs is a
+criterion over *what the compiled input is*, not over how the call line is
+spelled.
+
 Same family as #396, #398 and #403 — each an item a census could not contain —
 and this is the one whose removal breaks the supported route rather than a
 guard.
@@ -629,10 +656,14 @@ unrepaired instrument.
   sets, and returns three (587/536/80) — the cause of two plausible wrong
   intermediates, 90 and then 371.
 
-**Exit Gate:** each of the three defects has a test that fails on the old
-behaviour; the orphan report is derived from execution rather than mention;
-the allowlist re-baseline names a reason per entry; and no reachability
-consumer still builds its graph one fragment at a time.
+**Exit Gate:** each of the **four** defects — #390, #393, #395 and #404 — has a
+test that fails on the old behaviour; in particular the #404 falsifier is
+present as an inverse and demonstrably rejects a recipe made live solely by an
+inventory node naming it, rather than being satisfied by the other three; the
+orphan report is derived from execution rather than mention; the allowlist
+re-baseline names a reason per entry; `liveness()`'s return type matches the
+three sets it returns; and no reachability consumer still builds its graph one
+fragment at a time.
 
 **Boundary:** instrument repair only. Adjudicating the rows the repaired
 instrument re-scores — including the ones Patch 24.12a registered as
@@ -664,6 +695,13 @@ retirement debris survives across features.
   registry and once in the level file, so a bare level assignment is the only
   thing keeping a known-red, never-executed guard off the orphan list. A
   survivor like that names no live invariant.
+- Adjudicate the stderr-blind consumers Patch 24.12b registered rather than
+  fixed (#412), with #407's single case: a consumer that materializes an
+  observable and never compares it is accurately *falsifiable on source drift,
+  blind to execution expectations*, and each survivor must either start
+  comparing what it requests, request only what it consumes, or carry a
+  registered reason. Measured at filing: 29 of 39 consumers never mention a
+  frozen stderr.
 - Adjudicate the rows Patch 24.12a registered rather than fixed: the
   `stale_row_scoring` residue in the retirement inventory — 13 rows whose
   `action` disagrees with what happened to their harness, and 7 scored
