@@ -171,6 +171,37 @@ BOOTSTRAP_ENTRY_DECISION = {
 TAKEN_OUT_BY = "24.12"
 FROZEN_ORACLE_CALL = "phase24_frozen_oracle.py materialize"
 
+# recipe id -> why Patch 24.13 routed it to the SURVIVING backend rather than
+# to the frozen oracle.
+#
+# A third disposition was needed. TAKEN_OUT_RECIPES asserts a recipe's C route
+# is gone AND that it now reaches the frozen oracle; these three reach the
+# native route instead, because what they assert is still directly observable
+# there -- acceptance, rejection, and compile-and-run. Checking them against
+# the frozen-oracle branch would demand an oracle call they should not make,
+# and the "else" branch demands the C route still be present, so without this
+# the conversion fails whichever way it is scored.
+#
+# guard-compile-pass and guard-compile-fail were scored 24.16/retire. That
+# ownership was assigned before it was known that 24.13's removal BREAKS them:
+# they drive the spelling this patch turns into a rejection, so leaving them to
+# 24.16 ships ~82 guard invocations that cannot run. Re-scored to 24.13 with
+# the reason recorded, not moved silently.
+NATIVE_ROUTED_RECIPES = {
+    "guard-positive":
+        "compile-and-run, measured: 101 of 105 sources compile and run with "
+        "exit 0 on the native route; the four that do not are named in the "
+        "recipe with the reason code the compiler reports",
+    "guard-compile-pass":
+        "acceptance: 17 of 25 sources stop at decision=deferred with no "
+        "front-end error, so the recipe asserts acceptance directly rather "
+        "than inferring it from a successful C emission",
+    "guard-compile-fail":
+        "rejection is backend-independent; all 49 sources still reject with "
+        "their registered diagnostic",
+}
+NATIVE_ROUTE_NEEDLE = "--backend cranelift"
+
 # recipe id -> what Patch 24.12 did to it
 TAKEN_OUT_RECIPES = {
     "guard-cranelift-phase11-scalar-expression-parity": "convert",
@@ -264,7 +295,12 @@ DEFERRED_HARNESSES = {
 # Patch 24.13 removed compiler/test_runner_entry.gst from this set: it no
 # longer carries a live C route, and RETIRED_FILE_SURFACES asserts the
 # surfaces it lost stay gone.
-SWEEP_LOCI = ["Makefile", "justfile", "justfile-step51"]
+# Patch 24.13 dropped justfile-step51: its three generic recipes were routed
+# to the surviving backend, so the file carries no live C route at all. Same
+# treatment as compiler/test_runner_entry.gst below -- dropped rather than
+# pinned at zero, because a zero pin keeps asserting a sweep over a file with
+# nothing to sweep.
+SWEEP_LOCI = ["Makefile", "justfile"]
 
 # Exact per-file spelling counts for sweep loci with more than one shape.
 # Single-shape loci are pinned by their row checks; the sweep asserts the
@@ -283,7 +319,6 @@ SWEEP_COUNTS = {
     # mir-feature parity recipes, and the live-C literals three closure
     # guards required the Phase 13 differential harness to still contain).
     "justfile": 16,
-    "justfile-step51": 3,
     "tests/e2e_codegen_assertions.gst": 4,
     "tests/test_runner.gst": 2,
     "scripts/run-gust-file.sh": 1,
@@ -1214,7 +1249,14 @@ def validate() -> dict:
 
     for recipe, needle, owner, action, is_live in RECIPE_ROWS:
         require(recipe in bodies, f"inventoried recipe is missing: {recipe}")
-        if recipe in TAKEN_OUT_RECIPES:
+        if recipe in NATIVE_ROUTED_RECIPES:
+            require(needle not in bodies[recipe],
+                    f"a recipe Patch 24.13 routed natively has its C route "
+                    f"back: {recipe}")
+            require(NATIVE_ROUTE_NEEDLE in bodies[recipe],
+                    f"a recipe Patch 24.13 routed natively does not select "
+                    f"the surviving backend: {recipe}")
+        elif recipe in TAKEN_OUT_RECIPES:
             require(needle not in bodies[recipe],
                     f"a recipe Patch {TAKEN_OUT_BY} took out has its C route "
                     f"back: {recipe}")
