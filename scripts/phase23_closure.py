@@ -337,6 +337,9 @@ def check() -> None:
             # Patch 24.12a retires the seven emitter-only harnesses, so it is
             # the tail and the one that must equal the live surface. 24.12's
             # "current" above becomes a link rather than the end of the chain.
+            conversion_frozen = registry.get(
+                "phase24_12b_python_parity_conversion", {}).get(
+                    "frozen_surface_transition")
             if emitter_frozen is not None:
                 require(
                     emitter_frozen.get("contract_version") ==
@@ -345,10 +348,24 @@ def check() -> None:
                     emitter_frozen.get("previous_live_c_case_surface") ==
                     retirement_frozen["current_live_c_case_surface"] and
                     emitter_frozen.get("current_live_c_case_surface") ==
-                    current_frozen and
+                    (conversion_frozen["previous_live_c_case_surface"]
+                     if conversion_frozen is not None else current_frozen) and
                     emitter_frozen.get("partial_or_unregistered_surface") ==
                     "rejected",
                     "Patch 24.12a frozen-surface closure successor drifted")
+                # Patch 24.12b continues the chain and becomes its tail, so it
+                # is the node that must equal the live scan.
+                if conversion_frozen is not None:
+                    require(
+                        conversion_frozen.get("contract_version") ==
+                        "phase24_12b_frozen_surface_transition_v1" and
+                        conversion_frozen.get(
+                            "current_live_c_case_surface") ==
+                        current_frozen and
+                        conversion_frozen.get(
+                            "partial_or_unregistered_surface") == "rejected",
+                        "Patch 24.12b frozen-surface closure successor "
+                        "drifted")
 
     production = registry["phase23_production_release_audit"]
     require(closure.get("production_release_authority") == {
@@ -445,6 +462,9 @@ def check() -> None:
                 retirement_production.get(
                     "partial_extra_or_substituted_audit") == "rejected",
                 "Patch 24.12 production-audit closure successor drifted")
+            conversion_production = registry.get(
+                "phase24_12b_python_parity_conversion", {}).get(
+                    "production_audit_transition")
             if emitter_production is not None:
                 require(
                     emitter_production.get("contract_version") ==
@@ -453,10 +473,25 @@ def check() -> None:
                     "patch24_12a_complete" and
                     emitter_production.get("previous_audit") ==
                     retirement_production["current_audit"] and
-                    emitter_production.get("current_audit") == current_audit and
+                    emitter_production.get("current_audit") ==
+                    (conversion_production["previous_audit"]
+                     if conversion_production is not None
+                     else current_audit) and
                     emitter_production.get(
                         "partial_extra_or_substituted_audit") == "rejected",
                     "Patch 24.12a production-audit closure successor drifted")
+                # Patch 24.12b is the tail of this chain too.
+                if conversion_production is not None:
+                    require(
+                        conversion_production.get("contract_version") ==
+                        "phase24_12b_production_audit_transition_v1" and
+                        conversion_production.get("current_audit") ==
+                        current_audit and
+                        conversion_production.get(
+                            "partial_extra_or_substituted_audit") ==
+                        "rejected",
+                        "Patch 24.12b production-audit closure successor "
+                        "drifted")
             for field in production_unchanged:
                 if field in reduced:
                     continue

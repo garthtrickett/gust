@@ -24807,7 +24807,7 @@
           "classification": "historical_only",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_as_historical_evidence",
-          "digest": "c09c7eedcc2acb531982deda114e0fc095cc7ec0f3d30a9bb0b4326dfea0c080",
+          "digest": "7aea19ef98a669d72b36f1c14d94c1fe07f3c9995174963a229b86077975bc31",
           "falsifier": "historical_record_is_reclassified_as_live_support",
           "match_counts": {
             "explicit_backend_spelling": 6,
@@ -24966,6 +24966,21 @@
           },
           "owner": "cranelift",
           "path": "scripts/phase22_preflip_default_cohort.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "130514d157b78eb6a3b5010c31525cfd3412976b9a952b5b4bb151f48446f867",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 25
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase23_closure.py",
           "removal_phase": "24"
         },
         {
@@ -25230,6 +25245,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "9788451dd075b22660a0616f7ae9a81ec15f583e382fcfa7cc8e3cb9808cec0b",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 25
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase23_closure.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "b761acd6a6779fe5a0c8b28923bcd6aadefaae3b520eb0aaaeb1a0d9f7e8ed9c",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -25301,6 +25331,7 @@
         "scripts/phase22_default_route_flip.py",
         "scripts/phase22_opening.py",
         "scripts/phase22_preflip_default_cohort.py",
+        "scripts/phase23_closure.py",
         "scripts/phase24_cr15_derivation.py",
         "scripts/phase24_frozen_oracle.py",
         "scripts/phase24_resource_implicit_transfer.py",
