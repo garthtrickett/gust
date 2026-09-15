@@ -434,10 +434,17 @@ NOT_REPAIRED = (
 # exactly rather than claiming more than it delivers: after 24.12 no parity
 # guard *selects* live C, and these two still *reach* it until 24.13 flips
 # the runner default. Registered so the count cannot grow unnoticed.
-RUNNER_MEDIATED_RESIDUE = {
-    "scripts/phase15_resource_composition_parity.sh": 3,
-    "scripts/phase16_abi_composition_parity.sh": 2,
-}
+# Patch 24.13 (#411): the residue is discharged, not excused.
+#
+# These two harnesses called the shared runner with no route pinned, so they
+# reached the retired backend through its default. Patch 24.13 flips that
+# default to cranelift, which is why this register is now empty and why the
+# unqualified live-C gate belongs to this patch rather than to 24.12b.
+#
+# Kept as an empty register rather than deleted: check_no_live_c below asserts
+# it is empty, so a harness that reacquires a default-route call fails instead
+# of quietly rejoining a set nobody reads.
+RUNNER_MEDIATED_RESIDUE: dict[str, int] = {}
 RUNNER_RESIDUE_OWNER = "24.13"
 
 # ---------------------------------------------------------------------------
@@ -463,7 +470,11 @@ RUNNER_RESIDUE_OWNER = "24.13"
 # than the row being quietly dropped.
 # ---------------------------------------------------------------------------
 
-RUNNER_DEFAULT_ROUTE = 'RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-mir-to-c}"'
+# Patch 24.13 (#411): the flip this register exists to witness. It was
+# ${GUST_RUNNER_ROUTE:-mir-to-c}; a caller that pinned nothing reached the
+# retired backend by default rather than by selection, which is what kept
+# Patch 24.12b's live-C gate qualified.
+RUNNER_DEFAULT_ROUTE = 'RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-cranelift}"'
 RUNNER_DEFAULT_UNPINNED_CALLERS = (
     "guard-stdlib-s1-collection-receivers",
     "guard-stdlib-s1-str-surface",
@@ -1252,6 +1263,10 @@ def check_no_live_c() -> None:
                     f"asserts that nothing was emitted")
     # The runner-mediated residue is bounded and owned by 24.13; it must not
     # grow, and a harness must not quietly acquire a new default-route call.
+    require(not RUNNER_MEDIATED_RESIDUE,
+            "Patch 24.13 discharged the runner-mediated residue by flipping "
+            "the runner default; a locus is back in the register: "
+            f"{sorted(RUNNER_MEDIATED_RESIDUE)}")
     for locus, expected in RUNNER_MEDIATED_RESIDUE.items():
         text = (ROOT / locus).read_text(encoding="utf-8")
         found = sum(1 for line in text.split("\n")
@@ -1261,15 +1276,22 @@ def check_no_live_c() -> None:
                 f"runner-mediated C residue moved without updating the "
                 f"{RUNNER_RESIDUE_OWNER} hand-off: {locus} "
                 f"({found} default-route calls, registered {expected})")
+    # Patch 24.13 (#411): the polarity of this check is inverted with the
+    # runner's default.
+    #
+    # It used to forbid an UNPINNED runner call, because unpinned meant the
+    # retired backend. After the default flip, unpinned means cranelift, so an
+    # unpinned call is now the correct thing and forbidding it would be
+    # asserting the opposite of what the phase wants. What must be forbidden
+    # instead is an EXPLICIT pin to the retired route, which is the only way a
+    # converted harness can still reach it.
     for locus in FROZEN_LOCI:
-        if locus in RUNNER_MEDIATED_RESIDUE:
-            continue
         text = (ROOT / locus).read_text(encoding="utf-8")
-        require(not any(RUNNER_CALL.search(line)
-                        and "GUST_RUNNER_ROUTE=cranelift" not in line
+        require(not any(RUNNER_CALL.search(line) and
+                        "GUST_RUNNER_ROUTE=mir-to-c" in line
                         for line in text.split("\n")),
-                f"a converted parity harness acquired an unregistered "
-                f"default-route runner call: {locus}")
+                f"a converted parity harness pins the retired route "
+                f"explicitly: {locus}")
 
     # The runner's default route, and every recipe that takes it by omission.
     runner = (ROOT / "scripts/run-gust-file.sh").read_text(encoding="utf-8")
