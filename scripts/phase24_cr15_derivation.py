@@ -230,7 +230,12 @@ def evidence() -> None:
                 diagnostic in frozen_stdout,
                 f"frozen negative authority drifted for {key}")
 
-        native = run([str(compiler), "--backend", "cranelift", str(witness)])
+        # The witness is passed RELATIVE, matching how the frozen vector was
+        # captured. A diagnostic quotes the path it was given, so an absolute
+        # path here makes the two sides differ by their own spelling and the
+        # byte comparison below fails for a reason that has nothing to do with
+        # the diagnostic. Both arms must be asked the same question.
+        native = run([str(compiler), "--backend", "cranelift", vector_id])
         require(native.returncode == 1 and not native.stderr and
                 diagnostic in native.stdout,
                 f"negative authority drifted for {key}: native")
