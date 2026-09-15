@@ -9,6 +9,7 @@ import os
 import shutil
 import stat
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -302,15 +303,35 @@ def evidence() -> None:
             "without_metadata": "same_spelling_without_metadata_rejected",
             "post_cleanup": "post_cleanup_rejected",
         }[key]
-        outputs = []
-        for route in (("--backend", "mir-to-c"),
-                      ("--backend", "cranelift")):
-            result = run([str(compiler), *route, str(witnesses[witness_key])])
-            require(result.returncode == 1 and not result.stderr and
-                    diagnostic.encode() in result.stdout,
-                    f"negative authority drifted for {key}: {route}")
-            outputs.append(result.stdout)
-        require(outputs[0] == outputs[1],
+        # Patch 24.12b: the retired arm is served frozen, the native arm still
+        # runs live, and the two diagnostics are still compared byte for byte.
+        # Both arms are asked with the RELATIVE path, which is how the vector
+        # was captured -- a diagnostic quotes the path it was given, so a
+        # spelling difference alone would fail the comparison.
+        witness = witnesses[witness_key]
+        vector_id = witness.relative_to(ROOT).as_posix()
+        with tempfile.TemporaryDirectory(prefix="gust-cr15q-frozen-") as raw:
+            prefix = Path(raw) / "frozen"
+            materialized = run([sys.executable,
+                                "scripts/phase24_frozen_oracle.py",
+                                "materialize", vector_id, str(prefix),
+                                "--kind", "reject"])
+            require(materialized.returncode == 0,
+                    f"frozen oracle refused {key}: "
+                    f"{materialized.stderr.decode(errors='replace')[:200]}")
+            frozen_status = int(
+                Path(f"{prefix}.compile.status").read_text().strip())
+            frozen_stdout = Path(f"{prefix}.compile.stdout").read_bytes()
+            frozen_stderr = Path(f"{prefix}.compile.stderr").read_bytes()
+        require(frozen_status == 1 and not frozen_stderr and
+                diagnostic.encode() in frozen_stdout,
+                f"frozen negative authority drifted for {key}")
+
+        native = run([str(compiler), "--backend", "cranelift", vector_id])
+        require(native.returncode == 1 and not native.stderr and
+                diagnostic.encode() in native.stdout,
+                f"negative authority drifted for {key}: native")
+        require(frozen_stdout == native.stdout,
                 f"pre-driver diagnostics diverged for {key}")
 
     check_review(value)
