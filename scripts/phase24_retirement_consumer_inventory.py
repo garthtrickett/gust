@@ -715,8 +715,13 @@ SCRIPT_ROWS = [
 ]
 
 
-def liveness() -> tuple[set[str], set[str]]:
+def liveness() -> tuple[set[str], set[str], set[str]]:
     """Workflow-reachable, CI-family registry-named, and make-test closure.
+
+    The annotation said two while the docstring said three and the body
+    returned three (#404). That mismatch is what produced two plausible wrong
+    intermediates, 90 and then 371: a caller reading the signature unpacks two
+    names and silently folds the third set into whichever it happens to bind.
 
     Recipes the just-graph cannot see through make/python indirection are
     covered by the registry-named set and the make-test roots. Anything
@@ -738,8 +743,19 @@ def liveness() -> tuple[set[str], set[str]]:
     # validated green only because the registry-named set covered the
     # difference, which is the mechanism issue #393 says is unsound: two
     # unsound parts cancelling. Issue #395.
-    edges, _ = module.parse_justfile(
-        "\n".join(module.justfile_sources(ROOT / "justfile")))
+    justfile_text = "\n".join(module.justfile_sources(ROOT / "justfile"))
+    edges, _ = module.parse_justfile(justfile_text)
+    # Patch 24.15a (#404): fold dynamically dispatched guards into the graph,
+    # exactly as guard_reachability.main does before computing reachability.
+    # liveness() did not, which is the whole reason it needed the substring
+    # blob match below: a guard reached only through `just "$var"` dispatch was
+    # invisible to the static edges, so `named` had to cover for it. That made
+    # mention load-bearing here while #393's repair was busy removing it from
+    # guard_reachability -- the two instruments disagreeing about what counts
+    # as an execution route.
+    dispatched = module.dynamic_edges(justfile_text, set(edges))
+    for recipe, names in dispatched.items():
+        edges[recipe].extend(names)
     roots = set(module.workflow_roots(edges))
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     # The inventory node itself names every row by construction, so it must
@@ -1232,6 +1248,87 @@ def check_family_actions() -> None:
                 f"files went {expected[0]}/{expected[1]}")
 
 
+
+# ---------------------------------------------------------------------------
+# Patch 24.15a (#404): the inverse, over EVERY recipe rather than over the
+# inventory's own rows.
+#
+# IS_LIVE_WITH_NO_EXECUTION_ROUTE above is an enumeration scoped to
+# RECIPE_ROWS, so it can only catch a recipe the inventory already lists. Of
+# the 55 recipes whose ONLY liveness signal is a registry mention,
+# 14 are inventoried and
+# 41 are not -- invisible to that check
+# entirely. That is the shape #404 names: an enumeration reporting
+# completeness over a population that excludes the real case.
+#
+# This is a SHRINK-ONLY ledger, not an allowlist. A recipe joining it fails,
+# because self-enrolment becoming load-bearing is exactly what Patch 24.15's
+# registry retirements make possible. A recipe leaving it also fails, so the
+# register cannot quietly drift out of step with the tree.
+#
+# Adjudicating these rows is NOT this patch's job -- TASK.md scopes 24.15a to
+# instrument repair and gives the re-scored rows to 24.16, with a different
+# falsifier. What lands here is the measurement, taken with an instrument that
+# folds dynamic dispatch into the graph, so 24.16 starts from a number that
+# means what it says.
+MENTION_ONLY_LIVENESS = (
+    "bootstrap",
+    "check",
+    "default",
+    "gt-one",
+    "gt-one-gst",
+    "guard-cranelift-branch-native-smoke",
+    "guard-cranelift-compiler-mir-ingestion-corpus-surface",
+    "guard-cranelift-contract-fast",
+    "guard-cranelift-differential-native-smoke",
+    "guard-cranelift-experimental-backend-suite-parallel",
+    "guard-cranelift-local-binding-read-native-smoke",
+    "guard-cranelift-phase10-packaging-help-ci",
+    "guard-cranelift-phase11-block-parameter-loop-parity",
+    "guard-cranelift-phase11-ci-family",
+    "guard-cranelift-phase11-direct-call-abi-parity",
+    "guard-cranelift-phase11-local-state-parity",
+    "guard-cranelift-phase11-metadata-diagnostic-parity",
+    "guard-cranelift-phase11-module-import-runtime-parity",
+    "guard-cranelift-phase11-registry-differential",
+    "guard-cranelift-phase11-scalar-expression-parity",
+    "guard-cranelift-phase11-structured-cfg-parity",
+    "guard-cranelift-phase12-5-opening-contract",
+    "guard-cranelift-phase13-broader-imported-runtime-calls-parity",
+    "guard-cranelift-phase13-composition-differential",
+    "guard-cranelift-phase13-direct-call-graph-parity",
+    "guard-cranelift-phase13-general-loop-parity",
+    "guard-cranelift-phase13-multiple-locals-assignments-parity",
+    "guard-cranelift-phase13-nested-structured-cfg-parity",
+    "guard-cranelift-phase13-parameter-argument-parity",
+    "guard-cranelift-phase13-scalar-expression-parity",
+    "guard-cranelift-phase13-source-metadata-parity",
+    "guard-cranelift-phase14-aggregate-parity",
+    "guard-cranelift-phase14-array-slice-parity",
+    "guard-cranelift-phase14-composition-differential",
+    "guard-cranelift-phase14-enum-parity",
+    "guard-cranelift-phase14-integer-conversion-parity",
+    "guard-cranelift-phase14-memory-access-parity",
+    "guard-cranelift-phase14-pointer-memory-parity",
+    "guard-cranelift-phase14-pointer-parity",
+    "guard-cranelift-phase14-primitive-layout-parity",
+    "guard-cranelift-phase14-stack-slot-parity",
+    "guard-cranelift-phase14-string-view-parity",
+    "guard-cranelift-phase14-struct-parity",
+    "guard-cranelift-phase14-structs-enums-parity",
+    "guard-cranelift-phase20-resource-acquisition-parity",
+    "guard-cranelift-phase20-resource-enforcement-parity",
+    "guard-cranelift-phase9b-close",
+    "guard-cranelift-phase9c-close",
+    "guard-cranelift-phase9f-opening-contract",
+    "guard-mir-feature-if-else-return-int-preservation",
+    "guard-mir-feature-local-binding-read-preservation",
+    "guard-mir-feature-local-binding-read-provenance-metadata-preservation",
+    "guard-mir-feature-return-int-preservation",
+    "phase10-native-package",
+    "test",
+)
+
 def check_stale_row_scoring(bodies: dict[str, str], workflow_seen: set[str],
                             named_seen: set[str],
                             make_seen: set[str]) -> None:
@@ -1258,6 +1355,21 @@ def check_stale_row_scoring(bodies: dict[str, str], workflow_seen: set[str],
             f"the no-execution-route liveness residue moved: measured "
             f"{measured_mention}, registered "
             f"{sorted(IS_LIVE_WITH_NO_EXECUTION_ROUTE)}")
+
+    # #404's inverse: no recipe may be live SOLELY because a registry names it.
+    # Asserted over every recipe, not over the inventory's own rows, because an
+    # enumeration scoped to RECIPE_ROWS cannot see the 41 that are not in it.
+    mention_only = sorted(named_seen - workflow_seen - make_seen)
+    joined = sorted(set(mention_only) - set(MENTION_ONLY_LIVENESS))
+    left = sorted(set(MENTION_ONLY_LIVENESS) - set(mention_only))
+    require(not joined,
+            "a recipe became live solely because a registry names it: "
+            f"{joined}. Self-enrolment is not an execution route; register it "
+            "with a reason or give it a caller.")
+    require(not left,
+            "a recipe left the mention-only ledger without the register "
+            f"being updated: {left}. This ledger is shrink-only and every "
+            "removal is an adjudication, which is Patch 24.16's job.")
 
     require(STALE_SCORING_OWNER not in ("24.12", "24.12a"),
             "the stale-row residue must be owned by a patch that can still "
