@@ -509,7 +509,6 @@ PYTHON_RETIRED_ARGV_PENDING_CONVERSION: tuple[str, ...] = (
     "scripts/phase20_generated_mir_scale.py",
     "scripts/phase21_compiler_support_native_qualification.py",
     "scripts/phase21_selected_compiler_module_qualification.py",
-    "scripts/phase22_default_route_flip.py",
     "scripts/phase22_preflip_default_cohort.py",
     "scripts/phase24_resource_implicit_transfer.py",
 )

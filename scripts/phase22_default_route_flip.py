@@ -265,17 +265,27 @@ def evidence() -> None:
     require(b"#include" not in bare_failure.stdout,
             "unavailable default-native route emitted fallback C")
 
-    for index, row in enumerate(record["frozen_preflip_c_corpus"]):
-        mir = run([str(PACKAGED_GUST), "--backend", "mir-to-c", row["source"]])
-        alias = run([str(PACKAGED_GUST), "--backend", "c", row["source"]])
-        require(mir.returncode == alias.returncode == 0 and
-                mir.stdout == alias.stdout and mir.stderr == alias.stderr == b"",
-                f"explicit C spelling parity failed: {row['source']}")
-        digest = hashlib.sha256(mir.stdout).hexdigest()
-        require(digest == row["digest"],
-                f"frozen pre-flip C bytes drifted: {row['source']}")
-        (output / f"explicit-c-{index}.sha256").write_text(
-            f"{digest}  {row['source']}\n", encoding="utf-8")
+    # Patch 24.12b: retired, and INVERTED rather than deleted.
+    #
+    # This loop compiled four sources through BOTH retired spellings and
+    # required their emitted C be identical, then pinned the bytes against a
+    # frozen digest. Both halves are properties of the retired emitter: the
+    # spelling-parity arm compares the retired backend against itself, and the
+    # digest pins bytes only it produces. There is no native counterpart for
+    # either, so no frozen vector can stand in -- this is the emitter-only
+    # class, like the two CR-15 arms.
+    #
+    # The frozen_preflip_c_corpus rows stay in the registry as the historical
+    # record they are. What stops is replaying them against a backend that is
+    # being removed. The assertion below fails if the replay comes back.
+    retired_route = "--backend" + '", "' + "mir-to-c"
+    own_source = Path(__file__).read_text(encoding="utf-8")
+    require(retired_route not in own_source,
+            "the retired explicit-C spelling parity replay is back in "
+            "phase22_default_route_flip")
+    require(len(record["frozen_preflip_c_corpus"]) == 4,
+            "the frozen pre-flip corpus is a historical record and must keep "
+            "its four rows even though they are no longer replayed")
     print(f"{GUARD_L2}: evidence ok")
 
 
