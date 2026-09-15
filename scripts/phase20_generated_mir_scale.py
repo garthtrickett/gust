@@ -119,15 +119,18 @@ def validate() -> dict:
             "fixed_registry_values_reviewed_with_the_patch_no_runtime_rebasing",
             "Patch 20.14 threshold policy drifted")
     budgets = measurement.get("budgets")
-    require(isinstance(budgets, list) and len(budgets) == 4,
+    # Patch 24.12b: the retired backend's two budget rows are retired with
+    # the arms that measured them. A budget is a threshold on a measurement,
+    # and there is no measurement left to threshold.
+    require(isinstance(budgets, list) and len(budgets) == 2,
             "Patch 20.14 budget inventory drifted")
     budget_keys = {(row.get("cohort"), row.get("backend")) for row in budgets}
     require(budget_keys == {
-        ("large_function", "mir-to-c"),
         ("large_function", "cranelift"),
-        ("large_module", "mir-to-c"),
         ("large_module", "cranelift"),
     }, "Patch 20.14 budget coverage drifted")
+    require(not any(row.get("backend") != "cranelift" for row in budgets),
+            "a retired-backend budget row is back in Patch 20.14")
     for row in budgets:
         require(all(isinstance(row.get(key), int) and row[key] > 0 for key in (
             "baseline_elapsed_ms", "baseline_peak_rss_kib",
@@ -502,6 +505,21 @@ def compile_and_compare(case: dict, worker: Path, output: Path) -> None:
     case_dir.mkdir(parents=True, exist_ok=True)
     source = Path(case["source"])
     mir = Path(case["mir"])
+    # Patch 24.12b: this arm is NOT retired, and the first draft of this patch
+    # was wrong to retire it. The registered route_policy above states that
+    # large_function uses three-way source and direct-MIR agreement while
+    # large_module uses the retired route as its SOURCE ORACLE against direct
+    # canonical MIR, because the source-native planner intentionally rejects
+    # unregistered call-graph shapes. Removing it leaves large_module with one
+    # arm and nothing to disagree with -- a silent coverage loss, which is the
+    # failure this phase keeps finding.
+    #
+    # It cannot be frozen as things stand: the source is synthesized per run,
+    # so there is no tracked path to key a vector on. The disposition is
+    # therefore "capturable after materialization" and it is on the clock --
+    # Patch 24.13 seals the corpus, so the large_module case must be
+    # materialized as a tracked fixture and captured before then, or
+    # large_module's oracle is gone permanently.
     c_path = case_dir / "program.c"
     c_stderr = case_dir / "mir-to-c.compiler.stderr"
     status = run_process([GUST, "--backend", "mir-to-c", str(source)],
@@ -623,10 +641,11 @@ def measure_scale(cases: list[dict], worker: Path, output: Path, value: dict) ->
                 case["mir"],
                 str((output / case["id"] / "measured-native.o").resolve()),
             ]
-        commands = {
-            "mir-to-c": [GUST, "--backend", "mir-to-c", source],
-            "cranelift": cranelift_command,
-        }
+        # Patch 24.12b: the retired cohort is retired rather than converted.
+        # It measured elapsed time and peak RSS of the retired backend, and a
+        # frozen vector cannot serve a timing measurement of a backend that no
+        # longer exists.
+        commands = {"cranelift": cranelift_command}
         for backend, command in commands.items():
             prefix = output / case["id"] / f"measure-{backend}"
             elapsed, peak_rss = measure_command(command, prefix, warmups, samples)
