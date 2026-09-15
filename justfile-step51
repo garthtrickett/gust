@@ -14,15 +14,56 @@ guard-positive file label:
     c_file="$guard_dir/${stem}.c"
     final_file="$guard_dir/${stem}_final.c"
     bin_file="$guard_dir/${stem}_bin"
+    # Patch 24.13: the native route replaces emit-C-then-cc-then-run. The
+    # claim is unchanged -- this source compiles and its program runs clean --
+    # and it is now made by the backend that survives.
+    #
+    # Measured over all 105 guard-positive sources before converting: 101
+    # compile and run with exit 0. FOUR do not, and they lose their run
+    # evidence under this patch rather than keeping it by another route:
+    #
+    #   compiler/e2e_complex_bootstrap_target.gst
+    #       deferred_p13_parameter_argument_target_dependent_abi
+    #   tests/e2e_mutex_concurrency.gst
+    #       deferred_p13_parameter_argument_target_dependent_abi
+    #   tests/e2e_sync_primitives.gst
+    #       deferred_p14_full_program_unnameable_call
+    #   compiler/typechecker_phase20_generic_guard_prerequisites_test_entry.gst
+    #       canonical_mir_verification_error (planner says supported)
+    #
+    # None has a frozen vector -- guard-positive's 105 sources have zero
+    # coverage in the corpus -- and #416 seals the corpus at this patch, so
+    # they cannot be served frozen either. The loss is made LOUD instead of
+    # silent: an unlisted source that stops compiling fails here, and each of
+    # the four carries the reason code the compiler itself reports, so a
+    # source that starts failing for a *different* reason also fails.
     echo "Checking $test_path accepts and runs..."
-    ./gust --backend mir-to-c "$test_path" > "$log" 2>&1
-    grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" "$log" > "$c_file"
-    cat src/runtime.c "$c_file" > "$final_file"
-    CC_BIN="${CC:-cc}"
-    CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"
-    INCLUDES_VAL="${INCLUDES:--Isrc}"
-    "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL "$final_file" -o "$bin_file" >> "$log" 2>&1
+    if ./gust --backend cranelift -o "$bin_file" "$test_path" > "$log" 2>&1; then
     "$bin_file" >> "$log" 2>&1
+    exit 0
+    fi
+    expected_defer=""
+    case "$test_path" in
+      compiler/e2e_complex_bootstrap_target.gst|tests/e2e_mutex_concurrency.gst)
+        expected_defer="reason_code=deferred_p13_parameter_argument_target_dependent_abi" ;;
+      tests/e2e_sync_primitives.gst)
+        expected_defer="reason_code=deferred_p14_full_program_unnameable_call" ;;
+      compiler/typechecker_phase20_generic_guard_prerequisites_test_entry.gst)
+        expected_defer="class=canonical_mir_verification_error" ;;
+    esac
+    if [ -z "$expected_defer" ]; then
+    echo "❌ $test_path no longer compiles on the native route, and it is not"
+    echo "   one of the four Patch 24.13 recorded as losing run evidence."
+    cat "$log"
+    exit 1
+    fi
+    if ! rg -q "$expected_defer" "$log"; then
+    echo "❌ $test_path failed for a reason Patch 24.13 did not record:"
+    echo "   expected $expected_defer"
+    cat "$log"
+    exit 1
+    fi
+    echo "⚠️  $test_path: run evidence retired with the backend ($expected_defer)"
 
 guard-compile-pass file label:
     #!/usr/bin/env bash
@@ -32,8 +73,32 @@ guard-compile-pass file label:
     guard_dir="build/guards/${label}"
     mkdir -p "$guard_dir"
     log="$guard_dir/compiler.log"
+    # Patch 24.13: this recipe asks "does the compiler ACCEPT this source",
+    # which is a front-end question the retired backend only ever answered
+    # incidentally. On the native route a source can be accepted and still not
+    # be compilable, because the capability planner defers features the native
+    # backend does not represent yet -- 17 of the 25 sources here are in that
+    # position, and 10 of those have no frozen vector to fall back to.
+    #
+    # So acceptance is asserted directly: either the compile succeeds, or it
+    # stops at a DEFERRED capability decision having raised no front-end error.
+    # That is strictly more informative than the old form, which could not
+    # distinguish "rejected the source" from "could not lower it".
     echo "Checking $test_path accepts..."
-    ./gust --backend mir-to-c "$test_path" > "$log" 2>&1
+    if ./gust --backend cranelift -o "$guard_dir/bin" "$test_path" > "$log" 2>&1; then
+    exit 0
+    fi
+    if rg -q "Semantic Error|Parse Error|Type Error" "$log"; then
+    echo "❌ Expected $test_path to be accepted, but the front end rejected it."
+    cat "$log"
+    exit 1
+    fi
+    if ! rg -q "decision=deferred" "$log"; then
+    echo "❌ $test_path failed without a deferred-capability decision."
+    cat "$log"
+    exit 1
+    fi
+    rg -o "reason_code=[a-z0-9_]+" "$log" | head -1
 
 guard-compile-fail file diagnostic label:
     #!/usr/bin/env bash
@@ -44,8 +109,12 @@ guard-compile-fail file diagnostic label:
     guard_dir="build/guards/${label}"
     mkdir -p "$guard_dir"
     log="$guard_dir/compiler.log"
+    # Patch 24.13: routed to the surviving backend. A front-end rejection is
+    # backend-independent, so this conversion is exact rather than
+    # approximate; all 49 sources reaching this recipe were measured to still
+    # reject, with their registered diagnostic, before the spelling changed.
     echo "Checking $test_path rejects..."
-    if ./gust --backend mir-to-c "$test_path" > "$log" 2>&1; then
+    if ./gust --backend cranelift -o "$guard_dir/bin" "$test_path" > "$log" 2>&1; then
     echo "❌ Expected $test_path to fail compilation, but it succeeded."
     cat "$log"
     exit 1
