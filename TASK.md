@@ -118,8 +118,8 @@ Out of scope:
 - [ ] Patch 24.12b — Python Parity Guard Conversion
 - [ ] Patch 24.13 — Backend-Selection and Publication-Path Removal
 - [ ] Patch 24.14 — C Toolchain Discovery, Error, and Temp-File Removal
-- [ ] Patch 24.15 — Package, Documentation, and Registry Retirement
 - [ ] Patch 24.15a — Reachability Instrument Repair
+- [ ] Patch 24.15 — Package, Documentation, and Registry Retirement
 - [ ] Patch 24.16 — Cross-Feature Residue Audit
 - [ ] Patch 24.17 — Exact-Main Historical Full Qualification
 - [ ] Patch 24.18 — Phase 24 Closure and Terminal State
@@ -284,7 +284,7 @@ goes, so no removal patch deletes live parity evidence.
 - Prove each frozen test fails on the mutations the live lane used to catch;
   a replacement that cannot fail is a deleted test.
 
-**Exit Gate:** zero parity guards **with a native arm** execute live C; the
+**Exit Gate:** zero parity guards **with a native arm** *select* live C; the
 frozen tests are green and falsified by mutation; the archived corpus plus
 frozen tests are recorded as the parity authority; the harnesses with no
 native arm are registered as deliberately excluded with the measurable
@@ -425,11 +425,56 @@ inside a single function.
   tracked files, which is how four CI reds happened on Patch 24.12. It takes
   eleven paths out of the tracked-file census, so it belongs in a patch
   already paying the text-surface toll.
+- Restore the front-end coverage Patch 24.12a retired with an emitter-only
+  harness (#413). Three of that harness's five arms were backend-neutral — a
+  positive round trip and two `guard-compile-fail` cases whose `OpaqueConstruction`
+  and `PrivateDeclarationAccess` rejections are raised in
+  `compiler/typechecker.gst:12083`/`:12099` before any backend emits. Nothing on
+  the tree compiles the three fixtures now. The expected behaviour is already
+  recorded in `compiler/fixtures/phase24_frozen_oracle_vectors_v1.json`, so this
+  needs a runner, not new goldens; correct the rationale at
+  `scripts/phase21_inert_scoped_query_records.py:160-165` to state what was
+  actually retired.
+- Add the stderr mutation arm the frozen oracle never had (#412).
+  `validate_mutations` mutates exit and stdout and never stderr, while
+  `materialize` freezes stderr on all 253 vectors and 29 of 39 consumers never
+  read one. This is the patch that next touches the oracle; a mutation arm added
+  by a removal patch would be an instrument change riding a removal.
+- **Measure the 10/39 stderr-consumer split as part of the same step, not as a
+  follow-up.** The mutation arm alone proves the oracle *can* reject a wrong
+  stderr; it says nothing about whether any consumer of a given vector would
+  notice. Each vector's consumers must either read the frozen stderr or be
+  registered as not reading it, so a consumer that stops reading it fails rather
+  than shrinking the covered set silently. Adjudicating the registered
+  non-readers is Patch 24.16's, with #407.
 
-**Exit Gate:** zero parity guards execute live C — the unqualified form of the
-Patch 24.12 gate, now measured over a population that includes `scripts/*.py`;
-every converted guard still runs its native arm live and compares it byte for
-byte; the conversion criterion is measured rather than asserted.
+**Exit Gate:** zero parity guards execute live C **except the runner-mediated
+residue registered to Patch 24.13, named here with its count rather than
+inherited silently** — `scripts/phase15_resource_composition_parity.sh` (3
+calls) and `scripts/phase16_abi_composition_parity.sh` (2), which pin no route
+and so reach the retired backend through `scripts/run-gust-file.sh:19`'s
+default; measured over a population that includes `scripts/*.py`; every
+converted guard still runs its native arm live and compares it byte for byte;
+the conversion criterion is measured rather than asserted; and every frozen
+observable that any consumer compares — stderr included — has a mutation arm
+proving it rejects, with the consumer split registered rather than implied
+(#412).
+
+**Why the gate is qualified (#411).** The unqualified form was false at the
+moment this patch was meant to discharge it. Both harnesses have a native arm
+and execute live C, both are Level 2 and so run on every pull request, and
+neither can be fixed here: pinning them to the native route before 24.13 makes
+that route the default would change what they compare, and would need its own
+evidence that neither guard weakens. The residue is already owned and counted
+(`RUNNER_MEDIATED_RESIDUE`, `scripts/phase24_frozen_oracle.py:435-439`, owner
+`24.13`), so the unqualified gate closed only by inheriting a registered
+exclusion — a gate passing over a population it excludes by registration, which
+is the shape #398, #402 and #403 each found elsewhere. Naming the exception in
+the gate that claims it is the correction; the ordering constraint below is not
+negotiable, so this patch cannot simply run after 24.13.
+
+**The unqualified claim is not left unclaimed.** It moves to Patch 24.13, which
+flips the runner default and so is the patch that actually makes it true.
 
 ## Patch 24.13 — Backend-Selection and Publication-Path Removal
 
@@ -448,7 +493,12 @@ paths from the active compiler.
   removal; they do not fall back, retry through C, or select by environment.
 - Keep default and explicit Cranelift identity observably identical.
 
-**Exit Gate:** no accepted C spelling and no publication path remain;
+**Exit Gate:** **zero parity guards execute live C, unqualified and with no
+registered exception standing in for a live one** — `RUNNER_MEDIATED_RESIDUE`
+is empty and `check_no_live_c` fails if any parity locus reaches
+`scripts/run-gust-file.sh` without a pinned route (#411). This is the claim
+Patch 24.12b's gate defers to this patch, and flipping the runner default is
+what discharges it. No accepted C spelling and no publication path remain;
 retired-backend requests reject explicitly without fallback; the
 Phase-25-owned bootstrap callers still converge stage2==stage3 through the
 explicit internal entry after selection removal; Cranelift-route
@@ -457,24 +507,70 @@ a separate seed-only PR, or the checked no-diff fixed point stands.
 
 ## Patch 24.14 — C Toolchain Discovery, Error, and Temp-File Removal
 
-**Purpose:** remove C compiler discovery from normal compilation with the
-C-specific error classes and temporary files that exist only to serve it.
+**Purpose:** remove C compiler discovery that exists to *emit and build C as a
+backend*, with the C-specific error classes and temporary files that exist only
+to serve it. Two things share the `CC` variable and the `cc` binary and are
+otherwise unrelated: the retired emission path, which this patch removes, and
+the supported native route's **linker driver**, which this patch must keep.
 
 **Steps:**
 
-- Delete C compiler discovery from normal compilation paths, the C-specific
-  error classes, and the temporary C files.
+- Delete C compiler discovery from the retired backend's emission and build
+  paths, the C-specific error classes, and the temporary C files.
+- **Except the native route's linker driver by name (#401), as the bootstrap
+  chain already is.** The supported route discovers it at
+  `compiler/experiments/cranelift/src/main.rs:16484-16485`
+  (`env::var_os("CC").unwrap_or_else(|| OsString::from("cc"))`) and invokes it
+  at `:33277` (`Command::new(&request.linker_driver)`), implementing the Patch
+  18.7 ordered discovery policy recorded at
+  `compiler/mir_target_authority.gst:660-665`. Deleting it removes the ability
+  to **link**, not the ability to emit C. Read literally, the unamended step
+  above required exactly that removal, and the unamended gate excepted only
+  bootstrap — so the roadmap demanded breaking the supported backend.
+- Treat the inventory as incomplete here rather than authoritative. `linker`,
+  `linker_driver`, `18.7`, `main.rs` and `cranelift/src` each occur **0** times
+  in `scripts/phase24_retirement_consumer_inventory.py`: the supported
+  backend's own implementation is absent from the census every removal patch is
+  sequenced from, so "not in the inventory" is not evidence that a `cc`
+  consumer is retired.
 - Prove normal builds and tests never invoke a C compiler for backend
   purposes; the Phase-25-owned bootstrap chain is excepted, not removed.
 - Keep diagnostics for genuinely missing native-toolchain pieces explicit and
   backend-accurate.
 
 **Exit Gate:** no normal compilation, test, or package route discovers or
-invokes a C compiler for backend purposes; the bootstrap chain's host-C use
-(assembling generated stage files with the host C compiler) is excepted by
-name and stays Phase-25-owned; C-specific errors and temp files
-are absent; `make gust` passes; and a moved seed reconverges in a separate
-seed-only PR, or the checked no-diff fixed point stands.
+invokes a C compiler **for backend emission or build** purposes; the native
+route's linker driver survives and the default route still links with a working
+`cc`; the bootstrap chain's host-C use (assembling generated stage files with
+the host C compiler) is excepted by name and stays Phase-25-owned; C-specific
+errors and temp files are absent; `make gust` passes; and a moved seed
+reconverges in a separate seed-only PR, or the checked no-diff fixed point
+stands.
+
+The linker exception carries an **over-approximating** falsifier, not an
+enumerated one — but over-approximating *within the right scope*. The
+assertion is that no surviving `CC`/`cc` consumer **compiles or links C emitted
+as a backend product**, outside the Phase-25 bootstrap chain. It is **not**
+that the retained discovery is the only surviving `CC`/`cc` consumer at all:
+that form is unsatisfiable without deleting valid evidence. Re-derived on this
+tree, **46 `cc` call sites across 44 `scripts/*.sh`** exist, and they include
+native-route linkers that link Cranelift-produced objects —
+`scripts/phase20_arena_free.sh:76` and
+`scripts/phase20_protected_access_liveness.sh:55` both link a `native.o` into a
+`native-program`, and both are live PR Fast Level 2 guards. Those are the
+supported route working, not residue.
+
+**The split is not measured here, and 24.14 must measure it rather than inherit
+a number.** A crude categorisation of the 46 sites by whether the command line
+names a native object or a `.c` file classified only 13 and left 33 ambiguous;
+refining that heuristic until it separated cleanly would be fitting rather than
+measuring, so it is recorded as attempted and rejected. What 24.14 needs is a
+criterion over *what the compiled input is*, not over how the call line is
+spelled.
+
+Same family as #396, #398 and #403 — each an item a census could not contain —
+and this is the one whose removal breaks the supported route rather than a
+guard.
 
 ## Patch 24.15 — Package, Documentation, and Registry Retirement
 
@@ -483,6 +579,17 @@ documentation, and the registry.
 
 **Steps:**
 
+- Account for every `list-native` member this patch retires against the Patch
+  24.17 pre-retirement baseline (#405). Retiring a test-level entry shrinks a
+  population that 24.17's gate is measured over, and an unaccounted removal
+  makes that gate easier rather than failing it.
+- Require Patch 24.15a to have landed first (#404). This patch retires
+  registry rows and test-level entries, which is what removes the redundancy
+  currently masking `registry_named`'s unsound substring match. Running it
+  first makes the reachability instrument load-bearing at the patch most
+  dependent on it, where it fails by reporting a retired guard as live
+  rather than by erroring — so this patch's own exit gate would be
+  discharged by a plausible number.
 - Remove generated-C backend paths from package contents and install flows;
   help, user documentation, and generated authority state removal, not
   deprecation.
@@ -497,13 +604,22 @@ invariant.
 ## Patch 24.15a — Reachability Instrument Repair
 
 **Purpose:** repair the three defects in `scripts/guard_reachability.py` and
-its callers before Patch 24.16 measures anything with them.
+its callers before Patch 24.15 retires the rows that mask them and Patch
+24.16 measures anything with them.
 
 A patch cannot both repair an instrument and be the audit that trusts it. If
 these rode 24.16, that audit's own before/after baseline would be taken on
 the broken tool — which is the defect in #393 one level up, a declared value
 standing in for a measured one. So the repair lands first, as its own patch,
 and 24.16 starts from an instrument whose output means what it says.
+
+It lands before **24.15** as well, and for a reason 24.15 cannot supply
+itself (#404). The unsound substring match is inert today only because a
+sound signal covers the same population; 24.15's retirements are what remove
+that cover. A tool that fails by reporting a retired guard as *live* is worst
+at the patch whose gate is "every surviving evidence row protects a
+still-live invariant", so 24.15 may not be the first consumer of the
+unrepaired instrument.
 
 **Steps:**
 
@@ -532,11 +648,22 @@ and 24.16 starts from an instrument whose output means what it says.
 - Re-baseline `scripts/guard_reachability_allowlist.json`, justifying or
   removing each newly visible entry. The orphan count jumps from 20 toward 97;
   a bulk accept re-hides exactly what Patch 24.16 exists to find.
+- **#404** — assert the inverse rather than the enumeration: *no recipe may
+  be live solely because an inventory node names it*. It passes today with
+  the 3 known exceptions and fails the moment self-enrolment becomes
+  load-bearing, which is what 24.15 makes possible. Also fix the type defect
+  it records: `liveness()` is annotated as a 2-tuple, documented as three
+  sets, and returns three (587/536/80) — the cause of two plausible wrong
+  intermediates, 90 and then 371.
 
-**Exit Gate:** each of the three defects has a test that fails on the old
-behaviour; the orphan report is derived from execution rather than mention;
-the allowlist re-baseline names a reason per entry; and no reachability
-consumer still builds its graph one fragment at a time.
+**Exit Gate:** each of the **four** defects — #390, #393, #395 and #404 — has a
+test that fails on the old behaviour; in particular the #404 falsifier is
+present as an inverse and demonstrably rejects a recipe made live solely by an
+inventory node naming it, rather than being satisfied by the other three; the
+orphan report is derived from execution rather than mention; the allowlist
+re-baseline names a reason per entry; `liveness()`'s return type matches the
+three sets it returns; and no reachability consumer still builds its graph one
+fragment at a time.
 
 **Boundary:** instrument repair only. Adjudicating the rows the repaired
 instrument re-scores — including the ones Patch 24.12a registered as
@@ -568,6 +695,13 @@ retirement debris survives across features.
   registry and once in the level file, so a bare level assignment is the only
   thing keeping a known-red, never-executed guard off the orphan list. A
   survivor like that names no live invariant.
+- Adjudicate the stderr-blind consumers Patch 24.12b registered rather than
+  fixed (#412), with #407's single case: a consumer that materializes an
+  observable and never compares it is accurately *falsifiable on source drift,
+  blind to execution expectations*, and each survivor must either start
+  comparing what it requests, request only what it consumes, or carry a
+  registered reason. Measured at filing: 29 of 39 consumers never mention a
+  frozen stderr.
 - Adjudicate the rows Patch 24.12a registered rather than fixed: the
   `stale_row_scoring` residue in the retirement inventory — 13 rows whose
   `action` disagrees with what happened to their harness, and 7 scored
@@ -598,10 +732,146 @@ with one authoritative Historical Full run.
   incomplete or stale job populations and unresolved material findings.
 - Record run ID, full SHA, event, conclusion, unique job population, and
   budgets in generated authority before closure publication.
+- **Qualify the run against the pre-retirement population baseline below
+  (#405), not against whatever population the run happened to have.** Part of
+  this population is computed at run time: `just` dispatches
+  `python3 scripts/cranelift_test_levels.py list-native` at `justfile:276-280`
+  and the historical workflow reaches it through the phase9-core shard. Nothing
+  in the level script or the workflow pins the result — re-derived on this
+  tree, the literal `88` occurs **0** times in either.
+
+**Pre-retirement population baseline (#405).** Measured at `87231e50`, the
+Patch 24.12a merge, before any patch that retires a level entry has run:
+
+```text
+$ python3 scripts/cranelift_test_levels.py list-native | wc -l
+88
+```
+
+The 88 members, which 24.15, 24.15a and 24.16 may reduce only with an
+accounting, sorted:
+
+```text
+  guard-cranelift-add-i32-native-smoke
+  guard-cranelift-call-helper-i32-native-smoke
+  guard-cranelift-compiler-mir-add-i32-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-jump-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-local-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-local-branch-join-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-local-update-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-dual-materialize-return-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-imported-call-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-imported-call-return-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-imported-materialize-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-imported-materialize-return-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-imported-predicate-update-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-local-call-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-local-first-dual-materialize-return-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-local-materialize-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-local-materialize-return-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-return-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-merge-dual-imported-joined-return-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-merge-imported-branch-joined-return-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-merge-imported-call-return-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-merge-update-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-quad-materialize-return-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-quint-materialize-return-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-triple-materialize-return-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-update-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-two-local-update-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-conditional-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection
+  guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke
+  guard-cranelift-compiler-mir-native-boundary-metadata-ingestion-native-smoke
+  guard-cranelift-compiler-mir-positive-i32-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-provenance-metadata-ingestion-native-smoke
+  guard-cranelift-compiler-mir-resource-metadata-ingestion-native-smoke
+  guard-cranelift-compiler-mir-return-int-ingestion-native-smoke
+  guard-cranelift-conditional-branch-native-smoke
+  guard-cranelift-extern-add-i32-native-smoke
+  guard-cranelift-extern-call-i32-native-smoke
+  guard-cranelift-extern-predicate-branch-i32-native-smoke
+  guard-cranelift-identity-i32-native-smoke
+  guard-cranelift-increment-local-i32-native-smoke
+  guard-cranelift-local-binding-native-smoke
+  guard-cranelift-mir-add-i32-native-smoke
+  guard-cranelift-mir-arithmetic-i32-bundle-native-smoke
+  guard-cranelift-mir-block-graph-i32-bundle-native-smoke
+  guard-cranelift-mir-block-graph-local-i32-bundle-native-smoke
+  guard-cranelift-mir-block-graph-local-update-i32-bundle-native-smoke
+  guard-cranelift-mir-block-graph-param-call-i32-bundle-native-smoke
+  guard-cranelift-mir-block-graph-param-extern-add-i32-bundle-native-smoke
+  guard-cranelift-mir-block-graph-param-extern-i32-bundle-native-smoke
+  guard-cranelift-mir-block-graph-param-extern-predicate-i32-bundle-native-smoke
+  guard-cranelift-mir-block-graph-param-i32-bundle-native-smoke
+  guard-cranelift-mir-block-graph-param-merge-call-i32-bundle-native-smoke
+  guard-cranelift-mir-block-graph-param-merge-i32-bundle-native-smoke
+  guard-cranelift-mir-call-helper-i32-native-smoke
+  guard-cranelift-mir-comparison-branch-i32-bundle-native-smoke
+  guard-cranelift-mir-comparison-i32-bundle-native-smoke
+  guard-cranelift-mir-conditional-branch-native-smoke
+  guard-cranelift-mir-extern-add-i32-native-smoke
+  guard-cranelift-mir-extern-call-i32-native-smoke
+  guard-cranelift-mir-extern-predicate-branch-i32-native-smoke
+  guard-cranelift-mir-increment-local-i32-native-smoke
+  guard-cranelift-mir-local-binding-read-native-smoke
+  guard-cranelift-mir-positive-i32-branch-native-smoke
+  guard-cranelift-mir-return-int-native-smoke
+  guard-cranelift-mir-to-c-differential-native-smoke
+  guard-cranelift-mir-to-cranelift-add-i32-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-block-jump-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-block-local-branch-join-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-branch-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-return-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-block-param-merge-dual-imported-joined-return-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-block-param-merge-imported-branch-joined-return-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-block-param-merge-imported-call-return-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-block-param-merge-update-branch-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-block-param-update-branch-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-conditional-branch-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-local-binding-read-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-native-boundary-metadata-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-positive-i32-branch-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-provenance-metadata-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-resource-metadata-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-translator-seed-suite
+  guard-cranelift-phase9c-differential-ladder-native-smoke
+  guard-cranelift-positive-i32-branch-native-smoke
+  guard-cranelift-return-int-native-smoke
+```
 
 **Exit Gate:** the exact-main Historical population is fully green with zero
-unresolved material findings, and its evidence is recorded as the Phase 24
-closure authority.
+unresolved material findings; **every one of the 88 baseline members above
+either appears in that run's population or names the patch that retired it and
+the live invariant that went with it**; and its evidence is recorded as the
+Phase 24 closure authority.
+
+The gate as originally written was satisfiable by deletion. "Fully green" over
+a run-time-computed population that the retirement patches themselves shrink is
+met by asking less: 24.15 and 24.16 retire level entries, the smaller
+population runs green, and nothing notices. Patch 24.16 already states that
+*absence never counts as success* — the principle was written one patch before
+the gate that did not implement it, and nothing carried a baseline across that
+boundary. The falsifier over-approximates: the population **may not shrink**
+unless every missing member is individually accounted, so it fails on an
+unexplained absence rather than on a list.
+
+**Patch 24.18 inherits this.** A closure record citing a green Historical run
+inherits that run's population, so the closure generator is where the baseline
+accounting is asserted rather than merely available.
+
+**Stated at its current strength:** as of the amendment that records it, the
+list above is a *measured and dated value, not a mechanically enforced one*. No
+guard yet compares a later `list-native` against it. That is deliberate rather
+than overlooked — the comparison cannot be equality, because 24.15 and 24.16
+are expected to shrink the population legitimately, so the check needs the
+per-member accounting that does not exist until the closure generator (#406)
+is built. Until then the baseline's force is review: it is dated, it is
+re-derivable by the command printed with it, and 24.15's step list requires
+each member it retires to be accounted. Anyone reading this before that
+generator exists should not read the list as a passing check.
 
 ## Patch 24.18 — Phase 24 Closure and Terminal State
 
@@ -610,14 +880,51 @@ later architecture phases inactive.
 
 **Steps:**
 
+- **Build `scripts/phase24_closure.py` (#406). It does not exist.** Phase 24
+  has two closure generators and neither closes the phase: `phase24_cr15_closure.py`
+  closes 24.0f and `phase24_preflight_closure.py` closes 24.4, both sub-phases
+  *inside* the opening. The closure generator is the instrument that
+  mechanically enforces *every status row is DONE*, and it is the last thing
+  that reads the retirement rows. Every defect filed against this phase
+  concerns a row, an assertion, or a population that a census failed to
+  contain; the final check on the ledger's completeness is the one artifact
+  that was never scoped.
+- Follow the Phase 23 precedent rather than inventing a shape: a
+  `tests/cranelift/phase24_closure_contract.tsv`, an
+  `authoritative_latest_historical_full` run identity in the registry, a
+  generated `docs/PHASE24_CLOSURE.md` view, and a staleness check that fails
+  unless the view is generated from registry authority
+  (`scripts/phase23_closure.py:21`, `:95`, `:198-204`, `:847`).
+- **Enforce the retirement row order as amended, not as first written.** The
+  Phase 23 generator rejects rows that are *missing, duplicated, or reordered*
+  against an expected list (`scripts/phase23_closure.py:170-179`). Phase 24's
+  expected list must therefore carry **24.15a before 24.15**, the order Patch
+  24.15a's #404 amendment establishes. A generator built from the original
+  numbering would silently re-assert the sequence that amendment corrected —
+  ownership is not ordering (#402), and a row list is where the two are easiest
+  to confuse.
+- Assert the Patch 24.17 pre-retirement population baseline here (#405). A
+  closure record citing a green Historical run inherits that run's population,
+  so the generator is the natural — and the last — place the per-member
+  accounting can be required rather than merely available.
+- **Scope it as a patch, not as bookkeeping.** Re-derived on this tree, the
+  precedent closure generators run 311, 290 and 865 lines
+  (`phase19_closure.py`, `phase20_closure.py`, `phase23_closure.py`), with
+  `phase14_closure.py` at 912. The trend is upward and the most recent and most
+  similar precedent is the largest. Planning 24.18 as a docs commit means
+  ignoring it.
 - Generate the retirement closure from registry source, replace evidence
   placeholders, mark every retirement row DONE, publish the atomic closure
   PR, and write a terminal lane state after merge.
 - State the closure sentence and its boundary: Gust no longer emits C as a
   compiler backend; the repository still contains C under Phase 25 ownership.
 
-**Exit Gate:** every retirement row is DONE; the exact-main Historical
-population and closure PR are fully green; all review threads are resolved;
+**Exit Gate:** `scripts/phase24_closure.py` exists and is the instrument that
+establishes the rest of this gate rather than a record written alongside it;
+every retirement row is DONE, in the amended order, checked by that generator;
+the exact-main Historical population is fully green **and accounted against the
+Patch 24.17 baseline member by member**; the closure PR is fully green; all
+review threads are resolved;
 the terminal lane record cites exact PR head, merge main, workflow
 population, review state, Historical run, event, full SHA, job population,
 conclusion, and budgets; and Phase 24.5, Phase 25, Stdlib implementation, and
@@ -632,8 +939,8 @@ Web Slice 1 remain inactive pending fresh activation.
 → 24.12b python parity guard conversion
 → 24.13 backend-selection and publication-path removal
 → 24.14 C toolchain discovery, error, and temp-file removal
-→ 24.15 package, documentation, and registry retirement
 → 24.15a reachability instrument repair
+→ 24.15 package, documentation, and registry retirement
 → 24.16 cross-feature residue audit
 → 24.17 Historical Full qualification
 → 24.18 closure and terminal state.
@@ -647,7 +954,21 @@ and all twenty-three recipes reaching them run in CI, so removing the backend
 first breaks them. This is an ordering constraint, not a preference. Patch 24.11 must complete its inventory before 24.13 removes
 what it lists. A seed cannot share a PR with
 compiler-source changes; reconverge it alone where 24.13 or 24.14 moves it.
-Patch 24.15a precedes 24.16 because 24.16 audits with the instrument 24.15a repairs, and a patch cannot be both the repair and the audit that trusts it.
+Patch 24.15a precedes **both 24.15 and 24.16**. It precedes 24.16 because
+24.16 audits with the instrument 24.15a repairs, and a patch cannot be both
+the repair and the audit that trusts it. It precedes 24.15 for a different
+reason (#404): `registry_named`'s substring match is unsound, and what has
+hidden the consequence is composition — of the ~547 hits that suppress orphan
+reporting, 513–516 come from the test-levels file, which names nearly
+everything legitimately, so an unsound signal is masked by a sound one over
+the same population, and residual self-enrolment resolves to 3 recipes that
+`make_roots` already covers. **Patch 24.15 removes the mask**, because
+retiring registry rows and level entries is exactly what thins the sound
+signal; the instrument becomes load-bearing at the patch most dependent on
+it, and it fails by reporting a retired guard as *live* rather than by
+erroring. Two independent measurements of that split disagree
+(513/173/66/14 against 516/176/64/11) and are recorded unreconciled rather
+than averaged; the ordering does not depend on which is right.
 Patch 24.17 runs only after the final removal and retirement mains exist. No
 later phase is activated by completing this sequence.
 
