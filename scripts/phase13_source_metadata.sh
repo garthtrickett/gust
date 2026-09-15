@@ -46,8 +46,6 @@ CARGO_TARGET_DIR="$cargo_target" cargo build \
 driver="$cargo_target/debug/gust-cranelift-experiment"
 test -x "$driver"
 driver_abs="$(cd "$(dirname "$driver")" && pwd)/$(basename "$driver")"
-CC_BIN="${CC:-cc}"
-CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
 
 capture_driver="$build_root/capture-driver"
 cat >"$capture_driver" <<'EOF_CAPTURE'

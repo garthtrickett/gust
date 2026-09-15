@@ -45,8 +45,6 @@ if [ ! -x "$driver_bin" ]; then
   exit 1
 fi
 driver_abs="$(cd "$(dirname "$driver_bin")" && pwd)/$(basename "$driver_bin")"
-CC_BIN="${CC:-cc}"
-CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
 
 execute_and_capture() {
   local binary="$1"
