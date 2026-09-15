@@ -26123,7 +26123,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "db4ccb251bf04eb7c2e29dd817bd585004e17f1b37f8d6f873f1002c587fa486",
+          "digest": "37832ce23b09c5b676b317a89071e6c33eb866fc4a658edaa3cff7d040014b38",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 6,
@@ -26132,6 +26132,21 @@
           },
           "owner": "cranelift",
           "path": "scripts/phase24_frozen_oracle.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "4986ff179b801f2756ac14f56a79bd812cd2853313ebe9cdf5bf213f2da08e3b",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 1,
+            "generated_c_contract": 2,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase24_frozen_oracle_capture.py",
           "removal_phase": "24"
         },
         {
@@ -26606,6 +26621,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "6cebd257fe389207190ad329ed8d6f51fde0b245af6bc03950d1a21afbdac195",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 1,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase24_frozen_oracle_capture.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "5efe4734ca8fe5ad60307e91f072ca066778fca2f258a315a938081e5feaacc8",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -26663,6 +26693,7 @@
         "scripts/phase23_same_scope_declaration.py",
         "scripts/phase23_structured_guard_defer_native_admission.py",
         "scripts/phase24_frozen_oracle.py",
+        "scripts/phase24_frozen_oracle_capture.py",
         "scripts/phase24_retirement_consumer_inventory.py",
         "scripts/run-gust-file.sh"
       ],

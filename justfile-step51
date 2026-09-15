@@ -77,7 +77,37 @@ guard-positive file label:
     cat "$log"
     exit 1
     fi
-    echo "⚠️  $test_path: run evidence retired with the backend ($expected_defer)"
+    # Patch 24.12c: the run evidence is no longer retired, it is REPLAYED.
+    #
+    # Raised in review on #421: exiting successfully here without creating or
+    # running a binary makes a regression invisible so long as the same
+    # unsupported reason is emitted -- and TASK.md's Immutable Contracts say
+    # "Absence of C execution never counts as parity success." Pinning the
+    # reason bounded the damage; it did not carry the behaviour.
+    #
+    # #429 captured a frozen vector for each of these four while the retired
+    # backend still existed, which was the last opportunity: v2's authority
+    # records that no vector can be captured after 24.13 merges. Serving one
+    # here is not decoration -- `check_vector` re-digests the SOURCE and fails
+    # with "frozen vector source moved without a re-freeze", so a change to
+    # the fixture invalidates its evidence instead of sailing past on an
+    # unchanged deferral reason. That is the regression the old form missed.
+    frozen_dir="$guard_dir/frozen"
+    if ! python3 scripts/phase24_frozen_oracle.py materialize \
+        "$test_path" "$frozen_dir/replay" > "$guard_dir/frozen.log" 2>&1; then
+    echo "❌ $test_path defers on the native route and its frozen evidence"
+    echo "   could not be served, so nothing checks its behaviour:"
+    cat "$guard_dir/frozen.log"
+    exit 1
+    fi
+    frozen_status="$(cat "$frozen_dir/replay.status")"
+    if [ "$frozen_status" != "0" ]; then
+    echo "❌ $test_path is a positive test but its frozen run exited"
+    echo "   $frozen_status, so the recorded behaviour is not a pass."
+    exit 1
+    fi
+    echo "🧊 $test_path: native route defers ($expected_defer); frozen run"
+    echo "   evidence replayed from the Patch 24.12c capture, exit $frozen_status"
 
 guard-compile-pass file label:
     #!/usr/bin/env bash

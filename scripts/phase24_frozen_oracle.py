@@ -41,6 +41,7 @@ TASK = ROOT / "TASK.md"
 VECTORS = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v1.json"
 # Patch 24.12b (#416): the additive v2 capture, served alongside v1.
 VECTORS_V2 = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v2.json"
+VECTORS_V3 = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v3.json"
 CORPUS = ROOT / "compiler/fixtures/phase23_mir_to_c_reference_corpus_v1.json"
 VIEW = ROOT / "docs/PHASE24_FROZEN_ORACLE_REPLACEMENT.md"
 EMITTER_ONLY_ASSERTIONS_REMOVED = (
@@ -951,6 +952,18 @@ def load_servable_vectors() -> dict:
     merged = dict(vectors)
     merged["vectors"] = dict(vectors["vectors"])
     merged["vectors"].update(second["vectors"])
+    # Patch 24.12c adds a third capture, on the same terms as the second: an
+    # addition, never an edit. Its collision check spans v1 AND v2, because by
+    # this point both are already merged and a v3 vector may shadow neither.
+    if VECTORS_V3.is_file():
+        third = json.loads(VECTORS_V3.read_text(encoding="utf-8"))
+        require(third.get("format") == "phase24_frozen_oracle_vectors_v3",
+                "the v3 capture file is not a v3 corpus")
+        collisions = sorted(set(third["vectors"]) & set(merged["vectors"]))
+        require(not collisions,
+                "a v3 vector would shadow an earlier one; v1 and v2 are "
+                f"immutable and a capture may not redefine them: {collisions}")
+        merged["vectors"].update(third["vectors"])
     return merged
 
 
@@ -983,8 +996,21 @@ def check_vector(vector_id: str, vectors: dict) -> dict:
     for field in ("source_fixture", "source_sha256", "kind", "provenance",
                   "compile", "side_effects", "workdir_sensitive"):
         require(field in vector, f"frozen vector is malformed: {vector_id}")
-    require(vector["kind"] in ("exec", "reject"),
+    require(vector["kind"] in ("exec", "reject", "compile_only"),
             f"frozen vector has an unknown kind: {vector_id}")
+    if vector["kind"] == "compile_only":
+        # Patch 24.12c. A fixture that must be compiled but never run -- the
+        # CR-16 raw-double-unlock witness, whose two unlock paths make its
+        # runtime behaviour undefined and whose guard stops at
+        # `cc -fsyntax-only`. The absence of an execution record is the
+        # POINT, so it is asserted rather than tolerated, and the reason is
+        # carried in the vector so a consumer cannot read it as an omission.
+        require("execution" not in vector,
+                f"a compile-only vector carries an execution record, which "
+                f"is the one thing its kind exists to forbid: {vector_id}")
+        require(vector.get("never_executed_reason"),
+                f"a compile-only vector does not say why it is never "
+                f"executed: {vector_id}")
     source = ROOT / str(vector["source_fixture"])
     require(source.is_file(),
             f"frozen vector source is missing: {vector_id}")
@@ -998,7 +1024,8 @@ def check_vector(vector_id: str, vectors: dict) -> dict:
     # to a prefix match, so a third capture has to declare itself too.
     require(vector["provenance"] in (
         "derived_from_archived_corpus_v1", "captured_live_while_green",
-        "captured_live_while_green_patch24_12b"),
+        "captured_live_while_green_patch24_12b",
+        "captured_live_while_green_patch24_12c"),
         f"frozen vector has an unknown provenance: {vector_id}")
     require(not (vector["provenance"] == "derived_from_archived_corpus_v1"
                  and vector.get("archived_corpus_case") is None),
@@ -1039,6 +1066,14 @@ def materialize(vector_id: str, prefix: Path, expect_kind: str | None,
         f"{compile_record['exit']}\n", encoding="utf-8")
     Path(f"{prefix}.compile.stderr").write_bytes(
         record_bytes(compile_record["stderr"]))
+    if vector["kind"] == "compile_only":
+        # Serve the compile side and stop. There is deliberately no runtime
+        # observable to write.
+        Path(f"{prefix}.compile.stdout").write_bytes(
+            record_bytes(compile_record["stdout"]))
+        Path(f"{prefix}.never-executed").write_text(
+            str(vector["never_executed_reason"]) + "\n", encoding="utf-8")
+        return
     if vector["kind"] == "reject":
         stdout = record_bytes(compile_record["stdout"])
         stderr = record_bytes(compile_record["stderr"])
