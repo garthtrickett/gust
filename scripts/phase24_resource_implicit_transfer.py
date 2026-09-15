@@ -242,7 +242,14 @@ def assert_pre_backend_rejection(compiler: Path, source: Path,
     ):
         artifact = temporary / f"must-not-exist-{source.stem}-{label}"
         output_args = ["-o", str(artifact)] if accepts_output else []
-        result = run([str(compiler), *route, *output_args, str(source)])
+        # Both arms are asked with the RELATIVE path. A diagnostic quotes the
+        # path it was given, so an absolute one here differs from the frozen
+        # side by its own spelling and the byte comparison below fails for a
+        # reason that has nothing to do with the diagnostic. Third occurrence
+        # of this defect in the patch series -- every conversion has to move
+        # BOTH arms to the relative form, not just the one being frozen.
+        result = run([str(compiler), *route, *output_args,
+                      source.relative_to(ROOT).as_posix()])
         require(result.returncode == 1 and not result.stderr and
                 DIAGNOSTIC in result.stdout and not artifact.exists(),
                 f"source reuse in {source.name} was not rejected before {label} "
