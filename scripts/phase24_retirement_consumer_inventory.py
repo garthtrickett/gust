@@ -1441,6 +1441,45 @@ def check_stale_row_scoring(bodies: dict[str, str], workflow_seen: set[str],
             f"{measured_mention}, registered "
             f"{sorted(IS_LIVE_WITH_NO_EXECUTION_ROUTE)}")
 
+    # Patch 24.16's adjudication of the native-smoke population.
+    #
+    # TASK.md expected this to be the phase's weak point: "Most of the 43 are
+    # *-native-smoke recipes ... so they bear on the phase's premise: Phase 24
+    # removes the C backend on the grounds that the native route is qualified,
+    # and part of that evidence is guards nothing runs."
+    #
+    # Measured on the REPAIRED instrument, that is substantially not the case.
+    # The 43 was counted before 24.15a folded dynamic dispatch into the graph;
+    # doing so recovered the native smokes as genuinely reached. The residue is
+    # concentrated in parity guards instead, and the premise is in better shape
+    # than the roadmap feared -- which is exactly the kind of thing a repaired
+    # instrument is supposed to be able to say.
+    #
+    #   native-smoke recipes known : 96
+    #   workflow-reachable         : 93
+    #   mention-only               :  3
+    #
+    # guard-cranelift-mir-to-c-differential-native-smoke, named in the roadmap
+    # as bearing on the premise, is workflow-reachable.
+    #
+    # Pinned as a floor rather than an equality: new smokes may be added, but
+    # the reached population may not silently shrink back.
+    smokes = {recipe for recipe in (workflow_seen | named_seen | make_seen)
+              if recipe.endswith("-native-smoke")}
+    reached = smokes & (workflow_seen | make_seen)
+    require(
+        len(reached) >= 93,
+        f"the native-smoke population that something executes shrank to "
+        f"{len(reached)} of {len(smokes)}. Phase 24 removes the C backend on "
+        "the grounds that the native route is qualified; that evidence cannot "
+        "be guards nothing runs.",
+    )
+    require(
+        "guard-cranelift-mir-to-c-differential-native-smoke" in reached,
+        "the MIR-to-C differential native smoke is no longer executed by "
+        "anything, and TASK.md names it as bearing on the phase's premise",
+    )
+
     # #404's inverse: no recipe may be live SOLELY because a registry names it.
     # Asserted over every recipe, not over the inventory's own rows, because an
     # enumeration scoped to RECIPE_ROWS cannot see the 41 that are not in it.
