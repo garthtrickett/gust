@@ -501,6 +501,38 @@ def _backend_removal_successor(registry: dict, previous: dict) -> dict:
     require(current["total"] == previous["total"],
             "Patch 24.13 reclassifies invocations, so the total must be "
             f"unchanged: {previous['total']} -> {current['total']}")
+    return _toolchain_removal_successor(registry, current)
+
+
+def _toolchain_removal_successor(registry: dict, previous: dict) -> dict:
+    """Patch 24.14 removes the focused live oracle's invocation.
+
+    A REDUCTION again, not a reclassification: 24.13 moved callers between
+    backends and kept the total, while 24.14 retires the lane outright, so its
+    one invocation leaves the census entirely. Asserting the shape rather than
+    just the arithmetic is what keeps a reduction from passing as a move, and
+    vice versa.
+    """
+    successor = registry.get("phase24_14_toolchain_removal", {}).get(
+        "phase22_invocation_successor")
+    if successor is None:
+        return previous
+    current = successor.get("current_relay_inventory")
+    require(isinstance(current, dict) and
+            successor.get("contract_version") ==
+            "phase24_14_invocation_successor_v1" and
+            successor.get("previous_relay_inventory") == previous and
+            successor.get("partial_or_unregistered_reduction") == "rejected",
+            "Patch 24.14 relay inventory successor drifted")
+    removed = previous["total"] - current["total"]
+    require(removed == successor.get("removed_invocation_count") ==
+            previous["selection_counts"].get("explicit_c", 0) -
+            current["selection_counts"].get("explicit_c", 0),
+            "the Patch 24.14 census reduction is not entirely explicit-C: it "
+            "retires the focused live oracle, whose invocation is explicit C")
+    require(current["unclassified_count"] == previous["unclassified_count"]
+            == 0,
+            "Patch 24.14 did not reduce a fully classified census")
     return current
 
 

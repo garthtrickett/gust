@@ -25359,6 +25359,101 @@
   },
     "phase24_14_toolchain_removal": {
       "authority_owner": "phase24_14_toolchain_removal",
+      "phase22_invocation_successor": {
+        "change_reason": "Patch_24_14_retired_the_focused_live_oracle_invocation",
+        "contract_version": "phase24_14_invocation_successor_v1",
+        "current_relay_inventory": {
+          "consumer_class_counts": {
+            "already_explicit_or_parser_probe": 168,
+            "cranelift_C_or_diagnostic_guard": 2,
+            "help_surface_probe": 3,
+            "intentional_default_selection_probe": 8,
+            "invocation_parser_probe": 2
+          },
+          "owner_counts": {
+            "cranelift": 154,
+            "stdlib": 29
+          },
+          "selection_counts": {
+            "explicit_bootstrap_emitter": 2,
+            "explicit_c": 45,
+            "explicit_cranelift": 118,
+            "explicit_invalid_or_parser_probe": 3,
+            "implicit_default": 15
+          },
+          "total": 183,
+          "unclassified_count": 0
+        },
+        "current_summary": {
+          "consumer_class_counts": {
+            "already_explicit_or_parser_probe": 177,
+            "cranelift_C_or_diagnostic_guard": 5,
+            "help_surface_probe": 3,
+            "intentional_default_selection_probe": 8,
+            "invocation_parser_probe": 2
+          },
+          "owner_counts": {
+            "cranelift": 166,
+            "stdlib": 29
+          },
+          "selection_counts": {
+            "explicit_bootstrap_emitter": 2,
+            "explicit_c": 50,
+            "explicit_cranelift": 122,
+            "explicit_invalid_or_parser_probe": 3,
+            "implicit_default": 18
+          },
+          "total": 195,
+          "unclassified_count": 0
+        },
+        "partial_or_unregistered_reduction": "rejected",
+        "previous_relay_inventory": {
+          "consumer_class_counts": {
+            "already_explicit_or_parser_probe": 169,
+            "cranelift_C_or_diagnostic_guard": 2,
+            "help_surface_probe": 3,
+            "intentional_default_selection_probe": 8,
+            "invocation_parser_probe": 2
+          },
+          "owner_counts": {
+            "cranelift": 155,
+            "stdlib": 29
+          },
+          "selection_counts": {
+            "explicit_bootstrap_emitter": 2,
+            "explicit_c": 46,
+            "explicit_cranelift": 118,
+            "explicit_invalid_or_parser_probe": 3,
+            "implicit_default": 15
+          },
+          "total": 184,
+          "unclassified_count": 0
+        },
+        "previous_summary": {
+          "consumer_class_counts": {
+            "already_explicit_or_parser_probe": 178,
+            "cranelift_C_or_diagnostic_guard": 5,
+            "help_surface_probe": 3,
+            "intentional_default_selection_probe": 8,
+            "invocation_parser_probe": 2
+          },
+          "owner_counts": {
+            "cranelift": 167,
+            "stdlib": 29
+          },
+          "selection_counts": {
+            "explicit_bootstrap_emitter": 2,
+            "explicit_c": 51,
+            "explicit_cranelift": 122,
+            "explicit_invalid_or_parser_probe": 3,
+            "implicit_default": 18
+          },
+          "total": 196,
+          "unclassified_count": 0
+        },
+        "removed_invocation_count": 1,
+        "status": "patch24_14_complete"
+      },
       "production_audit_transition": {
         "change_reason": "Patch_24_14_retired_the_focused_live_oracle_and_derived_the_active_live_C_lane_count_instead_of_declaring_it",
         "contract_version": "phase24_14_production_audit_transition_v1",
