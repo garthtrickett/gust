@@ -608,6 +608,20 @@ REGISTRY_ROWS = [
 # FILE_ROWS entries, still owned for later retirement, and still required to be
 # present -- which is why this register names one surface rather than three.
 RETIRED_FILE_SURFACES = [
+    # Patch 24.15: user documentation states removal, not deprecation. These
+    # are the three README passages Phase 23.8 left in the future tense --
+    # "remain accepted through Phase 23", "scheduled for Phase 24" -- which
+    # read as a promise the compiler no longer keeps.
+    # Moved out of FILE_ROWS, where they asserted the C surface was PRESENT.
+    # Leaving them there would have failed; deleting them would have asserted
+    # nothing. Inverted instead, with a companion replacement row below.
+    ("README.md", "selected explicitly with `--backend c`", "24.15"),
+    ("compiler/experiments/cranelift/README.md",
+     "Explicit `--backend c` / `--backend mir-to-c` remains the", "24.15"),
+    ("README.md", "backend removal scheduled for Phase 24", "24.15"),
+    ("README.md", "remain accepted through Phase 23", "24.15"),
+    ("README.md", "The deprecated C backend remains a temporary compatibility "
+     "path", "24.15"),
     ("compiler/test_runner_entry.gst",
      "gust --backend mir-to-c <source.gst>", "24.13"),
     ("scripts/run-gust-file.sh",
@@ -624,6 +638,20 @@ RETIRED_FILE_SURFACES = [
 # diagnostic needs both halves asserted: the old wording gone, and the new
 # wording there. Asserting only the first lets the check be deleted outright.
 REBASED_FILE_SURFACES = [
+    # The other half of the three rows above. Asserting only absence would
+    # pass on a README that says nothing at all about the backend, which is
+    # worse than a stale promise: a reader would not know the route is gone.
+    ("README.md", "was **removed in Phase 24**", "24.15"),
+    # Needle chosen to sit on ONE line: the prose wraps, and a needle that
+    # spans the wrap matches nothing while looking correct.
+    ("README.md", "are rejected with a diagnostic naming the removal", "24.15"),
+    # Removal of the backend is not removal of the bootstrap chain's C, and
+    # the document has to keep saying so or Phase 25's scope silently widens.
+    ("README.md", "their retirement is Phase 25's", "24.15"),
+    ("compiler/experiments/cranelift/README.md",
+     "The generated-C backend was **removed in Phase 24**", "24.15"),
+    ("compiler/experiments/cranelift/README.md",
+     "bootstrap path is separate and survives", "24.15"),
     ("compiler/test_runner_entry.gst",
      "the bootstrap emitter entry does not accept -o", "24.14"),
 ]
@@ -661,10 +689,6 @@ FILE_ROWS = [
      'std.Concat("./gust --backend mir-to-c ", path)', "24.13", "migrate"),
     ("tests/e2e_codegen_assertions.gst",
      '"./gust --backend mir-to-c tests/codegen_helper_pod_move.gst', "24.12", "convert"),
-    ("README.md",
-     "selected explicitly with `--backend c`", "24.15", "retire"),
-    ("compiler/experiments/cranelift/README.md",
-     "Explicit `--backend c` / `--backend mir-to-c`", "24.15", "retire"),
 ]
 
 SMOKE_FIXTURES = sorted([

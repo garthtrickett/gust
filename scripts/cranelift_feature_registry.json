@@ -23383,7 +23383,7 @@
       "selected_entry": "--backend bootstrap-emitter",
       "status": "patch24_11_decided_patch24_13_lands"
     },
-    "inventory_digest": "4a9e0a86cfb2b8d970ef89fae310aee7e52e50d5b45beab4d8a9d76c4b1bd831",
+    "inventory_digest": "37fa6d8149a7f7b479353bae6fa65dd882869c53e02f4c0271d2fefc7a436ef8",
     "retired": {
       "by": "24.12a",
       "harnesses": [
@@ -23404,7 +23404,7 @@
         "guard-cranelift-phase21-inert-scoped-query-records-evidence"
       ]
     },
-    "row_count": 109,
+    "row_count": 107,
     "rows": [
       {
         "action": "convert",
@@ -23800,16 +23800,6 @@
         "action": "convert",
         "id": "tests/e2e_codegen_assertions.gst :: \"./gust --backend mir-to-c tests/codegen",
         "owner_patch": "24.12"
-      },
-      {
-        "action": "retire",
-        "id": "README.md :: selected explicitly with `--backend c`",
-        "owner_patch": "24.15"
-      },
-      {
-        "action": "retire",
-        "id": "compiler/experiments/cranelift/README.md :: Explicit `--backend c` / `--backend mir-",
-        "owner_patch": "24.15"
       },
       {
         "action": "convert",
