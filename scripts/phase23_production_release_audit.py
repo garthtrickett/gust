@@ -161,9 +161,44 @@ def scan() -> dict[str, object]:
         "phase25_bootstrap_explicit_c_count": len(bootstrap),
         "non_bootstrap_retained_test_surface_count": len(non_bootstrap),
         "supported_production_or_release_explicit_c_count": 0,
-        "active_non_bootstrap_live_c_lane_count": 1,
-        "active_non_bootstrap_live_c_owner": "phase23_mir_to_c_focused_live",
+        # Patch 24.14: DERIVED, not declared. These were the literals `1` and
+        # "phase23_mir_to_c_focused_live", so the audit whose job is to say
+        # what live C remains asserted one surviving lane regardless of the
+        # tree. Patch 24.14 retires exactly that lane, which would have left
+        # this audit -- and every consumer of it through 24.15, 24.16 and the
+        # closure -- claiming a lane that no longer exists. A declared value
+        # standing in for a measured one is the #393 defect, here in the
+        # instrument the residue audit trusts most.
+        #
+        # A lane is ACTIVE when the script that owns it still builds an argv
+        # selecting the retired backend, which the frozen oracle already
+        # derives from the tree.
+        **_active_live_c_lanes(),
         "unknown_downstream_count": 0,
+    }
+
+
+
+# Registered non-bootstrap live-C lanes, and the script whose retired-backend
+# argv is what makes each one live.
+_LIVE_C_LANES = {
+    "phase23_mir_to_c_focused_live":
+        "scripts/phase21_cranelift_built_compiler_programs.py",
+}
+
+
+def _active_live_c_lanes() -> dict[str, object]:
+    """Which registered live-C lanes still execute the retired backend."""
+    spec = importlib.util.spec_from_file_location(
+        "_frozen_oracle", ROOT / "scripts/phase24_frozen_oracle.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    sites = module.python_retired_argv_sites()
+    active = sorted(lane for lane, owner in _LIVE_C_LANES.items()
+                    if owner in sites)
+    return {
+        "active_non_bootstrap_live_c_lane_count": len(active),
+        "active_non_bootstrap_live_c_owner": active[0] if active else None,
     }
 
 
@@ -385,10 +420,15 @@ def validate() -> tuple[dict, dict[str, object]]:
             # Patch 24.13 is the tail when present: it reclassifies two
             # bootstrap callers onto the bootstrap-only entry, so the
             # explicit-C counts fall while the calls remain.
+            toolchain_transition = registry.get(
+                "phase24_14_toolchain_removal", {}).get(
+                    "production_audit_transition")
             if removal_transition is not None:
                 require(removal_transition.get("contract_version") ==
                         "phase24_13_production_audit_transition_v1" and
-                        removal_transition.get("current_audit") == summary and
+                        removal_transition.get("current_audit") ==
+                        (toolchain_transition["previous_audit"]
+                         if toolchain_transition is not None else summary) and
                         sorted(removal_transition.get("reduced_fields",
                                                       [])) == [
                             "phase25_bootstrap_explicit_c_count",
@@ -397,6 +437,29 @@ def validate() -> tuple[dict, dict[str, object]]:
                             "partial_extra_or_substituted_audit") ==
                         "rejected",
                         "Patch 24.13 production audit transition drifted")
+                # Patch 24.14 becomes the tail. It retires the focused live
+                # oracle, so it reduces the non-bootstrap counts and leaves the
+                # Phase-25-owned bootstrap C alone -- the opposite shape from
+                # 24.13, which reduced bootstrap C by moving two Makefile rows
+                # to the bootstrap-only entry.
+                if toolchain_transition is not None:
+                    require(
+                        toolchain_transition.get("contract_version") ==
+                        "phase24_14_production_audit_transition_v1" and
+                        toolchain_transition.get("current_audit") == summary and
+                        toolchain_transition.get(
+                            "partial_extra_or_substituted_audit") ==
+                        "rejected",
+                        "Patch 24.14 production audit transition drifted")
+                    was = toolchain_transition["previous_audit"]
+                    require(
+                        was["phase25_bootstrap_explicit_c_count"] ==
+                        summary["phase25_bootstrap_explicit_c_count"],
+                        "Patch 24.14 must not move Phase-25-owned bootstrap C")
+                    require(
+                        summary["active_non_bootstrap_live_c_lane_count"] == 0,
+                        "Patch 24.14 retires the last non-bootstrap live-C "
+                        "lane, so this audit must measure none")
             removed = emitter_only_transition.get("removed_invocation_count")
             surface = registry.get(
                 "phase24_12a_emitter_only_retirement", {}).get(
@@ -419,10 +482,13 @@ def validate() -> tuple[dict, dict[str, object]]:
             # Patch 24.12b, when present, is the tail: the effective audit is
             # its current_audit, not 24.12a's, because that is the one the
             # live scan has to match.
-            # Patch 24.13 is the tail when present, so the effective audit is
-            # its current_audit -- that is the one the live scan must match.
+            # Patch 24.14 is the tail when present, then 24.13, then 24.12b:
+            # the effective audit is the newest registered successor's
+            # current_audit, because that is the one the live scan must match.
             effective["audit"] = (
-                removal_transition["current_audit"]
+                toolchain_transition["current_audit"]
+                if toolchain_transition is not None
+                else removal_transition["current_audit"]
                 if removal_transition is not None
                 else conversion_transition["current_audit"]
                 if conversion_transition is not None else current)

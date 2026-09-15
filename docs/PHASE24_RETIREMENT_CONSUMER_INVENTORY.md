@@ -6,8 +6,8 @@
 
 Status: `patch24_11_complete`
 Authority base: `b7b1713cd65630b14ae92e46afd393990928a2e2`
-Rows: `110`
-Digest: `8d32bf7cc1c00d97de97e33b88e1ae2ad63f445cdb1878154f39fb4f3e3ce9fa`
+Rows: `109`
+Digest: `4a9e0a86cfb2b8d970ef89fae310aee7e52e50d5b45beab4d8a9d76c4b1bd831`
 
 ## Bootstrap-entry decision
 
@@ -117,7 +117,6 @@ Digest: `8d32bf7cc1c00d97de97e33b88e1ae2ad63f445cdb1878154f39fb4f3e3ce9fa`
 
 - Makefile :: CC="${CC}" CFLAGS="${CFLAGS}" INCLUDES=" (migrate)
 - Makefile :: build/gust_final.c (migrate)
-- compiler/test_runner_entry.gst :: the MIR-to-C backend does not accept -o (retire)
 - scripts/phase21_cranelift_built_compiler_programs.py (retire)
 
 ### 24.15

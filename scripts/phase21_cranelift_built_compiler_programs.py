@@ -312,24 +312,21 @@ def render(record: dict) -> str:
     return "\n".join(lines)
 
 
-def compile_oracle(
-    source: str,
-    root: Path,
-    deadline: float,
-) -> tuple[Path, subprocess.CompletedProcess[bytes]]:
-    generated_c = root / "oracle.c"
-    compiled = run_before(deadline, [str(ROOT / "gust"), "--backend", "mir-to-c", source])
-    generated_c.write_bytes(compiled.stdout)
-    require(compiled.returncode == 0 and compiled.stderr == b"" and generated_c.stat().st_size > 0,
-            f"{source}: MIR-to-C oracle compilation failed")
-    artifact = root / "oracle"
-    linked = run_before(deadline, [
-        os.environ.get("CC", "cc"), "-O0", "-w", "-pthread", "-Isrc",
-        "-include", "src/runtime.c", str(generated_c), "-o", str(artifact),
-    ])
-    require(linked.returncode == 0 and linked.stdout == linked.stderr == b"" and artifact.is_file(),
-            f"{source}: MIR-to-C oracle link failed")
-    return artifact, compiled
+# Patch 24.14: compile_oracle is retired.
+#
+# This was the focused_live_oracle -- the single live-C lane Patch 23.10
+# deliberately retained, and the registered reason this file was excluded from
+# 24.12b's conversion rather than converted: it goes WITH the backend, not
+# before it. Patch 24.13 removed the user-facing spellings, so its oracle call
+# can no longer run at all.
+#
+# Retiring it is safe here for a reason worth stating rather than assuming: the
+# comparison below ran THREE artifacts -- oracle, reference and subject -- and
+# required all three to match the case's DECLARED run_exit, stdout and stderr.
+# Removing the oracle leaves two native arms still compared against each other
+# and against the declaration, which is the same structure that made the scale
+# guard's large_function cohort safe and large_module unsafe. Here both
+# survivors are native, so nothing loses its only second opinion.
 
 
 def assert_elf(path: Path, deadline: float) -> None:
@@ -374,7 +371,7 @@ def evidence(record: dict) -> None:
             case_root = tmp / case["id"]
             case_root.mkdir()
             source = case["source_fixture"]
-            oracle_artifact, _ = compile_oracle(source, case_root, deadline)
+            # Patch 24.14: the oracle arm is retired with the backend.
             reference_artifact = case_root / "reference-native"
             reference = run_before(deadline, [
                 str(ROOT / "gust"), "--backend", "cranelift", "-o",
@@ -408,7 +405,7 @@ def evidence(record: dict) -> None:
             assert_elf(reference_artifact, deadline)
             assert_elf(subject_artifact, deadline)
             executions = [run_before(deadline, [str(path)]) for path in
-                          (oracle_artifact, reference_artifact, subject_artifact)]
+                          (reference_artifact, subject_artifact)]
             expected_stdout = case["stdout"].encode()
             expected_stderr = case["stderr"].encode()
             require(

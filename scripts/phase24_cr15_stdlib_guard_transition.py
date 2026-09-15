@@ -961,6 +961,27 @@ def effective_phase22_summary(registry: dict, value: dict) -> dict:
             f"registered {moved}, explicit-C drop {drop}, destination rise "
             f"{rise}. An invocation that disappeared must not pass as one "
             "that moved.")
+
+    # Patch 24.14 continues the chain, and REDUCES where 24.13 reclassified:
+    # retiring the focused live oracle takes its one explicit-C invocation out
+    # of the census entirely rather than moving it to another backend.
+    toolchain = registry.get("phase24_14_toolchain_removal", {}).get(
+        "phase22_invocation_successor")
+    if toolchain is None:
+        return current
+    previous, current = current, toolchain.get("current_summary")
+    require(isinstance(current, dict) and
+            toolchain.get("previous_summary") == previous and
+            toolchain.get("partial_or_unregistered_reduction") == "rejected",
+            "Patch 24.14 Phase 22 invocation successor drifted")
+    require(toolchain.get("removed_invocation_count") ==
+            previous["total"] - current["total"] ==
+            previous["selection_counts"].get("explicit_c", 0) -
+            current["selection_counts"].get("explicit_c", 0),
+            "the Patch 24.14 census reduction is not entirely explicit-C")
+    require(current["unclassified_count"] == previous["unclassified_count"]
+            == 0,
+            "Patch 24.14 did not reduce a fully classified Phase 22 census")
     return current
 
 
@@ -1884,6 +1905,43 @@ def normalize_phase23_text_surfaces(
     # 24.12a: the newest link projects the tree back to the state the older
     # successors were registered against, so each hands the next the tree it
     # expects.
+    # Patch 24.14 is newer than 24.13, so it runs FIRST and projects the tree
+    # back to the state 24.13's successor was registered against. Same
+    # newest-first discipline as every link below; inserting it after 24.13
+    # would hand 24.13 a tree two patches ahead of what it recorded.
+    toolchain_surface = registry.get(
+        "phase24_14_toolchain_removal", {}).get("text_surface_successor")
+    if toolchain_surface is not None:
+        require(toolchain_surface.get("contract_version") ==
+                "phase24_14_text_surface_successor_v1" and
+                toolchain_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Patch 24.14 text surface successor drifted")
+        toolchain_paths = list(toolchain_surface["registered_changed_paths"])
+        toolchain_pre = {row["path"]: row for row
+                         in toolchain_surface["previous_changed_text_surfaces"]}
+        toolchain_post = {row["path"]: row for row
+                          in toolchain_surface["current_changed_text_surfaces"]}
+        require(sorted(toolchain_pre) == sorted(toolchain_paths) ==
+                sorted(toolchain_post),
+                "Patch 24.14 registered text surface is missing")
+        toolchain_live = {row["path"]: row for row in rows
+                          if row["path"] in toolchain_paths}
+        require(sorted(toolchain_live) == sorted(toolchain_paths),
+                "Patch 24.14 registered text surface is missing from the scan")
+        for path in toolchain_paths:
+            require(toolchain_live[path] in (toolchain_pre[path],
+                                             toolchain_post[path]),
+                    "Patch 24.14 changed text surfaces are partial or "
+                    f"substituted: {path}")
+        toolchain_added = set(toolchain_surface["added_text_surfaces"])
+        rows = [dict(toolchain_pre.get(row["path"], row)) for row in rows
+                if row["path"] not in toolchain_added]
+        rows = sorted(rows + [copy.deepcopy(r) for r
+                              in toolchain_surface["removed_text_surfaces"]],
+                      key=lambda row: str(row["path"]))
+        by_path = {row["path"]: row for row in rows}
+
     removal_surface = registry.get(
         "phase24_13_backend_removal", {}).get("text_surface_successor")
     if removal_surface is not None:

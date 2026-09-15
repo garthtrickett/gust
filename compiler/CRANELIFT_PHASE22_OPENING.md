@@ -9,7 +9,7 @@ Do not edit by hand.
 - Next patch: `22.2`
 - Observed main: `c157c86674624fd298c2f65e98ed8f4df85cb175`
 - Opening-baseline executable compiler invocations: `269`
-- Live successor executable compiler invocations: `184`
+- Live successor executable compiler invocations: `183`
 - Unclassified invocations: `0`
 - Relay state: `exact_post_relay_only`
 - Landed owning PR: `#264`
@@ -36,11 +36,11 @@ Do not edit by hand.
 ## Landed successor invocation summary
 
 - Landed selection `explicit_bootstrap_emitter`: `2`
-- Landed selection `explicit_c`: `46`
+- Landed selection `explicit_c`: `45`
 - Landed selection `explicit_cranelift`: `118`
 - Landed selection `explicit_invalid_or_parser_probe`: `3`
 - Landed selection `implicit_default`: `15`
-- Landed consumer class `already_explicit_or_parser_probe`: `169`
+- Landed consumer class `already_explicit_or_parser_probe`: `168`
 - Landed consumer class `cranelift_C_or_diagnostic_guard`: `2`
 - Landed consumer class `help_surface_probe`: `3`
 - Landed consumer class `intentional_default_selection_probe`: `8`
@@ -162,7 +162,6 @@ Do not edit by hand.
 | `scripts/phase21_collection_string_native_source.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase21_compiler_support_native_qualification.py` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase21_complete_guard_suite.py` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `scripts/phase21_cranelift_built_compiler_programs.py` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase21_cranelift_built_compiler_programs.py` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase21_cranelift_built_compiler_programs.py` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase21_cranelift_built_compiler_programs.py` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |

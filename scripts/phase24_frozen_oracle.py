@@ -561,11 +561,6 @@ PYTHON_RETIRED_ARGV_EXCLUSIONS: dict[str, str] = {
         "opening record for CR-15: its routes list is "
         "[explicit_c_spellings[0], explicit_native_backend], and the explicit-C "
         "route is the thing the opening measures. Its witness has no vector.",
-    "scripts/phase21_cranelift_built_compiler_programs.py":
-        "registered focused_live_oracle: classify_surface returns "
-        "focused_live_oracle for this path, the single live lane Patch 23.10 "
-        "deliberately retained. It goes with the backend at 24.13/24.14 "
-        "rather than being converted.",
     "scripts/phase23_same_scope_declaration.py":
         "no frozen vector covers its sources. compiler/"
         "phase23_same_scope_duplicate_current.gst and its positives have no "
