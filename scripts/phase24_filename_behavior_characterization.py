@@ -172,7 +172,12 @@ def validate_static(value: dict) -> None:
 
     entrypoints = value.get("current_file_input_manifest")
     require(entrypoints == [
-        {"path": "compiler/test_runner_entry.gst", "lines": [342, 356, 376]},
+        # Patch 24.13: these shifted by twelve when backend selection was
+        # removed and the help surface rewritten. Patch 24.3b's principle is
+        # that line numbers are display only and never digest inputs -- this
+        # manifest compares them directly, so any edit above them breaks a
+        # closed-phase record. Recorded here rather than silently bumped.
+        {"path": "compiler/test_runner_entry.gst", "lines": [354, 368, 388]},
         {"path": "compiler/test_runner_bootstrap_bridge_entry.gst",
          "lines": [199, 213, 233]},
         {"path": "compiler/type_dump_entry.gst", "lines": [38]},
