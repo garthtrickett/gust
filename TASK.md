@@ -512,6 +512,10 @@ documentation, and the registry.
 
 **Steps:**
 
+- Account for every `list-native` member this patch retires against the Patch
+  24.17 pre-retirement baseline (#405). Retiring a test-level entry shrinks a
+  population that 24.17's gate is measured over, and an unaccounted removal
+  makes that gate easier rather than failing it.
 - Require Patch 24.15a to have landed first (#404). This patch retires
   registry rows and test-level entries, which is what removes the redundancy
   currently masking `registry_named`'s unsound substring match. Running it
@@ -650,10 +654,146 @@ with one authoritative Historical Full run.
   incomplete or stale job populations and unresolved material findings.
 - Record run ID, full SHA, event, conclusion, unique job population, and
   budgets in generated authority before closure publication.
+- **Qualify the run against the pre-retirement population baseline below
+  (#405), not against whatever population the run happened to have.** Part of
+  this population is computed at run time: `just` dispatches
+  `python3 scripts/cranelift_test_levels.py list-native` at `justfile:276-280`
+  and the historical workflow reaches it through the phase9-core shard. Nothing
+  in the level script or the workflow pins the result — re-derived on this
+  tree, the literal `88` occurs **0** times in either.
+
+**Pre-retirement population baseline (#405).** Measured at `87231e50`, the
+Patch 24.12a merge, before any patch that retires a level entry has run:
+
+```text
+$ python3 scripts/cranelift_test_levels.py list-native | wc -l
+88
+```
+
+The 88 members, which 24.15, 24.15a and 24.16 may reduce only with an
+accounting, sorted:
+
+```text
+  guard-cranelift-add-i32-native-smoke
+  guard-cranelift-call-helper-i32-native-smoke
+  guard-cranelift-compiler-mir-add-i32-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-jump-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-local-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-local-branch-join-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-local-update-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-dual-materialize-return-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-imported-call-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-imported-call-return-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-imported-materialize-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-imported-materialize-return-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-imported-predicate-update-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-local-call-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-local-first-dual-materialize-return-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-local-materialize-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-local-materialize-return-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-merge-arm-update-imported-call-return-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-merge-dual-imported-joined-return-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-merge-imported-branch-joined-return-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-merge-imported-call-return-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-merge-update-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-quad-materialize-return-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-quint-materialize-return-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-triple-materialize-return-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-param-update-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-block-two-local-update-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-conditional-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-ingestion-invalid-fixtures-native-rejection
+  guard-cranelift-compiler-mir-local-binding-read-ingestion-native-smoke
+  guard-cranelift-compiler-mir-native-boundary-metadata-ingestion-native-smoke
+  guard-cranelift-compiler-mir-positive-i32-branch-ingestion-native-smoke
+  guard-cranelift-compiler-mir-provenance-metadata-ingestion-native-smoke
+  guard-cranelift-compiler-mir-resource-metadata-ingestion-native-smoke
+  guard-cranelift-compiler-mir-return-int-ingestion-native-smoke
+  guard-cranelift-conditional-branch-native-smoke
+  guard-cranelift-extern-add-i32-native-smoke
+  guard-cranelift-extern-call-i32-native-smoke
+  guard-cranelift-extern-predicate-branch-i32-native-smoke
+  guard-cranelift-identity-i32-native-smoke
+  guard-cranelift-increment-local-i32-native-smoke
+  guard-cranelift-local-binding-native-smoke
+  guard-cranelift-mir-add-i32-native-smoke
+  guard-cranelift-mir-arithmetic-i32-bundle-native-smoke
+  guard-cranelift-mir-block-graph-i32-bundle-native-smoke
+  guard-cranelift-mir-block-graph-local-i32-bundle-native-smoke
+  guard-cranelift-mir-block-graph-local-update-i32-bundle-native-smoke
+  guard-cranelift-mir-block-graph-param-call-i32-bundle-native-smoke
+  guard-cranelift-mir-block-graph-param-extern-add-i32-bundle-native-smoke
+  guard-cranelift-mir-block-graph-param-extern-i32-bundle-native-smoke
+  guard-cranelift-mir-block-graph-param-extern-predicate-i32-bundle-native-smoke
+  guard-cranelift-mir-block-graph-param-i32-bundle-native-smoke
+  guard-cranelift-mir-block-graph-param-merge-call-i32-bundle-native-smoke
+  guard-cranelift-mir-block-graph-param-merge-i32-bundle-native-smoke
+  guard-cranelift-mir-call-helper-i32-native-smoke
+  guard-cranelift-mir-comparison-branch-i32-bundle-native-smoke
+  guard-cranelift-mir-comparison-i32-bundle-native-smoke
+  guard-cranelift-mir-conditional-branch-native-smoke
+  guard-cranelift-mir-extern-add-i32-native-smoke
+  guard-cranelift-mir-extern-call-i32-native-smoke
+  guard-cranelift-mir-extern-predicate-branch-i32-native-smoke
+  guard-cranelift-mir-increment-local-i32-native-smoke
+  guard-cranelift-mir-local-binding-read-native-smoke
+  guard-cranelift-mir-positive-i32-branch-native-smoke
+  guard-cranelift-mir-return-int-native-smoke
+  guard-cranelift-mir-to-c-differential-native-smoke
+  guard-cranelift-mir-to-cranelift-add-i32-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-block-jump-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-block-local-branch-join-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-branch-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-block-param-merge-arm-update-imported-call-return-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-block-param-merge-dual-imported-joined-return-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-block-param-merge-imported-branch-joined-return-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-block-param-merge-imported-call-return-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-block-param-merge-update-branch-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-block-param-update-branch-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-conditional-branch-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-local-binding-read-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-native-boundary-metadata-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-positive-i32-branch-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-provenance-metadata-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-resource-metadata-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-return-int-translator-native-smoke
+  guard-cranelift-mir-to-cranelift-translator-seed-suite
+  guard-cranelift-phase9c-differential-ladder-native-smoke
+  guard-cranelift-positive-i32-branch-native-smoke
+  guard-cranelift-return-int-native-smoke
+```
 
 **Exit Gate:** the exact-main Historical population is fully green with zero
-unresolved material findings, and its evidence is recorded as the Phase 24
-closure authority.
+unresolved material findings; **every one of the 88 baseline members above
+either appears in that run's population or names the patch that retired it and
+the live invariant that went with it**; and its evidence is recorded as the
+Phase 24 closure authority.
+
+The gate as originally written was satisfiable by deletion. "Fully green" over
+a run-time-computed population that the retirement patches themselves shrink is
+met by asking less: 24.15 and 24.16 retire level entries, the smaller
+population runs green, and nothing notices. Patch 24.16 already states that
+*absence never counts as success* — the principle was written one patch before
+the gate that did not implement it, and nothing carried a baseline across that
+boundary. The falsifier over-approximates: the population **may not shrink**
+unless every missing member is individually accounted, so it fails on an
+unexplained absence rather than on a list.
+
+**Patch 24.18 inherits this.** A closure record citing a green Historical run
+inherits that run's population, so the closure generator is where the baseline
+accounting is asserted rather than merely available.
+
+**Stated at its current strength:** as of the amendment that records it, the
+list above is a *measured and dated value, not a mechanically enforced one*. No
+guard yet compares a later `list-native` against it. That is deliberate rather
+than overlooked — the comparison cannot be equality, because 24.15 and 24.16
+are expected to shrink the population legitimately, so the check needs the
+per-member accounting that does not exist until the closure generator (#406)
+is built. Until then the baseline's force is review: it is dated, it is
+re-derivable by the command printed with it, and 24.15's step list requires
+each member it retires to be accounted. Anyone reading this before that
+generator exists should not read the list as a passing check.
 
 ## Patch 24.18 — Phase 24 Closure and Terminal State
 
