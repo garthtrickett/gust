@@ -457,24 +457,53 @@ a separate seed-only PR, or the checked no-diff fixed point stands.
 
 ## Patch 24.14 — C Toolchain Discovery, Error, and Temp-File Removal
 
-**Purpose:** remove C compiler discovery from normal compilation with the
-C-specific error classes and temporary files that exist only to serve it.
+**Purpose:** remove C compiler discovery that exists to *emit and build C as a
+backend*, with the C-specific error classes and temporary files that exist only
+to serve it. Two things share the `CC` variable and the `cc` binary and are
+otherwise unrelated: the retired emission path, which this patch removes, and
+the supported native route's **linker driver**, which this patch must keep.
 
 **Steps:**
 
-- Delete C compiler discovery from normal compilation paths, the C-specific
-  error classes, and the temporary C files.
+- Delete C compiler discovery from the retired backend's emission and build
+  paths, the C-specific error classes, and the temporary C files.
+- **Except the native route's linker driver by name (#401), as the bootstrap
+  chain already is.** The supported route discovers it at
+  `compiler/experiments/cranelift/src/main.rs:16484-16485`
+  (`env::var_os("CC").unwrap_or_else(|| OsString::from("cc"))`) and invokes it
+  at `:33277` (`Command::new(&request.linker_driver)`), implementing the Patch
+  18.7 ordered discovery policy recorded at
+  `compiler/mir_target_authority.gst:660-665`. Deleting it removes the ability
+  to **link**, not the ability to emit C. Read literally, the unamended step
+  above required exactly that removal, and the unamended gate excepted only
+  bootstrap — so the roadmap demanded breaking the supported backend.
+- Treat the inventory as incomplete here rather than authoritative. `linker`,
+  `linker_driver`, `18.7`, `main.rs` and `cranelift/src` each occur **0** times
+  in `scripts/phase24_retirement_consumer_inventory.py`: the supported
+  backend's own implementation is absent from the census every removal patch is
+  sequenced from, so "not in the inventory" is not evidence that a `cc`
+  consumer is retired.
 - Prove normal builds and tests never invoke a C compiler for backend
   purposes; the Phase-25-owned bootstrap chain is excepted, not removed.
 - Keep diagnostics for genuinely missing native-toolchain pieces explicit and
   backend-accurate.
 
 **Exit Gate:** no normal compilation, test, or package route discovers or
-invokes a C compiler for backend purposes; the bootstrap chain's host-C use
-(assembling generated stage files with the host C compiler) is excepted by
-name and stays Phase-25-owned; C-specific errors and temp files
-are absent; `make gust` passes; and a moved seed reconverges in a separate
-seed-only PR, or the checked no-diff fixed point stands.
+invokes a C compiler **for backend emission or build** purposes; the native
+route's linker driver survives and the default route still links with a working
+`cc`; the bootstrap chain's host-C use (assembling generated stage files with
+the host C compiler) is excepted by name and stays Phase-25-owned; C-specific
+errors and temp files are absent; `make gust` passes; and a moved seed
+reconverges in a separate seed-only PR, or the checked no-diff fixed point
+stands.
+
+The linker exception carries an **over-approximating** falsifier, not an
+enumerated one: the retained discovery must be the *only* surviving `CC`/`cc`
+consumer outside the Phase-25 bootstrap chain, so the check fails on a new
+consumer rather than on a list that inherits whichever enumeration was wrong.
+Same family as #396, #398 and #403 — each an item a census could not contain —
+and this is the one whose removal breaks the supported route rather than a
+guard.
 
 ## Patch 24.15 — Package, Documentation, and Registry Retirement
 
