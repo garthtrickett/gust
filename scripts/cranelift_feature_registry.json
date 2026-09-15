@@ -24867,6 +24867,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "c57e862a113a7090cc7e5640048fa7fc64954962a42f7f0dc68db9c5bab20be4",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 30
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_test_levels.json",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "5b2eaf7400163426ece066101d83f44a7db02e9920bf5dc46a0b3d9858a8dfd4",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -24912,7 +24927,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "1d27cc047570caf4e707172ea2d50c5c47160d2236dc49ba53d5baf6b3f9d50a",
+          "digest": "ccf2bd58a8a519e6b266cee0ebbd2d54bf5ad1525d3cfd65be90e8aca63e9f3b",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -25140,6 +25155,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "943c270a0a6c29ad4c32b62c82586c71a3110b9a9519a56bc7efc97195687c0e",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 30
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_test_levels.json",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "ee618cb6131bf18de07e3098e66d04d75c50025f40e4a24f854b8028fca8ee0c",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -25324,6 +25354,7 @@
         "compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md",
         "docs/PHASE24_RETIREMENT_CONSUMER_INVENTORY.md",
         "scripts/cranelift_registry.py",
+        "scripts/cranelift_test_levels.json",
         "scripts/phase20_generated_mir_scale.py",
         "scripts/phase21_compiler_support_native_qualification.py",
         "scripts/phase21_inert_scoped_query_records.py",
