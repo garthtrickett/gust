@@ -6,6 +6,8 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
+import sys
+import tempfile
 from pathlib import Path
 
 
@@ -205,16 +207,36 @@ def evidence() -> None:
         ("arbitrary_generic_rejected", b"Argument type mismatch for function 'identity'"),
         ("unprotected_rejected", b"[ProtectedResourceDerivation]"),
     ):
-        outputs = []
-        for route in (("--backend", "mir-to-c"), ("--backend", "cranelift")):
-            result = run([str(compiler), *route, str(witnesses[key])])
-            require(result.returncode == 1 and not result.stderr and
-                    diagnostic in result.stdout,
-                    f"negative authority drifted for {key}: {route}")
-            require(not native_artifact(witnesses[key]).exists(),
-                    f"negative case produced an artifact for {key}")
-            outputs.append(result.stdout)
-        require(outputs[0] == outputs[1],
+        # Patch 24.12b: the retired arm is served from the frozen oracle and
+        # the native arm still runs live. What changed is which side of the
+        # comparison executes, not what the comparison means -- the two
+        # diagnostics are still required to be byte identical.
+        witness = witnesses[key]
+        vector_id = witness.relative_to(ROOT).as_posix()
+        with tempfile.TemporaryDirectory(prefix="gust-cr15-frozen-") as raw:
+            prefix = Path(raw) / "frozen"
+            materialized = run([sys.executable,
+                                "scripts/phase24_frozen_oracle.py",
+                                "materialize", vector_id, str(prefix),
+                                "--kind", "reject"])
+            require(materialized.returncode == 0,
+                    f"frozen oracle refused {key}: "
+                    f"{materialized.stderr.decode(errors='replace')[:200]}")
+            frozen_status = int(
+                Path(f"{prefix}.compile.status").read_text().strip())
+            frozen_stdout = Path(f"{prefix}.compile.stdout").read_bytes()
+            frozen_stderr = Path(f"{prefix}.compile.stderr").read_bytes()
+        require(frozen_status == 1 and not frozen_stderr and
+                diagnostic in frozen_stdout,
+                f"frozen negative authority drifted for {key}")
+
+        native = run([str(compiler), "--backend", "cranelift", str(witness)])
+        require(native.returncode == 1 and not native.stderr and
+                diagnostic in native.stdout,
+                f"negative authority drifted for {key}: native")
+        require(not native_artifact(witness).exists(),
+                f"negative case produced an artifact for {key}")
+        require(frozen_stdout == native.stdout,
                 f"pre-driver diagnostics diverged for {key}")
     check_review(value)
     print("phase24_cr15_derivation: evidence ok")
