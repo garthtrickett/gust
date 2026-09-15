@@ -5,6 +5,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import tempfile
+import sys
+import subprocess
 from pathlib import Path
 
 
@@ -158,12 +161,21 @@ def validate() -> dict:
             TASK.read_text(encoding="utf-8"),
             "TASK.md does not mark Patch 21.2 DONE")
 
-    # Patch 24.12a retired the Level 2 evidence recipe. Its only substance
-    # was scripts/phase21_inert_scoped_query_records.sh, whose two arms were
-    # both MIR-to-C, so what it compared was a property of the emitter being
-    # retired. The Level 1 contract is untouched and still carries this
-    # patch's live invariant: it validates the registry authority and its
-    # generated review, and names no backend at all.
+    # Patch 24.12a retired the Level 2 evidence recipe. The rationale
+    # recorded here described that harness as two arms, both on the retired
+    # route. It had FIVE, and three of them were backend-neutral (#413): a
+    # positive round trip and two compile-fail cases whose OpaqueConstruction
+    # and PrivateDeclarationAccess rejections are raised in the typechecker
+    # before any backend emits. The retirement was right about the emitter
+    # arms and wrong about those three, and nothing on the tree compiled the
+    # three fixtures afterwards -- the surviving Level 1 validator checked
+    # that witness strings were still present in source, which is not a
+    # behaviour test.
+    #
+    # Patch 24.12b restores the behavioural half in replay_front_end below,
+    # from the frozen vectors that already recorded it. The Level 1 contract
+    # otherwise still carries this patch's live invariant: it validates the
+    # registry authority and its generated review.
     #
     # Asserted in the inverse rather than dropped. A clause that simply
     # stopped mentioning the evidence guard would say nothing about it, and
@@ -260,6 +272,62 @@ def render(record: dict) -> str:
     return "\n".join(lines)
 
 
+# Patch 24.12b (#413): the behavioural half Patch 24.12a retired with the
+# emitter arms. These three fixtures are typechecker cases -- two rejections
+# raised before any backend emits, and one positive round trip -- so they were
+# never emitter-coupled and should not have gone with the golden loop.
+#
+# Replayed from the frozen vectors rather than recompiled: the expected
+# observation was already captured, so this needs a runner, not new goldens,
+# and it executes no C. That is what lets it sit in the Level 1 contract
+# instead of reviving a Level 2 evidence recipe.
+FRONT_END_REPLAY = (
+    ("compiler/typed_query_semantic_records_forge_invalid.gst", "reject",
+     b"[OpaqueConstruction]"),
+    ("compiler/typed_query_semantic_records_private_constructor_invalid.gst",
+     "reject", b"[PrivateDeclarationAccess]"),
+    ("compiler/typed_query_semantic_records_test_entry.gst", "exec",
+     b"SUCCESS: Phase 21 inert scoped-query semantic records round-tripped"),
+)
+
+
+def replay_front_end() -> int:
+    """Assert the two rejections and the positive round trip still hold."""
+    replayed = 0
+    for vector_id, kind, needle in FRONT_END_REPLAY:
+        require((ROOT / vector_id).is_file(),
+                f"Patch 21.2 front-end fixture is missing: {vector_id}")
+        with tempfile.TemporaryDirectory(prefix="gust-p21-inert-") as raw:
+            prefix = Path(raw) / "frozen"
+            served = subprocess.run(
+                [sys.executable, "scripts/phase24_frozen_oracle.py",
+                 "materialize", vector_id, str(prefix), "--kind", kind],
+                cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                check=False)
+            require(served.returncode == 0,
+                    f"the frozen oracle refused {vector_id}: "
+                    f"{served.stderr.decode(errors='replace')[:200]}")
+            if kind == "reject":
+                status = int(Path(f"{prefix}.compile.status")
+                             .read_text().strip())
+                stdout = Path(f"{prefix}.compile.stdout").read_bytes()
+                stderr = Path(f"{prefix}.compile.stderr").read_bytes()
+                require(status == 1 and not stderr and needle in stdout,
+                        f"Patch 21.2 front-end rejection drifted for "
+                        f"{vector_id}")
+            else:
+                status = int(Path(f"{prefix}.status").read_text().strip())
+                stdout = Path(f"{prefix}.stdout").read_bytes()
+                require(status == 0 and needle in stdout,
+                        f"Patch 21.2 positive round trip drifted for "
+                        f"{vector_id}")
+        replayed += 1
+    require(replayed == len(FRONT_END_REPLAY),
+            "Patch 21.2 front-end replay skipped a case; absence is not "
+            "success")
+    return replayed
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("command", choices=(
@@ -282,7 +350,12 @@ def main() -> None:
                 row.get("generated_c_golden", "-"),
             )))
         return
-    print(f"{GUARD_L1}: ok")
+    # #413: the behavioural half runs inside the Level 1 contract, which PR
+    # Fast already owns, so the coverage returns without reviving a Level 2
+    # recipe. The count is printed rather than implied -- a replay that
+    # silently covered fewer cases would otherwise read as "ok".
+    replayed = replay_front_end()
+    print(f"{GUARD_L1}: ok ({replayed} front-end cases replayed)")
 
 
 if __name__ == "__main__":
