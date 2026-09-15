@@ -14,14 +14,19 @@ reports far too many orphans:
   1. `just <recipe>` written literally in a workflow, plus everything that
      recipe pulls in -- its dependency list and any `just <other>` in its body.
   2. The same, transitively.
-  3. Names carried in the registries that generate CI families, which dispatch
-     guards without ever naming them in YAML.
+  3. The CI families the registries generate, which dispatch guards without
+     ever naming them in YAML. Until Patch 24.15a this source was approximated
+     by testing whether a registry file *mentions* the name; it is now modeled
+     directly, by resolving the `just "$var"` dispatch sites into edges
+     (`dynamic_edges`). A mention is a classification, not a route, and
+     issue #393 is what happens when the two are conflated.
 """
 
 import argparse
 import json
 import pathlib
 import re
+import subprocess
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -58,6 +63,27 @@ def justfile_sources(path, seen=None):
     return out
 
 
+QUOTED = re.compile(r"'[^']*'|\"[^\"]*\"")
+
+
+def strip_quoted(line):
+    """Blank out quoted spans so a searched-for name is not read as a call.
+
+    Issue #390: `parse_justfile` matched `just <recipe>` anywhere in a body,
+    including inside the *pattern* of an assertion that forbids or requires a
+    call -- `rg -n -F 'just guard-x' "$body"` -- and inside bash arrays of
+    expected tokens (`justfile:105-111`). Both are text about a call, not a
+    call, and reading them as edges makes an orphan look reachable.
+
+    Blanking quoted spans is sound here because no recipe invokes `just` from
+    inside a quoted string: there is no `bash -c "just ..."` and no
+    `xargs just` in any justfile source. A real call is always unquoted, and
+    its quoted *arguments* (`just guard-x "{{shard}}"`) are untouched because
+    only the argument span is blanked, not the call.
+    """
+    return QUOTED.sub(lambda m: " " * len(m.group(0)), line)
+
+
 def parse_justfile(text):
     """Return ({recipe: [recipes it reaches]}, {recipes that take parameters})."""
     edges = {}
@@ -82,10 +108,115 @@ def parse_justfile(text):
         bodies[current] = []
     # A recipe may also shell out to `just other-recipe`, which is an edge too.
     for recipe, body in bodies.items():
-        for call in JUST_CALL.finditer("\n".join(body)):
-            if call.group(1) in edges:
-                edges[recipe].append(call.group(1))
+        for line in body:
+            for call in JUST_CALL.finditer(strip_quoted(line)):
+                if call.group(1) in edges:
+                    edges[recipe].append(call.group(1))
     return edges, parameterised
+
+
+def _recipe_bodies(text):
+    """Recipe name -> body lines. Shared so the dispatch model and the call
+    graph cannot drift apart; `parse_justfile`'s two-value signature is public
+    (phase24_retirement_consumer_inventory.liveness unpacks it) and must not
+    change to expose this."""
+    bodies = {}
+    current = None
+    for line in text.split("\n"):
+        if line[:1] in (" ", "\t"):
+            if current:
+                bodies[current].append(line)
+            continue
+        if line.startswith("#") or not line.strip() or ":=" in line:
+            continue
+        match = RECIPE_HEAD.match(line)
+        if not match:
+            continue
+        current = match.group(1)
+        bodies[current] = []
+    return bodies
+
+
+SINGLE_QUOTED = re.compile(r"'[^']*'")
+DISPATCH = re.compile(r'just\s+"\$\{?(\w+)')
+ARRAY_OPEN = re.compile(r"^\s*(\w+)=\(\s*$")
+PY_SOURCE = re.compile(r"python3\s+(scripts/[A-Za-z0-9_.-]+\.py)\s+([a-z][a-z0-9-]*)")
+
+
+def _run_name_source(script, subcommand):
+    """Ask an authority script for the names it dispatches, or return None."""
+    try:
+        out = subprocess.run([sys.executable, script, subcommand],
+                             capture_output=True, text=True, timeout=120,
+                             cwd=str(ROOT))
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if out.returncode != 0:
+        return None
+    return [line.strip() for line in out.stdout.split("\n") if line.strip()]
+
+
+def dynamic_edges(text, known):
+    """Resolve `just "$var"` dispatch into real edges (issue #393).
+
+    `parse_justfile` only sees literal `just <name>`, so every dynamically
+    dispatched guard is invisible to it -- and `registry_mentioned`'s
+    substring match had been silently standing in for the missing model.
+    This function is now that model, and the exemption it stood in for is
+    gone: see `registry_mentioned` and `main`.
+
+    Each dispatching body is resolved by unioning every name source it
+    contains: literal bash arrays, and the output of any authority script it
+    invokes (`cranelift_test_levels.py list-native`,
+    `phase15/16/17_*.py individual-guards`). The union **over-approximates**:
+    a body that filters its list through `rg` before dispatching gets edges to
+    the unfiltered set. That is the safe direction for a reachability claim --
+    it can only make a guard look live, never dead -- and it is recorded here
+    rather than tuned away, because the filters are themselves computed.
+
+    Raises if a body dispatches but offers no resolvable source. An
+    unmodelled dispatch site must fail loudly rather than silently contribute
+    nothing, which is exactly how #393 went unnoticed.
+    """
+    cache = {}
+    extra = {}
+    for recipe, body in _recipe_bodies(text).items():
+        text = "\n".join(body)
+        # Only single-quoted spans are blanked here, not all quoted spans:
+        # a real dispatch *is* `just "$guard_recipe"` (double-quoted variable),
+        # while the assertion that forbids one wraps the whole call in single
+        # quotes (`rg -n -F 'just "$guard_recipe"'`, justfile:1834). Reusing
+        # strip_quoted would blank the variable itself and resolve nothing --
+        # it silently reported 0 dispatch sites when there are 7.
+        targets = {m.group(1) for m in DISPATCH.finditer(SINGLE_QUOTED.sub(" ", text))}
+        if not targets:
+            continue
+        names = set()
+        in_array = False
+        for line in body:
+            if ARRAY_OPEN.match(line):
+                in_array = True
+                continue
+            if in_array:
+                if line.strip() == ")":
+                    in_array = False
+                elif NAME.fullmatch(line.strip()):
+                    names.add(line.strip())
+        for script, sub in PY_SOURCE.findall(text):
+            key = (script, sub)
+            if key not in cache:
+                cache[key] = _run_name_source(script, sub)
+            if cache[key]:
+                names.update(cache[key])
+        resolved = {n for n in names if n in known}
+        if not resolved:
+            raise SystemExit(
+                f"guard_reachability: recipe {recipe!r} dispatches "
+                f"`just \"${sorted(targets)[0]}\"` but no name source in its "
+                f"body could be resolved. Issue #393: an unmodelled dispatch "
+                f"site must fail here, not silently contribute no edges.")
+        extra[recipe] = sorted(resolved)
+    return extra
 
 
 def workflow_roots(edges):
@@ -109,26 +240,166 @@ def reachable(edges, roots):
     return seen
 
 
-def registry_named(names):
-    """Names a registry mentions. Substring matching is deliberate: the
-    registries embed guard names inside larger command strings."""
+def registry_mentioned(names):
+    """Names a CI-family registry mentions. **Diagnostic only. Never
+    subtracted from the orphan set** (issue #393).
+
+    Until Patch 24.15a this was `registry_named`, and `main()` computed
+    `orphans = unreached - registry_named(unreached)`. A guard therefore left
+    the orphan report because its name occurred as a substring of a registry
+    file -- as a level assignment, a historical `frozen_recipes` entry, a
+    `not_repaired` record, or an inventory row that says the guard has no
+    execution route. None of those runs anything, and the last one is
+    circular: the register of guards with no execution route was itself
+    keeping them off the report.
+
+    The exemption was defensible while the graph was literal-call-only,
+    because the registries genuinely do drive execution -- through the
+    `just "$var"` dispatch sites `dynamic_edges` models as of this patch.
+    That model is the exemption's replacement, and `main()` asserts it still
+    contributes rather than assuming it. Measured here once the model was in
+    place: of the 45 names the exemption removed from the report, 28 have no
+    caller at all and 17 are called only by recipes that are themselves
+    unreachable. Zero are the target of a reachable dispatcher. So the
+    substring test survives as a label for Patch 24.16's triage, and stops
+    deciding reachability.
+
+    Substring matching is still deliberate for that labelling purpose: the
+    registries embed guard names inside larger command strings.
+    """
     blobs = [p.read_text() for p in REGISTRIES if p.exists()]
     return {n for n in names if any(n in blob for blob in blobs)}
 
 
+def selftest_quoted_is_not_a_call():
+    """Fail if a searched-for name is read as a call edge again (issue #390).
+
+    This asserts on `parse_justfile` directly rather than through the report,
+    because the report cannot see the difference: every recipe this repair
+    makes unreachable was, at the time this was written, absorbed by the
+    registry-mention exemption, so the aggregate output is byte-identical
+    before and after the fix. Measured on
+    `b7a028df`: reachable falls 591 -> 584 and the guard still prints
+    "unreachable: 20 (20 known, 0 new)". Asserting here is the only place the
+    correction is observable -- the two unsound parts cancel everywhere else,
+    which is issue #395's mechanism and why #390 must not be judged by whether
+    the summary moved.
+
+    The fixture is synthetic on purpose: a live-justfile assertion would drift
+    the moment a recipe is renamed, and start passing for the wrong reason.
+    """
+    sample = "\n".join([
+        "guard-a:",
+        "    just guard-real",
+        "    rg -n -F 'just guard-forbidden' \"$body\"",
+        "    tokens=( 'just guard-token' )",
+        "    just guard-with-arg \"{{shard}}\"",
+        "guard-real:",
+        "guard-forbidden:",
+        "guard-token:",
+        "guard-with-arg:",
+    ])
+    edges, _ = parse_justfile(sample)
+    reached = edges["guard-a"]
+    if "guard-real" not in reached:
+        raise SystemExit(
+            "guard_reachability selftest: an unquoted `just` call stopped "
+            "being an edge; the repair is over-broad")
+    if "guard-with-arg" not in reached:
+        raise SystemExit(
+            "guard_reachability selftest: a call with a quoted argument "
+            "stopped being an edge; only the argument may be blanked")
+    if "guard-forbidden" in reached:
+        raise SystemExit(
+            "guard_reachability selftest: a name inside an rg pattern is "
+            "being read as a call edge again (issue #390)")
+    if "guard-token" in reached:
+        raise SystemExit(
+            "guard_reachability selftest: a name inside a quoted array token "
+            "is being read as a call edge again (issue #390)")
+
+
+def selftest_dispatch_is_modelled():
+    """Fail if dynamic dispatch stops producing edges (issue #393).
+
+    Asserts both directions on a synthetic fixture: a resolvable source must
+    yield edges, and an unresolvable dispatch must raise rather than quietly
+    contribute nothing -- silence is how #393 survived.
+    """
+    sample = "\n".join([
+        "dispatcher:",
+        "    guards=(",
+        "      guard-alpha",
+        "      guard-beta",
+        "    )",
+        "    for g in \"${guards[@]}\"; do",
+        "      just \"$g\"",
+        "    done",
+        "guard-alpha:",
+        "guard-beta:",
+    ])
+    edges, _ = parse_justfile(sample)
+    resolved = dynamic_edges(sample, set(edges))
+    if sorted(resolved.get("dispatcher", [])) != ["guard-alpha", "guard-beta"]:
+        raise SystemExit(
+            "guard_reachability selftest: dynamic dispatch is no longer "
+            "resolved into edges (issue #393); got "
+            f"{resolved.get('dispatcher')}")
+    blind = "\n".join([
+        "blind:",
+        "    for g in \"${mystery[@]}\"; do",
+        "      just \"$g\"",
+        "    done",
+        "guard-alpha:",
+    ])
+    blind_edges, _ = parse_justfile(blind)
+    try:
+        dynamic_edges(blind, set(blind_edges))
+    except SystemExit:
+        return
+    raise SystemExit(
+        "guard_reachability selftest: an unresolvable dispatch site no "
+        "longer fails (issue #393); it must not silently contribute nothing")
+
+
 def main():
+    selftest_quoted_is_not_a_call()
+    selftest_dispatch_is_modelled()
     parser = argparse.ArgumentParser()
     parser.add_argument("--list", action="store_true",
                         help="print the current orphans and exit 0")
     args = parser.parse_args()
 
-    edges, parameterised = parse_justfile("\n".join(justfile_sources(JUSTFILE)))
+    justfile_text = "\n".join(justfile_sources(JUSTFILE))
+    edges, parameterised = parse_justfile(justfile_text)
+    # Issue #393: fold dynamically dispatched guards into the graph. This is
+    # the model that the registry-mention exemption used to stand in for, so
+    # it is built before reachability and asserted below, not assumed.
+    dispatched = dynamic_edges(justfile_text, set(edges))
+    for recipe, names in dispatched.items():
+        edges[recipe].extend(names)
     # A recipe that takes arguments cannot be a gate on its own -- something has
     # to supply the arguments -- so only argument-free recipes are checked.
     guards = {r for r in edges if r.startswith("guard-") and r not in parameterised}
     seen = reachable(edges, workflow_roots(edges))
-    unreached = guards - seen
-    orphans = sorted(unreached - registry_named(unreached))
+    # Issue #393: an orphan is a guard no execution route reaches. A registry
+    # mention is not an execution route, so nothing is subtracted here; the
+    # mention count is printed below as a label, not applied as an exemption.
+    orphans = sorted(guards - seen)
+
+    # The exemption's replacement, asserted rather than assumed. Registry
+    # authority reaches guards through `just "$var"` dispatch, and if every
+    # dispatching recipe fell out of the workflow closure that coverage would
+    # silently drop to zero -- which, with the exemption gone, would report
+    # the whole registry-driven population as orphans. Fail here instead.
+    registry_routed = {name for recipe, names in dispatched.items()
+                       if recipe in seen for name in names}
+    if not registry_routed:
+        raise SystemExit(
+            "guard_reachability: no recipe reachable from a workflow "
+            "dispatches a guard through a registry authority. The modeled "
+            "dispatch that replaced issue #393's mention exemption now "
+            "covers nothing, so the orphan report cannot be trusted.")
 
     if args.list:
         for name in orphans:
@@ -141,14 +412,19 @@ def main():
 
     print(f"guard recipes: {len(guards)}")
     print(f"reachable from a workflow: {len(guards & seen)}")
-    print(f"named in a CI-family registry: {len(unreached) - len(orphans)}")
+    print("  reached through modeled registry dispatch: "
+          f"{len(registry_routed & guards & seen)}")
     print(f"unreachable: {len(orphans)} ({len(allowed)} known, {len(new)} new)")
+    print("  merely named in a CI-family registry (a label, not a route): "
+          f"{len(registry_mentioned(set(orphans)))}")
 
     if new:
         print("\nThese guard recipes are reachable from nothing:")
         for name in new:
             print(f"  {name}")
-        print("\nWire each into a workflow or a CI-family registry, or delete it.")
+        print("\nWire each into a workflow, or into a CI family that "
+              "dispatches it, or delete it.")
+        print("Naming it in a registry is not enough -- that is issue #393.")
         print("A guard nothing runs is not coverage.")
         return 1
 
