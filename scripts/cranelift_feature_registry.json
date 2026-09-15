@@ -7694,7 +7694,7 @@
       {"fixture":"tests/test_tcs_non_pod_on_stack_rejected.gst","caller":"tests/test_runner.gst","caller_line":1566,"expected_diagnostic_fragment":"StackAllocationViolation"}
     ],
     "current_file_input_manifest": [
-      {"path":"compiler/test_runner_entry.gst","lines":[342,356,376]},
+      {"path":"compiler/test_runner_entry.gst","lines":[354,368,388]},
       {"path":"compiler/test_runner_bootstrap_bridge_entry.gst","lines":[199,213,233]},
       {"path":"compiler/type_dump_entry.gst","lines":[38]}
     ],
