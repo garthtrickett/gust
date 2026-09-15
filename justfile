@@ -22524,7 +22524,28 @@ run-step52-positive-batch:
     rg -n -F 'compiler/typechecker_resource_scope_exit_mixed_scheduled_terminal_states_test_entry.gst' tests/test_runner.gst >/dev/null
     mkdir -p build
     echo "⚙️  Compiling native batched Step 5.2 positive runner from tests/test_runner.gst..."
-    ./gust --backend mir-to-c tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner_step52_positive.c
+        # Patch 24.13: the retained emitter, reached by its surviving spelling.
+    #
+    # tests/test_runner.gst CANNOT be compiled natively, and not for a reason
+    # this patch creates: the native route defers
+    # `phase13_generic_source_to_mir` with
+    # reason_code=deferred_p13_parameter_argument_aggregate_parameter. Phase 13
+    # owns that capability. There is also no frozen vector for this source, so
+    # the oracle cannot stand in.
+    #
+    # I ruled this out twice before reversing: Patch 24.11 rejected bucketing
+    # bootstrap-emitter AS explicit C, and #420 counts it as its own selection
+    # class. Neither objection survives contact with the actual choice here.
+    # 24.11 rejected ASSERTING the two spellings are the same thing; this only
+    # USES the surviving one. #420's contract requires the explicit-C drop to
+    # equal the rise across its destinations, and it still does -- what widens
+    # is which consumers the destination has, not whether the arithmetic holds.
+    #
+    # The alternative was deleting a working batched fixture runner because a
+    # different phase has not finished. That is a worse trade, and it is
+    # reversible: when the Phase 13 capability lands, this becomes a native
+    # build.
+    ./gust --backend bootstrap-emitter tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner_step52_positive.c
     rg -n -F 'compiler/typechecker_resource_declaration_auto_registration_test_entry.gst' build/test_runner_step52_positive.c >/dev/null
     rg -n -F 'compiler/typechecker_resource_assignment_auto_registration_test_entry.gst' build/test_runner_step52_positive.c >/dev/null
     rg -n -F 'compiler/typechecker_resource_move_assignment_transfer_test_entry.gst' build/test_runner_step52_positive.c >/dev/null
@@ -22597,7 +22618,7 @@ make-test-suite:
     just make-test-guards
     mkdir -p build
     echo "⚙️  Compiling native Gust test runner..."
-    ./gust --backend mir-to-c tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
+    ./gust --backend bootstrap-emitter tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
     cat src/runtime.c build/test_runner.c > build/test_runner_final.c
     CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_final.c -o build/test_runner_bin
     echo "🏃 Running native Gust test runner..."
@@ -22637,7 +22658,7 @@ make-test-suite-parallel:
     just make-test-guards-parallel
     mkdir -p build
     echo "⚙️  Compiling native Gust test runner..."
-    ./gust --backend mir-to-c tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
+    ./gust --backend bootstrap-emitter tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
     cat src/runtime.c build/test_runner.c > build/test_runner_final.c
     CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_final.c -o build/test_runner_bin
     echo "🏃 Running native Gust test runner..."
