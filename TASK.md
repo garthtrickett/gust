@@ -115,7 +115,7 @@ Out of scope:
 - [x] Patch 24.11 — Generated-C Consumer and Route Inventory — DONE
 - [x] Patch 24.12 — Frozen Expected-Behaviour Oracle Replacement — DONE
 - [x] Patch 24.12a — Emitter-Only Parity Guard Retirement — DONE
-- [ ] Patch 24.12b — Python Parity Guard Conversion
+- [x] Patch 24.12b — Python Parity Guard Conversion — DONE
 - [ ] Patch 24.13 — Backend-Selection and Publication-Path Removal
 - [ ] Patch 24.14 — C Toolchain Discovery, Error, and Temp-File Removal
 - [ ] Patch 24.15a — Reachability Instrument Repair
@@ -409,6 +409,53 @@ inside a single function.
 - Widen the gate's population to include `scripts/*.py`. This is part of the
   patch, not a follow-up: a gate that cannot see a population cannot close
   over it.
+- **Two dispositions are decided here rather than deferred, because both are
+  on the critical path and 24.13 removes the option set.**
+  `scripts/phase20_generated_mir_scale.py`'s two retired-backend arms are
+  **retired, not converted**, and materializing its fixtures would not have
+  helped: one site synthesizes every case per run, and the other measures the
+  *elapsed time and peak RSS of the retired backend itself* as a performance
+  budget, which no frozen vector can serve. The guard's purpose — native scale
+  qualification — survives, because it compares three arms against a declared
+  `expected_exit` and removing the retired one leaves a two-arm native
+  differential. The per-cohort budget rows keyed on the retired backend are
+  retired with it. Second, the **emitter-only arms inside the two CR-15
+  guards** are retired on Patch 24.12a's precedent, each replaced by an
+  inverse assertion rather than deleted, so the record says the arm is gone
+  instead of saying nothing.
+- **Measure the source-resolution split before capturing anything (#416).**
+  A frozen vector is keyed by source path and pins `source_sha256`, so the
+  oracle's identity model assumes a tracked file. The eight do not divide that
+  way and the list does not say so: `scripts/phase20_generated_mir_scale.py`
+  has **no tracked fixtures at all** — its one `.gst` mention, at `:419-421`,
+  constructs and writes each case itself — so no budget discharges the
+  conversion step for it, and
+  `scripts/phase24_resource_implicit_transfer.py` is partial, with three
+  tracked sources and three written into a temp directory, one of them a
+  deliberately renamed module where materializing the rename may destroy the
+  property under test. Classify each locus as capturable as-is, capturable
+  after materialization, or not path-keyable, as a property the validator
+  measures — it fails when a guard starts synthesizing sources — and give the
+  last two a registered disposition rather than a silent omission. Note the
+  interaction with the deadline: materialization and guard rework are **not**
+  blocked by 24.13, but capture is, so the tracked-fixture captures happen
+  here even where the rework lands later.
+- **Capture a frozen vector set v2 covering these guards' sources first
+  (#416). This patch is granted that authority explicitly, with the boundary
+  below; without it the conversion step is not executable.** Measured at
+  `6592c5b4`: the eight reference 33 distinct literal `.gst` fixtures and **2**
+  have a vector, neither necessarily on the retired arm, so 2 is an upper bound
+  on coverage rather than a count of it. The 253 v1 vectors are the *shell*
+  harness corpus Patch 24.12 captured; nothing captured the Python guards'
+  fixtures, because 24.12's measurement could not see them, which is this
+  patch's premise. The oracle has no capture command by design
+  (`scripts/phase24_frozen_oracle.py:15,19`) and refuses the operation until a
+  roadmap says otherwise. This is that authority, and it is bounded: capture
+  only the sources these eight compile through the retired arm, carry
+  archived-corpus identity and per-vector mutation evidence on the same footing
+  as v1, and add no live fallback. A v2 that re-introduces #399's
+  independent-authority gap at twice the size is not a capture, it is a
+  regression with more rows.
 - Convert the eight to the frozen oracle, each keeping its native arm live:
   `phase20_generated_mir_scale`,
   `phase21_compiler_support_native_qualification`,
@@ -951,7 +998,17 @@ because it removes guards rather than converting them and the conversion must
 be green first. Patch 24.12b must land before 24.13 removes backend selection:
 the eight Python parity guards it converts still invoke the retired backend,
 and all twenty-three recipes reaching them run in CI, so removing the backend
-first breaks them. This is an ordering constraint, not a preference. Patch 24.11 must complete its inventory before 24.13 removes
+first breaks them. This is an ordering constraint, not a preference.
+
+**Patch 24.13 seals the frozen corpus permanently (#416).** Capturing a vector
+requires executing the retired backend while the live lane is green, and 24.13
+removes backend selection. After it merges, no vector can ever be captured
+again, for any source, by anyone — so the window for extending the corpus is
+open only until 24.13, and 24.12b is the last patch inside it. Any patch that
+will ever need a frozen observable must say so before 24.13, including 24.15a's
+re-baseline and 24.16's residue audit: after that point the answer is not
+"expensive", it is "not possible". This is the only irreversible step in the
+retirement, and it is one patch wide. Patch 24.11 must complete its inventory before 24.13 removes
 what it lists. A seed cannot share a PR with
 compiler-source changes; reconverge it alone where 24.13 or 24.14 moves it.
 Patch 24.15a precedes **both 24.15 and 24.16**. It precedes 24.16 because

@@ -62,6 +62,15 @@ PATCH24_2F_LINEAR_FIXTURES = [
     "compiler/phase24_resource_implicit_transfer_module.gst",
 ]
 
+# Patch 24.12b: the alias module, materialized from a source the resource
+# transfer guard used to synthesize per run. It declares the same #[linear]
+# resources under renamed declarations, which is the property its fixture
+# tests, so it joins this compiler-owned inventory as a tracked file rather
+# than appearing and vanishing inside a temp directory.
+PATCH24_12B_LINEAR_FIXTURES = [
+    "compiler/phase24_resource_implicit_transfer_alias_module.gst",
+]
+
 SOURCE_DESTRUCTORS = {
     SOURCE_DECLARATIONS[0]: (
         "Phase13CompositionResourceMetadata",
@@ -227,7 +236,8 @@ def validate() -> dict:
                              CROSS_FEATURE_LINEAR_FIXTURES +
                              PROTECTED_ACCESS_LINEAR_FIXTURES +
                              PHASE21_RESOURCE_SYNC_LINEAR_FIXTURES +
-                             PATCH24_2F_LINEAR_FIXTURES)
+                             PATCH24_2F_LINEAR_FIXTURES +
+                             PATCH24_12B_LINEAR_FIXTURES)
     require(actual_linear == expected_linear,
             "compiler-owned #[linear] declaration inventory drifted: " +
             repr(actual_linear))

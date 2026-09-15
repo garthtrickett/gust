@@ -23918,3 +23918,15 @@ guard-cranelift-phase24-frozen-oracle-evidence:
     just guard-cranelift-phase24-frozen-oracle-contract
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase24-frozen-oracle-evidence | grep -F $'guard-cranelift-phase24-frozen-oracle-evidence\t2\t' >/dev/null
     python3 scripts/phase24_frozen_oracle.py mutation-evidence
+
+# Patch 24.12b. No script may read a name nothing binds. Three guards in this
+# patch died on NameError because a conversion retired a producer and left its
+# consumer; all three were in evidence paths `validate` never calls. Appended
+# at the end: the Patch 24.0c manifest keys on line numbers.
+guard-cranelift-phase24-undefined-name-sweep-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔍 Sweeping scripts for reads of names nothing binds..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase24-undefined-name-sweep-contract | grep -F $'guard-cranelift-phase24-undefined-name-sweep-contract\t1\t' >/dev/null
+    python3 scripts/phase24_undefined_name_sweep.py

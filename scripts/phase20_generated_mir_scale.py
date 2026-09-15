@@ -68,6 +68,29 @@ def validate() -> dict:
     require(value.get("route_policy") ==
             "generated_scalars_and_large_function_use_three_way_source_and_direct_mir_agreement_while_large_module_uses_mir_to_c_source_oracle_against_direct_canonical_mir_because_the_source_native_planner_intentionally_rejects_unregistered_call_graph_shapes",
             "Patch 20.14 route policy drifted")
+    # Patch 24.12b (#416): the large_module case is materialized as a tracked
+    # fixture so it can carry a frozen vector. Its oracle is the retired
+    # route -- the registered route_policy above says so, because the
+    # source-native planner intentionally rejects these call-graph shapes --
+    # and Patch 24.13 makes capturing one impossible forever.
+    #
+    # A materialized copy of generated output is a stale copy waiting to
+    # happen, so it is not merely committed: it must still be byte-identical
+    # to what the generator produces from the registered function_count. If
+    # the generator changes and the fixture does not, this fails rather than
+    # letting the frozen vector describe a source that no longer exists.
+    materialized = ROOT / "compiler/phase20_generated_large_module_source.gst"
+    require(materialized.is_file(),
+            "the materialized large_module fixture is missing")
+    large_module_count = {
+        row["id"]: row for row in value["cohorts"]
+    }["large_module"]["function_count"]
+    require(materialized.read_text(encoding="utf-8") ==
+            module_source(large_module_count),
+            "the materialized large_module fixture has drifted from the "
+            "generator; regenerate it or the frozen vector describes a "
+            "source that no longer exists")
+
     require(value.get("normalization_policy") == "none",
             "Patch 20.14 silently permits normalization")
 
@@ -119,15 +142,18 @@ def validate() -> dict:
             "fixed_registry_values_reviewed_with_the_patch_no_runtime_rebasing",
             "Patch 20.14 threshold policy drifted")
     budgets = measurement.get("budgets")
-    require(isinstance(budgets, list) and len(budgets) == 4,
+    # Patch 24.12b: the retired backend's two budget rows are retired with
+    # the arms that measured them. A budget is a threshold on a measurement,
+    # and there is no measurement left to threshold.
+    require(isinstance(budgets, list) and len(budgets) == 2,
             "Patch 20.14 budget inventory drifted")
     budget_keys = {(row.get("cohort"), row.get("backend")) for row in budgets}
     require(budget_keys == {
-        ("large_function", "mir-to-c"),
         ("large_function", "cranelift"),
-        ("large_module", "mir-to-c"),
         ("large_module", "cranelift"),
     }, "Patch 20.14 budget coverage drifted")
+    require(not any(row.get("backend") != "cranelift" for row in budgets),
+            "a retired-backend budget row is back in Patch 20.14")
     for row in budgets:
         require(all(isinstance(row.get(key), int) and row[key] > 0 for key in (
             "baseline_elapsed_ms", "baseline_peak_rss_kib",
@@ -502,20 +528,51 @@ def compile_and_compare(case: dict, worker: Path, output: Path) -> None:
     case_dir.mkdir(parents=True, exist_ok=True)
     source = Path(case["source"])
     mir = Path(case["mir"])
-    c_path = case_dir / "program.c"
-    c_stderr = case_dir / "mir-to-c.compiler.stderr"
-    status = run_process([GUST, "--backend", "mir-to-c", str(source)],
-                         c_path, c_stderr)
-    require(status == 0 and not c_stderr.read_bytes(),
-            f"{case['id']}: MIR-to-C compilation failed")
-    final_c = case_dir / "program.final.c"
-    final_c.write_bytes((ROOT / "src/runtime.c").read_bytes() + c_path.read_bytes())
-    mir_binary = case_dir / "mir-to-c-program"
-    status = run_process([
-        os.environ.get("CC", "cc"), "-O0", "-w", "-pthread", "-Isrc",
-        str(final_c), "-o", str(mir_binary),
-    ], case_dir / "cc.stdout", case_dir / "cc.stderr")
-    require(status == 0, f"{case['id']}: host C compilation failed")
+    # Patch 24.12b: this arm is NOT retired, and the first draft of this patch
+    # was wrong to retire it. The registered route_policy above states that
+    # large_function uses three-way source and direct-MIR agreement while
+    # large_module uses the retired route as its SOURCE ORACLE against direct
+    # canonical MIR, because the source-native planner intentionally rejects
+    # unregistered call-graph shapes. Removing it leaves large_module with one
+    # arm and nothing to disagree with -- a silent coverage loss, which is the
+    # failure this phase keeps finding.
+    #
+    # It cannot be frozen as things stand: the source is synthesized per run,
+    # so there is no tracked path to key a vector on. The disposition is
+    # therefore "capturable after materialization" and it is on the clock --
+    # Patch 24.13 seals the corpus, so the large_module case must be
+    # materialized as a tracked fixture and captured before then, or
+    # large_module's oracle is gone permanently.
+    # Patch 24.12b: the retired arm survives only where it is the sole oracle,
+    # and there it is served frozen rather than executed.
+    #
+    # large_module has no second opinion: the registered route_policy says the
+    # source-native planner intentionally rejects its call-graph shapes, so
+    # only the direct-MIR arm runs natively. Its case is now materialized as a
+    # tracked fixture -- validate() requires that fixture stay byte-identical
+    # to the generator -- so a frozen vector covers it.
+    #
+    # Every other cohort keeps TWO native arms, cranelift-source and
+    # cranelift-direct-mir, compared against each other and against the
+    # generator's declared expected_exit. There the retired arm was a third
+    # opinion, not the only one, so it is retired rather than frozen.
+    frozen_observation = None
+    if case["kind"] == "large_module":
+        materialized = "compiler/phase20_generated_large_module_source.gst"
+        frozen_prefix = case_dir / "frozen"
+        status = run_process(
+            [sys.executable, "scripts/phase24_frozen_oracle.py", "materialize",
+             materialized, str(frozen_prefix), "--kind", "exec"],
+            case_dir / "frozen.stdout", case_dir / "frozen.stderr")
+        require(status == 0,
+                f"{case['id']}: the frozen oracle refused {materialized}")
+        require(not Path(f"{frozen_prefix}.compile.stderr").read_bytes(),
+                f"{case['id']}: MIR-to-C compilation failed")
+        frozen_observation = (
+            int(Path(f"{frozen_prefix}.status").read_text().strip()),
+            Path(f"{frozen_prefix}.stdout").read_bytes(),
+            Path(f"{frozen_prefix}.stderr").read_bytes(),
+        )
 
     native_binary = case_dir / "native-program"
     if case["kind"] != "large_module":
@@ -546,10 +603,11 @@ def compile_and_compare(case: dict, worker: Path, output: Path) -> None:
     require(status == 0, f"{case['id']}: generated canonical MIR did not link")
 
     results = {
-        "mir-to-c": execute(mir_binary, case_dir / "mir-to-c"),
         "cranelift-direct-mir": execute(direct_binary,
                                          case_dir / "cranelift-direct-mir"),
     }
+    if frozen_observation is not None:
+        results["mir-to-c-frozen"] = frozen_observation
     if case["kind"] != "large_module":
         results["cranelift-source"] = execute(
             native_binary, case_dir / "cranelift-source")
@@ -623,10 +681,11 @@ def measure_scale(cases: list[dict], worker: Path, output: Path, value: dict) ->
                 case["mir"],
                 str((output / case["id"] / "measured-native.o").resolve()),
             ]
-        commands = {
-            "mir-to-c": [GUST, "--backend", "mir-to-c", source],
-            "cranelift": cranelift_command,
-        }
+        # Patch 24.12b: the retired cohort is retired rather than converted.
+        # It measured elapsed time and peak RSS of the retired backend, and a
+        # frozen vector cannot serve a timing measurement of a backend that no
+        # longer exists.
+        commands = {"cranelift": cranelift_command}
         for backend, command in commands.items():
             prefix = output / case["id"] / f"measure-{backend}"
             elapsed, peak_rss = measure_command(command, prefix, warmups, samples)

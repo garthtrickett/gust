@@ -68,3 +68,9 @@ yarn-error.log*
 /build/guards/cranelift_mir_to_c_differential_native/
 
 /src/runtime/rust/target/
+
+# Patch 24.12b: byte-compiled Python is a build artifact, not evidence. A
+# tracked .pyc is a tracked file to every guard that greps the census, which
+# is how four CI reds happened on Patch 24.12.
+__pycache__/
+*.pyc

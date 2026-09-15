@@ -316,6 +316,9 @@ def validate() -> tuple[dict, dict[str, object]]:
                     "the Patch 24.12a production audit successor has no "
                     "registered predecessor")
             previous = emitter_only_transition.get("previous_audit", {})
+            conversion_transition = registry.get(
+                "phase24_12b_python_parity_conversion", {}).get(
+                    "production_audit_transition")
             current = emitter_only_transition.get("current_audit", {})
             reduced = emitter_only_transition.get("reduced_fields", [])
             require(emitter_only_transition.get("contract_version") ==
@@ -323,7 +326,9 @@ def validate() -> tuple[dict, dict[str, object]]:
                     emitter_only_transition.get("status") ==
                     "patch24_12a_complete" and
                     previous == retirement_transition["current_audit"] and
-                    current == summary and
+                    current == (
+                        conversion_transition["previous_audit"]
+                        if conversion_transition is not None else summary) and
                     sorted(reduced) == [
                         "non_bootstrap_retained_test_surface_count",
                         "repository_explicit_c_count",
@@ -331,6 +336,24 @@ def validate() -> tuple[dict, dict[str, object]]:
                     emitter_only_transition.get(
                         "partial_extra_or_substituted_audit") == "rejected",
                     "Patch 24.12a production audit transition drifted")
+            # Patch 24.12b is the newest link and so is the tail that must
+            # equal the live scan.
+            if conversion_transition is not None:
+                require(conversion_transition.get("contract_version") ==
+                        "phase24_12b_production_audit_transition_v1" and
+                        conversion_transition.get("previous_audit") ==
+                        current and
+                        conversion_transition.get("current_audit") ==
+                        summary and
+                        sorted(conversion_transition.get(
+                            "reduced_fields", [])) == [
+                            "non_bootstrap_retained_test_surface_count",
+                            "repository_explicit_c_count",
+                            "repository_invocation_count"] and
+                        conversion_transition.get(
+                            "partial_extra_or_substituted_audit") ==
+                        "rejected",
+                        "Patch 24.12b production audit transition drifted")
             removed = emitter_only_transition.get("removed_invocation_count")
             surface = registry.get(
                 "phase24_12a_emitter_only_retirement", {}).get(
@@ -350,7 +373,12 @@ def validate() -> tuple[dict, dict[str, object]]:
                 require(current.get(field) == previous.get(field),
                         f"Patch 24.12a changed an unregistered production "
                         f"audit field: {field}")
-            effective["audit"] = current
+            # Patch 24.12b, when present, is the tail: the effective audit is
+            # its current_audit, not 24.12a's, because that is the one the
+            # live scan has to match.
+            effective["audit"] = (
+                conversion_transition["current_audit"]
+                if conversion_transition is not None else current)
         validate_mutations(effective, summary)
     require(record.get("timelines") == {
         "phase24": "remove_generated_C_backend_and_explicit_C_publication_routes",

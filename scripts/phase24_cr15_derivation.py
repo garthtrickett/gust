@@ -6,6 +6,8 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
+import sys
+import tempfile
 from pathlib import Path
 
 
@@ -172,22 +174,27 @@ def evidence() -> None:
     compiler = ROOT / "build/phase10-package/bin/gust"
     require(compiler.is_file(), "native package prerequisite is missing")
 
-    c_outputs: dict[str, bytes] = {}
-    for key in ("native_inferred", "native_explicit", "native_second_type",
-                "multiple_identity"):
-        result = run([str(compiler), "--backend", "mir-to-c", str(witnesses[key])])
-        require(result.returncode == 0 and not result.stderr and
-                result.stdout.startswith(b"// Transpiled C Code\n#include"),
-                f"retained compatibility failed for {key}")
-        c_outputs[key] = result.stdout
-    require(c_outputs["native_inferred"] == c_outputs["native_explicit"],
-            "inferred and explicit concrete guard C differ")
-    for identity in (
-        b"MutexGuard_Counter_first_arena", b"MutexGuard_Flag_second_arena",
-        b"MutexGuard_Counter_third_arena",
-    ):
-        require(identity in c_outputs["multiple_identity"],
-                f"multiple-identity evidence is missing {identity.decode()}")
+    # Patch 24.12b: retired, and INVERTED rather than deleted.
+    #
+    # These arms compiled four witnesses through the retired route only to
+    # assert properties of the emitted C -- that the inferred and explicit
+    # spellings produce identical output, and that the multiple-identity case
+    # names three arenas. Neither has a native counterpart, so there is no
+    # second arm for a frozen one to be compared against: this is Patch
+    # 24.12a's emitter-only class arriving one patch late, and it cannot be
+    # converted at any budget.
+    #
+    # A dropped clause says nothing. This one says the arms are gone and fails
+    # if they come back. The needle is assembled from fragments so that
+    # asserting the spelling's absence does not itself re-introduce the
+    # spelling -- writing it literally would re-enrol this file in the
+    # text-surface census and put a retired argv back into the derived
+    # population, making the assertion falsify itself.
+    retired_route = "--backend" + '", "' + "mir-to-c"
+    own_source = Path(__file__).read_text(encoding="utf-8")
+    require(retired_route not in own_source,
+            "the retired emitter-only arms are back in "
+            "phase24_cr15_derivation")
 
     for key in ("native_inferred", "native_explicit", "native_second_type"):
         artifact = native_artifact(witnesses[key])
@@ -205,16 +212,41 @@ def evidence() -> None:
         ("arbitrary_generic_rejected", b"Argument type mismatch for function 'identity'"),
         ("unprotected_rejected", b"[ProtectedResourceDerivation]"),
     ):
-        outputs = []
-        for route in (("--backend", "mir-to-c"), ("--backend", "cranelift")):
-            result = run([str(compiler), *route, str(witnesses[key])])
-            require(result.returncode == 1 and not result.stderr and
-                    diagnostic in result.stdout,
-                    f"negative authority drifted for {key}: {route}")
-            require(not native_artifact(witnesses[key]).exists(),
-                    f"negative case produced an artifact for {key}")
-            outputs.append(result.stdout)
-        require(outputs[0] == outputs[1],
+        # Patch 24.12b: the retired arm is served from the frozen oracle and
+        # the native arm still runs live. What changed is which side of the
+        # comparison executes, not what the comparison means -- the two
+        # diagnostics are still required to be byte identical.
+        witness = witnesses[key]
+        vector_id = witness.relative_to(ROOT).as_posix()
+        with tempfile.TemporaryDirectory(prefix="gust-cr15-frozen-") as raw:
+            prefix = Path(raw) / "frozen"
+            materialized = run([sys.executable,
+                                "scripts/phase24_frozen_oracle.py",
+                                "materialize", vector_id, str(prefix),
+                                "--kind", "reject"])
+            require(materialized.returncode == 0,
+                    f"frozen oracle refused {key}: "
+                    f"{materialized.stderr.decode(errors='replace')[:200]}")
+            frozen_status = int(
+                Path(f"{prefix}.compile.status").read_text().strip())
+            frozen_stdout = Path(f"{prefix}.compile.stdout").read_bytes()
+            frozen_stderr = Path(f"{prefix}.compile.stderr").read_bytes()
+        require(frozen_status == 1 and not frozen_stderr and
+                diagnostic in frozen_stdout,
+                f"frozen negative authority drifted for {key}")
+
+        # The witness is passed RELATIVE, matching how the frozen vector was
+        # captured. A diagnostic quotes the path it was given, so an absolute
+        # path here makes the two sides differ by their own spelling and the
+        # byte comparison below fails for a reason that has nothing to do with
+        # the diagnostic. Both arms must be asked the same question.
+        native = run([str(compiler), "--backend", "cranelift", vector_id])
+        require(native.returncode == 1 and not native.stderr and
+                diagnostic in native.stdout,
+                f"negative authority drifted for {key}: native")
+        require(not native_artifact(witness).exists(),
+                f"negative case produced an artifact for {key}")
+        require(frozen_stdout == native.stdout,
                 f"pre-driver diagnostics diverged for {key}")
     check_review(value)
     print("phase24_cr15_derivation: evidence ok")

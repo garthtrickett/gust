@@ -30,9 +30,7 @@ Generated from `scripts/cranelift_feature_registry.json` by
 
 | Cohort | Backend | Baseline ms | Baseline KiB | Maximum ms | Maximum KiB |
 | --- | --- | ---: | ---: | ---: | ---: |
-| `large_function` | `mir-to-c` | 24 | 16128 | 10000 | 262144 |
 | `large_function` | `cranelift` | 107 | 83328 | 10000 | 262144 |
-| `large_module` | `mir-to-c` | 8 | 16000 | 10000 | 262144 |
 | `large_module` | `cranelift` | 16 | 16128 | 10000 | 262144 |
 
 ## Failure preservation

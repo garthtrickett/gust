@@ -394,6 +394,31 @@ def effective_relay_inventory(registry: dict, landed_authority: dict) -> dict:
             current["selection_counts"]["explicit_c"],
             "the Patch 24.12a post-relay census reduction is not the "
             "registered explicit-C removal")
+
+    # Patch 24.12b continues the same chain, with the same arithmetic. It
+    # retires the emitter-only arms inside two surviving guards and the scale
+    # guard's timing cohort, so the census shrinks again by exactly the
+    # explicit-C invocations those arms held.
+    conversion = registry.get(
+        "phase24_12b_python_parity_conversion", {}).get(
+            "phase22_invocation_successor")
+    if conversion is None:
+        return current
+    previous, current = current, conversion.get("current_relay_inventory")
+    require(conversion.get("previous_relay_inventory") == previous and
+            isinstance(current, dict),
+            "Patch 24.12b post-relay inventory successor drifted")
+    require(current["total"] < previous["total"] and
+            current["unclassified_count"] == previous["unclassified_count"]
+            == 0,
+            "Patch 24.12b did not reduce a fully classified post-relay "
+            "census")
+    removed = previous["total"] - current["total"]
+    require(removed == conversion.get("removed_invocation_count") ==
+            previous["selection_counts"]["explicit_c"] -
+            current["selection_counts"]["explicit_c"],
+            "the Patch 24.12b post-relay census reduction is not the "
+            "registered explicit-C removal")
     return current
 
 

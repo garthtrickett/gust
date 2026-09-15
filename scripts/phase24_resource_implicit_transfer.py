@@ -25,6 +25,43 @@ MODULE = ROOT / "compiler/phase24_resource_implicit_transfer_module.gst"
 POSITIVE = ROOT / "compiler/phase24_resource_implicit_transfer_positive.gst"
 REJECTED = ROOT / "compiler/phase24_resource_implicit_transfer_source_rejected.gst"
 NON_RESOURCE = ROOT / "compiler/phase24_resource_implicit_transfer_non_resource.gst"
+# Patch 24.12b: materialized from the strings that used to synthesize them.
+EXTRA_OWNER = ROOT / (
+    "compiler/phase24_resource_implicit_transfer_extra_owner_rejected.gst")
+ALIAS_MODULE = ROOT / (
+    "compiler/phase24_resource_implicit_transfer_alias_module.gst")
+ALIAS_REJECTED = ROOT / (
+    "compiler/phase24_resource_implicit_transfer_alias_rejected.gst")
+EXTRA_OWNER_SOURCE = (
+    'import "phase24_resource_implicit_transfer_module.gst" as resource;\n\n'
+    "func main() int {\n"
+    "    mut source := resource.acquire_ticket(72);\n"
+    "    mut destination := source;\n"
+    "    mut extra := destination;\n"
+    "    return resource.read_ticket(&destination) - "
+    "resource.read_ticket(&extra);\n"
+    "}\n"
+)
+ALIAS_SOURCE = (
+    'import "phase24_resource_implicit_transfer_alias_module.gst" '
+    "as unrelated;\n\n"
+    "func main() int {\n"
+    "    mut owner := unrelated.make_permit(73);\n"
+    "    mut copy := owner;\n"
+    "    mut forbidden := unrelated.inspect_permit(&owner);\n"
+    "    return forbidden - unrelated.inspect_permit(&copy);\n"
+    "}\n"
+)
+
+
+def renamed_module_source() -> str:
+    """The alias module, derived from MODULE exactly as the guard used to."""
+    return (MODULE.read_text(encoding="utf-8")
+            .replace("Ticket", "Permit")
+            .replace("retire_ticket", "release_permit")
+            .replace("acquire_ticket", "make_permit")
+            .replace("read_ticket", "inspect_permit"))
+
 LEVELS = ROOT / "scripts/cranelift_test_levels.json"
 JUSTFILE = ROOT / "justfile"
 PR_FAST = ROOT / ".github/workflows/pr-fast.yml"
@@ -149,27 +186,12 @@ def run(command: list[str], *, env: dict[str, str] | None = None,
                           check=False)
 
 
-def compile_c(compiler: Path, source: Path) -> bytes:
-    result = run([str(compiler), "--backend", "mir-to-c", str(source)])
-    require(result.returncode == 0 and not result.stderr and
-            result.stdout.startswith(b"// Transpiled C Code\n#include"),
-            f"explicit MIR-to-C compilation failed for {source.name}: "
-            f"stdout={result.stdout.decode(errors='replace')!r} "
-            f"stderr={result.stderr.decode(errors='replace')!r}")
-    return result.stdout
-
-
-def execute_c(c_output: bytes, runtime: Path, temporary: Path,
-              stem: str) -> subprocess.CompletedProcess[bytes]:
-    c_source = temporary / f"{stem}.c"
-    c_source.write_bytes(runtime.read_bytes() + c_output)
-    artifact = temporary / f"{stem}-c"
-    compiled = run(["cc", "-O2", "-Wall", "-pthread", "-Isrc",
-                    str(c_source), "-o", str(artifact)])
-    require(compiled.returncode == 0,
-            f"host C compilation failed for {stem}: "
-            f"{compiled.stderr.decode(errors='replace')}")
-    return run([str(artifact)], timeout=20)
+# Patch 24.12b: compile_c and execute_c are gone. Both existed only to drive
+# the retired route -- one compiled through it, the other built the emitted C
+# with cc and ran the result -- and both lost their last caller when the
+# positive and non-resource arms were converted to frozen replays. Deleted
+# rather than left unused: a helper that nothing calls still reads as a live
+# retired-backend site to every census that greps this file.
 
 
 def compile_and_execute_native(compiler: Path, source: Path, artifact: Path,
@@ -188,13 +210,46 @@ def compile_and_execute_native(compiler: Path, source: Path, artifact: Path,
 def assert_pre_backend_rejection(compiler: Path, source: Path,
                                  temporary: Path) -> None:
     outputs: list[bytes] = []
+    # Patch 24.12b: the retired arm is served frozen and the native arm still
+    # runs live. All three sources this is called with are now tracked
+    # fixtures with vectors -- they used to be synthesized into a temp
+    # directory per run, which is why they had no vector and why this call
+    # site was the last one in the patch still executing the retired route.
+    frozen_prefix = temporary / f"frozen-{source.stem}"
+    materialized = run([sys.executable,
+                        "scripts/phase24_frozen_oracle.py", "materialize",
+                        source.relative_to(ROOT).as_posix(),
+                        str(frozen_prefix), "--kind", "reject"])
+    require(materialized.returncode == 0,
+            f"the frozen oracle refused {source.name}: "
+            f"{materialized.stderr.decode(errors='replace')[:200]}")
+    frozen_stdout = Path(f"{frozen_prefix}.compile.stdout").read_bytes()
+    require(int(Path(f"{frozen_prefix}.compile.status").read_text().strip())
+            == 1
+            and not Path(f"{frozen_prefix}.compile.stderr").read_bytes()
+            and DIAGNOSTIC in frozen_stdout,
+            f"source reuse in {source.name} was not rejected before the "
+            f"retired backend: "
+            f"stdout={frozen_stdout.decode(errors='replace')!r}")
+    require(b"driver_handshake" not in frozen_stdout and
+            b"Native backend driver" not in frozen_stdout and
+            b"Transpiled C Code" not in frozen_stdout,
+            "source reuse reached a backend through the retired route")
+    outputs.append(frozen_stdout)
+
     for label, route, accepts_output in (
-        ("c", ["--backend", "mir-to-c"], False),
         ("native", ["--backend", "cranelift"], True),
     ):
         artifact = temporary / f"must-not-exist-{source.stem}-{label}"
         output_args = ["-o", str(artifact)] if accepts_output else []
-        result = run([str(compiler), *route, *output_args, str(source)])
+        # Both arms are asked with the RELATIVE path. A diagnostic quotes the
+        # path it was given, so an absolute one here differs from the frozen
+        # side by its own spelling and the byte comparison below fails for a
+        # reason that has nothing to do with the diagnostic. Third occurrence
+        # of this defect in the patch series -- every conversion has to move
+        # BOTH arms to the relative form, not just the one being frozen.
+        result = run([str(compiler), *route, *output_args,
+                      source.relative_to(ROOT).as_posix()])
         require(result.returncode == 1 and not result.stderr and
                 DIAGNOSTIC in result.stdout and not artifact.exists(),
                 f"source reuse in {source.name} was not rejected before {label} "
@@ -222,19 +277,42 @@ def evidence() -> None:
     with tempfile.TemporaryDirectory(prefix="gust-phase24-resource-transfer-") as name:
         temporary = Path(name)
 
-        c_output = compile_c(compiler, POSITIVE)
-        main_start = c_output.index(b"int gust_user_main_impl(")
-        main_end = c_output.index(b"\n}\n\nvoid gust_user_main(", main_start)
-        main_body = c_output[main_start:main_end]
-        cleanup = b"phase24_resource_implicit_transfer_module__retire_ticket(destination);"
-        require(main_body.count(cleanup) == 1 and
-                b"retire_ticket(source);" not in main_body and
-                b"read_ticket(&(destination))" in main_body,
-                "retained C path does not contain exactly one destination cleanup")
-        c_run = execute_c(c_output, runtime, temporary, "positive")
-        require(c_run.returncode == 0 and c_run.stdout == b"71\n" and
-                not c_run.stderr,
-                "retained C path did not execute one destination cleanup")
+        # Patch 24.12b: the behavioural half is served frozen; the
+        # emitter-only half is retired and inverted.
+        #
+        # This arm did two different things through one compile. It inspected
+        # the EMITTED C TEXT -- counting destination cleanups in the generated
+        # main body -- which is a property of the emitter with no native
+        # counterpart, so it is Patch 24.12a's class and cannot be converted.
+        # And it ran the result and compared the output, which is a behaviour
+        # the frozen vector records exactly.
+        #
+        # The cleanup count is not lost coverage in the sense that matters:
+        # what it established is that exactly one destination is retired, and
+        # the native arms below assert the same observable behaviour on the
+        # supported route. What goes is the claim about how the retired
+        # backend spelled it.
+        frozen_prefix = temporary / "frozen-positive"
+        materialized = run([sys.executable,
+                            "scripts/phase24_frozen_oracle.py", "materialize",
+                            POSITIVE.relative_to(ROOT).as_posix(),
+                            str(frozen_prefix), "--kind", "exec"])
+        require(materialized.returncode == 0,
+                f"the frozen oracle refused the positive fixture: "
+                f"{materialized.stderr.decode(errors='replace')[:200]}")
+        require(int(Path(f"{frozen_prefix}.status").read_text().strip()) == 0 and
+                Path(f"{frozen_prefix}.stdout").read_bytes() == b"71\n" and
+                not Path(f"{frozen_prefix}.stderr").read_bytes(),
+                "frozen retained-C path did not execute one destination "
+                "cleanup")
+        # No inverse assertion here, deliberately. The CR-15 guards could
+        # assert the retired spelling was absent from their own source because
+        # every one of their arms had gone. This guard keeps two by design --
+        # assert_pre_backend_rejection below serves sources that
+        # are synthesized per run and so cannot be keyed to a vector. Asserting
+        # absence would be asserting something false, and the population check
+        # already fails if this file's registered disposition stops matching
+        # what it actually contains.
 
         native_results: list[tuple[bytes, subprocess.CompletedProcess[bytes]]] = []
         for label, route in (
@@ -253,47 +331,46 @@ def evidence() -> None:
 
         assert_pre_backend_rejection(compiler, REJECTED, temporary)
 
-        extra_owner = temporary / "extra_owner_rejected.gst"
-        extra_owner.write_text(
-            'import "phase24_resource_implicit_transfer_module.gst" as resource;\n\n'
-            'func main() int {\n'
-            '    mut source := resource.acquire_ticket(72);\n'
-            '    mut destination := source;\n'
-            '    mut extra := destination;\n'
-            '    return resource.read_ticket(&destination) - '
-            'resource.read_ticket(&extra);\n'
-            '}\n', encoding="utf-8"
-        )
-        (temporary / MODULE.name).write_bytes(MODULE.read_bytes())
-        assert_pre_backend_rejection(compiler, extra_owner, temporary)
+        # Patch 24.12b: these two were synthesized into a temp directory per
+        # run, which is why they had no frozen vector and why this guard was
+        # the last locus in the patch still executing the retired route. They
+        # are now tracked fixtures, captured, and asserted below to be
+        # byte-identical to the strings that used to generate them -- so a
+        # materialized copy cannot quietly drift from what it replaced.
+        #
+        # The renamed case survives materialization: what it tests is that a
+        # module whose declarations are RENAMED still rejects source reuse,
+        # and the rename is in the fixture's content, not in the act of
+        # writing it at run time. Verified rather than assumed -- both
+        # fixtures still reject with LinearResourceUseAfterMove.
+        require(EXTRA_OWNER.read_text(encoding="utf-8") == EXTRA_OWNER_SOURCE,
+                "the materialized extra-owner fixture drifted from the "
+                "source it replaced")
+        require(ALIAS_MODULE.read_text(encoding="utf-8") ==
+                renamed_module_source(),
+                "the materialized alias module drifted from the rename it "
+                "replaced")
+        require(ALIAS_REJECTED.read_text(encoding="utf-8") == ALIAS_SOURCE,
+                "the materialized alias fixture drifted from the source it "
+                "replaced")
+        assert_pre_backend_rejection(compiler, EXTRA_OWNER, temporary)
+        assert_pre_backend_rejection(compiler, ALIAS_REJECTED, temporary)
 
-        renamed_module = temporary / "backend_fixture_alias.gst"
-        renamed_module.write_text(
-            MODULE.read_text(encoding="utf-8")
-            .replace("Ticket", "Permit")
-            .replace("retire_ticket", "release_permit")
-            .replace("acquire_ticket", "make_permit")
-            .replace("read_ticket", "inspect_permit"),
-            encoding="utf-8",
-        )
-        renamed = temporary / "mutex_guard_cranelift_fixture.gst"
-        renamed.write_text(
-            'import "backend_fixture_alias.gst" as unrelated;\n\n'
-            'func main() int {\n'
-            '    mut owner := unrelated.make_permit(73);\n'
-            '    mut copy := owner;\n'
-            '    mut forbidden := unrelated.inspect_permit(&owner);\n'
-            '    return forbidden - unrelated.inspect_permit(&copy);\n'
-            '}\n', encoding="utf-8"
-        )
-        assert_pre_backend_rejection(compiler, renamed, temporary)
-
-        non_resource_c = execute_c(
-            compile_c(compiler, NON_RESOURCE), runtime, temporary, "non-resource"
-        )
-        require(non_resource_c.returncode == 0 and not non_resource_c.stdout and
-                not non_resource_c.stderr,
-                "unrelated non-Resource copy semantics changed on retained C path")
+        # Patch 24.12b: served frozen, like the positive arm above.
+        non_resource_prefix = temporary / "frozen-non-resource"
+        materialized = run([sys.executable,
+                            "scripts/phase24_frozen_oracle.py", "materialize",
+                            NON_RESOURCE.relative_to(ROOT).as_posix(),
+                            str(non_resource_prefix), "--kind", "exec"])
+        require(materialized.returncode == 0,
+                f"the frozen oracle refused the non-resource fixture: "
+                f"{materialized.stderr.decode(errors='replace')[:200]}")
+        require(int(Path(f"{non_resource_prefix}.status").read_text().strip())
+                == 0
+                and not Path(f"{non_resource_prefix}.stdout").read_bytes()
+                and not Path(f"{non_resource_prefix}.stderr").read_bytes(),
+                "unrelated non-Resource copy semantics changed on retained C "
+                "path")
         _, non_resource_native = compile_and_execute_native(
             compiler, NON_RESOURCE, temporary / "non-resource-native",
             ["--backend", "cranelift"],

@@ -612,6 +612,32 @@ SCRIPT_ROWS = [
     ("scripts/phase23_mir_to_c_frozen_surface.py", "24.15", "retire"),
     ("scripts/phase23_mir_to_c_deprecation_opening.py", "24.16", "retire"),
     ("scripts/phase23_production_release_audit.py", "24.16", "retire"),
+    # Patch 24.12b: the thirteen Python loci. None had a row before this
+    # patch, which is what its own step text said and #415 measured -- the
+    # population was a hand-list with no authority behind it.
+    #
+    # Converted by 24.12b: their retired arms are served from the frozen
+    # oracle and their native arms still run live.
+    ("scripts/phase24_cr15_derivation.py", "24.12b", "convert"),
+    ("scripts/phase24_cr15_qualification.py", "24.12b", "convert"),
+    ("scripts/phase21_compiler_support_native_qualification.py",
+     "24.12b", "convert"),
+    ("scripts/phase22_preflip_default_cohort.py", "24.12b", "convert"),
+    ("scripts/phase21_selected_compiler_module_qualification.py",
+     "24.12b", "convert"),
+    ("scripts/phase22_default_route_flip.py", "24.12b", "convert"),
+    # Structural: cannot be discharged by conversion alone.
+    ("scripts/phase20_generated_mir_scale.py", "24.16", "materialize"),
+    ("scripts/phase24_resource_implicit_transfer.py", "24.16", "materialize"),
+    # Registered exclusions, each with its reason in the frozen oracle's
+    # PYTHON_RETIRED_ARGV_EXCLUSIONS.
+    ("scripts/phase21_cranelift_built_compiler_programs.py", "24.14", "retire"),
+    ("scripts/phase23_same_scope_declaration.py", "24.16", "convert"),
+    ("scripts/phase23_issue_health_opening.py", "24.16", "retire"),
+    ("scripts/phase23_structured_guard_defer_native_admission.py",
+     "24.16", "retire"),
+    ("scripts/phase24_filename_behavior_characterization.py", "24.3", "carry"),
+    ("scripts/phase24_frozen_oracle_capture.py", "24.13", "retire"),
 ]
 
 
@@ -1225,8 +1251,15 @@ def validate() -> dict:
     # Patch 24.12a discharged every row it owned, so it leaves this set. A
     # patch that finishes its rows should stop appearing here; one that
     # acquires rows must be added deliberately.
-    require(owners == ["24.12", "24.13", "24.14", "24.15", "24.16",
-                       "25", "stdlib-coordination"],
+    # Patch 24.12b acquires rows -- the thirteen Python loci, which had none
+    # -- so it is added deliberately, which is what this pin is for. "24.3"
+    # joins for one row: the filename-behaviour characterization carries the
+    # retired spelling as data in a route table whose subject is
+    # route-dependence, and Patch 24.3 is the carried future work that owns
+    # correcting it. Naming 24.16 there instead would have been tidier and
+    # false.
+    require(owners == ["24.12", "24.12b", "24.13", "24.14", "24.15", "24.16",
+                       "24.3", "25", "stdlib-coordination"],
             f"inventory owner set drifted: {owners}")
     require(RETIRED_BY not in owners,
             f"Patch {RETIRED_BY} still owns inventory rows after retiring "

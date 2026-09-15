@@ -39,6 +39,8 @@ REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 LEVELS = ROOT / "scripts/cranelift_test_levels.json"
 TASK = ROOT / "TASK.md"
 VECTORS = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v1.json"
+# Patch 24.12b (#416): the additive v2 capture, served alongside v1.
+VECTORS_V2 = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v2.json"
 CORPUS = ROOT / "compiler/fixtures/phase23_mir_to_c_reference_corpus_v1.json"
 VIEW = ROOT / "docs/PHASE24_FROZEN_ORACLE_REPLACEMENT.md"
 EMITTER_ONLY_ASSERTIONS_REMOVED = (
@@ -472,6 +474,337 @@ BACKEND_SPELLING = re.compile(r"--backend (?:mir-to-c|c(?=[\s\"']|$))")
 RECIPE_HEAD = re.compile(r"^([A-Za-z0-9_-]+)([^:]*):")
 
 
+# ---------------------------------------------------------------------------
+# Patch 24.12b: the Python population, computed rather than enumerated (#415).
+#
+# FROZEN_LOCI above is a registered tuple, so check_no_live_c can only catch a
+# *registered* harness reacquiring live C. A guard written in Python that
+# builds its own argv is invisible to it, and to check_sweep, whose loci are
+# scripts/*.sh plus the Makefile and the justfile fragments.
+#
+# The criterion below is derived from the tree, not listed here. Every
+# scripts/*.py that builds an argv selecting the retired backend must be
+# either converted or carry a registered exclusion with a reason. A file that
+# acquires such an argv later fails this check rather than being silently out
+# of scope -- the inverse form, so it fails on a new site instead of on a list
+# that inherits whichever enumeration was wrong.
+#
+# It over-approximates deliberately: it finds argv *construction*, not proven
+# execution. The narrower form -- requiring the list be passed directly to a
+# subprocess.* call -- was measured and returns 0, because every site on this
+# tree hands its argv to a local helper (`run`, `run_process`, `run_before`).
+# That is #396's indirection defect one language over, and it is why the
+# narrow form is recorded here as rejected rather than used.
+# ---------------------------------------------------------------------------
+
+# Named PENDING, not CONVERTED, because that is the true state. A file in this
+# tuple still builds a retired-backend argv today -- that is exactly why the
+# derivation still finds it. Conversion *removes* the argv, which drops the
+# file out of the derived population, and the staleness check below then
+# requires its row be retired. So the tuple empties itself as the work lands,
+# and "Patch 24.12b is done" is the statement that it is empty. Calling these
+# "converted" while they still execute the retired backend would be the
+# green-but-wrong shape this phase keeps finding.
+PYTHON_RETIRED_ARGV_PENDING_CONVERSION: tuple[str, ...] = (
+)
+
+# Each exclusion carries the reason it is out, and every reason is a property
+# something else on the tree can contradict -- not an opinion recorded once.
+PYTHON_RETIRED_ARGV_EXCLUSIONS: dict[str, str] = {
+    # The three the literals-only scan could not see. Registered rather than
+    # converted, each for a reason measured on this tree, and all three are
+    # workflow-reachable -- they were executing live C while this guard
+    # reported zero pending conversions.
+    "scripts/phase21_complete_guard_suite.py":
+        "a two-arm parity suite whose oracle arm IS the retired route: "
+        "compile_case builds the argv from a parameter and qualify_case "
+        "passes 'mir-to-c'. Conversion needs a frozen vector per case, and "
+        "only 4 of its 326 runner cases have one -- 322 captures, which is "
+        "not a budget Patch 24.12b holds. Routing it natively instead would "
+        "leave a parity suite comparing the native arm against itself. Owned "
+        "by 24.13, which cannot merge while this suite still executes a "
+        "spelling it removes (#424).",
+    "scripts/phase23_mir_to_c_deprecation_opening.py":
+        "opening record for a closed phase: compile_baseline('mir-to-c') and "
+        "('c') establish the Phase 23 deprecation baseline itself, so the "
+        "retired-route call produces the reference rather than being judged "
+        "against one. Its source has no vector. Same disposition as "
+        "phase23_structured_guard_defer_native_admission.",
+    "scripts/phase24_cr15_opening.py":
+        "opening record for CR-15: its routes list is "
+        "[explicit_c_spellings[0], explicit_native_backend], and the explicit-C "
+        "route is the thing the opening measures. Its witness has no vector.",
+    "scripts/phase21_cranelift_built_compiler_programs.py":
+        "registered focused_live_oracle: classify_surface returns "
+        "focused_live_oracle for this path, the single live lane Patch 23.10 "
+        "deliberately retained. It goes with the backend at 24.13/24.14 "
+        "rather than being converted.",
+    "scripts/phase23_same_scope_declaration.py":
+        "no frozen vector covers its sources. compiler/"
+        "phase23_same_scope_duplicate_current.gst and its positives have no "
+        "entry in the vector set, so converting it needs a *capture*, and "
+        "refreshing the frozen set requires a new vector version and explicit "
+        "roadmap authority that Patch 24.12b does not hold. This is a genuine "
+        "two-arm parity guard (#415) and is excluded on feasibility, not on "
+        "shape: it is the first thing the patch holding that authority "
+        "converts.",
+    "scripts/phase23_issue_health_opening.py":
+        "issue-health probe, not a parity guard: both retired-backend calls "
+        "assert issue #105's diagnostic against literals and neither is "
+        "compared against a native arm.",
+    "scripts/phase23_structured_guard_defer_native_admission.py":
+        "oracle role for a closed Phase 23 record; its retired-backend call "
+        "produces the reference the native admission path is judged against, "
+        "and it carries no vector either.",
+    "scripts/phase24_frozen_oracle_capture.py":
+        "the capture tool itself. It builds the retired argv because running "
+        "the retired route while the live lane is green is precisely what a "
+        "capture is, under the authority TASK.md Patch 24.12b grants (#416). "
+        "It is not a parity guard, runs only when named with --authority, and "
+        "becomes inert at Patch 24.13, which seals the corpus. Caught by this "
+        "very check when it was added, which is the inverse assertion working: "
+        "a new site fails rather than being silently out of scope.",
+    "scripts/phase24_filename_behavior_characterization.py":
+        "the retired spelling is data in a ROUTES table whose subject *is* "
+        "route-dependent behaviour (Patch 24.1). Removing the row would "
+        "delete the phenomenon under characterization; Patch 24.3 carries the "
+        "correction as future work by operator decision.",
+}
+
+
+# Patch 24.12b (#416): fixtures that are modules, not programs.
+#
+# A module has no `main`, so it cannot be captured as an exec vector -- the
+# capture tool's link step fails, correctly, and writes nothing. It does not
+# need one: a module's behaviour is exercised through the source that imports
+# it, and that source carries the vector.
+#
+# Registered as a claim the validator checks rather than a note: each entry
+# must actually be imported by a fixture that has a vector. A module whose
+# importer loses its vector stops being covered, and this fails rather than
+# leaving the module silently uncaptured.
+PYTHON_MODULE_FIXTURES: dict[str, str] = {
+    "compiler/phase21_selected_declaration_module.gst":
+        "compiler/phase21_selected_declaration_source.gst",
+    "compiler/phase22_default_index_initialization_helper.gst":
+        "compiler/phase22_default_index_initialization_source.gst",
+    "compiler/phase24_resource_implicit_transfer_module.gst":
+        "compiler/phase24_resource_implicit_transfer_positive.gst",
+}
+
+
+def check_module_fixture_cover() -> int:
+    """Every registered module is imported by a fixture that has a vector."""
+    servable = load_servable_vectors()["vectors"]
+    for module, importer in PYTHON_MODULE_FIXTURES.items():
+        require((ROOT / module).is_file(),
+                f"a registered module fixture is missing: {module}")
+        require(importer in servable,
+                f"module {module} is registered as covered by {importer}, "
+                f"but that fixture has no frozen vector")
+        body = (ROOT / importer).read_text(encoding="utf-8", errors="replace")
+        require(Path(module).name in body,
+                f"{importer} no longer imports {module}, so the module is "
+                f"not covered by it")
+    return len(PYTHON_MODULE_FIXTURES)
+
+
+def python_retired_argv_sites() -> dict[str, list[int]]:
+    """Every scripts/*.py that builds an argv selecting the retired backend.
+
+    Derived by walking each module's AST for a list or tuple literal whose
+    elements include the ``--backend`` flag followed by a retired spelling,
+    or a single fused ``--backend=<spelling>`` element.
+    """
+    import ast
+
+    retired = {"mir-to-c", "c"}
+    found: dict[str, list[int]] = {}
+    for path in sorted((ROOT / "scripts").glob("*.py")):
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"))
+        except SyntaxError:
+            continue
+        lines: list[int] = []
+        for node in ast.walk(tree):
+            if not isinstance(node, (ast.List, ast.Tuple)):
+                continue
+            elements = [
+                element.value
+                if isinstance(element, ast.Constant)
+                and isinstance(element.value, str) else None
+                for element in node.elts
+            ]
+            for index, value in enumerate(elements):
+                if (value == "--backend" and index + 1 < len(elements)
+                        and elements[index + 1] in retired):
+                    lines.append(node.lineno)
+                elif (isinstance(value, str) and value.startswith("--backend=")
+                      and value.split("=", 1)[1] in retired):
+                    lines.append(node.lineno)
+                elif value == "--backend" and index + 1 < len(elements):
+                    # The backend is chosen by a VARIABLE, so its value is not
+                    # visible here. Recognising only adjacent literals made this
+                    # scan report a file as clean while it executed live C:
+                    # phase21_complete_guard_suite.compile_case builds
+                    # [compiler, "--backend", backend] and qualify_case passes
+                    # "mir-to-c" into it, from three workflows.
+                    #
+                    # Resolving that needs interprocedural dataflow. This check
+                    # does the thing it can defend instead: an argv whose
+                    # backend value cannot be resolved to a literal is
+                    # UNRESOLVED, and unresolved fails -- same direction as the
+                    # rest of this instrument, where a site that cannot be
+                    # classified is a failure rather than a pass. A file that
+                    # genuinely only ever passes a live spelling says so with a
+                    # registered exclusion.
+                    if node.elts[index + 1].__class__ is not ast.Constant:
+                        lines.append(node.lineno)
+        if lines:
+            found[path.relative_to(ROOT).as_posix()] = sorted(set(lines))
+    return found
+
+
+# Patch 24.12b (#416): a vector is keyed by source path and pins
+# source_sha256, so the oracle's identity model assumes the source is a
+# tracked file. A guard that *writes* its own .gst sources has nothing to key
+# on, and no budget discharges the conversion step for it. That is a different
+# disposition from "needs a capture", and the roadmap's list of eight does not
+# distinguish them -- so it is measured here rather than inherited.
+#
+# Over-approximating on purpose: any locus that synthesizes a .gst at all is
+# flagged, and the flag is cleared only by a registered disposition. A guard
+# that starts synthesizing sources later fails this rather than silently
+# becoming unconvertible.
+# Patch 24.12b: conversion is per call site, not per guard. A guard can hold
+# both a convertible parity arm and an arm asserting a property of the EMITTED
+# C with no native counterpart; the second kind is Patch 24.12a's class and
+# cannot be converted. Empty because every such arm in this patch's population
+# has been retired and inverted -- the register stays, with its falsifier, so
+# a future arm has somewhere to be declared rather than being invented ad hoc.
+PYTHON_EMITTER_ONLY_ARMS: dict[str, str] = {}
+
+
+PYTHON_SOURCE_SYNTHESIS_DISPOSITION: dict[str, str] = {
+}
+
+
+def python_source_synthesis() -> dict[str, list[int]]:
+    """Loci that write their own .gst sources at run time.
+
+    Detected by walking for a write to a path whose literal or f-string
+    spelling ends in ``.gst``. It over-approximates: a locus that writes any
+    such path is reported, whether or not that source reaches the retired arm.
+    """
+    import ast
+
+    def names_gst(node: ast.AST) -> bool:
+        for child in ast.walk(node):
+            if isinstance(child, ast.Constant) and isinstance(child.value, str):
+                if child.value.endswith(".gst"):
+                    return True
+        return False
+
+    found: dict[str, list[int]] = {}
+    for path in sorted((ROOT / "scripts").glob("*.py")):
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"))
+        except SyntaxError:
+            continue
+        lines: list[int] = []
+        for node in ast.walk(tree):
+            if (isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Attribute)
+                    and node.func.attr in ("write_text", "write_bytes")):
+                target = node.func.value
+                # `<expr>.write_text(...)` where <expr> mentions a .gst name,
+                # or a variable assigned from one -- the assignment form is
+                # caught by scanning the enclosing module for the same name.
+                if names_gst(target):
+                    lines.append(node.lineno)
+        # Catch the two-step form: `p = dir / "x.gst"` then `p.write_text(...)`.
+        gst_vars: set[str] = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign) and names_gst(node.value):
+                for target in node.targets:
+                    if isinstance(target, ast.Name):
+                        gst_vars.add(target.id)
+        for node in ast.walk(tree):
+            if (isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Attribute)
+                    and node.func.attr in ("write_text", "write_bytes")
+                    and isinstance(node.func.value, ast.Name)
+                    and node.func.value.id in gst_vars):
+                lines.append(node.lineno)
+        if lines:
+            found[path.relative_to(ROOT).as_posix()] = sorted(set(lines))
+    return found
+
+
+def check_python_population() -> dict[str, object]:
+    """Patch 24.12b: the criterion, measured over the live tree."""
+    sites = python_retired_argv_sites()
+    pending = set(PYTHON_RETIRED_ARGV_PENDING_CONVERSION)
+    excluded = set(PYTHON_RETIRED_ARGV_EXCLUSIONS)
+
+    overlap = pending & excluded
+    require(not overlap,
+            "a Python locus is both pending conversion and excluded: "
+            f"{sorted(overlap)}")
+
+    accounted = pending | excluded
+    unaccounted = sorted(set(sites) - accounted)
+    require(not unaccounted,
+            "a scripts/*.py builds a retired-backend argv and is neither "
+            "owned for conversion nor registered as excluded: "
+            f"{unaccounted}")
+
+    # An account that no longer describes the tree is worse than none: it
+    # reads as coverage. Both directions fail.
+    stale = sorted(accounted - set(sites))
+    require(not stale,
+            "a registered Python locus no longer builds a retired-backend "
+            f"argv; retire its row instead of leaving it: {stale}")
+
+    for locus, reason in PYTHON_RETIRED_ARGV_EXCLUSIONS.items():
+        require(len(reason.split()) >= 12,
+                f"a Python exclusion is registered without a reason: {locus}")
+
+    # #416: a locus pending conversion that synthesizes its own .gst sources
+    # cannot be discharged by capturing a vector, because there is no tracked
+    # path to key one on. It needs a registered disposition saying which of
+    # its sources are capturable and where the rest go.
+    for locus, description in PYTHON_EMITTER_ONLY_ARMS.items():
+        require(locus in pending,
+                f"an emitter-only arm is registered against a locus that is "
+                f"not pending conversion; retire the row: {locus}")
+        require(len(description.split()) >= 12,
+                f"an emitter-only arm is registered without a description: "
+                f"{locus}")
+
+    synthesis = python_source_synthesis()
+    needs_disposition = sorted(pending & set(synthesis))
+    missing = [locus for locus in needs_disposition
+               if locus not in PYTHON_SOURCE_SYNTHESIS_DISPOSITION]
+    require(not missing,
+            "a locus pending conversion writes its own .gst sources and has "
+            f"no registered disposition: {missing}")
+    for locus, disposition in PYTHON_SOURCE_SYNTHESIS_DISPOSITION.items():
+        require(locus in synthesis,
+                f"a source-synthesis disposition names a locus that no longer "
+                f"synthesizes sources; retire its row instead: {locus}")
+        require(len(disposition.split()) >= 12,
+                f"a source-synthesis disposition has no reason: {locus}")
+
+    return {
+        "population": len(sites),
+        "pending": len(pending),
+        "excluded": len(excluded),
+        "synthesizes_sources": sorted(pending & set(python_source_synthesis())),
+        "sites": {locus: list(lines) for locus, lines in sites.items()},
+    }
+
+
 def fail(message: str) -> None:
     raise SystemExit(f"{GUARD_L1}: {message}")
 
@@ -503,6 +836,43 @@ _VECTORS_PATH = VECTORS
 def load_vectors() -> dict:
     require(_VECTORS_PATH.is_file(), "frozen vector file is missing")
     return json.loads(_VECTORS_PATH.read_text(encoding="utf-8"))
+
+
+def load_servable_vectors() -> dict:
+    """v1 plus the Patch 24.12b v2 capture, for serving only.
+
+    The two corpora are kept as separate files on purpose. v1 is immutable and
+    its supersession policy forbids refreshing it, so v2 is an *addition*
+    rather than an edit: a source captured for the Python guards cannot
+    silently redefine a v1 observable. Serving unions them; `validate` still
+    measures v1 alone, so the v1 counts this guard reports keep meaning what
+    they meant.
+
+    A v2 vector that collides with a v1 id fails rather than shadowing it --
+    the one direction that would let a new capture overwrite a frozen
+    expectation without anything noticing.
+    """
+    vectors = load_vectors()
+    # During a mutation replay `_materialize_from` repoints _VECTORS_PATH at a
+    # scratch file holding exactly the table under test. That table is already
+    # the complete set to serve, so merging v2 on top of it would re-add the
+    # very vectors being mutated and trip the collision check below. Serving
+    # the scratch verbatim is what makes the v2 arm testable at all.
+    if _VECTORS_PATH != VECTORS:
+        return vectors
+    if not VECTORS_V2.is_file():
+        return vectors
+    second = json.loads(VECTORS_V2.read_text(encoding="utf-8"))
+    require(second.get("format") == "phase24_frozen_oracle_vectors_v2",
+            "the v2 capture file is not a v2 corpus")
+    collisions = sorted(set(second["vectors"]) & set(vectors["vectors"]))
+    require(not collisions,
+            f"a v2 vector would shadow a v1 vector; v1 is immutable and a "
+            f"capture may not redefine it: {collisions}")
+    merged = dict(vectors)
+    merged["vectors"] = dict(vectors["vectors"])
+    merged["vectors"].update(second["vectors"])
+    return merged
 
 
 def load_corpus() -> dict:
@@ -544,8 +914,12 @@ def check_vector(vector_id: str, vectors: dict) -> dict:
     if vector["kind"] == "exec":
         require("execution" in vector,
                 f"exec vector has no frozen execution: {vector_id}")
+    # Provenance is an allowlist, not a free field: an unrecognised value
+    # fails closed. The v2 spelling is listed explicitly rather than relaxed
+    # to a prefix match, so a third capture has to declare itself too.
     require(vector["provenance"] in (
-        "derived_from_archived_corpus_v1", "captured_live_while_green"),
+        "derived_from_archived_corpus_v1", "captured_live_while_green",
+        "captured_live_while_green_patch24_12b"),
         f"frozen vector has an unknown provenance: {vector_id}")
     require(not (vector["provenance"] == "derived_from_archived_corpus_v1"
                  and vector.get("archived_corpus_case") is None),
@@ -564,7 +938,9 @@ def materialize(vector_id: str, prefix: Path, expect_kind: str | None,
     by-product of it: a case that used to write a file must still be
     recorded as writing it.
     """
-    vectors = load_vectors()
+    # Serving resolves v1 and the v2 capture; validate below still measures
+    # v1 alone, so its counts keep meaning what they meant.
+    vectors = load_servable_vectors()
     vector = check_vector(vector_id, vectors)
     if expect_kind is not None:
         require(vector["kind"] == expect_kind,
@@ -997,6 +1373,28 @@ def validate_mutations(vectors: dict) -> int:
                 else f"{root / 'out'}.stdout").read_bytes() != good_out,
                 f"stdout mutation is invisible: {vector_id}")
 
+            # Patch 24.12b (#412): stderr on the same footing as exit and
+            # stdout. materialize freezes it on every vector, and the docstring
+            # above has always claimed the live lane caught a wrong stderr --
+            # but nothing here demonstrated it, so the claim rested on the
+            # arm that did not exist. For an exec vector the observable is
+            # {prefix}.stderr; for a reject it is folded into {prefix}.log.
+            good_err = Path(
+                f"{prefix}.log" if kind == "reject" else f"{prefix}.stderr"
+            ).read_bytes()
+            mutated = copy.deepcopy(table)
+            stream = _served_block(mutated[vector_id], kind, env_key)["stderr"]
+            tampered = bytes.fromhex(str(stream["hex"])) + b"tampered"
+            stream["hex"] = tampered.hex()
+            stream["size"] = len(tampered)
+            stream["sha256"] = digest_bytes(tampered)
+            _materialize_from(vector_id, mutated, root / "err",
+                              env_key=env_key)
+            require(Path(
+                f"{root / 'err'}.log" if kind == "reject"
+                else f"{root / 'err'}.stderr").read_bytes() != good_err,
+                f"stderr mutation is invisible: {vector_id}")
+
             if env_key is not None:
                 # Two more ways an environment-parameterised vector could be
                 # served wrongly and look fine: dropping the environment (and
@@ -1278,8 +1676,30 @@ def validate() -> dict:
             "the registry must not enumerate frozen fixture paths; the "
             "Phase 12.5 route probes have to stay out of it")
 
+    # v2 is pinned the same way v1 is. It was not, and the asymmetry was
+    # load-bearing: capture_authority_digest is WRITTEN into each v2 vector and
+    # read by nothing, so a v2 observation could be edited -- keeping its own
+    # size and sha256 fields self-consistent -- and the loader would accept it,
+    # because it checked only the format and collisions against v1. The frozen
+    # corpus is the only oracle the retired backend leaves behind; an
+    # unpinned half of it is a corpus that can be quietly rewritten.
+    if VECTORS_V2.exists():
+        v2_table = json.loads(VECTORS_V2.read_text(encoding="utf-8"))["vectors"]
+        require(node.get("v2_vector_count") == len(v2_table),
+                "registered v2 vector count drifted: registry says "
+                f"{node.get('v2_vector_count')}, the manifest holds "
+                f"{len(v2_table)}")
+        require(node.get("v2_vectors_digest") == canonical_digest(v2_table),
+                "registered v2 vectors digest drifted; a v2 observation was "
+                "edited after capture")
+
     check_no_live_c()
     check_native_arm_split()
+    # Patch 24.12b (#415): the Python half of the population, derived from the
+    # tree rather than read off FROZEN_LOCI. check_no_live_c above iterates a
+    # registered tuple and so cannot see a guard that was never registered.
+    python_population = check_python_population()
+    check_module_fixture_cover()
     require(node.get("frozen_loci") == list(FROZEN_LOCI) and
             node.get("frozen_recipes") == list(FROZEN_RECIPES),
             "registered frozen locus set drifted")
@@ -1863,9 +2283,21 @@ def main() -> None:
                     args.env)
         return
     if args.command == "mutation-evidence":
+        # v1 and the v2 capture are both proven falsifiable, and the two
+        # counts are reported separately. A capture that is servable but never
+        # mutated is the #399 shape again -- an observable nothing can
+        # contradict -- so v2 does not get to inherit v1's evidence.
         checked = validate_mutations(load_vectors())
-        print(f"{GUARD_L2}: {checked} frozen vectors are falsifiable "
-              f"(exit, stdout, moved source, changed kind, unknown id)")
+        servable = load_servable_vectors()
+        second = {"vectors": {k: v for k, v in servable["vectors"].items()
+                              if k not in load_vectors()["vectors"]}}
+        captured = validate_mutations(second) if second["vectors"] else 0
+        # Patch 24.12b (#412): stderr joins the named arms. It is named here
+        # because this line is the only place the covered set is stated, and
+        # an arm that runs but is not named reads as absent.
+        print(f"{GUARD_L2}: {checked} v1 + {captured} v2 frozen vectors are "
+              f"falsifiable (exit, stdout, stderr, moved source, changed "
+              f"kind, unknown id)")
         return
 
     node = validate()
@@ -1877,11 +2309,19 @@ def main() -> None:
         check_review(node)
         print(f"{GUARD_L1}: review current")
     else:
+        # State the covered counts rather than leaving them implicit: an
+        # unstated split reads as full coverage to anyone who sees "ok"
+        # (#399, the 34-of-253 lesson). The Python population is derived,
+        # so its size is a measurement and belongs in the summary.
+        population = check_python_population()
         print(f"{GUARD_L1}: ok "
               f"({node['vector_count']} vectors, "
               f"{node['archived_corpus_linked_vectors']} archived-corpus "
               f"linked, {len(FROZEN_LOCI)} harnesses and "
-              f"{len(FROZEN_RECIPES)} recipes free of live C)")
+              f"{len(FROZEN_RECIPES)} recipes free of live C; "
+              f"{population['population']} Python loci build a retired-backend "
+              f"argv = {population['pending']} pending conversion + "
+              f"{population['excluded']} registered exclusions)")
 
 
 if __name__ == "__main__":

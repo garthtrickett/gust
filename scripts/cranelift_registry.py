@@ -96,6 +96,7 @@ TOP_FIELDS = {
     "phase24_preflight_closure",
     "phase24_retirement_consumer_inventory",
     "phase24_12a_emitter_only_retirement",
+    "phase24_12b_python_parity_conversion",
     "phase24_frozen_oracle_replacement",
     "phase24_cr19_multi_module_analysis",
     "phase24_filename_behavior_characterization",

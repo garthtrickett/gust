@@ -9,6 +9,7 @@ import os
 import shutil
 import stat
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -192,21 +193,29 @@ def evidence() -> None:
     compiler = ROOT / "build/phase10-package/bin/gust"
     driver = ROOT / "build/phase10-package/bin/gust-native-backend"
     runtime_package = ROOT / "build/phase10-package/bin/gust-runtime-package.a"
-    runtime = ROOT / "src/runtime.c"
-    for prerequisite in (compiler, driver, runtime_package, runtime):
+    # src/runtime.c was a prerequisite only because the retired host-compile
+    # arm below concatenated it in front of the emitted C. With that arm gone
+    # the requirement is vacuous -- the file is tracked, so it always exists --
+    # and keeping it would tell the next reader this guard still touches the C
+    # runtime. Same shape as the dead `CC_BIN` bindings 24.14 removes.
+    for prerequisite in (compiler, driver, runtime_package):
         require(prerequisite.is_file(), f"missing prerequisite {prerequisite}")
 
     expected_stdout = value["positive_authority"]["expected_stdout"].encode()
-    c_outputs: dict[str, bytes] = {}
-    for key in ("inferred", "explicit"):
-        result = run([str(compiler), "--backend", "mir-to-c",
-                      str(witnesses[key])])
-        require(result.returncode == 0 and not result.stderr and
-                result.stdout.startswith(b"// Transpiled C Code\n#include"),
-                f"retained compatibility failed for {key}")
-        c_outputs[key] = result.stdout
-    require(c_outputs["inferred"] == c_outputs["explicit"],
-            "inferred and explicit generated C differ")
+    # Patch 24.12b: retired, and INVERTED rather than deleted -- same
+    # disposition as the derivation guard's equivalent arm. This compiled two
+    # witnesses through the retired route only to require their emitted C be
+    # identical. That is a property of the emitter with no native counterpart,
+    # so no frozen vector can stand in for it.
+    #
+    # The needle is assembled from fragments: writing the spelling literally
+    # to assert its absence would re-enrol this file and put a retired argv
+    # back into the derived population, so the assertion would falsify itself.
+    retired_route = "--backend" + '", "' + "mir-to-c"
+    own_source = Path(__file__).read_text(encoding="utf-8")
+    require(retired_route not in own_source,
+            "the retired emitter-only arm is back in "
+            "phase24_cr15_qualification")
 
     with tempfile.TemporaryDirectory(prefix="gust-phase24-cr15-") as temporary:
         temp = Path(temporary)
@@ -268,18 +277,25 @@ def evidence() -> None:
         require(outputs["inferred"] == outputs["explicit"],
                 "inferred and explicit native output differs")
 
-        for key in ("inferred", "explicit"):
-            c_source = temp / f"{key}.c"
-            c_source.write_bytes(runtime.read_bytes() + c_outputs[key])
-            c_artifact = temp / f"{key}-c"
-            compiled = run(["cc", "-O2", "-Wall", "-pthread", "-Isrc",
-                            str(c_source), "-o", str(c_artifact)])
-            require(compiled.returncode == 0,
-                    f"retained compatibility host compile failed for {key}")
-            executed = run([str(c_artifact)], timeout=20)
-            require(executed.returncode == 0 and
-                    executed.stdout == expected_stdout and not executed.stderr,
-                    f"retained compatibility execution drifted for {key}")
+        # Patch 24.12b: the CONSUMER of the retired emitter arm, retired here
+        # with it. The arm above stopped producing c_outputs; this block still
+        # read it, so `evidence()` raised NameError: name 'c_outputs' is not
+        # defined. It survived local runs because `validate` never calls
+        # `evidence` -- only the packaged-compiler CI job does.
+        #
+        # Inverted rather than deleted. The producer's inverse asserts the
+        # retired argv is absent; this one asserts the host compile that
+        # consumed its output is absent too, because a `cc` line does not
+        # spell the backend and so the first inverse cannot see it coming back.
+        # Assembled from fragments for the same reason the producer's inverse
+        # is: spelling the needle literally puts it in this file, so the
+        # assertion falsifies itself. It did exactly that on the first run --
+        # the evidence arm rejected its own check.
+        host_compile = '"-O2", ' + '"-Wall", ' + '"-pthread", ' + '"-Isrc"'
+        require(host_compile not in own_source,
+                "the retired emitter-only arm's host C compile is back in "
+                "phase24_cr15_qualification: it compiled and ran C emitted by "
+                "the retired route, and has no native counterpart")
 
         failed_artifact = temp / "must-not-fallback"
         failed_env = os.environ.copy()
@@ -302,15 +318,35 @@ def evidence() -> None:
             "without_metadata": "same_spelling_without_metadata_rejected",
             "post_cleanup": "post_cleanup_rejected",
         }[key]
-        outputs = []
-        for route in (("--backend", "mir-to-c"),
-                      ("--backend", "cranelift")):
-            result = run([str(compiler), *route, str(witnesses[witness_key])])
-            require(result.returncode == 1 and not result.stderr and
-                    diagnostic.encode() in result.stdout,
-                    f"negative authority drifted for {key}: {route}")
-            outputs.append(result.stdout)
-        require(outputs[0] == outputs[1],
+        # Patch 24.12b: the retired arm is served frozen, the native arm still
+        # runs live, and the two diagnostics are still compared byte for byte.
+        # Both arms are asked with the RELATIVE path, which is how the vector
+        # was captured -- a diagnostic quotes the path it was given, so a
+        # spelling difference alone would fail the comparison.
+        witness = witnesses[witness_key]
+        vector_id = witness.relative_to(ROOT).as_posix()
+        with tempfile.TemporaryDirectory(prefix="gust-cr15q-frozen-") as raw:
+            prefix = Path(raw) / "frozen"
+            materialized = run([sys.executable,
+                                "scripts/phase24_frozen_oracle.py",
+                                "materialize", vector_id, str(prefix),
+                                "--kind", "reject"])
+            require(materialized.returncode == 0,
+                    f"frozen oracle refused {key}: "
+                    f"{materialized.stderr.decode(errors='replace')[:200]}")
+            frozen_status = int(
+                Path(f"{prefix}.compile.status").read_text().strip())
+            frozen_stdout = Path(f"{prefix}.compile.stdout").read_bytes()
+            frozen_stderr = Path(f"{prefix}.compile.stderr").read_bytes()
+        require(frozen_status == 1 and not frozen_stderr and
+                diagnostic.encode() in frozen_stdout,
+                f"frozen negative authority drifted for {key}")
+
+        native = run([str(compiler), "--backend", "cranelift", vector_id])
+        require(native.returncode == 1 and not native.stderr and
+                diagnostic.encode() in native.stdout,
+                f"negative authority drifted for {key}: native")
+        require(frozen_stdout == native.stdout,
                 f"pre-driver diagnostics diverged for {key}")
 
     check_review(value)
