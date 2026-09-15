@@ -890,6 +890,38 @@ def effective_phase22_summary(registry: dict, value: dict) -> dict:
             emitter_surface.get("removed_case_count"),
             "the Phase 22 census and the frozen-surface transition disagree "
             "about how many live-C cases Patch 24.12a removed")
+    # Patch 24.12b advances the same census once more, under the same
+    # two-authority rule: its reduction must agree with its own
+    # frozen-surface transition or one of them is measuring something else.
+    conversion = registry.get(
+        "phase24_12b_python_parity_conversion", {}).get(
+            "phase22_invocation_successor")
+    if conversion is None:
+        return current
+    previous, current = current, conversion.get("current_summary")
+    require(conversion.get("contract_version") ==
+            "phase24_12b_invocation_successor_v1" and
+            conversion.get("previous_summary") == previous and
+            isinstance(current, dict) and
+            conversion.get("partial_or_unregistered_reduction") == "rejected",
+            "Patch 24.12b Phase 22 invocation successor drifted")
+    require(current["total"] < previous["total"] and
+            current["unclassified_count"] == previous["unclassified_count"]
+            == 0,
+            "Patch 24.12b did not reduce a fully classified Phase 22 census")
+    require(conversion.get("removed_invocation_count") ==
+            previous["total"] - current["total"] and
+            conversion["removed_invocation_count"] ==
+            previous["selection_counts"]["explicit_c"] -
+            current["selection_counts"]["explicit_c"],
+            "the Patch 24.12b census reduction is not entirely explicit-C")
+    conversion_surface = registry.get(
+        "phase24_12b_python_parity_conversion", {}).get(
+            "frozen_surface_transition", {})
+    require(conversion["removed_invocation_count"] ==
+            conversion_surface.get("removed_case_count"),
+            "the Phase 22 census and the frozen-surface transition disagree "
+            "about how many live-C cases Patch 24.12b removed")
     return current
 
 

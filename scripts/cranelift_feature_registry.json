@@ -24383,7 +24383,9 @@
           "explicit_c": 63
         }
       },
-      "status": "patch24_12b_in_progress"
+      "removed_case_count": 3,
+      "status": "patch24_12b_in_progress",
+      "unchanged_fields": []
     },
     "phase22_invocation_successor": {
       "authority_base_main": "6592c5b4d515c55ead4a82a49095d4bd42f83f2e",
@@ -24475,6 +24477,42 @@
         "unclassified_count": 0
       },
       "removed_invocation_count": 3,
+      "status": "patch24_12b_in_progress"
+    },
+    "production_audit_transition": {
+      "authority_base_main": "6592c5b4d515c55ead4a82a49095d4bd42f83f2e",
+      "change_reason": "patch24_12b_retired_the_emitter_only_arms_inside_surviving_guards_so_their_explicit_C_invocations_and_retained_test_surfaces_leave_the_audit",
+      "contract_version": "phase24_12b_production_audit_transition_v1",
+      "current_audit": {
+        "active_non_bootstrap_live_c_lane_count": 1,
+        "active_non_bootstrap_live_c_owner": "phase23_mir_to_c_focused_live",
+        "non_bootstrap_retained_test_surface_count": 55,
+        "phase25_bootstrap_explicit_c_count": 5,
+        "repository_explicit_c_count": 60,
+        "repository_invocation_count": 200,
+        "supported_production_or_release_explicit_c_count": 0,
+        "supported_surface_count": 6,
+        "supported_surface_manifest_digest": "d42f0663249e8ac61f939a6b802eb3ce5078a7aad7bc34da588ba6bafc23c2e0",
+        "unknown_downstream_count": 0
+      },
+      "partial_extra_or_substituted_audit": "rejected",
+      "previous_audit": {
+        "active_non_bootstrap_live_c_lane_count": 1,
+        "active_non_bootstrap_live_c_owner": "phase23_mir_to_c_focused_live",
+        "non_bootstrap_retained_test_surface_count": 58,
+        "phase25_bootstrap_explicit_c_count": 5,
+        "repository_explicit_c_count": 63,
+        "repository_invocation_count": 203,
+        "supported_production_or_release_explicit_c_count": 0,
+        "supported_surface_count": 6,
+        "supported_surface_manifest_digest": "d42f0663249e8ac61f939a6b802eb3ce5078a7aad7bc34da588ba6bafc23c2e0",
+        "unknown_downstream_count": 0
+      },
+      "reduced_fields": [
+        "non_bootstrap_retained_test_surface_count",
+        "repository_explicit_c_count",
+        "repository_invocation_count"
+      ],
       "status": "patch24_12b_in_progress"
     },
     "text_surface_successor": {
