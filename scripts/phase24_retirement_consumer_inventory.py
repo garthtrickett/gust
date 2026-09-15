@@ -612,6 +612,20 @@ RETIRED_FILE_SURFACES = [
      "gust --backend mir-to-c <source.gst>", "24.13"),
     ("scripts/run-gust-file.sh",
      'RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-mir-to-c}"', "24.13"),
+    # Patch 24.14: rebased, not deleted. The check survives -- the bootstrap
+    # entry still cannot take -o -- so what must be gone is the wording that
+    # named the removed backend, and a companion row below requires the
+    # surviving message to be present.
+    ("compiler/test_runner_entry.gst",
+     "the MIR-to-C backend does not accept -o", "24.14"),
+]
+
+# Surfaces a retirement patch REPLACED rather than removed. A rebased
+# diagnostic needs both halves asserted: the old wording gone, and the new
+# wording there. Asserting only the first lets the check be deleted outright.
+REBASED_FILE_SURFACES = [
+    ("compiler/test_runner_entry.gst",
+     "the bootstrap emitter entry does not accept -o", "24.14"),
 ]
 
 FILE_ROWS = [
@@ -622,8 +636,7 @@ FILE_ROWS = [
      'std.str_eq(backend_name, "mir-to-c")', "24.13", "retire"),
     # Patch 24.13 retired this help line. The row stays, inverted: see
     # RETIRED_FILE_SURFACES below.
-    ("compiler/test_runner_entry.gst",
-     "the MIR-to-C backend does not accept -o", "24.14", "retire"),
+    # Patch 24.14 rebased this error class; the row is inverted below.
     ("compiler/test_runner_entry.gst",
      "mut c_code := codegen.codegen_generate(programs, module_prefixes, &env, ctx);",
      "25", "survive"),
@@ -959,6 +972,45 @@ def check_harness_callers(bodies: dict[str, str],
                     f"unregistered C-harness caller: {recipe} -> {harness}")
 
 
+# Patch 24.14 (#401): the native route's linker driver, excepted BY NAME.
+#
+# 24.14 removes C compiler discovery that exists to emit and build C as a
+# backend product. The supported native route discovers its linker driver on a
+# normal compilation path and must survive: deleting it removes the ability to
+# LINK, not the ability to emit C, and the two share only the CC variable and
+# the cc binary.
+#
+# The falsifier over-approximates within the right scope rather than
+# enumerating call sites. It asserts the discovery is still there and still
+# reached from the link request -- so a patch that deletes it fails here rather
+# than at whatever downstream guard happens to notice a missing binary.
+#
+# It deliberately does NOT assert that this is the only cc consumer anywhere:
+# 46 cc call sites across 44 scripts/*.sh link native objects, and that form
+# was measured and rejected as unsatisfiable without deleting valid evidence.
+NATIVE_LINKER_DRIVER = {
+    "path": "compiler/experiments/cranelift/src/main.rs",
+    "discovery": 'env::var_os("CC").unwrap_or_else(|| OsString::from("cc"))',
+    "request_field": "linker_driver,",
+    "invocation": "Command::new(&request.linker_driver)",
+    "policy": "compiler/mir_target_authority.gst",
+    "policy_marker": "Patch 18.7: linker discovery and invocation policy",
+}
+
+
+def check_native_linker_driver() -> None:
+    """Patch 24.14: the supported route can still find and run its linker."""
+    driver = read(NATIVE_LINKER_DRIVER["path"])
+    for key in ("discovery", "request_field", "invocation"):
+        require(NATIVE_LINKER_DRIVER[key] in driver,
+                f"Patch 24.14 removed the native route's linker driver, which "
+                f"#401 excepts by name: {NATIVE_LINKER_DRIVER[key]}")
+    policy = read(NATIVE_LINKER_DRIVER["policy"])
+    require(NATIVE_LINKER_DRIVER["policy_marker"] in policy,
+            "the Patch 18.7 linker discovery policy this exception rests on "
+            "is gone")
+
+
 def check_sweep() -> dict[str, int]:
     """Every backend-spelling hit in execution loci belongs to a row."""
     loci = (["Makefile"] + JUSTFILE_FRAGMENTS
@@ -1282,6 +1334,10 @@ def validate() -> dict:
         require(needle not in read(path),
                 f"Patch {owner} retired this surface, but it is back: "
                 f"{path}: {needle[:48]}")
+    for path, needle, owner in REBASED_FILE_SURFACES:
+        require(needle in read(path),
+                f"Patch {owner} rebased this surface onto a surviving reason, "
+                f"but that is gone too: {path}: {needle[:48]}")
     for family_name, family in SH_FAMILIES.items():
         for path, count in family["files"].items():
             text = read(path)
@@ -1311,6 +1367,7 @@ def validate() -> dict:
         require((ROOT / path).is_file(),
                 f"inventoried guard script is missing: {path}")
 
+    check_native_linker_driver()
     counts = check_sweep()
     require(counts == expected_sweep(),
             f"live C sweep moved without inventory update: "

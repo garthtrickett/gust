@@ -157,8 +157,15 @@ func compiler_parse_invocation(args: std.Vector[str, ctx], ctx: &Arena) Compiler
         compiler_invocation_fail("expected exactly one source path");
     }
 
+    // Patch 24.14: this error class existed because the retired backend
+    // emitted to stdout and could not take -o. Patch 24.13 removed the
+    // user-facing spellings, so the only way to reach tag 0 now is the
+    // bootstrap-only entry, which never passes -o. The check is kept rather
+    // than deleted and its message names the surviving reason: a diagnostic
+    // that can no longer fire for the removed backend should say what it does
+    // guard, not what it used to.
     if invocation.backend.tag == 0 && invocation.output_was_explicit == 1 {
-        compiler_invocation_fail("the MIR-to-C backend does not accept -o");
+        compiler_invocation_fail("the bootstrap emitter entry does not accept -o");
     }
 
     if invocation.backend.tag == 1 && invocation.output_was_explicit == 0 {
