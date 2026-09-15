@@ -24,9 +24,12 @@ BUILD_LOG="build/gust-build.log"
 # C through this line, registered as this patch's residue. Flipping the default
 # is what discharges the unqualified claim 24.12b deferred here.
 #
-# The retired spelling is still accepted as an explicit request so a caller
-# that pins it gets the compiler's removal diagnostic rather than this script
-# rejecting an argument the compiler would explain better.
+# The retired spelling is still RECOGNISED as an explicit request -- and
+# refused here, immediately below, with a reason. It is not silently aliased to
+# cranelift: a caller that pinned it asked for something specific and is told
+# it is gone. It is refused by this script rather than by the compiler because
+# there is no longer a compiler invocation to reach; the branch that made one
+# could only ever have produced a rejection.
 RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-cranelift}"
 case "$RUNNER_ROUTE" in
   mir-to-c|cranelift) ;;
@@ -36,48 +39,41 @@ case "$RUNNER_ROUTE" in
     ;;
 esac
 
-if [ "${GUST_RUNNER_SKIP_BUILD:-0}" != "1" ]; then
-  # Force make to recognize compiler changes before a normal developer run.
-  if [ -f compiler/test_runner_entry.gst ]; then
-    touch compiler/test_runner_entry.gst
-  fi
-  if [ "$RUNNER_ROUTE" = "cranelift" ]; then
-    if ! make phase10-native-package >"$BUILD_LOG" 2>&1; then
-      cat "$BUILD_LOG" >&2
-      echo "❌ Error: native package build failed. Aborting. Full diagnostics: $BUILD_LOG" >&2
-      exit 1
-    fi
-  elif ! make gust >"$BUILD_LOG" 2>&1; then
-    cat "$BUILD_LOG" >&2
-    echo "❌ Error: 'make gust' failed. Aborting. Full diagnostics: $BUILD_LOG" >&2
-    exit 1
-  fi
-elif [ "$RUNNER_ROUTE" = "cranelift" ] && \
-    { [ ! -x gust ] || [ ! -x build/gust-native-backend ] || \
-      [ ! -f build/gust-runtime-package.a ]; }; then
-  echo "❌ Error: native GUST_RUNNER_SKIP_BUILD requires an existing native package." >&2
-  exit 1
-elif [ "$RUNNER_ROUTE" = "mir-to-c" ] && [ ! -x gust ]; then
-  echo "❌ Error: MIR-to-C GUST_RUNNER_SKIP_BUILD requires an existing compiler." >&2
-  exit 1
-fi
-
-TEST_STEM="$(basename "$TEST_PATH" .gst)"
-TEMP_OUTPUT="build/${TEST_STEM}.compile.log"
-NATIVE_OUTPUT="build/${TEST_STEM}_bin"
-
-# Patch 24.13: the mir-to-c route is retired. It emitted C, host-compiled it
-# and ran the result -- every step through a backend this patch removes, so
-# the branch could only ever reach a rejection. The route VALUE is still
-# accepted above and rejected with a reason, rather than silently treated as
-# cranelift: a caller that pinned GUST_RUNNER_ROUTE=mir-to-c asked for
-# something specific and should be told it is gone.
+# Patch 24.13: the mir-to-c route is retired, and refused BEFORE any build
+# work. It emitted C, host-compiled it and ran the result -- every step
+# through a backend this patch removes -- so the branch could only ever reach
+# a rejection. Refusing it after `make gust` would spend a full compiler build
+# to reach a message that never depended on the build.
 if [ "$RUNNER_ROUTE" = "mir-to-c" ]; then
   echo "❌ Error: GUST_RUNNER_ROUTE=mir-to-c selects the generated-C backend," >&2
   echo "   which was removed in Phase 24. Use cranelift, or the frozen oracle" >&2
   echo "   (scripts/phase24_frozen_oracle.py materialize) for recorded C results." >&2
   exit 1
 fi
+
+# Only cranelift reaches this point, so the build and skip-build branches no
+# longer need a per-route arm. The arms that built ./gust for the retired
+# route, and that required an existing ./gust under GUST_RUNNER_SKIP_BUILD,
+# are gone with the route they served.
+if [ "${GUST_RUNNER_SKIP_BUILD:-0}" != "1" ]; then
+  # Force make to recognize compiler changes before a normal developer run.
+  if [ -f compiler/test_runner_entry.gst ]; then
+    touch compiler/test_runner_entry.gst
+  fi
+  if ! make phase10-native-package >"$BUILD_LOG" 2>&1; then
+    cat "$BUILD_LOG" >&2
+    echo "❌ Error: native package build failed. Aborting. Full diagnostics: $BUILD_LOG" >&2
+    exit 1
+  fi
+elif [ ! -x gust ] || [ ! -x build/gust-native-backend ] || \
+    [ ! -f build/gust-runtime-package.a ]; then
+  echo "❌ Error: native GUST_RUNNER_SKIP_BUILD requires an existing native package." >&2
+  exit 1
+fi
+
+TEST_STEM="$(basename "$TEST_PATH" .gst)"
+TEMP_OUTPUT="build/${TEST_STEM}.compile.log"
+NATIVE_OUTPUT="build/${TEST_STEM}_bin"
 
 echo "=== [1/2] COMPILING GUST WITH CRANELIFT ===" > to.log
 

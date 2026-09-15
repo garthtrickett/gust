@@ -159,14 +159,13 @@ def validate() -> None:
             "PR Fast reachability is missing")
 
 
-def host_c_compiles(source: Path, generated: bytes) -> None:
-    with tempfile.TemporaryDirectory(prefix="gust-phase23-scope-") as raw:
-        output = Path(raw) / "program.c"
-        output.write_bytes((ROOT / "src/runtime.c").read_bytes() + generated)
-        result = run(["cc", "-O0", "-w", "-pthread", "-Isrc", str(output),
-                      "-o", str(Path(raw) / "program")])
-        require(result.returncode == 0,
-                f"{source.relative_to(ROOT)} no longer compiles through the explicit-C oracle")
+# Patch 24.13: host_c_compiles is retired with the oracle it served.
+#
+# It host-compiled the explicit-C oracle's output to prove the positives still
+# lowered. The conversion in evidence() below asserts acceptance at the front
+# end instead, where it is actually decided, so this had no callers left. Its
+# failure message -- "no longer compiles through the explicit-C oracle" --
+# could not be true of a tree with no explicit-C oracle.
 
 
 def evidence() -> None:
@@ -227,7 +226,7 @@ def render() -> str:
         f"- Positives: `{', '.join(value['positives'])}`",
         f"- Assurance: `{value['assurance']}` (`unqualified_candidate_evidence`; not merge authority).",
         "- Current-scope-only: parent shadowing, disjoint block reuse, assignment, and different-function reuse remain valid.",
-        "- Explicit MIR-to-C remains the oracle. Default-native valid fixtures retain their explicit native-capability deferral; no fallback is added.",
+        "- Explicit MIR-to-C was this guard's oracle through Patch 23.6; Patch 24.13 retires that route and asserts the same claims at the front end, where the duplicate is actually rejected. Default-native valid fixtures retain their explicit native-capability deferral; no fallback is added.",
         "- Seed reconvergence is deliberately deferred to Patch 23.6a.",
         "",
         "## Closure evidence",

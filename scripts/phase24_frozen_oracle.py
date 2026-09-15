@@ -176,6 +176,26 @@ POISONED_ROUTE_PROBES = {
 }
 POISON_GUARD = "GUST_TEST_MIR_TO_C_UNAVAILABLE=1"
 
+# Patch 24.13: the second, stronger way to be a route-unavailability probe.
+#
+# The poison env var identified a probe while the C route still EXISTED: it
+# made the route unavailable at run time so the harness could prove there was
+# no silent fallback. Once 24.13 removes the route outright that premise is
+# gone -- the spelling is rejected by construction, and a probe that still set
+# the poison would be asserting the old world.
+#
+# So a probe may instead be identified by what it now asserts, which is more
+# than the poison form ever did: the invocation must FAIL, the rejection must
+# NAME the removal rather than any test-only condition, and nothing may be
+# emitted. All three markers must follow the spelling inside the window below,
+# so a bare live-C invocation cannot pass by sitting near an unrelated one.
+REMOVAL_REJECTION_MARKERS = (
+    "The removed MIR-to-C spelling still succeeds.",
+    "the generated-C backend was removed in Phase 24",
+    "unexpectedly emitted generated C",
+)
+REMOVAL_REJECTION_WINDOW = 25
+
 # ---------------------------------------------------------------------------
 # Closure guards that required a converted harness to still contain live C.
 #
@@ -535,6 +555,41 @@ RECIPE_HEAD = re.compile(r"^([A-Za-z0-9_-]+)([^:]*):")
 PYTHON_RETIRED_ARGV_PENDING_CONVERSION: tuple[str, ...] = (
 )
 
+# Patch 24.13: rows retired out of the register above, with the check that
+# retires them.
+#
+# The staleness check below requires that a registered locus still builds a
+# retired-backend argv, so a converted file's row must come out. Deleting the
+# row would leave no trace that the file was ever in the population -- the
+# exclusion's reason, and the fact that it was discharged rather than never
+# applying, would both be gone. So the row moves here instead, and the claim
+# inverts: each entry asserts the argv is ABSENT, and fails if the file starts
+# building one again.
+PYTHON_RETIRED_ARGV_DISCHARGED: dict[str, str] = {
+    "scripts/phase23_issue_health_opening.py":
+        "converted by Patch 24.13. Both retired-backend calls asserted issue "
+        "#105's diagnostic against literals, and front-end rejection was "
+        "measured to be backend-independent, so both were re-pointed at the "
+        "native backend with an explicit -o. The assertions are unchanged; "
+        "only the route they travel is.",
+    "scripts/phase23_same_scope_declaration.py":
+        "converted by Patch 24.13. Its exclusion said conversion needed a "
+        "frozen-vector capture and roadmap authority Patch 24.12b did not "
+        "hold. 24.13 did not capture vectors: it retired the two explicit-C "
+        "arms and asserts the same claims where they are actually decided -- "
+        "the duplicate is rejected in the front end, before native capability "
+        "selection is consulted, which is what the two-backend differential "
+        "was proving indirectly. host_c_compiles and its explicit-C oracle "
+        "were retired with it.",
+    "scripts/phase23_structured_guard_defer_native_admission.py":
+        "discharged by Patch 24.13. Its exclusion covered run_oracle, the "
+        "MIR-to-C differential arm. The guard was converted to hold the "
+        "native arm to the registered observables directly, which left "
+        "run_oracle dead while it still constructed a retired-backend argv; "
+        "24.13 retires the function. MIR_TO_C_COMMAND still records the argv "
+        "it built, so the history survives as data.",
+}
+
 # Each exclusion carries the reason it is out, and every reason is a property
 # something else on the tree can contradict -- not an opinion recorded once.
 PYTHON_RETIRED_ARGV_EXCLUSIONS: dict[str, str] = {
@@ -566,23 +621,6 @@ PYTHON_RETIRED_ARGV_EXCLUSIONS: dict[str, str] = {
         "focused_live_oracle for this path, the single live lane Patch 23.10 "
         "deliberately retained. It goes with the backend at 24.13/24.14 "
         "rather than being converted.",
-    "scripts/phase23_same_scope_declaration.py":
-        "no frozen vector covers its sources. compiler/"
-        "phase23_same_scope_duplicate_current.gst and its positives have no "
-        "entry in the vector set, so converting it needs a *capture*, and "
-        "refreshing the frozen set requires a new vector version and explicit "
-        "roadmap authority that Patch 24.12b does not hold. This is a genuine "
-        "two-arm parity guard (#415) and is excluded on feasibility, not on "
-        "shape: it is the first thing the patch holding that authority "
-        "converts.",
-    "scripts/phase23_issue_health_opening.py":
-        "issue-health probe, not a parity guard: both retired-backend calls "
-        "assert issue #105's diagnostic against literals and neither is "
-        "compared against a native arm.",
-    "scripts/phase23_structured_guard_defer_native_admission.py":
-        "oracle role for a closed Phase 23 record; its retired-backend call "
-        "produces the reference the native admission path is judged against, "
-        "and it carries no vector either.",
     "scripts/phase24_frozen_oracle_capture.py":
         "the capture tool itself. It builds the retired argv because running "
         "the retired route while the live lane is green is precisely what a "
@@ -778,6 +816,20 @@ def check_python_population() -> dict[str, object]:
     require(not overlap,
             "a Python locus is both pending conversion and excluded: "
             f"{sorted(overlap)}")
+
+    discharged = set(PYTHON_RETIRED_ARGV_DISCHARGED)
+    reentered = sorted(discharged & set(sites))
+    require(not reentered,
+            "a Python locus registered as discharged builds a retired-backend "
+            f"argv again: {reentered}")
+    for locus in discharged:
+        require((ROOT / locus).is_file(),
+                "a discharged Python locus was deleted rather than converted: "
+                f"{locus}")
+    collision = sorted(discharged & (pending | excluded))
+    require(not collision,
+            "a Python locus is both discharged and still registered as "
+            f"pending or excluded: {collision}")
 
     accounted = pending | excluded
     unaccounted = sorted(set(sites) - accounted)
@@ -1269,10 +1321,19 @@ def check_no_live_c() -> None:
             # freezing it would replace a live refusal with a recording of
             # one. Anything else on this line is a C arm wearing a probe's
             # name.
-            require(any(POISON_GUARD in line
-                        for line in lines[max(0, index - 3):index]),
+            poisoned = any(POISON_GUARD in line
+                           for line in lines[max(0, index - 3):index])
+            window = "\n".join(
+                lines[index:index + REMOVAL_REJECTION_WINDOW])
+            rejects = all(marker in window
+                          for marker in REMOVAL_REJECTION_MARKERS)
+            require(poisoned or rejects,
                     f"a live-C spelling in {locus} is not a registered "
-                    f"route-unavailability probe (line {index + 1})")
+                    f"route-unavailability probe (line {index + 1}): it "
+                    "neither carries the poison guard nor asserts within "
+                    f"{REMOVAL_REJECTION_WINDOW} lines that the spelling is "
+                    "rejected, that the rejection names the Phase 24 removal, "
+                    "and that nothing was emitted")
         if allowed:
             require("unexpectedly emitted generated C" in text,
                     f"a route-unavailability probe in {locus} no longer "

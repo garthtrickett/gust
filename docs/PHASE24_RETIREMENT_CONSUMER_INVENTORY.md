@@ -6,8 +6,8 @@
 
 Status: `patch24_11_complete`
 Authority base: `b7b1713cd65630b14ae92e46afd393990928a2e2`
-Rows: `110`
-Digest: `8d32bf7cc1c00d97de97e33b88e1ae2ad63f445cdb1878154f39fb4f3e3ce9fa`
+Rows: `109`
+Digest: `f0e3ab5d49d9b7cca57d7d2f36af77778919b54395a9a6ab9e3a9ae73ff3fb17`
 
 ## Bootstrap-entry decision
 
@@ -109,9 +109,9 @@ Digest: `8d32bf7cc1c00d97de97e33b88e1ae2ad63f445cdb1878154f39fb4f3e3ce9fa`
 - guard-positive (migrate)
 - make-test-suite (migrate)
 - make-test-suite-parallel (migrate)
+- run-step52-positive-batch (migrate)
 - scripts/phase24_frozen_oracle_capture.py (retire)
-- sh-family:phase22-flip-evidence:deferred-to-24.13 (retire)
-- tests/test_runner.gst :: std.Concat("./gust --backend mir-to-c ", (migrate)
+- sh-family:phase22-flip-evidence (retire)
 
 ### 24.14
 
@@ -142,7 +142,6 @@ Digest: `8d32bf7cc1c00d97de97e33b88e1ae2ad63f445cdb1878154f39fb4f3e3ce9fa`
 - phase23-mir-to-c-deprecation-opening.yml (retire)
 - phase24-cr15-stdlib-guard-transition.yml (retire)
 - pr-fast.yml (retire)
-- run-step52-positive-batch (retire)
 - scripts/phase20_generated_mir_scale.py (materialize)
 - scripts/phase23_issue_health_opening.py (retire)
 - scripts/phase23_mir_to_c_deprecation_opening.py (retire)

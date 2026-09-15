@@ -202,6 +202,41 @@ NATIVE_ROUTED_RECIPES = {
 }
 NATIVE_ROUTE_NEEDLE = "--backend cranelift"
 
+# recipe id -> why Patch 24.13 routed it to the BOOTSTRAP-ONLY entry rather
+# than to the surviving native backend or to the frozen oracle.
+#
+# A fourth disposition, for the same reason the third was needed: scoring one
+# of these any other way fails whichever way it is scored. These recipes
+# compile tests/test_runner.gst, and the native route does not accept it --
+# measured on this branch, `./gust --backend cranelift tests/test_runner.gst`
+# stops at decision=deferred, capability=phase13_generic_source_to_mir,
+# reason_code=deferred_p13_parameter_argument_aggregate_parameter at line 336,
+# which Phase 13 owns. So NATIVE_ROUTED_RECIPES would assert a route that
+# cannot compile the source, TAKEN_OUT_RECIPES would demand a frozen-oracle
+# call these recipes should not make, and the "else" branch demands the C
+# route still be present.
+#
+# The bootstrap-only entry is the right destination and not a loophole: Patch
+# 24.11 created it precisely so a bootstrap caller need not be spelled as the
+# retired backend, and declined to keep the retired spelling for bootstrap.
+# The check below is correspondingly strict -- the C route must be gone, the
+# bootstrap entry must be selected, and the native needle must be ABSENT, so a
+# recipe cannot sit in this register while quietly having a native route that
+# would have made it a NATIVE_ROUTED_RECIPES row.
+BOOTSTRAP_ROUTED_RECIPES = {
+    "make-test-suite":
+        "compiles tests/test_runner.gst, which the native route defers on "
+        "(phase13_generic_source_to_mir); the bootstrap-only entry reaches "
+        "the emitter without spelling the retired backend",
+    "make-test-suite-parallel":
+        "the parallel form of make-test-suite, on the same source and for the "
+        "same measured reason",
+    "run-step52-positive-batch":
+        "compiles the same tests/test_runner.gst; re-scored from 24.16 "
+        "because 24.13's removal breaks it where it stands",
+}
+BOOTSTRAP_ROUTE_NEEDLE = "--backend bootstrap-emitter"
+
 # recipe id -> what Patch 24.12 did to it
 TAKEN_OUT_RECIPES = {
     "guard-cranelift-phase11-scalar-expression-parity": "convert",
@@ -268,28 +303,44 @@ TAKEN_OUT_HARNESSES = {
 }
 
 # harness path -> (patch that owns it instead, why 24.12 did not)
-DEFERRED_HARNESSES = {
-    "scripts/phase22_default_native_package.sh":
-        ("24.13", "it asserts that the explicit C selection still "
-                  "works, so it cannot outlive the selection 24.13 "
-                  "removes"),
-    "scripts/phase22_explicit_c_migration.sh":
-        ("24.13", "it asserts that the explicit C selection still "
-                  "works, so it cannot outlive the selection 24.13 "
-                  "removes"),
-    "scripts/phase22_native_implicit_output.sh":
-        ("24.13", "it asserts that the explicit C selection still "
-                  "works, so it cannot outlive the selection 24.13 "
-                  "removes"),
-    "scripts/phase22_opening.sh":
-        ("24.13", "it asserts that the explicit C selection still "
-                  "works, so it cannot outlive the selection 24.13 "
-                  "removes"),
-    "scripts/phase22_postflip_qualification.sh":
-        ("24.13", "it asserts that the explicit C selection still "
-                  "works, so it cannot outlive the selection 24.13 "
-                  "removes"),
+#
+# Patch 24.13: empty, and that is the statement. Every row here named 24.13 as
+# the patch that would handle it, so the register discharges when 24.13 lands
+# rather than being carried forward. The rows move to DISCHARGED_HARNESSES,
+# which asserts the opposite of what the deferral did: the deferral required
+# the harness still have a C route, and the discharge requires it either have
+# none or say in the file why the survivors are not live-C arms.
+DEFERRED_HARNESSES: dict[str, tuple[str, str]] = {
 }
+
+# harness path -> (patch that discharged it, what survives and why)
+#
+# Each reason is a property the tree can contradict, checked below: a harness
+# at zero must be at zero, and a harness with survivors must carry the Phase 24
+# removal marker -- the string its own inverted assertions grep for. A harness
+# that simply dropped its C route without inverting anything has neither, and
+# fails.
+DISCHARGED_HARNESSES: dict[str, tuple[str, str]] = {
+    "scripts/phase22_default_native_package.sh":
+        ("24.13", "every live-C arm retired; nothing survives"),
+    "scripts/phase22_explicit_c_migration.sh":
+        ("24.13", "two survive: the ./gust_bootstrap seed emitter, which is "
+                  "the pinned pre-patch binary Phase 25 owns and not the live "
+                  "compiler, and an inverted help assertion that now requires "
+                  "the removed alias be ABSENT from --help"),
+    "scripts/phase22_native_implicit_output.sh":
+        ("24.13", "every live-C arm retired; nothing survives"),
+    "scripts/phase22_opening.sh":
+        ("24.13", "one survives, inverted: the `c` alias is invoked so the "
+                  "harness can assert it is REJECTED and that the rejection "
+                  "names the Phase 24 removal"),
+    "scripts/phase22_postflip_qualification.sh":
+        ("24.13", "every live-C arm retired; nothing survives"),
+}
+
+# Compared case-insensitively: the harnesses spell it both "REMOVED in
+# Phase 24" (help text) and "removed in Phase 24" (rejection text).
+REMOVAL_MARKER = "removed in phase 24"
 
 
 # Patch 24.13 removed compiler/test_runner_entry.gst from this set: it no
@@ -318,10 +369,12 @@ SWEEP_COUNTS = {
     # 38 before Patch 24.12; the conversion took 22 out (7 phase11 and 4
     # mir-feature parity recipes, and the live-C literals three closure
     # guards required the Phase 13 differential harness to still contain).
-    "justfile": 16,
+    "justfile": 9,
     "tests/e2e_codegen_assertions.gst": 4,
-    "tests/test_runner.gst": 2,
-    "scripts/run-gust-file.sh": 1,
+    # Patch 24.13 migrated both invocations to the bootstrap-only entry;
+    # both halves of the move are asserted in MIGRATED_FILE_SURFACES.
+    # Patch 24.13 retired the runner's mir-to-c route; the surface is
+    # asserted absent in RETIRED_FILE_SURFACES instead of counted here.
 }
 
 # Differential .sh harness families: exact file set with per-file hit
@@ -402,11 +455,16 @@ SH_FAMILIES = {
         "owner_patch": "24.13",
         "action": "retire",
         "files": {
-            "scripts/phase22_default_native_package.sh": 2,
-            "scripts/phase22_explicit_c_migration.sh": 6,
-            "scripts/phase22_native_implicit_output.sh": 2,
-            "scripts/phase22_opening.sh": 2,
-            "scripts/phase22_postflip_qualification.sh": 3,
+            # Patch 24.13 discharged this family's deferral -- it IS 24.13.
+            # Counts re-measured, not adjusted to fit: the three that reach 0
+            # had every live-C arm retired; the two that do not are the mixed
+            # dispositions, and their survivors are accounted for in
+            # DISCHARGED_HARNESSES below rather than left as bare residue.
+            "scripts/phase22_default_native_package.sh": 0,
+            "scripts/phase22_explicit_c_migration.sh": 2,
+            "scripts/phase22_native_implicit_output.sh": 0,
+            "scripts/phase22_opening.sh": 1,
+            "scripts/phase22_postflip_qualification.sh": 0,
         },
     },
     "stdlib-parity": {
@@ -470,8 +528,13 @@ RECIPE_ROWS = [
      "./gust --backend mir-to-c tests/test_runner.gst", "24.13", "migrate", True),
     ("make-test-suite-parallel",
      "./gust --backend mir-to-c tests/test_runner.gst", "24.13", "migrate", True),
+    # Re-scored from 24.16/retire by Patch 24.13, for the same reason
+    # guard-compile-pass and guard-compile-fail were: the ownership was
+    # assigned before it was known that 24.13's removal BREAKS it. This recipe
+    # drives the spelling this patch turns into a rejection, so leaving it to
+    # 24.16 ships a recipe that cannot run. Recorded, not moved silently.
     ("run-step52-positive-batch",
-     "./gust --backend mir-to-c tests/test_runner.gst", "24.16", "retire", False),
+     "./gust --backend mir-to-c tests/test_runner.gst", "24.13", "migrate", False),
     ("guard-positive",
      './gust --backend mir-to-c "$test_path"', "24.13", "migrate", True),
     # Re-scored live by Patch 24.12a. Both are reached from a workflow --
@@ -614,6 +677,22 @@ RETIRED_FILE_SURFACES = [
      'RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-mir-to-c}"', "24.13"),
 ]
 
+# (path, the spelling that was there, the spelling that replaced it, owner)
+#
+# RETIRED_FILE_SURFACES asserts only that a surface is GONE, which is the right
+# claim when a patch takes something out. A migration is a different claim and
+# a stronger one: the old spelling is gone AND a named replacement is there in
+# its place. Scoring a migration as a retirement would let the file lose the
+# invocation entirely and still pass, which is the "vanished passing as moved"
+# failure this phase keeps having to rule out -- so it gets its own register
+# rather than being folded into the retirement one.
+MIGRATED_FILE_SURFACES = [
+    ("tests/test_runner.gst",
+     'std.Concat("./gust --backend mir-to-c ", path)',
+     'std.Concat("./gust --backend bootstrap-emitter ", path)',
+     "24.13"),
+]
+
 FILE_ROWS = [
     # (path, needle, owner_patch, action)
     ("compiler/test_runner_entry.gst",
@@ -644,8 +723,8 @@ FILE_ROWS = [
     # Patch 24.13 migrated this default to cranelift (#411); inverted below.
     ("scripts/cranelift_ci_family.py",
      '["just", runner["static_guard"]]', "24.12", "convert"),
-    ("tests/test_runner.gst",
-     'std.Concat("./gust --backend mir-to-c ", path)', "24.13", "migrate"),
+    # Patch 24.13 migrated this to the bootstrap-only entry; the row moves to
+    # MIGRATED_FILE_SURFACES above, which asserts both halves of the move.
     ("tests/e2e_codegen_assertions.gst",
      '"./gust --backend mir-to-c tests/codegen_helper_pod_move.gst', "24.12", "convert"),
     ("README.md",
@@ -901,10 +980,6 @@ ACTION_DISAGREES_WITH_OUTCOME = (
     "guard-cranelift-phase15-resource-composition-differential",
     "guard-cranelift-phase16-composition-differential",
     "guard-cranelift-phase19-composition-parity",
-    "guard-cranelift-phase22-default-native-package-evidence",
-    "guard-cranelift-phase22-explicit-c-migration-evidence",
-    "guard-cranelift-phase22-native-implicit-output-evidence",
-    "guard-cranelift-phase22-opening-evidence",
 )
 
 IS_LIVE_WITH_NO_EXECUTION_ROUTE = (
@@ -1156,7 +1231,16 @@ def expected_sweep() -> dict[str, int]:
     for family in SH_FAMILIES.values():
         if family.get("match") == "route":
             continue
-        expected.update(family["files"])
+        for path, count in family["files"].items():
+            # Same rule as the converted harnesses below, and for the same
+            # reason: check_sweep only reports loci with at least one hit, so
+            # a family file whose live-C arms are all gone has to leave the
+            # expectation rather than sit at zero, which would expect a key
+            # the sweep will never produce.
+            if count:
+                expected[path] = count
+            else:
+                expected.pop(path, None)
     # check_sweep only reports loci with at least one hit, so a converted
     # harness must leave the expectation entirely rather than sit at zero.
     for path, residual in TAKEN_OUT_HARNESSES.items():
@@ -1249,7 +1333,18 @@ def validate() -> dict:
 
     for recipe, needle, owner, action, is_live in RECIPE_ROWS:
         require(recipe in bodies, f"inventoried recipe is missing: {recipe}")
-        if recipe in NATIVE_ROUTED_RECIPES:
+        if recipe in BOOTSTRAP_ROUTED_RECIPES:
+            require(needle not in bodies[recipe],
+                    f"a recipe Patch 24.13 routed to the bootstrap entry has "
+                    f"its C route back: {recipe}")
+            require(BOOTSTRAP_ROUTE_NEEDLE in bodies[recipe],
+                    f"a recipe Patch 24.13 routed to the bootstrap entry does "
+                    f"not select it: {recipe}")
+            require(NATIVE_ROUTE_NEEDLE not in bodies[recipe],
+                    f"a recipe registered as bootstrap-routed also takes the "
+                    f"native route, so it belongs in NATIVE_ROUTED_RECIPES: "
+                    f"{recipe}")
+        elif recipe in NATIVE_ROUTED_RECIPES:
             require(needle not in bodies[recipe],
                     f"a recipe Patch 24.13 routed natively has its C route "
                     f"back: {recipe}")
@@ -1282,6 +1377,15 @@ def validate() -> dict:
         require(needle not in read(path),
                 f"Patch {owner} retired this surface, but it is back: "
                 f"{path}: {needle[:48]}")
+    for path, was, now, owner in MIGRATED_FILE_SURFACES:
+        text = read(path)
+        require(was not in text,
+                f"Patch {owner} migrated this surface, but the old spelling is "
+                f"back: {path}: {was[:48]}")
+        require(now in text,
+                f"Patch {owner} migrated this surface, but its replacement is "
+                f"not there -- the invocation vanished rather than moving: "
+                f"{path}: {now[:48]}")
     for family_name, family in SH_FAMILIES.items():
         for path, count in family["files"].items():
             text = read(path)
@@ -1300,6 +1404,14 @@ def validate() -> dict:
             else:
                 require(hits == count,
                         f"harness family drifted: {path}")
+                if path in DISCHARGED_HARNESSES:
+                    patch, _reason = DISCHARGED_HARNESSES[path]
+                    require(hits == 0 or
+                            REMOVAL_MARKER in text.lower(),
+                            f"Patch {patch} discharged this harness, but it "
+                            f"still carries {hits} live-C spellings without "
+                            "asserting the Phase 24 removal anywhere -- the "
+                            f"route was dropped, not inverted: {path}")
                 require(path not in DEFERRED_HARNESSES or hits > 0,
                         f"a harness deferred to "
                         f"{DEFERRED_HARNESSES.get(path, ('', ''))[0]} lost "

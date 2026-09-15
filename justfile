@@ -22524,7 +22524,7 @@ run-step52-positive-batch:
     rg -n -F 'compiler/typechecker_resource_scope_exit_mixed_scheduled_terminal_states_test_entry.gst' tests/test_runner.gst >/dev/null
     mkdir -p build
     echo "⚙️  Compiling native batched Step 5.2 positive runner from tests/test_runner.gst..."
-        # Patch 24.13: the retained emitter, reached by its surviving spelling.
+    # Patch 24.13: the retained emitter, reached by its surviving spelling.
     #
     # tests/test_runner.gst CANNOT be compiled natively, and not for a reason
     # this patch creates: the native route defers
