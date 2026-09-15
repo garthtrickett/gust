@@ -41,6 +41,22 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 GUARD = "phase24_frozen_oracle_capture"
+# Patch 24.12c: the authority is now a set, and each member is checked against
+# the roadmap rather than taken on trust.
+#
+# This was a single constant compared to a passed string, which made the bound
+# real but shallow: anyone editing the constant could grant themselves the
+# authority the docstring says is granted by TASK.md. Each entry now names the
+# roadmap row that grants it, and `require_roadmap_authority` refuses unless
+# that row actually exists in TASK.md -- so the grant and the claim cannot
+# drift apart.
+AUTHORITIES = {
+    "patch24.12b": ("- [x] Patch 24.12b — Python Parity Guard Conversion",
+                    "phase24_frozen_oracle_vectors_v2"),
+    "patch24.12c": ("- [ ] Patch 24.12c — Frozen Oracle Capture for the "
+                    "Uncovered Population",
+                    "phase24_frozen_oracle_vectors_v3"),
+}
 AUTHORITY = "patch24.12b"
 FORMAT = "phase24_frozen_oracle_vectors_v2"
 
@@ -120,7 +136,7 @@ def capture_one(compiler: Path, source: Path, kind: str) -> dict:
                 "stderr": stream(compiled.stderr, replayable=True),
             },
             "kind": "reject",
-            "provenance": "captured_live_while_green_patch24_12b",
+            "provenance": "captured_live_while_green_patch24_12c",
             "side_effects": [],
             "source_fixture": relative,
             "source_sha256": digest_bytes(source.read_bytes()),
@@ -131,6 +147,20 @@ def capture_one(compiler: Path, source: Path, kind: str) -> dict:
             f"{relative} is registered as executable but the retired route "
             f"rejected it (exit {compiled.returncode}): "
             f"{compiled.stdout.decode(errors='replace')[:200]}")
+
+    # Patch 24.12c had a `compile_only` kind here, for a module with no
+    # `main` that cannot be linked. It was removed before this patch landed:
+    # the module is never compiled standalone by its guard, which greps the
+    # module's SOURCE for tokens and the importing fixture's generated C for
+    # the derived symbols. A vector for it would have been read by nothing
+    # while looking like coverage.
+    #
+    # The over-approximation that produced it came from deriving the fixture
+    # set by regex over every .gst path the guards mention. Seven other
+    # "never compiled" candidates from a second, narrower derivation turned
+    # out to be false negatives -- step51 compiles through a just parameter
+    # and the scope guard through a spec array -- so the set was checked
+    # against the scripts directly rather than by a third heuristic.
 
     with tempfile.TemporaryDirectory() as raw:
         work = Path(raw)
@@ -149,8 +179,26 @@ def capture_one(compiler: Path, source: Path, kind: str) -> dict:
         "archived_corpus_case": None,
         "compile": {
             "exit": compiled.returncode,
-            # Provenance: the emitted C, recorded but never served.
-            "stdout": stream(compiled.stdout, replayable=False),
+            # Patch 24.12c serves the emitted C where it fits, instead of
+            # recording it as provenance unconditionally. v1's convention
+            # rested on "it is large, and no guard compares it directly", and
+            # both halves are false for most of this population: three Stdlib
+            # parity guards `cmp` the generated C byte-for-byte and a fourth
+            # greps it for symbols.
+            #
+            # "Most", not "all", and the difference was measured rather than
+            # assumed. 24 of these 25 fixtures emit 1-13 KB; one --
+            # typechecker_phase20_generic_guard_prerequisites_test_entry.gst --
+            # emits 1.6 MB, over the replay limit. A first version served
+            # unconditionally and the capture died on it.
+            #
+            # So the decision is per vector and is RECORDED per vector: a
+            # consumer that needs the C text can see `c_served: false` and the
+            # size, rather than replaying a record that silently has no `hex`
+            # and concluding the streams differ.
+            "stdout": stream(compiled.stdout,
+                             replayable=len(compiled.stdout) <= HEX_LIMIT),
+            "c_served": len(compiled.stdout) <= HEX_LIMIT,
             "stderr": stream(compiled.stderr, replayable=True),
         },
         "execution": {
@@ -159,7 +207,7 @@ def capture_one(compiler: Path, source: Path, kind: str) -> dict:
             "stderr": stream(executed.stderr, replayable=True),
         },
         "kind": "exec",
-        "provenance": "captured_live_while_green_patch24_12b",
+        "provenance": "captured_live_while_green_patch24_12c",
         "side_effects": [],
         "source_fixture": relative,
         "source_sha256": digest_bytes(source.read_bytes()),
@@ -191,9 +239,15 @@ def main() -> None:
     parser.add_argument("--out", required=True)
     arguments = parser.parse_args()
 
-    require(arguments.authority == AUTHORITY,
-            f"capture refused: this tool runs only under {AUTHORITY}, the "
-            f"roadmap patch that grants it; got {arguments.authority!r}")
+    require(arguments.authority in AUTHORITIES,
+            "capture refused: this tool runs only under a roadmap patch that "
+            f"grants it ({sorted(AUTHORITIES)}); got {arguments.authority!r}")
+    roadmap_row, output_format = AUTHORITIES[arguments.authority]
+    roadmap = (ROOT / "TASK.md").read_text(encoding="utf-8")
+    require(roadmap_row in roadmap,
+            "capture refused: TASK.md does not carry the row that grants "
+            f"{arguments.authority}. The grant has to be in the roadmap, not "
+            f"in this tool: {roadmap_row!r}")
 
     compiler = ROOT / "gust"
     require(compiler.is_file(),
@@ -240,7 +294,8 @@ def main() -> None:
 
     document = {
         "capture_authority": {
-            "authorised_by": "TASK.md Patch 24.12b (#416)",
+            "authorised_by": f"TASK.md {arguments.authority}",
+            "authorising_roadmap_row": roadmap_row,
             "capture_tool_sha256": digest_bytes(Path(__file__).read_bytes()),
             "cc": compiler_version.stdout.decode(errors="replace"
                                                  ).splitlines()[0],
@@ -259,9 +314,9 @@ def main() -> None:
                         "visible rather than implicit",
             },
         },
-        "format": FORMAT,
+        "format": output_format,
         "supersession_policy": {
-            "immutable_version": "v2",
+            "immutable_version": output_format.rsplit("_", 1)[-1],
             "live_c": "never_executed_by_replay",
             "mismatch": "fail_never_refresh_silently",
             "refresh": "impossible_after_patch24_13_seals_the_backend",
