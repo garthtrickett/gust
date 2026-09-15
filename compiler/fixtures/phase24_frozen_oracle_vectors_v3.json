@@ -2,7 +2,7 @@
   "capture_authority": {
     "authorised_by": "TASK.md patch24.12c",
     "authorising_roadmap_row": "- [ ] Patch 24.12c \u2014 Frozen Oracle Capture for the Uncovered Population",
-    "capture_tool_sha256": "80cb62b65a0da13f6efb5652412dd14de569650770edad364d14f1f430486fbf",
+    "capture_tool_sha256": "4986ff179b801f2756ac14f56a79bd812cd2853313ebe9cdf5bf213f2da08e3b",
     "cc": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
     "cflags": "-O0 -w -pthread -Isrc",
     "gust_sha256": "8bed62efdcf19d31594b855cade827eee6e95e0e14436fd1341e1741630d4217",
@@ -15,11 +15,11 @@
     },
     "oracle_route": "explicit_retired_backend_spelling",
     "sealed_by": "Patch 24.13 removes backend selection; no vector can be captured after it merges",
-    "source_commit": "200a0e880bb943ae3dda5f08e632ddb57069a036",
+    "source_commit": "4417620994e6318612e167077e915ae1410c74d7",
     "stderr_population": {
       "non_empty": 0,
       "note": "v1 recorded 0 non-empty across 421 records (#417); this count is stated so a uniformly empty corpus is visible rather than implicit",
-      "records": 37
+      "records": 36
     }
   },
   "format": "phase24_frozen_oracle_vectors_v3",
@@ -659,7 +659,7 @@
     },
     "tests/stdlib_s1_mutex_guard_scope_raw_double_unlock.gst": {
       "archived_corpus_case": null,
-      "capture_authority_digest": "80786406766178a7c34a78c2f43f3a3d5cf5e0a88823e1d7f6dbac9df03b591e",
+      "capture_authority_digest": "cac831ea60e7334ee46527084f9c8df7d9055c42e02611cb84cc955f109a3f11",
       "compile": {
         "c_served": true,
         "exit": 0,
@@ -674,20 +674,8 @@
           "size": 5740
         }
       },
-      "execution": {
-        "exit": 0,
-        "stderr": {
-          "hex": "",
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-          "size": 0
-        },
-        "stdout": {
-          "hex": "",
-          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-          "size": 0
-        }
-      },
-      "kind": "exec",
+      "kind": "compile_only",
+      "never_executed_reason": "CR-16 explicit-unsafe witness: a manual unlock followed by guard cleanup gives two unlock paths, so the program's runtime behaviour is undefined. Its guard stops at `cc -fsyntax-only` and states that the runner must not execute it; a recorded exit would be a reading of undefined behaviour replayable as an expectation.",
       "provenance": "captured_live_while_green_patch24_12c",
       "side_effects": [],
       "source_fixture": "tests/stdlib_s1_mutex_guard_scope_raw_double_unlock.gst",
