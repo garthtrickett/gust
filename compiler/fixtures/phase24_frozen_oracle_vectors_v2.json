@@ -14,11 +14,11 @@
     },
     "oracle_route": "explicit_retired_backend_spelling",
     "sealed_by": "Patch 24.13 removes backend selection; no vector can be captured after it merges",
-    "source_commit": "81d798c20bd398a52f19449880816a2f9bd2e517",
+    "source_commit": "d995f64be8fe30cb0e83b4832e539df4e9d7176a",
     "stderr_population": {
       "non_empty": 0,
       "note": "v1 recorded 0 non-empty across 421 records (#417); this count is stated so a uniformly empty corpus is visible rather than implicit",
-      "records": 6
+      "records": 12
     }
   },
   "format": "phase24_frozen_oracle_vectors_v2",
@@ -64,6 +64,41 @@
       "source_sha256": "c946336db2076ed156a1078062a6f95ad03bd102665e6645c3fe4fd399ab4a8e",
       "workdir_sensitive": false
     },
+    "compiler/phase21_selected_codegen_slice.gst": {
+      "archived_corpus_case": null,
+      "capture_authority_digest": "964b9cd26ef488a1c82ddd5f1ecd4289382e6c2e0d848ac6778a024afaf3e266",
+      "compile": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "sha256": "011f2c2395c61d937b2ee9186156b708f9adb6fb0920b5131fbeebfda8f9a0bd",
+          "size": 2485323
+        }
+      },
+      "execution": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        }
+      },
+      "kind": "exec",
+      "provenance": "captured_live_while_green_patch24_12b",
+      "side_effects": [],
+      "source_fixture": "compiler/phase21_selected_codegen_slice.gst",
+      "source_sha256": "19998437fe84bb221bcd9d3064125429a07a456bba19b0d6e89d61f5faf42032",
+      "workdir_sensitive": false
+    },
     "compiler/phase21_selected_declaration_source.gst": {
       "archived_corpus_case": null,
       "capture_authority_digest": "e610a9b666d8ac55f6d2d9fcaf237fcd6395f9d72d9cae0b86c9d219f2e548f2",
@@ -97,6 +132,181 @@
       "side_effects": [],
       "source_fixture": "compiler/phase21_selected_declaration_source.gst",
       "source_sha256": "e041ab3bd66365a29f6d7d91313341726abb4dd0919740ff852186026cec1e65",
+      "workdir_sensitive": false
+    },
+    "compiler/phase21_selected_lexer_slice.gst": {
+      "archived_corpus_case": null,
+      "capture_authority_digest": "56647694b5ff5cc9d95b22ab985cfeb79b949b8f0c2e0fae0de1ea11c67b2a56",
+      "compile": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "sha256": "a4e36ac76a656656dce46c566f99702336524b001c2040252357dcb26d2a6339",
+          "size": 32882
+        }
+      },
+      "execution": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        }
+      },
+      "kind": "exec",
+      "provenance": "captured_live_while_green_patch24_12b",
+      "side_effects": [],
+      "source_fixture": "compiler/phase21_selected_lexer_slice.gst",
+      "source_sha256": "f750a07ea5614b2a06da8d8c7ffc9d6bde63414a757c8ab17b7099c1e604cdf6",
+      "workdir_sensitive": false
+    },
+    "compiler/phase21_selected_mir_slice.gst": {
+      "archived_corpus_case": null,
+      "capture_authority_digest": "a4b1f56537a43e96af52b9c599af98a168c1bedba4d29cba48cbfcdf58cf7d57",
+      "compile": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "sha256": "c6950aaf25d8ef80e193c7ab07a636e4de577148ebcf5fbb97b93527d77e6f86",
+          "size": 3134232
+        }
+      },
+      "execution": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        }
+      },
+      "kind": "exec",
+      "provenance": "captured_live_while_green_patch24_12b",
+      "side_effects": [],
+      "source_fixture": "compiler/phase21_selected_mir_slice.gst",
+      "source_sha256": "cdb8be18cd165e9926b8484fb487463b5981d14d2baaa05034326a9a77e374a5",
+      "workdir_sensitive": false
+    },
+    "compiler/phase21_selected_parser_slice.gst": {
+      "archived_corpus_case": null,
+      "capture_authority_digest": "8ae2fb50c4329258f543a85d56e73803ddab81593d1d2b18c253c60c551816d9",
+      "compile": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "sha256": "a5daef31474e04df5c1b66f4cf5bf50fd11da81d4cd2fb4671d3d41352952b38",
+          "size": 290133
+        }
+      },
+      "execution": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        }
+      },
+      "kind": "exec",
+      "provenance": "captured_live_while_green_patch24_12b",
+      "side_effects": [],
+      "source_fixture": "compiler/phase21_selected_parser_slice.gst",
+      "source_sha256": "d13ae9a3070c668ba90f9dfdb9aba632246593c503bbe45fd7b27796a4b583a3",
+      "workdir_sensitive": false
+    },
+    "compiler/phase21_selected_resolver_slice.gst": {
+      "archived_corpus_case": null,
+      "capture_authority_digest": "ccc6922eb72e435c11cee0e099d961dc1ee2ad9ef5213c23e6a032f40cdc61f7",
+      "compile": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "sha256": "e1ed973a22de8e20ab1940a1e5fa5f3e91ac4239a6d9b38546a47308b47459a6",
+          "size": 46521
+        }
+      },
+      "execution": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        }
+      },
+      "kind": "exec",
+      "provenance": "captured_live_while_green_patch24_12b",
+      "side_effects": [],
+      "source_fixture": "compiler/phase21_selected_resolver_slice.gst",
+      "source_sha256": "a547684a05e78101ac114c2ec9b1170d9fe5aeb6919c968b4045da7bc7ea5c66",
+      "workdir_sensitive": false
+    },
+    "compiler/phase21_selected_typechecker_slice.gst": {
+      "archived_corpus_case": null,
+      "capture_authority_digest": "f6debc46960ac33f6ce5120cdce123c892132bcf942d0849eb2e77a306d78a9b",
+      "compile": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "sha256": "1842f5fba0b3d2150256574975862b552f092c251834d37bc6dcd3ba68df8f41",
+          "size": 1448327
+        }
+      },
+      "execution": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        }
+      },
+      "kind": "exec",
+      "provenance": "captured_live_while_green_patch24_12b",
+      "side_effects": [],
+      "source_fixture": "compiler/phase21_selected_typechecker_slice.gst",
+      "source_sha256": "8020d2247e85bf3d2240f18abfbb0fc38581e09eeb412fbc3ac76a0882e5facb",
       "workdir_sensitive": false
     },
     "compiler/phase21_support_canonical_mir_slice.gst": {
