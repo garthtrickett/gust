@@ -102,7 +102,16 @@ def validate() -> dict:
         'compiler_invocation_fail("implicit Cranelift output would collide with a Gust source path");',
     ):
         require(marker in entry, f"compiler marker is missing: {marker}")
-    require(entry.splitlines()[240] == "func main() {",
+    # Patch 24.13: index 240 -> 252 (line 241 -> 253). The entry moved because
+    # backend selection was removed and the help surface rewritten above it.
+    #
+    # Third line-number pin this patch has had to rebase, after the runner rows
+    # and the filename-behaviour manifest. Patch 24.3b's stated principle is
+    # that line numbers are display only and never digest inputs; these compare
+    # them directly, so a comment added above a function breaks a closed-phase
+    # record exactly as deleting the function would. Rebased with the reason
+    # rather than silently bumped.
+    require(entry.splitlines()[252] == "func main() {",
             "Patch 22.3 moved the registered compiler entry source line")
     require(entry.count("native_source_route.mir_native_scalar_source_compile(") == 1,
             "implicit and explicit forms no longer share one native source route")
