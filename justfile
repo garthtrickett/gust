@@ -9076,12 +9076,18 @@ guard-cranelift-phase10-backend-selection-contract:
     malformed_log="$build_dir/malformed-cranelift.log"
     output_path="$build_dir/program"
 
-    ./gust "$source_fixture" > "$default_c"
-    ./gust --backend mir-to-c "$source_fixture" > "$explicit_c"
-    ./gust "$source_fixture" --backend mir-to-c > "$reordered_c"
-    cmp -s "$default_c" "$explicit_c"
-    cmp -s "$default_c" "$reordered_c"
-    test -s "$default_c"
+    # Patch 24.13: the three-way C byte-identity check is retired. It compared
+    # the bare route, explicit mir-to-c, and mir-to-c with the flag after the
+    # source -- all asserting that one removed spelling emitted the same C in
+    # three argument orders. The bare route is native now, so `default_c` is
+    # not C at all and the comparison has no subject.
+    #
+    # Argument-order tolerance is what this block was really exercising, and it
+    # is preserved below against a spelling that still exists.
+    ./gust --backend cranelift -o "$build_dir/order-a" "$source_fixture"
+    ./gust "$source_fixture" --backend cranelift -o "$build_dir/order-b"
+    cmp -s "$build_dir/order-a" "$build_dir/order-b" ||
+      { echo "argument order changed the compiled artifact" >&2; exit 1; }
 
     set +e
     ./gust --backend cranelift -o "$output_path" "$source_fixture" > "$cranelift_log" 2>&1
@@ -9134,7 +9140,7 @@ guard-cranelift-phase10-backend-selection-contract:
     expect_invocation_failure \
       'Compiler invocation error: duplicate --backend option' \
       duplicate-backend \
-      ./gust --backend mir-to-c --backend cranelift -o "$output_path" "$source_fixture"
+      ./gust --backend cranelift --backend cranelift -o "$output_path" "$source_fixture"
     expect_invocation_failure \
       'Compiler invocation error: unknown backend: llvm' \
       unknown-backend \
@@ -9157,8 +9163,8 @@ guard-cranelift-phase10-backend-selection-contract:
       ./gust "$source_fixture" compiler/mir_feature_local_binding_read_preservation_source.gst
     expect_invocation_failure \
       'Compiler invocation error: the MIR-to-C backend does not accept -o' \
-      mir-to-c-output \
-      ./gust --backend mir-to-c -o "$output_path" "$source_fixture"
+      bootstrap-emitter-output \
+      ./gust --backend bootstrap-emitter -o "$output_path" "$source_fixture"
     if rg -F '"phase22_native_implicit_output"' scripts/cranelift_feature_registry.json >/dev/null; then
       rg -n -F 'invocation.output_path = compiler_native_implicit_output_path(invocation.source_path, ctx);' "$compiler_entry" >/dev/null
     else
