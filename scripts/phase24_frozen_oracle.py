@@ -539,6 +539,14 @@ PYTHON_RETIRED_ARGV_EXCLUSIONS: dict[str, str] = {
         "oracle role for a closed Phase 23 record; its retired-backend call "
         "produces the reference the native admission path is judged against, "
         "and it carries no vector either.",
+    "scripts/phase24_frozen_oracle_capture.py":
+        "the capture tool itself. It builds the retired argv because running "
+        "the retired route while the live lane is green is precisely what a "
+        "capture is, under the authority TASK.md Patch 24.12b grants (#416). "
+        "It is not a parity guard, runs only when named with --authority, and "
+        "becomes inert at Patch 24.13, which seals the corpus. Caught by this "
+        "very check when it was added, which is the inverse assertion working: "
+        "a new site fails rather than being silently out of scope.",
     "scripts/phase24_filename_behavior_characterization.py":
         "the retired spelling is data in a ROUTES table whose subject *is* "
         "route-dependent behaviour (Patch 24.1). Removing the row would "
@@ -612,6 +620,32 @@ PYTHON_SOURCE_SYNTHESIS_DISPOSITION: dict[str, str] = {
         "property under test. Capture the tracked three in this patch, since "
         "Patch 24.13 seals the corpus; route the synthesized three with the "
         "guard rework, which 24.13 does not block.",
+}
+
+
+# Patch 24.12b: conversion is per call site, not per guard.
+#
+# A guard can hold both a convertible parity arm and an arm that asserts a
+# property of the *emitted C* with no native counterpart. The second kind is
+# what Patch 24.12a retired as "emitter-only", and it cannot be converted --
+# there is no second arm for a frozen one to be compared against. The roadmap's
+# list of eight reads as though a guard were uniformly one or the other.
+#
+# Each entry names the arm, not the file, so the row says what has to happen to
+# it rather than recording that something is wrong somewhere in the guard.
+PYTHON_EMITTER_ONLY_ARMS: dict[str, str] = {
+    "scripts/phase24_cr15_derivation.py":
+        ":182-190 requires the inferred and explicit generated C be equal and "
+        "searches the multiple-identity output for three arena identity "
+        "strings. Both are assertions about the emitter with no native "
+        "counterpart, so they are Patch 24.12a's class arriving one patch "
+        "late; its rejection arms at :209-215 convert normally and are "
+        "captured.",
+    "scripts/phase24_cr15_qualification.py":
+        ":202-208 requires the inferred and explicit generated C be equal, "
+        "with no native counterpart. Same disposition as the derivation "
+        "guard; its four rejection arms at :306-314 convert normally and are "
+        "captured.",
 }
 
 
@@ -700,6 +734,14 @@ def check_python_population() -> dict[str, object]:
     # cannot be discharged by capturing a vector, because there is no tracked
     # path to key one on. It needs a registered disposition saying which of
     # its sources are capturable and where the rest go.
+    for locus, description in PYTHON_EMITTER_ONLY_ARMS.items():
+        require(locus in pending,
+                f"an emitter-only arm is registered against a locus that is "
+                f"not pending conversion; retire the row: {locus}")
+        require(len(description.split()) >= 12,
+                f"an emitter-only arm is registered without a description: "
+                f"{locus}")
+
     synthesis = python_source_synthesis()
     needs_disposition = sorted(pending & set(synthesis))
     missing = [locus for locus in needs_disposition
