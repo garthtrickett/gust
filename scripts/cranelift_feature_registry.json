@@ -25374,6 +25374,48 @@
   },
   "phase24_13_backend_removal": {
     "authority_owner": "scripts/cranelift_feature_registry.json",
+    "frozen_surface_transition": {
+      "change_reason": "patch24_13_removed_backend_selection_so_the_remaining_live_explicit_C_cases_go_with_it",
+      "contract_version": "phase24_13_frozen_surface_transition_v1",
+      "current_live_c_case_surface": {
+        "case_id_manifest_digest": "4af54874e8f6b4739eae05355a33f6a2bd841f5f2accfb51eb75ddf5249aa777",
+        "complete_identity_manifest_digest": "a99c975c3670f4328237a35ffc0775fec4d0cd05c23afe868d6927e3d1b87d85",
+        "consumer_class_counts": {
+          "already_explicit_or_parser_probe": 54
+        },
+        "count": 54,
+        "owner_contract_count": 17,
+        "owner_contract_manifest_digest": "3005f3aa082e6f4e83ca613b829debc3b11005f6cd369be0200a913e6025f104",
+        "owner_counts": {
+          "cranelift": 28,
+          "stdlib": 26
+        },
+        "selection_counts": {
+          "explicit_c": 54
+        }
+      },
+      "partial_or_unregistered_surface": "rejected",
+      "previous_live_c_case_surface": {
+        "case_id_manifest_digest": "4aaaef669b31a24534ab882226ef0f6a7b6745bed49a6c09e4bb67d0fe66513e",
+        "complete_identity_manifest_digest": "88cd8cad6f81617000c857122f4a38f4cfb4c33bed223bae5792290218bdb9d7",
+        "consumer_class_counts": {
+          "already_explicit_or_parser_probe": 56
+        },
+        "count": 56,
+        "owner_contract_count": 17,
+        "owner_contract_manifest_digest": "751bb6ff1a1dd9b30d986087a5f7290a9cfe0f2afda5b2e0679809f7e6ff9211",
+        "owner_counts": {
+          "cranelift": 30,
+          "stdlib": 26
+        },
+        "selection_counts": {
+          "explicit_c": 56
+        }
+      },
+      "removed_case_count": 2,
+      "status": "patch24_13_in_progress",
+      "unchanged_fields": []
+    },
     "phase22_invocation_successor": {
       "change_reason": "patch24_13_moved_two_makefile_bootstrap_callers_from_the_retired_spelling_to_the_bootstrap_only_entry_so_the_calls_are_reclassified_not_removed",
       "contract_version": "phase24_13_invocation_reclassification_successor_v1",
