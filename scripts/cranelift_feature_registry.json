@@ -25819,15 +25819,12 @@
       "removed_invocation_count": 107,
       "status": "patch24_12_complete"
     },
-    "runner_default_route": "RUNNER_ROUTE=\"${GUST_RUNNER_ROUTE:-mir-to-c}\"",
+    "runner_default_route": "RUNNER_ROUTE=\"${GUST_RUNNER_ROUTE:-cranelift}\"",
     "runner_default_unpinned_callers": [
       "guard-stdlib-s1-collection-receivers",
       "guard-stdlib-s1-str-surface"
     ],
-    "runner_mediated_residue": {
-      "scripts/phase15_resource_composition_parity.sh": 3,
-      "scripts/phase16_abi_composition_parity.sh": 2
-    },
+    "runner_mediated_residue": {},
     "runner_residue_owner": "24.13",
     "status": "patch24_12_complete",
     "text_surface_successor": {
