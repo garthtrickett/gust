@@ -66,54 +66,17 @@ TEST_STEM="$(basename "$TEST_PATH" .gst)"
 TEMP_OUTPUT="build/${TEST_STEM}.compile.log"
 NATIVE_OUTPUT="build/${TEST_STEM}_bin"
 
+# Patch 24.13: the mir-to-c route is retired. It emitted C, host-compiled it
+# and ran the result -- every step through a backend this patch removes, so
+# the branch could only ever reach a rejection. The route VALUE is still
+# accepted above and rejected with a reason, rather than silently treated as
+# cranelift: a caller that pinned GUST_RUNNER_ROUTE=mir-to-c asked for
+# something specific and should be told it is gone.
 if [ "$RUNNER_ROUTE" = "mir-to-c" ]; then
-  echo "=== [1/3] COMPILING GUST TO C ===" > to.log
-
-  ./gust --backend mir-to-c "$TEST_PATH" > "$TEMP_OUTPUT" 2>&1
-  COMP_STATUS=$?
-  cat "$TEMP_OUTPUT" >> to.log
-
-  if [[ "$TEST_PATH" == *"rejected"* || "$TEST_PATH" == *"violation"* ]]; then
-    if [ "$COMP_STATUS" -ne 0 ]; then
-      echo "✅ Negative test caught compilation failure successfully! Full diagnostics: $TEMP_OUTPUT"
-      exit 0
-    fi
-
-    echo "❌ FAIL: Expected negative test to fail compilation, but it succeeded."
-    exit 1
-  fi
-
-  if [ "$COMP_STATUS" -ne 0 ]; then
-    cat "$TEMP_OUTPUT" >&2
-    echo "❌ Gust compilation failed. Full diagnostics: $TEMP_OUTPUT and to.log" >&2
-    exit "$COMP_STATUS"
-  fi
-
-  grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" "$TEMP_OUTPUT" > \
-    "build/${TEST_STEM}.c"
-
-  echo -e "\n=== [2/3] COMPILING NATIVE C EXECUTABLE ===" >> to.log
-  cat src/runtime.c "build/${TEST_STEM}.c" > "build/${TEST_STEM}_final.c"
-
-  CC_BIN="${CC:-cc}"
-  "$CC_BIN" -O2 -Wall -pthread -Isrc "build/${TEST_STEM}_final.c" \
-    -o "$NATIVE_OUTPUT" >> to.log 2>&1
-  C_STATUS=$?
-  if [ "$C_STATUS" -ne 0 ]; then
-    echo "❌ Native C compilation failed! See to.log for compiler errors."
-    exit "$C_STATUS"
-  fi
-
-  echo -e "\n=== [3/3] RUNNING COMPILED BINARY ===" >> to.log
-  "$NATIVE_OUTPUT" >> to.log 2>&1
-  RUN_STATUS=$?
-  if [ "$RUN_STATUS" -ne 0 ]; then
-    echo "❌ Runtime execution failed! See to.log for panic/segfault traces."
-    exit "$RUN_STATUS"
-  fi
-
-  echo "📝 Test '$TEST_PATH' executed successfully. Output written to to.log"
-  exit 0
+  echo "❌ Error: GUST_RUNNER_ROUTE=mir-to-c selects the generated-C backend," >&2
+  echo "   which was removed in Phase 24. Use cranelift, or the frozen oracle" >&2
+  echo "   (scripts/phase24_frozen_oracle.py materialize) for recorded C results." >&2
+  exit 1
 fi
 
 echo "=== [1/2] COMPILING GUST WITH CRANELIFT ===" > to.log
