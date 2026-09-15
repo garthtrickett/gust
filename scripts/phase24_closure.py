@@ -23,6 +23,18 @@ the two are easiest to confuse -- so the expected order is stated here once,
 with the reason, and reordering it fails.
 """
 
+# REGISTRATION NOTE (24.18): this guard has no justfile recipe, no test
+# level and no workflow YET, and that is deliberate. It is designed to
+# REFUSE until every retirement row is DONE, so wiring it into PR CI now
+# would turn every pull request red -- including the six that have to
+# merge before the rows CAN be DONE. Registering a must-fail guard ahead
+# of the work it gates blocks the work it gates.
+#
+# It is registered in the atomic closure PR, which is the first moment
+# its passing is possible. The Phase 23 precedent reads the same way:
+# guard-cranelift-phase23-close is Level 1 and green because Phase 23 is
+# closed, not because it was wired up early.
+
 import argparse
 import hashlib
 import json

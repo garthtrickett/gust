@@ -22,6 +22,12 @@ can check the claim instead of believing it. An abbreviated sha is rejected:
 abbreviations can become ambiguous as the repository grows.
 """
 
+# REGISTRATION NOTE (24.17): no recipe, level or workflow yet, for the
+# same reason as phase24_closure.py -- this refuses until main contains
+# the retirement, which cannot be true until the stack merges. It is
+# registered alongside the closure, and dispatched by hand once between
+# the merge and the closure PR.
+
 import argparse
 import json
 import subprocess
