@@ -37,6 +37,20 @@ guard-positive file label:
     # silent: an unlisted source that stops compiling fails here, and each of
     # the four carries the reason code the compiler itself reports, so a
     # source that starts failing for a *different* reason also fails.
+    # Patch 24.13: the native route needs its driver, and the compiler finds
+    # it as a SIBLING of the binary being run. ./gust lives at the repo root
+    # and the driver is built at build/gust-native-backend, so a bare
+    # `./gust --backend cranelift` fails with
+    # "sibling native backend driver path is unavailable or not executable".
+    #
+    # I measured this conversion with GUST_NATIVE_BACKEND_DRIVER exported and
+    # the recipe without it, so the measurement was taken in an environment the
+    # guard does not have. Pointing the variable at the built driver -- and
+    # building it if absent -- makes the two agree.
+    if [ ! -x build/gust-native-backend ]; then
+      make build/gust-native-backend
+    fi
+    export GUST_NATIVE_BACKEND_DRIVER="$PWD/build/gust-native-backend"
     echo "Checking $test_path accepts and runs..."
     if ./gust --backend cranelift -o "$bin_file" "$test_path" > "$log" 2>&1; then
     "$bin_file" >> "$log" 2>&1
@@ -84,6 +98,20 @@ guard-compile-pass file label:
     # stops at a DEFERRED capability decision having raised no front-end error.
     # That is strictly more informative than the old form, which could not
     # distinguish "rejected the source" from "could not lower it".
+    # Patch 24.13: the native route needs its driver, and the compiler finds
+    # it as a SIBLING of the binary being run. ./gust lives at the repo root
+    # and the driver is built at build/gust-native-backend, so a bare
+    # `./gust --backend cranelift` fails with
+    # "sibling native backend driver path is unavailable or not executable".
+    #
+    # I measured this conversion with GUST_NATIVE_BACKEND_DRIVER exported and
+    # the recipe without it, so the measurement was taken in an environment the
+    # guard does not have. Pointing the variable at the built driver -- and
+    # building it if absent -- makes the two agree.
+    if [ ! -x build/gust-native-backend ]; then
+      make build/gust-native-backend
+    fi
+    export GUST_NATIVE_BACKEND_DRIVER="$PWD/build/gust-native-backend"
     echo "Checking $test_path accepts..."
     if ./gust --backend cranelift -o "$guard_dir/bin" "$test_path" > "$log" 2>&1; then
     exit 0
@@ -113,6 +141,20 @@ guard-compile-fail file diagnostic label:
     # backend-independent, so this conversion is exact rather than
     # approximate; all 49 sources reaching this recipe were measured to still
     # reject, with their registered diagnostic, before the spelling changed.
+    # Patch 24.13: the native route needs its driver, and the compiler finds
+    # it as a SIBLING of the binary being run. ./gust lives at the repo root
+    # and the driver is built at build/gust-native-backend, so a bare
+    # `./gust --backend cranelift` fails with
+    # "sibling native backend driver path is unavailable or not executable".
+    #
+    # I measured this conversion with GUST_NATIVE_BACKEND_DRIVER exported and
+    # the recipe without it, so the measurement was taken in an environment the
+    # guard does not have. Pointing the variable at the built driver -- and
+    # building it if absent -- makes the two agree.
+    if [ ! -x build/gust-native-backend ]; then
+      make build/gust-native-backend
+    fi
+    export GUST_NATIVE_BACKEND_DRIVER="$PWD/build/gust-native-backend"
     echo "Checking $test_path rejects..."
     if ./gust --backend cranelift -o "$guard_dir/bin" "$test_path" > "$log" 2>&1; then
     echo "❌ Expected $test_path to fail compilation, but it succeeded."
