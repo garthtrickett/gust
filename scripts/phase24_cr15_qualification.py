@@ -287,7 +287,11 @@ def evidence() -> None:
         # retired argv is absent; this one asserts the host compile that
         # consumed its output is absent too, because a `cc` line does not
         # spell the backend and so the first inverse cannot see it coming back.
-        host_compile = '"-O2", "-Wall", "-pthread", "-Isrc"'
+        # Assembled from fragments for the same reason the producer's inverse
+        # is: spelling the needle literally puts it in this file, so the
+        # assertion falsifies itself. It did exactly that on the first run --
+        # the evidence arm rejected its own check.
+        host_compile = '"-O2", ' + '"-Wall", ' + '"-pthread", ' + '"-Isrc"'
         require(host_compile not in own_source,
                 "the retired emitter-only arm's host C compile is back in "
                 "phase24_cr15_qualification: it compiled and ran C emitted by "
