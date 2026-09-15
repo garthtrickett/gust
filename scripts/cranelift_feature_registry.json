@@ -5702,49 +5702,49 @@
       "no_fallback": "native_succeeds_with_mir_to_c_test_poisoned"
     },
     "phase22_closed_inventory_migration": {
-      "status": "exact_phase23_dual_route_projected_to_phase22_predecessor",
+      "added_native_row": {
+        "command": "./build/phase10-package/bin/gust --backend cranelift -o \"$NATIVE_OUTPUT\" \"$TEST_PATH\" > \"$TEMP_OUTPUT\" 2>&1",
+        "compiler_token": "./build/phase10-package/bin/gust",
+        "consumer_class": "already_explicit_or_parser_probe",
+        "expected_artifact": "selected_backend_contract",
+        "expected_transition": "preserve_explicit_selection",
+        "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+        "line": 122,
+        "owner": "cranelift",
+        "path": "scripts/run-gust-file.sh",
+        "recipe": "none",
+        "selection": "explicit_cranelift"
+      },
+      "current_historical_row": {
+        "command": "./gust --backend mir-to-c \"$TEST_PATH\" > \"$TEMP_OUTPUT\" 2>&1",
+        "compiler_token": "./gust",
+        "consumer_class": "already_explicit_or_parser_probe",
+        "expected_artifact": "selected_backend_contract",
+        "expected_transition": "preserve_explicit_selection",
+        "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+        "line": 72,
+        "owner": "cranelift",
+        "path": "scripts/run-gust-file.sh",
+        "recipe": "none",
+        "selection": "explicit_c"
+      },
+      "falsifier": "missing_partial_extra_or_same_count_command_substitution_is_rejected",
       "owning_patch": "23.12",
       "path": "scripts/run-gust-file.sh",
       "previous_row": {
-        "path": "scripts/run-gust-file.sh",
+        "command": "./gust --backend mir-to-c \"$TEST_PATH\" > \"$TEMP_OUTPUT\" 2>&1",
+        "compiler_token": "./gust",
+        "consumer_class": "already_explicit_or_parser_probe",
+        "expected_artifact": "selected_backend_contract",
+        "expected_transition": "preserve_explicit_selection",
+        "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
         "line": 35,
-        "recipe": "none",
-        "compiler_token": "./gust",
-        "selection": "explicit_c",
-        "consumer_class": "already_explicit_or_parser_probe",
         "owner": "cranelift",
-        "expected_artifact": "selected_backend_contract",
-        "expected_transition": "preserve_explicit_selection",
-        "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
-        "command": "./gust --backend mir-to-c \"$TEST_PATH\" > \"$TEMP_OUTPUT\" 2>&1"
-      },
-      "current_historical_row": {
         "path": "scripts/run-gust-file.sh",
-        "line": 61,
         "recipe": "none",
-        "compiler_token": "./gust",
-        "selection": "explicit_c",
-        "consumer_class": "already_explicit_or_parser_probe",
-        "owner": "cranelift",
-        "expected_artifact": "selected_backend_contract",
-        "expected_transition": "preserve_explicit_selection",
-        "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
-        "command": "./gust --backend mir-to-c \"$TEST_PATH\" > \"$TEMP_OUTPUT\" 2>&1"
+        "selection": "explicit_c"
       },
-      "added_native_row": {
-        "path": "scripts/run-gust-file.sh",
-        "line": 111,
-        "recipe": "none",
-        "compiler_token": "./build/phase10-package/bin/gust",
-        "selection": "explicit_cranelift",
-        "consumer_class": "already_explicit_or_parser_probe",
-        "owner": "cranelift",
-        "expected_artifact": "selected_backend_contract",
-        "expected_transition": "preserve_explicit_selection",
-        "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
-        "command": "./build/phase10-package/bin/gust --backend cranelift -o \"$NATIVE_OUTPUT\" \"$TEST_PATH\" > \"$TEMP_OUTPUT\" 2>&1"
-      },
-      "falsifier": "missing_partial_extra_or_same_count_command_substitution_is_rejected"
+      "status": "exact_phase23_dual_route_projected_to_phase22_predecessor"
     },
     "budgets": {
       "workflow_timeout_minutes": 45,
@@ -25370,6 +25370,102 @@
       ],
       "removed_text_surfaces": [],
       "status": "patch24_12b_in_progress"
+    }
+  },
+  "phase24_13_backend_removal": {
+    "authority_owner": "scripts/cranelift_feature_registry.json",
+    "phase22_invocation_successor": {
+      "change_reason": "patch24_13_moved_two_makefile_bootstrap_callers_from_the_retired_spelling_to_the_bootstrap_only_entry_so_the_calls_are_reclassified_not_removed",
+      "contract_version": "phase24_13_invocation_reclassification_successor_v1",
+      "current_relay_inventory": {
+        "consumer_class_counts": {
+          "already_explicit_or_parser_probe": 169,
+          "cranelift_C_or_diagnostic_guard": 2,
+          "help_surface_probe": 3,
+          "intentional_default_selection_probe": 8,
+          "invocation_parser_probe": 2
+        },
+        "owner_counts": {
+          "cranelift": 155,
+          "stdlib": 29
+        },
+        "selection_counts": {
+          "explicit_bootstrap_emitter": 2,
+          "explicit_c": 49,
+          "explicit_cranelift": 115,
+          "explicit_invalid_or_parser_probe": 3,
+          "implicit_default": 15
+        },
+        "total": 184,
+        "unclassified_count": 0
+      },
+      "current_summary": {
+        "consumer_class_counts": {
+          "already_explicit_or_parser_probe": 178,
+          "cranelift_C_or_diagnostic_guard": 5,
+          "help_surface_probe": 3,
+          "intentional_default_selection_probe": 8,
+          "invocation_parser_probe": 2
+        },
+        "owner_counts": {
+          "cranelift": 167,
+          "stdlib": 29
+        },
+        "selection_counts": {
+          "explicit_bootstrap_emitter": 2,
+          "explicit_c": 54,
+          "explicit_cranelift": 119,
+          "explicit_invalid_or_parser_probe": 3,
+          "implicit_default": 18
+        },
+        "total": 196,
+        "unclassified_count": 0
+      },
+      "partial_or_unregistered_reclassification": "rejected",
+      "previous_relay_inventory": {
+        "consumer_class_counts": {
+          "already_explicit_or_parser_probe": 169,
+          "cranelift_C_or_diagnostic_guard": 2,
+          "help_surface_probe": 3,
+          "intentional_default_selection_probe": 8,
+          "invocation_parser_probe": 2
+        },
+        "owner_counts": {
+          "cranelift": 155,
+          "stdlib": 29
+        },
+        "selection_counts": {
+          "explicit_c": 51,
+          "explicit_cranelift": 115,
+          "explicit_invalid_or_parser_probe": 3,
+          "implicit_default": 15
+        },
+        "total": 184,
+        "unclassified_count": 0
+      },
+      "previous_summary": {
+        "consumer_class_counts": {
+          "already_explicit_or_parser_probe": 178,
+          "cranelift_C_or_diagnostic_guard": 5,
+          "help_surface_probe": 3,
+          "intentional_default_selection_probe": 8,
+          "invocation_parser_probe": 2
+        },
+        "owner_counts": {
+          "cranelift": 167,
+          "stdlib": 29
+        },
+        "selection_counts": {
+          "explicit_c": 56,
+          "explicit_cranelift": 119,
+          "explicit_invalid_or_parser_probe": 3,
+          "implicit_default": 18
+        },
+        "total": 196,
+        "unclassified_count": 0
+      },
+      "reclassified_invocation_count": 2,
+      "status": "patch24_13_in_progress"
     }
   },
   "phase24_frozen_oracle_replacement": {

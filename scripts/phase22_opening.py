@@ -87,6 +87,19 @@ def selection(command: str) -> str:
     if (re.search(r"--backend(?:=|\s+)(?:mir-to-c|c)(?:\s|$)", command) or
             re.search(r"['\"]--backend['\"]\s*,\s*['\"](?:mir-to-c|c)['\"]", command)):
         return "explicit_c"
+    # Patch 24.13 (#420): the bootstrap-only entry is its own selection.
+    #
+    # It is an explicit, roadmap-decided spelling that reaches the emitter,
+    # deliberately unadvertised in help. Without this branch it falls into
+    # explicit_invalid_or_parser_probe, and the census cannot tell a bootstrap
+    # call from a typo -- which is the distinction Patch 24.11 created this
+    # entry to make. It is deliberately NOT explicit_c: calling it that would
+    # assert the bootstrap entry is the retired spelling, the conflation 24.11
+    # rejected when it declined to keep that spelling for bootstrap.
+    if (re.search(r"--backend(?:=|\s+)bootstrap-emitter(?:\s|$)", command) or
+            re.search(r"['\"]--backend['\"]\s*,\s*['\"]bootstrap-emitter['\"]",
+                      command)):
+        return "explicit_bootstrap_emitter"
     if "--backend" in command:
         return "explicit_invalid_or_parser_probe"
     return "implicit_default"
@@ -403,7 +416,7 @@ def effective_relay_inventory(registry: dict, landed_authority: dict) -> dict:
         "phase24_12b_python_parity_conversion", {}).get(
             "phase22_invocation_successor")
     if conversion is None:
-        return current
+        return _backend_removal_successor(registry, current)
     previous, current = current, conversion.get("current_relay_inventory")
     require(conversion.get("previous_relay_inventory") == previous and
             isinstance(current, dict),
@@ -419,6 +432,54 @@ def effective_relay_inventory(registry: dict, landed_authority: dict) -> dict:
             current["selection_counts"]["explicit_c"],
             "the Patch 24.12b post-relay census reduction is not the "
             "registered explicit-C removal")
+    return _backend_removal_successor(registry, current)
+
+
+def _backend_removal_successor(registry: dict, previous: dict) -> dict:
+    """Patch 24.13: a RECLASSIFICATION successor, not a reduction one (#420).
+
+    Every earlier successor removed invocations, so the chain asserts
+    ``current["total"] < previous["total"]`` and that the drop equals the
+    explicit-C delta. Patch 24.13 does something no earlier patch did: it
+    moves two bootstrap callers from the retired spelling to the
+    bootstrap-only entry. The calls remain, so the total does not move and
+    that contract cannot express the change.
+
+    This shape holds it to the same standard by a different arithmetic: the
+    total must be UNCHANGED, the registered moved count must equal both the
+    drop in explicit_c and the rise in explicit_bootstrap_emitter, and it must
+    be non-zero. A successor that moves nothing, or whose registered move
+    disagrees with the scan, still fails -- which is what `<` bought for the
+    reduction successors and what widening it to `<=` would have thrown away.
+    """
+    removal = registry.get(
+        "phase24_13_backend_removal", {}).get("phase22_invocation_successor")
+    if removal is None:
+        return previous
+    current = removal.get("current_relay_inventory")
+    require(removal.get("contract_version") ==
+            "phase24_13_invocation_reclassification_successor_v1" and
+            removal.get("previous_relay_inventory") == previous and
+            isinstance(current, dict) and
+            removal.get("partial_or_unregistered_reclassification") ==
+            "rejected",
+            "Patch 24.13 invocation reclassification successor drifted")
+    require(current["total"] == previous["total"] and
+            current["unclassified_count"] == previous["unclassified_count"]
+            == 0,
+            "Patch 24.13 reclassifies rather than removes, so the fully "
+            "classified census total must not move")
+    moved = removal.get("reclassified_invocation_count")
+    require(isinstance(moved, int) and moved > 0,
+            "Patch 24.13 registered a reclassification that moves nothing")
+    require(moved ==
+            previous["selection_counts"].get("explicit_c", 0) -
+            current["selection_counts"].get("explicit_c", 0) and
+            moved ==
+            current["selection_counts"].get("explicit_bootstrap_emitter", 0) -
+            previous["selection_counts"].get("explicit_bootstrap_emitter", 0),
+            "the Patch 24.13 registered move disagrees with the scan: it must "
+            "equal both the explicit-C drop and the bootstrap-entry rise")
     return current
 
 
