@@ -306,6 +306,11 @@ def policy_accepts(record: dict, summary: dict[str, object]) -> bool:
         "phase24_12a_emitter_only_retirement", {}).get(
         "frozen_surface_transition", {}).get(
         "current_live_c_case_surface", expected_live)
+    # Patch 24.12b is the newest link, so it overrides last.
+    expected_live = registry.get(
+        "phase24_12b_python_parity_conversion", {}).get(
+        "frozen_surface_transition", {}).get(
+        "current_live_c_case_surface", expected_live)
     return (
         record.get("capability_surface") == summary["capability_surface"] and
         expected_live == summary["live_c_case_surface"] and
@@ -632,6 +637,9 @@ def validate() -> tuple[dict, dict[str, object]]:
             require(retirement_transition is not None,
                     "the Patch 24.12a frozen-surface successor has no "
                     "registered predecessor")
+            conversion_transition = registry.get(
+                "phase24_12b_python_parity_conversion", {}).get(
+                    "frozen_surface_transition")
             previous = emitter_only_transition.get(
                 "previous_live_c_case_surface", {})
             current = emitter_only_transition.get(
@@ -642,11 +650,28 @@ def validate() -> tuple[dict, dict[str, object]]:
                     "patch24_12a_complete" and
                     previous ==
                     retirement_transition["current_live_c_case_surface"] and
-                    current == summary["live_c_case_surface"] and
+                    current == (
+                        conversion_transition["previous_live_c_case_surface"]
+                        if conversion_transition is not None
+                        else summary["live_c_case_surface"]) and
                     emitter_only_transition.get("unchanged_fields") == [] and
                     emitter_only_transition.get(
                         "partial_or_unregistered_surface") == "rejected",
                     "Patch 24.12a frozen live-C transition drifted")
+            # Patch 24.12b retires the emitter-only arms inside guards that
+            # survive, so it becomes the tail of this chain and is the node
+            # required to equal the live scan.
+            if conversion_transition is not None:
+                require(conversion_transition.get("contract_version") ==
+                        "phase24_12b_frozen_surface_transition_v1" and
+                        conversion_transition.get(
+                            "previous_live_c_case_surface") == current and
+                        conversion_transition.get(
+                            "current_live_c_case_surface") ==
+                        summary["live_c_case_surface"] and
+                        conversion_transition.get(
+                            "partial_or_unregistered_surface") == "rejected",
+                        "Patch 24.12b frozen live-C transition drifted")
             removed_from = emitter_only_transition.get("removed_from", {})
             require(isinstance(removed_from, dict) and removed_from,
                     "Patch 24.12a registered no source for its reduction")
