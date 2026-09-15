@@ -69,6 +69,10 @@ fi
 # -- and those two rows are the ones this patch moved to the bootstrap-only
 # entry. Using bootstrap-emitter here is not overloading a bootstrap name for a
 # non-bootstrap purpose; this arm IS bootstrap work.
+# Patch 24.13: the bootstrap-emitter entry is authority-gated (review on
+# #421). Exported here rather than inline so the invocation lines stay as the
+# manifests pin them.
+export GUST_BOOTSTRAP_EMITTER=1
 ./gust --backend bootstrap-emitter "$compiler_source" |
   grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" >"$build_dir/stage2.c"
 cat src/runtime.c "$build_dir/stage2.c" >"$build_dir/stage2-final.c"

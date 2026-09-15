@@ -237,6 +237,46 @@ BOOTSTRAP_ROUTED_RECIPES = {
 }
 BOOTSTRAP_ROUTE_NEEDLE = "--backend bootstrap-emitter"
 
+# Patch 24.13, raised in review on #421: the bootstrap-only entry is gated on
+# GUST_BOOTSTRAP_EMITTER=1, because keeping a spelling out of help does not
+# make it internal.
+#
+# A gate is only worth as much as the certainty that every caller carries it,
+# and a caller that forgets it fails at RUN time, in a recipe that may not run
+# on every PR. So the authority is enumerated here instead: every executable
+# bootstrap-emitter site in the tree must be covered, and the check below
+# derives the sites from the tree rather than from this list, so a NEW site
+# fails rather than being silently uncovered.
+#
+# Two ways to carry it, both line-neutral by design -- the justfile's manifest
+# is keyed on line numbers and the route-flip and seed-convergence manifests
+# pin the invocation strings verbatim, so neither an inserted line nor a
+# rewritten command was available:
+#   - an inline prefix on the command itself
+#   - an `export` earlier in the same file (the Makefile uses a
+#     target-specific export; the shell harness a plain one)
+BOOTSTRAP_AUTHORITY = "GUST_BOOTSTRAP_EMITTER"
+BOOTSTRAP_AUTHORITY_FILES = (
+    "Makefile",
+    "justfile",
+    "scripts/phase22_explicit_c_migration.sh",
+)
+# tests/test_runner.gst is deliberately absent: its two invocations run inside
+# the compiled runner binary, which inherits the authority from the recipe that
+# launched it. Requiring the literal there would demand a prefix on a string
+# the registry pins as this file's migrated command.
+BOOTSTRAP_AUTHORITY_INHERITED = ("tests/test_runner.gst",)
+# Files that NAME the spelling without invoking it. The compiler entry is where
+# the spelling is defined and where the authority is checked, so it necessarily
+# contains the string; requiring an authority there would be asking the gate to
+# authorise itself. Kept as an explicit register rather than a path heuristic,
+# so a compiler entry that started actually invoking the emitter would have to
+# be moved out of here deliberately.
+BOOTSTRAP_AUTHORITY_DEFINES_ONLY = (
+    "compiler/test_runner_entry.gst",
+    "compiler/test_runner_bootstrap_bridge_entry.gst",
+)
+
 # recipe id -> what Patch 24.12 did to it
 TAKEN_OUT_RECIPES = {
     "guard-cranelift-phase11-scalar-expression-parity": "convert",
@@ -1034,6 +1074,23 @@ def check_harness_callers(bodies: dict[str, str],
                     f"unregistered C-harness caller: {recipe} -> {harness}")
 
 
+def SWEEP_LOCI_FOR_AUTHORITY() -> list[str]:
+    """Executable loci that could carry a bootstrap-emitter invocation.
+
+    The same corpus check_sweep walks, minus nothing: if a file in it gains the
+    spelling, the authority check above has to see it.
+    """
+    loci = (["Makefile"] + JUSTFILE_FRAGMENTS
+            + ["compiler/test_runner_entry.gst",
+               "compiler/test_runner_bootstrap_bridge_entry.gst",
+               "scripts/run-gust-file.sh",
+               "tests/e2e_codegen_assertions.gst",
+               "tests/test_runner.gst"]
+            + sorted(str(path.relative_to(ROOT)) for path in
+                     (ROOT / "scripts").glob("*.sh")))
+    return [locus for locus in loci if (ROOT / locus).is_file()]
+
+
 def check_sweep() -> dict[str, int]:
     """Every backend-spelling hit in execution loci belongs to a row."""
     loci = (["Makefile"] + JUSTFILE_FRAGMENTS
@@ -1422,6 +1479,57 @@ def validate() -> dict:
     for path, owner, action in SCRIPT_ROWS:
         require((ROOT / path).is_file(),
                 f"inventoried guard script is missing: {path}")
+
+    # Every executable bootstrap-emitter site carries the authority, derived
+    # from the tree so a new site cannot appear uncovered.
+    uncovered = []
+    for locus in (list(BOOTSTRAP_AUTHORITY_FILES)
+                  + list(BOOTSTRAP_AUTHORITY_INHERITED)):
+        text = read(locus)
+        if BOOTSTRAP_ROUTE_NEEDLE not in text:
+            continue
+        if locus in BOOTSTRAP_AUTHORITY_INHERITED:
+            continue
+        for line in text.splitlines():
+            if BOOTSTRAP_ROUTE_NEEDLE not in line:
+                continue
+            if BOOTSTRAP_AUTHORITY in line:
+                continue
+            # an `export` anywhere earlier in the file also carries it
+            if f"export {BOOTSTRAP_AUTHORITY}" in text.split(line)[0]:
+                continue
+            uncovered.append(f"{locus}: {line.strip()[:70]}")
+    require(not uncovered,
+            "a bootstrap-emitter invocation does not carry the "
+            f"{BOOTSTRAP_AUTHORITY} authority, so it will fail at run time: "
+            f"{uncovered}")
+    scanned = {locus for locus in SWEEP_LOCI_FOR_AUTHORITY()
+               if BOOTSTRAP_ROUTE_NEEDLE in read(locus)}
+    for locus in BOOTSTRAP_AUTHORITY_DEFINES_ONLY:
+        text = read(locus)
+        if BOOTSTRAP_ROUTE_NEEDLE not in text:
+            continue
+        # The CALL, not the name. A first version required only that
+        # "GUST_BOOTSTRAP_EMITTER" appear somewhere in the file, and a mutation
+        # that repointed the lookup at an unrelated variable passed -- because
+        # the name still appeared in the comment explaining the gate. Grepping
+        # for a name to answer "does it check this?" returns a plausible wrong
+        # answer.
+        # Whitespace-tolerant: an exact-string pin also failed on a pure
+        # reformat, and "the gate is gone" is the wrong thing to say about a
+        # space. This still fails if the lookup is repointed or removed.
+        require(re.search(
+            r'os\.GetEnv\(\s*ctx\s*,\s*"' + re.escape(BOOTSTRAP_AUTHORITY)
+            + r'"\s*\)', text) is not None,
+                f"{locus} names the bootstrap-emitter spelling but does not "
+                f"read {BOOTSTRAP_AUTHORITY}, so the gate is gone")
+    registered = (set(BOOTSTRAP_AUTHORITY_FILES)
+                  | set(BOOTSTRAP_AUTHORITY_INHERITED)
+                  | set(BOOTSTRAP_AUTHORITY_DEFINES_ONLY))
+    unregistered = sorted(scanned - registered)
+    require(not unregistered,
+            "a file gained a bootstrap-emitter invocation without being "
+            f"registered as an authority site: {unregistered}")
 
     counts = check_sweep()
     require(counts == expected_sweep(),

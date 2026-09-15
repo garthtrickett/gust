@@ -107,10 +107,30 @@ func compiler_parse_invocation(args: std.Vector[str, ctx], ctx: &Arena) Compiler
                     backend_name));
             }
             // Patch 24.11 decided this entry and Patch 24.13 lands it: the
-            // emitter survives as bootstrap-only machinery reachable only
-            // through an explicit internal spelling, which is not advertised
-            // in help and reuses the existing MirToC tag.
+            // emitter survives as bootstrap-only machinery reusing the
+            // existing MirToC tag.
+            //
+            // Raised in review on #421: keeping the spelling out of help does
+            // not make it internal. Any user who knew the string could reach
+            // codegen_generate through the public binary, which left the
+            // publication path this patch retires open to anyone.
+            //
+            // It cannot move to a separate binary: `make bootstrap` compares
+            // build/gust_stage2.c against build/gust_stage3.c for byte
+            // identity, and that fixed point is the CURRENT compiler emitting
+            // its own C. Take the emitter out of ./gust and there is no stage
+            // two. So the entry stays and carries an authority instead: the
+            // caller must also set GUST_BOOTSTRAP_EMITTER=1, which the
+            // bootstrap chain's own recipes export and an ordinary invocation
+            // does not have.
             if std.str_eq(backend_name, "bootstrap-emitter") == 1 {
+                if std.str_eq(
+                    os.GetEnv(ctx, "GUST_BOOTSTRAP_EMITTER"),
+                    "1"
+                ) == 0 {
+                    compiler_invocation_fail(
+                        "--backend bootstrap-emitter is bootstrap-only machinery, not a user-selectable backend; the generated-C backend was removed in Phase 24");
+                }
                 unsafe {
                     invocation.backend.tag = 0; // MirToC, bootstrap-only
                 }

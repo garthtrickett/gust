@@ -235,6 +235,12 @@ phase10-native-package: gust build/gust-native-backend $(PHASE21_RUNTIME_PACKAGE
 	@echo "✅ Phase 10 native package ready: build/phase10-package/bin/gust, build/phase10-package/bin/gust-native-backend, and build/phase10-package/bin/gust-runtime-package.a"
 
 # Fixed-Point Bootstrap Verification
+#
+# Patch 24.13: the bootstrap-emitter entry requires GUST_BOOTSTRAP_EMITTER=1.
+# Exported target-specifically rather than inline on each command, so the two
+# invocation lines below stay byte-identical to what the route-flip and
+# seed-convergence manifests pin.
+bootstrap: export GUST_BOOTSTRAP_EMITTER = 1
 bootstrap: gust
 	@echo "⚙️  Beginning fixed-point bootstrap verification..."
 	@# Stage 2: Use the new 'gust' binary to compile the compiler again
