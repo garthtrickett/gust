@@ -14,11 +14,11 @@
     },
     "oracle_route": "explicit_retired_backend_spelling",
     "sealed_by": "Patch 24.13 removes backend selection; no vector can be captured after it merges",
-    "source_commit": "730f6c2f8a712e80352fde603263963a595b662a",
+    "source_commit": "653b9db666dda9ee57aa9735a2573a20e7ffdc1d",
     "stderr_population": {
       "non_empty": 0,
       "note": "v1 recorded 0 non-empty across 421 records (#417); this count is stated so a uniformly empty corpus is visible rather than implicit",
-      "records": 8
+      "records": 4
     }
   },
   "format": "phase24_frozen_oracle_vectors_v2",
@@ -29,6 +29,216 @@
     "refresh": "impossible_after_patch24_13_seals_the_backend"
   },
   "vectors": {
+    "compiler/phase21_selected_declaration_source.gst": {
+      "archived_corpus_case": null,
+      "capture_authority_digest": "e610a9b666d8ac55f6d2d9fcaf237fcd6395f9d72d9cae0b86c9d219f2e548f2",
+      "compile": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "sha256": "1a6c3a6c3d1ef72d0cc4653fb77fd4c37d06c8129664f9aab628ab12b5ad5682",
+          "size": 3629
+        }
+      },
+      "execution": {
+        "exit": 42,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        }
+      },
+      "kind": "exec",
+      "provenance": "captured_live_while_green_patch24_12b",
+      "side_effects": [],
+      "source_fixture": "compiler/phase21_selected_declaration_source.gst",
+      "source_sha256": "e041ab3bd66365a29f6d7d91313341726abb4dd0919740ff852186026cec1e65",
+      "workdir_sensitive": false
+    },
+    "compiler/phase21_support_canonical_mir_slice.gst": {
+      "archived_corpus_case": null,
+      "capture_authority_digest": "f5dc0914693eb2ef2d407b242be661a6b24f3054e81499f17ed3282e0b13419b",
+      "compile": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "sha256": "746ce63035ca74d1e141c2f899815a65db4f2a58fa78a3a512d0e0b127dc4b43",
+          "size": 1951841
+        }
+      },
+      "execution": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        }
+      },
+      "kind": "exec",
+      "provenance": "captured_live_while_green_patch24_12b",
+      "side_effects": [],
+      "source_fixture": "compiler/phase21_support_canonical_mir_slice.gst",
+      "source_sha256": "5b875e84c6283795b6fdf1e24454744df383c57e3e19c273493d05d0916a8c24",
+      "workdir_sensitive": false
+    },
+    "compiler/phase21_support_lexical_ast_slice.gst": {
+      "archived_corpus_case": null,
+      "capture_authority_digest": "54fd00aa6aa5df5fa5193f46ba18af5b74608c49cf8787328d9c4798ff6bb0cc",
+      "compile": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "sha256": "800da2d5a17bd7d707112e9e781548daf553f7a851b735eb30f98ea93ab7512a",
+          "size": 140878
+        }
+      },
+      "execution": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        }
+      },
+      "kind": "exec",
+      "provenance": "captured_live_while_green_patch24_12b",
+      "side_effects": [],
+      "source_fixture": "compiler/phase21_support_lexical_ast_slice.gst",
+      "source_sha256": "3602f6899b81bc90055d44a848d643181f57a3ce2e62fc8e25e824ee93f1e69a",
+      "workdir_sensitive": false
+    },
+    "compiler/phase21_support_native_request_slice.gst": {
+      "archived_corpus_case": null,
+      "capture_authority_digest": "f46f9dce156d4026210348053345d06ab79d7fc99be1c2d2e9c98d6fd9a34219",
+      "compile": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "sha256": "91585fecf36d98a15a37221200bab752d37250b413317d69d9dbf406cd6c3649",
+          "size": 6779888
+        }
+      },
+      "execution": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        }
+      },
+      "kind": "exec",
+      "provenance": "captured_live_while_green_patch24_12b",
+      "side_effects": [],
+      "source_fixture": "compiler/phase21_support_native_request_slice.gst",
+      "source_sha256": "565bce63d085ebb4375a7c1fc9db860a04e651b2854afc2f74557374eaddd48a",
+      "workdir_sensitive": false
+    },
+    "compiler/phase21_support_native_source_slice.gst": {
+      "archived_corpus_case": null,
+      "capture_authority_digest": "454c92588bd4043d6ffe54173c9feef490bece56955ce8751b57b5da5275889e",
+      "compile": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "sha256": "a5046489bb5432c6a595af22d441e8c79807ea5c12750799413e0b8b316f33c1",
+          "size": 6644889
+        }
+      },
+      "execution": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        }
+      },
+      "kind": "exec",
+      "provenance": "captured_live_while_green_patch24_12b",
+      "side_effects": [],
+      "source_fixture": "compiler/phase21_support_native_source_slice.gst",
+      "source_sha256": "7bba795f38f68ecfa366705217324f775c4dcd7401b40d24176bdc54a321b69c",
+      "workdir_sensitive": false
+    },
+    "compiler/phase22_default_index_initialization_source.gst": {
+      "archived_corpus_case": null,
+      "capture_authority_digest": "66523fc15ec8d5dc1e7e5e6f5b397c9c228efda46aaef46374bfcff6fc7599e9",
+      "compile": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "sha256": "512aca6b5aebc07c670739e341c527df2bc144d77f4d9150e2f78bfe26207ac7",
+          "size": 2745
+        }
+      },
+      "execution": {
+        "exit": 7,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        }
+      },
+      "kind": "exec",
+      "provenance": "captured_live_while_green_patch24_12b",
+      "side_effects": [],
+      "source_fixture": "compiler/phase22_default_index_initialization_source.gst",
+      "source_sha256": "140c7a0b78e5ef24ac162e2cde4ebd3cf4bbe6813f6e2fb9309b7dca111fdabc",
+      "workdir_sensitive": false
+    },
     "compiler/phase24_resource_implicit_transfer_non_resource.gst": {
       "archived_corpus_case": null,
       "capture_authority_digest": "05a8169096cc2b5c615fb13b43206de007bfc45c6c14b50eada511f2b6098423",
