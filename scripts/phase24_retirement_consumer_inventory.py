@@ -261,15 +261,24 @@ DEFERRED_HARNESSES = {
 }
 
 
-SWEEP_LOCI = ["Makefile", "justfile", "justfile-step51",
-              "compiler/test_runner_entry.gst"]
+# Patch 24.13 removed compiler/test_runner_entry.gst from this set: it no
+# longer carries a live C route, and RETIRED_FILE_SURFACES asserts the
+# surfaces it lost stay gone.
+SWEEP_LOCI = ["Makefile", "justfile", "justfile-step51"]
 
 # Exact per-file spelling counts for sweep loci with more than one shape.
 # Single-shape loci are pinned by their row checks; the sweep asserts the
 # total per file so a new C route in a known file still fails.
 SWEEP_COUNTS = {
-    "Makefile": 5,
-    "compiler/test_runner_entry.gst": 2,
+    # Patch 24.13: 5 -> 3. Two Makefile bootstrap callers moved to the
+    # bootstrap-only entry; the remaining three are driven by the seed and the
+    # bridge parser, which this patch does not touch and Phase 25 owns.
+    "Makefile": 3,
+    # Patch 24.13 removed this locus entirely -- the help line went and the
+    # selection branch became a rejection, so the file no longer carries a
+    # live C route. It is dropped from SWEEP_LOCI rather than pinned at zero,
+    # because a zero pin would keep asserting a sweep over a file with nothing
+    # to sweep.
     # 38 before Patch 24.12; the conversion took 22 out (7 phase11 and 4
     # mir-feature parity recipes, and the live-C literals three closure
     # guards required the Phase 13 differential harness to still contain).
@@ -552,14 +561,32 @@ REGISTRY_ROWS = [
     ("phase23_mir_to_c_archived_corpus", "24.15", "update"),
 ]
 
+# Patch 24.13 (#398, #402): surfaces this patch actually removed, asserted in
+# the INVERSE. A FILE_ROWS entry requires its needle to be PRESENT, which is
+# right while a surface is still awaiting retirement and wrong the moment it is
+# retired -- the row would break on a patch that never edits the file, and
+# dropping it would say nothing about whether the surface came back.
+#
+# Only the help line went. The MirToC enum variant survives because the
+# bootstrap-only entry reuses that tag, and the str_eq on the retired spelling
+# survives because it is now the branch that REJECTS it. Both are still
+# FILE_ROWS entries, still owned for later retirement, and still required to be
+# present -- which is why this register names one surface rather than three.
+RETIRED_FILE_SURFACES = [
+    ("compiler/test_runner_entry.gst",
+     "gust --backend mir-to-c <source.gst>", "24.13"),
+    ("scripts/run-gust-file.sh",
+     'RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-mir-to-c}"', "24.13"),
+]
+
 FILE_ROWS = [
     # (path, needle, owner_patch, action)
     ("compiler/test_runner_entry.gst",
      "    MirToC,", "24.13", "retire"),
     ("compiler/test_runner_entry.gst",
      'std.str_eq(backend_name, "mir-to-c")', "24.13", "retire"),
-    ("compiler/test_runner_entry.gst",
-     "gust --backend mir-to-c <source.gst>", "24.13", "retire"),
+    # Patch 24.13 retired this help line. The row stays, inverted: see
+    # RETIRED_FILE_SURFACES below.
     ("compiler/test_runner_entry.gst",
      "the MIR-to-C backend does not accept -o", "24.14", "retire"),
     ("compiler/test_runner_entry.gst",
@@ -579,8 +606,7 @@ FILE_ROWS = [
     ("Makefile",
      'CC="${CC}" CFLAGS="${CFLAGS}" INCLUDES="${INCLUDES}" just make-test-suite',
      "24.14", "migrate"),
-    ("scripts/run-gust-file.sh",
-     'RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-mir-to-c}"', "24.13", "migrate"),
+    # Patch 24.13 migrated this default to cranelift (#411); inverted below.
     ("scripts/cranelift_ci_family.py",
      '["just", runner["static_guard"]]', "24.12", "convert"),
     ("tests/test_runner.gst",
@@ -1210,6 +1236,10 @@ def validate() -> dict:
     for path, needle, owner, action in FILE_ROWS:
         require(needle in read(path),
                 f"inventoried file lost its C surface: {path}: {needle[:48]}")
+    for path, needle, owner in RETIRED_FILE_SURFACES:
+        require(needle not in read(path),
+                f"Patch {owner} retired this surface, but it is back: "
+                f"{path}: {needle[:48]}")
     for family_name, family in SH_FAMILIES.items():
         for path, count in family["files"].items():
             text = read(path)
