@@ -1441,6 +1441,55 @@ def check_stale_row_scoring(bodies: dict[str, str], workflow_seen: set[str],
             f"{measured_mention}, registered "
             f"{sorted(IS_LIVE_WITH_NO_EXECUTION_ROUTE)}")
 
+    # Patch 24.16's adjudication of the PARITY residue, which is what the
+    # repaired instrument shows the mention-only population actually is.
+    #
+    # 28 of the 54 are parity guards -- 12 phase14, 8 phase13, 7 phase11, 1
+    # phase20 -- and all 28 share one basis, so they are one class and not 28
+    # decisions:
+    #
+    #   * they exist as justfile recipes (0 of 28 are absent);
+    #   * they are UNASSIGNED in cranelift_test_levels.json -- all 28;
+    #   * nothing executes them: not a workflow, not the make closure;
+    #   * they are "live" only because the feature registry mentions the name.
+    #
+    # That is a weaker basis than the roadmap's sharpest case. TASK.md says of
+    # guard-cranelift-phase20-resource-enforcement-parity that "a bare level
+    # assignment is the only thing keeping a known-red, never-executed guard
+    # off the orphan list". These have no level assignment AT ALL, and a guard
+    # with no level cannot be dispatched by the level-driven runners, so there
+    # is no path by which CI reaches them.
+    #
+    # Pinned rather than retired in this commit. Retiring 28 recipes at once is
+    # the same shape as the bulk accept TASK.md warns against for the
+    # allowlist: it would discharge the gate by volume rather than by
+    # adjudication. What is asserted here is the BASIS -- if any of them gains
+    # a level assignment or an executor, this fails and the class has to be
+    # re-adjudicated rather than silently shrinking.
+    parity_residue = sorted(
+        recipe for recipe in MENTION_ONLY_LIVENESS if "parity" in recipe)
+    levels = json.loads(
+        (ROOT / "scripts" / "cranelift_test_levels.json").read_text(
+            encoding="utf-8"))
+    assigned = sorted(r for r in parity_residue if r in levels)
+    require(
+        not assigned,
+        f"a mention-only parity guard gained a level assignment: {assigned}. "
+        "That changes its basis from 'named by a registry' to 'dispatchable "
+        "by CI', so it leaves this class and needs its own adjudication.",
+    )
+    executed = sorted(set(parity_residue) & (workflow_seen | make_seen))
+    require(
+        not executed,
+        f"a mention-only parity guard is now executed: {executed}. It "
+        "protects a live invariant again and must leave the residue.",
+    )
+    require(
+        len(parity_residue) == 28,
+        f"the parity residue moved from 28 to {len(parity_residue)} without "
+        "adjudication",
+    )
+
     # Patch 24.16's adjudication of the native-smoke population.
     #
     # TASK.md expected this to be the phase's weak point: "Most of the 43 are
