@@ -14,11 +14,11 @@
     },
     "oracle_route": "explicit_retired_backend_spelling",
     "sealed_by": "Patch 24.13 removes backend selection; no vector can be captured after it merges",
-    "source_commit": "653b9db666dda9ee57aa9735a2573a20e7ffdc1d",
+    "source_commit": "81d798c20bd398a52f19449880816a2f9bd2e517",
     "stderr_population": {
       "non_empty": 0,
       "note": "v1 recorded 0 non-empty across 421 records (#417); this count is stated so a uniformly empty corpus is visible rather than implicit",
-      "records": 4
+      "records": 6
     }
   },
   "format": "phase24_frozen_oracle_vectors_v2",
@@ -29,6 +29,41 @@
     "refresh": "impossible_after_patch24_13_seals_the_backend"
   },
   "vectors": {
+    "compiler/parser_reference_access_test_entry.gst": {
+      "archived_corpus_case": null,
+      "capture_authority_digest": "ba958d0b020e4b3f7783f3140e645c81f15a45485d7f90e9bff79fb7d874fc14",
+      "compile": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "sha256": "fbc8ad50c714edd38207ced00582a0433711e10daea6735b7d960bf0f28f6f58",
+          "size": 298063
+        }
+      },
+      "execution": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "hex": "535543434553533a204578706c69636974207265666572656e63652d616363657373206d6574686f642063616c6c2070617273696e67207665726966696564210a",
+          "sha256": "417984b33c232e139548fd297f47a0fe1616fb7cf879bac24ce2f664b3d6a49a",
+          "size": 65
+        }
+      },
+      "kind": "exec",
+      "provenance": "captured_live_while_green_patch24_12b",
+      "side_effects": [],
+      "source_fixture": "compiler/parser_reference_access_test_entry.gst",
+      "source_sha256": "c946336db2076ed156a1078062a6f95ad03bd102665e6645c3fe4fd399ab4a8e",
+      "workdir_sensitive": false
+    },
     "compiler/phase21_selected_declaration_source.gst": {
       "archived_corpus_case": null,
       "capture_authority_digest": "e610a9b666d8ac55f6d2d9fcaf237fcd6395f9d72d9cae0b86c9d219f2e548f2",
@@ -330,6 +365,76 @@
       "side_effects": [],
       "source_fixture": "compiler/phase24_resource_implicit_transfer_source_rejected.gst",
       "source_sha256": "070423c47466465881e0294ceb5c4736a29bcc420dcadc294ccfbdc38ba93b94",
+      "workdir_sensitive": false
+    },
+    "compiler/typechecker_expression_provenance_test_entry.gst": {
+      "archived_corpus_case": null,
+      "capture_authority_digest": "f1dd40f4015a803c0de034ec64fc89c4e3cb0fc5bb04e34f8b230990b9d625ac",
+      "compile": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "sha256": "2fe4eea775b14d9630e66816150262a0b7f0910e3eab6e97ed6a0eff6c7dabc1",
+          "size": 1603034
+        }
+      },
+      "execution": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "hex": "535543434553533a20696e6572742065787072657373696f6e2070726f76656e616e63652063617272696572207665726966696564210a",
+          "sha256": "52e41665d2c1274ce04b2c1b028be04252e5df4b513bbe559221406be50b6fd0",
+          "size": 55
+        }
+      },
+      "kind": "exec",
+      "provenance": "captured_live_while_green_patch24_12b",
+      "side_effects": [],
+      "source_fixture": "compiler/typechecker_expression_provenance_test_entry.gst",
+      "source_sha256": "6bfefb25a698be27c23fc1e94f6d933001f6c42d858086a5fd87f55027cac81c",
+      "workdir_sensitive": false
+    },
+    "compiler/typechecker_scope_test_entry.gst": {
+      "archived_corpus_case": null,
+      "capture_authority_digest": "88015322d2ebc6503b3e4bf0d984a42a27b50e55c0432b4a05719deae0d9dfc6",
+      "compile": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "sha256": "b4fc79483c7a1067bd5904804df36cd360b6381a43ef41640dd5f0ec5db7d652",
+          "size": 1449562
+        }
+      },
+      "execution": {
+        "exit": 0,
+        "stderr": {
+          "hex": "",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 0
+        },
+        "stdout": {
+          "hex": "300a330a310a320a",
+          "sha256": "d38c552842c8cbe98b79e4bc799fb8c0d327e74bf5b3999ccb3526b3791a46b1",
+          "size": 8
+        }
+      },
+      "kind": "exec",
+      "provenance": "captured_live_while_green_patch24_12b",
+      "side_effects": [],
+      "source_fixture": "compiler/typechecker_scope_test_entry.gst",
+      "source_sha256": "eb14497ac93d9501c34adce148435585dac59fd27904919e8871f2b3931bd8fc",
       "workdir_sensitive": false
     },
     "tests/phase24_cr15_arbitrary_generic_rejected.gst": {
