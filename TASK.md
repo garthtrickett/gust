@@ -802,14 +802,51 @@ later architecture phases inactive.
 
 **Steps:**
 
+- **Build `scripts/phase24_closure.py` (#406). It does not exist.** Phase 24
+  has two closure generators and neither closes the phase: `phase24_cr15_closure.py`
+  closes 24.0f and `phase24_preflight_closure.py` closes 24.4, both sub-phases
+  *inside* the opening. The closure generator is the instrument that
+  mechanically enforces *every status row is DONE*, and it is the last thing
+  that reads the retirement rows. Every defect filed against this phase
+  concerns a row, an assertion, or a population that a census failed to
+  contain; the final check on the ledger's completeness is the one artifact
+  that was never scoped.
+- Follow the Phase 23 precedent rather than inventing a shape: a
+  `tests/cranelift/phase24_closure_contract.tsv`, an
+  `authoritative_latest_historical_full` run identity in the registry, a
+  generated `docs/PHASE24_CLOSURE.md` view, and a staleness check that fails
+  unless the view is generated from registry authority
+  (`scripts/phase23_closure.py:21`, `:95`, `:198-204`, `:847`).
+- **Enforce the retirement row order as amended, not as first written.** The
+  Phase 23 generator rejects rows that are *missing, duplicated, or reordered*
+  against an expected list (`scripts/phase23_closure.py:170-179`). Phase 24's
+  expected list must therefore carry **24.15a before 24.15**, the order Patch
+  24.15a's #404 amendment establishes. A generator built from the original
+  numbering would silently re-assert the sequence that amendment corrected —
+  ownership is not ordering (#402), and a row list is where the two are easiest
+  to confuse.
+- Assert the Patch 24.17 pre-retirement population baseline here (#405). A
+  closure record citing a green Historical run inherits that run's population,
+  so the generator is the natural — and the last — place the per-member
+  accounting can be required rather than merely available.
+- **Scope it as a patch, not as bookkeeping.** Re-derived on this tree, the
+  precedent closure generators run 311, 290 and 865 lines
+  (`phase19_closure.py`, `phase20_closure.py`, `phase23_closure.py`), with
+  `phase14_closure.py` at 912. The trend is upward and the most recent and most
+  similar precedent is the largest. Planning 24.18 as a docs commit means
+  ignoring it.
 - Generate the retirement closure from registry source, replace evidence
   placeholders, mark every retirement row DONE, publish the atomic closure
   PR, and write a terminal lane state after merge.
 - State the closure sentence and its boundary: Gust no longer emits C as a
   compiler backend; the repository still contains C under Phase 25 ownership.
 
-**Exit Gate:** every retirement row is DONE; the exact-main Historical
-population and closure PR are fully green; all review threads are resolved;
+**Exit Gate:** `scripts/phase24_closure.py` exists and is the instrument that
+establishes the rest of this gate rather than a record written alongside it;
+every retirement row is DONE, in the amended order, checked by that generator;
+the exact-main Historical population is fully green **and accounted against the
+Patch 24.17 baseline member by member**; the closure PR is fully green; all
+review threads are resolved;
 the terminal lane record cites exact PR head, merge main, workflow
 population, review state, Historical run, event, full SHA, job population,
 conclusion, and budgets; and Phase 24.5, Phase 25, Stdlib implementation, and
