@@ -25,6 +25,7 @@
     "guard-cranelift-phase24-semantic-spelling-inventory-contract": 1,
     "guard-cranelift-phase24-retirement-consumer-inventory-contract": 1,
     "guard-cranelift-phase24-undefined-name-sweep-contract": 1,
+    "guard-cranelift-phase24-c-toolchain-provenance-contract": 1,
     "guard-cranelift-phase24-frozen-oracle-contract": 1,
     "guard-cranelift-phase24-frozen-oracle-evidence": 2,
     "guard-cranelift-phase24-identity-format-ledger-contract": 1,
