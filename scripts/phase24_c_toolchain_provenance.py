@@ -240,7 +240,22 @@ AUTHORED_WRITE = re.compile(r'<<[-~]?\s*[\'"]?[A-Za-z_]+|printf\s|echo\s|cat\s+>
 # producer is unowned, which is what #422 exists to resolve -- so it gets its
 # own class rather than being folded into either side.
 LAYOUT_ORACLE_C = "layout-oracle-c"
-RETAINED = RETAINED | frozenset({LAYOUT_ORACLE_C})
+
+# The Makefile's C is the bootstrap chain: it assembles generated stage files
+# with the host C compiler to build the gust compiler binary itself. TASK.md
+# excepts this BY NAME and leaves it Phase-25-owned -- removing the backend is
+# not removing the bootstrap chain's C.
+#
+# The exception is defined by what the compile PRODUCES, not by which file it
+# lives in: a cc invocation in the Makefile qualifies only if its -o target is
+# a gust compiler binary. A new Makefile cc site building anything else is not
+# covered by the Phase 25 exception and fails.
+BOOTSTRAP_CHAIN_C = "bootstrap-chain-c"
+COMPILER_BINARIES = frozenset(
+    {"gust", "gust_bootstrap", "build/gust_stage1_bin", "build/gust_stage2_bin"}
+)
+
+RETAINED = RETAINED | frozenset({LAYOUT_ORACLE_C, BOOTSTRAP_CHAIN_C})
 
 GST_EMITTER = re.compile(r'mir_[a-z_0-9]*_c_source|_to_c_source')
 JUST_GUARD_ENTRY = re.compile(r'just guard (compiler/[A-Za-z0-9_]+\.gst)')
@@ -495,6 +510,58 @@ def resolve_input(token: str, lines: list, lineno: int) -> dict:
     return record
 
 
+MAKE_CC = re.compile(r'^\s*@?\$\{CC\}\s')
+MAKE_OUTPUT = re.compile(r'-o\s+(\S+)\s*$')
+
+
+def scan_makefile() -> dict:
+    """Classify the Makefile's own C toolchain sites.
+
+    The provenance instrument covered scripts/*.sh only, which left the
+    bootstrap chain -- the largest surviving C consumer in the tree -- outside
+    the measurement entirely. An exception nothing checks is an assertion, not
+    an exception.
+    """
+    path = ROOT / "Makefile"
+    text = path.read_text()
+    lines = [
+        (lineno, line)
+        for lineno, line in logical_lines(text)
+        if not line.strip().startswith("#")
+    ]
+
+    invocations = []
+    for lineno, line in lines:
+        if not MAKE_CC.match(line):
+            continue
+        output = MAKE_OUTPUT.search(line)
+        target = output.group(1) if output else ""
+        invocations.append(
+            {
+                "file": "Makefile",
+                "line": lineno,
+                "spelling": "${CC}",
+                "query": False,
+                "target": target,
+                "inputs": [
+                    {
+                        "token": target,
+                        "klass": BOOTSTRAP_CHAIN_C if target in COMPILER_BINARIES else "",
+                        "why": (
+                            f"builds the compiler binary {target}; Phase-25-owned "
+                            "bootstrap chain, excepted by name"
+                            if target in COMPILER_BINARIES
+                            else f"Makefile cc builds {target!r}, which is not a gust "
+                            "compiler binary, so the Phase 25 bootstrap exception "
+                            "does not cover it"
+                        ),
+                    }
+                ],
+            }
+        )
+    return {"file": "Makefile", "bindings": {}, "dead_bindings": [], "invocations": invocations}
+
+
 def shell_scripts() -> list:
     return sorted(ROOT.glob("scripts/*.sh"))
 
@@ -554,6 +621,7 @@ def scan() -> dict:
         record = scan_script(path)
         if record["bindings"] or record["invocations"]:
             scripts.append(record)
+    scripts.append(scan_makefile())
     return {"scripts": scripts}
 
 
