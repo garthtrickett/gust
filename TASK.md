@@ -115,7 +115,7 @@ Out of scope:
 - [x] Patch 24.11 — Generated-C Consumer and Route Inventory — DONE
 - [x] Patch 24.12 — Frozen Expected-Behaviour Oracle Replacement — DONE
 - [x] Patch 24.12a — Emitter-Only Parity Guard Retirement — DONE
-- [ ] Patch 24.12b — Python Parity Guard Conversion
+- [x] Patch 24.12b — Python Parity Guard Conversion — DONE
 - [ ] Patch 24.13 — Backend-Selection and Publication-Path Removal
 - [ ] Patch 24.14 — C Toolchain Discovery, Error, and Temp-File Removal
 - [ ] Patch 24.15a — Reachability Instrument Repair
