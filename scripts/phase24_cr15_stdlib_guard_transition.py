@@ -922,6 +922,45 @@ def effective_phase22_summary(registry: dict, value: dict) -> dict:
             conversion_surface.get("removed_case_count"),
             "the Phase 22 census and the frozen-surface transition disagree "
             "about how many live-C cases Patch 24.12b removed")
+
+    # Patch 24.13 continues the chain, and is the first link that RECLASSIFIES
+    # rather than reduces. Every successor above removes invocations, so each
+    # asserts `current["total"] < previous["total"]`; 24.13 removes backend
+    # SELECTION, not invocations -- the callers survive and choose a different
+    # backend -- so its total must be UNCHANGED and the explicit-C drop must
+    # equal the rise across the destinations it moves to.
+    #
+    # Without this link the chain simply stopped at 24.12b and returned a
+    # census that predates the removal, so the aggregate compared a live tree
+    # against a state two patches old and reported "drifted" without saying
+    # which patch was missing.
+    removal = registry.get("phase24_13_backend_removal", {}).get(
+        "phase22_invocation_successor")
+    if removal is None:
+        return current
+    previous, current = current, removal.get("current_summary")
+    require(isinstance(current, dict) and
+            removal.get("previous_summary") == previous and
+            removal.get("partial_or_unregistered_reclassification") ==
+            "rejected",
+            "Patch 24.13 Phase 22 invocation successor drifted")
+    require(current["total"] == previous["total"] and
+            current["unclassified_count"] == previous["unclassified_count"]
+            == 0,
+            "Patch 24.13 reclassifies rather than reduces, so the Phase 22 "
+            f"census total must be unchanged: {previous['total']} -> "
+            f"{current['total']}")
+    moved = removal.get("reclassified_invocation_count")
+    drop = (previous["selection_counts"].get("explicit_c", 0) -
+            current["selection_counts"].get("explicit_c", 0))
+    rise = sum(current["selection_counts"].get(name, 0) -
+               previous["selection_counts"].get(name, 0)
+               for name in ("explicit_bootstrap_emitter", "explicit_cranelift"))
+    require(isinstance(moved, int) and moved > 0 and moved == drop == rise,
+            f"the Patch 24.13 Phase 22 reclassification does not balance: "
+            f"registered {moved}, explicit-C drop {drop}, destination rise "
+            f"{rise}. An invocation that disappeared must not pass as one "
+            "that moved.")
     return current
 
 

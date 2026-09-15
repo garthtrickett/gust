@@ -36,8 +36,8 @@ Do not edit by hand.
 ## Landed successor invocation summary
 
 - Landed selection `explicit_bootstrap_emitter`: `2`
-- Landed selection `explicit_c`: `49`
-- Landed selection `explicit_cranelift`: `115`
+- Landed selection `explicit_c`: `46`
+- Landed selection `explicit_cranelift`: `118`
 - Landed selection `explicit_invalid_or_parser_probe`: `3`
 - Landed selection `implicit_default`: `15`
 - Landed consumer class `already_explicit_or_parser_probe`: `169`
@@ -105,9 +105,9 @@ Do not edit by hand.
 | `justfile` | `guard-stdlib-s1-collection-receivers` | `explicit_c` | `already_explicit_or_parser_probe` | `stdlib` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `justfile` | `guard-stdlib-s1-collection-receivers` | `explicit_c` | `already_explicit_or_parser_probe` | `stdlib` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `justfile` | `guard-stdlib-s1-resource-prerequisites` | `explicit_c` | `already_explicit_or_parser_probe` | `stdlib` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `justfile-step51` | `guard-positive` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `justfile-step51` | `guard-compile-pass` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `justfile-step51` | `guard-compile-fail` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
+| `justfile-step51` | `guard-positive` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
+| `justfile-step51` | `guard-compile-pass` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
+| `justfile-step51` | `guard-compile-fail` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `reset-heavy-guards-workflow.sh` | `none` | `implicit_default` | `help_surface_probe` | `cranelift` | `help_text` | `22.6_flip_help_expectation` | `help_expectation_changes_before_the_default_route` |
 | `scripts/phase12_5_route_architecture.sh` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase12_5_route_architecture.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
