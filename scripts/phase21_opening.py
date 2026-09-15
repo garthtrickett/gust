@@ -142,7 +142,12 @@ def validate() -> dict:
         "reason_code": "source_or_type_failure",
         "diagnostic_class": "canonical_mir_verification_error",
         "diagnostic": "Native backend canonical MIR verification failed: unsupported top-level statement in module/import cohort",
-        "source_line": 241,
+        # Patch 24.13 added the rejection branches ahead of main(), moving it
+        # from 241 to 253. This is the line the compiler reports in its
+        # gust_native_capability_decision, not a decorative marker, so it has
+        # to track the file; the require() below re-reads the fixture and
+        # fails if the two ever disagree again.
+        "source_line": 253,
         "source_column": 1,
         "failure_stage": "before_driver_discovery",
         "artifact": "absent",

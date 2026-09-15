@@ -631,14 +631,37 @@ def validate() -> dict:
             "TASK.md does not mark Patch 22.6a DONE")
 
     makefile = MAKEFILE.read_text(encoding="utf-8")
+    # Patch 22.6a pinned four bootstrap rows as explicit C. Patch 24.13 moved
+    # two of them to the bootstrap-only entry, and the two halves are owned
+    # differently from here on:
+    #
+    #   gust_bootstrap    parses the bridge entry; the seed spells mir-to-c
+    #   gust_stage1_bin   built from the bridge; Phase 25 owns its retirement
+    #   gust              built from the entry, which no longer selects C
+    #   gust_stage2_bin   built from the entry, same
+    #
+    # The moved rows are INVERTED, not dropped. A deleted clause says nothing:
+    # it would pass just as well if the row silently went back to mir-to-c, or
+    # vanished from the Makefile entirely. Each moved row therefore asserts
+    # both halves -- the retired spelling absent AND the replacement present.
     for explicit_seed_command in (
         "./gust_bootstrap --backend mir-to-c compiler/test_runner_bootstrap_bridge_entry.gst",
         "./build/gust_stage1_bin --backend mir-to-c compiler/test_runner_entry.gst",
-        "./gust --backend mir-to-c compiler/test_runner_entry.gst",
-        "./build/gust_stage2_bin --backend mir-to-c compiler/test_runner_entry.gst",
     ):
         require(explicit_seed_command in makefile,
-                f"bootstrap route is not explicit C: {explicit_seed_command}")
+                f"Phase-25-owned bootstrap route is not explicit C: {explicit_seed_command}")
+    for retired, rebased in (
+        ("./gust --backend mir-to-c compiler/test_runner_entry.gst",
+         "./gust --backend bootstrap-emitter compiler/test_runner_entry.gst"),
+        ("./build/gust_stage2_bin --backend mir-to-c compiler/test_runner_entry.gst",
+         "./build/gust_stage2_bin --backend bootstrap-emitter compiler/test_runner_entry.gst"),
+    ):
+        require(retired not in makefile,
+                "Patch 24.13 removed generated-C backend selection, so this "
+                f"bootstrap row cannot select it again: {retired}")
+        require(rebased in makefile,
+                "the rebased bootstrap row is absent: the seed still has to "
+                f"reach the bootstrap-only entry: {rebased}")
 
     workflow = WORKFLOW.read_text(encoding="utf-8")
     for evidence in (
