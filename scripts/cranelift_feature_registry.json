@@ -25805,6 +25805,21 @@
           "removal_phase": "not_removed_by_phase23"
         },
         {
+          "classification": "bootstrap_phase25",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_exact_C_bootstrap_dependency",
+          "digest": "69c36dd966a4092bf82fbdf29d700e7214187ce065a0f68c6ce9a8aec6086ce8",
+          "falsifier": "bootstrap_surface_is_missing_changed_or_reclassified",
+          "match_counts": {
+            "explicit_backend_spelling": 2,
+            "generated_c_contract": 189,
+            "mir_to_c_name": 105
+          },
+          "owner": "cranelift",
+          "path": "gust_v4.c",
+          "removal_phase": "25"
+        },
+        {
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
@@ -26063,7 +26078,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "b52c83bc36d6c628ec5f69f7db002ce860d44f93e20638cebfc0d8bd14fc4798",
+          "digest": "33e4459ed907bea09fa3a78f515ba85524188b5c2544110b6184c276627413b5",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -26271,6 +26286,21 @@
           "owner": "cranelift",
           "path": "docs/PHASE24_RETIREMENT_CONSUMER_INVENTORY.md",
           "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "bootstrap_phase25",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_exact_C_bootstrap_dependency",
+          "digest": "a1ba675a1c244af0a77485d48a5865833eee896a4a2b746ea5728e20f590eebb",
+          "falsifier": "bootstrap_surface_is_missing_changed_or_reclassified",
+          "match_counts": {
+            "explicit_backend_spelling": 4,
+            "generated_c_contract": 188,
+            "mir_to_c_name": 107
+          },
+          "owner": "cranelift",
+          "path": "gust_v4.c",
+          "removal_phase": "25"
         },
         {
           "classification": "archive_candidate",
@@ -26641,6 +26671,7 @@
         "compiler/test_runner_entry.gst",
         "docs/PHASE24_FROZEN_ORACLE_REPLACEMENT.md",
         "docs/PHASE24_RETIREMENT_CONSUMER_INVENTORY.md",
+        "gust_v4.c",
         "scripts/cranelift_manifest.py",
         "scripts/cranelift_registry.py",
         "scripts/phase12_5_route_architecture.sh",
