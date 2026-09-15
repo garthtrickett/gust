@@ -1147,6 +1147,28 @@ def validate_mutations(vectors: dict) -> int:
                 else f"{root / 'out'}.stdout").read_bytes() != good_out,
                 f"stdout mutation is invisible: {vector_id}")
 
+            # Patch 24.12b (#412): stderr on the same footing as exit and
+            # stdout. materialize freezes it on every vector, and the docstring
+            # above has always claimed the live lane caught a wrong stderr --
+            # but nothing here demonstrated it, so the claim rested on the
+            # arm that did not exist. For an exec vector the observable is
+            # {prefix}.stderr; for a reject it is folded into {prefix}.log.
+            good_err = Path(
+                f"{prefix}.log" if kind == "reject" else f"{prefix}.stderr"
+            ).read_bytes()
+            mutated = copy.deepcopy(table)
+            stream = _served_block(mutated[vector_id], kind, env_key)["stderr"]
+            tampered = bytes.fromhex(str(stream["hex"])) + b"tampered"
+            stream["hex"] = tampered.hex()
+            stream["size"] = len(tampered)
+            stream["sha256"] = digest_bytes(tampered)
+            _materialize_from(vector_id, mutated, root / "err",
+                              env_key=env_key)
+            require(Path(
+                f"{root / 'err'}.log" if kind == "reject"
+                else f"{root / 'err'}.stderr").read_bytes() != good_err,
+                f"stderr mutation is invisible: {vector_id}")
+
             if env_key is not None:
                 # Two more ways an environment-parameterised vector could be
                 # served wrongly and look fine: dropping the environment (and
@@ -2018,8 +2040,12 @@ def main() -> None:
         return
     if args.command == "mutation-evidence":
         checked = validate_mutations(load_vectors())
+        # Patch 24.12b (#412): stderr joins the named arms. It is named here
+        # because this line is the only place the covered set is stated, and
+        # an arm that runs but is not named reads as absent.
         print(f"{GUARD_L2}: {checked} frozen vectors are falsifiable "
-              f"(exit, stdout, moved source, changed kind, unknown id)")
+              f"(exit, stdout, stderr, moved source, changed kind, "
+              f"unknown id)")
         return
 
     node = validate()
