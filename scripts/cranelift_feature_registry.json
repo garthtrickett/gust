@@ -25614,6 +25614,21 @@
           "removal_phase": "not_removed_by_phase23"
         },
         {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "6b693f5f89f9d9d8588fbfdf4406df878eaa9f63d18aab64ce928be7c284bbd7",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 5,
+            "generated_c_contract": 3,
+            "mir_to_c_name": 21
+          },
+          "owner": "cranelift",
+          "path": "docs/PHASE24_RETIREMENT_CONSUMER_INVENTORY.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
@@ -25671,6 +25686,21 @@
           },
           "owner": "cranelift",
           "path": "scripts/phase24_frozen_oracle.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "d0b40daad586b4afb2b82e7a476f2666a3ac81307e72e12cd7787fb04be7f971",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 31,
+            "generated_c_contract": 7,
+            "mir_to_c_name": 75
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase24_retirement_consumer_inventory.py",
           "removal_phase": "24"
         },
         {
@@ -25767,6 +25797,21 @@
           "removal_phase": "not_removed_by_phase23"
         },
         {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "00e7c8f5e3e2701dd6012c4aaaf8fc720dcc093eac63d0ba9af81f1ed71c80b6",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 6,
+            "generated_c_contract": 3,
+            "mir_to_c_name": 22
+          },
+          "owner": "cranelift",
+          "path": "docs/PHASE24_RETIREMENT_CONSUMER_INVENTORY.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
@@ -25827,6 +25872,21 @@
           "removal_phase": "24"
         },
         {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "5efe4734ca8fe5ad60307e91f072ca066778fca2f258a315a938081e5feaacc8",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 31,
+            "generated_c_contract": 7,
+            "mir_to_c_name": 75
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase24_retirement_consumer_inventory.py",
+          "removal_phase": "24"
+        },
+        {
           "classification": "production_or_release_migration",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "deprecate_or_migrate_under_23_8_and_23_12",
@@ -25848,10 +25908,12 @@
         "compiler/phase10_help.txt",
         "compiler/test_runner_entry.gst",
         "docs/PHASE24_FROZEN_ORACLE_REPLACEMENT.md",
+        "docs/PHASE24_RETIREMENT_CONSUMER_INVENTORY.md",
         "scripts/cranelift_registry.py",
         "scripts/phase22_explicit_c_migration.py",
         "scripts/phase22_opening.py",
         "scripts/phase24_frozen_oracle.py",
+        "scripts/phase24_retirement_consumer_inventory.py",
         "scripts/run-gust-file.sh"
       ],
       "removed_text_surfaces": [],
