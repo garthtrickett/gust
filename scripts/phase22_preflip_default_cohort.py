@@ -8,6 +8,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -262,59 +263,62 @@ def evidence() -> None:
             record["resolved_phase21_runtime_divergences"]["fixtures"]):
         case = output / f"case-{index}"
         case.mkdir()
-        oracle_c = run([str(native_compiler), "--backend", "mir-to-c", fixture],
-                       env=env)
-        require(oracle_c.returncode == 0 and oracle_c.stdout and
-                not oracle_c.stderr, f"oracle compile failed: {fixture}")
-        c_path = case / "oracle.final.c"
-        c_path.write_bytes((ROOT / "src/runtime.c").read_bytes() +
-                           b"\n" + oracle_c.stdout)
-        oracle_program = case / "oracle-program"
-        c_build = run([os.environ.get("CC", "cc"), "-O2", "-Wall", "-pthread",
-                       "-Isrc", str(c_path), "-o", str(oracle_program)])
-        require(c_build.returncode == 0,
-                f"oracle host compile failed: {fixture}: {c_build.stderr[-500:]!r}")
+        # Patch 24.12b: the oracle arm is served frozen. It used to compile
+        # the fixture through the retired route, concatenate the runtime,
+        # build with cc and run the result -- four executions of the backend
+        # being removed to obtain one observation. The observation is frozen,
+        # so the parity comparison below is unchanged; only which side
+        # executes has moved.
+        frozen_prefix = case / "frozen"
+        materialized = run([sys.executable,
+                            "scripts/phase24_frozen_oracle.py", "materialize",
+                            fixture, str(frozen_prefix), "--kind", "exec"])
+        require(materialized.returncode == 0,
+                f"the frozen oracle refused {fixture}: "
+                f"{materialized.stderr.decode(errors='replace')[:200]}")
+        require(not Path(f"{frozen_prefix}.compile.stderr").read_bytes(),
+                f"frozen oracle compile emitted stderr: {fixture}")
         native_program = case / "native-program"
         native_build = run([str(native_compiler), "--backend", "cranelift", "-o",
                             str(native_program), fixture], env=native_env)
         require(native_build.returncode == 0 and native_program.is_file() and
                 not native_build.stdout and not native_build.stderr,
                 f"native compile or no-fallback contract failed: {fixture}")
-        oracle_run = run([str(oracle_program)])
         native_run = run([str(native_program)])
-        require(oracle_run.returncode == native_run.returncode == 0 and
-                oracle_run.stdout == native_run.stdout and
-                oracle_run.stderr == native_run.stderr,
+        require(int(Path(f"{frozen_prefix}.status").read_text().strip()) ==
+                native_run.returncode == 0 and
+                Path(f"{frozen_prefix}.stdout").read_bytes() ==
+                native_run.stdout and
+                Path(f"{frozen_prefix}.stderr").read_bytes() ==
+                native_run.stderr,
                 f"focused observable parity failed: {fixture}")
     correction = record["postmerge_default_index_correction"]
     fixture = correction["source_fixture"]
     case = output / "default-index-initialization"
     case.mkdir()
-    oracle_c = run([str(native_compiler), "--backend", "mir-to-c", fixture],
-                   env=env)
-    require(oracle_c.returncode == 0 and oracle_c.stdout and
-            not oracle_c.stderr,
-            "default-Index oracle compile failed")
-    c_path = case / "oracle.final.c"
-    c_path.write_bytes((ROOT / "src/runtime.c").read_bytes() +
-                       b"\n" + oracle_c.stdout)
-    oracle_program = case / "oracle-program"
-    c_build = run([os.environ.get("CC", "cc"), "-O2", "-Wall", "-pthread",
-                   "-Isrc", str(c_path), "-o", str(oracle_program)])
-    require(c_build.returncode == 0,
-            f"default-Index oracle host compile failed: {c_build.stderr[-500:]!r}")
+    # Patch 24.12b: same conversion as the divergence loop above.
+    frozen_prefix = case / "frozen"
+    materialized = run([sys.executable,
+                        "scripts/phase24_frozen_oracle.py", "materialize",
+                        fixture, str(frozen_prefix), "--kind", "exec"])
+    require(materialized.returncode == 0,
+            f"the frozen oracle refused {fixture}: "
+            f"{materialized.stderr.decode(errors='replace')[:200]}")
+    require(not Path(f"{frozen_prefix}.compile.stderr").read_bytes(),
+            "default-Index frozen oracle compile emitted stderr")
     native_program = case / "native-program"
     native_build = run([str(native_compiler), "--backend", "cranelift", "-o",
                         str(native_program), fixture], env=native_env)
     require(native_build.returncode == 0 and native_program.is_file() and
             not native_build.stdout and not native_build.stderr,
             "default-Index native compile or no-fallback contract failed")
-    oracle_run = run([str(oracle_program)])
     native_run = run([str(native_program)])
-    require(oracle_run.returncode == native_run.returncode ==
-            correction["corrected_native_exit"] and
-            oracle_run.stdout == native_run.stdout and
-            oracle_run.stderr == native_run.stderr,
+    require(int(Path(f"{frozen_prefix}.status").read_text().strip()) ==
+            native_run.returncode == correction["corrected_native_exit"] and
+            Path(f"{frozen_prefix}.stdout").read_bytes() ==
+            native_run.stdout and
+            Path(f"{frozen_prefix}.stderr").read_bytes() ==
+            native_run.stderr,
             "default-Index scalar/struct observable parity failed")
     elapsed_ms = int((time.monotonic() - started) * 1000)
     require(elapsed_ms <= record["budgets"]["complete_suite_ms"],
