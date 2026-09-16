@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import importlib.util
 import os
 import resource
 import signal
@@ -312,6 +313,31 @@ def render(record: dict) -> str:
     return "\n".join(lines)
 
 
+def frozen_oracle_execution(source: str) -> dict:
+    """The frozen record of what the retired backend did for this source.
+
+    Loaded through the oracle module rather than read from the file, so the
+    vector's own integrity checks run -- in particular the source re-digest,
+    which fails if the fixture moved without a re-freeze.
+    """
+    spec = importlib.util.spec_from_file_location(
+        "phase24_frozen_oracle", ROOT / "scripts/phase24_frozen_oracle.py")
+    require(spec is not None and spec.loader is not None,
+            "cannot load the frozen oracle")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    vectors = module.load_servable_vectors()
+    vector = module.check_vector(source, vectors)
+    require(vector["kind"] == "exec",
+            f"{source} is not a frozen executable observation")
+    execution = vector["execution"]
+    return {
+        "exit": execution["exit"],
+        "stdout": module.record_bytes(execution["stdout"]),
+        "stderr": module.record_bytes(execution["stderr"]),
+    }
+
+
 def compile_oracle(
     source: str,
     root: Path,
@@ -374,7 +400,25 @@ def evidence(record: dict) -> None:
             case_root = tmp / case["id"]
             case_root.mkdir()
             source = case["source_fixture"]
-            oracle_artifact, _ = compile_oracle(source, case_root, deadline)
+            # Patch 24.13: the oracle arm is REPLAYED, not compiled.
+            #
+            # compile_oracle ran `./gust --backend mir-to-c`, linked the C and
+            # executed it, so the retired backend was this guard's third arm.
+            # That spelling is removed, so the arm could only ever fail.
+            #
+            # What the arm actually contributed is narrow and is not lost: all
+            # three artifacts are required to produce the REGISTERED
+            # observables below -- case["run_exit"], case["stdout"],
+            # case["stderr"] -- so the oracle was never the reference, it was
+            # a third witness to it. Patch 24.12c froze that witness while the
+            # backend still existed, and the vector is asserted against the
+            # same registered values here.
+            oracle_execution = frozen_oracle_execution(source)
+            require(oracle_execution["exit"] == case["run_exit"] and
+                    oracle_execution["stdout"] == case["stdout"].encode() and
+                    oracle_execution["stderr"] == case["stderr"].encode(),
+                    f"{case['id']}: the frozen oracle observation disagrees "
+                    "with the registered accepted behaviour")
             reference_artifact = case_root / "reference-native"
             reference = run_before(deadline, [
                 str(ROOT / "gust"), "--backend", "cranelift", "-o",
@@ -408,7 +452,7 @@ def evidence(record: dict) -> None:
             assert_elf(reference_artifact, deadline)
             assert_elf(subject_artifact, deadline)
             executions = [run_before(deadline, [str(path)]) for path in
-                          (oracle_artifact, reference_artifact, subject_artifact)]
+                          (reference_artifact, subject_artifact)]
             expected_stdout = case["stdout"].encode()
             expected_stderr = case["stderr"].encode()
             require(

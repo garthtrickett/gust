@@ -1464,7 +1464,15 @@ def _served_block(slot: dict, kind: str, env_key: str | None) -> dict:
     """The record `materialize` will actually replay for this call shape."""
     if env_key is not None:
         return slot["env_variants"][env_key]
-    return slot["compile"] if kind == "reject" else slot["execution"]
+    # `compile_only` serves its compile block, like `reject` does. It has no
+    # execution record at all -- that absence is the point of the kind, for a
+    # witness whose runtime behaviour is undefined and must never be replayed
+    # as an expectation. Reading slot["execution"] here raised KeyError:
+    # 'execution' the moment such a vector entered the servable set, which is
+    # a crash where a clear refusal belongs.
+    if kind in ("reject", "compile_only"):
+        return slot["compile"]
+    return slot["execution"]
 
 
 def validate_mutations(vectors: dict) -> int:
