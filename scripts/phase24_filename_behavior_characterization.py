@@ -46,10 +46,24 @@ PAIR_NAMES = {
 }
 
 ROUTES = {
+    # Patch 24.13: this route now produces a REJECTION, not a compilation.
+    #
+    # It existed to show the retired spelling agreed with the native one about
+    # the pre-backend diagnostic -- a front-end property, observed through
+    # three routes. The spelling is removed, so the observation it yields is
+    # the removal diagnostic, and the recorded one can never match again.
+    #
+    # Kept rather than dropped, and inverted rather than loosened. The claim
+    # the guard makes is that filename selection is decided BEFORE any backend
+    # is consulted; a route that is refused before reaching a backend is still
+    # evidence for that, provided the refusal is identical for the selected and
+    # neutral names. Dropping the route would leave only Cranelift routes and
+    # stop testing route-independence at all.
     "retained_explicit_compatibility": ("--backend", "mir-to-c"),
     "explicit_cranelift": ("--backend", "cranelift"),
     "default_cranelift": (),
 }
+REMOVED_ROUTES = ("retained_explicit_compatibility",)
 
 
 def require(condition: bool, message: str) -> None:
@@ -546,6 +560,17 @@ def evidence(value: dict) -> None:
         for route in ROUTES:
             for side in ("selected", "neutral"):
                 actual = run_observation(witness_id, route, side)
+                if route in REMOVED_ROUTES:
+                    # The recorded observation is what this route produced
+                    # before the removal and stays as the historical record.
+                    # What must hold now is that the route is refused, and
+                    # refused identically for both names -- which is the
+                    # route-independence this witness is about.
+                    require(actual != expected[witness_id][route][side],
+                            f"{witness_id} {route} {side} still reproduces its "
+                            "pre-removal observation, so the removal did not "
+                            "take effect")
+                    continue
                 require(actual == expected[witness_id][route][side],
                         f"{witness_id} {route} {side} observation drifted: {actual}")
                 require(actual["stderr_bytes"] == 0 and
@@ -556,9 +581,17 @@ def evidence(value: dict) -> None:
         require(expected[witness_id]["explicit_cranelift"] ==
                 expected[witness_id]["default_cranelift"],
                 f"default and explicit Cranelift observations differ for {witness_id}")
-        require(expected[witness_id]["retained_explicit_compatibility"]["selected"] ==
-                expected[witness_id]["explicit_cranelift"]["selected"],
-                f"selected pre-backend diagnostic differs for {witness_id}")
+        # The removed route is compared LIVE against itself across the two
+        # names, not against its recorded pre-removal observation: the refusal
+        # must not depend on which filename was used, which is exactly what
+        # this witness tests and what the recorded comparison used to show.
+        for route in REMOVED_ROUTES:
+            live_selected = run_observation(witness_id, route, "selected")
+            live_neutral = run_observation(witness_id, route, "neutral")
+            require(live_selected == live_neutral,
+                    f"{witness_id} {route} refuses differently for the "
+                    "selected and neutral filenames, so the refusal is "
+                    "filename-dependent")
     check_review(value)
     print("phase24_filename_behavior_characterization: evidence ok")
 
