@@ -31,7 +31,20 @@ seed_before="$(sha256sum gust_v4.c | awk '{print $1}')"
 # build/gust_stage2.c and build/gust_stage3.c to be byte-identical.
 #
 # So the claim survives with a different witness rather than being dropped.
-./gust_bootstrap --backend mir-to-c "$fixture" >"$build_dir/prepatch.c" 2>"$build_dir/prepatch.stderr"
+#
+# Patch 24.13 correction: this line used to read --backend mir-to-c, justified
+# as "the pinned pre-patch binary Phase 25 owns". That held only while the seed
+# predated the removal. This patch reconverges the seed, so gust_bootstrap is
+# compiled from a 24.13 gust_v4.c and rejects the spelling it was pinned to --
+# the same correction already made for all five Makefile bootstrap callers.
+# The emitter is reached through the bootstrap-only entry instead, and the
+# assertions below are unchanged: clean stderr, non-empty C.
+# Patch 24.13: the bootstrap-emitter entry is authority-gated (review on
+# #421). Exported once, ABOVE the first use -- it sat below the seed emitter
+# when that line still spelled mir-to-c, and moving the line without moving
+# the export would have left the first caller ungated.
+export GUST_BOOTSTRAP_EMITTER=1
+./gust_bootstrap --backend bootstrap-emitter "$fixture" >"$build_dir/prepatch.c" 2>"$build_dir/prepatch.stderr"
 test ! -s "$build_dir/prepatch.stderr" || fail "the Phase-25-owned seed emitter emitted diagnostics"
 test -s "$build_dir/prepatch.c" || fail "the Phase-25-owned seed emitter produced no C"
 
@@ -69,10 +82,6 @@ fi
 # -- and those two rows are the ones this patch moved to the bootstrap-only
 # entry. Using bootstrap-emitter here is not overloading a bootstrap name for a
 # non-bootstrap purpose; this arm IS bootstrap work.
-# Patch 24.13: the bootstrap-emitter entry is authority-gated (review on
-# #421). Exported here rather than inline so the invocation lines stay as the
-# manifests pin them.
-export GUST_BOOTSTRAP_EMITTER=1
 ./gust --backend bootstrap-emitter "$compiler_source" |
   grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" >"$build_dir/stage2.c"
 cat src/runtime.c "$build_dir/stage2.c" >"$build_dir/stage2-final.c"

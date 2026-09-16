@@ -583,6 +583,13 @@ PYTHON_RETIRED_ARGV_DISCHARGED: dict[str, str] = {
         "selection is consulted, which is what the two-backend differential "
         "was proving indirectly. host_c_compiles and its explicit-C oracle "
         "were retired with it.",
+    "scripts/phase21_cranelift_built_compiler_programs.py":
+        "discharged by Patch 24.13. Its exclusion covered compile_oracle, the "
+        "MIR-to-C third arm of a three-way comparison. All three arms were "
+        "checked against the REGISTERED accepted_cases rather than against "
+        "each other, so the oracle was a third witness and not the reference; "
+        "24.13 replaces it with the frozen vector asserted against those same "
+        "values, and retires the now-callerless function.",
     "scripts/phase23_structured_guard_defer_native_admission.py":
         "discharged by Patch 24.13. Its exclusion covered run_oracle, the "
         "MIR-to-C differential arm. The guard was converted to hold the "
@@ -618,11 +625,6 @@ PYTHON_RETIRED_ARGV_EXCLUSIONS: dict[str, str] = {
         "opening record for CR-15: its routes list is "
         "[explicit_c_spellings[0], explicit_native_backend], and the explicit-C "
         "route is the thing the opening measures. Its witness has no vector.",
-    "scripts/phase21_cranelift_built_compiler_programs.py":
-        "registered focused_live_oracle: classify_surface returns "
-        "focused_live_oracle for this path, the single live lane Patch 23.10 "
-        "deliberately retained. It goes with the backend at 24.13/24.14 "
-        "rather than being converted.",
     "scripts/phase24_frozen_oracle_capture.py":
         "the capture tool itself. It builds the retired argv because running "
         "the retired route while the live lane is green is precisely what a "

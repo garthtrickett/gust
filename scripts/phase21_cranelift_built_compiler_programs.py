@@ -338,25 +338,19 @@ def frozen_oracle_execution(source: str) -> dict:
     }
 
 
-def compile_oracle(
-    source: str,
-    root: Path,
-    deadline: float,
-) -> tuple[Path, subprocess.CompletedProcess[bytes]]:
-    generated_c = root / "oracle.c"
-    compiled = run_before(deadline, [str(ROOT / "gust"), "--backend", "mir-to-c", source])
-    generated_c.write_bytes(compiled.stdout)
-    require(compiled.returncode == 0 and compiled.stderr == b"" and generated_c.stat().st_size > 0,
-            f"{source}: MIR-to-C oracle compilation failed")
-    artifact = root / "oracle"
-    linked = run_before(deadline, [
-        os.environ.get("CC", "cc"), "-O0", "-w", "-pthread", "-Isrc",
-        "-include", "src/runtime.c", str(generated_c), "-o", str(artifact),
-    ])
-    require(linked.returncode == 0 and linked.stdout == linked.stderr == b"" and artifact.is_file(),
-            f"{source}: MIR-to-C oracle link failed")
-    return artifact, compiled
-
+# Patch 24.13: compile_oracle is retired, not merely unused.
+#
+# It ran `./gust --backend mir-to-c <source>`, wrote the emitted C, linked it
+# and returned the artifact -- the third arm of this guard's comparison. The
+# conversion above replaced that arm with the frozen vector, which left this
+# function with no callers while it still invoked the spelling this patch
+# removes. Dead code that calls a removed backend is what #424 was filed
+# about: it never runs, so nothing fails, and it survives review as "unused".
+#
+# What it asserted is not lost. The registered accepted_cases still carry the
+# observables it was checked against, and the frozen vector is now checked
+# against those same values, so the retired backend's witness is preserved as
+# a recording rather than as a live call.
 
 def assert_elf(path: Path, deadline: float) -> None:
     header = run_before(deadline, ["readelf", "-h", str(path)])
@@ -467,10 +461,20 @@ def evidence(record: dict) -> None:
                     and not Path(str(path) + ".phase10.request").exists(),
                     f"{case['id']}: native route left request or bundle residue",
                 )
+            # Patch 24.13: no generated C at all, which is STRICTER than what
+            # this asserted before.
+            #
+            # It required exactly one .c to exist -- oracle.c -- because the
+            # oracle arm deliberately produced one and the native arms must
+            # produce none. With the oracle arm replaced by a frozen replay
+            # nothing writes C here, so the whole directory must be free of it.
+            # Keeping the old form would have demanded a file that no longer
+            # has anything to create it.
+            stray_c = sorted(path.name for path in case_root.glob("*.c"))
             require(
-                list(case_root.glob("*.c")) == [case_root / "oracle.c"]
-                and not list(case_root.glob("*.o")),
-                f"{case['id']}: native route left generated C or object residue",
+                not stray_c and not list(case_root.glob("*.o")),
+                f"{case['id']}: native route left generated C or object "
+                f"residue: {stray_c}",
             )
 
         missing_driver = tmp / "deliberately-missing-native-driver"
