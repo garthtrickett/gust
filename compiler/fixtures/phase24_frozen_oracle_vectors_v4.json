@@ -2,7 +2,7 @@
   "capture_authority": {
     "authorised_by": "TASK.md patch24.12d",
     "authorising_roadmap_row": "- [ ] Patch 24.12d \u2014 Frozen Oracle Capture for the Default-Route Flip",
-    "capture_tool_sha256": "d699b440be3c820c4feef4108d9d78ece332718faba852a10fd86778817cb204",
+    "capture_tool_sha256": "4e35832509cb0566dd459ca3fcb3d3477c623f6339a43ad893f039246729182e",
     "cc": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
     "cflags": "-O0 -w -pthread -Isrc",
     "gust_sha256": "8bed62efdcf19d31594b855cade827eee6e95e0e14436fd1341e1741630d4217",
@@ -15,7 +15,7 @@
     },
     "oracle_route": "explicit_retired_backend_spelling",
     "sealed_by": "Patch 24.13 removes backend selection; no vector can be captured after it merges",
-    "source_commit": "890362268ac29401cda0d5847a8266df36fb53a3",
+    "source_commit": "7cc26a4efcd66aee246e4944ee44272d8d7fe46c",
     "stderr_population": {
       "non_empty": 0,
       "note": "v1 recorded 0 non-empty across 421 records (#417); this count is stated so a uniformly empty corpus is visible rather than implicit",
@@ -61,7 +61,7 @@
         }
       },
       "kind": "exec",
-      "provenance": "captured_live_while_green_patch24_12c",
+      "provenance": "captured_live_while_green_patch24_12d",
       "side_effects": [],
       "source_fixture": "compiler/future/p15_directory_resources_source.gst",
       "source_sha256": "2fdff599a76be03189c8a63d25f37b378c2bd4604c129f36ac260bb3e718bc4e",
@@ -98,7 +98,7 @@
         }
       },
       "kind": "exec",
-      "provenance": "captured_live_while_green_patch24_12c",
+      "provenance": "captured_live_while_green_patch24_12d",
       "side_effects": [],
       "source_fixture": "compiler/future/p15_selected_failure_cleanup_source.gst",
       "source_sha256": "ae327406c33d34b8e449f2ebdabb2b9691071d9c78eea7278edf1b043b9b42bc",

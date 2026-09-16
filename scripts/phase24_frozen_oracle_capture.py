@@ -213,7 +213,8 @@ def run(command: list[str], *, cwd: Path, timeout: int = 300):
                           timeout=timeout, check=False)
 
 
-def capture_one(compiler: Path, source: Path, kind: str) -> dict:
+def capture_one(compiler: Path, source: Path, kind: str,
+                provenance: str) -> dict:
     """Capture one vector by running the retired route, then the artifact."""
     require(source.is_file(), f"source fixture is not a tracked file: {source}")
     relative = source.relative_to(ROOT).as_posix()
@@ -239,7 +240,7 @@ def capture_one(compiler: Path, source: Path, kind: str) -> dict:
                 "stderr": stream(compiled.stderr, replayable=True),
             },
             "kind": "reject",
-            "provenance": "captured_live_while_green_patch24_12c",
+            "provenance": provenance,
             "side_effects": [],
             "source_fixture": relative,
             "source_sha256": digest_bytes(source.read_bytes()),
@@ -283,7 +284,7 @@ def capture_one(compiler: Path, source: Path, kind: str) -> dict:
             },
             "kind": "compile_only",
             "never_executed_reason": NEVER_EXECUTE[relative],
-            "provenance": "captured_live_while_green_patch24_12c",
+            "provenance": provenance,
             "side_effects": [],
             "source_fixture": relative,
             "source_sha256": digest_bytes(source.read_bytes()),
@@ -335,7 +336,7 @@ def capture_one(compiler: Path, source: Path, kind: str) -> dict:
             "stderr": stream(executed.stderr, replayable=True),
         },
         "kind": "exec",
-        "provenance": "captured_live_while_green_patch24_12c",
+        "provenance": provenance,
         "side_effects": [],
         "source_fixture": relative,
         "source_sha256": digest_bytes(source.read_bytes()),
@@ -371,6 +372,13 @@ def main() -> None:
             "capture refused: this tool runs only under a roadmap patch that "
             f"grants it ({sorted(AUTHORITIES)}); got {arguments.authority!r}")
     roadmap_row, output_format = AUTHORITIES[arguments.authority]
+    # Provenance follows the AUTHORITY. It was hard-coded to the 24.12c
+    # spelling, so the 24.12d corpus recorded vectors as though 24.12c had
+    # produced them -- and these records are immutable, so once Patch 24.13
+    # removes the retired route that misattribution could never be corrected
+    # by re-capturing. Raised in review on #435.
+    provenance = ("captured_live_while_green_"
+                  + arguments.authority.replace(".", "_").replace("patch", "patch"))
     roadmap = (ROOT / "TASK.md").read_text(encoding="utf-8")
     require(roadmap_row in roadmap,
             "capture refused: TASK.md does not carry the row that grants "
@@ -425,9 +433,17 @@ def main() -> None:
         # Nothing already covered. Recapture is the one thing this corpus can
         # never take back, because 24.13 removes the route that produced it.
         covered = set()
-        for existing in ("compiler/fixtures/phase24_frozen_oracle_vectors_v1.json",
-                         "compiler/fixtures/phase24_frozen_oracle_vectors_v2.json",
-                         "compiler/fixtures/phase24_frozen_oracle_vectors_v3.json"):
+        # Every corpus EXCEPT the one this authority writes. Adding v3
+        # unconditionally made every 24.12c capture fail at the overlap check
+        # before reaching the identical-recapture comparison below, because
+        # 24.12c's own members all live in v3 -- it produced them. That
+        # regressed the documented behaviour that only a second capture which
+        # DISAGREES is rejected. Raised in review on #435.
+        corpora = ["compiler/fixtures/phase24_frozen_oracle_vectors_v1.json",
+                   "compiler/fixtures/phase24_frozen_oracle_vectors_v2.json",
+                   "compiler/fixtures/phase24_frozen_oracle_vectors_v3.json"]
+        own = f"compiler/fixtures/{output_format}.json"
+        for existing in [row for row in corpora if row != own]:
             path = ROOT / existing
             if path.is_file():
                 covered |= set(json.loads(
@@ -440,7 +456,7 @@ def main() -> None:
     vectors: dict[str, dict] = {}
     for entry in entries:
         source = ROOT / entry["source"]
-        vector = capture_one(compiler, source, entry["kind"])
+        vector = capture_one(compiler, source, entry["kind"], provenance)
         identifier = vector["source_fixture"]
         require(identifier not in vectors,
                 f"manifest names {identifier} twice")

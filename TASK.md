@@ -403,16 +403,22 @@ scripts/run-gust-file.sh with no explicit route. Those went through C on main
 and take the native route after the flip.
 
 Measured across all 61 sources those scripts hand to the runner: 58 compile
-natively and 3 defer.
+natively and 2 defer.
 
   compiler/future/p15_directory_resources_source.gst
       deferred_p13_structured_cfg_condition_shape
   compiler/future/p15_selected_failure_cleanup_source.gst
       deferred_p13_parameter_argument_target_dependent_abi
-  tests/e2e_collections_methods.gst
-      deferred_p13_structured_cfg_condition_shape
 
-None has a vector in v1, v2 or the v3 capture. Their guards assert RUNTIME
+A first derivation reported three. tests/e2e_collections_methods.gst is not a
+consumer source: the sweep matched "run-gust-file.sh <path>.gst" textually and
+run-gust-file.sh carries its own usage message -- "e.g., scripts/run-gust-file
+.sh tests/e2e_collections_methods.gst", an example inside an error string. No
+script passes it to the runner, and the capture tool's consumer check rejected
+it. The roadmap is the scope Patch 24.13 is read from, so the corrected count
+belongs here and not only in the tool.
+
+Neither of the two has a vector in v1, v2 or the v3 capture. Their guards assert RUNTIME
 behaviour -- phase15_failure_cleanup_parity.sh runs the program and greps
 "SUCCESS: Phase 15.12 selected failure cleanup source passed" -- so a deferral
 cannot stand in for the assertion, and "Absence of C execution never counts as
@@ -423,8 +429,8 @@ phase24_frozen_oracle_capture.py drives it, so these are capturable now and
 not after Patch 24.13 merges.
 
 Bounded identically to 24.12c. v1, v2 and v3 stay immutable; this produces a
-fourth set for three sources that never had a vector. The capture tool's
-declared population is extended by exactly those three, each named with the
+fourth set for two sources that never had a vector. The capture tool's
+declared population is extended by exactly those two, each named with the
 consumer that reads it, and the tool refuses any manifest that does not match
 that population.
 
