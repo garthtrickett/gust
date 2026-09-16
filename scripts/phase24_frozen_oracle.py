@@ -42,6 +42,7 @@ VECTORS = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v1.json"
 # Patch 24.12b (#416): the additive v2 capture, served alongside v1.
 VECTORS_V2 = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v2.json"
 VECTORS_V3 = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v3.json"
+VECTORS_V4 = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v4.json"
 CORPUS = ROOT / "compiler/fixtures/phase23_mir_to_c_reference_corpus_v1.json"
 VIEW = ROOT / "docs/PHASE24_FROZEN_ORACLE_REPLACEMENT.md"
 EMITTER_ONLY_ASSERTIONS_REMOVED = (
@@ -955,15 +956,20 @@ def load_servable_vectors() -> dict:
     # Patch 24.12c adds a third capture, on the same terms as the second: an
     # addition, never an edit. Its collision check spans v1 AND v2, because by
     # this point both are already merged and a v3 vector may shadow neither.
-    if VECTORS_V3.is_file():
-        third = json.loads(VECTORS_V3.read_text(encoding="utf-8"))
-        require(third.get("format") == "phase24_frozen_oracle_vectors_v3",
-                "the v3 capture file is not a v3 corpus")
-        collisions = sorted(set(third["vectors"]) & set(merged["vectors"]))
+    for path, expected_format, label in (
+            (VECTORS_V3, "phase24_frozen_oracle_vectors_v3", "v3"),
+            (VECTORS_V4, "phase24_frozen_oracle_vectors_v4", "v4")):
+        if not path.is_file():
+            continue
+        block = json.loads(path.read_text(encoding="utf-8"))
+        require(block.get("format") == expected_format,
+                f"the {label} capture file is not a {label} corpus")
+        collisions = sorted(set(block["vectors"]) & set(merged["vectors"]))
         require(not collisions,
-                "a v3 vector would shadow an earlier one; v1 and v2 are "
-                f"immutable and a capture may not redefine them: {collisions}")
-        merged["vectors"].update(third["vectors"])
+                f"a {label} vector would shadow an earlier one; the previous "
+                "corpora are immutable and a capture may not redefine them: "
+                f"{collisions}")
+        merged["vectors"].update(block["vectors"])
     return merged
 
 
@@ -1025,7 +1031,8 @@ def check_vector(vector_id: str, vectors: dict) -> dict:
     require(vector["provenance"] in (
         "derived_from_archived_corpus_v1", "captured_live_while_green",
         "captured_live_while_green_patch24_12b",
-        "captured_live_while_green_patch24_12c"),
+        "captured_live_while_green_patch24_12c",
+        "captured_live_while_green_patch24_12d"),
         f"frozen vector has an unknown provenance: {vector_id}")
     require(not (vector["provenance"] == "derived_from_archived_corpus_v1"
                  and vector.get("archived_corpus_case") is None),
