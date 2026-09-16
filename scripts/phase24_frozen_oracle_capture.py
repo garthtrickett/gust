@@ -56,7 +56,33 @@ AUTHORITIES = {
     "patch24.12c": ("- [ ] Patch 24.12c — Frozen Oracle Capture for the "
                     "Uncovered Population",
                     "phase24_frozen_oracle_vectors_v3"),
+    "patch24.12d": ("- [ ] Patch 24.12d — Frozen Oracle Capture for the "
+                    "Default-Route Flip",
+                    "phase24_frozen_oracle_vectors_v4"),
 }
+
+# Patch 24.12d's population: the sources that lose their C route to the
+# runner's DEFAULT flip rather than to a consumer naming them.
+#
+# 24.12c derived its population from consumers that name their fixtures. These
+# three are named by nobody -- they are handed to scripts/run-gust-file.sh with
+# no explicit route, so they went through C by default and take the native
+# route once Patch 24.13 flips that default. Measured across all 61 sources
+# those 55 scripts pass to the runner: 58 compile natively and 3 appeared to
+# defer, of which one was an artifact of matching a usage message rather than
+# an invocation. Two are real.
+POPULATION_24_12D: dict[str, tuple[str, str]] = {
+    "compiler/future/p15_directory_resources_source.gst":
+        ("scripts/phase15_specialized_resource_parity.sh", "exec"),
+    "compiler/future/p15_selected_failure_cleanup_source.gst":
+        ("scripts/phase15_failure_cleanup_parity.sh", "exec"),
+}
+# tests/e2e_collections_methods.gst is deliberately NOT here. It appeared in
+# the first derivation because the sweep matched `run-gust-file.sh <path>.gst`
+# textually, and the runner's own usage message contains
+# "e.g., scripts/run-gust-file.sh tests/e2e_collections_methods.gst". No script
+# passes it to the runner; it is an example in an error string. The consumer
+# check below is what caught it -- the named consumer does not mention it.
 AUTHORITY = "patch24.12b"
 FORMAT = "phase24_frozen_oracle_vectors_v2"
 
@@ -187,7 +213,8 @@ def run(command: list[str], *, cwd: Path, timeout: int = 300):
                           timeout=timeout, check=False)
 
 
-def capture_one(compiler: Path, source: Path, kind: str) -> dict:
+def capture_one(compiler: Path, source: Path, kind: str,
+                provenance: str) -> dict:
     """Capture one vector by running the retired route, then the artifact."""
     require(source.is_file(), f"source fixture is not a tracked file: {source}")
     relative = source.relative_to(ROOT).as_posix()
@@ -213,7 +240,7 @@ def capture_one(compiler: Path, source: Path, kind: str) -> dict:
                 "stderr": stream(compiled.stderr, replayable=True),
             },
             "kind": "reject",
-            "provenance": "captured_live_while_green_patch24_12c",
+            "provenance": provenance,
             "side_effects": [],
             "source_fixture": relative,
             "source_sha256": digest_bytes(source.read_bytes()),
@@ -257,7 +284,7 @@ def capture_one(compiler: Path, source: Path, kind: str) -> dict:
             },
             "kind": "compile_only",
             "never_executed_reason": NEVER_EXECUTE[relative],
-            "provenance": "captured_live_while_green_patch24_12c",
+            "provenance": provenance,
             "side_effects": [],
             "source_fixture": relative,
             "source_sha256": digest_bytes(source.read_bytes()),
@@ -309,7 +336,7 @@ def capture_one(compiler: Path, source: Path, kind: str) -> dict:
             "stderr": stream(executed.stderr, replayable=True),
         },
         "kind": "exec",
-        "provenance": "captured_live_while_green_patch24_12c",
+        "provenance": provenance,
         "side_effects": [],
         "source_fixture": relative,
         "source_sha256": digest_bytes(source.read_bytes()),
@@ -345,6 +372,13 @@ def main() -> None:
             "capture refused: this tool runs only under a roadmap patch that "
             f"grants it ({sorted(AUTHORITIES)}); got {arguments.authority!r}")
     roadmap_row, output_format = AUTHORITIES[arguments.authority]
+    # Provenance follows the AUTHORITY. It was hard-coded to the 24.12c
+    # spelling, so the 24.12d corpus recorded vectors as though 24.12c had
+    # produced them -- and these records are immutable, so once Patch 24.13
+    # removes the retired route that misattribution could never be corrected
+    # by re-capturing. Raised in review on #435.
+    provenance = ("captured_live_while_green_"
+                  + arguments.authority.replace(".", "_").replace("patch", "patch"))
     roadmap = (ROOT / "TASK.md").read_text(encoding="utf-8")
     require(roadmap_row in roadmap,
             "capture refused: TASK.md does not carry the row that grants "
@@ -366,9 +400,11 @@ def main() -> None:
     # before 24.12c those were three sentences in TASK.md and nothing checked
     # them, so a malformed manifest could mint a permanent vector for the
     # wrong fixture.
-    if arguments.authority == "patch24.12c":
+    if arguments.authority in ("patch24.12c", "patch24.12d"):
+        population = (POPULATION if arguments.authority == "patch24.12c"
+                      else POPULATION_24_12D)
         supplied = {entry["source"]: entry.get("kind") for entry in entries}
-        declared = {source: kind for source, (_, kind) in POPULATION.items()}
+        declared = {source: kind for source, (_, kind) in population.items()}
         extra = sorted(set(supplied) - set(declared))
         require(not extra,
                 "capture refused: the manifest names sources outside the "
@@ -386,7 +422,7 @@ def main() -> None:
 
         # Every entry is read by the consumer that claims it.
         unreferenced = []
-        for source, (consumer, _kind) in POPULATION.items():
+        for source, (consumer, _kind) in population.items():
             text = (ROOT / consumer).read_text(encoding="utf-8")
             if source not in text:
                 unreferenced.append(f"{source} not named in {consumer}")
@@ -397,8 +433,17 @@ def main() -> None:
         # Nothing already covered. Recapture is the one thing this corpus can
         # never take back, because 24.13 removes the route that produced it.
         covered = set()
-        for existing in ("compiler/fixtures/phase24_frozen_oracle_vectors_v1.json",
-                         "compiler/fixtures/phase24_frozen_oracle_vectors_v2.json"):
+        # Every corpus EXCEPT the one this authority writes. Adding v3
+        # unconditionally made every 24.12c capture fail at the overlap check
+        # before reaching the identical-recapture comparison below, because
+        # 24.12c's own members all live in v3 -- it produced them. That
+        # regressed the documented behaviour that only a second capture which
+        # DISAGREES is rejected. Raised in review on #435.
+        corpora = ["compiler/fixtures/phase24_frozen_oracle_vectors_v1.json",
+                   "compiler/fixtures/phase24_frozen_oracle_vectors_v2.json",
+                   "compiler/fixtures/phase24_frozen_oracle_vectors_v3.json"]
+        own = f"compiler/fixtures/{output_format}.json"
+        for existing in [row for row in corpora if row != own]:
             path = ROOT / existing
             if path.is_file():
                 covered |= set(json.loads(
@@ -411,7 +456,7 @@ def main() -> None:
     vectors: dict[str, dict] = {}
     for entry in entries:
         source = ROOT / entry["source"]
-        vector = capture_one(compiler, source, entry["kind"])
+        vector = capture_one(compiler, source, entry["kind"], provenance)
         identifier = vector["source_fixture"]
         require(identifier not in vectors,
                 f"manifest names {identifier} twice")
