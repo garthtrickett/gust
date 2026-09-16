@@ -116,7 +116,13 @@ func run_test(t: Test[ctx]) int {
     bin_path = std.Concat(bin_path, "_bin");
 
     if is_neg == 1 {
-        mut cmd := std.Concat("./gust --backend mir-to-c ", path);
+        // Patch 24.13: the retained emitter's surviving spelling. This corpus cannot
+        // go native: phase21_complete_guard_suite measures 129 of its 326 cases as
+        // native DEFERRALS, so a native migration would fail 129 tests rather than
+        // migrate them. The negative path only needs a front-end rejection, which
+        // either spelling gives, and it takes this one to stay uniform with the
+        // positive path below.
+        mut cmd := std.Concat("./gust --backend bootstrap-emitter ", path);
         cmd = std.Concat(cmd, " > ");
         cmd = std.Concat(cmd, temp_log);
         cmd = std.Concat(cmd, " 2>&1");
@@ -151,7 +157,10 @@ func run_test(t: Test[ctx]) int {
             run_system_cmd("mkdir -p temp_e2e_filesystem_dir && echo 'func main() {}' > temp_e2e_filesystem_dir/file1.gst && echo 'plain text' > temp_e2e_filesystem_dir/file2.txt");
         }
 
-        mut cmd_comp := std.Concat("./gust --backend mir-to-c ", path);
+        // Patch 24.13: the retained emitter. The positive path emits C, cleans it,
+        // concatenates the runtime and host-compiles the result -- it needs an
+        // emitter, and 129 of 326 cases have no native route to move to.
+        mut cmd_comp := std.Concat("./gust --backend bootstrap-emitter ", path);
         cmd_comp = std.Concat(cmd_comp, " > ");
         cmd_comp = std.Concat(cmd_comp, temp_log);
         cmd_comp = std.Concat(cmd_comp, " 2>&1");

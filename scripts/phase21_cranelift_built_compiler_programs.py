@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import importlib.util
 import os
 import resource
 import signal
@@ -312,25 +313,44 @@ def render(record: dict) -> str:
     return "\n".join(lines)
 
 
-def compile_oracle(
-    source: str,
-    root: Path,
-    deadline: float,
-) -> tuple[Path, subprocess.CompletedProcess[bytes]]:
-    generated_c = root / "oracle.c"
-    compiled = run_before(deadline, [str(ROOT / "gust"), "--backend", "mir-to-c", source])
-    generated_c.write_bytes(compiled.stdout)
-    require(compiled.returncode == 0 and compiled.stderr == b"" and generated_c.stat().st_size > 0,
-            f"{source}: MIR-to-C oracle compilation failed")
-    artifact = root / "oracle"
-    linked = run_before(deadline, [
-        os.environ.get("CC", "cc"), "-O0", "-w", "-pthread", "-Isrc",
-        "-include", "src/runtime.c", str(generated_c), "-o", str(artifact),
-    ])
-    require(linked.returncode == 0 and linked.stdout == linked.stderr == b"" and artifact.is_file(),
-            f"{source}: MIR-to-C oracle link failed")
-    return artifact, compiled
+def frozen_oracle_execution(source: str) -> dict:
+    """The frozen record of what the retired backend did for this source.
 
+    Loaded through the oracle module rather than read from the file, so the
+    vector's own integrity checks run -- in particular the source re-digest,
+    which fails if the fixture moved without a re-freeze.
+    """
+    spec = importlib.util.spec_from_file_location(
+        "phase24_frozen_oracle", ROOT / "scripts/phase24_frozen_oracle.py")
+    require(spec is not None and spec.loader is not None,
+            "cannot load the frozen oracle")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    vectors = module.load_servable_vectors()
+    vector = module.check_vector(source, vectors)
+    require(vector["kind"] == "exec",
+            f"{source} is not a frozen executable observation")
+    execution = vector["execution"]
+    return {
+        "exit": execution["exit"],
+        "stdout": module.record_bytes(execution["stdout"]),
+        "stderr": module.record_bytes(execution["stderr"]),
+    }
+
+
+# Patch 24.13: compile_oracle is retired, not merely unused.
+#
+# It ran `./gust --backend mir-to-c <source>`, wrote the emitted C, linked it
+# and returned the artifact -- the third arm of this guard's comparison. The
+# conversion above replaced that arm with the frozen vector, which left this
+# function with no callers while it still invoked the spelling this patch
+# removes. Dead code that calls a removed backend is what #424 was filed
+# about: it never runs, so nothing fails, and it survives review as "unused".
+#
+# What it asserted is not lost. The registered accepted_cases still carry the
+# observables it was checked against, and the frozen vector is now checked
+# against those same values, so the retired backend's witness is preserved as
+# a recording rather than as a live call.
 
 def assert_elf(path: Path, deadline: float) -> None:
     header = run_before(deadline, ["readelf", "-h", str(path)])
@@ -374,7 +394,25 @@ def evidence(record: dict) -> None:
             case_root = tmp / case["id"]
             case_root.mkdir()
             source = case["source_fixture"]
-            oracle_artifact, _ = compile_oracle(source, case_root, deadline)
+            # Patch 24.13: the oracle arm is REPLAYED, not compiled.
+            #
+            # compile_oracle ran `./gust --backend mir-to-c`, linked the C and
+            # executed it, so the retired backend was this guard's third arm.
+            # That spelling is removed, so the arm could only ever fail.
+            #
+            # What the arm actually contributed is narrow and is not lost: all
+            # three artifacts are required to produce the REGISTERED
+            # observables below -- case["run_exit"], case["stdout"],
+            # case["stderr"] -- so the oracle was never the reference, it was
+            # a third witness to it. Patch 24.12c froze that witness while the
+            # backend still existed, and the vector is asserted against the
+            # same registered values here.
+            oracle_execution = frozen_oracle_execution(source)
+            require(oracle_execution["exit"] == case["run_exit"] and
+                    oracle_execution["stdout"] == case["stdout"].encode() and
+                    oracle_execution["stderr"] == case["stderr"].encode(),
+                    f"{case['id']}: the frozen oracle observation disagrees "
+                    "with the registered accepted behaviour")
             reference_artifact = case_root / "reference-native"
             reference = run_before(deadline, [
                 str(ROOT / "gust"), "--backend", "cranelift", "-o",
@@ -408,7 +446,7 @@ def evidence(record: dict) -> None:
             assert_elf(reference_artifact, deadline)
             assert_elf(subject_artifact, deadline)
             executions = [run_before(deadline, [str(path)]) for path in
-                          (oracle_artifact, reference_artifact, subject_artifact)]
+                          (reference_artifact, subject_artifact)]
             expected_stdout = case["stdout"].encode()
             expected_stderr = case["stderr"].encode()
             require(
@@ -423,10 +461,20 @@ def evidence(record: dict) -> None:
                     and not Path(str(path) + ".phase10.request").exists(),
                     f"{case['id']}: native route left request or bundle residue",
                 )
+            # Patch 24.13: no generated C at all, which is STRICTER than what
+            # this asserted before.
+            #
+            # It required exactly one .c to exist -- oracle.c -- because the
+            # oracle arm deliberately produced one and the native arms must
+            # produce none. With the oracle arm replaced by a frozen replay
+            # nothing writes C here, so the whole directory must be free of it.
+            # Keeping the old form would have demanded a file that no longer
+            # has anything to create it.
+            stray_c = sorted(path.name for path in case_root.glob("*.c"))
             require(
-                list(case_root.glob("*.c")) == [case_root / "oracle.c"]
-                and not list(case_root.glob("*.o")),
-                f"{case['id']}: native route left generated C or object residue",
+                not stray_c and not list(case_root.glob("*.o")),
+                f"{case['id']}: native route left generated C or object "
+                f"residue: {stray_c}",
             )
 
         missing_driver = tmp / "deliberately-missing-native-driver"

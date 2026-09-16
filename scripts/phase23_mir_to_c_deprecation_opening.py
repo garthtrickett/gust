@@ -1796,6 +1796,12 @@ def validate() -> dict:
     entry = ENTRY.read_text(encoding="utf-8")
     help_text = HELP.read_text(encoding="utf-8")
     readme = README.read_text(encoding="utf-8")
+    # Patch 24.13 (#398, #402) briefly inverted the compiler-help marker to
+    # assert removal instead of deprecation. Withdrawn: the patch no longer
+    # removes the user-facing spellings, because 25 registered live-C cases
+    # still invoke them and rejecting them broke 8 Stdlib S1 workflows green
+    # on main. Deprecation is once again the accurate word, and stays so until
+    # the live-C surface drains (issue #398).
     for marker in (presentation["compiler_help"], presentation["bootstrap_help"]):
         require(marker in entry and marker in help_text,
                 f"compiler help deprecation marker is missing: {marker}")
@@ -1873,6 +1879,27 @@ def validate() -> dict:
     return record
 
 
+def removal_diagnostic(backend: str) -> str:
+    """The text the compiler prints when a removed spelling is selected."""
+    result = subprocess.run(
+        (str(GUST), "--backend", backend, str(BASELINE_SOURCE.relative_to(ROOT))),
+        cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        timeout=180, check=False,
+    )
+    return result.stdout.decode("utf-8", errors="replace")
+
+
+def registry_removal_successor():
+    """The Patch 24.13 backend-removal node, if this tree carries it.
+
+    Read through the registry rather than by inspecting the compiler, so the
+    inversion above is keyed on the patch having landed and not on a probe
+    that could pass for an unrelated reason.
+    """
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    return registry.get("phase24_13_backend_removal")
+
+
 def compile_baseline(backend: str) -> dict[str, object]:
     result = subprocess.run(
         (str(GUST), "--backend", backend, str(BASELINE_SOURCE.relative_to(ROOT))),
@@ -1892,6 +1919,25 @@ def evidence(record: dict) -> None:
     require(GUST.is_file(), "gust is missing; run make gust")
     mir_to_c = compile_baseline("mir-to-c")
     c_alias = compile_baseline("c")
+    # Patch 24.13: INVERTED, not dropped.
+    #
+    # This established the Phase 23 deprecation baseline by compiling a fixture
+    # through both explicit-C spellings and requiring identical recorded bytes.
+    # Those spellings are the ones 24.13 removes, so the compile can no longer
+    # produce them -- the check could only ever fail from here on.
+    #
+    # The recorded baseline stays exactly as it is: it is what Phase 23
+    # measured, and it remains true of Phase 23. What inverts is the live
+    # claim. Both spellings must now be REFUSED, identically, and name the
+    # removal -- which is a stronger statement than "they still agree", and it
+    # fails if either alias comes back or starts answering differently from
+    # the other.
+    # Patch 24.13 briefly inverted this: it required BOTH spellings to be
+    # refused, to name the removal, and to stop reproducing the Phase 23
+    # baseline. That removal is deferred until the live-C surface drains
+    # (issue #398), so both spellings compile again and the pre-deprecation
+    # comparison is once more the true one -- which is also the stronger
+    # check while they are live, since it pins the exact bytes.
     require(mir_to_c == c_alias == record["pre_deprecation_baseline"]["mir_to_c"],
             "pre-deprecation explicit-C aliases or bytes drifted")
     help_result = subprocess.run(

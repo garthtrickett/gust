@@ -101,11 +101,12 @@ func main() {
     } else if len(args) == 4 &&
               std.str_eq(args[1], "--backend") == 1 &&
               (std.str_eq(args[2], "mir-to-c") == 1 ||
-               std.str_eq(args[2], "c") == 1)
+               std.str_eq(args[2], "c") == 1 ||
+               std.str_eq(args[2], "bootstrap-emitter") == 1)
     {
         file_path = args[3];
     } else {
-        os.LogStr("Usage: gust-bootstrap-bridge [--backend <mir-to-c|c>] <file.gst>");
+        os.LogStr("Usage: gust-bootstrap-bridge [--backend <mir-to-c|c|bootstrap-emitter>] <file.gst>");
         os.Exit(1);
     }
 

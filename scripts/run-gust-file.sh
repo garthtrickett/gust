@@ -16,7 +16,7 @@ fi
 
 mkdir -p build
 BUILD_LOG="build/gust-build.log"
-RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-mir-to-c}"
+RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-cranelift}"  # 24.13 (#411): native default; explicit mir-to-c still served until #398
 case "$RUNNER_ROUTE" in
   mir-to-c|cranelift) ;;
   *)

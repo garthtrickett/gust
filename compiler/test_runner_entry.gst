@@ -96,11 +96,58 @@ func compiler_parse_invocation(args: std.Vector[str, ctx], ctx: &Arena) Compiler
             }
 
             mut backend_name := args[i + 1];
+            // Patch 24.13 removes the generated-C backend from the
+            // bootstrap chain and closes its publication path, but it does
+            // NOT yet remove these two user-facing spellings.
+            //
+            // Rejecting them here was measured to break 8 Stdlib S1
+            // workflows that are green on main. The registry still records
+            // 26 live-C cases as surviving this patch, and 25 of them invoke
+            // exactly this spelling, so removing it while they are
+            // registered live is self-contradictory: the guards passed only
+            // because they compare text and digests, never behaviour. The
+            // diagnostic also went to stdout, so it landed *in* the .c file
+            // each caller captured, leaving stderr empty and the failure
+            // unreadable.
+            //
+            // The ordering constraint is therefore: the live-C surface must
+            // reach zero before the spelling can go. Those 25 callers are
+            // Stdlib-owned stdlib tests (AGENTS.md line 98), so this lane
+            // cannot rewire them; that is issue #398, and the removal lands
+            // in a successor patch once it closes.
             if std.str_eq(backend_name, "mir-to-c") == 1 ||
                std.str_eq(backend_name, "c") == 1
             {
                 unsafe {
                     invocation.backend.tag = 0; // MirToC
+                }
+            // Patch 24.11 decided this entry and Patch 24.13 lands it: the
+            // emitter survives as bootstrap-only machinery reusing the
+            // existing MirToC tag.
+            //
+            // Raised in review on #421: keeping the spelling out of help does
+            // not make it internal. Any user who knew the string could reach
+            // codegen_generate through the public binary, which left the
+            // publication path this patch retires open to anyone.
+            //
+            // It cannot move to a separate binary: `make bootstrap` compares
+            // build/gust_stage2.c against build/gust_stage3.c for byte
+            // identity, and that fixed point is the CURRENT compiler emitting
+            // its own C. Take the emitter out of ./gust and there is no stage
+            // two. So the entry stays and carries an authority instead: the
+            // caller must also set GUST_BOOTSTRAP_EMITTER=1, which the
+            // bootstrap chain's own recipes export and an ordinary invocation
+            // does not have.
+            } else if std.str_eq(backend_name, "bootstrap-emitter") == 1 {
+                if std.str_eq(
+                    os.GetEnv(ctx, "GUST_BOOTSTRAP_EMITTER"),
+                    "1"
+                ) == 0 {
+                    compiler_invocation_fail(
+                        "--backend bootstrap-emitter is bootstrap-only machinery, not a user-selectable backend; the generated-C route is reached through its deprecated explicit spellings");
+                }
+                unsafe {
+                    invocation.backend.tag = 0; // MirToC, bootstrap-only
                 }
             } else if std.str_eq(backend_name, "cranelift") == 1 {
                 unsafe {
