@@ -23957,3 +23957,16 @@ guard-cranelift-phase24-undefined-name-sweep-contract:
     python3 scripts/cranelift_test_levels.py validate
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase24-undefined-name-sweep-contract | grep -F $'guard-cranelift-phase24-undefined-name-sweep-contract\t1\t' >/dev/null
     python3 scripts/phase24_undefined_name_sweep.py
+
+# Patch 24.14. Classify every surviving cc site by the provenance of what it
+# compiles, not by how the call line is spelled, and fail on discovery nothing
+# reads. Appended at the end of the file: the Patch 24.0c manifest keys on line
+# numbers, so a mid-file insert breaks two digests while the count stays right.
+guard-cranelift-phase24-c-toolchain-provenance-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔧 Checking Phase 24 C toolchain provenance..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase24-c-toolchain-provenance-contract | grep -F $'guard-cranelift-phase24-c-toolchain-provenance-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase24_c_toolchain_provenance.py validate

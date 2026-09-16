@@ -665,18 +665,39 @@ def validate_transition(record: dict, registry: dict) -> None:
                                 "partial_or_unregistered_surface") ==
                             "rejected",
                             "Patch 24.12b frozen surface successor drifted")
+                        toolchain_frozen = registry.get(
+                            "phase24_14_toolchain_removal", {}).get(
+                                "frozen_surface_transition")
                         if removal_frozen is not None:
                             require(
                                 removal_frozen.get("contract_version") ==
                                 "phase24_13_frozen_surface_transition_v1" and
                                 removal_frozen.get(
                                     "current_live_c_case_surface") ==
-                                live_frozen and
+                                (toolchain_frozen[
+                                    "previous_live_c_case_surface"]
+                                 if toolchain_frozen is not None
+                                 else live_frozen) and
                                 removal_frozen.get(
                                     "partial_or_unregistered_surface") ==
                                 "rejected",
                                 "Patch 24.13 frozen surface successor "
                                 "drifted")
+                            # Patch 24.14 is the tail when present.
+                            if toolchain_frozen is not None:
+                                require(
+                                    toolchain_frozen.get("contract_version")
+                                    ==
+                                    "phase24_14_frozen_surface_transition_v2"
+                                    and
+                                    toolchain_frozen.get(
+                                        "current_live_c_case_surface") ==
+                                    live_frozen and
+                                    toolchain_frozen.get(
+                                        "partial_or_unregistered_surface") ==
+                                    "rejected",
+                                    "Patch 24.14 frozen surface successor "
+                                    "drifted")
             # Compare the two ends of the link 24.0c registered, not the live
             # surface against 24.0c's start: with a successor in the chain the
             # live surface belongs to the successor, and reading it here would

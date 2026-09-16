@@ -142,16 +142,16 @@ def validate() -> dict:
         "reason_code": "source_or_type_failure",
         "diagnostic_class": "canonical_mir_verification_error",
         "diagnostic": "Native backend canonical MIR verification failed: unsupported top-level statement in module/import cohort",
-        # This is the line the compiler reports in its
-        # gust_native_capability_decision, not a decorative marker, so it has
-        # to track the file. Patch 24.13 has moved it four times: 241 -> 253
-        # when the rejection branches went in ahead of main(), -> 273 with the
-        # bootstrap-emitter authority gate, and -> 288 when the rejection was
-        # withdrawn (issue #398) and the restored help lines and the comment
-        # recording that withdrawal were added. Every move was caught by the
-        # require() below re-reading the fixture, in CI rather than by
-        # inspection -- which is the only reason a line-number coordinate is
-        # safe to carry here at all.
+        # Patch 24.13 moved this from 241 to 253, to 273, and to 288 once
+        # the removal was withdrawn (issue #398); Patch 24.14 moves it again.
+        # It
+        # marks a line in compiler/test_runner_entry.gst, which every backend
+        # removal patch edits. It is NOT compared against live compiler output
+        # anywhere -- only against the fixture below, and rendered into a
+        # review doc -- so it is a marker on a line future patches must move,
+        # which is the thing not to do. The check below now DERIVES the
+        # location and names the correct value when they disagree, so a patch
+        # that moves main() is told the new number instead of bisecting for it.
         "source_line": 288,
         "source_column": 1,
         "failure_stage": "before_driver_discovery",
@@ -162,8 +162,18 @@ def validate() -> dict:
     }, "full-compiler baseline drifted")
     source_lines = (ROOT / baseline["source_fixture"]).read_text(
         encoding="utf-8").splitlines()
-    require(source_lines[baseline["source_line"] - 1] == "func main() {",
-            "full-compiler baseline source location drifted")
+    anchor = "func main() {"
+    found = [index + 1 for index, line in enumerate(source_lines) if line == anchor]
+    require(len(found) == 1,
+            f"the full-compiler baseline anchor {anchor!r} appears "
+            f"{len(found)} times in {baseline['source_fixture']}; the marker "
+            "is only meaningful if it is unique")
+    require(found[0] == baseline["source_line"],
+            "full-compiler baseline source location drifted: "
+            f"{baseline['source_fixture']} has {anchor!r} at line {found[0]}, "
+            f"the registry and this contract both say {baseline['source_line']}. "
+            "Set both to "
+            f"{found[0]}.")
     require(record.get("unclassified_failures") == [],
             "Patch 21.1 leaves an unclassified failure")
     boundary = record.get("boundary", {})

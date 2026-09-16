@@ -125,8 +125,6 @@ CARGO_TARGET_DIR="$cargo_target" cargo build \
   --locked --quiet --manifest-path "$rust_manifest"
 driver_bin="$cargo_target/debug/gust-cranelift-experiment"
 driver_abs="$(cd "$(dirname "$driver_bin")" && pwd)/$(basename "$driver_bin")"
-CC_BIN="${CC:-cc}"
-CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
 
 capture_driver="$build_root/capture-driver"
 cat >"$capture_driver" <<'EOF_CAPTURE'
