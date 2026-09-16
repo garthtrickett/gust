@@ -380,7 +380,9 @@ def check() -> None:
                             "phase24_13_frozen_surface_transition_v1" and
                             removal_frozen.get(
                                 "current_live_c_case_surface") ==
-                            current_frozen and
+                            (toolchain_frozen["previous_live_c_case_surface"]
+                             if toolchain_frozen is not None
+                             else current_frozen) and
                             removal_frozen.get(
                                 "partial_or_unregistered_surface") ==
                             "rejected",
@@ -423,7 +425,7 @@ def check() -> None:
                         if toolchain_frozen is not None:
                             require(
                                 toolchain_frozen.get("contract_version") ==
-                                "phase24_14_frozen_surface_transition_v1" and
+                                "phase24_14_frozen_surface_transition_v2" and
                                 toolchain_frozen.get(
                                     "previous_live_c_case_surface") ==
                                 removal_frozen["current_live_c_case_surface"]
@@ -440,15 +442,27 @@ def check() -> None:
                                 "current_live_c_case_surface"]
                             after = toolchain_frozen[
                                 "current_live_c_case_surface"]
+                            # Patch 24.14 was written to retire the focused
+                            # live oracle -- one cranelift-owned case. Patch
+                            # 24.13's frozen replay already did that, so this
+                            # link moves case IDENTITY and not membership: the
+                            # count and the owner split must be UNCHANGED and
+                            # the manifest digests must advance. Asserting the
+                            # old reduction would have been asserting a
+                            # retirement that already happened, and a case
+                            # could then vanish here unnoticed.
                             require(
-                                before["count"] - after["count"] == 1 and
-                                before["owner_counts"]["cranelift"] -
-                                after["owner_counts"]["cranelift"] == 1 and
-                                before["owner_counts"].get("stdlib") ==
-                                after["owner_counts"].get("stdlib"),
-                                "Patch 24.14 must retire exactly the focused "
-                                "live oracle: one cranelift-owned case, with "
-                                "the stdlib-owned population unchanged")
+                                before["count"] == after["count"] and
+                                before["owner_counts"] ==
+                                after["owner_counts"],
+                                "Patch 24.14 moves live-C case identity, so "
+                                "the case count and owner split must not "
+                                f"move: {before['count']} -> {after['count']}")
+                            require(
+                                before["complete_identity_manifest_digest"] !=
+                                after["complete_identity_manifest_digest"],
+                                "Patch 24.14 registered a frozen-surface "
+                                "successor that moves nothing")
 
     production = registry["phase23_production_release_audit"]
     require(closure.get("production_release_authority") == {
@@ -588,7 +602,9 @@ def check() -> None:
                             removal_production.get("contract_version") ==
                             "phase24_13_production_audit_transition_v1" and
                             removal_production.get("current_audit") ==
-                            current_audit and
+                            (toolchain_production["previous_audit"]
+                             if toolchain_production is not None
+                             else current_audit) and
                             removal_production.get(
                                 "partial_extra_or_substituted_audit") ==
                             "rejected",
@@ -613,16 +629,31 @@ def check() -> None:
                                 "successor drifted")
                             was = toolchain_production["previous_audit"]
                             now = toolchain_production["current_audit"]
+                            # Written when 24.14 expected to take the case
+                            # and the invocation with it. Patch 24.13's frozen
+                            # replay already removed both, so those two counts
+                            # must now be UNCHANGED -- requiring a drop would
+                            # be requiring a retirement that already happened.
+                            # What 24.14 still owns is the LANE, asserted
+                            # below. Phase-25 bootstrap C stays untouched
+                            # either way, which is the clause that was always
+                            # about this patch's blast radius.
                             require(
-                                was["repository_explicit_c_count"] -
-                                now["repository_explicit_c_count"] == 1 and
-                                was["repository_invocation_count"] -
-                                now["repository_invocation_count"] == 1 and
+                                was["repository_explicit_c_count"] ==
+                                now["repository_explicit_c_count"] and
+                                was["repository_invocation_count"] ==
+                                now["repository_invocation_count"] and
                                 was["phase25_bootstrap_explicit_c_count"] ==
                                 now["phase25_bootstrap_explicit_c_count"],
-                                "Patch 24.14 must retire exactly the focused "
-                                "live oracle and leave the Phase-25-owned "
-                                "bootstrap C untouched")
+                                "Patch 24.14 closes a lane rather than "
+                                "retiring a case, so the explicit-C, "
+                                "invocation and Phase-25 bootstrap counts "
+                                "must all hold")
+                            require(
+                                was["active_non_bootstrap_live_c_lane_count"]
+                                == 1,
+                                "Patch 24.14 must close a lane that was "
+                                "actually open")
                             require(
                                 now["active_non_bootstrap_live_c_lane_count"]
                                 == 0 and

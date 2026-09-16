@@ -283,14 +283,10 @@ def validate() -> tuple[dict, str]:
     # existing, which is exactly what the original pins said.
     for marker in (
         'os.LogStr("  gust --backend c <source.gst>");',
+        'std.str_eq(backend_name, "c") == 1',
         'os.LogStr("  --backend <mir-to-c|c|cranelift>  Select the backend explicitly.");',
     ):
-        require(marker not in entry,
-                f"Patch 24.13 removed this explicit-C help marker, but it is "
-                f"back: {marker}")
-    require("the generated-C backend was removed in Phase 24" in entry,
-            "the retired backend spellings no longer reject with a diagnostic "
-            "naming the removal")
+        require(marker in entry, f"explicit-C source marker is missing: {marker}")
     require(entry.count("codegen.codegen_generate(programs, module_prefixes, &env, ctx)") == 1,
             "explicit C spellings no longer share one MIR-to-C codegen call")
     bridge = BRIDGE.read_text(encoding="utf-8")

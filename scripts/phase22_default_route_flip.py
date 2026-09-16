@@ -103,8 +103,7 @@ def validate() -> dict:
     # Patch 24.13 briefly swapped the deprecation clause for a removal
     # statement; withdrawn with the removal itself (issue #398).
     require("Compile to one native executable (default)." in help_text and
-            "The generated-C backend was REMOVED in Phase 24; mir-to-c and c are rejected." in help_text and
-            "Bootstrap C retirement is separate and deferred to Phase 25." in help_text and
+            "DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24." in help_text and "Bootstrap C retirement is separate and deferred to Phase 25." in help_text and
             "Optional Cranelift output; defaults to the source stem." in help_text and
             "fallback to MIR-to-C." in help_text,
             "checked help projection drifted")

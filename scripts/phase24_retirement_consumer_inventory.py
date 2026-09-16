@@ -187,6 +187,26 @@ FROZEN_ORACLE_CALL = "phase24_frozen_oracle.py materialize"
 # they drive the spelling this patch turns into a rejection, so leaving them to
 # 24.16 ships ~82 guard invocations that cannot run. Re-scored to 24.13 with
 # the reason recorded, not moved silently.
+# Patch 24.13 routed these to the bootstrap-only entry. Patch 24.14 renamed
+# the set it inherited to NATIVE_ROUTED_RECIPES and repopulated it with the
+# recipes IT routes natively, which silently dropped 24.13's population --
+# make-test-suite then fell through to the branch demanding a retired C
+# route it no longer has. Both routings are real and both stay asserted.
+BOOTSTRAP_ROUTED_RECIPES = {
+    "make-test-suite":
+        "compiles tests/test_runner.gst, which the native route defers on "
+        "(phase13_generic_source_to_mir); the bootstrap-only entry reaches "
+        "the emitter without spelling the retired backend",
+    "make-test-suite-parallel":
+        "the parallel form of make-test-suite, on the same source and for the "
+        "same measured reason",
+    "run-step52-positive-batch":
+        "compiles the same tests/test_runner.gst; re-scored from 24.16 "
+        "because 24.13's removal breaks it where it stands",
+}
+BOOTSTRAP_ROUTE_NEEDLE = "--backend bootstrap-emitter"
+
+
 NATIVE_ROUTED_RECIPES = {
     "guard-positive":
         "compile-and-run, measured: 101 of 105 sources compile and run with "
@@ -667,6 +687,18 @@ RETIRED_FILE_SURFACES = [
 # invocation entirely and still pass, which is the "vanished passing as moved"
 # failure this phase keeps having to rule out -- so it gets its own register
 # rather than being folded into the retirement one.
+# Surfaces a retirement patch REPLACED rather than removed: both halves
+# have to be asserted, or the check could be deleted outright.
+#
+# Patch 24.14 rebased the -o refusal's wording from "the MIR-to-C
+# backend" to "the bootstrap emitter entry", on the premise that only the
+# bootstrap entry could still reach it. The removal is deferred until the
+# live-C surface drains (issue #398), so --backend mir-to-c reaches that
+# refusal too and the original wording names the spelling the caller
+# actually used. Empty rather than deleted: this register is what 24.14
+# needs again the moment the removal lands.
+REBASED_FILE_SURFACES: list = []
+
 MIGRATED_FILE_SURFACES = [
     ("tests/test_runner.gst",
      'std.Concat("./gust --backend mir-to-c ", path)',
@@ -1363,7 +1395,18 @@ def validate() -> dict:
 
     for recipe, needle, owner, action, is_live in RECIPE_ROWS:
         require(recipe in bodies, f"inventoried recipe is missing: {recipe}")
-        if recipe in NATIVE_ROUTED_RECIPES:
+        if recipe in BOOTSTRAP_ROUTED_RECIPES:
+            require(needle not in bodies[recipe],
+                    f"a recipe Patch 24.13 routed to the bootstrap entry has "
+                    f"its C route back: {recipe}")
+            require(BOOTSTRAP_ROUTE_NEEDLE in bodies[recipe],
+                    f"a recipe Patch 24.13 routed to the bootstrap entry does "
+                    f"not select it: {recipe}")
+            require(NATIVE_ROUTE_NEEDLE not in bodies[recipe],
+                    f"a recipe registered as bootstrap-routed also takes the "
+                    f"native route, so it belongs in NATIVE_ROUTED_RECIPES: "
+                    f"{recipe}")
+        elif recipe in NATIVE_ROUTED_RECIPES:
             require(needle not in bodies[recipe],
                     f"a recipe Patch 24.13 routed natively has its C route "
                     f"back: {recipe}")
