@@ -117,6 +117,7 @@ Out of scope:
 - [x] Patch 24.12a — Emitter-Only Parity Guard Retirement — DONE
 - [x] Patch 24.12b — Python Parity Guard Conversion — DONE
 - [ ] Patch 24.12c — Frozen Oracle Capture for the Uncovered Population
+- [ ] Patch 24.12d — Frozen Oracle Capture for the Default-Route Flip
 - [ ] Patch 24.13 — Backend-Selection and Publication-Path Removal
 - [ ] Patch 24.14 — C Toolchain Discovery, Error, and Temp-File Removal
 - [ ] Patch 24.15a — Reachability Instrument Repair
@@ -390,6 +391,42 @@ and 1 live, with re-examination routed to Patch 24.16. Instrument defects
 `liveness()` half is fixed here only because this patch rewrites that
 function. The two runner-mediated default-route calls remain Patch 24.13's
 residue and the unqualified gate remains Patch 24.12b's.
+
+## Patch 24.12d — Frozen Oracle Capture for the Default-Route Flip
+
+The same amendment as 24.12c, for a population 24.12c could not have seen.
+
+24.12c captured the sources whose CONSUMERS name them -- the justfile-step51
+allowlist and the Stdlib parity guards. Patch 24.13 also flips the shared
+runner's default from mir-to-c to cranelift, and 55 scripts call
+scripts/run-gust-file.sh with no explicit route. Those went through C on main
+and take the native route after the flip.
+
+Measured across all 61 sources those scripts hand to the runner: 58 compile
+natively and 3 defer.
+
+  compiler/future/p15_directory_resources_source.gst
+      deferred_p13_structured_cfg_condition_shape
+  compiler/future/p15_selected_failure_cleanup_source.gst
+      deferred_p13_parameter_argument_target_dependent_abi
+  tests/e2e_collections_methods.gst
+      deferred_p13_structured_cfg_condition_shape
+
+None has a vector in v1, v2 or the v3 capture. Their guards assert RUNTIME
+behaviour -- phase15_failure_cleanup_parity.sh runs the program and greps
+"SUCCESS: Phase 15.12 selected failure cleanup source passed" -- so a deferral
+cannot stand in for the assertion, and "Absence of C execution never counts as
+parity success" applies exactly as it did for the step51 four.
+
+Same window, same reason: origin/main still has the retired backend and
+phase24_frozen_oracle_capture.py drives it, so these are capturable now and
+not after Patch 24.13 merges.
+
+Bounded identically to 24.12c. v1, v2 and v3 stay immutable; this produces a
+fourth set for three sources that never had a vector. The capture tool's
+declared population is extended by exactly those three, each named with the
+consumer that reads it, and the tool refuses any manifest that does not match
+that population.
 
 ## Patch 24.12c — Frozen Oracle Capture for the Uncovered Population
 

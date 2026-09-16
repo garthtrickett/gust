@@ -56,7 +56,33 @@ AUTHORITIES = {
     "patch24.12c": ("- [ ] Patch 24.12c — Frozen Oracle Capture for the "
                     "Uncovered Population",
                     "phase24_frozen_oracle_vectors_v3"),
+    "patch24.12d": ("- [ ] Patch 24.12d — Frozen Oracle Capture for the "
+                    "Default-Route Flip",
+                    "phase24_frozen_oracle_vectors_v4"),
 }
+
+# Patch 24.12d's population: the sources that lose their C route to the
+# runner's DEFAULT flip rather than to a consumer naming them.
+#
+# 24.12c derived its population from consumers that name their fixtures. These
+# three are named by nobody -- they are handed to scripts/run-gust-file.sh with
+# no explicit route, so they went through C by default and take the native
+# route once Patch 24.13 flips that default. Measured across all 61 sources
+# those 55 scripts pass to the runner: 58 compile natively and 3 appeared to
+# defer, of which one was an artifact of matching a usage message rather than
+# an invocation. Two are real.
+POPULATION_24_12D: dict[str, tuple[str, str]] = {
+    "compiler/future/p15_directory_resources_source.gst":
+        ("scripts/phase15_specialized_resource_parity.sh", "exec"),
+    "compiler/future/p15_selected_failure_cleanup_source.gst":
+        ("scripts/phase15_failure_cleanup_parity.sh", "exec"),
+}
+# tests/e2e_collections_methods.gst is deliberately NOT here. It appeared in
+# the first derivation because the sweep matched `run-gust-file.sh <path>.gst`
+# textually, and the runner's own usage message contains
+# "e.g., scripts/run-gust-file.sh tests/e2e_collections_methods.gst". No script
+# passes it to the runner; it is an example in an error string. The consumer
+# check below is what caught it -- the named consumer does not mention it.
 AUTHORITY = "patch24.12b"
 FORMAT = "phase24_frozen_oracle_vectors_v2"
 
@@ -366,9 +392,11 @@ def main() -> None:
     # before 24.12c those were three sentences in TASK.md and nothing checked
     # them, so a malformed manifest could mint a permanent vector for the
     # wrong fixture.
-    if arguments.authority == "patch24.12c":
+    if arguments.authority in ("patch24.12c", "patch24.12d"):
+        population = (POPULATION if arguments.authority == "patch24.12c"
+                      else POPULATION_24_12D)
         supplied = {entry["source"]: entry.get("kind") for entry in entries}
-        declared = {source: kind for source, (_, kind) in POPULATION.items()}
+        declared = {source: kind for source, (_, kind) in population.items()}
         extra = sorted(set(supplied) - set(declared))
         require(not extra,
                 "capture refused: the manifest names sources outside the "
@@ -386,7 +414,7 @@ def main() -> None:
 
         # Every entry is read by the consumer that claims it.
         unreferenced = []
-        for source, (consumer, _kind) in POPULATION.items():
+        for source, (consumer, _kind) in population.items():
             text = (ROOT / consumer).read_text(encoding="utf-8")
             if source not in text:
                 unreferenced.append(f"{source} not named in {consumer}")
@@ -398,7 +426,8 @@ def main() -> None:
         # never take back, because 24.13 removes the route that produced it.
         covered = set()
         for existing in ("compiler/fixtures/phase24_frozen_oracle_vectors_v1.json",
-                         "compiler/fixtures/phase24_frozen_oracle_vectors_v2.json"):
+                         "compiler/fixtures/phase24_frozen_oracle_vectors_v2.json",
+                         "compiler/fixtures/phase24_frozen_oracle_vectors_v3.json"):
             path = ROOT / existing
             if path.is_file():
                 covered |= set(json.loads(
