@@ -142,7 +142,9 @@ def validate() -> dict:
         "reason_code": "source_or_type_failure",
         "diagnostic_class": "canonical_mir_verification_error",
         "diagnostic": "Native backend canonical MIR verification failed: unsupported top-level statement in module/import cohort",
-        # Patch 24.13 moved this from 241 to 253 and Patch 24.14 to 260: it
+        # Patch 24.13 moved this from 241 to 253, to 273, and to 288 once
+        # the removal was withdrawn (issue #398); Patch 24.14 moves it again.
+        # It
         # marks a line in compiler/test_runner_entry.gst, which every backend
         # removal patch edits. It is NOT compared against live compiler output
         # anywhere -- only against the fixture below, and rendered into a
@@ -150,7 +152,7 @@ def validate() -> dict:
         # which is the thing not to do. The check below now DERIVES the
         # location and names the correct value when they disagree, so a patch
         # that moves main() is told the new number instead of bisecting for it.
-        "source_line": 260,
+        "source_line": 288,
         "source_column": 1,
         "failure_stage": "before_driver_discovery",
         "artifact": "absent",

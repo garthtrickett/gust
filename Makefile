@@ -45,6 +45,7 @@ gust_bootstrap: gust_v4.c $(RUNTIME_SRCS)
 	cat src/runtime.c gust_v4.c > build/gust_bootstrap_final.c
 	${CC} ${CFLAGS} ${INCLUDES} build/gust_bootstrap_final.c -o gust_bootstrap
 
+build/gust_stage1_compiler.c: export GUST_BOOTSTRAP_EMITTER = 1
 build/gust_stage1_compiler.c: gust_bootstrap $(COMPILER_SRCS) tools/normalize_generated_arena_offsets.py
 	mkdir -p build
 	@rm -f \
@@ -52,7 +53,7 @@ build/gust_stage1_compiler.c: gust_bootstrap $(COMPILER_SRCS) tools/normalize_ge
 		build/gust_stage1_compiler.filtered \
 		build/gust_stage1_compiler.tmp
 	@set +e; \
-	./gust_bootstrap --backend mir-to-c compiler/test_runner_bootstrap_bridge_entry.gst > build/gust_stage1_compiler.raw 2>&1; \
+	./gust_bootstrap --backend bootstrap-emitter compiler/test_runner_bootstrap_bridge_entry.gst > build/gust_stage1_compiler.raw 2>&1; \
 	status=$$?; \
 	set -e; \
 	if [ "$$status" -ne 0 ]; then \
@@ -91,6 +92,7 @@ build/gust_stage1_bin: build/gust_stage1_compiler.c $(RUNTIME_SRCS)
 	cat src/runtime.c build/gust_stage1_compiler.c > build/gust_stage1_final.c
 	${CC} ${CFLAGS} ${INCLUDES} build/gust_stage1_final.c -o build/gust_stage1_bin
 
+diagnose-phase10-stage1: export GUST_BOOTSTRAP_EMITTER = 1
 diagnose-phase10-stage1: build/gust_stage1_compiler.c $(RUNTIME_SRCS)
 	@command -v "$(PHASE10_DIAG_CC)" >/dev/null 2>&1 || { \
 		echo "❌ $(PHASE10_DIAG_CC) is required for the Phase 10 stage-one sanitizer diagnostic."; \
@@ -109,7 +111,7 @@ diagnose-phase10-stage1: build/gust_stage1_compiler.c $(RUNTIME_SRCS)
 	ASAN_OPTIONS='abort_on_error=1:detect_leaks=0:disable_coredump=0:fast_unwind_on_malloc=0:malloc_context_size=40:print_summary=1:symbolize=1:strict_string_checks=1:check_initialization_order=1:detect_stack_use_after_return=1' \
 	UBSAN_OPTIONS='halt_on_error=1:print_stacktrace=1:report_error_type=1' \
 		./build/diagnostics/phase10-stage1/gust_stage1_sanitized \
-		--backend mir-to-c \
+		--backend bootstrap-emitter \
 		compiler/test_runner_entry.gst \
 		> build/diagnostics/phase10-stage1/stdout.log \
 		2> build/diagnostics/phase10-stage1/stderr.log; \
@@ -136,11 +138,12 @@ diagnose-phase10-stage1: build/gust_stage1_compiler.c $(RUNTIME_SRCS)
 	fi; \
 	exit "$$status"
 
+build/gust_compiler.c: export GUST_BOOTSTRAP_EMITTER = 1
 build/gust_compiler.c: build/gust_stage1_bin $(COMPILER_SRCS)
 	mkdir -p build
 	@rm -f build/gust_compiler.raw build/gust_compiler.tmp
 	@set +e; \
-	./build/gust_stage1_bin --backend mir-to-c compiler/test_runner_entry.gst > build/gust_compiler.raw 2>&1; \
+	./build/gust_stage1_bin --backend bootstrap-emitter compiler/test_runner_entry.gst > build/gust_compiler.raw 2>&1; \
 	status=$$?; \
 	set -e; \
 	if [ "$$status" -ne 0 ]; then \
@@ -235,6 +238,12 @@ phase10-native-package: gust build/gust-native-backend $(PHASE21_RUNTIME_PACKAGE
 	@echo "✅ Phase 10 native package ready: build/phase10-package/bin/gust, build/phase10-package/bin/gust-native-backend, and build/phase10-package/bin/gust-runtime-package.a"
 
 # Fixed-Point Bootstrap Verification
+#
+# Patch 24.13: the bootstrap-emitter entry requires GUST_BOOTSTRAP_EMITTER=1.
+# Exported target-specifically rather than inline on each command, so the two
+# invocation lines below stay byte-identical to what the route-flip and
+# seed-convergence manifests pin.
+bootstrap: export GUST_BOOTSTRAP_EMITTER = 1
 bootstrap: gust
 	@echo "⚙️  Beginning fixed-point bootstrap verification..."
 	@# Stage 2: Use the new 'gust' binary to compile the compiler again

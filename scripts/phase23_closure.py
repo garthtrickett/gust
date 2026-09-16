@@ -380,14 +380,39 @@ def check() -> None:
                             "phase24_13_frozen_surface_transition_v1" and
                             removal_frozen.get(
                                 "current_live_c_case_surface") ==
-                            (toolchain_frozen["previous_live_c_case_surface"]
-                             if toolchain_frozen is not None
-                             else current_frozen) and
+                            current_frozen and
                             removal_frozen.get(
                                 "partial_or_unregistered_surface") ==
                             "rejected",
                             "Patch 24.13 frozen-surface closure successor "
                             "drifted")
+                        # Raised in review on #421: unlike every earlier link
+                        # in this chain, the 24.13 successor did not assert
+                        # its own arithmetic, so a `removed_case_count` that
+                        # disagreed with its own previous/current pair was
+                        # accepted. It was registered as 2 against a 56 -> 51
+                        # surface -- an undercount of the retirement evidence
+                        # that no check could catch.
+                        #
+                        # Enforced here, in the same shape the 24.12, 24.12a
+                        # and 24.12b links use: the count IS the reduction,
+                        # and it has to be positive, so a successor that
+                        # retires nothing cannot claim to be one.
+                        removed_cases = (
+                            removal_frozen["previous_live_c_case_surface"][
+                                "count"]
+                            - removal_frozen["current_live_c_case_surface"][
+                                "count"])
+                        require(removed_cases ==
+                                removal_frozen.get("removed_case_count") and
+                                removed_cases > 0,
+                                "the Patch 24.13 removed-case count is not "
+                                "the reduction it records: "
+                                f"{removal_frozen['previous_live_c_case_surface']['count']}"
+                                f" -> "
+                                f"{removal_frozen['current_live_c_case_surface']['count']}"
+                                f" against "
+                                f"{removal_frozen.get('removed_case_count')}")
                         # Patch 24.14 continues the chain and becomes its tail
                         # when present. It retires the focused live oracle --
                         # "the single live lane Patch 23.10 deliberately
@@ -563,9 +588,7 @@ def check() -> None:
                             removal_production.get("contract_version") ==
                             "phase24_13_production_audit_transition_v1" and
                             removal_production.get("current_audit") ==
-                            (toolchain_production["previous_audit"]
-                             if toolchain_production is not None
-                             else current_audit) and
+                            current_audit and
                             removal_production.get(
                                 "partial_extra_or_substituted_audit") ==
                             "rejected",

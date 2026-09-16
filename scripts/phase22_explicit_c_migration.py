@@ -164,12 +164,45 @@ def validate() -> tuple[dict, str]:
         for row in stdlib_rows
         if tuple(row[field] for field in pending_site_fields) in pending_sites
     }
+    # Patch 24.13 migrates two of these six sites off the retired spelling.
+    # This is the second copy of the same manifest -- phase22_opening.py pins
+    # it too -- so it consults the SAME registered successor rather than
+    # growing its own record of the move, which could then disagree.
+    #
+    # The pinned key is swapped for the migrated one and the expected selection
+    # becomes what the successor recorded, per site. A migrated site that
+    # vanished fails (its key is absent from the live set), and one that landed
+    # on some other backend fails the per-site selection.
+    site_migration = post_flip_relay.get("phase24_13_site_migration")
+    expected_selection = {site: "explicit_c" for site in pending_sites}
+    if site_migration is not None:
+        require(site_migration.get("contract_version") ==
+                "phase24_13_six_site_relay_migration_v1",
+                "Patch 24.13 six-site relay migration successor drifted")
+        for entry in site_migration.get("migrations", []):
+            pinned_key = tuple(entry["pinned_site"][field]
+                               for field in pending_site_fields)
+            moved_key = tuple(entry["migrated_site"][field]
+                              for field in pending_site_fields)
+            require(pinned_key in pending_sites,
+                    "Patch 24.13 migrates a site this manifest never pinned: "
+                    f"{pinned_key[0]}")
+            pending_sites.discard(pinned_key)
+            pending_sites.add(moved_key)
+            expected_selection.pop(pinned_key, None)
+            expected_selection[moved_key] = entry["migrated_selection"]
+        live_pending_sites = {
+            tuple(row[field] for field in pending_site_fields): row
+            for row in stdlib_rows
+            if tuple(row[field] for field in pending_site_fields)
+            in pending_sites
+        }
     require(len(pending_sites) == 6 and
             pending_sites == set(live_pending_sites) and
             sorted({str(row["path"]) for row in live_pending_sites.values()}) ==
             post_flip_relay.get("paths") and
-            all(row["selection"] == "explicit_c"
-                for row in live_pending_sites.values()),
+            all(str(row["selection"]) == expected_selection[site]
+                for site, row in live_pending_sites.items()),
             "post-flip review relay site manifest drifted")
     require(relay_transition_state == "landed_post_relay" and
             transition == post_flip_relay.get("landed_authority") and
@@ -238,17 +271,16 @@ def validate() -> tuple[dict, str]:
             "merged post-relay Stdlib selection set drifted")
 
     entry = ENTRY.read_text(encoding="utf-8")
-    # Patch 24.13 (#398, #402): INVERTED, not deleted.
+    # Patch 24.13 (#398, #402) briefly inverted these three presence-pins to
+    # absence-pins, on the premise that it removed the explicit-C help lines
+    # and the selection branch. That premise is withdrawn.
     #
-    # These three markers were presence-pins: this closed-phase guard required
-    # the explicit-C help lines and the selection branch to keep existing.
-    # Patch 24.13 removes exactly those lines, so the pins would have broken on
-    # a patch that never edits this file, and the break would have surfaced on
-    # some later unrelated PR. Dropping the clauses would have said nothing.
-    #
-    # They now assert the inverse: the help surface no longer advertises the
-    # retired backend, and the selection branch no longer accepts it. These
-    # fail if the removal is reverted.
+    # Measured on #421: 25 registered live-C cases still invoke the retired
+    # spelling, and rejecting it broke 8 Stdlib S1 workflows that are green on
+    # main. Those callers are Stdlib-owned (AGENTS.md line 98), so this lane
+    # cannot rewire them. The removal is therefore sequenced after the live-C
+    # surface drains -- issue #398 -- and until then these lines must keep
+    # existing, which is exactly what the original pins said.
     for marker in (
         'os.LogStr("  gust --backend c <source.gst>");',
         'os.LogStr("  --backend <mir-to-c|c|cranelift>  Select the backend explicitly.");',

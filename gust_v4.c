@@ -65631,12 +65631,21 @@ CompilerInvocation compiler_parse_invocation(std_Vector_str args, os_Arena* ctx)
     invocation.backend.tag = 0;
     }
     } else {
+    if ((std_str_eq(backend_name, ((Slice_unsigned_char){ (unsigned char*)"bootstrap-emitter", 17 })) == 1)) {
+    if ((std_str_eq(os_GetEnv(ctx, ((Slice_unsigned_char){ (unsigned char*)"GUST_BOOTSTRAP_EMITTER", 22 })), ((Slice_unsigned_char){ (unsigned char*)"1", 1 })) == 0)) {
+    compiler_invocation_fail(((Slice_unsigned_char){ (unsigned char*)"--backend bootstrap-emitter is bootstrap-only machinery, not a user-selectable backend; the generated-C route is reached through its deprecated explicit spellings", 162 }));
+    }
+    {
+    invocation.backend.tag = 0;
+    }
+    } else {
     if ((std_str_eq(backend_name, ((Slice_unsigned_char){ (unsigned char*)"cranelift", 9 })) == 1)) {
     {
     invocation.backend.tag = 1;
     }
     } else {
     compiler_invocation_fail((({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"unknown backend: ", 17 }); Slice_unsigned_char _s2 = backend_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
+    }
     }
     }
     invocation.backend_was_explicit = 1;

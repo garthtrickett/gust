@@ -79,12 +79,10 @@ def validate() -> dict:
     for marker in (
         "invocation.backend.tag = 1; // Cranelift",
         'os.LogStr("  cranelift  Compile to one native executable (default).");',
-        # Patch 24.13: the DEPRECATED line became a removal statement, so the
-        # marker is rebased rather than dropped -- this guard still has to see
-        # that the help surface says something about the retired backend, and
-        # the inverse (the deprecation wording must be gone) is asserted by the
-        # deprecation-opening guard rather than duplicated here.
-        'os.LogStr("  The generated-C backend was REMOVED in Phase 24; mir-to-c and c are rejected.");',
+        # Patch 24.13 briefly rebased this onto a removal statement. The
+        # removal is deferred until the live-C surface drains (issue #398),
+        # so the deprecation wording is accurate again and stays pinned.
+        'os.LogStr("  mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.");',
         "if invocation.backend.tag == 1 {",
         "native_source_route.mir_native_scalar_source_compile(",
         "codegen.codegen_generate(programs, module_prefixes, &env, ctx)",
@@ -102,10 +100,8 @@ def validate() -> dict:
         "active compiler diagnostics or help still call Cranelift experimental")
 
     help_text = HELP.read_text(encoding="utf-8")
-    # Patch 24.13: the deprecation clause becomes the removal statement. The
-    # other four projections are unchanged and still required -- bootstrap C
-    # really is still deferred to Phase 25, and the no-fallback sentence is
-    # more true after removal, not less.
+    # Patch 24.13 briefly swapped the deprecation clause for a removal
+    # statement; withdrawn with the removal itself (issue #398).
     require("Compile to one native executable (default)." in help_text and
             "The generated-C backend was REMOVED in Phase 24; mir-to-c and c are rejected." in help_text and
             "Bootstrap C retirement is separate and deferred to Phase 25." in help_text and
@@ -113,27 +109,36 @@ def validate() -> dict:
             "fallback to MIR-to-C." in help_text,
             "checked help projection drifted")
     makefile = MAKEFILE.read_text(encoding="utf-8")
-    # Patch 24.13: the bootstrap chain splits by which parser reads the flag.
+    # Patch 24.13: the whole bootstrap chain reaches the bootstrap-only entry.
     #
-    # The first two are driven by the seed and the bridge parser, which this
-    # patch does not touch and Phase 25 owns, so they keep the retired
-    # spelling. The last two run a compiler built from test_runner_entry.gst
-    # and therefore use the bootstrap-only entry Patch 24.11 decided.
+    # An earlier version of this split the chain in two, keeping the seed- and
+    # bridge-driven callers on the retired spelling because "this patch does
+    # not touch them and Phase 25 owns them". That was true only while the
+    # seed still predated the removal. This patch reconverges the seed, so
+    # gust_bootstrap and gust_stage1_bin are 24.13 compilers and the spelling
+    # they were asserted to keep no longer exists -- measured, the second
+    # bootstrap would fail at Makefile:51 once the spelling is withdrawn.
+    # That withdrawal is deferred (issue #398), so this is a sequencing
+    # argument rather than a measured failure today.
     #
-    # Both halves stay asserted. Dropping the moved pair would stop checking
-    # that the bootstrap chain selects a backend explicitly at all, which is
-    # what this guard is for.
-    for marker in (
-        "./gust_bootstrap --backend mir-to-c compiler/test_runner_bootstrap_bridge_entry.gst",
-        "./build/gust_stage1_bin --backend mir-to-c compiler/test_runner_entry.gst",
+    # Both halves still stay asserted, which is what this guard is for: the
+    # retired spelling must be ABSENT from every caller and the entry must be
+    # PRESENT, so dropping a caller entirely fails just as loudly as
+    # reintroducing the old one.
+    for retired, rebased in (
+        ("./gust_bootstrap --backend mir-to-c compiler/test_runner_bootstrap_bridge_entry.gst",
+         "./gust_bootstrap --backend bootstrap-emitter compiler/test_runner_bootstrap_bridge_entry.gst"),
+        ("./build/gust_stage1_bin --backend mir-to-c compiler/test_runner_entry.gst",
+         "./build/gust_stage1_bin --backend bootstrap-emitter compiler/test_runner_entry.gst"),
+        ("./gust --backend mir-to-c compiler/test_runner_entry.gst",
+         "./gust --backend bootstrap-emitter compiler/test_runner_entry.gst"),
+        ("./build/gust_stage2_bin --backend mir-to-c compiler/test_runner_entry.gst",
+         "./build/gust_stage2_bin --backend bootstrap-emitter compiler/test_runner_entry.gst"),
     ):
-        require(marker in makefile, f"bootstrap route is not explicit C: {marker}")
-    for marker in (
-        "./gust --backend bootstrap-emitter compiler/test_runner_entry.gst",
-        "./build/gust_stage2_bin --backend bootstrap-emitter compiler/test_runner_entry.gst",
-    ):
-        require(marker in makefile,
-                f"bootstrap route is not the explicit bootstrap entry: {marker}")
+        require(retired not in makefile,
+                f"a bootstrap caller selects the removed backend: {retired}")
+        require(rebased in makefile,
+                f"bootstrap route is not the explicit bootstrap entry: {rebased}")
     implementation = record.get("implementation_patch", {})
     require(implementation.get("pull_request") == 259 and
             implementation.get("base_sha") ==
