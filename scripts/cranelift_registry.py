@@ -99,6 +99,7 @@ TOP_FIELDS = {
     "phase24_12b_python_parity_conversion",
     "phase24_13_backend_removal",
     "phase24_14_toolchain_removal",
+    "phase24_15a_reachability_repair",
     "phase24_frozen_oracle_replacement",
     "phase24_cr19_multi_module_analysis",
     "phase24_filename_behavior_characterization",
