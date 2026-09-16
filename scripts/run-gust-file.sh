@@ -16,21 +16,7 @@ fi
 
 mkdir -p build
 BUILD_LOG="build/gust-build.log"
-# Patch 24.13 (#411): the shared runner defaults to the native route.
-#
-# It defaulted to the retired backend, so any caller that pinned nothing
-# reached it by DEFAULT rather than by selection. That is what made Patch
-# 24.12b's gate qualified: two converted parity harnesses still executed live
-# C through this line, registered as this patch's residue. Flipping the default
-# is what discharges the unqualified claim 24.12b deferred here.
-#
-# The retired spelling is still RECOGNISED as an explicit request -- and
-# refused here, immediately below, with a reason. It is not silently aliased to
-# cranelift: a caller that pinned it asked for something specific and is told
-# it is gone. It is refused by this script rather than by the compiler because
-# there is no longer a compiler invocation to reach; the branch that made one
-# could only ever have produced a rejection.
-RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-cranelift}"
+RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-cranelift}"  # 24.13 (#411): native default; explicit mir-to-c still served until #398
 case "$RUNNER_ROUTE" in
   mir-to-c|cranelift) ;;
   *)
@@ -39,41 +25,85 @@ case "$RUNNER_ROUTE" in
     ;;
 esac
 
-# Patch 24.13: the mir-to-c route is retired, and refused BEFORE any build
-# work. It emitted C, host-compiled it and ran the result -- every step
-# through a backend this patch removes -- so the branch could only ever reach
-# a rejection. Refusing it after `make gust` would spend a full compiler build
-# to reach a message that never depended on the build.
-if [ "$RUNNER_ROUTE" = "mir-to-c" ]; then
-  echo "❌ Error: GUST_RUNNER_ROUTE=mir-to-c selects the generated-C backend," >&2
-  echo "   which was removed in Phase 24. Use cranelift, or the frozen oracle" >&2
-  echo "   (scripts/phase24_frozen_oracle.py materialize) for recorded C results." >&2
-  exit 1
-fi
-
-# Only cranelift reaches this point, so the build and skip-build branches no
-# longer need a per-route arm. The arms that built ./gust for the retired
-# route, and that required an existing ./gust under GUST_RUNNER_SKIP_BUILD,
-# are gone with the route they served.
 if [ "${GUST_RUNNER_SKIP_BUILD:-0}" != "1" ]; then
   # Force make to recognize compiler changes before a normal developer run.
   if [ -f compiler/test_runner_entry.gst ]; then
     touch compiler/test_runner_entry.gst
   fi
-  if ! make phase10-native-package >"$BUILD_LOG" 2>&1; then
+  if [ "$RUNNER_ROUTE" = "cranelift" ]; then
+    if ! make phase10-native-package >"$BUILD_LOG" 2>&1; then
+      cat "$BUILD_LOG" >&2
+      echo "❌ Error: native package build failed. Aborting. Full diagnostics: $BUILD_LOG" >&2
+      exit 1
+    fi
+  elif ! make gust >"$BUILD_LOG" 2>&1; then
     cat "$BUILD_LOG" >&2
-    echo "❌ Error: native package build failed. Aborting. Full diagnostics: $BUILD_LOG" >&2
+    echo "❌ Error: 'make gust' failed. Aborting. Full diagnostics: $BUILD_LOG" >&2
     exit 1
   fi
-elif [ ! -x gust ] || [ ! -x build/gust-native-backend ] || \
-    [ ! -f build/gust-runtime-package.a ]; then
+elif [ "$RUNNER_ROUTE" = "cranelift" ] && \
+    { [ ! -x gust ] || [ ! -x build/gust-native-backend ] || \
+      [ ! -f build/gust-runtime-package.a ]; }; then
   echo "❌ Error: native GUST_RUNNER_SKIP_BUILD requires an existing native package." >&2
+  exit 1
+elif [ "$RUNNER_ROUTE" = "mir-to-c" ] && [ ! -x gust ]; then
+  echo "❌ Error: MIR-to-C GUST_RUNNER_SKIP_BUILD requires an existing compiler." >&2
   exit 1
 fi
 
 TEST_STEM="$(basename "$TEST_PATH" .gst)"
 TEMP_OUTPUT="build/${TEST_STEM}.compile.log"
 NATIVE_OUTPUT="build/${TEST_STEM}_bin"
+
+if [ "$RUNNER_ROUTE" = "mir-to-c" ]; then
+  echo "=== [1/3] COMPILING GUST TO C ===" > to.log
+
+  ./gust --backend mir-to-c "$TEST_PATH" > "$TEMP_OUTPUT" 2>&1
+  COMP_STATUS=$?
+  cat "$TEMP_OUTPUT" >> to.log
+
+  if [[ "$TEST_PATH" == *"rejected"* || "$TEST_PATH" == *"violation"* ]]; then
+    if [ "$COMP_STATUS" -ne 0 ]; then
+      echo "✅ Negative test caught compilation failure successfully! Full diagnostics: $TEMP_OUTPUT"
+      exit 0
+    fi
+
+    echo "❌ FAIL: Expected negative test to fail compilation, but it succeeded."
+    exit 1
+  fi
+
+  if [ "$COMP_STATUS" -ne 0 ]; then
+    cat "$TEMP_OUTPUT" >&2
+    echo "❌ Gust compilation failed. Full diagnostics: $TEMP_OUTPUT and to.log" >&2
+    exit "$COMP_STATUS"
+  fi
+
+  grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" "$TEMP_OUTPUT" > \
+    "build/${TEST_STEM}.c"
+
+  echo -e "\n=== [2/3] COMPILING NATIVE C EXECUTABLE ===" >> to.log
+  cat src/runtime.c "build/${TEST_STEM}.c" > "build/${TEST_STEM}_final.c"
+
+  CC_BIN="${CC:-cc}"
+  "$CC_BIN" -O2 -Wall -pthread -Isrc "build/${TEST_STEM}_final.c" \
+    -o "$NATIVE_OUTPUT" >> to.log 2>&1
+  C_STATUS=$?
+  if [ "$C_STATUS" -ne 0 ]; then
+    echo "❌ Native C compilation failed! See to.log for compiler errors."
+    exit "$C_STATUS"
+  fi
+
+  echo -e "\n=== [3/3] RUNNING COMPILED BINARY ===" >> to.log
+  "$NATIVE_OUTPUT" >> to.log 2>&1
+  RUN_STATUS=$?
+  if [ "$RUN_STATUS" -ne 0 ]; then
+    echo "❌ Runtime execution failed! See to.log for panic/segfault traces."
+    exit "$RUN_STATUS"
+  fi
+
+  echo "📝 Test '$TEST_PATH' executed successfully. Output written to to.log"
+  exit 0
+fi
 
 echo "=== [1/2] COMPILING GUST WITH CRANELIFT ===" > to.log
 

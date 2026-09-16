@@ -67,7 +67,7 @@ FROZEN_TRANSITION = "Patch 24.13 frozen live-C transition drifted"
 # what makes such a patch announce itself here instead of silently
 # comparing an interior link against live.
 TERMINAL_FROZEN_LINK = "phase24_13_backend_removal"
-TERMINAL_LIVE_C_COUNT = 26
+TERMINAL_LIVE_C_COUNT = 28
 EFFECTIVE_AGGREGATE = "effective Phase 22 aggregate drifted"
 LANDED_SITE = "a landed Stdlib invocation site drifted"
 RETIREMENT_CONTRACT = "24.3b invocation digest fields drifted"

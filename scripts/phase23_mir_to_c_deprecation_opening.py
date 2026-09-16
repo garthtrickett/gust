@@ -1932,42 +1932,14 @@ def evidence(record: dict) -> None:
     # removal -- which is a stronger statement than "they still agree", and it
     # fails if either alias comes back or starts answering differently from
     # the other.
-    removal = registry_removal_successor()
-    if removal is None:
-        require(mir_to_c == c_alias ==
-                record["pre_deprecation_baseline"]["mir_to_c"],
-                "pre-deprecation explicit-C aliases or bytes drifted")
-        return
-    baseline = record["pre_deprecation_baseline"]["mir_to_c"]
-    require(mir_to_c["compile_status"] != 0 and c_alias["compile_status"] != 0,
-            "Patch 24.13 removed the explicit-C spellings, but one of them "
-            f"still compiles: mir-to-c={mir_to_c['compile_status']} "
-            f"c={c_alias['compile_status']}")
-    # NOT "identically". A first version required the two refusals to be
-    # byte-equal and they are not: the diagnostic names the spelling it was
-    # given, so mir-to-c's is 85 bytes and c's is 78. Requiring equality would
-    # have demanded the compiler stop telling the caller which spelling it
-    # used.
-    #
-    # What must hold is that each refusal names the removal, and that neither
-    # writes to stderr -- the same stderr-clean property the baseline recorded.
-    for spelling, observed in (("mir-to-c", mir_to_c), ("c", c_alias)):
-        message = removal_diagnostic(spelling)
-        require("removed in Phase 24" in message,
-                f"the refusal for --backend {spelling} does not name the "
-                f"Phase 24 removal: {message[:120]}")
-        require(spelling in message,
-                f"the refusal for --backend {spelling} does not say which "
-                f"spelling was refused: {message[:120]}")
-        require(observed["stderr_size"] == 0,
-                f"--backend {spelling} now writes to stderr, which the "
-                "recorded baseline did not")
-    require(mir_to_c != baseline,
-            "the explicit-C spellings still reproduce the pre-deprecation "
-            "baseline, so the removal did not take effect")
-    require(baseline["compile_status"] == 0 and baseline["stdout_size"] > 0,
-            "the recorded Phase 23 baseline no longer describes a successful "
-            "pre-deprecation compile, so it has been edited rather than kept")
+    # Patch 24.13 briefly inverted this: it required BOTH spellings to be
+    # refused, to name the removal, and to stop reproducing the Phase 23
+    # baseline. That removal is deferred until the live-C surface drains
+    # (issue #398), so both spellings compile again and the pre-deprecation
+    # comparison is once more the true one -- which is also the stronger
+    # check while they are live, since it pins the exact bytes.
+    require(mir_to_c == c_alias == record["pre_deprecation_baseline"]["mir_to_c"],
+            "pre-deprecation explicit-C aliases or bytes drifted")
     help_result = subprocess.run(
         (str(GUST), "--help"), cwd=ROOT, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE, timeout=180, check=False,

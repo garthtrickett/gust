@@ -400,6 +400,9 @@ SWEEP_LOCI = ["Makefile", "justfile", "compiler/test_runner_entry.gst"]
 # total per file so a new C route in a known file still fails.
 SWEEP_COUNTS = {
     "compiler/test_runner_entry.gst": 2,
+    # Restored with the runner's mir-to-c arm (issue #398). 24.13 dropped this
+    # key when it deleted that arm; the arm is back, so the sweep is too.
+    "scripts/run-gust-file.sh": 1,
     # Patch 24.13: 5 -> 3. Two Makefile bootstrap callers moved to the
     # bootstrap-only entry; the remaining three are driven by the seed and the
     # bridge parser, which this patch does not touch and Phase 25 owns.
@@ -517,7 +520,10 @@ SH_FAMILIES = {
             "scripts/phase22_default_native_package.sh": 0,
             "scripts/phase22_explicit_c_migration.sh": 2,
             "scripts/phase22_native_implicit_output.sh": 0,
-            "scripts/phase22_opening.sh": 1,
+            # 1 -> 2: restoring the explicit.c emission the c-alias
+            # comparison needs as its reference (issue #398) brings back the
+            # spelling that produced it.
+            "scripts/phase22_opening.sh": 2,
             "scripts/phase22_postflip_qualification.sh": 0,
         },
     },

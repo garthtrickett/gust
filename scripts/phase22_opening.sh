@@ -22,11 +22,14 @@ test ! -x "$package_dir/gust-runtime-package.a" || fail "runtime archive must no
 rm -rf "$build_dir"
 mkdir -p "$build_dir"
 
-# Patch 24.13: the explicit MIR-to-C emission is retired. Everything it fed --
-# the byte comparison against the bare route, and the c-alias comparison below
-# -- compared two spellings this patch removes. The post-flip branch is
-# unaffected: it compares bare against explicit CRANELIFT, which is the
-# comparison this file exists to make now.
+# Patch 24.13 retired this emission on the premise that the spelling was
+# removed. The removal is deferred until the live-C surface drains (issue
+# #398), so it is restored -- the c-alias comparison below needs it as its
+# reference, and removing the comparison's reference while keeping the
+# comparison is how this file started failing with "the registered C alias
+# differs from MIR-to-C" against a file that no longer existed.
+./gust --backend mir-to-c "$fixture" > "$build_dir/explicit.c" 2> "$build_dir/explicit.stderr"
+test ! -s "$build_dir/explicit.stderr" || fail "explicit MIR-to-C emitted stderr"
 if rg -F '"phase22_default_route_flip"' scripts/cranelift_feature_registry.json >/dev/null; then
   GUST_NATIVE_BACKEND_DRIVER="$PWD/$package_dir/gust-native-backend" \
     ./gust -o "$build_dir/bare-program" "$fixture" > "$build_dir/bare.stdout" 2> "$build_dir/bare.stderr"

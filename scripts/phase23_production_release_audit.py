@@ -108,25 +108,18 @@ def scan() -> dict[str, object]:
         # Patch 24.13: the runner's default is now cranelift (#411), so the
         # marker recording the old default is rebased rather than dropped --
         # the surface still has to carry a default, and the audit still has to
-        # see which one. The retired route stays as an explicit branch so a
-        # caller that pins it gets the compiler's removal diagnostic.
+        # see which one. Defaulting away from the retired route is separable
+        # from refusing it, and only the first is this patch's to make.
         surface("scripts/run-gust-file.sh", "shared_explicit_route_runner", (
             'RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-cranelift}"',
             "make phase10-native-package",
             "./build/phase10-package/bin/gust",
             "--backend cranelift",
-            # Rebased by Patch 24.13, because the earlier marker stopped
-            # being true. It expected the runner to still CALL the retired
-            # backend, on the reasoning that the compiler explains the removal
-            # better than the script could. Once the backend is gone that call
-            # can only reach a rejection, so the runner rejects the route
-            # itself -- and the audit now checks the thing that matters, which
-            # is that the pinned route is still RECOGNISED and refused with a
-            # reason rather than silently aliased to cranelift. A runner that
-            # quietly treated mir-to-c as cranelift would have passed the old
-            # marker's intent and fails these two.
-            '[ "$RUNNER_ROUTE" = "mir-to-c" ]',
-            "which was removed in Phase 24",
+            # Patch 24.13 briefly rebased this pair onto the runner's own
+            # rejection of the route. The rejection is withdrawn until the
+            # live-C surface drains (issue #398), so the runner calls the
+            # retired backend again and the original marker is the true one.
+            "./gust --backend mir-to-c",
             'NATIVE_OUTPUT="build/${TEST_STEM}_bin"',
             "COMPILING GUST WITH CRANELIFT",
         )),
@@ -138,24 +131,13 @@ def scan() -> dict[str, object]:
         )),
     )
     runner = RUNNER.read_text(encoding="utf-8")
-    # Patch 24.13: INVERTED, not relaxed. This required exactly one explicit
-    # route per backend, which was the right shape while both backends
-    # existed. With the generated-C backend removed, the same intent -- the
-    # runner exposes each route exactly once, and no route is ambiguous --
-    # becomes: no mir-to-c INVOCATION at all, still exactly one cranelift
-    # route, and exactly one place where the pinned mir-to-c route VALUE is
-    # refused.
-    #
-    # Keeping the count at 1 by leaving a dead call would satisfy the old
-    # line; dropping the line entirely would let the route be silently aliased
-    # to cranelift. Both are what this asserts against.
-    require(runner.count("--backend mir-to-c") == 0,
-            "the shared runner still invokes the removed backend")
-    require(runner.count("--backend cranelift") == 1,
-            "shared runner does not expose exactly one explicit native route")
-    require(runner.count('[ "$RUNNER_ROUTE" = "mir-to-c" ]') == 1,
-            "the shared runner does not refuse the retired route exactly "
-            "once, so a caller that pins it may be silently aliased")
+    # Patch 24.13 briefly inverted this to require no mir-to-c invocation and
+    # exactly one refusal site. The refusal is withdrawn until the live-C
+    # surface drains (issue #398), so the original shape -- exactly one
+    # explicit route per backend, neither ambiguous -- is the true one again.
+    require(runner.count("--backend mir-to-c") == 1 and
+            runner.count("--backend cranelift") == 1,
+            "shared runner does not expose exactly one explicit route per backend")
     require("GUST_RUNNER_ROUTE must be 'mir-to-c' or 'cranelift'" in runner,
             "shared runner does not reject an unknown explicit route")
     # Patch 24.13 (#398, #433): rebased twice, and both reasons are recorded
