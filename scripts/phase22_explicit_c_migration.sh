@@ -59,15 +59,13 @@ test ! -s "$build_dir/invalid.stderr" || fail "unknown backend emitted stderr"
 
 ./gust --help >"$build_dir/help.stdout" 2>"$build_dir/help.stderr"
 test ! -s "$build_dir/help.stderr" || fail "help emitted stderr"
-# Patch 24.13: INVERTED, not deleted. Help advertised the c alias and the
-# three-way backend option; both are gone, and asserting their absence is what
-# stops the help from quietly offering a backend the CLI rejects.
-rg -F 'gust --backend c <source.gst>' "$build_dir/help.stdout" >/dev/null &&
-  fail "help still advertises the removed c alias"
-rg -F -- '--backend <mir-to-c|c|cranelift>' "$build_dir/help.stdout" >/dev/null &&
-  fail "help still advertises the removed C spellings"
-rg -F 'The generated-C backend was REMOVED in Phase 24' "$build_dir/help.stdout" >/dev/null ||
-  fail "help does not state the Phase 24 removal"
+# Patch 24.13 briefly inverted these two to absence-pins. Withdrawn with the
+# removal itself: 25 registered live-C cases still invoke the spelling, and
+# rejecting it broke 8 Stdlib S1 workflows green on main. Help must keep
+# advertising what the CLI still accepts until the live-C surface drains
+# (issue #398).
+rg -F 'gust --backend c <source.gst>' "$build_dir/help.stdout" >/dev/null || fail "c alias is absent from help"
+rg -F -- '--backend <mir-to-c|c|cranelift>' "$build_dir/help.stdout" >/dev/null || fail "backend option help drifted"
 if rg -F '"phase22_default_route_flip"' scripts/cranelift_feature_registry.json >/dev/null; then
   rg -F 'Compile to one native executable (default).' "$build_dir/help.stdout" >/dev/null || fail "successor default route is absent"
 else

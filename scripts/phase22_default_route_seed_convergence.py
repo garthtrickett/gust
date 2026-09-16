@@ -521,17 +521,17 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
             },
             {
                 "state": "post_publication",
-                "line_count": 66002,
+                "line_count": 66007,
                 "seed_digest":
-                    "6e2f45f4276cb63e97902141088b50c2886a6de5132d5ad5384c9070b950bb6f"
+                    "2144a8c0ba5c2babafd58dadc705750b4f3fc8be0304540535cc695e50e87074"
             }
         ],
         "generated_seed_diff": {
             "previous_lines": 65998,
-            "current_lines": 66002,
-            "insertions": 8,
-            "deletions": 4,
-            "line_delta": 4
+            "current_lines": 66007,
+            "insertions": 9,
+            "deletions": 0,
+            "line_delta": 9
         },
         "seed_pr_policy": "gust_v4_c_only",
         "partial_or_unregistered_identity": "rejected",
@@ -696,27 +696,12 @@ def validate() -> dict:
     if live_seed_identity["seed_digest"] == "33b23ff4e8dab6c84365920bf3a2a674d7e3f5248646f6ffd69c8f7cc014083a":
         help_fragments.append(
             "mir-to-c, c  Emit C source to stdout (retained semantic oracle).")
-    elif live_seed_identity["seed_digest"] == (
-            "6e2f45f4276cb63e97902141088b50c2886a6de5132d5ad5384c9070b950bb6f"):
-        # Patch 24.13's seed. The two eras above expect help that ADVERTISES
-        # the retired backend -- first plainly, then as deprecated. This seed
-        # is compiled from an entry that removed it, so requiring either
-        # fragment would require the seed to advertise a backend its own
-        # compiler rejects.
-        #
-        # The replacement is the stronger claim, and it is the inverse: help
-        # must state the removal, and must NOT still offer the spelling as an
-        # oracle. A seed that quietly reintroduced the advertisement fails
-        # here even though its identity is registered.
-        help_fragments.extend([
-            "The generated-C backend was REMOVED in Phase 24; "
-            "mir-to-c and c are rejected.",
-            "Bootstrap C retirement is separate and deferred to Phase 25.",
-        ])
-        require("retained semantic oracle" not in seed_text,
-                "the Patch 24.13 seed still advertises the retired backend as "
-                "a retained oracle")
     else:
+        # Patch 24.13 briefly added an era here for a seed compiled from an
+        # entry that REMOVED the retired spellings, whose help therefore could
+        # not advertise them. That removal is deferred until the live-C
+        # surface drains (issue #398), so 24.13's seed advertises the same
+        # deprecation wording as the era below and needs no era of its own.
         help_fragments.extend([
             "mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.",
             "Bootstrap C retirement is separate and deferred to Phase 25.",

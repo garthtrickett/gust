@@ -45,14 +45,20 @@ set +e
 ./gust --backend c "$fixture" > "$build_dir/c-alias.stdout" 2> "$build_dir/c-alias.stderr"
 c_alias_status="$?"
 set -e
-# Patch 24.13: INVERTED. Phase 22 introduced the `c` alias and this block
-# asserted it worked; the alias is now removed, so what must hold is that it is
-# REJECTED. Asserting absence-by-rejection rather than deleting the block keeps
-# a live falsifier: if the alias comes back, this fails.
-test "$c_alias_status" -ne 0 || fail "the removed C alias still succeeds"
-rg -F 'the generated-C backend was removed in Phase 24' "$build_dir/c-alias.stdout" >/dev/null ||
-  fail "the C-alias rejection does not name the Phase 24 removal"
-test ! -s "$build_dir/c-alias.stderr" || fail "rejected C alias emitted stderr"
+# Patch 24.13 briefly inverted this to assert the alias was rejected. The
+# removal is deferred until the live-C surface drains (issue #398), so the
+# alias works again and the registered behaviour is what must hold.
+if rg -F '"phase22_explicit_c_migration"' scripts/cranelift_feature_registry.json >/dev/null; then
+  test "$c_alias_status" -eq 0 || fail "the registered C alias failed"
+  test ! -s "$build_dir/c-alias.stderr" || fail "the C alias emitted stderr"
+  cmp -s "$build_dir/explicit.c" "$build_dir/c-alias.stdout" ||
+    fail "the registered C alias differs from MIR-to-C"
+else
+  test "$c_alias_status" -ne 0 || fail "the not-yet-introduced C alias unexpectedly succeeded"
+  rg -F 'Compiler invocation error: unknown backend: c' "$build_dir/c-alias.stdout" >/dev/null ||
+    fail "the current C-alias rejection diagnostic drifted"
+  test ! -s "$build_dir/c-alias.stderr" || fail "rejected C alias emitted stderr"
+fi
 
 if rg -F '"phase22_native_implicit_output"' scripts/cranelift_feature_registry.json >/dev/null; then
   rg -F 'invocation.output_path = compiler_native_implicit_output_path(invocation.source_path, ctx);' \

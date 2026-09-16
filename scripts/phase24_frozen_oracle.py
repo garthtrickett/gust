@@ -178,25 +178,15 @@ POISONED_ROUTE_PROBES = {
 }
 POISON_GUARD = "GUST_TEST_MIR_TO_C_UNAVAILABLE=1"
 
-# Patch 24.13: the second, stronger way to be a route-unavailability probe.
+# Patch 24.13 briefly added a second way to be a route-unavailability probe,
+# for a world where the spelling was rejected by construction. That removal is
+# deferred until the live-C surface drains (issue #398), so the C route still
+# EXISTS and the poison env var is once again the only thing that can make it
+# unavailable at run time.
 #
-# The poison env var identified a probe while the C route still EXISTED: it
-# made the route unavailable at run time so the harness could prove there was
-# no silent fallback. Once 24.13 removes the route outright that premise is
-# gone -- the spelling is rejected by construction, and a probe that still set
-# the poison would be asserting the old world.
-#
-# So a probe may instead be identified by what it now asserts, which is more
-# than the poison form ever did: the invocation must FAIL, the rejection must
-# NAME the removal rather than any test-only condition, and nothing may be
-# emitted. All three markers must follow the spelling inside the window below,
-# so a bare live-C invocation cannot pass by sitting near an unrelated one.
-REMOVAL_REJECTION_MARKERS = (
-    "The removed MIR-to-C spelling still succeeds.",
-    "the generated-C backend was removed in Phase 24",
-    "unexpectedly emitted generated C",
-)
-REMOVAL_REJECTION_WINDOW = 25
+# The alternative form is retired rather than left dormant: as a disjunct it
+# could never fire, but it would still let any harness qualify as a probe by
+# containing three strings, which is weaker than what this check is for.
 
 # ---------------------------------------------------------------------------
 # Closure guards that required a converted harness to still contain live C.
@@ -1367,17 +1357,10 @@ def check_no_live_c() -> None:
             # name.
             poisoned = any(POISON_GUARD in line
                            for line in lines[max(0, index - 3):index])
-            window = "\n".join(
-                lines[index:index + REMOVAL_REJECTION_WINDOW])
-            rejects = all(marker in window
-                          for marker in REMOVAL_REJECTION_MARKERS)
-            require(poisoned or rejects,
+            require(poisoned,
                     f"a live-C spelling in {locus} is not a registered "
-                    f"route-unavailability probe (line {index + 1}): it "
-                    "neither carries the poison guard nor asserts within "
-                    f"{REMOVAL_REJECTION_WINDOW} lines that the spelling is "
-                    "rejected, that the rejection names the Phase 24 removal, "
-                    "and that nothing was emitted")
+                    f"route-unavailability probe (line {index + 1}): it does "
+                    "not carry the poison guard")
         if allowed:
             require("unexpectedly emitted generated C" in text,
                     f"a route-unavailability probe in {locus} no longer "

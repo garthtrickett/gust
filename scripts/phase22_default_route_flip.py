@@ -79,12 +79,10 @@ def validate() -> dict:
     for marker in (
         "invocation.backend.tag = 1; // Cranelift",
         'os.LogStr("  cranelift  Compile to one native executable (default).");',
-        # Patch 24.13: the DEPRECATED line became a removal statement, so the
-        # marker is rebased rather than dropped -- this guard still has to see
-        # that the help surface says something about the retired backend, and
-        # the inverse (the deprecation wording must be gone) is asserted by the
-        # deprecation-opening guard rather than duplicated here.
-        'os.LogStr("  The generated-C backend was REMOVED in Phase 24; mir-to-c and c are rejected.");',
+        # Patch 24.13 briefly rebased this onto a removal statement. The
+        # removal is deferred until the live-C surface drains (issue #398),
+        # so the deprecation wording is accurate again and stays pinned.
+        'os.LogStr("  mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.");',
         "if invocation.backend.tag == 1 {",
         "native_source_route.mir_native_scalar_source_compile(",
         "codegen.codegen_generate(programs, module_prefixes, &env, ctx)",
@@ -102,13 +100,10 @@ def validate() -> dict:
         "active compiler diagnostics or help still call Cranelift experimental")
 
     help_text = HELP.read_text(encoding="utf-8")
-    # Patch 24.13: the deprecation clause becomes the removal statement. The
-    # other four projections are unchanged and still required -- bootstrap C
-    # really is still deferred to Phase 25, and the no-fallback sentence is
-    # more true after removal, not less.
+    # Patch 24.13 briefly swapped the deprecation clause for a removal
+    # statement; withdrawn with the removal itself (issue #398).
     require("Compile to one native executable (default)." in help_text and
-            "The generated-C backend was REMOVED in Phase 24; mir-to-c and c are rejected." in help_text and
-            "Bootstrap C retirement is separate and deferred to Phase 25." in help_text and
+            "DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24." in help_text and "Bootstrap C retirement is separate and deferred to Phase 25." in help_text and
             "Optional Cranelift output; defaults to the source stem." in help_text and
             "fallback to MIR-to-C." in help_text,
             "checked help projection drifted")
@@ -121,8 +116,9 @@ def validate() -> dict:
     # seed still predated the removal. This patch reconverges the seed, so
     # gust_bootstrap and gust_stage1_bin are 24.13 compilers and the spelling
     # they were asserted to keep no longer exists -- measured, the second
-    # bootstrap fails at Makefile:51 with "the generated-C backend was removed
-    # in Phase 24: mir-to-c".
+    # bootstrap would fail at Makefile:51 once the spelling is withdrawn.
+    # That withdrawal is deferred (issue #398), so this is a sequencing
+    # argument rather than a measured failure today.
     #
     # Both halves still stay asserted, which is what this guard is for: the
     # retired spelling must be ABSENT from every caller and the entry must be

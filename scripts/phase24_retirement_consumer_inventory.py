@@ -363,17 +363,15 @@ DEFERRED_HARNESSES: dict[str, tuple[str, str]] = {
 DISCHARGED_HARNESSES: dict[str, tuple[str, str]] = {
     "scripts/phase22_default_native_package.sh":
         ("24.13", "every live-C arm retired; nothing survives"),
-    "scripts/phase22_explicit_c_migration.sh":
-        ("24.13", "two survive: the ./gust_bootstrap seed emitter, which is "
-                  "the pinned pre-patch binary Phase 25 owns and not the live "
-                  "compiler, and an inverted help assertion that now requires "
-                  "the removed alias be ABSENT from --help"),
+    # phase22_explicit_c_migration.sh and phase22_opening.sh were listed here
+    # on the premise that their surviving live-C arms had been INVERTED into
+    # assertions that the spelling is rejected. That removal is deferred until
+    # the live-C surface drains (issue #398), so those arms are ordinary live
+    # invocations again and this patch discharges neither harness. Claiming a
+    # discharge that did not happen is exactly what this register exists to
+    # prevent, so the rows are withdrawn rather than reworded.
     "scripts/phase22_native_implicit_output.sh":
         ("24.13", "every live-C arm retired; nothing survives"),
-    "scripts/phase22_opening.sh":
-        ("24.13", "one survives, inverted: the `c` alias is invoked so the "
-                  "harness can assert it is REJECTED and that the rejection "
-                  "names the Phase 24 removal"),
     "scripts/phase22_postflip_qualification.sh":
         ("24.13", "every live-C arm retired; nothing survives"),
 }
@@ -387,16 +385,21 @@ REMOVAL_MARKER = "removed in phase 24"
 # longer carries a live C route, and RETIRED_FILE_SURFACES asserts the
 # surfaces it lost stay gone.
 # Patch 24.13 dropped justfile-step51: its three generic recipes were routed
-# to the surviving backend, so the file carries no live C route at all. Same
-# treatment as compiler/test_runner_entry.gst below -- dropped rather than
-# pinned at zero, because a zero pin keeps asserting a sweep over a file with
-# nothing to sweep.
-SWEEP_LOCI = ["Makefile", "justfile"]
+# to the surviving backend, so the file carries no live C route at all --
+# dropped rather than pinned at zero, because a zero pin keeps asserting a
+# sweep over a file with nothing to sweep.
+#
+# compiler/test_runner_entry.gst was dropped alongside it on the premise that
+# the removal took its help lines out. That removal is deferred until the
+# live-C surface drains (issue #398), so the file carries two spellings again
+# and has to stay swept -- measured at 2, the same count main carries.
+SWEEP_LOCI = ["Makefile", "justfile", "compiler/test_runner_entry.gst"]
 
 # Exact per-file spelling counts for sweep loci with more than one shape.
 # Single-shape loci are pinned by their row checks; the sweep asserts the
 # total per file so a new C route in a known file still fails.
 SWEEP_COUNTS = {
+    "compiler/test_runner_entry.gst": 2,
     # Patch 24.13: 5 -> 3. Two Makefile bootstrap callers moved to the
     # bootstrap-only entry; the remaining three are driven by the seed and the
     # bridge parser, which this patch does not touch and Phase 25 owns.
@@ -722,8 +725,9 @@ REGISTRY_ROWS = [
 # FILE_ROWS entries, still owned for later retirement, and still required to be
 # present -- which is why this register names one surface rather than three.
 RETIRED_FILE_SURFACES = [
-    ("compiler/test_runner_entry.gst",
-     "gust --backend mir-to-c <source.gst>", "24.13"),
+    # The compiler help line that sat here is withdrawn: 24.13 no longer
+    # removes it (issue #398). The runner default below is unaffected --
+    # flipping the runner route is independent of the spelling removal.
     ("scripts/run-gust-file.sh",
      'RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-mir-to-c}"', "24.13"),
 ]
@@ -750,8 +754,12 @@ FILE_ROWS = [
      "    MirToC,", "24.13", "retire"),
     ("compiler/test_runner_entry.gst",
      'std.str_eq(backend_name, "mir-to-c")', "24.13", "retire"),
-    # Patch 24.13 retired this help line. The row stays, inverted: see
-    # RETIRED_FILE_SURFACES below.
+    # Patch 24.13 briefly retired this help line and inverted the row. The
+    # removal is deferred until the live-C surface drains (issue #398), so the
+    # line is present again and the row is once more an ordinary
+    # awaiting-retirement entry owned by 24.13.
+    ("compiler/test_runner_entry.gst",
+     "gust --backend mir-to-c <source.gst>", "24.13", "retire"),
     ("compiler/test_runner_entry.gst",
      "the MIR-to-C backend does not accept -o", "24.14", "retire"),
     ("compiler/test_runner_entry.gst",

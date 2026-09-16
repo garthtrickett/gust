@@ -6,8 +6,8 @@
 
 Status: `patch24_11_complete`
 Authority base: `b7b1713cd65630b14ae92e46afd393990928a2e2`
-Rows: `109`
-Digest: `f0e3ab5d49d9b7cca57d7d2f36af77778919b54395a9a6ab9e3a9ae73ff3fb17`
+Rows: `110`
+Digest: `5a133326d7e089b278fde99107a84413e31452ddc8167b28e196e22d0d26d056`
 
 ## Bootstrap-entry decision
 
@@ -104,6 +104,7 @@ Digest: `f0e3ab5d49d9b7cca57d7d2f36af77778919b54395a9a6ab9e3a9ae73ff3fb17`
 ### 24.13
 
 - compiler/test_runner_entry.gst ::     MirToC, (retire)
+- compiler/test_runner_entry.gst :: gust --backend mir-to-c <source.gst> (retire)
 - compiler/test_runner_entry.gst :: std.str_eq(backend_name, "mir-to-c") (retire)
 - guard-cranelift-phase10-backend-selection-contract (retire)
 - guard-positive (migrate)

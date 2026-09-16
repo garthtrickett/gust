@@ -142,14 +142,17 @@ def validate() -> dict:
         "reason_code": "source_or_type_failure",
         "diagnostic_class": "canonical_mir_verification_error",
         "diagnostic": "Native backend canonical MIR verification failed: unsupported top-level statement in module/import cohort",
-        # Patch 24.13 added the rejection branches ahead of main(), moving it
-        # from 241 to 253, and then the bootstrap-emitter authority gate moved
-        # it again to 273. This is the line the compiler reports in its
+        # This is the line the compiler reports in its
         # gust_native_capability_decision, not a decorative marker, so it has
-        # to track the file; the require() below re-reads the fixture and
-        # fails if the two ever disagree again -- which is how this was caught
-        # both times, in CI rather than by inspection.
-        "source_line": 273,
+        # to track the file. Patch 24.13 has moved it four times: 241 -> 253
+        # when the rejection branches went in ahead of main(), -> 273 with the
+        # bootstrap-emitter authority gate, and -> 288 when the rejection was
+        # withdrawn (issue #398) and the restored help lines and the comment
+        # recording that withdrawal were added. Every move was caught by the
+        # require() below re-reading the fixture, in CI rather than by
+        # inspection -- which is the only reason a line-number coordinate is
+        # safe to carry here at all.
+        "source_line": 288,
         "source_column": 1,
         "failure_stage": "before_driver_discovery",
         "artifact": "absent",

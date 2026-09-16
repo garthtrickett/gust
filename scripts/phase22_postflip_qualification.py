@@ -136,22 +136,17 @@ def validate() -> dict:
             "historical record" in cranelift_readme,
             "native backend README does not distinguish current status")
     help_text = HELP.read_text(encoding="utf-8")
-    # Patch 24.13 rebases one of these three. "retained semantic oracle" was
-    # the post-flip contract's way of saying the C backend survived the default
-    # flip as an explicitly selectable oracle; this patch removes it, so help
-    # that still advertised it would be advertising a backend the CLI rejects.
-    # The replacement is the stronger statement -- help must say the backend
-    # was REMOVED, and must not describe it as retained.
-    #
-    # The other two are untouched and still checked: cranelift is the default,
-    # and there is still no fallback.
+    # Patch 24.13 briefly rebased this onto a removal marker. That is
+    # withdrawn: the patch no longer removes the two user-facing spellings,
+    # because 25 registered live-C cases still invoke them and rejecting them
+    # broke 8 Stdlib S1 workflows that are green on main. Help that announced
+    # a removal the CLI does not perform would be the same defect in the other
+    # direction, so the post-flip contract stands unchanged until the live-C
+    # surface drains (issue #398).
     require("Compile to one native executable (default)." in help_text and
+            "retained semantic oracle" in help_text and
             "fallback to MIR-to-C" in help_text,
             "checked help does not state the post-flip contract")
-    require("REMOVED in Phase 24" in help_text and
-            "retained semantic oracle" not in help_text,
-            "checked help does not state the Patch 24.13 removal, or still "
-            "offers the retired backend as a retained oracle")
 
     required_inputs = record.get("native_workflow_inputs")
     expected_inputs = [

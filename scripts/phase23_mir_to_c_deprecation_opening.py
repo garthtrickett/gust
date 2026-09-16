@@ -1796,29 +1796,15 @@ def validate() -> dict:
     entry = ENTRY.read_text(encoding="utf-8")
     help_text = HELP.read_text(encoding="utf-8")
     readme = README.read_text(encoding="utf-8")
-    # Patch 24.13 (#398, #402): INVERTED for the compiler-help marker.
-    #
-    # Patch 23.8 recorded the deprecation wording and this closed-phase guard
-    # pinned it present. Patch 24.13 replaces deprecation with removal, so the
-    # pin would have broken on a patch that never edits this file. Inverted
-    # rather than dropped: the deprecation wording must now be ABSENT, and the
-    # removal statement present, so a revert fails here.
-    #
-    # The bootstrap-help marker keeps its original polarity. Bootstrap C
-    # retirement really is still deferred to Phase 25, so that line is still
-    # true and still has to be there.
-    require(presentation["compiler_help"] not in entry and
-            presentation["compiler_help"] not in help_text,
-            "Patch 24.13 replaced the deprecation wording with a removal "
-            "statement, but the deprecation marker is back: "
-            f"{presentation['compiler_help']}")
-    removal_marker = "The generated-C backend was REMOVED in Phase 24"
-    require(removal_marker in entry and removal_marker in help_text,
-            "the compiler help no longer states the removal")
-    require(presentation["bootstrap_help"] in entry and
-            presentation["bootstrap_help"] in help_text,
-            "compiler help deprecation marker is missing: "
-            f"{presentation['bootstrap_help']}")
+    # Patch 24.13 (#398, #402) briefly inverted the compiler-help marker to
+    # assert removal instead of deprecation. Withdrawn: the patch no longer
+    # removes the user-facing spellings, because 25 registered live-C cases
+    # still invoke them and rejecting them broke 8 Stdlib S1 workflows green
+    # on main. Deprecation is once again the accurate word, and stays so until
+    # the live-C surface drains (issue #398).
+    for marker in (presentation["compiler_help"], presentation["bootstrap_help"]):
+        require(marker in entry and marker in help_text,
+                f"compiler help deprecation marker is missing: {marker}")
     require(entry.count('std.str_eq(backend_name, "mir-to-c")') == 1 and
             entry.count('std.str_eq(backend_name, "c")') == 1,
             "an explicit C spelling is no longer accepted by the shared parser")
