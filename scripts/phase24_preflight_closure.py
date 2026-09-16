@@ -97,13 +97,44 @@ def validate() -> dict:
     seed = node.get("bootstrap_authority", {})
     live_digest = hashlib.sha256(SEED.read_bytes()).hexdigest()
     live_lines = len(SEED.read_text(encoding="utf-8").splitlines())
+    # The RECORD is the seed as Phase 24 preflight closed, and stays exactly
+    # that. What cannot stay is the assertion that the live seed still equals
+    # it: Patch 24.13 changes the compiler, so the seed reconverges, which is
+    # routine in this phase -- five republications precede it.
+    #
+    # A successor is consulted rather than the pin being relaxed. Without one
+    # the original assertion holds unchanged, so a seed that moved for any
+    # unregistered reason still fails here. With one, the live seed must be
+    # exactly the identity that successor publishes, and the recorded preflight
+    # identity must be untouched -- so this cannot be used to launder a seed
+    # change past the closure record it is supposed to protect.
     require(seed.get("seed") == "gust_v4.c" and
             seed.get("seed_digest") == EXPECTED_SEED_DIGEST and
             seed.get("seed_lines") == EXPECTED_SEED_LINES and
-            seed.get("fixed_point") == "stage2_stage3_byte_identity" and
-            live_digest == EXPECTED_SEED_DIGEST and
-            live_lines == EXPECTED_SEED_LINES,
-            "bootstrap seed drifted under the closure")
+            seed.get("fixed_point") == "stage2_stage3_byte_identity",
+            "the recorded preflight bootstrap seed drifted")
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    transition = registry.get("phase22_default_route_seed_convergence", {}).get(
+        "phase24_13_seed_transition")
+    if transition is None:
+        require(live_digest == EXPECTED_SEED_DIGEST and
+                live_lines == EXPECTED_SEED_LINES,
+                "bootstrap seed drifted under the closure")
+    else:
+        identities = transition.get("accepted_live_seed_identities", [])
+        published = [row for row in identities
+                     if row.get("state") == "post_publication"]
+        require(len(published) == 1,
+                "the Patch 24.13 seed transition does not publish exactly one "
+                "identity")
+        require(live_digest == published[0]["seed_digest"] and
+                live_lines == published[0]["line_count"],
+                "the live seed is neither the preflight closure identity nor "
+                "the one Patch 24.13 publishes: "
+                f"{live_lines} lines, {live_digest[:16]}")
+        require(published[0]["seed_digest"] != EXPECTED_SEED_DIGEST,
+                "the Patch 24.13 seed transition publishes the preflight "
+                "identity, so it is not a reconvergence at all")
     require(node.get("pinned_manifest_closure", {}).get("status") ==
             "patch24_3b_complete_merged_31b49779" and
             isinstance(registry.get(
