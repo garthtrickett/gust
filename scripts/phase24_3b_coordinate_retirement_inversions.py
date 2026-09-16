@@ -36,7 +36,14 @@ DRIVER_HOST = ROOT / "scripts/phase24_filename_behavior_characterization.py"
 PERTURBED = (JUSTFILE, REGISTRY, OPENING_REVIEW, DRIVER_HOST)
 
 SHIFT_PROBE_LINE = "# 24.3b inversion probe: simulated above-boundary insertion\n"
-SUBSTITUTE_TOKEN = "mir-to-c-output"
+# Patch 24.13 renamed this probe label. It identifies the invocation-parser
+# case that asserts -o is refused; the case still exists and still asserts
+# the same refusal, but it now reaches the emitter through the
+# bootstrap-only entry, so the label moved with it. The harness
+# substitutes this token to prove the coordinate-retirement guard rejects
+# a changed command, and asserts it appears exactly once -- which is how
+# the rename surfaced rather than silently disarming the inversion.
+SUBSTITUTE_TOKEN = "bootstrap-emitter-output"
 DISABLED_COMMAND_ANCHOR = '$positive_source" >"$case_dir/default.c'
 DELETED_TABLE_ROW_PREFIX = "| `Makefile` | `none` |"
 
