@@ -171,17 +171,32 @@ def validate_static(value: dict) -> None:
     }], "pre-change caller manifest drifted")
 
     entrypoints = value.get("current_file_input_manifest")
+    # Patch 24.13: COUNTS, not line numbers.
+    #
+    # These shifted by twelve when backend selection was removed, and again
+    # when the bootstrap-emitter authority gate was added above them. Patch
+    # 24.3b's principle is that line numbers are display only and never digest
+    # inputs; this manifest compared them directly, so any edit anywhere above
+    # them broke a closed-phase record -- twice, in CI both times.
+    #
+    # The property this record is actually about is how many current_file
+    # inputs each entry point has. That is preserved exactly: three in the
+    # runner entry, three in the bootstrap bridge, one in type_dump. Adding or
+    # removing one still fails; moving one no longer does, because where it
+    # sits was never the claim.
     require(entrypoints == [
-        {"path": "compiler/test_runner_entry.gst", "lines": [342, 356, 376]},
+        {"path": "compiler/test_runner_entry.gst", "count": 3},
         {"path": "compiler/test_runner_bootstrap_bridge_entry.gst",
-         "lines": [199, 213, 233]},
-        {"path": "compiler/type_dump_entry.gst", "lines": [38]},
+         "count": 3},
+        {"path": "compiler/type_dump_entry.gst", "count": 1},
     ], "current_file input manifest drifted")
     for row in entrypoints:
         lines = (ROOT / row["path"]).read_text(encoding="utf-8").splitlines()
-        for line_number in row["lines"]:
-            require("current_file =" in lines[line_number - 1],
-                    f"current_file input drifted at {row['path']}:{line_number}")
+        found = [index + 1 for index, text in enumerate(lines)
+                 if "current_file =" in text]
+        require(len(found) == row["count"],
+                f"current_file input count drifted at {row['path']}: "
+                f"{len(found)} inputs, {row['count']} registered ({found})")
 
     witnesses = value.get("witnesses")
     require(isinstance(witnesses, list) and len(witnesses) == 4,

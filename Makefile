@@ -235,14 +235,20 @@ phase10-native-package: gust build/gust-native-backend $(PHASE21_RUNTIME_PACKAGE
 	@echo "✅ Phase 10 native package ready: build/phase10-package/bin/gust, build/phase10-package/bin/gust-native-backend, and build/phase10-package/bin/gust-runtime-package.a"
 
 # Fixed-Point Bootstrap Verification
+#
+# Patch 24.13: the bootstrap-emitter entry requires GUST_BOOTSTRAP_EMITTER=1.
+# Exported target-specifically rather than inline on each command, so the two
+# invocation lines below stay byte-identical to what the route-flip and
+# seed-convergence manifests pin.
+bootstrap: export GUST_BOOTSTRAP_EMITTER = 1
 bootstrap: gust
 	@echo "⚙️  Beginning fixed-point bootstrap verification..."
 	@# Stage 2: Use the new 'gust' binary to compile the compiler again
-	./gust --backend mir-to-c compiler/test_runner_entry.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_stage2.c && sync
+	./gust --backend bootstrap-emitter compiler/test_runner_entry.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_stage2.c && sync
 	@cat src/runtime.c build/gust_stage2.c > build/gust_stage2_final.c
 	@${CC} ${CFLAGS} ${INCLUDES} build/gust_stage2_final.c -o build/gust_stage2_bin
 	@# Stage 3: Use the Stage 2 binary to compile the compiler a third time
-	./build/gust_stage2_bin --backend mir-to-c compiler/test_runner_entry.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_stage3.c && sync
+	./build/gust_stage2_bin --backend bootstrap-emitter compiler/test_runner_entry.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_stage3.c && sync
 	@# Stage 4: Assert byte-by-byte identity between Stage 2 and Stage 3 C files
 	@diff -u build/gust_stage2.c build/gust_stage3.c && echo "✅ Fixed-point bootstrap convergence achieved!"
 	cp build/gust_stage3.c gust_v4.c

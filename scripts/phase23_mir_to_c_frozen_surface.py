@@ -311,6 +311,11 @@ def policy_accepts(record: dict, summary: dict[str, object]) -> bool:
         "phase24_12b_python_parity_conversion", {}).get(
         "frozen_surface_transition", {}).get(
         "current_live_c_case_surface", expected_live)
+    # Patch 24.13 is newer still.
+    expected_live = registry.get(
+        "phase24_13_backend_removal", {}).get(
+        "frozen_surface_transition", {}).get(
+        "current_live_c_case_surface", expected_live)
     return (
         record.get("capability_surface") == summary["capability_surface"] and
         expected_live == summary["live_c_case_surface"] and
@@ -640,6 +645,9 @@ def validate() -> tuple[dict, dict[str, object]]:
             conversion_transition = registry.get(
                 "phase24_12b_python_parity_conversion", {}).get(
                     "frozen_surface_transition")
+            removal_transition = registry.get(
+                "phase24_13_backend_removal", {}).get(
+                    "frozen_surface_transition")
             previous = emitter_only_transition.get(
                 "previous_live_c_case_surface", {})
             current = emitter_only_transition.get(
@@ -668,10 +676,22 @@ def validate() -> tuple[dict, dict[str, object]]:
                             "previous_live_c_case_surface") == current and
                         conversion_transition.get(
                             "current_live_c_case_surface") ==
-                        summary["live_c_case_surface"] and
+                        (removal_transition["previous_live_c_case_surface"]
+                         if removal_transition is not None
+                         else summary["live_c_case_surface"]) and
                         conversion_transition.get(
                             "partial_or_unregistered_surface") == "rejected",
                         "Patch 24.12b frozen live-C transition drifted")
+                if removal_transition is not None:
+                    require(removal_transition.get("contract_version") ==
+                            "phase24_13_frozen_surface_transition_v1" and
+                            removal_transition.get(
+                                "current_live_c_case_surface") ==
+                            summary["live_c_case_surface"] and
+                            removal_transition.get(
+                                "partial_or_unregistered_surface") ==
+                            "rejected",
+                            "Patch 24.13 frozen live-C transition drifted")
             removed_from = emitter_only_transition.get("removed_from", {})
             require(isinstance(removed_from, dict) and removed_from,
                     "Patch 24.12a registered no source for its reduction")

@@ -87,19 +87,14 @@ test ! -s "$build_dir/installed.stderr" || fail "installed native compilation em
 test "$(run_status "$build_dir/installed-runtime" "$build_dir/installed-run")" = "0" ||
   fail "installed runtime-boundary behavior drifted"
 
-# Explicit C remains the oracle and does not need worker discovery.
-"$installed_bin/gust" --backend c "$installed_case" \
-  >"$build_dir/installed.c" 2>"$build_dir/installed-c.stderr"
-test ! -s "$build_dir/installed-c.stderr" || fail "installed explicit C emitted diagnostics"
-cat src/runtime.c "$build_dir/installed.c" >"$build_dir/installed-final.c"
-"${CC:-cc}" ${CFLAGS:--O2 -Wall -pthread} ${INCLUDES:--Isrc} \
-  "$build_dir/installed-final.c" -o "$build_dir/installed-oracle"
-test "$(run_status "$build_dir/installed-oracle" "$build_dir/oracle-run")" = "0" ||
-  fail "installed explicit-C oracle behavior drifted"
-cmp -s "$build_dir/installed-run.stdout" "$build_dir/oracle-run.stdout" ||
-  fail "installed native stdout differs from explicit C"
-cmp -s "$build_dir/installed-run.stderr" "$build_dir/oracle-run.stderr" ||
-  fail "installed native stderr differs from explicit C"
+# Patch 24.13: the explicit-C oracle is retired with the route it tested. The
+# comment it replaces read "Explicit C remains the oracle and does not need
+# worker discovery" -- both halves of that sentence are about a route this
+# patch removes, so there is no independent authority to re-point at.
+#
+# The installed native run above is unchanged and still asserts exit 0 and its
+# own observables. What is lost is the agreement between the installed native
+# artifact and the C the same compiler would have emitted.
 
 # Relocate only the installed sibling directory. Discovery and runtime-package
 # selection must remain executable-relative, not tied to the staging prefix.
@@ -121,10 +116,10 @@ test "$(run_status "$build_dir/relocated-runtime" "$build_dir/relocated-run")" =
 missing_bin="$build_dir/missing-worker-package/bin"
 mkdir -p "$missing_bin"
 cp "$installed_bin/gust" "$missing_bin/gust"
-"$missing_bin/gust" --backend c "$installed_case" \
-  >"$build_dir/missing-worker.c" 2>"$build_dir/missing-worker-c.stderr"
-cmp -s "$build_dir/installed.c" "$build_dir/missing-worker.c" ||
-  fail "explicit C depends on installed native components"
+# Patch 24.13: retired with the route. This asserted that explicit C emitted
+# the same source with the native siblings absent -- a property of explicit C,
+# not of the package layout. The discovery claims this file exists to make are
+# asserted by the native arms below, which still run with the worker missing.
 
 missing_case="$build_dir/missing-worker.gst"
 cp "$scalar_fixture" "$missing_case"

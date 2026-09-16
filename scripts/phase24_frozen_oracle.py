@@ -41,6 +41,7 @@ TASK = ROOT / "TASK.md"
 VECTORS = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v1.json"
 # Patch 24.12b (#416): the additive v2 capture, served alongside v1.
 VECTORS_V2 = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v2.json"
+VECTORS_V3 = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v3.json"
 CORPUS = ROOT / "compiler/fixtures/phase23_mir_to_c_reference_corpus_v1.json"
 VIEW = ROOT / "docs/PHASE24_FROZEN_ORACLE_REPLACEMENT.md"
 EMITTER_ONLY_ASSERTIONS_REMOVED = (
@@ -175,6 +176,26 @@ POISONED_ROUTE_PROBES = {
     "scripts/phase12_5_route_architecture.sh": 1,
 }
 POISON_GUARD = "GUST_TEST_MIR_TO_C_UNAVAILABLE=1"
+
+# Patch 24.13: the second, stronger way to be a route-unavailability probe.
+#
+# The poison env var identified a probe while the C route still EXISTED: it
+# made the route unavailable at run time so the harness could prove there was
+# no silent fallback. Once 24.13 removes the route outright that premise is
+# gone -- the spelling is rejected by construction, and a probe that still set
+# the poison would be asserting the old world.
+#
+# So a probe may instead be identified by what it now asserts, which is more
+# than the poison form ever did: the invocation must FAIL, the rejection must
+# NAME the removal rather than any test-only condition, and nothing may be
+# emitted. All three markers must follow the spelling inside the window below,
+# so a bare live-C invocation cannot pass by sitting near an unrelated one.
+REMOVAL_REJECTION_MARKERS = (
+    "The removed MIR-to-C spelling still succeeds.",
+    "the generated-C backend was removed in Phase 24",
+    "unexpectedly emitted generated C",
+)
+REMOVAL_REJECTION_WINDOW = 25
 
 # ---------------------------------------------------------------------------
 # Closure guards that required a converted harness to still contain live C.
@@ -434,22 +455,45 @@ NOT_REPAIRED = (
 # exactly rather than claiming more than it delivers: after 24.12 no parity
 # guard *selects* live C, and these two still *reach* it until 24.13 flips
 # the runner default. Registered so the count cannot grow unnoticed.
-RUNNER_MEDIATED_RESIDUE = {
-    "scripts/phase15_resource_composition_parity.sh": 3,
-    "scripts/phase16_abi_composition_parity.sh": 2,
-}
+# Patch 24.13 (#411): the residue is discharged, not excused.
+#
+# These two harnesses called the shared runner with no route pinned, so they
+# reached the retired backend through its default. Patch 24.13 flips that
+# default to cranelift, which is why this register is now empty and why the
+# unqualified live-C gate belongs to this patch rather than to 24.12b.
+#
+# Kept as an empty register rather than deleted: check_no_live_c below asserts
+# it is empty, so a harness that reacquires a default-route call fails instead
+# of quietly rejoining a set nobody reads.
+# Patch 24.13: emptied, and the flip alone did NOT empty it. Both rows --
+# phase15_resource_composition_parity.sh and phase16_abi_composition_parity.sh
+# -- reached live C through the runner's default, and flipping that default
+# left them with no working route at all rather than with a native one: their
+# `compiler/future/p1{5,6}_complete_*_differential_source.gst` sources have a
+# deferred native capability, and the mir-to-c route this patch removed was the
+# only other one. CI named it as an unconnected source-level route.
+#
+# What discharged the rows was converting that one call in each harness to the
+# frozen oracle, which both were already materializing two lines later. Their
+# remaining runner calls are smoke entries that compile natively today --
+# measured, not assumed, against a built native package.
+#
+# Recorded because "the register is empty" and "the work is done" are different
+# claims, and this patch briefly had the first without the second.
+RUNNER_MEDIATED_RESIDUE: dict[str, int] = {}
 RUNNER_RESIDUE_OWNER = "24.13"
 
 # ---------------------------------------------------------------------------
 # The shared runner's own default, which no Phase 24 patch owned.
 #
 # RUNNER_MEDIATED_RESIDUE above records converted harnesses that still reach
-# live C through the runner. This records the runner itself:
-# scripts/run-gust-file.sh:19 is
-# RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-mir-to-c}", so a caller that sets
-# nothing reaches the retired backend *by default rather than by selection*
+# live C through the runner. This records the runner itself: before Patch
+# 24.13, scripts/run-gust-file.sh WAS
+# RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-mir-to-c}", so a caller that set
+# nothing reached the retired backend *by default rather than by selection*
 # -- the "no fallback, retry-through-C, or environment-selected route"
-# invariant read forwards.
+# invariant read forwards. It is cranelift now; the paragraph is kept in the
+# past tense because the register exists to witness that change.
 #
 # Four justfile recipes call the runner. Two pin GUST_RUNNER_ROUTE=cranelift
 # on the invoking line and the inventory re-verifies that pin. The two below
@@ -463,7 +507,11 @@ RUNNER_RESIDUE_OWNER = "24.13"
 # than the row being quietly dropped.
 # ---------------------------------------------------------------------------
 
-RUNNER_DEFAULT_ROUTE = 'RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-mir-to-c}"'
+# Patch 24.13 (#411): the flip this register exists to witness. It was
+# ${GUST_RUNNER_ROUTE:-mir-to-c}; a caller that pinned nothing reached the
+# retired backend by default rather than by selection, which is what kept
+# Patch 24.12b's live-C gate qualified.
+RUNNER_DEFAULT_ROUTE = 'RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-cranelift}"'
 RUNNER_DEFAULT_UNPINNED_CALLERS = (
     "guard-stdlib-s1-collection-receivers",
     "guard-stdlib-s1-str-surface",
@@ -508,6 +556,41 @@ RECIPE_HEAD = re.compile(r"^([A-Za-z0-9_-]+)([^:]*):")
 PYTHON_RETIRED_ARGV_PENDING_CONVERSION: tuple[str, ...] = (
 )
 
+# Patch 24.13: rows retired out of the register above, with the check that
+# retires them.
+#
+# The staleness check below requires that a registered locus still builds a
+# retired-backend argv, so a converted file's row must come out. Deleting the
+# row would leave no trace that the file was ever in the population -- the
+# exclusion's reason, and the fact that it was discharged rather than never
+# applying, would both be gone. So the row moves here instead, and the claim
+# inverts: each entry asserts the argv is ABSENT, and fails if the file starts
+# building one again.
+PYTHON_RETIRED_ARGV_DISCHARGED: dict[str, str] = {
+    "scripts/phase23_issue_health_opening.py":
+        "converted by Patch 24.13. Both retired-backend calls asserted issue "
+        "#105's diagnostic against literals, and front-end rejection was "
+        "measured to be backend-independent, so both were re-pointed at the "
+        "native backend with an explicit -o. The assertions are unchanged; "
+        "only the route they travel is.",
+    "scripts/phase23_same_scope_declaration.py":
+        "converted by Patch 24.13. Its exclusion said conversion needed a "
+        "frozen-vector capture and roadmap authority Patch 24.12b did not "
+        "hold. 24.13 did not capture vectors: it retired the two explicit-C "
+        "arms and asserts the same claims where they are actually decided -- "
+        "the duplicate is rejected in the front end, before native capability "
+        "selection is consulted, which is what the two-backend differential "
+        "was proving indirectly. host_c_compiles and its explicit-C oracle "
+        "were retired with it.",
+    "scripts/phase23_structured_guard_defer_native_admission.py":
+        "discharged by Patch 24.13. Its exclusion covered run_oracle, the "
+        "MIR-to-C differential arm. The guard was converted to hold the "
+        "native arm to the registered observables directly, which left "
+        "run_oracle dead while it still constructed a retired-backend argv; "
+        "24.13 retires the function. MIR_TO_C_COMMAND still records the argv "
+        "it built, so the history survives as data.",
+}
+
 # Each exclusion carries the reason it is out, and every reason is a property
 # something else on the tree can contradict -- not an opinion recorded once.
 PYTHON_RETIRED_ARGV_EXCLUSIONS: dict[str, str] = {
@@ -539,23 +622,6 @@ PYTHON_RETIRED_ARGV_EXCLUSIONS: dict[str, str] = {
         "focused_live_oracle for this path, the single live lane Patch 23.10 "
         "deliberately retained. It goes with the backend at 24.13/24.14 "
         "rather than being converted.",
-    "scripts/phase23_same_scope_declaration.py":
-        "no frozen vector covers its sources. compiler/"
-        "phase23_same_scope_duplicate_current.gst and its positives have no "
-        "entry in the vector set, so converting it needs a *capture*, and "
-        "refreshing the frozen set requires a new vector version and explicit "
-        "roadmap authority that Patch 24.12b does not hold. This is a genuine "
-        "two-arm parity guard (#415) and is excluded on feasibility, not on "
-        "shape: it is the first thing the patch holding that authority "
-        "converts.",
-    "scripts/phase23_issue_health_opening.py":
-        "issue-health probe, not a parity guard: both retired-backend calls "
-        "assert issue #105's diagnostic against literals and neither is "
-        "compared against a native arm.",
-    "scripts/phase23_structured_guard_defer_native_admission.py":
-        "oracle role for a closed Phase 23 record; its retired-backend call "
-        "produces the reference the native admission path is judged against, "
-        "and it carries no vector either.",
     "scripts/phase24_frozen_oracle_capture.py":
         "the capture tool itself. It builds the retired argv because running "
         "the retired route while the live lane is green is precisely what a "
@@ -752,6 +818,20 @@ def check_python_population() -> dict[str, object]:
             "a Python locus is both pending conversion and excluded: "
             f"{sorted(overlap)}")
 
+    discharged = set(PYTHON_RETIRED_ARGV_DISCHARGED)
+    reentered = sorted(discharged & set(sites))
+    require(not reentered,
+            "a Python locus registered as discharged builds a retired-backend "
+            f"argv again: {reentered}")
+    for locus in discharged:
+        require((ROOT / locus).is_file(),
+                "a discharged Python locus was deleted rather than converted: "
+                f"{locus}")
+    collision = sorted(discharged & (pending | excluded))
+    require(not collision,
+            "a Python locus is both discharged and still registered as "
+            f"pending or excluded: {collision}")
+
     accounted = pending | excluded
     unaccounted = sorted(set(sites) - accounted)
     require(not unaccounted,
@@ -872,6 +952,18 @@ def load_servable_vectors() -> dict:
     merged = dict(vectors)
     merged["vectors"] = dict(vectors["vectors"])
     merged["vectors"].update(second["vectors"])
+    # Patch 24.12c adds a third capture, on the same terms as the second: an
+    # addition, never an edit. Its collision check spans v1 AND v2, because by
+    # this point both are already merged and a v3 vector may shadow neither.
+    if VECTORS_V3.is_file():
+        third = json.loads(VECTORS_V3.read_text(encoding="utf-8"))
+        require(third.get("format") == "phase24_frozen_oracle_vectors_v3",
+                "the v3 capture file is not a v3 corpus")
+        collisions = sorted(set(third["vectors"]) & set(merged["vectors"]))
+        require(not collisions,
+                "a v3 vector would shadow an earlier one; v1 and v2 are "
+                f"immutable and a capture may not redefine them: {collisions}")
+        merged["vectors"].update(third["vectors"])
     return merged
 
 
@@ -904,8 +996,21 @@ def check_vector(vector_id: str, vectors: dict) -> dict:
     for field in ("source_fixture", "source_sha256", "kind", "provenance",
                   "compile", "side_effects", "workdir_sensitive"):
         require(field in vector, f"frozen vector is malformed: {vector_id}")
-    require(vector["kind"] in ("exec", "reject"),
+    require(vector["kind"] in ("exec", "reject", "compile_only"),
             f"frozen vector has an unknown kind: {vector_id}")
+    if vector["kind"] == "compile_only":
+        # Patch 24.12c. A fixture that must be compiled but never run -- the
+        # CR-16 raw-double-unlock witness, whose two unlock paths make its
+        # runtime behaviour undefined and whose guard stops at
+        # `cc -fsyntax-only`. The absence of an execution record is the
+        # POINT, so it is asserted rather than tolerated, and the reason is
+        # carried in the vector so a consumer cannot read it as an omission.
+        require("execution" not in vector,
+                f"a compile-only vector carries an execution record, which "
+                f"is the one thing its kind exists to forbid: {vector_id}")
+        require(vector.get("never_executed_reason"),
+                f"a compile-only vector does not say why it is never "
+                f"executed: {vector_id}")
     source = ROOT / str(vector["source_fixture"])
     require(source.is_file(),
             f"frozen vector source is missing: {vector_id}")
@@ -919,7 +1024,8 @@ def check_vector(vector_id: str, vectors: dict) -> dict:
     # to a prefix match, so a third capture has to declare itself too.
     require(vector["provenance"] in (
         "derived_from_archived_corpus_v1", "captured_live_while_green",
-        "captured_live_while_green_patch24_12b"),
+        "captured_live_while_green_patch24_12b",
+        "captured_live_while_green_patch24_12c"),
         f"frozen vector has an unknown provenance: {vector_id}")
     require(not (vector["provenance"] == "derived_from_archived_corpus_v1"
                  and vector.get("archived_corpus_case") is None),
@@ -960,6 +1066,14 @@ def materialize(vector_id: str, prefix: Path, expect_kind: str | None,
         f"{compile_record['exit']}\n", encoding="utf-8")
     Path(f"{prefix}.compile.stderr").write_bytes(
         record_bytes(compile_record["stderr"]))
+    if vector["kind"] == "compile_only":
+        # Serve the compile side and stop. There is deliberately no runtime
+        # observable to write.
+        Path(f"{prefix}.compile.stdout").write_bytes(
+            record_bytes(compile_record["stdout"]))
+        Path(f"{prefix}.never-executed").write_text(
+            str(vector["never_executed_reason"]) + "\n", encoding="utf-8")
+        return
     if vector["kind"] == "reject":
         stdout = record_bytes(compile_record["stdout"])
         stderr = record_bytes(compile_record["stderr"])
@@ -1242,16 +1356,29 @@ def check_no_live_c() -> None:
             # freezing it would replace a live refusal with a recording of
             # one. Anything else on this line is a C arm wearing a probe's
             # name.
-            require(any(POISON_GUARD in line
-                        for line in lines[max(0, index - 3):index]),
+            poisoned = any(POISON_GUARD in line
+                           for line in lines[max(0, index - 3):index])
+            window = "\n".join(
+                lines[index:index + REMOVAL_REJECTION_WINDOW])
+            rejects = all(marker in window
+                          for marker in REMOVAL_REJECTION_MARKERS)
+            require(poisoned or rejects,
                     f"a live-C spelling in {locus} is not a registered "
-                    f"route-unavailability probe (line {index + 1})")
+                    f"route-unavailability probe (line {index + 1}): it "
+                    "neither carries the poison guard nor asserts within "
+                    f"{REMOVAL_REJECTION_WINDOW} lines that the spelling is "
+                    "rejected, that the rejection names the Phase 24 removal, "
+                    "and that nothing was emitted")
         if allowed:
             require("unexpectedly emitted generated C" in text,
                     f"a route-unavailability probe in {locus} no longer "
                     f"asserts that nothing was emitted")
     # The runner-mediated residue is bounded and owned by 24.13; it must not
     # grow, and a harness must not quietly acquire a new default-route call.
+    require(not RUNNER_MEDIATED_RESIDUE,
+            "Patch 24.13 discharged the runner-mediated residue by flipping "
+            "the runner default; a locus is back in the register: "
+            f"{sorted(RUNNER_MEDIATED_RESIDUE)}")
     for locus, expected in RUNNER_MEDIATED_RESIDUE.items():
         text = (ROOT / locus).read_text(encoding="utf-8")
         found = sum(1 for line in text.split("\n")
@@ -1261,15 +1388,22 @@ def check_no_live_c() -> None:
                 f"runner-mediated C residue moved without updating the "
                 f"{RUNNER_RESIDUE_OWNER} hand-off: {locus} "
                 f"({found} default-route calls, registered {expected})")
+    # Patch 24.13 (#411): the polarity of this check is inverted with the
+    # runner's default.
+    #
+    # It used to forbid an UNPINNED runner call, because unpinned meant the
+    # retired backend. After the default flip, unpinned means cranelift, so an
+    # unpinned call is now the correct thing and forbidding it would be
+    # asserting the opposite of what the phase wants. What must be forbidden
+    # instead is an EXPLICIT pin to the retired route, which is the only way a
+    # converted harness can still reach it.
     for locus in FROZEN_LOCI:
-        if locus in RUNNER_MEDIATED_RESIDUE:
-            continue
         text = (ROOT / locus).read_text(encoding="utf-8")
-        require(not any(RUNNER_CALL.search(line)
-                        and "GUST_RUNNER_ROUTE=cranelift" not in line
+        require(not any(RUNNER_CALL.search(line) and
+                        "GUST_RUNNER_ROUTE=mir-to-c" in line
                         for line in text.split("\n")),
-                f"a converted parity harness acquired an unregistered "
-                f"default-route runner call: {locus}")
+                f"a converted parity harness pins the retired route "
+                f"explicitly: {locus}")
 
     # The runner's default route, and every recipe that takes it by omission.
     runner = (ROOT / "scripts/run-gust-file.sh").read_text(encoding="utf-8")

@@ -36,16 +36,14 @@ func compiler_is_help_invocation(args: std.Vector[str, ctx], ctx: &Arena) int {
 func compiler_print_help() {
     os.LogStr("Usage:");
     os.LogStr("  gust <source.gst>");
-    os.LogStr("  gust --backend mir-to-c <source.gst>");
-    os.LogStr("  gust --backend c <source.gst>");
     os.LogStr("  gust --backend cranelift [-o <output>] <source.gst>");
     os.LogStr("");
     os.LogStr("Backends:");
     os.LogStr("  cranelift  Compile to one native executable (default).");
-    os.LogStr("  mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.");
+    os.LogStr("  The generated-C backend was REMOVED in Phase 24; mir-to-c and c are rejected.");
     os.LogStr("  Bootstrap C retirement is separate and deferred to Phase 25.");
     os.LogStr("Options:");
-    os.LogStr("  --backend <mir-to-c|c|cranelift>  Select the backend explicitly.");
+    os.LogStr("  --backend <cranelift>            Select the backend explicitly.");
     os.LogStr("  -o <output>                     Optional Cranelift output; defaults to the source stem.");
     os.LogStr("  -h, --help                      Show this help and exit.");
     os.LogStr("");
@@ -96,11 +94,45 @@ func compiler_parse_invocation(args: std.Vector[str, ctx], ctx: &Arena) Compiler
             }
 
             mut backend_name := args[i + 1];
+            // Patch 24.13: the user-facing generated-C spellings are removed.
+            // They reject with a diagnostic naming the removal rather than
+            // falling through to "unknown backend", so a caller that still
+            // asks for them is told what happened instead of being told the
+            // spelling was never valid.
             if std.str_eq(backend_name, "mir-to-c") == 1 ||
                std.str_eq(backend_name, "c") == 1
             {
+                compiler_invocation_fail(std.Concat(
+                    "the generated-C backend was removed in Phase 24: ",
+                    backend_name));
+            }
+            // Patch 24.11 decided this entry and Patch 24.13 lands it: the
+            // emitter survives as bootstrap-only machinery reusing the
+            // existing MirToC tag.
+            //
+            // Raised in review on #421: keeping the spelling out of help does
+            // not make it internal. Any user who knew the string could reach
+            // codegen_generate through the public binary, which left the
+            // publication path this patch retires open to anyone.
+            //
+            // It cannot move to a separate binary: `make bootstrap` compares
+            // build/gust_stage2.c against build/gust_stage3.c for byte
+            // identity, and that fixed point is the CURRENT compiler emitting
+            // its own C. Take the emitter out of ./gust and there is no stage
+            // two. So the entry stays and carries an authority instead: the
+            // caller must also set GUST_BOOTSTRAP_EMITTER=1, which the
+            // bootstrap chain's own recipes export and an ordinary invocation
+            // does not have.
+            if std.str_eq(backend_name, "bootstrap-emitter") == 1 {
+                if std.str_eq(
+                    os.GetEnv(ctx, "GUST_BOOTSTRAP_EMITTER"),
+                    "1"
+                ) == 0 {
+                    compiler_invocation_fail(
+                        "--backend bootstrap-emitter is bootstrap-only machinery, not a user-selectable backend; the generated-C backend was removed in Phase 24");
+                }
                 unsafe {
-                    invocation.backend.tag = 0; // MirToC
+                    invocation.backend.tag = 0; // MirToC, bootstrap-only
                 }
             } else if std.str_eq(backend_name, "cranelift") == 1 {
                 unsafe {

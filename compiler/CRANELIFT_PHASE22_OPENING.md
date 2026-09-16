@@ -9,7 +9,7 @@ Do not edit by hand.
 - Next patch: `22.2`
 - Observed main: `c157c86674624fd298c2f65e98ed8f4df85cb175`
 - Opening-baseline executable compiler invocations: `269`
-- Live successor executable compiler invocations: `184`
+- Live successor executable compiler invocations: `175`
 - Unclassified invocations: `0`
 - Relay state: `exact_post_relay_only`
 - Landed owning PR: `#264`
@@ -35,14 +35,15 @@ Do not edit by hand.
 
 ## Landed successor invocation summary
 
-- Landed selection `explicit_c`: `51`
-- Landed selection `explicit_cranelift`: `115`
+- Landed selection `explicit_bootstrap_emitter`: `9`
+- Landed selection `explicit_c`: `32`
+- Landed selection `explicit_cranelift`: `120`
 - Landed selection `explicit_invalid_or_parser_probe`: `3`
-- Landed selection `implicit_default`: `15`
-- Landed consumer class `already_explicit_or_parser_probe`: `169`
+- Landed selection `implicit_default`: `11`
+- Landed consumer class `already_explicit_or_parser_probe`: `164`
 - Landed consumer class `cranelift_C_or_diagnostic_guard`: `2`
 - Landed consumer class `help_surface_probe`: `3`
-- Landed consumer class `intentional_default_selection_probe`: `8`
+- Landed consumer class `intentional_default_selection_probe`: `4`
 - Landed consumer class `invocation_parser_probe`: `2`
 
 ## Landed exact relay commands
@@ -61,11 +62,10 @@ Do not edit by hand.
 | `Makefile` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `Makefile` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `Makefile` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `Makefile` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `Makefile` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `justfile` | `guard-cranelift-phase10-backend-selection-contract` | `implicit_default` | `intentional_default_selection_probe` | `cranelift` | `current_default_route_observation` | `22.6_flip_expectation_only` | `probe_is_migrated_before_the_default_route_changes` |
-| `justfile` | `guard-cranelift-phase10-backend-selection-contract` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `justfile` | `guard-cranelift-phase10-backend-selection-contract` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
+| `Makefile` | `none` | `explicit_bootstrap_emitter` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
+| `Makefile` | `none` | `explicit_bootstrap_emitter` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
+| `justfile` | `guard-cranelift-phase10-backend-selection-contract` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
+| `justfile` | `guard-cranelift-phase10-backend-selection-contract` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `justfile` | `guard-cranelift-phase10-backend-selection-contract` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `justfile` | `guard-cranelift-phase10-backend-selection-contract` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `justfile` | `guard-cranelift-phase10-backend-selection-contract` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
@@ -74,7 +74,7 @@ Do not edit by hand.
 | `justfile` | `guard-cranelift-phase10-backend-selection-contract` | `explicit_invalid_or_parser_probe` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `justfile` | `guard-cranelift-phase10-backend-selection-contract` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `justfile` | `guard-cranelift-phase10-backend-selection-contract` | `implicit_default` | `invocation_parser_probe` | `cranelift` | `pre_backend_invocation_diagnostic` | `preserve_shared_parser_diagnostic` | `backend_migration_changes_a_pre_backend_parser_diagnostic` |
-| `justfile` | `guard-cranelift-phase10-backend-selection-contract` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
+| `justfile` | `guard-cranelift-phase10-backend-selection-contract` | `explicit_bootstrap_emitter` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `justfile` | `guard-cranelift-phase10-backend-selection-contract` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `justfile` | `guard-cranelift-phase10-output-contract` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `justfile` | `guard-cranelift-phase11-scalar-expression-parity` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
@@ -93,9 +93,9 @@ Do not edit by hand.
 | `justfile` | `guard-cranelift-phase11-metadata-diagnostic-parity` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `justfile` | `guard-cranelift-phase11-metadata-diagnostic-parity` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `justfile` | `guard-cranelift-phase11-metadata-diagnostic-parity` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `justfile` | `run-step52-positive-batch` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `justfile` | `make-test-suite` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `justfile` | `make-test-suite-parallel` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
+| `justfile` | `run-step52-positive-batch` | `explicit_bootstrap_emitter` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
+| `justfile` | `make-test-suite` | `explicit_bootstrap_emitter` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
+| `justfile` | `make-test-suite-parallel` | `explicit_bootstrap_emitter` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `justfile` | `guard-stdlib-s1-str-equality-diagnostic` | `explicit_c` | `already_explicit_or_parser_probe` | `stdlib` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `justfile` | `guard-stdlib-s1-str-equality-diagnostic` | `explicit_c` | `already_explicit_or_parser_probe` | `stdlib` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `justfile` | `guard-stdlib-s1-str-equality-diagnostic` | `explicit_c` | `already_explicit_or_parser_probe` | `stdlib` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
@@ -104,9 +104,9 @@ Do not edit by hand.
 | `justfile` | `guard-stdlib-s1-collection-receivers` | `explicit_c` | `already_explicit_or_parser_probe` | `stdlib` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `justfile` | `guard-stdlib-s1-collection-receivers` | `explicit_c` | `already_explicit_or_parser_probe` | `stdlib` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `justfile` | `guard-stdlib-s1-resource-prerequisites` | `explicit_c` | `already_explicit_or_parser_probe` | `stdlib` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `justfile-step51` | `guard-positive` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `justfile-step51` | `guard-compile-pass` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `justfile-step51` | `guard-compile-fail` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
+| `justfile-step51` | `guard-positive` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
+| `justfile-step51` | `guard-compile-pass` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
+| `justfile-step51` | `guard-compile-fail` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `reset-heavy-guards-workflow.sh` | `none` | `implicit_default` | `help_surface_probe` | `cranelift` | `help_text` | `22.6_flip_help_expectation` | `help_expectation_changes_before_the_default_route` |
 | `scripts/phase12_5_route_architecture.sh` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase12_5_route_architecture.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
@@ -194,27 +194,19 @@ Do not edit by hand.
 | `scripts/phase22_default_route_flip.py` | `none` | `implicit_default` | `cranelift_C_or_diagnostic_guard` | `cranelift` | `generated_C_or_diagnostic` | `22.2_explicit_C_selection` | `default_flip_changes_the_guard_artifact_before_explicit_C_migration` |
 | `scripts/phase22_default_route_flip.py` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase22_explicit_c_migration.sh` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `scripts/phase22_explicit_c_migration.sh` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `scripts/phase22_explicit_c_migration.sh` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `scripts/phase22_explicit_c_migration.sh` | `none` | `implicit_default` | `intentional_default_selection_probe` | `cranelift` | `current_default_route_observation` | `22.6_flip_expectation_only` | `probe_is_migrated_before_the_default_route_changes` |
 | `scripts/phase22_explicit_c_migration.sh` | `none` | `explicit_invalid_or_parser_probe` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase22_explicit_c_migration.sh` | `none` | `implicit_default` | `intentional_default_selection_probe` | `cranelift` | `current_default_route_observation` | `22.6_flip_expectation_only` | `probe_is_migrated_before_the_default_route_changes` |
-| `scripts/phase22_explicit_c_migration.sh` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `scripts/phase22_native_implicit_output.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `scripts/phase22_native_implicit_output.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `scripts/phase22_native_implicit_output.sh` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
+| `scripts/phase22_explicit_c_migration.sh` | `none` | `explicit_bootstrap_emitter` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase22_native_implicit_output.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase22_native_implicit_output.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase22_native_implicit_output.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase22_native_implicit_output.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase22_native_implicit_output.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `scripts/phase22_native_implicit_output.sh` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
+| `scripts/phase22_native_implicit_output.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
+| `scripts/phase22_native_implicit_output.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase22_native_implicit_output.sh` | `none` | `implicit_default` | `intentional_default_selection_probe` | `cranelift` | `current_default_route_observation` | `22.6_flip_expectation_only` | `probe_is_migrated_before_the_default_route_changes` |
-| `scripts/phase22_native_implicit_output.sh` | `none` | `implicit_default` | `intentional_default_selection_probe` | `cranelift` | `current_default_route_observation` | `22.6_flip_expectation_only` | `probe_is_migrated_before_the_default_route_changes` |
-| `scripts/phase22_opening.sh` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase22_opening.sh` | `none` | `implicit_default` | `intentional_default_selection_probe` | `cranelift` | `current_default_route_observation` | `22.6_flip_expectation_only` | `probe_is_migrated_before_the_default_route_changes` |
 | `scripts/phase22_opening.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
-| `scripts/phase22_opening.sh` | `none` | `implicit_default` | `intentional_default_selection_probe` | `cranelift` | `current_default_route_observation` | `22.6_flip_expectation_only` | `probe_is_migrated_before_the_default_route_changes` |
 | `scripts/phase22_opening.sh` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase22_opening.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase22_opening.sh` | `none` | `implicit_default` | `intentional_default_selection_probe` | `cranelift` | `current_default_route_observation` | `22.6_flip_expectation_only` | `probe_is_migrated_before_the_default_route_changes` |
@@ -240,8 +232,8 @@ Do not edit by hand.
 | `tests/e2e_codegen_assertions.gst` | `none` | `explicit_c` | `landed_six_site_stdlib_C_or_diagnostic_relay` | `stdlib` | `generated_C_or_diagnostic` | `exact_six_site_explicit_mir_to_c_relay` | `partial_extra_path_drift_or_unrelated_inventory_change` |
 | `tests/e2e_codegen_assertions.gst` | `none` | `explicit_c` | `landed_six_site_stdlib_C_or_diagnostic_relay` | `stdlib` | `generated_C_or_diagnostic` | `exact_six_site_explicit_mir_to_c_relay` | `partial_extra_path_drift_or_unrelated_inventory_change` |
 | `tests/e2e_codegen_assertions.gst` | `none` | `explicit_c` | `landed_six_site_stdlib_C_or_diagnostic_relay` | `stdlib` | `generated_C_or_diagnostic` | `exact_six_site_explicit_mir_to_c_relay` | `partial_extra_path_drift_or_unrelated_inventory_change` |
-| `tests/test_runner.gst` | `none` | `explicit_c` | `landed_six_site_stdlib_C_or_diagnostic_relay` | `stdlib` | `generated_C_or_diagnostic` | `exact_six_site_explicit_mir_to_c_relay` | `partial_extra_path_drift_or_unrelated_inventory_change` |
-| `tests/test_runner.gst` | `none` | `explicit_c` | `landed_six_site_stdlib_C_or_diagnostic_relay` | `stdlib` | `generated_C_or_diagnostic` | `exact_six_site_explicit_mir_to_c_relay` | `partial_extra_path_drift_or_unrelated_inventory_change` |
+| `tests/test_runner.gst` | `none` | `explicit_bootstrap_emitter` | `already_explicit_or_parser_probe` | `stdlib` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
+| `tests/test_runner.gst` | `none` | `explicit_bootstrap_emitter` | `already_explicit_or_parser_probe` | `stdlib` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 
 ## Phase 21 native-capability handoff
 

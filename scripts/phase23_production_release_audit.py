@@ -105,12 +105,28 @@ def scan() -> dict[str, object]:
         surface("justfile", "developer_single_program_commands", (
             'GUST_RUNNER_ROUTE=cranelift bash scripts/run-gust-file.sh "{{file}}"',
         )),
+        # Patch 24.13: the runner's default is now cranelift (#411), so the
+        # marker recording the old default is rebased rather than dropped --
+        # the surface still has to carry a default, and the audit still has to
+        # see which one. The retired route stays as an explicit branch so a
+        # caller that pins it gets the compiler's removal diagnostic.
         surface("scripts/run-gust-file.sh", "shared_explicit_route_runner", (
-            'RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-mir-to-c}"',
+            'RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-cranelift}"',
             "make phase10-native-package",
             "./build/phase10-package/bin/gust",
             "--backend cranelift",
-            "./gust --backend mir-to-c",
+            # Rebased by Patch 24.13, because the earlier marker stopped
+            # being true. It expected the runner to still CALL the retired
+            # backend, on the reasoning that the compiler explains the removal
+            # better than the script could. Once the backend is gone that call
+            # can only reach a rejection, so the runner rejects the route
+            # itself -- and the audit now checks the thing that matters, which
+            # is that the pinned route is still RECOGNISED and refused with a
+            # reason rather than silently aliased to cranelift. A runner that
+            # quietly treated mir-to-c as cranelift would have passed the old
+            # marker's intent and fails these two.
+            '[ "$RUNNER_ROUTE" = "mir-to-c" ]',
+            "which was removed in Phase 24",
             'NATIVE_OUTPUT="build/${TEST_STEM}_bin"',
             "COMPILING GUST WITH CRANELIFT",
         )),
@@ -122,13 +138,43 @@ def scan() -> dict[str, object]:
         )),
     )
     runner = RUNNER.read_text(encoding="utf-8")
-    require(runner.count("--backend mir-to-c") == 1 and
-            runner.count("--backend cranelift") == 1,
-            "shared runner does not expose exactly one explicit route per backend")
+    # Patch 24.13: INVERTED, not relaxed. This required exactly one explicit
+    # route per backend, which was the right shape while both backends
+    # existed. With the generated-C backend removed, the same intent -- the
+    # runner exposes each route exactly once, and no route is ambiguous --
+    # becomes: no mir-to-c INVOCATION at all, still exactly one cranelift
+    # route, and exactly one place where the pinned mir-to-c route VALUE is
+    # refused.
+    #
+    # Keeping the count at 1 by leaving a dead call would satisfy the old
+    # line; dropping the line entirely would let the route be silently aliased
+    # to cranelift. Both are what this asserts against.
+    require(runner.count("--backend mir-to-c") == 0,
+            "the shared runner still invokes the removed backend")
+    require(runner.count("--backend cranelift") == 1,
+            "shared runner does not expose exactly one explicit native route")
+    require(runner.count('[ "$RUNNER_ROUTE" = "mir-to-c" ]') == 1,
+            "the shared runner does not refuse the retired route exactly "
+            "once, so a caller that pins it may be silently aliased")
     require("GUST_RUNNER_ROUTE must be 'mir-to-c' or 'cranelift'" in runner,
             "shared runner does not reject an unknown explicit route")
-    require(len(bootstrap) == 5,
+    # Patch 24.13 (#398): rebased, and the reason is recorded rather than the
+    # number silently bumped.
+    #
+    # Five Makefile callers reached the emitter through the user-facing
+    # spelling. Two of them -- the stage-2 and stage-3 emissions, driven by a
+    # compiler built from test_runner_entry.gst -- now use the bootstrap-only
+    # entry Patch 24.11 decided. The other three are driven by the seed and the
+    # bridge parser, which this patch does not touch and Phase 25 owns.
+    #
+    # So the explicit-C bootstrap count is three, not five, and the two that
+    # moved are counted where they now belong rather than being dropped.
+    require(len(bootstrap) == 3,
             "Phase 25 bootstrap explicit-C invocation count drifted")
+    makefile_text = (ROOT / "Makefile").read_text(encoding="utf-8")
+    require(makefile_text.count("--backend bootstrap-emitter") == 2,
+            "the two bootstrap-entry callers Patch 24.13 landed are not both "
+            "there")
     return {
         "supported_surface_count": len(supported),
         "supported_surface_manifest_digest": canonical_digest(supported),
@@ -319,6 +365,9 @@ def validate() -> tuple[dict, dict[str, object]]:
             conversion_transition = registry.get(
                 "phase24_12b_python_parity_conversion", {}).get(
                     "production_audit_transition")
+            removal_transition = registry.get(
+                "phase24_13_backend_removal", {}).get(
+                    "production_audit_transition")
             current = emitter_only_transition.get("current_audit", {})
             reduced = emitter_only_transition.get("reduced_fields", [])
             require(emitter_only_transition.get("contract_version") ==
@@ -344,7 +393,8 @@ def validate() -> tuple[dict, dict[str, object]]:
                         conversion_transition.get("previous_audit") ==
                         current and
                         conversion_transition.get("current_audit") ==
-                        summary and
+                        (removal_transition["previous_audit"]
+                         if removal_transition is not None else summary) and
                         sorted(conversion_transition.get(
                             "reduced_fields", [])) == [
                             "non_bootstrap_retained_test_surface_count",
@@ -354,6 +404,21 @@ def validate() -> tuple[dict, dict[str, object]]:
                             "partial_extra_or_substituted_audit") ==
                         "rejected",
                         "Patch 24.12b production audit transition drifted")
+            # Patch 24.13 is the tail when present: it reclassifies two
+            # bootstrap callers onto the bootstrap-only entry, so the
+            # explicit-C counts fall while the calls remain.
+            if removal_transition is not None:
+                require(removal_transition.get("contract_version") ==
+                        "phase24_13_production_audit_transition_v1" and
+                        removal_transition.get("current_audit") == summary and
+                        sorted(removal_transition.get("reduced_fields",
+                                                      [])) == [
+                            "phase25_bootstrap_explicit_c_count",
+                            "repository_explicit_c_count"] and
+                        removal_transition.get(
+                            "partial_extra_or_substituted_audit") ==
+                        "rejected",
+                        "Patch 24.13 production audit transition drifted")
             removed = emitter_only_transition.get("removed_invocation_count")
             surface = registry.get(
                 "phase24_12a_emitter_only_retirement", {}).get(
@@ -376,8 +441,12 @@ def validate() -> tuple[dict, dict[str, object]]:
             # Patch 24.12b, when present, is the tail: the effective audit is
             # its current_audit, not 24.12a's, because that is the one the
             # live scan has to match.
+            # Patch 24.13 is the tail when present, so the effective audit is
+            # its current_audit -- that is the one the live scan must match.
             effective["audit"] = (
-                conversion_transition["current_audit"]
+                removal_transition["current_audit"]
+                if removal_transition is not None
+                else conversion_transition["current_audit"]
                 if conversion_transition is not None else current)
         validate_mutations(effective, summary)
     require(record.get("timelines") == {

@@ -94,8 +94,6 @@ Two of them still *reach* live C through the shared runner's default
 route (`scripts/run-gust-file.sh`), which is Patch
 `24.13`'s row to migrate, not this one's:
 
-- `scripts/phase15_resource_composition_parity.sh` — 3 default-route call(s)
-- `scripts/phase16_abi_composition_parity.sh` — 2 default-route call(s)
 
 That count is registered and checked, so the residue cannot grow
 unnoticed and cannot be mistaken for a completed migration.
