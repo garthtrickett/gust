@@ -7787,9 +7787,18 @@
       {"fixture":"tests/test_tcs_non_pod_on_stack_rejected.gst","caller":"tests/test_runner.gst","caller_line":1566,"expected_diagnostic_fragment":"StackAllocationViolation"}
     ],
     "current_file_input_manifest": [
-      {"path":"compiler/test_runner_entry.gst","lines":[354,368,388]},
-      {"path":"compiler/test_runner_bootstrap_bridge_entry.gst","lines":[199,213,233]},
-      {"path":"compiler/type_dump_entry.gst","lines":[38]}
+      {
+        "path": "compiler/test_runner_entry.gst",
+        "count": 3
+      },
+      {
+        "path": "compiler/test_runner_bootstrap_bridge_entry.gst",
+        "count": 3
+      },
+      {
+        "path": "compiler/type_dump_entry.gst",
+        "count": 1
+      }
     ],
     "witnesses": [
       {"id":"tcs_declaration","site_id":"var_declaration_stack_classification","fixture":"tests/phase24_filename_tcs_declaration_characterization.gst","fixture_digest":"a56f9c52cecd5acd8cf3f050523726e560aaf1ade7980c77016dca4d78bb2088","selected_filename":"test_tcs_declaration_selected.gst","neutral_filename":"declaration_neutral.gst","pair_bytes_identical":true},
@@ -25745,6 +25754,21 @@
           "removal_phase": "not_removed_by_phase23"
         },
         {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "b67b5a9e4f364169523346a54171dd7db491be98c7ff905c596dda3c1f540e93",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE23_SAME_SCOPE_DECLARATION.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
@@ -26228,6 +26252,21 @@
           "removal_phase": "not_removed_by_phase23"
         },
         {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "4cfef87ce57620480287acf07c53524b3a9421b7a79bef11fd3dae9438548373",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE23_SAME_SCOPE_DECLARATION.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
@@ -26667,6 +26706,7 @@
         "Makefile",
         "compiler/CRANELIFT_PHASE21_OPENING.md",
         "compiler/CRANELIFT_PHASE22_OPENING.md",
+        "compiler/CRANELIFT_PHASE23_SAME_SCOPE_DECLARATION.md",
         "compiler/phase10_help.txt",
         "compiler/test_runner_entry.gst",
         "docs/PHASE24_FROZEN_ORACLE_REPLACEMENT.md",
