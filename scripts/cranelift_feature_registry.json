@@ -2025,7 +2025,7 @@
       "reason_code": "source_or_type_failure",
       "diagnostic_class": "canonical_mir_verification_error",
       "diagnostic": "Native backend canonical MIR verification failed: unsupported top-level statement in module/import cohort",
-      "source_line": 253,
+      "source_line": 273,
       "source_column": 1,
       "failure_stage": "before_driver_discovery",
       "artifact": "absent",
@@ -25718,7 +25718,7 @@
           "classification": "historical_only",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_as_historical_evidence",
-          "digest": "ff2089da7b6567c03807d4f107a6b4f1f8332f6ee9ccce402aced30091b1b439",
+          "digest": "1aa75af9e74b5ed8946c22a242220c8f0bff1ed2f8e538192fc8df8faa43b06a",
           "falsifier": "historical_record_is_reclassified_as_live_support",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -25898,7 +25898,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "424730f6e4cc2146322f5c95c85e3f26e8fa8efd5ba8811757d03f16b31c21e1",
+          "digest": "9b9773db7c6c5ebf2d5a5ff839d0c00aceeea1ae264e1b3a18076689dd66b7c7",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
