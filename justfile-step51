@@ -50,6 +50,20 @@ guard-positive file label:
     if [ ! -x build/gust-native-backend ]; then
       make build/gust-native-backend
     fi
+    # The driver is not the whole native environment. `phase10-native-package`
+    # depends on gust, the driver AND the runtime package, and a native link
+    # without the package fails at `stage=link_input_validation` with
+    # "compiler MIR link runtime package" -- which reads as a source that
+    # stopped compiling rather than as a missing build artifact.
+    #
+    # It passed locally for exactly the reason the driver did: my tree already
+    # had the package from an earlier build, so the recipe was measured in an
+    # environment it does not create. In CI it is absent, and sources that link
+    # fine everywhere failed the allowlist check as though they were further
+    # capability losses. Reproduced by deleting the package locally.
+    if [ ! -f build/gust-runtime-package.a ]; then
+      make build/gust-runtime-package.a
+    fi
     export GUST_NATIVE_BACKEND_DRIVER="$PWD/build/gust-native-backend"
     echo "Checking $test_path accepts and runs..."
     if ./gust --backend cranelift -o "$bin_file" "$test_path" > "$log" 2>&1; then
@@ -141,6 +155,20 @@ guard-compile-pass file label:
     if [ ! -x build/gust-native-backend ]; then
       make build/gust-native-backend
     fi
+    # The driver is not the whole native environment. `phase10-native-package`
+    # depends on gust, the driver AND the runtime package, and a native link
+    # without the package fails at `stage=link_input_validation` with
+    # "compiler MIR link runtime package" -- which reads as a source that
+    # stopped compiling rather than as a missing build artifact.
+    #
+    # It passed locally for exactly the reason the driver did: my tree already
+    # had the package from an earlier build, so the recipe was measured in an
+    # environment it does not create. In CI it is absent, and sources that link
+    # fine everywhere failed the allowlist check as though they were further
+    # capability losses. Reproduced by deleting the package locally.
+    if [ ! -f build/gust-runtime-package.a ]; then
+      make build/gust-runtime-package.a
+    fi
     export GUST_NATIVE_BACKEND_DRIVER="$PWD/build/gust-native-backend"
     echo "Checking $test_path accepts..."
     if ./gust --backend cranelift -o "$guard_dir/bin" "$test_path" > "$log" 2>&1; then
@@ -183,6 +211,20 @@ guard-compile-fail file diagnostic label:
     # building it if absent -- makes the two agree.
     if [ ! -x build/gust-native-backend ]; then
       make build/gust-native-backend
+    fi
+    # The driver is not the whole native environment. `phase10-native-package`
+    # depends on gust, the driver AND the runtime package, and a native link
+    # without the package fails at `stage=link_input_validation` with
+    # "compiler MIR link runtime package" -- which reads as a source that
+    # stopped compiling rather than as a missing build artifact.
+    #
+    # It passed locally for exactly the reason the driver did: my tree already
+    # had the package from an earlier build, so the recipe was measured in an
+    # environment it does not create. In CI it is absent, and sources that link
+    # fine everywhere failed the allowlist check as though they were further
+    # capability losses. Reproduced by deleting the package locally.
+    if [ ! -f build/gust-runtime-package.a ]; then
+      make build/gust-runtime-package.a
     fi
     export GUST_NATIVE_BACKEND_DRIVER="$PWD/build/gust-native-backend"
     echo "Checking $test_path rejects..."
