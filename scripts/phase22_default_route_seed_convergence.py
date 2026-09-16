@@ -480,7 +480,85 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
     require(strata_diff["previous_lines"] == strata_identities[0]["line_count"] and
             strata_diff["current_lines"] == strata_identities[1]["line_count"],
             "Patch 24.2q seed diff does not match its exact pre/post identities")
-    return strata_identities
+
+    # Patch 24.13 continues the chain, for the reason every earlier link
+    # continued it: the compiler changed, so the seed a bootstrap regenerates
+    # is no longer the landed one.
+    #
+    # This link is the one that lets the four Makefile bootstrap callers move
+    # off the retired spelling. The old seed's gust_bootstrap has only
+    # mir-to-c, and the new seed's has only the bootstrap-only entry, so the
+    # callers and the seed must land together -- the transition build runs
+    # once, with the old callers against the old seed, and produces the seed
+    # the new callers need.
+    #
+    # Verified rather than asserted: from a tree with gust_bootstrap,
+    # stage1_compiler.c, stage1_bin and gust_compiler.c deleted, the migrated
+    # callers bootstrap against this seed, the stage2/stage3 fixed point
+    # holds, and the regenerated seed is this identity again. That last
+    # property is what this guard demands -- a regeneration of the landed
+    # identity to itself.
+    removal_transition = record.get("phase24_13_seed_transition")
+    if removal_transition is None:
+        return strata_identities
+    require(removal_transition == {
+        "contract_version":
+            "phase24_13_backend_removal_seed_reconvergence_transition_v1",
+        "status": "ready_for_seed_publication",
+        "predecessor_seed_authority":
+            "phase24_2q_str_equality_seed_reconvergence_transition_v1",
+        "authority_base_main":
+            "890362268ac29401cda0d5847a8266df36fb53a3",
+        "accounted_compiler_authorities": [
+            "phase24_13_backend_removal_v1"
+        ],
+        "accepted_live_seed_identities": [
+            {
+                "state": "pre_publication",
+                "line_count": 65998,
+                "seed_digest":
+                    "a1ba675a1c244af0a77485d48a5865833eee896a4a2b746ea5728e20f590eebb"
+            },
+            {
+                "state": "post_publication",
+                "line_count": 66002,
+                "seed_digest":
+                    "6e2f45f4276cb63e97902141088b50c2886a6de5132d5ad5384c9070b950bb6f"
+            }
+        ],
+        "generated_seed_diff": {
+            "previous_lines": 65998,
+            "current_lines": 66002,
+            "insertions": 8,
+            "deletions": 4,
+            "line_delta": 4
+        },
+        "seed_pr_policy": "gust_v4_c_only",
+        "partial_or_unregistered_identity": "rejected",
+        "closure_transition": "collapse_to_post_publication_after_seed_merge"
+    }, "Patch 24.13 seed transition drifted")
+    removal_identities = removal_transition["accepted_live_seed_identities"]
+    require([row["state"] for row in removal_identities] ==
+            ["pre_publication", "post_publication"],
+            "Patch 24.13 seed transition state order drifted")
+    require(len({(row["line_count"], row["seed_digest"])
+                 for row in removal_identities}) == 2,
+            "Patch 24.13 seed transition identities are not distinct")
+    require(removal_identities[0] == {
+        "state": "pre_publication",
+        "line_count": strata_identities[1]["line_count"],
+        "seed_digest": strata_identities[1]["seed_digest"],
+    }, "Patch 24.13 does not start from the landed Patch 24.2q identity")
+    removal_diff = removal_transition["generated_seed_diff"]
+    require(removal_diff["current_lines"] - removal_diff["previous_lines"] ==
+            removal_diff["line_delta"] and
+            removal_diff["insertions"] - removal_diff["deletions"] ==
+            removal_diff["line_delta"],
+            "Patch 24.13 seed line delta is inconsistent")
+    require(removal_diff["previous_lines"] == removal_identities[0]["line_count"] and
+            removal_diff["current_lines"] == removal_identities[1]["line_count"],
+            "Patch 24.13 seed diff does not match its exact pre/post identities")
+    return removal_identities
 
 
 def accepted_live_seed_line_counts(record: dict) -> set[int]:
@@ -618,6 +696,26 @@ def validate() -> dict:
     if live_seed_identity["seed_digest"] == "33b23ff4e8dab6c84365920bf3a2a674d7e3f5248646f6ffd69c8f7cc014083a":
         help_fragments.append(
             "mir-to-c, c  Emit C source to stdout (retained semantic oracle).")
+    elif live_seed_identity["seed_digest"] == (
+            "6e2f45f4276cb63e97902141088b50c2886a6de5132d5ad5384c9070b950bb6f"):
+        # Patch 24.13's seed. The two eras above expect help that ADVERTISES
+        # the retired backend -- first plainly, then as deprecated. This seed
+        # is compiled from an entry that removed it, so requiring either
+        # fragment would require the seed to advertise a backend its own
+        # compiler rejects.
+        #
+        # The replacement is the stronger claim, and it is the inverse: help
+        # must state the removal, and must NOT still offer the spelling as an
+        # oracle. A seed that quietly reintroduced the advertisement fails
+        # here even though its identity is registered.
+        help_fragments.extend([
+            "The generated-C backend was REMOVED in Phase 24; "
+            "mir-to-c and c are rejected.",
+            "Bootstrap C retirement is separate and deferred to Phase 25.",
+        ])
+        require("retained semantic oracle" not in seed_text,
+                "the Patch 24.13 seed still advertises the retired backend as "
+                "a retained oracle")
     else:
         help_fragments.extend([
             "mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.",
@@ -631,26 +729,33 @@ def validate() -> dict:
             "TASK.md does not mark Patch 22.6a DONE")
 
     makefile = MAKEFILE.read_text(encoding="utf-8")
-    # Patch 22.6a pinned four bootstrap rows as explicit C. Patch 24.13 moved
-    # two of them to the bootstrap-only entry, and the two halves are owned
-    # differently from here on:
+    # Patch 22.6a pinned four bootstrap rows as explicit C. Patch 24.13 moves
+    # ALL FOUR to the bootstrap-only entry.
     #
-    #   gust_bootstrap    parses the bridge entry; the seed spells mir-to-c
-    #   gust_stage1_bin   built from the bridge; Phase 25 owns its retirement
-    #   gust              built from the entry, which no longer selects C
-    #   gust_stage2_bin   built from the entry, same
+    # An earlier version of this patch moved two and left the other two pinned
+    # as explicit C, on the reasoning that gust_bootstrap and gust_stage1_bin
+    # are compiled from a pre-removal seed and legitimately still have the
+    # backend. That described a transitional state correctly and drew the
+    # wrong conclusion from it: once the seed reconverges -- which this patch
+    # does, because it changes the compiler -- those binaries are 24.13
+    # compilers and the spelling they were pinned to no longer exists.
     #
-    # The moved rows are INVERTED, not dropped. A deleted clause says nothing:
-    # it would pass just as well if the row silently went back to mir-to-c, or
-    # vanished from the Makefile entirely. Each moved row therefore asserts
-    # both halves -- the retired spelling absent AND the replacement present.
-    for explicit_seed_command in (
-        "./gust_bootstrap --backend mir-to-c compiler/test_runner_bootstrap_bridge_entry.gst",
-        "./build/gust_stage1_bin --backend mir-to-c compiler/test_runner_entry.gst",
-    ):
-        require(explicit_seed_command in makefile,
-                f"Phase-25-owned bootstrap route is not explicit C: {explicit_seed_command}")
+    # Measured, not argued: with the republished seed and the old callers, the
+    # second bootstrap fails at Makefile:51 with "the generated-C backend was
+    # removed in Phase 24: mir-to-c". With all four moved, a tree whose
+    # gust_bootstrap, stage1_compiler.c, stage1_bin and gust_compiler.c are
+    # deleted bootstraps cleanly, the fixed point holds, and the regenerated
+    # seed is the registered identity again.
+    #
+    # Every row is INVERTED, not dropped. A deleted clause says nothing: it
+    # would pass just as well if a row silently went back to mir-to-c, or
+    # vanished from the Makefile entirely. Each asserts both halves -- the
+    # retired spelling absent AND the replacement present.
     for retired, rebased in (
+        ("./gust_bootstrap --backend mir-to-c compiler/test_runner_bootstrap_bridge_entry.gst",
+         "./gust_bootstrap --backend bootstrap-emitter compiler/test_runner_bootstrap_bridge_entry.gst"),
+        ("./build/gust_stage1_bin --backend mir-to-c compiler/test_runner_entry.gst",
+         "./build/gust_stage1_bin --backend bootstrap-emitter compiler/test_runner_entry.gst"),
         ("./gust --backend mir-to-c compiler/test_runner_entry.gst",
          "./gust --backend bootstrap-emitter compiler/test_runner_entry.gst"),
         ("./build/gust_stage2_bin --backend mir-to-c compiler/test_runner_entry.gst",

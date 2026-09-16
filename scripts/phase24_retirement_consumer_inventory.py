@@ -400,7 +400,18 @@ SWEEP_COUNTS = {
     # Patch 24.13: 5 -> 3. Two Makefile bootstrap callers moved to the
     # bootstrap-only entry; the remaining three are driven by the seed and the
     # bridge parser, which this patch does not touch and Phase 25 owns.
-    "Makefile": 3,
+    # Patch 24.13 moved all five Makefile bootstrap callers to the
+    # bootstrap-only entry, so the Makefile carries no retired spelling at
+    # all and check_sweep -- which reports only loci WITH hits -- stops
+    # producing a row for it. Expecting a count here would expect a key the
+    # sweep can never emit.
+    #
+    # The claim is not lost, it moved to checks that assert it directly:
+    # phase22_postflip_qualification requires all five callers on the entry
+    # and no seed driver spelling the retired backend,
+    # phase23_production_release_audit records phase25_bootstrap_explicit_c
+    # _count at zero, and phase22_default_route_seed_convergence inverts
+    # each of the four rows -- retired absent AND replacement present.
     # Patch 24.13 removed this locus entirely -- the help line went and the
     # selection branch became a rejection, so the file no longer carries a
     # live C route. It is dropped from SWEEP_LOCI rather than pinned at zero,
@@ -753,7 +764,13 @@ FILE_ROWS = [
      "mut c_code := codegen.codegen_generate(programs, module_prefixes, &env, ctx);",
      "25", "survive"),
     ("compiler/test_runner_bootstrap_bridge_entry.gst",
-     "Usage: gust-bootstrap-bridge [--backend <mir-to-c|c>] <file.gst>",
+     # Patch 24.13 WIDENED this usage line rather than retiring it: the bridge
+     # now also accepts the bootstrap-only entry, because Makefile:143 and the
+     # sanitized stage-one diagnostic drive stage1_bin through it once the seed
+     # reconverges. The retired spellings are still listed and still accepted
+     # here -- the bridge is Phase-25-owned machinery and this patch does not
+     # retire it, it only adds the entry the migrated callers need.
+     "Usage: gust-bootstrap-bridge [--backend <mir-to-c|c|bootstrap-emitter>] <file.gst>",
      "25", "survive"),
     ("Makefile",
      "build/gust_final.c", "24.14", "migrate"),

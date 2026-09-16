@@ -167,6 +167,14 @@ SEED_SUCCESSOR_TRANSITIONS = (
     "phase24_cra_stage1_seed_transition",
     "phase24_cr19_seed_transition",
     "phase24_2q_seed_transition",
+    # Patch 24.13. Listed here for the same reason as 24.3a above: the guard
+    # consults a successor only when it is named, so registering the
+    # transition block was not enough to widen what the live seed may be, and
+    # should not have been. 24.13 reconverges the seed because it changes the
+    # compiler -- the four Makefile bootstrap callers move to the
+    # bootstrap-only entry, which the old seed's gust_bootstrap cannot parse
+    # and the new one can.
+    "phase24_13_seed_transition",
 )
 
 

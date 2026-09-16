@@ -90,29 +90,33 @@ def validate() -> dict:
     # if the retired spelling were ALSO present on the seed path, so the claim
     # that it is gone is asserted separately.
     #
-    # Scoped to the CURRENT compiler, and not by preference. The seed path runs
-    # three compilers: ./build/gust_stage1_bin, which is compiled from
-    # gust_v4.c and therefore predates this patch and still HAS the backend;
-    # ./gust and ./build/gust_stage2_bin, which do not. Requiring the retired
-    # spelling to be absent everywhere would demand that a frozen pre-removal
-    # binary stop accepting an argument it was built with.
+    # NO exemption. An earlier version of this check scoped itself to ./gust
+    # and ./build/gust_stage2_bin, exempting stage one on the grounds that
+    # ./build/gust_stage1_bin is compiled from a pre-removal gust_v4.c and
+    # legitimately still has the backend. That was a true description of a
+    # transitional state and a wrong conclusion, and the bounding assertion
+    # written alongside it -- "the pre-removal stage-one seed step is missing,
+    # so this exemption no longer describes the Makefile" -- is what caught it
+    # once the seed reconverged.
     #
-    # That exemption is bounded and named rather than open: `make bootstrap`
-    # republishes gust_v4.c from build/gust_stage3.c, so the seed becomes a
-    # compiler without the backend and this line has to move with it. Phase 25
-    # owns that republication; until it happens, stage one is the one caller
-    # allowed to spell it.
-    seed_drivers = ("./gust", "./build/gust_stage2_bin")
+    # Patch 24.13 republishes the seed and moves all four Makefile bootstrap
+    # callers to the bootstrap-only entry, so no seed step spells the retired
+    # backend and the exemption has nothing left to cover. Asserted over every
+    # caller now, which is the claim the phase actually makes.
+    seed_drivers = ("./gust", "./build/gust_stage2_bin", "./gust_bootstrap",
+                    "./build/gust_stage1_bin")
     for driver in seed_drivers:
         for spelling in ("mir-to-c", "c"):
-            marker = f"{driver} --backend {spelling} compiler/test_runner_entry.gst"
-            require(marker not in makefile,
-                    "the Makefile still drives the seed through a spelling "
-                    f"Patch 24.13 removed: {marker}")
-    require("./build/gust_stage1_bin --backend mir-to-c "
-            "compiler/test_runner_entry.gst" in makefile,
-            "the pre-removal stage-one seed step is missing, so this "
-            "exemption no longer describes the Makefile")
+            for source in ("compiler/test_runner_entry.gst",
+                           "compiler/test_runner_bootstrap_bridge_entry.gst"):
+                marker = f"{driver} --backend {spelling} {source}"
+                require(marker not in makefile,
+                        "the Makefile still drives the seed through a "
+                        f"spelling Patch 24.13 removed: {marker}")
+    require(makefile.count("--backend bootstrap-emitter") == 5,
+            "the five Makefile bootstrap callers do not all reach the "
+            "bootstrap-only entry: "
+            f"{makefile.count('--backend bootstrap-emitter')} of 5")
 
     readme = README.read_text(encoding="utf-8")
     for marker in (

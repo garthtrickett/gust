@@ -65563,16 +65563,14 @@ int compiler_is_help_invocation(std_Vector_str args, os_Arena* ctx) {
 void compiler_print_help() {
     os_LogStr(((Slice_unsigned_char){ (unsigned char*)"Usage:", 6 }));
     os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  gust <source.gst>", 19 }));
-    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  gust --backend mir-to-c <source.gst>", 38 }));
-    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  gust --backend c <source.gst>", 31 }));
     os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  gust --backend cranelift [-o <output>] <source.gst>", 53 }));
     os_LogStr(((Slice_unsigned_char){ (unsigned char*)"", 0 }));
     os_LogStr(((Slice_unsigned_char){ (unsigned char*)"Backends:", 9 }));
     os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  cranelift  Compile to one native executable (default).", 56 }));
-    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.", 107 }));
+    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  The generated-C backend was REMOVED in Phase 24; mir-to-c and c are rejected.", 79 }));
     os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  Bootstrap C retirement is separate and deferred to Phase 25.", 62 }));
     os_LogStr(((Slice_unsigned_char){ (unsigned char*)"Options:", 8 }));
-    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  --backend <mir-to-c|c|cranelift>  Select the backend explicitly.", 66 }));
+    os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  --backend <cranelift>            Select the backend explicitly.", 65 }));
     os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  -o <output>                     Optional Cranelift output; defaults to the source stem.", 89 }));
     os_LogStr(((Slice_unsigned_char){ (unsigned char*)"  -h, --help                      Show this help and exit.", 58 }));
     os_LogStr(((Slice_unsigned_char){ (unsigned char*)"", 0 }));
@@ -65627,6 +65625,12 @@ CompilerInvocation compiler_parse_invocation(std_Vector_str args, os_Arena* ctx)
     }
     Slice_unsigned_char backend_name = (*({ if ((i + 1) < 0 || (i + 1) >= args.len) { printf("Vector bounds check failed at line %d\n", __LINE__); exit(1); } &(args.data[(i + 1)]); }));
     if (((std_str_eq(backend_name, ((Slice_unsigned_char){ (unsigned char*)"mir-to-c", 8 })) == 1) || (std_str_eq(backend_name, ((Slice_unsigned_char){ (unsigned char*)"c", 1 })) == 1))) {
+    compiler_invocation_fail((({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"the generated-C backend was removed in Phase 24: ", 49 }); Slice_unsigned_char _s2 = backend_name; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
+    }
+    if ((std_str_eq(backend_name, ((Slice_unsigned_char){ (unsigned char*)"bootstrap-emitter", 17 })) == 1)) {
+    if ((std_str_eq(os_GetEnv(ctx, ((Slice_unsigned_char){ (unsigned char*)"GUST_BOOTSTRAP_EMITTER", 22 })), ((Slice_unsigned_char){ (unsigned char*)"1", 1 })) == 0)) {
+    compiler_invocation_fail(((Slice_unsigned_char){ (unsigned char*)"--backend bootstrap-emitter is bootstrap-only machinery, not a user-selectable backend; the generated-C backend was removed in Phase 24", 135 }));
+    }
     {
     invocation.backend.tag = 0;
     }
