@@ -120,6 +120,16 @@ guard-positive file label:
     echo "   $frozen_status, so the recorded behaviour is not a pass."
     exit 1
     fi
+    # The replayed stdout goes where the LIVE run put it.
+    #
+    # guard-positive's callers do not stop at this recipe: they grep the
+    # guard's compiler.log for the program's own output -- e.g.
+    # `grep -Fx 'Active: E2E_Bootstrap' build/guards/<label>/compiler.log`.
+    # On the live path the binary ran and its stdout landed there. Replaying
+    # into replay.stdout alone produced correct evidence in the wrong place,
+    # and every such caller failed on an empty log while this recipe reported
+    # success. Appending closes the substitution rather than half-making it.
+    cat "$frozen_dir/replay.stdout" >> "$log"
     echo "🧊 $test_path: native route defers ($expected_defer); frozen run"
     echo "   evidence replayed from the Patch 24.12c capture, exit $frozen_status"
 
