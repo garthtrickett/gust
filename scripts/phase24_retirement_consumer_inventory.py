@@ -305,6 +305,17 @@ DEFERRED_HARNESSES: dict[str, tuple[str, str]] = {
 # removal marker -- the string its own inverted assertions grep for. A harness
 # that simply dropped its C route without inverting anything has neither, and
 # fails.
+# Compared case-insensitively: the harnesses spell it both "REMOVED in
+# Phase 24" (help text) and "removed in Phase 24" (rejection text).
+#
+# Lost in the 24.13/24.14 merge: the definition sat in a hunk resolved to
+# 24.14's side while its consumer below came from main's. `validate` never
+# reaches that branch, so it read clean -- the undefined-name sweep is what
+# caught it, which is exactly the runtime-in-evidence-paths case it exists
+# for.
+REMOVAL_MARKER = "removed in phase 24"
+
+
 DISCHARGED_HARNESSES: dict[str, tuple[str, str]] = {
     "scripts/phase22_default_native_package.sh":
         ("24.13", "every live-C arm retired; nothing survives"),
