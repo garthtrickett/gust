@@ -132,6 +132,20 @@ def validate() -> dict:
     successor_commands = successor.get("commands", [])
     successor_metadata = dict(successor)
     successor_metadata.pop("commands", None)
+    # Patch 24.13 nests its per-row disposition record inside this node, which
+    # would otherwise make the exact-dict comparison below fail on an extra
+    # key. Patch 23.1's authority is unchanged and still compared exactly; the
+    # 24.13 record is lifted out and checked on its own terms, so it can
+    # neither slip into that dict unexamined nor be dropped from the node
+    # without this failing.
+    retirement = successor_metadata.pop("phase24_13_retirement", None)
+    require(retirement is None or
+            (retirement.get("contract_version") ==
+             "phase24_13_phase23_executor_retirement_v1" and
+             len(retirement.get("dispositions", [])) ==
+             successor.get("invocation_count")),
+            "the Patch 24.13 retirement record nested in Patch 23.1's "
+            "successor drifted")
     require(successor_metadata == {
         "status": "exact_phase23_extension_excluded_only_from_phase22_relay_identity",
         "owning_patch": "23.1",
@@ -276,14 +290,36 @@ def evidence() -> None:
     require(native_run.returncode == 168 and not native_run.stdout and not native_run.stderr,
             "#240 positive native observable drifted")
 
-    same_c = run(["./gust", "--backend", "mir-to-c", str(SAME_SCOPE)])
-    shadow_c = run(["./gust", "--backend", "mir-to-c", str(PARENT_SHADOW)])
+    # Patch 24.13: CONVERTED, not retired. Both arms asked front-end questions
+    # and only reached the retired backend because it happened to be the route
+    # in use. #105 is about declaration scoping, which the backend never
+    # decided.
+    #
+    # The rejection arm converts exactly: a Semantic Error is raised before any
+    # backend runs, which this patch measured at 49 of 49 over the
+    # guard-compile-fail corpus.
+    (ROOT / "build/guards/phase23_issue_health").mkdir(parents=True, exist_ok=True)
+    same_c = run(["./gust", "--backend", "cranelift", "-o",
+                  str(ROOT / "build/guards/phase23_issue_health/same-scope"), str(SAME_SCOPE)])
     require(same_c.returncode == 1 and not same_c.stderr and
             b"Semantic Error: Duplicate declaration 'value' in the same lexical scope" in
             same_c.stdout,
             "#105 successor same-scope diagnostic does not pass current main")
-    require(shadow_c.returncode == 0 and not shadow_c.stderr and shadow_c.stdout,
+
+    # The acceptance arm cannot assert exit 0 any more: on the native route an
+    # accepted source may still stop at the capability planner, which says
+    # nothing about whether the front end accepted it. So acceptance is
+    # asserted directly -- no front-end error, and any non-zero exit must carry
+    # a deferred capability decision. Same rule this patch applied to
+    # guard-compile-pass, where 17 of 25 sources are in exactly this position.
+    shadow_c = run(["./gust", "--backend", "cranelift", "-o",
+                    str(ROOT / "build/guards/phase23_issue_health/parent-shadow"), str(PARENT_SHADOW)])
+    combined = shadow_c.stdout + shadow_c.stderr
+    require(b"Semantic Error" not in combined and b"Parse Error" not in combined,
             "#105 parent-scope shadow is no longer accepted by current main")
+    require(shadow_c.returncode == 0 or b"decision=deferred" in combined,
+            "#105 parent-scope shadow failed without a deferred-capability "
+            "decision, so it was not merely unlowerable")
 
     check_review(value)
     print("phase23_issue_health_opening: evidence ok")

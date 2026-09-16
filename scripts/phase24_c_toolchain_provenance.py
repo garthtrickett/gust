@@ -224,7 +224,13 @@ def command_inputs(line: str) -> tuple:
     return inputs, False
 
 
-BACKEND_EMIT = re.compile(r'--backend (?:mir-to-c|c)(?=[\s"\']|$)')
+# `bootstrap-emitter` is a C-emitting backend spelling too. Patch 24.13 moved
+# the whole bootstrap chain onto it, so a producer written as
+# `--backend bootstrap-emitter ... > stage2.c` was invisible here and its
+# consumer failed as "no producer resolved" -- which is this guard working:
+# a new way of producing a C input must be classified before it lands.
+BACKEND_EMIT = re.compile(
+    r'--backend (?:mir-to-c|bootstrap-emitter|c)(?=[\s"\']|$)')
 NATIVE_EMIT = re.compile(
     r'--backend cranelift|compiler-mir-ingestion-object|--emit[= ]obj|'
     r'compiler-mir-native-object|gust-native-backend|cranelift-experiment'

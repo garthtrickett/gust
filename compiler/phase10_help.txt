@@ -1,13 +1,15 @@
 Usage:
   gust <source.gst>
+  gust --backend mir-to-c <source.gst>
+  gust --backend c <source.gst>
   gust --backend cranelift [-o <output>] <source.gst>
 
 Backends:
   cranelift  Compile to one native executable (default).
-  The generated-C backend was REMOVED in Phase 24; mir-to-c and c are rejected.
+  mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.
   Bootstrap C retirement is separate and deferred to Phase 25.
 Options:
-  --backend <cranelift>            Select the backend explicitly.
+  --backend <mir-to-c|c|cranelift>  Select the backend explicitly.
   -o <output>                     Optional Cranelift output; defaults to the source stem.
   -h, --help                      Show this help and exit.
 

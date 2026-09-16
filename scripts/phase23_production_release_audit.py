@@ -108,17 +108,17 @@ def scan() -> dict[str, object]:
         # Patch 24.13: the runner's default is now cranelift (#411), so the
         # marker recording the old default is rebased rather than dropped --
         # the surface still has to carry a default, and the audit still has to
-        # see which one. The retired route stays as an explicit branch so a
-        # caller that pins it gets the compiler's removal diagnostic.
+        # see which one. Defaulting away from the retired route is separable
+        # from refusing it, and only the first is this patch's to make.
         surface("scripts/run-gust-file.sh", "shared_explicit_route_runner", (
             'RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-cranelift}"',
             "make phase10-native-package",
             "./build/phase10-package/bin/gust",
             "--backend cranelift",
-            # Still present and still audited: the runner keeps an explicit
-            # retired-route branch so a caller that pins it reaches the
-            # compiler and gets the removal diagnostic, rather than this
-            # script rejecting an argument the compiler explains better.
+            # Patch 24.13 briefly rebased this pair onto the runner's own
+            # rejection of the route. The rejection is withdrawn until the
+            # live-C surface drains (issue #398), so the runner calls the
+            # retired backend again and the original marker is the true one.
             "./gust --backend mir-to-c",
             'NATIVE_OUTPUT="build/${TEST_STEM}_bin"',
             "COMPILING GUST WITH CRANELIFT",
@@ -131,28 +131,41 @@ def scan() -> dict[str, object]:
         )),
     )
     runner = RUNNER.read_text(encoding="utf-8")
+    # Patch 24.13 briefly inverted this to require no mir-to-c invocation and
+    # exactly one refusal site. The refusal is withdrawn until the live-C
+    # surface drains (issue #398), so the original shape -- exactly one
+    # explicit route per backend, neither ambiguous -- is the true one again.
     require(runner.count("--backend mir-to-c") == 1 and
             runner.count("--backend cranelift") == 1,
             "shared runner does not expose exactly one explicit route per backend")
     require("GUST_RUNNER_ROUTE must be 'mir-to-c' or 'cranelift'" in runner,
             "shared runner does not reject an unknown explicit route")
-    # Patch 24.13 (#398): rebased, and the reason is recorded rather than the
-    # number silently bumped.
+    # Patch 24.13 (#398, #433): rebased twice, and both reasons are recorded
+    # rather than the number silently bumped.
     #
-    # Five Makefile callers reached the emitter through the user-facing
-    # spelling. Two of them -- the stage-2 and stage-3 emissions, driven by a
-    # compiler built from test_runner_entry.gst -- now use the bootstrap-only
-    # entry Patch 24.11 decided. The other three are driven by the seed and the
-    # bridge parser, which this patch does not touch and Phase 25 owns.
+    # The first rebase moved two of the five Makefile callers -- the stage-2
+    # and stage-3 emissions -- to the bootstrap-only entry, and left three
+    # counted as explicit C on the reasoning that they are driven by the seed
+    # and the bridge, which Phase 25 owns.
     #
-    # So the explicit-C bootstrap count is three, not five, and the two that
-    # moved are counted where they now belong rather than being dropped.
-    require(len(bootstrap) == 3,
-            "Phase 25 bootstrap explicit-C invocation count drifted")
+    # That was a transitional state read as a final one. This patch changes the
+    # compiler, so the seed reconverges; once it does, gust_bootstrap and
+    # gust_stage1_bin ARE 24.13 compilers and the spelling they were counted
+    # under no longer exists. Measured: with the republished seed and the old
+    # callers, the second bootstrap fails at Makefile:51 with "the generated-C
+    # backend was removed in Phase 24: mir-to-c".
+    #
+    # So all four Makefile callers now reach the bootstrap-only entry, and the
+    # Makefile's explicit-C bootstrap count is zero. What remains Phase
+    # 25-owned is the bridge parser's own acceptance of the spelling, which
+    # this patch leaves alone.
+    require(not bootstrap,
+            "a Makefile bootstrap caller still selects explicit C: "
+            f"{bootstrap}")
     makefile_text = (ROOT / "Makefile").read_text(encoding="utf-8")
-    require(makefile_text.count("--backend bootstrap-emitter") == 2,
-            "the two bootstrap-entry callers Patch 24.13 landed are not both "
-            "there")
+    require(makefile_text.count("--backend bootstrap-emitter") == 5,
+            "the five bootstrap-entry callers Patch 24.13 landed are not all "
+            f"there: {makefile_text.count('--backend bootstrap-emitter')} of 5")
     return {
         "supported_surface_count": len(supported),
         "supported_surface_manifest_digest": canonical_digest(supported),

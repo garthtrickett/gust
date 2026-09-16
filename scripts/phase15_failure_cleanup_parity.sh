@@ -14,8 +14,25 @@ rm -rf "$build_dir"
 rm -f "$request" "$mir_to_c"
 mkdir -p "$build_dir"
 
-XDG_RUNTIME_DIR=/tmp TMPDIR=/tmp bash scripts/run-gust-file.sh compiler/future/p15_selected_failure_cleanup_source.gst
-grep -F 'SUCCESS: Phase 15.12 selected failure cleanup source passed' to.log >/dev/null
+# Patch 24.13: this source defers on the native route, so the runner cannot
+# produce its runtime evidence any more.
+#
+# Patch 24.13 flips the runner's default from mir-to-c to cranelift. This
+# source went through C by default and now takes the native route, where the
+# capability planner defers it -- deferred_p13_parameter_argument_target_dependent_abi. So the run below
+# would fail, and treating that as a pass would be "absence of C execution
+# counting as parity success", which TASK.md forbids.
+#
+# Patch 24.12d captured the frozen vector for exactly this case, while main
+# still had the retired backend. Replaying it asserts the same observable the
+# grep below asserted, and `check_vector` re-digests the SOURCE, so editing
+# the fixture invalidates its evidence instead of passing on an unchanged
+# deferral.
+frozen_dir="$build_dir/frozen"
+python3 scripts/phase24_frozen_oracle.py materialize \
+  "compiler/future/p15_selected_failure_cleanup_source.gst" "$frozen_dir/replay"
+grep -F 'SUCCESS: Phase 15.12 selected failure cleanup source passed' "$frozen_dir/replay.stdout" >/dev/null
+test "$(cat "$frozen_dir/replay.status")" = "0"
 XDG_RUNTIME_DIR=/tmp TMPDIR=/tmp bash scripts/run-gust-file.sh compiler/mir_failure_cleanup_state_smoke_test_entry.gst
 grep -F 'SUCCESS: Phase 15.12 failure cleanup state policy passed' to.log >/dev/null
 XDG_RUNTIME_DIR=/tmp TMPDIR=/tmp bash scripts/run-gust-file.sh compiler/mir_failure_cleanup_parity_smoke_test_entry.gst

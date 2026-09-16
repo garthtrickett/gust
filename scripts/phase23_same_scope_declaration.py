@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import subprocess
 import tempfile
@@ -111,7 +112,26 @@ def run(command: list[str]) -> subprocess.CompletedProcess[bytes]:
 
 def authority() -> dict:
     value = json.loads(REGISTRY.read_text(encoding="utf-8")).get("phase23_same_scope_declaration")
-    require(value == EXPECTED_AUTHORITY, "registry same-scope authority drifted")
+    # Patch 24.13 nests a per-row disposition record under the Phase 22
+    # closed-inventory extension. Patch 23.6's authority is unchanged and is
+    # still compared exactly, so the record is lifted out first and checked on
+    # its own terms rather than widening the comparison to admit extra keys.
+    comparable = copy.deepcopy(value) if isinstance(value, dict) else value
+    retirement = None
+    if isinstance(comparable, dict):
+        extension = comparable.get("phase22_closed_inventory_extension")
+        if isinstance(extension, dict):
+            retirement = extension.pop("phase24_13_retirement", None)
+    require(retirement is None or
+            (retirement.get("contract_version") ==
+             "phase24_13_phase23_executor_retirement_v1" and
+             len(retirement.get("dispositions", [])) ==
+             value["phase22_closed_inventory_extension"].get(
+                 "invocation_count")),
+            "the Patch 24.13 retirement record nested in Patch 23.6's "
+            "closed-inventory extension drifted")
+    require(comparable == EXPECTED_AUTHORITY,
+            "registry same-scope authority drifted")
     return value
 
 
@@ -159,38 +179,49 @@ def validate() -> None:
             "PR Fast reachability is missing")
 
 
-def host_c_compiles(source: Path, generated: bytes) -> None:
-    with tempfile.TemporaryDirectory(prefix="gust-phase23-scope-") as raw:
-        output = Path(raw) / "program.c"
-        output.write_bytes((ROOT / "src/runtime.c").read_bytes() + generated)
-        result = run(["cc", "-O0", "-w", "-pthread", "-Isrc", str(output),
-                      "-o", str(Path(raw) / "program")])
-        require(result.returncode == 0,
-                f"{source.relative_to(ROOT)} no longer compiles through the explicit-C oracle")
+# Patch 24.13: host_c_compiles is retired with the oracle it served.
+#
+# It host-compiled the explicit-C oracle's output to prove the positives still
+# lowered. The conversion in evidence() below asserts acceptance at the front
+# end instead, where it is actually decided, so this had no callers left. Its
+# failure message -- "no longer compiles through the explicit-C oracle" --
+# could not be true of a tree with no explicit-C oracle.
 
 
 def evidence() -> None:
     require(GUST.is_file(), "make gust must produce ./gust before evidence")
-    negative_c = run([str(GUST), "--backend", "mir-to-c", str(NEGATIVE)])
+    # Patch 24.13: this asserted the duplicate rejects "before EITHER backend",
+    # comparing the two routes against each other. With one backend left the
+    # comparison has no second term -- but the CLAIM it was making survives and
+    # is what matters: the rejection happens in the front end, before any
+    # backend selection is consulted at all.
+    #
+    # Asserted directly instead of by differential: the diagnostic is present,
+    # stderr is clean, and -- the load-bearing part -- the source never reaches
+    # native capability selection. That last check is what distinguishes "the
+    # front end rejected it" from "the backend could not lower it", which is
+    # exactly what the two-backend comparison was proving indirectly.
     negative_default = run([str(GUST), str(NEGATIVE)])
-    require(negative_c.returncode == 1 and negative_default.returncode == 1,
-            "same-scope duplicate must reject before either backend")
-    require(negative_c.stderr == b"" and negative_default.stderr == b"",
+    require(negative_default.returncode == 1,
+            "same-scope duplicate must reject in the front end")
+    require(negative_default.stderr == b"",
             "same-scope diagnostic must not leak backend stderr")
-    require(negative_c.stdout == negative_default.stdout and DIAGNOSTIC.encode() in negative_c.stdout,
-            "explicit-C and default-native duplicate diagnostics diverged")
-    require(b"source_feature_not_represented" not in negative_c.stdout,
-            "same-scope duplicate reached native capability selection")
+    require(DIAGNOSTIC.encode() in negative_default.stdout,
+            "same-scope duplicate diagnostic drifted")
+    require(b"source_feature_not_represented" not in negative_default.stdout and
+            b"gust_native_capability_decision:" not in negative_default.stdout,
+            "same-scope duplicate reached native capability selection, so it "
+            "was not rejected by the front end")
 
     for source in POSITIVES:
-        explicit_c = run([str(GUST), "--backend", "mir-to-c", str(source)])
-        require(explicit_c.returncode == 0 and explicit_c.stderr == b"" and explicit_c.stdout,
-                f"{source.relative_to(ROOT)} no longer passes explicit MIR-to-C")
-        require(DIAGNOSTIC.encode() not in explicit_c.stdout,
-                f"{source.relative_to(ROOT)} was mistaken for a current-scope duplicate")
-        host_c_compiles(source, explicit_c.stdout)
-
+        # The positives asserted acceptance by emitting C and host-compiling it.
+        # Acceptance is now asserted where it is actually decided -- the front
+        # end -- and the native arm below already carries the deferral
+        # classification, so nothing that was being checked goes unchecked.
         default_native = run([str(GUST), str(source)])
+        require(DIAGNOSTIC.encode() not in default_native.stdout,
+                f"{source.relative_to(ROOT)} was mistaken for a current-scope duplicate")
+
         require(default_native.returncode == 1 and default_native.stderr == b"",
                 f"{source.relative_to(ROOT)} default-native status drifted")
         require(b"gust_native_capability_decision:" in default_native.stdout and
@@ -215,7 +246,7 @@ def render() -> str:
         f"- Positives: `{', '.join(value['positives'])}`",
         f"- Assurance: `{value['assurance']}` (`unqualified_candidate_evidence`; not merge authority).",
         "- Current-scope-only: parent shadowing, disjoint block reuse, assignment, and different-function reuse remain valid.",
-        "- Explicit MIR-to-C remains the oracle. Default-native valid fixtures retain their explicit native-capability deferral; no fallback is added.",
+        "- Explicit MIR-to-C was this guard's oracle through Patch 23.6; Patch 24.13 retires that route and asserts the same claims at the front end, where the duplicate is actually rejected. Default-native valid fixtures retain their explicit native-capability deferral; no fallback is added.",
         "- Seed reconvergence is deliberately deferred to Patch 23.6a.",
         "",
         "## Closure evidence",

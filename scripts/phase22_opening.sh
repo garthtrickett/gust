@@ -22,6 +22,12 @@ test ! -x "$package_dir/gust-runtime-package.a" || fail "runtime archive must no
 rm -rf "$build_dir"
 mkdir -p "$build_dir"
 
+# Patch 24.13 retired this emission on the premise that the spelling was
+# removed. The removal is deferred until the live-C surface drains (issue
+# #398), so it is restored -- the c-alias comparison below needs it as its
+# reference, and removing the comparison's reference while keeping the
+# comparison is how this file started failing with "the registered C alias
+# differs from MIR-to-C" against a file that no longer existed.
 ./gust --backend mir-to-c "$fixture" > "$build_dir/explicit.c" 2> "$build_dir/explicit.stderr"
 test ! -s "$build_dir/explicit.stderr" || fail "explicit MIR-to-C emitted stderr"
 if rg -F '"phase22_default_route_flip"' scripts/cranelift_feature_registry.json >/dev/null; then
@@ -32,16 +38,19 @@ if rg -F '"phase22_default_route_flip"' scripts/cranelift_feature_registry.json 
   cmp -s "$build_dir/bare-program" "$build_dir/explicit-program" || fail "bare and explicit native output differ"
   test ! -s "$build_dir/bare.stderr" || fail "bare native route emitted stderr"
 else
-  ./gust "$fixture" > "$build_dir/bare.c" 2> "$build_dir/bare.stderr"
-  test -s "$build_dir/bare.c" || fail "bare route emitted no C"
-  test ! -s "$build_dir/bare.stderr" || fail "bare route emitted stderr"
-  cmp -s "$build_dir/bare.c" "$build_dir/explicit.c" || fail "bare and explicit MIR-to-C output differ"
+  # Patch 24.13: the pre-flip branch compared the bare route's emitted C
+  # against explicit MIR-to-C. Both are gone, and reaching this branch would
+  # mean the flip was unregistered after the backend was removed.
+  fail "the default-route flip is unregistered but the generated-C backend is already removed"
 fi
 
 set +e
 ./gust --backend c "$fixture" > "$build_dir/c-alias.stdout" 2> "$build_dir/c-alias.stderr"
 c_alias_status="$?"
 set -e
+# Patch 24.13 briefly inverted this to assert the alias was rejected. The
+# removal is deferred until the live-C surface drains (issue #398), so the
+# alias works again and the registered behaviour is what must hold.
 if rg -F '"phase22_explicit_c_migration"' scripts/cranelift_feature_registry.json >/dev/null; then
   test "$c_alias_status" -eq 0 || fail "the registered C alias failed"
   test ! -s "$build_dir/c-alias.stderr" || fail "the C alias emitted stderr"

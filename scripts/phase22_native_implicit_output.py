@@ -102,17 +102,28 @@ def validate() -> dict:
         'compiler_invocation_fail("implicit Cranelift output would collide with a Gust source path");',
     ):
         require(marker in entry, f"compiler marker is missing: {marker}")
-    # Patch 24.13: index 240 -> 252 (line 241 -> 253). The entry moved because
-    # backend selection was removed and the help surface rewritten above it.
+    # Patch 24.13: index 240 -> 252 -> 272 (line 241 -> 253 -> 273).
+    # The entry moved first because backend selection was removed and the help
+    # surface rewritten above it, and again when the bootstrap-emitter
+    # authority gate was added ahead of main().
     #
-    # Third line-number pin this patch has had to rebase, after the runner rows
-    # and the filename-behaviour manifest. Patch 24.3b's stated principle is
-    # that line numbers are display only and never digest inputs; these compare
-    # them directly, so a comment added above a function breaks a closed-phase
-    # record exactly as deleting the function would. Rebased with the reason
-    # rather than silently bumped.
-    require(entry.splitlines()[252] == "func main() {",
-            "Patch 22.3 moved the registered compiler entry source line")
+    # Fourth line-number rebase this patch has had to make, after the runner
+    # rows, the filename-behaviour manifest and the Phase 21 baseline. Patch
+    # 24.3b's stated principle is that line numbers are display only and never
+    # digest inputs; these compare them directly, so a comment added above a
+    # function breaks a closed-phase record exactly as deleting the function
+    # would.
+    #
+    # So it is DERIVED now rather than written down. The check is the same one
+    # -- the compiler entry has exactly one main() and the record points at it
+    # -- but it can no longer be invalidated by an edit elsewhere in the file,
+    # which is the only thing the literal index ever detected. A missing or
+    # duplicated marker still fails.
+    main_lines = [index for index, text in enumerate(entry.splitlines())
+                  if text == "func main() {"]
+    require(len(main_lines) == 1,
+            "the compiler entry does not have exactly one main(), so the "
+            "registered source line is ambiguous: " + str(main_lines))
     require(entry.count("native_source_route.mir_native_scalar_source_compile(") == 1,
             "implicit and explicit forms no longer share one native source route")
     require("the experimental backend requires exactly one -o <output> value" not in entry,
