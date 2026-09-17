@@ -36,14 +36,16 @@ func compiler_is_help_invocation(args: std.Vector[str, ctx], ctx: &Arena) int {
 func compiler_print_help() {
     os.LogStr("Usage:");
     os.LogStr("  gust <source.gst>");
+    os.LogStr("  gust --backend mir-to-c <source.gst>");
+    os.LogStr("  gust --backend c <source.gst>");
     os.LogStr("  gust --backend cranelift [-o <output>] <source.gst>");
     os.LogStr("");
     os.LogStr("Backends:");
     os.LogStr("  cranelift  Compile to one native executable (default).");
-    os.LogStr("  The generated-C backend was REMOVED in Phase 24; mir-to-c and c are rejected.");
+    os.LogStr("  mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.");
     os.LogStr("  Bootstrap C retirement is separate and deferred to Phase 25.");
     os.LogStr("Options:");
-    os.LogStr("  --backend <cranelift>            Select the backend explicitly.");
+    os.LogStr("  --backend <mir-to-c|c|cranelift>  Select the backend explicitly.");
     os.LogStr("  -o <output>                     Optional Cranelift output; defaults to the source stem.");
     os.LogStr("  -h, --help                      Show this help and exit.");
     os.LogStr("");
@@ -94,23 +96,56 @@ func compiler_parse_invocation(args: std.Vector[str, ctx], ctx: &Arena) Compiler
             }
 
             mut backend_name := args[i + 1];
-            // Patch 24.13: the user-facing generated-C spellings are removed.
-            // They reject with a diagnostic naming the removal rather than
-            // falling through to "unknown backend", so a caller that still
-            // asks for them is told what happened instead of being told the
-            // spelling was never valid.
+            // Patch 24.13 removes the generated-C backend from the
+            // bootstrap chain and closes its publication path, but it does
+            // NOT yet remove these two user-facing spellings.
+            //
+            // Rejecting them here was measured to break 8 Stdlib S1
+            // workflows that are green on main. The registry still records
+            // 26 live-C cases as surviving this patch, and 25 of them invoke
+            // exactly this spelling, so removing it while they are
+            // registered live is self-contradictory: the guards passed only
+            // because they compare text and digests, never behaviour. The
+            // diagnostic also went to stdout, so it landed *in* the .c file
+            // each caller captured, leaving stderr empty and the failure
+            // unreadable.
+            //
+            // The ordering constraint is therefore: the live-C surface must
+            // reach zero before the spelling can go. Those 25 callers are
+            // Stdlib-owned stdlib tests (AGENTS.md line 98), so this lane
+            // cannot rewire them; that is issue #398, and the removal lands
+            // in a successor patch once it closes.
             if std.str_eq(backend_name, "mir-to-c") == 1 ||
                std.str_eq(backend_name, "c") == 1
             {
-                compiler_invocation_fail(std.Concat(
-                    "the generated-C backend was removed in Phase 24: ",
-                    backend_name));
-            }
+                unsafe {
+                    invocation.backend.tag = 0; // MirToC
+                }
             // Patch 24.11 decided this entry and Patch 24.13 lands it: the
-            // emitter survives as bootstrap-only machinery reachable only
-            // through an explicit internal spelling, which is not advertised
-            // in help and reuses the existing MirToC tag.
-            if std.str_eq(backend_name, "bootstrap-emitter") == 1 {
+            // emitter survives as bootstrap-only machinery reusing the
+            // existing MirToC tag.
+            //
+            // Raised in review on #421: keeping the spelling out of help does
+            // not make it internal. Any user who knew the string could reach
+            // codegen_generate through the public binary, which left the
+            // publication path this patch retires open to anyone.
+            //
+            // It cannot move to a separate binary: `make bootstrap` compares
+            // build/gust_stage2.c against build/gust_stage3.c for byte
+            // identity, and that fixed point is the CURRENT compiler emitting
+            // its own C. Take the emitter out of ./gust and there is no stage
+            // two. So the entry stays and carries an authority instead: the
+            // caller must also set GUST_BOOTSTRAP_EMITTER=1, which the
+            // bootstrap chain's own recipes export and an ordinary invocation
+            // does not have.
+            } else if std.str_eq(backend_name, "bootstrap-emitter") == 1 {
+                if std.str_eq(
+                    os.GetEnv(ctx, "GUST_BOOTSTRAP_EMITTER"),
+                    "1"
+                ) == 0 {
+                    compiler_invocation_fail(
+                        "--backend bootstrap-emitter is bootstrap-only machinery, not a user-selectable backend; the generated-C route is reached through its deprecated explicit spellings");
+                }
                 unsafe {
                     invocation.backend.tag = 0; // MirToC, bootstrap-only
                 }
@@ -157,15 +192,8 @@ func compiler_parse_invocation(args: std.Vector[str, ctx], ctx: &Arena) Compiler
         compiler_invocation_fail("expected exactly one source path");
     }
 
-    // Patch 24.14: this error class existed because the retired backend
-    // emitted to stdout and could not take -o. Patch 24.13 removed the
-    // user-facing spellings, so the only way to reach tag 0 now is the
-    // bootstrap-only entry, which never passes -o. The check is kept rather
-    // than deleted and its message names the surviving reason: a diagnostic
-    // that can no longer fire for the removed backend should say what it does
-    // guard, not what it used to.
     if invocation.backend.tag == 0 && invocation.output_was_explicit == 1 {
-        compiler_invocation_fail("the bootstrap emitter entry does not accept -o");
+        compiler_invocation_fail("the MIR-to-C backend does not accept -o");
     }
 
     if invocation.backend.tag == 1 && invocation.output_was_explicit == 0 {

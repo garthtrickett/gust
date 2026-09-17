@@ -316,6 +316,13 @@ def policy_accepts(record: dict, summary: dict[str, object]) -> bool:
         "phase24_13_backend_removal", {}).get(
         "frozen_surface_transition", {}).get(
         "current_live_c_case_surface", expected_live)
+    # Patch 24.14 is newer still, and is the tail. It moves case identity
+    # without changing membership, so this override is what keeps the closed
+    # record comparable to a live scan whose digests have advanced.
+    expected_live = registry.get(
+        "phase24_14_toolchain_removal", {}).get(
+        "frozen_surface_transition", {}).get(
+        "current_live_c_case_surface", expected_live)
     return (
         record.get("capability_surface") == summary["capability_surface"] and
         expected_live == summary["live_c_case_surface"] and
@@ -648,6 +655,9 @@ def validate() -> tuple[dict, dict[str, object]]:
             removal_transition = registry.get(
                 "phase24_13_backend_removal", {}).get(
                     "frozen_surface_transition")
+            toolchain_transition = registry.get(
+                "phase24_14_toolchain_removal", {}).get(
+                    "frozen_surface_transition")
             previous = emitter_only_transition.get(
                 "previous_live_c_case_surface", {})
             current = emitter_only_transition.get(
@@ -687,11 +697,39 @@ def validate() -> tuple[dict, dict[str, object]]:
                             "phase24_13_frozen_surface_transition_v1" and
                             removal_transition.get(
                                 "current_live_c_case_surface") ==
-                            summary["live_c_case_surface"] and
+                            (toolchain_transition[
+                                "previous_live_c_case_surface"]
+                             if toolchain_transition is not None
+                             else summary["live_c_case_surface"]) and
                             removal_transition.get(
                                 "partial_or_unregistered_surface") ==
                             "rejected",
                             "Patch 24.13 frozen live-C transition drifted")
+                    # Patch 24.14 is the tail when present. It moves case
+                    # IDENTITY without changing membership -- 24.13's frozen
+                    # replay already took the one case 24.14 was written to
+                    # retire -- so the count and owner split must hold while
+                    # the manifest digest advances.
+                    if toolchain_transition is not None:
+                        before = removal_transition[
+                            "current_live_c_case_surface"]
+                        after = toolchain_transition[
+                            "current_live_c_case_surface"]
+                        require(toolchain_transition.get("contract_version") ==
+                                "phase24_14_frozen_surface_transition_v2" and
+                                after == summary["live_c_case_surface"] and
+                                toolchain_transition.get(
+                                    "partial_or_unregistered_surface") ==
+                                "rejected",
+                                "Patch 24.14 frozen live-C transition drifted")
+                        require(before["count"] == after["count"] and
+                                before["owner_counts"] ==
+                                after["owner_counts"] and
+                                before["complete_identity_manifest_digest"] !=
+                                after["complete_identity_manifest_digest"],
+                                "Patch 24.14 moves live-C case identity, so "
+                                "the count and owner split must hold and the "
+                                "digest must move")
             removed_from = emitter_only_transition.get("removed_from", {})
             require(isinstance(removed_from, dict) and removed_from,
                     "Patch 24.12a registered no source for its reduction")

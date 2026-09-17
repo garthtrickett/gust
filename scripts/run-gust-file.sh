@@ -16,18 +16,7 @@ fi
 
 mkdir -p build
 BUILD_LOG="build/gust-build.log"
-# Patch 24.13 (#411): the shared runner defaults to the native route.
-#
-# It defaulted to the retired backend, so any caller that pinned nothing
-# reached it by DEFAULT rather than by selection. That is what made Patch
-# 24.12b's gate qualified: two converted parity harnesses still executed live
-# C through this line, registered as this patch's residue. Flipping the default
-# is what discharges the unqualified claim 24.12b deferred here.
-#
-# The retired spelling is still accepted as an explicit request so a caller
-# that pins it gets the compiler's removal diagnostic rather than this script
-# rejecting an argument the compiler would explain better.
-RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-cranelift}"
+RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-cranelift}"  # 24.13 (#411): native default; explicit mir-to-c still served until #398
 case "$RUNNER_ROUTE" in
   mir-to-c|cranelift) ;;
   *)

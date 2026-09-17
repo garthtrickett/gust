@@ -1,14 +1,11 @@
 # Gust Cranelift experiment
 
-> Current status (Phase 24): this crate supplies Gust's only compilation
-> backend. Bare `gust source.gst` and explicit `--backend cranelift` use the
-> same no-fallback route. The generated-C backend was **removed in Phase 24**:
-> the `c` and `mir-to-c` spellings are rejected, and the semantic-oracle role
-> they held is served from a frozen corpus of recorded observations. The host-C
-> bootstrap path is separate and survives; retiring it is Phase 25's. The
-> phase-by-phase text below is a historical record; its earlier “experimental”,
-> “disabled by default”, and explicit-C statements describe the named phase,
-> not the current route.
+> Current status (Phase 22): this crate supplies Gust's default native backend.
+> Bare `gust source.gst` and explicit `--backend cranelift` use the same
+> no-fallback route. Explicit `--backend c` / `--backend mir-to-c` remains the
+> semantic oracle and bootstrap path. The phase-by-phase text below is a
+> historical record; its earlier “experimental” and “disabled by default”
+> statements describe the named phase, not the current route.
 
 This crate is intentionally separate from the root Gust compiler crate.
 

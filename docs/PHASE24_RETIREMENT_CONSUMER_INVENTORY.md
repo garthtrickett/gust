@@ -6,8 +6,8 @@
 
 Status: `patch24_11_complete`
 Authority base: `b7b1713cd65630b14ae92e46afd393990928a2e2`
-Rows: `109`
-Digest: `4a9e0a86cfb2b8d970ef89fae310aee7e52e50d5b45beab4d8a9d76c4b1bd831`
+Rows: `110`
+Digest: `5a133326d7e089b278fde99107a84413e31452ddc8167b28e196e22d0d26d056`
 
 ## Bootstrap-entry decision
 
@@ -104,19 +104,21 @@ Digest: `4a9e0a86cfb2b8d970ef89fae310aee7e52e50d5b45beab4d8a9d76c4b1bd831`
 ### 24.13
 
 - compiler/test_runner_entry.gst ::     MirToC, (retire)
+- compiler/test_runner_entry.gst :: gust --backend mir-to-c <source.gst> (retire)
 - compiler/test_runner_entry.gst :: std.str_eq(backend_name, "mir-to-c") (retire)
 - guard-cranelift-phase10-backend-selection-contract (retire)
 - guard-positive (migrate)
 - make-test-suite (migrate)
 - make-test-suite-parallel (migrate)
+- run-step52-positive-batch (migrate)
 - scripts/phase24_frozen_oracle_capture.py (retire)
-- sh-family:phase22-flip-evidence:deferred-to-24.13 (retire)
-- tests/test_runner.gst :: std.Concat("./gust --backend mir-to-c ", (migrate)
+- sh-family:phase22-flip-evidence (retire)
 
 ### 24.14
 
 - Makefile :: CC="${CC}" CFLAGS="${CFLAGS}" INCLUDES=" (migrate)
 - Makefile :: build/gust_final.c (migrate)
+- compiler/test_runner_entry.gst :: the MIR-to-C backend does not accept -o (retire)
 - scripts/phase21_cranelift_built_compiler_programs.py (retire)
 
 ### 24.15
@@ -141,7 +143,6 @@ Digest: `4a9e0a86cfb2b8d970ef89fae310aee7e52e50d5b45beab4d8a9d76c4b1bd831`
 - phase23-mir-to-c-deprecation-opening.yml (retire)
 - phase24-cr15-stdlib-guard-transition.yml (retire)
 - pr-fast.yml (retire)
-- run-step52-positive-batch (retire)
 - scripts/phase20_generated_mir_scale.py (materialize)
 - scripts/phase23_issue_health_opening.py (retire)
 - scripts/phase23_mir_to_c_deprecation_opening.py (retire)

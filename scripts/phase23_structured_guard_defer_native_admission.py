@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import os
 import shutil
@@ -48,7 +49,25 @@ def deferred_reason_body() -> str:
 
 def validate(value: dict | None = None) -> dict:
     value = authority() if value is None else value
-    require(value == {
+    # Patch 24.13 nests a per-row disposition record under the Phase 22
+    # closed-inventory extension. Patch 23.3a's authority is unchanged and is
+    # still compared exactly below, so the record is lifted out first and
+    # checked on its own terms rather than widening that comparison.
+    comparable = copy.deepcopy(value) if isinstance(value, dict) else value
+    retirement = None
+    if isinstance(comparable, dict):
+        extension = comparable.get("phase22_closed_inventory_extension")
+        if isinstance(extension, dict):
+            retirement = extension.pop("phase24_13_retirement", None)
+    require(retirement is None or
+            (retirement.get("contract_version") ==
+             "phase24_13_phase23_executor_retirement_v1" and
+             len(retirement.get("dispositions", [])) ==
+             value["phase22_closed_inventory_extension"].get(
+                 "invocation_count")),
+            "the Patch 24.13 retirement record nested in Patch 23.3a's "
+            "closed-inventory extension drifted")
+    require(comparable == {
         "contract_version": "phase23_structured_guard_defer_native_admission_v1",
         "status": "patch23_3a_complete",
         "next_patch": "23.3",
@@ -154,20 +173,21 @@ def run(command: list[str], *, env: dict[str, str] | None = None) -> subprocess.
                           stderr=subprocess.PIPE, check=False)
 
 
-def run_oracle(source: Path) -> tuple[int, bytes, bytes]:
-    generated = run([str(GUST), "--backend", "mir-to-c", str(source)])
-    require(generated.returncode == 0, "MIR-to-C oracle did not compile positive")
-    require(generated.stderr == b"", "MIR-to-C oracle emitted compiler stderr")
-    output_c = BUILD / "positive.c"
-    output_c.write_bytes(generated.stdout)
-    final_c = BUILD / "positive.final.c"
-    final_c.write_bytes((ROOT / "src/runtime.c").read_bytes() + generated.stdout)
-    program = BUILD / "positive.c.program"
-    linked = run(["cc", "-O0", "-w", "-pthread", "-Isrc", str(final_c),
-                  "-o", str(program)])
-    require(linked.returncode == 0, "MIR-to-C oracle generated C did not link")
-    observed = run([str(program)])
-    return observed.returncode, observed.stdout, observed.stderr
+# Patch 24.13: run_oracle is retired, not merely unused.
+#
+# It compiled the positive fixture through the MIR-to-C backend, host-compiled
+# the result and ran it, to serve as the differential oracle for run_native.
+# The conversion below dropped the differential -- the native arm is held to
+# the registered observables directly -- which left this function with no
+# callers while it still executed the spelling this patch removes. Dead code
+# that invokes a removed backend is exactly what #424 was filed about: it does
+# not run, so nothing fails, and it survives review as "unused".
+#
+# What it asserted is not lost. MIR_TO_C_COMMAND above still records the argv
+# it built, and the Phase 22 successor manifest still pins that row as this
+# guard's history; the frozen oracle's discharged register asserts that the
+# argv is no longer CONSTRUCTED anywhere in this file. So the record of what
+# the oracle was survives, and the claim that it no longer runs is checked.
 
 
 def run_native(source: Path) -> tuple[int, bytes, bytes, Path]:
@@ -276,12 +296,22 @@ def evidence() -> None:
         shutil.rmtree(BUILD)
     BUILD.mkdir(parents=True)
     source = ROOT / value["fixtures"]["positive"]
-    oracle = run_oracle(source)
+    # Patch 24.13: the oracle arm is retired and the native arm is checked
+    # against the REGISTERED CONTRACT instead of against it.
+    #
+    # The two assertions were doing different work. The first compared native
+    # to MIR-to-C -- a second opinion, which the retirement removes. The second
+    # compared the oracle to value["observables"]["exit_status"], a registered
+    # expectation that was never derived from either backend. Pointing the
+    # native arm at that expectation keeps the assertion that has independent
+    # authority and drops only the differential.
+    #
+    # This is why the guard converts rather than retires: what it ultimately
+    # proves is that the positive fixture produces the registered observables,
+    # and the native route can be held to that directly.
     native = run_native(source)
-    require(oracle == native[:3],
-            "native guard/defer observables differ from MIR-to-C")
-    require(oracle == (value["observables"]["exit_status"], b"", b""),
-            "positive observables differ from registered contract")
+    require(native[:3] == (value["observables"]["exit_status"], b"", b""),
+            "positive native observables differ from registered contract")
     validate_retained_deferral(value)
     validate_retained_declaration_deferral(value)
     check_review(value)
