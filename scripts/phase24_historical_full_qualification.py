@@ -92,16 +92,37 @@ def retirement_is_on_main() -> None:
                "--jq", ".content")
     import base64
     source = base64.b64decode(entry).decode("utf-8", "replace")
+    # Both assertions here were written for a main where the user-facing
+    # spellings were gone. That removal is deferred until the live-C surface
+    # drains (issue #398), so they would fail on the merged retirement main
+    # this patch exists to qualify -- and failing because the tree is correct
+    # is the opposite of evidence.
+    #
+    # What DID land is the bootstrap-only entry and its authority, so that is
+    # what is required. A Historical run on a pre-retirement main still fails
+    # here, which is the property the original pair was protecting.
     require(
-        "the generated-C backend was removed in Phase 24" in source,
-        "main does not contain the retirement: the compiler entry still "
-        "accepts the generated-C backend. A Historical run on a "
-        "pre-retirement main is green because nothing was removed yet, so "
-        "qualifying it proves the opposite of what this patch claims.",
+        'std.str_eq(backend_name, "bootstrap-emitter")' in source,
+        "main does not contain the retirement: the compiler entry has no "
+        "bootstrap-only backend entry. A Historical run on a pre-retirement "
+        "main is green because nothing was retired yet, so qualifying it "
+        "proves the opposite of what this patch claims.",
     )
     require(
-        '"--backend <mir-to-c|c|cranelift>"' not in source,
-        "main still advertises the removed C backend in its help surface",
+        "GUST_BOOTSTRAP_EMITTER" in source,
+        "main reaches the emitter without the bootstrap authority, so the "
+        "publication path this phase closes is open to any caller",
+    )
+    # Inverted, not dropped. While the removal is deferred the spellings must
+    # still be THERE: a main that quietly dropped them without #398 closing
+    # would break the 25 Stdlib-owned live-C callers, and this instrument
+    # would otherwise qualify that run as the retirement landing.
+    require(
+        '"  --backend <mir-to-c|c|cranelift>  Select the backend explicitly."'
+        in source,
+        "main no longer advertises the deferred C spellings: their removal is "
+        "sequenced after the live-C surface drains (issue #398), so dropping "
+        "them here is not the retirement this patch qualifies",
     )
 
 
@@ -126,11 +147,44 @@ def qualify(run: dict, expected_sha: str) -> dict:
     require(not duplicated,
             f"the job population is not unique: {duplicated}. A repeated job "
             "makes the population count larger than the work it covers.")
+    # Raised in review on #427: treating `skipped` as complete let a run that
+    # executed NONE of the historical suite qualify as Phase 24 closure
+    # evidence. cranelift-historical-full.yml gates `inventory` on the actor,
+    # and every other job depends on it with no `if:` of its own, so an
+    # actor-gated dispatch skips the whole suite while GitHub still reports
+    # the run successful. Skips are named separately because that is the case
+    # that reads as a pass.
+    skipped = [job["name"] for job in jobs if job["conclusion"] == "skipped"]
+    require(not skipped,
+            f"jobs were skipped, so this run is not evidence that the "
+            f"historical suite ran: {skipped[:6]}. A dispatch that misses the "
+            "actor gate skips `inventory` and every job below it, and the run "
+            "still reports success.")
     incomplete = [job["name"] for job in jobs
-                  if job["conclusion"] not in ("success", "skipped")]
+                  if job["conclusion"] != "success"]
     require(not incomplete,
             f"jobs did not succeed: {incomplete[:6]}")
 
+    # Raised in review on #427: this subprocess reads the LOCAL TASK.md and
+    # level files, not the tree the remote run exercised. Invoked from a
+    # closure branch or a dirty checkout it would combine a successful run on
+    # one population with accounting from another, and the authority would
+    # record a pairing that never existed. The local tree has to BE the
+    # qualified commit.
+    local_head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT,
+                                capture_output=True, text=True, check=False)
+    require(local_head.returncode == 0 and
+            local_head.stdout.strip() == expected_sha,
+            "the population accounting would be read from a different tree "
+            f"than the run qualified: local {local_head.stdout.strip()[:12]} "
+            f"!= qualified {expected_sha[:12]}. Run `qualify` from a clean "
+            "checkout of the merged main it is qualifying.")
+    dirty = subprocess.run(["git", "status", "--porcelain"], cwd=ROOT,
+                           capture_output=True, text=True, check=False)
+    require(dirty.returncode == 0 and not dirty.stdout.strip(),
+            "the checkout is dirty, so the accounting would describe a tree "
+            "no run exercised: "
+            f"{dirty.stdout.strip().splitlines()[:4]}")
     accounting = subprocess.run(
         ["python3", str(ROOT / "scripts" / "phase24_native_population_accounting.py"),
          "validate"], cwd=ROOT, capture_output=True, text=True, check=False)

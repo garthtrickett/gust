@@ -60,6 +60,13 @@ EXPECTED_ROWS = (
     ("24.12", "Frozen Expected-Behaviour Oracle Replacement"),
     ("24.12a", "Emitter-Only Parity Guard Retirement"),
     ("24.12b", "Python Parity Guard Conversion"),
+    # Surfaced by the review fix above: both landed (#429, #435) and both sit
+    # in the Status block between 24.12b and 24.13, but neither was in this
+    # expected set. While `rows()` filtered to EXPECTED_ROWS they were simply
+    # invisible here -- two retirement patches a closure instrument is meant
+    # to account for and could not see.
+    ("24.12c", "Frozen Oracle Capture for the Uncovered Population"),
+    ("24.12d", "Frozen Oracle Capture for the Default-Route Flip"),
     ("24.13", "Backend-Selection and Publication-Path Removal"),
     ("24.14", "C Toolchain Discovery, Error, and Temp-File Removal"),
     ("24.15a", "Reachability Instrument Repair"),
@@ -99,8 +106,25 @@ def rows() -> list:
     """The retirement rows as TASK.md states them, in file order."""
     text = TASK.read_text(encoding="utf-8")
     found = []
-    for mark, patch, title in ROW.findall(text):
-        if patch.startswith("24.") and any(patch == p for p, _ in EXPECTED_ROWS):
+    # Raised in review on #427: filtering to EXPECTED_ROWS here dropped any
+    # unexpected Phase 24 row BEFORE check_row_order() computed `extra`, so
+    # that check was permanently empty and a new retirement patch could be
+    # added to the roadmap and ignored by check_all_done().
+    #
+    # Every row in Phase 24's own `## Status` block is collected instead, and
+    # the comparison against EXPECTED_ROWS happens where it can fail. Scoped
+    # to that block rather than to the whole file: Phase 24's pre-retirement
+    # patches (24.0 through 24.4) carry status rows elsewhere and are not
+    # retirement rows, so collecting them would report thirty "unexpected"
+    # rows that are nothing of the kind.
+    start = text.find("# Phase 24 — Generated-C Backend Retirement")
+    require(start != -1, "the Phase 24 roadmap header is missing from TASK.md")
+    status = text.find("\n## Status", start)
+    require(status != -1, "the Phase 24 status block is missing from TASK.md")
+    end = text.find("\n## ", status + 1)
+    block = text[status:end if end != -1 else len(text)]
+    for mark, patch, title in ROW.findall(block):
+        if patch.startswith("24."):
             found.append((patch, title.strip(), mark == "x"))
     return found
 

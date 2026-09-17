@@ -1557,6 +1557,35 @@ def check_stale_row_scoring(bodies: dict[str, str], workflow_seen: set[str],
         f"the parity residue moved from 28 to {len(parity_residue)} without "
         "adjudication",
     )
+    # Raised in review on #427 (P1): the two checks above make continued
+    # UNREACHABILITY the passing state, so all 28 evidence owners could test
+    # nothing while this audit passed -- which contradicts Patch 24.16's own
+    # exit gate that every survivor protect a live invariant.
+    #
+    # Adjudicating them is per-guard work: most compared the native route
+    # against MIR-to-C, so each needs a decision about whether the invariant
+    # survives the retirement or went with it. That is issue #437.
+    #
+    # What changes here is the BASIS on which this passes. The residue must be
+    # registered as pending adjudication against a named owner, so the passing
+    # state is "declared pending", not "correctly unreachable". The structural
+    # falsifiers above are untouched: gaining a level or an executor still
+    # fails and forces re-adjudication.
+    pending = json.loads(REGISTRY.read_text(encoding="utf-8")).get(
+        "phase24_16_residue_audit", {}).get("parity_residue_adjudication")
+    require(isinstance(pending, dict) and
+            pending.get("contract_version") ==
+            "phase24_16_parity_residue_pending_v1" and
+            pending.get("status") == "pending_adjudication" and
+            pending.get("owner_issue") == 437 and
+            pending.get("unreachability_is_not_the_end_state") == "declared",
+            "the parity residue is not registered as pending adjudication, so "
+            "this audit would pass on the bare fact that 28 guards are "
+            "unreachable")
+    require(sorted(pending.get("recipes", [])) == parity_residue,
+            "the registered pending-adjudication set is not the parity "
+            "residue this audit measured: "
+            f"{sorted(set(pending.get('recipes', [])) ^ set(parity_residue))[:6]}")
 
     # Patch 24.16's adjudication of the native-smoke population.
     #
