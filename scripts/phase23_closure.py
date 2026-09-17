@@ -565,6 +565,9 @@ def check() -> None:
             toolchain_production = registry.get(
                 "phase24_14_toolchain_removal", {}).get(
                     "production_audit_transition")
+            docs_production = registry.get(
+                "phase24_15_package_docs_registry", {}).get(
+                    "production_audit_transition")
             removal_production = registry.get(
                 "phase24_13_backend_removal", {}).get(
                     "production_audit_transition")
@@ -621,7 +624,9 @@ def check() -> None:
                                 toolchain_production.get("contract_version") ==
                                 "phase24_14_production_audit_transition_v1" and
                                 toolchain_production.get("current_audit") ==
-                                current_audit and
+                                (docs_production["previous_audit"]
+                                 if docs_production is not None
+                                 else current_audit) and
                                 toolchain_production.get(
                                     "partial_extra_or_substituted_audit") ==
                                 "rejected",
@@ -661,6 +666,19 @@ def check() -> None:
                                 is None,
                                 "Patch 24.14 retires the last non-bootstrap "
                                 "live-C lane, so the audit must report none")
+                            # Patch 24.15 is the tail when present, and is
+                            # digest-only: documentation stating removal moves
+                            # the supported-surface digest and no count.
+                            if docs_production is not None:
+                                require(
+                                    docs_production.get("contract_version") ==
+                                    "phase24_15_production_audit_transition_v1"
+                                    and
+                                    docs_production.get("current_audit") ==
+                                    current_audit and
+                                    docs_production.get("digest_only") is True,
+                                    "Patch 24.15 production-audit closure "
+                                    "successor drifted")
             for field in production_unchanged:
                 if field in reduced:
                     continue

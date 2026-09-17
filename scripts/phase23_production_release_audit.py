@@ -94,6 +94,13 @@ def scan() -> dict[str, object]:
         surface("README.md", "user_build_run_install_contract", (
             "build/phase10-package/bin/gust program.gst",
             "make install",
+            # Patch 24.15 briefly rebased this onto "were removed in", on the
+            # premise that 24.13 had stopped keeping the scheduling promise.
+            # The removal is deferred until the live-C surface drains (issue
+            # #398), so the compiler still accepts both spellings and the
+            # forward-looking wording is the accurate one. Documentation that
+            # announced a removal the CLI does not perform would be the same
+            # defect as help text that did.
             "backend removal is scheduled for",
             "Phase 24. Bootstrap-C retirement is a separate Phase 25 change",
             "There is no automatic fallback",
@@ -436,6 +443,9 @@ def validate() -> tuple[dict, dict[str, object]]:
             toolchain_transition = registry.get(
                 "phase24_14_toolchain_removal", {}).get(
                     "production_audit_transition")
+            docs_transition = registry.get(
+                "phase24_15_package_docs_registry", {}).get(
+                    "production_audit_transition")
             if removal_transition is not None:
                 require(removal_transition.get("contract_version") ==
                         "phase24_13_production_audit_transition_v1" and
@@ -459,7 +469,9 @@ def validate() -> tuple[dict, dict[str, object]]:
                     require(
                         toolchain_transition.get("contract_version") ==
                         "phase24_14_production_audit_transition_v1" and
-                        toolchain_transition.get("current_audit") == summary and
+                        toolchain_transition.get("current_audit") ==
+                        (docs_transition["previous_audit"]
+                         if docs_transition is not None else summary) and
                         toolchain_transition.get(
                             "partial_extra_or_substituted_audit") ==
                         "rejected",
@@ -473,6 +485,29 @@ def validate() -> tuple[dict, dict[str, object]]:
                         summary["active_non_bootstrap_live_c_lane_count"] == 0,
                         "Patch 24.14 retires the last non-bootstrap live-C "
                         "lane, so this audit must measure none")
+                # Patch 24.15 is the tail when present, and its shape is
+                # DIGEST-ONLY: it states removal in user documentation, which
+                # moves the supported-surface manifest digest and must move no
+                # count at all. A documentation patch that changes a count has
+                # changed a route, which is not what it claims to be doing.
+                if docs_transition is not None:
+                    require(
+                        docs_transition.get("contract_version") ==
+                        "phase24_15_production_audit_transition_v1" and
+                        docs_transition.get("current_audit") == summary and
+                        docs_transition.get("digest_only") is True and
+                        docs_transition.get(
+                            "partial_extra_or_substituted_audit") ==
+                        "rejected",
+                        "Patch 24.15 production audit transition drifted")
+                    was = docs_transition["previous_audit"]
+                    moved = [key for key in set(was) | set(summary)
+                             if was.get(key) != summary.get(key)]
+                    require(
+                        moved == ["supported_surface_manifest_digest"],
+                        "Patch 24.15 states removal in documentation, so only "
+                        "the supported-surface digest may move; these also "
+                        f"moved: {sorted(k for k in moved if k != 'supported_surface_manifest_digest')}")
             removed = emitter_only_transition.get("removed_invocation_count")
             surface = registry.get(
                 "phase24_12a_emitter_only_retirement", {}).get(
@@ -498,8 +533,13 @@ def validate() -> tuple[dict, dict[str, object]]:
             # Patch 24.14 is the tail when present, then 24.13, then 24.12b:
             # the effective audit is the newest registered successor's
             # current_audit, because that is the one the live scan must match.
+            docs_transition = registry.get(
+                "phase24_15_package_docs_registry", {}).get(
+                    "production_audit_transition")
             effective["audit"] = (
-                toolchain_transition["current_audit"]
+                docs_transition["current_audit"]
+                if docs_transition is not None
+                else toolchain_transition["current_audit"]
                 if toolchain_transition is not None
                 else removal_transition["current_audit"]
                 if removal_transition is not None

@@ -23970,3 +23970,15 @@ guard-cranelift-phase24-c-toolchain-provenance-contract:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase24-c-toolchain-provenance-contract | grep -F $'guard-cranelift-phase24-c-toolchain-provenance-contract\t1\t' >/dev/null
     python3 scripts/cranelift_registry.py validate
     python3 scripts/phase24_c_toolchain_provenance.py validate
+
+# Patch 24.15 (#405). Account every `list-native` member this phase retires
+# against the pre-retirement baseline Patch 24.17 qualifies its run over.
+# Appended at the end: the Patch 24.0c manifest keys on line numbers.
+guard-cranelift-phase24-native-population-accounting-contract:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🧮 Checking the Phase 24 native population accounting..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase24-native-population-accounting-contract | grep -F $'guard-cranelift-phase24-native-population-accounting-contract\t1\t' >/dev/null
+    python3 scripts/cranelift_registry.py validate
+    python3 scripts/phase24_native_population_accounting.py validate
