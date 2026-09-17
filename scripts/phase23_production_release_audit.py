@@ -94,12 +94,14 @@ def scan() -> dict[str, object]:
         surface("README.md", "user_build_run_install_contract", (
             "build/phase10-package/bin/gust program.gst",
             "make install",
-            # Patch 24.15: the marker was "backend removal is scheduled for".
-            # That is a promise about the future, and the compiler stopped
-            # keeping it at 24.13. Rebased onto the statement of fact, with
-            # the Phase 25 boundary marker kept unchanged beside it so this
-            # audit still fails if a document conflates the two retirements.
-            "were removed in",
+            # Patch 24.15 briefly rebased this onto "were removed in", on the
+            # premise that 24.13 had stopped keeping the scheduling promise.
+            # The removal is deferred until the live-C surface drains (issue
+            # #398), so the compiler still accepts both spellings and the
+            # forward-looking wording is the accurate one. Documentation that
+            # announced a removal the CLI does not perform would be the same
+            # defect as help text that did.
+            "backend removal is scheduled for",
             "Phase 24. Bootstrap-C retirement is a separate Phase 25 change",
             "There is no automatic fallback",
         )),

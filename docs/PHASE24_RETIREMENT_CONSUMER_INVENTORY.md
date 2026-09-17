@@ -6,8 +6,8 @@
 
 Status: `patch24_11_complete`
 Authority base: `b7b1713cd65630b14ae92e46afd393990928a2e2`
-Rows: `110`
-Digest: `5a133326d7e089b278fde99107a84413e31452ddc8167b28e196e22d0d26d056`
+Rows: `108`
+Digest: `47e18d1907b50f12150661fbcd1aa968dd08b4122595c7d823216d9a99653ee7`
 
 ## Bootstrap-entry decision
 
@@ -123,8 +123,6 @@ Digest: `5a133326d7e089b278fde99107a84413e31452ddc8167b28e196e22d0d26d056`
 
 ### 24.15
 
-- README.md :: selected explicitly with `--backend c` (retire)
-- compiler/experiments/cranelift/README.md :: Explicit `--backend c` / `--backend mir- (retire)
 - guard-cranelift-phase10-opening-contract (retire)
 - phase23-mir-to-c-archived-corpus.yml (update)
 - phase23-mir-to-c-frozen-surface.yml (update)
