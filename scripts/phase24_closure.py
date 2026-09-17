@@ -37,6 +37,7 @@ with the reason, and reordering it fails.
 
 import argparse
 import hashlib
+import importlib.util
 import json
 import re
 import subprocess
@@ -81,10 +82,34 @@ ROW = re.compile(r"^- \[( |x)\] Patch (24\.\d+[a-z]?) — ([^—\n]+?)(?: — DO
 
 # The closure sentence and its boundary, stated together because the second
 # half is what keeps Phase 25's scope from widening by implication.
+# The sentence Phase 24 was scoped to say was "Gust no longer emits C as a
+# compiler backend". Measured on the merged retirement main, that is FALSE:
+# `./gust --backend mir-to-c` emits C. Closing on it would make the repository
+# assert something its own compiler contradicts, which is the defect this
+# phase spent five patches removing.
+#
+# What the phase DID achieve, verified rather than asserted:
+#   ./gust <src>                            -> native, emits no C
+#   ./gust --backend bootstrap-emitter      -> REFUSED without the authority
+#   GUST_BOOTSTRAP_EMITTER=1 ... emitter    -> emits C, bootstrap-only
+#   ./gust --backend mir-to-c               -> emits C, deprecated, retained
+#
+# So the publication path is closed and the default route is native; what
+# survives is the deprecated explicit spelling, retained because 28 registered
+# live-C cases still invoke it and 25 of them are Stdlib-owned (AGENTS.md
+# line 98). Their removal is sequenced after issue #398.
+#
+# The sentence is narrowed to what is true and the residue is bounded below,
+# so the claim cannot quietly widen. A later patch restores the unqualified
+# sentence when #398 closes.
 CLOSURE_SENTENCE = (
-    "Gust no longer emits C as a compiler backend; the repository still "
+    "Gust no longer emits C on any default or publication route: the default "
+    "route is native and the bootstrap emitter is refused without its "
+    "authority. The deprecated explicit spellings are retained for 28 "
+    "registered live-C cases pending issue #398, and the repository still "
     "contains C under Phase 25 ownership."
 )
+RETAINED_LIVE_C_CASES = 28
 
 
 def fail(message: str) -> None:
@@ -215,6 +240,31 @@ def check_historical_authority(registry: dict) -> dict:
     return node
 
 
+def check_retained_residue() -> dict:
+    """The retained explicit spellings are bounded, not open-ended.
+
+    The closure sentence admits an exception, so the exception has to be
+    measured here or it is an escape hatch. The live-C surface is the same
+    population Patch 23.10 froze and every retirement patch has reduced; if it
+    grows, the narrowed sentence stops being true and this closure fails
+    rather than ageing into a false claim.
+    """
+    spec = importlib.util.spec_from_file_location(
+        "_frozen_surface", ROOT / "scripts" / "phase23_mir_to_c_frozen_surface.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    cases = module.live_c_case_rows()
+    require(
+        len(cases) == RETAINED_LIVE_C_CASES,
+        f"the retained live-C surface is {len(cases)}, not "
+        f"{RETAINED_LIVE_C_CASES}. The closure sentence names an exact "
+        "residue; a different one means the exception moved and the sentence "
+        "has to be re-derived, not re-pinned.",
+    )
+    owners = sorted({str(row.get("owner", "?")) for row in cases})
+    return {"retained_live_c_cases": len(cases), "owners": owners}
+
+
 def check_boundary() -> None:
     """Closing the backend is not closing Phase 25."""
     text = TASK.read_text(encoding="utf-8")
@@ -229,6 +279,7 @@ def validate() -> dict:
     found = check_row_order()
     check_all_done(found)
     population = check_population_accounting()
+    residue = check_retained_residue()
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     historical = check_historical_authority(registry)
     check_boundary()
@@ -237,6 +288,7 @@ def validate() -> dict:
         "rows": len(found),
         "order": [patch for patch, _, _ in found],
         "population": population,
+        "retained_residue": residue,
         "historical_run": historical["run_id"],
         "closure_sentence": CLOSURE_SENTENCE,
     }
