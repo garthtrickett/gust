@@ -2000,7 +2000,43 @@ def normalize_phase23_text_surfaces(
     # Patch 24.15a is newer than 24.14, so it runs first, same newest-first
     # discipline as every link below it.
     # Patch 24.15 is newest, so it runs first.
-    # Patch 24.16 is newest, so it runs first.
+    # Patch 24.18 is newest, so it runs first. It registers the closure's own
+    # surfaces: cranelift_registry.py, which it edits to register the
+    # phase24_closure top-level key, and the closure contract it adds.
+    closure_surface = registry.get(
+        "phase24_closure", {}).get("text_surface_successor")
+    if closure_surface is not None:
+        require(closure_surface.get("contract_version") ==
+                "phase24_18_text_surface_successor_v1" and
+                closure_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Patch 24.18 text surface successor drifted")
+        closure_paths = list(closure_surface["registered_changed_paths"])
+        closure_pre = {row["path"]: row for row
+                       in closure_surface["previous_changed_text_surfaces"]}
+        closure_post = {row["path"]: row for row
+                        in closure_surface["current_changed_text_surfaces"]}
+        require(sorted(closure_pre) == sorted(closure_paths) ==
+                sorted(closure_post),
+                "Patch 24.18 registered text surface is missing")
+        closure_live = {row["path"]: row for row in rows
+                        if row["path"] in closure_paths}
+        require(sorted(closure_live) == sorted(closure_paths),
+                "Patch 24.18 registered text surface is missing from the scan")
+        for path in closure_paths:
+            require(closure_live[path] in (closure_pre[path],
+                                           closure_post[path]),
+                    "Patch 24.18 changed text surfaces are partial or "
+                    f"substituted: {path}")
+        closure_added = set(closure_surface["added_text_surfaces"])
+        rows = [dict(closure_pre.get(row["path"], row)) for row in rows
+                if row["path"] not in closure_added]
+        rows = sorted(rows + [copy.deepcopy(r) for r
+                              in closure_surface["removed_text_surfaces"]],
+                      key=lambda row: str(row["path"]))
+        by_path = {row["path"]: row for row in rows}
+
+    # Patch 24.16 runs next.
     audit_surface = registry.get(
         "phase24_16_residue_audit", {}).get("text_surface_successor")
     if audit_surface is not None:

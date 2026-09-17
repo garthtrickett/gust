@@ -116,15 +116,15 @@ Out of scope:
 - [x] Patch 24.12 — Frozen Expected-Behaviour Oracle Replacement — DONE
 - [x] Patch 24.12a — Emitter-Only Parity Guard Retirement — DONE
 - [x] Patch 24.12b — Python Parity Guard Conversion — DONE
-- [ ] Patch 24.12c — Frozen Oracle Capture for the Uncovered Population
-- [ ] Patch 24.12d — Frozen Oracle Capture for the Default-Route Flip
-- [ ] Patch 24.13 — Backend-Selection and Publication-Path Removal
-- [ ] Patch 24.14 — C Toolchain Discovery, Error, and Temp-File Removal
-- [ ] Patch 24.15a — Reachability Instrument Repair
-- [ ] Patch 24.15 — Package, Documentation, and Registry Retirement
-- [ ] Patch 24.16 — Cross-Feature Residue Audit
-- [ ] Patch 24.17 — Exact-Main Historical Full Qualification
-- [ ] Patch 24.18 — Phase 24 Closure and Terminal State
+- [x] Patch 24.12c — Frozen Oracle Capture for the Uncovered Population — DONE
+- [x] Patch 24.12d — Frozen Oracle Capture for the Default-Route Flip — DONE
+- [x] Patch 24.13 — Backend-Selection and Publication-Path Removal — DONE
+- [x] Patch 24.14 — C Toolchain Discovery, Error, and Temp-File Removal — DONE
+- [x] Patch 24.15a — Reachability Instrument Repair — DONE
+- [x] Patch 24.15 — Package, Documentation, and Registry Retirement — DONE
+- [x] Patch 24.16 — Cross-Feature Residue Audit — DONE
+- [x] Patch 24.17 — Exact-Main Historical Full Qualification — DONE
+- [x] Patch 24.18 — Phase 24 Closure and Terminal State — DONE
 
 Status rows are machine-parsed. Keep each row as
 `- [ ] Patch 24.N — <Title>` or `- [x] Patch 24.N — <Title> — DONE`; an
@@ -1054,8 +1054,9 @@ later architecture phases inactive.
 - Generate the retirement closure from registry source, replace evidence
   placeholders, mark every retirement row DONE, publish the atomic closure
   PR, and write a terminal lane state after merge.
-- State the closure sentence and its boundary: Gust no longer emits C as a
-  compiler backend; the repository still contains C under Phase 25 ownership.
+- State the closure sentence and its boundary, narrowed to what the merged
+  main supports and bounded by the registered residue (see the Status
+  section above and issue #398).
 
 **Exit Gate:** `scripts/phase24_closure.py` exists and is the instrument that
 establishes the rest of this gate rather than a record written alongside it;
@@ -1147,7 +1148,18 @@ The retirement succeeds when:
   merge main, workflow population, review state, Historical run, event, full
   SHA, job population, conclusion, and budgets.
 
-This phase may say **Gust no longer emits C as a compiler backend**. It may
+This phase was scoped to say **Gust no longer emits C as a compiler
+backend**. Measured on the merged retirement main that is false --
+`./gust --backend mir-to-c` emits C -- because 28 registered live-C cases
+still invoke the deprecated explicit spellings and 25 of them are
+Stdlib-owned, so this lane cannot rewire them (issue #398). Closing on the
+unqualified sentence would assert what the compiler contradicts.
+
+Phase 24 therefore closes on the narrower claim, which is verified:
+
+Gust no longer emits C on any default or publication route: the default route is native and the bootstrap emitter is refused without its authority. The deprecated explicit spellings are retained for 28 registered live-C cases pending issue #398, and the repository still contains C under Phase 25 ownership.
+
+A later patch restores the unqualified sentence when #398 closes. It may
 not say the repository contains no C, the bootstrap is native, a host C
 compiler is unnecessary, the compiler is consolidated, intrinsic IDs exist,
 or Phase 24 is otherwise more than backend retirement.

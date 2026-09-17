@@ -1,0 +1,7 @@
+kind	requirement	evidence	level
+closure	every Phase 24 retirement row is DONE in the amended order with 24.15a before 24.15	TASK.md Status rows 24.10 through 24.18	1
+historical	the exact-main Historical Full run is green and cited by identity not adjective	phase24_closure authoritative_latest_historical_full	1
+population	the Historical population is accounted against the Patch 24.17 baseline member by member	phase24_native_population_accounting with pinned baseline digest	1
+boundary	closing the generated-C backend is not closing Phase 25 bootstrap C	TASK.md closure sentence stated with its Phase 25 boundary	1
+residue	the parity residue is registered as pending adjudication rather than asserted correct	phase24_16_residue_audit parity_residue_adjudication and issue 437	1
+deferral	the retained explicit C spellings are registered bounded and owned	phase24_13_backend_removal deferral record and issue 398	1

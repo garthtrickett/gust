@@ -25506,6 +25506,100 @@
       "status": "patch24_12b_in_progress"
     }
   },
+  "phase24_closure": {
+    "text_surface_successor": {
+      "added_text_surfaces": [
+        "docs/PHASE24_CLOSURE.md",
+        "tests/cranelift/phase24_closure_contract.tsv"
+      ],
+      "change_reason": "Patch 24.18 edits cranelift_registry.py to register the phase24_closure top-level key and phase24_cr15_stdlib_guard_transition.py to consume this successor, and it adds the closure contract. cranelift_registry.py was owned by Patch 24.16 and takes 24.16's current row as its previous; the cr15 script was unowned and takes main's.",
+      "contract_version": "phase24_18_text_surface_successor_v1",
+      "current_changed_text_surfaces": [
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "d12fc1e792adaf8bc5e9665435a173c316217a07945df5f091956669b17a13ab",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "75f835548055310422f3a7d6013243ca746672bc008ec8bdec17a4b9b4abaf8a",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 30
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_test_levels.json",
+          "removal_phase": "24"
+        }
+      ],
+      "partial_extra_or_substituted_surface": "rejected",
+      "previous_changed_text_surfaces": [
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "507e55ed44597a88341c41c3ec98f0b4d7c606f55478589508e7a1226aba8153",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "7ac193c84897e21311c98db4bd1aa2a2bb88264d62a80fc6597926c341577809",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 30
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_test_levels.json",
+          "removal_phase": "24"
+        }
+      ],
+      "registered_changed_paths": [
+        "scripts/cranelift_registry.py",
+        "scripts/cranelift_test_levels.json"
+      ],
+      "removed_text_surfaces": [],
+      "status": "patch24_18_complete"
+    },
+    "authoritative_latest_historical_full": {
+      "budgets": {
+        "jobs": 18,
+        "skipped": 0
+      },
+      "conclusion": "success",
+      "event": "schedule",
+      "head_sha": "927892b31fdfc509eb6a3c82697acdd862863134",
+      "run_id": 35201456702,
+      "unique_job_population": 18
+    },
+    "change_reason": "Patch 24.17 qualified ONE Historical Full run on the exact merged retirement main 927892b3. Recorded by identity -- run id, full SHA, event, conclusion, job population and budgets -- because 'the run was green' is an adjective and cannot be checked later. The dispatched run 35194127770 was green on the same SHA; the scheduled run is cited because the qualifier takes the LATEST run, which is what stops a stale green shadowing a newer red.",
+    "status": "patch24_18_complete"
+  },
   "phase24_16_residue_audit": {
       "parity_residue_adjudication": {
         "change_reason": "Patch 24.16 measured these 28 mention-only parity recipes and pinned them absent from every execution route, which made continued unreachability the passing state and contradicted this patch's own exit gate that every survivor protect a live invariant. Most of them compared the native route against MIR-to-C, so each needs a per-guard decision about whether the invariant survives the retirement or went with it. Registered as pending against issue #437 so the audit passes on a declared deferral rather than on the bare fact of unreachability.",
