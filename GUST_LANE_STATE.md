@@ -61,15 +61,26 @@ intrinsic IDs exist, or that Phase 24 is more than backend retirement.
 
 ### Standing truth for the next lane activation
 
-- The publication path is closed. `codegen_generate` is unreachable through
-  the public binary without `GUST_BOOTSTRAP_EMITTER`, so no user can reach the
-  emitter by knowing a spelling.
+- The publication path is closed **for the bootstrap-only spelling**.
+  `--backend bootstrap-emitter` is refused without `GUST_BOOTSTRAP_EMITTER`,
+  so the entry Patch 24.11 created cannot be reached by knowing its name.
+  It is NOT closed for the deprecated aliases: `--backend mir-to-c` and
+  `--backend c` are advertised in the checked help and reach
+  `codegen_generate` with no authority check. Raised in review on #439 --
+  the unqualified claim was false for exactly the callers #398 is about.
 - The default route is native and the bootstrap chain reaches the emitter
   through one gated entry.
 - **28 live-C cases remain** and still emit C through the deprecated explicit
-  spellings. 25 are Stdlib-owned stdlib tests (AGENTS.md line 98), so the
-  Cranelift lane cannot rewire them. Issue **#398** owns the removal and gates
-  restoring the unqualified closure sentence.
+  spellings. Re-derived on this tree rather than carried forward: **24 are
+  stdlib-owned and 4 are cranelift-owned**, not the 25/3 an earlier draft
+  said -- that split was taken when the surface was 26 cases and stopped being
+  true when `scripts/phase22_opening.sh` regained one. The cranelift four are
+  `phase12_5_route_architecture.sh`, `phase22_opening.sh` (2) and
+  `run-gust-file.sh`, and they are this lane's to convert without any
+  cross-lane coordination. The stdlib 24 are the `stdlib_s1_*_parity.sh`
+  guards, their justfile recipes and `tests/e2e_codegen_assertions.gst`
+  (AGENTS.md line 98). Issue **#398** owns the removal and gates restoring the
+  unqualified closure sentence.
 - **Phase 25 should not begin while #398 is open.** Phase 25 retires the
   bootstrap C; starting it on top of an unfinished backend retirement layers
   one retirement on another, which is the sequencing error that produced the
