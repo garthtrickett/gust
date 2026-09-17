@@ -8774,6 +8774,23 @@
           "**Report three outcomes from a rejection harness, not two.**"
          ],
          "reason": "AGENTS.md enrols itself in the Phase 23 content-pattern manifest - it spells MIR-to-C five times - but carries no row of its own, so it sat only inside unchanged_other_text_surface_manifest_digest and any edit read as an unregistered text surface change. Measured on eb6b6cf2: one distinct message and one digest across 4 failing validators, 59 passing. Registered here rather than by bumping that aggregate, because a one-off digest bump would freeze it again and charge the next editor the same cost; this is the mechanism Patch 24.2r built for exactly this case. The markers hold obligations, not contents: that the subsection exists, and the rules whose absence has actually cost CI cycles. The rules may be reworded and a seventh added without touching a marker - deliberately, because a marker on a line a planned patch must edit rebuilds the wall one level down. Verified on a root file BEFORE registering: a marker-preserving edit to TASK_STDLIB.md is admitted and a marker-breaking one is rejected, so the route reaches files outside docs/."
+        },
+        {
+         "path": "scripts/guard_reachability_allowlist.json",
+         "digest": "9b23c5d08de4a7f85778aa4188599f2c03d0f082c5c1a8f6e139e63f0c789b15",
+         "match_counts": {
+          "explicit_backend_spelling": 0,
+          "mir_to_c_name": 12,
+          "generated_c_contract": 0
+         },
+         "required_markers": [
+          "This file is a ratchet, not an exemption",
+          "Do not add to this list to silence a",
+          "Check for readers before removing anything here.",
+          "Mention is not execution",
+          "Each carries a per-entry reason below stating the route it lacks"
+         ],
+         "reason": "the guard-reachability ratchet enrols itself in the Phase 23 content-pattern manifest - it names twelve guard-mir-to-c-* recipes - so it carried a row inside unchanged_other_text_surface_manifest_digest and every entry added to it read as an unregistered text-surface change. That makes the one file whose whole purpose is to record newly measured orphans the one file a patch cannot add a measurement to. Measured on e5465826: Patch 24.15a's re-baseline produced one distinct message and one digest across 2 failing validators (phase23_mir_to_c_deprecation_opening and phase23_cross_feature_qualification), 10 passing. Registered here rather than by bumping that aggregate, following the AGENTS.md precedent immediately above: a one-off bump would refreeze the file and charge Patch 24.16 the same cost when it adjudicates these same 45 rows. The markers hold obligations, not contents - that the list is a ratchet rather than an exemption, that it may not be used to silence a new orphan, that entries have readers to check before removal, that mention is not execution, and that each entry states its reason. Names may be added, removed as they are wired or retired, and re-worded around those five obligations, which is exactly the movement Patch 24.16 is required to make."
         }
        ],
        "structural_rules": [
@@ -24090,11 +24107,19 @@
         "guard-cranelift-phase11-block-parameter-loop-parity",
         "guard-cranelift-phase11-direct-call-abi-parity",
         "guard-cranelift-phase11-local-state-parity",
+        "guard-cranelift-phase11-metadata-diagnostic-parity",
         "guard-cranelift-phase11-module-import-runtime-parity",
         "guard-cranelift-phase11-scalar-expression-parity",
         "guard-cranelift-phase11-structured-cfg-parity",
-        "guard-cranelift-phase13-source-metadata-parity"
-      ]
+        "guard-cranelift-phase13-composition-differential",
+        "guard-cranelift-phase13-source-metadata-parity",
+        "guard-cranelift-phase14-composition-differential",
+        "guard-mir-feature-if-else-return-int-preservation",
+        "guard-mir-feature-local-binding-read-preservation",
+        "guard-mir-feature-local-binding-read-provenance-metadata-preservation",
+        "guard-mir-feature-return-int-preservation"
+      ],
+      "owner": "24.16"
     },
     "status": "patch24_11_complete",
     "unowned_surfaces": {
@@ -25489,6 +25514,116 @@
       ],
       "removed_text_surfaces": [],
       "status": "patch24_12b_in_progress"
+    }
+  },
+  "phase24_15a_reachability_repair": {
+    "authority_owner": "phase24_15a_reachability_repair",
+    "text_surface_successor": {
+      "added_text_surfaces": [],
+      "change_reason": "Patch_24_15a_repaired_the_reachability_instrument_and_folded_dynamic_dispatch_into_liveness",
+      "contract_version": "phase24_15a_text_surface_successor_v1",
+      "current_changed_text_surfaces": [
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "d06bf0bb2f695694a36d0c98fd5e6f80af54c4009aaa19dda386659ad105823f",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "7abca7125148ce074b9fa0aee1b0906b12f1b6cf27437c0dea112542651a18ac",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 21
+          },
+          "owner": "cranelift",
+          "path": "scripts/guard_reachability_allowlist.json",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "a8224c70e1d8d7d66114de7555cecc923cebce716aba9780925bc2bbab7d7796",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 32,
+            "generated_c_contract": 7,
+            "mir_to_c_name": 79
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase24_retirement_consumer_inventory.py",
+          "removal_phase": "24"
+        }
+      ],
+      "partial_extra_or_substituted_surface": "rejected",
+      "previous_changed_text_surfaces": [
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "032ead7d596a3a2788cabb374fbccd88e6c4bbf140e07b5a709bb0fddadd8a73",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "9b23c5d08de4a7f85778aa4188599f2c03d0f082c5c1a8f6e139e63f0c789b15",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 12
+          },
+          "owner": "cranelift",
+          "path": "scripts/guard_reachability_allowlist.json",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "a4f31bc9aeb4bb36700dcb30820db0bf8a1385c33c90a948c8e4cbc642c2349d",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 32,
+            "generated_c_contract": 7,
+            "mir_to_c_name": 79
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase24_retirement_consumer_inventory.py",
+          "removal_phase": "24"
+        }
+      ],
+      "registered_changed_paths": [
+        "scripts/cranelift_registry.py",
+        "scripts/guard_reachability_allowlist.json",
+        "scripts/phase24_retirement_consumer_inventory.py"
+      ],
+      "removed_text_surfaces": [],
+      "status": "patch24_15a_complete"
     }
   },
   "phase24_14_toolchain_removal": {

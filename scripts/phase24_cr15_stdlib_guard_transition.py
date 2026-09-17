@@ -1997,6 +1997,40 @@ def normalize_phase23_text_surfaces(
     # back to the state 24.13's successor was registered against. Same
     # newest-first discipline as every link below; inserting it after 24.13
     # would hand 24.13 a tree two patches ahead of what it recorded.
+    # Patch 24.15a is newer than 24.14, so it runs first, same newest-first
+    # discipline as every link below it.
+    reachability_surface = registry.get(
+        "phase24_15a_reachability_repair", {}).get("text_surface_successor")
+    if reachability_surface is not None:
+        require(reachability_surface.get("contract_version") ==
+                "phase24_15a_text_surface_successor_v1" and
+                reachability_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Patch 24.15a text surface successor drifted")
+        reach_paths = list(
+            reachability_surface["registered_changed_paths"])
+        reach_pre = {row["path"]: row for row in
+                     reachability_surface["previous_changed_text_surfaces"]}
+        reach_post = {row["path"]: row for row in
+                      reachability_surface["current_changed_text_surfaces"]}
+        require(sorted(reach_pre) == sorted(reach_paths) == sorted(reach_post),
+                "Patch 24.15a registered text surface is missing")
+        reach_live = {row["path"]: row for row in rows
+                      if row["path"] in reach_paths}
+        require(sorted(reach_live) == sorted(reach_paths),
+                "Patch 24.15a registered text surface is missing from the scan")
+        for path in reach_paths:
+            require(reach_live[path] in (reach_pre[path], reach_post[path]),
+                    "Patch 24.15a changed text surfaces are partial or "
+                    f"substituted: {path}")
+        reach_added = set(reachability_surface["added_text_surfaces"])
+        rows = [dict(reach_pre.get(row["path"], row)) for row in rows
+                if row["path"] not in reach_added]
+        rows = sorted(rows + [copy.deepcopy(r) for r
+                              in reachability_surface["removed_text_surfaces"]],
+                      key=lambda row: str(row["path"]))
+        by_path = {row["path"]: row for row in rows}
+
     toolchain_surface = registry.get(
         "phase24_14_toolchain_removal", {}).get("text_surface_successor")
     if toolchain_surface is not None:
