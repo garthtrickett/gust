@@ -2000,6 +2000,38 @@ def normalize_phase23_text_surfaces(
     # Patch 24.15a is newer than 24.14, so it runs first, same newest-first
     # discipline as every link below it.
     # Patch 24.15 is newest, so it runs first.
+    # Patch 24.16 is newest, so it runs first.
+    audit_surface = registry.get(
+        "phase24_16_residue_audit", {}).get("text_surface_successor")
+    if audit_surface is not None:
+        require(audit_surface.get("contract_version") ==
+                "phase24_16_text_surface_successor_v1" and
+                audit_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Patch 24.16 text surface successor drifted")
+        audit_paths = list(audit_surface["registered_changed_paths"])
+        audit_pre = {row["path"]: row for row
+                     in audit_surface["previous_changed_text_surfaces"]}
+        audit_post = {row["path"]: row for row
+                      in audit_surface["current_changed_text_surfaces"]}
+        require(sorted(audit_pre) == sorted(audit_paths) == sorted(audit_post),
+                "Patch 24.16 registered text surface is missing")
+        audit_live = {row["path"]: row for row in rows
+                      if row["path"] in audit_paths}
+        require(sorted(audit_live) == sorted(audit_paths),
+                "Patch 24.16 registered text surface is missing from the scan")
+        for path in audit_paths:
+            require(audit_live[path] in (audit_pre[path], audit_post[path]),
+                    "Patch 24.16 changed text surfaces are partial or "
+                    f"substituted: {path}")
+        audit_added = set(audit_surface["added_text_surfaces"])
+        rows = [dict(audit_pre.get(row["path"], row)) for row in rows
+                if row["path"] not in audit_added]
+        rows = sorted(rows + [copy.deepcopy(r) for r
+                              in audit_surface["removed_text_surfaces"]],
+                      key=lambda row: str(row["path"]))
+        by_path = {row["path"]: row for row in rows}
+
     docs_surface = registry.get(
         "phase24_15_package_docs_registry", {}).get("text_surface_successor")
     if docs_surface is not None:

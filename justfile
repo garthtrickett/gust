@@ -16438,15 +16438,6 @@ guard-cranelift-phase20-resource-enforcement-contract:
     just guard-compile-fail compiler/phase20_resource_destructor_extern_invalid.gst ResourceDestructorStatus phase20_resource_destructor_extern
     just guard-compile-fail compiler/phase20_resource_destructor_owner_invalid.gst ResourceDestructorModuleMismatch phase20_resource_destructor_owner
 
-guard-cranelift-phase20-resource-enforcement-parity:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    echo "⚖️ Checking Phase 20 resource declaration enforcement parity..."
-    python3 scripts/cranelift_test_levels.py validate
-    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase20-resource-enforcement-parity | grep -F $'guard-cranelift-phase20-resource-enforcement-parity\t2\t' >/dev/null
-    just guard-cranelift-phase20-resource-enforcement-contract
-    scripts/phase20_resource_enforcement.sh
-
 guard-cranelift-phase20-resource-acquisition-contract:
     #!/usr/bin/env bash
     set -euo pipefail

@@ -1471,7 +1471,6 @@ MENTION_ONLY_LIVENESS = (
     "guard-cranelift-phase14-struct-parity",
     "guard-cranelift-phase14-structs-enums-parity",
     "guard-cranelift-phase20-resource-acquisition-parity",
-    "guard-cranelift-phase20-resource-enforcement-parity",
     "guard-cranelift-phase9b-close",
     "guard-cranelift-phase9c-close",
     "guard-cranelift-phase9f-opening-contract",
@@ -1509,6 +1508,123 @@ def check_stale_row_scoring(bodies: dict[str, str], workflow_seen: set[str],
             f"the no-execution-route liveness residue moved: measured "
             f"{measured_mention}, registered "
             f"{sorted(IS_LIVE_WITH_NO_EXECUTION_ROUTE)}")
+
+    # Patch 24.16's adjudication of the PARITY residue, which is what the
+    # repaired instrument shows the mention-only population actually is.
+    #
+    # 28 of the 54 are parity guards -- 12 phase14, 8 phase13, 7 phase11, 1
+    # phase20 -- and all 28 share one basis, so they are one class and not 28
+    # decisions:
+    #
+    #   * they exist as justfile recipes (0 of 28 are absent);
+    #   * they are UNASSIGNED in cranelift_test_levels.json -- all 28;
+    #   * nothing executes them: not a workflow, not the make closure;
+    #   * they are "live" only because the feature registry mentions the name.
+    #
+    # That is a weaker basis than the roadmap's sharpest case. TASK.md says of
+    # guard-cranelift-phase20-resource-enforcement-parity that "a bare level
+    # assignment is the only thing keeping a known-red, never-executed guard
+    # off the orphan list". These have no level assignment AT ALL, and a guard
+    # with no level cannot be dispatched by the level-driven runners, so there
+    # is no path by which CI reaches them.
+    #
+    # Pinned rather than retired in this commit. Retiring 28 recipes at once is
+    # the same shape as the bulk accept TASK.md warns against for the
+    # allowlist: it would discharge the gate by volume rather than by
+    # adjudication. What is asserted here is the BASIS -- if any of them gains
+    # a level assignment or an executor, this fails and the class has to be
+    # re-adjudicated rather than silently shrinking.
+    parity_residue = sorted(
+        recipe for recipe in MENTION_ONLY_LIVENESS if "parity" in recipe)
+    levels = json.loads(
+        (ROOT / "scripts" / "cranelift_test_levels.json").read_text(
+            encoding="utf-8"))
+    assigned = sorted(r for r in parity_residue if r in levels)
+    require(
+        not assigned,
+        f"a mention-only parity guard gained a level assignment: {assigned}. "
+        "That changes its basis from 'named by a registry' to 'dispatchable "
+        "by CI', so it leaves this class and needs its own adjudication.",
+    )
+    executed = sorted(set(parity_residue) & (workflow_seen | make_seen))
+    require(
+        not executed,
+        f"a mention-only parity guard is now executed: {executed}. It "
+        "protects a live invariant again and must leave the residue.",
+    )
+    require(
+        len(parity_residue) == 28,
+        f"the parity residue moved from 28 to {len(parity_residue)} without "
+        "adjudication",
+    )
+    # Raised in review on #427 (P1): the two checks above make continued
+    # UNREACHABILITY the passing state, so all 28 evidence owners could test
+    # nothing while this audit passed -- which contradicts Patch 24.16's own
+    # exit gate that every survivor protect a live invariant.
+    #
+    # Adjudicating them is per-guard work: most compared the native route
+    # against MIR-to-C, so each needs a decision about whether the invariant
+    # survives the retirement or went with it. That is issue #437.
+    #
+    # What changes here is the BASIS on which this passes. The residue must be
+    # registered as pending adjudication against a named owner, so the passing
+    # state is "declared pending", not "correctly unreachable". The structural
+    # falsifiers above are untouched: gaining a level or an executor still
+    # fails and forces re-adjudication.
+    pending = json.loads(REGISTRY.read_text(encoding="utf-8")).get(
+        "phase24_16_residue_audit", {}).get("parity_residue_adjudication")
+    require(isinstance(pending, dict) and
+            pending.get("contract_version") ==
+            "phase24_16_parity_residue_pending_v1" and
+            pending.get("status") == "pending_adjudication" and
+            pending.get("owner_issue") == 437 and
+            pending.get("unreachability_is_not_the_end_state") == "declared",
+            "the parity residue is not registered as pending adjudication, so "
+            "this audit would pass on the bare fact that 28 guards are "
+            "unreachable")
+    require(sorted(pending.get("recipes", [])) == parity_residue,
+            "the registered pending-adjudication set is not the parity "
+            "residue this audit measured: "
+            f"{sorted(set(pending.get('recipes', [])) ^ set(parity_residue))[:6]}")
+
+    # Patch 24.16's adjudication of the native-smoke population.
+    #
+    # TASK.md expected this to be the phase's weak point: "Most of the 43 are
+    # *-native-smoke recipes ... so they bear on the phase's premise: Phase 24
+    # removes the C backend on the grounds that the native route is qualified,
+    # and part of that evidence is guards nothing runs."
+    #
+    # Measured on the REPAIRED instrument, that is substantially not the case.
+    # The 43 was counted before 24.15a folded dynamic dispatch into the graph;
+    # doing so recovered the native smokes as genuinely reached. The residue is
+    # concentrated in parity guards instead, and the premise is in better shape
+    # than the roadmap feared -- which is exactly the kind of thing a repaired
+    # instrument is supposed to be able to say.
+    #
+    #   native-smoke recipes known : 96
+    #   workflow-reachable         : 93
+    #   mention-only               :  3
+    #
+    # guard-cranelift-mir-to-c-differential-native-smoke, named in the roadmap
+    # as bearing on the premise, is workflow-reachable.
+    #
+    # Pinned as a floor rather than an equality: new smokes may be added, but
+    # the reached population may not silently shrink back.
+    smokes = {recipe for recipe in (workflow_seen | named_seen | make_seen)
+              if recipe.endswith("-native-smoke")}
+    reached = smokes & (workflow_seen | make_seen)
+    require(
+        len(reached) >= 93,
+        f"the native-smoke population that something executes shrank to "
+        f"{len(reached)} of {len(smokes)}. Phase 24 removes the C backend on "
+        "the grounds that the native route is qualified; that evidence cannot "
+        "be guards nothing runs.",
+    )
+    require(
+        "guard-cranelift-mir-to-c-differential-native-smoke" in reached,
+        "the MIR-to-C differential native smoke is no longer executed by "
+        "anything, and TASK.md names it as bearing on the phase's premise",
+    )
 
     # #404's inverse: no recipe may be live SOLELY because a registry names it.
     # Asserted over every recipe, not over the inventory's own rows, because an

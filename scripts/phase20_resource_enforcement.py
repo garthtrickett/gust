@@ -145,14 +145,38 @@ def validate() -> dict:
             "TASK.md does not mark Patch 20.8 DONE")
 
     levels = json.loads(LEVELS.read_text(encoding="utf-8"))["guards"]
-    require(levels.get(GUARD_L1) == 1 and levels.get(GUARD_L2) == 2,
-            "Patch 20.8 guard levels drifted")
+    # Patch 24.16's residue audit adjudicated the Level 2 parity guard and
+    # retired it. INVERTED rather than relaxed: with the successor registered
+    # the guard must be ABSENT from the level policy, so re-adding it without
+    # withdrawing that record fails here just as loudly as removing it without
+    # one did. The Level 1 contract guard is untouched and still pinned.
+    retirement = registry.get("phase24_16_residue_audit", {}).get(
+        "guard_retirement")
+    if retirement is None:
+        require(levels.get(GUARD_L1) == 1 and levels.get(GUARD_L2) == 2,
+                "Patch 20.8 guard levels drifted")
+    else:
+        require(retirement.get("contract_version") ==
+                "phase24_16_guard_retirement_v1" and
+                retirement.get("retired_guard") == GUARD_L2 and
+                retirement.get("retired_from_level") == 2 and
+                retirement.get("surviving_contract_guard") == GUARD_L1 and
+                retirement.get("partial_or_unregistered_retirement") ==
+                "rejected",
+                "Patch 24.16 guard retirement successor drifted")
+        require(levels.get(GUARD_L1) == 1 and GUARD_L2 not in levels,
+                "Patch 24.16 retired the Patch 20.8 parity guard, so it must "
+                "be absent from the level policy while the Level 1 contract "
+                f"guard stays at 1: {levels.get(GUARD_L1)}, "
+                f"{GUARD_L2 in levels}")
     workflow = PR_FAST.read_text(encoding="utf-8")
     require("Phase 20 resource declaration enforcement" in workflow and
             f"just {GUARD_L1}" in workflow,
             "PR Fast does not own the Patch 20.8 Level 1 guard")
     justfile = JUSTFILE.read_text(encoding="utf-8")
-    require(f"{GUARD_L1}:" in justfile and f"{GUARD_L2}:" in justfile,
+    require(f"{GUARD_L1}:" in justfile and
+            ((f"{GUARD_L2}:" in justfile) if retirement is None
+             else (f"{GUARD_L2}:" not in justfile)),
             "Patch 20.8 just guards are missing")
     return authority
 
