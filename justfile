@@ -23973,3 +23973,11 @@ guard-cranelift-phase24-native-population-accounting-contract:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase24-native-population-accounting-contract | grep -F $'guard-cranelift-phase24-native-population-accounting-contract\t1\t' >/dev/null
     python3 scripts/cranelift_registry.py validate
     python3 scripts/phase24_native_population_accounting.py validate
+
+guard-cranelift-phase24-close:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Closing Phase 24 generated-C backend retirement..."
+    python3 scripts/cranelift_test_levels.py validate
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase24-close | grep -F $'guard-cranelift-phase24-close\t1\t' >/dev/null
+    python3 scripts/phase24_closure.py validate

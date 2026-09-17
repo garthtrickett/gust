@@ -110,6 +110,10 @@ CLOSURE_SENTENCE = (
     "contains C under Phase 25 ownership."
 )
 RETAINED_LIVE_C_CASES = 28
+# The boundary half of the closure sentence, required in TASK.md in its own
+# right so "the sentence and its boundary are stated together" is checked
+# rather than assumed.
+PHASE25_BOUNDARY = "the repository still contains C under Phase 25 ownership"
 
 
 def fail(message: str) -> None:
@@ -266,12 +270,31 @@ def check_retained_residue() -> dict:
 
 
 def check_boundary() -> None:
-    """Closing the backend is not closing Phase 25."""
+    """Closing the backend is not closing Phase 25.
+
+    Raised in review on #438: this was `CLOSURE_SENTENCE in text or
+    VIEW.is_file()`, and once 24.18 started requiring the view to exist the
+    `or` was permanently satisfied -- the TASK.md half became unenforced and
+    the sentence could be deleted from the roadmap with every authoritative
+    check still green. The closure contract names TASK.md as the boundary
+    evidence, so that row was claiming something nothing verified.
+
+    Required independently now. The view comparison proves the sentence is in
+    the generated record; this proves it is in the roadmap the record is
+    generated from.
+    """
     text = TASK.read_text(encoding="utf-8")
     require(
-        CLOSURE_SENTENCE in text or VIEW.is_file(),
-        "the closure sentence and its boundary must be stated together: "
+        CLOSURE_SENTENCE in text,
+        "the closure sentence is not stated in TASK.md, so the roadmap does "
+        "not carry the claim this closure rests on: "
         f"{CLOSURE_SENTENCE}",
+    )
+    require(
+        PHASE25_BOUNDARY in text,
+        "the closure sentence is stated without its Phase 25 boundary: "
+        "closing the generated-C backend is not closing the bootstrap C that "
+        f"Phase 25 owns. Expected: {PHASE25_BOUNDARY}",
     )
 
 
