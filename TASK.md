@@ -116,13 +116,13 @@ Out of scope:
 - [x] Patch 24.12 — Frozen Expected-Behaviour Oracle Replacement — DONE
 - [x] Patch 24.12a — Emitter-Only Parity Guard Retirement — DONE
 - [x] Patch 24.12b — Python Parity Guard Conversion — DONE
-- [ ] Patch 24.12c — Frozen Oracle Capture for the Uncovered Population
-- [ ] Patch 24.12d — Frozen Oracle Capture for the Default-Route Flip
-- [ ] Patch 24.13 — Backend-Selection and Publication-Path Removal
-- [ ] Patch 24.14 — C Toolchain Discovery, Error, and Temp-File Removal
-- [ ] Patch 24.15a — Reachability Instrument Repair
-- [ ] Patch 24.15 — Package, Documentation, and Registry Retirement
-- [ ] Patch 24.16 — Cross-Feature Residue Audit
+- [x] Patch 24.12c — Frozen Oracle Capture for the Uncovered Population — DONE
+- [x] Patch 24.12d — Frozen Oracle Capture for the Default-Route Flip — DONE
+- [x] Patch 24.13 — Backend-Selection and Publication-Path Removal — DONE
+- [x] Patch 24.14 — C Toolchain Discovery, Error, and Temp-File Removal — DONE
+- [x] Patch 24.15a — Reachability Instrument Repair — DONE
+- [x] Patch 24.15 — Package, Documentation, and Registry Retirement — DONE
+- [x] Patch 24.16 — Cross-Feature Residue Audit — DONE
 - [ ] Patch 24.17 — Exact-Main Historical Full Qualification
 - [ ] Patch 24.18 — Phase 24 Closure and Terminal State
 
