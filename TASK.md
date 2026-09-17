@@ -116,6 +116,8 @@ Out of scope:
 - [x] Patch 24.12 — Frozen Expected-Behaviour Oracle Replacement — DONE
 - [x] Patch 24.12a — Emitter-Only Parity Guard Retirement — DONE
 - [x] Patch 24.12b — Python Parity Guard Conversion — DONE
+- [ ] Patch 24.12c — Frozen Oracle Capture for the Uncovered Population
+- [ ] Patch 24.12d — Frozen Oracle Capture for the Default-Route Flip
 - [ ] Patch 24.13 — Backend-Selection and Publication-Path Removal
 - [ ] Patch 24.14 — C Toolchain Discovery, Error, and Temp-File Removal
 - [ ] Patch 24.15a — Reachability Instrument Repair
@@ -389,6 +391,95 @@ and 1 live, with re-examination routed to Patch 24.16. Instrument defects
 `liveness()` half is fixed here only because this patch rewrites that
 function. The two runner-mediated default-route calls remain Patch 24.13's
 residue and the unqualified gate remains Patch 24.12b's.
+
+## Patch 24.12d — Frozen Oracle Capture for the Default-Route Flip
+
+The same amendment as 24.12c, for a population 24.12c could not have seen.
+
+24.12c captured the sources whose CONSUMERS name them -- the justfile-step51
+allowlist and the Stdlib parity guards. Patch 24.13 also flips the shared
+runner's default from mir-to-c to cranelift, and 55 scripts call
+scripts/run-gust-file.sh with no explicit route. Those went through C on main
+and take the native route after the flip.
+
+Measured across all 61 sources those scripts hand to the runner: 58 compile
+natively and 2 defer.
+
+  compiler/future/p15_directory_resources_source.gst
+      deferred_p13_structured_cfg_condition_shape
+  compiler/future/p15_selected_failure_cleanup_source.gst
+      deferred_p13_parameter_argument_target_dependent_abi
+
+A first derivation reported three. tests/e2e_collections_methods.gst is not a
+consumer source: the sweep matched "run-gust-file.sh <path>.gst" textually and
+run-gust-file.sh carries its own usage message -- "e.g., scripts/run-gust-file
+.sh tests/e2e_collections_methods.gst", an example inside an error string. No
+script passes it to the runner, and the capture tool's consumer check rejected
+it. The roadmap is the scope Patch 24.13 is read from, so the corrected count
+belongs here and not only in the tool.
+
+Neither of the two has a vector in v1, v2 or the v3 capture. Their guards assert RUNTIME
+behaviour -- phase15_failure_cleanup_parity.sh runs the program and greps
+"SUCCESS: Phase 15.12 selected failure cleanup source passed" -- so a deferral
+cannot stand in for the assertion, and "Absence of C execution never counts as
+parity success" applies exactly as it did for the step51 four.
+
+Same window, same reason: origin/main still has the retired backend and
+phase24_frozen_oracle_capture.py drives it, so these are capturable now and
+not after Patch 24.13 merges.
+
+Bounded identically to 24.12c. v1, v2 and v3 stay immutable; this produces a
+fourth set for two sources that never had a vector. The capture tool's
+declared population is extended by exactly those two, each named with the
+consumer that reads it, and the tool refuses any manifest that does not match
+that population.
+
+## Patch 24.12c — Frozen Oracle Capture for the Uncovered Population
+
+An amendment, not new scope. It exists because Patch 24.13 cannot satisfy two
+of this phase's own Immutable Contracts, and the reason is ordering rather than
+a defect in 24.13.
+
+**The contracts.** "The oracle role is replaced before the oracle goes ...
+no removal patch begins until that replacement is green", and "Absence of C
+execution never counts as parity success."
+
+**Measured, not assumed.** The replacement is not green for 25 fixtures, all
+with zero frozen vectors in either the v1 (253) or v2 (29) set:
+
+  * the four sources `justfile-step51` allowlists, where `guard-positive`
+    currently reports success for a source it can neither compile nor run --
+    which is exactly what the second contract forbids; and
+  * the 23 fixtures behind the seven `scripts/stdlib_s1_*_parity.sh` guards,
+    which are `stdlib-coordination`-owned (#398). Two sources appear in both
+    populations, so the union is 25 rather than 27.
+
+**Why it cannot be done inside 24.13.** `phase24_frozen_oracle_capture.py`
+drives `--backend mir-to-c`, the spelling 24.13 removes, so the tool cannot run
+on that branch at all. Capture needs a tree where the retired backend still
+works.
+
+**Why it cannot be deferred.** This is already recorded in the repository, in
+v2's own authority: `"sealed_by": "Patch 24.13 removes backend selection; no
+vector can be captured after it merges"`, and
+`"refresh": "impossible_after_patch24_13_seals_the_backend"`. The capture tool
+says the same in its docstring. So the ordering is capture, then 24.13 --
+reversed, the runtime evidence for these 25 is unrecoverable.
+
+**Authority.** This row grants the capture, the way v2 records
+`authorised_by: TASK.md Patch 24.12b (#416)`. v1's
+`supersession_policy.refresh` is `new_version_and_explicit_roadmap_authority_only`,
+so a roadmap row is the documented mechanism rather than a way around one.
+
+**Bounded.** v1 and v2 stay immutable and are not refreshed, reopened or
+superseded. This produces a third set alongside them, for sources that have
+never had a vector, and for no others: the manifest is derived from the two
+consumer populations above, so a source that is already covered cannot be
+recaptured and a source neither consumer names cannot be added.
+
+**Not in scope.** Rewiring the Stdlib guards to read these vectors. That stays
+a coordination request under the cross-lane discipline (#398); this patch makes
+the evidence exist so that request is answerable at all.
 
 ## Patch 24.12b — Python Parity Guard Conversion
 

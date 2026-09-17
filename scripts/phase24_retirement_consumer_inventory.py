@@ -187,6 +187,26 @@ FROZEN_ORACLE_CALL = "phase24_frozen_oracle.py materialize"
 # they drive the spelling this patch turns into a rejection, so leaving them to
 # 24.16 ships ~82 guard invocations that cannot run. Re-scored to 24.13 with
 # the reason recorded, not moved silently.
+# Patch 24.13 routed these to the bootstrap-only entry. Patch 24.14 renamed
+# the set it inherited to NATIVE_ROUTED_RECIPES and repopulated it with the
+# recipes IT routes natively, which silently dropped 24.13's population --
+# make-test-suite then fell through to the branch demanding a retired C
+# route it no longer has. Both routings are real and both stay asserted.
+BOOTSTRAP_ROUTED_RECIPES = {
+    "make-test-suite":
+        "compiles tests/test_runner.gst, which the native route defers on "
+        "(phase13_generic_source_to_mir); the bootstrap-only entry reaches "
+        "the emitter without spelling the retired backend",
+    "make-test-suite-parallel":
+        "the parallel form of make-test-suite, on the same source and for the "
+        "same measured reason",
+    "run-step52-positive-batch":
+        "compiles the same tests/test_runner.gst; re-scored from 24.16 "
+        "because 24.13's removal breaks it where it stands",
+}
+BOOTSTRAP_ROUTE_NEEDLE = "--backend bootstrap-emitter"
+
+
 NATIVE_ROUTED_RECIPES = {
     "guard-positive":
         "compile-and-run, measured: 101 of 105 sources compile and run with "
@@ -268,48 +288,87 @@ TAKEN_OUT_HARNESSES = {
 }
 
 # harness path -> (patch that owns it instead, why 24.12 did not)
-DEFERRED_HARNESSES = {
-    "scripts/phase22_default_native_package.sh":
-        ("24.13", "it asserts that the explicit C selection still "
-                  "works, so it cannot outlive the selection 24.13 "
-                  "removes"),
-    "scripts/phase22_explicit_c_migration.sh":
-        ("24.13", "it asserts that the explicit C selection still "
-                  "works, so it cannot outlive the selection 24.13 "
-                  "removes"),
-    "scripts/phase22_native_implicit_output.sh":
-        ("24.13", "it asserts that the explicit C selection still "
-                  "works, so it cannot outlive the selection 24.13 "
-                  "removes"),
-    "scripts/phase22_opening.sh":
-        ("24.13", "it asserts that the explicit C selection still "
-                  "works, so it cannot outlive the selection 24.13 "
-                  "removes"),
-    "scripts/phase22_postflip_qualification.sh":
-        ("24.13", "it asserts that the explicit C selection still "
-                  "works, so it cannot outlive the selection 24.13 "
-                  "removes"),
+#
+# Patch 24.13: empty, and that is the statement. Every row here named 24.13 as
+# the patch that would handle it, so the register discharges when 24.13 lands
+# rather than being carried forward. The rows move to DISCHARGED_HARNESSES,
+# which asserts the opposite of what the deferral did: the deferral required
+# the harness still have a C route, and the discharge requires it either have
+# none or say in the file why the survivors are not live-C arms.
+DEFERRED_HARNESSES: dict[str, tuple[str, str]] = {
 }
 
+# harness path -> (patch that discharged it, what survives and why)
+#
+# Each reason is a property the tree can contradict, checked below: a harness
+# at zero must be at zero, and a harness with survivors must carry the Phase 24
+# removal marker -- the string its own inverted assertions grep for. A harness
+# that simply dropped its C route without inverting anything has neither, and
+# fails.
+# Compared case-insensitively: the harnesses spell it both "REMOVED in
+# Phase 24" (help text) and "removed in Phase 24" (rejection text).
+#
+# Lost in the 24.13/24.14 merge: the definition sat in a hunk resolved to
+# 24.14's side while its consumer below came from main's. `validate` never
+# reaches that branch, so it read clean -- the undefined-name sweep is what
+# caught it, which is exactly the runtime-in-evidence-paths case it exists
+# for.
+REMOVAL_MARKER = "removed in phase 24"
+
+
+DISCHARGED_HARNESSES: dict[str, tuple[str, str]] = {
+    "scripts/phase22_default_native_package.sh":
+        ("24.13", "every live-C arm retired; nothing survives"),
+    # phase22_explicit_c_migration.sh and phase22_opening.sh were listed here
+    # on the premise that their surviving live-C arms had been INVERTED into
+    # assertions that the spelling is rejected. That removal is deferred until
+    # the live-C surface drains (issue #398), so those arms are ordinary live
+    # invocations again and this patch discharges neither harness. Claiming a
+    # discharge that did not happen is exactly what this register exists to
+    # prevent, so the rows are withdrawn rather than reworded.
+    "scripts/phase22_native_implicit_output.sh":
+        ("24.13", "every live-C arm retired; nothing survives"),
+    "scripts/phase22_postflip_qualification.sh":
+        ("24.13", "every live-C arm retired; nothing survives"),
+}
 
 # Patch 24.13 removed compiler/test_runner_entry.gst from this set: it no
 # longer carries a live C route, and RETIRED_FILE_SURFACES asserts the
 # surfaces it lost stay gone.
 # Patch 24.13 dropped justfile-step51: its three generic recipes were routed
-# to the surviving backend, so the file carries no live C route at all. Same
-# treatment as compiler/test_runner_entry.gst below -- dropped rather than
-# pinned at zero, because a zero pin keeps asserting a sweep over a file with
-# nothing to sweep.
-SWEEP_LOCI = ["Makefile", "justfile"]
+# to the surviving backend, so the file carries no live C route at all --
+# dropped rather than pinned at zero, because a zero pin keeps asserting a
+# sweep over a file with nothing to sweep.
+#
+# compiler/test_runner_entry.gst was dropped alongside it on the premise that
+# the removal took its help lines out. That removal is deferred until the
+# live-C surface drains (issue #398), so the file carries two spellings again
+# and has to stay swept -- measured at 2, the same count main carries.
+SWEEP_LOCI = ["Makefile", "justfile", "compiler/test_runner_entry.gst"]
 
 # Exact per-file spelling counts for sweep loci with more than one shape.
 # Single-shape loci are pinned by their row checks; the sweep asserts the
 # total per file so a new C route in a known file still fails.
 SWEEP_COUNTS = {
+    "compiler/test_runner_entry.gst": 2,
+    # Restored with the runner's mir-to-c arm (issue #398). 24.13 dropped this
+    # key when it deleted that arm; the arm is back, so the sweep is too.
+    "scripts/run-gust-file.sh": 1,
     # Patch 24.13: 5 -> 3. Two Makefile bootstrap callers moved to the
     # bootstrap-only entry; the remaining three are driven by the seed and the
     # bridge parser, which this patch does not touch and Phase 25 owns.
-    "Makefile": 3,
+    # Patch 24.13 moved all five Makefile bootstrap callers to the
+    # bootstrap-only entry, so the Makefile carries no retired spelling at
+    # all and check_sweep -- which reports only loci WITH hits -- stops
+    # producing a row for it. Expecting a count here would expect a key the
+    # sweep can never emit.
+    #
+    # The claim is not lost, it moved to checks that assert it directly:
+    # phase22_postflip_qualification requires all five callers on the entry
+    # and no seed driver spelling the retired backend,
+    # phase23_production_release_audit records phase25_bootstrap_explicit_c
+    # _count at zero, and phase22_default_route_seed_convergence inverts
+    # each of the four rows -- retired absent AND replacement present.
     # Patch 24.13 removed this locus entirely -- the help line went and the
     # selection branch became a rejection, so the file no longer carries a
     # live C route. It is dropped from SWEEP_LOCI rather than pinned at zero,
@@ -318,10 +377,12 @@ SWEEP_COUNTS = {
     # 38 before Patch 24.12; the conversion took 22 out (7 phase11 and 4
     # mir-feature parity recipes, and the live-C literals three closure
     # guards required the Phase 13 differential harness to still contain).
-    "justfile": 16,
+    "justfile": 9,
     "tests/e2e_codegen_assertions.gst": 4,
-    "tests/test_runner.gst": 2,
-    "scripts/run-gust-file.sh": 1,
+    # Patch 24.13 migrated both invocations to the bootstrap-only entry;
+    # both halves of the move are asserted in MIGRATED_FILE_SURFACES.
+    # Patch 24.13 retired the runner's mir-to-c route; the surface is
+    # asserted absent in RETIRED_FILE_SURFACES instead of counted here.
 }
 
 # Differential .sh harness families: exact file set with per-file hit
@@ -402,11 +463,19 @@ SH_FAMILIES = {
         "owner_patch": "24.13",
         "action": "retire",
         "files": {
-            "scripts/phase22_default_native_package.sh": 2,
-            "scripts/phase22_explicit_c_migration.sh": 6,
-            "scripts/phase22_native_implicit_output.sh": 2,
+            # Patch 24.13 discharged this family's deferral -- it IS 24.13.
+            # Counts re-measured, not adjusted to fit: the three that reach 0
+            # had every live-C arm retired; the two that do not are the mixed
+            # dispositions, and their survivors are accounted for in
+            # DISCHARGED_HARNESSES below rather than left as bare residue.
+            "scripts/phase22_default_native_package.sh": 0,
+            "scripts/phase22_explicit_c_migration.sh": 2,
+            "scripts/phase22_native_implicit_output.sh": 0,
+            # 1 -> 2: restoring the explicit.c emission the c-alias
+            # comparison needs as its reference (issue #398) brings back the
+            # spelling that produced it.
             "scripts/phase22_opening.sh": 2,
-            "scripts/phase22_postflip_qualification.sh": 3,
+            "scripts/phase22_postflip_qualification.sh": 0,
         },
     },
     "stdlib-parity": {
@@ -470,8 +539,13 @@ RECIPE_ROWS = [
      "./gust --backend mir-to-c tests/test_runner.gst", "24.13", "migrate", True),
     ("make-test-suite-parallel",
      "./gust --backend mir-to-c tests/test_runner.gst", "24.13", "migrate", True),
+    # Re-scored from 24.16/retire by Patch 24.13, for the same reason
+    # guard-compile-pass and guard-compile-fail were: the ownership was
+    # assigned before it was known that 24.13's removal BREAKS it. This recipe
+    # drives the spelling this patch turns into a rejection, so leaving it to
+    # 24.16 ships a recipe that cannot run. Recorded, not moved silently.
     ("run-step52-positive-batch",
-     "./gust --backend mir-to-c tests/test_runner.gst", "24.16", "retire", False),
+     "./gust --backend mir-to-c tests/test_runner.gst", "24.13", "migrate", False),
     ("guard-positive",
      './gust --backend mir-to-c "$test_path"', "24.13", "migrate", True),
     # Re-scored live by Patch 24.12a. Both are reached from a workflow --
@@ -670,52 +744,39 @@ REGISTRY_ROWS = [
 # FILE_ROWS entries, still owned for later retirement, and still required to be
 # present -- which is why this register names one surface rather than three.
 RETIRED_FILE_SURFACES = [
-    # Patch 24.15: user documentation states removal, not deprecation. These
-    # are the three README passages Phase 23.8 left in the future tense --
-    # "remain accepted through Phase 23", "scheduled for Phase 24" -- which
-    # read as a promise the compiler no longer keeps.
-    # Moved out of FILE_ROWS, where they asserted the C surface was PRESENT.
-    # Leaving them there would have failed; deleting them would have asserted
-    # nothing. Inverted instead, with a companion replacement row below.
-    ("README.md", "selected explicitly with `--backend c`", "24.15"),
-    ("compiler/experiments/cranelift/README.md",
-     "Explicit `--backend c` / `--backend mir-to-c` remains the", "24.15"),
-    ("README.md", "backend removal scheduled for Phase 24", "24.15"),
-    ("README.md", "remain accepted through Phase 23", "24.15"),
-    ("README.md", "The deprecated C backend remains a temporary compatibility "
-     "path", "24.15"),
-    ("compiler/test_runner_entry.gst",
-     "gust --backend mir-to-c <source.gst>", "24.13"),
+    # The compiler help line that sat here is withdrawn: 24.13 no longer
+    # removes it (issue #398). The runner default below is unaffected --
+    # flipping the runner route is independent of the spelling removal.
     ("scripts/run-gust-file.sh",
      'RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-mir-to-c}"', "24.13"),
-    # Patch 24.14: rebased, not deleted. The check survives -- the bootstrap
-    # entry still cannot take -o -- so what must be gone is the wording that
-    # named the removed backend, and a companion row below requires the
-    # surviving message to be present.
-    ("compiler/test_runner_entry.gst",
-     "the MIR-to-C backend does not accept -o", "24.14"),
 ]
 
-# Surfaces a retirement patch REPLACED rather than removed. A rebased
-# diagnostic needs both halves asserted: the old wording gone, and the new
-# wording there. Asserting only the first lets the check be deleted outright.
-REBASED_FILE_SURFACES = [
-    # The other half of the three rows above. Asserting only absence would
-    # pass on a README that says nothing at all about the backend, which is
-    # worse than a stale promise: a reader would not know the route is gone.
-    ("README.md", "was **removed in Phase 24**", "24.15"),
-    # Needle chosen to sit on ONE line: the prose wraps, and a needle that
-    # spans the wrap matches nothing while looking correct.
-    ("README.md", "are rejected with a diagnostic naming the removal", "24.15"),
-    # Removal of the backend is not removal of the bootstrap chain's C, and
-    # the document has to keep saying so or Phase 25's scope silently widens.
-    ("README.md", "their retirement is Phase 25's", "24.15"),
-    ("compiler/experiments/cranelift/README.md",
-     "The generated-C backend was **removed in Phase 24**", "24.15"),
-    ("compiler/experiments/cranelift/README.md",
-     "bootstrap path is separate and survives", "24.15"),
-    ("compiler/test_runner_entry.gst",
-     "the bootstrap emitter entry does not accept -o", "24.14"),
+# (path, the spelling that was there, the spelling that replaced it, owner)
+#
+# RETIRED_FILE_SURFACES asserts only that a surface is GONE, which is the right
+# claim when a patch takes something out. A migration is a different claim and
+# a stronger one: the old spelling is gone AND a named replacement is there in
+# its place. Scoring a migration as a retirement would let the file lose the
+# invocation entirely and still pass, which is the "vanished passing as moved"
+# failure this phase keeps having to rule out -- so it gets its own register
+# rather than being folded into the retirement one.
+# Surfaces a retirement patch REPLACED rather than removed: both halves
+# have to be asserted, or the check could be deleted outright.
+#
+# Patch 24.14 rebased the -o refusal's wording from "the MIR-to-C
+# backend" to "the bootstrap emitter entry", on the premise that only the
+# bootstrap entry could still reach it. The removal is deferred until the
+# live-C surface drains (issue #398), so --backend mir-to-c reaches that
+# refusal too and the original wording names the spelling the caller
+# actually used. Empty rather than deleted: this register is what 24.14
+# needs again the moment the removal lands.
+REBASED_FILE_SURFACES: list = []
+
+MIGRATED_FILE_SURFACES = [
+    ("tests/test_runner.gst",
+     'std.Concat("./gust --backend mir-to-c ", path)',
+     'std.Concat("./gust --backend bootstrap-emitter ", path)',
+     "24.13"),
 ]
 
 FILE_ROWS = [
@@ -724,9 +785,14 @@ FILE_ROWS = [
      "    MirToC,", "24.13", "retire"),
     ("compiler/test_runner_entry.gst",
      'std.str_eq(backend_name, "mir-to-c")', "24.13", "retire"),
-    # Patch 24.13 retired this help line. The row stays, inverted: see
-    # RETIRED_FILE_SURFACES below.
-    # Patch 24.14 rebased this error class; the row is inverted below.
+    # Patch 24.13 briefly retired this help line and inverted the row. The
+    # removal is deferred until the live-C surface drains (issue #398), so the
+    # line is present again and the row is once more an ordinary
+    # awaiting-retirement entry owned by 24.13.
+    ("compiler/test_runner_entry.gst",
+     "gust --backend mir-to-c <source.gst>", "24.13", "retire"),
+    ("compiler/test_runner_entry.gst",
+     "the MIR-to-C backend does not accept -o", "24.14", "retire"),
     ("compiler/test_runner_entry.gst",
      "mut c_code := codegen.codegen_generate(programs, module_prefixes, &env, ctx);",
      "25", "survive"),
@@ -737,7 +803,13 @@ FILE_ROWS = [
      "mut c_code := codegen.codegen_generate(programs, module_prefixes, &env, ctx);",
      "25", "survive"),
     ("compiler/test_runner_bootstrap_bridge_entry.gst",
-     "Usage: gust-bootstrap-bridge [--backend <mir-to-c|c>] <file.gst>",
+     # Patch 24.13 WIDENED this usage line rather than retiring it: the bridge
+     # now also accepts the bootstrap-only entry, because Makefile:143 and the
+     # sanitized stage-one diagnostic drive stage1_bin through it once the seed
+     # reconverges. The retired spellings are still listed and still accepted
+     # here -- the bridge is Phase-25-owned machinery and this patch does not
+     # retire it, it only adds the entry the migrated callers need.
+     "Usage: gust-bootstrap-bridge [--backend <mir-to-c|c|bootstrap-emitter>] <file.gst>",
      "25", "survive"),
     ("Makefile",
      "build/gust_final.c", "24.14", "migrate"),
@@ -747,8 +819,8 @@ FILE_ROWS = [
     # Patch 24.13 migrated this default to cranelift (#411); inverted below.
     ("scripts/cranelift_ci_family.py",
      '["just", runner["static_guard"]]', "24.12", "convert"),
-    ("tests/test_runner.gst",
-     'std.Concat("./gust --backend mir-to-c ", path)', "24.13", "migrate"),
+    # Patch 24.13 migrated this to the bootstrap-only entry; the row moves to
+    # MIGRATED_FILE_SURFACES above, which asserts both halves of the move.
     ("tests/e2e_codegen_assertions.gst",
      '"./gust --backend mir-to-c tests/codegen_helper_pod_move.gst', "24.12", "convert"),
 ]
@@ -1016,10 +1088,6 @@ ACTION_DISAGREES_WITH_OUTCOME = (
     "guard-cranelift-phase15-resource-composition-differential",
     "guard-cranelift-phase16-composition-differential",
     "guard-cranelift-phase19-composition-parity",
-    "guard-cranelift-phase22-default-native-package-evidence",
-    "guard-cranelift-phase22-explicit-c-migration-evidence",
-    "guard-cranelift-phase22-native-implicit-output-evidence",
-    "guard-cranelift-phase22-opening-evidence",
 )
 
 # Issues #390 and #393, Patch 24.15a: seven entries join this register as a
@@ -1605,7 +1673,16 @@ def expected_sweep() -> dict[str, int]:
     for family in SH_FAMILIES.values():
         if family.get("match") == "route":
             continue
-        expected.update(family["files"])
+        for path, count in family["files"].items():
+            # Same rule as the converted harnesses below, and for the same
+            # reason: check_sweep only reports loci with at least one hit, so
+            # a family file whose live-C arms are all gone has to leave the
+            # expectation rather than sit at zero, which would expect a key
+            # the sweep will never produce.
+            if count:
+                expected[path] = count
+            else:
+                expected.pop(path, None)
     # check_sweep only reports loci with at least one hit, so a converted
     # harness must leave the expectation entirely rather than sit at zero.
     for path, residual in TAKEN_OUT_HARNESSES.items():
@@ -1698,7 +1775,18 @@ def validate() -> dict:
 
     for recipe, needle, owner, action, is_live in RECIPE_ROWS:
         require(recipe in bodies, f"inventoried recipe is missing: {recipe}")
-        if recipe in NATIVE_ROUTED_RECIPES:
+        if recipe in BOOTSTRAP_ROUTED_RECIPES:
+            require(needle not in bodies[recipe],
+                    f"a recipe Patch 24.13 routed to the bootstrap entry has "
+                    f"its C route back: {recipe}")
+            require(BOOTSTRAP_ROUTE_NEEDLE in bodies[recipe],
+                    f"a recipe Patch 24.13 routed to the bootstrap entry does "
+                    f"not select it: {recipe}")
+            require(NATIVE_ROUTE_NEEDLE not in bodies[recipe],
+                    f"a recipe registered as bootstrap-routed also takes the "
+                    f"native route, so it belongs in NATIVE_ROUTED_RECIPES: "
+                    f"{recipe}")
+        elif recipe in NATIVE_ROUTED_RECIPES:
             require(needle not in bodies[recipe],
                     f"a recipe Patch 24.13 routed natively has its C route "
                     f"back: {recipe}")
@@ -1754,6 +1842,14 @@ def validate() -> dict:
             else:
                 require(hits == count,
                         f"harness family drifted: {path}")
+                if path in DISCHARGED_HARNESSES:
+                    patch, _reason = DISCHARGED_HARNESSES[path]
+                    require(hits == 0 or
+                            REMOVAL_MARKER in text.lower(),
+                            f"Patch {patch} discharged this harness, but it "
+                            f"still carries {hits} live-C spellings without "
+                            "asserting the Phase 24 removal anywhere -- the "
+                            f"route was dropped, not inverted: {path}")
                 require(path not in DEFERRED_HARNESSES or hits > 0,
                         f"a harness deferred to "
                         f"{DEFERRED_HARNESSES.get(path, ('', ''))[0]} lost "

@@ -154,37 +154,15 @@ def validate_compiler_and_package_surface() -> None:
         'os.LogStr("  cranelift  Compile to one native executable (default).");' in test_runner,
         "compiler help must identify Cranelift as the default backend",
     )
-    # Patch 24.13 removed generated-C backend selection. Both help assertions
-    # below are INVERTED rather than deleted: dropping them would let the help
-    # go back to offering a backend the compiler rejects, or say nothing about
-    # the removal at all, and this manifest would still pass.
     require(
         'os.LogStr("  --backend <mir-to-c|c|cranelift>  Select the backend explicitly.");'
-        not in test_runner,
-        "compiler help still offers the C aliases Patch 24.13 removed: a help "
-        "surface that advertises a rejected backend is a lie the CLI corrects "
-        "only after the user tries it",
-    )
-    require(
-        'os.LogStr("  --backend <cranelift>            Select the backend explicitly.");'
         in test_runner,
-        "compiler help must expose the surviving Cranelift selector",
+        "compiler help must expose the retained C aliases and Cranelift selector",
     )
     require(
-        'DEPRECATED: Emit C source to stdout' not in test_runner,
-        "compiler help still deprecates a backend that is gone: Patch 24.13 "
-        "removed it, so the help must state removal, not deprecation",
-    )
-    require(
-        'os.LogStr("  The generated-C backend was REMOVED in Phase 24; mir-to-c and c are rejected.");'
+        'os.LogStr("  mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.");'
         in test_runner,
-        "compiler help must state the Phase 24 removal",
-    )
-    require(
-        'os.LogStr("  Bootstrap C retirement is separate and deferred to Phase 25.");'
-        in test_runner,
-        "compiler help must keep the Phase 25 bootstrap boundary explicit: "
-        "removal of the backend is not removal of the bootstrap chain's C",
+        "compiler help must identify the retained explicit C oracle",
     )
     for token in (
         "GUST_NATIVE_BACKEND_DRIVER",

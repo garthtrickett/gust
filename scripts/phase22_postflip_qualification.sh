@@ -47,20 +47,24 @@ cmp -s "$build_dir/bare.run.stdout" "$build_dir/explicit.run.stdout" ||
 cmp -s "$build_dir/bare.run.stderr" "$build_dir/explicit.run.stderr" ||
   fail "bare and explicit native stderr differ"
 
-"$package_bin/gust" --backend c "$source_copy" >"$build_dir/c.c" 2>"$build_dir/c.stderr"
-"$package_bin/gust" --backend mir-to-c "$source_copy" \
-  >"$build_dir/mir-to-c.c" 2>"$build_dir/mir-to-c.stderr"
-cmp -s "$build_dir/c.c" "$build_dir/mir-to-c.c" ||
-  fail "explicit C spellings are not byte-identical"
-cat src/runtime.c "$build_dir/c.c" >"$build_dir/oracle-final.c"
-"${CC:-cc}" ${CFLAGS:--O2 -Wall -pthread} ${INCLUDES:--Isrc} \
-  "$build_dir/oracle-final.c" -o "$build_dir/oracle"
-test "$(run_status "$build_dir/oracle" "$build_dir/oracle.run")" = "7" ||
-  fail "explicit-C oracle behavior drifted"
-cmp -s "$build_dir/bare.run.stdout" "$build_dir/oracle.run.stdout" ||
-  fail "default native stdout differs from explicit-C oracle"
-cmp -s "$build_dir/bare.run.stderr" "$build_dir/oracle.run.stderr" ||
-  fail "default native stderr differs from explicit-C oracle"
+# Patch 24.13: the explicit-C arms are RETIRED, and this one is a retirement
+# rather than a conversion because the guard's SUBJECT is gone.
+#
+# It asserted three things about explicit C: that `c` and `mir-to-c` emit
+# byte-identical source, that the emitted C links and runs to exit 7, and that
+# the native route agrees with it. All three are properties of a route this
+# patch removes. Unlike the front-end guards converted alongside this one,
+# there is no independent authority to re-point at -- the assertions were ABOUT
+# explicit C, not merely routed through it.
+#
+# What survives above is the whole native claim, unchanged: bare and explicit
+# cranelift produce identical artifacts, both exit 7, and their stdout and
+# stderr match. The exit-7 expectation the oracle was checked against is still
+# checked, twice, against the route that still exists.
+#
+# What is lost is the cross-backend agreement. Recorded here rather than
+# absorbed: after this patch, nothing asserts that the native route's
+# observable behaviour matches what the C route produced.
 
 make install DESTDIR="$install_root" PREFIX=/opt/gust \
   >"$build_dir/install.stdout" 2>"$build_dir/install.stderr"
@@ -108,9 +112,10 @@ rg -F 'Native backend driver discovery error:' "$build_dir/missing.diagnostic" >
   fail "missing-worker diagnostic drifted"
 ! rg -F '#include' "$build_dir/missing.stdout" >/dev/null ||
   fail "failed bare default emitted fallback C"
-"$missing_bin/gust" --backend c "$missing_source" >"$build_dir/missing-explicit.c" \
-  2>"$build_dir/missing-explicit.stderr"
-cmp -s "$build_dir/c.c" "$build_dir/missing-explicit.c" ||
-  fail "explicit rollback depends on native siblings"
+# Patch 24.13: the explicit-C rollback arm is retired with the route it tested.
+# It asserted that `--backend c` still worked when the native siblings were
+# missing -- a rollback path that no longer exists. The check immediately above
+# survives and is the one that still matters: a failed bare default must not
+# emit fallback C.
 
 echo "$guard: ok"

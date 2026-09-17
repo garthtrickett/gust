@@ -688,7 +688,7 @@ def validate_transition(record: dict, registry: dict) -> None:
                                 require(
                                     toolchain_frozen.get("contract_version")
                                     ==
-                                    "phase24_14_frozen_surface_transition_v1"
+                                    "phase24_14_frozen_surface_transition_v2"
                                     and
                                     toolchain_frozen.get(
                                         "current_live_c_case_surface") ==

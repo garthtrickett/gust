@@ -30,6 +30,7 @@ succeed" checking detects.
 
 import argparse
 import json
+import hashlib
 import re
 import subprocess
 from pathlib import Path
@@ -45,6 +46,17 @@ VERSION = "phase24_native_population_accounting_v1"
 # patch that retires a level entry had run.
 BASELINE_COMMIT = "87231e50"
 BASELINE_COUNT = 88
+# Raised in review on #426: pinning only the COUNT lets a patch rename or
+# replace a retired native guard in TASK.md, the justfile and the level policy
+# while keeping 88 names. `expected` would then equal the rewritten live
+# population and this guard would pass against a baseline that had silently
+# moved -- the accounting would be true of a baseline nobody measured.
+#
+# The membership is pinned by digest over the sorted names, so a rename fails
+# here and has to be accounted for rather than absorbed. Verified before
+# pinning that the block is byte-identical to the one 24.15 introduced, so
+# this locks the measured baseline and not a drifted one.
+BASELINE_DIGEST = "231e5dace4c8b12003eba39a7494f0ce7d79aeff9167e73ae51ddaea918ace48"
 
 # Every member this phase retires, with the patch that did it and why. Empty
 # until a retirement lands; an entry here that is still in the population is
@@ -83,6 +95,14 @@ def baseline() -> set:
         f"{BASELINE_COUNT}. The baseline is measured at {BASELINE_COMMIT} and "
         "is not something a later patch may edit: reduce the live population "
         "and account for it here instead.",
+    )
+    digest = hashlib.sha256("\n".join(sorted(members)).encode("utf-8")).hexdigest()
+    require(
+        digest == BASELINE_DIGEST,
+        "the #405 baseline members changed while the count held: a renamed or "
+        "substituted member is still a moved baseline, and this accounting "
+        f"would otherwise be true of a baseline nobody measured. Got {digest}, "
+        f"pinned {BASELINE_DIGEST} at {BASELINE_COMMIT}.",
     )
     return members
 

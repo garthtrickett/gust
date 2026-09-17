@@ -300,8 +300,45 @@ def phase22_relay_inventory_rows(
             isinstance(previous, dict),
             "Patch 23.12 Phase 22 projection rows are missing")
     live_current = [row for row in rows if row.get("path") == migration["path"]]
-    require(live_current == [historical, added_native],
-            "Patch 23.12 dual-route runner inventory is missing, partial, or substituted")
+    # Patch 24.13: the runner was DUAL-route -- a historical explicit-C row and
+    # an added native row. This patch retires the explicit-C route, so only the
+    # native row survives and the dual-route record needs a successor rather
+    # than an edit: Patch 23.12's record of what was true then stays true.
+    #
+    # The successor asserts exactly the shape of the change: the historical row
+    # it drops must be the explicit-C one, and the row that remains must be the
+    # native one 23.12 added. A successor that dropped the NATIVE row would
+    # satisfy "one row survives" and is rejected here.
+    runner_successor = registry.get("phase24_13_backend_removal", {}).get(
+        "runner_route_successor")
+    if runner_successor is None:
+        require(live_current == [historical, added_native],
+                "Patch 23.12 dual-route runner inventory is missing, partial, "
+                "or substituted")
+    else:
+        require(runner_successor.get("contract_version") ==
+                "phase24_13_runner_route_successor_v1" and
+                runner_successor.get("retired_row") == historical and
+                runner_successor.get("partial_or_substituted_route") ==
+                "rejected",
+                "Patch 24.13 runner route successor drifted")
+        require(len(live_current) == 1,
+                "Patch 24.13 retires the runner's explicit-C route, so the "
+                f"native row must be the only one left: {live_current}")
+        survivor = live_current[0]
+        # Deleting the explicit-C route moved the native row UP in the file, so
+        # `line` is the one field 23.12's record cannot still match. Every other
+        # field must be untouched -- in particular `selection` and `command`, so
+        # a survivor that had been re-pointed at another backend is rejected --
+        # and the shift must be upward by exactly the span the retirement freed.
+        moved = {k for k in set(survivor) | set(added_native)
+                 if survivor.get(k) != added_native.get(k)}
+        require(moved == {"line"},
+                f"Patch 24.13 moved more than the native row's line: {moved}")
+        require(survivor["line"] == runner_successor.get("surviving_row_line")
+                and survivor["line"] < added_native["line"],
+                "Patch 24.13 native row is not at the line the successor "
+                f"records after the retirement: {survivor['line']}")
     rows = [copy.deepcopy(row) for row in rows if row not in live_current]
     rows.append(copy.deepcopy(previous))
     rows.sort(key=lambda row: (
@@ -348,8 +385,53 @@ def phase22_relay_inventory_rows(
             (str(row["path"]), str(row["command"]), str(row["selection"]))
             for row in live_successors
         ]
-        require(len(expected) == len(live_successors) == count and live == expected,
-                "Phase 23 successor invocation path, command, or selection drifted")
+        # Patch 24.13 retires explicit C, so these Phase 23 executors no longer
+        # match the rows they were pinned against. The pin is not edited: the
+        # successor records, per PINNED index, what 24.13 did to that row --
+        # "converted" (same site, now native), "retired" (the site is gone) or
+        # "unchanged". The post-retirement expectation is DERIVED from those
+        # dispositions, so a row that merely disappeared cannot be passed off as
+        # a conversion and vice versa.
+        retirement = successor.get("phase24_13_retirement")
+        if retirement is not None:
+            require(retirement.get("contract_version") ==
+                    "phase24_13_phase23_executor_retirement_v1",
+                    f"Patch 24.13 retirement successor for {path} drifted")
+            dispositions = retirement.get("dispositions", [])
+            require(len(dispositions) == count,
+                    f"Patch 24.13 must disposition every pinned row of {path}: "
+                    f"{len(dispositions)} of {count}")
+            derived = []
+            for index, disposition in enumerate(dispositions):
+                kind = disposition.get("kind")
+                was = expected_selections[index]
+                if was == "explicit_c":
+                    require(kind in ("converted", "retired"),
+                            f"Patch 24.13 leaves explicit C at {path} row "
+                            f"{index}: {kind}")
+                else:
+                    require(kind == "unchanged",
+                            f"Patch 24.13 must not disturb the non-explicit-C "
+                            f"row {index} of {path}: {kind}")
+                if kind == "retired":
+                    continue
+                if kind == "converted":
+                    derived.append((path, disposition.get("command"),
+                                    "explicit_cranelift"))
+                else:
+                    derived.append((path, successor.get("commands", [])[index],
+                                    was))
+            require(live == derived,
+                    "Patch 24.13 Phase 23 executor retirement does not match "
+                    f"the tree at {path}: {live} != {derived}")
+            require(all(row["selection"] != "explicit_c"
+                        for row in live_successors),
+                    f"Patch 24.13 left an explicit-C invocation in {path}")
+        else:
+            require(len(expected) == len(live_successors) == count
+                    and live == expected,
+                    "Phase 23 successor invocation path, command, or selection "
+                    "drifted")
         excluded.extend(live_successors)
     return [row for row in rows if row not in excluded]
 
@@ -436,21 +518,34 @@ def effective_relay_inventory(registry: dict, landed_authority: dict) -> dict:
 
 
 def _backend_removal_successor(registry: dict, previous: dict) -> dict:
-    """Patch 24.13: a RECLASSIFICATION successor, not a reduction one (#420).
+    """Patch 24.13: a COMBINED reclassification-and-retirement successor.
 
-    Every earlier successor removed invocations, so the chain asserts
+    Earlier successors only ever REMOVED invocations, so the chain asserts
     ``current["total"] < previous["total"]`` and that the drop equals the
-    explicit-C delta. Patch 24.13 does something no earlier patch did: it
-    moves two bootstrap callers from the retired spelling to the
-    bootstrap-only entry. The calls remain, so the total does not move and
-    that contract cannot express the change.
+    explicit-C delta. This contract was first written for the opposite case --
+    24.13 moving bootstrap callers to the bootstrap-only entry, total
+    unchanged -- and required ``current["total"] == previous["total"]``.
 
-    This shape holds it to the same standard by a different arithmetic: the
-    total must be UNCHANGED, the registered moved count must equal both the
-    drop in explicit_c and the rise in explicit_bootstrap_emitter, and it must
-    be non-zero. A successor that moves nothing, or whose registered move
-    disagrees with the scan, still fails -- which is what `<` bought for the
-    reduction successors and what widening it to `<=` would have thrown away.
+    Dispositioning the rest of Phase 23's executors broke that: 24.13 now does
+    BOTH. Some explicit-C sites moved to a live backend; others were retired
+    outright, taking with them the bare ``./gust`` arm that existed only to
+    compare against them. So neither `<` nor `==` on the total is true, and
+    the honest contract is the one that splits the explicit-C drop into its
+    two fates and makes them add up.
+
+    Measured against the registered predecessor census, not assumed:
+    explicit_c 51 -> 32 (drop 19), explicit_bootstrap_emitter 0 -> 9 and
+    explicit_cranelift 115 -> 120 (rise 14), implicit_default 15 -> 11 (drop
+    4), explicit_invalid_or_parser_probe 3 -> 3, total 184 -> 175 (drop 9).
+    So 14 invocations moved, 5 explicit-C sites were retired, and 4 companion
+    default arms went with them: 14 + 5 = 19, and 5 + 4 = 9.
+
+    The point of the split is that a site which VANISHED cannot pass as one
+    that moved, and vice versa -- the property `<` bought for the reduction
+    successors. A registered move that overstates itself by one leaves the
+    retirement count one short and fails; a retirement that quietly dropped a
+    row nobody registered fails the total. Selections outside the four this
+    patch touches must not move at all.
     """
     removal = registry.get(
         "phase24_13_backend_removal", {}).get("phase22_invocation_successor")
@@ -458,83 +553,56 @@ def _backend_removal_successor(registry: dict, previous: dict) -> dict:
         return previous
     current = removal.get("current_relay_inventory")
     require(removal.get("contract_version") ==
-            "phase24_13_invocation_reclassification_successor_v1" and
+            "phase24_13_invocation_retirement_successor_v2" and
             removal.get("previous_relay_inventory") == previous and
             isinstance(current, dict) and
             removal.get("partial_or_unregistered_reclassification") ==
             "rejected",
-            "Patch 24.13 invocation reclassification successor drifted")
-    require(current["total"] == previous["total"] and
-            current["unclassified_count"] == previous["unclassified_count"]
+            "Patch 24.13 invocation retirement successor drifted")
+    require(current["unclassified_count"] == previous["unclassified_count"]
             == 0,
-            "Patch 24.13 reclassifies rather than removes, so the fully "
-            "classified census total must not move")
-    moved = removal.get("reclassified_invocation_count")
-    require(isinstance(moved, int) and moved > 0,
-            "Patch 24.13 registered a reclassification that moves nothing")
-    # Two destinations, not one. This contract first required the explicit-C
-    # drop to equal the bootstrap-entry rise, which was true while the
-    # bootstrap entry was the only place a retired invocation could go. Patch
-    # 24.13 then routed justfile-step51's three generic recipes to the native
-    # backend, so the drop is 5 and the rise is 2 and no single equality can
-    # hold. Measured, not assumed: 56 -> 51 explicit_c, 119 -> 122
-    # explicit_cranelift, 0 -> 2 explicit_bootstrap_emitter, total 196 both
-    # sides.
-    #
-    # Generalised by naming the destinations and requiring the drop to equal
-    # their SUM, which is still exact. Relaxing to `<=` was considered and
-    # rejected for the same reason it was rejected when this contract was
-    # written: it stops distinguishing an invocation that MOVED from one that
-    # vanished, and vanishing is precisely what a removal patch must not do
-    # silently.
+            "Patch 24.13 must leave the post-relay census fully classified")
+
+    reclassified = removal.get("reclassified_invocation_count")
+    retired_c = removal.get("retired_explicit_c_count")
+    retired_companion = removal.get("retired_companion_default_count")
+    require(all(isinstance(value, int) for value in
+                (reclassified, retired_c, retired_companion)) and
+            reclassified > 0 and retired_c > 0,
+            "Patch 24.13 registered a transition that neither moves nor "
+            "retires an explicit-C invocation")
+
+    destinations = ("explicit_bootstrap_emitter", "explicit_cranelift")
     drop = (previous["selection_counts"].get("explicit_c", 0) -
             current["selection_counts"].get("explicit_c", 0))
-    destinations = ("explicit_bootstrap_emitter", "explicit_cranelift")
     rise = sum(current["selection_counts"].get(name, 0) -
                previous["selection_counts"].get(name, 0)
                for name in destinations)
-    require(moved == drop and moved == rise,
-            "the Patch 24.13 registered move disagrees with the scan: the "
-            f"registered move is {moved}, the explicit-C drop is {drop}, and "
-            f"the rise across {destinations} is {rise}. They must be equal, "
-            "so an invocation that disappeared cannot pass as one that moved.")
-    require(current["total"] == previous["total"],
-            "Patch 24.13 reclassifies invocations, so the total must be "
-            f"unchanged: {previous['total']} -> {current['total']}")
-    return _toolchain_removal_successor(registry, current)
-
-
-def _toolchain_removal_successor(registry: dict, previous: dict) -> dict:
-    """Patch 24.14 removes the focused live oracle's invocation.
-
-    A REDUCTION again, not a reclassification: 24.13 moved callers between
-    backends and kept the total, while 24.14 retires the lane outright, so its
-    one invocation leaves the census entirely. Asserting the shape rather than
-    just the arithmetic is what keeps a reduction from passing as a move, and
-    vice versa.
-    """
-    successor = registry.get("phase24_14_toolchain_removal", {}).get(
-        "phase22_invocation_successor")
-    if successor is None:
-        return previous
-    current = successor.get("current_relay_inventory")
-    require(isinstance(current, dict) and
-            successor.get("contract_version") ==
-            "phase24_14_invocation_successor_v1" and
-            successor.get("previous_relay_inventory") == previous and
-            successor.get("partial_or_unregistered_reduction") == "rejected",
-            "Patch 24.14 relay inventory successor drifted")
-    removed = previous["total"] - current["total"]
-    require(removed == successor.get("removed_invocation_count") ==
-            previous["selection_counts"].get("explicit_c", 0) -
-            current["selection_counts"].get("explicit_c", 0),
-            "the Patch 24.14 census reduction is not entirely explicit-C: it "
-            "retires the focused live oracle, whose invocation is explicit C")
-    require(current["unclassified_count"] == previous["unclassified_count"]
-            == 0,
-            "Patch 24.14 did not reduce a fully classified census")
+    require(rise == reclassified,
+            f"the Patch 24.13 registered move is {reclassified} but the rise "
+            f"across {destinations} is {rise}")
+    require(drop == reclassified + retired_c,
+            f"the Patch 24.13 explicit-C drop is {drop}, which is not the "
+            f"{reclassified} that moved plus the {retired_c} retired")
+    default_drop = (previous["selection_counts"].get("implicit_default", 0) -
+                    current["selection_counts"].get("implicit_default", 0))
+    require(default_drop == retired_companion,
+            f"the Patch 24.13 implicit-default drop is {default_drop} but "
+            f"{retired_companion} companion arms are registered as retired")
+    require(previous["total"] - current["total"] ==
+            retired_c + retired_companion,
+            "the Patch 24.13 census total must fall by exactly the retired "
+            f"sites: {previous['total']} -> {current['total']} against "
+            f"{retired_c} + {retired_companion}")
+    touched = {"explicit_c", "implicit_default", *destinations}
+    for name in set(previous["selection_counts"]) | set(
+            current["selection_counts"]):
+        if name in touched:
+            continue
+        require(previous["selection_counts"].get(name, 0) ==
+                current["selection_counts"].get(name, 0),
+                f"Patch 24.13 moved a selection it does not claim: {name}")
     return current
-
 
 def validate_post_flip_relay_transition(
         registry: dict, rows: list[dict[str, object]]) -> tuple[str, dict]:
@@ -578,6 +646,47 @@ def validate_post_flip_relay_transition(
         for row in rows
         if tuple(row[field] for field in site_fields) in expected_sites
     }
+    # Patch 24.13 migrates two of the six relay sites off mir-to-c. The pinned
+    # manifest still records where they were and what they said, which stays
+    # true of Patch 22; the successor says what each became. A migration is
+    # only accepted if the pinned site is ABSENT and its named replacement is
+    # PRESENT -- deleting a relay site outright fails here, as does leaving the
+    # mir-to-c spelling in place.
+    migration = relay.get("phase24_13_site_migration")
+    if migration is not None:
+        require(migration.get("contract_version") ==
+                "phase24_13_six_site_relay_migration_v1",
+                "Patch 24.13 six-site relay migration successor drifted")
+        migrations = migration.get("migrations", [])
+        require(len(migrations) == migration.get("migrated_count") and
+                migration.get("migrated_count") +
+                migration.get("retained_mir_to_c_count") ==
+                relay.get("consumer_count") == 6,
+                "Patch 24.13 relay migration does not account for all six "
+                "sites")
+        live_keys = {tuple(row[field] for field in site_fields) for row in rows}
+        for entry in migrations:
+            pinned = tuple(entry["pinned_site"][field] for field in site_fields)
+            moved = tuple(entry["migrated_site"][field] for field in site_fields)
+            require(pinned in expected_sites,
+                    f"Patch 24.13 migrates a site the manifest never pinned: "
+                    f"{pinned[0]}:{pinned[1]}")
+            require(pinned not in live_keys,
+                    f"Patch 24.13 records {pinned[0]}:{pinned[1]} as migrated "
+                    "but the mir-to-c site is still in the tree")
+            require(moved in live_keys,
+                    f"Patch 24.13 records a replacement for {pinned[0]}:"
+                    f"{pinned[1]} that is not in the tree")
+            require("mir-to-c" not in str(entry["migrated_site"]["command"]),
+                    f"Patch 24.13 replacement for {pinned[0]}:{pinned[1]} "
+                    "still spells mir-to-c")
+            expected_sites.discard(pinned)
+            expected_sites.add(moved)
+        live_sites = {
+            tuple(row[field] for field in site_fields): row
+            for row in rows
+            if tuple(row[field] for field in site_fields) in expected_sites
+        }
     require(len(expected_sites) == len(live_sites) ==
             relay.get("consumer_count") == 6 and
             sorted({str(site[0]) for site in expected_sites}) ==
@@ -585,8 +694,18 @@ def validate_post_flip_relay_transition(
             "six-site relay path or site manifest drifted")
 
     summary = scan_summary(rows)
-    require({str(row["selection"]) for row in live_sites.values()} ==
-            {"explicit_c"} and
+    # Every relay site was explicit C when Patch 22 closed. A site 24.13
+    # migrated must now read as the selection its successor names -- checked
+    # per site, so a migrated site that landed on some third backend fails
+    # here, and an unmigrated site that drifted off explicit C fails too.
+    expected_site_selection = {}
+    for key in live_sites:
+        expected_site_selection[key] = "explicit_c"
+    for entry in (migration or {}).get("migrations", []):
+        moved = tuple(entry["migrated_site"][field] for field in site_fields)
+        expected_site_selection[moved] = entry["migrated_selection"]
+    require({key: str(row["selection"]) for key, row in live_sites.items()} ==
+            expected_site_selection and
             summary == effective_relay_inventory(registry, landed_authority),
             "live invocation scan is not the exact landed six-site post-relay state")
     return "landed_post_relay", landed_authority

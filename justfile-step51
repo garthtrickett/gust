@@ -50,6 +50,20 @@ guard-positive file label:
     if [ ! -x build/gust-native-backend ]; then
       make build/gust-native-backend
     fi
+    # The driver is not the whole native environment. `phase10-native-package`
+    # depends on gust, the driver AND the runtime package, and a native link
+    # without the package fails at `stage=link_input_validation` with
+    # "compiler MIR link runtime package" -- which reads as a source that
+    # stopped compiling rather than as a missing build artifact.
+    #
+    # It passed locally for exactly the reason the driver did: my tree already
+    # had the package from an earlier build, so the recipe was measured in an
+    # environment it does not create. In CI it is absent, and sources that link
+    # fine everywhere failed the allowlist check as though they were further
+    # capability losses. Reproduced by deleting the package locally.
+    if [ ! -f build/gust-runtime-package.a ]; then
+      make build/gust-runtime-package.a
+    fi
     export GUST_NATIVE_BACKEND_DRIVER="$PWD/build/gust-native-backend"
     echo "Checking $test_path accepts and runs..."
     if ./gust --backend cranelift -o "$bin_file" "$test_path" > "$log" 2>&1; then
@@ -77,7 +91,47 @@ guard-positive file label:
     cat "$log"
     exit 1
     fi
-    echo "⚠️  $test_path: run evidence retired with the backend ($expected_defer)"
+    # Patch 24.12c: the run evidence is no longer retired, it is REPLAYED.
+    #
+    # Raised in review on #421: exiting successfully here without creating or
+    # running a binary makes a regression invisible so long as the same
+    # unsupported reason is emitted -- and TASK.md's Immutable Contracts say
+    # "Absence of C execution never counts as parity success." Pinning the
+    # reason bounded the damage; it did not carry the behaviour.
+    #
+    # #429 captured a frozen vector for each of these four while the retired
+    # backend still existed, which was the last opportunity: v2's authority
+    # records that no vector can be captured after 24.13 merges. Serving one
+    # here is not decoration -- `check_vector` re-digests the SOURCE and fails
+    # with "frozen vector source moved without a re-freeze", so a change to
+    # the fixture invalidates its evidence instead of sailing past on an
+    # unchanged deferral reason. That is the regression the old form missed.
+    frozen_dir="$guard_dir/frozen"
+    if ! python3 scripts/phase24_frozen_oracle.py materialize \
+        "$test_path" "$frozen_dir/replay" > "$guard_dir/frozen.log" 2>&1; then
+    echo "❌ $test_path defers on the native route and its frozen evidence"
+    echo "   could not be served, so nothing checks its behaviour:"
+    cat "$guard_dir/frozen.log"
+    exit 1
+    fi
+    frozen_status="$(cat "$frozen_dir/replay.status")"
+    if [ "$frozen_status" != "0" ]; then
+    echo "❌ $test_path is a positive test but its frozen run exited"
+    echo "   $frozen_status, so the recorded behaviour is not a pass."
+    exit 1
+    fi
+    # The replayed stdout goes where the LIVE run put it.
+    #
+    # guard-positive's callers do not stop at this recipe: they grep the
+    # guard's compiler.log for the program's own output -- e.g.
+    # `grep -Fx 'Active: E2E_Bootstrap' build/guards/<label>/compiler.log`.
+    # On the live path the binary ran and its stdout landed there. Replaying
+    # into replay.stdout alone produced correct evidence in the wrong place,
+    # and every such caller failed on an empty log while this recipe reported
+    # success. Appending closes the substitution rather than half-making it.
+    cat "$frozen_dir/replay.stdout" >> "$log"
+    echo "🧊 $test_path: native route defers ($expected_defer); frozen run"
+    echo "   evidence replayed from the Patch 24.12c capture, exit $frozen_status"
 
 guard-compile-pass file label:
     #!/usr/bin/env bash
@@ -111,6 +165,20 @@ guard-compile-pass file label:
     if [ ! -x build/gust-native-backend ]; then
       make build/gust-native-backend
     fi
+    # The driver is not the whole native environment. `phase10-native-package`
+    # depends on gust, the driver AND the runtime package, and a native link
+    # without the package fails at `stage=link_input_validation` with
+    # "compiler MIR link runtime package" -- which reads as a source that
+    # stopped compiling rather than as a missing build artifact.
+    #
+    # It passed locally for exactly the reason the driver did: my tree already
+    # had the package from an earlier build, so the recipe was measured in an
+    # environment it does not create. In CI it is absent, and sources that link
+    # fine everywhere failed the allowlist check as though they were further
+    # capability losses. Reproduced by deleting the package locally.
+    if [ ! -f build/gust-runtime-package.a ]; then
+      make build/gust-runtime-package.a
+    fi
     export GUST_NATIVE_BACKEND_DRIVER="$PWD/build/gust-native-backend"
     echo "Checking $test_path accepts..."
     if ./gust --backend cranelift -o "$guard_dir/bin" "$test_path" > "$log" 2>&1; then
@@ -121,10 +189,75 @@ guard-compile-pass file label:
     cat "$log"
     exit 1
     fi
+    # Patch 24.13: a THIRD outcome, measured rather than assumed.
+    #
+    # This recipe asks "does the compiler ACCEPT this source". The retired C
+    # route answered it incidentally; the native route answers it directly,
+    # and for most sources the answer is a clean `decision=deferred` having
+    # raised no front-end error. Three sources answer differently: the
+    # capability planner says `decision=supported`, the front end raises
+    # nothing, and native lowering then fails MIR verification.
+    #
+    # The recipe's own question is already answered at that point -- the
+    # source WAS accepted -- so failing here would report a front-end verdict
+    # the compiler never gave. But passing silently would bury a real native
+    # lowering defect, so the three are named with their exact class and
+    # counted. A fourth source, or a different class, still fails.
+    #
+    # Enumerated by classifying all 66 sources these two recipes drive rather
+    # than by fixing the one CI happened to reach first: 45 front-end
+    # rejections (the compile-fail population), 10 deferred, 8 native-OK, and
+    # exactly these 3.
     if ! rg -q "decision=deferred" "$log"; then
-    echo "❌ $test_path failed without a deferred-capability decision."
+    verification_residue=""
+    planner_decision=""
+    case "$test_path" in
+      compiler/phase20_arena_free_live_source.gst)
+        verification_residue="class=canonical_mir_verification_error"
+        planner_decision="decision=source_or_type_failure" ;;
+      compiler/phase20_protected_access_source.gst)
+        verification_residue="class=canonical_mir_verification_error"
+        planner_decision="decision=supported" ;;
+      tests/e2e_extern_func_call_inside_unsafe.gst)
+        verification_residue="class=canonical_mir_verification_error"
+        planner_decision="decision=source_or_type_failure" ;;
+    esac
+    if [ -z "$verification_residue" ]; then
+    echo "❌ $test_path failed without a deferred-capability decision, and it"
+    echo "   is not one of the three Patch 24.13 recorded as accepted-but-"
+    echo "   unlowerable."
     cat "$log"
     exit 1
+    fi
+    # The planner's decision is PINNED PER SOURCE, not required to be
+    # `supported`, because for two of the three it is not.
+    #
+    # A first version required decision=supported for all three. It passed for
+    # one and failed the other two, which report
+    # decision=source_or_type_failure -- while raising no front-end diagnostic
+    # and, measured on main, compiling cleanly through the retired C route
+    # (exit 0, empty stderr). The source is therefore fine and the native
+    # planner's classification of it is wrong.
+    #
+    # Requiring `supported` would have encoded that misclassification as the
+    # expectation. Pinning what each source actually reports records the
+    # defect instead of hiding it, and still fails if either value moves.
+    if ! rg -q "$planner_decision" "$log"; then
+    echo "❌ $test_path is recorded as accepted-but-unlowerable with"
+    echo "   $planner_decision, which the compiler no longer reports."
+    cat "$log"
+    exit 1
+    fi
+    if ! rg -q "$verification_residue" "$log"; then
+    echo "❌ $test_path failed for a reason Patch 24.13 did not record:"
+    echo "   expected $verification_residue"
+    cat "$log"
+    exit 1
+    fi
+    echo "⚠️  $test_path: accepted (decision=supported, no front-end error);"
+    echo "   native lowering fails $verification_residue — a backend defect,"
+    echo "   not a rejection of the source."
+    exit 0
     fi
     rg -o "reason_code=[a-z0-9_]+" "$log" | head -1
 
@@ -153,6 +286,20 @@ guard-compile-fail file diagnostic label:
     # building it if absent -- makes the two agree.
     if [ ! -x build/gust-native-backend ]; then
       make build/gust-native-backend
+    fi
+    # The driver is not the whole native environment. `phase10-native-package`
+    # depends on gust, the driver AND the runtime package, and a native link
+    # without the package fails at `stage=link_input_validation` with
+    # "compiler MIR link runtime package" -- which reads as a source that
+    # stopped compiling rather than as a missing build artifact.
+    #
+    # It passed locally for exactly the reason the driver did: my tree already
+    # had the package from an earlier build, so the recipe was measured in an
+    # environment it does not create. In CI it is absent, and sources that link
+    # fine everywhere failed the allowlist check as though they were further
+    # capability losses. Reproduced by deleting the package locally.
+    if [ ! -f build/gust-runtime-package.a ]; then
+      make build/gust-runtime-package.a
     fi
     export GUST_NATIVE_BACKEND_DRIVER="$PWD/build/gust-native-backend"
     echo "Checking $test_path rejects..."
