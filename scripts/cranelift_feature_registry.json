@@ -25509,6 +25509,7 @@
   "phase24_closure": {
     "text_surface_successor": {
       "added_text_surfaces": [
+        "GUST_LANE_STATE.md",
         "docs/PHASE24_CLOSURE.md",
         "tests/cranelift/phase24_closure_contract.tsv"
       ],
