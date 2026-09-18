@@ -683,7 +683,14 @@ def validate_transition(record: dict, registry: dict) -> None:
                                 "rejected",
                                 "Patch 24.13 frozen surface successor "
                                 "drifted")
-                            # Patch 24.14 is the tail when present.
+                            # Patch 24.14, then Issue #398, which is the
+                            # tail. Each link ends where the next one starts,
+                            # and only the last may end at the live surface --
+                            # so a chain with a gap in it fails here rather
+                            # than at whichever end happens to match.
+                            spelling_frozen = registry.get(
+                                "phase398_retained_spelling_removal", {}).get(
+                                    "frozen_surface_transition")
                             if toolchain_frozen is not None:
                                 require(
                                     toolchain_frozen.get("contract_version")
@@ -692,12 +699,29 @@ def validate_transition(record: dict, registry: dict) -> None:
                                     and
                                     toolchain_frozen.get(
                                         "current_live_c_case_surface") ==
-                                    live_frozen and
+                                    (spelling_frozen[
+                                        "previous_live_c_case_surface"]
+                                     if spelling_frozen is not None
+                                     else live_frozen) and
                                     toolchain_frozen.get(
                                         "partial_or_unregistered_surface") ==
                                     "rejected",
                                     "Patch 24.14 frozen surface successor "
                                     "drifted")
+                                if spelling_frozen is not None:
+                                    require(
+                                        spelling_frozen.get(
+                                            "contract_version") ==
+                                        "phase398_frozen_surface_transition_v1"
+                                        and
+                                        spelling_frozen.get(
+                                            "current_live_c_case_surface") ==
+                                        live_frozen and
+                                        spelling_frozen.get(
+                                            "partial_or_unregistered_surface")
+                                        == "rejected",
+                                        "Issue #398 frozen surface successor "
+                                        "drifted")
             # Compare the two ends of the link 24.0c registered, not the live
             # surface against 24.0c's start: with a successor in the chain the
             # live surface belongs to the successor, and reading it here would

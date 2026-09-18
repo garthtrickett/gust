@@ -1680,11 +1680,28 @@ def drop_class_appended_text_surfaces(
     # below, because only registered departures are discharged here.
     departures = registry.get("phase24_13_backend_removal", {}).get(
         "text_surface_departures")
+    # Issue #398 retires a landed Stdlib surface of its own, so the registered
+    # set is the union of the two. Union rather than replacement: 24.13's two
+    # departures are still departed, and a patch that dropped them from the
+    # register would stop proving they left by retirement rather than by
+    # deletion. Each patch's own paths are still proved below, one at a time.
+    spelling_departures = registry.get(
+        "phase398_retained_spelling_removal", {}).get(
+            "text_surface_departures")
+    if spelling_departures is not None:
+        require(spelling_departures.get("contract_version") ==
+                "phase398_text_surface_departure_v1" and
+                spelling_departures.get("deleted_rather_than_retired") ==
+                "rejected",
+                "Issue #398 text surface departure successor drifted")
     if departures is not None and missing:
         require(departures.get("contract_version") ==
                 "phase24_13_text_surface_departure_v1",
                 "Patch 24.13 text surface departure successor drifted")
-        registered = departures.get("paths", [])
+        registered = list(departures.get("paths", []))
+        registered += [path for path in
+                       (spelling_departures or {}).get("paths", [])
+                       if path not in registered]
         # Containment, not equality: this node records every surface that left
         # the content enrolment, and the landed-Stdlib set is a subset of that.
         # Both directions still hold -- an unregistered departure fails here,
@@ -2026,6 +2043,46 @@ def normalize_phase22_invocations(
     return normalized
 
 
+def rebase_s1_8_surface(registry: dict, rows: list) -> list:
+    """Apply Issue #398's one-path S1.8 rebase to a list of expected rows.
+
+    The same successor the S1.8 inventory manifest uses, applied here because
+    this projection runs BEFORE the newest-first successor chain further down
+    and therefore sees the file at its converted bytes, not at the identity
+    S1.8 registered.
+
+    It rewrites exactly one digest, and only from the predecessor it names.
+    A row at any other digest is left alone and fails the comparison it was
+    going to fail anyway -- the rebase cannot be used to make an unexpected
+    identity acceptable.
+    """
+    successor = registry.get("phase398_retained_spelling_removal", {}).get(
+        "s1_8_surface_successor")
+    if successor is None:
+        return rows
+    require(successor.get("contract_version") ==
+            "phase398_s1_8_surface_successor_v1" and
+            successor.get("partial_or_substituted_surface") == "rejected",
+            "Issue #398 S1.8 surface successor drifted")
+    # Two shapes reach this. The S1.8 inventory manifest carries bare
+    # `{path, digest}` rows, so only the digest moves there. The Phase 23
+    # text-surface manifest carries the full classified row, whose match
+    # counts the conversion also moved -- a digest-only swap would leave that
+    # row claiming seven MIR-to-C mentions in a file that now has twelve. So
+    # the full row is registered as a pair and swapped whole.
+    rebased = []
+    for row in rows:
+        if row is not None and str(row.get("path")) == successor["path"]:
+            if row == successor.get("previous_row"):
+                row = copy.deepcopy(successor["current_row"])
+            elif (set(row) == {"path", "digest"} and
+                    row.get("digest") == successor["predecessor_digest"]):
+                row = copy.deepcopy(row)
+                row["digest"] = successor["successor_digest"]
+        rebased.append(row)
+    return rebased
+
+
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
@@ -2077,6 +2134,7 @@ def normalize_phase23_text_surfaces(
         # drop_class_appended_text_surfaces above, so here each is admitted at
         # any bytes and projected onto the exact closed row this manifest was
         # registered against. Appending a guard recipe is not changing one.
+        expected_current = rebase_s1_8_surface(registry, expected_current)
         rows = project_class_living_rows(rows, expected_current, living_paths)
         by_live_path = {str(row["path"]): row for row in rows}
         require([by_live_path.get(path) for path in transition["changed_paths"]] ==
@@ -2089,7 +2147,8 @@ def normalize_phase23_text_surfaces(
         replacements["justfile"]["digest"] = coordination[
             "justfile_state_digests"]["pre_s1_8"]
         rows = [replacements.get(str(row["path"]), row) for row in rows]
-        added = coordination["added_phase23_text_surface"]
+        added = rebase_s1_8_surface(
+            registry, [coordination["added_phase23_text_surface"]])[0]
         matches = [row for row in rows if row["path"] == added["path"]]
         require(matches == [added],
                 "S1.8 added text surface is missing, substituted, or duplicated")
@@ -2192,6 +2251,47 @@ def normalize_phase23_text_surfaces(
     # Patch 24.18 is newest, so it runs first. It registers the closure's own
     # surfaces: cranelift_registry.py, which it edits to register the
     # phase24_closure top-level key, and the closure contract it adds.
+    # Issue #398 is newest, so it runs FIRST and projects the tree back to
+    # the state every successor below it was registered against. It moves the
+    # most surfaces of any link here -- the compiler entry and its help, the
+    # guards that pinned the old wording, the consumers converted onto frozen
+    # replay, the seed, and the user documentation -- and it is the only one
+    # that REMOVES a surface: tests/e2e_codegen_assertions.gst stops matching
+    # the content patterns once its invocations become replays.
+    spelling_surface = registry.get(
+        "phase398_retained_spelling_removal", {}).get("text_surface_successor")
+    if spelling_surface is not None:
+        require(spelling_surface.get("contract_version") ==
+                "phase398_text_surface_successor_v1" and
+                spelling_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Issue #398 text surface successor drifted")
+        spelling_paths = list(spelling_surface["registered_changed_paths"])
+        spelling_pre = {row["path"]: row for row
+                        in spelling_surface["previous_changed_text_surfaces"]}
+        spelling_post = {row["path"]: row for row
+                         in spelling_surface["current_changed_text_surfaces"]}
+        require(sorted(spelling_pre) == sorted(spelling_paths) ==
+                sorted(spelling_post),
+                "Issue #398 registered paths and rows disagree")
+        spelling_live = {row["path"]: row for row in rows
+                         if row["path"] in spelling_paths}
+        require(sorted(spelling_live) == sorted(spelling_paths),
+                "Issue #398 registered text surface is missing from the "
+                f"scan: {sorted(set(spelling_paths) - set(spelling_live))}")
+        for path in spelling_paths:
+            require(spelling_live[path] in (spelling_pre[path],
+                                            spelling_post[path]),
+                    "Issue #398 changed text surfaces are partial or "
+                    f"substituted: {path}")
+        spelling_added = set(spelling_surface["added_text_surfaces"])
+        rows = [dict(spelling_pre.get(row["path"], row)) for row in rows
+                if row["path"] not in spelling_added]
+        rows = sorted(rows + [copy.deepcopy(r) for r
+                              in spelling_surface["removed_text_surfaces"]],
+                      key=lambda row: str(row["path"]))
+        by_path = {row["path"]: row for row in rows}
+
     closure_surface = registry.get(
         "phase24_closure", {}).get("text_surface_successor")
     if closure_surface is not None:
