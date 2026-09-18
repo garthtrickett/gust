@@ -10419,8 +10419,8 @@ guard-cranelift-route-architecture-contract:
 
     native_branch="$(
       sed -n \
-        '/if invocation.backend.tag == 1 {/,/Both explicit C spellings/p' \
-        "$invocation_source"
+        '/if invocation.backend.tag == 1 {/,/mut c_code := codegen/p' \
+        "$invocation_source" | sed '$d'
     )"
     if printf '%s\n' "$native_branch" |
        rg -n -F 'codegen.codegen_generate(' >/dev/null; then
@@ -22938,9 +22938,11 @@ guard-stdlib-s1-str-equality-diagnostic:
     # frozen case identity does not move. Only the assertions around
     # them changed: acceptance is now the failure, and the wording
     # check below names the genuine type error, not the retired ban.
-    mismatch_out="$(./gust --backend mir-to-c "$mismatch" 2>&1 || true)"
-    if ./gust --backend mir-to-c "$mismatch" >/dev/null 2>&1; then
-      echo "$mismatch must be rejected, but it compiled."
+    # Issue #398: the refusal is replayed, not re-provoked.
+    python3 scripts/phase24_frozen_oracle.py materialize "$mismatch" build/s1-mismatch --kind reject
+    mismatch_out="$(cat build/s1-mismatch.compile.stdout build/s1-mismatch.compile.stderr)"
+    if [ "$(cat build/s1-mismatch.compile.status)" = "0" ]; then
+      echo "$mismatch must be rejected, but the frozen record compiles."
       exit 1
     fi
     if ! printf '%s\n' "$mismatch_out" | rg -n -F "[TypeMismatch] Mismatched types in binary operation '=='" >/dev/null; then
@@ -22953,8 +22955,13 @@ guard-stdlib-s1-str-equality-diagnostic:
     # build natively, and print both of its markers.
     for spec in tests/test_str_equality_rejected.gst:101,104 tests/test_str_inequality_rejected.gst:102,107 tests/test_str_equality_literal_rejected.gst:103,105 tests/test_str_equality_param_rejected.gst:108,109; do
       fixture="${spec%%:*}"; markers="${spec#*:}"; [ -f "$fixture" ] || { echo "Missing $fixture"; exit 1; }
-      ./gust --backend mir-to-c "$fixture" >build/s1-tmp.c 2>build/s1-tmp.err || { echo "$fixture failed to compile"; head -3 build/s1-tmp.err; exit 1; }
-      rg -q -F 'std_str_eq' build/s1-tmp.c || { echo "$fixture did not lower through the equality helper"; exit 1; }; grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" build/s1-tmp.c > build/s1-tmp.clean.c; cat src/runtime.c build/s1-tmp.clean.c > build/s1-tmp.final.c; cc -O2 -Wall -pthread -Isrc build/s1-tmp.final.c -o build/s1-tmp-bin 2>/dev/null || { echo "$fixture native build failed"; exit 1; }; run_out="$(./build/s1-tmp-bin 2>&1)"
+      # Issue #398: both observables come from the frozen record -- the C, to
+      # show the fixture lowers through the equality helper, and the runtime
+      # markers. The host compile and link are gone with the emission that
+      # made them necessary.
+      python3 scripts/phase24_frozen_oracle.py materialize "$fixture" build/s1-tmp --kind exec
+      test "$(cat build/s1-tmp.compile.status)" = "0" || { echo "$fixture failed to compile"; head -3 build/s1-tmp.compile.stderr; exit 1; }
+      rg -q -F 'std_str_eq' build/s1-tmp.compile.stdout || { echo "$fixture did not lower through the equality helper"; exit 1; }; run_out="$(cat build/s1-tmp.stdout)"
       for marker in $(echo "$markers" | tr ',' ' '); do printf '%s\n' "$run_out" | rg -q -F "$marker" || { echo "$fixture missing marker $marker"; exit 1; }; done
     done; echo "✅ str content equality accepted with runtime markers; mixed operands still rejected."
 
@@ -22985,19 +22992,27 @@ guard-stdlib-s1-collection-receivers:
     rg -n -F '5' to.log >/dev/null
 
     # Move tracking must not weaken just because the use is behind a reference.
-    if ./gust --backend mir-to-c "$negative" >/dev/null 2>&1; then
-      echo "$negative must be rejected, but it compiled."
+    # Issue #398: the refusal is replayed, not re-provoked.
+    python3 scripts/phase24_frozen_oracle.py materialize "$negative" build/s1-negative --kind reject
+    if [ "$(cat build/s1-negative.compile.status)" = "0" ]; then
+      echo "$negative must be rejected, but the frozen record compiles."
       exit 1
     fi
-    negative_output="$(./gust --backend mir-to-c "$negative" 2>&1 || true)"
+    negative_output="$(cat build/s1-negative.compile.stdout build/s1-negative.compile.stderr)"
     printf '%s\n' "$negative_output" | rg -n -F 'Use of moved variable' >/dev/null
 
     # A reference receiver must lower to the same runtime operations as a value
     # receiver. Only the C access differs: `m.len` becomes `m->len`.
-    printf 'func main() {\n    mut arena := os.Arena.New();\n    defer arena.Free();\n    mut m: std.HashMap[str, int, arena] := std.HashMapNew(arena);\n    m.Insert("k", 7);\n    mut r := m.Get("k");\n    if r.Ok { os.LogInt(r.Val); }\n    os.LogInt(len(m));\n}\n' >build/stdlib-s1-byval.gst
-    printf 'func work(m: &std.HashMap[str, int, ctx]) {\n    mut r := m.Get("k");\n    if r.Ok { os.LogInt(r.Val); }\n    os.LogInt(len(m));\n}\nfunc main() {\n    mut arena := os.Arena.New();\n    defer arena.Free();\n    mut m: std.HashMap[str, int, arena] := std.HashMapNew(arena);\n    m.Insert("k", 7);\n    work(&m);\n}\n' >build/stdlib-s1-byref.gst
-    ./gust --backend mir-to-c build/stdlib-s1-byval.gst >build/stdlib-s1-byval.c 2>&1
-    ./gust --backend mir-to-c build/stdlib-s1-byref.gst >build/stdlib-s1-byref.c 2>&1
+    # Issue #398: these two fixtures are tracked under tests/ rather than
+    # than printed here. A frozen vector pins its SOURCE digest, so a source that
+    # only exists inside build/ cannot be audited on a clean checkout -- which is
+    # exactly how CI failed: the guard passed locally off a populated build/ and
+    # reported the source missing in a clean one. The bytes are unchanged, so the
+    # capture is untouched; only where the source lives moved.
+    python3 scripts/phase24_frozen_oracle.py materialize tests/stdlib_s1_str_equality_byval.gst build/s1-byval --kind compile_only
+    python3 scripts/phase24_frozen_oracle.py materialize tests/stdlib_s1_str_equality_byref.gst build/s1-byref --kind compile_only
+    cp build/s1-byval.compile.stdout build/stdlib-s1-byval.c
+    cp build/s1-byref.compile.stdout build/stdlib-s1-byref.c
     byval_ops="$(rg -o -N 'os_HashMap[A-Za-z_]*' build/stdlib-s1-byval.c | sort | uniq -c)"
     byref_ops="$(rg -o -N 'os_HashMap[A-Za-z_]*' build/stdlib-s1-byref.c | sort | uniq -c)"
     if [ "$byval_ops" != "$byref_ops" ]; then
@@ -23123,7 +23138,12 @@ guard-stdlib-s1-resource-prerequisites:
     make gust >build/guards/stdlib_s1_resource_prerequisites/build.log 2>&1
     output="build/guards/stdlib_s1_resource_prerequisites/generic-derivation.output"
     derivation_version="$(python3 -c 'import json, sys; value = json.load(open(sys.argv[1])).get("phase24_cr15_derivation"); print("" if value is None else value.get("contract_version", "<invalid>") if isinstance(value, dict) else "<invalid>")' "$registry")"
-    if ./gust --backend mir-to-c "$witness" >"$output" 2>&1; then
+    # Issue #398: the witness is compiled only to learn WHETHER it compiles --
+    # the answer selects which authority branch this guard asserts -- so the
+    # frozen record answers it without the retired spelling.
+    python3 scripts/phase24_frozen_oracle.py materialize "$witness" "$output.frozen" --kind compile_only
+    cat "$output.frozen.compile.stdout" "$output.frozen.compile.stderr" >"$output"
+    if [ "$(cat "$output.frozen.compile.status")" = "0" ]; then
       witness_compiled=1
     else
       witness_compiled=0

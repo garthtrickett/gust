@@ -422,6 +422,9 @@ def check() -> None:
                         # cranelift-owned explicit-C case and must not touch
                         # the stdlib-owned ones, which Phase 25 and the Stdlib
                         # lane own respectively.
+                        spelling_frozen = registry.get(
+                            "phase398_retained_spelling_removal", {}).get(
+                                "frozen_surface_transition")
                         if toolchain_frozen is not None:
                             require(
                                 toolchain_frozen.get("contract_version") ==
@@ -432,7 +435,10 @@ def check() -> None:
                                 and
                                 toolchain_frozen.get(
                                     "current_live_c_case_surface") ==
-                                current_frozen and
+                                (spelling_frozen[
+                                    "previous_live_c_case_surface"]
+                                 if spelling_frozen is not None
+                                 else current_frozen) and
                                 toolchain_frozen.get(
                                     "partial_or_unregistered_surface") ==
                                 "rejected",
@@ -458,6 +464,46 @@ def check() -> None:
                                 "Patch 24.14 moves live-C case identity, so "
                                 "the case count and owner split must not "
                                 f"move: {before['count']} -> {after['count']}")
+                            # Issue #398 is the tail. Where 24.14 moved
+                            # identity without moving membership, this link
+                            # empties the surface: the Stdlib owner leaves
+                            # the split entirely rather than shrinking, so a
+                            # removal that left one Stdlib case behind would
+                            # still reduce the count and would fail here.
+                            # The reduction is asserted as its own arithmetic
+                            # for the reason review raised on #421 -- a
+                            # successor whose registered numbers disagree
+                            # with its own pre/post pair is not caught by the
+                            # chain alone.
+                            if spelling_frozen is not None:
+                                require(
+                                    spelling_frozen.get("contract_version")
+                                    ==
+                                    "phase398_frozen_surface_transition_v1"
+                                    and
+                                    spelling_frozen.get(
+                                        "previous_live_c_case_surface") ==
+                                    toolchain_frozen[
+                                        "current_live_c_case_surface"] and
+                                    spelling_frozen.get(
+                                        "current_live_c_case_surface") ==
+                                    current_frozen and
+                                    spelling_frozen.get(
+                                        "partial_or_unregistered_surface")
+                                    == "rejected",
+                                    "Issue #398 frozen-surface closure "
+                                    "successor drifted")
+                                started = spelling_frozen[
+                                    "previous_live_c_case_surface"]
+                                ended = spelling_frozen[
+                                    "current_live_c_case_surface"]
+                                require(
+                                    ended["count"] < started["count"] and
+                                    "stdlib" not in ended["owner_counts"],
+                                    "Issue #398 retires every Stdlib-owned "
+                                    "live-C case, so the owner must leave "
+                                    "the split entirely: "
+                                    f"{ended['owner_counts']}")
                             require(
                                 before["complete_identity_manifest_digest"] !=
                                 after["complete_identity_manifest_digest"],
@@ -568,6 +614,9 @@ def check() -> None:
             docs_production = registry.get(
                 "phase24_15_package_docs_registry", {}).get(
                     "production_audit_transition")
+            spelling_production = registry.get(
+                "phase398_retained_spelling_removal", {}).get(
+                    "production_audit_transition")
             removal_production = registry.get(
                 "phase24_13_backend_removal", {}).get(
                     "production_audit_transition")
@@ -626,6 +675,8 @@ def check() -> None:
                                 toolchain_production.get("current_audit") ==
                                 (docs_production["previous_audit"]
                                  if docs_production is not None
+                                 else spelling_production["previous_audit"]
+                                 if spelling_production is not None
                                  else current_audit) and
                                 toolchain_production.get(
                                     "partial_extra_or_substituted_audit") ==
@@ -675,10 +726,52 @@ def check() -> None:
                                     "phase24_15_production_audit_transition_v1"
                                     and
                                     docs_production.get("current_audit") ==
-                                    current_audit and
+                                    (spelling_production["previous_audit"]
+                                     if spelling_production is not None
+                                     else current_audit) and
                                     docs_production.get("digest_only") is True,
                                     "Patch 24.15 production-audit closure "
                                     "successor drifted")
+                            # Issue #398 is the tail. It is the opposite
+                            # shape from both links above it: 24.14 closed a
+                            # lane without moving a count and 24.15 moved
+                            # only a digest, but this one removes the
+                            # backend, so the explicit-C and invocation
+                            # counts fall together. The Phase-25 bootstrap
+                            # count must still hold -- that clause has been
+                            # about blast radius since 24.14 and it is what
+                            # keeps "the backend is gone" from being read as
+                            # "the repository has no C".
+                            if spelling_production is not None:
+                                require(
+                                    spelling_production.get(
+                                        "contract_version") ==
+                                    "phase398_production_audit_transition_v1"
+                                    and
+                                    spelling_production.get("current_audit")
+                                    == current_audit and
+                                    spelling_production.get(
+                                        "partial_extra_or_substituted_audit")
+                                    == "rejected",
+                                    "Issue #398 production-audit closure "
+                                    "successor drifted")
+                                opened = spelling_production["previous_audit"]
+                                closed = spelling_production["current_audit"]
+                                require(
+                                    closed["repository_explicit_c_count"] <
+                                    opened["repository_explicit_c_count"] and
+                                    closed["repository_invocation_count"] <
+                                    opened["repository_invocation_count"],
+                                    "Issue #398 removes the backend, so the "
+                                    "explicit-C and invocation counts must "
+                                    "both fall")
+                                require(
+                                    opened[
+                                        "phase25_bootstrap_explicit_c_count"]
+                                    == closed[
+                                        "phase25_bootstrap_explicit_c_count"],
+                                    "Issue #398 must not move Phase-25-owned "
+                                    "bootstrap C")
             for field in production_unchanged:
                 if field in reduced:
                     continue

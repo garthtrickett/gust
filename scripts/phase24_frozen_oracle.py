@@ -43,6 +43,7 @@ VECTORS = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v1.json"
 VECTORS_V2 = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v2.json"
 VECTORS_V3 = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v3.json"
 VECTORS_V4 = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v4.json"
+VECTORS_V5 = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v5.json"
 CORPUS = ROOT / "compiler/fixtures/phase23_mir_to_c_reference_corpus_v1.json"
 VIEW = ROOT / "docs/PHASE24_FROZEN_ORACLE_REPLACEMENT.md"
 EMITTER_ONLY_ASSERTIONS_REMOVED = (
@@ -178,15 +179,20 @@ POISONED_ROUTE_PROBES = {
 }
 POISON_GUARD = "GUST_TEST_MIR_TO_C_UNAVAILABLE=1"
 
-# Patch 24.13 briefly added a second way to be a route-unavailability probe,
-# for a world where the spelling was rejected by construction. That removal is
-# deferred until the live-C surface drains (issue #398), so the C route still
-# EXISTS and the poison env var is once again the only thing that can make it
-# unavailable at run time.
+# Patch 24.13 added a second way to be a route-unavailability probe, for a
+# world where the spelling was rejected by construction, and withdrew it when
+# the removal was deferred. Issue #398 lands the removal, so that world is
+# this one and the second form is restored -- but it REPLACES the poison form
+# rather than joining it as a disjunct.
 #
-# The alternative form is retired rather than left dormant: as a disjunct it
-# could never fire, but it would still let any harness qualify as a probe by
-# containing three strings, which is weaker than what this check is for.
+# That is the whole point. A disjunct would let a probe qualify by carrying
+# either string, and the poison string can no longer make anything
+# unavailable: the spelling is refused before a backend is selected, so
+# GUST_TEST_MIR_TO_C_UNAVAILABLE is unreachable through it. A probe still
+# relying on the poison is asserting something that cannot happen, and reads
+# green while proving nothing. Once the removal is registered, the poison
+# form is rejected here rather than merely no longer required.
+REMOVAL_REJECTION = "the generated-C backend was removed in Phase 24"
 
 # ---------------------------------------------------------------------------
 # Closure guards that required a converted harness to still contain live C.
@@ -950,7 +956,10 @@ def load_servable_vectors() -> dict:
     # this point both are already merged and a v3 vector may shadow neither.
     for path, expected_format, label in (
             (VECTORS_V3, "phase24_frozen_oracle_vectors_v3", "v3"),
-            (VECTORS_V4, "phase24_frozen_oracle_vectors_v4", "v4")):
+            (VECTORS_V4, "phase24_frozen_oracle_vectors_v4", "v4"),
+            # Issue #398 adds a fifth on the same terms: an addition, never an
+            # edit, with the same shadow check across every earlier corpus.
+            (VECTORS_V5, "phase24_frozen_oracle_vectors_v5", "v5")):
         if not path.is_file():
             continue
         block = json.loads(path.read_text(encoding="utf-8"))
@@ -1024,7 +1033,12 @@ def check_vector(vector_id: str, vectors: dict) -> dict:
         "derived_from_archived_corpus_v1", "captured_live_while_green",
         "captured_live_while_green_patch24_12b",
         "captured_live_while_green_patch24_12c",
-        "captured_live_while_green_patch24_12d"),
+        "captured_live_while_green_patch24_12d",
+        # Issue #398's capture, declared rather than admitted by a prefix
+        # match. Same terms as the earlier three: taken while the backend was
+        # still green, which it is only because Patch 24.13 merged with the
+        # removal deferred.
+        "captured_live_while_green_issue398"),
         f"frozen vector has an unknown provenance: {vector_id}")
     require(not (vector["provenance"] == "derived_from_archived_corpus_v1"
                  and vector.get("archived_corpus_case") is None),
@@ -1065,6 +1079,16 @@ def materialize(vector_id: str, prefix: Path, expect_kind: str | None,
         f"{compile_record['exit']}\n", encoding="utf-8")
     Path(f"{prefix}.compile.stderr").write_bytes(
         record_bytes(compile_record["stderr"]))
+    # Issue #398: serve the emitted C wherever it is frozen, not only for
+    # compile_only. Several consumers assert on the C's CONTENT -- canonical
+    # typedefs, generated signatures -- rather than on what running it did,
+    # and those bytes are recorded and digest-checked for exec vectors too.
+    # Withholding them by kind was an artefact of the first consumers all
+    # being execution comparisons; a record WITHOUT hex is provenance and is
+    # still never served.
+    if vector["kind"] != "compile_only" and "hex" in compile_record["stdout"]:
+        Path(f"{prefix}.compile.stdout").write_bytes(
+            record_bytes(compile_record["stdout"]))
     if vector["kind"] == "compile_only":
         # Serve the compile side and stop. There is deliberately no runtime
         # observable to write.
@@ -1336,6 +1360,13 @@ def check_frozen_only_cases(vectors: dict) -> None:
                 f"{row['source_fixture']}")
 
 
+def spelling_removal_is_registered() -> bool:
+    """True once Issue #398's removal is registered in the feature registry."""
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    return isinstance(
+        registry.get("phase398_retained_spelling_removal"), dict)
+
+
 def check_no_live_c() -> None:
     for locus in FROZEN_LOCI:
         path = ROOT / locus
@@ -1349,6 +1380,7 @@ def check_no_live_c() -> None:
                 f"a converted parity harness executes live C again: "
                 f"{locus} ({len(hits)} spellings, {allowed} registered as "
                 f"route-unavailability probes)")
+        removed = spelling_removal_is_registered()
         for index in hits:
             # A registered probe asserts the route is *refused*. It compiles
             # nothing and runs nothing, so there is no observable to freeze;
@@ -1357,10 +1389,23 @@ def check_no_live_c() -> None:
             # name.
             poisoned = any(POISON_GUARD in line
                            for line in lines[max(0, index - 3):index])
-            require(poisoned,
+            if not removed:
+                require(poisoned,
+                        f"a live-C spelling in {locus} is not a registered "
+                        f"route-unavailability probe (line {index + 1}): it "
+                        "does not carry the poison guard")
+                continue
+            require(REMOVAL_REJECTION in text,
                     f"a live-C spelling in {locus} is not a registered "
-                    f"route-unavailability probe (line {index + 1}): it does "
-                    "not carry the poison guard")
+                    f"route-unavailability probe (line {index + 1}): the "
+                    "spelling is removed, so the probe has to assert the "
+                    "rejection that replaced the route")
+            require(not poisoned,
+                    f"the route-unavailability probe in {locus} (line "
+                    f"{index + 1}) still relies on {POISON_GUARD}, which the "
+                    "removal made unreachable: the spelling is refused before "
+                    "a backend is selected, so the poison can no longer be "
+                    "what makes the route unavailable")
         if allowed:
             require("unexpectedly emitted generated C" in text,
                     f"a route-unavailability probe in {locus} no longer "
@@ -2402,7 +2447,11 @@ def main() -> None:
         "mutation-evidence"))
     parser.add_argument("vector_id", nargs="?")
     parser.add_argument("prefix", nargs="?")
-    parser.add_argument("--kind", choices=("exec", "reject"), default=None)
+    # compile_only has been servable since Patch 24.12c -- check_vector,
+    # materialize and _served_block all handle it -- but it was missing here,
+    # so the kind existed and no consumer could ask for it.
+    parser.add_argument("--kind", choices=("exec", "reject", "compile_only"),
+                        default=None)
     parser.add_argument("--workdir", default=None)
     parser.add_argument("--env", default=None,
                         help="KEY=VALUE the call site sets when running the "

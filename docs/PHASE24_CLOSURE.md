@@ -5,7 +5,7 @@
 
 Status: `patch24_18_complete`
 
-Gust no longer emits C on any default or publication route: the default route is native and the bootstrap emitter is refused without its authority. The deprecated explicit spellings are retained for 28 registered live-C cases pending issue #398, and the repository still contains C under Phase 25 ownership.
+Gust no longer emits C as a compiler backend: the default route is native, the explicit generated-C spellings are removed and refused by name, and the bootstrap emitter is refused without its authority. The repository still contains C under Phase 25 ownership.
 
 ## Retirement rows
 
@@ -51,5 +51,5 @@ Gust no longer emits C on any default or publication route: the default route is
 - Baseline members: `88`
 - Live members: `88`
 
-Digest: `e86666aaba7e5ddcad73fc2b1c788daf6121c8a369109eb20fd4ec076b69da37`
+Digest: `4df8f60448213f1dccf61a0dc334be7488d9e48d2a2ee6c1e947be228b60c6cf`
 

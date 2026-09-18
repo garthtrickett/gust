@@ -27,12 +27,17 @@ done
 rm -rf "$build_dir"
 mkdir -p "$build_dir"
 
-./gust --backend mir-to-c "$source_fixture" >"$build_dir/default.c" 2>"$build_dir/default.stderr"
-./gust --backend mir-to-c "$source_fixture" \
-  >"$build_dir/explicit.c" 2>"$build_dir/explicit.stderr"
-test ! -s "$build_dir/default.stderr"
-test ! -s "$build_dir/explicit.stderr"
-cmp -s "$build_dir/default.c" "$build_dir/explicit.c"
+# Issue #398: served from the frozen corpus instead of invoking the retired
+# spelling. The two emissions this replaced were byte-identical invocations --
+# the `cmp` between them compared the backend against itself and could not
+# fail, which is why replaying one record loses nothing. What the guard is
+# actually for is the canonical-name assertions below, and those read the
+# recorded C.
+python3 scripts/phase24_frozen_oracle.py materialize \
+  "$source_fixture" "$build_dir/explicit" --kind exec
+test "$(cat "$build_dir/explicit.compile.status")" = "0"
+test ! -s "$build_dir/explicit.compile.stderr"
+cp "$build_dir/explicit.compile.stdout" "$build_dir/explicit.c"
 
 # Phase 19 makes arena spelling invisible to generated collection types. These
 # canonical names cover layout and ABI consumers without reconstructing brands

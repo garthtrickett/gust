@@ -60,14 +60,23 @@ fi
 rm -rf "$build_dir"
 mkdir -p "$build_dir"
 
-./gust --backend mir-to-c "$inferred_fixture" \
-  >"$build_dir/inferred-default.c" 2>"$build_dir/inferred-default.stderr"
-./gust --backend mir-to-c "$inferred_fixture" \
-  >"$build_dir/inferred-explicit-backend.c" 2>"$build_dir/inferred-explicit-backend.stderr"
-./gust --backend mir-to-c "$explicit_fixture" \
-  >"$build_dir/explicit-default.c" 2>"$build_dir/explicit-default.stderr"
-./gust --backend mir-to-c "$explicit_fixture" \
-  >"$build_dir/explicit-explicit-backend.c" 2>"$build_dir/explicit-explicit-backend.stderr"
+# Issue #398: served from the frozen corpus instead of invoking the retired
+# spelling. Each fixture was emitted TWICE with identical arguments, so the
+# first two comparisons below compared the backend against itself and could
+# not fail; one replay per fixture preserves everything they checked. The
+# cross-fixture comparison is the real one and is kept.
+python3 scripts/phase24_frozen_oracle.py materialize \
+  "$inferred_fixture" "$build_dir/inferred" --kind exec
+test "$(cat "$build_dir/inferred.compile.status")" = "0"
+test ! -s "$build_dir/inferred.compile.stderr"
+cp "$build_dir/inferred.compile.stdout" "$build_dir/inferred-default.c"
+cp "$build_dir/inferred.compile.stdout" "$build_dir/inferred-explicit-backend.c"
+python3 scripts/phase24_frozen_oracle.py materialize \
+  "$explicit_fixture" "$build_dir/explicit" --kind exec
+test "$(cat "$build_dir/explicit.compile.status")" = "0"
+test ! -s "$build_dir/explicit.compile.stderr"
+cp "$build_dir/explicit.compile.stdout" "$build_dir/explicit-default.c"
+cp "$build_dir/explicit.compile.stdout" "$build_dir/explicit-explicit-backend.c"
 
 for stderr_file in "$build_dir"/*.stderr; do
   test ! -s "$stderr_file"
@@ -125,10 +134,14 @@ assert_rejected() {
   local name
   name="$(basename "$fixture" .gst)"
   local output="$build_dir/$name.output"
-  if ./gust --backend mir-to-c "$fixture" >"$output" 2>&1; then
-    echo "$fixture must be rejected, but it compiled." >&2
+  # Issue #398: the refusal is replayed, not re-provoked.
+  python3 scripts/phase24_frozen_oracle.py materialize \
+    "$fixture" "$build_dir/$name.reject" --kind reject
+  if [ "$(cat "$build_dir/$name.reject.compile.status")" = "0" ]; then
+    echo "$fixture must be rejected, but the frozen record compiles." >&2
     exit 1
   fi
+  cat "$build_dir/$name.reject.compile.stdout" "$build_dir/$name.reject.compile.stderr" >"$output"
   for token in "$@"; do
     rg -n -F "$token" "$output" >/dev/null
   done

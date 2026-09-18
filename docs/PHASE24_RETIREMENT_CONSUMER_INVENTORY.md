@@ -6,8 +6,8 @@
 
 Status: `patch24_11_complete`
 Authority base: `b7b1713cd65630b14ae92e46afd393990928a2e2`
-Rows: `108`
-Digest: `47e18d1907b50f12150661fbcd1aa968dd08b4122595c7d823216d9a99653ee7`
+Rows: `106`
+Digest: `a014f136d709b775d65e66d644ec1ef5bbef1d1fbea708c533ad8b1b68fc5f63`
 
 ## Bootstrap-entry decision
 
@@ -90,7 +90,6 @@ Digest: `47e18d1907b50f12150661fbcd1aa968dd08b4122595c7d823216d9a99653ee7`
 - sh-family:phase19-parity (convert)
 - sh-family:phase20-evidence (convert)
 - sh-family:phase21-native-qualification (convert)
-- tests/e2e_codegen_assertions.gst :: "./gust --backend mir-to-c tests/codegen (convert)
 
 ### 24.12b
 
@@ -104,7 +103,6 @@ Digest: `47e18d1907b50f12150661fbcd1aa968dd08b4122595c7d823216d9a99653ee7`
 ### 24.13
 
 - compiler/test_runner_entry.gst ::     MirToC, (retire)
-- compiler/test_runner_entry.gst :: gust --backend mir-to-c <source.gst> (retire)
 - compiler/test_runner_entry.gst :: std.str_eq(backend_name, "mir-to-c") (retire)
 - guard-cranelift-phase10-backend-selection-contract (retire)
 - guard-positive (migrate)

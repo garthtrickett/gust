@@ -53,12 +53,39 @@ GUARD = "phase24_frozen_oracle_capture"
 AUTHORITIES = {
     "patch24.12b": ("- [x] Patch 24.12b — Python Parity Guard Conversion",
                     "phase24_frozen_oracle_vectors_v2"),
-    "patch24.12c": ("- [ ] Patch 24.12c — Frozen Oracle Capture for the "
-                    "Uncovered Population",
+    # Both rows read "- [x] ... — DONE" since the Patch 24.18 closure marked
+    # every retirement row. The grant text has to track the row or this dict
+    # stops matching the thing it exists to be checked against -- which is the
+    # drift its own comment warns about, and which I introduced by marking the
+    # rows without updating here.
+    "patch24.12c": ("- [x] Patch 24.12c — Frozen Oracle Capture for the "
+                    "Uncovered Population — DONE",
                     "phase24_frozen_oracle_vectors_v3"),
-    "patch24.12d": ("- [ ] Patch 24.12d — Frozen Oracle Capture for the "
-                    "Default-Route Flip",
+    "patch24.12d": ("- [x] Patch 24.12d — Frozen Oracle Capture for the "
+                    "Default-Route Flip — DONE",
                     "phase24_frozen_oracle_vectors_v4"),
+    # Issue #398's capture. Granted by the carried-work row rather than a
+    # Phase 24 status row: Phase 24 is closed and its closure generator fails
+    # on any unaccounted row inside its Status block.
+    "issue398": ("- [x] Issue #398 — Retained Explicit C Spelling Removal "
+                 "— DONE",
+                 "phase24_frozen_oracle_vectors_v5"),
+}
+
+# Issue #398's population: the four fixtures behind
+# tests/e2e_codegen_assertions.gst. Their disposition is registered as
+# `#398 migrate`, and every one asserts on the CONTENT of the emitted C --
+# memset presence, binding declarations -- so they are compile_only: there is
+# no execution to record, only the C the backend produced.
+POPULATION_398: dict[str, tuple[str, str]] = {
+    "tests/codegen_helper_pod_move.gst":
+        ("tests/e2e_codegen_assertions.gst", "compile_only"),
+    "tests/codegen_helper_linear_move.gst":
+        ("tests/e2e_codegen_assertions.gst", "compile_only"),
+    "tests/codegen_helper_take_ops.gst":
+        ("tests/e2e_codegen_assertions.gst", "compile_only"),
+    "tests/codegen_helper_match_destructure.gst":
+        ("tests/e2e_codegen_assertions.gst", "compile_only"),
 }
 
 # Patch 24.12d's population: the sources that lose their C route to the
@@ -155,12 +182,26 @@ for _fixture, _kind in (
 # the vector itself so a consumer cannot mistake a missing `execution` block
 # for an omission.
 NEVER_EXECUTE = {
+    "tests/stdlib_s1_mutex_guard_generic_derivation_rejected.gst":
+        "issue #398: the resource-prerequisites guard compiles this witness only to learn WHETHER it compiles -- the answer selects which authority branch it asserts -- and never links or runs the result.",
+    "build/stdlib-s1-byval.gst":
+        "issue #398: the collection-receivers guard generates this fixture with printf, emits its C and compares the os_HashMap* operation counts between the by-value and by-reference forms. It never links or runs either, so there is no execution to record.",
+    "build/stdlib-s1-byref.gst":
+        "issue #398: the collection-receivers guard generates this fixture with printf, emits its C and compares the os_HashMap* operation counts between the by-value and by-reference forms. It never links or runs either, so there is no execution to record.",
     "tests/stdlib_s1_mutex_guard_scope_raw_double_unlock.gst":
         "CR-16 explicit-unsafe witness: a manual unlock followed by guard "
         "cleanup gives two unlock paths, so the program's runtime behaviour "
         "is undefined. Its guard stops at `cc -fsyntax-only` and states that "
         "the runner must not execute it; a recorded exit would be a reading "
         "of undefined behaviour replayable as an expectation.",
+    "tests/codegen_helper_pod_move.gst":
+        "issue #398: tests/e2e_codegen_assertions.gst emits this fixture's C and asserts on its CONTENT -- memset presence or absence, and the bindings a match destructure declares. It never links or runs the result, so there is no execution to record and a recorded exit would be an expectation nothing ever produced.",
+    "tests/codegen_helper_linear_move.gst":
+        "issue #398: tests/e2e_codegen_assertions.gst emits this fixture's C and asserts on its CONTENT -- memset presence or absence, and the bindings a match destructure declares. It never links or runs the result, so there is no execution to record and a recorded exit would be an expectation nothing ever produced.",
+    "tests/codegen_helper_take_ops.gst":
+        "issue #398: tests/e2e_codegen_assertions.gst emits this fixture's C and asserts on its CONTENT -- memset presence or absence, and the bindings a match destructure declares. It never links or runs the result, so there is no execution to record and a recorded exit would be an expectation nothing ever produced.",
+    "tests/codegen_helper_match_destructure.gst":
+        "issue #398: tests/e2e_codegen_assertions.gst emits this fixture's C and asserts on its CONTENT -- memset presence or absence, and the bindings a match destructure declares. It never links or runs the result, so there is no execution to record and a recorded exit would be an expectation nothing ever produced.",
 }
 
 # Held byte-identical with the v1 capture so the two corpora are comparable.

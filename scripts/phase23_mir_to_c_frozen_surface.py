@@ -323,6 +323,14 @@ def policy_accepts(record: dict, summary: dict[str, object]) -> bool:
         "phase24_14_toolchain_removal", {}).get(
         "frozen_surface_transition", {}).get(
         "current_live_c_case_surface", expected_live)
+    # Issue #398 is the tail now, and unlike 24.14 it changes membership:
+    # 28 cases to 2. The chain above proves the reduction is the registered
+    # one; this override is what lets the closed Phase 23 record still be
+    # compared against a live scan of the tree that reduction produced.
+    expected_live = registry.get(
+        "phase398_retained_spelling_removal", {}).get(
+        "frozen_surface_transition", {}).get(
+        "current_live_c_case_surface", expected_live)
     return (
         record.get("capability_surface") == summary["capability_surface"] and
         expected_live == summary["live_c_case_surface"] and
@@ -715,9 +723,16 @@ def validate() -> tuple[dict, dict[str, object]]:
                             "current_live_c_case_surface"]
                         after = toolchain_transition[
                             "current_live_c_case_surface"]
+                        spelling_transition = registry.get(
+                            "phase398_retained_spelling_removal", {}).get(
+                                "frozen_surface_transition")
                         require(toolchain_transition.get("contract_version") ==
                                 "phase24_14_frozen_surface_transition_v2" and
-                                after == summary["live_c_case_surface"] and
+                                after == (
+                                    spelling_transition[
+                                        "previous_live_c_case_surface"]
+                                    if spelling_transition is not None
+                                    else summary["live_c_case_surface"]) and
                                 toolchain_transition.get(
                                     "partial_or_unregistered_surface") ==
                                 "rejected",
@@ -730,6 +745,54 @@ def validate() -> tuple[dict, dict[str, object]]:
                                 "Patch 24.14 moves live-C case identity, so "
                                 "the count and owner split must hold and the "
                                 "digest must move")
+                        # Issue #398 is the tail. Where 24.14 moved identity
+                        # without moving membership, this one empties the
+                        # surface: every Stdlib-owned case replays a frozen
+                        # record instead, and the owner disappears from the
+                        # split rather than merely shrinking. That is the
+                        # check -- a reduction that left one Stdlib case
+                        # behind would still reduce the count and would fail
+                        # here.
+                        #
+                        # What survives is asserted to be probes, not
+                        # consumers: the same set scripts/phase24_closure.py
+                        # requires, read from the same record, so the closure
+                        # sentence and this surface cannot disagree about what
+                        # is left.
+                        if spelling_transition is not None:
+                            final = spelling_transition[
+                                "current_live_c_case_surface"]
+                            probe_owner = spelling_transition.get(
+                                "retained_probe_owner")
+                            require(
+                                spelling_transition.get("contract_version") ==
+                                "phase398_frozen_surface_transition_v1" and
+                                final == summary["live_c_case_surface"] and
+                                spelling_transition.get(
+                                    "partial_or_unregistered_surface") ==
+                                "rejected",
+                                "Issue #398 frozen live-C transition drifted")
+                            require(final["count"] < after["count"] and
+                                    "stdlib" not in final["owner_counts"],
+                                    "Issue #398 retires every Stdlib-owned "
+                                    "live-C case, so the owner must leave the "
+                                    f"split entirely: {final['owner_counts']}")
+                            require(final["owner_counts"] ==
+                                    {probe_owner: final["count"]},
+                                    "the live-C cases Issue #398 leaves are "
+                                    "not all owned by the lane that owns the "
+                                    f"inverted probes: {final['owner_counts']}")
+                            inversions = registry.get(
+                                "phase398_retained_spelling_removal", {}).get(
+                                    "phase22_invocation_successor", {}).get(
+                                        "retained_inversions", [])
+                            require(final["count"] == len(inversions) and
+                                    sorted({str(row["path"])
+                                            for row in live_c_case_rows()}) ==
+                                    sorted({str(row["path"])
+                                            for row in inversions}),
+                                    "the live-C cases Issue #398 leaves are "
+                                    "not the probes it registered as inverted")
             removed_from = emitter_only_transition.get("removed_from", {})
             require(isinstance(removed_from, dict) and removed_from,
                     "Patch 24.12a registered no source for its reduction")

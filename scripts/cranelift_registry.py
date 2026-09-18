@@ -103,6 +103,7 @@ TOP_FIELDS = {
     "phase24_15_package_docs_registry",
     "phase24_16_residue_audit",
     "phase24_closure",
+    "phase398_retained_spelling_removal",
     "phase24_frozen_oracle_replacement",
     "phase24_cr19_multi_module_analysis",
     "phase24_filename_behavior_characterization",

@@ -175,6 +175,11 @@ SEED_SUCCESSOR_TRANSITIONS = (
     # bootstrap-only entry, which the old seed's gust_bootstrap cannot parse
     # and the new one can.
     "phase24_13_seed_transition",
+    # Issue #398. Named for the same reason again. It reconverges the seed
+    # because it removes the retained explicit-C spellings from the compiler
+    # entry and the help text, so the seed the old gust_bootstrap produces no
+    # longer matches the one this compiler emits.
+    "phase398_seed_transition",
 )
 
 

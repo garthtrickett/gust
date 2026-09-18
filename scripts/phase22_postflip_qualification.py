@@ -119,14 +119,23 @@ def validate() -> dict:
             f"{makefile.count('--backend bootstrap-emitter')} of 5")
 
     readme = README.read_text(encoding="utf-8")
+    # Issue #398 rebases the first two. "by default" was accurate while there
+    # were two backends to choose between; there is one now, and a README
+    # that still called it the default would imply an alternative the
+    # compiler refuses. The spellings are still NAMED, because a user who
+    # knows them has to be able to find out what happened to them -- so the
+    # marker moves from "or" to "and" rather than disappearing.
     for marker in (
-        "Gust compiles to native executables through Cranelift by default.",
-        "`--backend c` or `--backend mir-to-c`",
+        "Gust compiles to native executables through Cranelift.",
+        "`--backend c` and `--backend mir-to-c`",
         "There is no automatic fallback",
         "`gust-native-backend`",
         "`gust-runtime-package.a`",
     ):
         require(marker in readme, f"README route/package marker missing: {marker}")
+    require("through Cranelift by default" not in readme,
+            "the README still calls Cranelift the default, which implies an "
+            "alternative backend that Issue #398 removed")
     ledger = LEDGER.read_text(encoding="utf-8")
     require("Cranelift is the default; C remains the named oracle" in ledger and
             "rollback is an explicit `--backend c`" in ledger,
@@ -136,17 +145,23 @@ def validate() -> dict:
             "historical record" in cranelift_readme,
             "native backend README does not distinguish current status")
     help_text = HELP.read_text(encoding="utf-8")
-    # Patch 24.13 briefly rebased this onto a removal marker. That is
-    # withdrawn: the patch no longer removes the two user-facing spellings,
-    # because 25 registered live-C cases still invoke them and rejecting them
-    # broke 8 Stdlib S1 workflows that are green on main. Help that announced
-    # a removal the CLI does not perform would be the same defect in the other
-    # direction, so the post-flip contract stands unchanged until the live-C
-    # surface drains (issue #398).
+    # Patch 24.13 rebased this onto a removal marker and withdrew it: 28
+    # registered live-C cases still invoked the spellings, 24 of them
+    # Stdlib-owned, and rejecting them broke eight Stdlib S1 workflows that
+    # were green on main. Help announcing a removal the CLI does not perform
+    # is the same defect in the other direction, so the post-flip contract
+    # stood until the live-C surface drained.
+    #
+    # Issue #398 drained it. Help now states the removal, and the wording it
+    # replaced is required absent -- otherwise this check would pass on a help
+    # text that announced the removal and went on offering the oracle.
     require("Compile to one native executable (default)." in help_text and
-            "retained semantic oracle" in help_text and
+            "mir-to-c and c are rejected" in help_text and
             "fallback to MIR-to-C" in help_text,
             "checked help does not state the post-flip contract")
+    require("retained semantic oracle" not in help_text,
+            "the checked help still offers the retained semantic oracle that "
+            "Issue #398 removed")
 
     required_inputs = record.get("native_workflow_inputs")
     expected_inputs = [

@@ -1796,26 +1796,80 @@ def validate() -> dict:
     entry = ENTRY.read_text(encoding="utf-8")
     help_text = HELP.read_text(encoding="utf-8")
     readme = README.read_text(encoding="utf-8")
-    # Patch 24.13 (#398, #402) briefly inverted the compiler-help marker to
-    # assert removal instead of deprecation. Withdrawn: the patch no longer
-    # removes the user-facing spellings, because 25 registered live-C cases
-    # still invoke them and rejecting them broke 8 Stdlib S1 workflows green
-    # on main. Deprecation is once again the accurate word, and stays so until
-    # the live-C surface drains (issue #398).
-    for marker in (presentation["compiler_help"], presentation["bootstrap_help"]):
+    # Patch 24.13 (#398, #402) inverted the compiler-help marker to assert
+    # removal instead of deprecation, and withdrew it when the removal was
+    # deferred. Issue #398 performs the removal, so the inversion lands --
+    # through a successor, because the presentation record above says what
+    # Phase 23 DELIVERED and that stays true of Phase 23.
+    #
+    # The two markers are treated differently and that is the point. The
+    # compiler-help one moves: its deprecation sentence must be gone and the
+    # removal sentence that replaced it must be there, in both the entry and
+    # the help file. The bootstrap-help one does NOT move, and is required
+    # unchanged -- the bootstrap emitter still emits C, so Phase 23's
+    # sentence about Phase 25 owning it is as true now as it was then.
+    # Retiring both together would have quietly widened this patch into a
+    # claim about bootstrap C that it does not make.
+    spelling = registry.get("phase398_retained_spelling_removal", {}).get(
+        "presentation_successor")
+    if spelling is None:
+        for marker in (presentation["compiler_help"],
+                       presentation["bootstrap_help"]):
+            require(marker in entry and marker in help_text,
+                    f"compiler help deprecation marker is missing: {marker}")
+    else:
+        require(spelling.get("contract_version") ==
+                "phase398_presentation_successor_v1" and
+                spelling.get("partial_or_unregistered_presentation") ==
+                "rejected" and
+                spelling.get("bootstrap_help_unchanged") == "required" and
+                spelling.get("retired_compiler_help") ==
+                presentation["compiler_help"],
+                "Issue #398 presentation successor drifted")
+        retired = spelling["retired_compiler_help"]
+        replacement = spelling["replacement_compiler_help"]
+        require(retired not in entry and retired not in help_text,
+                "the compiler still presents the deprecation Issue #398 "
+                f"replaced: {retired}")
+        require(replacement in entry and replacement in help_text,
+                "the compiler does not present the removal that replaced the "
+                f"deprecation: {replacement}")
+        marker = presentation["bootstrap_help"]
         require(marker in entry and marker in help_text,
-                f"compiler help deprecation marker is missing: {marker}")
+                "the Phase 25 bootstrap-C boundary left the compiler help "
+                f"with the backend removal, which does not retire it: {marker}")
+    # Both spellings are still RECOGNISED by the shared parser after Issue
+    # #398 -- that is what lets the compiler tell a caller who asks for one
+    # that it was removed, rather than that it never existed. What changed is
+    # what recognising them does, which the presentation successor above and
+    # phase22_explicit_c_migration.py's pinned rejection block assert. The
+    # count stays: each spelling is named exactly once, so a second arm
+    # cannot appear alongside the refusal.
     require(entry.count('std.str_eq(backend_name, "mir-to-c")') == 1 and
             entry.count('std.str_eq(backend_name, "c")') == 1,
-            "an explicit C spelling is no longer accepted by the shared parser")
+            "an explicit C spelling is no longer named by the shared parser, "
+            "so a caller who asks for it is told it was never valid rather "
+            "than that it was removed")
+    # The user-facing timeline moves with the removal. Two of these four
+    # markers are inverted and two are not, and the split is the content:
+    # what Phase 24 did to the backend is now past tense, and what Phase 25
+    # still owns is unchanged. A patch that retired all four would be
+    # claiming the bootstrap C went too.
+    for marker in (
+        "C99 backend was removed in Phase 24",
+        "were removed in",
+        "retirement is deferred to Phase 25",
+        "C compatibility choices",
+    ):
+        require(marker in readme,
+                f"root user removal timeline is missing: {marker}")
     for marker in (
         "C99 backend is deprecated",
         "backend removal scheduled for Phase 24",
-        "retirement is deferred to Phase 25",
         "deprecated C compatibility choices",
     ):
-        require(marker in readme,
-                f"root user deprecation timeline is missing: {marker}")
+        require(marker not in readme,
+                f"the README still schedules a removal that happened: {marker}")
     require(record["pre_deprecation_baseline"] ==
             successor.get("explicit_c_byte_authority"),
             "Patch 23.8 did not preserve the Patch 23.7 byte authority")
@@ -1932,14 +1986,66 @@ def evidence(record: dict) -> None:
     # removal -- which is a stronger statement than "they still agree", and it
     # fails if either alias comes back or starts answering differently from
     # the other.
-    # Patch 24.13 briefly inverted this: it required BOTH spellings to be
-    # refused, to name the removal, and to stop reproducing the Phase 23
-    # baseline. That removal is deferred until the live-C surface drains
-    # (issue #398), so both spellings compile again and the pre-deprecation
-    # comparison is once more the true one -- which is also the stronger
-    # check while they are live, since it pins the exact bytes.
-    require(mir_to_c == c_alias == record["pre_deprecation_baseline"]["mir_to_c"],
-            "pre-deprecation explicit-C aliases or bytes drifted")
+    # Patch 24.13 inverted this and withdrew it when the removal was
+    # deferred. Issue #398 performs the removal, so the inversion lands.
+    #
+    # Three clauses, and each one is doing work. Both spellings must FAIL --
+    # a compile that succeeds means the backend is back. They must fail
+    # IDENTICALLY -- the aliasing Phase 23 established is a property of the
+    # pair, and it survives the removal as "both are refused the same way";
+    # losing it would mean one alias started answering differently, which is
+    # exactly the drift the original byte comparison existed to catch. And
+    # neither may still reproduce the Phase 23 baseline, which is the clause
+    # that makes this an inversion rather than a weaker check: without it,
+    # a compiler that emitted the old C and then exited non-zero would pass.
+    spelling = json.loads(REGISTRY.read_text(encoding="utf-8")).get(
+        "phase398_retained_spelling_removal", {}).get(
+            "presentation_successor")
+    if spelling is None:
+        require(mir_to_c == c_alias ==
+                record["pre_deprecation_baseline"]["mir_to_c"],
+                "pre-deprecation explicit-C aliases or bytes drifted")
+    else:
+        baseline = record["pre_deprecation_baseline"]["mir_to_c"]
+        require(mir_to_c["compile_status"] != 0 and
+                c_alias["compile_status"] != 0,
+                "a removed explicit-C spelling still compiles: "
+                f"mir-to-c={mir_to_c['compile_status']}, "
+                f"c={c_alias['compile_status']}")
+        # Not byte-identical, deliberately. Each refusal NAMES the spelling
+        # the caller used, so the two messages differ by design and an
+        # equality check here would be asserting something false -- the
+        # first draft of this did exactly that and failed.
+        #
+        # What must still match is everything the aliasing was about: the
+        # same status, the same silence on stderr, and the same reason. The
+        # spelling-specific tail is the part that should differ, because a
+        # caller who typed `--backend c` should be told about `c`.
+        require(mir_to_c["compile_status"] == c_alias["compile_status"] and
+                mir_to_c["stderr_size"] == c_alias["stderr_size"] == 0 and
+                mir_to_c["stderr_digest"] == c_alias["stderr_digest"],
+                "the two removed explicit-C spellings are refused "
+                "differently, so the aliasing Phase 23 established did not "
+                "survive the removal")
+        require(mir_to_c != baseline,
+                "a removed explicit-C spelling still reproduces the Phase 23 "
+                "pre-deprecation bytes, so the backend is still emitting")
+        for spelling_name in ("mir-to-c", "c"):
+            removal = subprocess.run(
+                (str(GUST), "--backend", spelling_name,
+                 str(BASELINE_SOURCE.relative_to(ROOT))),
+                cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                timeout=180, check=False,
+            )
+            combined = removal.stdout + removal.stderr
+            require(b"the generated-C backend was removed in Phase 24"
+                    in combined,
+                    f"the --backend {spelling_name} refusal does not name "
+                    "the Phase 24 removal, so a caller is told the spelling "
+                    "was never valid rather than that it was removed")
+            require(spelling_name.encode() in combined,
+                    f"the --backend {spelling_name} refusal does not name "
+                    "the spelling the caller asked for")
     help_result = subprocess.run(
         (str(GUST), "--help"), cwd=ROOT, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE, timeout=180, check=False,
@@ -2072,8 +2178,24 @@ def render(registry: dict, record: dict) -> str:
         f"- Next patch: `{successor['next_patch']}`",
         f"- Compiler help: `{successor['presentation']['compiler_help']}`",
         f"- Bootstrap help: `{successor['presentation']['bootstrap_help']}`",
-        "- Both explicit C spellings remain accepted and byte-identical.",
-        "- Generated-C backend removal is Phase 24; bootstrap-C retirement is Phase 25.",
+        # Issue #398: what this review said about the two spellings became
+        # false when they were removed, and a generated document repeating a
+        # false sentence every time it is projected is worse than a stale
+        # pin -- nothing fails, it just keeps saying it. The line now reports
+        # which state the tree is in, read from the registered successor
+        # rather than from prose.
+        ("- Both explicit C spellings remain accepted and byte-identical."
+         if registry.get("phase398_retained_spelling_removal", {}).get(
+             "presentation_successor") is None else
+         "- Both explicit C spellings are removed and refused by name "
+         "(#398); the recorded C they used to emit is replayed from the "
+         "frozen oracle."),
+        ("- Generated-C backend removal is Phase 24; bootstrap-C retirement "
+         "is Phase 25."
+         if registry.get("phase398_retained_spelling_removal", {}).get(
+             "presentation_successor") is None else
+         "- The generated-C backend was removed in Phase 24; bootstrap-C "
+         "retirement remains Phase 25."),
         "- Ordinary compilation emits no deprecation notice.",
         f"- Post-deprecation text surfaces: `{post['text_surface_count']}`",
         f"- Post-deprecation invocations: `{post['invocation_count']}`",

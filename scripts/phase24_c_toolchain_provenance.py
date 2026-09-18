@@ -59,8 +59,25 @@ SCRIPT_AUTHORED_C = "script-authored-c"  # heredoc probe, not a backend product
 RUST_ARCHIVE = "rust-archive"            # Phase 17.6 staticlib
 TOOLCHAIN_QUERY = "toolchain-query"      # --version / -dumpmachine, no input
 
+# C replayed from the frozen oracle (#398). Retained, and a class of its own
+# rather than folded into BACKEND_PRODUCT or SCRIPT_AUTHORED_C, because it is
+# neither and the difference is the whole point of this guard.
+#
+# It is not a backend product: no generated-C backend runs, and none exists to
+# run -- the bytes were emitted at capture time and are read back from
+# compiler/fixtures. Scoring it as one would make this guard report live
+# backend residue that is not there, and hand the site an owner from the
+# retirement inventory for work already done.
+#
+# It is not script-authored either: nobody wrote this C by hand, and calling
+# it authored would lose the fact that it is a recording of what the retired
+# backend produced -- which is exactly what Phase 25 will need to know when it
+# asks what still compiles C.
+FROZEN_ORACLE_C = "frozen-oracle-c"
+
 RETAINED = frozenset(
-    {NATIVE_OBJECT, RETAINED_RUNTIME_C, SCRIPT_AUTHORED_C, RUST_ARCHIVE, TOOLCHAIN_QUERY}
+    {NATIVE_OBJECT, RETAINED_RUNTIME_C, SCRIPT_AUTHORED_C, RUST_ARCHIVE,
+     TOOLCHAIN_QUERY, FROZEN_ORACLE_C}
 )
 
 # Ownership for surviving backend-product invocations. 24.14 removes the
@@ -237,6 +254,15 @@ NATIVE_EMIT = re.compile(
 )
 ARCHIVE_PRODUCER = re.compile(r'cargo\s+build|--manifest-path|staticlib')
 AUTHORED_WRITE = re.compile(r'<<[-~]?\s*[\'"]?[A-Za-z_]+|printf\s|echo\s|cat\s+>')
+# A file taken from `<prefix>.compile.stdout` came out of the frozen oracle:
+# that suffix is written by `phase24_frozen_oracle.py materialize` and by
+# nothing else. Matching the name rather than the materialize call is what
+# lets provenance survive the copy -- the script materializes into one path
+# and compiles a concatenation of another, and the resolver follows one hop.
+# The name alone is not trusted: FROZEN_MATERIALIZE must also appear in the
+# same file, so a coincidental filename cannot claim the class.
+FROZEN_RECORD = re.compile(r'\.compile\.stdout')
+FROZEN_MATERIALIZE = re.compile(r'phase24_frozen_oracle\.py\s+materialize')
 
 # The `.gst` smoke-test entries reach a MIR-to-C emitter as a library call and
 # write its output straight to disk, never spelling `--backend` (#422). The
@@ -297,8 +323,10 @@ def resolve_variable(name: str, lines: list, depth: int = 0):
     return None
 
 
-def classify_producer(line: str) -> str:
+def classify_producer(line: str, source: str = "") -> str:
     """What kind of thing writes a file, judged by the command that writes it."""
+    if FROZEN_RECORD.search(line) and FROZEN_MATERIALIZE.search(source):
+        return FROZEN_ORACLE_C
     if BACKEND_EMIT.search(line):
         return BACKEND_PRODUCT
     if NATIVE_EMIT.search(line):
@@ -474,7 +502,11 @@ def resolve_input(token: str, lines: list, lineno: int) -> dict:
             continue
 
         mentions = mention_lines(variant, scope, lineno)
-        found = {classify_producer(line) for _, line in mentions}
+        # The whole script is the context for the frozen-oracle class: the
+        # name says the file came from a recording, and this proves the
+        # script is one that makes recordings.
+        source = "\n".join(text for _, text in scope)
+        found = {classify_producer(line, source) for _, line in mentions}
         found.discard("")
 
         # `cat src/runtime.c "$dir/x.c" > "$dir/x-final.c"` makes the final file
@@ -486,7 +518,7 @@ def resolve_input(token: str, lines: list, lineno: int) -> dict:
                     if not part_key or part_key == variant:
                         continue
                     for _, deep in mention_lines(part_key, scope, lineno):
-                        klass = classify_producer(deep)
+                        klass = classify_producer(deep, source)
                         if klass:
                             found.add(klass)
 
@@ -505,6 +537,14 @@ def resolve_input(token: str, lines: list, lineno: int) -> dict:
     if BACKEND_PRODUCT in classes:
         record["klass"] = BACKEND_PRODUCT
         record["why"] = f"{key} is written by a retired-backend emission"
+        return record
+    # After BACKEND_PRODUCT, deliberately. If any path to this file runs a
+    # live backend, that is the honest class even when another path replays a
+    # record -- a site that does both is still a site that emits C.
+    if FROZEN_ORACLE_C in classes:
+        record["klass"] = FROZEN_ORACLE_C
+        record["why"] = (
+            f"{key} is replayed from the frozen oracle, not emitted (#398)")
         return record
     if classes:
         record["klass"] = sorted(classes)[0]

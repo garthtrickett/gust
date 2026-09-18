@@ -79,15 +79,26 @@ def validate() -> dict:
     for marker in (
         "invocation.backend.tag = 1; // Cranelift",
         'os.LogStr("  cranelift  Compile to one native executable (default).");',
-        # Patch 24.13 briefly rebased this onto a removal statement. The
-        # removal is deferred until the live-C surface drains (issue #398),
-        # so the deprecation wording is accurate again and stays pinned.
-        'os.LogStr("  mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.");',
+        # Patch 24.13 rebased this onto a removal statement and withdrew it
+        # when the removal was deferred. Issue #398 lands the removal, so the
+        # marker is the removal statement, and the deprecation wording it
+        # replaced is required ABSENT below -- this guard exists to pin what
+        # help says about the routes, and a pin that only requires the new
+        # wording would let both sentences sit there at once.
+        'os.LogStr("  The generated-C backend was REMOVED in Phase 24; mir-to-c and c are rejected.");',
         "if invocation.backend.tag == 1 {",
         "native_source_route.mir_native_scalar_source_compile(",
         "codegen.codegen_generate(programs, module_prefixes, &env, ctx)",
     ):
         require(marker in entry, f"compiler route marker is missing: {marker}")
+    for retired in (
+        "mir-to-c, c  DEPRECATED",
+        "--backend <mir-to-c|c|cranelift>",
+        'os.LogStr("  gust --backend mir-to-c <source.gst>");',
+    ):
+        require(retired not in entry,
+                f"the compiler still offers a route Issue #398 removed: "
+                f"{retired}")
     require(entry.count("native_source_route.mir_native_scalar_source_compile(") == 1,
             "default and explicit native forms do not share one route")
     native_start = entry.index("if invocation.backend.tag == 1 {")
@@ -100,13 +111,18 @@ def validate() -> dict:
         "active compiler diagnostics or help still call Cranelift experimental")
 
     help_text = HELP.read_text(encoding="utf-8")
-    # Patch 24.13 briefly swapped the deprecation clause for a removal
-    # statement; withdrawn with the removal itself (issue #398).
+    # Patch 24.13 swapped the deprecation clause for a removal statement and
+    # withdrew it with the removal; Issue #398 lands both. The Phase 25
+    # boundary line stays exactly as it was: the bootstrap emitter still emits
+    # C, so retiring the backend did not retire that sentence.
     require("Compile to one native executable (default)." in help_text and
-            "DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24." in help_text and "Bootstrap C retirement is separate and deferred to Phase 25." in help_text and
+            "The generated-C backend was REMOVED in Phase 24; mir-to-c and c are rejected." in help_text and
+            "Bootstrap C retirement is separate and deferred to Phase 25." in help_text and
             "Optional Cranelift output; defaults to the source stem." in help_text and
             "fallback to MIR-to-C." in help_text,
             "checked help projection drifted")
+    require("DEPRECATED: Emit C source to stdout" not in help_text,
+            "the checked help still advertises the removed explicit C oracle")
     makefile = MAKEFILE.read_text(encoding="utf-8")
     # Patch 24.13: the whole bootstrap chain reaches the bootstrap-only entry.
     #

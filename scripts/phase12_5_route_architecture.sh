@@ -104,25 +104,36 @@ novel_dir="$build_root/novel-source"
 mkdir -p "$novel_dir"
 compile_mir_to_c_oracle "$novel_source" "$novel_dir"
 
+# Issue #398: INVERTED, and the claim gets stronger rather than weaker.
+#
+# This asserted that a test-only env poison made the MIR-to-C route
+# unavailable, proving there is no silent fallback to C. The route is now
+# removed outright, so the same claim holds by construction and is asserted
+# directly: the spelling is REJECTED, and the rejection names the removal
+# rather than the test-only poison. The poison remains in the compiler, and
+# other guards still use it against the NATIVE route, where a silent fallback
+# is still a thing that could happen; here it is unreachable, because the
+# spelling is refused before any backend is selected. The file names below
+# keep the word "poisoned" for the same reason the block is kept at all -- so
+# that a reader looking for the old evidence finds what replaced it.
 set +e
-GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
-  ./gust --backend mir-to-c "$novel_source" \
+./gust --backend mir-to-c "$novel_source" \
     >"$novel_dir/poisoned-mir-to-c.stdout" \
     2>"$novel_dir/poisoned-mir-to-c.stderr"
 poisoned_mir_to_c_status="$?"
 set -e
 if [ "$poisoned_mir_to_c_status" = "0" ]; then
-  echo "MIR-to-C poison did not make the fallback route unavailable." >&2
+  echo "The removed MIR-to-C spelling still succeeds." >&2
   exit 1
 fi
 cat "$novel_dir/poisoned-mir-to-c.stdout" \
     "$novel_dir/poisoned-mir-to-c.stderr" \
     >"$novel_dir/poisoned-mir-to-c.combined"
 if ! rg -n -F \
-    'MIR-to-C intentionally unavailable for route architecture evidence.' \
+    'the generated-C backend was removed in Phase 24: mir-to-c' \
     "$novel_dir/poisoned-mir-to-c.combined" >/dev/null; then
   cat "$novel_dir/poisoned-mir-to-c.combined" >&2
-  echo "MIR-to-C poison failure did not report the expected test-only diagnostic." >&2
+  echo "The MIR-to-C rejection did not name the Phase 24 removal." >&2
   exit 1
 fi
 if rg -n -F 'int main(' "$novel_dir/poisoned-mir-to-c.stdout" >/dev/null; then

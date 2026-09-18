@@ -764,6 +764,53 @@ def s1_8_state(value: dict, registry: dict | None = None) -> str:
                     "live_justfile_successor_digest"]
         s1_8_falsifier_self_test(implementation_coordinated)
         state = classify_s1_8_manifest(implementation_coordinated, live)
+        if state is None:
+            # Issue #398 converts scripts/stdlib_s1_mutex_guard_parity.sh
+            # onto frozen replay, which moves bytes S1.8 pinned exactly. The
+            # pin stays as the record of what S1.8 delivered; the successor
+            # rebases the one path it moved, the same way Patch 24.2f's
+            # successor rebases the justfile just above.
+            #
+            # It rebases exactly one path, and only from the digest it names
+            # as the predecessor. A successor that pointed at some other
+            # registered file, or at a post-state this manifest never held,
+            # fails rather than re-pinning the manifest to whatever is on
+            # disk. The falsifier self-test runs again on the rebased
+            # manifest, so the classifier is proved to still reject partial,
+            # substituted, path-drifted and extra states after the rebase --
+            # a rebase that made the manifest permissive would fail there.
+            spelling = registry.get(
+                "phase398_retained_spelling_removal", {}).get(
+                    "s1_8_surface_successor")
+            if spelling is not None:
+                require(spelling.get("contract_version") ==
+                        "phase398_s1_8_surface_successor_v1" and
+                        spelling.get("partial_or_substituted_surface") ==
+                        "rejected",
+                        "Issue #398 S1.8 surface successor drifted")
+                # Rebased onto `coordinated`, not onto the justfile
+                # successor above it. The justfile is a registered living
+                # surface, so its live bytes are already projected onto the
+                # registered post identity before any of this runs; layering
+                # this on top of the justfile rebase would put that one path
+                # back to a digest the projection had just resolved, and the
+                # manifest would fail on the justfile instead.
+                spelling_coordinated = copy.deepcopy(coordinated)
+                rebased = 0
+                for row in spelling_coordinated["accepted_states"][1]["files"]:
+                    if row["path"] != spelling["path"]:
+                        continue
+                    require(row.get("digest") ==
+                            spelling["predecessor_digest"],
+                            "Issue #398 S1.8 surface predecessor identity "
+                            f"drifted: {spelling['path']}")
+                    row["digest"] = spelling["successor_digest"]
+                    rebased += 1
+                require(rebased == 1,
+                        "Issue #398 rebases a path the S1.8 manifest does not "
+                        f"pin exactly once: {spelling['path']}")
+                s1_8_falsifier_self_test(spelling_coordinated)
+                state = classify_s1_8_manifest(spelling_coordinated, live)
     require(state is not None,
             "live Stdlib surface is neither exact pre-S1.8 nor exact post-S1.8 state")
     return state
@@ -1023,6 +1070,90 @@ def effective_phase22_summary(registry: dict, value: dict) -> dict:
             removal.get("retired_companion_default_count"),
             "a companion default arm was retired inside a relay-excluded row, "
             "which the two censuses cannot both be measuring")
+    return _issue398_summary_successor(registry, current)
+
+
+def _issue398_summary_successor(registry: dict, previous: dict) -> dict:
+    """Issue #398 on the unfiltered census: a retirement with two survivors.
+
+    The relay-filtered half of this same successor lives in
+    scripts/phase22_opening.py and carries the file-level checks, because that
+    module can join line continuations the way the scan does. This half owns
+    the arithmetic on the unfiltered census and the one number the two must
+    agree on: the size of the removal, differing only by the retired rows the
+    relay census excludes.
+
+    Nothing is reclassified. Every converted consumer stops invoking a
+    compiler rather than invoking a different one, so the explicit-C drop and
+    the total drop are the same number. The two invocations left are inverted
+    probes asserting the spelling is refused; each is checked here against the
+    rejection it claims to assert, so a probe that went back to expecting
+    success cannot sit in this census looking like a retired one that got
+    missed.
+    """
+    successor = registry.get("phase398_retained_spelling_removal", {}).get(
+        "phase22_invocation_successor")
+    if successor is None:
+        return previous
+    current = successor.get("current_summary")
+    require(successor.get("contract_version") ==
+            "phase398_invocation_retirement_successor_v1" and
+            successor.get("previous_summary") == previous and
+            isinstance(current, dict) and
+            successor.get("partial_or_unregistered_retirement") == "rejected",
+            "Issue #398 Phase 22 invocation successor drifted")
+    require(current["unclassified_count"] == previous["unclassified_count"]
+            == 0,
+            "Issue #398 must leave the Phase 22 census fully classified")
+
+    retired = successor.get("unfiltered_retired_explicit_c_count")
+    relay_retired = successor.get("relay_retired_explicit_c_count")
+    excluded = successor.get("relay_excluded_retired_count")
+    reclassified = successor.get("reclassified_invocation_count")
+    require(all(isinstance(value, int) for value in
+                (retired, relay_retired, excluded, reclassified)) and
+            retired > 0,
+            "Issue #398 registered a Phase 22 transition that retires no "
+            "explicit-C invocation")
+    require(retired - relay_retired == excluded >= 0,
+            "the unfiltered and relay censuses disagree by an unregistered "
+            f"amount: {retired} vs {relay_retired} retired against "
+            f"{excluded} relay-excluded")
+
+    destinations = ("explicit_bootstrap_emitter", "explicit_cranelift")
+    drop = (previous["selection_counts"].get("explicit_c", 0) -
+            current["selection_counts"].get("explicit_c", 0))
+    rise = sum(current["selection_counts"].get(name, 0) -
+               previous["selection_counts"].get(name, 0)
+               for name in destinations)
+    require(rise == reclassified == 0,
+            "Issue #398 retires the spelling rather than re-pointing it, but "
+            f"{rise} invocations arrive at {destinations}")
+    require(drop == retired and previous["total"] - current["total"] == retired,
+            f"the Issue #398 Phase 22 transition does not balance: an "
+            f"explicit-C drop of {drop} and a total drop of "
+            f"{previous['total'] - current['total']} against {retired} "
+            "registered as retired")
+    for name in set(previous["selection_counts"]) | set(
+            current["selection_counts"]):
+        if name == "explicit_c":
+            continue
+        require(previous["selection_counts"].get(name, 0) ==
+                current["selection_counts"].get(name, 0),
+                f"Issue #398 moved a selection it does not claim: {name}")
+
+    inversions = successor.get("retained_inversions", [])
+    require(current["selection_counts"].get("explicit_c", 0) ==
+            len(inversions),
+            "the explicit-C invocations Issue #398 leaves in the Phase 22 "
+            f"census are not the registered inverted probes: "
+            f"{current['selection_counts'].get('explicit_c', 0)} against "
+            f"{len(inversions)}")
+    for row in inversions:
+        require(str(row["rejection_marker"]) in
+                (ROOT / str(row["path"])).read_text(encoding="utf-8"),
+                f"the retained explicit-C invocation in {row['path']} no "
+                "longer asserts that the spelling is refused")
     return current
 
 
@@ -1549,11 +1680,28 @@ def drop_class_appended_text_surfaces(
     # below, because only registered departures are discharged here.
     departures = registry.get("phase24_13_backend_removal", {}).get(
         "text_surface_departures")
+    # Issue #398 retires a landed Stdlib surface of its own, so the registered
+    # set is the union of the two. Union rather than replacement: 24.13's two
+    # departures are still departed, and a patch that dropped them from the
+    # register would stop proving they left by retirement rather than by
+    # deletion. Each patch's own paths are still proved below, one at a time.
+    spelling_departures = registry.get(
+        "phase398_retained_spelling_removal", {}).get(
+            "text_surface_departures")
+    if spelling_departures is not None:
+        require(spelling_departures.get("contract_version") ==
+                "phase398_text_surface_departure_v1" and
+                spelling_departures.get("deleted_rather_than_retired") ==
+                "rejected",
+                "Issue #398 text surface departure successor drifted")
     if departures is not None and missing:
         require(departures.get("contract_version") ==
                 "phase24_13_text_surface_departure_v1",
                 "Patch 24.13 text surface departure successor drifted")
-        registered = departures.get("paths", [])
+        registered = list(departures.get("paths", []))
+        registered += [path for path in
+                       (spelling_departures or {}).get("paths", [])
+                       if path not in registered]
         # Containment, not equality: this node records every surface that left
         # the content enrolment, and the landed-Stdlib set is a subset of that.
         # Both directions still hold -- an unregistered departure fails here,
@@ -1627,10 +1775,36 @@ def drop_class_appended_invocations(
     live_counts = collections.Counter(
         (str(row["path"]), str(row["recipe"])) for row in rows
         if str(row.get("owner")) == "stdlib")
+    # Issue #398 converts these consumers onto frozen replay, so the closed
+    # Patch 24.2p counts stop describing the tree. The reduction is read from
+    # the successor rather than edited into that record, and BOTH counts are
+    # checked: a site that vanished fails the same as one that kept an
+    # invocation it was supposed to retire.
+    retirement = registry.get("phase398_retained_spelling_removal", {})
+    retired = {}
+    if retirement:
+        require(retirement.get("contract_version") ==
+                "phase398_landed_site_retirement_v1" and
+                retirement.get("partial_or_unregistered_retirement") ==
+                "rejected",
+                "Issue #398 landed-site retirement successor drifted")
+        for row in retirement.get("retired_sites", []):
+            retired[(str(row["path"]), str(row["recipe"]))] = row
     for key, count in sorted(sites.items()):
-        require(live_counts.get(key, 0) == count,
-                "a landed Stdlib invocation site drifted: "
-                f"{key[0]} {key[1]} {live_counts.get(key, 0)} != {count}")
+        row = retired.get(key)
+        if row is None:
+            require(live_counts.get(key, 0) == count,
+                    "a landed Stdlib invocation site drifted: "
+                    f"{key[0]} {key[1]} {live_counts.get(key, 0)} != {count}")
+            continue
+        require(int(row["previous_invocation_count"]) == count,
+                "Issue #398 records a previous count this manifest never "
+                f"pinned: {key[0]} {key[1]} {row['previous_invocation_count']}"
+                f" != {count}")
+        require(live_counts.get(key, 0) == int(row["current_invocation_count"]),
+                "a site Issue #398 retired does not match its registered "
+                f"result: {key[0]} {key[1]} {live_counts.get(key, 0)} != "
+                f"{row['current_invocation_count']}")
     kept: list[dict[str, object]] = []
     for row in rows:
         require(str(row.get("consumer_class")) != "unclassified",
@@ -1712,42 +1886,74 @@ def normalize_phase22_invocations(
         row.get("recipe") == site["recipe"] and
         row.get("compiler_token") == site["compiler_token"]
     ]
-    require(len(matches) == 1, "relay site is missing, duplicated, or substituted")
-    match = matches[0]
-    # Patch 24.3c: anchor on what the pin MEANS - the recipe that owns the site
-    # and the exact command it runs - rather than on where it happens to sit.
-    # `line` was an absolute coordinate used as a proxy for a location, so it
-    # broke on any insertion above it, including one in an unrelated recipe:
-    # Stdlib S1.10 could not edit its own guard recipe without failing seven
-    # guards, all reporting this one assertion. recipe + command + selection is
-    # what the check was always trying to say, and the evidence is that it is
-    # stable across exactly the edit that moved the coordinate.
-    require(match.get("command") == site["command"] and
-            match.get("selection") == site["selection"],
-            "relay site command or route drifted")
-    # The no-fallback guarantee, asserted rather than left implied. Relaxing this
-    # manifest is lane work ONLY while it never admits an implicit_default
-    # invocation, so that condition is a check rather than a promise in prose.
-    require(site["selection"] != anchor["rejected_selection"] and
-            match.get("selection") != anchor["rejected_selection"],
-            "relay site would admit an implicit_default invocation")
-    normalized = copy.deepcopy(rows)
-    target = next(
-        row for row in normalized
-        if row.get("path") == site["path"] and
-        row.get("recipe") == site["recipe"] and
-        row.get("compiler_token") == site["compiler_token"]
-    )
-    # KEEP THIS. It projects this row's live line onto the frozen coordinate
-    # before the invocation manifest is hashed, which is why re-anchoring above
-    # does not move invocation_manifest_digest for this row.
-    #
-    # It immunizes EXACTLY ONE ROW. Measured, because an earlier reading of this
-    # line claimed the digest was immunized in general and that is false: a
-    # justfile edit above other invocations still moves the digest
-    # (f27c56c4... -> aaaf12d4...). Retiring the remaining coordinates is
-    # Patch 24.3b's; see relay_site_anchor.unretired_coordinates_owner.
-    target["line"] = site["pre_relay_line"]
+    # Issue #398 converts this invocation onto frozen replay, so the relay
+    # identity it anchored is retired. Both halves are required, because a
+    # site that simply vanished would otherwise read as converted.
+    relay_retired = registry.get("phase398_retained_spelling_removal", {}).get(
+        "relay_site_retirement")
+    if relay_retired is not None:
+        require(relay_retired.get("contract_version") ==
+                "phase398_relay_site_retirement_v1" and
+                relay_retired.get("retired_site") == site and
+                relay_retired.get("partial_or_unregistered_retirement") ==
+                "rejected",
+                "Issue #398 relay site retirement successor drifted")
+        justfile_text = (ROOT / "justfile").read_text(encoding="utf-8")
+        require(str(site["command"]) not in justfile_text,
+                "Issue #398 retired the relay site, but its command is back: "
+                f"{site['command'][:60]}")
+        require(str(relay_retired["replacement_marker"]) in justfile_text,
+                "Issue #398 retired the relay site without its replay "
+                "replacement, so the site vanished rather than converted")
+        require(not matches,
+                "the retired relay site still produces an invocation row")
+    # Only the relay site's own assertions are skipped once it is retired: the
+    # command and route checks, the no-fallback check and the line projection
+    # all speak about a row that no longer exists. Everything AFTER them still
+    # applies -- in particular Patch 24.1's observation driver, which this
+    # function also removes from the projection. An earlier draft returned here
+    # instead and left that driver in, which showed up as an implicit_default
+    # invocation appearing from nowhere in the census.
+    if relay_retired is None:
+        require(len(matches) == 1,
+                "relay site is missing, duplicated, or substituted")
+        match = matches[0]
+        # Patch 24.3c: anchor on what the pin MEANS - the recipe that owns the site
+        # and the exact command it runs - rather than on where it happens to sit.
+        # `line` was an absolute coordinate used as a proxy for a location, so it
+        # broke on any insertion above it, including one in an unrelated recipe:
+        # Stdlib S1.10 could not edit its own guard recipe without failing seven
+        # guards, all reporting this one assertion. recipe + command + selection is
+        # what the check was always trying to say, and the evidence is that it is
+        # stable across exactly the edit that moved the coordinate.
+        require(match.get("command") == site["command"] and
+                match.get("selection") == site["selection"],
+                "relay site command or route drifted")
+        # The no-fallback guarantee, asserted rather than left implied. Relaxing this
+        # manifest is lane work ONLY while it never admits an implicit_default
+        # invocation, so that condition is a check rather than a promise in prose.
+        require(site["selection"] != anchor["rejected_selection"] and
+                match.get("selection") != anchor["rejected_selection"],
+                "relay site would admit an implicit_default invocation")
+        normalized = copy.deepcopy(rows)
+        target = next(
+            row for row in normalized
+            if row.get("path") == site["path"] and
+            row.get("recipe") == site["recipe"] and
+            row.get("compiler_token") == site["compiler_token"]
+        )
+        # KEEP THIS. It projects this row's live line onto the frozen coordinate
+        # before the invocation manifest is hashed, which is why re-anchoring above
+        # does not move invocation_manifest_digest for this row.
+        #
+        # It immunizes EXACTLY ONE ROW. Measured, because an earlier reading of this
+        # line claimed the digest was immunized in general and that is false: a
+        # justfile edit above other invocations still moves the digest
+        # (f27c56c4... -> aaaf12d4...). Retiring the remaining coordinates is
+        # Patch 24.3b's; see relay_site_anchor.unretired_coordinates_owner.
+        target["line"] = site["pre_relay_line"]
+    else:
+        normalized = copy.deepcopy(rows)
     characterization = registry.get(
         "phase24_filename_behavior_characterization", {})
     transition = characterization.get("phase22_invocation_transition")
@@ -1837,6 +2043,46 @@ def normalize_phase22_invocations(
     return normalized
 
 
+def rebase_s1_8_surface(registry: dict, rows: list) -> list:
+    """Apply Issue #398's one-path S1.8 rebase to a list of expected rows.
+
+    The same successor the S1.8 inventory manifest uses, applied here because
+    this projection runs BEFORE the newest-first successor chain further down
+    and therefore sees the file at its converted bytes, not at the identity
+    S1.8 registered.
+
+    It rewrites exactly one digest, and only from the predecessor it names.
+    A row at any other digest is left alone and fails the comparison it was
+    going to fail anyway -- the rebase cannot be used to make an unexpected
+    identity acceptable.
+    """
+    successor = registry.get("phase398_retained_spelling_removal", {}).get(
+        "s1_8_surface_successor")
+    if successor is None:
+        return rows
+    require(successor.get("contract_version") ==
+            "phase398_s1_8_surface_successor_v1" and
+            successor.get("partial_or_substituted_surface") == "rejected",
+            "Issue #398 S1.8 surface successor drifted")
+    # Two shapes reach this. The S1.8 inventory manifest carries bare
+    # `{path, digest}` rows, so only the digest moves there. The Phase 23
+    # text-surface manifest carries the full classified row, whose match
+    # counts the conversion also moved -- a digest-only swap would leave that
+    # row claiming seven MIR-to-C mentions in a file that now has twelve. So
+    # the full row is registered as a pair and swapped whole.
+    rebased = []
+    for row in rows:
+        if row is not None and str(row.get("path")) == successor["path"]:
+            if row == successor.get("previous_row"):
+                row = copy.deepcopy(successor["current_row"])
+            elif (set(row) == {"path", "digest"} and
+                    row.get("digest") == successor["predecessor_digest"]):
+                row = copy.deepcopy(row)
+                row["digest"] = successor["successor_digest"]
+        rebased.append(row)
+    return rebased
+
+
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
@@ -1888,6 +2134,7 @@ def normalize_phase23_text_surfaces(
         # drop_class_appended_text_surfaces above, so here each is admitted at
         # any bytes and projected onto the exact closed row this manifest was
         # registered against. Appending a guard recipe is not changing one.
+        expected_current = rebase_s1_8_surface(registry, expected_current)
         rows = project_class_living_rows(rows, expected_current, living_paths)
         by_live_path = {str(row["path"]): row for row in rows}
         require([by_live_path.get(path) for path in transition["changed_paths"]] ==
@@ -1900,7 +2147,8 @@ def normalize_phase23_text_surfaces(
         replacements["justfile"]["digest"] = coordination[
             "justfile_state_digests"]["pre_s1_8"]
         rows = [replacements.get(str(row["path"]), row) for row in rows]
-        added = coordination["added_phase23_text_surface"]
+        added = rebase_s1_8_surface(
+            registry, [coordination["added_phase23_text_surface"]])[0]
         matches = [row for row in rows if row["path"] == added["path"]]
         require(matches == [added],
                 "S1.8 added text surface is missing, substituted, or duplicated")
@@ -2003,6 +2251,47 @@ def normalize_phase23_text_surfaces(
     # Patch 24.18 is newest, so it runs first. It registers the closure's own
     # surfaces: cranelift_registry.py, which it edits to register the
     # phase24_closure top-level key, and the closure contract it adds.
+    # Issue #398 is newest, so it runs FIRST and projects the tree back to
+    # the state every successor below it was registered against. It moves the
+    # most surfaces of any link here -- the compiler entry and its help, the
+    # guards that pinned the old wording, the consumers converted onto frozen
+    # replay, the seed, and the user documentation -- and it is the only one
+    # that REMOVES a surface: tests/e2e_codegen_assertions.gst stops matching
+    # the content patterns once its invocations become replays.
+    spelling_surface = registry.get(
+        "phase398_retained_spelling_removal", {}).get("text_surface_successor")
+    if spelling_surface is not None:
+        require(spelling_surface.get("contract_version") ==
+                "phase398_text_surface_successor_v1" and
+                spelling_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Issue #398 text surface successor drifted")
+        spelling_paths = list(spelling_surface["registered_changed_paths"])
+        spelling_pre = {row["path"]: row for row
+                        in spelling_surface["previous_changed_text_surfaces"]}
+        spelling_post = {row["path"]: row for row
+                         in spelling_surface["current_changed_text_surfaces"]}
+        require(sorted(spelling_pre) == sorted(spelling_paths) ==
+                sorted(spelling_post),
+                "Issue #398 registered paths and rows disagree")
+        spelling_live = {row["path"]: row for row in rows
+                         if row["path"] in spelling_paths}
+        require(sorted(spelling_live) == sorted(spelling_paths),
+                "Issue #398 registered text surface is missing from the "
+                f"scan: {sorted(set(spelling_paths) - set(spelling_live))}")
+        for path in spelling_paths:
+            require(spelling_live[path] in (spelling_pre[path],
+                                            spelling_post[path]),
+                    "Issue #398 changed text surfaces are partial or "
+                    f"substituted: {path}")
+        spelling_added = set(spelling_surface["added_text_surfaces"])
+        rows = [dict(spelling_pre.get(row["path"], row)) for row in rows
+                if row["path"] not in spelling_added]
+        rows = sorted(rows + [copy.deepcopy(r) for r
+                              in spelling_surface["removed_text_surfaces"]],
+                      key=lambda row: str(row["path"]))
+        by_path = {row["path"]: row for row in rows}
+
     closure_surface = registry.get(
         "phase24_closure", {}).get("text_surface_successor")
     if closure_surface is not None:

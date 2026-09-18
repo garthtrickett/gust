@@ -131,9 +131,36 @@ def validate() -> tuple[dict, str]:
             relay.get("consumer_count") == 15 and
             relay.get("authorized_post_relay_consumer_count") == 0,
             "cross-lane relay transition count drifted")
-    require(sorted({str(row["path"]) for row in stdlib_rows
-                    if not str(row["path"]).startswith("tests/")}) ==
-            sorted(relay.get("paths", [])),
+    # Issue #398 converts every Stdlib invocation in the justfile onto frozen
+    # replay, so the justfile stops producing a Stdlib-owned row and leaves
+    # this path set. The closed Phase 22 record of which paths the relay
+    # covered stays as it is; the successor states which of them no longer
+    # holds a Stdlib invocation.
+    #
+    # A path is not allowed to leave this set just by having no rows. It has
+    # to have been driven to zero on the record: every site the landed-site
+    # retirement registers for that path must read zero, and the path must
+    # appear there at all. A path whose invocations were simply deleted has no
+    # registered sites and fails the first half.
+    live_paths = sorted({str(row["path"]) for row in stdlib_rows
+                         if not str(row["path"]).startswith("tests/")})
+    expected_paths = sorted(relay.get("paths", []))
+    departed = sorted(set(expected_paths) - set(live_paths))
+    if departed:
+        retired_counts: dict[str, list[int]] = {}
+        for row in registry.get("phase398_retained_spelling_removal", {}).get(
+                "retired_sites", []):
+            retired_counts.setdefault(str(row["path"]), []).append(
+                int(row["current_invocation_count"]))
+        for path in departed:
+            counts = retired_counts.get(path)
+            require(counts is not None and all(count == 0 for count in counts),
+                    f"{path} left the cross-lane relay path set without every "
+                    "one of its Stdlib invocations being registered as "
+                    f"retired: {counts}")
+        expected_paths = [path for path in expected_paths
+                          if path not in departed]
+    require(live_paths == expected_paths,
             "cross-lane relay path set drifted")
     # Physical line numbers move whenever an unrelated guard recipe is added.
     # The frozen manifest records the stable source, owning recipe, and compiler
@@ -148,12 +175,41 @@ def validate() -> tuple[dict, str]:
         tuple(row[field] for field in site_fields)
         for row in site_manifest
     }
-    require(len(site_manifest) == 15 and expected_sites.issubset(live_site_rows),
+    # Issue #398 splits this manifest in two. The justfile sites are retired:
+    # every Stdlib invocation in those three recipes is converted onto frozen
+    # replay, so the site makes no invocation at all. The three parity scripts
+    # keep one invocation each, but on the native route rather than explicit
+    # C. The Phase 22 manifest stays exactly as it recorded the relay; the
+    # successor says, per site, which of the two happened.
+    #
+    # The distinction is the point. A retired site must be absent from the
+    # live set AND registered at zero by the landed-site retirement -- absence
+    # alone would let a deleted guard pass as a converted one. A converted
+    # site must still be there, on the selection #398 registers, so one that
+    # drifted to a third backend fails and so does one that kept its
+    # explicit-C arm.
+    removal = registry.get("phase398_retained_spelling_removal", {})
+    retired_keys = {
+        (str(row["path"]), str(row["recipe"]))
+        for row in removal.get("retired_sites", [])
+        if int(row["current_invocation_count"]) == 0
+    }
+    surviving_sites = {site for site in expected_sites
+                       if (str(site[0]), str(site[1])) not in retired_keys}
+    retired_sites = expected_sites - surviving_sites
+    require(len(site_manifest) == 15 and
+            surviving_sites.issubset(live_site_rows),
             "cross-lane relay site manifest drifted")
-    require(all(any(row["selection"] == "explicit_c"
+    require(all(site not in live_site_rows for site in retired_sites),
+            "a relay site registered as retired still makes an invocation: "
+            f"{sorted(site for site in retired_sites if site in live_site_rows)}")
+    converted_selection = (removal.get("converted_selection", "explicit_c")
+                           if removal else "explicit_c")
+    require(all(any(row["selection"] == converted_selection
                     for row in live_site_rows[site])
-                for site in expected_sites),
-            "an authorized relay site did not make the exact route transition")
+                for site in surviving_sites),
+            "an authorized relay site did not make the exact route "
+            f"transition to {converted_selection}")
     pending_site_fields = site_fields + ("command",)
     pending_sites = {
         tuple(row[field] for field in pending_site_fields)
@@ -197,9 +253,50 @@ def validate() -> tuple[dict, str]:
             if tuple(row[field] for field in pending_site_fields)
             in pending_sites
         }
-    require(len(pending_sites) == 6 and
-            pending_sites == set(live_pending_sites) and
-            sorted({str(row["path"]) for row in live_pending_sites.values()}) ==
+    # Issue #398 retires the four sites 24.13 left spelled mir-to-c. Same
+    # rule as the migration above: this is the second copy of the manifest, so
+    # it consults the SAME registered successor that phase22_opening.py does
+    # rather than keeping its own record of the retirement, which could then
+    # disagree with it.
+    #
+    # phase22_opening.py owns the file-level half -- the retired command gone,
+    # the frozen replay present. What this copy adds is that the retired site
+    # is absent from the live Stdlib rows and that the paths it took with it
+    # are accounted for, so the path set below still names every path the
+    # relay covered rather than shrinking silently.
+    retired_paths: set = set()
+    site_retirement = post_flip_relay.get("phase398_site_retirement")
+    if site_retirement is not None:
+        require(site_retirement.get("contract_version") ==
+                "phase398_six_site_relay_retirement_v1",
+                "Issue #398 six-site relay retirement successor drifted")
+        for entry in site_retirement.get("retirements", []):
+            retired_key = tuple(entry["retired_site"][field]
+                                for field in pending_site_fields)
+            require(retired_key in pending_sites,
+                    "Issue #398 retires a site this manifest never pinned: "
+                    f"{retired_key[0]}")
+            pending_sites.discard(retired_key)
+            expected_selection.pop(retired_key, None)
+            retired_paths.add(str(entry["retired_site"]["path"]))
+        live_pending_sites = {
+            tuple(row[field] for field in pending_site_fields): row
+            for row in stdlib_rows
+            if tuple(row[field] for field in pending_site_fields)
+            in pending_sites
+        }
+        require(all(tuple(row[field] for field in pending_site_fields)
+                    not in {tuple(entry["retired_site"][field]
+                                  for field in pending_site_fields)
+                            for entry in site_retirement["retirements"]}
+                    for row in stdlib_rows),
+                "a post-flip relay site registered as retired still makes an "
+                "invocation")
+    require(len(pending_sites) + len(
+                site_retirement["retirements"] if site_retirement else []) == 6
+            and pending_sites == set(live_pending_sites) and
+            sorted({str(row["path"])
+                    for row in live_pending_sites.values()} | retired_paths) ==
             post_flip_relay.get("paths") and
             all(str(row["selection"]) == expected_selection[site]
                 for site, row in live_pending_sites.items()),
@@ -262,31 +359,79 @@ def validate() -> tuple[dict, str]:
         row for row in stdlib_rows
         if tuple(row[field] for field in pending_site_fields) not in pending_sites
     ]
-    require(len(initial_stdlib_rows) == 23 and
+    # Issue #398 retires every Stdlib explicit-C invocation outside the
+    # six-site relay. The closed Phase 22 record of the merged post-relay set
+    # stays as it is; the successor states the reduction.
+    #
+    # Its size is DERIVED from the landed-site retirement rather than
+    # registered again here: the total reduction across every Stdlib site it
+    # records, minus the sites the six-site relay accounts for separately.
+    # So the two records have to agree about how many invocations went. A
+    # retirement that overstates itself here leaves the six-site half short
+    # and fails there, and one that understates it fails the count below.
+    #
+    # The three native rows are expected to be untouched, and that is asserted
+    # rather than absorbed: this patch retires explicit C, so a Stdlib row
+    # that was already native must still be there afterwards.
+    expected_initial = 23
+    expected_explicit_c = owner_selections.get("explicit_c")
+    if removal:
+        retired_total = sum(
+            int(row["previous_invocation_count"]) -
+            int(row["current_invocation_count"])
+            for row in removal.get("retired_sites", []))
+        relay_retired = len(
+            post_flip_relay.get("phase398_site_retirement", {})
+            .get("retirements", []))
+        outside_relay = retired_total - relay_retired
+        require(outside_relay == expected_explicit_c,
+                "Issue #398 retires "
+                f"{retired_total} Stdlib invocations with {relay_retired} of "
+                f"them inside the six-site relay, leaving {outside_relay} "
+                f"against the {expected_explicit_c} explicit-C rows this "
+                "merged set pinned")
+        expected_initial -= outside_relay
+        expected_explicit_c = 0
+    require(len(initial_stdlib_rows) == expected_initial and
             sum(row["selection"] == "explicit_c" for row in initial_stdlib_rows) ==
-            owner_selections.get("explicit_c") == 20 and
+            expected_explicit_c and
             sum(row["selection"] == "explicit_cranelift"
                 for row in initial_stdlib_rows) ==
             owner_selections.get("explicit_cranelift") == 3,
             "merged post-relay Stdlib selection set drifted")
 
     entry = ENTRY.read_text(encoding="utf-8")
-    # Patch 24.13 (#398, #402) briefly inverted these three presence-pins to
-    # absence-pins, on the premise that it removed the explicit-C help lines
-    # and the selection branch. That premise is withdrawn.
+    # Patch 24.13 (#398, #402) inverted these three presence-pins to
+    # absence-pins and withdrew it: 28 registered live-C cases still invoked
+    # the retired spelling, 24 of them Stdlib-owned (AGENTS.md line 98), and
+    # rejecting it broke eight Stdlib S1 workflows that were green on main.
     #
-    # Measured on #421: 25 registered live-C cases still invoke the retired
-    # spelling, and rejecting it broke 8 Stdlib S1 workflows that are green on
-    # main. Those callers are Stdlib-owned (AGENTS.md line 98), so this lane
-    # cannot rewire them. The removal is therefore sequenced after the live-C
-    # surface drains -- issue #398 -- and until then these lines must keep
-    # existing, which is exactly what the original pins said.
+    # Issue #398 rewires those callers, so the inversion lands. Two of the
+    # three pins become absence pins. The third does NOT: the `c` spelling is
+    # still tested for by name, because the compiler tells a caller who asks
+    # for it that it was removed rather than that it never existed. So the
+    # marker stays present and what changes is what it must guard -- the
+    # rejection, pinned as a block rather than a line, so the test cannot
+    # quietly go back to selecting a backend while the marker still matches.
+    rejection = (
+        'if std.str_eq(backend_name, "mir-to-c") == 1 ||\n'
+        '               std.str_eq(backend_name, "c") == 1\n'
+        '            {\n'
+        '                compiler_invocation_fail(std.Concat(\n'
+        '                    "the generated-C backend was removed in Phase 24: ",\n'
+        '                    backend_name));'
+    )
+    require(rejection in entry,
+            "the retired C spellings are not refused by name: the compiler "
+            "must tell a caller who asks for them that they were removed, "
+            "not that they were never valid")
     for marker in (
         'os.LogStr("  gust --backend c <source.gst>");',
-        'std.str_eq(backend_name, "c") == 1',
+        'os.LogStr("  gust --backend mir-to-c <source.gst>");',
         'os.LogStr("  --backend <mir-to-c|c|cranelift>  Select the backend explicitly.");',
     ):
-        require(marker in entry, f"explicit-C source marker is missing: {marker}")
+        require(marker not in entry,
+                f"the compiler still advertises a removed route: {marker}")
     require(entry.count("codegen.codegen_generate(programs, module_prefixes, &env, ctx)") == 1,
             "explicit C spellings no longer share one MIR-to-C codegen call")
     bridge = BRIDGE.read_text(encoding="utf-8")

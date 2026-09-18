@@ -311,20 +311,38 @@ def phase22_relay_inventory_rows(
     # satisfy "one row survives" and is rejected here.
     runner_successor = registry.get("phase24_13_backend_removal", {}).get(
         "runner_route_successor")
+    runner_contract = "phase24_13_runner_route_successor_v1"
+    # Patch 24.13 wrote this retirement and withdrew it: the removal it
+    # depended on was deferred, and the runner went back to carrying both
+    # routes. Issue #398 lands the removal, so the successor is registered
+    # under #398's key rather than reopening 24.13's closed record.
+    #
+    # Exactly one of the two may be present. Accepting both would let a tree
+    # carry two records of the same single retirement, and only the first
+    # would be checked against the surviving row's line -- the second could
+    # name any line at all and never be read.
+    issue398_successor = registry.get(
+        "phase398_retained_spelling_removal", {}).get("runner_route_successor")
+    require(runner_successor is None or issue398_successor is None,
+            "the runner's explicit-C route is retired twice: Patch 24.13 and "
+            "Issue #398 both register a runner route successor")
+    if issue398_successor is not None:
+        runner_successor = issue398_successor
+        runner_contract = "phase398_runner_route_successor_v1"
     if runner_successor is None:
         require(live_current == [historical, added_native],
                 "Patch 23.12 dual-route runner inventory is missing, partial, "
                 "or substituted")
     else:
         require(runner_successor.get("contract_version") ==
-                "phase24_13_runner_route_successor_v1" and
+                runner_contract and
                 runner_successor.get("retired_row") == historical and
                 runner_successor.get("partial_or_substituted_route") ==
                 "rejected",
                 "Patch 24.13 runner route successor drifted")
         require(len(live_current) == 1,
-                "Patch 24.13 retires the runner's explicit-C route, so the "
-                f"native row must be the only one left: {live_current}")
+                f"{runner_contract} retires the runner's explicit-C route, so "
+                f"the native row must be the only one left: {live_current}")
         survivor = live_current[0]
         # Deleting the explicit-C route moved the native row UP in the file, so
         # `line` is the one field 23.12's record cannot still match. Every other
@@ -334,11 +352,12 @@ def phase22_relay_inventory_rows(
         moved = {k for k in set(survivor) | set(added_native)
                  if survivor.get(k) != added_native.get(k)}
         require(moved == {"line"},
-                f"Patch 24.13 moved more than the native row's line: {moved}")
+                f"{runner_contract} moved more than the native row's line: "
+                f"{moved}")
         require(survivor["line"] == runner_successor.get("surviving_row_line")
                 and survivor["line"] < added_native["line"],
-                "Patch 24.13 native row is not at the line the successor "
-                f"records after the retirement: {survivor['line']}")
+                f"{runner_contract}: the native row is not at the line the "
+                f"successor records after the retirement: {survivor['line']}")
     rows = [copy.deepcopy(row) for row in rows if row not in live_current]
     rows.append(copy.deepcopy(previous))
     rows.sort(key=lambda row: (
@@ -602,7 +621,119 @@ def _backend_removal_successor(registry: dict, previous: dict) -> dict:
         require(previous["selection_counts"].get(name, 0) ==
                 current["selection_counts"].get(name, 0),
                 f"Patch 24.13 moved a selection it does not claim: {name}")
+    return _issue398_successor(registry, current, "relay")
+
+
+def _issue398_successor(registry: dict, previous: dict, census: str) -> dict:
+    """Issue #398: a pure retirement, with two deliberate survivors.
+
+    Patch 24.13 needed a combined contract because some explicit-C sites moved
+    to another backend. Nothing moves here. Every consumer of the retired
+    spelling is converted onto frozen replay, so the invocation is not
+    re-pointed -- it stops existing -- and the explicit-C drop and the census
+    total fall by the same number. `reclassified_invocation_count` is
+    registered as 0 and asserted against the destinations, so a patch that
+    quietly re-pointed a site at cranelift and called it a retirement fails.
+
+    Two explicit-C invocations survive on purpose: the poison probe in
+    scripts/phase12_5_route_architecture.sh and the `c` alias probe in
+    scripts/phase22_opening.sh, both inverted to assert the spelling is now
+    REFUSED. A census cannot tell an inverted probe from a live consumer --
+    both read as explicit_c -- so each is registered by path and command
+    together with the rejection it asserts, and both are checked against the
+    file. Deleting a probe to make the count come out fails the length check;
+    letting one go back to expecting success fails its marker.
+
+    The two censuses are filtered differently and carry different totals, so
+    each has its own retired count, and the difference between them is
+    registered as the number of retired rows the relay census excludes. They
+    have to agree: if they do not, one of them is measuring something else.
+    """
+    successor = registry.get("phase398_retained_spelling_removal", {}).get(
+        "phase22_invocation_successor")
+    if successor is None:
+        return previous
+    key = {"relay": "relay_inventory", "unfiltered": "summary"}[census]
+    current = successor.get(f"current_{key}")
+    require(successor.get("contract_version") ==
+            "phase398_invocation_retirement_successor_v1" and
+            successor.get(f"previous_{key}") == previous and
+            isinstance(current, dict) and
+            successor.get("partial_or_unregistered_retirement") == "rejected",
+            f"Issue #398 {census} invocation successor drifted")
+    require(current["unclassified_count"] == previous["unclassified_count"]
+            == 0,
+            f"Issue #398 must leave the {census} census fully classified")
+
+    retired = successor.get(
+        "relay_retired_explicit_c_count" if census == "relay"
+        else "unfiltered_retired_explicit_c_count")
+    excluded = successor.get("relay_excluded_retired_count")
+    reclassified = successor.get("reclassified_invocation_count")
+    require(all(isinstance(value, int) for value in
+                (retired, excluded, reclassified)) and retired > 0,
+            "Issue #398 registered a transition that retires no explicit-C "
+            "invocation")
+    require(successor.get("relay_retired_explicit_c_count", 0) + excluded ==
+            successor.get("unfiltered_retired_explicit_c_count", 0),
+            "the two Issue #398 censuses disagree about the size of the "
+            "removal: "
+            f"{successor.get('relay_retired_explicit_c_count')} + {excluded} "
+            f"!= {successor.get('unfiltered_retired_explicit_c_count')}")
+
+    drop = (previous["selection_counts"].get("explicit_c", 0) -
+            current["selection_counts"].get("explicit_c", 0))
+    destinations = ("explicit_bootstrap_emitter", "explicit_cranelift")
+    rise = sum(current["selection_counts"].get(name, 0) -
+               previous["selection_counts"].get(name, 0)
+               for name in destinations)
+    require(rise == reclassified == 0,
+            f"Issue #398 retires the spelling rather than re-pointing it, but "
+            f"the {census} census shows {rise} invocations arriving at "
+            f"{destinations}")
+    require(drop == retired,
+            f"the Issue #398 {census} explicit-C drop is {drop}, not the "
+            f"{retired} registered as retired")
+    require(previous["total"] - current["total"] == retired,
+            f"the Issue #398 {census} census total must fall by exactly the "
+            f"retired invocations: {previous['total']} -> {current['total']} "
+            f"against {retired}")
+    for name in set(previous["selection_counts"]) | set(
+            current["selection_counts"]):
+        if name == "explicit_c":
+            continue
+        require(previous["selection_counts"].get(name, 0) ==
+                current["selection_counts"].get(name, 0),
+                f"Issue #398 moved a selection it does not claim in the "
+                f"{census} census: {name}")
+
+    inversions = successor.get("retained_inversions", [])
+    excess = successor.get("relay_pinned_explicit_c_excess", 0) \
+        if census == "relay" else 0
+    require(isinstance(excess, int) and
+            current["selection_counts"].get("explicit_c", 0) ==
+            len(inversions) + excess,
+            f"the explicit-C invocations Issue #398 leaves in the {census} "
+            f"census are not the registered inverted probes: "
+            f"{current['selection_counts'].get('explicit_c', 0)} against "
+            f"{len(inversions)} + {excess}")
+    for row in inversions:
+        path = ROOT / str(row["path"])
+        # Matched through logical_commands, not against the raw file: the
+        # census joins line continuations before it classifies, so a probe
+        # written across three backslashed lines is one command to the number
+        # this check guards and three lines to a plain substring search. The
+        # check has to see what the count saw.
+        commands = [command for _, command, _ in logical_commands(path)]
+        require(str(row["command"]) in commands,
+                "Issue #398 registers an inverted probe that is not in the "
+                f"tree: {row['path']}")
+        require(str(row["rejection_marker"]) in
+                path.read_text(encoding="utf-8"),
+                f"the retained explicit-C invocation in {row['path']} no "
+                "longer asserts that the spelling is refused")
     return current
+
 
 def validate_post_flip_relay_transition(
         registry: dict, rows: list[dict[str, object]]) -> tuple[str, dict]:
@@ -687,9 +818,61 @@ def validate_post_flip_relay_transition(
             for row in rows
             if tuple(row[field] for field in site_fields) in expected_sites
         }
+    # Issue #398 retires the four relay sites 24.13 left spelled mir-to-c.
+    # They are not migrated to another backend: they stop invoking a compiler
+    # at all and replay a frozen record instead. The migration contract above
+    # cannot express that, because it requires a replacement INVOCATION to be
+    # present in the census, and a converted site makes none.
+    #
+    # So the retirement asserts against the FILE rather than the census: the
+    # pinned command must be absent from its path AND the named replay marker
+    # must be present in it. A site that was merely deleted satisfies the first
+    # half and fails the second -- the "vanished passing as converted" failure
+    # this phase keeps having to rule out.
+    retirement = relay.get("phase398_site_retirement")
+    retired_sites: set = set()
+    if retirement is not None:
+        require(retirement.get("contract_version") ==
+                "phase398_six_site_relay_retirement_v1" and
+                retirement.get("partial_or_unregistered_retirement") ==
+                "rejected",
+                "Issue #398 six-site relay retirement successor drifted")
+        retirements = retirement.get("retirements", [])
+        require(len(retirements) == retirement.get("retired_count") and
+                retirement.get("retired_count") +
+                retirement.get("surviving_site_count") ==
+                relay.get("consumer_count") == 6,
+                "Issue #398 relay retirement does not account for all six "
+                "sites")
+        live_keys = {tuple(row[field] for field in site_fields) for row in rows}
+        for entry in retirements:
+            pinned = tuple(entry["retired_site"][field]
+                           for field in site_fields)
+            require(pinned in expected_sites,
+                    "Issue #398 retires a site the manifest never pinned: "
+                    f"{pinned[0]}:{pinned[1]}")
+            require(pinned not in live_keys,
+                    f"Issue #398 records {pinned[0]}:{pinned[1]} as retired "
+                    "but the invocation is still in the tree")
+            text = (ROOT / str(pinned[0])).read_text(encoding="utf-8")
+            require(str(entry["retired_site"]["command"]) not in text,
+                    f"Issue #398 records {pinned[0]}:{pinned[1]} as retired "
+                    "but the retired command is still written there")
+            require(str(entry["replacement_marker"]) in text,
+                    f"Issue #398 retires {pinned[0]}:{pinned[1]} without the "
+                    "frozen replay that replaces it")
+            expected_sites.discard(pinned)
+            retired_sites.add(pinned)
+        live_sites = {
+            tuple(row[field] for field in site_fields): row
+            for row in rows
+            if tuple(row[field] for field in site_fields) in expected_sites
+        }
     require(len(expected_sites) == len(live_sites) ==
+            relay.get("consumer_count") - len(retired_sites) and
             relay.get("consumer_count") == 6 and
-            sorted({str(site[0]) for site in expected_sites}) ==
+            sorted({str(site[0])
+                    for site in expected_sites | retired_sites}) ==
             relay.get("paths"),
             "six-site relay path or site manifest drifted")
 
@@ -742,23 +925,45 @@ def transition_projection_rows(
 def validate_landed_relay_command_substitution_rejection(
         registry: dict, rows: list[dict[str, object]]) -> None:
     """Prove same-selection changes cannot bypass the landed command manifest."""
-    substitutions = (
-        ("codegen_helper_pod_move.gst", "codegen_helper_linear_move.gst"),
-        ("--backend mir-to-c", "--backend c"),
-        ("2>&1", "2>/dev/null"),
-    )
+    # Issue #398 retires the four tests/e2e_codegen_assertions.gst relay sites
+    # this harness used to mutate. The property does not retire with them: it
+    # has to hold for whatever the manifest still expects, so the probe moves
+    # onto the two sites that survive -- the tests/test_runner.gst rows Patch
+    # 24.13 migrated onto the bootstrap-only entry. Leaving the harness pinned
+    # to a retired row would have made it pass by finding nothing to mutate.
+    retired = registry.get("phase22_explicit_c_migration", {}).get(
+        "cross_lane_relay", {}).get("post_flip_review_relay", {}).get(
+            "phase398_site_retirement")
+    if retired is None:
+        anchor_path = "tests/e2e_codegen_assertions.gst"
+        anchor_token = "codegen_helper_pod_move.gst"
+        substitutions = (
+            ("codegen_helper_pod_move.gst", "codegen_helper_linear_move.gst"),
+            ("--backend mir-to-c", "--backend c"),
+            ("2>&1", "2>/dev/null"),
+        )
+    else:
+        anchor_path = "tests/test_runner.gst"
+        anchor_token = "mut cmd := std.Concat"
+        substitutions = (
+            # a different backend, the retired spelling coming back, and an
+            # edit that changes nothing about the selection at all
+            ("--backend bootstrap-emitter", "--backend cranelift"),
+            ("--backend bootstrap-emitter", "--backend mir-to-c"),
+            ("std.Concat(", "std.Concat( "),
+        )
     for old, new in substitutions:
         probe = copy.deepcopy(rows)
         # Patch 24.3b: find the probe row by what it IS, not where it sits.
         # The old lookup pinned `line == 33`, so any edit above that fixture
-        # broke the harness instead of the guard. The fixture token below is
-        # present in exactly one row before mutation; duplicates fail loud,
-        # and a substitution that no longer applies fails rather than
-        # passing vacuously on a no-op replace.
+        # broke the harness instead of the guard. The token below is present
+        # in exactly one row before mutation; duplicates fail loud, and a
+        # substitution that no longer applies fails rather than passing
+        # vacuously on a no-op replace.
         candidates = [
             row for row in probe
-            if row["path"] == "tests/e2e_codegen_assertions.gst" and
-            "codegen_helper_pod_move.gst" in str(row["command"])
+            if row["path"] == anchor_path and
+            anchor_token in str(row["command"])
         ]
         require(len(candidates) == 1,
                 "landed relay probe row is missing or duplicated")
@@ -772,6 +977,60 @@ def validate_landed_relay_command_substitution_rejection(
             continue
         require(False,
                 f"landed relay command substitution was accepted: {old}")
+
+
+def validate_relay_retirement_rejection(
+        registry: dict, rows: list[dict[str, object]]) -> None:
+    """Prove a retired relay site cannot pass by vanishing, or by coming back.
+
+    The retirement makes two claims and each needs its own falsifier. That the
+    invocation is gone is checked by putting it back: the pinned row is added
+    to the census and the transition must reject it. That a frozen replay took
+    its place is checked by pointing the registered marker at text the file
+    does not contain -- which is what a site that was simply deleted would
+    look like -- and the transition must reject that too.
+    """
+    relay = registry.get("phase22_explicit_c_migration", {}).get(
+        "cross_lane_relay", {}).get("post_flip_review_relay", {})
+    retirement = relay.get("phase398_site_retirement")
+    if retirement is None:
+        return
+    retirements = retirement.get("retirements", [])
+    require(bool(retirements), "Issue #398 relay retirement is empty")
+    entry = retirements[0]
+
+    resurrected = copy.deepcopy(rows)
+    resurrected.append({
+        **{field: entry["retired_site"][field] for field in
+           ("path", "line", "recipe", "compiler_token", "command")},
+        "selection": "explicit_c",
+        "consumer_class": "already_explicit_or_parser_probe",
+        "owner": "stdlib",
+        "expected_artifact": "generated_C_or_diagnostic",
+        "expected_transition": "exact_six_site_explicit_mir_to_c_relay",
+        "falsifier": "partial_extra_path_drift_or_unrelated_inventory_change",
+    })
+    try:
+        validate_post_flip_relay_transition(registry, resurrected)
+    except SystemExit:
+        pass
+    else:
+        require(False,
+                "a retired relay invocation was accepted back into the tree")
+
+    probe = copy.deepcopy(registry)
+    probe["phase22_explicit_c_migration"]["cross_lane_relay"][
+        "post_flip_review_relay"]["phase398_site_retirement"][
+            "retirements"][0]["replacement_marker"] = (
+                "a replay this file does not contain")
+    try:
+        validate_post_flip_relay_transition(probe, rows)
+    except SystemExit:
+        pass
+    else:
+        require(False,
+                "a retired relay site was accepted without the frozen replay "
+                "that replaces it")
 
 
 def validate() -> dict:
@@ -844,6 +1103,7 @@ def validate() -> dict:
             "explicit-C migration authority is missing")
     validate_post_flip_relay_transition(registry, live_rows)
     validate_landed_relay_command_substitution_rejection(registry, live_rows)
+    validate_relay_retirement_rejection(registry, live_rows)
     require(summary["unclassified_count"] == 0,
             "an executable compiler invocation is unclassified")
     require(all(row["owner"] and row["expected_artifact"] and
