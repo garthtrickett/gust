@@ -81,4 +81,4 @@ cmp -s "$build_dir/expected" "$build_dir/observable"
 # removal successor; without it the contract rejects a migrated source.
 python3 scripts/phase20_unsafe_mutex_migration.py validate >/dev/null
 
-echo "guard-stdlib-s1-migration: ok (four manual cleanup paths removed; mutex reachable only through the safe surface; observable 10 unchanged; raw-Mutex inventory records the removal)"
+echo "guard-stdlib-s1-migration: ok (four manual cleanup paths removed; mutex reachable only through the safe surface; observable 10 unchanged, replayed from the frozen record; raw-Mutex inventory records the removal)"

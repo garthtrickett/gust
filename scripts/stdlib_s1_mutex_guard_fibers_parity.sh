@@ -112,4 +112,4 @@ rg -N -x -e '300' "$build_dir/raw.mir-to-c.log" >"$build_dir/raw.observable"
 printf '300\n' >"$build_dir/raw.expected"
 cmp -s "$build_dir/raw.expected" "$build_dir/raw.observable"
 
-echo "guard-stdlib-s1-mutex-guard-fibers: ok (contention/suspension/wakeup and an exact shared counter through the guard; unchanged raw-mutex baseline; MIR-to-C; Cranelift fiber route deferred and recorded)"
+echo "guard-stdlib-s1-mutex-guard-fibers: ok (contention/suspension/wakeup and an exact shared counter through the guard; unchanged raw-mutex baseline; replayed from the frozen MIR-to-C record, retired route refused; Cranelift fiber route deferred and recorded)"

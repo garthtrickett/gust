@@ -25863,7 +25863,7 @@
         "classification": "archive_candidate",
         "current_route": "tracked_MIR_to_C_or_generated_C_surface",
         "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-        "digest": "32d49fba760ade80158baa67e1b4857382db006694c79af8e57d924c0b03644e",
+        "digest": "195f8d5b5029937460db645f63c68a96928be485ca3814c6720a42f7f1923bce",
         "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
         "match_counts": {
           "explicit_backend_spelling": 0,
@@ -25874,6 +25874,9 @@
         "path": "scripts/stdlib_s1_mutex_guard_parity.sh",
         "removal_phase": "24"
       },
+      "partial_or_substituted_surface": "rejected",
+      "path": "scripts/stdlib_s1_mutex_guard_parity.sh",
+      "predecessor_digest": "f03f7b26d667150fcc2019a5aea8f99f12ac165e4da28eac18d1c878fc7eb9fe",
       "previous_row": {
         "classification": "archive_candidate",
         "current_route": "tracked_MIR_to_C_or_generated_C_surface",
@@ -25889,11 +25892,8 @@
         "path": "scripts/stdlib_s1_mutex_guard_parity.sh",
         "removal_phase": "24"
       },
-      "partial_or_substituted_surface": "rejected",
-      "path": "scripts/stdlib_s1_mutex_guard_parity.sh",
-      "predecessor_digest": "f03f7b26d667150fcc2019a5aea8f99f12ac165e4da28eac18d1c878fc7eb9fe",
       "status": "issue398_in_progress",
-      "successor_digest": "32d49fba760ade80158baa67e1b4857382db006694c79af8e57d924c0b03644e"
+      "successor_digest": "195f8d5b5029937460db645f63c68a96928be485ca3814c6720a42f7f1923bce"
     },
     "status": "issue398_in_progress",
     "text_surface_departures": {

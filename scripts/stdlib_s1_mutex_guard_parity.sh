@@ -112,4 +112,4 @@ done
 test "$(rg -o -F 'std_Mutex_Lock_impl' "$build_dir/mir-to-c.c" | wc -l)" -eq 1
 test "$(rg -o -F 'std_Mutex_Unlock_impl' "$build_dir/mir-to-c.c" | wc -l)" -eq 1
 
-echo "guard-stdlib-s1-mutex-guard: ok (safe 41/42 behavior on MIR-to-C and Cranelift; one generic lock/unlock body; Level 1 + Level 2)"
+echo "guard-stdlib-s1-mutex-guard: ok (safe 41/42 behavior on the frozen MIR-to-C record and live Cranelift; one generic lock/unlock body; Level 1 + Level 2)"

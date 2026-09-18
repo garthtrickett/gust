@@ -171,4 +171,4 @@ cat "$build_dir/raw-double-unlock.log" >>"$build_dir/raw-double-unlock.c"
   >"$build_dir/raw-double-unlock.native.log" 2>&1
 test -s "$build_dir/raw-double-unlock.bin"
 
-echo "guard-stdlib-s1-mutex-guard-scope: ok (7 control-flow forms; 5 compile-fail classes; MIR-to-C and Cranelift parity; CR-16 compile-only witness)"
+echo "guard-stdlib-s1-mutex-guard-scope: ok (7 control-flow forms; 5 compile-fail classes; frozen MIR-to-C record and live Cranelift parity, retired route refused; CR-16 compile-only witness)"
