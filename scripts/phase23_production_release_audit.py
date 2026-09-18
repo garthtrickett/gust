@@ -94,14 +94,15 @@ def scan() -> dict[str, object]:
         surface("README.md", "user_build_run_install_contract", (
             "build/phase10-package/bin/gust program.gst",
             "make install",
-            # Patch 24.15 briefly rebased this onto "were removed in", on the
-            # premise that 24.13 had stopped keeping the scheduling promise.
-            # The removal is deferred until the live-C surface drains (issue
-            # #398), so the compiler still accepts both spellings and the
-            # forward-looking wording is the accurate one. Documentation that
-            # announced a removal the CLI does not perform would be the same
-            # defect as help text that did.
-            "backend removal is scheduled for",
+            # Patch 24.15 rebased this onto "were removed in" and withdrew
+            # it: the removal was deferred, so the compiler still accepted
+            # both spellings and documentation announcing a removal the CLI
+            # does not perform would be the same defect as help text that
+            # did. Issue #398 performs it, so the wording is the removal
+            # again -- and the scheduling promise it replaced is required
+            # absent, because a README that says both is no clearer than one
+            # that says the wrong thing.
+            "were removed in",
             "Phase 24. Bootstrap-C retirement is a separate Phase 25 change",
             "There is no automatic fallback",
         )),
@@ -122,11 +123,12 @@ def scan() -> dict[str, object]:
             "make phase10-native-package",
             "./build/phase10-package/bin/gust",
             "--backend cranelift",
-            # Patch 24.13 briefly rebased this pair onto the runner's own
-            # rejection of the route. The rejection is withdrawn until the
-            # live-C surface drains (issue #398), so the runner calls the
-            # retired backend again and the original marker is the true one.
-            "./gust --backend mir-to-c",
+            # Patch 24.13 rebased this pair onto the runner's own rejection
+            # of the route and withdrew it with the removal. Issue #398 lands
+            # both: the runner no longer has a C route to call, so what the
+            # audit must see is the refusal and the reason it gives.
+            'if [ "$RUNNER_ROUTE" = "mir-to-c" ]; then',
+            "which was removed in Phase 24",
             'NATIVE_OUTPUT="build/${TEST_STEM}_bin"',
             "COMPILING GUST WITH CRANELIFT",
         )),
@@ -138,13 +140,23 @@ def scan() -> dict[str, object]:
         )),
     )
     runner = RUNNER.read_text(encoding="utf-8")
-    # Patch 24.13 briefly inverted this to require no mir-to-c invocation and
-    # exactly one refusal site. The refusal is withdrawn until the live-C
-    # surface drains (issue #398), so the original shape -- exactly one
-    # explicit route per backend, neither ambiguous -- is the true one again.
-    require(runner.count("--backend mir-to-c") == 1 and
+    # Patch 24.13 inverted this to require no mir-to-c invocation and exactly
+    # one refusal site, and withdrew it with the removal. Issue #398 lands
+    # both halves, and both are needed.
+    #
+    # "No C invocation" alone would pass on a runner that had quietly dropped
+    # the route without telling anyone who asked for it -- the caller would
+    # get a native build they did not request. "Exactly one refusal" alone
+    # would pass on a runner that refused in one branch and still compiled C
+    # in another. Together they say: the route is gone, and asking for it
+    # says so.
+    require(runner.count("--backend mir-to-c") == 0 and
             runner.count("--backend cranelift") == 1,
-            "shared runner does not expose exactly one explicit route per backend")
+            "shared runner does not expose exactly one explicit native route "
+            "with no C route beside it")
+    require(runner.count('if [ "$RUNNER_ROUTE" = "mir-to-c" ]; then') == 1,
+            "the shared runner does not refuse the retired route exactly "
+            "once, so a caller who asks for it is not told it is gone")
     require("GUST_RUNNER_ROUTE must be 'mir-to-c' or 'cranelift'" in runner,
             "shared runner does not reject an unknown explicit route")
     # Patch 24.13 (#398, #433): rebased twice, and both reasons are recorded
@@ -446,6 +458,9 @@ def validate() -> tuple[dict, dict[str, object]]:
             docs_transition = registry.get(
                 "phase24_15_package_docs_registry", {}).get(
                     "production_audit_transition")
+            spelling_transition = registry.get(
+                "phase398_retained_spelling_removal", {}).get(
+                    "production_audit_transition")
             if removal_transition is not None:
                 require(removal_transition.get("contract_version") ==
                         "phase24_13_production_audit_transition_v1" and
@@ -471,7 +486,9 @@ def validate() -> tuple[dict, dict[str, object]]:
                         "phase24_14_production_audit_transition_v1" and
                         toolchain_transition.get("current_audit") ==
                         (docs_transition["previous_audit"]
-                         if docs_transition is not None else summary) and
+                         if docs_transition is not None
+                         else spelling_transition["previous_audit"]
+                         if spelling_transition is not None else summary) and
                         toolchain_transition.get(
                             "partial_extra_or_substituted_audit") ==
                         "rejected",
@@ -508,6 +525,77 @@ def validate() -> tuple[dict, dict[str, object]]:
                         "Patch 24.15 states removal in documentation, so only "
                         "the supported-surface digest may move; these also "
                         f"moved: {sorted(k for k in moved if k != 'supported_surface_manifest_digest')}")
+                # Issue #398 is the tail. Unlike 24.15 it is not
+                # digest-only: it removes the backend, so the three
+                # non-bootstrap counts fall together and the
+                # supported-surface digest moves with them. Phase-25-owned
+                # bootstrap C must NOT move -- that is the line this patch is
+                # not allowed to cross, and it is checked rather than
+                # promised.
+                #
+                # The two other records of the same removal are consulted
+                # rather than restated: the frozen-surface transition says how
+                # many live-C cases went, the invocation successor says how
+                # many invocations went. Three independent measurements of one
+                # removal; if any disagrees, one of them is measuring
+                # something else.
+                if spelling_transition is not None:
+                    require(
+                        spelling_transition.get("contract_version") ==
+                        "phase398_production_audit_transition_v1" and
+                        spelling_transition.get("current_audit") == summary and
+                        spelling_transition.get(
+                            "partial_extra_or_substituted_audit") ==
+                        "rejected",
+                        "Issue #398 production audit transition drifted")
+                    was = spelling_transition["previous_audit"]
+                    moved = sorted(key for key in set(was) | set(summary)
+                                   if was.get(key) != summary.get(key))
+                    require(
+                        moved == sorted(
+                            list(spelling_transition["reduced_fields"]) +
+                            ["supported_surface_manifest_digest"]),
+                        "Issue #398 moved a production audit field it does "
+                        f"not register: {moved}")
+                    require(
+                        was["phase25_bootstrap_explicit_c_count"] ==
+                        summary["phase25_bootstrap_explicit_c_count"],
+                        "Issue #398 must not move Phase-25-owned bootstrap C")
+                    probes = spelling_transition["retained_probe_count"]
+                    require(
+                        summary["repository_explicit_c_count"] ==
+                        summary["non_bootstrap_retained_test_surface_count"]
+                        == probes,
+                        "the explicit-C count Issue #398 leaves is not the "
+                        f"{probes} inverted probes it registers: "
+                        f"{summary['repository_explicit_c_count']} and "
+                        f"{summary['non_bootstrap_retained_test_surface_count']}")
+                    removal_node = registry.get(
+                        "phase398_retained_spelling_removal", {})
+                    frozen = removal_node.get("frozen_surface_transition", {})
+                    cases_removed = (
+                        frozen.get("previous_live_c_case_surface", {})
+                        .get("count", 0) -
+                        frozen.get("current_live_c_case_surface", {})
+                        .get("count", 0))
+                    explicit_removed = (
+                        was["repository_explicit_c_count"] -
+                        summary["repository_explicit_c_count"])
+                    require(
+                        explicit_removed == cases_removed,
+                        "the Issue #398 production audit and frozen-surface "
+                        "transitions disagree about how many live-C cases it "
+                        f"removed: {explicit_removed} against {cases_removed}")
+                    invocations = removal_node.get(
+                        "phase22_invocation_successor", {})
+                    require(
+                        was["repository_invocation_count"] -
+                        summary["repository_invocation_count"] ==
+                        invocations.get(
+                            "unfiltered_retired_explicit_c_count"),
+                        "the Issue #398 production audit and invocation "
+                        "successor disagree about how many invocations it "
+                        "retired")
             removed = emitter_only_transition.get("removed_invocation_count")
             surface = registry.get(
                 "phase24_12a_emitter_only_retirement", {}).get(
@@ -536,8 +624,16 @@ def validate() -> tuple[dict, dict[str, object]]:
             docs_transition = registry.get(
                 "phase24_15_package_docs_registry", {}).get(
                     "production_audit_transition")
+            # Issue #398 is newest, so it is checked first: the live scan has
+            # to match the newest registered successor, not the newest one
+            # that happens to be listed here.
+            spelling_transition = registry.get(
+                "phase398_retained_spelling_removal", {}).get(
+                    "production_audit_transition")
             effective["audit"] = (
-                docs_transition["current_audit"]
+                spelling_transition["current_audit"]
+                if spelling_transition is not None
+                else docs_transition["current_audit"]
                 if docs_transition is not None
                 else toolchain_transition["current_audit"]
                 if toolchain_transition is not None

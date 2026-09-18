@@ -25699,6 +25699,42 @@
       "status": "issue398_in_progress",
       "unfiltered_retired_explicit_c_count": 26
     },
+    "production_audit_transition": {
+      "change_reason": "Issue #398 removes the retained explicit-C spellings. The non-bootstrap counts fall to the two inverted probes that assert the removal, and the Phase-25-owned bootstrap C is untouched -- this patch retires a backend, not the C the bootstrap emits.",
+      "contract_version": "phase398_production_audit_transition_v1",
+      "current_audit": {
+        "active_non_bootstrap_live_c_lane_count": 0,
+        "active_non_bootstrap_live_c_owner": null,
+        "non_bootstrap_retained_test_surface_count": 2,
+        "phase25_bootstrap_explicit_c_count": 0,
+        "repository_explicit_c_count": 2,
+        "repository_invocation_count": 158,
+        "supported_production_or_release_explicit_c_count": 0,
+        "supported_surface_count": 6,
+        "supported_surface_manifest_digest": "8d036993703e3e5aad8efd43d64881fe4ef6ed1e7d0f70307b8fd6ad08d49b24",
+        "unknown_downstream_count": 0
+      },
+      "partial_extra_or_substituted_audit": "rejected",
+      "previous_audit": {
+        "active_non_bootstrap_live_c_lane_count": 0,
+        "active_non_bootstrap_live_c_owner": null,
+        "non_bootstrap_retained_test_surface_count": 28,
+        "phase25_bootstrap_explicit_c_count": 0,
+        "repository_explicit_c_count": 28,
+        "repository_invocation_count": 184,
+        "supported_production_or_release_explicit_c_count": 0,
+        "supported_surface_count": 6,
+        "supported_surface_manifest_digest": "3557bdd149d498da8008f4ef05c114464ec1d6743a890043d984dd50dbd957e8",
+        "unknown_downstream_count": 0
+      },
+      "reduced_fields": [
+        "non_bootstrap_retained_test_surface_count",
+        "repository_explicit_c_count",
+        "repository_invocation_count"
+      ],
+      "retained_probe_count": 2,
+      "status": "issue398_in_progress"
+    },
     "relay_site_retirement": {
       "change_reason": "Patch 24.0c's relay identity is this one invocation, and Issue #398 converts it onto frozen replay. Registered with BOTH halves: the retired command must be gone AND the replay must be there, so the site cannot simply vanish and pass as converted.",
       "contract_version": "phase398_relay_site_retirement_v1",
@@ -25780,6 +25816,46 @@
       "selection": "explicit_c"
     },
     "surviving_row_line": 81
+    },
+    "frozen_surface_transition": {
+      "change_reason": "Issue #398 removes the retained explicit-C spellings, so the frozen live-C surface Patch 23.10 defined collapses from 28 cases to 2. The 24 Stdlib-owned cases are gone entirely -- each one now replays a frozen record -- and 2 of the 4 Cranelift-owned cases go with them. The 2 that remain are inverted probes: they still spell the retired backend, in order to assert that it is refused.",
+      "contract_version": "phase398_frozen_surface_transition_v1",
+      "current_live_c_case_surface": {
+        "case_id_manifest_digest": "689339d376a50c9c9039584af51d93683f1fa1c47e09aa9870920c4699118cbb",
+        "complete_identity_manifest_digest": "f50d47a2672521c486072436b2a15661ca8b47d4f7a1e895c9e4ec5e5c462e5e",
+        "consumer_class_counts": {
+          "already_explicit_or_parser_probe": 2
+        },
+        "count": 2,
+        "owner_contract_count": 2,
+        "owner_contract_manifest_digest": "072e480265d504ff80561e1786e3a86c6305f95944e83cd1d5fd1ee02e69fe10",
+        "owner_counts": {
+          "cranelift": 2
+        },
+        "selection_counts": {
+          "explicit_c": 2
+        }
+      },
+      "partial_or_unregistered_surface": "rejected",
+      "previous_live_c_case_surface": {
+        "case_id_manifest_digest": "a2a940b2fc8c5888732f4500c6b8c9ba544fd9debc2589625c2d43637ef4f661",
+        "complete_identity_manifest_digest": "5c9ef6a2490a90544375d4a6ece484a749f0eb86701e283e188b040a96cb1b9c",
+        "consumer_class_counts": {
+          "already_explicit_or_parser_probe": 28
+        },
+        "count": 28,
+        "owner_contract_count": 8,
+        "owner_contract_manifest_digest": "1d1bfea178303690b08c2e66fe7a2efddb080b01a9cfac760ab4fd0c6ee7d5bf",
+        "owner_counts": {
+          "cranelift": 4,
+          "stdlib": 24
+        },
+        "selection_counts": {
+          "explicit_c": 28
+        }
+      },
+      "retained_probe_owner": "cranelift",
+      "status": "issue398_in_progress"
     },
     "converted_selection": "explicit_cranelift",
     "status": "issue398_in_progress",

@@ -359,31 +359,79 @@ def validate() -> tuple[dict, str]:
         row for row in stdlib_rows
         if tuple(row[field] for field in pending_site_fields) not in pending_sites
     ]
-    require(len(initial_stdlib_rows) == 23 and
+    # Issue #398 retires every Stdlib explicit-C invocation outside the
+    # six-site relay. The closed Phase 22 record of the merged post-relay set
+    # stays as it is; the successor states the reduction.
+    #
+    # Its size is DERIVED from the landed-site retirement rather than
+    # registered again here: the total reduction across every Stdlib site it
+    # records, minus the sites the six-site relay accounts for separately.
+    # So the two records have to agree about how many invocations went. A
+    # retirement that overstates itself here leaves the six-site half short
+    # and fails there, and one that understates it fails the count below.
+    #
+    # The three native rows are expected to be untouched, and that is asserted
+    # rather than absorbed: this patch retires explicit C, so a Stdlib row
+    # that was already native must still be there afterwards.
+    expected_initial = 23
+    expected_explicit_c = owner_selections.get("explicit_c")
+    if removal:
+        retired_total = sum(
+            int(row["previous_invocation_count"]) -
+            int(row["current_invocation_count"])
+            for row in removal.get("retired_sites", []))
+        relay_retired = len(
+            post_flip_relay.get("phase398_site_retirement", {})
+            .get("retirements", []))
+        outside_relay = retired_total - relay_retired
+        require(outside_relay == expected_explicit_c,
+                "Issue #398 retires "
+                f"{retired_total} Stdlib invocations with {relay_retired} of "
+                f"them inside the six-site relay, leaving {outside_relay} "
+                f"against the {expected_explicit_c} explicit-C rows this "
+                "merged set pinned")
+        expected_initial -= outside_relay
+        expected_explicit_c = 0
+    require(len(initial_stdlib_rows) == expected_initial and
             sum(row["selection"] == "explicit_c" for row in initial_stdlib_rows) ==
-            owner_selections.get("explicit_c") == 20 and
+            expected_explicit_c and
             sum(row["selection"] == "explicit_cranelift"
                 for row in initial_stdlib_rows) ==
             owner_selections.get("explicit_cranelift") == 3,
             "merged post-relay Stdlib selection set drifted")
 
     entry = ENTRY.read_text(encoding="utf-8")
-    # Patch 24.13 (#398, #402) briefly inverted these three presence-pins to
-    # absence-pins, on the premise that it removed the explicit-C help lines
-    # and the selection branch. That premise is withdrawn.
+    # Patch 24.13 (#398, #402) inverted these three presence-pins to
+    # absence-pins and withdrew it: 28 registered live-C cases still invoked
+    # the retired spelling, 24 of them Stdlib-owned (AGENTS.md line 98), and
+    # rejecting it broke eight Stdlib S1 workflows that were green on main.
     #
-    # Measured on #421: 25 registered live-C cases still invoke the retired
-    # spelling, and rejecting it broke 8 Stdlib S1 workflows that are green on
-    # main. Those callers are Stdlib-owned (AGENTS.md line 98), so this lane
-    # cannot rewire them. The removal is therefore sequenced after the live-C
-    # surface drains -- issue #398 -- and until then these lines must keep
-    # existing, which is exactly what the original pins said.
+    # Issue #398 rewires those callers, so the inversion lands. Two of the
+    # three pins become absence pins. The third does NOT: the `c` spelling is
+    # still tested for by name, because the compiler tells a caller who asks
+    # for it that it was removed rather than that it never existed. So the
+    # marker stays present and what changes is what it must guard -- the
+    # rejection, pinned as a block rather than a line, so the test cannot
+    # quietly go back to selecting a backend while the marker still matches.
+    rejection = (
+        'if std.str_eq(backend_name, "mir-to-c") == 1 ||\n'
+        '               std.str_eq(backend_name, "c") == 1\n'
+        '            {\n'
+        '                compiler_invocation_fail(std.Concat(\n'
+        '                    "the generated-C backend was removed in Phase 24: ",\n'
+        '                    backend_name));'
+    )
+    require(rejection in entry,
+            "the retired C spellings are not refused by name: the compiler "
+            "must tell a caller who asks for them that they were removed, "
+            "not that they were never valid")
     for marker in (
         'os.LogStr("  gust --backend c <source.gst>");',
-        'std.str_eq(backend_name, "c") == 1',
+        'os.LogStr("  gust --backend mir-to-c <source.gst>");',
         'os.LogStr("  --backend <mir-to-c|c|cranelift>  Select the backend explicitly.");',
     ):
-        require(marker in entry, f"explicit-C source marker is missing: {marker}")
+        require(marker not in entry,
+                f"the compiler still advertises a removed route: {marker}")
     require(entry.count("codegen.codegen_generate(programs, module_prefixes, &env, ctx)") == 1,
             "explicit C spellings no longer share one MIR-to-C codegen call")
     bridge = BRIDGE.read_text(encoding="utf-8")
