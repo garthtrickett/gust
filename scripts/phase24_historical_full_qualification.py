@@ -113,16 +113,33 @@ def retirement_is_on_main() -> None:
         "main reaches the emitter without the bootstrap authority, so the "
         "publication path this phase closes is open to any caller",
     )
-    # Inverted, not dropped. While the removal is deferred the spellings must
-    # still be THERE: a main that quietly dropped them without #398 closing
-    # would break the 25 Stdlib-owned live-C callers, and this instrument
-    # would otherwise qualify that run as the retirement landing.
-    require(
+    # This reads MAIN, not the working tree, so it has to stay true across
+    # the #398 merge boundary rather than be flipped at it. A one-sided pin
+    # would be wrong on one side of that merge whichever way it pointed:
+    # required-present breaks the moment #398 lands, required-absent breaks
+    # every run before it.
+    #
+    # So both states are accepted and EXACTLY one must hold. Before #398,
+    # main advertises the spellings. After it, main offers the Cranelift-only
+    # selector and says the backend was removed. A main that does neither has
+    # dropped the spellings without landing the removal -- which is the
+    # failure the original pin existed to catch, and it still fails here.
+    # A main that does both is incoherent and fails too.
+    advertises_retained = (
         '"  --backend <mir-to-c|c|cranelift>  Select the backend explicitly."'
-        in source,
-        "main no longer advertises the deferred C spellings: their removal is "
-        "sequenced after the live-C surface drains (issue #398), so dropping "
-        "them here is not the retirement this patch qualifies",
+        in source)
+    states_removal = (
+        '"  --backend <cranelift>            Select the backend explicitly."'
+        in source and
+        "the generated-C backend was removed in Phase 24" in source)
+    require(
+        advertises_retained != states_removal,
+        "main is in neither registered state for the explicit C spellings: "
+        f"advertises_retained={advertises_retained}, "
+        f"states_removal={states_removal}. Before issue #398 main advertises "
+        "them; after it main offers the Cranelift-only selector and names the "
+        "removal. Anything else means they were dropped without the removal "
+        "landing, which is not the retirement this patch qualifies.",
     )
 
 

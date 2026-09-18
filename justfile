@@ -23003,14 +23003,14 @@ guard-stdlib-s1-collection-receivers:
 
     # A reference receiver must lower to the same runtime operations as a value
     # receiver. Only the C access differs: `m.len` becomes `m->len`.
-    printf 'func main() {\n    mut arena := os.Arena.New();\n    defer arena.Free();\n    mut m: std.HashMap[str, int, arena] := std.HashMapNew(arena);\n    m.Insert("k", 7);\n    mut r := m.Get("k");\n    if r.Ok { os.LogInt(r.Val); }\n    os.LogInt(len(m));\n}\n' >build/stdlib-s1-byval.gst
-    printf 'func work(m: &std.HashMap[str, int, ctx]) {\n    mut r := m.Get("k");\n    if r.Ok { os.LogInt(r.Val); }\n    os.LogInt(len(m));\n}\nfunc main() {\n    mut arena := os.Arena.New();\n    defer arena.Free();\n    mut m: std.HashMap[str, int, arena] := std.HashMapNew(arena);\n    m.Insert("k", 7);\n    work(&m);\n}\n' >build/stdlib-s1-byref.gst
-    # Issue #398: both are generated above and captured under this issue's
-    # authority, so the C they lower to is replayed rather than re-emitted.
-    # The printf lines stay: the fixtures must still be written, because the
-    # frozen record pins the bytes they are generated FROM.
-    python3 scripts/phase24_frozen_oracle.py materialize build/stdlib-s1-byval.gst build/s1-byval --kind compile_only
-    python3 scripts/phase24_frozen_oracle.py materialize build/stdlib-s1-byref.gst build/s1-byref --kind compile_only
+    # Issue #398: these two fixtures are tracked under compiler/fixtures/ rather
+    # than printed here. A frozen vector pins its SOURCE digest, so a source that
+    # only exists inside build/ cannot be audited on a clean checkout -- which is
+    # exactly how CI failed: the guard passed locally off a populated build/ and
+    # reported the source missing in a clean one. The bytes are unchanged, so the
+    # capture is untouched; only where the source lives moved.
+    python3 scripts/phase24_frozen_oracle.py materialize compiler/fixtures/stdlib_s1_str_equality_byval.gst build/s1-byval --kind compile_only
+    python3 scripts/phase24_frozen_oracle.py materialize compiler/fixtures/stdlib_s1_str_equality_byref.gst build/s1-byref --kind compile_only
     cp build/s1-byval.compile.stdout build/stdlib-s1-byval.c
     cp build/s1-byref.compile.stdout build/stdlib-s1-byref.c
     byval_ops="$(rg -o -N 'os_HashMap[A-Za-z_]*' build/stdlib-s1-byval.c | sort | uniq -c)"

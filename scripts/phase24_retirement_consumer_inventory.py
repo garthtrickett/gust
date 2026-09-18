@@ -395,11 +395,14 @@ DISCHARGED_HARNESSES: dict[str, tuple[str, str]] = {
         ("24.13", "every live-C arm retired; nothing survives"),
     # phase22_explicit_c_migration.sh and phase22_opening.sh were listed here
     # on the premise that their surviving live-C arms had been INVERTED into
-    # assertions that the spelling is rejected. That removal is deferred until
-    # the live-C surface drains (issue #398), so those arms are ordinary live
-    # invocations again and this patch discharges neither harness. Claiming a
-    # discharge that did not happen is exactly what this register exists to
-    # prevent, so the rows are withdrawn rather than reworded.
+    # assertions that the spelling is rejected, and withdrawn when that
+    # removal was deferred. Issue #398 performs it and the arms are inverted
+    # for real -- but the rows stay out of this register, because neither
+    # harness is DISCHARGED. phase22_opening.sh still makes one invocation,
+    # registered in ISSUE398_INVERTED_HARNESSES with its removal marker.
+    # "Discharged" means nothing survives; "inverted" means something
+    # survives and asserts the opposite. Collapsing the two is what this
+    # register exists to prevent.
     "scripts/phase22_native_implicit_output.sh":
         ("24.13", "every live-C arm retired; nothing survives"),
     "scripts/phase22_postflip_qualification.sh":
@@ -414,10 +417,13 @@ DISCHARGED_HARNESSES: dict[str, tuple[str, str]] = {
 # dropped rather than pinned at zero, because a zero pin keeps asserting a
 # sweep over a file with nothing to sweep.
 #
-# compiler/test_runner_entry.gst was dropped alongside it on the premise that
-# the removal took its help lines out. That removal is deferred until the
-# live-C surface drains (issue #398), so the file carries two spellings again
-# and has to stay swept -- measured at 2, the same count main carries.
+# compiler/test_runner_entry.gst stays in the LOCUS list under Issue #398
+# even though its count left SWEEP_COUNTS. The two are different statements:
+# the locus list is where the sweep looks, and the count list is what it
+# expects to find. The entry now carries no backend spelling, so check_sweep
+# emits no row for it and a count would expect a key that never appears --
+# but it is exactly the file where one coming back matters most, so it stays
+# in the population that gets looked at.
 SWEEP_LOCI = ["Makefile", "justfile", "compiler/test_runner_entry.gst"]
 
 # Exact per-file spelling counts for sweep loci with more than one shape.

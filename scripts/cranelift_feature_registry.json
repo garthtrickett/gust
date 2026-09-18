@@ -26304,7 +26304,22 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "02f358ddbc36d6ace3ba67876286ef4f31938db365338e1fed27897e8b6608f0",
+          "digest": "d3c9077de293755b61d97f43281443546f039fbe8b2781080b8234980c1cd315",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase24_historical_full_qualification.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "5d6cd96d914fa0250b334ea30e51192c15047d6e0be596891f8c36aff297801f",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 33,
@@ -26781,6 +26796,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "69d062fcdd3bcaabdb661a80ac089c2d1adb9289d2962f5b9630e24a3dc3ce92",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase24_historical_full_qualification.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "585f44435eed82af03f451e7b03c1663733bea3b742e4a783303a4751118b4db",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -26880,6 +26910,7 @@
         "scripts/phase24_cr15_closure.py",
         "scripts/phase24_frozen_oracle.py",
         "scripts/phase24_frozen_oracle_capture.py",
+        "scripts/phase24_historical_full_qualification.py",
         "scripts/phase24_retirement_consumer_inventory.py",
         "scripts/run-gust-file.sh",
         "scripts/stdlib_s1_branded_collections_parity.sh",

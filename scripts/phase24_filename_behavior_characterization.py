@@ -63,15 +63,17 @@ ROUTES = {
     "explicit_cranelift": ("--backend", "cranelift"),
     "default_cranelift": (),
 }
-# Patch 24.13 briefly listed retained_explicit_compatibility here, so the
-# route was checked for an identical REFUSAL across both filenames instead of
-# for its recorded observation. The removal is deferred until the live-C
-# surface drains (issue #398), so the route answers again and goes back to the
-# exact-observation comparison every other route gets -- which is the stronger
-# check of the two, since it pins the bytes rather than only their equality.
-# The branches below are kept, not deleted: they are what this route needs
-# again the moment the removal lands.
-REMOVED_ROUTES: tuple[str, ...] = ()
+# Patch 24.13 listed retained_explicit_compatibility here and withdrew it
+# when the removal was deferred. Issue #398 performs the removal, so the
+# route is listed again and the branches below -- kept, not deleted, for
+# exactly this moment -- take over from the exact-observation comparison.
+#
+# The claim this witness makes does not weaken. It is that filename selection
+# is decided BEFORE any backend is consulted, and a route refused before it
+# reaches a backend is still evidence for that, provided the refusal does not
+# depend on the filename. Dropping the route instead would have left only
+# Cranelift routes and stopped testing route-independence at all.
+REMOVED_ROUTES: tuple[str, ...] = ("retained_explicit_compatibility",)
 
 
 def require(condition: bool, message: str) -> None:
