@@ -1166,6 +1166,29 @@ or Phase 24 is otherwise more than backend retirement.
 
 ---
 
+# Carried Work After Phase 24 — Retained Explicit C Spellings (#398)
+
+Phase 24 closed on a narrowed claim: the generated-C backend is retired from
+every default and publication route, and the deprecated explicit spellings are
+retained for 28 registered live-C cases. Issue #398 owns removing them.
+
+**Capture authority.** This row grants the frozen-oracle capture #398 needs,
+the way Patch 24.12c's row granted v3 and 24.12d's granted v4.
+
+- [ ] Issue #398 — Retained Explicit C Spelling Removal
+
+Four fixtures behind `tests/e2e_codegen_assertions.gst` have no frozen vector
+in the v1, v2, v3 or v4 sets. Their registered disposition is `24.12 convert`,
+so conversion — not retirement — is what the phase decided for them, and
+conversion needs recorded C to assert against.
+
+**The capture window is still open, and only by accident.** Patch 24.12c's
+section records v2's seal: *"Patch 24.13 removes backend selection; no vector
+can be captured after it merges"*. Patch 24.13 merged with that removal
+DEFERRED, so the spelling still works and the evidence is still recoverable.
+Had 24.13 landed as scoped, these four would have been unrecoverable. The
+ordering therefore stands exactly as 24.12c stated it: capture, then removal.
+
 # Immutable Phase 24 Opening-Preflight Completion Record — Make Compiler Meaning Explicit
 
 **Lane:** Cranelift. Branches follow the existing
