@@ -181,6 +181,10 @@ for _fixture, _kind in (
 # the vector itself so a consumer cannot mistake a missing `execution` block
 # for an omission.
 NEVER_EXECUTE = {
+    "build/stdlib-s1-byval.gst":
+        "issue #398: the collection-receivers guard generates this fixture with printf, emits its C and compares the os_HashMap* operation counts between the by-value and by-reference forms. It never links or runs either, so there is no execution to record.",
+    "build/stdlib-s1-byref.gst":
+        "issue #398: the collection-receivers guard generates this fixture with printf, emits its C and compares the os_HashMap* operation counts between the by-value and by-reference forms. It never links or runs either, so there is no execution to record.",
     "tests/stdlib_s1_mutex_guard_scope_raw_double_unlock.gst":
         "CR-16 explicit-unsafe witness: a manual unlock followed by guard "
         "cleanup gives two unlock paths, so the program's runtime behaviour "
