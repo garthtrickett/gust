@@ -1074,6 +1074,16 @@ def materialize(vector_id: str, prefix: Path, expect_kind: str | None,
         f"{compile_record['exit']}\n", encoding="utf-8")
     Path(f"{prefix}.compile.stderr").write_bytes(
         record_bytes(compile_record["stderr"]))
+    # Issue #398: serve the emitted C wherever it is frozen, not only for
+    # compile_only. Several consumers assert on the C's CONTENT -- canonical
+    # typedefs, generated signatures -- rather than on what running it did,
+    # and those bytes are recorded and digest-checked for exec vectors too.
+    # Withholding them by kind was an artefact of the first consumers all
+    # being execution comparisons; a record WITHOUT hex is provenance and is
+    # still never served.
+    if vector["kind"] != "compile_only" and "hex" in compile_record["stdout"]:
+        Path(f"{prefix}.compile.stdout").write_bytes(
+            record_bytes(compile_record["stdout"]))
     if vector["kind"] == "compile_only":
         # Serve the compile side and stop. There is deliberately no runtime
         # observable to write.
