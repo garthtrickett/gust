@@ -30,7 +30,7 @@
     "refresh": "impossible_after_patch24_13_seals_the_backend"
   },
   "vectors": {
-    "compiler/fixtures/stdlib_s1_str_equality_byref.gst": {
+    "tests/stdlib_s1_str_equality_byref.gst": {
       "archived_corpus_case": null,
       "capture_authority_digest": "61700711904a95a3b2c7c2ca2ee0a2407fc9e5d512d16a42392f818605b55f5b",
       "compile": {
@@ -51,11 +51,11 @@
       "never_executed_reason": "issue #398: the collection-receivers guard generates this fixture with printf, emits its C and compares the os_HashMap* operation counts between the by-value and by-reference forms. It never links or runs either, so there is no execution to record.",
       "provenance": "captured_live_while_green_issue398",
       "side_effects": [],
-      "source_fixture": "compiler/fixtures/stdlib_s1_str_equality_byref.gst",
+      "source_fixture": "tests/stdlib_s1_str_equality_byref.gst",
       "source_sha256": "296f8452709b03dc307f19b8a48be646ed5eb53599ce92d059a1d39c6361f1e4",
       "workdir_sensitive": false
     },
-    "compiler/fixtures/stdlib_s1_str_equality_byval.gst": {
+    "tests/stdlib_s1_str_equality_byval.gst": {
       "archived_corpus_case": null,
       "capture_authority_digest": "f0fcddc2f471feb8efd07b83c5734ea3308dc3e79f4e659d19a3a45b8fa50ead",
       "compile": {
@@ -76,7 +76,7 @@
       "never_executed_reason": "issue #398: the collection-receivers guard generates this fixture with printf, emits its C and compares the os_HashMap* operation counts between the by-value and by-reference forms. It never links or runs either, so there is no execution to record.",
       "provenance": "captured_live_while_green_issue398",
       "side_effects": [],
-      "source_fixture": "compiler/fixtures/stdlib_s1_str_equality_byval.gst",
+      "source_fixture": "tests/stdlib_s1_str_equality_byval.gst",
       "source_sha256": "2f30166df618c955262a5c895a5d6c38be67b3626db3e35bfa8cc459934ed84f",
       "workdir_sensitive": false
     },

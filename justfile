@@ -23003,14 +23003,14 @@ guard-stdlib-s1-collection-receivers:
 
     # A reference receiver must lower to the same runtime operations as a value
     # receiver. Only the C access differs: `m.len` becomes `m->len`.
-    # Issue #398: these two fixtures are tracked under compiler/fixtures/ rather
+    # Issue #398: these two fixtures are tracked under tests/ rather than
     # than printed here. A frozen vector pins its SOURCE digest, so a source that
     # only exists inside build/ cannot be audited on a clean checkout -- which is
     # exactly how CI failed: the guard passed locally off a populated build/ and
     # reported the source missing in a clean one. The bytes are unchanged, so the
     # capture is untouched; only where the source lives moved.
-    python3 scripts/phase24_frozen_oracle.py materialize compiler/fixtures/stdlib_s1_str_equality_byval.gst build/s1-byval --kind compile_only
-    python3 scripts/phase24_frozen_oracle.py materialize compiler/fixtures/stdlib_s1_str_equality_byref.gst build/s1-byref --kind compile_only
+    python3 scripts/phase24_frozen_oracle.py materialize tests/stdlib_s1_str_equality_byval.gst build/s1-byval --kind compile_only
+    python3 scripts/phase24_frozen_oracle.py materialize tests/stdlib_s1_str_equality_byref.gst build/s1-byref --kind compile_only
     cp build/s1-byval.compile.stdout build/stdlib-s1-byval.c
     cp build/s1-byref.compile.stdout build/stdlib-s1-byref.c
     byval_ops="$(rg -o -N 'os_HashMap[A-Za-z_]*' build/stdlib-s1-byval.c | sort | uniq -c)"
