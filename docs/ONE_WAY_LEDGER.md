@@ -911,6 +911,20 @@ retries through C; rollback is an explicit `--backend c` or
 `--backend mir-to-c` choice. MIR-to-C remains the differential oracle and the
 bootstrap Make targets name it explicitly.
 
+**Superseded by issue #398.** The paragraph above records the post-flip state
+and stays as written, because that is what a ledger is for. It is no longer
+the live behaviour. The explicit spellings are removed: `--backend c` and
+`--backend mir-to-c` are refused by name, so there is no rollback choice left
+to make. The differential oracle is served from the frozen corpus
+(`scripts/phase24_frozen_oracle.py materialize`) rather than by invoking a
+backend, and the bootstrap targets name `--backend bootstrap-emitter`, which
+refuses to run without `GUST_BOOTSTRAP_EMITTER=1`.
+
+So this row is no longer `PARTIAL` for the reason given above — the choice it
+described is gone, and one user-selectable backend remains. The C that
+survives is what the bootstrap emitter produces and what `gust_v4.c` already
+contains, and retiring that is Phase 25's, not this row's.
+
 **Row 29 closes when it does, without anyone working on it directly**, and
 `GEMINI.md` §C is the same shape although it is not a row here.
 

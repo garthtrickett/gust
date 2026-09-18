@@ -82,34 +82,38 @@ ROW = re.compile(r"^- \[( |x)\] Patch (24\.\d+[a-z]?) — ([^—\n]+?)(?: — DO
 
 # The closure sentence and its boundary, stated together because the second
 # half is what keeps Phase 25's scope from widening by implication.
-# The sentence Phase 24 was scoped to say was "Gust no longer emits C as a
-# compiler backend". Measured on the merged retirement main, that is FALSE:
-# `./gust --backend mir-to-c` emits C. Closing on it would make the repository
-# assert something its own compiler contradicts, which is the defect this
-# phase spent five patches removing.
 #
-# What the phase DID achieve, verified rather than asserted:
+# Phase 24 could not say this sentence. Measured on the merged retirement
+# main, "Gust no longer emits C as a compiler backend" was FALSE: `./gust
+# --backend mir-to-c` emitted C, because 28 registered live-C cases still
+# invoked the spelling and 24 of them were Stdlib-owned (AGENTS.md line 98).
+# So the phase closed on a narrowed sentence that named the exception and
+# bounded it, and left the unqualified claim to whoever discharged issue #398.
+#
+# Issue #398 discharged it. Every one of those 28 consumers now replays a
+# frozen record, and the spellings are removed from the compiler. Verified
+# rather than asserted:
 #   ./gust <src>                            -> native, emits no C
+#   ./gust --backend mir-to-c               -> REFUSED, names the removal
+#   ./gust --backend c                      -> REFUSED, names the removal
 #   ./gust --backend bootstrap-emitter      -> REFUSED without the authority
 #   GUST_BOOTSTRAP_EMITTER=1 ... emitter    -> emits C, bootstrap-only
-#   ./gust --backend mir-to-c               -> emits C, deprecated, retained
 #
-# So the publication path is closed and the default route is native; what
-# survives is the deprecated explicit spelling, retained because 28 registered
-# live-C cases still invoke it and 25 of them are Stdlib-owned (AGENTS.md
-# line 98). Their removal is sequenced after issue #398.
-#
-# The sentence is narrowed to what is true and the residue is bounded below,
-# so the claim cannot quietly widen. A later patch restores the unqualified
-# sentence when #398 closes.
+# The boundary stays, and it is not a formality: the bootstrap emitter still
+# emits C on demand and gust_v4.c is still in the tree. Phase 25 owns both.
+# The sentence below says the backend is gone, not that the repository is
+# free of C, and check_retired_residue() is what keeps those two apart.
 CLOSURE_SENTENCE = (
-    "Gust no longer emits C on any default or publication route: the default "
-    "route is native and the bootstrap emitter is refused without its "
-    "authority. The deprecated explicit spellings are retained for 28 "
-    "registered live-C cases pending issue #398, and the repository still "
-    "contains C under Phase 25 ownership."
+    "Gust no longer emits C as a compiler backend: the default route is "
+    "native, the explicit generated-C spellings are removed and refused by "
+    "name, and the bootstrap emitter is refused without its authority. The "
+    "repository still contains C under Phase 25 ownership."
 )
-RETAINED_LIVE_C_CASES = 28
+# What survives the removal is two INVERTED probes: invocations that still
+# spell the retired backend in order to assert that it is refused. They read
+# as live-C cases to any census that classifies by command text, so the count
+# is not zero and pretending it is would be a lie of a different shape.
+REJECTION_PROBE_CASES = 2
 # The boundary half of the closure sentence, required in TASK.md in its own
 # right so "the sentence and its boundary are stated together" is checked
 # rather than assumed.
@@ -244,29 +248,59 @@ def check_historical_authority(registry: dict) -> dict:
     return node
 
 
-def check_retained_residue() -> dict:
-    """The retained explicit spellings are bounded, not open-ended.
+def check_retired_residue() -> dict:
+    """Nothing that still emits C survives, and the exceptions prove it.
 
-    The closure sentence admits an exception, so the exception has to be
-    measured here or it is an escape hatch. The live-C surface is the same
-    population Patch 23.10 froze and every retirement patch has reduced; if it
-    grows, the narrowed sentence stops being true and this closure fails
-    rather than ageing into a false claim.
+    Phase 24's version of this bounded an exception: the sentence admitted
+    retained spellings, so the retained population had to be measured or the
+    admission was an escape hatch. Issue #398 removed the spellings, so the
+    check inverts -- but it does not become `len(cases) == 0`, because that is
+    not what the tree looks like and a check that expects the wrong thing
+    fails for the wrong reason.
+
+    Two rows remain in the live-C population, and both are probes that invoke
+    the retired spelling in order to assert it is REFUSED. A census cannot
+    tell those from a consumer; both read as explicit_c. So the check is an
+    identity rather than a count: the surviving population must be exactly the
+    set Issue #398 registered as inverted, and each one must still carry the
+    rejection it claims to assert. A real consumer coming back fails the set
+    comparison. A probe quietly going back to expecting success fails its
+    marker. Deleting both probes to reach zero fails the count.
     """
     spec = importlib.util.spec_from_file_location(
         "_frozen_surface", ROOT / "scripts" / "phase23_mir_to_c_frozen_surface.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     cases = module.live_c_case_rows()
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    inversions = registry.get("phase398_retained_spelling_removal", {}).get(
+        "phase22_invocation_successor", {}).get("retained_inversions", [])
     require(
-        len(cases) == RETAINED_LIVE_C_CASES,
-        f"the retained live-C surface is {len(cases)}, not "
-        f"{RETAINED_LIVE_C_CASES}. The closure sentence names an exact "
-        "residue; a different one means the exception moved and the sentence "
-        "has to be re-derived, not re-pinned.",
+        len(cases) == len(inversions) == REJECTION_PROBE_CASES,
+        f"the live-C surface is {len(cases)} against {len(inversions)} "
+        f"registered inverted probes, not {REJECTION_PROBE_CASES}. The "
+        "closure sentence says the backend is gone; a population that is not "
+        "exactly the registered probes means something still reaches it.",
     )
+    live_paths = sorted({str(row["path"]) for row in cases})
+    probe_paths = sorted({str(row["path"]) for row in inversions})
+    require(
+        live_paths == probe_paths,
+        "the live-C surface is not the registered set of inverted probes: "
+        f"{live_paths} against {probe_paths}. An invocation that reaches the "
+        "retired backend is not made acceptable by the count matching.",
+    )
+    for row in inversions:
+        require(
+            str(row["rejection_marker"]) in
+            (ROOT / str(row["path"])).read_text(encoding="utf-8"),
+            f"the surviving live-C invocation in {row['path']} no longer "
+            "asserts that the spelling is refused, so it is a consumer again "
+            "rather than a probe.",
+        )
     owners = sorted({str(row.get("owner", "?")) for row in cases})
-    return {"retained_live_c_cases": len(cases), "owners": owners}
+    return {"rejection_probe_cases": len(cases), "owners": owners,
+            "probe_paths": live_paths}
 
 
 def check_boundary() -> None:
@@ -302,7 +336,7 @@ def validate() -> dict:
     found = check_row_order()
     check_all_done(found)
     population = check_population_accounting()
-    residue = check_retained_residue()
+    residue = check_retired_residue()
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     historical = check_historical_authority(registry)
     check_boundary()
@@ -311,7 +345,7 @@ def validate() -> dict:
         "rows": len(found),
         "order": [patch for patch, _, _ in found],
         "population": population,
-        "retained_residue": residue,
+        "retired_residue": residue,
         "historical_run": historical["run_id"],
         "closure_sentence": CLOSURE_SENTENCE,
     }

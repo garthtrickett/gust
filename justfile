@@ -23138,7 +23138,12 @@ guard-stdlib-s1-resource-prerequisites:
     make gust >build/guards/stdlib_s1_resource_prerequisites/build.log 2>&1
     output="build/guards/stdlib_s1_resource_prerequisites/generic-derivation.output"
     derivation_version="$(python3 -c 'import json, sys; value = json.load(open(sys.argv[1])).get("phase24_cr15_derivation"); print("" if value is None else value.get("contract_version", "<invalid>") if isinstance(value, dict) else "<invalid>")' "$registry")"
-    if ./gust --backend mir-to-c "$witness" >"$output" 2>&1; then
+    # Issue #398: the witness is compiled only to learn WHETHER it compiles --
+    # the answer selects which authority branch this guard asserts -- so the
+    # frozen record answers it without the retired spelling.
+    python3 scripts/phase24_frozen_oracle.py materialize "$witness" "$output.frozen" --kind compile_only
+    cat "$output.frozen.compile.stdout" "$output.frozen.compile.stderr" >"$output"
+    if [ "$(cat "$output.frozen.compile.status")" = "0" ]; then
       witness_compiled=1
     else
       witness_compiled=0

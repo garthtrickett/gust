@@ -1023,6 +1023,90 @@ def effective_phase22_summary(registry: dict, value: dict) -> dict:
             removal.get("retired_companion_default_count"),
             "a companion default arm was retired inside a relay-excluded row, "
             "which the two censuses cannot both be measuring")
+    return _issue398_summary_successor(registry, current)
+
+
+def _issue398_summary_successor(registry: dict, previous: dict) -> dict:
+    """Issue #398 on the unfiltered census: a retirement with two survivors.
+
+    The relay-filtered half of this same successor lives in
+    scripts/phase22_opening.py and carries the file-level checks, because that
+    module can join line continuations the way the scan does. This half owns
+    the arithmetic on the unfiltered census and the one number the two must
+    agree on: the size of the removal, differing only by the retired rows the
+    relay census excludes.
+
+    Nothing is reclassified. Every converted consumer stops invoking a
+    compiler rather than invoking a different one, so the explicit-C drop and
+    the total drop are the same number. The two invocations left are inverted
+    probes asserting the spelling is refused; each is checked here against the
+    rejection it claims to assert, so a probe that went back to expecting
+    success cannot sit in this census looking like a retired one that got
+    missed.
+    """
+    successor = registry.get("phase398_retained_spelling_removal", {}).get(
+        "phase22_invocation_successor")
+    if successor is None:
+        return previous
+    current = successor.get("current_summary")
+    require(successor.get("contract_version") ==
+            "phase398_invocation_retirement_successor_v1" and
+            successor.get("previous_summary") == previous and
+            isinstance(current, dict) and
+            successor.get("partial_or_unregistered_retirement") == "rejected",
+            "Issue #398 Phase 22 invocation successor drifted")
+    require(current["unclassified_count"] == previous["unclassified_count"]
+            == 0,
+            "Issue #398 must leave the Phase 22 census fully classified")
+
+    retired = successor.get("unfiltered_retired_explicit_c_count")
+    relay_retired = successor.get("relay_retired_explicit_c_count")
+    excluded = successor.get("relay_excluded_retired_count")
+    reclassified = successor.get("reclassified_invocation_count")
+    require(all(isinstance(value, int) for value in
+                (retired, relay_retired, excluded, reclassified)) and
+            retired > 0,
+            "Issue #398 registered a Phase 22 transition that retires no "
+            "explicit-C invocation")
+    require(retired - relay_retired == excluded >= 0,
+            "the unfiltered and relay censuses disagree by an unregistered "
+            f"amount: {retired} vs {relay_retired} retired against "
+            f"{excluded} relay-excluded")
+
+    destinations = ("explicit_bootstrap_emitter", "explicit_cranelift")
+    drop = (previous["selection_counts"].get("explicit_c", 0) -
+            current["selection_counts"].get("explicit_c", 0))
+    rise = sum(current["selection_counts"].get(name, 0) -
+               previous["selection_counts"].get(name, 0)
+               for name in destinations)
+    require(rise == reclassified == 0,
+            "Issue #398 retires the spelling rather than re-pointing it, but "
+            f"{rise} invocations arrive at {destinations}")
+    require(drop == retired and previous["total"] - current["total"] == retired,
+            f"the Issue #398 Phase 22 transition does not balance: an "
+            f"explicit-C drop of {drop} and a total drop of "
+            f"{previous['total'] - current['total']} against {retired} "
+            "registered as retired")
+    for name in set(previous["selection_counts"]) | set(
+            current["selection_counts"]):
+        if name == "explicit_c":
+            continue
+        require(previous["selection_counts"].get(name, 0) ==
+                current["selection_counts"].get(name, 0),
+                f"Issue #398 moved a selection it does not claim: {name}")
+
+    inversions = successor.get("retained_inversions", [])
+    require(current["selection_counts"].get("explicit_c", 0) ==
+            len(inversions),
+            "the explicit-C invocations Issue #398 leaves in the Phase 22 "
+            f"census are not the registered inverted probes: "
+            f"{current['selection_counts'].get('explicit_c', 0)} against "
+            f"{len(inversions)}")
+    for row in inversions:
+        require(str(row["rejection_marker"]) in
+                (ROOT / str(row["path"])).read_text(encoding="utf-8"),
+                f"the retained explicit-C invocation in {row['path']} no "
+                "longer asserts that the spelling is refused")
     return current
 
 
@@ -1627,10 +1711,36 @@ def drop_class_appended_invocations(
     live_counts = collections.Counter(
         (str(row["path"]), str(row["recipe"])) for row in rows
         if str(row.get("owner")) == "stdlib")
+    # Issue #398 converts these consumers onto frozen replay, so the closed
+    # Patch 24.2p counts stop describing the tree. The reduction is read from
+    # the successor rather than edited into that record, and BOTH counts are
+    # checked: a site that vanished fails the same as one that kept an
+    # invocation it was supposed to retire.
+    retirement = registry.get("phase398_retained_spelling_removal", {})
+    retired = {}
+    if retirement:
+        require(retirement.get("contract_version") ==
+                "phase398_landed_site_retirement_v1" and
+                retirement.get("partial_or_unregistered_retirement") ==
+                "rejected",
+                "Issue #398 landed-site retirement successor drifted")
+        for row in retirement.get("retired_sites", []):
+            retired[(str(row["path"]), str(row["recipe"]))] = row
     for key, count in sorted(sites.items()):
-        require(live_counts.get(key, 0) == count,
-                "a landed Stdlib invocation site drifted: "
-                f"{key[0]} {key[1]} {live_counts.get(key, 0)} != {count}")
+        row = retired.get(key)
+        if row is None:
+            require(live_counts.get(key, 0) == count,
+                    "a landed Stdlib invocation site drifted: "
+                    f"{key[0]} {key[1]} {live_counts.get(key, 0)} != {count}")
+            continue
+        require(int(row["previous_invocation_count"]) == count,
+                "Issue #398 records a previous count this manifest never "
+                f"pinned: {key[0]} {key[1]} {row['previous_invocation_count']}"
+                f" != {count}")
+        require(live_counts.get(key, 0) == int(row["current_invocation_count"]),
+                "a site Issue #398 retired does not match its registered "
+                f"result: {key[0]} {key[1]} {live_counts.get(key, 0)} != "
+                f"{row['current_invocation_count']}")
     kept: list[dict[str, object]] = []
     for row in rows:
         require(str(row.get("consumer_class")) != "unclassified",
@@ -1712,42 +1822,74 @@ def normalize_phase22_invocations(
         row.get("recipe") == site["recipe"] and
         row.get("compiler_token") == site["compiler_token"]
     ]
-    require(len(matches) == 1, "relay site is missing, duplicated, or substituted")
-    match = matches[0]
-    # Patch 24.3c: anchor on what the pin MEANS - the recipe that owns the site
-    # and the exact command it runs - rather than on where it happens to sit.
-    # `line` was an absolute coordinate used as a proxy for a location, so it
-    # broke on any insertion above it, including one in an unrelated recipe:
-    # Stdlib S1.10 could not edit its own guard recipe without failing seven
-    # guards, all reporting this one assertion. recipe + command + selection is
-    # what the check was always trying to say, and the evidence is that it is
-    # stable across exactly the edit that moved the coordinate.
-    require(match.get("command") == site["command"] and
-            match.get("selection") == site["selection"],
-            "relay site command or route drifted")
-    # The no-fallback guarantee, asserted rather than left implied. Relaxing this
-    # manifest is lane work ONLY while it never admits an implicit_default
-    # invocation, so that condition is a check rather than a promise in prose.
-    require(site["selection"] != anchor["rejected_selection"] and
-            match.get("selection") != anchor["rejected_selection"],
-            "relay site would admit an implicit_default invocation")
-    normalized = copy.deepcopy(rows)
-    target = next(
-        row for row in normalized
-        if row.get("path") == site["path"] and
-        row.get("recipe") == site["recipe"] and
-        row.get("compiler_token") == site["compiler_token"]
-    )
-    # KEEP THIS. It projects this row's live line onto the frozen coordinate
-    # before the invocation manifest is hashed, which is why re-anchoring above
-    # does not move invocation_manifest_digest for this row.
-    #
-    # It immunizes EXACTLY ONE ROW. Measured, because an earlier reading of this
-    # line claimed the digest was immunized in general and that is false: a
-    # justfile edit above other invocations still moves the digest
-    # (f27c56c4... -> aaaf12d4...). Retiring the remaining coordinates is
-    # Patch 24.3b's; see relay_site_anchor.unretired_coordinates_owner.
-    target["line"] = site["pre_relay_line"]
+    # Issue #398 converts this invocation onto frozen replay, so the relay
+    # identity it anchored is retired. Both halves are required, because a
+    # site that simply vanished would otherwise read as converted.
+    relay_retired = registry.get("phase398_retained_spelling_removal", {}).get(
+        "relay_site_retirement")
+    if relay_retired is not None:
+        require(relay_retired.get("contract_version") ==
+                "phase398_relay_site_retirement_v1" and
+                relay_retired.get("retired_site") == site and
+                relay_retired.get("partial_or_unregistered_retirement") ==
+                "rejected",
+                "Issue #398 relay site retirement successor drifted")
+        justfile_text = (ROOT / "justfile").read_text(encoding="utf-8")
+        require(str(site["command"]) not in justfile_text,
+                "Issue #398 retired the relay site, but its command is back: "
+                f"{site['command'][:60]}")
+        require(str(relay_retired["replacement_marker"]) in justfile_text,
+                "Issue #398 retired the relay site without its replay "
+                "replacement, so the site vanished rather than converted")
+        require(not matches,
+                "the retired relay site still produces an invocation row")
+    # Only the relay site's own assertions are skipped once it is retired: the
+    # command and route checks, the no-fallback check and the line projection
+    # all speak about a row that no longer exists. Everything AFTER them still
+    # applies -- in particular Patch 24.1's observation driver, which this
+    # function also removes from the projection. An earlier draft returned here
+    # instead and left that driver in, which showed up as an implicit_default
+    # invocation appearing from nowhere in the census.
+    if relay_retired is None:
+        require(len(matches) == 1,
+                "relay site is missing, duplicated, or substituted")
+        match = matches[0]
+        # Patch 24.3c: anchor on what the pin MEANS - the recipe that owns the site
+        # and the exact command it runs - rather than on where it happens to sit.
+        # `line` was an absolute coordinate used as a proxy for a location, so it
+        # broke on any insertion above it, including one in an unrelated recipe:
+        # Stdlib S1.10 could not edit its own guard recipe without failing seven
+        # guards, all reporting this one assertion. recipe + command + selection is
+        # what the check was always trying to say, and the evidence is that it is
+        # stable across exactly the edit that moved the coordinate.
+        require(match.get("command") == site["command"] and
+                match.get("selection") == site["selection"],
+                "relay site command or route drifted")
+        # The no-fallback guarantee, asserted rather than left implied. Relaxing this
+        # manifest is lane work ONLY while it never admits an implicit_default
+        # invocation, so that condition is a check rather than a promise in prose.
+        require(site["selection"] != anchor["rejected_selection"] and
+                match.get("selection") != anchor["rejected_selection"],
+                "relay site would admit an implicit_default invocation")
+        normalized = copy.deepcopy(rows)
+        target = next(
+            row for row in normalized
+            if row.get("path") == site["path"] and
+            row.get("recipe") == site["recipe"] and
+            row.get("compiler_token") == site["compiler_token"]
+        )
+        # KEEP THIS. It projects this row's live line onto the frozen coordinate
+        # before the invocation manifest is hashed, which is why re-anchoring above
+        # does not move invocation_manifest_digest for this row.
+        #
+        # It immunizes EXACTLY ONE ROW. Measured, because an earlier reading of this
+        # line claimed the digest was immunized in general and that is false: a
+        # justfile edit above other invocations still moves the digest
+        # (f27c56c4... -> aaaf12d4...). Retiring the remaining coordinates is
+        # Patch 24.3b's; see relay_site_anchor.unretired_coordinates_owner.
+        target["line"] = site["pre_relay_line"]
+    else:
+        normalized = copy.deepcopy(rows)
     characterization = registry.get(
         "phase24_filename_behavior_characterization", {})
     transition = characterization.get("phase22_invocation_transition")

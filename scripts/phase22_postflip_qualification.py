@@ -136,17 +136,23 @@ def validate() -> dict:
             "historical record" in cranelift_readme,
             "native backend README does not distinguish current status")
     help_text = HELP.read_text(encoding="utf-8")
-    # Patch 24.13 briefly rebased this onto a removal marker. That is
-    # withdrawn: the patch no longer removes the two user-facing spellings,
-    # because 25 registered live-C cases still invoke them and rejecting them
-    # broke 8 Stdlib S1 workflows that are green on main. Help that announced
-    # a removal the CLI does not perform would be the same defect in the other
-    # direction, so the post-flip contract stands unchanged until the live-C
-    # surface drains (issue #398).
+    # Patch 24.13 rebased this onto a removal marker and withdrew it: 28
+    # registered live-C cases still invoked the spellings, 24 of them
+    # Stdlib-owned, and rejecting them broke eight Stdlib S1 workflows that
+    # were green on main. Help announcing a removal the CLI does not perform
+    # is the same defect in the other direction, so the post-flip contract
+    # stood until the live-C surface drained.
+    #
+    # Issue #398 drained it. Help now states the removal, and the wording it
+    # replaced is required absent -- otherwise this check would pass on a help
+    # text that announced the removal and went on offering the oracle.
     require("Compile to one native executable (default)." in help_text and
-            "retained semantic oracle" in help_text and
+            "mir-to-c and c are rejected" in help_text and
             "fallback to MIR-to-C" in help_text,
             "checked help does not state the post-flip contract")
+    require("retained semantic oracle" not in help_text,
+            "the checked help still offers the retained semantic oracle that "
+            "Issue #398 removed")
 
     required_inputs = record.get("native_workflow_inputs")
     expected_inputs = [

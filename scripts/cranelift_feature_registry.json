@@ -2025,7 +2025,7 @@
       "reason_code": "source_or_type_failure",
       "diagnostic_class": "canonical_mir_verification_error",
       "diagnostic": "Native backend canonical MIR verification failed: unsupported top-level statement in module/import cohort",
-      "source_line": 288,
+      "source_line": 281,
       "source_column": 1,
       "failure_stage": "before_driver_discovery",
       "artifact": "absent",
@@ -3571,6 +3571,56 @@
           {"path": "tests/test_runner.gst", "line": 119, "recipe": "none", "compiler_token": "./gust", "command": "mut cmd := std.Concat(\"./gust --backend mir-to-c \", path);"},
           {"path": "tests/test_runner.gst", "line": 154, "recipe": "none", "compiler_token": "./gust", "command": "mut cmd_comp := std.Concat(\"./gust --backend mir-to-c \", path);"}
         ],
+          "phase398_site_retirement": {
+            "change_reason": "Patch 24.13 migrated two of the six relay sites onto the bootstrap-only entry and left four spelled mir-to-c. Issue #398 retires those four: each asserts on the CONTENT of the emitted C, so each is served from the frozen corpus instead of by invoking the retired spelling. They make no compiler invocation at all afterwards, which is why this is a retirement rather than a migration -- there is no replacement invocation for the census to see. Both halves are registered: the retired command must be gone from the file AND the replay that replaces it must be there.",
+            "contract_version": "phase398_six_site_relay_retirement_v1",
+            "partial_or_unregistered_retirement": "rejected",
+            "retired_count": 4,
+            "retirements": [
+              {
+                "replacement_marker": "materialize tests/codegen_helper_pod_move.gst build/codegen_helper_pod_move --kind compile_only",
+                "retired_site": {
+                  "command": "os.System(\"./gust --backend mir-to-c tests/codegen_helper_pod_move.gst > build/codegen_helper_pod_move_temp.log 2>&1\");",
+                  "compiler_token": "./gust",
+                  "line": 33,
+                  "path": "tests/e2e_codegen_assertions.gst",
+                  "recipe": "none"
+                }
+              },
+              {
+                "replacement_marker": "materialize tests/codegen_helper_linear_move.gst build/codegen_helper_linear_move --kind compile_only",
+                "retired_site": {
+                  "command": "os.System(\"./gust --backend mir-to-c tests/codegen_helper_linear_move.gst > build/codegen_helper_linear_move_temp.log 2>&1\");",
+                  "compiler_token": "./gust",
+                  "line": 39,
+                  "path": "tests/e2e_codegen_assertions.gst",
+                  "recipe": "none"
+                }
+              },
+              {
+                "replacement_marker": "materialize tests/codegen_helper_take_ops.gst build/codegen_helper_take_ops --kind compile_only",
+                "retired_site": {
+                  "command": "os.System(\"./gust --backend mir-to-c tests/codegen_helper_take_ops.gst > build/codegen_helper_take_ops_temp.log 2>&1\");",
+                  "compiler_token": "./gust",
+                  "line": 45,
+                  "path": "tests/e2e_codegen_assertions.gst",
+                  "recipe": "none"
+                }
+              },
+              {
+                "replacement_marker": "materialize tests/codegen_helper_match_destructure.gst build/codegen_helper_match_destructure --kind compile_only",
+                "retired_site": {
+                  "command": "os.System(\"./gust --backend mir-to-c tests/codegen_helper_match_destructure.gst > build/codegen_helper_match_destructure_temp.log 2>&1\");",
+                  "compiler_token": "./gust",
+                  "line": 52,
+                  "path": "tests/e2e_codegen_assertions.gst",
+                  "recipe": "none"
+                }
+              }
+            ],
+            "status": "issue398_in_progress",
+            "surviving_site_count": 2
+          },
           "phase24_13_site_migration": {
             "contract_version": "phase24_13_six_site_relay_migration_v1",
             "status": "patch24_13_complete",
@@ -4233,6 +4283,37 @@
         "committed_seed_remains": "preregistration_state_A_superseded_by_landed_C"
       }
     },
+      "phase398_seed_transition": {
+        "accepted_live_seed_identities": [
+          {
+            "line_count": 66007,
+            "seed_digest": "2144a8c0ba5c2babafd58dadc705750b4f3fc8be0304540535cc695e50e87074",
+            "state": "pre_publication"
+          },
+          {
+            "line_count": 66002,
+            "seed_digest": "6e2f45f4276cb63e97902141088b50c2886a6de5132d5ad5384c9070b950bb6f",
+            "state": "post_publication"
+          }
+        ],
+        "accounted_compiler_authorities": [
+          "phase398_retained_spelling_removal"
+        ],
+        "authority_base_main": "498329bac1a245b3a6799f1aa112145c48e6e4ec",
+        "closure_transition": "collapse_to_post_publication_after_seed_merge",
+        "contract_version": "phase398_retained_spelling_removal_seed_reconvergence_transition_v1",
+        "generated_seed_diff": {
+          "current_lines": 66002,
+          "deletions": 9,
+          "insertions": 4,
+          "line_delta": -5,
+          "previous_lines": 66007
+        },
+        "partial_or_unregistered_identity": "rejected",
+        "predecessor_seed_authority": "phase24_13_backend_removal_seed_reconvergence_transition_v1",
+        "seed_pr_policy": "gust_v4_c_only",
+        "status": "ready_for_seed_publication"
+      },
       "phase24_13_seed_transition": {
         "contract_version": "phase24_13_backend_removal_seed_reconvergence_transition_v1",
         "status": "ready_for_seed_publication",
@@ -25505,6 +25586,204 @@
       "removed_text_surfaces": [],
       "status": "patch24_12b_in_progress"
     }
+  },
+  "phase398_retained_spelling_removal": {
+    "phase22_invocation_successor": {
+      "change_reason": "Issue #398 converts every remaining live-C consumer onto frozen replay and then removes the spelling from the compiler. Nothing is reclassified: unlike Patch 24.13, no invocation moves to another backend, so the explicit-C drop and the census total fall together. Two explicit-C invocations SURVIVE, and survive deliberately: they are inverted probes that now assert the spelling is refused. They are registered by path and command with the rejection each one asserts, so a probe that quietly went back to expecting success, or was deleted to make the count come out, fails here rather than reading as a clean removal.",
+      "contract_version": "phase398_invocation_retirement_successor_v1",
+      "current_relay_inventory": {
+        "consumer_class_counts": {
+          "already_explicit_or_parser_probe": 139,
+          "cranelift_C_or_diagnostic_guard": 2,
+          "help_surface_probe": 3,
+          "intentional_default_selection_probe": 4,
+          "invocation_parser_probe": 2
+        },
+        "owner_counts": {
+          "cranelift": 145,
+          "stdlib": 5
+        },
+        "selection_counts": {
+          "explicit_bootstrap_emitter": 13,
+          "explicit_c": 3,
+          "explicit_cranelift": 120,
+          "explicit_invalid_or_parser_probe": 3,
+          "implicit_default": 11
+        },
+        "total": 150,
+        "unclassified_count": 0
+      },
+      "current_summary": {
+        "consumer_class_counts": {
+          "already_explicit_or_parser_probe": 144,
+          "cranelift_C_or_diagnostic_guard": 5,
+          "help_surface_probe": 3,
+          "intentional_default_selection_probe": 4,
+          "invocation_parser_probe": 2
+        },
+        "owner_counts": {
+          "cranelift": 153,
+          "stdlib": 5
+        },
+        "selection_counts": {
+          "explicit_bootstrap_emitter": 13,
+          "explicit_c": 2,
+          "explicit_cranelift": 126,
+          "explicit_invalid_or_parser_probe": 3,
+          "implicit_default": 14
+        },
+        "total": 158,
+        "unclassified_count": 0
+      },
+      "partial_or_unregistered_retirement": "rejected",
+      "previous_relay_inventory": {
+        "consumer_class_counts": {
+          "already_explicit_or_parser_probe": 164,
+          "cranelift_C_or_diagnostic_guard": 2,
+          "help_surface_probe": 3,
+          "intentional_default_selection_probe": 4,
+          "invocation_parser_probe": 2
+        },
+        "owner_counts": {
+          "cranelift": 146,
+          "stdlib": 29
+        },
+        "selection_counts": {
+          "explicit_bootstrap_emitter": 13,
+          "explicit_c": 28,
+          "explicit_cranelift": 120,
+          "explicit_invalid_or_parser_probe": 3,
+          "implicit_default": 11
+        },
+        "total": 175,
+        "unclassified_count": 0
+      },
+      "previous_summary": {
+        "consumer_class_counts": {
+          "already_explicit_or_parser_probe": 170,
+          "cranelift_C_or_diagnostic_guard": 5,
+          "help_surface_probe": 3,
+          "intentional_default_selection_probe": 4,
+          "invocation_parser_probe": 2
+        },
+        "owner_counts": {
+          "cranelift": 155,
+          "stdlib": 29
+        },
+        "selection_counts": {
+          "explicit_bootstrap_emitter": 13,
+          "explicit_c": 28,
+          "explicit_cranelift": 126,
+          "explicit_invalid_or_parser_probe": 3,
+          "implicit_default": 14
+        },
+        "total": 184,
+        "unclassified_count": 0
+      },
+      "reclassified_invocation_count": 0,
+      "relay_excluded_retired_count": 1,
+      "relay_pinned_explicit_c_excess": 1,
+      "relay_retired_explicit_c_count": 25,
+      "retained_inversions": [
+        {
+          "command": "./gust --backend mir-to-c \"$novel_source\" >\"$novel_dir/poisoned-mir-to-c.stdout\" 2>\"$novel_dir/poisoned-mir-to-c.stderr\"",
+          "path": "scripts/phase12_5_route_architecture.sh",
+          "rejection_marker": "'the generated-C backend was removed in Phase 24: mir-to-c'"
+        },
+        {
+          "command": "./gust --backend c \"$fixture\" > \"$build_dir/c-alias.stdout\" 2> \"$build_dir/c-alias.stderr\"",
+          "path": "scripts/phase22_opening.sh",
+          "rejection_marker": "fail \"the removed C alias still succeeds\""
+        }
+      ],
+      "status": "issue398_in_progress",
+      "unfiltered_retired_explicit_c_count": 26
+    },
+    "relay_site_retirement": {
+      "change_reason": "Patch 24.0c's relay identity is this one invocation, and Issue #398 converts it onto frozen replay. Registered with BOTH halves: the retired command must be gone AND the replay must be there, so the site cannot simply vanish and pass as converted.",
+      "contract_version": "phase398_relay_site_retirement_v1",
+      "partial_or_unregistered_retirement": "rejected",
+      "replacement_marker": "materialize \"$witness\" \"$output.frozen\" --kind compile_only",
+      "retired_command_absent": "required",
+      "retired_site": {
+        "command": "if ./gust --backend mir-to-c \"$witness\" >\"$output\" 2>&1; then",
+        "compiler_token": "./gust",
+        "path": "justfile",
+        "post_relay_line": 23270,
+        "pre_relay_line": 23258,
+        "recipe": "guard-stdlib-s1-resource-prerequisites",
+        "selection": "explicit_c"
+      }
+    },
+    "change_reason": "Issue #398 converts every Stdlib consumer of the retired spelling onto frozen replay. The landed-site counts are a closed Patch 24.2p record, so the reduction is registered as a successor rather than edited into that record. Each row carries BOTH counts: a site that vanished entirely fails the same check as one that quietly kept an invocation, which is the 'vanished passing as moved' failure this phase keeps having to rule out.",
+    "contract_version": "phase398_landed_site_retirement_v1",
+    "partial_or_unregistered_retirement": "rejected",
+    "retired_sites": [
+      {
+        "current_invocation_count": 0,
+        "path": "justfile",
+        "previous_invocation_count": 4,
+        "recipe": "guard-stdlib-s1-collection-receivers"
+      },
+      {
+        "current_invocation_count": 0,
+        "path": "justfile",
+        "previous_invocation_count": 1,
+        "recipe": "guard-stdlib-s1-resource-prerequisites"
+      },
+      {
+        "current_invocation_count": 0,
+        "path": "justfile",
+        "previous_invocation_count": 3,
+        "recipe": "guard-stdlib-s1-str-equality-diagnostic"
+      },
+      {
+        "current_invocation_count": 1,
+        "path": "scripts/stdlib_s1_branded_collections_parity.sh",
+        "previous_invocation_count": 6,
+        "recipe": "none"
+      },
+      {
+        "current_invocation_count": 1,
+        "path": "scripts/stdlib_s1_clone_destination_parity.sh",
+        "previous_invocation_count": 6,
+        "recipe": "none"
+      },
+      {
+        "current_invocation_count": 1,
+        "path": "scripts/stdlib_s1_composition_parity.sh",
+        "previous_invocation_count": 3,
+        "recipe": "none"
+      },
+      {
+        "current_invocation_count": 0,
+        "path": "tests/e2e_codegen_assertions.gst",
+        "previous_invocation_count": 4,
+        "recipe": "none"
+      }
+    ],
+    "runner_route_successor": {
+    "change_reason": "Patch 23.12 made scripts/run-gust-file.sh dual-route: a historical explicit-C row and an added native row. Issue #398 retires the explicit-C route, so only the native row survives. Patch 24.13 wrote this same successor and withdrew it when its removal was deferred; this is the same retirement landing under the patch that actually performs it, not a reopening of 24.13's record.",
+    "contract_version": "phase398_runner_route_successor_v1",
+    "partial_or_substituted_route": "rejected",
+    "retired_row": {
+      "command": "./gust --backend mir-to-c \"$TEST_PATH\" > \"$TEMP_OUTPUT\" 2>&1",
+      "compiler_token": "./gust",
+      "consumer_class": "already_explicit_or_parser_probe",
+      "expected_artifact": "selected_backend_contract",
+      "expected_transition": "preserve_explicit_selection",
+      "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+      "line": 61,
+      "owner": "cranelift",
+      "path": "scripts/run-gust-file.sh",
+      "recipe": "none",
+      "selection": "explicit_c"
+    },
+    "surviving_row_line": 81
+    },
+    "converted_selection": "explicit_cranelift",
+    "status": "issue398_in_progress",
+    "surviving_invocation_total": 5
   },
   "phase24_closure": {
     "text_surface_successor": {

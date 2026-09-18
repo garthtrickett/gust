@@ -179,15 +179,20 @@ POISONED_ROUTE_PROBES = {
 }
 POISON_GUARD = "GUST_TEST_MIR_TO_C_UNAVAILABLE=1"
 
-# Patch 24.13 briefly added a second way to be a route-unavailability probe,
-# for a world where the spelling was rejected by construction. That removal is
-# deferred until the live-C surface drains (issue #398), so the C route still
-# EXISTS and the poison env var is once again the only thing that can make it
-# unavailable at run time.
+# Patch 24.13 added a second way to be a route-unavailability probe, for a
+# world where the spelling was rejected by construction, and withdrew it when
+# the removal was deferred. Issue #398 lands the removal, so that world is
+# this one and the second form is restored -- but it REPLACES the poison form
+# rather than joining it as a disjunct.
 #
-# The alternative form is retired rather than left dormant: as a disjunct it
-# could never fire, but it would still let any harness qualify as a probe by
-# containing three strings, which is weaker than what this check is for.
+# That is the whole point. A disjunct would let a probe qualify by carrying
+# either string, and the poison string can no longer make anything
+# unavailable: the spelling is refused before a backend is selected, so
+# GUST_TEST_MIR_TO_C_UNAVAILABLE is unreachable through it. A probe still
+# relying on the poison is asserting something that cannot happen, and reads
+# green while proving nothing. Once the removal is registered, the poison
+# form is rejected here rather than merely no longer required.
+REMOVAL_REJECTION = "the generated-C backend was removed in Phase 24"
 
 # ---------------------------------------------------------------------------
 # Closure guards that required a converted harness to still contain live C.
@@ -1355,6 +1360,13 @@ def check_frozen_only_cases(vectors: dict) -> None:
                 f"{row['source_fixture']}")
 
 
+def spelling_removal_is_registered() -> bool:
+    """True once Issue #398's removal is registered in the feature registry."""
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    return isinstance(
+        registry.get("phase398_retained_spelling_removal"), dict)
+
+
 def check_no_live_c() -> None:
     for locus in FROZEN_LOCI:
         path = ROOT / locus
@@ -1368,6 +1380,7 @@ def check_no_live_c() -> None:
                 f"a converted parity harness executes live C again: "
                 f"{locus} ({len(hits)} spellings, {allowed} registered as "
                 f"route-unavailability probes)")
+        removed = spelling_removal_is_registered()
         for index in hits:
             # A registered probe asserts the route is *refused*. It compiles
             # nothing and runs nothing, so there is no observable to freeze;
@@ -1376,10 +1389,23 @@ def check_no_live_c() -> None:
             # name.
             poisoned = any(POISON_GUARD in line
                            for line in lines[max(0, index - 3):index])
-            require(poisoned,
+            if not removed:
+                require(poisoned,
+                        f"a live-C spelling in {locus} is not a registered "
+                        f"route-unavailability probe (line {index + 1}): it "
+                        "does not carry the poison guard")
+                continue
+            require(REMOVAL_REJECTION in text,
                     f"a live-C spelling in {locus} is not a registered "
-                    f"route-unavailability probe (line {index + 1}): it does "
-                    "not carry the poison guard")
+                    f"route-unavailability probe (line {index + 1}): the "
+                    "spelling is removed, so the probe has to assert the "
+                    "rejection that replaced the route")
+            require(not poisoned,
+                    f"the route-unavailability probe in {locus} (line "
+                    f"{index + 1}) still relies on {POISON_GUARD}, which the "
+                    "removal made unreachable: the spelling is refused before "
+                    "a backend is selected, so the poison can no longer be "
+                    "what makes the route unavailable")
         if allowed:
             require("unexpectedly emitted generated C" in text,
                     f"a route-unavailability probe in {locus} no longer "

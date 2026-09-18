@@ -350,9 +350,14 @@ def validate_static_architecture(registry: dict) -> None:
         "Cranelift target defaults or Rust host layout became a semantic authority",
     )
 
+    # Issue #398 rewrote the comment this used to close on, because the two
+    # explicit spellings it named are removed. Anchoring on a comment made
+    # this guard a marker on a line a later patch had to edit; it now closes
+    # on the emitter call itself, which is the thing the native branch must
+    # not reach and the same anchor phase22_default_route_flip.py uses.
     native_branch_match = re.search(
         r"if invocation\.backend\.tag == 1 \{(.*?)"
-        r"Both explicit C spellings",
+        r"mut c_code := codegen\.codegen_generate\(",
         compiler_entry,
         re.DOTALL,
     )

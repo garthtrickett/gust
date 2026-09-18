@@ -154,15 +154,29 @@ def validate_compiler_and_package_surface() -> None:
         'os.LogStr("  cranelift  Compile to one native executable (default).");' in test_runner,
         "compiler help must identify Cranelift as the default backend",
     )
+    # Issue #398 removed the retained C aliases, so the two assertions that
+    # required help to ADVERTISE them are inverted rather than deleted. Each
+    # keeps both halves: the retired wording must be gone AND the wording that
+    # replaced it must be there. Deleting them would have left help free to
+    # say anything at all about the backends, including advertising a backend
+    # that no longer exists.
     require(
-        'os.LogStr("  --backend <mir-to-c|c|cranelift>  Select the backend explicitly.");'
+        'os.LogStr("  --backend <cranelift>            Select the backend explicitly.");'
         in test_runner,
-        "compiler help must expose the retained C aliases and Cranelift selector",
+        "compiler help must expose the Cranelift selector",
     )
     require(
-        'os.LogStr("  mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.");'
+        "--backend <mir-to-c|c|cranelift>" not in test_runner,
+        "compiler help still offers the removed C aliases in its selector",
+    )
+    require(
+        'os.LogStr("  The generated-C backend was REMOVED in Phase 24; mir-to-c and c are rejected.");'
         in test_runner,
-        "compiler help must identify the retained explicit C oracle",
+        "compiler help must state that the explicit C backend is removed",
+    )
+    require(
+        "mir-to-c, c  DEPRECATED" not in test_runner,
+        "compiler help still advertises the removed explicit C oracle",
     )
     for token in (
         "GUST_NATIVE_BACKEND_DRIVER",

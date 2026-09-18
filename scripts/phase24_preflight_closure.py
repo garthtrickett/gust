@@ -114,8 +114,16 @@ def validate() -> dict:
             seed.get("fixed_point") == "stage2_stage3_byte_identity",
             "the recorded preflight bootstrap seed drifted")
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
-    transition = registry.get("phase22_default_route_seed_convergence", {}).get(
-        "phase24_13_seed_transition")
+    # Named in order, newest last, and consulted only when named: Issue #398
+    # reconverges the seed again, and a second successor block appearing in
+    # the registry must not widen what this guard accepts on its own. Whoever
+    # moves the seed next adds their key here and says why.
+    convergence = registry.get("phase22_default_route_seed_convergence", {})
+    successor_key = None
+    for key in ("phase24_13_seed_transition", "phase398_seed_transition"):
+        if isinstance(convergence.get(key), dict):
+            successor_key = key
+    transition = convergence.get(successor_key) if successor_key else None
     if transition is None:
         require(live_digest == EXPECTED_SEED_DIGEST and
                 live_lines == EXPECTED_SEED_LINES,
@@ -125,15 +133,15 @@ def validate() -> dict:
         published = [row for row in identities
                      if row.get("state") == "post_publication"]
         require(len(published) == 1,
-                "the Patch 24.13 seed transition does not publish exactly one "
-                "identity")
+                f"the {successor_key} seed transition does not publish "
+                "exactly one identity")
         require(live_digest == published[0]["seed_digest"] and
                 live_lines == published[0]["line_count"],
                 "the live seed is neither the preflight closure identity nor "
-                "the one Patch 24.13 publishes: "
+                f"the one {successor_key} publishes: "
                 f"{live_lines} lines, {live_digest[:16]}")
         require(published[0]["seed_digest"] != EXPECTED_SEED_DIGEST,
-                "the Patch 24.13 seed transition publishes the preflight "
+                f"the {successor_key} seed transition publishes the preflight "
                 "identity, so it is not a reconvergence at all")
     require(node.get("pinned_manifest_closure", {}).get("status") ==
             "patch24_3b_complete_merged_31b49779" and

@@ -1149,20 +1149,29 @@ The retirement succeeds when:
   SHA, job population, conclusion, and budgets.
 
 This phase was scoped to say **Gust no longer emits C as a compiler
-backend**. Measured on the merged retirement main that is false --
-`./gust --backend mir-to-c` emits C -- because 28 registered live-C cases
-still invoke the deprecated explicit spellings and 25 of them are
-Stdlib-owned, so this lane cannot rewire them (issue #398). Closing on the
-unqualified sentence would assert what the compiler contradicts.
+backend**. Measured on the merged retirement main that was false --
+`./gust --backend mir-to-c` emitted C -- because 28 registered live-C cases
+still invoked the deprecated explicit spellings and 24 of them were
+Stdlib-owned, so that lane could not rewire them (issue #398). Closing on the
+unqualified sentence would have asserted what the compiler contradicted.
 
-Phase 24 therefore closes on the narrower claim, which is verified:
+Phase 24 therefore closed on the narrower claim, which was verified then and
+stays true of the tree it described:
 
-Gust no longer emits C on any default or publication route: the default route is native and the bootstrap emitter is refused without its authority. The deprecated explicit spellings are retained for 28 registered live-C cases pending issue #398, and the repository still contains C under Phase 25 ownership.
+> Gust no longer emits C on any default or publication route: the default route is native and the bootstrap emitter is refused without its authority. The deprecated explicit spellings are retained for 28 registered live-C cases pending issue #398, and the repository still contains C under Phase 25 ownership.
 
-A later patch restores the unqualified sentence when #398 closes. It may
-not say the repository contains no C, the bootstrap is native, a host C
-compiler is unnecessary, the compiler is consolidated, intrinsic IDs exist,
-or Phase 24 is otherwise more than backend retirement.
+Issue #398 discharged the exception that sentence named. All 28 cases replay
+a frozen record instead of invoking the backend, and both spellings are
+removed from the compiler and refused by name. The unqualified sentence is
+restored, and it is the claim `scripts/phase24_closure.py` checks:
+
+Gust no longer emits C as a compiler backend: the default route is native, the explicit generated-C spellings are removed and refused by name, and the bootstrap emitter is refused without its authority. The repository still contains C under Phase 25 ownership.
+
+The boundary is not a formality. The bootstrap emitter still emits C behind
+`GUST_BOOTSTRAP_EMITTER=1`, and `gust_v4.c` is still in the tree; Phase 25
+owns both. This may not say the repository contains no C, the bootstrap is
+native, a host C compiler is unnecessary, the compiler is consolidated,
+intrinsic IDs exist, or Phase 24 is otherwise more than backend retirement.
 
 ---
 

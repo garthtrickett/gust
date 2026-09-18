@@ -152,7 +152,7 @@ def validate() -> dict:
         # which is the thing not to do. The check below now DERIVES the
         # location and names the correct value when they disagree, so a patch
         # that moves main() is told the new number instead of bisecting for it.
-        "source_line": 288,
+        "source_line": 281,
         "source_column": 1,
         "failure_stage": "before_driver_discovery",
         "artifact": "absent",

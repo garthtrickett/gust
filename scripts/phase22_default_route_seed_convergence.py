@@ -558,7 +558,81 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
     require(removal_diff["previous_lines"] == removal_identities[0]["line_count"] and
             removal_diff["current_lines"] == removal_identities[1]["line_count"],
             "Patch 24.13 seed diff does not match its exact pre/post identities")
-    return removal_identities
+
+    # Issue #398 removes the retained explicit-C spellings from the compiler
+    # entry and the help text, so the seed reconverges again. This is the
+    # first link in this chain whose seed gets SMALLER -- the diff is four
+    # lines in and nine out -- which is why the arithmetic below is stated as
+    # an identity on the delta rather than as a growth check: a shrinking seed
+    # is as registrable as a growing one, and neither may disagree with its
+    # own pre/post line counts.
+    spelling_transition = record.get("phase398_seed_transition")
+    if spelling_transition is None:
+        return removal_identities
+    require(spelling_transition == {
+            "accepted_live_seed_identities": [
+                    {
+                            "line_count": 66007,
+                            "seed_digest": "2144a8c0ba5c2babafd58dadc705750b4f3fc8be0304540535cc695e50e87074",
+                            "state": "pre_publication"
+                    },
+                    {
+                            "line_count": 66002,
+                            "seed_digest": "6e2f45f4276cb63e97902141088b50c2886a6de5132d5ad5384c9070b950bb6f",
+                            "state": "post_publication"
+                    }
+            ],
+            "accounted_compiler_authorities": [
+                    "phase398_retained_spelling_removal"
+            ],
+            "authority_base_main": "498329bac1a245b3a6799f1aa112145c48e6e4ec",
+            "closure_transition": "collapse_to_post_publication_after_seed_merge",
+            "contract_version": "phase398_retained_spelling_removal_seed_reconvergence_transition_v1",
+            "generated_seed_diff": {
+                    "current_lines": 66002,
+                    "deletions": 9,
+                    "insertions": 4,
+                    "line_delta": -5,
+                    "previous_lines": 66007
+            },
+            "partial_or_unregistered_identity": "rejected",
+            "predecessor_seed_authority": "phase24_13_backend_removal_seed_reconvergence_transition_v1",
+            "seed_pr_policy": "gust_v4_c_only",
+            "status": "ready_for_seed_publication"
+    }, "Issue #398 seed transition drifted")
+    spelling_identities = spelling_transition["accepted_live_seed_identities"]
+    require([row["state"] for row in spelling_identities] ==
+            ["pre_publication", "post_publication"],
+            "Issue #398 seed transition state order drifted")
+    require(len({(row["line_count"], row["seed_digest"])
+                 for row in spelling_identities}) == 2,
+            "Issue #398 seed transition identities are not distinct")
+    require(spelling_identities[0] == {
+        "state": "pre_publication",
+        "line_count": removal_identities[1]["line_count"],
+        "seed_digest": removal_identities[1]["seed_digest"],
+    }, "Issue #398 does not start from the landed Patch 24.13 identity")
+    # The named authority is a registry key rather than a bare string, so it
+    # can be checked. Patch 24.13 registered "phase24_13_backend_removal_v1",
+    # which appears nowhere else in the tree and therefore asserted nothing.
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    for name in spelling_transition["accounted_compiler_authorities"]:
+        require(isinstance(registry.get(name), dict),
+                "Issue #398 accounts a compiler authority that is not "
+                f"registered: {name}")
+    spelling_diff = spelling_transition["generated_seed_diff"]
+    require(spelling_diff["current_lines"] - spelling_diff["previous_lines"] ==
+            spelling_diff["line_delta"] and
+            spelling_diff["insertions"] - spelling_diff["deletions"] ==
+            spelling_diff["line_delta"],
+            "Issue #398 seed line delta is inconsistent")
+    require(spelling_diff["previous_lines"] ==
+            spelling_identities[0]["line_count"] and
+            spelling_diff["current_lines"] ==
+            spelling_identities[1]["line_count"],
+            "Issue #398 seed diff does not match its exact pre/post "
+            "identities")
+    return spelling_identities
 
 
 def accepted_live_seed_line_counts(record: dict) -> set[int]:
@@ -693,15 +767,41 @@ def validate() -> dict:
         "cranelift  Compile to one native executable (default).",
         "fallback to MIR-to-C.",
     ]
+    absent_help_fragments: list[str] = []
     if live_seed_identity["seed_digest"] == "33b23ff4e8dab6c84365920bf3a2a674d7e3f5248646f6ffd69c8f7cc014083a":
         help_fragments.append(
             "mir-to-c, c  Emit C source to stdout (retained semantic oracle).")
+    elif record.get("phase398_seed_transition") is not None and \
+            live_seed_identity == {
+                key: value for key, value in
+                record["phase398_seed_transition"][
+                    "accepted_live_seed_identities"][1].items()
+                if key != "state"}:
+        # Issue #398's era. This seed is compiled from an entry that REMOVED
+        # the retained spellings, so its help cannot advertise them.
+        #
+        # Patch 24.13 wrote an era here for exactly this seed and then had to
+        # withdraw it, because the removal was deferred and its seed went on
+        # advertising the deprecation wording after all. The era is restored
+        # now that the removal actually lands, and gated on the seed IDENTITY
+        # rather than on a patch being registered -- so it describes the seed
+        # in front of it rather than an intention recorded elsewhere.
+        #
+        # Both halves are asserted. The deprecation wording must be GONE from
+        # the seed, and the rejection that replaces it must be in it. Dropping
+        # the first clause would let a seed that still advertises the removed
+        # backend pass as long as it also mentions the rejection.
+        help_fragments.extend([
+            "The generated-C backend was REMOVED in Phase 24; mir-to-c and c are rejected.",
+            "the generated-C backend was removed in Phase 24: ",
+            "Bootstrap C retirement is separate and deferred to Phase 25.",
+        ])
+        absent_help_fragments.extend([
+            "mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.",
+            "gust --backend mir-to-c <source.gst>",
+            "--backend <mir-to-c|c|cranelift>",
+        ])
     else:
-        # Patch 24.13 briefly added an era here for a seed compiled from an
-        # entry that REMOVED the retired spellings, whose help therefore could
-        # not advertise them. That removal is deferred until the live-C
-        # surface drains (issue #398), so 24.13's seed advertises the same
-        # deprecation wording as the era below and needs no era of its own.
         help_fragments.extend([
             "mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.",
             "Bootstrap C retirement is separate and deferred to Phase 25.",
@@ -709,6 +809,10 @@ def validate() -> dict:
     for help_fragment in help_fragments:
         require(help_fragment in seed_text,
                 f"regenerated seed lacks help contract fragment: {help_fragment}")
+    for help_fragment in absent_help_fragments:
+        require(help_fragment not in seed_text,
+                "the regenerated seed still carries a help contract fragment "
+                f"Issue #398 removed: {help_fragment}")
     require("- [x] Patch 22.6a — Default-Route Bootstrap Seed Reconvergence — DONE"
             in TASK.read_text(encoding="utf-8"),
             "TASK.md does not mark Patch 22.6a DONE")
