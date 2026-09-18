@@ -21,6 +21,7 @@
     "guard-cranelift-experimental-backend-suite-parallel": "Cranelift lane (Patch 24.16 cross-feature residue audit)",
     "guard-cranelift-local-binding-read-native-smoke": "Cranelift lane (Patch 24.16 cross-feature residue audit)",
     "guard-cranelift-phase10-packaging-help-ci": "Cranelift lane (Patch 24.16 cross-feature residue audit)",
+    "guard-cranelift-phase11-metadata-diagnostic-parity": "Issue #437: adjudicated repair_required, not wired, because executing it fails. The call case captures metadata policy ignored_with_proof where the guard's native_boundary branch requires recognized_preserved and contract phase13_10. Wiring needs the repair first; the finding is in issue437_parity_residue_adjudication.repair_required_finding.",
     "guard-cranelift-phase12-5-opening-contract": "Cranelift lane (Patch 24.16 cross-feature residue audit)",
     "guard-cranelift-phase9b-close": "Cranelift lane (Patch 24.16 cross-feature residue audit)",
     "guard-cranelift-phase9c-close": "Cranelift lane (Patch 24.16 cross-feature residue audit)",

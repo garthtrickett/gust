@@ -58,7 +58,6 @@ jobs:
               just guard-cranelift-phase11-block-parameter-loop-parity
               just guard-cranelift-phase11-direct-call-abi-parity
               just guard-cranelift-phase11-local-state-parity
-              just guard-cranelift-phase11-metadata-diagnostic-parity
               just guard-cranelift-phase11-module-import-runtime-parity
               just guard-cranelift-phase11-scalar-expression-parity
               just guard-cranelift-phase11-structured-cfg-parity

@@ -1217,6 +1217,13 @@ ACTION_DISAGREES_WITH_OUTCOME = (
 # the 24.15a split could not satisfy: the repair and this register have to
 # land in one tree.
 IS_LIVE_WITH_NO_EXECUTION_ROUTE = (
+    # Issue #437 wired 27 of the 28 parity recipes and left this one here
+    # deliberately: it is adjudicated repair_required, not wired, because it
+    # fails when executed. It keeps its level and its place in the justfile,
+    # so it is still live-by-mention with no execution route -- which is
+    # exactly what this register is for. The finding is in
+    # issue437_parity_residue_adjudication.repair_required_finding.
+    "guard-cranelift-phase11-metadata-diagnostic-parity",
     "guard-cranelift-phase13-composition-differential",
     "guard-cranelift-phase14-composition-differential",
     "guard-mir-feature-if-else-return-int-preservation",
@@ -1524,7 +1531,12 @@ def check_family_actions() -> None:
 # folds dynamic dispatch into the graph, so 24.16 starts from a number that
 # means what it says.
 MENTION_ONLY_LIVENESS = (
-    # Issue #437 removed 28 parity recipes from this ledger. That is what the
+    # Issue #437 left this one here: it is adjudicated repair_required
+    # rather than wired, because it fails when executed, so it still has no
+    # execution route and is still live only by mention. Removing it would
+    # claim a wiring that did not happen.
+    "guard-cranelift-phase11-metadata-diagnostic-parity",
+    # Issue #437 removed the other 27 parity recipes from this ledger. That is what the
     # "every removal is an adjudication" clause below asks for: they were not
     # dropped, they were WIRED. Each now has an execution route in
     # .github/workflows/phase24-parity-residue.yml, so it is no longer live
@@ -1653,17 +1665,30 @@ def check_stale_row_scoring(bodies: dict[str, str], workflow_seen: set[str],
 
     wired = sorted(adjudication.get("wired", []))
     retired = sorted(adjudication.get("retired", []))
+    # A third verdict, because two were not enough. One of the 28 fails when
+    # executed, and neither existing verdict is honest about it: "wired"
+    # would turn main red, and dropping it from the disposal to keep CI
+    # green is adjudicating by convenience -- the failure this whole check
+    # exists to correct.
+    #
+    # repair_required says what is true: it is still here, still
+    # dispatchable, deliberately not yet executed, and owned. It is a far
+    # smaller claim than 24.16's blanket pending -- one recipe, reproduced
+    # and diagnosed to a named field -- and it carries the finding so the
+    # next reader does not start from scratch.
+    repair = sorted(adjudication.get("repair_required", []))
     # Every pending recipe must get exactly one verdict. A recipe in neither
     # list has been dropped from the adjudication silently; one in both is
     # incoherent. Either way the disposal is partial, which the contract
     # rejects by name.
-    require(sorted(set(wired) | set(retired)) ==
+    require(sorted(set(wired) | set(retired) | set(repair)) ==
             sorted(pending.get("recipes", [])),
             "the adjudication does not dispose of exactly the pending set: "
-            f"{sorted(set(wired) ^ set(pending.get('recipes', [])))[:6]}")
-    require(not set(wired) & set(retired),
-            "a recipe is adjudicated both wired and retired: "
-            f"{sorted(set(wired) & set(retired))}")
+            f"{sorted((set(wired) | set(retired) | set(repair)) ^ set(pending.get('recipes', [])))[:6]}")
+    require(len(wired) + len(retired) + len(repair) ==
+            len(set(wired) | set(retired) | set(repair)),
+            "a recipe carries more than one verdict: "
+            f"{sorted((set(wired) & set(retired)) | (set(wired) & set(repair)) | (set(retired) & set(repair)))}")
 
     adjudicated_bodies = recipe_bodies()
     for recipe in wired:
@@ -1682,6 +1707,23 @@ def check_stale_row_scoring(bodies: dict[str, str], workflow_seen: set[str],
                 f"a recipe adjudicated WIRE is not executed by anything: "
                 f"{recipe}. The verdict was to give it an execution route; "
                 "without one the adjudication is a word in the registry.")
+    for recipe in repair:
+        # Deliberately NOT executed, and that has to be checked in both
+        # directions. It must still be here and still dispatchable, so the
+        # verdict cannot be used to quietly park a recipe; and it must not
+        # be in the executor, so a red guard cannot reach main by being
+        # added to a shard without re-adjudication.
+        require(recipe in adjudicated_bodies and recipe in levels,
+                "a recipe adjudicated repair_required is gone or unlevelled: "
+                f"{recipe}. That is a retirement, and it needs that verdict.")
+        require(recipe not in workflow_seen and recipe not in make_seen,
+                "a recipe adjudicated repair_required is executed: "
+                f"{recipe}. It is known red; wiring it needs the repair "
+                "first and a new verdict after it.")
+    require(bool(adjudication.get("repair_required_finding")) == bool(repair),
+            "a repair_required verdict carries no finding, so the next "
+            "reader has to rediscover why it is red")
+
     for recipe in retired:
         require(recipe not in adjudicated_bodies,
                 f"a recipe adjudicated RETIRE is still in the justfile: "
@@ -1689,11 +1731,15 @@ def check_stale_row_scoring(bodies: dict[str, str], workflow_seen: set[str],
         require(recipe not in workflow_seen and recipe not in make_seen,
                 f"a recipe adjudicated RETIRE is still executed: {recipe}")
 
-    require(not parity_residue,
-            "parity recipes are live by mention alone again: "
-            f"{parity_residue}. Every one was adjudicated by Issue #437; a "
-            "recipe returning to this class has lost the execution route "
-            "that adjudication gave it.")
+    # The residue is exactly the repair_required set -- not empty, and not
+    # whatever happens to be left. A wired recipe falling back into it has
+    # lost the execution route the adjudication gave it; a repair_required
+    # one leaving it has been wired without the repair.
+    require(parity_residue == repair,
+            "the mention-only parity residue is not the repair_required "
+            f"set: {parity_residue} against {repair}. A wired recipe here "
+            "has lost its execution route; a repair_required recipe missing "
+            "from here has been wired while still red.")
 
     # The execution route is checked against the file that provides it, not
     # taken on the registry's word. A workflow that stopped naming a wired
