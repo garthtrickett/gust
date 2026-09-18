@@ -1217,15 +1217,7 @@ ACTION_DISAGREES_WITH_OUTCOME = (
 # the 24.15a split could not satisfy: the repair and this register have to
 # land in one tree.
 IS_LIVE_WITH_NO_EXECUTION_ROUTE = (
-    "guard-cranelift-phase11-block-parameter-loop-parity",
-    "guard-cranelift-phase11-direct-call-abi-parity",
-    "guard-cranelift-phase11-local-state-parity",
-    "guard-cranelift-phase11-metadata-diagnostic-parity",
-    "guard-cranelift-phase11-module-import-runtime-parity",
-    "guard-cranelift-phase11-scalar-expression-parity",
-    "guard-cranelift-phase11-structured-cfg-parity",
     "guard-cranelift-phase13-composition-differential",
-    "guard-cranelift-phase13-source-metadata-parity",
     "guard-cranelift-phase14-composition-differential",
     "guard-mir-feature-if-else-return-int-preservation",
     "guard-mir-feature-local-binding-read-preservation",
@@ -1532,6 +1524,11 @@ def check_family_actions() -> None:
 # folds dynamic dispatch into the graph, so 24.16 starts from a number that
 # means what it says.
 MENTION_ONLY_LIVENESS = (
+    # Issue #437 removed 28 parity recipes from this ledger. That is what the
+    # "every removal is an adjudication" clause below asks for: they were not
+    # dropped, they were WIRED. Each now has an execution route in
+    # .github/workflows/phase24-parity-residue.yml, so it is no longer live
+    # by mention alone and no longer belongs here.
     "bootstrap",
     "check",
     "default",
@@ -1544,39 +1541,11 @@ MENTION_ONLY_LIVENESS = (
     "guard-cranelift-experimental-backend-suite-parallel",
     "guard-cranelift-local-binding-read-native-smoke",
     "guard-cranelift-phase10-packaging-help-ci",
-    "guard-cranelift-phase11-block-parameter-loop-parity",
     "guard-cranelift-phase11-ci-family",
-    "guard-cranelift-phase11-direct-call-abi-parity",
-    "guard-cranelift-phase11-local-state-parity",
-    "guard-cranelift-phase11-metadata-diagnostic-parity",
-    "guard-cranelift-phase11-module-import-runtime-parity",
     "guard-cranelift-phase11-registry-differential",
-    "guard-cranelift-phase11-scalar-expression-parity",
-    "guard-cranelift-phase11-structured-cfg-parity",
     "guard-cranelift-phase12-5-opening-contract",
-    "guard-cranelift-phase13-broader-imported-runtime-calls-parity",
     "guard-cranelift-phase13-composition-differential",
-    "guard-cranelift-phase13-direct-call-graph-parity",
-    "guard-cranelift-phase13-general-loop-parity",
-    "guard-cranelift-phase13-multiple-locals-assignments-parity",
-    "guard-cranelift-phase13-nested-structured-cfg-parity",
-    "guard-cranelift-phase13-parameter-argument-parity",
-    "guard-cranelift-phase13-scalar-expression-parity",
-    "guard-cranelift-phase13-source-metadata-parity",
-    "guard-cranelift-phase14-aggregate-parity",
-    "guard-cranelift-phase14-array-slice-parity",
     "guard-cranelift-phase14-composition-differential",
-    "guard-cranelift-phase14-enum-parity",
-    "guard-cranelift-phase14-integer-conversion-parity",
-    "guard-cranelift-phase14-memory-access-parity",
-    "guard-cranelift-phase14-pointer-memory-parity",
-    "guard-cranelift-phase14-pointer-parity",
-    "guard-cranelift-phase14-primitive-layout-parity",
-    "guard-cranelift-phase14-stack-slot-parity",
-    "guard-cranelift-phase14-string-view-parity",
-    "guard-cranelift-phase14-struct-parity",
-    "guard-cranelift-phase14-structs-enums-parity",
-    "guard-cranelift-phase20-resource-acquisition-parity",
     "guard-cranelift-phase9b-close",
     "guard-cranelift-phase9c-close",
     "guard-cranelift-phase9f-opening-contract",
@@ -1640,58 +1609,106 @@ def check_stale_row_scoring(bodies: dict[str, str], workflow_seen: set[str],
     # adjudication. What is asserted here is the BASIS -- if any of them gains
     # a level assignment or an executor, this fails and the class has to be
     # re-adjudicated rather than silently shrinking.
+    # Issue #437 adjudicates the 28. The verdict is WIRE, so every check
+    # here inverts: where Patch 24.16 required these recipes to be
+    # unreachable, unlevelled and pending, this requires each to be executed,
+    # levelled, and disposed of by a registered verdict.
+    #
+    # That inversion is the point. 24.16's version made continued
+    # unreachability the passing state, which is why #427 flagged it: all 28
+    # evidence owners could test nothing and the audit stayed green. Now the
+    # audit goes red if any of them stops running.
     parity_residue = sorted(
         recipe for recipe in MENTION_ONLY_LIVENESS if "parity" in recipe)
     levels = json.loads(
         (ROOT / "scripts" / "cranelift_test_levels.json").read_text(
-            encoding="utf-8"))
-    assigned = sorted(r for r in parity_residue if r in levels)
-    require(
-        not assigned,
-        f"a mention-only parity guard gained a level assignment: {assigned}. "
-        "That changes its basis from 'named by a registry' to 'dispatchable "
-        "by CI', so it leaves this class and needs its own adjudication.",
-    )
-    executed = sorted(set(parity_residue) & (workflow_seen | make_seen))
-    require(
-        not executed,
-        f"a mention-only parity guard is now executed: {executed}. It "
-        "protects a live invariant again and must leave the residue.",
-    )
-    require(
-        len(parity_residue) == 28,
-        f"the parity residue moved from 28 to {len(parity_residue)} without "
-        "adjudication",
-    )
-    # Raised in review on #427 (P1): the two checks above make continued
-    # UNREACHABILITY the passing state, so all 28 evidence owners could test
-    # nothing while this audit passed -- which contradicts Patch 24.16's own
-    # exit gate that every survivor protect a live invariant.
-    #
-    # Adjudicating them is per-guard work: most compared the native route
-    # against MIR-to-C, so each needs a decision about whether the invariant
-    # survives the retirement or went with it. That is issue #437.
-    #
-    # What changes here is the BASIS on which this passes. The residue must be
-    # registered as pending adjudication against a named owner, so the passing
-    # state is "declared pending", not "correctly unreachable". The structural
-    # falsifiers above are untouched: gaining a level or an executor still
-    # fails and forces re-adjudication.
-    pending = json.loads(REGISTRY.read_text(encoding="utf-8")).get(
-        "phase24_16_residue_audit", {}).get("parity_residue_adjudication")
+            encoding="utf-8"))["guards"]
+    registry_doc = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    pending = registry_doc.get("phase24_16_residue_audit", {}).get(
+        "parity_residue_adjudication")
+    # 24.16's record stays exactly as 24.16 wrote it. It is still true of
+    # 24.16 -- these recipes WERE pending then -- and the adjudication links
+    # to it rather than editing it.
     require(isinstance(pending, dict) and
             pending.get("contract_version") ==
             "phase24_16_parity_residue_pending_v1" and
             pending.get("status") == "pending_adjudication" and
-            pending.get("owner_issue") == 437 and
-            pending.get("unreachability_is_not_the_end_state") == "declared",
-            "the parity residue is not registered as pending adjudication, so "
-            "this audit would pass on the bare fact that 28 guards are "
-            "unreachable")
-    require(sorted(pending.get("recipes", [])) == parity_residue,
-            "the registered pending-adjudication set is not the parity "
-            "residue this audit measured: "
-            f"{sorted(set(pending.get('recipes', [])) ^ set(parity_residue))[:6]}")
+            pending.get("owner_issue") == 437,
+            "Patch 24.16's pending-adjudication record is missing or "
+            "reworded; the Issue #437 adjudication is a successor to it, not "
+            "a replacement for it")
+    adjudication = registry_doc.get("issue437_parity_residue_adjudication")
+    require(isinstance(adjudication, dict) and
+            adjudication.get("contract_version") ==
+            "issue437_parity_residue_adjudication_v1" and
+            adjudication.get("predecessor_contract_version") ==
+            pending["contract_version"] and
+            adjudication.get("partial_or_unregistered_adjudication") ==
+            "rejected" and
+            adjudication.get("unreachability_is_not_the_end_state") ==
+            "discharged",
+            "the parity residue has no registered adjudication, so this "
+            "audit would pass on the bare fact that 28 guards are "
+            "unreachable -- the defect #427 raised")
+
+    wired = sorted(adjudication.get("wired", []))
+    retired = sorted(adjudication.get("retired", []))
+    # Every pending recipe must get exactly one verdict. A recipe in neither
+    # list has been dropped from the adjudication silently; one in both is
+    # incoherent. Either way the disposal is partial, which the contract
+    # rejects by name.
+    require(sorted(set(wired) | set(retired)) ==
+            sorted(pending.get("recipes", [])),
+            "the adjudication does not dispose of exactly the pending set: "
+            f"{sorted(set(wired) ^ set(pending.get('recipes', [])))[:6]}")
+    require(not set(wired) & set(retired),
+            "a recipe is adjudicated both wired and retired: "
+            f"{sorted(set(wired) & set(retired))}")
+
+    adjudicated_bodies = recipe_bodies()
+    for recipe in wired:
+        # The inversion, stated three ways, because "wired" is a claim about
+        # three different things and a recipe can lose any one of them
+        # independently: it must still exist, still be dispatchable, and
+        # still be reached by something that runs.
+        require(recipe in adjudicated_bodies,
+                f"a recipe adjudicated WIRE is gone from the justfile: "
+                f"{recipe}. Retiring it is a different verdict and needs "
+                "re-adjudication, not a deletion.")
+        require(recipe in levels,
+                f"a recipe adjudicated WIRE has no level assignment: "
+                f"{recipe}, so the level-driven runners cannot dispatch it")
+        require(recipe in workflow_seen or recipe in make_seen,
+                f"a recipe adjudicated WIRE is not executed by anything: "
+                f"{recipe}. The verdict was to give it an execution route; "
+                "without one the adjudication is a word in the registry.")
+    for recipe in retired:
+        require(recipe not in adjudicated_bodies,
+                f"a recipe adjudicated RETIRE is still in the justfile: "
+                f"{recipe}")
+        require(recipe not in workflow_seen and recipe not in make_seen,
+                f"a recipe adjudicated RETIRE is still executed: {recipe}")
+
+    require(not parity_residue,
+            "parity recipes are live by mention alone again: "
+            f"{parity_residue}. Every one was adjudicated by Issue #437; a "
+            "recipe returning to this class has lost the execution route "
+            "that adjudication gave it.")
+
+    # The execution route is checked against the file that provides it, not
+    # taken on the registry's word. A workflow that stopped naming a wired
+    # recipe would otherwise leave the liveness signal to whatever else
+    # happened to reach it.
+    executor = ROOT / str(adjudication.get("executor_workflow", ""))
+    require(executor.is_file(),
+            "the registered executor workflow is missing: "
+            f"{adjudication.get('executor_workflow')}")
+    executor_text = executor.read_text(encoding="utf-8")
+    unnamed = [recipe for recipe in wired
+               if f"just {recipe}" not in executor_text]
+    require(not unnamed,
+            f"the executor workflow does not run every wired recipe: "
+            f"{unnamed[:6]}")
 
     # Patch 24.16's adjudication of the native-smoke population.
     #

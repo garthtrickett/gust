@@ -101,6 +101,7 @@ TOP_FIELDS = {
     "phase24_14_toolchain_removal",
     "phase24_15a_reachability_repair",
     "phase24_15_package_docs_registry",
+    "issue437_parity_residue_adjudication",
     "phase24_16_residue_audit",
     "phase24_closure",
     "phase398_retained_spelling_removal",

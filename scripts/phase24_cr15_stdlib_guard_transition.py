@@ -2258,6 +2258,43 @@ def normalize_phase23_text_surfaces(
     # replay, the seed, and the user documentation -- and it is the only one
     # that REMOVES a surface: tests/e2e_codegen_assertions.gst stops matching
     # the content patterns once its invocations become replays.
+    # Issue #437 is newest, so it runs FIRST and projects the tree back to
+    # the state Issue #398's successor was registered against. Same
+    # newest-first discipline as every link below it.
+    parity_surface = registry.get(
+        "issue437_parity_residue_adjudication", {}).get(
+            "text_surface_successor")
+    if parity_surface is not None:
+        require(parity_surface.get("contract_version") ==
+                "issue437_text_surface_successor_v1" and
+                parity_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Issue #437 text surface successor drifted")
+        parity_paths = list(parity_surface["registered_changed_paths"])
+        parity_pre = {row["path"]: row for row
+                      in parity_surface["previous_changed_text_surfaces"]}
+        parity_post = {row["path"]: row for row
+                       in parity_surface["current_changed_text_surfaces"]}
+        require(sorted(parity_pre) == sorted(parity_paths) ==
+                sorted(parity_post),
+                "Issue #437 registered paths and rows disagree")
+        parity_live = {row["path"]: row for row in rows
+                       if row["path"] in parity_paths}
+        require(sorted(parity_live) == sorted(parity_paths),
+                "Issue #437 registered text surface is missing from the scan")
+        for path in parity_paths:
+            require(parity_live[path] in (parity_pre[path],
+                                          parity_post[path]),
+                    "Issue #437 changed text surfaces are partial or "
+                    f"substituted: {path}")
+        parity_added = set(parity_surface["added_text_surfaces"])
+        rows = [dict(parity_pre.get(row["path"], row)) for row in rows
+                if row["path"] not in parity_added]
+        rows = sorted(rows + [copy.deepcopy(r) for r
+                              in parity_surface["removed_text_surfaces"]],
+                      key=lambda row: str(row["path"]))
+        by_path = {row["path"]: row for row in rows}
+
     spelling_surface = registry.get(
         "phase398_retained_spelling_removal", {}).get("text_surface_successor")
     if spelling_surface is not None:

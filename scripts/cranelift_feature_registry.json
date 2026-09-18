@@ -24165,21 +24165,13 @@
         "guard-cranelift-phase19-composition-parity"
       ],
       "is_live_with_no_execution_route": [
-        "guard-cranelift-phase11-block-parameter-loop-parity",
-        "guard-cranelift-phase11-direct-call-abi-parity",
-        "guard-cranelift-phase11-local-state-parity",
-        "guard-cranelift-phase11-metadata-diagnostic-parity",
-        "guard-cranelift-phase11-module-import-runtime-parity",
-        "guard-cranelift-phase11-scalar-expression-parity",
-        "guard-cranelift-phase11-structured-cfg-parity",
-        "guard-cranelift-phase13-composition-differential",
-        "guard-cranelift-phase13-source-metadata-parity",
-        "guard-cranelift-phase14-composition-differential",
-        "guard-mir-feature-if-else-return-int-preservation",
-        "guard-mir-feature-local-binding-read-preservation",
-        "guard-mir-feature-local-binding-read-provenance-metadata-preservation",
-        "guard-mir-feature-return-int-preservation"
-      ],
+          "guard-cranelift-phase13-composition-differential",
+          "guard-cranelift-phase14-composition-differential",
+          "guard-mir-feature-if-else-return-int-preservation",
+          "guard-mir-feature-local-binding-read-preservation",
+          "guard-mir-feature-local-binding-read-provenance-metadata-preservation",
+          "guard-mir-feature-return-int-preservation"
+        ],
       "owner": "24.16"
     },
     "status": "patch24_11_complete",
@@ -27032,7 +27024,177 @@
     "change_reason": "Patch 24.17 qualified ONE Historical Full run on the exact merged retirement main 927892b3. Recorded by identity -- run id, full SHA, event, conclusion, job population and budgets -- because 'the run was green' is an adjective and cannot be checked later. The dispatched run 35194127770 was green on the same SHA; the scheduled run is cited because the qualifier takes the LATEST run, which is what stops a stale green shadowing a newer red.",
     "status": "patch24_18_complete"
   },
-  "phase24_16_residue_audit": {
+  "issue437_parity_residue_adjudication": {
+    "text_surface_successor": {
+      "added_text_surfaces": [],
+      "change_reason": "Wiring the 28 moves three surfaces: the registry script and schema list that gains this issue's top-level key, the inventory script whose two stale-row registers shrink by the adjudicated recipes, and the reachability allowlist the ratchet asked to tighten once they stopped being unreachable. The executor workflow itself is not here because it matches no surface pattern -- it names recipes, not the retired backend. The reachability allowlist is NOT registered here. It is a class-living surface already pinned by Patch 24.15a and Patch 24.16 and projected onto a registered row before this link runs, so claiming it would assert against a row that has already been replaced.",
+      "contract_version": "issue437_text_surface_successor_v1",
+      "current_changed_text_surfaces": [
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "17df2b1c08d1c3f1708bcefad25397c3c43c96189ab51664390bcebf0b0768ea",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "35b4c59c090e48693ca8c58cddef18be9cc421034348827be89ad3f4f0c49f3b",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 33,
+            "generated_c_contract": 8,
+            "mir_to_c_name": 86
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase24_retirement_consumer_inventory.py",
+          "removal_phase": "24"
+        }
+      ],
+      "partial_extra_or_substituted_surface": "rejected",
+      "paths_judged_elsewhere": [
+        "scripts/guard_reachability_allowlist.json"
+      ],
+      "previous_changed_text_surfaces": [
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "5e218347e888ecf62414c06851e563bb6f87c7a6e1a7c531347702ddf774c110",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "5d6cd96d914fa0250b334ea30e51192c15047d6e0be596891f8c36aff297801f",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 33,
+            "generated_c_contract": 8,
+            "mir_to_c_name": 87
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase24_retirement_consumer_inventory.py",
+          "removal_phase": "24"
+        }
+      ],
+      "registered_changed_paths": [
+        "scripts/cranelift_registry.py",
+        "scripts/phase24_retirement_consumer_inventory.py"
+      ],
+      "removed_text_surfaces": [],
+      "status": "issue437_in_progress"
+    },
+    "change_reason": "Patch 24.16 measured these 28 mention-only parity recipes and registered them as pending adjudication against this issue. The adjudication is WIRE, for all 28, and the evidence is that retiring them would delete working coverage rather than dead weight: each of the eleven differential harnesses they drive has exactly one caller -- the unexecuted parity recipe -- and no executed caller at all. Every one carries zero retired-backend spellings, so they already survived the Phase 24 retirement; the contract half of each pair is executed by a workflow and only the differential half was orphaned. One recipe of each of the four shapes was run end to end and passes.",
+    "contract_version": "issue437_parity_residue_adjudication_v1",
+    "evidence": {
+      "differential_harnesses_driven": 11,
+      "differential_harnesses_with_an_executed_caller": 0,
+      "measured_recipe_seconds": {
+        "guard-cranelift-phase11-scalar-expression-parity": 89,
+        "guard-cranelift-phase13-scalar-expression-parity": 182,
+        "guard-cranelift-phase14-enum-parity": 121,
+        "guard-cranelift-phase20-resource-acquisition-parity": 75
+      },
+      "retired_backend_spellings_in_driven_harnesses": 0,
+      "shapes_measured": 4
+    },
+    "executor_workflow": ".github/workflows/phase24-parity-residue.yml",
+    "level_assignment_check_was_vacuous": "Patch 24.16 tested `recipe in levels` against the whole cranelift_test_levels.json document, whose top-level keys are guards, levels and version, so the check could never fire. All 28 carry a Level 2 assignment under levels['guards'], which is the state that check existed to detect and the opposite of what the comment beside it claimed.",
+    "partial_or_unregistered_adjudication": "rejected",
+    "predecessor_contract_version": "phase24_16_parity_residue_pending_v1",
+    "retired": [],
+    "shards": {
+      "phase11-parity": [
+        "guard-cranelift-phase11-block-parameter-loop-parity",
+        "guard-cranelift-phase11-direct-call-abi-parity",
+        "guard-cranelift-phase11-local-state-parity",
+        "guard-cranelift-phase11-metadata-diagnostic-parity",
+        "guard-cranelift-phase11-module-import-runtime-parity",
+        "guard-cranelift-phase11-scalar-expression-parity",
+        "guard-cranelift-phase11-structured-cfg-parity"
+      ],
+      "phase13-parity": [
+        "guard-cranelift-phase13-broader-imported-runtime-calls-parity",
+        "guard-cranelift-phase13-direct-call-graph-parity",
+        "guard-cranelift-phase13-general-loop-parity",
+        "guard-cranelift-phase13-multiple-locals-assignments-parity",
+        "guard-cranelift-phase13-nested-structured-cfg-parity",
+        "guard-cranelift-phase13-parameter-argument-parity",
+        "guard-cranelift-phase13-scalar-expression-parity",
+        "guard-cranelift-phase13-source-metadata-parity"
+      ],
+      "phase14-parity-a": [
+        "guard-cranelift-phase14-aggregate-parity",
+        "guard-cranelift-phase14-array-slice-parity",
+        "guard-cranelift-phase14-enum-parity",
+        "guard-cranelift-phase14-integer-conversion-parity",
+        "guard-cranelift-phase14-memory-access-parity",
+        "guard-cranelift-phase14-pointer-memory-parity",
+        "guard-cranelift-phase14-pointer-parity"
+      ],
+      "phase14-parity-b": [
+        "guard-cranelift-phase14-primitive-layout-parity",
+        "guard-cranelift-phase14-stack-slot-parity",
+        "guard-cranelift-phase14-string-view-parity",
+        "guard-cranelift-phase14-struct-parity",
+        "guard-cranelift-phase14-structs-enums-parity",
+        "guard-cranelift-phase20-resource-acquisition-parity"
+      ]
+    },
+    "status": "adjudicated",
+    "unreachability_is_not_the_end_state": "discharged",
+    "verdict": "wire",
+    "wired": [
+      "guard-cranelift-phase11-block-parameter-loop-parity",
+      "guard-cranelift-phase11-direct-call-abi-parity",
+      "guard-cranelift-phase11-local-state-parity",
+      "guard-cranelift-phase11-metadata-diagnostic-parity",
+      "guard-cranelift-phase11-module-import-runtime-parity",
+      "guard-cranelift-phase11-scalar-expression-parity",
+      "guard-cranelift-phase11-structured-cfg-parity",
+      "guard-cranelift-phase13-broader-imported-runtime-calls-parity",
+      "guard-cranelift-phase13-direct-call-graph-parity",
+      "guard-cranelift-phase13-general-loop-parity",
+      "guard-cranelift-phase13-multiple-locals-assignments-parity",
+      "guard-cranelift-phase13-nested-structured-cfg-parity",
+      "guard-cranelift-phase13-parameter-argument-parity",
+      "guard-cranelift-phase13-scalar-expression-parity",
+      "guard-cranelift-phase13-source-metadata-parity",
+      "guard-cranelift-phase14-aggregate-parity",
+      "guard-cranelift-phase14-array-slice-parity",
+      "guard-cranelift-phase14-enum-parity",
+      "guard-cranelift-phase14-integer-conversion-parity",
+      "guard-cranelift-phase14-memory-access-parity",
+      "guard-cranelift-phase14-pointer-memory-parity",
+      "guard-cranelift-phase14-pointer-parity",
+      "guard-cranelift-phase14-primitive-layout-parity",
+      "guard-cranelift-phase14-stack-slot-parity",
+      "guard-cranelift-phase14-string-view-parity",
+      "guard-cranelift-phase14-struct-parity",
+      "guard-cranelift-phase14-structs-enums-parity",
+      "guard-cranelift-phase20-resource-acquisition-parity"
+    ]
+  },  "phase24_16_residue_audit": {
       "parity_residue_adjudication": {
         "change_reason": "Patch 24.16 measured these 28 mention-only parity recipes and pinned them absent from every execution route, which made continued unreachability the passing state and contradicted this patch's own exit gate that every survivor protect a live invariant. Most of them compared the native route against MIR-to-C, so each needs a per-guard decision about whether the invariant survives the retirement or went with it. Registered as pending against issue #437 so the audit passes on a declared deferral rather than on the bare fact of unreachability.",
         "contract_version": "phase24_16_parity_residue_pending_v1",

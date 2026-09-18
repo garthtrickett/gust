@@ -1,0 +1,94 @@
+name: Cranelift Phase 24 Parity Residue
+
+# Issue #437. Patch 24.16 measured 28 parity recipes that nothing
+# executes and registered them as pending adjudication. The adjudication
+# is to WIRE them, and this workflow is the execution route that makes
+# that true -- without it the verdict would be a word in the registry.
+#
+# A new workflow rather than a case in `guard-cloud-heavy-shard`: that
+# dispatcher sits near the top of the justfile, whose Patch 24.0c
+# invocation manifest is keyed on line numbers, so inserting there moves
+# every row below it. A workflow is an execution route by the same
+# measure -- guard_reachability's workflow_roots -- and costs no
+# renumbering.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        shard:
+          - phase11-parity
+          - phase13-parity
+          - phase14-parity-a
+          - phase14-parity-b
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install system dependencies
+        run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - name: Install just
+        run: |
+          bash scripts/install-just-ci.sh "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Build the compiler and native package once
+        run: |
+          make gust
+          make phase10-native-package
+      - name: Parity shard
+        env:
+          GUST_RUNNER_SKIP_BUILD: '1'
+        run: |
+          case "${{ matrix.shard }}" in
+            phase11-parity)
+              just guard-cranelift-phase11-block-parameter-loop-parity
+              just guard-cranelift-phase11-direct-call-abi-parity
+              just guard-cranelift-phase11-local-state-parity
+              just guard-cranelift-phase11-metadata-diagnostic-parity
+              just guard-cranelift-phase11-module-import-runtime-parity
+              just guard-cranelift-phase11-scalar-expression-parity
+              just guard-cranelift-phase11-structured-cfg-parity
+              ;;
+            phase13-parity)
+              just guard-cranelift-phase13-broader-imported-runtime-calls-parity
+              just guard-cranelift-phase13-direct-call-graph-parity
+              just guard-cranelift-phase13-general-loop-parity
+              just guard-cranelift-phase13-multiple-locals-assignments-parity
+              just guard-cranelift-phase13-nested-structured-cfg-parity
+              just guard-cranelift-phase13-parameter-argument-parity
+              just guard-cranelift-phase13-scalar-expression-parity
+              just guard-cranelift-phase13-source-metadata-parity
+              ;;
+            phase14-parity-a)
+              just guard-cranelift-phase14-aggregate-parity
+              just guard-cranelift-phase14-array-slice-parity
+              just guard-cranelift-phase14-enum-parity
+              just guard-cranelift-phase14-integer-conversion-parity
+              just guard-cranelift-phase14-memory-access-parity
+              just guard-cranelift-phase14-pointer-memory-parity
+              just guard-cranelift-phase14-pointer-parity
+              ;;
+            phase14-parity-b)
+              just guard-cranelift-phase14-primitive-layout-parity
+              just guard-cranelift-phase14-stack-slot-parity
+              just guard-cranelift-phase14-string-view-parity
+              just guard-cranelift-phase14-struct-parity
+              just guard-cranelift-phase14-structs-enums-parity
+              just guard-cranelift-phase20-resource-acquisition-parity
+              ;;
+            *) echo "unknown parity shard: ${{ matrix.shard }}" >&2; exit 1 ;;
+          esac
