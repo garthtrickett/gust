@@ -359,6 +359,100 @@ def gst_entry_emits(key: str, lines: list) -> bool:
     return False
 
 
+def looks_like_path(token: str) -> bool:
+    """True when a token could name a file, so the one-hop can follow it.
+
+    Issue #436. The hop below split the writing line and followed EVERY
+    token, so it grepped the script for `-c`, `-o` and `cc` and classified
+    from whatever those substrings happened to hit. Measured on
+    scripts/phase17_retained_c_runtime_parity.sh, following `-c` reached a
+    line that reads as native-object and that is how arena.o -- an object
+    compiled from tracked hand-written runtime C -- acquired a
+    Cranelift-output classification.
+
+    A flag is not a file, and neither is a bare word with no separator in
+    it. Requiring a `/` or a `.` keeps the hop on things that can name a
+    path and off the argv furniture around them.
+    """
+    bare = strip_quotes(token)
+    if not bare or bare.startswith("-"):
+        return False
+    return "/" in bare or "." in bare
+
+
+def classify_writer_inputs(line: str) -> str:
+    """Classify a product from the tracked source its writing line compiles.
+
+    Issue #436. Preferring the writing line is only half the repair: the
+    generic classifier matches on how a line SPELLS its producer -- a
+    backend flag, a cargo invocation, a heredoc -- and
+
+        cc -O2 -c src/runtime/arena.c -I src/runtime -o "$build_dir/arena.o"
+
+    spells none of them. It returns nothing, resolution falls through, and
+    the object gets whatever some later heuristic offers.
+
+    Measured on that exact line: before the writer preference, arena.o was
+    classified script-authored-c from an `echo` on line 52 that merely
+    names it in a note; after, it fell through to native-object. Both are
+    wrong. It is an object compiled from tracked hand-written runtime C, so
+    it inherits that source's class.
+
+    Only tracked files count. A `$`-bearing token names something this
+    function cannot resolve, and a path that is not in the repo is not
+    hand-written runtime C by any evidence available here.
+    """
+    tokens = split_tokens(line)
+    skip_next = False
+    for token in tokens:
+        bare = strip_quotes(token)
+        if skip_next:
+            skip_next = False
+            continue
+        if bare in FLAG_WITH_VALUE:
+            skip_next = True
+            continue
+        if bare.startswith("-") or "$" in bare:
+            continue
+        candidate = ROOT / bare.lstrip("./")
+        if candidate.is_file() and candidate.suffix in (".c", ".h"):
+            return RETAINED_RUNTIME_C
+    return ""
+
+
+def writes_key(line: str, key: str) -> bool:
+    """True when this line WRITES the named file, not merely mentions it.
+
+    Issue #436: resolve_input picked a producer from any line naming the
+    file, so for a justfile recipe it selected whichever mention happened to
+    classify -- an unrelated `rg` over the file, a `cat` that reads it, a
+    comment. The line that actually creates a file is the one that says what
+    produced it; every other mention is a consumer and says nothing.
+
+    Four shapes count as writing, and they are the four this tree uses:
+    a redirection, an `-o` output, a `cp`/`mv` destination, and the worker's
+    positional object output. A fifth shape appearing later fails closed --
+    it simply is not a writer here, so resolution falls back to the mention
+    scan rather than silently trusting a consumer.
+    """
+    tokens = split_tokens(line)
+    for index, token in enumerate(tokens):
+        if token.startswith(">"):
+            if key in strip_quotes(token.lstrip(">")):
+                return True
+        if token in (">", ">>", "-o") and index + 1 < len(tokens):
+            if key in strip_quotes(tokens[index + 1]):
+                return True
+    if not tokens:
+        return False
+    head = strip_quotes(tokens[0]).rsplit("/", 1)[-1]
+    if head in ("cp", "mv", "install") and key in strip_quotes(tokens[-1]):
+        return True
+    if NATIVE_EMIT.search(line) and key in strip_quotes(tokens[-1]):
+        return True
+    return False
+
+
 def mention_lines(key: str, lines: list, skip_lineno: int) -> list:
     """Every line naming the file, not only those spelling `-o` or `>`.
 
@@ -506,7 +600,19 @@ def resolve_input(token: str, lines: list, lineno: int) -> dict:
         # name says the file came from a recording, and this proves the
         # script is one that makes recordings.
         source = "\n".join(text for _, text in scope)
-        found = {classify_producer(line, source) for _, line in mentions}
+        # Issue #436: writers first. A line that creates the file says what
+        # produced it; a line that reads it says nothing, and picking from
+        # the mention set at large is how a justfile recipe's input got
+        # classified from an unrelated `rg` over the same path.
+        #
+        # Fall back to the full mention set when no line writes the file,
+        # rather than reporting no provenance: the positional worker output
+        # and the build-system cases below are still resolved that way, and
+        # narrowing this without them would turn resolvable inputs into
+        # failures.
+        writers = [row for row in mentions if writes_key(row[1], variant)]
+        found = {classify_producer(line, source)
+                 for _, line in (writers or mentions)}
         found.discard("")
 
         # `cat src/runtime.c "$dir/x.c" > "$dir/x-final.c"` makes the final file
@@ -514,6 +620,8 @@ def resolve_input(token: str, lines: list, lineno: int) -> dict:
         if not found:
             for _, line in mentions:
                 for part in split_tokens(line):
+                    if not looks_like_path(part):
+                        continue
                     part_key = tail_key(part)
                     if not part_key or part_key == variant:
                         continue
@@ -526,6 +634,20 @@ def resolve_input(token: str, lines: list, lineno: int) -> dict:
             klass = build_system_produces(variant, scope)
             if klass:
                 found.add(klass)
+
+        # LAST, and the ordering is load-bearing. A writing line that spells
+        # no producer still says what it compiled -- but only after the
+        # one-hop above has had its say, because
+        #
+        #     cat src/runtime.c "$dir/stage2.c" > "$dir/stage2-final.c"
+        #
+        # writes a file whose tracked input is the runtime prelude and whose
+        # MEANING is the emitted half. Running this first classified
+        # stage2-final.c as retained-runtime-c and hid a backend product,
+        # which is worse than the gap it was meant to close.
+        if writers and not found:
+            found = {classify_writer_inputs(line) for _, line in writers}
+            found.discard("")
 
         classes |= found
 
@@ -609,9 +731,36 @@ def scan_makefile() -> dict:
 
 
 def shell_scripts() -> list:
+    r"""Every file this guard reads for C toolchain sites.
+
+    Issue #436 wants the justfile in here, and it is not, deliberately.
+
+    Adding `ROOT / "justfile"` makes the guard GREEN -- 99 invocations
+    instead of 35, no unresolved provenance -- and the green is worthless.
+    Measured on this tree with the resolver repairs already in place: 117
+    justfile inputs, 105 of them classified `rust-archive`, against exactly
+    one in the whole of the rest of the repository. The samples say what
+    that is worth:
+
+        tiny_cranelift_return_int_main.c  -> rust-archive  (a printf shim)
+        tiny_cranelift_return_int.o       -> rust-archive  (a native object)
+
+    The mechanism is build_system_produces, whose fallback matches `\.a\b`.
+    `gust-runtime-package.a` appears throughout the justfile, so nearly
+    every input that reaches that fallback lands on rust-archive.
+
+    So the blind spot stays open and named, rather than being closed with a
+    guard that asserts a clean population over 64 sites it classified by
+    accident. Passing for the wrong reason is worse than the gap: the gap is
+    visible in #436, and a green check is not.
+
+    What this file now has that it did not is the resolution the issue asks
+    for first -- writers preferred over mentions, hops restricted to
+    path-like tokens, products classified from the tracked source they
+    compile. Those are verified behaviour-preserving on the current
+    population. Closing the fallback is the remaining work.
+    """
     return sorted(ROOT.glob("scripts/*.sh"))
-
-
 def scan_script(path: Path) -> dict:
     text = path.read_text()
     lines = [
