@@ -10419,8 +10419,8 @@ guard-cranelift-route-architecture-contract:
 
     native_branch="$(
       sed -n \
-        '/if invocation.backend.tag == 1 {/,/Both explicit C spellings/p' \
-        "$invocation_source"
+        '/if invocation.backend.tag == 1 {/,/mut c_code := codegen/p' \
+        "$invocation_source" | sed '$d'
     )"
     if printf '%s\n' "$native_branch" |
        rg -n -F 'codegen.codegen_generate(' >/dev/null; then

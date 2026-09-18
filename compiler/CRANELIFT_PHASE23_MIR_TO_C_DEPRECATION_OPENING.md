@@ -650,8 +650,8 @@ explicit successor when they intentionally migrate or archive a surface.
 - Next patch: `23.8a`
 - Compiler help: `mir-to-c, c  DEPRECATED: Emit C source to stdout (retained semantic oracle); backend removal is Phase 24.`
 - Bootstrap help: `Bootstrap C retirement is separate and deferred to Phase 25.`
-- Both explicit C spellings remain accepted and byte-identical.
-- Generated-C backend removal is Phase 24; bootstrap-C retirement is Phase 25.
+- Both explicit C spellings are removed and refused by name (#398); the recorded C they used to emit is replayed from the frozen oracle.
+- The generated-C backend was removed in Phase 24; bootstrap-C retirement remains Phase 25.
 - Ordinary compilation emits no deprecation notice.
 - Post-deprecation text surfaces: `566`
 - Post-deprecation invocations: `316`

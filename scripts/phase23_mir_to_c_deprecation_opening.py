@@ -2126,8 +2126,24 @@ def render(registry: dict, record: dict) -> str:
         f"- Next patch: `{successor['next_patch']}`",
         f"- Compiler help: `{successor['presentation']['compiler_help']}`",
         f"- Bootstrap help: `{successor['presentation']['bootstrap_help']}`",
-        "- Both explicit C spellings remain accepted and byte-identical.",
-        "- Generated-C backend removal is Phase 24; bootstrap-C retirement is Phase 25.",
+        # Issue #398: what this review said about the two spellings became
+        # false when they were removed, and a generated document repeating a
+        # false sentence every time it is projected is worse than a stale
+        # pin -- nothing fails, it just keeps saying it. The line now reports
+        # which state the tree is in, read from the registered successor
+        # rather than from prose.
+        ("- Both explicit C spellings remain accepted and byte-identical."
+         if registry.get("phase398_retained_spelling_removal", {}).get(
+             "presentation_successor") is None else
+         "- Both explicit C spellings are removed and refused by name "
+         "(#398); the recorded C they used to emit is replayed from the "
+         "frozen oracle."),
+        ("- Generated-C backend removal is Phase 24; bootstrap-C retirement "
+         "is Phase 25."
+         if registry.get("phase398_retained_spelling_removal", {}).get(
+             "presentation_successor") is None else
+         "- The generated-C backend was removed in Phase 24; bootstrap-C "
+         "retirement remains Phase 25."),
         "- Ordinary compilation emits no deprecation notice.",
         f"- Post-deprecation text surfaces: `{post['text_surface_count']}`",
         f"- Post-deprecation invocations: `{post['invocation_count']}`",
