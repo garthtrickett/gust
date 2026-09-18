@@ -27029,6 +27029,7 @@
     "change_reason": "Patch 24.16 measured these 28 mention-only parity recipes and registered them as pending adjudication against this issue. The adjudication is WIRE, for all 28, and the evidence is that retiring them would delete working coverage rather than dead weight: each of the eleven differential harnesses they drive has exactly one caller -- the unexecuted parity recipe -- and no executed caller at all. Every one carries zero retired-backend spellings, so they already survived the Phase 24 retirement; the contract half of each pair is executed by a workflow and only the differential half was orphaned. One recipe of each of the four shapes was run end to end and passes. One of the 28 does not pass: guard-cranelift-phase11-metadata-diagnostic-parity is adjudicated repair_required rather than wired, because wiring it red would turn main red and dropping it from the verdict to keep CI green would be adjudicating by convenience -- the exact failure this issue exists to correct. It is reproduced, diagnosed to a specific field, and given an owner.",
     "contract_version": "issue437_parity_residue_adjudication_v1",
     "evidence": {
+      "all_28_executed_locally": "26 green, 2 red, matching CI",
       "differential_harnesses_driven": 11,
       "differential_harnesses_with_an_executed_caller": 0,
       "measured_recipe_seconds": {
@@ -27036,6 +27037,10 @@
         "guard-cranelift-phase13-scalar-expression-parity": 182,
         "guard-cranelift-phase14-enum-parity": 121,
         "guard-cranelift-phase20-resource-acquisition-parity": 75
+      },
+      "red_causes": {
+        "behavioural_divergence": 1,
+        "harness_rot_repaired_here": 1
       },
       "retired_backend_spellings_in_driven_harnesses": 0,
       "shapes_measured": 4
@@ -27056,6 +27061,9 @@
       "reproduced": "locally and in CI on the same commit",
       "silent_failure_note": "The four native_boundary assertions are bare `rg` calls under set -e, so the guard aborts with no message. That cost a reproduce-and-diagnose cycle to locate.",
       "surfaced_by": "wiring it. The guard has not executed since Patch 24.15a, and the behaviour it protects diverged while it was orphaned -- which is the case against retiring this population, not for it."
+    },
+    "repaired_to_wire": {
+      "guard-cranelift-phase11-structured-cfg-parity": "Read registry[\"phase13\"][\"entries\"], a top-level key the 7ca76604 consolidation flattened away, and died on KeyError before any assertion ran. The row survives in the top-level entries list with status migrated and origin_phase phase13, so the lookup was rebased there. Harness rot from a registry restructure nobody noticed, because nothing executed this guard after Patch 24.15a. Repaired and green, so it is wired rather than deferred."
     },
     "retired": [],
     "shards": {
@@ -27134,6 +27142,7 @@
       ],
       "partial_extra_or_substituted_surface": "rejected",
       "paths_judged_elsewhere": [
+        "justfile",
         "scripts/guard_reachability_allowlist.json"
       ],
       "previous_changed_text_surfaces": [

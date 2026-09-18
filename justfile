@@ -11249,7 +11249,7 @@ guard-cranelift-phase11-structured-cfg-parity:
     with open(sys.argv[1], encoding="utf-8") as registry_file:
         registry = json.load(registry_file)
 
-    for entry in registry["phase13"]["entries"]:
+    for entry in registry["entries"]:  # issue #437: flattened by 7ca76604
         if entry["id"] == "p13_general_loop_backedge_source_route":
             print(entry["status"])
             break
