@@ -67,13 +67,14 @@ AUTHORITIES = {
     # Issue #398's capture. Granted by the carried-work row rather than a
     # Phase 24 status row: Phase 24 is closed and its closure generator fails
     # on any unaccounted row inside its Status block.
-    "issue398": ("- [ ] Issue #398 — Retained Explicit C Spelling Removal",
+    "issue398": ("- [x] Issue #398 — Retained Explicit C Spelling Removal "
+                 "— DONE",
                  "phase24_frozen_oracle_vectors_v5"),
 }
 
 # Issue #398's population: the four fixtures behind
-# tests/e2e_codegen_assertions.gst. Their registered disposition is
-# `24.12 convert`, and every one asserts on the CONTENT of the emitted C --
+# tests/e2e_codegen_assertions.gst. Their disposition is registered as
+# `#398 migrate`, and every one asserts on the CONTENT of the emitted C --
 # memset presence, binding declarations -- so they are compile_only: there is
 # no execution to record, only the C the backend produced.
 POPULATION_398: dict[str, tuple[str, str]] = {

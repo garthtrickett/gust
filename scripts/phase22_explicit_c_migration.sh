@@ -59,13 +59,31 @@ test ! -s "$build_dir/invalid.stderr" || fail "unknown backend emitted stderr"
 
 ./gust --help >"$build_dir/help.stdout" 2>"$build_dir/help.stderr"
 test ! -s "$build_dir/help.stderr" || fail "help emitted stderr"
-# Patch 24.13 briefly inverted these two to absence-pins. Withdrawn with the
-# removal itself: 25 registered live-C cases still invoke the spelling, and
-# rejecting it broke 8 Stdlib S1 workflows green on main. Help must keep
-# advertising what the CLI still accepts until the live-C surface drains
-# (issue #398).
-rg -F 'gust --backend c <source.gst>' "$build_dir/help.stdout" >/dev/null || fail "c alias is absent from help"
-rg -F -- '--backend <mir-to-c|c|cranelift>' "$build_dir/help.stdout" >/dev/null || fail "backend option help drifted"
+# Patch 24.13 inverted these two to absence-pins and withdrew it: 28
+# registered live-C cases still invoked the spelling, 24 of them
+# Stdlib-owned, and rejecting it broke eight Stdlib S1 workflows green on
+# main. Help had to keep advertising what the CLI still accepted.
+#
+# Issue #398 drained that surface, so the inversion lands -- and it is
+# checked against LIVE help output, not against the help file, which is what
+# makes it evidence rather than a second copy of a static assertion. Both
+# halves: the retired wording gone AND the wording that replaced it there. A
+# bare absence pin would pass on a compiler that printed no help at all.
+rg -F 'gust --backend c <source.gst>' "$build_dir/help.stdout" >/dev/null &&
+  fail "help still advertises the removed c alias"
+rg -F -- '--backend <mir-to-c|c|cranelift>' "$build_dir/help.stdout" >/dev/null &&
+  fail "the backend option help still offers the removed spellings"
+rg -F -- '--backend <cranelift>' "$build_dir/help.stdout" >/dev/null ||
+  fail "backend option help drifted"
+rg -F 'The generated-C backend was REMOVED in Phase 24' "$build_dir/help.stdout" >/dev/null ||
+  fail "help does not state that the generated-C backend was removed"
+
+# No CLI probe here. The behaviour -- both spellings refused, each naming the
+# removal -- is asserted by scripts/phase12_5_route_architecture.sh and
+# scripts/phase22_opening.sh, and those two are the registered inverted
+# probes the invocation census accounts for. A third would add a live-C row
+# that every census then has to explain, in exchange for a claim two guards
+# already make.
 if rg -F '"phase22_default_route_flip"' scripts/cranelift_feature_registry.json >/dev/null; then
   rg -F 'Compile to one native executable (default).' "$build_dir/help.stdout" >/dev/null || fail "successor default route is absent"
 else

@@ -1184,12 +1184,19 @@ retained for 28 registered live-C cases. Issue #398 owns removing them.
 **Capture authority.** This row grants the frozen-oracle capture #398 needs,
 the way Patch 24.12c's row granted v3 and 24.12d's granted v4.
 
-- [ ] Issue #398 — Retained Explicit C Spelling Removal
+- [x] Issue #398 — Retained Explicit C Spelling Removal — DONE
 
-Four fixtures behind `tests/e2e_codegen_assertions.gst` have no frozen vector
-in the v1, v2, v3 or v4 sets. Their registered disposition is `24.12 convert`,
-so conversion — not retirement — is what the phase decided for them, and
-conversion needs recorded C to assert against.
+Four fixtures behind `tests/e2e_codegen_assertions.gst` had no frozen vector
+in the v1, v2, v3 or v4 sets. Conversion — not retirement — is what the phase
+decided for them, and conversion needs recorded C to assert against, so the
+v5 set was captured under this row's authority before anything was removed.
+Their disposition is now registered as `#398 migrate`: the retired command
+absent AND the replay present, which a retirement row could not have said.
+
+**Done.** All 28 registered live-C cases replay a frozen record, both
+spellings are removed from the compiler and refused by name, and the seed
+reconverged at 66002 lines. Phase 24's closure sentence is restored to the
+unqualified claim it was scoped to make.
 
 **The capture window is still open, and only by accident.** Patch 24.12c's
 section records v2's seal: *"Patch 24.13 removes backend selection; no vector

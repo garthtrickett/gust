@@ -764,6 +764,53 @@ def s1_8_state(value: dict, registry: dict | None = None) -> str:
                     "live_justfile_successor_digest"]
         s1_8_falsifier_self_test(implementation_coordinated)
         state = classify_s1_8_manifest(implementation_coordinated, live)
+        if state is None:
+            # Issue #398 converts scripts/stdlib_s1_mutex_guard_parity.sh
+            # onto frozen replay, which moves bytes S1.8 pinned exactly. The
+            # pin stays as the record of what S1.8 delivered; the successor
+            # rebases the one path it moved, the same way Patch 24.2f's
+            # successor rebases the justfile just above.
+            #
+            # It rebases exactly one path, and only from the digest it names
+            # as the predecessor. A successor that pointed at some other
+            # registered file, or at a post-state this manifest never held,
+            # fails rather than re-pinning the manifest to whatever is on
+            # disk. The falsifier self-test runs again on the rebased
+            # manifest, so the classifier is proved to still reject partial,
+            # substituted, path-drifted and extra states after the rebase --
+            # a rebase that made the manifest permissive would fail there.
+            spelling = registry.get(
+                "phase398_retained_spelling_removal", {}).get(
+                    "s1_8_surface_successor")
+            if spelling is not None:
+                require(spelling.get("contract_version") ==
+                        "phase398_s1_8_surface_successor_v1" and
+                        spelling.get("partial_or_substituted_surface") ==
+                        "rejected",
+                        "Issue #398 S1.8 surface successor drifted")
+                # Rebased onto `coordinated`, not onto the justfile
+                # successor above it. The justfile is a registered living
+                # surface, so its live bytes are already projected onto the
+                # registered post identity before any of this runs; layering
+                # this on top of the justfile rebase would put that one path
+                # back to a digest the projection had just resolved, and the
+                # manifest would fail on the justfile instead.
+                spelling_coordinated = copy.deepcopy(coordinated)
+                rebased = 0
+                for row in spelling_coordinated["accepted_states"][1]["files"]:
+                    if row["path"] != spelling["path"]:
+                        continue
+                    require(row.get("digest") ==
+                            spelling["predecessor_digest"],
+                            "Issue #398 S1.8 surface predecessor identity "
+                            f"drifted: {spelling['path']}")
+                    row["digest"] = spelling["successor_digest"]
+                    rebased += 1
+                require(rebased == 1,
+                        "Issue #398 rebases a path the S1.8 manifest does not "
+                        f"pin exactly once: {spelling['path']}")
+                s1_8_falsifier_self_test(spelling_coordinated)
+                state = classify_s1_8_manifest(spelling_coordinated, live)
     require(state is not None,
             "live Stdlib surface is neither exact pre-S1.8 nor exact post-S1.8 state")
     return state

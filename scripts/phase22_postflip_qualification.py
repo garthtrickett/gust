@@ -119,14 +119,23 @@ def validate() -> dict:
             f"{makefile.count('--backend bootstrap-emitter')} of 5")
 
     readme = README.read_text(encoding="utf-8")
+    # Issue #398 rebases the first two. "by default" was accurate while there
+    # were two backends to choose between; there is one now, and a README
+    # that still called it the default would imply an alternative the
+    # compiler refuses. The spellings are still NAMED, because a user who
+    # knows them has to be able to find out what happened to them -- so the
+    # marker moves from "or" to "and" rather than disappearing.
     for marker in (
-        "Gust compiles to native executables through Cranelift by default.",
-        "`--backend c` or `--backend mir-to-c`",
+        "Gust compiles to native executables through Cranelift.",
+        "`--backend c` and `--backend mir-to-c`",
         "There is no automatic fallback",
         "`gust-native-backend`",
         "`gust-runtime-package.a`",
     ):
         require(marker in readme, f"README route/package marker missing: {marker}")
+    require("through Cranelift by default" not in readme,
+            "the README still calls Cranelift the default, which implies an "
+            "alternative backend that Issue #398 removed")
     ledger = LEDGER.read_text(encoding="utf-8")
     require("Cranelift is the default; C remains the named oracle" in ledger and
             "rollback is an explicit `--backend c`" in ledger,

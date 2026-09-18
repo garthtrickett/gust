@@ -25848,7 +25848,15 @@
       "status": "issue398_in_progress"
     },
     "converted_selection": "explicit_cranelift",
-    "status": "issue398_in_progress",
+    "s1_8_surface_successor": {
+      "change_reason": "Issue #398 converts this harness onto frozen replay: its four live-C arms are replaced by recordings and by an assertion that the retired route is refused. S1.8 pinned the file's exact bytes, so the conversion needs a successor rather than an edit to that pin.",
+      "contract_version": "phase398_s1_8_surface_successor_v1",
+      "partial_or_substituted_surface": "rejected",
+      "path": "scripts/stdlib_s1_mutex_guard_parity.sh",
+      "predecessor_digest": "f03f7b26d667150fcc2019a5aea8f99f12ac165e4da28eac18d1c878fc7eb9fe",
+      "status": "issue398_in_progress",
+      "successor_digest": "32d49fba760ade80158baa67e1b4857382db006694c79af8e57d924c0b03644e"
+    },    "status": "issue398_in_progress",
     "surviving_invocation_total": 5
   },
   "phase24_closure": {

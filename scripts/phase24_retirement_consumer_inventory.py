@@ -350,6 +350,13 @@ ISSUE398_CONVERTED_HARNESSES = {
     "scripts/stdlib_s1_branded_collections_parity.sh": 0,
     "scripts/stdlib_s1_clone_destination_parity.sh": 0,
     "scripts/stdlib_s1_composition_parity.sh": 0,
+    # Found by the C-toolchain provenance guard rather than by any invocation
+    # census: this harness made four live-C calls that every census projected
+    # away as appended Stdlib rows, so "28 registered live-C cases" never
+    # counted them. The removal would have broken it in CI. Converted here
+    # with the rest -- all seven of its fixtures already had v3 vectors of
+    # exactly the right kinds, so it needed no new capture.
+    "scripts/stdlib_s1_mutex_guard_scope_parity.sh": 0,
 }
 
 # Harnesses that KEEP a spelling because they invert it: the invocation is
@@ -359,6 +366,28 @@ ISSUE398_CONVERTED_HARNESSES = {
 ISSUE398_INVERTED_HARNESSES = {
     "scripts/phase22_opening.sh": 1,
 }
+
+# Harnesses that reached the retired backend through the shared runner rather
+# than by spelling `--backend`, so no invocation census ever saw them and the
+# "28 registered live-C cases" figure never counted them. The C-toolchain
+# provenance guard found the first; the rest came from the runner-pinned
+# family this inventory already tracked.
+#
+# Their family counts occurrences of the string "mir-to-c", which after the
+# conversion is mostly file names -- a number that would go up and down
+# without meaning anything. So these three are measured on what actually
+# matters instead: exactly ONE place still asks the runner for the retired
+# route, that place asserts the request is refused, and the evidence the
+# route used to produce is replayed from the frozen oracle. A harness that
+# went back to asking for the route twice, or stopped asserting the refusal,
+# or dropped the replay, each fails a different one of the three.
+ISSUE398_RUNNER_CONVERTED = {
+    "scripts/stdlib_s1_migration_parity.sh": 1,
+    "scripts/stdlib_s1_mutex_guard_fibers_parity.sh": 1,
+    "scripts/stdlib_s1_mutex_guard_parity.sh": 1,
+}
+RETIRED_ROUTE_REQUEST = "GUST_RUNNER_ROUTE=mir-to-c"
+RETIRED_ROUTE_REFUSAL = "which was removed in Phase 24"
 
 
 DISCHARGED_HARNESSES: dict[str, tuple[str, str]] = {
@@ -1952,7 +1981,22 @@ def validate() -> dict:
                 hits = text.count("mir-to-c")
             else:
                 hits = len(BACKEND_SPELLING.findall(text))
-            if path in ISSUE398_CONVERTED_HARNESSES:
+            if path in ISSUE398_RUNNER_CONVERTED:
+                expected = ISSUE398_RUNNER_CONVERTED[path]
+                asks = text.count(RETIRED_ROUTE_REQUEST)
+                require(asks == expected,
+                        f"a runner-pinned harness Issue #398 converted asks "
+                        f"for the retired route {asks} times, {expected} "
+                        f"registered: {path}")
+                require(RETIRED_ROUTE_REFUSAL in text,
+                        f"a runner-pinned harness Issue #398 converted asks "
+                        "for the retired route without asserting that the "
+                        f"request is refused: {path}")
+                require(FROZEN_ORACLE_CALL in text,
+                        f"a runner-pinned harness Issue #398 converted does "
+                        f"not replay the evidence it stopped producing: "
+                        f"{path}")
+            elif path in ISSUE398_CONVERTED_HARNESSES:
                 expected = ISSUE398_CONVERTED_HARNESSES[path]
                 require(hits == expected,
                         f"a harness Issue #398 converted carries {hits} live "
