@@ -27052,6 +27052,7 @@
       "expected_policy": "recognized_preserved",
       "failing_case": "call",
       "observed_policy": "ignored_with_proof",
+      "owner_issue": 443,
       "reproduced": "locally and in CI on the same commit",
       "silent_failure_note": "The four native_boundary assertions are bare `rg` calls under set -e, so the guard aborts with no message. That cost a reproduce-and-diagnose cycle to locate.",
       "surfaced_by": "wiring it. The guard has not executed since Patch 24.15a, and the behaviour it protects diverged while it was orphaned -- which is the case against retiring this population, not for it."
