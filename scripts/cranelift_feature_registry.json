@@ -27032,7 +27032,84 @@
     "change_reason": "Patch 24.17 qualified ONE Historical Full run on the exact merged retirement main 927892b3. Recorded by identity -- run id, full SHA, event, conclusion, job population and budgets -- because 'the run was green' is an adjective and cannot be checked later. The dispatched run 35194127770 was green on the same SHA; the scheduled run is cited because the qualifier takes the LATEST run, which is what stops a stale green shadowing a newer red.",
     "status": "patch24_18_complete"
   },
-  "phase24_16_residue_audit": {
+  "issue436_provenance_resolver": {
+    "text_surface_successor": {
+      "added_text_surfaces": [],
+      "change_reason": "Issue #436 repairs producer selection in the C-toolchain provenance resolver: writers preferred over mentions, one-hop restricted to path-like tokens, and products classified from the tracked source their writing line compiles. The classifications do not move -- 44 of 44 sites, same by_class, same members -- so this successor records a change to the instrument, not to what it measures. The justfile is deliberately still outside the population; see the issue for the measurement that says why.",
+      "contract_version": "issue436_text_surface_successor_v1",
+      "current_changed_text_surfaces": [
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "9ece490f01e43102200e39b4f3dd83b037159154a9dde5300baa6f536391c87f",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "16ff0b571579ad35aff0d57df53b87c6c10a80916a57f8c04a1994a67cffd413",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 1,
+            "generated_c_contract": 3,
+            "mir_to_c_name": 4
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase24_c_toolchain_provenance.py",
+          "removal_phase": "24"
+        }
+      ],
+      "partial_extra_or_substituted_surface": "rejected",
+      "previous_changed_text_surfaces": [
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "5e218347e888ecf62414c06851e563bb6f87c7a6e1a7c531347702ddf774c110",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "6340712f8c6413e504725eb778c664469821ec7b00e70c946ecddf250fe27c08",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 1,
+            "generated_c_contract": 3,
+            "mir_to_c_name": 4
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase24_c_toolchain_provenance.py",
+          "removal_phase": "24"
+        }
+      ],
+      "registered_changed_paths": [
+        "scripts/cranelift_registry.py",
+        "scripts/phase24_c_toolchain_provenance.py"
+      ],
+      "removed_text_surfaces": [],
+      "status": "issue436_in_progress"
+    }
+  },  "phase24_16_residue_audit": {
       "parity_residue_adjudication": {
         "change_reason": "Patch 24.16 measured these 28 mention-only parity recipes and pinned them absent from every execution route, which made continued unreachability the passing state and contradicted this patch's own exit gate that every survivor protect a live invariant. Most of them compared the native route against MIR-to-C, so each needs a per-guard decision about whether the invariant survives the retirement or went with it. Registered as pending against issue #437 so the audit passes on a declared deferral rather than on the bare fact of unreachability.",
         "contract_version": "phase24_16_parity_residue_pending_v1",

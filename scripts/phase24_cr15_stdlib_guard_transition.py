@@ -2258,6 +2258,37 @@ def normalize_phase23_text_surfaces(
     # replay, the seed, and the user documentation -- and it is the only one
     # that REMOVES a surface: tests/e2e_codegen_assertions.gst stops matching
     # the content patterns once its invocations become replays.
+    # Issue #436 is newest, so it runs FIRST and projects the tree back to
+    # the state Issue #398's successor was registered against.
+    resolver_surface = registry.get(
+        "issue436_provenance_resolver", {}).get("text_surface_successor")
+    if resolver_surface is not None:
+        require(resolver_surface.get("contract_version") ==
+                "issue436_text_surface_successor_v1" and
+                resolver_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Issue #436 text surface successor drifted")
+        resolver_paths = list(resolver_surface["registered_changed_paths"])
+        resolver_pre = {row["path"]: row for row
+                        in resolver_surface["previous_changed_text_surfaces"]}
+        resolver_post = {row["path"]: row for row
+                         in resolver_surface["current_changed_text_surfaces"]}
+        require(sorted(resolver_pre) == sorted(resolver_paths) ==
+                sorted(resolver_post),
+                "Issue #436 registered paths and rows disagree")
+        resolver_live = {row["path"]: row for row in rows
+                         if row["path"] in resolver_paths}
+        require(sorted(resolver_live) == sorted(resolver_paths),
+                "Issue #436 registered text surface is missing from the scan")
+        for path in resolver_paths:
+            require(resolver_live[path] in (resolver_pre[path],
+                                            resolver_post[path]),
+                    "Issue #436 changed text surfaces are partial or "
+                    f"substituted: {path}")
+        rows = [dict(resolver_pre.get(row["path"], row)) for row in rows]
+        rows.sort(key=lambda row: str(row["path"]))
+        by_path = {row["path"]: row for row in rows}
+
     spelling_surface = registry.get(
         "phase398_retained_spelling_removal", {}).get("text_surface_successor")
     if spelling_surface is not None:
