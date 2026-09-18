@@ -222,6 +222,31 @@ NATIVE_ROUTED_RECIPES = {
 }
 NATIVE_ROUTE_NEEDLE = "--backend cranelift"
 
+# recipe id -> why Issue #398 served it from the frozen oracle.
+#
+# A fourth disposition, and a separate register rather than three more rows
+# in TAKEN_OUT_RECIPES, because that set records what Patch 24.12 did and
+# these three are not 24.12's. They are the Stdlib-owned recipes the deferral
+# left behind: Patch 24.13 could not convert them (AGENTS.md line 98 puts
+# them in the other lane's ownership) and its removal broke them where they
+# stood, which is why it was withdrawn.
+#
+# The assertions are the same as TAKEN_OUT_RECIPES': the C route must be gone
+# AND the recipe must reach the frozen oracle. Both halves, so a recipe that
+# simply stopped compiling anything cannot pass as a converted one.
+ISSUE398_CONVERTED_RECIPES = {
+    "guard-stdlib-s1-str-equality-diagnostic":
+        "asserts the text of a diagnostic and of the emitted C, both of "
+        "which the frozen record carries",
+    "guard-stdlib-s1-collection-receivers":
+        "compares emitted C across receiver forms; the comparison is between "
+        "two recordings rather than two compilations",
+    "guard-stdlib-s1-resource-prerequisites":
+        "Patch 24.0c's relay site, whose one invocation is registered as "
+        "retired in phase398_retained_spelling_removal.relay_site_retirement",
+}
+ISSUE398_CONVERTED_BY = "#398"
+
 # recipe id -> what Patch 24.12 did to it
 TAKEN_OUT_RECIPES = {
     "guard-cranelift-phase11-scalar-expression-parity": "convert",
@@ -315,6 +340,26 @@ DEFERRED_HARNESSES: dict[str, tuple[str, str]] = {
 # for.
 REMOVAL_MARKER = "removed in phase 24"
 
+# Harnesses Issue #398 converted onto frozen replay, and the spellings each
+# has left. Kept apart from TAKEN_OUT_HARNESSES because that register records
+# what Patch 24.12 did; these three are the Stdlib-owned harnesses the
+# deferral left behind. Same both-halves rule: the registered count AND a
+# frozen-oracle call, so a harness that simply stopped comparing anything
+# fails rather than reading as converted.
+ISSUE398_CONVERTED_HARNESSES = {
+    "scripts/stdlib_s1_branded_collections_parity.sh": 0,
+    "scripts/stdlib_s1_clone_destination_parity.sh": 0,
+    "scripts/stdlib_s1_composition_parity.sh": 0,
+}
+
+# Harnesses that KEEP a spelling because they invert it: the invocation is
+# still made, in order to assert that it is refused. The count alone cannot
+# tell that from a live consumer, so the removal marker is required too --
+# a probe that drifted back to expecting success loses it.
+ISSUE398_INVERTED_HARNESSES = {
+    "scripts/phase22_opening.sh": 1,
+}
+
 
 DISCHARGED_HARNESSES: dict[str, tuple[str, str]] = {
     "scripts/phase22_default_native_package.sh":
@@ -350,10 +395,18 @@ SWEEP_LOCI = ["Makefile", "justfile", "compiler/test_runner_entry.gst"]
 # Single-shape loci are pinned by their row checks; the sweep asserts the
 # total per file so a new C route in a known file still fails.
 SWEEP_COUNTS = {
-    "compiler/test_runner_entry.gst": 2,
-    # Restored with the runner's mir-to-c arm (issue #398). 24.13 dropped this
-    # key when it deleted that arm; the arm is back, so the sweep is too.
-    "scripts/run-gust-file.sh": 1,
+    # Issue #398 removed both spellings from the compiler entry and the
+    # runner's C arm with them, so neither file carries a backend spelling
+    # any more and check_sweep -- which reports only loci WITH hits -- stops
+    # producing a row for either. Dropped rather than pinned at zero, for the
+    # reason spelled out for the Makefile below: a zero pin expects a key the
+    # sweep can never emit.
+    #
+    # The claim is not lost. The compiler entry's spellings are asserted
+    # absent in RETIRED_FILE_SURFACES and its rejection block is pinned by
+    # phase22_explicit_c_migration.py; the runner is required to carry no
+    # mir-to-c invocation and exactly one refusal by
+    # phase23_production_release_audit.py.
     # Patch 24.13: 5 -> 3. Two Makefile bootstrap callers moved to the
     # bootstrap-only entry; the remaining three are driven by the seed and the
     # bridge parser, which this patch does not touch and Phase 25 owns.
@@ -377,8 +430,17 @@ SWEEP_COUNTS = {
     # 38 before Patch 24.12; the conversion took 22 out (7 phase11 and 4
     # mir-feature parity recipes, and the live-C literals three closure
     # guards required the Phase 13 differential harness to still contain).
-    "justfile": 9,
-    "tests/e2e_codegen_assertions.gst": 4,
+    # Issue #398: 9 -> 1. Eight Stdlib-owned invocations across three guard
+    # recipes now replay a frozen record. The one that remains is
+    # Cranelift-owned.
+    "justfile": 1,
+    # Issue #398 converted all four cases onto frozen replay, so this locus
+    # leaves the sweep too. An earlier draft pinned it at zero on the grounds
+    # that it is still a live harness worth a falsifier -- true, but a zero
+    # pin is not that falsifier, because the sweep never emits a key for a
+    # file with no hits. The falsifier it actually needs is the
+    # MIGRATED_FILE_SURFACES row, which requires the retired command absent
+    # AND the frozen replay present.
     # Patch 24.13 migrated both invocations to the bootstrap-only entry;
     # both halves of the move are asserted in MIGRATED_FILE_SURFACES.
     # Patch 24.13 retired the runner's mir-to-c route; the surface is
@@ -744,11 +806,21 @@ REGISTRY_ROWS = [
 # FILE_ROWS entries, still owned for later retirement, and still required to be
 # present -- which is why this register names one surface rather than three.
 RETIRED_FILE_SURFACES = [
-    # The compiler help line that sat here is withdrawn: 24.13 no longer
-    # removes it (issue #398). The runner default below is unaffected --
-    # flipping the runner route is independent of the spelling removal.
+    # Flipping the runner default was independent of the spelling removal, so
+    # this row survived 24.13's withdrawal on its own.
     ("scripts/run-gust-file.sh",
      'RUNNER_ROUTE="${GUST_RUNNER_ROUTE:-mir-to-c}"', "24.13"),
+    # The compiler help lines 24.13 wrote out and had to put back. Issue #398
+    # removes them for real. Retirement is the right claim for these three:
+    # nothing replaces a usage line for a route that no longer exists, and
+    # what the compiler says INSTEAD is asserted by the rebased rows below
+    # and by the rejection block phase22_explicit_c_migration.py pins.
+    ("compiler/test_runner_entry.gst",
+     "gust --backend mir-to-c <source.gst>", "#398"),
+    ("compiler/test_runner_entry.gst",
+     "gust --backend c <source.gst>", "#398"),
+    ("compiler/test_runner_entry.gst",
+     "--backend <mir-to-c|c|cranelift>", "#398"),
 ]
 
 # (path, the spelling that was there, the spelling that replaced it, owner)
@@ -777,6 +849,15 @@ MIGRATED_FILE_SURFACES = [
      'std.Concat("./gust --backend mir-to-c ", path)',
      'std.Concat("./gust --backend bootstrap-emitter ", path)',
      "24.13"),
+    # Issue #398. A migration rather than a retirement, and scored that way
+    # deliberately: these four cases still run, they just read a recording
+    # instead of making a compilation. Scoring them as retirements would let
+    # the assertions disappear along with the invocation and still pass.
+    ("tests/e2e_codegen_assertions.gst",
+     '"./gust --backend mir-to-c tests/codegen_helper_pod_move.gst',
+     "materialize tests/codegen_helper_pod_move.gst "
+     "build/codegen_helper_pod_move --kind compile_only",
+     "#398"),
 ]
 
 FILE_ROWS = [
@@ -785,12 +866,6 @@ FILE_ROWS = [
      "    MirToC,", "24.13", "retire"),
     ("compiler/test_runner_entry.gst",
      'std.str_eq(backend_name, "mir-to-c")', "24.13", "retire"),
-    # Patch 24.13 briefly retired this help line and inverted the row. The
-    # removal is deferred until the live-C surface drains (issue #398), so the
-    # line is present again and the row is once more an ordinary
-    # awaiting-retirement entry owned by 24.13.
-    ("compiler/test_runner_entry.gst",
-     "gust --backend mir-to-c <source.gst>", "24.13", "retire"),
     ("compiler/test_runner_entry.gst",
      "the MIR-to-C backend does not accept -o", "24.14", "retire"),
     ("compiler/test_runner_entry.gst",
@@ -819,10 +894,6 @@ FILE_ROWS = [
     # Patch 24.13 migrated this default to cranelift (#411); inverted below.
     ("scripts/cranelift_ci_family.py",
      '["just", runner["static_guard"]]', "24.12", "convert"),
-    # Patch 24.13 migrated this to the bootstrap-only entry; the row moves to
-    # MIGRATED_FILE_SURFACES above, which asserts both halves of the move.
-    ("tests/e2e_codegen_assertions.gst",
-     '"./gust --backend mir-to-c tests/codegen_helper_pod_move.gst', "24.12", "convert"),
 ]
 
 SMOKE_FIXTURES = sorted([
@@ -1719,6 +1790,20 @@ def expected_sweep() -> dict[str, int]:
             expected[path] = residual
         else:
             expected.pop(path, None)
+    # Issue #398's two registers, by the same rule. The converted harnesses
+    # all land at zero and leave the expectation; the inverted one keeps its
+    # spelling and stays in it, which is what makes the sweep still able to
+    # notice if that probe ever grows a second invocation.
+    for path, residual in ISSUE398_CONVERTED_HARNESSES.items():
+        if residual:
+            expected[path] = residual
+        else:
+            expected.pop(path, None)
+    for path, residual in ISSUE398_INVERTED_HARNESSES.items():
+        if residual:
+            expected[path] = residual
+        else:
+            expected.pop(path, None)
     return expected
 
 
@@ -1829,6 +1914,13 @@ def validate() -> dict:
             require(FROZEN_ORACLE_CALL in bodies[recipe],
                     f"a recipe Patch {TAKEN_OUT_BY} took out does not reach "
                     f"the frozen oracle: {recipe}")
+        elif recipe in ISSUE398_CONVERTED_RECIPES:
+            require(needle not in bodies[recipe],
+                    f"a recipe Issue {ISSUE398_CONVERTED_BY} converted has "
+                    f"its C route back: {recipe}")
+            require(FROZEN_ORACLE_CALL in bodies[recipe],
+                    f"a recipe Issue {ISSUE398_CONVERTED_BY} converted does "
+                    f"not reach the frozen oracle: {recipe}")
         else:
             require(needle in bodies[recipe],
                     f"inventoried recipe lost its C route: {recipe}")
@@ -1860,7 +1952,24 @@ def validate() -> dict:
                 hits = text.count("mir-to-c")
             else:
                 hits = len(BACKEND_SPELLING.findall(text))
-            if path in TAKEN_OUT_HARNESSES:
+            if path in ISSUE398_CONVERTED_HARNESSES:
+                expected = ISSUE398_CONVERTED_HARNESSES[path]
+                require(hits == expected,
+                        f"a harness Issue #398 converted carries {hits} live "
+                        f"C spellings, {expected} registered: {path}")
+                require(FROZEN_ORACLE_CALL in text,
+                        "a harness Issue #398 converted does not reach the "
+                        f"frozen oracle: {path}")
+            elif path in ISSUE398_INVERTED_HARNESSES:
+                expected = ISSUE398_INVERTED_HARNESSES[path]
+                require(hits == expected,
+                        f"a harness Issue #398 inverted carries {hits} live "
+                        f"C spellings, {expected} registered: {path}")
+                require(REMOVAL_MARKER in text.lower(),
+                        f"the spelling Issue #398 left in {path} does not "
+                        "assert the Phase 24 removal, so it reads as a live "
+                        "consumer rather than an inverted probe")
+            elif path in TAKEN_OUT_HARNESSES:
                 require(hits == TAKEN_OUT_HARNESSES[path],
                         f"a harness Patch {TAKEN_OUT_BY} converted carries "
                         f"{hits} live C spellings, "

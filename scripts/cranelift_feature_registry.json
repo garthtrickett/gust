@@ -23597,7 +23597,7 @@
       "selected_entry": "--backend bootstrap-emitter",
       "status": "patch24_11_decided_patch24_13_lands"
     },
-    "inventory_digest": "47e18d1907b50f12150661fbcd1aa968dd08b4122595c7d823216d9a99653ee7",
+    "inventory_digest": "a014f136d709b775d65e66d644ec1ef5bbef1d1fbea708c533ad8b1b68fc5f63",
     "retired": {
       "by": "24.12a",
       "harnesses": [
@@ -23618,7 +23618,7 @@
         "guard-cranelift-phase21-inert-scoped-query-records-evidence"
       ]
     },
-    "row_count": 108,
+    "row_count": 106,
     "rows": [
       {
         "action": "convert",
@@ -23972,11 +23972,6 @@
       },
       {
         "action": "retire",
-        "id": "compiler/test_runner_entry.gst :: gust --backend mir-to-c <source.gst>",
-        "owner_patch": "24.13"
-      },
-      {
-        "action": "retire",
         "id": "compiler/test_runner_entry.gst :: the MIR-to-C backend does not accept -o",
         "owner_patch": "24.14"
       },
@@ -24013,11 +24008,6 @@
       {
         "action": "convert",
         "id": "scripts/cranelift_ci_family.py :: [\"just\", runner[\"static_guard\"]]",
-        "owner_patch": "24.12"
-      },
-      {
-        "action": "convert",
-        "id": "tests/e2e_codegen_assertions.gst :: \"./gust --backend mir-to-c tests/codegen",
         "owner_patch": "24.12"
       },
       {
