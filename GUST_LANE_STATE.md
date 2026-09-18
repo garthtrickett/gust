@@ -1,10 +1,100 @@
 # Gust Lane State — Cranelift Lane Terminal Record
 
+## Phase 24 closed — generated-C backend retirement (Patch 24.18, merged 2026-09-17)
+
+Phase 24 is closed. Later architecture phases remain inactive pending fresh
+activation: Phase 24.5, Phase 25, Stdlib implementation, Web Slice 1.
+
+### What Phase 24 claims — and what it does not
+
+The closure sentence is NARROWER than the one this phase was scoped to make,
+and the narrowing is the substance of the record rather than a caveat.
+
+Scoped: *Gust no longer emits C as a compiler backend.*
+
+Measured on merged main `790f9387`, that is **false** — `./gust --backend
+mir-to-c` emits C. So Phase 24 closed on what is verified:
+
+> Gust no longer emits C on any default or publication route: the default
+> route is native and the bootstrap emitter is refused without its authority.
+> The deprecated explicit spellings are retained for 28 registered live-C
+> cases pending issue #398, and the repository still contains C under Phase 25
+> ownership.
+
+Each clause was measured, not asserted:
+
+| invocation | result |
+| --- | --- |
+| `./gust <src>` | native, emits no C |
+| `./gust --backend bootstrap-emitter` | refused without the authority |
+| `GUST_BOOTSTRAP_EMITTER=1 … bootstrap-emitter` | emits C, bootstrap-only |
+| `./gust --backend mir-to-c` | **emits C** |
+
+The exception is bounded, not open-ended: `check_retained_residue()` fails if
+the live-C surface moves off 28, so the claim cannot quietly widen while the
+closure stays green.
+
+It does NOT claim the repository contains no C, that the bootstrap is native,
+that a host C compiler is unnecessary, that the compiler is consolidated, that
+intrinsic IDs exist, or that Phase 24 is more than backend retirement.
+
+### Closure evidence (all measured, none cited on trust)
+
+- Closure PR: `garthtrickett/gust#438`
+- PR head: `9ac701932bfbeff5d01bbf5095d8732acfce0ac0`
+- Merge main: `790f93872f8cd8bb9057c63ce47c2a9221068e1b`, merged 2026-09-17
+- Workflow population on the closure head: **303/303 successful**, 0 failing
+- Review state: 2 threads, both resolved — an unwired closure guard and a
+  vacuous boundary check, both found by review and both introduced by this
+  patch
+- Authoritative Historical Full run: **35201456702**, event `schedule`,
+  completed `success` on exact merged main
+  `927892b31fdfc509eb6a3c82697acdd862863134`
+- Job population: **18 unique jobs**, budgets `{jobs: 18, skipped: 0}`. Zero
+  skipped is load-bearing: the workflow gates `inventory` on the actor and
+  every other job depends on it, so a skipped suite reports success while
+  executing nothing
+- Retirement rows: **14 of 14 DONE**, in the amended order with 24.15a before
+  24.15
+- Patches merged: #429 (24.12c), #435 (24.12d), #421 (24.13), #423 (24.14),
+  #410 (24.15a), #426 (24.15), #427 (24.16), #438 (24.18)
+
+### Standing truth for the next lane activation
+
+- The publication path is closed **for the bootstrap-only spelling**.
+  `--backend bootstrap-emitter` is refused without `GUST_BOOTSTRAP_EMITTER`,
+  so the entry Patch 24.11 created cannot be reached by knowing its name.
+  It is NOT closed for the deprecated aliases: `--backend mir-to-c` and
+  `--backend c` are advertised in the checked help and reach
+  `codegen_generate` with no authority check. Raised in review on #439 --
+  the unqualified claim was false for exactly the callers #398 is about.
+- The default route is native and the bootstrap chain reaches the emitter
+  through one gated entry.
+- **28 live-C cases remain** and still emit C through the deprecated explicit
+  spellings. Re-derived on this tree rather than carried forward: **24 are
+  stdlib-owned and 4 are cranelift-owned**, not the 25/3 an earlier draft
+  said -- that split was taken when the surface was 26 cases and stopped being
+  true when `scripts/phase22_opening.sh` regained one. The cranelift four are
+  `phase12_5_route_architecture.sh`, `phase22_opening.sh` (2) and
+  `run-gust-file.sh`, and they are this lane's to convert without any
+  cross-lane coordination. The stdlib 24 are the `stdlib_s1_*_parity.sh`
+  guards, their justfile recipes and `tests/e2e_codegen_assertions.gst`
+  (AGENTS.md line 98). Issue **#398** owns the removal and gates restoring the
+  unqualified closure sentence.
+- **Phase 25 should not begin while #398 is open.** Phase 25 retires the
+  bootstrap C; starting it on top of an unfinished backend retirement layers
+  one retirement on another, which is the sequencing error that produced the
+  deferral in the first place.
+- Carried defects, each filed with evidence: **#398** (retained spellings),
+  **#437** (28 parity guards pinned as unreachable rather than adjudicated),
+  **#436** (the C toolchain provenance scan excludes the justfile).
+
 ## Opening preflight closed (Patch 24.4, merged 2026-09-12)
 
 The make-compiler-meaning-explicit preflight (Patches 24.0–24.4) is closed.
-Later architecture phases remain inactive: Phase 24 backend retirement,
-Phase 24.5, Phase 25, Stdlib implementation, Web Slice 1.
+Later architecture phases were inactive at the time of this record: Phase 24
+backend retirement, Phase 24.5, Phase 25, Stdlib implementation, Web Slice 1.
+Phase 24 has since closed — see the record above; the rest remain inactive.
 
 ### What the preflight claims
 
