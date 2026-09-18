@@ -371,13 +371,26 @@ def looks_like_path(token: str) -> bool:
     Cranelift-output classification.
 
     A flag is not a file, and neither is a bare word with no separator in
-    it. Requiring a `/` or a `.` keeps the hop on things that can name a
-    path and off the argv furniture around them.
+    it. A `/` or a `.` says the token can name a path; a `$` says it holds
+    one.
+
+    Raised in review on #442 (P2): an earlier draft required `/` or `.`
+    only, which filtered `"$generated_c"` -- a variable holding a path with
+    no separator in its own name. That broke the hop for
+
+        ./gust --backend c ... > "$generated_c"
+        cat "$generated_c" > "$build_dir/final.c"
+
+    and would have reported final.c unresolved where the parent correctly
+    reached backend-emitted-c. No site in the current population took that
+    shape, so the per-site diff stayed clean and the gap was invisible --
+    but variable-held inputs are pervasive in the justfile recipes this is
+    preparing to scan, which is exactly where it would have bitten.
     """
     bare = strip_quotes(token)
     if not bare or bare.startswith("-"):
         return False
-    return "/" in bare or "." in bare
+    return "/" in bare or "." in bare or "$" in bare
 
 
 def classify_writer_inputs(line: str) -> str:
