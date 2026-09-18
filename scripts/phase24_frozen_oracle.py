@@ -43,6 +43,7 @@ VECTORS = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v1.json"
 VECTORS_V2 = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v2.json"
 VECTORS_V3 = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v3.json"
 VECTORS_V4 = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v4.json"
+VECTORS_V5 = ROOT / "compiler/fixtures/phase24_frozen_oracle_vectors_v5.json"
 CORPUS = ROOT / "compiler/fixtures/phase23_mir_to_c_reference_corpus_v1.json"
 VIEW = ROOT / "docs/PHASE24_FROZEN_ORACLE_REPLACEMENT.md"
 EMITTER_ONLY_ASSERTIONS_REMOVED = (
@@ -950,7 +951,10 @@ def load_servable_vectors() -> dict:
     # this point both are already merged and a v3 vector may shadow neither.
     for path, expected_format, label in (
             (VECTORS_V3, "phase24_frozen_oracle_vectors_v3", "v3"),
-            (VECTORS_V4, "phase24_frozen_oracle_vectors_v4", "v4")):
+            (VECTORS_V4, "phase24_frozen_oracle_vectors_v4", "v4"),
+            # Issue #398 adds a fifth on the same terms: an addition, never an
+            # edit, with the same shadow check across every earlier corpus.
+            (VECTORS_V5, "phase24_frozen_oracle_vectors_v5", "v5")):
         if not path.is_file():
             continue
         block = json.loads(path.read_text(encoding="utf-8"))
@@ -1024,7 +1028,12 @@ def check_vector(vector_id: str, vectors: dict) -> dict:
         "derived_from_archived_corpus_v1", "captured_live_while_green",
         "captured_live_while_green_patch24_12b",
         "captured_live_while_green_patch24_12c",
-        "captured_live_while_green_patch24_12d"),
+        "captured_live_while_green_patch24_12d",
+        # Issue #398's capture, declared rather than admitted by a prefix
+        # match. Same terms as the earlier three: taken while the backend was
+        # still green, which it is only because Patch 24.13 merged with the
+        # removal deferred.
+        "captured_live_while_green_issue398"),
         f"frozen vector has an unknown provenance: {vector_id}")
     require(not (vector["provenance"] == "derived_from_archived_corpus_v1"
                  and vector.get("archived_corpus_case") is None),
@@ -2402,7 +2411,11 @@ def main() -> None:
         "mutation-evidence"))
     parser.add_argument("vector_id", nargs="?")
     parser.add_argument("prefix", nargs="?")
-    parser.add_argument("--kind", choices=("exec", "reject"), default=None)
+    # compile_only has been servable since Patch 24.12c -- check_vector,
+    # materialize and _served_block all handle it -- but it was missing here,
+    # so the kind existed and no consumer could ask for it.
+    parser.add_argument("--kind", choices=("exec", "reject", "compile_only"),
+                        default=None)
     parser.add_argument("--workdir", default=None)
     parser.add_argument("--env", default=None,
                         help="KEY=VALUE the call site sets when running the "
