@@ -190,7 +190,14 @@ users must link for; and an *optional* foreign-runtime component is defined
 by an **operational test measured by the no-C-compiler job** — absent from
 the machine, a hello-world and the full suite still build and run; reachable
 only through a user-written `extern`; its absence an error only for programs
-that opted in — rather than by a list that would go stale.
+that opted in — rather than by a list that would go stale. A further ten questions the decided rows
+leave open are resolved in the same file, two of them conflicts between
+decisions: `approved_scalar_imports.c` is **rehomed, not deleted**, because
+26 files depend on its symbols and a Gust rewrite would destroy the FFI
+contract they test; and **all eight** of `fiber.c`'s assembly blocks port
+rather than the two CI builds, because the platform-naming obligation binds
+the seed rather than the runtime and macOS is aarch64. Both move work
+earlier than the runtime rows assumed, so the sequence is reordered.
 
 That file also records the first step, which is neither the seed nor the
 runtime: enumerate what actually requires a C toolchain rather than inherit

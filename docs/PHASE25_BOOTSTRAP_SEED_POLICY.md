@@ -148,7 +148,7 @@ Per-file, measured by what each file calls:
 
 | file | lines | needs | verdict |
 | --- | --- | --- | --- |
-| `approved_scalar_imports.c` | 15 | nothing | **delete** — `tiny_host_add_one_i32` and two siblings, fixtures only |
+| `approved_scalar_imports.c` | 15 | nothing | **rehome, not delete** — 26 files depend on its three symbols; see O1 |
 | `host_io.c` | 60 | `malloc` `memcpy` `strlen` | Gust |
 | `scratch.c` | 80 | `memset` | Gust |
 | `strings.c` | 130 | `memcpy` | Gust — `std_str_eq`/`find`/`byte_at` are pure byte loops |
@@ -187,6 +187,12 @@ that this is file-by-file behind parity evidence either way
 falls back to Rust on its own merits without re-opening the row. Order the
 easy ones first — `scratch.c`, `strings.c`, `host_io.c` — so the freestanding
 subset is exercised on 270 lines before it is trusted with the allocator.
+
+**Superseded in two places by the O-series.** This row said to *delete*
+`approved_scalar_imports.c`; O1 shows 26 files depend on its symbols and it
+must be rehomed into D3's Rust crate instead, before the port rather than
+after. And this row treated defining the freestanding subset as an obligation
+without an owner; O3 assigns it and makes it patch 1.
 
 **Declaring the runtime a foreign component does not satisfy the gate** under
 either target. The gate excepts *optional* foreign-runtime components; this
@@ -283,6 +289,12 @@ problem requires. Nothing in `fiber.c` uses operand constraints or clobbers.
 Sequence `fiber.c` **last** of the eight regardless, behind the files with
 cheaper parity evidence.
 
+**Amended by O1 and O2.** The *crate* is created early, because O1 rehomes
+the `tiny_host_*` fixtures into it before the runtime port begins; only
+`fiber.c` itself moves last. And all **eight** blocks port, not the two CI
+builds: O2 finds that D6 binds the seed rather than the runtime, and that
+deleting by architecture would delete Apple Silicon, since macOS is aarch64.
+
 ## D4 — the form of the fixed point · *lane* · **DECIDED: compare emitted objects**
 
 Today's proof is `stage2.c == stage3.c`, byte-identical *text*. Natively the
@@ -314,7 +326,9 @@ CI is **`ubuntu-latest`/`ubuntu-24` only — 261 jobs, no macOS runner** — yet
 has macOS code that nothing builds or tests.
 
 The seed must therefore name its platforms explicitly rather than implying
-portability it has no evidence for. A seed supporting one platform while the
+portability it has no evidence for. **This binds the seed, not the
+runtime** — see O2, where reading it as a licence to delete runtime platform
+branches was the error. A seed supporting one platform while the
 docs imply several is Phase 24's count problem again: accurate about the
 register, incomplete about the tree. If macOS is meant to be supported, that
 needs a runner before it needs a seed.
@@ -514,104 +528,254 @@ unqualified, for someone at closure time to call the C runtime a foreign
 component and pass the gate with the C still in place — which is the shape of
 defect Phase 24's narrowed closure sentence exists to prevent.
 
-# What the decisions leave open
+# What the decisions left open — resolved
 
-D1-D10 are decided. Working through their consequences surfaces questions
-none of them answers. Recorded here so they are found now rather than at the
-gate, which is the failure Phase 24 spent five patches on.
+D1-D10 are decided. Working through their consequences surfaced ten further
+questions, all resolved here on 2026-09-19. None was left to the operator;
+each says what it rests on, so a wrong one can be found and reversed.
 
-## Blocking — decide before the work starts
+## O1 — the `tiny_host_*` fixtures · **RESOLVED: rehome into D3's Rust crate, symbol names unchanged, guards updated in the same patch**
 
-**O1 — deleting `approved_scalar_imports.c` breaks 26 files.** D2 says delete
-it rather than rewrite it, on the grounds that it is 15 lines of fixtures.
-That is true and the conclusion is still wrong: **26 files reference
-`tiny_host_add_i32` / `tiny_host_add_one_i32` / `tiny_host_is_positive_i32`**,
-including `phase13_runtime_*_source.gst` and `mir_runtime_import_smoke_test_entry.gst`.
-They are the corpus for the FFI and runtime-import tests — the very machinery
-D2 relies on to move the other seven files. So the decision is not *delete*
-but **rehome**: into a Gust definition exporting those symbols via
-`extern_symbol_name`, or a Rust test shim. Deciding which, and doing it
-first, is a prerequisite for D2 rather than a tidy-up after it.
+D2 said *delete* `approved_scalar_imports.c` as 15 lines of fixtures. It is
+15 lines of fixtures and the conclusion was still wrong. **26 files depend on
+those three symbols** — the `phase13_runtime_*` sources, four
+`mir_*_smoke_test_entry.gst`, `phase17_runtime_import.py`,
+`phase17_runtime_symbol_version.py`, `phase20_stdlib_runtime_differential.py`,
+`phase21_full_compiler_native_qualification.py`, and
+`cranelift_feature_registry.json` with its schema. They are the approved-
+runtime-import corpus, which is the machinery D2 relies on to move the other
+seven files.
 
-**O2 — D3 and D6 disagree about how many assembly blocks exist.** The eight
-blocks are structured `#if __x86_64__ { #if __APPLE__ / #else } #elif
-__aarch64__ { #if __APPLE__ / #else }`. So **four are macOS-only and four are
-aarch64**, and under D6 — name exactly what CI builds, which is Linux
-x86_64 — only **two blocks are actually built**. D3's port is therefore 2
-blocks or 8 depending on a question D6 raises and does not answer: are the
-unbuilt platform branches **deleted** or **kept unbuilt**? D6 says a seed
-must not imply portability it has no evidence for; it does not say the code
-must go. Answer this before D3 is scheduled, because it changes the size of
-the work by 4x.
+**They must not be rewritten in Gust.** The point of the fixtures is that the
+callee is *foreign*; a Gust implementation would test Gust calling Gust and
+the contract under test would evaporate. This is the trap in "everything goes
+to Gust" and it is worth stating because D2 makes it sound obvious.
 
-**O3 — who owns the freestanding subset?** D2's first obligation is defining
-the Gust subset the runtime must be written in. That is a **language-surface
-definition**, not lane work, and may belong in the VISION §0.15 OD register
-rather than here. Until it has an owner it will be written implicitly by
-whoever ports `scratch.c` first, which is the worst outcome.
+**They go into the `#![no_std]` Rust crate D3 creates.** That keeps them
+genuinely foreign, uses a crate that must exist anyway, and the FFI surface
+they then exercise — Gust calling Rust — is exactly the surface that survives
+D2 and D3. Symbol names stay byte-identical, so no registry *value* changes.
 
-## Before the gate can close
+**Consequence for sequencing, which D3 did not anticipate:** D3 sequences
+`fiber.c` last. The crate it creates is needed *first*. So the crate is
+created early with the fixtures in it, and `fiber.c` moves into it last. The
+crate's creation and `fiber.c`'s port are separate patches.
 
-**O4 — when does D8's job stop being allowed to fail?** A job standing red
-indefinitely is decoration, not a falsifier. It needs a promotion criterion:
-what makes it required, and what happens to the phase if it is still red at
-that point.
+**This is not a free move.** Two guards assert the C file by path or product:
+`scripts/cranelift_registry.py:2538` tests
+`source["source_path"] == "src/runtime/approved_scalar_imports.c"`, and
+`scripts/phase21_full_compiler_native_qualification.py:92` expects
+`approved_scalar_imports.o` in the object set.
+`scripts/phase20_stdlib_runtime_differential.py:57` carries
+`runtime_component:approved_scalar_imports`, and the Phase 17 package and
+symbol-version guards carry `three_approved_scalar_imports` boundary sets.
+Those updates are **part of the rehoming patch**, with a successor record,
+not a follow-up. `cranelift_feature_registry.json` is edited in place and
+never reserialized.
 
-**O5 — is the `$CC`/gnu path tested, or only supported?** D9 keeps `cc`
-supported indefinitely and D9a makes musl the proving configuration.
-Supported-but-untested rots. Either CI carries both configurations, at real
-cost, or "supported" is downgraded to "not deliberately broken" and said so.
+## O2 — how many assembly blocks · **RESOLVED: port all eight; D6 binds the seed, not the runtime**
 
-**O6 — what target do user builds default to?** Follows from D9a and is
-user-visible. `gust build foo.gst` on a machine with both toolchains present
-resolves to musl or gnu, and the answer has different libc behaviour.
+The conflict dissolves once the two artifacts are separated. **D6 requires
+the *seed* to name the platforms it can bootstrap. It does not require the
+*runtime* to drop platforms it already supports.** Those are different
+artifacts with different obligations, and reading D6 as a licence to delete
+runtime code was the error.
 
-**O7 — what exactly does D4 compare, and how is path nondeterminism
-handled?** "Emitted objects" is not yet an artifact list, and objects embed
-absolute paths and debug info. A `--remap-path-prefix` equivalent is almost
-certainly needed. This is separate from, and in addition to, the unverified
-Cranelift determinism prerequisite D4 already records.
+The arithmetic also does not support deleting by architecture.
+The blocks are `#if __x86_64__ { #if __APPLE__ / #else } #elif __aarch64__
+{ #if __APPLE__ / #else }`, so the four quadrants are macOS-x86_64,
+Linux-x86_64, **macOS-aarch64** and Linux-aarch64. Modern macOS *is*
+aarch64, so "delete aarch64, keep darwin" is incoherent — and
+`compiler/mir_target_authority.gst` names `"darwin"` as a live target, so
+deleting its support would contradict a live authority rather than tidy up.
 
-## Release mechanics — all fall out of D1 and D7
+So: **port all eight blocks, preserving all four quadrants.** The marginal
+cost over porting two is close to zero, because this is D3's copy-paste —
+the same assembly text under the same `cfg` structure, `#if` becoming
+`#[cfg]`. Add a guard asserting the ported crate carries the same four
+platform quadrants as `fiber.c` did, so the copy-paste is provably lossless.
 
-**O8 — what *is* a release?** D1 bootstraps from the previous one and D7
-requires publishing a seed digest and a fixed-point proof. Neither says what
-a release is: a tag, an artifact, hosted where, obtained how — including by
-a build with no network, which an auditable chain arguably requires.
+Record explicitly that **three of the four quadrants remain unbuilt**. That
+is a pre-existing condition, and the port must neither silently worsen it nor
+silently claim to have fixed it. D6's obligation is discharged by the seed
+naming Linux x86_64, not by the runtime shedding code.
 
-**O9 — is there a bootstrap floor?** Bootstrap-from-previous-release means
-either every intermediate release must exist forever, or a floor is declared
-and releases below it are unsupported. Rust and Go both hit this; it is
-cheaper to decide now than to discover.
+## O3 — who owns the freestanding subset · **RESOLVED: lane-owned spec plus guard, delivered as patch 1; escalates to the OD register only if it needs new language surface**
 
-**O10 — what attests a release?** D7's "verified rather than trusted" rests
-on the fixed-point proof, but a published digest still needs provenance, and
-the checked-in bridge binary of D1's option B needs it more.
+The subset is **derivable, not designed**: it is exactly what remains once
+runtime code may not use the `str`, `Vector`, `HashMap` and arena it
+implements. A derivable constraint is lane work. VISION §0.15's OD register
+is for genuinely open language questions — OD-3 shared ownership, OD-9 model
+fluency — and putting a derivable constraint there would dilute it.
 
-## Measurements owed — not decisions
+So the rule is: **derivable constraint → lane; new language surface → OD.**
+If defining the subset turns out to need a new spelling — a `#[freestanding]`
+attribute, a module-level mode — *that* is an OD and escalates. Writing a
+document that says "do not call `std.Clone` here" is not.
 
-- Cranelift object determinism (D4's prerequisite).
-- D9's poison test extended past `std` to the runtime archive, pthread and
-  the host object.
-- The fiber benchmark on musl before D9a's job is called performance-
-  representative.
+It is delivered as **the first patch of the runtime work**, before any file
+moves, and the deliverable is a spec section **and a guard**. The guard is
+what makes it real: a subset that exists only as prose will be violated by
+the first port and nobody will notice until the compiler recurses. The
+failure mode this prevents — the subset written implicitly by whoever ports
+`scratch.c` first — is the reason it is sequenced first rather than
+alongside.
+
+## O4 — when D8's job stops being allowed to fail · **RESOLVED: expected-red with a named reason; required the moment the last C source leaves the tree**
+
+There is no `continue-on-error` precedent anywhere in the repository's 153
+workflows, so a job standing red would be anomalous and would be read as
+breakage. It therefore needs a stated contract rather than an exemption.
+
+The job is **non-required and expected-red from the start, and it carries
+its expected-failure reason as data**: the list of C inputs still required.
+It must fail for *that* reason. **Failing for a different reason is a
+regression and is reported as one** — that is the inversion discipline
+applied to a CI job, and it is what makes an expected-red job a measurement
+rather than decoration.
+
+Its promotion criterion is **mechanical, not a date**: it becomes required
+at the moment its expected-failure list empties, which is the moment the last
+C source leaves the tree. So the job cannot be "allowed to fail" indefinitely
+by inattention — the list is the schedule, and it shrinks patch by patch.
+
+## O5 — is the `$CC`/gnu path tested · **RESOLVED: one gnu smoke job, and say plainly that the full suite is musl-only**
+
+Doubling a 153-workflow matrix is not a real option and pretending otherwise
+would be how "supported" quietly becomes "untested".
+
+**Supported means: builds, links, and passes a defined smoke subset on the
+gnu target.** One job, not the matrix. Everything beyond that subset is
+proved on musl only, and the documentation says so in those words rather
+than implying parity. A user on gnu gets a working compiler and an honest
+statement of what was verified.
+
+This is the same move as D9 and D9a — a narrower claim that is true, instead
+of a broad one that rots.
+
+## O6 — default target for user builds · **RESOLVED: the host's native target; musl is opt-in**
+
+`gust build foo.gst` on a glibc host produces a glibc binary. Defaulting to
+musl would hand users a static binary with a `dlopen` that always fails and
+different name-resolution behaviour, as a side effect of a decision about how
+*Gust's own CI* proves a gate. That is a bad trade and users did not ask for
+it.
+
+musl is reachable by explicit `--target`. This follows directly from D9a:
+musl is the **proving configuration**, not the supported default, and the
+distinction is worth nothing if the user-facing default quietly follows the
+CI configuration.
+
+## O7 — what D4 compares, and path nondeterminism · **RESOLVED: the compiler's own object set, paths remapped, debug info included**
+
+Three parts, because "compare emitted objects" named none of them.
+
+**The artifact set** is the objects the compiler emits for `compiler/*.gst`
+— the compiler compiling itself. Not the runtime objects, which are built by
+a different toolchain under D2 and D3 and whose reproducibility is that
+toolchain's problem, and not linked executables, which is D4's original
+point.
+
+**Paths are remapped at build time**, not stripped afterwards. Absolute
+paths enter objects through debug info and through any embedded source
+location, and a fixed point that only holds inside one checkout directory is
+not the property D7 promises a third party.
+
+**Debug info is included in the comparison, not stripped.** Stripping would
+make the comparison pass more easily and would hide exactly the class of
+nondeterminism most likely to be present. If it turns out determinism holds
+only after stripping, that is a **narrower fixed point** and must be recorded
+as one — with the stripped sections named — rather than quietly adopted. The
+difference between "the compiler reproduces itself" and "the compiler
+reproduces itself except for the parts we did not look at" is the whole
+value of the proof.
+
+This is separate from, and in addition to, D4's already-recorded prerequisite
+that Cranelift's object output be deterministic at all.
+
+## O8 — what a release *is* · **RESOLVED: an annotated tag, an artifact set with a digest manifest, and no network on the critical path**
+
+A release is:
+
+1. An **annotated git tag**.
+2. An **artifact set** attached to it: the per-platform bridge binaries of
+   D1 option B, the fixed-point proof log, and a **manifest** listing every
+   artifact with its digest.
+3. The manifest, and only the manifest, is **also committed to the
+   repository as tracked text**. Binaries live as release assets; the text
+   that describes them lives in git, where it is diffable and where D7's
+   "tracked text or a proved artifact" condition can see it.
+
+**The network is never on the critical path.** The build accepts a local
+path to the seed (`GUST_BOOTSTRAP_SEED=/path/to/artifact`) and verifies it
+against the tracked manifest digest. Fetching is a convenience for the common
+case, not a requirement. An auditable chain that cannot be built offline is
+not auditable by anyone who does not trust the host, which is most of the
+people the property is for.
+
+## O9 — is there a bootstrap floor · **RESOLVED: N-1 only, with the checked-in bridge as the documented escape**
+
+**Release N builds from release N-1 and nothing older is promised.** Every
+intermediate tag continues to exist — they are tags and assets, which cost
+nothing to keep — but the supported, tested path is one step.
+
+Promising more would mean testing more, and a chain nobody exercises is a
+chain that is already broken. Rust and Go both arrived here; there is no
+reason to rediscover it.
+
+**The escape is D1's option B, and this is what it is for.** If the chain is
+broken — an intermediate release is unreproducible, or someone is
+bootstrapping from nothing — the checked-in verified bridge binary re-enters
+the chain in one step. B being "the bridge" is not a transitional note; it is
+the permanent answer to the floor problem.
+
+## O10 — what attests a release · **RESOLVED: two layers, and the reproducible one is the one that counts**
+
+**Layer 1, the attestation that matters: the fixed-point proof.** It says
+*what the artifact is*, and anyone can regenerate it from source. This is
+D7's "verified rather than trusted" and it is the reason option B was
+acceptable at all.
+
+**Layer 2, provenance: a signed manifest.** Signing the digest manifest —
+via whatever the project already uses for tags, or GitHub artifact
+attestations — says *who published it*. This is worth having, and it is
+strictly the weaker claim.
+
+Stated plainly so the two are not confused: **a signature on a blob nobody
+can reproduce is trust, not verification.** If the two layers ever conflict,
+the fixed point wins and the release is withdrawn. Layer 2 exists to detect
+substitution, not to substitute for layer 1.
 
 ## Sequence implied by the above
 
+Reordered by O1 and O3, which moved work earlier than D2 and D3 assumed.
+
 1. Enumerate what actually requires a C toolchain, measured (pre-work, stated above).
-2. Stand up the no-C-compiler CI job as the standing falsifier (D8).
-3. Verify Cranelift object determinism (D4 prerequisite).
-4. Define and guard the freestanding Gust subset the runtime must be written
-   in (D2's first obligation), then runtime to **Gust** file by file behind
-   parity evidence — `scratch.c`, `strings.c`, `host_io.c` first to exercise
-   the subset, `arena.c` behind its no-allocate guard, Rust as the per-file
-   fallback. Delete `approved_scalar_imports.c` rather than rewriting it.
-   `fiber.c` last, as a `#![no_std]` Rust crate carrying the two
-   `global_asm!` blocks verbatim (D3).
-5. Native stage chain and the new fixed point (D4).
-6. Seed cut-over (D1).
-7. Delete the emitter and its entry together (D5).
-8. Make `cc` optional rather than required (D9): keep `$CC` honoured, and
-   prove the gate with a musl + `rust-lld` link in the D8 job. Extend the
-   measured link to cover the runtime archive, pthread and the host object —
-   none of which the `std`-only measurement covered.
+2. Stand up the no-C-compiler CI job as the standing falsifier (D8), carrying
+   its expected-failure list as data and required to fail for that reason
+   only (O4). Add the single gnu smoke job at the same time (O5).
+3. Verify Cranelift object determinism, and fix the artifact set, path
+   remapping and debug-info policy while doing it (D4 prerequisite, O7).
+4. **Define and guard the freestanding Gust subset** — spec section *and*
+   guard, before any file moves (D2's first obligation, O3).
+5. **Create the `#![no_std]` Rust crate and rehome the `tiny_host_*`
+   fixtures into it**, updating `cranelift_registry.py:2538`,
+   `phase21_full_compiler_native_qualification.py:92`,
+   `phase20_stdlib_runtime_differential.py:57` and the Phase 17 boundary sets
+   in the same patch (O1). This is now *before* the runtime port, not after.
+6. Runtime to **Gust** file by file behind parity evidence — `scratch.c`,
+   `strings.c`, `host_io.c` first to exercise the subset, `arena.c` behind
+   its no-allocate guard, Rust as the per-file fallback (D2).
+7. `fiber.c` last, into the crate from step 5, porting **all eight**
+   `global_asm!` blocks and preserving all four platform quadrants, with a
+   guard proving the copy-paste lossless (D3, O2).
+8. Native stage chain and the new fixed point (D4).
+9. Release mechanics — tag, artifact set, tracked digest manifest, offline
+   seed path, N-1 floor, signed manifest (O8, O9, O10). **Before** the seed
+   cut-over, which has nothing to bootstrap from otherwise.
+10. Seed cut-over (D1).
+11. Delete the emitter and its entry together (D5).
+12. Make `cc` optional rather than required (D9): keep `$CC` honoured, prove
+    the gate with a musl + `rust-lld` link, and extend the measured link to
+    cover the runtime archive, pthread and the host object — none of which
+    the `std`-only measurement covered. The host default stays native (O6).
