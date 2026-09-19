@@ -17,6 +17,10 @@ open phase.
   checkpoint. It is recorded future work, not an active phase.
 - `docs/PHASES_26_AND_27.md` — detailed systems-safety, resource,
   implicit-context, and consolidation plan after the C-retirement tail.
+- `docs/PHASE25_BOOTSTRAP_SEED_POLICY.md` — the Phase 25 bootstrap seed
+  decision: options, ranking, and the runtime-before-seed ordering, with the
+  three C strands measured. Records what the decision does *not* settle,
+  including whether `cc` survives as the linker driver.
 - `docs/COMPILER_ARCHITECTURE_CONSOLIDATION.md` — Phase 24 opening preflight,
   deletion-first sequencing, bounded Phase 24.5 consolidation and the Phase 25
   predecessor gate.

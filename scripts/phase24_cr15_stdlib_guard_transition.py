@@ -2261,6 +2261,39 @@ def normalize_phase23_text_surfaces(
     # Issue #437 is newest, so it runs FIRST and projects the tree back to
     # the state Issue #398's successor was registered against. Same
     # newest-first discipline as every link below it.
+    # Phase 25's seed-policy record is newest, so it runs FIRST. It adds one
+    # document and moves docs/ROADMAP_TAIL.md; no code or route changes.
+    seed_policy_surface = registry.get(
+        "phase25_bootstrap_seed_policy", {}).get("text_surface_successor")
+    if seed_policy_surface is not None:
+        require(seed_policy_surface.get("contract_version") ==
+                "phase25_bootstrap_seed_policy_text_surface_successor_v1" and
+                seed_policy_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Phase 25 seed-policy text surface successor drifted")
+        seed_paths = list(seed_policy_surface["registered_changed_paths"])
+        seed_pre = {row["path"]: row for row
+                    in seed_policy_surface["previous_changed_text_surfaces"]}
+        seed_post = {row["path"]: row for row
+                     in seed_policy_surface["current_changed_text_surfaces"]}
+        require(sorted(seed_pre) == sorted(seed_paths) == sorted(seed_post),
+                "Phase 25 seed-policy registered paths and rows disagree")
+        seed_live = {row["path"]: row for row in rows
+                     if row["path"] in seed_paths}
+        require(sorted(seed_live) == sorted(seed_paths),
+                "Phase 25 seed-policy text surface is missing from the scan")
+        for path in seed_paths:
+            require(seed_live[path] in (seed_pre[path], seed_post[path]),
+                    "Phase 25 seed-policy changed text surfaces are partial "
+                    f"or substituted: {path}")
+        seed_added = set(seed_policy_surface["added_text_surfaces"])
+        rows = [dict(seed_pre.get(row["path"], row)) for row in rows
+                if row["path"] not in seed_added]
+        rows = sorted(rows + [copy.deepcopy(r) for r
+                              in seed_policy_surface["removed_text_surfaces"]],
+                      key=lambda row: str(row["path"]))
+        by_path = {row["path"]: row for row in rows}
+
     parity_surface = registry.get(
         "issue437_parity_residue_adjudication", {}).get(
             "text_surface_successor")

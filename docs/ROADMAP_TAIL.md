@@ -150,12 +150,21 @@ backend path.
 Gust itself.
 
 Replace the legacy C bootstrap stage and establish a native bootstrap seed
-policy. Decide how bootstrap binaries are produced and verified. Rebuild the
-compiler entirely through the native backend. Remove generated stage-one compiler
-C files, and the requirement for a host C compiler from normal bootstrap. Rewrite
-or separately package remaining C runtime components. Remove C shims and pthread
-wrappers where practical. Audit build scripts, Nix packages, CI images and
-release archives. Preserve an independently auditable bootstrap chain.
+policy. Rebuild the compiler entirely through the native backend. Remove
+generated stage-one compiler C files, and the requirement for a host C compiler
+from normal bootstrap. Rewrite or separately package remaining C runtime
+components. Remove C shims and pthread wrappers where practical. Audit build
+scripts, Nix packages, CI images and release archives. Preserve an
+independently auditable bootstrap chain.
+
+**Seed policy decided 2026-09-19: bootstrap from the previous release, with a
+verified checked-in binary as the bridge, and the runtime done before the
+seed.** The runtime is 1,968 hand-written lines that every binary links —
+including whatever replaces the seed — so leaving it until last makes the exit
+gate unreachable whichever seed lands. The options, the ranking and the
+ordering are in `docs/PHASE25_BOOTSTRAP_SEED_POLICY.md`; that file also records
+the first step, which is to enumerate what actually requires a C toolchain
+rather than inherit the count.
 
 > A deliberately retained C runtime library may still exist after generated-C
 > retirement. **Full C removal is a separate policy decision** and should happen
