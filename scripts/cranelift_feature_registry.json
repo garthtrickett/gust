@@ -2861,14 +2861,17 @@
     "full_compiler_progression": {
       "historical_authority": "phase21_opening_evidence_v1",
       "historical_record_preserved": true,
+      "retired_current_artifact": "absent",
+      "retired_current_failure_stage": "before_driver_discovery",
+      "retired_driver_invoked": false,
       "support_authority": "phase21_compiler_support_native_qualification_v1",
       "support_record_preserved": true,
       "cross_feature_authority": "phase20_cross_feature_qualification_v1",
       "cross_feature_record_preserved": true,
       "current_diagnostic": "Native backend canonical MIR verification failed: module function uses an unsupported scalar signature",
-      "current_failure_stage": "before_driver_discovery",
-      "current_artifact": "absent",
-      "driver_invoked": false
+      "current_failure_stage": "none",
+      "current_artifact": "linked_native_compiler_executable",
+      "driver_invoked": true
     },
     "resource_state": "oracle_executables_exit_cleanly_and_rejecting_native_routes_never_reach_driver_or_publish_artifacts",
     "boundary": {
@@ -27100,7 +27103,113 @@
         ]
       }
     },
-    "issue436_justfile_population": {
+      "issue431_full_compiler_baseline": {
+      "status": "issue431_progression_repaired_historical_record_preserved",
+      "text_surface_successor": {
+        "contract_version": "issue431_full_compiler_baseline_text_surface_successor_v1",
+        "current_changed_text_surfaces": [
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "cc9b37ee72a472b9ae28dd76f6bb65dd1995a003a16d43dcec7943a6b919b3e9",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "generated_c_contract": 5,
+              "mir_to_c_name": 61
+            },
+            "owner": "cranelift",
+            "path": "scripts/cranelift_registry.py",
+            "removal_phase": "24"
+          },
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "e75b975d9f3ab97f2c31fc354543f2b8a6f42752d029918c961fe9ae8959d244",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "generated_c_contract": 0,
+              "mir_to_c_name": 5
+            },
+            "owner": "cranelift",
+            "path": "scripts/phase21_opening.py",
+            "removal_phase": "24"
+          },
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "3c159290cb5e6a2c6f467dfdfebef5a039a67daf3403d24fd10aa83f5d7b7bb6",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "generated_c_contract": 4,
+              "mir_to_c_name": 12
+            },
+            "owner": "cranelift",
+            "path": "scripts/phase21_selected_compiler_module_qualification.py",
+            "removal_phase": "24"
+          }
+        ],
+        "partial_extra_or_substituted_surface": "rejected",
+        "previous_changed_text_surfaces": [
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "c9fec27c2cad24ccec462c8b691b21b48477303dee5cfaaa6f7d099eed791788",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "generated_c_contract": 5,
+              "mir_to_c_name": 61
+            },
+            "owner": "cranelift",
+            "path": "scripts/cranelift_registry.py",
+            "removal_phase": "24"
+          },
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "792df3920a95a19f41d0c802235aeb190605d566a6d86789511ffba76fa6006f",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "generated_c_contract": 0,
+              "mir_to_c_name": 5
+            },
+            "owner": "cranelift",
+            "path": "scripts/phase21_opening.py",
+            "removal_phase": "24"
+          },
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "ccf2bd58a8a519e6b266cee0ebbd2d54bf5ad1525d3cfd65be90e8aca63e9f3b",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "generated_c_contract": 4,
+              "mir_to_c_name": 12
+            },
+            "owner": "cranelift",
+            "path": "scripts/phase21_selected_compiler_module_qualification.py",
+            "removal_phase": "24"
+          }
+        ],
+        "registered_changed_paths": [
+          "scripts/cranelift_registry.py",
+          "scripts/phase21_opening.py",
+          "scripts/phase21_selected_compiler_module_qualification.py"
+        ]
+      }
+    },
+  "issue436_justfile_population": {
       "status": "issue436_justfile_population_classified",
       "text_surface_successor": {
         "contract_version": "issue436_justfile_population_text_surface_successor_v1",

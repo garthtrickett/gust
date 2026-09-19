@@ -5,6 +5,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
+import sys
+import tempfile
 from pathlib import Path
 
 
@@ -174,6 +177,7 @@ def validate() -> dict:
             f"the registry and this contract both say {baseline['source_line']}. "
             "Set both to "
             f"{found[0]}.")
+    verify_full_compiler_progression(registry)
     require(record.get("unclassified_failures") == [],
             "Patch 21.1 leaves an unclassified failure")
     boundary = record.get("boundary", {})
@@ -263,6 +267,65 @@ def render(record: dict) -> str:
     return "\n".join(lines)
 
 
+def verify_full_compiler_progression(registry: dict) -> None:
+    """Attempt the compile and check it against the PROGRESSION successor.
+
+    Issue #431: the historical Patch 21.8 baseline says the full compiler
+    stops before driver discovery with no artifact. That was true when it
+    was recorded and `TASK.md` marks Phase 21 an immutable completion
+    record, so it is preserved untouched. What is false today is the
+    CURRENT state, and the registry already has the mechanism for that --
+    `full_compiler_progression`, which carries `historical_record_preserved`
+    alongside `current_*` fields.
+
+    The defect this closes is that nothing checked the progression against
+    reality. The only live check was a line marker on the historical
+    record: it confirmed the record still POINTS at `func main()` and could
+    not notice the progression had become false. A record that cannot fail
+    on the thing it describes is not a guard.
+
+    The driver is resolved as a SIBLING of the `gust` binary, so this uses
+    the installed package layout. Absent package: report and return -- an
+    unbuilt package is not evidence either way, and failing on it would put
+    a cargo build in front of every contract-only job.
+
+    Diagnostics go to STDERR. `witness-cases` and `active-residue-cases`
+    emit tab-separated rows that `scripts/phase21_opening.sh` reads with
+    `while read`, so anything on stdout becomes a bogus case row.
+    """
+    progression = registry.get(
+        "phase21_selected_compiler_module_qualification", {}
+    ).get("full_compiler_progression", {})
+    if not progression:
+        return
+    package = ROOT / "build/phase10-package/bin"
+    binary, driver = package / "gust", package / "gust-native-backend"
+    if not (binary.is_file() and driver.is_file()):
+        print("phase21 full-compiler progression: native package absent, "
+              "compile not attempted; run `make phase10-native-package`",
+              file=sys.stderr)
+        return
+    with tempfile.TemporaryDirectory() as scratch:
+        out = Path(scratch) / "full-compiler.bin"
+        done = subprocess.run(
+            [str(binary), "--backend", "cranelift", "-o", str(out),
+             "compiler/test_runner_entry.gst"],
+            cwd=ROOT, capture_output=True, text=True, timeout=3600)
+        produced = out.is_file() and out.stat().st_size > 0
+    expect_artifact = progression["current_artifact"] != "absent"
+    require(produced == expect_artifact,
+            "full-compiler progression artifact drifted: the successor says "
+            f"{progression['current_artifact']!r}, the compile "
+            f"{'produced' if produced else 'produced no'} artifact")
+    require((done.returncode == 0) == expect_artifact,
+            "full-compiler progression exit drifted: the successor implies "
+            f"exit {'0' if expect_artifact else 'non-zero'}, got "
+            f"{done.returncode}. stderr: {done.stderr.strip()[:200]!r}")
+    print("phase21 full-compiler progression: compile attempted, "
+          f"exit={done.returncode}, artifact="
+          f"{'present' if produced else 'absent'}", file=sys.stderr)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("command", choices=(
@@ -321,9 +384,22 @@ def main() -> None:
                 progression.get("historical_authority")
                 == record["contract_version"]
                 and progression.get("historical_record_preserved") is True
+                # Issue #431: these two clauses required the progression to
+                # AGREE with the historical baseline, which is only true
+                # while nothing has progressed. The full compiler now
+                # reaches the driver and publishes an artifact, so the
+                # progression must DIFFER from the preserved record -- that
+                # difference is what a progression is for. Inverted rather
+                # than dropped: the historical values are still named, and
+                # a progression that silently matches them again means the
+                # capability regressed.
                 and progression.get("current_failure_stage")
-                == record["full_compiler_baseline"]["failure_stage"]
+                != record["full_compiler_baseline"]["failure_stage"]
                 and progression.get("current_artifact")
+                != record["full_compiler_baseline"]["artifact"]
+                and progression.get("retired_current_failure_stage")
+                == record["full_compiler_baseline"]["failure_stage"]
+                and progression.get("retired_current_artifact")
                 == record["full_compiler_baseline"]["artifact"]
                 and progression.get("support_authority")
                 == registry["phase21_compiler_support_native_qualification"][
@@ -335,7 +411,8 @@ def main() -> None:
                     "contract_version"
                 ]
                 and progression.get("cross_feature_record_preserved") is True
-                and progression.get("driver_invoked") is False
+                and progression.get("driver_invoked") is True
+                and progression.get("retired_driver_invoked") is False
                 and progression.get("current_diagnostic"),
                 "successor full-compiler progression authority drifted",
             )
