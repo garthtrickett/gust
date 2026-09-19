@@ -96,3 +96,131 @@ guards reaching the backend through `GUST_RUNNER_ROUTE` or through rows every
 census projects away. The bootstrap chain has the same shape — components that
 need a C toolchain without spelling `cc`. An enumeration that starts from the
 existing registers will inherit the same blind spot.
+
+---
+
+# Remaining Phase 25 decisions
+
+Worked through 2026-09-19 against `bae85510`. The seed decision above is D1.
+Each entry says who decides: **lane** means this is ordinary lane work and is
+decided here; **operator** means it is policy and is not decided here.
+
+## D2 — the C runtime's disposition · *lane* · **DECIDED: rewrite in Rust**
+
+1,968 hand-written lines across eight files, linked into every binary.
+
+**The obvious answer is blocked.** Rewriting it in Gust needs gated raw
+pointers, explicit FFI ownership and ABI layout enforcement — and those are
+**Phase 26.1**, after this phase. `arena.c` is pointer arithmetic and
+`fiber.c` is context switching; neither is expressible in Gust today.
+
+**Declaring it a foreign component does not satisfy the gate.** The exit gate
+excepts *optional* foreign-runtime components. This runtime is mandatory —
+every binary links it — so the escape clause does not reach it. That is worth
+stating because it is the tempting shortcut.
+
+So: **Rust.** `cargo` is already a hard dependency, Rust expresses everything
+these files do including inline assembly, and it unblocks the gate without
+waiting for Phase 26. It also does not foreclose a later Gust rewrite; C→Rust
+now and Rust→Gust after 26.1 are compatible.
+
+Risk: this is a real rewrite of arena and fiber semantics, not a translation.
+`scripts/phase17_retained_c_runtime_parity.sh` already exists as a comparison
+harness and should gate each file.
+
+## D3 — `fiber.c` specifically · *lane* · **DECIDED: Rust with `global_asm!`**
+
+719 lines carrying **eight blocks of inline assembly** for context switching,
+plus pthread. The riskiest single file in D2 and the one most likely to be
+argued into the "foreign component" bucket. It should not be: Rust supports
+`global_asm!`/`asm!` directly, so the assembly ports as assembly. Sequence it
+**last** of the eight, behind the files with cheaper parity evidence.
+
+## D4 — the form of the fixed point · *lane* · **DECIDED: compare emitted objects**
+
+Today's proof is `stage2.c == stage3.c`, byte-identical *text*. Natively the
+equivalent is comparing **Cranelift-emitted object files**, not linked
+executables: linking introduces ordering and layout the compiler does not own,
+so a binary comparison would be proving the linker deterministic rather than
+the compiler self-reproducing.
+
+**This depends on a fact nobody has checked: that Cranelift's object output is
+itself deterministic.** Verify before adopting; if it is not, that is a
+prerequisite patch, not a footnote.
+
+## D5 — when the emitter is deleted · *lane* · **DECIDED: one patch, after the native chain is green**
+
+`compiler/codegen.gst` is 4,765 lines; `--backend bootstrap-emitter` and its
+`GUST_BOOTSTRAP_EMITTER` authority appear 6× in the justfile, 6× in the
+Makefile and 3× in the compiler entry. `TASK.md` already sequences the
+deletion after the native bootstrap replaces it.
+
+What is decided here is that the emitter and the entry go **together, in one
+patch**. They exist only for each other: an entry with no emitter is dead
+machinery, and an emitter no entry can reach is the dead code #424 was filed
+about.
+
+## D6 — platform scope of the seed · *lane* · **DECIDED: exactly what CI builds, named**
+
+CI is **`ubuntu-latest`/`ubuntu-24` only — 261 jobs, no macOS runner** — yet
+`fiber.c` and `file_io.c` carry ten `__APPLE__`/`mach_` branches. So the tree
+has macOS code that nothing builds or tests.
+
+The seed must therefore name its platforms explicitly rather than implying
+portability it has no evidence for. A seed supporting one platform while the
+docs imply several is Phase 24's count problem again: accurate about the
+register, incomplete about the tree. If macOS is meant to be supported, that
+needs a runner before it needs a seed.
+
+## D7 — what "independently auditable" requires · *lane* · **DECIDED: two conditions**
+
+The tail requires preserving an independently auditable bootstrap chain, and
+never says what that means. It means: **(a)** every bootstrap input is either
+tracked text or an artifact whose reproduction is proved, and **(b)** a third
+party can reproduce the fixed point from source alone. Concretely, each
+release publishes the seed digest and the fixed-point proof.
+
+This is what makes option B's checked-in binary acceptable at all — it is the
+difference between *verified* and *trusted*.
+
+## D8 — Nix and CI images · *lane* · **DECIDED: a no-C-compiler job is the gate's falsifier**
+
+`flake.nix` currently ships **both `tinycc` and `clang`**, plus `stdenv.cc`.
+
+Removing them is not incidental cleanup — it is the evidence. The gate says a
+clean machine builds and tests Gust without invoking a C compiler, and the
+only honest falsifier for that is **a CI job on an image with no C compiler
+installed**. Stand that job up early and let it stay red; it measures the
+phase's remaining distance instead of asserting the endpoint at the end.
+
+## D9 — does `cc` survive as the linker driver? · **operator**
+
+Patch 18.7 established it (`compiler/mir_target_authority.gst:660-665`) and
+`#401` defends it by name. Cranelift emits objects; something still links
+them. "No host C compiler" may honestly resolve to *no host C compiler, but
+still a linker*.
+
+Settle it **before** the closure sentence is written. Phase 24 discovered its
+equivalent at the gate and spent five patches recovering.
+
+## D10 — what counts as an "optional foreign-runtime component"? · **operator**
+
+The exit gate excepts them and nothing defines them. This is the tail's own
+"full C removal is a separate policy decision", made concrete.
+
+One input to that decision is already settled by D2: **the runtime does not
+qualify**, because it is mandatory rather than optional. Without a definition,
+the exception is an escape hatch wide enough to pass the gate with the C
+still in place — which is exactly the shape of defect Phase 24's narrowed
+closure sentence existed to avoid.
+
+## Sequence implied by the above
+
+1. Enumerate what actually requires a C toolchain, measured (pre-work, stated above).
+2. Stand up the no-C-compiler CI job as the standing falsifier (D8).
+3. Verify Cranelift object determinism (D4 prerequisite).
+4. Runtime to Rust, file by file behind parity evidence, `fiber.c` last (D2, D3).
+5. Native stage chain and the new fixed point (D4).
+6. Seed cut-over (D1).
+7. Delete the emitter and its entry together (D5).
+8. Linker-driver disposition, once D9 is answered.

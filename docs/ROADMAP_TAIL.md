@@ -162,9 +162,20 @@ verified checked-in binary as the bridge, and the runtime done before the
 seed.** The runtime is 1,968 hand-written lines that every binary links —
 including whatever replaces the seed — so leaving it until last makes the exit
 gate unreachable whichever seed lands. The options, the ranking and the
-ordering are in `docs/PHASE25_BOOTSTRAP_SEED_POLICY.md`; that file also records
-the first step, which is to enumerate what actually requires a C toolchain
-rather than inherit the count.
+ordering are in `docs/PHASE25_BOOTSTRAP_SEED_POLICY.md`, together with the
+rest of the phase's decisions worked through on the same date: the runtime
+goes to **Rust**, not Gust, because gated raw pointers and FFI are Phase 26.1
+and the runtime is mandatory rather than an optional foreign component; the
+fixed point becomes a comparison of **emitted objects** rather than linked
+binaries; the emitter and its bootstrap entry are deleted **together**; and
+the seed names its platforms, because CI builds Linux only while the runtime
+carries unbuilt macOS branches. Two rows are left to the operator — whether
+`cc` survives as the linker driver, and what counts as an *optional*
+foreign-runtime component under the exit gate.
+
+That file also records the first step, which is neither the seed nor the
+runtime: enumerate what actually requires a C toolchain rather than inherit
+the count.
 
 > A deliberately retained C runtime library may still exist after generated-C
 > retirement. **Full C removal is a separate policy decision** and should happen
