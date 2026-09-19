@@ -460,7 +460,8 @@ closure sentence existed to avoid.
    parity evidence — `scratch.c`, `strings.c`, `host_io.c` first to exercise
    the subset, `arena.c` behind its no-allocate guard, Rust as the per-file
    fallback. Delete `approved_scalar_imports.c` rather than rewriting it.
-   `fiber.c` last, on D3's open routes.
+   `fiber.c` last, as a `#![no_std]` Rust crate carrying the two
+   `global_asm!` blocks verbatim (D3).
 5. Native stage chain and the new fixed point (D4).
 6. Seed cut-over (D1).
 7. Delete the emitter and its entry together (D5).
