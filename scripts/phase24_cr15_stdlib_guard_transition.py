@@ -2294,6 +2294,37 @@ def normalize_phase23_text_surfaces(
         rows.sort(key=lambda r: str(r["path"]))
         by_path = {r["path"]: r for r in rows}
 
+    # Issue #451 is the newest successor, so it runs FIRST. Three files:
+    # the provenance guard (justfile enabled), the retirement inventory
+    # (three recipes owned by phase25) and cranelift_registry.py, which
+    # moves because adding a top-level key edits TOP_FIELDS.
+    ownership_surface = registry.get(
+        "issue451_inventory_ownership", {}).get("text_surface_successor")
+    if ownership_surface is not None:
+        require(ownership_surface.get("contract_version") ==
+                "issue451_inventory_ownership_text_surface_successor_v1" and
+                ownership_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Issue #451 ownership text surface successor drifted")
+        ow_paths = list(ownership_surface["registered_changed_paths"])
+        ow_pre = {r["path"]: r for r
+                  in ownership_surface["previous_changed_text_surfaces"]}
+        ow_post = {r["path"]: r for r
+                   in ownership_surface["current_changed_text_surfaces"]}
+        require(sorted(ow_pre) == sorted(ow_paths) == sorted(ow_post),
+                "Issue #451 registered paths and rows disagree")
+        ow_live = {r["path"]: r for r in rows if r["path"] in ow_paths}
+        require(sorted(ow_live) == sorted(ow_paths),
+                "Issue #451 registered text surface is missing from the scan")
+        require(ow_live in (ow_pre, ow_post),
+                "Issue #451 changed text surfaces are partial or "
+                "substituted: the live rows match neither the complete "
+                "predecessor state nor the complete successor state "
+                f"({sorted(p for p in ow_paths if ow_live[p] != ow_post[p])} differ from post)")
+        rows = [dict(ow_pre.get(r["path"], r)) for r in rows]
+        rows.sort(key=lambda r: str(r["path"]))
+        by_path = {r["path"]: r for r in rows}
+
     # Issue #436's justfile population is the newest successor here, so it
     # runs FIRST. Whole-map comparison per the PR #447 review.
     population_surface = registry.get(

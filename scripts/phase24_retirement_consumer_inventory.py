@@ -735,6 +735,25 @@ RECIPE_ROWS = [
      "scripts/stdlib_s1_mutex_guard_scope_parity.sh", "stdlib-coordination", "migrate", True),
     ("guard-stdlib-s1-str-surface",
      'bash scripts/run-gust-file.sh "$fixture"', "stdlib-coordination", "migrate", True),
+    # Issue #451: these three compile `build/test_runner_final.c`, which is
+    # `cat src/runtime.c build/test_runner.c` -- the hand-written runtime
+    # concatenated with emitter output. They were invisible to the census
+    # until the provenance scan learned to see a line that both binds and
+    # invokes (`CC_BIN=...; "$CC_BIN" ...`), so no patch had ever claimed
+    # them. They retire when the emitter retires: Patch 25.10 deletes the
+    # emitter and its bootstrap entry together, and these recipes cannot
+    # outlive it. Owner `phase25`, which `inventory_owner`'s pattern
+    # already accepts and which the Makefile's compiler-binary builds
+    # already use by name.
+    ('run-step52-positive-batch',
+     'justfile: "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_step52_positive_final.c',
+     'phase25', 'retire-with-emitter', False),
+    ('make-test-suite',
+     'justfile: "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_final.c',
+     'phase25', 'retire-with-emitter', True),
+    ('make-test-suite-parallel',
+     'justfile: "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_final.c',
+     'phase25', 'retire-with-emitter', True),
 ]
 
 WORKFLOW_ROWS = [
@@ -2136,8 +2155,15 @@ def validate() -> dict:
     # route-dependence, and Patch 24.3 is the carried future work that owns
     # correcting it. Naming 24.16 there instead would have been tidier and
     # false.
+    # Issue #451 adds "phase25" for three justfile recipes that compile
+    # emitter output and retire with the emitter at Patch 25.10. "25"
+    # already appears, but `inventory_owner`'s pattern only accepts
+    # `24.N`, `stdlib-coordination` or `phase25`, so a row owned "25" is
+    # invisible to the provenance guard asking who owns a file. The
+    # spelling matters; both are kept rather than unified, because
+    # renaming existing rows is a separate change with its own evidence.
     require(owners == ["24.12", "24.12b", "24.13", "24.14", "24.15", "24.16",
-                       "24.3", "25", "stdlib-coordination"],
+                       "24.3", "25", "phase25", "stdlib-coordination"],
             f"inventory owner set drifted: {owners}")
     require(RETIRED_BY not in owners,
             f"Patch {RETIRED_BY} still owns inventory rows after retiring "
