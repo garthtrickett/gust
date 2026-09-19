@@ -977,7 +977,7 @@ def shell_scripts() -> list:
     35-invocation population and its whole by_class distribution are
     unchanged from before any of this.
     """
-    return sorted(ROOT.glob("scripts/*.sh"))
+    return sorted(ROOT.glob("scripts/*.sh")) + [ROOT / "justfile"]
 RECIPE_HEAD = re.compile(r'^@?[A-Za-z0-9_][A-Za-z0-9_-]*(?:\s+[^:\n]*)?:(?!=)')
 
 

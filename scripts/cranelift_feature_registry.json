@@ -23600,7 +23600,7 @@
       "selected_entry": "--backend bootstrap-emitter",
       "status": "patch24_11_decided_patch24_13_lands"
     },
-    "inventory_digest": "a014f136d709b775d65e66d644ec1ef5bbef1d1fbea708c533ad8b1b68fc5f63",
+    "inventory_digest": "716ac2c20d56eaba7e58f1b02d8fcac012f51758b01a03cf7d92c37d4bb88d86",
     "retired": {
       "by": "24.12a",
       "harnesses": [
@@ -23621,7 +23621,7 @@
         "guard-cranelift-phase21-inert-scoped-query-records-evidence"
       ]
     },
-    "row_count": 106,
+    "row_count": 109,
     "rows": [
       {
         "action": "convert",
@@ -23903,7 +23903,22 @@
         "id": "guard-stdlib-s1-str-surface",
         "owner_patch": "stdlib-coordination"
       },
-      {
+              {
+          "action": "retire-with-emitter",
+          "id": "run-step52-positive-batch",
+          "owner_patch": "phase25"
+        },
+        {
+          "action": "retire-with-emitter",
+          "id": "make-test-suite",
+          "owner_patch": "phase25"
+        },
+        {
+          "action": "retire-with-emitter",
+          "id": "make-test-suite-parallel",
+          "owner_patch": "phase25"
+        },
+        {
         "action": "retire",
         "id": "phase23-mir-to-c-focused-live.yml",
         "owner_patch": "24.12"
@@ -27206,6 +27221,112 @@
           "scripts/cranelift_registry.py",
           "scripts/phase21_opening.py",
           "scripts/phase21_selected_compiler_module_qualification.py"
+        ]
+      }
+    },
+    "issue451_inventory_ownership": {
+      "status": "issue451_three_recipes_owned_by_phase25",
+      "text_surface_successor": {
+        "contract_version": "issue451_inventory_ownership_text_surface_successor_v1",
+        "current_changed_text_surfaces": [
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "167863b7dcf905766231db9be3c3c0bf304cfb7f9b8629234d512c4ab95b95d7",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "generated_c_contract": 5,
+              "mir_to_c_name": 61
+            },
+            "owner": "cranelift",
+            "path": "scripts/cranelift_registry.py",
+            "removal_phase": "24"
+          },
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "bd03a12a302c1f8dbdfba508f8e2fc863cca8dff0c1cdd205104e5eee56a3b72",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 2,
+              "generated_c_contract": 3,
+              "mir_to_c_name": 4
+            },
+            "owner": "cranelift",
+            "path": "scripts/phase24_c_toolchain_provenance.py",
+            "removal_phase": "24"
+          },
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "03f62c08d4e878cdddbaff1fb37913a4dc5a919bac8e88d3079d107fa92a1a90",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 33,
+              "generated_c_contract": 8,
+              "mir_to_c_name": 86
+            },
+            "owner": "cranelift",
+            "path": "scripts/phase24_retirement_consumer_inventory.py",
+            "removal_phase": "24"
+          }
+        ],
+        "partial_extra_or_substituted_surface": "rejected",
+        "previous_changed_text_surfaces": [
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "cc9b37ee72a472b9ae28dd76f6bb65dd1995a003a16d43dcec7943a6b919b3e9",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "generated_c_contract": 5,
+              "mir_to_c_name": 61
+            },
+            "owner": "cranelift",
+            "path": "scripts/cranelift_registry.py",
+            "removal_phase": "24"
+          },
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "29350efa61726ecb15e0a34ac1232fc989efeaa4cacb9530c328acb652d924a8",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 2,
+              "generated_c_contract": 3,
+              "mir_to_c_name": 4
+            },
+            "owner": "cranelift",
+            "path": "scripts/phase24_c_toolchain_provenance.py",
+            "removal_phase": "24"
+          },
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "9226c4d16812e0cc219a06159d2f5c551c7b2cfe12928a632bf14ad5ba3138e1",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 33,
+              "generated_c_contract": 8,
+              "mir_to_c_name": 86
+            },
+            "owner": "cranelift",
+            "path": "scripts/phase24_retirement_consumer_inventory.py",
+            "removal_phase": "24"
+          }
+        ],
+        "registered_changed_paths": [
+          "scripts/cranelift_registry.py",
+          "scripts/phase24_c_toolchain_provenance.py",
+          "scripts/phase24_retirement_consumer_inventory.py"
         ]
       }
     },
