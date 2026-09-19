@@ -182,10 +182,15 @@ link with no C compiler invoked is verified in that file — but only on the
 **musl** target with `-C linker-flavor=ld.lld`. On `*-linux-gnu` there is no
 stock C-free link, because rustc emits a driver-style line and expects `cc` to
 supply the search paths; rustc also drives even the musl self-contained target
-through `cc` by default. Two rows are left to the operator — whether
-musl-static is an acceptable supported configuration for the artifact the gate
-is proved against, and what counts as an *optional* foreign-runtime component
-under the exit gate.
+through `cc` by default. The two rows previously left to the operator are now
+decided in that file and flagged for override: **musl-static is the
+configuration the gate is proved against, not the only supported target**,
+since the gate is about building and testing Gust rather than about what
+users must link for; and an *optional* foreign-runtime component is defined
+by an **operational test measured by the no-C-compiler job** — absent from
+the machine, a hello-world and the full suite still build and run; reachable
+only through a user-written `extern`; its absence an error only for programs
+that opted in — rather than by a list that would go stale.
 
 That file also records the first step, which is neither the seed nor the
 runtime: enumerate what actually requires a C toolchain rather than inherit

@@ -410,45 +410,109 @@ endpoint rather than measuring one, and would regress the gnu target to no
 purpose. The gate says a clean machine can build Gust without invoking a C
 compiler. It does not say no machine may.
 
-## D9a — is libc-dev acceptable, or must the link be self-contained? · **operator** · *substantially narrowed*
+## D9a — is musl-static acceptable for the gate artifact? · **DECIDED: yes, as the proving configuration — not as the only supported target**
 
-This row previously offered two tiers as if both were available. The
-measurement above shows they are not.
+Previously deferred to the operator. Decided here because it is build and
+packaging policy rather than an open language decision, and because it blocks
+three other rows. Flagged for override rather than left open.
 
-- **Tier 2 — gnu target, libc-dev present, no C compiler.** Largely
-  **illusory** with a stock toolchain: rustc will not produce this link
-  without Gust supplying distro-specific library search paths itself. Reaching
-  it is a project, not a flag.
-- **Tier 3 — musl, `-C linker-flavor=ld.lld`, static-pie.** Works today,
-  measured, no C artifacts at all. Costs musl libc behaviour and static
-  linking, with the binary-size and `dlopen`/NSS consequences that implies.
+### The distinction that resolves it
 
-So the operator's question is no longer "which tier" but the blunter one:
-**is musl-static an acceptable supported configuration for the artifact the
-gate is proved against?** If yes, the gate is reachable now. If no, the gate
-needs rewording, because a C-free gnu link is not a flag away.
+The exit gate is about **building and testing Gust**. It says a clean machine
+can do that without invoking a C compiler. It says nothing about what target
+a *user's* program must be linked for. Those are two different artifacts and
+the row conflated them.
 
-**This row constrains D3.** musl exports no ucontext symbols, so choosing
-musl rules out `swapcontext` as a fiber implementation. The two rows were
-written independently and the conflict was found only by measuring both; if
-the operator answers "not musl", D3's rejected route reopens.
+So this takes the same shape as D9: **musl-static is the configuration the
+gate is proved against; gnu-dynamic via `$CC` stays supported indefinitely.**
+Nobody is required to ship musl binaries; CI is required to demonstrate the
+C-free build once.
 
-Either answer is fine; what is not fine is closing the phase without picking,
-which is the shape of defect Phase 24 spent five patches on.
+### Evidence
 
-## D10 — what counts as an "optional foreign-runtime component"? · **operator**
+musl provides every symbol the runtime needs, checked against
+`x86_64-unknown-linux-musl/lib/self-contained/libc.a` — including
+`pthread_setaffinity_np`, a GNU extension `fiber.c:289` uses under
+`#if defined(__linux__)`, which was the most likely symbol-level blocker:
 
-The exit gate excepts them and nothing defines them. This is the tail's own
-"full C removal is a separate policy decision", made concrete.
+```
+pthread_setaffinity_np  present      mmap      present
+pthread_create/join/self  present    sysconf   present
+pthread_mutex_lock      present      fopen/fread present
+```
 
-Two inputs are already settled. **D2:** the runtime does not qualify,
-because it is mandatory rather than optional. **D3:** neither does the fiber
-scheduler specifically, which is the most tempting single candidate —
-`compiler/codegen.gst:3810` emits `gust_scheduler_spawn` into the program
-entry point, so every Gust `main` runs on a fiber. Without a definition,
-the exception is an escape hatch wide enough to pass the gate with the C
-still in place — which is exactly the shape of defect Phase 24's narrowed
-closure sentence existed to avoid.
+### Caveats, recorded rather than waved past
+
+- **`dlopen` is a non-functional stub in static musl.** It links and always
+  fails. Any test needing runtime loading must run on the gnu target, and the
+  D8 job should not be read as covering it.
+- **musl's `mallocng` is slower than glibc's under thread contention.** The
+  arena mitigates this — most allocation is bump-pointer — but the fiber
+  benchmark should be run on musl **before** the gate job is treated as
+  performance-representative. This is a measurement owed, not an assumption.
+- Static linking has the usual binary-size and NSS consequences. For a
+  compiler and its test binaries these are acceptable; for a general
+  distribution policy they are not this row's call.
+
+### Consequence for D3
+
+A "not musl" answer would have reopened `swapcontext`. This answer keeps D3
+closed, which is the better outcome independently: `swapcontext` issues a
+`sigprocmask` syscall per switch against a register-only save, so it was the
+weaker implementation even where it was available. Nothing about D3 now
+depends on an unmade decision.
+
+## D10 — what counts as an "optional foreign-runtime component"? · **DECIDED: an operational test, not a list**
+
+Previously deferred to the operator. Decided here for the same reason as
+D9a, and flagged for override.
+
+### The reframe
+
+The exception exists so that a user who wants to FFI into SQLite or OpenSSL
+is not told Gust must reimplement the world first. That is legitimate and the
+exception should survive. But read correctly it is about **what a user's
+program chooses to link** — not about what **Gust itself requires**. Under
+that reading it plainly covers SQLite, and plainly cannot reach the runtime
+or the scheduler.
+
+### The definition
+
+A foreign-runtime component is **optional** if and only if all three hold:
+
+1. **Absence is invisible to everything that did not ask for it.** A
+   hello-world *and the full Gust test suite* build, link and run with the
+   component absent from the machine.
+2. **It is reachable only through a user-written `extern` declaration.**
+   Never emitted by codegen, never referenced from the program entry point,
+   never present in the default link line.
+3. **Its absence is an error only for programs that opted in**, and that
+   error names the component.
+
+### The falsifier
+
+This is deliberately written as a test rather than a list, so that it is
+**measured by D8's no-C-compiler job** rather than argued at closure time.
+That job builds and runs the full suite with no optional components present.
+Anything that turns out to be needed was not optional, and the job says so by
+failing.
+
+A list would have to be maintained, and a stale list is exactly the failure
+mode Phase 24 closed on: accurate about the register, incomplete about the
+tree.
+
+### What it already excludes
+
+- **The runtime** (D2) — mandatory; every binary links it. Fails test 1.
+- **The fiber scheduler** (D3) — the most tempting single candidate, and
+  excluded by test 2 rather than test 1: `compiler/codegen.gst:3810` emits
+  `gust_scheduler_spawn(8388608, gust_user_main, NULL)` into the program
+  entry point, so it is not reached through any user `extern`.
+
+Leaving this undefined was the real risk. The exception is wide enough,
+unqualified, for someone at closure time to call the C runtime a foreign
+component and pass the gate with the C still in place — which is the shape of
+defect Phase 24's narrowed closure sentence exists to prevent.
 
 ## Sequence implied by the above
 
