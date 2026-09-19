@@ -61,7 +61,7 @@ enough to read, which builds the real one. The Mes / live-bootstrap model.
 | | option | assessment |
 |---|---|---|
 | 1 | **A** | Removes the seed rather than translating it. The fixed point survives intact: the released compiler builds current source, and current source rebuilds itself byte-identically. Today's `gust_v4.c` can mint the first release, giving a clean one-time cut-over. The cost is release infrastructure this project wants regardless. |
-| 2 | **B**, *if the fixed point proves it* | The usual objection is that a blob cannot be diffed. This repository already has the machinery that answers it: require the committed binary to rebuild itself byte-identically from source. That makes the seed **verified rather than trusted**, which is most of what auditability buys. Cost: one artifact per platform. Narrowed by P15: the binary is published and its digest committed, not the binary itself. |
+| 2 | **B**, *if the fixed point proves it* | The usual objection is that a blob cannot be diffed. This repository already has the machinery that answers it: require the committed binary to rebuild itself byte-identically from source. That makes the seed **reproducible**, which is most but not all of what auditability buys — see D7 and O11: a compromised seed reproduces itself too. Cost: one artifact per platform. Narrowed by P15: the binary is published and its digest committed, not the binary itself. |
 | 3 | **C** | Strictly worse than B — still opaque, still per-platform, and still needs a linker, with no compensating advantage. |
 | 4 | **D** | Attractive at first glance: text, diffable, toolchain already present. But it is not swapping an emitter, it is **writing a new backend**, and it ends in a 66k-line generated artifact again in a different language. High cost, little gain over A. |
 | 5 | **E** | Right in principle, wrong for now. Needs a defined language subset and is plausibly years of work. Recorded so it is not foreclosed. |
@@ -347,6 +347,40 @@ release publishes the seed digest and the fixed-point proof.
 
 This is what makes option B's checked-in binary acceptable at all — it is the
 difference between *verified* and *trusted*.
+
+**Corrected after review (PR #444, P2).** That sentence claimed more than the
+fixed point delivers, and the argument that refutes it is one **this same
+document already makes in D2**: the fixed point cannot detect a *consistent*
+miscompile. That is the Thompson property. Applied to D2 it weakened the
+bootstrap-circle objection; applied here it undercuts the justification for
+option B, and the document used it in one place and not the other.
+
+Rebuilding a seed byte-identically from source proves **a fixed point, not
+that the binary implements the source you read**. A compromised seed that
+reproduces itself passes this test exactly as a clean one does. So the fixed
+point is necessary and it is not sufficient, and "verified rather than
+trusted" overstates it.
+
+What (a) and (b) actually buy, stated honestly: **reproducibility** — that the
+artifact corresponds to *some* fixed point of the published source, and that
+anyone can confirm they obtained the same artifact everyone else did. That is
+worth having and it is not provenance.
+
+**Closing the gap needs an independent mechanism, and this document does not
+have one yet.** The candidate is **diverse double compilation**: build the
+compiler with an independent implementation — the previous release built on a
+different toolchain, or a second compiler — and require the two to converge on
+the same artifact. A seed compromise survives self-reproduction; it does not
+survive being reproduced by something that never contained it.
+
+This is now an open row, deliberately not resolved here:
+
+> **O11 — what independent provenance mechanism closes the Thompson gap?**
+> Diverse double compilation is the obvious candidate and it has a real cost:
+> it needs a second, independently obtained compiler in the release pipeline.
+> Until it is decided, D7 claims **reproducibility**, not verification, and
+> O10's layering is correspondingly weaker: the fixed point still beats a
+> signature, but neither establishes that the binary implements the source.
 
 ## D8 — Nix and CI images · *lane* · **DECIDED: a no-C-compiler job is the gate's falsifier**
 
@@ -736,9 +770,10 @@ the permanent answer to the floor problem.
 ## O10 — what attests a release · **RESOLVED: two layers, and the reproducible one is the one that counts**
 
 **Layer 1, the attestation that matters: the fixed-point proof.** It says
-*what the artifact is*, and anyone can regenerate it from source. This is
-D7's "verified rather than trusted" and it is the reason option B was
-acceptable at all.
+the artifact is *a* fixed point of the published source, and anyone can
+regenerate it. Narrowed by O11: this is **reproducibility**, not proof that
+the binary implements the source — a compromised seed reproduces itself too.
+It is still the stronger of the two layers.
 
 **Layer 2, provenance: a signed manifest.** Signing the digest manifest —
 via whatever the project already uses for tags, or GitHub artifact

@@ -2287,6 +2287,26 @@ def normalize_phase23_text_surfaces(
                     "Phase 25 seed-policy changed text surfaces are partial "
                     f"or substituted: {path}")
         seed_added = set(seed_policy_surface["added_text_surfaces"])
+        # PR #444 review (P2): the block below filters every added path out of
+        # the scan, and nothing first required the path to BE in the scan. So
+        # deleting docs/PHASE25_BOOTSTRAP_SEED_POLICY.md left both this guard
+        # and phase23_mir_to_c_deprecation_opening green -- verified by
+        # deleting it -- and the registered enrolment protected nothing. A
+        # projection that cannot fail on the surface it projects is a record,
+        # not a guard. Require the expected row first, then project it away.
+        seed_added_rows = {row["path"]: row for row
+                           in seed_policy_surface["added_text_surface_rows"]}
+        require(sorted(seed_added_rows) == sorted(seed_added),
+                "Phase 25 seed-policy added paths and rows disagree")
+        seed_added_live = {row["path"]: row for row in rows
+                           if row["path"] in seed_added}
+        require(sorted(seed_added_live) == sorted(seed_added),
+                "Phase 25 seed-policy added text surface is missing from the "
+                f"scan: {sorted(set(seed_added) - set(seed_added_live))}")
+        for path in sorted(seed_added):
+            require(seed_added_live[path] == seed_added_rows[path],
+                    "Phase 25 seed-policy added text surface does not match "
+                    f"its registered row: {path}")
         rows = [dict(seed_pre.get(row["path"], row)) for row in rows
                 if row["path"] not in seed_added]
         rows = sorted(rows + [copy.deepcopy(r) for r
