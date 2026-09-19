@@ -238,9 +238,16 @@ def validate() -> dict:
             "cross_feature_authority": "phase20_cross_feature_qualification_v1",
             "cross_feature_record_preserved": True,
             "current_diagnostic": "Native backend canonical MIR verification failed: module function uses an unsupported scalar signature",
-            "current_failure_stage": "before_driver_discovery",
-            "current_artifact": "absent",
-            "driver_invoked": False,
+            # Issue #431: the full compiler now reaches the driver and
+            # publishes a linked executable, so these three moved. The
+            # retired values are pinned alongside rather than dropped --
+            # if they ever come back, the capability regressed.
+            "current_failure_stage": "none",
+            "current_artifact": "linked_native_compiler_executable",
+            "driver_invoked": True,
+            "retired_current_failure_stage": "before_driver_discovery",
+            "retired_current_artifact": "absent",
+            "retired_driver_invoked": False,
         }
         and all(
             row["cranelift"]["diagnostic"]

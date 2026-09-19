@@ -77,5 +77,15 @@ jobs:
       - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
       - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: make gust
+      # Issue #431: the full-compiler baseline claimed the compiler does not
+      # reach the native driver, and the only live check was a line marker,
+      # so the claim stayed green while being false. The contract guard now
+      # ATTEMPTS the compile, which needs the native package -- the driver
+      # is resolved as a sibling of the `gust` binary. Built here rather
+      # than in the contract job so the fast job stays fast; the contract
+      # guard is re-run below with the package present.
+      - run: make phase10-native-package
+      - name: guard-cranelift-phase21-opening-contract (compile attempted)
+        run: just guard-cranelift-phase21-opening-contract
       - name: guard-cranelift-phase21-opening-evidence
         run: just guard-cranelift-phase21-opening-evidence
