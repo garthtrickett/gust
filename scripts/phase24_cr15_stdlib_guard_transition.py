@@ -2263,37 +2263,6 @@ def normalize_phase23_text_surfaces(
     # newest-first discipline as every link below it.
     # Phase 25's seed-policy record is newest, so it runs FIRST. It adds one
     # document and moves docs/ROADMAP_TAIL.md; no code or route changes.
-    # Issue #431 is the newest successor, so it runs FIRST. It carries the
-    # two repaired guards plus scripts/cranelift_registry.py, because
-    # adding a top-level key edits TOP_FIELDS and that file is itself an
-    # enrolled surface. Whole-map comparison per the PR #447 review.
-    baseline_surface = registry.get(
-        "issue431_full_compiler_baseline", {}).get("text_surface_successor")
-    if baseline_surface is not None:
-        require(baseline_surface.get("contract_version") ==
-                "issue431_full_compiler_baseline_text_surface_successor_v1"
-                and baseline_surface.get(
-                    "partial_extra_or_substituted_surface") == "rejected",
-                "Issue #431 baseline text surface successor drifted")
-        bl_paths = list(baseline_surface["registered_changed_paths"])
-        bl_pre = {r["path"]: r for r
-                  in baseline_surface["previous_changed_text_surfaces"]}
-        bl_post = {r["path"]: r for r
-                   in baseline_surface["current_changed_text_surfaces"]}
-        require(sorted(bl_pre) == sorted(bl_paths) == sorted(bl_post),
-                "Issue #431 registered paths and rows disagree")
-        bl_live = {r["path"]: r for r in rows if r["path"] in bl_paths}
-        require(sorted(bl_live) == sorted(bl_paths),
-                "Issue #431 registered text surface is missing from the scan")
-        require(bl_live in (bl_pre, bl_post),
-                "Issue #431 changed text surfaces are partial or "
-                "substituted: the live rows match neither the complete "
-                "predecessor state nor the complete successor state "
-                f"({sorted(p for p in bl_paths if bl_live[p] != bl_post[p])} differ from post)")
-        rows = [dict(bl_pre.get(r["path"], r)) for r in rows]
-        rows.sort(key=lambda r: str(r["path"]))
-        by_path = {r["path"]: r for r in rows}
-
     # Issue #451 is the newest successor, so it runs FIRST. Three files:
     # the provenance guard (justfile enabled), the retirement inventory
     # (three recipes owned by phase25) and cranelift_registry.py, which
@@ -2322,6 +2291,37 @@ def normalize_phase23_text_surfaces(
                 "predecessor state nor the complete successor state "
                 f"({sorted(p for p in ow_paths if ow_live[p] != ow_post[p])} differ from post)")
         rows = [dict(ow_pre.get(r["path"], r)) for r in rows]
+        rows.sort(key=lambda r: str(r["path"]))
+        by_path = {r["path"]: r for r in rows}
+
+    # Issue #431 is the newest successor, so it runs FIRST. It carries the
+    # two repaired guards plus scripts/cranelift_registry.py, because
+    # adding a top-level key edits TOP_FIELDS and that file is itself an
+    # enrolled surface. Whole-map comparison per the PR #447 review.
+    baseline_surface = registry.get(
+        "issue431_full_compiler_baseline", {}).get("text_surface_successor")
+    if baseline_surface is not None:
+        require(baseline_surface.get("contract_version") ==
+                "issue431_full_compiler_baseline_text_surface_successor_v1"
+                and baseline_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Issue #431 baseline text surface successor drifted")
+        bl_paths = list(baseline_surface["registered_changed_paths"])
+        bl_pre = {r["path"]: r for r
+                  in baseline_surface["previous_changed_text_surfaces"]}
+        bl_post = {r["path"]: r for r
+                   in baseline_surface["current_changed_text_surfaces"]}
+        require(sorted(bl_pre) == sorted(bl_paths) == sorted(bl_post),
+                "Issue #431 registered paths and rows disagree")
+        bl_live = {r["path"]: r for r in rows if r["path"] in bl_paths}
+        require(sorted(bl_live) == sorted(bl_paths),
+                "Issue #431 registered text surface is missing from the scan")
+        require(bl_live in (bl_pre, bl_post),
+                "Issue #431 changed text surfaces are partial or "
+                "substituted: the live rows match neither the complete "
+                "predecessor state nor the complete successor state "
+                f"({sorted(p for p in bl_paths if bl_live[p] != bl_post[p])} differ from post)")
+        rows = [dict(bl_pre.get(r["path"], r)) for r in rows]
         rows.sort(key=lambda r: str(r["path"]))
         by_path = {r["path"]: r for r in rows}
 
