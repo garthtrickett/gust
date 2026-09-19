@@ -2263,6 +2263,37 @@ def normalize_phase23_text_surfaces(
     # newest-first discipline as every link below it.
     # Phase 25's seed-policy record is newest, so it runs FIRST. It adds one
     # document and moves docs/ROADMAP_TAIL.md; no code or route changes.
+    # PR #447 is newer than Issue #436's own successor, so it runs FIRST and
+    # projects the tree back to the state #436 was registered against. It
+    # carries scripts/cranelift_registry.py as well as the resolver, because
+    # adding a top-level key edits TOP_FIELDS, and that file is itself an
+    # enrolled surface and not in SELF_EXCLUSIONS.
+    scoping_surface = registry.get(
+        "issue447_resolver_scoping", {}).get("text_surface_successor")
+    if scoping_surface is not None:
+        require(scoping_surface.get("contract_version") ==
+                "issue447_resolver_scoping_text_surface_successor_v1" and
+                scoping_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Issue #447 resolver scoping text surface successor drifted")
+        scoping_paths = list(scoping_surface["registered_changed_paths"])
+        scoping_pre = {row["path"]: row for row
+                       in scoping_surface["previous_changed_text_surfaces"]}
+        scoping_post = {row["path"]: row for row
+                        in scoping_surface["current_changed_text_surfaces"]}
+        require(sorted(scoping_pre) == sorted(scoping_paths) ==
+                sorted(scoping_post),
+                "Issue #447 registered paths and rows disagree")
+        scoping_live = {row["path"]: row for row in rows
+                        if row["path"] in scoping_paths}
+        require(sorted(scoping_live) == sorted(scoping_paths),
+                "Issue #447 registered text surface is missing from the scan")
+        for path in scoping_paths:
+            require(scoping_live[path] in (scoping_pre[path],
+                                           scoping_post[path]),
+                    "Issue #447 changed text surfaces are partial or "
+                    f"substituted: {path}")
+        rows = [dict(scoping_pre.get(row["path"], row)) for row in rows]
     # The Phase 25 roadmap draft is newer than the seed policy, so it runs
     # FIRST and projects the tree back to the state the seed-policy successor
     # was registered against. It only adds a surface; it changes none, so the
