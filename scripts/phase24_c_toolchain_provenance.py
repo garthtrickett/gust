@@ -1123,7 +1123,7 @@ def population(report: dict) -> dict:
     }
 
 
-def inventory_owner(path: str) -> str:
+def inventory_owner(path: str, site: str = "") -> str:
     """The owning patch the retirement inventory records for a file.
 
     Read out of the inventory's own tables so the two cannot disagree. The
@@ -1152,6 +1152,14 @@ def inventory_owner(path: str) -> str:
                 continue
             cells = [c for c in row if isinstance(c, str)]
             if not any(path in cell for cell in cells):
+                continue
+            # PR #452 review (P1): matching on the file alone made a cell
+            # naming `justfile` authorize EVERY backend-emitted-C
+            # invocation anywhere in it, including ones with no row --
+            # the inverse of a guard that exists to reject unregistered
+            # consumers. A row authorizes a SITE: the file and the
+            # product it compiles.
+            if site and not any(site in cell for cell in cells):
                 continue
             for cell in cells:
                 if owner_pattern.match(cell):
@@ -1230,7 +1238,10 @@ def validate() -> dict:
     owners = {}
     unowned = []
     for record in pop["backend_product"]:
-        owner = inventory_owner(record["file"])
+        # The product name is the site identity: `why` reads
+        # "<product> is written by a retired-backend emission".
+        product = record.get("why", "").split(" is written by", 1)[0].strip()
+        owner = inventory_owner(record["file"], product)
         if owner:
             owners[f"{record['file']}:{record['line']}"] = owner
         else:

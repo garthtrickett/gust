@@ -6,8 +6,8 @@
 
 Status: `patch24_11_complete`
 Authority base: `b7b1713cd65630b14ae92e46afd393990928a2e2`
-Rows: `106`
-Digest: `a014f136d709b775d65e66d644ec1ef5bbef1d1fbea708c533ad8b1b68fc5f63`
+Rows: `108`
+Digest: `a00088bcc092af13a17641b200b383ee261964f74c25a3eae3ebe65edcc1e1f1`
 
 ## Bootstrap-entry decision
 
@@ -158,6 +158,11 @@ Digest: `a014f136d709b775d65e66d644ec1ef5bbef1d1fbea708c533ad8b1b68fc5f63`
 - compiler/test_runner_bootstrap_bridge_entry.gst :: Usage: gust-bootstrap-bridge [--backend  (survive)
 - compiler/test_runner_bootstrap_bridge_entry.gst :: mut c_code := codegen.codegen_generate(p (survive)
 - compiler/test_runner_entry.gst :: mut c_code := codegen.codegen_generate(p (survive)
+
+### phase25
+
+- justfile :: build/test_runner_final.c (retire-with-emitter)
+- justfile :: build/test_runner_step52_positive_final. (retire-with-emitter)
 
 ### stdlib-coordination
 
