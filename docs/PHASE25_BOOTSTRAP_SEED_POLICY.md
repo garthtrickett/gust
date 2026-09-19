@@ -77,13 +77,15 @@ So: **runtime → seed → linker driver.**
 
 ## What this does not decide
 
-**Whether `cc` survives as the linker driver.** Patch 18.7 established it
+**Superseded — see D9.** This section originally left the linker driver open
+as an operator policy call, on the grounds that Patch 18.7 established `cc`
 deliberately (`compiler/mir_target_authority.gst:660-665`) and `#401` defends
-it by name. "No host C compiler" may honestly resolve to *no host C compiler,
-but still a linker*. That is a policy decision for the operator, and it should
-be settled **before** the phase writes its closure sentence rather than
-discovered at the gate — which is the trap Phase 24 fell into and spent five
-patches climbing out of.
+it by name. D9 answered it by measurement instead: `cc` was only ever a
+default behind `$CC`, and a C-free link was demonstrated end to end. What
+survives as policy is the narrower D9a — whether the link may rely on libc
+development files or must be self-contained. That still wants settling
+**before** the phase writes its closure sentence rather than at the gate,
+which is the trap Phase 24 fell into and spent five patches climbing out of.
 
 ## First step, before any of the above
 
