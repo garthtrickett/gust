@@ -99,6 +99,15 @@ TOOLCHAIN_QUERY_FLAGS = ("--version", "-dumpmachine", "-dumpversion", "-print-pr
 
 CC_HEAD = re.compile(
     r'^\s*(?:if\s+|!\s+|then\s+)*'
+    # PR #450 review (P1): the head was anchored past `if`/`!`/`then` only,
+    # so a compile written as
+    #   CC_BIN="${CC:-cc}"; CFLAGS_VAL="..."; "$CC_BIN" $CFLAGS_VAL ...
+    # was not an invocation at all. justfile:22547, :22614 and :22654 are
+    # exactly that shape and were absent from the population, which made a
+    # "zero unresolved" result a statement about an incomplete enumeration.
+    # Leading `VAR=value;` assignments are skipped so the command is seen.
+    r'''(?:[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|\S*)\s*;\s*)*'''
+    r'(?:if\s+|!\s+|then\s+)*'
     r'(?P<cc>"?\$\{CC:-cc\}"?|"?\$\{CC_BIN\}"?|"?\$CC_BIN"?|"?\$CC"?|cc)\s'
 )
 CC_BINDING = re.compile(r'^\s*(?P<name>[A-Za-z_][A-Za-z0-9_]*)=(?P<rhs>.*\$\{?CC\b.*|"?cc"?)\s*$')
@@ -250,7 +259,17 @@ BACKEND_EMIT = re.compile(
     r'--backend (?:mir-to-c|bootstrap-emitter|c)(?=[\s"\']|$)')
 NATIVE_EMIT = re.compile(
     r'--backend cranelift|compiler-mir-ingestion-object|--emit[= ]obj|'
-    r'compiler-mir-native-object|gust-native-backend|cranelift-experiment'
+    r'compiler-mir-native-object|gust-native-backend|cranelift-experiment|'
+    # Issue #436: the justfile runs the Cranelift experiment through
+    # `cargo run --manifest-path compiler/experiments/cranelift/Cargo.toml
+    #  -- <subcommand> "$object_file"`, writing the object POSITIONALLY.
+    # That form matched nothing here, so `writes_key`'s positional branch
+    # never fired and the objects resolved to no producer at all -- 52 of
+    # the 54 that remained unresolved once scoping landed. It also matches
+    # ARCHIVE_PRODUCER on `--manifest-path`, so anything that did reach the
+    # fallback was called a rust-archive. `cargo run` on that crate emits
+    # objects; it does not build an archive.
+    r'cargo\s+run[^\n]*experiments/cranelift'
 )
 ARCHIVE_PRODUCER = re.compile(r'cargo\s+build|--manifest-path|staticlib')
 AUTHORED_WRITE = re.compile(r'<<[-~]?\s*[\'"]?[A-Za-z_]+|printf\s|echo\s|cat\s+>')
@@ -487,7 +506,20 @@ def writes_variable(line: str, name: str) -> bool:
         match = VAR_REFERENCE.fullmatch(strip_quotes(target).strip())
         if match and match.group(1) == name:
             return True
-    return False
+    # Issue #436: the Cranelift experiment writes its object POSITIONALLY --
+    # `cargo run --manifest-path .../cranelift -- <subcommand> "$object_file"`
+    # -- and `cp`/`mv`/`install` write their destination the same way. Both
+    # shapes are already honoured by writes_key for a literal key; they were
+    # not honoured for a key reached through a variable, which is how these
+    # objects were named. 52 of the 54 inputs left unresolved after scoping
+    # were this.
+    if not tokens:
+        return False
+    last = VAR_REFERENCE.fullmatch(strip_quotes(tokens[-1]).strip())
+    if not last or last.group(1) != name:
+        return False
+    head = strip_quotes(tokens[0]).rsplit("/", 1)[-1]
+    return bool(NATIVE_EMIT.search(line)) or head in ("cp", "mv", "install")
 
 
 def writes_key(line: str, key: str) -> bool:
@@ -750,9 +782,79 @@ def resolve_input(token: str, lines: list, lineno: int) -> dict:
         record["why"] = f"{key} is written by a {sorted(classes)[0]} producer"
         return record
 
+    # Issue #436: a shell function binds `local source="$1"` and the caller
+    # passes `run_c "$mir_c" "$mir_bin"`, so the value is two hops away --
+    # parameter, then the caller's variable. Resolving inside the function
+    # body alone reports no producer for a file the recipe plainly writes.
+    # The last three unresolved justfile inputs were exactly this shape.
+    via_param = resolve_through_parameter(name, lines, lineno)
+    if via_param:
+        record["klass"] = via_param["klass"]
+        record["why"] = (f"{key} is bound from a shell-function parameter; "
+                         f"{via_param['why']}")
+        return record
+
     record["klass"] = ""
     record["why"] = f"no producer resolved for {key}"
     return record
+
+
+LOCAL_PARAM = re.compile(r'^\s*local\s+([A-Za-z_][A-Za-z0-9_]*)="?\$\{?([0-9]+)\}?"?\s*$')
+FUNC_HEAD = re.compile(r'^\s*([A-Za-z_][A-Za-z0-9_]*)\s*\(\)\s*\{')
+
+
+def resolve_through_parameter(name: str, lines: list, lineno: int) -> dict:
+    """Resolve a name bound from a positional shell-function parameter.
+
+    Bounded on purpose: one hop from `local NAME="$N"` to the Nth argument
+    at each call site, then the ordinary variable resolution on that
+    argument. If the call sites disagree about the class, this returns
+    nothing rather than picking one -- an ambiguous answer is worse than an
+    honest gap.
+    """
+    if not name:
+        return {}
+    index = None
+    for row_lineno, line in lines:
+        match = LOCAL_PARAM.match(line)
+        if match and match.group(1) == name:
+            index = int(match.group(2))
+            bind_at = row_lineno
+            break
+    if index is None or index < 1:
+        return {}
+    func = None
+    for row_lineno, line in lines:
+        if row_lineno > bind_at:
+            break
+        head = FUNC_HEAD.match(line)
+        if head:
+            func = head.group(1)
+    if not func:
+        return {}
+    call = re.compile(r'\b' + re.escape(func) + r'\s+(.+)$')
+    seen = {}
+    for row_lineno, line in lines:
+        if row_lineno == bind_at or LOCAL_PARAM.match(line):
+            continue
+        match = call.search(line)
+        if not match:
+            continue
+        args = split_tokens(match.group(1).rstrip(')"\''))
+        if len(args) < index:
+            continue
+        inner = resolve_input(args[index - 1], lines, row_lineno)
+        # PR #450 review (P2): recording only the calls that resolved meant
+        # `run_c "$good"` plus `run_c "$unknown"` left exactly one class in
+        # `seen`, and the unresolved call was silently accepted as the good
+        # one. That is the opposite of the fail-closed contract this
+        # docstring claims. An argument that does not resolve is a
+        # disagreement.
+        seen[inner.get("klass") or ""] = inner.get("why", "")
+    if len(seen) != 1 or "" in seen:
+        return {}
+    klass, why = next(iter(seen.items()))
+    return {"klass": klass, "why": f"call sites pass {why}"}
 
 
 MAKE_CC = re.compile(r'^\s*@?\$\{CC\}\s')
@@ -810,49 +912,70 @@ def scan_makefile() -> dict:
 def shell_scripts() -> list:
     r"""Every file this guard reads for C toolchain sites.
 
-    Issue #436 wants the justfile in here, and it is not, deliberately.
+    Issue #436 wants the justfile in here. It is still out, and the reason
+    changed: the resolver can now classify it, and doing so uncovers a
+    census gap that must be filed rather than absorbed.
 
-    Adding `ROOT / "justfile"` makes the guard GREEN -- 99 invocations
-    instead of 35, no unresolved provenance -- and the green is worthless.
-    Measured on this tree with the resolver repairs already in place: 117
-    justfile inputs, 105 of them classified `rust-archive`, against exactly
-    one in the whole of the rest of the repository. The samples say what
-    that is worth:
+    With the justfile enabled the population is 102 invocations and **zero
+    unresolved** -- every input classified. But three of them,
+    justfile:22547, :22614 and :22654, compile retired-backend products
+    (`test_runner_step52_positive_final.c`, `test_runner_final.c`) that the
+    retirement inventory does not own, and `validate` refuses:
 
-        tiny_cranelift_return_int_main.c  -> rust-archive  (a printf shim)
-        tiny_cranelift_return_int.o       -> rust-archive  (a native object)
+        cc invocations compiling a retired-backend product that the
+        retirement inventory does not own: justfile:22547, :22614, :22654
 
-    That diagnosis named the wrong mechanism, and the correction is the
-    useful part. `build_system_produces`'s `\.a\b` fallback was blamed. It
-    was not the cause: binding that fallback to the key it writes left the
-    number unchanged at 106, which is what said the cause was structural.
+    `inventory_owner`'s own docstring says that is the finding and not
+    something to paper over locally, so no local owner is added here. The
+    three sites need an owning patch in the inventory; until they have one,
+    enabling the scan would be trading a classification gap for an
+    ownership gap.
 
-    The cause was SCOPE. `scan_script` passed the whole file as the
-    resolution scope -- right for `scripts/*.sh`, catastrophic for a
-    22,605-line justfile, where every `cc` site was resolved against every
-    other recipe and `build_system_produces` collected every `make`/`just`
-    target in the file. Per-recipe scoping plus variable aliasing in the
-    writer scan (a recipe binds `generated_c=...` then writes `> "$generated_c"`,
-    so the binding mentions the key and the writer does not) moves it to:
+    They were invisible until this patch. They are written as
+    `CC_BIN=...; CFLAGS_VAL=...; "$CC_BIN" ...`, and `scan_script` matched
+    CC_BINDING first and `continue`d, so a line that both binds and invokes
+    was only ever counted as a binding.
 
-        rust-archive       106 -> 1
-        script-authored-c    5 -> 67
-        unresolved         116 -> 54
+    The history is kept because two diagnoses were wrong before the right
+    one, and the wrongness is the useful part.
 
-    Both repairs are behaviour-preserving with the justfile excluded: the
+    First diagnosis: `build_system_produces`'s `\.a\b` fallback matched
+    anywhere in a target body. Binding it to the key it writes left the
+    count unchanged at 106, which is what said the cause was structural.
+
+    Second: SCOPE. `scan_script` passed the whole file as the resolution
+    scope -- right for `scripts/*.sh`, catastrophic for 22,605 lines of
+    justfile. Per-recipe scoping plus variable aliasing in the writer scan
+    took rust-archive 106 -> 1 and script-authored-c 5 -> 67, leaving 54
+    honest "no producer resolved" gaps rather than false archives.
+
+    Those 54 were two more shapes the resolver did not know:
+
+      - The Cranelift experiment writes its object POSITIONALLY, via
+        `cargo run --manifest-path .../cranelift -- <subcommand> "$out"`.
+        `NATIVE_EMIT` did not match that form, and `ARCHIVE_PRODUCER` did
+        match it on `--manifest-path`, so these were either unresolved or
+        called archives. `cargo run` on that crate emits objects.
+
+      - A shell function binds `local source="$1"` and the caller passes
+        `run_c "$mir_c" "$mir_bin"`, so the value is two hops away. One
+        bounded hop to the call sites resolves it; disagreeing call sites
+        return nothing rather than a guess.
+
+    Final population with the justfile in: bootstrap-chain-c 4,
+    frozen-oracle-c 12, layout-oracle-c 10, native-object 57,
+    retained-runtime-c 7, rust-archive 1, script-authored-c 69,
+    toolchain-query 1. Zero unresolved.
+
+    The check that matters is the one the issue posed. `justfile:1875` is
+    `"$CC_BIN" $CFLAGS_VAL "$shim_c" "$object_file" -o "$binary"`, and it
+    now classifies as BOTH `script-authored-c` for the printf shim and
+    `native-object` for the Cranelift object -- the two samples #436 named
+    as falsely `rust-archive`.
+
+    Every repair is behaviour-preserving with the justfile excluded: the
     35-invocation population and its whole by_class distribution are
-    unchanged, and this guard validates green.
-
-    So the blind spot stays open and named, rather than being closed with a
-    guard that asserts a clean population over 64 sites it classified by
-    accident. Passing for the wrong reason is worse than the gap: the gap is
-    visible in #436, and a green check is not.
-
-    What this file now has that it did not is the resolution the issue asks
-    for first -- writers preferred over mentions, hops restricted to
-    path-like tokens, products classified from the tracked source they
-    compile. Those are verified behaviour-preserving on the current
-    population. Closing the fallback is the remaining work.
+    unchanged from before any of this.
     """
     return sorted(ROOT.glob("scripts/*.sh"))
 RECIPE_HEAD = re.compile(r'^@?[A-Za-z0-9_][A-Za-z0-9_-]*(?:\s+[^:\n]*)?:(?!=)')
@@ -905,11 +1028,23 @@ def scan_script(path: Path) -> dict:
         binding = CC_BINDING.match(line)
         if binding and re.search(r'\$\{?CC\b|(?<![\w-])cc(?![\w-])', binding.group("rhs")):
             bindings[binding.group("name")] = lineno
-            continue
+            # PR #450 review (P1): this used to `continue`, so a line that
+            # BOTH binds and invokes was only ever counted as a binding.
+            # justfile:22547, :22614 and :22654 are
+            #   CC_BIN="${CC:-cc}"; CFLAGS_VAL="..."; "$CC_BIN" ... 
+            # and were therefore absent from the population entirely, which
+            # made "zero unresolved" a claim about an incomplete
+            # enumeration rather than a complete one. Record the binding
+            # and fall through so the invocation on the same line is seen.
+            if not CC_HEAD.match(line):
+                continue
         head = CC_HEAD.match(line)
         if not head:
             continue
-        inputs, is_query = command_inputs(line)
+        # Parse from the compiler head, not the line start: a line like
+        # `CC_BIN=...; CFLAGS_VAL=...; "$CC_BIN" ...` would otherwise offer
+        # its leading assignments as compiler inputs.
+        inputs, is_query = command_inputs(line[head.start("cc"):])
         invocations.append(
             {
                 "file": rel,
