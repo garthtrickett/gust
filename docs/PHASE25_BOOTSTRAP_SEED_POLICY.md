@@ -955,6 +955,40 @@ emitter — already satisfied by the sequence, which puts release mechanics at
 step 9 and emitter deletion at step 11, and noted here so a future reorder
 does not quietly break it.
 
+## Measurements owed before the first patch
+
+Not decisions — three facts the decided rows assume and nobody has checked.
+This list was dropped by an editing error when the O-series replaced the
+section that held it, and is restored here.
+
+1. **Cranelift object determinism** (D4's prerequisite). If it does not hold,
+   the fixed point as specified does not exist and that is a prerequisite
+   patch, not a footnote.
+2. **D9's poison test extended past `std`** to the runtime archive, pthread
+   and the host object. What was measured is a mechanism proof on a
+   `std`-only binary, not the Gust link.
+3. **The fiber benchmark on musl** (D9a). musl's `mallocng` is slower than
+   glibc's under contention; until this is run, the D8 job is a correctness
+   falsifier and not a performance-representative one.
+
+## Still required before Phase 25 can start
+
+Beyond the measurements above, and beyond this document merging:
+
+- **A patch breakdown.** There is no `Patch 25.x` sequence anywhere in the
+  repository. This document decides *what* and *in what order*; it is not a
+  task list and `TASK.md` still belongs to Phase 24, whose closure patch
+  24.18 is DONE. Writing that breakdown is the first Phase 25 act.
+- **#433.** Two of the five Makefile bootstrap callers still reach the
+  emitter through the retired `--backend mir-to-c` spelling, and both run on
+  **seed-derived** binaries, so the seed cannot reconverge. Phase 25's whole
+  subject is the seed; this is the one open issue that blocks the phase
+  rather than a patch within it.
+- **#431 and #436, which block specific patches rather than the phase.** P2
+  must teach `phase21_full_compiler_native_qualification` about archives,
+  and #431 reports that guard's baseline falsified on `main`; P1's second
+  archive is a new input to #436's `\.a\b` misclassification.
+
 ## Sequence implied by the above
 
 Reordered by O1 and O3, which moved work earlier than D2 and D3 assumed.
