@@ -433,6 +433,63 @@ def classify_writer_inputs(line: str) -> str:
     return ""
 
 
+def var_aliases(name: str) -> list:
+    """The spellings a shell line uses to name a variable-bound path."""
+    if not name:
+        return []
+    return [f"${name}", "${" + name + "}"]
+
+
+def writes_any(line: str, variant: str, name: str) -> bool:
+    """True when `line` writes the key, named directly or through its variable.
+
+    Issue #436: `writes_key` compared only against the resolved tail, but a
+    justfile recipe binds `generated_c="build/.../tiny_return_int.c"` and then
+    writes `printf ... > "$generated_c"`. The binding mentions the key and the
+    writer does not, so the writer scan found nothing and resolution fell
+    through. The variable is an alias for the key on the lines that matter.
+    """
+    if writes_key(line, variant):
+        return True
+    if not name:
+        return False
+    # PR #447 review (P2): `writes_key` tests substring containment, so an
+    # alias of `$foo` matched a redirect to `$foobar` and `resolve_input`
+    # adopted the wrong producer's class. Reproduced before fixing. A
+    # variable reference has a boundary -- `$name` ends at the first
+    # character that cannot continue an identifier -- so match the whole
+    # reference rather than a prefix of one.
+    return writes_variable(line, name)
+
+
+VAR_REFERENCE = re.compile(r'\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?')
+
+
+def writes_variable(line: str, name: str) -> bool:
+    """True when `line` writes to the variable `name`, matched whole.
+
+    Tokenises like `writes_key` and then compares the *resolved identifier*
+    of each redirect or `-o` target, so `$foobar` is never a write to `$foo`.
+    """
+    tokens = split_tokens(line)
+    for index, token in enumerate(tokens):
+        target = None
+        # A bare `>` is a redirect operator whose target is the NEXT token;
+        # `>file` carries its own. Testing startswith(">") first swallowed
+        # the bare case with an empty target and never looked ahead.
+        if token in (">", ">>", "-o"):
+            if index + 1 < len(tokens):
+                target = tokens[index + 1]
+        elif token.startswith(">") and token.lstrip(">"):
+            target = token.lstrip(">")
+        if target is None:
+            continue
+        match = VAR_REFERENCE.fullmatch(strip_quotes(target).strip())
+        if match and match.group(1) == name:
+            return True
+    return False
+
+
 def writes_key(line: str, key: str) -> bool:
     """True when this line WRITES the named file, not merely mentions it.
 
@@ -623,7 +680,14 @@ def resolve_input(token: str, lines: list, lineno: int) -> dict:
         # and the build-system cases below are still resolved that way, and
         # narrowing this without them would turn resolvable inputs into
         # failures.
-        writers = [row for row in mentions if writes_key(row[1], variant)]
+        alias_rows = list(mentions)
+        seen = {row[0] for row in mentions}
+        for alias in var_aliases(name):
+            for row in scope:
+                if alias in row[1] and row[0] not in seen:
+                    alias_rows.append(row)
+                    seen.add(row[0])
+        writers = [row for row in alias_rows if writes_any(row[1], variant, name)]
         found = {classify_producer(line, source)
                  for _, line in (writers or mentions)}
         found.discard("")
@@ -758,9 +822,26 @@ def shell_scripts() -> list:
         tiny_cranelift_return_int_main.c  -> rust-archive  (a printf shim)
         tiny_cranelift_return_int.o       -> rust-archive  (a native object)
 
-    The mechanism is build_system_produces, whose fallback matches `\.a\b`.
-    `gust-runtime-package.a` appears throughout the justfile, so nearly
-    every input that reaches that fallback lands on rust-archive.
+    That diagnosis named the wrong mechanism, and the correction is the
+    useful part. `build_system_produces`'s `\.a\b` fallback was blamed. It
+    was not the cause: binding that fallback to the key it writes left the
+    number unchanged at 106, which is what said the cause was structural.
+
+    The cause was SCOPE. `scan_script` passed the whole file as the
+    resolution scope -- right for `scripts/*.sh`, catastrophic for a
+    22,605-line justfile, where every `cc` site was resolved against every
+    other recipe and `build_system_produces` collected every `make`/`just`
+    target in the file. Per-recipe scoping plus variable aliasing in the
+    writer scan (a recipe binds `generated_c=...` then writes `> "$generated_c"`,
+    so the binding mentions the key and the writer does not) moves it to:
+
+        rust-archive       106 -> 1
+        script-authored-c    5 -> 67
+        unresolved         116 -> 54
+
+    Both repairs are behaviour-preserving with the justfile excluded: the
+    35-invocation population and its whole by_class distribution are
+    unchanged, and this guard validates green.
 
     So the blind spot stays open and named, rather than being closed with a
     guard that asserts a clean population over 64 sites it classified by
@@ -774,6 +855,40 @@ def shell_scripts() -> list:
     population. Closing the fallback is the remaining work.
     """
     return sorted(ROOT.glob("scripts/*.sh"))
+RECIPE_HEAD = re.compile(r'^@?[A-Za-z0-9_][A-Za-z0-9_-]*(?:\s+[^:\n]*)?:(?!=)')
+
+
+def recipe_scopes(lines: list) -> dict:
+    """Map each line number to the lines of the recipe that contains it.
+
+    Issue #436: `scan_script` passed the WHOLE file as the resolution scope.
+    For `scripts/*.sh` that is right -- they are small and single-purpose. For
+    the 22,605-line justfile it is not: every `cc` site was resolved against
+    every other recipe, and `build_system_produces` collected every `make`/
+    `just` target in the file. `gust-runtime-package.a` appears among them, so
+    inputs fell through to the archive fallback -- 105 of 117 classified
+    `rust-archive`, including a printf shim and a native object.
+
+    Scoping is the fix. A key-binding tweak to the fallback pattern was tried
+    first and left the number unchanged at 106, which is what said the cause
+    was structural rather than a pattern.
+    """
+    starts = [lineno for lineno, line in lines if RECIPE_HEAD.match(line)]
+    if not starts:
+        return {}
+    scoped = {}
+    for index, start in enumerate(starts):
+        end = starts[index + 1] if index + 1 < len(starts) else None
+        block = [
+            (lineno, line)
+            for lineno, line in lines
+            if lineno >= start and (end is None or lineno < end)
+        ]
+        for lineno, _ in block:
+            scoped[lineno] = block
+    return scoped
+
+
 def scan_script(path: Path) -> dict:
     text = path.read_text()
     lines = [
@@ -782,6 +897,7 @@ def scan_script(path: Path) -> dict:
         if not line.strip().startswith("#")
     ]
     rel = path.relative_to(ROOT).as_posix()
+    scoped = recipe_scopes(lines) if rel == "justfile" else {}
 
     bindings = {}
     invocations = []
@@ -800,7 +916,10 @@ def scan_script(path: Path) -> dict:
                 "line": lineno,
                 "spelling": strip_quotes(head.group("cc")),
                 "query": is_query,
-                "inputs": [resolve_input(token, lines, lineno) for token in inputs],
+                "inputs": [
+                    resolve_input(token, scoped.get(lineno, lines), lineno)
+                    for token in inputs
+                ],
             }
         )
 

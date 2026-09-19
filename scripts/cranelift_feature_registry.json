@@ -27025,6 +27025,81 @@
     "change_reason": "Patch 24.17 qualified ONE Historical Full run on the exact merged retirement main 927892b3. Recorded by identity -- run id, full SHA, event, conclusion, job population and budgets -- because 'the run was green' is an adjective and cannot be checked later. The dispatched run 35194127770 was green on the same SHA; the scheduled run is cited because the qualifier takes the LATEST run, which is what stops a stale green shadowing a newer red.",
     "status": "patch24_18_complete"
   },
+    "issue447_resolver_scoping": {
+      "status": "issue436_resolver_scoping_in_progress",
+      "text_surface_successor": {
+        "contract_version": "issue447_resolver_scoping_text_surface_successor_v1",
+        "current_changed_text_surfaces": [
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "745b3f8e64d84d0167c5596fa5c24a7525e03800ca6767ed5f58af827f9f7936",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "generated_c_contract": 5,
+              "mir_to_c_name": 61
+            },
+            "owner": "cranelift",
+            "path": "scripts/cranelift_registry.py",
+            "removal_phase": "24"
+          },
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "4e9fbe09b2e53d2d4cbeb944e4cf5379eedf0a7b8584252eaeddd202a3e8d558",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 2,
+              "generated_c_contract": 3,
+              "mir_to_c_name": 4
+            },
+            "owner": "cranelift",
+            "path": "scripts/phase24_c_toolchain_provenance.py",
+            "removal_phase": "24"
+          }
+        ],
+        "partial_extra_or_substituted_surface": "rejected",
+        "previous_changed_text_surfaces": [
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "21b17c9a756def7febd293e881d1c5a8277b2ea8ec5291a3780c5e4e036a1dbd",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "generated_c_contract": 5,
+              "mir_to_c_name": 61
+            },
+            "owner": "cranelift",
+            "path": "scripts/cranelift_registry.py",
+            "removal_phase": "24"
+          },
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "1e8185be3aa3108be9cde4959e2877ec9b255d38a81eecd6fb84b110cd170a25",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 2,
+              "generated_c_contract": 3,
+              "mir_to_c_name": 4
+            },
+            "owner": "cranelift",
+            "path": "scripts/phase24_c_toolchain_provenance.py",
+            "removal_phase": "24"
+          }
+        ],
+        "registered_changed_paths": [
+          "scripts/cranelift_registry.py",
+          "scripts/phase24_c_toolchain_provenance.py"
+        ]
+      }
+    },
   "issue436_provenance_resolver": {
     "text_surface_successor": {
       "added_text_surfaces": [],
