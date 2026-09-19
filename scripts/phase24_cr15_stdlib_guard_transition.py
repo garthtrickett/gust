@@ -2263,6 +2263,36 @@ def normalize_phase23_text_surfaces(
     # newest-first discipline as every link below it.
     # Phase 25's seed-policy record is newest, so it runs FIRST. It adds one
     # document and moves docs/ROADMAP_TAIL.md; no code or route changes.
+    # Issue #436's justfile population is the newest successor here, so it
+    # runs FIRST. Whole-map comparison per the PR #447 review.
+    population_surface = registry.get(
+        "issue436_justfile_population", {}).get("text_surface_successor")
+    if population_surface is not None:
+        require(population_surface.get("contract_version") ==
+                "issue436_justfile_population_text_surface_successor_v1" and
+                population_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Issue #436 justfile population successor drifted")
+        pop_paths = list(population_surface["registered_changed_paths"])
+        pop_pre = {row["path"]: row for row
+                   in population_surface["previous_changed_text_surfaces"]}
+        pop_post = {row["path"]: row for row
+                    in population_surface["current_changed_text_surfaces"]}
+        require(sorted(pop_pre) == sorted(pop_paths) == sorted(pop_post),
+                "Issue #436 justfile population paths and rows disagree")
+        pop_live = {row["path"]: row for row in rows
+                    if row["path"] in pop_paths}
+        require(sorted(pop_live) == sorted(pop_paths),
+                "Issue #436 justfile population surface missing from scan")
+        require(pop_live in (pop_pre, pop_post),
+                "Issue #436 justfile population changed text surfaces are "
+                "partial or substituted: the live rows match neither the "
+                "complete predecessor state nor the complete successor "
+                f"state ({sorted(p for p in pop_paths if pop_live[p] != pop_post[p])} differ from post)")
+        rows = [dict(pop_pre.get(row["path"], row)) for row in rows]
+        rows.sort(key=lambda row: str(row["path"]))
+        by_path = {row["path"]: row for row in rows}
+
     # PR #447 is newer than Issue #436's own successor, so it runs FIRST and
     # projects the tree back to the state #436 was registered against. It
     # carries scripts/cranelift_registry.py as well as the resolver, because
