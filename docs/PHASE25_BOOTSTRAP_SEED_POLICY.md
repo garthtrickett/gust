@@ -514,6 +514,88 @@ unqualified, for someone at closure time to call the C runtime a foreign
 component and pass the gate with the C still in place — which is the shape of
 defect Phase 24's narrowed closure sentence exists to prevent.
 
+# What the decisions leave open
+
+D1-D10 are decided. Working through their consequences surfaces questions
+none of them answers. Recorded here so they are found now rather than at the
+gate, which is the failure Phase 24 spent five patches on.
+
+## Blocking — decide before the work starts
+
+**O1 — deleting `approved_scalar_imports.c` breaks 26 files.** D2 says delete
+it rather than rewrite it, on the grounds that it is 15 lines of fixtures.
+That is true and the conclusion is still wrong: **26 files reference
+`tiny_host_add_i32` / `tiny_host_add_one_i32` / `tiny_host_is_positive_i32`**,
+including `phase13_runtime_*_source.gst` and `mir_runtime_import_smoke_test_entry.gst`.
+They are the corpus for the FFI and runtime-import tests — the very machinery
+D2 relies on to move the other seven files. So the decision is not *delete*
+but **rehome**: into a Gust definition exporting those symbols via
+`extern_symbol_name`, or a Rust test shim. Deciding which, and doing it
+first, is a prerequisite for D2 rather than a tidy-up after it.
+
+**O2 — D3 and D6 disagree about how many assembly blocks exist.** The eight
+blocks are structured `#if __x86_64__ { #if __APPLE__ / #else } #elif
+__aarch64__ { #if __APPLE__ / #else }`. So **four are macOS-only and four are
+aarch64**, and under D6 — name exactly what CI builds, which is Linux
+x86_64 — only **two blocks are actually built**. D3's port is therefore 2
+blocks or 8 depending on a question D6 raises and does not answer: are the
+unbuilt platform branches **deleted** or **kept unbuilt**? D6 says a seed
+must not imply portability it has no evidence for; it does not say the code
+must go. Answer this before D3 is scheduled, because it changes the size of
+the work by 4x.
+
+**O3 — who owns the freestanding subset?** D2's first obligation is defining
+the Gust subset the runtime must be written in. That is a **language-surface
+definition**, not lane work, and may belong in the VISION §0.15 OD register
+rather than here. Until it has an owner it will be written implicitly by
+whoever ports `scratch.c` first, which is the worst outcome.
+
+## Before the gate can close
+
+**O4 — when does D8's job stop being allowed to fail?** A job standing red
+indefinitely is decoration, not a falsifier. It needs a promotion criterion:
+what makes it required, and what happens to the phase if it is still red at
+that point.
+
+**O5 — is the `$CC`/gnu path tested, or only supported?** D9 keeps `cc`
+supported indefinitely and D9a makes musl the proving configuration.
+Supported-but-untested rots. Either CI carries both configurations, at real
+cost, or "supported" is downgraded to "not deliberately broken" and said so.
+
+**O6 — what target do user builds default to?** Follows from D9a and is
+user-visible. `gust build foo.gst` on a machine with both toolchains present
+resolves to musl or gnu, and the answer has different libc behaviour.
+
+**O7 — what exactly does D4 compare, and how is path nondeterminism
+handled?** "Emitted objects" is not yet an artifact list, and objects embed
+absolute paths and debug info. A `--remap-path-prefix` equivalent is almost
+certainly needed. This is separate from, and in addition to, the unverified
+Cranelift determinism prerequisite D4 already records.
+
+## Release mechanics — all fall out of D1 and D7
+
+**O8 — what *is* a release?** D1 bootstraps from the previous one and D7
+requires publishing a seed digest and a fixed-point proof. Neither says what
+a release is: a tag, an artifact, hosted where, obtained how — including by
+a build with no network, which an auditable chain arguably requires.
+
+**O9 — is there a bootstrap floor?** Bootstrap-from-previous-release means
+either every intermediate release must exist forever, or a floor is declared
+and releases below it are unsupported. Rust and Go both hit this; it is
+cheaper to decide now than to discover.
+
+**O10 — what attests a release?** D7's "verified rather than trusted" rests
+on the fixed-point proof, but a published digest still needs provenance, and
+the checked-in bridge binary of D1's option B needs it more.
+
+## Measurements owed — not decisions
+
+- Cranelift object determinism (D4's prerequisite).
+- D9's poison test extended past `std` to the runtime archive, pthread and
+  the host object.
+- The fiber benchmark on musl before D9a's job is called performance-
+  representative.
+
 ## Sequence implied by the above
 
 1. Enumerate what actually requires a C toolchain, measured (pre-work, stated above).
