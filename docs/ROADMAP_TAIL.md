@@ -150,12 +150,62 @@ backend path.
 Gust itself.
 
 Replace the legacy C bootstrap stage and establish a native bootstrap seed
-policy. Decide how bootstrap binaries are produced and verified. Rebuild the
-compiler entirely through the native backend. Remove generated stage-one compiler
-C files, and the requirement for a host C compiler from normal bootstrap. Rewrite
-or separately package remaining C runtime components. Remove C shims and pthread
-wrappers where practical. Audit build scripts, Nix packages, CI images and
-release archives. Preserve an independently auditable bootstrap chain.
+policy. Rebuild the compiler entirely through the native backend. Remove
+generated stage-one compiler C files, and the requirement for a host C compiler
+from normal bootstrap. Rewrite or separately package remaining C runtime
+components. Remove C shims and pthread wrappers where practical. Audit build
+scripts, Nix packages, CI images and release archives. Preserve an
+independently auditable bootstrap chain.
+
+**Seed policy decided 2026-09-19: bootstrap from the previous release, with a
+verified published binary whose digest is committed as the bridge, and the runtime done before the
+seed.** The runtime is 1,968 hand-written lines that every binary links —
+including whatever replaces the seed — so leaving it until last makes the exit
+gate unreachable whichever seed lands. The options, the ranking and the
+ordering are in `docs/PHASE25_BOOTSTRAP_SEED_POLICY.md`, together with the
+rest of the phase's decisions worked through on the same date: the runtime
+goes to **Gust**, with Rust as the per-file fallback: Gust already has
+unsafe-gated `extern func` FFI, raw pointers, `repr(C)`/`packed` layout
+control and `extern_symbol_name`, so C→Rust→Gust would be the same rewrite
+twice. What remains is defining the freestanding subset the runtime must be
+written in, a no-allocate guard for `arena.c`, and `fiber.c`, whose eight
+`__asm__` blocks are two standalone assembly functions with no Gust spelling
+and go to Rust `global_asm!` as a copy-paste, with module-level `global_asm`
+in Gust as the Phase 26 successor; the
+runtime is mandatory rather than an optional foreign component; the
+fixed point becomes a comparison of **emitted objects** rather than linked
+binaries; the emitter and its bootstrap entry are deleted **together**; and
+the seed names its platforms, because CI builds Linux only while the runtime
+carries unbuilt macOS branches. `cc` stops being **required** as the linker
+driver but stays **supported**: it was only ever a default behind `$CC`, and a
+link with no C compiler invoked is verified in that file — but only on the
+**musl** target with `-C linker-flavor=ld.lld`. On `*-linux-gnu` there is no
+stock C-free link, because rustc emits a driver-style line and expects `cc` to
+supply the search paths; rustc also drives even the musl self-contained target
+through `cc` by default. The two rows previously left to the operator are now
+decided in that file and flagged for override: **musl-static is the
+configuration the gate is proved against, not the only supported target**,
+since the gate is about building and testing Gust rather than about what
+users must link for; and an *optional* foreign-runtime component is defined
+by an **operational test measured by the no-C-compiler job** — absent from
+the machine, a hello-world and the full suite still build and run; reachable
+only through a user-written `extern`; its absence an error only for programs
+that opted in — rather than by a list that would go stale. A further ten questions the decided rows
+leave open are resolved in the same file, two of them conflicts between
+decisions: `approved_scalar_imports.c` is **rehomed, not deleted**, because
+26 files depend on its symbols and a Gust rewrite would destroy the FFI
+contract they test; and **all eight** of `fiber.c`'s assembly blocks port
+rather than the two CI builds, because the platform-naming obligation binds
+the seed rather than the runtime and macOS is aarch64. Both move work
+earlier than the runtime rows assumed, so the sequence is reordered. A third round resolved fifteen
+further questions, including a contradiction between two decided rows:
+option B's bridge binary is **published with its digest committed**, not
+committed itself, since committing per-platform blobs was the opacity the
+seed ranking held against option C.
+
+That file also records the first step, which is neither the seed nor the
+runtime: enumerate what actually requires a C toolchain rather than inherit
+the count.
 
 > A deliberately retained C runtime library may still exist after generated-C
 > retirement. **Full C removal is a separate policy decision** and should happen

@@ -27293,6 +27293,78 @@
       "guard-cranelift-phase14-structs-enums-parity",
       "guard-cranelift-phase20-resource-acquisition-parity"
     ]
+  },
+  "phase25_bootstrap_seed_policy": {
+    "change_reason": "Records the Phase 25 bootstrap seed decision. The new document enrols in the Phase 23 content manifest because it discusses generated C, and docs/ROADMAP_TAIL.md moves because the decision replaces the open question it carried. No code or route changes; this is a decision record.",
+    "contract_version": "phase25_bootstrap_seed_policy_text_surface_v1",
+    "decision": "Bootstrap from the previous release, with a verified checked-in binary as the bridge, and the runtime retired before the seed.",
+    "stated_in_full": "docs/PHASE25_BOOTSTRAP_SEED_POLICY.md",
+    "status": "decided_2026_09_19",
+    "text_surface_successor": {
+      "added_text_surfaces": [
+        "docs/PHASE25_BOOTSTRAP_SEED_POLICY.md"
+      ],
+      "added_text_surface_rows": [
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "1029299b5ea3620aa18b82970ca2a23ed13137b86baf0bfc688f9817920963e2",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "docs/PHASE25_BOOTSTRAP_SEED_POLICY.md",
+          "removal_phase": "not_removed_by_phase23"
+        }
+      ],
+      "contract_version": "phase25_bootstrap_seed_policy_text_surface_successor_v1",
+      "current_changed_text_surfaces": [
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "66be351a48a9bcc15459201786cc113f6b6e0d2de2b2b407f2ae2afd9775d6df",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        }
+      ],
+      "partial_extra_or_substituted_surface": "rejected",
+      "paths_judged_elsewhere": [
+        "docs/ROADMAP_TAIL.md"
+      ],
+      "previous_changed_text_surfaces": [
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "8d92ba23a63ed16b8014d46af6c019b4edf7c14e6cb2a1beceeeda56bd5db85f",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        }
+      ],
+      "registered_changed_paths": [
+        "scripts/cranelift_registry.py"
+      ],
+      "removed_text_surfaces": []
+    }
   },  "phase24_16_residue_audit": {
       "parity_residue_adjudication": {
         "change_reason": "Patch 24.16 measured these 28 mention-only parity recipes and pinned them absent from every execution route, which made continued unreachability the passing state and contradicted this patch's own exit gate that every survivor protect a live invariant. Most of them compared the native route against MIR-to-C, so each needs a per-guard decision about whether the invariant survives the retirement or went with it. Registered as pending against issue #437 so the audit passes on a declared deferral rather than on the bare fact of unreachability.",

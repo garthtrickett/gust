@@ -104,6 +104,7 @@ TOP_FIELDS = {
     "issue436_provenance_resolver",
     "issue437_parity_residue_adjudication",
     "phase24_16_residue_audit",
+    "phase25_bootstrap_seed_policy",
     "phase24_closure",
     "phase398_retained_spelling_removal",
     "phase24_frozen_oracle_replacement",
