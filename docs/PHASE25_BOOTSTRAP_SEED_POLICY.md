@@ -244,67 +244,96 @@ only honest falsifier for that is **a CI job on an image with no C compiler
 installed**. Stand that job up early and let it stay red; it measures the
 phase's remaining distance instead of asserting the endpoint at the end.
 
-## D9 — does `cc` survive as the linker driver? · *lane* · **DECIDED: no**
+## D9 — does `cc` survive as the linker driver? · *lane* · **DECIDED: it stops being required; it does not stop being supported**
 
-Asked as policy, answered by measurement.
+Asked as policy, answered by measurement — and the first answer recorded here
+was too strong. Both the original claim and its correction are kept, because
+the correction is the useful part.
+
+**First: `cc` is a linker *driver*, not a linker.** It is the thing that
+computes a link line and then invokes `ld`/`ld.lld`/`gold`. So this row is not
+"C linker versus Rust linker" — both routes end in a linker, quite possibly
+the same one. The real question is **who computes the link line**: a C
+compiler that already knows the platform, or Gust.
+
+What `cc` supplies for free: crt object locations
+(`crt1.o`/`crti.o`/`crtbegin.o`/`crtend.o`/`crtn.o`), library search paths,
+the `--dynamic-linker` path, `libgcc`/`compiler-rt`, and PIE/relro/multilib
+defaults — all varying by distro and architecture. That is real accumulated
+knowledge, maintained by someone else, present on every machine.
 
 **`cc` is already only a default.** The worker reads
 `env::var_os("CC").unwrap_or_else(|| OsString::from("cc"))` and then invokes
-it generically — objects, optional host object, the runtime archive, `-l`
-libraries, `-o`. Nothing is welded to a C compiler; the driver is a variable
-and `additional_linker_args` already exists.
+it generically. The driver is a variable and `additional_linker_args` exists.
 
-**A non-C driver is already installed.** `rust-lld` ships inside the Rust
-toolchain at `lib/rustlib/<target>/bin/`, and Rust is a hard dependency
-already. No new tool is required.
+### What was measured, and what it actually shows
 
-**Verified end to end, not argued:**
+An earlier draft asserted that "once the runtime is a Rust staticlib the whole
+link is a Rust link, and Rust already solves per-target crt and libc
+discovery." **That is false on `*-linux-gnu`.** Measured by poisoning `cc`,
+`gcc`, `clang`, `c++`, `g++`, `ld` and `cc1` with scripts that exit 99:
 
-```
-rustc --emit=obj t.rs -o t.o          # any object; no C involved
-rust-lld -flavor gnu -o prog \
-    crt1.o crti.o t.o -lc crtn.o \
-    --dynamic-linker /lib64/ld-linux-x86-64.so.2
-./prog  ->  exit 7
-```
+| configuration | `cc` invoked? | result |
+| --- | --- | --- |
+| `rustc t.rs` (gnu, default) | **yes** | poison fires |
+| `rustc --target ...-musl` (default flavor) | **yes** | poison fires — self-contained crt, still driven by `cc` |
+| `rustc -C linker=rust-lld -C linker-flavor=ld.lld` (gnu) | no | **fails**: `unable to find library -lc -lm -ldl -lpthread -lrt -lutil -lgcc_s` |
+| `rustc --target ...-musl -C linker=rust-lld -C linker-flavor=ld.lld` | no | **works** — static-pie executable, exit 7 |
 
-A working dynamically linked executable with **no C compiler invoked**.
+Two things follow that the earlier draft got wrong:
 
-Scope of that result, stated honestly: it proves the mechanism, not the whole
-Gust link. It does not yet cover the runtime archive, pthread, or the host
-object, and it was run on `x86_64-unknown-linux-gnu` only. Those are the next
-measurements, not assumptions to carry forward.
+1. **rustc uses `cc` as its linker driver on Linux by default, including for
+   the musl self-contained target.** Choosing "link with rustc" removes
+   nothing on its own.
+2. **On the gnu target there is no stock C-free link.** rustc emits a
+   driver-style line with bare `-lc` and no search paths, because it expects
+   `cc` to supply them. Making that work means hardcoding
+   `/usr/lib/x86_64-linux-gnu` and friends — reimplementing, distro by
+   distro, exactly the knowledge this row says not to reimplement. The
+   original `rust-lld` experiment in this document did precisely that by
+   hand-passing crt paths and `--dynamic-linker`, which is why it looked
+   easier than it is. Note also that the gnu link wants **`-lgcc_s`**, a GCC
+   runtime library, so "no C compiler" on gnu is a narrower claim than it sounds.
 
-**What it still needs:** `crt1.o`/`crti.o`/`crtn.o` and `libc`, which come
-from libc development files — *not* from a compiler. So the gate's wording,
-"without invoking a C compiler", is satisfiable with libc-dev present.
+**The C-free link that actually works is musl + `-C linker-flavor=ld.lld`.**
+So the cost is not "swap a default" but "adopt musl and static linking as the
+configuration the gate is proved against."
 
-**Why this is natural rather than a workaround:** D2 moves the runtime to
-Rust. Once the runtime is a Rust staticlib, the whole link is a Rust link, and
-Rust already solves per-target crt and libc discovery. Reimplementing that
-discovery inside Gust would be duplicating a solved problem badly.
+### The decision
 
-One trap worth recording: **`rustc`'s own default linker on
-`x86_64-unknown-linux-gnu` is `cc`.** "Link with rustc" does not by itself
-remove the C toolchain; it needs `-C linker=rust-lld`, or lld invoked
-directly as above. Choosing rustc-as-driver without that flag would look like
-progress and change nothing.
+**`cc` stops being *required*. It does not stop being *supported*.**
 
-## D9a — is libc-dev acceptable, or must the link be self-contained? · **operator**
+- The exit gate is proved by a CI job that links with no C compiler present,
+  on the musl target with `rust-lld` (D8's falsifier job is where this lives).
+- `$CC` remains honoured indefinitely. Distro packagers, gnu-target users and
+  anyone cross-compiling will want it, it costs one line to keep, and removing
+  it buys nothing the gate asks for.
 
-What remains of D9 after the measurement, and it is a much smaller question.
+Writing it the other way round — forbidding `cc` — would be asserting an
+endpoint rather than measuring one, and would regress the gnu target to no
+purpose. The gate says a clean machine can build Gust without invoking a C
+compiler. It does not say no machine may.
 
-- **Tier 2 (measured above):** `rust-lld` + system crt and libc. No C
-  compiler is invoked. Needs libc development files present.
-- **Tier 3:** an `x86_64-unknown-linux-musl` target with
-  `-C link-self-contained=yes`, where Rust ships musl's crt objects itself.
-  No system C artifacts at all. Costs musl and static linking, with the libc
-  behaviour and binary-size consequences that implies.
+## D9a — is libc-dev acceptable, or must the link be self-contained? · **operator** · *substantially narrowed*
 
-Tier 2 satisfies the exit gate as written. Tier 3 satisfies the stronger
-claim some readers will hear in "Gust does not need C". Which one the phase
-is closing on is the operator's call, and it should be made **before** the
-closure sentence is drafted.
+This row previously offered two tiers as if both were available. The
+measurement above shows they are not.
+
+- **Tier 2 — gnu target, libc-dev present, no C compiler.** Largely
+  **illusory** with a stock toolchain: rustc will not produce this link
+  without Gust supplying distro-specific library search paths itself. Reaching
+  it is a project, not a flag.
+- **Tier 3 — musl, `-C linker-flavor=ld.lld`, static-pie.** Works today,
+  measured, no C artifacts at all. Costs musl libc behaviour and static
+  linking, with the binary-size and `dlopen`/NSS consequences that implies.
+
+So the operator's question is no longer "which tier" but the blunter one:
+**is musl-static an acceptable supported configuration for the artifact the
+gate is proved against?** If yes, the gate is reachable now. If no, the gate
+needs rewording, because a C-free gnu link is not a flag away.
+
+Either answer is fine; what is not fine is closing the phase without picking,
+which is the shape of defect Phase 24 spent five patches on.
 
 ## D10 — what counts as an "optional foreign-runtime component"? · **operator**
 
@@ -327,6 +356,7 @@ closure sentence existed to avoid.
 5. Native stage chain and the new fixed point (D4).
 6. Seed cut-over (D1).
 7. Delete the emitter and its entry together (D5).
-8. Switch the linker driver to `rust-lld` (D9) and extend the measured
-   link to cover the runtime archive, pthread and the host object.
-   Whether that link is self-contained depends on D9a.
+8. Make `cc` optional rather than required (D9): keep `$CC` honoured, and
+   prove the gate with a musl + `rust-lld` link in the D8 job. Extend the
+   measured link to cover the runtime archive, pthread and the host object —
+   none of which the `std`-only measurement covered.
