@@ -158,7 +158,7 @@ scripts, Nix packages, CI images and release archives. Preserve an
 independently auditable bootstrap chain.
 
 **Seed policy decided 2026-09-19: bootstrap from the previous release, with a
-verified checked-in binary as the bridge, and the runtime done before the
+verified published binary whose digest is committed as the bridge, and the runtime done before the
 seed.** The runtime is 1,968 hand-written lines that every binary links —
 including whatever replaces the seed — so leaving it until last makes the exit
 gate unreachable whichever seed lands. The options, the ranking and the
@@ -197,7 +197,11 @@ decisions: `approved_scalar_imports.c` is **rehomed, not deleted**, because
 contract they test; and **all eight** of `fiber.c`'s assembly blocks port
 rather than the two CI builds, because the platform-naming obligation binds
 the seed rather than the runtime and macOS is aarch64. Both move work
-earlier than the runtime rows assumed, so the sequence is reordered.
+earlier than the runtime rows assumed, so the sequence is reordered. A third round resolved fifteen
+further questions, including a contradiction between two decided rows:
+option B's bridge binary is **published with its digest committed**, not
+committed itself, since committing per-platform blobs was the opacity the
+seed ranking held against option C.
 
 That file also records the first step, which is neither the seed nor the
 runtime: enumerate what actually requires a C toolchain rather than inherit

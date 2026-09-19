@@ -12,8 +12,9 @@ Decided 2026-09-19, after `#398` closed Phase 24's backend retirement.
 
 ## The decision
 
-**Bootstrap from the previous release (option A), with a verified checked-in
-binary (option B) as the bridge. Do the runtime before the seed.**
+**Bootstrap from the previous release (option A), with a verified published
+binary whose digest is committed (option B) as the bridge. Do the runtime
+before the seed.**
 
 ## What the measurement changed
 
@@ -41,7 +42,10 @@ only release-named workflow is an audit.
 **A — bootstrap from the previous release.** No seed in the repository; the
 build obtains the last released compiler. What Go and Rust do.
 
-**B — checked-in native binary.** A prebuilt `gust` per platform, committed.
+**B — published native binary with a committed digest.** A prebuilt `gust`
+per platform, published as a release asset, with its digest tracked in the
+repository. *Narrowed by P15 — this row originally said the binary itself
+was committed, which contradicted O8.*
 
 **C — checked-in Cranelift object or archive.** `.o`/`.a` rather than an
 executable.
@@ -57,7 +61,7 @@ enough to read, which builds the real one. The Mes / live-bootstrap model.
 | | option | assessment |
 |---|---|---|
 | 1 | **A** | Removes the seed rather than translating it. The fixed point survives intact: the released compiler builds current source, and current source rebuilds itself byte-identically. Today's `gust_v4.c` can mint the first release, giving a clean one-time cut-over. The cost is release infrastructure this project wants regardless. |
-| 2 | **B**, *if the fixed point proves it* | The usual objection is that a blob cannot be diffed. This repository already has the machinery that answers it: require the committed binary to rebuild itself byte-identically from source. That makes the seed **verified rather than trusted**, which is most of what auditability buys. Cost: one artifact per platform. |
+| 2 | **B**, *if the fixed point proves it* | The usual objection is that a blob cannot be diffed. This repository already has the machinery that answers it: require the committed binary to rebuild itself byte-identically from source. That makes the seed **verified rather than trusted**, which is most of what auditability buys. Cost: one artifact per platform. Narrowed by P15: the binary is published and its digest committed, not the binary itself. |
 | 3 | **C** | Strictly worse than B — still opaque, still per-platform, and still needs a linker, with no compensating advantage. |
 | 4 | **D** | Attractive at first glance: text, diffable, toolchain already present. But it is not swapping an emitter, it is **writing a new backend**, and it ends in a 66k-line generated artifact again in a different language. High cost, little gain over A. |
 | 5 | **E** | Right in principle, wrong for now. Needs a defined language subset and is plausibly years of work. Recorded so it is not foreclosed. |
@@ -745,6 +749,211 @@ Stated plainly so the two are not confused: **a signature on a blob nobody
 can reproduce is trust, not verification.** If the two layers ever conflict,
 the fixed point wins and the release is withdrawn. Layer 2 exists to detect
 substitution, not to substitute for layer 1.
+
+
+# Round three — what O1-O10 left open
+
+Resolved 2026-09-19, same session. One of these is a **contradiction between
+two decided rows**, which is the reason to keep doing these rounds.
+
+## P15 — D1 and O8 contradict each other · **RESOLVED: O8 wins; D1's option B narrows to "published binary, committed digest"**
+
+Taking this first because it is a conflict rather than a gap.
+
+- **D1 option B:** "a prebuilt `gust` per platform, **committed**."
+- **O8:** "Binaries live as release assets; the manifest, **and only the
+  manifest**, is also committed."
+
+Both cannot hold. **O8 is right.** Committing per-platform binaries writes
+blobs into git history permanently, growing every clone forever for a file
+almost nobody needs — and opacity is precisely what D1's own ranking held
+against option C when it placed C below B.
+
+The *property* option B buys is a bridge that does not require a previous
+release to exist. That property survives intact: **the bridge is a release
+asset whose digest is committed**, alongside the fixed-point proof. Anyone
+can obtain a copy by any route and verify it against tracked text. Combined
+with O8's `GUST_BOOTSTRAP_SEED=/path`, the offline story holds too.
+
+D1's option B wording is hereby narrowed from *committed binary* to
+**published binary with committed digest**. The ranking is unaffected — B
+stays second, and stays the bridge for O9's floor.
+
+Honest limitation, stated rather than papered over: with **neither** network
+**nor** any release asset, there is nothing to bootstrap from. That is also
+true of Rust and Go, and it is the cost of retiring a checked-in seed.
+
+## P1 — the crate adds a second archive, and #436 is open · **RESOLVED: re-measure, record on #436, do not close it on a stale scan**
+
+There is exactly **one** `.a` in the build today, `build/gust-runtime-package.a`
+(`Makefile:18`). O1's crate makes two.
+
+#436 is open precisely because `build_system_produces`'s `\.a\b` fallback
+misclassifies — it put **105 of 117** justfile inputs in `rust-archive`
+against 1 in the rest of the tree. Adding a second archive is a new input to
+that open issue.
+
+So: the rehoming patch **re-runs the C-toolchain provenance scan and records
+the delta on #436**. And #436 must not be closed on the strength of a scan
+taken before the second archive existed — that is the shape of defect #423
+was reverted for, a guard green over a population it classified by accident.
+
+## P2 — `phase21`'s object set meets an archive · **RESOLVED: teach the guard archives; do not delete the row**
+
+`scripts/phase21_full_compiler_native_qualification.py:92` names a set of
+runtime **objects**, including `approved_scalar_imports.o`. A Rust staticlib
+is an **archive** containing objects, so the population changes shape, not
+just membership.
+
+Two ways to make it green, and only one is honest. Extracting the crate's
+objects so the existing guard still sees `.o` files defeats the point of the
+crate and adds a build step whose only purpose is to satisfy a guard. So:
+**teach the guard to accept an archive as a member**, and re-derive its
+population rather than deleting the row that no longer matches. Deleting the
+row would make it pass while measuring less, which is #423 again.
+
+## P3 — does a `#![no_std]` staticlib actually work · **RESOLVED: yes, measured**
+
+Recorded so the first patch does not rediscover it. A `staticlib` crate with
+`#![no_std]`, `panic = "abort"`, a trivial `#[panic_handler]`, three
+`#[no_mangle] extern "C"` fixtures and a `global_asm!` block builds clean and
+exports all four symbols:
+
+```
+nm -g target/release/libgustrt.a
+  T gust_context_switch
+  T tiny_host_add_i32
+  T tiny_host_add_one_i32
+  T tiny_host_is_positive_i32
+```
+
+`global_asm!` needs `options(att_syntax)` for the AT&T-syntax bodies
+`fiber.c` already uses, which keeps the copy-paste literal.
+
+## P4 — the macOS underscore variants · **RESOLVED: keep both spellings explicitly, as the C did**
+
+`#[no_mangle]` applies the platform symbol prefix for *functions*, but
+`global_asm!` is raw text and gets no such treatment. So the
+`_gust_context_switch` / `gust_context_switch` pair must stay explicit under
+`#[cfg(target_vendor = "apple")]`, exactly as `#if defined(__APPLE__)`
+carried it. The port stays a literal copy-paste, underscores included.
+
+## P5 — what proves the copy-paste lossless · **RESOLVED: byte comparison for the built quadrant, text comparison for the other three, and say which is which**
+
+Three of the four platform quadrants are unbuilt (O2), so there are no bytes
+to compare for them. The guard therefore has two halves:
+
+- **Built quadrant (Linux x86_64): compare emitted bytes** for
+  `gust_context_switch` and `gust_fiber_entry_wrapper`, old against new.
+- **Unbuilt quadrants: compare assembly text**, extracted per `#[cfg]` arm
+  from the crate and per `#if` arm from `fiber.c` at its last commit,
+  normalised for whitespace only.
+
+The text half is **weaker and is labelled as weaker**. It is accepted because
+the alternative is no evidence at all for three quadrants, not because text
+equality proves behaviour. If an aarch64 runner ever appears, that half is
+promoted to a byte comparison and the guard says so.
+
+## P6 — how the freestanding subset is enforced · **RESOLVED: relocations, not grep — so O3's escalation rule does not fire**
+
+O3 said "spec plus guard" without saying what the guard inspects, and the
+obvious answer is wrong. A guard that greps runtime `.gst` files for
+`std.Clone` is **a name test standing in for a behaviour test**: it passes
+for anything spelled differently, aliased, or reached one call deep.
+
+The strong enforcement needs no new language surface: **inspect the emitted
+object's relocations.** A runtime object carrying a relocation against
+`std_*`, `os_ArenaAlloc` or any other runtime export violated the subset,
+however it was spelled. That is the same technique D2's third obligation
+already specifies for `os_ArenaAlloc`, so the two guards are one mechanism
+applied twice.
+
+This matters for O3's own rule. A `#[freestanding]` module attribute *would*
+be new language surface and *would* escalate to the OD register — and it is
+the stronger answer, because it fails at compile time with a good message
+rather than at guard time with a relocation name. It is recorded here as the
+Phase 26 successor, and it is **not needed now**, so O3's rule does not fire
+and the subset stays lane work.
+
+## P7 — where D8's expected-failure list lives · **RESOLVED: a standalone tracked JSON, read by the job at runtime**
+
+Not in `scripts/cranelift_feature_registry.json`. A top-level key there costs
+three coordinated files — the registry, `TOP_FIELDS` in
+`cranelift_registry.py`, and the schema's `required` — and this is not a
+Cranelift feature.
+
+A standalone tracked JSON, carrying the repo's successor-chain convention so
+each patch that shortens the list says what it removed and why. **The job
+reads it at runtime** rather than restating it, so the list and the job
+cannot drift apart — a job that hardcodes what it expects to fail will one
+day expect something the list no longer says.
+
+## P8 — the promotion transition · **RESOLVED: a patch, never automatic**
+
+If promotion were automatic, the day the list empties an unrelated failure
+becomes a blocking required check with nobody expecting it — a green-to-red
+transition caused by a *success* elsewhere, which is the worst kind to debug.
+
+So the job reports **"list empty, ready for promotion"** and stays
+non-required. A patch flips it. That patch is the phase's closure patch, and
+tying them together is a feature: the gate becomes required exactly when
+someone writes down that it should be.
+
+## P9 — what is in the gnu smoke subset · **RESOLVED: named in the workflow, not computed**
+
+Build the compiler, run the bootstrap fixed point, and run one exec test per
+backend route. Small, fixed, and **enumerated literally in the workflow
+file**.
+
+A computed subset — "everything tagged smoke", "the fast half" — drifts
+toward nothing as tags rot, and nobody notices because the job stays green
+while covering less. O5 bought one job; this is what keeps it worth having.
+
+## P10 — host-native default on a machine with no C compiler · **RESOLVED: probe, then error naming musl — never switch silently**
+
+This falls straight out of D9 and O6 together and neither noticed it. O6
+defaults user builds to the host's native target; D9 establishes that on a
+gnu host the native link needs a C compiler. **On a gnu host with no C
+compiler, the default therefore fails.**
+
+The driver probes for a usable link driver. If none is found it **errors,
+naming `--target x86_64-unknown-linux-musl` as the fix.** It does *not*
+silently fall back to musl: that would hand the user a static binary with a
+non-functional `dlopen` and different name resolution as a side effect of
+their machine's package list, which is exactly the surprise O6 refused. An
+error the user can act on beats a binary they did not ask for.
+
+## P11 — Cranelift emits no debug info today · **RESOLVED: restate O7 as a standing obligation, and record that it is vacuous now**
+
+Measured: there is no `debug_info`, `DWARF` or `debuginfo` handling in
+`compiler/experiments/cranelift/src/main.rs`. So O7's "debug info is included
+in the comparison, not stripped" is **currently vacuous** — there is nothing
+to include.
+
+Restated so it does not need remembering: **the comparison covers every
+section the compiler emits.** The day debug info starts being emitted it is
+in scope automatically. And recorded here explicitly so nobody reads today's
+passing comparison as evidence about debug-info determinism, which it is not.
+
+## P12 — remap to what · **RESOLVED: one pinned canonical prefix, constant in the build**
+
+`/gust`, chosen once and recorded, so two checkouts in different directories
+emit identical objects. It must be a **build constant, never derived from
+`cwd`** — a remap computed from the working directory reproduces the very
+nondeterminism it exists to remove, while looking like it fixed it.
+
+## P13 — who cuts a release · **RESOLVED: the normal gate, no admin path**
+
+A release is a tag on merged `main`, cut by a patch that lands through the
+same ruleset as everything else: mergeable, zero unresolved review threads,
+required checks green. No `--admin`, no exception for release patches. A
+bootstrap chain whose releases bypass the review gate is not the auditable
+chain D7 describes.
+
+D1's release 0 is minted from today's `gust_v4.c` **before** D5 deletes the
+emitter — already satisfied by the sequence, which puts release mechanics at
+step 9 and emitter deletion at step 11, and noted here so a future reorder
+does not quietly break it.
 
 ## Sequence implied by the above
 
