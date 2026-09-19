@@ -99,6 +99,15 @@ TOOLCHAIN_QUERY_FLAGS = ("--version", "-dumpmachine", "-dumpversion", "-print-pr
 
 CC_HEAD = re.compile(
     r'^\s*(?:if\s+|!\s+|then\s+)*'
+    # PR #450 review (P1): the head was anchored past `if`/`!`/`then` only,
+    # so a compile written as
+    #   CC_BIN="${CC:-cc}"; CFLAGS_VAL="..."; "$CC_BIN" $CFLAGS_VAL ...
+    # was not an invocation at all. justfile:22547, :22614 and :22654 are
+    # exactly that shape and were absent from the population, which made a
+    # "zero unresolved" result a statement about an incomplete enumeration.
+    # Leading `VAR=value;` assignments are skipped so the command is seen.
+    r'''(?:[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|\S*)\s*;\s*)*'''
+    r'(?:if\s+|!\s+|then\s+)*'
     r'(?P<cc>"?\$\{CC:-cc\}"?|"?\$\{CC_BIN\}"?|"?\$CC_BIN"?|"?\$CC"?|cc)\s'
 )
 CC_BINDING = re.compile(r'^\s*(?P<name>[A-Za-z_][A-Za-z0-9_]*)=(?P<rhs>.*\$\{?CC\b.*|"?cc"?)\s*$')
@@ -835,9 +844,14 @@ def resolve_through_parameter(name: str, lines: list, lineno: int) -> dict:
         if len(args) < index:
             continue
         inner = resolve_input(args[index - 1], lines, row_lineno)
-        if inner.get("klass"):
-            seen[inner["klass"]] = inner.get("why", "")
-    if len(seen) != 1:
+        # PR #450 review (P2): recording only the calls that resolved meant
+        # `run_c "$good"` plus `run_c "$unknown"` left exactly one class in
+        # `seen`, and the unresolved call was silently accepted as the good
+        # one. That is the opposite of the fail-closed contract this
+        # docstring claims. An argument that does not resolve is a
+        # disagreement.
+        seen[inner.get("klass") or ""] = inner.get("why", "")
+    if len(seen) != 1 or "" in seen:
         return {}
     klass, why = next(iter(seen.items()))
     return {"klass": klass, "why": f"call sites pass {why}"}
@@ -898,9 +912,29 @@ def scan_makefile() -> dict:
 def shell_scripts() -> list:
     r"""Every file this guard reads for C toolchain sites.
 
-    Issue #436 wanted the justfile in here. It is now in, with every input
-    classified -- 0 unresolved -- rather than green over a population it
-    classified by accident, which is what the exclusion existed to prevent.
+    Issue #436 wants the justfile in here. It is still out, and the reason
+    changed: the resolver can now classify it, and doing so uncovers a
+    census gap that must be filed rather than absorbed.
+
+    With the justfile enabled the population is 102 invocations and **zero
+    unresolved** -- every input classified. But three of them,
+    justfile:22547, :22614 and :22654, compile retired-backend products
+    (`test_runner_step52_positive_final.c`, `test_runner_final.c`) that the
+    retirement inventory does not own, and `validate` refuses:
+
+        cc invocations compiling a retired-backend product that the
+        retirement inventory does not own: justfile:22547, :22614, :22654
+
+    `inventory_owner`'s own docstring says that is the finding and not
+    something to paper over locally, so no local owner is added here. The
+    three sites need an owning patch in the inventory; until they have one,
+    enabling the scan would be trading a classification gap for an
+    ownership gap.
+
+    They were invisible until this patch. They are written as
+    `CC_BIN=...; CFLAGS_VAL=...; "$CC_BIN" ...`, and `scan_script` matched
+    CC_BINDING first and `continue`d, so a line that both binds and invokes
+    was only ever counted as a binding.
 
     The history is kept because two diagnoses were wrong before the right
     one, and the wrongness is the useful part.
@@ -943,7 +977,7 @@ def shell_scripts() -> list:
     35-invocation population and its whole by_class distribution are
     unchanged from before any of this.
     """
-    return sorted(ROOT.glob("scripts/*.sh")) + [ROOT / "justfile"]
+    return sorted(ROOT.glob("scripts/*.sh"))
 RECIPE_HEAD = re.compile(r'^@?[A-Za-z0-9_][A-Za-z0-9_-]*(?:\s+[^:\n]*)?:(?!=)')
 
 
@@ -994,11 +1028,23 @@ def scan_script(path: Path) -> dict:
         binding = CC_BINDING.match(line)
         if binding and re.search(r'\$\{?CC\b|(?<![\w-])cc(?![\w-])', binding.group("rhs")):
             bindings[binding.group("name")] = lineno
-            continue
+            # PR #450 review (P1): this used to `continue`, so a line that
+            # BOTH binds and invokes was only ever counted as a binding.
+            # justfile:22547, :22614 and :22654 are
+            #   CC_BIN="${CC:-cc}"; CFLAGS_VAL="..."; "$CC_BIN" ... 
+            # and were therefore absent from the population entirely, which
+            # made "zero unresolved" a claim about an incomplete
+            # enumeration rather than a complete one. Record the binding
+            # and fall through so the invocation on the same line is seen.
+            if not CC_HEAD.match(line):
+                continue
         head = CC_HEAD.match(line)
         if not head:
             continue
-        inputs, is_query = command_inputs(line)
+        # Parse from the compiler head, not the line start: a line like
+        # `CC_BIN=...; CFLAGS_VAL=...; "$CC_BIN" ...` would otherwise offer
+        # its leading assignments as compiler inputs.
+        inputs, is_query = command_inputs(line[head.start("cc"):])
         invocations.append(
             {
                 "file": rel,
