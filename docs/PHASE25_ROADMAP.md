@@ -12,6 +12,27 @@ This file is the task list.
 phases still need their own activation", and Phase 24's activation explicitly
 does not authorize Phase 25 bootstrap-route work. Activation is the operator's.
 
+**Its lane ownership is unresolved, and that is flagged rather than
+assumed.** `AGENTS.md:10-14` gives Docs/vision the `docs/` set while stating it
+"owns no code and holds no semantic authority"; the Cranelift capability
+registry is Cranelift's. This patch touches both, so on the letter of the
+table it has no single owning lane.
+
+The coupling is **forced by the enrolment mechanism, not chosen**. Any
+`docs/` file whose text matches the surface patterns joins the manifest, and
+`phase23_closure` then fails until it is registered in the Cranelift registry
+— across four coordinated files, one of which (`scripts/cranelift_registry.py`)
+is itself an enrolled surface. A docs-only patch adding a document that
+mentions MIR-to-C is therefore **not constructible**. PR #444 hit exactly this
+and merged with the same shape.
+
+Routing it by `AGENTS.md:20-23`'s test — the file it changes and the
+*authority* it needs — the registry edit is enrolment bookkeeping rather than
+new semantic authority, and this document is an unactivated draft that holds
+none. That is an argument, not a ruling. **The operator should settle whether
+registration edits are lane-crossing, because the answer applies to every
+future document, not to this one.**
+
 **It deliberately lives outside `TASK.md`.** 127 scripts read that file and
 several assert an "immutable Phase N record" is preserved. Moving this
 breakdown into it is a structural edit that needs its own patch and a full
@@ -21,7 +42,7 @@ sweep, not a drive-by append. The activation patch does that move.
 
 | condition | state |
 | --- | --- |
-| `docs/PHASE25_BOOTSTRAP_SEED_POLICY.md` merged | PR #444, open |
+| `docs/PHASE25_BOOTSTRAP_SEED_POLICY.md` merged | **merged 2026-09-19**, PR #444 as `73862153`, 260/260 checks, zero unresolved threads |
 | #433 — seed cannot reconverge | **closed 2026-09-19**, verified on `main`: `make bootstrap` reaches the fixed point and `gust_v4.c` returns unchanged |
 | Cranelift object determinism | **unmeasured** — D4's prerequisite; if it fails, 25.2 grows a repair |
 | D9's poison test past `std` | **unmeasured** |
@@ -177,7 +198,10 @@ fixtures into it. **Before** the runtime port, not after — D3 sequenced
 **Steps:**
 
 - Create the crate: `staticlib`, `#![no_std]`, `panic = "abort"`, a trivial
-  `#[panic_handler]`. Measured to work, with all four symbols exported (P3).
+  `#[panic_handler]`. Measured to work (P3). **Three exports here** — the
+  `tiny_host_*` fixtures below. The P3 prototype also carried
+  `gust_context_switch`, but that is 25.6's; requiring four at this gate
+  would pull part of 25.6 forward.
 - Rehome `tiny_host_add_i32`, `tiny_host_add_one_i32`,
   `tiny_host_is_positive_i32` as `#[no_mangle] extern "C"`, symbol names
   byte-identical. **Do not rewrite them in Gust**: the fixtures exist because
