@@ -27294,6 +27294,71 @@
       "guard-cranelift-phase20-resource-acquisition-parity"
     ]
   },
+    "phase25_roadmap_draft": {
+      "status": "phase25_roadmap_draft_not_activated",
+      "text_surface_successor": {
+        "added_text_surface_rows": [
+          {
+            "classification": "historical_only",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "preserve_as_historical_evidence",
+            "digest": "6c598a2d39d70010bfbe75846a12e808b01b31f2c3019453ce2179679ec6c70b",
+            "falsifier": "historical_record_is_reclassified_as_live_support",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "generated_c_contract": 2,
+              "mir_to_c_name": 2
+            },
+            "owner": "cranelift",
+            "path": "docs/PHASE25_ROADMAP.md",
+            "removal_phase": "not_removed_by_phase23"
+          }
+        ],
+        "added_text_surfaces": [
+          "docs/PHASE25_ROADMAP.md"
+        ],
+        "contract_version": "phase25_roadmap_draft_text_surface_successor_v1",
+        "current_changed_text_surfaces": [
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "21b17c9a756def7febd293e881d1c5a8277b2ea8ec5291a3780c5e4e036a1dbd",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        }
+      ],
+        "partial_extra_or_substituted_surface": "rejected",
+        "previous_changed_text_surfaces": [
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "66be351a48a9bcc15459201786cc113f6b6e0d2de2b2b407f2ae2afd9775d6df",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        }
+      ],
+        "registered_changed_paths": [
+        "scripts/cranelift_registry.py"
+      ],
+        "removed_text_surfaces": []
+      }
+    },
   "phase25_bootstrap_seed_policy": {
     "change_reason": "Records the Phase 25 bootstrap seed decision. The new document enrols in the Phase 23 content manifest because it discusses generated C, and docs/ROADMAP_TAIL.md moves because the decision replaces the open question it carried. No code or route changes; this is a decision record.",
     "contract_version": "phase25_bootstrap_seed_policy_text_surface_v1",

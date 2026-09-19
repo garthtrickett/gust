@@ -2263,6 +2263,57 @@ def normalize_phase23_text_surfaces(
     # newest-first discipline as every link below it.
     # Phase 25's seed-policy record is newest, so it runs FIRST. It adds one
     # document and moves docs/ROADMAP_TAIL.md; no code or route changes.
+    # The Phase 25 roadmap draft is newer than the seed policy, so it runs
+    # FIRST and projects the tree back to the state the seed-policy successor
+    # was registered against. It only adds a surface; it changes none, so the
+    # added-row requirement carries the whole contract -- and per the PR #444
+    # review, that requirement is what makes the enrolment real rather than
+    # decorative.
+    roadmap_surface = registry.get(
+        "phase25_roadmap_draft", {}).get("text_surface_successor")
+    if roadmap_surface is not None:
+        require(roadmap_surface.get("contract_version") ==
+                "phase25_roadmap_draft_text_surface_successor_v1" and
+                roadmap_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Phase 25 roadmap text surface successor drifted")
+        roadmap_paths = list(roadmap_surface["registered_changed_paths"])
+        roadmap_pre = {row["path"]: row for row
+                       in roadmap_surface["previous_changed_text_surfaces"]}
+        roadmap_post = {row["path"]: row for row
+                        in roadmap_surface["current_changed_text_surfaces"]}
+        require(sorted(roadmap_pre) == sorted(roadmap_paths) ==
+                sorted(roadmap_post),
+                "Phase 25 roadmap registered paths and rows disagree")
+        roadmap_chg = {row["path"]: row for row in rows
+                       if row["path"] in roadmap_paths}
+        require(sorted(roadmap_chg) == sorted(roadmap_paths),
+                "Phase 25 roadmap registered text surface is missing from "
+                "the scan")
+        for path in roadmap_paths:
+            require(roadmap_chg[path] in (roadmap_pre[path],
+                                          roadmap_post[path]),
+                    "Phase 25 roadmap changed text surfaces are partial or "
+                    f"substituted: {path}")
+        rows = [dict(roadmap_pre.get(row["path"], row)) for row in rows]
+        roadmap_added = set(roadmap_surface["added_text_surfaces"])
+        roadmap_rows = {row["path"]: row for row
+                        in roadmap_surface["added_text_surface_rows"]}
+        require(sorted(roadmap_rows) == sorted(roadmap_added),
+                "Phase 25 roadmap added paths and rows disagree")
+        roadmap_live = {row["path"]: row for row in rows
+                        if row["path"] in roadmap_added}
+        require(sorted(roadmap_live) == sorted(roadmap_added),
+                "Phase 25 roadmap added text surface is missing from the "
+                f"scan: {sorted(roadmap_added - set(roadmap_live))}")
+        for path in sorted(roadmap_added):
+            require(roadmap_live[path] == roadmap_rows[path],
+                    "Phase 25 roadmap added text surface does not match its "
+                    f"registered row: {path}")
+        rows = [row for row in rows if row["path"] not in roadmap_added]
+        rows.sort(key=lambda row: str(row["path"]))
+        by_path = {row["path"]: row for row in rows}
+
     seed_policy_surface = registry.get(
         "phase25_bootstrap_seed_policy", {}).get("text_surface_successor")
     if seed_policy_surface is not None:
