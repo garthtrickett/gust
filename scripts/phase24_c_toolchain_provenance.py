@@ -451,7 +451,43 @@ def writes_any(line: str, variant: str, name: str) -> bool:
     """
     if writes_key(line, variant):
         return True
-    return any(writes_key(line, alias) for alias in var_aliases(name))
+    if not name:
+        return False
+    # PR #447 review (P2): `writes_key` tests substring containment, so an
+    # alias of `$foo` matched a redirect to `$foobar` and `resolve_input`
+    # adopted the wrong producer's class. Reproduced before fixing. A
+    # variable reference has a boundary -- `$name` ends at the first
+    # character that cannot continue an identifier -- so match the whole
+    # reference rather than a prefix of one.
+    return writes_variable(line, name)
+
+
+VAR_REFERENCE = re.compile(r'\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?')
+
+
+def writes_variable(line: str, name: str) -> bool:
+    """True when `line` writes to the variable `name`, matched whole.
+
+    Tokenises like `writes_key` and then compares the *resolved identifier*
+    of each redirect or `-o` target, so `$foobar` is never a write to `$foo`.
+    """
+    tokens = split_tokens(line)
+    for index, token in enumerate(tokens):
+        target = None
+        # A bare `>` is a redirect operator whose target is the NEXT token;
+        # `>file` carries its own. Testing startswith(">") first swallowed
+        # the bare case with an empty target and never looked ahead.
+        if token in (">", ">>", "-o"):
+            if index + 1 < len(tokens):
+                target = tokens[index + 1]
+        elif token.startswith(">") and token.lstrip(">"):
+            target = token.lstrip(">")
+        if target is None:
+            continue
+        match = VAR_REFERENCE.fullmatch(strip_quotes(target).strip())
+        if match and match.group(1) == name:
+            return True
+    return False
 
 
 def writes_key(line: str, key: str) -> bool:

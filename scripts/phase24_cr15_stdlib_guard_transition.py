@@ -2288,11 +2288,17 @@ def normalize_phase23_text_surfaces(
                         if row["path"] in scoping_paths}
         require(sorted(scoping_live) == sorted(scoping_paths),
                 "Issue #447 registered text surface is missing from the scan")
-        for path in scoping_paths:
-            require(scoping_live[path] in (scoping_pre[path],
-                                           scoping_post[path]),
-                    "Issue #447 changed text surfaces are partial or "
-                    f"substituted: {path}")
+        # PR #447 review (P2): comparing each path independently against
+        # pre-or-post accepts a MIX -- one path at its predecessor row while
+        # another is at its successor row -- which is exactly the partially
+        # applied or partially reverted state
+        # `partial_extra_or_substituted_surface: rejected` exists to refuse.
+        # Compare the complete map against one complete state or the other.
+        require(scoping_live in (scoping_pre, scoping_post),
+                "Issue #447 changed text surfaces are partial or "
+                "substituted: the live rows match neither the complete "
+                "predecessor state nor the complete successor state "
+                f"({sorted(path for path in scoping_paths if scoping_live[path] != scoping_post[path])} differ from post)")
         rows = [dict(scoping_pre.get(row["path"], row)) for row in rows]
     # The Phase 25 roadmap draft is newer than the seed policy, so it runs
     # FIRST and projects the tree back to the state the seed-policy successor
