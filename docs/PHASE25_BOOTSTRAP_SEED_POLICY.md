@@ -193,30 +193,95 @@ either target. The gate excepts *optional* foreign-runtime components; this
 runtime is mandatory, so the escape clause does not reach it. Worth stating
 because it is the tempting shortcut.
 
-## D3 — `fiber.c` specifically · *lane* · **OPEN: three routes, none free**
+## D3 — `fiber.c` specifically · *lane* · **DECIDED: Rust `global_asm!` now; module-level `global_asm` in Gust is the Phase 26 successor**
 
-719 lines carrying **eight blocks of inline assembly** for context switching,
-plus pthread. The one file where the block is capability, not sequencing, and
-the block is measured: there is no `asm` construct anywhere in
-`compiler/lexer.gst`, `compiler/parser.gst`, `compiler/codegen.gst` or the
-spec, and 26.1 does not add one.
+### What the eight blocks actually are
 
-Three routes, to be decided on measurement rather than here:
+They are **not inline assembly**. They are top-level `__asm__()` blocks
+containing pure `.text`/`.global` assembly with no operand constraints, no
+clobber lists and no interaction with surrounding C. They define whole
+functions. There are only **two of them**:
 
-- **Rust `global_asm!`.** The assembly ports as assembly. Lowest risk, and the
-  default if the others do not measure well. Cost: keeps a Rust component in
-  an otherwise Gust runtime, so the second toolchain stays mandatory.
-- **`swapcontext`/`makecontext` via `extern func`.** POSIX, needs no assembly
-  at all, so it is expressible in Gust today. Cost: slower, obsolescent, and
-  removed on some platforms — needs measuring against the current fiber
-  benchmark before it is credible.
-- **Add inline assembly to Gust.** Honest, and a genuine language feature with
-  a Phase 26-sized design question attached. Out of scope for Phase 25 unless
-  the other two both fail.
+| function | size | variants |
+| --- | --- | --- |
+| `gust_context_switch` | ~13 instructions | x86_64 + aarch64 × underscore-prefixed (macOS) and plain (Linux) |
+| `gust_fiber_entry_wrapper` | 4 instructions | same four |
 
-Sequence it **last** of the eight regardless, behind the files with cheaper
-parity evidence. `gust_context_switch` and `gust_scheduler_*` are exported
-into every binary, so D2's mandatory-not-optional finding applies here too.
+2 functions × 2 architectures × 2 symbol conventions = the eight blocks. This
+matters for every route below: what has to move is ~34 instructions of
+standalone assembly text, not a body of C to reimplement.
+
+### Two routes are dead, measured
+
+**`swapcontext`/`makecontext` — rejected.** This was the route this document
+was most enthusiastic about one revision ago, and it conflicts with D9.
+**musl exports zero ucontext symbols:**
+
+```
+$ nm -g .../x86_64-unknown-linux-musl/lib/self-contained/libc.a \
+    | grep -cE " T (swap|make|get|set)context"
+0
+```
+
+D9 measured that musl + `rust-lld` is the **only** configuration that links
+with no C compiler. So `swapcontext` and the Phase 25 exit gate are mutually
+exclusive: taking this route means the gate is unreachable. That is decisive
+before performance is even discussed — and on performance it is also bad,
+since glibc's `swapcontext` issues a `sigprocmask` syscall on every switch,
+against a register-only save/restore here. Recorded at length because the
+conflict was between two rows in this same document and was not noticed until
+both were measured.
+
+**"Declare fibers an optional foreign-runtime component" — rejected.** D10
+makes this look available. It is not: `compiler/codegen.gst:3810` emits
+`gust_scheduler_spawn(8388608, gust_user_main, NULL)` into the **program
+entry point**, so every Gust program's `main` runs on a fiber and every
+binary links the scheduler. There is no configuration in which this is
+optional.
+
+### The ranking
+
+**1. Rust `global_asm!` — do this in Phase 25.**
+
+Because the blocks are standalone assembly, this is a **copy-paste, not a
+rewrite**: the same ~34 instructions move from a C file to a Rust file
+unchanged, and `phase17_retained_c_runtime_parity.sh` proves it. About as low
+as migration risk gets.
+
+The objection previously recorded here — "it keeps a mandatory Rust component
+in an otherwise-Gust runtime" — **is already paid for and should not have
+been scored as a cost.** After D9 the C-free link *is* the Rust toolchain
+(musl + `rust-lld`), and the backend is already a cargo crate. Rust is a hard
+build dependency of Gust either way, for the compiler and for every user
+program Gust links. A `#![no_std]` crate holding two `global_asm!` blocks adds
+no dependency and no new *kind* of dependency. This is what flipped the
+ranking.
+
+**2. Module-level `global_asm` in Gust — the successor, Phase 26.**
+
+The right long-term answer, and smaller than "add inline assembly to Gust"
+suggests. What is needed is **global** asm, not **inline** asm: no operand
+constraints, no clobbers, no interaction with the register allocator — just
+"emit this text at this symbol in `.text`". That is a fraction of the feature.
+
+The open design question is not the syntax but the **assembler**: Cranelift
+has none, so either Gust bundles one, or the feature accepts pre-assembled
+bytes with the assembly text kept as pinned, auditable source. That is a real
+Phase 26 decision and it is not Phase 25's to make.
+
+Sequencing it after route 1 is close to free, and this is the rare case where
+doing it twice genuinely is cheap: **the artifact that moves the second time
+is the identical assembly text**, not a reimplementation. The C→Rust→Gust
+objection that flipped D2 does not apply here, because there is no second
+rewrite — only a second move.
+
+**3. Add full inline assembly to Gust — not needed.**
+
+Kept only to record that it was considered and is a larger feature than the
+problem requires. Nothing in `fiber.c` uses operand constraints or clobbers.
+
+Sequence `fiber.c` **last** of the eight regardless, behind the files with
+cheaper parity evidence.
 
 ## D4 — the form of the fixed point · *lane* · **DECIDED: compare emitted objects**
 
@@ -363,6 +428,11 @@ So the operator's question is no longer "which tier" but the blunter one:
 gate is proved against?** If yes, the gate is reachable now. If no, the gate
 needs rewording, because a C-free gnu link is not a flag away.
 
+**This row constrains D3.** musl exports no ucontext symbols, so choosing
+musl rules out `swapcontext` as a fiber implementation. The two rows were
+written independently and the conflict was found only by measuring both; if
+the operator answers "not musl", D3's rejected route reopens.
+
 Either answer is fine; what is not fine is closing the phase without picking,
 which is the shape of defect Phase 24 spent five patches on.
 
@@ -371,8 +441,11 @@ which is the shape of defect Phase 24 spent five patches on.
 The exit gate excepts them and nothing defines them. This is the tail's own
 "full C removal is a separate policy decision", made concrete.
 
-One input to that decision is already settled by D2: **the runtime does not
-qualify**, because it is mandatory rather than optional. Without a definition,
+Two inputs are already settled. **D2:** the runtime does not qualify,
+because it is mandatory rather than optional. **D3:** neither does the fiber
+scheduler specifically, which is the most tempting single candidate —
+`compiler/codegen.gst:3810` emits `gust_scheduler_spawn` into the program
+entry point, so every Gust `main` runs on a fiber. Without a definition,
 the exception is an escape hatch wide enough to pass the gate with the C
 still in place — which is exactly the shape of defect Phase 24's narrowed
 closure sentence existed to avoid.

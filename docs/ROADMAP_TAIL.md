@@ -169,7 +169,9 @@ unsafe-gated `extern func` FFI, raw pointers, `repr(C)`/`packed` layout
 control and `extern_symbol_name`, so C→Rust→Gust would be the same rewrite
 twice. What remains is defining the freestanding subset the runtime must be
 written in, a no-allocate guard for `arena.c`, and `fiber.c`, whose eight
-`__asm__` blocks have no Gust spelling; the
+`__asm__` blocks are two standalone assembly functions with no Gust spelling
+and go to Rust `global_asm!` as a copy-paste, with module-level `global_asm`
+in Gust as the Phase 26 successor; the
 runtime is mandatory rather than an optional foreign component; the
 fixed point becomes a comparison of **emitted objects** rather than linked
 binaries; the emitter and its bootstrap entry are deleted **together**; and
