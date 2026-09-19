@@ -105,24 +105,64 @@ Worked through 2026-09-19 against `bae85510`. The seed decision above is D1.
 Each entry says who decides: **lane** means this is ordinary lane work and is
 decided here; **operator** means it is policy and is not decided here.
 
-## D2 — the C runtime's disposition · *lane* · **DECIDED: rewrite in Rust**
+## D2 — the C runtime's disposition · *lane* · **DECIDED: Rust, on sequencing grounds — not capability**
 
 1,968 hand-written lines across eight files, linked into every binary.
 
-**The obvious answer is blocked.** Rewriting it in Gust needs gated raw
-pointers, explicit FFI ownership and ABI layout enforcement — and those are
-**Phase 26.1**, after this phase. `arena.c` is pointer arithmetic and
-`fiber.c` is context switching; neither is expressible in Gust today.
+**An earlier draft of this row said Gust was blocked by Phase 26.1. That was
+wrong, and the measurement is recorded here so the claim is not made again.**
+Gust already has bodyless `extern func f(a: int) int;` FFI, unsafe-gated at
+the call site (`compiler/parser_ffi_metadata_test_entry.gst`), with aggregate
+returns working (`phase13_parameter_argument_aggregate_return_source.gst`).
+It has raw pointers with provenance tracking and `*p` deref
+(`typechecker_raw_sandbox_provenance_expression_flow_test_entry.gst`), and
+1,416 `unsafe` sites across `compiler/*.gst`. `docs/ROADMAP_TAIL.md:196` says
+26.1 **completes** gated raw pointers and FFI — completes, not introduces.
+"Blocked by 26.1" was a restatement of the roadmap heading, not a measurement.
+
+What the eight files actually need, measured:
+
+| file | lines | needs | expressible in Gust today |
+| --- | --- | --- | --- |
+| `approved_scalar_imports.c` | 15 | nothing | **delete, not rewrite** — `tiny_host_add_one_i32` and two siblings, test fixtures only |
+| `host_io.c` | 60 | `malloc` `memcpy` `strlen` | yes, via `extern func` |
+| `scratch.c` | 80 | `memset` `exit` | yes |
+| `arena.c` | 122 | `malloc` `free` `memset` | yes in principle — see the self-reference below |
+| `strings.c` | 130 | `memcpy` `exit` | yes; `std_str_eq`/`find`/`byte_at` are pure byte loops |
+| `collections.c` | 243 | `memcpy` `memset` + C preprocessor macros for generics | yes; Gust has real generics, which is a better fit than `core_headers.h:233`'s macro |
+| `file_io.c` | 599 | stdio + pthread mutex | yes, via `extern func` |
+| `fiber.c` | 719 | **8 `__asm__` blocks** + pthreads | **no** — see D3 |
+
+So only one of the eight is capability-blocked. The other seven go to Rust for
+three reasons that are about **sequencing and risk**, not about what Gust can
+express:
+
+1. **Keep the bootstrap circle small while it is being re-established.**
+   Phase 25's job is deleting C and proving a native fixed point. A Gust
+   runtime is *inside* that circle: it would be compiled by the compiler whose
+   self-reproduction is the thing under proof, so a runtime miscompile and a
+   compiler miscompile become indistinguishable from the fixed point alone. A
+   Rust runtime stays outside it. This is the load-bearing argument.
+2. **`arena.c` is self-referential in a way the compiler is not.**
+   `os_ArenaAlloc` is what codegen emits for `ctx[...]`; it is compiler-known
+   by name (`compiler/codegen.gst:692`). A Gust `os_ArenaAlloc` must provably
+   never allocate, and nothing in the language enforces that today.
+3. **ABI layout enforcement is the one 26.1 item that genuinely bites.**
+   `os_Arena` is matched by name in `compiler/codegen.gst:69-70` and its layout
+   is fixed in `src/runtime/core_headers.h:53`. A Gust rewrite must reproduce
+   that layout exactly, and Gust has no layout-control construct. This is
+   narrower than "raw pointers and FFI are 26.1", and it is real.
 
 **Declaring it a foreign component does not satisfy the gate.** The exit gate
 excepts *optional* foreign-runtime components. This runtime is mandatory —
 every binary links it — so the escape clause does not reach it. That is worth
 stating because it is the tempting shortcut.
 
-So: **Rust.** `cargo` is already a hard dependency, Rust expresses everything
-these files do including inline assembly, and it unblocks the gate without
-waiting for Phase 26. It also does not foreclose a later Gust rewrite; C→Rust
-now and Rust→Gust after 26.1 are compatible.
+This does not foreclose Gust. C→Rust now and Rust→Gust after 26.1 compose, and
+after 26.1 adds layout enforcement the three reasons above weaken to one. A
+lane that wants to take `strings.c` or `scratch.c` to Gust inside Phase 25
+should be allowed to argue it on parity evidence; this row is a default, not a
+prohibition.
 
 Risk: this is a real rewrite of arena and fiber semantics, not a translation.
 `scripts/phase17_retained_c_runtime_parity.sh` already exists as a comparison
@@ -131,10 +171,19 @@ harness and should gate each file.
 ## D3 — `fiber.c` specifically · *lane* · **DECIDED: Rust with `global_asm!`**
 
 719 lines carrying **eight blocks of inline assembly** for context switching,
-plus pthread. The riskiest single file in D2 and the one most likely to be
-argued into the "foreign component" bucket. It should not be: Rust supports
-`global_asm!`/`asm!` directly, so the assembly ports as assembly. Sequence it
-**last** of the eight, behind the files with cheaper parity evidence.
+plus pthread. This is the one file where the Gust answer is blocked on
+capability rather than sequencing, and the block is measured: there is no
+`asm` construct anywhere in `compiler/lexer.gst`, `compiler/parser.gst`,
+`compiler/codegen.gst`, or the spec. Register-level context switching has no
+Gust spelling at all, and 26.1 does not add one. Rust supports
+`global_asm!`/`asm!` directly, so the assembly ports as assembly rather than
+being reimplemented.
+
+It is also the file most likely to be argued into the "foreign component"
+bucket. It should not be: `gust_context_switch` and `gust_scheduler_*` are
+exported into every binary, so D2's mandatory-not-optional finding applies
+here too. Sequence it **last** of the eight, behind the files with cheaper
+parity evidence.
 
 ## D4 — the form of the fixed point · *lane* · **DECIDED: compare emitted objects**
 
@@ -271,7 +320,8 @@ closure sentence existed to avoid.
 1. Enumerate what actually requires a C toolchain, measured (pre-work, stated above).
 2. Stand up the no-C-compiler CI job as the standing falsifier (D8).
 3. Verify Cranelift object determinism (D4 prerequisite).
-4. Runtime to Rust, file by file behind parity evidence, `fiber.c` last (D2, D3).
+4. Runtime to Rust, file by file behind parity evidence; delete
+   `approved_scalar_imports.c` rather than rewriting it; `fiber.c` last (D2, D3).
 5. Native stage chain and the new fixed point (D4).
 6. Seed cut-over (D1).
 7. Delete the emitter and its entry together (D5).
