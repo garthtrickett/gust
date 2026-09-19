@@ -193,15 +193,67 @@ only honest falsifier for that is **a CI job on an image with no C compiler
 installed**. Stand that job up early and let it stay red; it measures the
 phase's remaining distance instead of asserting the endpoint at the end.
 
-## D9 — does `cc` survive as the linker driver? · **operator**
+## D9 — does `cc` survive as the linker driver? · *lane* · **DECIDED: no**
 
-Patch 18.7 established it (`compiler/mir_target_authority.gst:660-665`) and
-`#401` defends it by name. Cranelift emits objects; something still links
-them. "No host C compiler" may honestly resolve to *no host C compiler, but
-still a linker*.
+Asked as policy, answered by measurement.
 
-Settle it **before** the closure sentence is written. Phase 24 discovered its
-equivalent at the gate and spent five patches recovering.
+**`cc` is already only a default.** The worker reads
+`env::var_os("CC").unwrap_or_else(|| OsString::from("cc"))` and then invokes
+it generically — objects, optional host object, the runtime archive, `-l`
+libraries, `-o`. Nothing is welded to a C compiler; the driver is a variable
+and `additional_linker_args` already exists.
+
+**A non-C driver is already installed.** `rust-lld` ships inside the Rust
+toolchain at `lib/rustlib/<target>/bin/`, and Rust is a hard dependency
+already. No new tool is required.
+
+**Verified end to end, not argued:**
+
+```
+rustc --emit=obj t.rs -o t.o          # any object; no C involved
+rust-lld -flavor gnu -o prog \
+    crt1.o crti.o t.o -lc crtn.o \
+    --dynamic-linker /lib64/ld-linux-x86-64.so.2
+./prog  ->  exit 7
+```
+
+A working dynamically linked executable with **no C compiler invoked**.
+
+Scope of that result, stated honestly: it proves the mechanism, not the whole
+Gust link. It does not yet cover the runtime archive, pthread, or the host
+object, and it was run on `x86_64-unknown-linux-gnu` only. Those are the next
+measurements, not assumptions to carry forward.
+
+**What it still needs:** `crt1.o`/`crti.o`/`crtn.o` and `libc`, which come
+from libc development files — *not* from a compiler. So the gate's wording,
+"without invoking a C compiler", is satisfiable with libc-dev present.
+
+**Why this is natural rather than a workaround:** D2 moves the runtime to
+Rust. Once the runtime is a Rust staticlib, the whole link is a Rust link, and
+Rust already solves per-target crt and libc discovery. Reimplementing that
+discovery inside Gust would be duplicating a solved problem badly.
+
+One trap worth recording: **`rustc`'s own default linker on
+`x86_64-unknown-linux-gnu` is `cc`.** "Link with rustc" does not by itself
+remove the C toolchain; it needs `-C linker=rust-lld`, or lld invoked
+directly as above. Choosing rustc-as-driver without that flag would look like
+progress and change nothing.
+
+## D9a — is libc-dev acceptable, or must the link be self-contained? · **operator**
+
+What remains of D9 after the measurement, and it is a much smaller question.
+
+- **Tier 2 (measured above):** `rust-lld` + system crt and libc. No C
+  compiler is invoked. Needs libc development files present.
+- **Tier 3:** an `x86_64-unknown-linux-musl` target with
+  `-C link-self-contained=yes`, where Rust ships musl's crt objects itself.
+  No system C artifacts at all. Costs musl and static linking, with the libc
+  behaviour and binary-size consequences that implies.
+
+Tier 2 satisfies the exit gate as written. Tier 3 satisfies the stronger
+claim some readers will hear in "Gust does not need C". Which one the phase
+is closing on is the operator's call, and it should be made **before** the
+closure sentence is drafted.
 
 ## D10 — what counts as an "optional foreign-runtime component"? · **operator**
 
@@ -223,4 +275,6 @@ closure sentence existed to avoid.
 5. Native stage chain and the new fixed point (D4).
 6. Seed cut-over (D1).
 7. Delete the emitter and its entry together (D5).
-8. Linker-driver disposition, once D9 is answered.
+8. Switch the linker driver to `rust-lld` (D9) and extend the measured
+   link to cover the runtime archive, pthread and the host object.
+   Whether that link is self-contained depends on D9a.

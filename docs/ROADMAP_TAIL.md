@@ -169,9 +169,12 @@ and the runtime is mandatory rather than an optional foreign component; the
 fixed point becomes a comparison of **emitted objects** rather than linked
 binaries; the emitter and its bootstrap entry are deleted **together**; and
 the seed names its platforms, because CI builds Linux only while the runtime
-carries unbuilt macOS branches. Two rows are left to the operator — whether
-`cc` survives as the linker driver, and what counts as an *optional*
-foreign-runtime component under the exit gate.
+carries unbuilt macOS branches. `cc` does **not** survive as the linker driver: it was only ever a default
+behind `$CC`, `rust-lld` already ships with the Rust toolchain the build
+requires, and linking an executable with no C compiler invoked is verified in
+that file. Two rows are left to the operator — whether the link must be
+self-contained or may rely on libc development files, and what counts as an
+*optional* foreign-runtime component under the exit gate.
 
 That file also records the first step, which is neither the seed nor the
 runtime: enumerate what actually requires a C toolchain rather than inherit
