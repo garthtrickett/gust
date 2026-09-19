@@ -107,85 +107,116 @@ Worked through 2026-09-19 against `bae85510`. The seed decision above is D1.
 Each entry says who decides: **lane** means this is ordinary lane work and is
 decided here; **operator** means it is policy and is not decided here.
 
-## D2 — the C runtime's disposition · *lane* · **DECIDED: Rust, on sequencing grounds — not capability**
+## D2 — the C runtime's disposition · *lane* · **DECIDED: Gust is the default target; Rust is the per-file fallback**
 
 1,968 hand-written lines across eight files, linked into every binary.
 
-**An earlier draft of this row said Gust was blocked by Phase 26.1. That was
-wrong, and the measurement is recorded here so the claim is not made again.**
-Gust already has bodyless `extern func f(a: int) int;` FFI, unsafe-gated at
-the call site (`compiler/parser_ffi_metadata_test_entry.gst`), with aggregate
-returns working (`phase13_parameter_argument_aggregate_return_source.gst`).
-It has raw pointers with provenance tracking and `*p` deref
-(`typechecker_raw_sandbox_provenance_expression_flow_test_entry.gst`), and
-1,416 `unsafe` sites across `compiler/*.gst`. `docs/ROADMAP_TAIL.md:196` says
-26.1 **completes** gated raw pointers and FFI — completes, not introduces.
-"Blocked by 26.1" was a restatement of the roadmap heading, not a measurement.
+**This row has been wrong twice and the corrections are the useful part.**
 
-What the eight files actually need, measured:
+*First draft:* "Gust is blocked by Phase 26.1." False. `docs/ROADMAP_TAIL.md:196`
+says 26.1 **completes** gated raw pointers and FFI, not that it introduces
+them. Gust has bodyless `extern func f(a: int) int;` FFI, unsafe-gated at the
+call site, with aggregate returns working, raw pointers with provenance and
+`*p` deref, and 1,416 `unsafe` sites in `compiler/*.gst`.
 
-| file | lines | needs | expressible in Gust today |
+*Second draft:* "Rust on sequencing grounds", resting on three constraints.
+**Two of the three are false, measured:**
+
+- ~~"`os_Arena`'s layout is matched by name and Gust has no layout control."~~
+  Gust **has `repr(C)` and `packed`**, parsed at `compiler/parser.gst:1021-1083`
+  and plumbed through `compiler/ast.gst:89-90`,
+  `typechecker.gst:8362` (`env_register_struct_layout_metadata`),
+  `typechecker.gst:10410` (`env_struct_is_repr_c`) and the whole
+  `mir_struct_layout` / `mir_layout_authority` family. This was the one 26.1
+  item claimed to bite, and it does not.
+- ~~"Symbol names are compiler-known, so the runtime's exports cannot be
+  reproduced."~~ `extern_symbol_name` exists (`parser.gst:1559-1562`,
+  `codegen.gst:785-786`), so a Gust definition can emit `os_ArenaAlloc` or
+  `std_str_eq` under exactly that name.
+- **"A Gust runtime sits inside the bootstrap circle."** True, but weaker than
+  it was written. The fixed point already cannot detect a *consistent*
+  miscompile of the compiler — that is the Thompson property and it predates
+  this question. Adding the runtime does not change what the fixed point
+  proves; it adds a second suspect when the fixed point *fails*. And the new
+  Gust runtime is always built by the **previous** compiler-and-runtime, so
+  the circle closes only after the replacement is proved, exactly as in any
+  self-hosting step.
+
+### What actually remains
+
+Per-file, measured by what each file calls:
+
+| file | lines | needs | verdict |
 | --- | --- | --- | --- |
-| `approved_scalar_imports.c` | 15 | nothing | **delete, not rewrite** — `tiny_host_add_one_i32` and two siblings, test fixtures only |
-| `host_io.c` | 60 | `malloc` `memcpy` `strlen` | yes, via `extern func` |
-| `scratch.c` | 80 | `memset` `exit` | yes |
-| `arena.c` | 122 | `malloc` `free` `memset` | yes in principle — see the self-reference below |
-| `strings.c` | 130 | `memcpy` `exit` | yes; `std_str_eq`/`find`/`byte_at` are pure byte loops |
-| `collections.c` | 243 | `memcpy` `memset` + C preprocessor macros for generics | yes; Gust has real generics, which is a better fit than `core_headers.h:233`'s macro |
-| `file_io.c` | 599 | stdio + pthread mutex | yes, via `extern func` |
-| `fiber.c` | 719 | **8 `__asm__` blocks** + pthreads | **no** — see D3 |
+| `approved_scalar_imports.c` | 15 | nothing | **delete** — `tiny_host_add_one_i32` and two siblings, fixtures only |
+| `host_io.c` | 60 | `malloc` `memcpy` `strlen` | Gust |
+| `scratch.c` | 80 | `memset` | Gust |
+| `strings.c` | 130 | `memcpy` | Gust — `std_str_eq`/`find`/`byte_at` are pure byte loops |
+| `collections.c` | 243 | `memcpy` `memset` + C preprocessor macros for generics | Gust — real generics beat `core_headers.h:233`'s macro |
+| `file_io.c` | 599 | stdio + pthread mutex | Gust, via `extern func` |
+| `arena.c` | 122 | `malloc` `free` `memset` | Gust, **behind a guard** — see below |
+| `fiber.c` | 719 | **8 `__asm__` blocks** + pthreads | **not Gust** — see D3 |
 
-So only one of the eight is capability-blocked. The other seven go to Rust for
-three reasons that are about **sequencing and risk**, not about what Gust can
-express:
+Three real obligations, none of them a Phase 26 language feature:
 
-1. **Keep the bootstrap circle small while it is being re-established.**
-   Phase 25's job is deleting C and proving a native fixed point. A Gust
-   runtime is *inside* that circle: it would be compiled by the compiler whose
-   self-reproduction is the thing under proof, so a runtime miscompile and a
-   compiler miscompile become indistinguishable from the fixed point alone. A
-   Rust runtime stays outside it. This is the load-bearing argument.
-2. **`arena.c` is self-referential in a way the compiler is not.**
-   `os_ArenaAlloc` is what codegen emits for `ctx[...]`; it is compiler-known
-   by name (`compiler/codegen.gst:692`). A Gust `os_ArenaAlloc` must provably
-   never allocate, and nothing in the language enforces that today.
-3. **ABI layout enforcement is the one 26.1 item that genuinely bites.**
-   `os_Arena` is matched by name in `compiler/codegen.gst:69-70` and its layout
-   is fixed in `src/runtime/core_headers.h:53`. A Gust rewrite must reproduce
-   that layout exactly, and Gust has no layout-control construct. This is
-   narrower than "raw pointers and FFI are 26.1", and it is real.
+1. **The freestanding subset is undefined.** This is the strongest remaining
+   argument and it is not one of the three above. The runtime *is* `str`,
+   `Vector`, `HashMap` and the arena, so runtime code cannot use them: no
+   `std.Concat`, no `std.Clone`, no `ctx[...]`. That subset — raw pointers,
+   scalars, loops, `extern func` — plausibly exists and is usable, but
+   **nothing defines or enforces it**, so a stray `std.Clone` in a runtime
+   file would compile and recurse. Define the subset and give it a guard.
+   This has value beyond the runtime; it is most of what option E wanted.
+2. **`os_ArenaAlloc` must provably never allocate.** A *guard*, not a
+   language feature: compile it and assert the emitted object carries no
+   relocation against the allocator. Cheap, and it inverts cleanly.
+3. **`fiber.c` has no Gust spelling.** See D3.
 
-**Declaring it a foreign component does not satisfy the gate.** The exit gate
-excepts *optional* foreign-runtime components. This runtime is mandatory —
-every binary links it — so the escape clause does not reach it. That is worth
-stating because it is the tempting shortcut.
+### The decision
 
-This does not foreclose Gust. C→Rust now and Rust→Gust after 26.1 compose, and
-after 26.1 adds layout enforcement the three reasons above weaken to one. A
-lane that wants to take `strings.c` or `scratch.c` to Gust inside Phase 25
-should be allowed to argue it on parity evidence; this row is a default, not a
-prohibition.
+**Gust is the default target for the seven; Rust is the per-file fallback.**
 
-Risk: this is a real rewrite of arena and fiber semantics, not a translation.
-`scripts/phase17_retained_c_runtime_parity.sh` already exists as a comparison
-harness and should gate each file.
+Going C→Rust→Gust is the same rewrite twice, with the same parity evidence
+twice, and it ends with the runtime, the backend and the linker all owned by
+Rust — a weaker self-hosting story than the one Phase 25 exists to
+strengthen. Going C→Gust is one migration and ends more self-hosted.
 
-## D3 — `fiber.c` specifically · *lane* · **DECIDED: Rust with `global_asm!`**
+The risk of pulling runtime-in-Gust work into Phase 25 is managed by the fact
+that this is file-by-file behind parity evidence either way
+(`scripts/phase17_retained_c_runtime_parity.sh`). A file that fights back
+falls back to Rust on its own merits without re-opening the row. Order the
+easy ones first — `scratch.c`, `strings.c`, `host_io.c` — so the freestanding
+subset is exercised on 270 lines before it is trusted with the allocator.
+
+**Declaring the runtime a foreign component does not satisfy the gate** under
+either target. The gate excepts *optional* foreign-runtime components; this
+runtime is mandatory, so the escape clause does not reach it. Worth stating
+because it is the tempting shortcut.
+
+## D3 — `fiber.c` specifically · *lane* · **OPEN: three routes, none free**
 
 719 lines carrying **eight blocks of inline assembly** for context switching,
-plus pthread. This is the one file where the Gust answer is blocked on
-capability rather than sequencing, and the block is measured: there is no
-`asm` construct anywhere in `compiler/lexer.gst`, `compiler/parser.gst`,
-`compiler/codegen.gst`, or the spec. Register-level context switching has no
-Gust spelling at all, and 26.1 does not add one. Rust supports
-`global_asm!`/`asm!` directly, so the assembly ports as assembly rather than
-being reimplemented.
+plus pthread. The one file where the block is capability, not sequencing, and
+the block is measured: there is no `asm` construct anywhere in
+`compiler/lexer.gst`, `compiler/parser.gst`, `compiler/codegen.gst` or the
+spec, and 26.1 does not add one.
 
-It is also the file most likely to be argued into the "foreign component"
-bucket. It should not be: `gust_context_switch` and `gust_scheduler_*` are
-exported into every binary, so D2's mandatory-not-optional finding applies
-here too. Sequence it **last** of the eight, behind the files with cheaper
-parity evidence.
+Three routes, to be decided on measurement rather than here:
+
+- **Rust `global_asm!`.** The assembly ports as assembly. Lowest risk, and the
+  default if the others do not measure well. Cost: keeps a Rust component in
+  an otherwise Gust runtime, so the second toolchain stays mandatory.
+- **`swapcontext`/`makecontext` via `extern func`.** POSIX, needs no assembly
+  at all, so it is expressible in Gust today. Cost: slower, obsolescent, and
+  removed on some platforms — needs measuring against the current fiber
+  benchmark before it is credible.
+- **Add inline assembly to Gust.** Honest, and a genuine language feature with
+  a Phase 26-sized design question attached. Out of scope for Phase 25 unless
+  the other two both fail.
+
+Sequence it **last** of the eight regardless, behind the files with cheaper
+parity evidence. `gust_context_switch` and `gust_scheduler_*` are exported
+into every binary, so D2's mandatory-not-optional finding applies here too.
 
 ## D4 — the form of the fixed point · *lane* · **DECIDED: compare emitted objects**
 
@@ -351,8 +382,12 @@ closure sentence existed to avoid.
 1. Enumerate what actually requires a C toolchain, measured (pre-work, stated above).
 2. Stand up the no-C-compiler CI job as the standing falsifier (D8).
 3. Verify Cranelift object determinism (D4 prerequisite).
-4. Runtime to Rust, file by file behind parity evidence; delete
-   `approved_scalar_imports.c` rather than rewriting it; `fiber.c` last (D2, D3).
+4. Define and guard the freestanding Gust subset the runtime must be written
+   in (D2's first obligation), then runtime to **Gust** file by file behind
+   parity evidence — `scratch.c`, `strings.c`, `host_io.c` first to exercise
+   the subset, `arena.c` behind its no-allocate guard, Rust as the per-file
+   fallback. Delete `approved_scalar_imports.c` rather than rewriting it.
+   `fiber.c` last, on D3's open routes.
 5. Native stage chain and the new fixed point (D4).
 6. Seed cut-over (D1).
 7. Delete the emitter and its entry together (D5).

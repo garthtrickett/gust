@@ -164,10 +164,12 @@ including whatever replaces the seed — so leaving it until last makes the exit
 gate unreachable whichever seed lands. The options, the ranking and the
 ordering are in `docs/PHASE25_BOOTSTRAP_SEED_POLICY.md`, together with the
 rest of the phase's decisions worked through on the same date: the runtime
-goes to **Rust**, not Gust — on sequencing grounds, because a Gust runtime
-would sit inside the very bootstrap circle Phase 25 is re-establishing, and
-only `fiber.c` is actually capability-blocked (Gust has no `asm` construct;
-it does have unsafe-gated `extern func` FFI and raw pointers today); the
+goes to **Gust**, with Rust as the per-file fallback: Gust already has
+unsafe-gated `extern func` FFI, raw pointers, `repr(C)`/`packed` layout
+control and `extern_symbol_name`, so C→Rust→Gust would be the same rewrite
+twice. What remains is defining the freestanding subset the runtime must be
+written in, a no-allocate guard for `arena.c`, and `fiber.c`, whose eight
+`__asm__` blocks have no Gust spelling; the
 runtime is mandatory rather than an optional foreign component; the
 fixed point becomes a comparison of **emitted objects** rather than linked
 binaries; the emitter and its bootstrap entry are deleted **together**; and
