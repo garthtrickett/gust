@@ -6,8 +6,8 @@
 
 Status: `patch24_11_complete`
 Authority base: `b7b1713cd65630b14ae92e46afd393990928a2e2`
-Rows: `108`
-Digest: `a00088bcc092af13a17641b200b383ee261964f74c25a3eae3ebe65edcc1e1f1`
+Rows: `109`
+Digest: `2e5c286f3eff14dc744b01b239737aa843c7f8723f956935acc8d4b1302ca2f9`
 
 ## Bootstrap-entry decision
 
@@ -161,8 +161,9 @@ Digest: `a00088bcc092af13a17641b200b383ee261964f74c25a3eae3ebe65edcc1e1f1`
 
 ### phase25
 
-- justfile :: build/test_runner_final.c (retire-with-emitter)
-- justfile :: build/test_runner_step52_positive_final. (retire-with-emitter)
+- justfile :: make-test-suite-parallel: (retire-with-emitter build/test_runner_final.c)
+- justfile :: make-test-suite: (retire-with-emitter build/test_runner_final.c)
+- justfile :: run-step52-positive-batch: (retire-with-emitter build/test_runner_step52_positive_final.c)
 
 ### stdlib-coordination
 

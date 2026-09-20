@@ -896,19 +896,28 @@ MIGRATED_FILE_SURFACES = [
 ]
 
 FILE_ROWS = [
-    # Issue #451: two products, three cc sites in the justfile. They are
+    # Issue #451: three cc sites in the justfile, one row each. They are
     # `cat src/runtime.c build/test_runner.c`, i.e. the hand-written
     # runtime concatenated with emitter output, so they retire when the
     # emitter retires at Patch 25.10 rather than being un-retired Phase 24
-    # routes. Recorded as FILE_ROWS with the PRODUCT as the marker, not as
-    # RECIPE_ROWS: those recipe IDs already exist under 24.13/migrate, and
-    # a second row per ID would say each recipe is both migrated and
-    # retired. Product granularity also keeps the authorization to these
-    # two artifacts instead of exempting a 22,605-line file.
-    ('justfile', 'build/test_runner_final.c',
-     'phase25', 'retire-with-emitter'),
-    ('justfile', 'build/test_runner_step52_positive_final.c',
-     'phase25', 'retire-with-emitter'),
+    # routes.
+    #
+    # Keyed on `(file, recipe, product)`. The MARKER cell must be literal
+    # text present in the file -- the guard checks the surface still
+    # exists -- so it carries the recipe header, and the action cell
+    # carries the product. `inventory_owner` matches across all cells,
+    # so a row authorizes exactly one site. Three earlier shapes were all too
+    # coarse and each was caught in review: RECIPE_ROWS by recipe name
+    # duplicated IDs that already exist under 24.13/migrate; FILE_ROWS by
+    # file exempted a 22,605-line file; FILE_ROWS by product let any NEW
+    # recipe compiling that product inherit the owner. A row authorizes
+    # one site.
+    ('justfile', 'make-test-suite:',
+     'phase25', 'retire-with-emitter build/test_runner_final.c'),
+    ('justfile', 'make-test-suite-parallel:',
+     'phase25', 'retire-with-emitter build/test_runner_final.c'),
+    ('justfile', 'run-step52-positive-batch:',
+     'phase25', 'retire-with-emitter build/test_runner_step52_positive_final.c'),
 
     # (path, needle, owner_patch, action)
     ("compiler/test_runner_entry.gst",

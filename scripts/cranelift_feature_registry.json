@@ -23600,7 +23600,7 @@
       "selected_entry": "--backend bootstrap-emitter",
       "status": "patch24_11_decided_patch24_13_lands"
     },
-    "inventory_digest": "a00088bcc092af13a17641b200b383ee261964f74c25a3eae3ebe65edcc1e1f1",
+    "inventory_digest": "2e5c286f3eff14dc744b01b239737aa843c7f8723f956935acc8d4b1302ca2f9",
     "retired": {
       "by": "24.12a",
       "harnesses": [
@@ -23621,7 +23621,7 @@
         "guard-cranelift-phase21-inert-scoped-query-records-evidence"
       ]
     },
-    "row_count": 108,
+    "row_count": 109,
     "rows": [
         {
           "action": "convert",
@@ -23964,13 +23964,18 @@
           "owner_patch": "24.15"
         },
         {
-          "action": "retire-with-emitter",
-          "id": "justfile :: build/test_runner_final.c",
+          "action": "retire-with-emitter build/test_runner_final.c",
+          "id": "justfile :: make-test-suite:",
           "owner_patch": "phase25"
         },
         {
-          "action": "retire-with-emitter",
-          "id": "justfile :: build/test_runner_step52_positive_final.",
+          "action": "retire-with-emitter build/test_runner_final.c",
+          "id": "justfile :: make-test-suite-parallel:",
+          "owner_patch": "phase25"
+        },
+        {
+          "action": "retire-with-emitter build/test_runner_step52_positive_final.c",
+          "id": "justfile :: run-step52-positive-batch:",
           "owner_patch": "phase25"
         },
         {
@@ -27228,7 +27233,7 @@
             "classification": "historical_only",
             "current_route": "tracked_MIR_to_C_or_generated_C_surface",
             "deprecation_action": "preserve_as_historical_evidence",
-            "digest": "fe73d11ad1d0888322691852167f6034fd8c610fd33a9286fced721afa4faf82",
+            "digest": "213de9e01ffd00c4a356bf754c6e9f0407c374ba1e48c177ff9bc5f013cd4e81",
             "falsifier": "historical_record_is_reclassified_as_live_support",
             "match_counts": {
               "explicit_backend_spelling": 3,
@@ -27258,7 +27263,7 @@
             "classification": "archive_candidate",
             "current_route": "tracked_MIR_to_C_or_generated_C_surface",
             "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-            "digest": "77c04ec2f087cf3627fa309f53d216dbc388fea7987758fd747d1ef2cc976681",
+            "digest": "bc5e39217a9233a56c77865273e16fa0b03a54bb70d0ad49d61f27ffd794ff91",
             "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
             "match_counts": {
               "explicit_backend_spelling": 2,
@@ -27273,7 +27278,7 @@
             "classification": "archive_candidate",
             "current_route": "tracked_MIR_to_C_or_generated_C_surface",
             "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-            "digest": "77577a94a3b8e0175a96836f0fe2aeb3727a58eb661ef09651d584b43d801557",
+            "digest": "c6c3b822c4d73117fd19478a3df4ffdbb50c0062d425cd0d1f2f886f7a28954b",
             "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
             "match_counts": {
               "explicit_backend_spelling": 33,
