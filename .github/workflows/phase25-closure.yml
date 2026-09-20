@@ -1,0 +1,42 @@
+name: Cranelift Phase 25 Closure
+
+concurrency:
+  group: phase25-closure-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+on:
+  pull_request:
+    paths:
+      - 'src/runtime/**'
+      - 'gust_v4.c'
+      - 'TASK.md'
+      - 'scripts/phase25_closure.py'
+      - 'scripts/phase25_no_c_expected_failures.json'
+      - '.github/workflows/phase25-closure.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/runtime/**'
+      - 'gust_v4.c'
+      - 'TASK.md'
+      - 'scripts/phase25_closure.py'
+      - 'scripts/phase25_no_c_expected_failures.json'
+      - '.github/workflows/phase25-closure.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  closure:
+    name: Phase 25 closure distance
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      # Reports distance to closure. It does NOT fail while conditions are
+      # outstanding -- the phase is openly incomplete and a red here would
+      # say nothing a reader does not know. It becomes the closure
+      # assertion in the patch that flips it, which is the same
+      # promotion-by-patch rule as the no-C falsifier (P8).
+      - name: guard-cranelift-phase25-closure
+        run: python3 scripts/phase25_closure.py validate
