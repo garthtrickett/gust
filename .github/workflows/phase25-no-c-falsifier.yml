@@ -1,0 +1,84 @@
+name: Cranelift Phase 25 No-C-Compiler Falsifier
+
+# D8: the only honest falsifier for "a clean machine builds and tests Gust
+# without invoking a C compiler" is a job on an image with no C compiler.
+#
+# O4: it is EXPECTED RED while scripts/phase25_no_c_expected_failures.json
+# has entries, and expected to fail only for reasons on that list. It is
+# deliberately NOT a required check and deliberately NOT continue-on-error
+# -- there is no continue-on-error anywhere in this repository's workflows,
+# and a silently-tolerated red is decoration. The contract is in the guard,
+# the list is read at runtime, and the job reports what remains.
+#
+# Promotion is mechanical but not automatic (P8): when the list empties the
+# guard says "ready for promotion", and a patch flips this to required.
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/phase25_no_c_expected_failures.json'
+      - 'scripts/phase25_no_c_falsifier.py'
+      - 'src/runtime/**'
+      - 'Makefile'
+      - '.github/workflows/phase25-no-c-falsifier.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/phase25_no_c_expected_failures.json'
+      - 'scripts/phase25_no_c_falsifier.py'
+      - 'src/runtime/**'
+      - 'Makefile'
+      - '.github/workflows/phase25-no-c-falsifier.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    name: Phase 25 expected-failure list contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      # This half must stay green: it checks the LIST's shape, not the gate.
+      # Every entry must say what clears it, or it is permanent by accident.
+      - name: guard-cranelift-phase25-no-c-falsifier
+        run: python3 scripts/phase25_no_c_falsifier.py validate
+
+  no-c-image:
+    name: Phase 25 no-C-compiler falsifier (expected red)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      # Ubuntu runners ship a C compiler, so remove it rather than pretend.
+      # The guard refuses to certify on an image that still has one.
+      - name: Remove the C toolchain from this image
+        run: |
+          sudo apt-get remove -y --purge gcc g++ clang cpp build-essential \
+            gcc-13 g++-13 cpp-13 libc6-dev >/dev/null 2>&1 || true
+          sudo apt-get autoremove -y >/dev/null 2>&1 || true
+          sudo rm -f /usr/bin/cc /usr/bin/gcc /usr/bin/g++ /usr/bin/clang \
+                     /usr/bin/c++ /usr/bin/cpp || true
+      - name: guard-cranelift-phase25-no-c-falsifier (expected red)
+        run: python3 scripts/phase25_no_c_falsifier.py check-environment
+
+  gnu-smoke:
+    name: Phase 25 gnu smoke subset
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      # O5/P9: ONE gnu job, and the subset is enumerated literally here.
+      # A computed subset -- "everything tagged smoke", "the fast half" --
+      # drifts toward nothing as tags rot, and the job stays green while
+      # covering less. "Supported" means exactly these three things pass on
+      # gnu; everything else is proved on musl only, and the docs say so.
+      - name: build the compiler
+        run: make gust
+      - name: bootstrap fixed point
+        run: make bootstrap
+      - name: one exec test per backend route
+        run: just guard-cranelift-return-int-native-smoke
