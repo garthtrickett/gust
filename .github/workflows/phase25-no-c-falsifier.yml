@@ -67,8 +67,32 @@ jobs:
             ln -sf "$(command -v $b)" "$RUNNER_TEMP/nocc/$b" || true
           done
           echo "NOCC_PATH=$RUNNER_TEMP/nocc" >> "$GITHUB_ENV"
+      # The guard exits 1 on purpose: it is a pre-registered expected failure
+      # that stays red until Phase 25 lands. A bare `run:` reads that intended
+      # state as a broken job, so the assertion is inverted here instead of
+      # suppressed with continue-on-error -- which would also swallow a crash,
+      # and would notice nothing on the day the contract finally clears.
       - name: guard-cranelift-phase25-no-c-falsifier (expected red)
-        run: env PATH="$NOCC_PATH" python3 scripts/phase25_no_c_falsifier.py check-environment
+        run: |
+          set +e
+          out="$(env PATH="$NOCC_PATH" python3 scripts/phase25_no_c_falsifier.py check-environment 2>&1)"
+          status=$?
+          set -e
+          echo "$out"
+          expected="$(python3 -c 'import json; print(len(json.load(open("scripts/phase25_no_c_expected_failures.json"))["entries"]))')"
+          if [ "$status" -eq 0 ]; then
+            echo "::error::the falsifier is GREEN: the C-free claim now holds, so this expected-red job and the contract it guards are what must change" >&2
+            exit 1
+          fi
+          if [ "$status" -ne 1 ]; then
+            echo "::error::the falsifier exited $status; an expected red is exactly 1, and a crash must not be read as one" >&2
+            exit 1
+          fi
+          if ! printf '%s\n' "$out" | grep -qF "EXPECTED RED. $expected reasons remain"; then
+            echo "::error::reported reason count disagrees with the $expected entries in scripts/phase25_no_c_expected_failures.json" >&2
+            exit 1
+          fi
+          echo "expected red confirmed: exit 1 with $expected registered reasons"
 
   gnu-smoke:
     name: Phase 25 gnu smoke subset
