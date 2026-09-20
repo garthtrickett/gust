@@ -1,0 +1,31 @@
+name: Cranelift Phase 25 Linker Driver Policy
+
+concurrency:
+  group: phase25-linker-driver-policy-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+on:
+  pull_request:
+    paths:
+      - 'compiler/experiments/cranelift/src/main.rs'
+      - 'scripts/phase25_linker_driver_policy.py'
+      - '.github/workflows/phase25-linker-driver-policy.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compiler/experiments/cranelift/src/main.rs'
+      - 'scripts/phase25_linker_driver_policy.py'
+      - '.github/workflows/phase25-linker-driver-policy.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  policy:
+    name: Phase 25 linker driver policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: guard-cranelift-phase25-linker-driver-policy
+        run: python3 scripts/phase25_linker_driver_policy.py validate
