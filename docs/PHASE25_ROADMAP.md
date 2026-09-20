@@ -381,6 +381,33 @@ removed assertion inverted; `make gust` and the native fixed point pass.
 **Exit Gate:** the no-C job is green; `$CC` still works; the probe-then-error
 path is tested; the D8 job's expected-failure list is empty.
 
+## Patch 25.12a — Closure Readiness Reporter
+
+**Purpose:** measure distance to closure, so 25.12 has something to assert
+against instead of an argument that the conditions hold.
+
+Split out of 25.12 after review: 25.12's Exit Gate requires the falsifier
+promoted, the closure sentence written AND `TASK.md` moved with all 127
+reader scripts swept. A patch that lands only the reporter would publish
+under an identity whose gate it does not meet, which is the split this
+project's one-patch-one-publication rule exists to prevent.
+
+**Steps:**
+
+- Report each closure condition and what owes it: runtime `.c` files (25.5,
+  25.6), `gust_v4.c` (25.9), emitter residue (25.10), the expected-failure
+  list (25.1, 25.11), and the active-roadmap declaration (25.12).
+- Every condition is derived, not asserted: a recursive scan for runtime C, a
+  `git ls-files` sweep for emitter residue, the parsed `# Phase N` headings
+  for the active roadmap, and the tracked falsifier list's own schema.
+- **An absent input is never a satisfied condition.** A missing
+  expected-failure list reads as an outstanding condition, not an exhausted
+  one; an uninspectable file is not a clean file.
+
+**Exit Gate:** the reporter names every outstanding condition with its owning
+patch; each condition's check is shown to both fire and clear; and the
+closure sentence is printed only when none remain.
+
 ## Patch 25.12 — Phase 25 Closure
 
 **Purpose:** promote the falsifier and write the terminal record.
