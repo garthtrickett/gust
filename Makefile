@@ -236,16 +236,35 @@ build/phase21-runtime/strings.o: src/runtime/strings.c src/runtime/core_headers.
 PHASE25_RUNTIME_RS = src/runtime-rs/target/release/libgust_runtime_rs.a
 
 $(PHASE25_RUNTIME_RS): src/runtime-rs/src/lib.rs src/runtime-rs/Cargo.toml
-	cargo build --release --manifest-path src/runtime-rs/Cargo.toml
+	$(CARGO) build --release --manifest-path src/runtime-rs/Cargo.toml
 
-$(PHASE21_RUNTIME_PACKAGE): $(PHASE21_RUNTIME_OBJECTS) $(PHASE25_RUNTIME_RS)
+# Only the crate's own codegen unit joins the runtime archive. The staticlib
+# has 310 members; 309 are core and compiler_builtins, which would add 7 MB
+# and a second definition of memcpy beside libc's. The member is selected by
+# CONTENT -- the one defining the fixtures -- because both hashes in its
+# filename change on every rebuild, and it fails loudly when absent: an
+# `|| true` here would make a missing fixture look like a built one.
+PHASE25_RUNTIME_RS_OBJ = build/phase25-runtime-rs/gust_runtime_rs_fixtures.o
+
+$(PHASE25_RUNTIME_RS_OBJ): $(PHASE25_RUNTIME_RS)
+	@rm -rf build/phase25-runtime-rs
+	@mkdir -p build/phase25-runtime-rs/members
+	cd build/phase25-runtime-rs/members && ar x ../../../$(PHASE25_RUNTIME_RS)
+	@found=''; for o in build/phase25-runtime-rs/members/*.o; do \
+		if nm --defined-only "$$o" 2>/dev/null | grep -q ' T tiny_host_add_i32$$'; then \
+			found="$$o"; break; \
+		fi; \
+	done; \
+	if [ -z "$$found" ]; then \
+		echo 'no src/runtime-rs member defines tiny_host_add_i32' >&2; exit 1; \
+	fi; \
+	cp "$$found" $@
+
+$(PHASE21_RUNTIME_PACKAGE): $(PHASE21_RUNTIME_OBJECTS) $(PHASE25_RUNTIME_RS_OBJ)
 	@rm -f build/.gust-runtime-package.a.tmp
-	# The Rust crate's members join the runtime archive, so the archive
-	# keeps one name and one shape while its contents move language.
-	ar rcs build/.gust-runtime-package.a.tmp $(PHASE21_RUNTIME_OBJECTS)
-	cd build && ar x --output . ../$(PHASE25_RUNTIME_RS) 2>/dev/null || true
-	ar q build/.gust-runtime-package.a.tmp $$(ar t $(PHASE25_RUNTIME_RS) | sed 's|^|build/|') 2>/dev/null || \
-		ar q build/.gust-runtime-package.a.tmp $(PHASE25_RUNTIME_RS)
+	# The Rust fixture object joins the runtime archive, so the archive keeps
+	# one name and one shape while its contents move language.
+	ar rcs build/.gust-runtime-package.a.tmp $(PHASE21_RUNTIME_OBJECTS) $(PHASE25_RUNTIME_RS_OBJ)
 	mv build/.gust-runtime-package.a.tmp $(PHASE21_RUNTIME_PACKAGE)
 
 phase10-native-package: gust build/gust-native-backend $(PHASE21_RUNTIME_PACKAGE)

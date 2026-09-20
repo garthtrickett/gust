@@ -3051,7 +3051,7 @@
     },
     "runtime_package": {
       "format": "static_archive",
-      "members": ["arena.o","host_io.o","file_io.o","scratch.o","fiber.o","collections.o","strings.o","libgust_runtime_rs.a"],
+      "members": ["arena.o","host_io.o","file_io.o","scratch.o","fiber.o","collections.o","strings.o","gust_runtime_rs_fixtures.o"],
       "symbol_policy": "existing_registered_runtime_symbols_only"
     },
     "resource_cleanup_transport": {
@@ -27384,6 +27384,66 @@
             "owner": "cranelift",
             "path": "scripts/cranelift_registry.py",
             "removal_phase": "24"
+          },
+          {
+            "classification": "bootstrap_phase25",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "preserve_exact_C_bootstrap_dependency",
+            "digest": "436fbdf34ff8df837bab13210b74a36ac93749ccbba70149c74fee787de155e4",
+            "falsifier": "bootstrap_surface_is_missing_changed_or_reclassified",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "generated_c_contract": 16,
+              "mir_to_c_name": 1
+            },
+            "owner": "cranelift",
+            "path": "Makefile",
+            "removal_phase": "25"
+          },
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "c5cdab3557fa4186376db4e51f2e50171d1cad0d746dedc196af9b046bff5f9e",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "generated_c_contract": 3,
+              "mir_to_c_name": 3
+            },
+            "owner": "cranelift",
+            "path": "scripts/phase21_full_compiler_native_qualification.py",
+            "removal_phase": "24"
+          },
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "a85b2a31c42eaba5bd56cf906965b36b1119e51ef9916c9e5a659936afc90b5d",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "generated_c_contract": 0,
+              "mir_to_c_name": 6
+            },
+            "owner": "cranelift",
+            "path": "scripts/phase13_broader_imported_runtime_calls.sh",
+            "removal_phase": "24"
+          },
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "ea14ffa5e4dc09fbee4a42b4ff416fbb5039540117b72992c86569b6048e1c48",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "generated_c_contract": 0,
+              "mir_to_c_name": 1
+            },
+            "owner": "cranelift",
+            "path": ".gitignore",
+            "removal_phase": "24"
           }
         ],
         "partial_extra_or_substituted_surface": "rejected",
@@ -27417,13 +27477,75 @@
             "owner": "cranelift",
             "path": "scripts/cranelift_registry.py",
             "removal_phase": "24"
+          },
+          {
+            "classification": "bootstrap_phase25",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "preserve_exact_C_bootstrap_dependency",
+            "digest": "defc3d1b32366b51e1bf1871831af57d09cb0d1e858a6d224652828fea6afd97",
+            "falsifier": "bootstrap_surface_is_missing_changed_or_reclassified",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "generated_c_contract": 16,
+              "mir_to_c_name": 1
+            },
+            "owner": "cranelift",
+            "path": "Makefile",
+            "removal_phase": "25"
+          },
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "46dfb1f58dae496cfc848683f1d6d7a1d2b78e9f617829c2cb289fe8bf79ebad",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "generated_c_contract": 3,
+              "mir_to_c_name": 3
+            },
+            "owner": "cranelift",
+            "path": "scripts/phase21_full_compiler_native_qualification.py",
+            "removal_phase": "24"
+          },
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "5aaa1227aa4089ae0de29d3f27fdcf620891a51dbff028a73ef891b408f69cff",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "generated_c_contract": 0,
+              "mir_to_c_name": 6
+            },
+            "owner": "cranelift",
+            "path": "scripts/phase13_broader_imported_runtime_calls.sh",
+            "removal_phase": "24"
+          },
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "261edb172fc528a29034abf9e439f9d3abcaaa49e6340ff7867c40c6331c8792",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "generated_c_contract": 0,
+              "mir_to_c_name": 1
+            },
+            "owner": "cranelift",
+            "path": ".gitignore",
+            "removal_phase": "24"
           }
         ],
         "registered_changed_paths": [
           "Makefile",
           "scripts/phase17_opening.py",
           "scripts/cranelift_registry.py",
-          "scripts/phase21_full_compiler_native_qualification.py"
+          "scripts/phase21_full_compiler_native_qualification.py",
+          "scripts/phase13_broader_imported_runtime_calls.sh",
+          ".gitignore"
         ]
       }
     },

@@ -12460,7 +12460,7 @@ guard-cranelift-phase13-broader-imported-runtime-calls-parity:
     echo "🔒 Checking Phase 13.9 broader imported and runtime-call parity..."
     lowerer_source="compiler/mir_native_backend_module_import_source.gst"
     rust_driver="compiler/experiments/cranelift/src/main.rs"
-    runtime_source="src/runtime/approved_scalar_imports.c"
+    runtime_source="src/runtime-rs/src/lib.rs"
     evidence_script="scripts/phase13_broader_imported_runtime_calls.sh"
     registry_validator="scripts/cranelift_registry.py"
     level_runner="scripts/cranelift_test_levels.py"

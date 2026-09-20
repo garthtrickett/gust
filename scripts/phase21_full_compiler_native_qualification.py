@@ -95,7 +95,7 @@ def validate() -> dict:
                 # member moved language. Symbol names are unchanged, so
                 # nothing that CALLS tiny_host_* needed editing.
                 "collections.o", "strings.o",
-                "libgust_runtime_rs.a",
+                "gust_runtime_rs_fixtures.o",
             ],
             "symbol_policy": "existing_registered_runtime_symbols_only",
         },
