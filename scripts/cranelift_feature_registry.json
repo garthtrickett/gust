@@ -25720,7 +25720,7 @@
         "repository_invocation_count": 158,
         "supported_production_or_release_explicit_c_count": 0,
         "supported_surface_count": 6,
-        "supported_surface_manifest_digest": "8d036993703e3e5aad8efd43d64881fe4ef6ed1e7d0f70307b8fd6ad08d49b24",
+        "supported_surface_manifest_digest": "320584f51f165b1dd42652926fcf47d8de93fd7c3c32e5195ee368720fd21517",
         "unknown_downstream_count": 0
       },
       "partial_extra_or_substituted_audit": "rejected",
