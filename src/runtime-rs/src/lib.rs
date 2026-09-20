@@ -1,7 +1,6 @@
 //! The Rust half of the Gust runtime (Patch 25.4).
 //!
-//! `#![no_std]` on purpose. This crate exists to hold the parts of the
-//! runtime that cannot be Gust, and nothing more:
+//! This crate holds the parts of the runtime that cannot be Gust:
 //!
 //!   * the `tiny_host_*` FFI fixtures, rehomed here by O1;
 //!   * later, `fiber.c`'s two assembly functions via `global_asm!` (D3).
@@ -16,14 +15,15 @@
 //! mir_*_smoke_test_entry.gst, the Phase 17 guards and the Cranelift
 //! registry -- need no value changes.
 
-#![no_std]
-
-use core::panic::PanicInfo;
-
-#[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
-    loop {}
-}
+// Patch 25.6 removed `#![no_std]`. See src/fiber.rs for why: pthread_mutex_t
+// is opaque and platform-specific, so a no_std scheduler must hand-guess its
+// layout per platform, and three of this patch's four committed quadrants
+// cannot be built here to check the guess. Phase 25's gate is no C COMPILER,
+// not no libc, so `std` costs the phase nothing and removes the guessing.
+//
+// The hand-written #[panic_handler] went with it -- std supplies one, and two
+// definitions do not link. `panic = "abort"` is kept in Cargo.toml, so the
+// abort behaviour the fixtures relied on is unchanged.
 
 /// Approved scalar import fixture. Was `src/runtime/approved_scalar_imports.c`.
 #[no_mangle]
@@ -44,3 +44,4 @@ pub extern "C" fn tiny_host_is_positive_i32(value: i32) -> i32 {
 }
 
 mod fiber_asm;
+pub mod fiber;
