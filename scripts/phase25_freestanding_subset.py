@@ -47,18 +47,78 @@ FREESTANDING_OBJECTS = ROOT / "build" / "phase25-freestanding"
 EXPORT_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_ *]*?\b([a-z_][A-Za-z0-9_]*)\s*\(', re.M)
 
 
+# The forbidden set derived from src/runtime/*.c SHRINKS as Patch 25.5 moves
+# those files to Gust -- it would empty itself precisely as this guard became
+# active, which is the one moment it must not. So today's set is pinned as a
+# floor and the live derivation must stay a superset of it. Migrating a file
+# removes its C source, not the obligation not to call into it.
+FORBIDDEN_FLOOR = frozenset(['gust_context_switch', 'gust_fiber_create', 'gust_fiber_entry_wrapper', 'gust_fiber_exit', 'gust_fiber_free', 'gust_fiber_switch', 'gust_scheduler_destroy', 'gust_scheduler_init', 'gust_scheduler_spawn', 'gust_shard_loop', 'gust_yield', 'os_ArenaAlloc', 'os_Arena_Free', 'os_Arena_New', 'os_Arena_Validate', 'os_Args', 'os_CloseDir', 'os_ExecutablePath', 'os_FileExecutable', 'os_FileExists', 'os_GetEnv', 'os_GetThreadScratch_raw', 'os_HashMapClear_impl', 'os_HashMapContains_impl', 'os_HashMapRef_impl', 'os_HashMapRemove_impl', 'os_LogError', 'os_LogInt', 'os_LogStr', 'os_MockPayload', 'os_NativeObjectFormat', 'os_NativeTargetTriple', 'os_OpenDir', 'os_PathAbsolute', 'os_PathDir', 'os_ReadDir', 'os_ReadFile', 'os_RemoveFile', 'os_RunProcess', 'os_ScratchAlloc', 'os_ScratchReset', 'os_SetThreadScratch', 'os_System', 'os_WriteFile', 'os_copy_c_string_to_arena', 'os_path_join', 'os_read_stream_to_arena', 'os_slice_to_c_string', 'std_Channel_Alloc', 'std_Channel_Recv_impl', 'std_Channel_Send_impl', 'std_Clone_str', 'std_GenerationalSwap', 'std_Mutex_Alloc', 'std_Mutex_Lock_impl', 'std_Mutex_Unlock_impl', 'std_PoolAlloc_impl', 'std_PoolFree_impl', 'std_is_alpha', 'std_is_digit', 'std_is_whitespace', 'std_parse_int', 'std_str_byte_at', 'std_str_eq', 'std_str_find', 'std_str_slice', 'std_str_split', 'std_str_trim'])
+
+
 def runtime_exports() -> set:
-    """Every symbol the C runtime exports -- the set runtime code may not call."""
+    """Every symbol the runtime exports -- the set runtime code may not call.
+
+    Three sources, unioned, because no single one survives the migration:
+    the remaining C sources; the built runtime archive if present, which
+    keeps its name and shape while its contents change language (25.4); and
+    the pinned floor, which is what stops the set shrinking to nothing.
+    """
     found = set()
     for path in sorted((ROOT / "src" / "runtime").glob("*.c")):
         text = path.read_text(encoding="utf-8", errors="replace")
         found.update(EXPORT_RE.findall(text))
-    return {s for s in found if s.startswith(("std_", "os_", "gust_"))}
+    found = {s for s in found if s.startswith(("std_", "os_", "gust_"))}
+    found |= archive_exports()
+    return found | set(FORBIDDEN_FLOOR)
 
 
-def undefined_symbols(obj: Path) -> set:
-    out = subprocess.run(["nm", "-u", str(obj)], capture_output=True, text=True)
-    return {line.split()[-1] for line in out.stdout.splitlines() if line.strip()}
+def archive_exports() -> set:
+    """Symbols the built runtime archive defines, whatever language wrote them."""
+    archive = ROOT / "build" / "gust-runtime-package.a"
+    if not archive.is_file():
+        return set()
+    out = run_tool(["nm", "--defined-only", str(archive)], archive)
+    names = set()
+    for line in out.splitlines():
+        parts = line.split()
+        if len(parts) >= 3 and parts[-2] in {"T", "D", "B", "R"}:
+            names.add(parts[-1])
+    return {s for s in names if s.startswith(("std_", "os_", "gust_"))}
+
+
+def run_tool(cmd: list, obj: Path) -> str:
+    """Run a binutils command, refusing to read failure as an empty result.
+
+    An object this guard cannot inspect is not an object with no violations.
+    Ignoring the exit status made a malformed or unsupported file report
+    clean, which is the failure mode the guard exists to prevent.
+    """
+    out = subprocess.run(cmd, capture_output=True, text=True)
+    require(out.returncode == 0,
+            f"{cmd[0]} failed on {obj.name} (exit {out.returncode}); an "
+            "object that cannot be inspected must not be reported clean: "
+            f"{out.stderr.strip()[:200]}")
+    return out.stdout
+
+
+def referenced_symbols(obj: Path) -> set:
+    """Symbols the object REFERENCES, read from its relocation table.
+
+    `nm -u` lists undefined symbols only, so an object that both defines a
+    forbidden export and calls it shows nothing -- the call is resolved
+    within the object and never becomes undefined. Measured: a translation
+    unit defining and calling std_Clone_str yields an empty `nm -u` and an
+    R_X86_64_PLT32 relocation against std_Clone_str. The relocation table is
+    what the contract always meant by "calls into the runtime".
+    """
+    names = set()
+    for line in run_tool(["readelf", "-rW", str(obj)], obj).splitlines():
+        parts = line.split()
+        if len(parts) >= 5 and parts[0][:1].isdigit() and "R_" in parts[2]:
+            sym = parts[4].split("@")[0]
+            if sym and not sym.startswith("."):
+                names.add(sym)
+    return names
 
 
 def require(condition: bool, message: str) -> None:
@@ -74,7 +134,7 @@ def report() -> dict:
         "forbidden_symbols": sorted(runtime_exports()),
         "freestanding_objects": [p.name for p in objects],
         "violations": {
-            p.name: sorted(undefined_symbols(p) & runtime_exports())
+            p.name: sorted(referenced_symbols(p) & runtime_exports())
             for p in objects
         },
     }
