@@ -1047,7 +1047,15 @@ def scan_script(path: Path) -> dict:
     for lineno, line in lines:
         binding = CC_BINDING.match(line)
         if binding and re.search(r'\$\{?CC\b|(?<![\w-])cc(?![\w-])', binding.group("rhs")):
-            bindings[binding.group("name")] = lineno
+            # PR #452 review (P2): keyed by name alone, the justfile's 75
+            # `CC_BIN` assignments collapsed to the last one, so the
+            # scoped search examined only that recipe and the other 74
+            # could lose their compile without reporting a dead binding.
+            # Key per recipe; the emitted rows still carry the bare name.
+            key = binding.group("name")
+            if rel == "justfile":
+                key = f'{recipe_of.get(lineno, "")}\x00{key}'
+            bindings[key] = lineno
             # PR #450 review (P1): this used to `continue`, so a line that
             # BOTH binds and invokes was only ever counted as a binding.
             # justfile:22547, :22614 and :22654 are
@@ -1081,7 +1089,8 @@ def scan_script(path: Path) -> dict:
 
     referenced = set()
     for name, bound_at in bindings.items():
-        pattern = re.compile(r'\$\{?' + re.escape(name) + r'\}?')
+        bare = name.split("\x00")[-1]
+        pattern = re.compile(r'\$\{?' + re.escape(bare) + r'\}?')
         # PR #452 review (P2): the reference search was file-wide. Many
         # just recipes declare their own `CC_BIN="${CC:-cc}"`, so removing
         # one recipe's compile left its discovery line looking live
@@ -1108,7 +1117,8 @@ def scan_script(path: Path) -> dict:
     return {
         "file": rel,
         "bindings": bindings,
-        "dead_bindings": [{"name": n, "line": bindings[n]} for n in dead],
+        "dead_bindings": [{"name": n.split("\x00")[-1],
+                           "line": bindings[n]} for n in dead],
         "invocations": invocations,
     }
 
@@ -1198,11 +1208,17 @@ def inventory_owner(path: str, site: str = "", recipe: str = "") -> str:
             # product it compiles.
             if site and not any(site in cell for cell in cells):
                 continue
+            # PR #452 review, third pass: `recipe in cell` matched
+            # "make-test" inside the registered "make-test-suite:" marker,
+            # so an invented recipe inherited the row. Compare whole
+            # tokens with the recipe-header colon stripped.
             # PR #452 review (P1), second pass: product granularity still
             # let a NEW recipe compiling a registered product inherit its
             # owner. A row authorizes one `(file, recipe, product)`, so a
             # new consumer of the same artifact is still unregistered.
-            if recipe and not any(recipe in cell for cell in cells):
+            if recipe and not any(
+                    recipe == token.strip().rstrip(":")
+                    for cell in cells for token in cell.split()):
                 continue
             for cell in cells:
                 if owner_pattern.match(cell):
