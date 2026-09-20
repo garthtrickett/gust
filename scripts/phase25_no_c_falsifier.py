@@ -25,6 +25,10 @@ The contract:
 from __future__ import annotations
 
 import argparse
+import os
+import re
+import subprocess
+import tempfile
 import json
 import shutil
 from pathlib import Path
@@ -95,15 +99,97 @@ def check_environment() -> None:
     raise SystemExit(1)
 
 
+
+WORKLOAD = ["make", "gust"]
+
+# Withheld from the shadow PATH. Everything else on PATH is symlinked through,
+# because a PATH of seven tools cannot run a build at all: the first attempt
+# died on `mkdir: command not found`, which is the harness failing, not the
+# gate. A falsifier whose environment cannot run the workload proves nothing
+# about the workload.
+BLOCKED_TOOLS = ("cc", "gcc", "clang", "c++", "g++", "cc1", "cpp",
+                 "clang++", "gcc-13", "x86_64-linux-gnu-gcc")
+
+
+def compiler_free_path(dest: str) -> str:
+    """A full toolchain with the compilers withheld."""
+    seen = set()
+    for directory in os.environ.get("PATH", "").split(os.pathsep):
+        if not os.path.isdir(directory) or directory.startswith(dest):
+            continue
+        for name in os.listdir(directory):
+            if name in BLOCKED_TOOLS or name in seen:
+                continue
+            src = os.path.join(directory, name)
+            if os.path.isdir(src) or not os.access(src, os.X_OK):
+                continue
+            try:
+                os.symlink(src, os.path.join(dest, name))
+                seen.add(name)
+            except OSError:
+                pass
+    return dest
+
+
+def run_workload() -> None:
+    """Run the real build with no compiler, and CLASSIFY what happens.
+
+    check-environment only asserts that compiler names are absent from PATH.
+    That certifies nothing about Gust: an eventual promoted job would pass
+    merely because `cc` is not on PATH, and an unrelated build break could
+    never be told apart from a tracked reason. So the workload runs, and its
+    failure is matched against the tracked list.
+    """
+    record = load()
+    entries = record["entries"]
+    with tempfile.TemporaryDirectory(prefix="gust-nocc-") as tmp:
+        dest = os.path.join(tmp, "nocc")
+        os.makedirs(dest)
+        env = dict(os.environ, PATH=compiler_free_path(dest))
+        proc = subprocess.run(WORKLOAD, cwd=ROOT, env=env,
+                              capture_output=True, text=True)
+    output = proc.stdout + proc.stderr
+    if not entries:
+        require(proc.returncode == 0,
+                "the expected-failure list is empty, so the no-C workload "
+                f"must SUCCEED, but {' '.join(WORKLOAD)} exited "
+                f"{proc.returncode}:\n{output[-2000:]}")
+        print("guard-cranelift-phase25-no-c-falsifier: the gate HOLDS -- "
+              f"{' '.join(WORKLOAD)} succeeded with no C compiler on PATH.")
+        return
+    require(proc.returncode != 0,
+            f"{' '.join(WORKLOAD)} SUCCEEDED with no C compiler while "
+            f"{len(entries)} expected failures remain. Either the gate now "
+            "holds and this list is stale, or the workload did not do what "
+            "it claims -- neither is a pass.")
+    matched = [e["id"] for e in entries
+               if e.get("observable_signature")
+               and re.search(e["observable_signature"], output)]
+    require(matched,
+            f"{' '.join(WORKLOAD)} failed for a reason not on the tracked "
+            "list, which is a REGRESSION, not progress. Expected one of "
+            f"{[e['id'] for e in entries if e.get('observable_signature')]}. "
+            f"Observed:\n{output[-2000:]}")
+    print("guard-cranelift-phase25-no-c-falsifier: EXPECTED RED, and the "
+          f"workload was run. {' '.join(WORKLOAD)} failed as "
+          f"{matched[0]}. {len(entries)} reasons remain:")
+    for entry in entries:
+        print(f"  - {entry['id']}: cleared by {entry['cleared_by']}")
+    raise SystemExit(1)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command",
-                        choices=["validate", "check-environment", "report"])
+                        choices=["validate", "check-environment", "run-workload",
+                                 "report"])
     args = parser.parse_args()
     if args.command == "report":
         print(json.dumps(load(), indent=2, sort_keys=True))
     elif args.command == "check-environment":
         check_environment()
+    elif args.command == "run-workload":
+        run_workload()
     else:
         validate()
     return 0

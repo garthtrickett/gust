@@ -16,6 +16,11 @@ name: Cranelift Phase 25 No-C-Compiler Falsifier
 on:
   pull_request:
     paths:
+      - 'compiler/**'
+      - 'justfile'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'flake.nix'
       - 'scripts/phase25_no_c_expected_failures.json'
       - 'scripts/phase25_no_c_falsifier.py'
       - 'src/runtime/**'
@@ -24,11 +29,20 @@ on:
   push:
     branches: [main]
     paths:
+      - 'compiler/**'
+      - 'justfile'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'flake.nix'
       - 'scripts/phase25_no_c_expected_failures.json'
       - 'scripts/phase25_no_c_falsifier.py'
       - 'src/runtime/**'
       - 'Makefile'
       - '.github/workflows/phase25-no-c-falsifier.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 permissions:
   contents: read
@@ -93,6 +107,27 @@ jobs:
             exit 1
           fi
           echo "expected red confirmed: exit 1 with $expected registered reasons"
+      # check-environment only proves compiler names are absent from PATH.
+      # That certifies nothing about Gust, so the workload runs too and its
+      # failure is classified against the tracked list. Same inversion: red
+      # is required while the list is non-empty, and a failure for an
+      # untracked reason is a regression, which the guard reports itself.
+      - name: guard-cranelift-phase25-no-c-falsifier run-workload (expected red)
+        run: |
+          set +e
+          out="$(python3 scripts/phase25_no_c_falsifier.py run-workload 2>&1)"
+          status=$?
+          set -e
+          echo "$out"
+          if [ "$status" -eq 0 ]; then
+            echo "::error::the no-C workload SUCCEEDED while the expected-failure list is non-empty; the gate may now hold, which is a change this job must not pass silently" >&2
+            exit 1
+          fi
+          if ! printf '%s\n' "$out" | grep -q "EXPECTED RED, and the workload was run"; then
+            echo "::error::the workload failed for an untracked reason -- a regression, not progress" >&2
+            exit 1
+          fi
+          echo "expected red confirmed by running the workload, not by inspecting PATH"
 
   gnu-smoke:
     name: Phase 25 gnu smoke subset

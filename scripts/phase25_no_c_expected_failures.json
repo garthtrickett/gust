@@ -18,7 +18,9 @@
       "id": "bootstrap-chain-compiles-c",
       "reason": "The Makefile assembles generated stage files with the host C compiler across 11 $(CC) recipe lines; gust_v4.c is 66,002 lines of generated C.",
       "measured_by": "Patch 25.0",
-      "cleared_by": "25.9 seed cut-over and 25.10 emitter deletion"
+      "cleared_by": "25.9 seed cut-over and 25.10 emitter deletion",
+            "observable_signature": "cc: (command not found|No such file)",
+            "observable_note": "The only entry observable as a build FAILURE: with no compiler on PATH the Makefile dies at its first $(CC) line. The other three are structural facts about the tree, true whether or not a build is attempted, so they are measured rather than triggered."
     },
     {
       "id": "rustc-defaults-to-cc-on-gnu",
