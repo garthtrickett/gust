@@ -521,3 +521,35 @@ The options, ranked:
 Option 1 unless someone names a reason the crate must stay `no_std` that is
 stronger than the layout hazard. The fixtures from 25.4 do not need
 `no_std`; they need to be FOREIGN, which they remain either way.
+
+## Sizing `gust_check_fail` before anyone starts it
+
+The emitter's libc surface section above names seven `printf`/`exit` sites in
+`codegen.gst` and proposes one runtime-provided noreturn to replace them.
+Seven emission SITES is not seven emissions. Counted in the current seed:
+
+    Vector bounds check failed   1960
+    Slice  bounds check failed      1
+    Pool   bounds check failed      1
+    HashMap GetRef missing key      1
+                                 ----
+                                 1963 inline printf/exit pairs
+                                      across 1,723 of 66,002 lines
+
+So the change replaces **1,963 inline `printf(...); exit(1);` pairs with
+1,963 calls to one function**, and removes `printf` and `exit` from emitted
+code entirely — one definition remains, in the runtime, where 25.5 and 25.6
+can move it to Rust along with everything else. That is the single largest
+reduction available in the emitter's libc surface.
+
+Two things the distribution tells us. Vector indexing is 99.8% of it, so a
+change that handled only `Slice` would look complete and do nothing. And
+`Slice` appearing exactly once confirms from a second direction what the
+25.5 probe found: the compiler's own sources reach bytes through
+`std.str_byte_at` (84 uses), not through `s[i]`, so slice indexing is rare
+in the code the compiler compiles even though it is common in the language.
+
+**It moves the seed** — 1,723 lines of `gust_v4.c` — so it needs a bootstrap
+and should ride with a patch already paying for one rather than buying a
+66,002-line republication of its own. This patch pays for one. Sized here so
+that decision is made against a number instead of an impression.
