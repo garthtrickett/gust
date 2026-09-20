@@ -86,3 +86,112 @@ pub unsafe extern "C" fn gust_fiber_switch(from: *mut Fiber, to: *mut Fiber) {
     os_SetThreadScratch((*to).active_arena);
     gust_context_switch(&mut (*from).sp, (*to).sp);
 }
+
+// ---- scheduler state ----------------------------------------------------
+//
+// Ported faithfully rather than idiomatically: statics and raw pointers,
+// mirroring the C. A port whose job is to be behaviour-identical is the
+// wrong place to redesign ownership, and the fiber ABI is fixed by the
+// assembly regardless -- `Fiber.sp` must stay where `gust_context_switch`
+// expects it.
+//
+// `SchedulerShard` is deliberately NOT `#[repr(C)]`, unlike `Fiber`. It held
+// `pthread_mutex_t` and `pthread_t`, the two opaque types that drove the
+// `std` decision; here they are `Mutex` and `JoinHandle`, which have no
+// layout to match. That is only sound because the port is atomic -- measured,
+// sixteen of twenty functions share this state, so there is no intermediate
+// build where C and Rust both see this struct.
+
+use std::sync::{Mutex, MutexGuard};
+use std::thread::JoinHandle;
+
+pub struct ShardQueue {
+    pub run_queue_head: *mut Fiber,
+    pub run_queue_tail: *mut Fiber,
+    pub active_fiber: *mut Fiber,
+}
+
+pub struct SchedulerShard {
+    pub id: i32,
+    pub thread: Option<JoinHandle<()>>,
+    pub queue: Mutex<ShardQueue>,
+    pub shard_fiber: Fiber,
+}
+
+// The C hands shard pointers between threads freely; the pointers inside are
+// only ever dereferenced under `queue`'s lock or by the owning fiber.
+unsafe impl Send for ShardQueue {}
+unsafe impl Sync for SchedulerShard {}
+
+thread_local! {
+    /// `static GUST_THREAD_LOCAL gust_SchedulerShard* active_shard`.
+    static ACTIVE_SHARD: Cell<*mut SchedulerShard> = const { Cell::new(std::ptr::null_mut()) };
+}
+
+pub(crate) fn active_shard() -> *mut SchedulerShard {
+    ACTIVE_SHARD.with(|s| s.get())
+}
+
+pub(crate) fn set_active_shard(shard: *mut SchedulerShard) {
+    ACTIVE_SHARD.with(|s| s.set(shard));
+}
+
+pub(crate) fn lock_queue(shard: &SchedulerShard) -> MutexGuard<'_, ShardQueue> {
+    // The C calls pthread_mutex_lock and ignores failure. A poisoned lock
+    // here means a fiber panicked mid-critical-section; the queue is still
+    // structurally intact, so recover rather than abort the whole runtime
+    // -- aborting would turn one fiber's bug into a scheduler shutdown.
+    shard.queue.lock().unwrap_or_else(|e| e.into_inner())
+}
+
+use std::sync::atomic::{AtomicBool, AtomicI32, Ordering};
+
+/// `static int gust_pending_fibers`. The C used `__sync_*` builtins, which
+/// are full barriers; `SeqCst` is the equivalent and keeps the property the
+/// C comment relies on -- a host thread observing zero also observes the
+/// fiber's published result and other terminal writes.
+pub(crate) static PENDING_FIBERS: AtomicI32 = AtomicI32::new(0);
+pub(crate) static SCHEDULER_RUNNING: AtomicBool = AtomicBool::new(true);
+
+/// `void gust_yield()`.
+///
+/// This is the function that made Patch 25.6 precede 25.5: codegen emits a
+/// call to it in every `while` loop and every recursive function
+/// (`codegen.gst:4018`, `:3870`), unconditionally and with no suppression
+/// flag. Every compiled Gust program reaches it on every loop iteration.
+///
+/// Off a fiber -- on a plain host thread -- it degrades to a scheduler hint
+/// rather than doing nothing, matching the C's `sched_yield()`.
+#[no_mangle]
+pub extern "C" fn gust_yield() {
+    let shard_ptr = active_shard();
+    if shard_ptr.is_null() {
+        std::thread::yield_now();
+        return;
+    }
+    // SAFETY: a non-null ACTIVE_SHARD is set only by `shard_loop` for the
+    // lifetime of that thread, and shards outlive their threads.
+    let shard = unsafe { &*shard_ptr };
+    let current = lock_queue(shard).active_fiber;
+    if current.is_null() {
+        std::thread::yield_now();
+        return;
+    }
+    unsafe {
+        (*current).state = FiberState::Ready;
+        (*current).next = std::ptr::null_mut();
+        {
+            let mut q = lock_queue(shard);
+            if q.run_queue_tail.is_null() {
+                q.run_queue_head = current;
+            } else {
+                (*q.run_queue_tail).next = current;
+            }
+            q.run_queue_tail = current;
+        }
+        // The switch happens OUTSIDE the lock. Holding it across the switch
+        // would carry this thread's guard onto another fiber's stack and
+        // deadlock the shard the moment that fiber touched the queue.
+        gust_fiber_switch(current, &(*shard_ptr).shard_fiber as *const Fiber as *mut Fiber);
+    }
+}
