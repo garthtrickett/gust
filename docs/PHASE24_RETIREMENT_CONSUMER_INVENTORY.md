@@ -6,8 +6,8 @@
 
 Status: `patch24_11_complete`
 Authority base: `b7b1713cd65630b14ae92e46afd393990928a2e2`
-Rows: `106`
-Digest: `a014f136d709b775d65e66d644ec1ef5bbef1d1fbea708c533ad8b1b68fc5f63`
+Rows: `109`
+Digest: `a9305e8d7a5e8d717365fbc5606154044fc631d47a3c765bf015912f5590ae20`
 
 ## Bootstrap-entry decision
 
@@ -158,6 +158,12 @@ Digest: `a014f136d709b775d65e66d644ec1ef5bbef1d1fbea708c533ad8b1b68fc5f63`
 - compiler/test_runner_bootstrap_bridge_entry.gst :: Usage: gust-bootstrap-bridge [--backend  (survive)
 - compiler/test_runner_bootstrap_bridge_entry.gst :: mut c_code := codegen.codegen_generate(p (survive)
 - compiler/test_runner_entry.gst :: mut c_code := codegen.codegen_generate(p (survive)
+
+### phase25
+
+- justfile :: make-test-suite-parallel: (retire-with-emitter test_runner_final.c)
+- justfile :: make-test-suite: (retire-with-emitter test_runner_final.c)
+- justfile :: run-step52-positive-batch: (retire-with-emitter test_runner_step52_positive_final.c)
 
 ### stdlib-coordination
 

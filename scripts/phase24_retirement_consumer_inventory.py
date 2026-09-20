@@ -896,6 +896,29 @@ MIGRATED_FILE_SURFACES = [
 ]
 
 FILE_ROWS = [
+    # Issue #451: three cc sites in the justfile, one row each. They are
+    # `cat src/runtime.c build/test_runner.c`, i.e. the hand-written
+    # runtime concatenated with emitter output, so they retire when the
+    # emitter retires at Patch 25.10 rather than being un-retired Phase 24
+    # routes.
+    #
+    # Keyed on `(file, recipe, product)`. The MARKER cell must be literal
+    # text present in the file -- the guard checks the surface still
+    # exists -- so it carries the recipe header, and the action cell
+    # carries the product. `inventory_owner` matches across all cells,
+    # so a row authorizes exactly one site. Three earlier shapes were all too
+    # coarse and each was caught in review: RECIPE_ROWS by recipe name
+    # duplicated IDs that already exist under 24.13/migrate; FILE_ROWS by
+    # file exempted a 22,605-line file; FILE_ROWS by product let any NEW
+    # recipe compiling that product inherit the owner. A row authorizes
+    # one site.
+    ('justfile', 'make-test-suite:',
+     'phase25', 'retire-with-emitter test_runner_final.c'),
+    ('justfile', 'make-test-suite-parallel:',
+     'phase25', 'retire-with-emitter test_runner_final.c'),
+    ('justfile', 'run-step52-positive-batch:',
+     'phase25', 'retire-with-emitter test_runner_step52_positive_final.c'),
+
     # (path, needle, owner_patch, action)
     ("compiler/test_runner_entry.gst",
      "    MirToC,", "24.13", "retire"),
@@ -2136,8 +2159,15 @@ def validate() -> dict:
     # route-dependence, and Patch 24.3 is the carried future work that owns
     # correcting it. Naming 24.16 there instead would have been tidier and
     # false.
+    # Issue #451 adds "phase25" for the two justfile products that compile
+    # emitter output and retire with the emitter at Patch 25.10. "25"
+    # already appears, but `inventory_owner` only accepts `24.N`,
+    # `stdlib-coordination` or `phase25`, so a row owned "25" is invisible
+    # to the provenance guard asking who owns a site. Both spellings are
+    # kept rather than unified: renaming existing rows is a separate change
+    # with its own evidence.
     require(owners == ["24.12", "24.12b", "24.13", "24.14", "24.15", "24.16",
-                       "24.3", "25", "stdlib-coordination"],
+                       "24.3", "25", "phase25", "stdlib-coordination"],
             f"inventory owner set drifted: {owners}")
     require(RETIRED_BY not in owners,
             f"Patch {RETIRED_BY} still owns inventory rows after retiring "

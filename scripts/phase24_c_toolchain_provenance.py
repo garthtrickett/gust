@@ -977,8 +977,27 @@ def shell_scripts() -> list:
     35-invocation population and its whole by_class distribution are
     unchanged from before any of this.
     """
-    return sorted(ROOT.glob("scripts/*.sh"))
+    return sorted(ROOT.glob("scripts/*.sh")) + [ROOT / "justfile"]
 RECIPE_HEAD = re.compile(r'^@?[A-Za-z0-9_][A-Za-z0-9_-]*(?:\s+[^:\n]*)?:(?!=)')
+
+
+def recipe_names(lines: list) -> dict:
+    """Map each line number to the name of the recipe containing it.
+
+    PR #452 review (P1): authorization has to be per `(file, recipe,
+    product)`. Product granularity still let any *new* recipe compiling a
+    registered product inherit its owner. The scope machinery already
+    knows where each recipe starts; this exposes the name so the
+    invocation record can carry it.
+    """
+    names = {}
+    current = ""
+    for lineno, line in lines:
+        head = RECIPE_HEAD.match(line)
+        if head:
+            current = line.split(":", 1)[0].strip().lstrip("@").split()[0]
+        names[lineno] = current
+    return names
 
 
 def recipe_scopes(lines: list) -> dict:
@@ -1021,13 +1040,22 @@ def scan_script(path: Path) -> dict:
     ]
     rel = path.relative_to(ROOT).as_posix()
     scoped = recipe_scopes(lines) if rel == "justfile" else {}
+    recipe_of = recipe_names(lines) if rel == "justfile" else {}
 
     bindings = {}
     invocations = []
     for lineno, line in lines:
         binding = CC_BINDING.match(line)
         if binding and re.search(r'\$\{?CC\b|(?<![\w-])cc(?![\w-])', binding.group("rhs")):
-            bindings[binding.group("name")] = lineno
+            # PR #452 review (P2): keyed by name alone, the justfile's 75
+            # `CC_BIN` assignments collapsed to the last one, so the
+            # scoped search examined only that recipe and the other 74
+            # could lose their compile without reporting a dead binding.
+            # Key per recipe; the emitted rows still carry the bare name.
+            key = binding.group("name")
+            if rel == "justfile":
+                key = f'{recipe_of.get(lineno, "")}\x00{key}'
+            bindings[key] = lineno
             # PR #450 review (P1): this used to `continue`, so a line that
             # BOTH binds and invokes was only ever counted as a binding.
             # justfile:22547, :22614 and :22654 are
@@ -1051,6 +1079,7 @@ def scan_script(path: Path) -> dict:
                 "line": lineno,
                 "spelling": strip_quotes(head.group("cc")),
                 "query": is_query,
+                "recipe": recipe_of.get(lineno, ""),
                 "inputs": [
                     resolve_input(token, scoped.get(lineno, lines), lineno)
                     for token in inputs
@@ -1060,9 +1089,25 @@ def scan_script(path: Path) -> dict:
 
     referenced = set()
     for name, bound_at in bindings.items():
-        pattern = re.compile(r'\$\{?' + re.escape(name) + r'\}?')
-        for lineno, line in lines:
+        bare = name.split("\x00")[-1]
+        pattern = re.compile(r'\$\{?' + re.escape(bare) + r'\}?')
+        # PR #452 review (P2): the reference search was file-wide. Many
+        # just recipes declare their own `CC_BIN="${CC:-cc}"`, so removing
+        # one recipe's compile left its discovery line looking live
+        # because a DIFFERENT recipe referenced the same name -- the
+        # dead-discovery invariant silently did not hold for the justfile.
+        # A binding is referenced only within the recipe that made it.
+        search = scoped.get(bound_at, lines)
+        for lineno, line in search:
             if lineno == bound_at:
+                # The justfile binds and uses on ONE line:
+                #   CC_BIN="${CC:-cc}"; ...; "$CC_BIN" $CFLAGS_VAL ...
+                # Skipping the whole line calls that binding dead. Skip
+                # only the assignment and search the rest of the line.
+                tail = line.split(";", 1)[1] if ";" in line else ""
+                if tail and pattern.search(tail):
+                    referenced.add(name)
+                    break
                 continue
             if pattern.search(line):
                 referenced.add(name)
@@ -1072,7 +1117,8 @@ def scan_script(path: Path) -> dict:
     return {
         "file": rel,
         "bindings": bindings,
-        "dead_bindings": [{"name": n, "line": bindings[n]} for n in dead],
+        "dead_bindings": [{"name": n.split("\x00")[-1],
+                           "line": bindings[n]} for n in dead],
         "invocations": invocations,
     }
 
@@ -1098,7 +1144,8 @@ def population(report: dict) -> dict:
     unresolved = []
     backend = []
     for inv in invocations:
-        where = {"file": inv["file"], "line": inv["line"]}
+        where = {"file": inv["file"], "line": inv["line"],
+                 "recipe": inv.get("recipe", "")}
         if inv["query"]:
             by_class.setdefault(TOOLCHAIN_QUERY, []).append(where)
             continue
@@ -1123,7 +1170,7 @@ def population(report: dict) -> dict:
     }
 
 
-def inventory_owner(path: str) -> str:
+def inventory_owner(path: str, site: str = "", recipe: str = "") -> str:
     """The owning patch the retirement inventory records for a file.
 
     Read out of the inventory's own tables so the two cannot disagree. The
@@ -1152,6 +1199,32 @@ def inventory_owner(path: str) -> str:
                 continue
             cells = [c for c in row if isinstance(c, str)]
             if not any(path in cell for cell in cells):
+                continue
+            # PR #452 review (P1): matching on the file alone made a cell
+            # naming `justfile` authorize EVERY backend-emitted-C
+            # invocation anywhere in it, including ones with no row --
+            # the inverse of a guard that exists to reject unregistered
+            # consumers. A row authorizes a SITE: the file and the
+            # product it compiles.
+            # PR #452 review: substring again -- `build/runner_final.c`
+            # occurs inside the registered `build/test_runner_final.c`, so
+            # mutating an inventoried recipe to a different product left
+            # validation green. Whole tokens, same as the recipe test.
+            if site and not any(
+                    site == token.strip().rstrip(":")
+                    for cell in cells for token in cell.split()):
+                continue
+            # PR #452 review, third pass: `recipe in cell` matched
+            # "make-test" inside the registered "make-test-suite:" marker,
+            # so an invented recipe inherited the row. Compare whole
+            # tokens with the recipe-header colon stripped.
+            # PR #452 review (P1), second pass: product granularity still
+            # let a NEW recipe compiling a registered product inherit its
+            # owner. A row authorizes one `(file, recipe, product)`, so a
+            # new consumer of the same artifact is still unregistered.
+            if recipe and not any(
+                    recipe == token.strip().rstrip(":")
+                    for cell in cells for token in cell.split()):
                 continue
             for cell in cells:
                 if owner_pattern.match(cell):
@@ -1230,7 +1303,11 @@ def validate() -> dict:
     owners = {}
     unowned = []
     for record in pop["backend_product"]:
-        owner = inventory_owner(record["file"])
+        # The product name is the site identity: `why` reads
+        # "<product> is written by a retired-backend emission".
+        product = record.get("why", "").split(" is written by", 1)[0].strip()
+        owner = inventory_owner(record["file"], product,
+                                record.get("recipe", ""))
         if owner:
             owners[f"{record['file']}:{record['line']}"] = owner
         else:

@@ -10591,7 +10591,7 @@ guard-cranelift-phase11-scalar-expression-parity:
       exit 1
     fi
     driver_abs="$(cd "$(dirname "$driver_bin")" && pwd)/$(basename "$driver_bin")"
-    CC_BIN="${CC:-cc}"
+    # CC_BIN discovery removed (#436): this recipe reads no $CC_BIN
     CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
 
     execute_and_capture() {
@@ -10858,7 +10858,7 @@ guard-cranelift-phase11-local-state-parity:
       exit 1
     fi
     driver_abs="$(cd "$(dirname "$driver_bin")" && pwd)/$(basename "$driver_bin")"
-    CC_BIN="${CC:-cc}"
+    # CC_BIN discovery removed (#436): this recipe reads no $CC_BIN
     CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
 
     execute_and_capture() {
@@ -11157,7 +11157,7 @@ guard-cranelift-phase11-structured-cfg-parity:
       exit 1
     fi
     driver_abs="$(cd "$(dirname "$driver_bin")" && pwd)/$(basename "$driver_bin")"
-    CC_BIN="${CC:-cc}"
+    # CC_BIN discovery removed (#436): this recipe reads no $CC_BIN
     CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
 
     execute_and_capture() {
@@ -11590,7 +11590,7 @@ guard-cranelift-phase11-block-parameter-loop-parity:
       --manifest-path "$rust_manifest"
     driver_bin="$cargo_target/debug/gust-cranelift-experiment"
     driver_abs="$(cd "$(dirname "$driver_bin")" && pwd)/$(basename "$driver_bin")"
-    CC_BIN="${CC:-cc}"
+    # CC_BIN discovery removed (#436): this recipe reads no $CC_BIN
     CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
 
     execute_and_capture() {
@@ -12011,7 +12011,7 @@ guard-cranelift-phase11-direct-call-abi-parity:
       --manifest-path "$rust_manifest"
     driver_bin="$cargo_target/debug/gust-cranelift-experiment"
     driver_abs="$(cd "$(dirname "$driver_bin")" && pwd)/$(basename "$driver_bin")"
-    CC_BIN="${CC:-cc}"
+    # CC_BIN discovery removed (#436): this recipe reads no $CC_BIN
     CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
 
     execute_and_capture() {
@@ -12330,7 +12330,7 @@ guard-cranelift-phase11-module-import-runtime-parity:
       --manifest-path "$rust_manifest"
     driver_bin="$cargo_target/debug/gust-cranelift-experiment"
     driver_abs="$(cd "$(dirname "$driver_bin")" && pwd)/$(basename "$driver_bin")"
-    CC_BIN="${CC:-cc}"
+    # CC_BIN discovery removed (#436): this recipe reads no $CC_BIN
     CFLAGS_VAL="${CFLAGS:--O0 -w -pthread}"
 
     execute_and_capture() {
