@@ -2,7 +2,8 @@
 #include <errno.h>
 #include "runtime/arena.c"
 #include "runtime/scratch.c"
-#include "runtime/fiber.c"
+/* Patch 25.6: fiber.c moved to src/runtime-rs. The unity build now covers
+   six files; the scheduler arrives through the runtime archive. */
 #include "runtime/collections.c"
 #include "runtime/file_io.c"
 #include "runtime/host_io.c"

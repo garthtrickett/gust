@@ -17,7 +17,8 @@ import json
 record = json.load(open("scripts/cranelift_feature_registry.json"))
 print(1 if record.get("phase21_full_compiler_native_qualification", {}).get("status") == "patch21_14_complete" else 0)
 ')"
-expected_runtime_members="arena.o host_io.o file_io.o scratch.o fiber.o "
+# Patch 25.6: fiber.o left the archive with fiber.c.
+expected_runtime_members="arena.o host_io.o file_io.o scratch.o "
 successor_runtime_symbols=()
 if test "$full_compiler_live" = 1; then
   expected_runtime_members="$(python3 -c '

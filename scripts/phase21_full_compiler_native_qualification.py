@@ -88,7 +88,9 @@ def validate() -> dict:
         record.get("runtime_package") == {
             "format": "static_archive",
             "members": [
-                "arena.o", "host_io.o", "file_io.o", "scratch.o", "fiber.o",
+                # Patch 25.6: fiber.o left too -- fiber.c is gone and its
+                # eighteen exports now come from the crate member.
+                "arena.o", "host_io.o", "file_io.o", "scratch.o",
                 # Patch 25.4: approved_scalar_imports.o left the archive
                 # when its fixtures were rehomed to the no_std Rust crate
                 # src/runtime-rs. The archive keeps its name and shape; a
