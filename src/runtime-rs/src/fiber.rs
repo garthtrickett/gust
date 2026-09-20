@@ -122,6 +122,8 @@ pub struct SchedulerShard {
 // only ever dereferenced under `queue`'s lock or by the owning fiber.
 unsafe impl Send for ShardQueue {}
 unsafe impl Sync for SchedulerShard {}
+// The C stores shards in a global array reachable from every thread.
+unsafe impl Send for SchedulerShard {}
 
 thread_local! {
     /// `static GUST_THREAD_LOCAL gust_SchedulerShard* active_shard`.
@@ -193,5 +195,320 @@ pub extern "C" fn gust_yield() {
         // would carry this thread's guard onto another fiber's stack and
         // deadlock the shard the moment that fiber touched the queue.
         gust_fiber_switch(current, &(*shard_ptr).shard_fiber as *const Fiber as *mut Fiber);
+    }
+}
+
+// ---- scheduler lifecycle ------------------------------------------------
+
+/// Shard storage. The C `malloc`s an array and hands out interior pointers
+/// that fibers keep in `Fiber.shard`, so the addresses must be stable for
+/// the scheduler's lifetime. Leaking each shard gives exactly that, and
+/// `destroy` reclaims them explicitly -- matching the C, where the array is
+/// freed only in `gust_scheduler_destroy`.
+static SHARDS: Mutex<Vec<&'static mut SchedulerShard>> = Mutex::new(Vec::new());
+
+/// A shard pointer crossing into its thread. The C passes `&gust_shards[i]`
+/// to `pthread_create` directly; Rust needs the promise spelled out.
+struct ShardPtr(*mut SchedulerShard);
+unsafe impl Send for ShardPtr {}
+
+/// `int get_num_threads_to_use()`.
+///
+/// Exported under its exact C name. It looks internal, but
+/// `phase21_collection_string_native_source.sh` compares the runtime
+/// archive's defined-symbol set EXACTLY, and this name is in that list --
+/// so making it private would delete an expected export and fail the guard
+/// with a symbol-set mismatch that says nothing about the port.
+#[no_mangle]
+pub extern "C" fn get_num_threads_to_use() -> i32 {
+    num_threads_to_use() as i32
+}
+
+fn num_threads_to_use() -> usize {
+    if let Ok(v) = std::env::var("GUST_THREADS") {
+        // The C uses atoi, which yields 0 on garbage and is then rejected by
+        // `val > 0`. parse().ok() rejects the same inputs without the
+        // silent-zero step.
+        if let Ok(n) = v.parse::<i32>() {
+            if n > 0 {
+                return n as usize;
+            }
+        }
+    }
+    std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4)
+}
+
+fn empty_shard_fiber() -> Fiber {
+    Fiber {
+        sp: std::ptr::null_mut(),
+        stack_base: std::ptr::null_mut(),
+        stack_size: 0,
+        state: FiberState::Running,
+        parent: std::ptr::null_mut(),
+        next: std::ptr::null_mut(),
+        shard: std::ptr::null_mut(),
+        active_arena: std::ptr::null_mut(),
+    }
+}
+
+/// `void gust_scheduler_init(int num_shards)`.
+#[no_mangle]
+pub extern "C" fn gust_scheduler_init(num_shards: i32) {
+    let n = if num_shards <= 0 { 1 } else { num_shards as usize };
+    SCHEDULER_RUNNING.store(true, Ordering::SeqCst);
+    let mut shards = SHARDS.lock().unwrap_or_else(|e| e.into_inner());
+    for i in 0..n {
+        let shard: &'static mut SchedulerShard = Box::leak(Box::new(SchedulerShard {
+            id: i as i32,
+            thread: None,
+            queue: Mutex::new(ShardQueue {
+                run_queue_head: std::ptr::null_mut(),
+                run_queue_tail: std::ptr::null_mut(),
+                active_fiber: std::ptr::null_mut(),
+            }),
+            shard_fiber: empty_shard_fiber(),
+        }));
+        let ptr = ShardPtr(shard as *mut SchedulerShard);
+        shard.thread = Some(std::thread::spawn(move || {
+            let p = ptr;
+            shard_loop(p.0);
+        }));
+        shards.push(shard);
+    }
+}
+
+/// `void gust_scheduler_destroy()`.
+///
+/// Drains before stopping, in that order. Setting `running = false` first
+/// would strand queued fibers and let the host observe a completed scheduler
+/// with work still pending -- the C drains first for the same reason.
+#[no_mangle]
+pub extern "C" fn gust_scheduler_destroy() {
+    loop {
+        let mut work_remaining = PENDING_FIBERS.load(Ordering::SeqCst) > 0;
+        {
+            let shards = SHARDS.lock().unwrap_or_else(|e| e.into_inner());
+            for shard in shards.iter() {
+                let q = lock_queue(shard);
+                if !q.run_queue_head.is_null() || !q.active_fiber.is_null() {
+                    work_remaining = true;
+                }
+            }
+        }
+        if !work_remaining {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_micros(1000));
+    }
+
+    SCHEDULER_RUNNING.store(false, Ordering::SeqCst);
+    let mut shards = SHARDS.lock().unwrap_or_else(|e| e.into_inner());
+    for shard in shards.iter_mut() {
+        if let Some(handle) = shard.thread.take() {
+            let _ = handle.join();
+        }
+        let mut curr = lock_queue(shard).run_queue_head;
+        while !curr.is_null() {
+            // SAFETY: the shard's thread has joined, so nothing else holds
+            // or will observe these fibers.
+            let next = unsafe { (*curr).next };
+            unsafe { gust_fiber_free(curr) };
+            curr = next;
+        }
+    }
+    // Reclaim the leaked shards now that their threads are joined.
+    for shard in shards.drain(..) {
+        drop(unsafe { Box::from_raw(shard as *mut SchedulerShard) });
+    }
+}
+
+// ---- fiber lifecycle ----------------------------------------------------
+
+/// `gust_Fiber* gust_fiber_create(size_t, void (*)(void*), void*)`.
+///
+/// The stack layout is the delicate part and is NOT a translation choice:
+/// it must match, register for register, what `gust_context_switch` pops.
+/// That assembly moved to `fiber_asm.rs` byte-identically in this patch, so
+/// the ordering below is copied from the C rather than reasoned out afresh.
+///
+/// # Safety
+/// `entry_fn` must remain valid until the fiber runs, and `arg` must outlive
+/// the fiber or be owned by it.
+#[no_mangle]
+pub unsafe extern "C" fn gust_fiber_create(
+    stack_size: usize,
+    entry_fn: Option<extern "C" fn(*mut c_void)>,
+    arg: *mut c_void,
+) -> *mut Fiber {
+    let stack_size = if stack_size < 16384 { 16384 } else { stack_size };
+    let layout = match std::alloc::Layout::from_size_align(stack_size, 16) {
+        Ok(l) => l,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let stack_base = std::alloc::alloc(layout);
+    if stack_base.is_null() {
+        return std::ptr::null_mut();
+    }
+    let fiber = Box::into_raw(Box::new(Fiber {
+        sp: std::ptr::null_mut(),
+        stack_base: stack_base as *mut c_void,
+        stack_size,
+        state: FiberState::Ready,
+        parent: std::ptr::null_mut(),
+        next: std::ptr::null_mut(),
+        shard: std::ptr::null_mut(),
+        active_arena: std::ptr::null_mut(),
+    }));
+
+    // 16-byte align the top, as the C does with `& ~15UL`.
+    let top = ((stack_base as usize + stack_size) & !15usize) as *mut u64;
+    let entry = entry_fn.map(|f| f as usize).unwrap_or(0) as u64;
+
+    #[cfg(target_arch = "x86_64")]
+    {
+        let mut sp = top;
+        sp = sp.offset(-1); *sp = gust_fiber_entry_wrapper as usize as u64;
+        sp = sp.offset(-1); *sp = 0;                       // rbp
+        sp = sp.offset(-1); *sp = 0;                       // rbx
+        sp = sp.offset(-1); *sp = entry;                   // r12
+        sp = sp.offset(-1); *sp = arg as u64;              // r13
+        sp = sp.offset(-1); *sp = fiber as u64;            // r14
+        sp = sp.offset(-1); *sp = 0;                       // r15
+        (*fiber).sp = sp as *mut c_void;
+    }
+    #[cfg(target_arch = "aarch64")]
+    {
+        let sp = top.offset(-12);
+        *sp.offset(11) = gust_fiber_entry_wrapper as usize as u64;
+        for i in 3..=10 { *sp.offset(i) = 0; }
+        *sp.offset(2) = fiber as u64;
+        *sp.offset(1) = arg as u64;
+        *sp.offset(0) = entry;
+        (*fiber).sp = sp as *mut c_void;
+    }
+    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+    {
+        (*fiber).sp = top as *mut c_void;
+    }
+    fiber
+}
+
+/// `void gust_fiber_free(gust_Fiber*)`.
+///
+/// # Safety
+/// `fiber` must have come from `gust_fiber_create` and must not be running.
+#[no_mangle]
+pub unsafe extern "C" fn gust_fiber_free(fiber: *mut Fiber) {
+    if fiber.is_null() {
+        return;
+    }
+    let f = Box::from_raw(fiber);
+    if !f.stack_base.is_null() {
+        if let Ok(layout) = std::alloc::Layout::from_size_align(f.stack_size, 16) {
+            std::alloc::dealloc(f.stack_base as *mut u8, layout);
+        }
+    }
+}
+
+extern "C" {
+    fn gust_fiber_entry_wrapper();
+}
+
+// ---- the shard loop -----------------------------------------------------
+
+/// Pin this thread to `core_id`.
+///
+/// `std` has no affinity API, and `cpu_set_t` is another OPAQUE libc type --
+/// the same trap that decided `no_std` against us. Avoided by going to the
+/// KERNEL ABI instead of the libc struct: `sched_setaffinity` takes a size
+/// in bytes and a bitmask, both stable, so a 128-byte buffer is correct
+/// whatever libc declares `cpu_set_t` to be.
+///
+/// Linux only. The C also pinned on macOS via `thread_policy_set`, which has
+/// no syscall equivalent; that quadrant is unpinned here and recorded rather
+/// than silently dropped -- affinity is an optimisation, not a correctness
+/// requirement, and three of four quadrants are unbuilt anyway.
+#[cfg(target_os = "linux")]
+fn pin_to_core(core_id: i32) {
+    extern "C" {
+        fn sched_setaffinity(pid: i32, cpusetsize: usize, mask: *const u64) -> i32;
+    }
+    if core_id < 0 || core_id >= 1024 {
+        return;
+    }
+    let mut mask = [0u64; 16]; // 1024 bits, glibc's cpu_set_t size
+    mask[(core_id / 64) as usize] = 1u64 << (core_id % 64);
+    // Ignoring the result matches the C, which also ignores it: failing to
+    // pin costs throughput, never correctness.
+    unsafe { sched_setaffinity(0, std::mem::size_of_val(&mask), mask.as_ptr()) };
+}
+
+#[cfg(not(target_os = "linux"))]
+fn pin_to_core(_core_id: i32) {}
+
+/// `void* gust_shard_loop(void* arg)`.
+///
+/// Kept exported with the C signature for the same reason as
+/// `get_num_threads_to_use`: it is in the exact symbol list that guard
+/// compares. Rust spawns threads through `std::thread`, so nothing calls
+/// this as a thread entry point any more -- but the runtime's export
+/// surface is part of its shape, and dropping a symbol is as much a change
+/// as adding one.
+///
+/// # Safety
+/// `arg` must be a shard pointer from `gust_scheduler_init`.
+#[no_mangle]
+pub unsafe extern "C" fn gust_shard_loop(arg: *mut c_void) -> *mut c_void {
+    shard_loop(arg as *mut SchedulerShard);
+    std::ptr::null_mut()
+}
+
+fn shard_loop(shard_ptr: *mut SchedulerShard) {
+    set_active_shard(shard_ptr);
+    // SAFETY: shards are leaked by `init` and reclaimed by `destroy` only
+    // after this thread has joined.
+    let shard = unsafe { &*shard_ptr };
+    pin_to_core(shard.id);
+
+    while SCHEDULER_RUNNING.load(Ordering::SeqCst) {
+        let next = {
+            let mut q = lock_queue(shard);
+            let next = q.run_queue_head;
+            if !next.is_null() {
+                unsafe {
+                    q.run_queue_head = (*next).next;
+                    if q.run_queue_head.is_null() {
+                        q.run_queue_tail = std::ptr::null_mut();
+                    }
+                    (*next).next = std::ptr::null_mut();
+                    // The C transitions state INSIDE the critical section
+                    // "to prevent TOCTOU races during scheduler shutdown";
+                    // destroy() reads active_fiber under the same lock, so
+                    // publishing the fiber and its state together is what
+                    // stops destroy seeing an empty shard with work in hand.
+                    (*next).parent = &shard.shard_fiber as *const Fiber as *mut Fiber;
+                    (*next).shard = shard_ptr as *mut c_void;
+                    (*next).state = FiberState::Running;
+                }
+                q.active_fiber = next;
+            }
+            next
+        };
+
+        if next.is_null() {
+            // `poll(NULL, 0, 1)` in the C: a 1 ms sleep, not a spin.
+            std::thread::sleep(std::time::Duration::from_millis(1));
+            continue;
+        }
+
+        unsafe {
+            gust_fiber_switch(&shard.shard_fiber as *const Fiber as *mut Fiber, next);
+        }
+        lock_queue(shard).active_fiber = std::ptr::null_mut();
+
+        if unsafe { (*next).state } == FiberState::Dead {
+            PENDING_FIBERS.fetch_sub(1, Ordering::SeqCst);
+            unsafe { gust_fiber_free(next) };
+        }
     }
 }

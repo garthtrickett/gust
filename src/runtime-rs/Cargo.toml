@@ -15,6 +15,20 @@ crate-type = ["staticlib"]
 
 [profile.release]
 panic = "abort"
+# Patch 25.6: ONE codegen unit, deliberately.
+#
+# Patch 25.4 extracts a single archive member -- the one defining the
+# fixtures -- to keep core and compiler_builtins out of the runtime
+# archive. That was correct while the crate was one CGU. Adding the
+# scheduler split it into several, and measured, gust_yield landed in a
+# DIFFERENT member than tiny_host_add_i32: the extraction silently
+# dropped it, and the failure would have surfaced much later as an
+# undefined symbol at link.
+#
+# One CGU makes the crate one member again, so the extraction stays
+# correct by construction rather than by luck. It also makes the object
+# deterministic, which is what Patch 25.2 fixes the artifact set for.
+codegen-units = 1
 
 [profile.dev]
 panic = "abort"
