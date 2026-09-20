@@ -244,6 +244,12 @@ $(PHASE25_RUNTIME_RS): src/runtime-rs/src/lib.rs src/runtime-rs/Cargo.toml
 # CONTENT -- the one defining the fixtures -- because both hashes in its
 # filename change on every rebuild, and it fails loudly when absent: an
 # `|| true` here would make a missing fixture look like a built one.
+# Its exports are then narrowed to the three fixtures. The crate's codegen
+# unit also defines Rust's panic handler, whose symbol carries a CONTENT
+# HASH -- three parity guards compare the archive's defined-symbol set
+# exactly, and a hash that moves whenever the crate changes would make
+# those lists churn forever. The C file exported exactly three symbols;
+# so does its replacement.
 PHASE25_RUNTIME_RS_OBJ = build/phase25-runtime-rs/gust_runtime_rs_fixtures.o
 
 $(PHASE25_RUNTIME_RS_OBJ): $(PHASE25_RUNTIME_RS)
@@ -258,7 +264,12 @@ $(PHASE25_RUNTIME_RS_OBJ): $(PHASE25_RUNTIME_RS)
 	if [ -z "$$found" ]; then \
 		echo 'no src/runtime-rs member defines tiny_host_add_i32' >&2; exit 1; \
 	fi; \
-	cp "$$found" $@
+	cp "$$found" $@.tmp; \
+	objcopy --keep-global-symbol=tiny_host_add_one_i32 \
+	        --keep-global-symbol=tiny_host_add_i32 \
+	        --keep-global-symbol=tiny_host_is_positive_i32 \
+	        $@.tmp $@; \
+	rm -f $@.tmp
 
 $(PHASE21_RUNTIME_PACKAGE): $(PHASE21_RUNTIME_OBJECTS) $(PHASE25_RUNTIME_RS_OBJ)
 	@rm -f build/.gust-runtime-package.a.tmp
