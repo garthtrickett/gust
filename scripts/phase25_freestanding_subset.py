@@ -55,6 +55,61 @@ EXPORT_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_ *]*?\b([a-z_][A-Za-z0-9_]*)\s*\('
 FORBIDDEN_FLOOR = frozenset(['gust_context_switch', 'gust_fiber_create', 'gust_fiber_entry_wrapper', 'gust_fiber_exit', 'gust_fiber_free', 'gust_fiber_switch', 'gust_scheduler_destroy', 'gust_scheduler_init', 'gust_scheduler_spawn', 'gust_shard_loop', 'gust_yield', 'os_ArenaAlloc', 'os_Arena_Free', 'os_Arena_New', 'os_Arena_Validate', 'os_Args', 'os_CloseDir', 'os_ExecutablePath', 'os_FileExecutable', 'os_FileExists', 'os_GetEnv', 'os_GetThreadScratch_raw', 'os_HashMapClear_impl', 'os_HashMapContains_impl', 'os_HashMapRef_impl', 'os_HashMapRemove_impl', 'os_LogError', 'os_LogInt', 'os_LogStr', 'os_MockPayload', 'os_NativeObjectFormat', 'os_NativeTargetTriple', 'os_OpenDir', 'os_PathAbsolute', 'os_PathDir', 'os_ReadDir', 'os_ReadFile', 'os_RemoveFile', 'os_RunProcess', 'os_ScratchAlloc', 'os_ScratchReset', 'os_SetThreadScratch', 'os_System', 'os_WriteFile', 'os_copy_c_string_to_arena', 'os_path_join', 'os_read_stream_to_arena', 'os_slice_to_c_string', 'std_Channel_Alloc', 'std_Channel_Recv_impl', 'std_Channel_Send_impl', 'std_Clone_str', 'std_GenerationalSwap', 'std_Mutex_Alloc', 'std_Mutex_Lock_impl', 'std_Mutex_Unlock_impl', 'std_PoolAlloc_impl', 'std_PoolFree_impl', 'std_is_alpha', 'std_is_digit', 'std_is_whitespace', 'std_parse_int', 'std_str_byte_at', 'std_str_eq', 'std_str_find', 'std_str_slice', 'std_str_split', 'std_str_trim'])
 
 
+# The subset asks "does runtime code call UPWARD", not "does runtime code
+# call the runtime". A flat forbidden set answers the second question, and so
+# would reject a Gust scratch.c for calling os_ArenaAlloc -- which is the
+# intended layering, not a violation. Derived from the C sources, not
+# proposed: arena depends on nothing, five files depend only on arena, and
+# fiber depends on scratch. No mutual pairs, so the order is a real DAG.
+LAYERS = {
+    "arena": 0,
+    "scratch": 1, "collections": 1,
+    "strings": 2, "host_io": 2, "file_io": 2,
+    "fiber": 3,
+}
+
+# Injected by codegen into every `while` loop and every recursive function
+# (codegen.gst:4018, :3870), unconditionally and with no suppression flag.
+# It is defined in fiber.c -- layer 3 -- so EVERY freestanding object calls
+# upward through no choice of its own, and a Gust arena.c with one loop would
+# close arena -> fiber -> scratch -> arena. Exempted here so the layer check
+# reports what the author controls; Patch 25.6 is what actually removes it,
+# which is why 25.6 now precedes 25.5.
+CODEGEN_INJECTED = frozenset({"gust_yield"})
+
+
+def symbol_layer(symbol: str) -> int:
+    """The layer of the file defining a runtime symbol, or -1 if unknown."""
+    for path in sorted((ROOT / "src" / "runtime").glob("*.c")):
+        text = path.read_text(encoding="utf-8", errors="replace")
+        if symbol in EXPORT_RE.findall(text):
+            return LAYERS.get(path.stem, -1)
+    return -1
+
+
+def object_layer(obj) -> int:
+    """The layer a freestanding object belongs to, from its stem."""
+    return LAYERS.get(obj.stem, -1)
+
+
+def upward_calls(obj, referenced: set, forbidden: set) -> list:
+    """Calls to the object's OWN layer or higher -- the real violation.
+
+    A downward call is the layering working. An unplaced object (-1) is
+    judged strictly: everything runtime it touches is a violation, because
+    an object whose layer nobody declared cannot be shown to respect one.
+    """
+    mine = object_layer(obj)
+    bad = []
+    for symbol in sorted(referenced & forbidden):
+        if symbol in CODEGEN_INJECTED:
+            continue
+        theirs = symbol_layer(symbol)
+        if mine < 0 or theirs < 0 or theirs >= mine:
+            bad.append(symbol)
+    return bad
+
+
 def runtime_exports() -> set:
     """Every symbol the runtime exports -- the set runtime code may not call.
 
@@ -134,7 +189,7 @@ def report() -> dict:
         "forbidden_symbols": sorted(runtime_exports()),
         "freestanding_objects": [p.name for p in objects],
         "violations": {
-            p.name: sorted(referenced_symbols(p) & runtime_exports())
+            p.name: upward_calls(p, referenced_symbols(p), runtime_exports())
             for p in objects
         },
     }
