@@ -101,6 +101,7 @@
     "issue447_resolver_scoping",
     "issue431_full_compiler_baseline",
     "patch251_no_c_falsifier",
+    "patch254_runtime_crate",
     "issue451_inventory_ownership",
     "issue436_justfile_population",
     "issue436_provenance_resolver",

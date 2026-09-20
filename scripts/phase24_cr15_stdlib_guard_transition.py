@@ -2333,6 +2333,33 @@ def normalize_phase23_text_surfaces(
                     "Patch 25.1 added text surface does not match its "
                     f"registered row: {path}")
         rows = [r for r in rows if r["path"] not in fs_added]
+    # Patch 25.4 is the newest successor, so it runs FIRST. It carries the
+    # Makefile (the C fixture's object left the runtime object list) and
+    # the phase21 qualification guard (its runtime_package members moved).
+    crate_surface = registry.get(
+        "patch254_runtime_crate", {}).get("text_surface_successor")
+    if crate_surface is not None:
+        require(crate_surface.get("contract_version") ==
+                "patch254_runtime_crate_text_surface_successor_v1" and
+                crate_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Patch 25.4 runtime crate text surface successor drifted")
+        cr_paths = list(crate_surface["registered_changed_paths"])
+        cr_pre = {r["path"]: r for r
+                  in crate_surface["previous_changed_text_surfaces"]}
+        cr_post = {r["path"]: r for r
+                   in crate_surface["current_changed_text_surfaces"]}
+        require(sorted(cr_pre) == sorted(cr_paths) == sorted(cr_post),
+                "Patch 25.4 registered paths and rows disagree")
+        cr_live = {r["path"]: r for r in rows if r["path"] in cr_paths}
+        require(sorted(cr_live) == sorted(cr_paths),
+                "Patch 25.4 registered text surface is missing from the scan")
+        require(cr_live in (cr_pre, cr_post),
+                "Patch 25.4 changed text surfaces are partial or "
+                "substituted: the live rows match neither the complete "
+                "predecessor state nor the complete successor state "
+                f"({sorted(p for p in cr_paths if cr_live[p] != cr_post[p])} differ from post)")
+        rows = [dict(cr_pre.get(r["path"], r)) for r in rows]
         rows.sort(key=lambda r: str(r["path"]))
         by_path = {r["path"]: r for r in rows}
 
