@@ -109,6 +109,7 @@ TOP_FIELDS = {
     "issue437_parity_residue_adjudication",
     "phase24_16_residue_audit",
     "phase25_roadmap_draft",
+    "phase258_release_mechanics",
     "phase25_bootstrap_seed_policy",
     "phase24_closure",
     "phase398_retained_spelling_removal",
