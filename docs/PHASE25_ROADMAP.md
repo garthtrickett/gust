@@ -1,4 +1,4 @@
-# Phase 25 — Bootstrap and Residual C Retirement · **DRAFT, NOT ACTIVATED**
+# Phase 25 — Bootstrap and Residual C Retirement · **ACTIVATED 2026-09-20**
 
 **Lane:** Cranelift. Branches follow `codex/phase25-<patch>-<slug>`.
 
@@ -8,9 +8,16 @@ This is the patch breakdown Phase 25 did not have. `docs/PHASE25_BOOTSTRAP_SEED_
 decides *what* and *in what order*; it is a decision record, not a task list.
 This file is the task list.
 
-**It is a draft and Phase 25 is not activated.** `TASK.md` states that "later
-phases still need their own activation", and Phase 24's activation explicitly
-does not authorize Phase 25 bootstrap-route work. Activation is the operator's.
+**Phase 25 was activated by the operator on 2026-09-20**, which is what
+`TASK.md`'s "later phases still need their own activation" requires and what
+Phase 24's activation explicitly withheld.
+
+**`TASK.md` has not yet been updated and still names Phase 24 as the active
+Cranelift roadmap.** That contradiction is real and is Patch 25.12's work:
+127 scripts read `TASK.md` and several assert an immutable Phase N record,
+so moving the active-roadmap pointer needs its own patch and a full sweep.
+Until then this file is the Phase 25 task list and `TASK.md` is the Phase 24
+record; a reader who needs the active roadmap should read both.
 
 **Its lane ownership is unresolved, and that is flagged rather than
 assumed.** `AGENTS.md:10-14` gives Docs/vision the `docs/` set while stating it

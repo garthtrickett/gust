@@ -41,7 +41,12 @@ def make_cc_recipes() -> list:
     text = (ROOT / "Makefile").read_text(encoding="utf-8")
     return [
         n for n, line in enumerate(text.splitlines(), 1)
-        if re.match(r'^\s*\$[({]CC[)}]', line)
+        # Make command prefixes -- `@` silent, `-` ignore-errors, `+`
+        # always-execute -- sit before the compiler reference. Requiring
+        # $(CC) at the start missed Makefile:252's `@${CC} ...`, so this
+        # reported 11 lines where the tree has 12. A miscount in the patch
+        # whose whole purpose is measurement.
+        if re.match(r'^\s*[-@+]*\s*\$[({]CC[)}]', line)
     ]
 
 
@@ -59,13 +64,21 @@ def tree_sitter_sites() -> list:
 def make_test_reaches_tree_sitter() -> bool:
     """The falsifier for the exception: if `make test` ever depends on it."""
     text = (ROOT / "Makefile").read_text(encoding="utf-8")
-    match = re.search(r'^test:(.*)$', text, re.MULTILINE)
+    # Prerequisites can be wrapped with a trailing backslash. Reading only
+    # the first physical line would let `test: gust require_just \` followed
+    # by `test_tree_sitter` run the grammar compiler while this reported the
+    # exception intact.
+    match = re.search(r'^test:((?:[^\n\\]|\\\n?)*)', text, re.MULTILINE)
     return bool(match) and "test_tree_sitter" in match.group(1)
 
 
 def workflows_reach_tree_sitter() -> list:
     found = subprocess.run(
-        ["grep", "-rl", "tree-sitter", str(ROOT / ".github" / "workflows")],
+        # `make test_tree_sitter` contains no "tree-sitter" substring, so
+        # searching only the hyphenated CLI name would miss a CI route to
+        # the grammar compiler entirely.
+        ["grep", "-rlE", "tree-sitter|test_tree_sitter",
+         str(ROOT / ".github" / "workflows")],
         capture_output=True, text=True,
     ).stdout.split()
     return [Path(p).name for p in found]

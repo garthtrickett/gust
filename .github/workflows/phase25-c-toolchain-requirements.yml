@@ -21,6 +21,12 @@ on:
       - 'scripts/phase25_c_toolchain_requirements.py'
       - 'docs/PHASE25_ROADMAP.md'
 
+# Branch-keyed concurrency: superseded PR runs are cancelled so they stop
+# consuming runner capacity, and main is never cancelled.
+concurrency:
+  group: phase25-c-toolchain-requirements-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 permissions:
   contents: read
 
