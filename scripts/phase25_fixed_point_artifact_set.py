@@ -72,6 +72,30 @@ def driver_emits_debug_info() -> bool:
     return bool(re.search(r'debug_info|DWARF|debuginfo|emit_debug', text))
 
 
+def driver_applies_remap() -> bool:
+    """Whether a build-time path remap exists in the driver at all.
+
+    Measured 2026-09-20: it does not. REMAP_PREFIX is a pinned constant that
+    nothing applies, so validating its SHAPE says nothing about its effect --
+    a well-formed constant is well-formed whether or not it is used.
+
+    That is tolerable only because the remap is not needed yet. An object
+    emitted through the native route was checked for the checkout path and
+    contained none: the paths the remap exists to erase do not reach the
+    artifact today, for the same reason VACUOUS_TODAY holds -- no debug info.
+
+    So this is the remap clause's falsifier, and it is the mirror of the
+    debug-info one. It fires when a remap APPEARS, because at that moment the
+    prefix stops being inert: it must then be shown to be applied and the
+    comparison must be exercised, not merely declared.
+    """
+    driver = ROOT / "compiler" / "experiments" / "cranelift" / "src" / "main.rs"
+    if not driver.is_file():
+        return False
+    text = driver.read_text(encoding="utf-8", errors="replace")
+    return bool(re.search(r'remap|prefix_map|path_prefix', text))
+
+
 def compiler_sources() -> list:
     return sorted(p.name for p in (ROOT / "compiler").glob("*.gst"))
 
@@ -85,6 +109,7 @@ def report() -> dict:
         "sections_in_scope": "all emitted sections, debug info included",
         "vacuous_today": list(VACUOUS_TODAY),
         "driver_emits_debug_info": driver_emits_debug_info(),
+        "driver_applies_remap": driver_applies_remap(),
     }
 
 
@@ -104,9 +129,16 @@ def validate() -> None:
             "already covers every emitted section, but this record said the "
             "clause was inert -- re-measure determinism WITH debug info "
             "before relying on the fixed point.")
+    # Inverts: the day a remap exists, a pinned-but-unapplied prefix stops
+    # being inert and starts being a claim this guard has not checked.
+    require(not record["driver_applies_remap"],
+            "the Cranelift driver now has a path remap, so REMAP_PREFIX is no "
+            "longer an inert constant. Prove it is actually applied and "
+            "exercise the two-build comparison -- validating the constant's "
+            "shape was only defensible while nothing applied it.")
     print("guard-cranelift-phase25-fixed-point-artifact-set: ok "
           f"({record['compiler_source_count']} compiler sources, remap "
-          f"{REMAP_PREFIX}, debug-info clause vacuous today)")
+          f"{REMAP_PREFIX} declared but not yet applied, debug-info and remap clauses both vacuous today)")
 
 
 def main() -> int:
