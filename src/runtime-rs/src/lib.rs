@@ -42,3 +42,5 @@ pub extern "C" fn tiny_host_add_i32(left: i32, right: i32) -> i32 {
 pub extern "C" fn tiny_host_is_positive_i32(value: i32) -> i32 {
     i32::from(value > 0)
 }
+
+mod fiber_asm;
