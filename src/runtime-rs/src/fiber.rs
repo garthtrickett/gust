@@ -367,7 +367,7 @@ pub unsafe extern "C" fn gust_fiber_create(
     #[cfg(target_arch = "x86_64")]
     {
         let mut sp = top;
-        sp = sp.offset(-1); *sp = gust_fiber_entry_wrapper as usize as u64;
+        sp = sp.offset(-1); *sp = (gust_fiber_entry_wrapper as unsafe extern "C" fn()) as usize as u64;
         sp = sp.offset(-1); *sp = 0;                       // rbp
         sp = sp.offset(-1); *sp = 0;                       // rbx
         sp = sp.offset(-1); *sp = entry;                   // r12
@@ -379,7 +379,7 @@ pub unsafe extern "C" fn gust_fiber_create(
     #[cfg(target_arch = "aarch64")]
     {
         let sp = top.offset(-12);
-        *sp.offset(11) = gust_fiber_entry_wrapper as usize as u64;
+        *sp.offset(11) = (gust_fiber_entry_wrapper as unsafe extern "C" fn()) as usize as u64;
         for i in 3..=10 { *sp.offset(i) = 0; }
         *sp.offset(2) = fiber as u64;
         *sp.offset(1) = arg as u64;
