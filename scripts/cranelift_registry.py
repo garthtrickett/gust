@@ -103,6 +103,7 @@ TOP_FIELDS = {
     "phase24_15_package_docs_registry",
     "issue447_resolver_scoping",
     "issue431_full_compiler_baseline",
+    "patch254_runtime_crate",
     "issue451_inventory_ownership",
     "issue436_justfile_population",
     "issue436_provenance_resolver",
