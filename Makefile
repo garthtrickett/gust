@@ -254,22 +254,19 @@ PHASE25_RUNTIME_RS_OBJ = build/phase25-runtime-rs/gust_runtime_rs_fixtures.o
 
 $(PHASE25_RUNTIME_RS_OBJ): $(PHASE25_RUNTIME_RS)
 	@rm -rf build/phase25-runtime-rs
-	@mkdir -p build/phase25-runtime-rs/members
-	cd build/phase25-runtime-rs/members && ar x ../../../$(PHASE25_RUNTIME_RS)
-	@found=''; for o in build/phase25-runtime-rs/members/*.o; do \
-		if nm --defined-only "$$o" 2>/dev/null | grep -q ' T tiny_host_add_i32$$'; then \
-			found="$$o"; break; \
-		fi; \
-	done; \
-	if [ -z "$$found" ]; then \
+	@mkdir -p build/phase25-runtime-rs
+	@member=$$(nm --print-armap $(PHASE25_RUNTIME_RS) 2>/dev/null \
+		| awk '/^Archive index:/{a=1;next} a && $$1=="tiny_host_add_i32"{print $$NF; exit}'); \
+	if [ -z "$$member" ]; then \
 		echo 'no src/runtime-rs member defines tiny_host_add_i32' >&2; exit 1; \
 	fi; \
-	cp "$$found" $@.tmp; \
+	cd build/phase25-runtime-rs && ar x ../../$(PHASE25_RUNTIME_RS) "$$member" \
+		&& mv "$$member" member.o
 	objcopy --keep-global-symbol=tiny_host_add_one_i32 \
 	        --keep-global-symbol=tiny_host_add_i32 \
 	        --keep-global-symbol=tiny_host_is_positive_i32 \
-	        $@.tmp $@; \
-	rm -f $@.tmp
+	        build/phase25-runtime-rs/member.o $@
+	@rm -f build/phase25-runtime-rs/member.o
 
 $(PHASE21_RUNTIME_PACKAGE): $(PHASE21_RUNTIME_OBJECTS) $(PHASE25_RUNTIME_RS_OBJ)
 	@rm -f build/.gust-runtime-package.a.tmp
