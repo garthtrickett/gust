@@ -913,11 +913,11 @@ FILE_ROWS = [
     # recipe compiling that product inherit the owner. A row authorizes
     # one site.
     ('justfile', 'make-test-suite:',
-     'phase25', 'retire-with-emitter build/test_runner_final.c'),
+     'phase25', 'retire-with-emitter test_runner_final.c'),
     ('justfile', 'make-test-suite-parallel:',
-     'phase25', 'retire-with-emitter build/test_runner_final.c'),
+     'phase25', 'retire-with-emitter test_runner_final.c'),
     ('justfile', 'run-step52-positive-batch:',
-     'phase25', 'retire-with-emitter build/test_runner_step52_positive_final.c'),
+     'phase25', 'retire-with-emitter test_runner_step52_positive_final.c'),
 
     # (path, needle, owner_patch, action)
     ("compiler/test_runner_entry.gst",

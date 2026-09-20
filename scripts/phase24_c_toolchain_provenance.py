@@ -1206,7 +1206,13 @@ def inventory_owner(path: str, site: str = "", recipe: str = "") -> str:
             # the inverse of a guard that exists to reject unregistered
             # consumers. A row authorizes a SITE: the file and the
             # product it compiles.
-            if site and not any(site in cell for cell in cells):
+            # PR #452 review: substring again -- `build/runner_final.c`
+            # occurs inside the registered `build/test_runner_final.c`, so
+            # mutating an inventoried recipe to a different product left
+            # validation green. Whole tokens, same as the recipe test.
+            if site and not any(
+                    site == token.strip().rstrip(":")
+                    for cell in cells for token in cell.split()):
                 continue
             # PR #452 review, third pass: `recipe in cell` matched
             # "make-test" inside the registered "make-test-suite:" marker,
