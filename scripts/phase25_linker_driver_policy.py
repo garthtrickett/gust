@@ -55,12 +55,41 @@ def require(condition: bool, message: str) -> None:
         raise SystemExit(1)
 
 
-def cc_is_a_default_not_a_constant() -> bool:
-    """`cc` must remain reachable through $CC, not be hardcoded or removed."""
+def worker_text() -> str:
     if not WORKER.is_file():
-        return False
-    text = WORKER.read_text(encoding="utf-8", errors="replace")
-    return bool(re.search(r'var_os\("CC"\)', text))
+        return ""
+    return WORKER.read_text(encoding="utf-8", errors="replace")
+
+
+def cc_reaches_the_linker() -> bool:
+    """$CC must reach the linker invocation, not merely be read somewhere.
+
+    A bare search for `var_os("CC")` is satisfied by a refactor that reads
+    the variable into an unused binding and hardcodes the driver -- the
+    contract would be broken and the guard still green. So both ends of the
+    data flow are checked: the read must BIND `linker_driver`, and the
+    command must be constructed FROM that binding.
+    """
+    text = worker_text()
+    binds = re.search(
+        r'let\s+linker_driver\s*(?::[^=]+)?=\s*\n?\s*env::var_os\("CC"\)',
+        text)
+    invokes = "Command::new(&request.linker_driver)" in text
+    return bool(binds) and invokes
+
+
+def worker_mentions_musl() -> bool:
+    """The falsifier for both policy claims below.
+
+    `user_default` and `no_silent_fallback` used to be hardcoded literals
+    that validate() re-read, so the guard stayed green for exactly the
+    regressions Patch 25.11 exists to prevent. They are now derived from one
+    measured fact: the worker does not mention musl anywhere, so it cannot
+    default to it and cannot silently fall back to it. The day musl appears
+    in the worker, that derivation stops holding and must be redone against
+    whatever the new code does.
+    """
+    return "musl" in worker_text().lower()
 
 
 def report() -> dict:
@@ -68,13 +97,14 @@ def report() -> dict:
         "version": "phase25_linker_driver_policy_v1",
         "cc_required": False,
         "cc_supported": True,
-        "cc_reachable_through_env": cc_is_a_default_not_a_constant(),
+        "cc_reaches_the_linker": cc_reaches_the_linker(),
+        "worker_mentions_musl": worker_mentions_musl(),
         "gate_target": MUSL_TARGET,
         "gate_blocked_until": ["25.5", "25.6"],
         "gate_blocker": "the runtime archive is glibc-bound and cannot link "
                         "against musl (Patch 25.0)",
         "user_default": "host native target; musl is opt-in via --target",
-        "no_silent_fallback": True,
+        "no_silent_fallback": not worker_mentions_musl(),
     }
 
 
@@ -83,16 +113,22 @@ def validate() -> None:
     # The whole decision is "not required, still supported". Losing $CC
     # would quietly convert it into "forbidden", which regresses every gnu
     # user and packager to no purpose the gate asks for.
-    require(record["cc_reachable_through_env"],
-            "the worker no longer reads $CC. D9 says cc stops being "
-            "REQUIRED, not supported: removing the variable forbids it, "
+    require(record["cc_reaches_the_linker"],
+            "$CC no longer reaches the linker invocation. D9 says cc stops "
+            "being REQUIRED, not supported: losing the variable forbids it, "
             "which regresses gnu targets, distro packagers and "
-            "cross-compilers for nothing the exit gate asks for.")
+            "cross-compilers for nothing the exit gate asks for. Both ends "
+            "are checked -- the read must bind `linker_driver` and the "
+            "command must be built from that binding -- because reading $CC "
+            "into an unused binding satisfied the previous test.")
     require(record["cc_required"] is False and record["cc_supported"] is True,
             "the policy record no longer says not-required-but-supported")
     require(record["no_silent_fallback"],
-            "silent musl fallback would hand users a static binary with a "
-            "non-functional dlopen as a side effect of their package list")
+            "the worker now mentions musl, so 'no silent fallback' and "
+            "'host native default' are no longer derivable from its silence "
+            "on the subject. They were hardcoded literals until now, which "
+            "kept this guard green for precisely the regression it exists "
+            "to catch: re-derive both against whatever the new code does.")
     print("guard-cranelift-phase25-linker-driver-policy: ok "
           "(cc not required, still supported via $CC; gate proved on "
           f"{MUSL_TARGET}, blocked until "
