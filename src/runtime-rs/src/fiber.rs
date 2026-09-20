@@ -512,3 +512,327 @@ fn shard_loop(shard_ptr: *mut SchedulerShard) {
         }
     }
 }
+
+// ---- blocking primitives ------------------------------------------------
+//
+// Mutex and Channel both block the same way, which is why neither could be
+// ported alone: park the running fiber on a wait queue, switch to the shard,
+// and later wake it onto its shard's run queue. That shape is factored here
+// rather than written four times, as the C does.
+
+/// A wait queue of parked fibers. Raw pointers, like the C: the fibers are
+/// owned by the scheduler, and a parked fiber is reachable only from here
+/// until it is woken.
+#[derive(Default)]
+pub struct WaitQueue {
+    head: *mut Fiber,
+    tail: *mut Fiber,
+}
+
+impl WaitQueue {
+    /// # Safety
+    /// `fiber` must be the running fiber and must not already be queued.
+    unsafe fn push(&mut self, fiber: *mut Fiber) {
+        (*fiber).next = std::ptr::null_mut();
+        if self.tail.is_null() {
+            self.head = fiber;
+        } else {
+            (*self.tail).next = fiber;
+        }
+        self.tail = fiber;
+    }
+
+    unsafe fn pop(&mut self) -> *mut Fiber {
+        let f = self.head;
+        if f.is_null() {
+            return f;
+        }
+        self.head = (*f).next;
+        if self.head.is_null() {
+            self.tail = std::ptr::null_mut();
+        }
+        (*f).next = std::ptr::null_mut();
+        f
+    }
+}
+
+/// Put a woken fiber back on its shard's run queue.
+///
+/// # Safety
+/// `waiter` must be parked and not running.
+unsafe fn wake_onto_shard(waiter: *mut Fiber) {
+    let mut shard_ptr = (*waiter).shard as *mut SchedulerShard;
+    if shard_ptr.is_null() {
+        // The C falls back to `&gust_shards[0]`. Same intent: a fiber with
+        // no recorded shard is still runnable, just not affine.
+        let shards = SHARDS.lock().unwrap_or_else(|e| e.into_inner());
+        match shards.first() {
+            Some(s) => shard_ptr = *s as *const SchedulerShard as *mut SchedulerShard,
+            None => return, // scheduler torn down; nothing can run it
+        }
+    }
+    let shard = &*shard_ptr;
+    let mut q = lock_queue(shard);
+    (*waiter).state = FiberState::Ready;
+    (*waiter).next = std::ptr::null_mut();
+    if q.run_queue_tail.is_null() {
+        q.run_queue_head = waiter;
+    } else {
+        (*q.run_queue_tail).next = waiter;
+    }
+    q.run_queue_tail = waiter;
+}
+
+/// `void gust_fiber_exit(gust_Fiber* fiber)`.
+///
+/// # Safety
+/// Called only from the assembly entry wrapper, on the exiting fiber.
+#[no_mangle]
+pub unsafe extern "C" fn gust_fiber_exit(fiber: *mut Fiber) {
+    (*fiber).state = FiberState::Dead;
+    if (*fiber).parent.is_null() {
+        // The C prints and exits. Keep that: a fiber with no parent has no
+        // stack to return to, so continuing would return into nothing.
+        eprintln!("Error: Fiber exited with no parent context to yield back to.");
+        std::process::exit(1);
+    }
+    gust_fiber_switch(fiber, (*fiber).parent);
+}
+
+/// `void gust_scheduler_spawn(size_t, void (*)(void*), void*)`.
+///
+/// # Safety
+/// `entry_fn` and `arg` must satisfy `gust_fiber_create`'s contract.
+#[no_mangle]
+pub unsafe extern "C" fn gust_scheduler_spawn(
+    stack_size: usize,
+    entry_fn: Option<extern "C" fn(*mut c_void)>,
+    arg: *mut c_void,
+) {
+    let fiber = gust_fiber_create(stack_size, entry_fn, arg);
+    if fiber.is_null() {
+        return;
+    }
+    static SPAWN_COUNTER: AtomicI32 = AtomicI32::new(0);
+    let shards = SHARDS.lock().unwrap_or_else(|e| e.into_inner());
+    if shards.is_empty() {
+        gust_fiber_free(fiber);
+        return;
+    }
+    let idx = (SPAWN_COUNTER.fetch_add(1, Ordering::SeqCst) as usize) % shards.len();
+    let target = shards[idx] as *const SchedulerShard as *mut SchedulerShard;
+    (*fiber).shard = target as *mut c_void;
+    let shard = &*target;
+    let mut q = lock_queue(shard);
+    // Count BEFORE publishing to the run queue. The reverse order lets
+    // destroy() observe an empty queue and a zero count between the two
+    // writes, and conclude the scheduler is drained while a fiber is in
+    // flight -- the C increments inside the lock for the same reason.
+    PENDING_FIBERS.fetch_add(1, Ordering::SeqCst);
+    (*fiber).state = FiberState::Ready;
+    if q.run_queue_tail.is_null() {
+        q.run_queue_head = fiber;
+    } else {
+        (*q.run_queue_tail).next = fiber;
+    }
+    q.run_queue_tail = fiber;
+}
+
+/// Park the running fiber on `queue`, release `guard`, and switch.
+///
+/// Returns false when there is no fiber to park -- on a plain host thread --
+/// in which case the caller yields and retries, exactly as the C does. The
+/// guard is dropped BEFORE the switch: holding it across would carry it onto
+/// another fiber's stack and deadlock every other user of this primitive.
+///
+/// # Safety
+/// Callers must re-acquire the lock after this returns and re-test their
+/// condition; a wake is not a guarantee the condition still holds.
+unsafe fn park_on<T>(queue: &mut WaitQueue, guard: MutexGuard<'_, T>) -> bool {
+    let shard_ptr = active_shard();
+    if shard_ptr.is_null() {
+        return false;
+    }
+    let shard = &*shard_ptr;
+    let current = lock_queue(shard).active_fiber;
+    if current.is_null() {
+        return false;
+    }
+    (*current).state = FiberState::Suspended;
+    queue.push(current);
+    drop(guard);
+    gust_fiber_switch(current, &shard.shard_fiber as *const Fiber as *mut Fiber);
+    true
+}
+
+struct MutexInternal {
+    locked: bool,
+    waiters: WaitQueue,
+}
+unsafe impl Send for MutexInternal {}
+
+static MUTEX_POOL: Mutex<Vec<Box<Mutex<MutexInternal>>>> = Mutex::new(Vec::new());
+
+/// `int std_Mutex_Alloc()`.
+#[no_mangle]
+pub extern "C" fn std_Mutex_Alloc() -> i32 {
+    let mut pool = MUTEX_POOL.lock().unwrap_or_else(|e| e.into_inner());
+    // The C has a fixed MAX_MUTEXES of 1024 and exits when exhausted. A Vec
+    // has no such ceiling, so the failure mode the C guarded against cannot
+    // arise -- the limit is removed rather than reimplemented.
+    pool.push(Box::new(Mutex::new(MutexInternal {
+        locked: false,
+        waiters: WaitQueue::default(),
+    })));
+    (pool.len() - 1) as i32
+}
+
+fn with_pool_entry<T>(pool: &Mutex<Vec<Box<Mutex<T>>>>, idx: i32) -> Option<*const Mutex<T>> {
+    let p = pool.lock().unwrap_or_else(|e| e.into_inner());
+    // Boxed, so the address is stable once handed out even if the Vec grows.
+    p.get(idx as usize).map(|b| &**b as *const Mutex<T>)
+}
+
+/// `void* std_Mutex_Lock_impl(int, void*)`.
+///
+/// # Safety
+/// `lock_state` must come from `std_Mutex_Alloc`.
+#[no_mangle]
+pub unsafe extern "C" fn std_Mutex_Lock_impl(lock_state: i32, value_ptr: *mut c_void) -> *mut c_void {
+    let Some(entry) = with_pool_entry(&MUTEX_POOL, lock_state) else {
+        return value_ptr;
+    };
+    let entry = &*entry;
+    loop {
+        let mut m = entry.lock().unwrap_or_else(|e| e.into_inner());
+        if !m.locked {
+            m.locked = true;
+            return value_ptr;
+        }
+        let waiters = &mut m.waiters as *mut WaitQueue;
+        if !park_on(&mut *waiters, m) {
+            std::thread::yield_now();
+        }
+    }
+}
+
+/// `void std_Mutex_Unlock_impl(int)`.
+///
+/// # Safety
+/// `lock_state` must come from `std_Mutex_Alloc`.
+#[no_mangle]
+pub unsafe extern "C" fn std_Mutex_Unlock_impl(lock_state: i32) {
+    let Some(entry) = with_pool_entry(&MUTEX_POOL, lock_state) else {
+        return;
+    };
+    let entry = &*entry;
+    let mut m = entry.lock().unwrap_or_else(|e| e.into_inner());
+    m.locked = false;
+    let waiter = m.waiters.pop();
+    drop(m);
+    if !waiter.is_null() {
+        wake_onto_shard(waiter);
+    }
+}
+
+struct ChannelInternal {
+    data: Vec<u8>,
+    head: usize,
+    tail: usize,
+    count: usize,
+    capacity: usize,
+    elem_size: usize,
+    recv_waiters: WaitQueue,
+    send_waiters: WaitQueue,
+}
+unsafe impl Send for ChannelInternal {}
+
+static CHANNEL_POOL: Mutex<Vec<Box<Mutex<ChannelInternal>>>> = Mutex::new(Vec::new());
+
+/// `int std_Channel_Alloc(int capacity, size_t elem_size)`.
+#[no_mangle]
+pub extern "C" fn std_Channel_Alloc(capacity: i32, elem_size: usize) -> i32 {
+    let capacity = if capacity > 0 { capacity as usize } else { 16 };
+    let mut pool = CHANNEL_POOL.lock().unwrap_or_else(|e| e.into_inner());
+    pool.push(Box::new(Mutex::new(ChannelInternal {
+        data: vec![0u8; capacity.saturating_mul(elem_size)],
+        head: 0,
+        tail: 0,
+        count: 0,
+        capacity,
+        elem_size,
+        recv_waiters: WaitQueue::default(),
+        send_waiters: WaitQueue::default(),
+    })));
+    (pool.len() - 1) as i32
+}
+
+/// `void std_Channel_Send_impl(int chan_idx, void* val_ptr)`.
+///
+/// # Safety
+/// `val_ptr` must point to at least `elem_size` readable bytes.
+#[no_mangle]
+pub unsafe extern "C" fn std_Channel_Send_impl(chan_idx: i32, val_ptr: *mut c_void) {
+    let Some(entry) = with_pool_entry(&CHANNEL_POOL, chan_idx) else {
+        return;
+    };
+    let entry = &*entry;
+    loop {
+        let mut c = entry.lock().unwrap_or_else(|e| e.into_inner());
+        if c.count < c.capacity {
+            let (tail, esz) = (c.tail, c.elem_size);
+            std::ptr::copy_nonoverlapping(
+                val_ptr as *const u8,
+                c.data.as_mut_ptr().add(tail * esz),
+                esz,
+            );
+            c.tail = (tail + 1) % c.capacity;
+            c.count += 1;
+            let waiter = c.recv_waiters.pop();
+            drop(c);
+            if !waiter.is_null() {
+                wake_onto_shard(waiter);
+            }
+            return;
+        }
+        let waiters = &mut c.send_waiters as *mut WaitQueue;
+        if !park_on(&mut *waiters, c) {
+            std::thread::yield_now();
+        }
+    }
+}
+
+/// `void std_Channel_Recv_impl(int chan_idx, void* out_ptr)`.
+///
+/// # Safety
+/// `out_ptr` must point to at least `elem_size` writable bytes.
+#[no_mangle]
+pub unsafe extern "C" fn std_Channel_Recv_impl(chan_idx: i32, out_ptr: *mut c_void) {
+    let Some(entry) = with_pool_entry(&CHANNEL_POOL, chan_idx) else {
+        return;
+    };
+    let entry = &*entry;
+    loop {
+        let mut c = entry.lock().unwrap_or_else(|e| e.into_inner());
+        if c.count > 0 {
+            let (head, esz) = (c.head, c.elem_size);
+            std::ptr::copy_nonoverlapping(
+                c.data.as_ptr().add(head * esz),
+                out_ptr as *mut u8,
+                esz,
+            );
+            c.head = (head + 1) % c.capacity;
+            c.count -= 1;
+            let waiter = c.send_waiters.pop();
+            drop(c);
+            if !waiter.is_null() {
+                wake_onto_shard(waiter);
+            }
+            return;
+        }
+        let waiters = &mut c.recv_waiters as *mut WaitQueue;
+        if !park_on(&mut *waiters, c) {
+            std::thread::yield_now();
+        }
+    }
+}
