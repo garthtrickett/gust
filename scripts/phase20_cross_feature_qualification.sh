@@ -33,9 +33,15 @@ fi
 "$worker" compiler-mir-ingestion-object "$canonical_mir" \
   "$build_root/native.o" >"$build_root/native.compile.stdout" \
   2>"$build_root/native.compile.stderr"
+# Patch 25.4 rehomed the tiny_host_* fixtures out of src/runtime.c into the
+# no_std Rust crate, so the unity build no longer supplies them and this
+# link needs the crate object explicitly. The canonical MIR fixture calls
+# tiny_host_add_i32, so omitting it fails at link, not at run.
+fixtures_obj="build/phase25-runtime-rs/gust_runtime_rs_fixtures.o"
+make "$fixtures_obj"
 "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
   src/runtime.c "$concurrent_probe" "$probe" \
-  "$build_root/native.o" -o "$build_root/native-program"
+  "$build_root/native.o" "$fixtures_obj" -o "$build_root/native-program"
 
 mir_status="$(cat "$build_root/mir-to-c.status")"
 set +e
