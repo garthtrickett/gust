@@ -1,0 +1,25 @@
+name: Cranelift Phase 25 Emitter Deletion
+
+concurrency:
+  group: phase25-emitter-deletion-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+on:
+  pull_request:
+    paths: ['compiler/codegen.gst', 'compiler/test_runner_entry.gst', 'Makefile', 'justfile', 'scripts/phase25_emitter_deletion.py', '.github/workflows/phase25-emitter-deletion.yml']
+  push:
+    branches: [main]
+    paths: ['compiler/codegen.gst', 'compiler/test_runner_entry.gst', 'Makefile', 'justfile', 'scripts/phase25_emitter_deletion.py', '.github/workflows/phase25-emitter-deletion.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  deletion:
+    name: Phase 25 emitter deletion symmetry
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: guard-cranelift-phase25-emitter-deletion
+        run: python3 scripts/phase25_emitter_deletion.py validate
