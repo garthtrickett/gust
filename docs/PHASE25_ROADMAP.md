@@ -390,3 +390,70 @@ path is tested; the D8 job's expected-failure list is empty.
 **Exit Gate:** the no-C job is required and green; the closure sentence names
 its exceptions; `TASK.md` carries the Phase 25 record and every prior
 immutable record still validates.
+
+# Patch 25.6 — findings before completing the port
+
+## The port is additive today, and that is not a valid intermediate state
+
+`fiber_asm.rs` adds all eight `global_asm!` blocks, but `src/runtime/fiber.c`
+is untouched: still 719 lines, still eight `__asm__` blocks, still defining
+`gust_context_switch` and `gust_fiber_entry_wrapper`. The assembly now exists
+twice.
+
+Measured: the Rust crate's *entire* public surface — the three `tiny_host_*`
+fixtures from 25.4 and both fiber functions — compiles into a **single**
+codegen unit object. So the two definitions are not merely duplicated in the
+tree, they are duplicated in one archive:
+
+    gust_runtime_rs-<hash>.gust_runtime_rs.<hash>-cgu.0.rcgu.o
+        T gust_context_switch
+        T gust_fiber_entry_wrapper
+        T tiny_host_add_i32
+        T tiny_host_add_one_i32
+        T tiny_host_is_positive_i32
+
+`fiber.o` is pulled from `gust-runtime-package.a` for `gust_yield`, and the
+crate object is pulled for `tiny_host_*`. Both get pulled, so both sets of
+definitions enter the link and it fails on duplicate symbols. The collision is
+latent only because 25.4's original recipe merged all 310 members and the
+archive was never exercised this way; the single-member extraction that
+replaced it makes the crate object unconditionally present.
+
+**So the deletion from `fiber.c` must land in the same patch as the addition
+to Rust.** There is no green intermediate.
+
+## `gust_yield` is the reason this patch gates 25.5
+
+The Exit Gate already requires `src/runtime/` to contain no `.c`, so the 579
+non-assembly lines were always in scope. What the entry does not convey is why
+they are urgent, and Patch 25.5 measured it: **codegen emits `gust_yield()`
+into every `while` loop and every recursive function**, unconditionally
+(`codegen.gst:4018`, `:3870`). `gust_yield` is defined at `fiber.c:336` and is
+a real scheduler function — `pthread_mutex_lock`, `sched_yield`, the shard
+run-queue — not a stub.
+
+So `fiber.c` is not "the last runtime file" in the sense of least-connected.
+It is the one every compiled Gust program reaches on every loop iteration,
+which is why 25.6 must precede 25.5 rather than follow it.
+
+The hard part of this patch is therefore the 579 lines, not the 140 that are
+done. `no_std` has no pthread, so the scheduler port needs either raw futex
+syscalls or a libc dependency the crate does not currently take. That choice
+is this patch's real subject and is not yet made.
+
+## What 25.6 CANNOT fix, stated so it is not assumed
+
+Patch 25.5's finding named two injected dependencies. This patch removes one
+of them from C, and cannot touch the other.
+
+`printf`/`exit` in slice bounds checks is a **codegen** property, not a runtime
+one: `codegen.gst:1647`, `:1677`, `:1697`, `:2000`, `:2088`, `:2992` emit the
+calls inline into every Gust function that indexes. Porting `fiber.c` to Rust
+does not remove a single one of them — they are in the compiler's own emitted
+output, including the compiler itself.
+
+Clearing that needs codegen to call a runtime-provided abort instead of
+inlining `printf`/`exit`, which is a change to the emitter and belongs with
+whoever owns the freestanding subset, not here. Recorded because 25.5's
+finding could be read as handing both problems to this patch, and only one of
+them is ours.
