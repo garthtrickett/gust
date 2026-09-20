@@ -553,3 +553,41 @@ in the code the compiler compiles even though it is common in the language.
 and should ride with a patch already paying for one rather than buying a
 66,002-line republication of its own. This patch pays for one. Sized here so
 that decision is made against a number instead of an impression.
+
+## The port cannot be incremental, measured
+
+Before writing any Rust, the obvious question is where to start. Looking for
+a self-contained corner, the mutex pool reads like one: 75 lines, its own
+`gust_mutex_pool`, its own lock. It is not. `std_Mutex_Lock_impl` blocks by
+suspending the running fiber onto a wait queue and calling
+`gust_fiber_switch` — so it needs the fiber representation, `active_shard`,
+the shard's `active_fiber`, and the context switch itself.
+
+Counting which of `fiber.c`'s twenty functions touch the shared state
+(`gust_Fiber`, `gust_SchedulerShard`, `active_shard`, `gust_shards`,
+`gust_num_shards`, `gust_pending_fibers`, `gust_scheduler_running`,
+`gust_fiber_switch`, `gust_context_switch`, `gust_loop_ticks`):
+
+    touch nothing shared     4   get_num_threads_to_use, std_Mutex_Alloc,
+                                 std_Channel_Alloc, the entry wrapper
+    touch 1-3                7
+    touch 4-6                9   including both Channel primitives, both
+                                 Mutex primitives, yield, spawn, the shard
+                                 loop, init and destroy
+
+Sixteen of twenty. There is no leaf to move first, because every blocking
+primitive in this file blocks the same way: change the fiber's state, push it
+on a queue, switch. That is not incidental coupling, it is what a
+cooperative scheduler IS.
+
+**So Patch 25.6 is one commit of roughly 719 lines, not a sequence.** Taken
+with the earlier finding — that the assembly must be deleted in the same
+commit that adds it, or the two definitions collide in one archive — the
+whole file moves at once or not at all.
+
+That raises the stakes on the `no_std` question rather than settling it
+differently. Writing 719 lines of unsafe systems code in one commit, with
+hand-guessed `pthread_mutex_t` layouts, on three platform quadrants that
+cannot be built here, is not a risk worth taking to preserve a crate
+attribute. `std` supplies `Mutex` and `thread` with no layout to guess, and
+the phase's gate is *no C compiler*, not *no libc*.
