@@ -11994,7 +11994,7 @@
       "id": "p17_helper_tiny_host_add_one_i32",
       "symbol_identity": "tiny_host_add_one_i32",
       "symbol_kind": "exact_c_symbol",
-      "source_path": "src/runtime/approved_scalar_imports.c",
+      "source_path": "src/runtime-rs/src/lib.rs",
       "reachability": "runtime_public_surface",
       "inventory_owner": "compiler_runtime_import_planner",
       "diagnostic_owner": "compiler_runtime_import_verifier",
@@ -12006,7 +12006,7 @@
       "id": "p17_helper_tiny_host_add_i32",
       "symbol_identity": "tiny_host_add_i32",
       "symbol_kind": "exact_c_symbol",
-      "source_path": "src/runtime/approved_scalar_imports.c",
+      "source_path": "src/runtime-rs/src/lib.rs",
       "reachability": "runtime_public_surface",
       "inventory_owner": "compiler_runtime_import_planner",
       "diagnostic_owner": "compiler_runtime_import_verifier",
@@ -12018,7 +12018,7 @@
       "id": "p17_helper_tiny_host_is_positive_i32",
       "symbol_identity": "tiny_host_is_positive_i32",
       "symbol_kind": "exact_c_symbol",
-      "source_path": "src/runtime/approved_scalar_imports.c",
+      "source_path": "src/runtime-rs/src/lib.rs",
       "reachability": "runtime_public_surface",
       "inventory_owner": "compiler_runtime_import_planner",
       "diagnostic_owner": "compiler_runtime_import_verifier",
@@ -27359,7 +27359,22 @@
             "classification": "archive_candidate",
             "current_route": "tracked_MIR_to_C_or_generated_C_surface",
             "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-            "digest": "d89a8b941933a03fbc1cdf0358b27eacf4038dd02565e6099200e58de5857849",
+            "digest": "e2bb1185c40acb2ec153185980ae5fbc9ac0712427090a2fd2f5be989d7ead65",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "generated_c_contract": 3,
+              "mir_to_c_name": 1
+            },
+            "owner": "cranelift",
+            "path": "scripts/phase17_opening.py",
+            "removal_phase": "24"
+          },
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "912b282d2e46309a1f6ddcba9ba552efa8e98b2f049398697c87167c8e1c0e15",
             "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
             "match_counts": {
               "explicit_backend_spelling": 0,
@@ -27377,6 +27392,21 @@
             "classification": "archive_candidate",
             "current_route": "tracked_MIR_to_C_or_generated_C_surface",
             "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "76f1a7396d5e2a00d71326b127409659643db81947eb59912ca6b9cb0c4003e3",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "generated_c_contract": 3,
+              "mir_to_c_name": 1
+            },
+            "owner": "cranelift",
+            "path": "scripts/phase17_opening.py",
+            "removal_phase": "24"
+          },
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
             "digest": "167863b7dcf905766231db9be3c3c0bf304cfb7f9b8629234d512c4ab95b95d7",
             "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
             "match_counts": {
@@ -27390,9 +27420,11 @@
           }
         ],
         "registered_changed_paths": [
-          "scripts/cranelift_registry.py"
-        ],
-        "removed_text_surfaces": []
+          "Makefile",
+          "scripts/phase17_opening.py",
+          "scripts/cranelift_registry.py",
+          "scripts/phase21_full_compiler_native_qualification.py"
+        ]
       }
     },
   "issue451_inventory_ownership": {
