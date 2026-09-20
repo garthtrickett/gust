@@ -78,8 +78,90 @@ LAYERS = {
 CODEGEN_INJECTED = frozenset({"gust_yield"})
 
 
+# Pinned for the same reason FORBIDDEN_FLOOR is, and the omission was the
+# same bug one level down. The floor stopped the forbidden SET emptying
+# as Patch 25.5 deletes src/runtime/*.c, but the layer LOOKUP still read
+# those files: measured, with them gone every symbol_layer() returned -1,
+# and -1 is treated as a violation, so the guard would have rejected
+# every migrated file at the moment migration began.
+SYMBOL_LAYERS = {'gust_context_switch': 3,
+ 'gust_fiber_create': 3,
+ 'gust_fiber_entry_wrapper': 3,
+ 'gust_fiber_exit': 3,
+ 'gust_fiber_free': 3,
+ 'gust_fiber_switch': 3,
+ 'gust_scheduler_destroy': 3,
+ 'gust_scheduler_init': 3,
+ 'gust_scheduler_spawn': 3,
+ 'gust_shard_loop': 3,
+ 'gust_yield': 3,
+ 'os_ArenaAlloc': 0,
+ 'os_Arena_Free': 0,
+ 'os_Arena_New': 0,
+ 'os_Arena_Validate': 0,
+ 'os_Args': 2,
+ 'os_CloseDir': 2,
+ 'os_ExecutablePath': 2,
+ 'os_FileExecutable': 2,
+ 'os_FileExists': 2,
+ 'os_GetEnv': 2,
+ 'os_GetThreadScratch_raw': 1,
+ 'os_HashMapClear_impl': 1,
+ 'os_HashMapContains_impl': 1,
+ 'os_HashMapRef_impl': 1,
+ 'os_HashMapRemove_impl': 1,
+ 'os_LogError': 2,
+ 'os_LogInt': 0,
+ 'os_LogStr': 2,
+ 'os_MockPayload': 2,
+ 'os_NativeObjectFormat': 2,
+ 'os_NativeTargetTriple': 2,
+ 'os_OpenDir': 2,
+ 'os_PathAbsolute': 2,
+ 'os_PathDir': 2,
+ 'os_ReadDir': 2,
+ 'os_ReadFile': 2,
+ 'os_RemoveFile': 2,
+ 'os_RunProcess': 2,
+ 'os_ScratchAlloc': 1,
+ 'os_ScratchReset': 1,
+ 'os_SetThreadScratch': 1,
+ 'os_System': 2,
+ 'os_WriteFile': 2,
+ 'os_copy_c_string_to_arena': 2,
+ 'os_path_join': 2,
+ 'os_read_stream_to_arena': 2,
+ 'os_slice_to_c_string': 2,
+ 'std_Channel_Alloc': 3,
+ 'std_Channel_Recv_impl': 3,
+ 'std_Channel_Send_impl': 3,
+ 'std_Clone_str': 2,
+ 'std_GenerationalSwap': 0,
+ 'std_Mutex_Alloc': 3,
+ 'std_Mutex_Lock_impl': 3,
+ 'std_Mutex_Unlock_impl': 3,
+ 'std_PoolAlloc_impl': 1,
+ 'std_PoolFree_impl': 1,
+ 'std_is_alpha': 2,
+ 'std_is_digit': 2,
+ 'std_is_whitespace': 2,
+ 'std_parse_int': 2,
+ 'std_str_byte_at': 2,
+ 'std_str_eq': 2,
+ 'std_str_find': 2,
+ 'std_str_slice': 2,
+ 'std_str_split': 2,
+ 'std_str_trim': 2}
+
+
 def symbol_layer(symbol: str) -> int:
-    """The layer of the file defining a runtime symbol, or -1 if unknown."""
+    """The layer of the file defining a runtime symbol, or -1 if unknown.
+
+    The pin is consulted first so migration cannot erase the answer. The
+    live scan remains for symbols added after this pin was taken.
+    """
+    if symbol in SYMBOL_LAYERS:
+        return SYMBOL_LAYERS[symbol]
     for path in sorted((ROOT / "src" / "runtime").glob("*.c")):
         text = path.read_text(encoding="utf-8", errors="replace")
         if symbol in EXPORT_RE.findall(text):
@@ -88,7 +170,16 @@ def symbol_layer(symbol: str) -> int:
 
 
 def object_layer(obj) -> int:
-    """The layer a freestanding object belongs to, from its stem."""
+    """The layer a freestanding object belongs to, from its stem.
+
+    The stem IS the contract: an object must be named for the runtime file
+    it replaces, because that is what places it in the order. Patch 25.5
+    emits these, so the naming rule is stated in the failure message rather
+    than left for someone to infer -- measured, `gust_strings.o` making a
+    perfectly legal downward call was reported as calling the runtime it
+    implements, which would send the reader hunting a violation that is not
+    there.
+    """
     return LAYERS.get(obj.stem, -1)
 
 
@@ -195,6 +286,11 @@ def report() -> dict:
     }
 
 
+def unplaced_objects(objects) -> list:
+    """Objects whose stem names no runtime file, so no order can judge them."""
+    return sorted(o.name for o in objects if object_layer(o) < 0)
+
+
 def validate() -> None:
     record = report()
     forbidden = set(record["forbidden_symbols"])
@@ -207,6 +303,18 @@ def validate() -> None:
             "the arena allocator is absent from the derived forbidden set; "
             f"got {sorted(forbidden)[:6]}... The derivation is matching the "
             "wrong thing.")
+    objects = (sorted(FREESTANDING_OBJECTS.glob("*.o"))
+               if FREESTANDING_OBJECTS.is_dir() else [])
+    stray = unplaced_objects(objects)
+    require(not stray,
+            f"freestanding objects {stray} are named for no runtime "
+            f"file, so the layer order cannot judge them. Name each "
+            f"object for the file it replaces -- one of "
+            f"{sorted(LAYERS)} -- because the stem is what places it "
+            "in the order. Reported separately from a layering "
+            "violation: a misnamed object is a naming bug, and "
+            "calling it a violation sends the reader hunting one "
+            "that is not there.")
     offenders = {k: v for k, v in record["violations"].items() if v}
     require(not offenders,
             "freestanding runtime objects call the runtime they implement: "
