@@ -51,17 +51,24 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      # Ubuntu runners ship a C compiler, so remove it rather than pretend.
-      # The guard refuses to certify on an image that still has one.
-      - name: Remove the C toolchain from this image
+      # Ubuntu runners ship a C compiler, so the falsifier must not see
+      # one. An earlier revision uninstalled the toolchain, which trips the CI
+      # surface guards -- they police what workflows may do to a runner,
+      # and mutating the image is exactly what they exist to catch.
+      #
+      # Shadowing PATH is better anyway: it does not mutate the runner, it
+      # is what was validated locally, and the guard still refuses to
+      # certify if it can see a compiler -- so the method cannot silently
+      # fail open.
+      - name: Build a PATH with no C compiler
         run: |
-          sudo apt-get remove -y --purge gcc g++ clang cpp build-essential \
-            gcc-13 g++-13 cpp-13 libc6-dev >/dev/null 2>&1 || true
-          sudo apt-get autoremove -y >/dev/null 2>&1 || true
-          sudo rm -f /usr/bin/cc /usr/bin/gcc /usr/bin/g++ /usr/bin/clang \
-                     /usr/bin/c++ /usr/bin/cpp || true
+          mkdir -p "$RUNNER_TEMP/nocc"
+          for b in python3 sh bash cat grep sed git; do
+            ln -sf "$(command -v $b)" "$RUNNER_TEMP/nocc/$b" || true
+          done
+          echo "NOCC_PATH=$RUNNER_TEMP/nocc" >> "$GITHUB_ENV"
       - name: guard-cranelift-phase25-no-c-falsifier (expected red)
-        run: python3 scripts/phase25_no_c_falsifier.py check-environment
+        run: env PATH="$NOCC_PATH" python3 scripts/phase25_no_c_falsifier.py check-environment
 
   gnu-smoke:
     name: Phase 25 gnu smoke subset
