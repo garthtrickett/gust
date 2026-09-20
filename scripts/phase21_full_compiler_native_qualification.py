@@ -89,7 +89,13 @@ def validate() -> dict:
             "format": "static_archive",
             "members": [
                 "arena.o", "host_io.o", "file_io.o", "scratch.o", "fiber.o",
-                "collections.o", "strings.o", "approved_scalar_imports.o",
+                # Patch 25.4: approved_scalar_imports.o left the archive
+                # when its fixtures were rehomed to the no_std Rust crate
+                # src/runtime-rs. The archive keeps its name and shape; a
+                # member moved language. Symbol names are unchanged, so
+                # nothing that CALLS tiny_host_* needed editing.
+                "collections.o", "strings.o",
+                "libgust_runtime_rs.a",
             ],
             "symbol_policy": "existing_registered_runtime_symbols_only",
         },
