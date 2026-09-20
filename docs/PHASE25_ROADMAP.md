@@ -457,3 +457,67 @@ inlining `printf`/`exit`, which is a change to the emitter and belongs with
 whoever owns the freestanding subset, not here. Recorded because 25.5's
 finding could be read as handing both problems to this patch, and only one of
 them is ours.
+
+## The 579 lines: what they need, and the `no_std` decision they force
+
+The earlier finding said the hard part of this patch is the 579 non-assembly
+lines and that the choice between raw syscalls and a libc dependency "is not
+yet made". Enumerating what `fiber.c` actually calls makes the choice, and it
+is not the one the crate's current shape implies.
+
+Host surface, counted:
+
+    pthread_mutex_lock / _unlock        40
+    pthread_mutex_init / _destroy        4
+    pthread_create / _join / _self       4
+    pthread_setaffinity_np               1   (Linux)
+    pthread_mach_thread_np               1   (macOS)
+    sched_yield                          4
+    malloc / free                        8
+    __sync_* atomics                     4
+    printf / exit                        8
+    usleep, sysconf, getenv, atoi        4
+
+Two of those groups are free. The `__sync_*` builtins map onto
+`core::sync::atomic` with no libc at all, and `malloc`/`free` are only used
+for the fiber struct and its stack, which a Rust port can own outright.
+
+**The mutexes are what force the decision.** 44 of the calls are mutex
+operations, and `pthread_mutex_t` is an OPAQUE type whose size and alignment
+are libc- and platform-specific. Measured here: 40 bytes, align 8, on glibc
+x86_64. Not measured, because no second libc is installed on this machine --
+but the type is opaque precisely so that it may differ, and musl and macOS
+are known to differ from glibc.
+
+A `#![no_std]` port must therefore hand-declare that type as a byte array of
+a guessed size per platform. Guess low and the mutex scribbles over adjacent
+memory; guess high and it merely wastes space. Both are silent. And this
+patch is committed to **all four platform quadrants** (O2, D6), three of
+which are unbuilt here -- so three of the four guesses could not be checked
+even in principle by this machine.
+
+That is the argument against `no_std` for this module, and it is
+structural rather than a matter of taste: the one thing 25.6 must not do is
+introduce a defect that only appears on the quadrants nobody builds.
+
+**What that means for 25.4's `#![no_std]`.** Phase 25's gate is *no C
+compiler*, not *no libc* -- linking libc requires no `cc`. So using `std`,
+which supplies `Mutex` and `thread` with no layout to guess, costs the phase
+nothing it is trying to buy. But it does reverse a decision 25.4 recorded
+deliberately, so it is stated here as a decision to be taken rather than
+taken quietly in a commit that looks like a port.
+
+The options, ranked:
+
+  1. **Crate becomes `std`.** `std::sync::Mutex`, `std::thread`. No opaque
+     layouts, all four quadrants correct by construction. Reverses 25.4's
+     `#![no_std]` and `panic = "abort"` shape.
+  2. **Stay `no_std`, bind pthread per platform.** Preserves 25.4, but puts
+     a hand-maintained ABI table in the one file whose bugs appear only on
+     unbuilt platforms.
+  3. **Raw futex syscalls.** Most work, and Linux-only, so it fails O2 on
+     its own.
+
+Option 1 unless someone names a reason the crate must stay `no_std` that is
+stronger than the layout hazard. The fixtures from 25.4 do not need
+`no_std`; they need to be FOREIGN, which they remain either way.
