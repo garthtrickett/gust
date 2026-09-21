@@ -31,9 +31,9 @@ and 20.9 respectively.
 
 | Registry status | Phase 20 decision | Entries |
 | --- | --- | ---: |
-| `migrated` | `selected` | 34 |
 | `candidate_deferred` | `deferred` | 43 |
 | `deferred` | `deferred` | 7 |
+| `migrated` | `selected` | 34 |
 | `replaced` | `unsupported_historical_replaced` | 11 |
 
 ## Canonical source/differential inventory

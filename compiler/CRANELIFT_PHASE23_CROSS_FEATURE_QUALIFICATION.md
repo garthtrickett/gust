@@ -22,22 +22,22 @@ rebuilds without changing the guard population or the 85-minute budget.
 
 ## Coverage
 
+- `assurance_report_only`: `phase23_assurance_phase_a, phase23_assurance_phase_b`
+- `bootstrap`: `make bootstrap, guard-cranelift-phase22-default-route-seed-convergence`
+- `cleanup_and_resources`: `guard-cranelift-phase20-resource-scope-cleanup-parity, guard-cranelift-phase23-resource-acquisition-parity-contract`
+- `consumer_scanner`: `phase23_mir_to_c_deprecation_opening.inventory_summary`
+- `default_and_explicit_native`: `guard-cranelift-phase22-postflip-qualification-evidence`
+- `deprecation_and_frozen_surface`: `phase23_mir_to_c_deprecation_opening, phase23_mir_to_c_frozen_surface`
+- `diagnostics`: `guard-cranelift-phase23-same-scope-declaration-evidence, guard-cranelift-phase18-target-diagnostic-parity`
+- `explicit_c_identity`: `guard-cranelift-phase23-mir-to-c-deprecation-opening-evidence, guard-cranelift-phase23-mir-to-c-focused-live-evidence`
+- `focused_live_and_archive`: `phase23_mir_to_c_focused_live, phase23_mir_to_c_archived_corpus`
+- `issue_health`: `phase23_mir_evidence_owner, phase23_resource_acquisition_parity, phase23_same_scope_declaration`
 - `level1_authority`: `phase23_level1_guards`
 - `level2_behaviour`: `phase23_level2_guards`
-- `issue_health`: `phase23_mir_evidence_owner, phase23_resource_acquisition_parity, phase23_same_scope_declaration`
-- `assurance_report_only`: `phase23_assurance_phase_a, phase23_assurance_phase_b`
-- `deprecation_and_frozen_surface`: `phase23_mir_to_c_deprecation_opening, phase23_mir_to_c_frozen_surface`
-- `focused_live_and_archive`: `phase23_mir_to_c_focused_live, phase23_mir_to_c_archived_corpus`
-- `package_install_and_release`: `phase23_production_release_audit, guard-cranelift-phase22-postflip-qualification-evidence`
-- `bootstrap`: `make bootstrap, guard-cranelift-phase22-default-route-seed-convergence`
-- `default_and_explicit_native`: `guard-cranelift-phase22-postflip-qualification-evidence`
-- `explicit_c_identity`: `guard-cranelift-phase23-mir-to-c-deprecation-opening-evidence, guard-cranelift-phase23-mir-to-c-focused-live-evidence`
-- `cleanup_and_resources`: `guard-cranelift-phase20-resource-scope-cleanup-parity, guard-cranelift-phase23-resource-acquisition-parity-contract`
-- `side_effects`: `guard-cranelift-phase23-mir-to-c-focused-live-evidence, guard-cranelift-phase23-production-release-audit-evidence`
-- `diagnostics`: `guard-cranelift-phase23-same-scope-declaration-evidence, guard-cranelift-phase18-target-diagnostic-parity`
-- `target`: `guard-cranelift-phase18-target-authority-parity, guard-cranelift-phase18-target-support-parity, guard-cranelift-phase18-target-diagnostic-parity`
 - `no_fallback`: `guard-cranelift-phase22-postflip-qualification-evidence, guard-cranelift-phase23-production-release-audit-evidence`
-- `consumer_scanner`: `phase23_mir_to_c_deprecation_opening.inventory_summary`
+- `package_install_and_release`: `phase23_production_release_audit, guard-cranelift-phase22-postflip-qualification-evidence`
+- `side_effects`: `guard-cranelift-phase23-mir-to-c-focused-live-evidence, guard-cranelift-phase23-production-release-audit-evidence`
+- `target`: `guard-cranelift-phase18-target-authority-parity, guard-cranelift-phase18-target-support-parity, guard-cranelift-phase18-target-diagnostic-parity`
 - `workflow_reachability`: `scripts/guard_reachability.py, scripts/fixture_reachability.py`
 
 ## Residues

@@ -21,14 +21,14 @@ Generated from `scripts/cranelift_feature_registry.json`. Do not edit by hand.
 
 ## Qualification
 
-- repository_package_bare_default: `qualified`
-- installed_package_bare_default: `qualified`
-- relocated_package_bare_default: `qualified`
 - bare_and_explicit_native: `artifact_and_behavior_identical`
-- explicit_c_spellings: `byte_identical_and_executable`
-- missing_native_worker: `bare_default_fails_without_fallback_and_explicit_c_succeeds`
 - documentation_and_help: `cranelift_default_explicit_c_oracle_no_fallback`
+- explicit_c_spellings: `byte_identical_and_executable`
+- installed_package_bare_default: `qualified`
+- missing_native_worker: `bare_default_fails_without_fallback_and_explicit_c_succeeds`
 - release_shape: `exact_three_artifact_sibling_package`
+- relocated_package_bare_default: `qualified`
+- repository_package_bare_default: `qualified`
 
 ## Native workflow dependencies
 

@@ -35,14 +35,14 @@ for or weaken this Phase 21 closure gate.
 - Linker: `GNU ld 2.42`
 - Runtime: `build/phase10-package/bin/gust-runtime-package.a`
 - Normalized stage environment:
-  - `LANG=C.UTF-8`
-  - `LC_ALL=C.UTF-8`
-  - `TZ=UTC`
-  - `SOURCE_DATE_EPOCH=0`
-  - `PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin`
   - `CC=cc`
   - `CFLAGS=-O2 -Wall -pthread`
+  - `LANG=C.UTF-8`
+  - `LC_ALL=C.UTF-8`
+  - `PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin`
   - `RUSTUP_TOOLCHAIN=1.97.1`
+  - `SOURCE_DATE_EPOCH=0`
+  - `TZ=UTC`
 
 ## Measured decision evidence
 

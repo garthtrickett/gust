@@ -10,14 +10,22 @@
   },
   "closure_snapshots": {
     "phase11": {
-      "byte_provenance": "git_history",
-      "classification_counts": {
-        "deferred": 7,
-        "excluded": 0,
-        "migrated": 12
-      },
       "closure_version": "phase11_closed_registry_backed_feature_parity_migration",
-      "comparison_policy": "semantic_fields_only_whitespace_prose_field_order_and_generated_layout_are_ignored",
+      "immutable_fields": [
+        "id",
+        "classification",
+        "feature_family",
+        "route_owner",
+        "source_fixture",
+        "canonical_mir_fixture",
+        "ci_family"
+      ],
+      "entry_count": 19,
+      "classification_counts": {
+        "migrated": 12,
+        "deferred": 7,
+        "excluded": 0
+      },
       "deferred_entry_ids": [
         "resource_metadata",
         "native_boundary_metadata",
@@ -200,72 +208,18 @@
           "source_fixture": "compiler/phase11_declared_external_import_source.gst"
         }
       ],
-      "entry_count": 19,
-      "immutable_fields": [
-        "id",
-        "classification",
-        "feature_family",
-        "route_owner",
-        "source_fixture",
-        "canonical_mir_fixture",
-        "ci_family"
-      ]
+      "byte_provenance": "git_history",
+      "comparison_policy": "semantic_fields_only_whitespace_prose_field_order_and_generated_layout_are_ignored"
     },
     "phase13": {
-      "artifact_owner": "phase9g_compiler_transactional_object_link_cleanup_and_publication",
-      "ci_owner": "PR_Fast_Level1_phase_closure",
-      "closure_assertions": [
-        "every_phase13_opening_row_has_a_valid_final_disposition",
-        "every_migrated_row_uses_generic_canonical_mir_routing",
-        "every_remaining_deferral_is_concrete_and_owned",
-        "no_exact_source_recognizer_was_introduced",
-        "explicit_cranelift_cannot_fall_back_to_mir_to_c",
-        "unsupported_cases_stop_before_driver_and_artifact_access",
-        "mir_to_c_remains_the_default_oracle",
-        "default_and_explicit_mir_to_c_remain_equivalent",
-        "worker_receives_only_request_data_and_canonical_mir",
-        "phase9g_owns_object_link_cleanup_and_publication",
-        "active_totals_are_registry_derived",
-        "generated_views_are_current",
-        "ci_families_remain_registry_derived",
-        "no_raw_registry_or_markdown_hash_contract_exists",
-        "no_exact_matrix_total_is_backend_correctness",
-        "full_historical_suite_remains_separately_runnable"
-      ],
-      "closure_guard": "guard-cranelift-phase13-close",
       "closure_version": "phase13_closed_deferred_registry_parity_expansion",
+      "status": "closed_declared_inventory_only",
+      "scope": "declared_phase13_deferred_parity_expansion_inventory_only",
+      "opening_version": "phase13_opening_inventory_v1",
+      "residual_version": "phase13_deferred_residue_v1",
+      "closure_guard": "guard-cranelift-phase13-close",
+      "ci_owner": "PR_Fast_Level1_phase_closure",
       "closure_wording": "The declared Phase 13 deferred-parity expansion inventory is complete. Migrated rows use the generic canonical-MIR route with focused differential evidence, while remaining unsupported capabilities are represented by narrower, explicitly owned future-phase deferrals.",
-      "comparison_policy": "semantic_registry_fields_and_wiring_only_no_raw_hashes_or_matrix_correctness_totals",
-      "default_oracle_owner": "mir_to_c",
-      "differential_owner": "registry_derived_level2_families",
-      "disposition_counts": {
-        "excluded": 0,
-        "migrated": 9,
-        "replaced": 11
-      },
-      "evidence_replay_policy": "validate_ownership_and_wiring_without_replaying_level2_or_level3",
-      "excluded_entry_ids": [],
-      "explicit_cranelift_fallback_policy": "forbidden",
-      "forbidden_replays": [
-        "every_phase13_differential_family",
-        "full_phase9_through_phase13_historical_suite",
-        "every_historical_native_fixture",
-        "complete_object_and_link_failure_matrices",
-        "release_or_packaging_matrices"
-      ],
-      "historical_owner": "scheduled_or_manual_cranelift_historical_full_level3",
-      "migrated_entry_ids": [
-        "p13_resource_metadata_source_route",
-        "p13_native_boundary_metadata_source_route",
-        "p13_scalar_multiply_i32",
-        "p13_two_local_update_branch_source_route",
-        "p13_nested_local_update_branch_source_route",
-        "p13_general_loop_backedge_source_route",
-        "p13_parameterized_local_call_branch_source_route",
-        "p13_multi_function_direct_call_graph_source_route",
-        "p13_imported_predicate_update_branch_source_route"
-      ],
-      "migrated_route_owner": "generic_canonical_mir",
       "non_claims": [
         "Cranelift_has_full_Gust_parity",
         "all_Gust_types_are_supported",
@@ -273,21 +227,6 @@
         "all_control_flow_forms_are_supported",
         "resource_semantics_are_complete",
         "the_experimental_backend_is_production_complete"
-      ],
-      "opening_entry_count": 20,
-      "opening_version": "phase13_opening_inventory_v1",
-      "replaced_entry_ids": [
-        "p13_imported_call_return_source_route",
-        "p13_imported_arm_update_return_source_route",
-        "p13_imported_arm_update_branch_source_route",
-        "p13_imported_branch_joined_return_source_route",
-        "p13_dual_imported_joined_return_source_route",
-        "p13_recursive_direct_call_policy",
-        "p13_mutual_recursive_direct_call_policy",
-        "p13_indirect_direct_call_policy",
-        "p13_function_value_call_policy",
-        "p13_multi_module_bundle_composition",
-        "p13_unapproved_host_symbol_policy"
       ],
       "required_contracts": [
         "phase13_opening_contract",
@@ -313,86 +252,84 @@
         "worker_request_isolation",
         "early_deferral_and_output_preservation_contracts"
       ],
-      "residual_entry_count": 19,
-      "residual_version": "phase13_deferred_residue_v1",
-      "scope": "declared_phase13_deferred_parity_expansion_inventory_only",
-      "status": "closed_declared_inventory_only",
-      "worker_request_boundary": "request_data_and_canonical_mir_only"
-    },
-    "phase14": {
-      "all_target_owner": "registry_derived_phase14_declared_target_matrix",
-      "artifact_owner": "phase9g_compiler_transactional_object_link_cleanup_and_publication",
-      "ci_owner": "PR_Fast_Level1_phase_closure",
       "closure_assertions": [
-        "every_phase14_opening_row_has_a_valid_final_disposition",
+        "every_phase13_opening_row_has_a_valid_final_disposition",
         "every_migrated_row_uses_generic_canonical_mir_routing",
-        "every_migrated_memory_representable_type_has_compiler_owned_layout",
-        "mir_to_c_and_cranelift_consume_the_same_compiler_produced_layout_data",
-        "runtime_facing_layout_descriptors_come_from_the_compiler_authority",
-        "diagnostics_consume_the_same_layout_decisions",
-        "every_remaining_deferral_is_concrete_target_scoped_when_needed_and_owned",
-        "no_exact_source_or_exact_layout_output_recognizer_exists",
-        "no_backend_local_type_layout_authority_exists",
-        "c_sizeof_and_offsetof_are_not_semantic_layout_authorities",
-        "cranelift_target_defaults_are_not_semantic_layout_authorities",
+        "every_remaining_deferral_is_concrete_and_owned",
+        "no_exact_source_recognizer_was_introduced",
         "explicit_cranelift_cannot_fall_back_to_mir_to_c",
         "unsupported_cases_stop_before_driver_and_artifact_access",
         "mir_to_c_remains_the_default_oracle",
         "default_and_explicit_mir_to_c_remain_equivalent",
-        "worker_receives_only_request_data_canonical_mir_and_compiler_produced_layout_data",
+        "worker_receives_only_request_data_and_canonical_mir",
         "phase9g_owns_object_link_cleanup_and_publication",
-        "active_totals_and_targets_are_registry_derived",
+        "active_totals_are_registry_derived",
         "generated_views_are_current",
         "ci_families_remain_registry_derived",
-        "no_raw_registry_layout_or_markdown_hash_contract_exists",
+        "no_raw_registry_or_markdown_hash_contract_exists",
         "no_exact_matrix_total_is_backend_correctness",
-        "cranelift_historical_full_remains_separately_runnable_and_owns_all_target_evidence",
-        "representative_aggregate_evidence_is_assigned_to_every_declared_host_target"
+        "full_historical_suite_remains_separately_runnable"
       ],
-      "closure_guard": "guard-cranelift-phase14-close",
-      "closure_review_view": "compiler/CRANELIFT_PHASE14_CLOSURE.md",
-      "closure_version": "phase14_closed_type_layout_and_memory_model",
-      "closure_wording": "The declared Phase 14 type, layout, and memory-model inventory is complete. Migrated rows use compiler-owned target and type layouts through generic canonical MIR, MIR-to-C, and Cranelift, while remaining unsupported capabilities are represented by narrower, explicitly owned future-phase deferrals.",
-      "comparison_policy": "semantic_registry_layout_and_wiring_only_no_raw_hashes_or_matrix_correctness_totals",
-      "composition_version": "phase14_cross_feature_all_target_layout_differential_v1",
-      "declared_target_count": 5,
-      "default_oracle_owner": "mir_to_c",
-      "differential_owner": "registry_derived_level2_families",
-      "disposition_counts": {
-        "excluded": 0,
-        "migrated": 13,
-        "replaced": 0
-      },
-      "evidence_replay_policy": "validate_ownership_and_wiring_without_replaying_level2_or_level3",
-      "excluded_entry_ids": [],
-      "explicit_cranelift_fallback_policy": "forbidden",
       "forbidden_replays": [
-        "every_phase14_differential_family",
-        "every_declared_target_runner",
-        "full_phase9_through_phase14_historical_suite",
+        "every_phase13_differential_family",
+        "full_phase9_through_phase13_historical_suite",
         "every_historical_native_fixture",
         "complete_object_and_link_failure_matrices",
         "release_or_packaging_matrices"
       ],
-      "historical_owner": "scheduled_or_manual_cranelift_historical_full_level3",
-      "layout_authority_owner": "compiler/mir_layout.gst",
-      "layout_table_format": "gust.compiler_layout_table.v2",
+      "opening_entry_count": 20,
+      "disposition_counts": {
+        "migrated": 9,
+        "replaced": 11,
+        "excluded": 0
+      },
       "migrated_entry_ids": [
-        "p14_primitive_scalar_layout",
-        "p14_pointer_sized_integer_layout",
-        "p14_target_dependent_conversions",
-        "p14_pointer_nullability_model",
-        "p14_stack_slot_addressable_locals",
-        "p14_typed_load_store_memory_access",
-        "p14_string_and_string_view_layout",
-        "p14_array_and_slice_layout",
-        "p14_struct_field_layout",
-        "p14_enum_tagged_union_layout",
-        "p14_aggregate_basic_block_transport",
-        "p14_target_layout_model",
-        "p14_all_target_layout_evidence"
+        "p13_resource_metadata_source_route",
+        "p13_native_boundary_metadata_source_route",
+        "p13_scalar_multiply_i32",
+        "p13_two_local_update_branch_source_route",
+        "p13_nested_local_update_branch_source_route",
+        "p13_general_loop_backedge_source_route",
+        "p13_parameterized_local_call_branch_source_route",
+        "p13_multi_function_direct_call_graph_source_route",
+        "p13_imported_predicate_update_branch_source_route"
       ],
+      "replaced_entry_ids": [
+        "p13_imported_call_return_source_route",
+        "p13_imported_arm_update_return_source_route",
+        "p13_imported_arm_update_branch_source_route",
+        "p13_imported_branch_joined_return_source_route",
+        "p13_dual_imported_joined_return_source_route",
+        "p13_recursive_direct_call_policy",
+        "p13_mutual_recursive_direct_call_policy",
+        "p13_indirect_direct_call_policy",
+        "p13_function_value_call_policy",
+        "p13_multi_module_bundle_composition",
+        "p13_unapproved_host_symbol_policy"
+      ],
+      "excluded_entry_ids": [],
+      "residual_entry_count": 19,
       "migrated_route_owner": "generic_canonical_mir",
+      "default_oracle_owner": "mir_to_c",
+      "explicit_cranelift_fallback_policy": "forbidden",
+      "worker_request_boundary": "request_data_and_canonical_mir_only",
+      "artifact_owner": "phase9g_compiler_transactional_object_link_cleanup_and_publication",
+      "differential_owner": "registry_derived_level2_families",
+      "historical_owner": "scheduled_or_manual_cranelift_historical_full_level3",
+      "evidence_replay_policy": "validate_ownership_and_wiring_without_replaying_level2_or_level3",
+      "comparison_policy": "semantic_registry_fields_and_wiring_only_no_raw_hashes_or_matrix_correctness_totals"
+    },
+    "phase14": {
+      "closure_version": "phase14_closed_type_layout_and_memory_model",
+      "status": "closed_declared_inventory_only",
+      "scope": "declared_phase14_type_layout_and_memory_model_inventory_only",
+      "opening_version": "phase14_opening_inventory_v1",
+      "residual_version": "phase14_deferred_residue_v1",
+      "composition_version": "phase14_cross_feature_all_target_layout_differential_v1",
+      "closure_review_view": "compiler/CRANELIFT_PHASE14_CLOSURE.md",
+      "closure_guard": "guard-cranelift-phase14-close",
+      "ci_owner": "PR_Fast_Level1_phase_closure",
+      "closure_wording": "The declared Phase 14 type, layout, and memory-model inventory is complete. Migrated rows use compiler-owned target and type layouts through generic canonical MIR, MIR-to-C, and Cranelift, while remaining unsupported capabilities are represented by narrower, explicitly owned future-phase deferrals.",
       "non_claims": [
         "Cranelift_has_full_Gust_type_parity",
         "all_Gust_types_are_supported",
@@ -404,9 +341,6 @@
         "dynamic_allocation_is_complete",
         "the_experimental_backend_is_production_complete"
       ],
-      "opening_entry_count": 13,
-      "opening_version": "phase14_opening_inventory_v1",
-      "replaced_entry_ids": [],
       "required_contracts": [
         "phase13_semantic_closure_summary",
         "phase14_opening_contract",
@@ -439,16 +373,82 @@
         "worker_request_isolation",
         "early_deferral_and_output_preservation_contracts"
       ],
-      "residual_entry_count": 22,
-      "residual_version": "phase14_deferred_residue_v1",
-      "scope": "declared_phase14_type_layout_and_memory_model_inventory_only",
-      "status": "closed_declared_inventory_only",
-      "target_disposition_counts": {
-        "excluded": 0,
+      "closure_assertions": [
+        "every_phase14_opening_row_has_a_valid_final_disposition",
+        "every_migrated_row_uses_generic_canonical_mir_routing",
+        "every_migrated_memory_representable_type_has_compiler_owned_layout",
+        "mir_to_c_and_cranelift_consume_the_same_compiler_produced_layout_data",
+        "runtime_facing_layout_descriptors_come_from_the_compiler_authority",
+        "diagnostics_consume_the_same_layout_decisions",
+        "every_remaining_deferral_is_concrete_target_scoped_when_needed_and_owned",
+        "no_exact_source_or_exact_layout_output_recognizer_exists",
+        "no_backend_local_type_layout_authority_exists",
+        "c_sizeof_and_offsetof_are_not_semantic_layout_authorities",
+        "cranelift_target_defaults_are_not_semantic_layout_authorities",
+        "explicit_cranelift_cannot_fall_back_to_mir_to_c",
+        "unsupported_cases_stop_before_driver_and_artifact_access",
+        "mir_to_c_remains_the_default_oracle",
+        "default_and_explicit_mir_to_c_remain_equivalent",
+        "worker_receives_only_request_data_canonical_mir_and_compiler_produced_layout_data",
+        "phase9g_owns_object_link_cleanup_and_publication",
+        "active_totals_and_targets_are_registry_derived",
+        "generated_views_are_current",
+        "ci_families_remain_registry_derived",
+        "no_raw_registry_layout_or_markdown_hash_contract_exists",
+        "no_exact_matrix_total_is_backend_correctness",
+        "cranelift_historical_full_remains_separately_runnable_and_owns_all_target_evidence",
+        "representative_aggregate_evidence_is_assigned_to_every_declared_host_target"
+      ],
+      "forbidden_replays": [
+        "every_phase14_differential_family",
+        "every_declared_target_runner",
+        "full_phase9_through_phase14_historical_suite",
+        "every_historical_native_fixture",
+        "complete_object_and_link_failure_matrices",
+        "release_or_packaging_matrices"
+      ],
+      "opening_entry_count": 13,
+      "disposition_counts": {
+        "migrated": 13,
         "replaced": 0,
-        "supported": 5
+        "excluded": 0
       },
-      "worker_request_boundary": "request_data_canonical_mir_and_compiler_produced_layout_only"
+      "migrated_entry_ids": [
+        "p14_primitive_scalar_layout",
+        "p14_pointer_sized_integer_layout",
+        "p14_target_dependent_conversions",
+        "p14_pointer_nullability_model",
+        "p14_stack_slot_addressable_locals",
+        "p14_typed_load_store_memory_access",
+        "p14_string_and_string_view_layout",
+        "p14_array_and_slice_layout",
+        "p14_struct_field_layout",
+        "p14_enum_tagged_union_layout",
+        "p14_aggregate_basic_block_transport",
+        "p14_target_layout_model",
+        "p14_all_target_layout_evidence"
+      ],
+      "replaced_entry_ids": [],
+      "excluded_entry_ids": [],
+      "residual_entry_count": 22,
+      "declared_target_count": 5,
+      "target_disposition_counts": {
+        "supported": 5,
+        "replaced": 0,
+        "excluded": 0
+      },
+      "migrated_route_owner": "generic_canonical_mir",
+      "layout_authority_owner": "compiler/mir_layout.gst",
+      "layout_table_format": "gust.compiler_layout_table.v2",
+      "default_oracle_owner": "mir_to_c",
+      "explicit_cranelift_fallback_policy": "forbidden",
+      "worker_request_boundary": "request_data_canonical_mir_and_compiler_produced_layout_only",
+      "artifact_owner": "phase9g_compiler_transactional_object_link_cleanup_and_publication",
+      "differential_owner": "registry_derived_level2_families",
+      "historical_owner": "scheduled_or_manual_cranelift_historical_full_level3",
+      "all_target_owner": "registry_derived_phase14_declared_target_matrix",
+      "evidence_replay_policy": "validate_ownership_and_wiring_without_replaying_level2_or_level3",
+      "comparison_policy": "semantic_registry_layout_and_wiring_only_no_raw_hashes_or_matrix_correctness_totals"
     }
   },
   "current_phase": "phase17",
@@ -9476,6 +9476,96 @@
           "removal_phase": "25"
         },
         {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "afb1e98867fe080543ef8244814cd153d255771cc99d4e15c87e5a0b78931de7",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 3,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE17_OPENING.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "7d8273011f1c5d5c8deab3885d12d2701eb2b8750126a0c37c00ff86b44a5f48",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 22
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE20_OPENING.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "ae887dda81d1290afb4238f7ff7fe0559f3db0b52e8b64a4712919440a8f2ae6",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 2
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE21_COMPLETE_GUARD_SUITE.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "4f2a1a2fcbb0e26a5fa01392aecd95dba4c455e92da074f20f75f7e4b6f4de28",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 2
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE22_POSTFLIP_QUALIFICATION.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "185d196b96d561711d6e51bf4c3e4c2d80469f23cb6e5e6519934e820e4cd3bd",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE22_STABILITY_QUALIFICATION.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "7ff29cef22b05ae9bc77d3aea20deab9f6b1e1e25c9c3870cd56975678a67bd6",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE23_HISTORICAL_FULL_QUALIFICATION.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
@@ -9599,6 +9689,96 @@
           "removal_phase": "25"
         },
         {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "30bcbbcf6b538c9ceb8faed7478fd50e48ea6771206c043e6c4df67aab693df5",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 3,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE17_OPENING.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "393331b689433a9ee62ef5145b893eb86965935e466a9b8994ba59693b92b74e",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 22
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE20_OPENING.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "54324f2469f29dda64370efd578e81d1891386d37db9e8607407ad4efb865369",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 2
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE21_COMPLETE_GUARD_SUITE.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "a7e88bb9826ef6206280aa23e2e1f83265f1b6e1a92a5973d73dee4c88adb44c",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 2
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE22_POSTFLIP_QUALIFICATION.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "9e21c8df316ca3b57c244ba5322be515e4bd691a30e4418b231e7ab19c3322e4",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE22_STABILITY_QUALIFICATION.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "f895e430d47cdf9ec27b4144fe9e34ee20a824c2f0a5960a943789e1132f7965",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE23_HISTORICAL_FULL_QUALIFICATION.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
@@ -9692,6 +9872,12 @@
       "registered_changed_paths": [
         ".gitignore",
         "Makefile",
+        "compiler/CRANELIFT_PHASE17_OPENING.md",
+        "compiler/CRANELIFT_PHASE20_OPENING.md",
+        "compiler/CRANELIFT_PHASE21_COMPLETE_GUARD_SUITE.md",
+        "compiler/CRANELIFT_PHASE22_POSTFLIP_QUALIFICATION.md",
+        "compiler/CRANELIFT_PHASE22_STABILITY_QUALIFICATION.md",
+        "compiler/CRANELIFT_PHASE23_HISTORICAL_FULL_QUALIFICATION.md",
         "scripts/cranelift_registry.py",
         "scripts/phase13_broader_imported_runtime_calls.sh",
         "scripts/phase17_opening.py",
