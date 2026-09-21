@@ -105,8 +105,11 @@ def validate() -> dict:
             "canonical MIR contract drifted")
     runtime = record.get("runtime_package", {})
     require(runtime.get("retained_components") ==
-            ["src/runtime/arena.c", "src/runtime/host_io.c",
-             "src/runtime/file_io.c"] and
+            # Patch 25.5: the three retained components are Rust now.
+            # The symbols they provide are unchanged and still listed
+            # below -- only the language of the component moved.
+            ["src/runtime-rs/src/arena.rs", "src/runtime-rs/src/host_io.rs",
+             "src/runtime-rs/src/file_io.rs"] and
             runtime.get("provided_symbols") == [
                 "os_ArenaAlloc", "os_Arena_Free", "os_Arena_New",
                 "os_Arena_Validate", "os_Args", "os_CloseDir",
@@ -174,9 +177,18 @@ def validate() -> dict:
                    "CallVoid", "StringSlice", "runtime_package"):
         require(marker in worker, f"worker lacks {marker} transport")
     makefile = MAKEFILE.read_text(encoding="utf-8")
-    for marker in ("build/gust-runtime-package.a", "src/runtime/arena.c",
-                   "src/runtime/host_io.c", "src/runtime/file_io.c", "ar rcs"):
+    # Patch 25.5: the Makefile no longer compiles those three .c files, so
+    # naming them here would assert a build step that does not exist. What
+    # the archive must still do is unchanged: be assembled with `ar rcs`,
+    # and contain the object the three components now live in.
+    for marker in ("build/gust-runtime-package.a",
+                   "src/runtime-rs/target/release/libgust_runtime_rs.a",
+                   "gust_runtime_rs_exports.o", "ar rcs"):
         require(marker in makefile, f"runtime archive build lacks {marker}")
+    for retired in ("src/runtime/arena.c", "src/runtime/host_io.c",
+                    "src/runtime/file_io.c"):
+        require(retired not in makefile,
+                f"the retired runtime C file is still built: {retired}")
 
     task = TASK.read_text(encoding="utf-8")
     require("- [x] Patch 21.9 — Collections and Strings Native Source Migration — DONE"
