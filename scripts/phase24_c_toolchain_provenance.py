@@ -849,7 +849,21 @@ def resolve_through_make(name: str, lines: list, lineno: int) -> dict:
         hit = assign.match(text)
         if hit:
             built = hit.group(1).strip()
-    if not built or os.path.basename(built) != os.path.basename(name):
+    # `name` may be the shell VARIABLE rather than the path. The cc line
+    # spells the input `"$fixtures_obj"`, and the tokenizer hands us
+    # `fixtures_obj` -- so comparing basenames against the assigned path
+    # never matches and the file reads as provenance-less. The variable the
+    # `make` invocation names IS the thing being built, so accept it.
+    #
+    # This failed ONLY in CI. Locally an earlier resolver short-circuited
+    # because build/phase25-runtime-rs/gust_runtime_rs_fixtures.o already
+    # existed on disk from a previous build; in a clean checkout it does
+    # not. Running the guard, and even running its just recipe, both passed
+    # -- the environment that differed was a build artifact, not a command
+    # or a variable.
+    if not built:
+        return {}
+    if os.path.basename(built) != os.path.basename(name) and name != target_var:
         return {}
     makefile = ROOT / "Makefile"
     if not makefile.is_file():
