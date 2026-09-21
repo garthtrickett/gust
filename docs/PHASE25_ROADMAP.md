@@ -1014,6 +1014,39 @@ This is the two-generation rule as a process, collapsed into one commit,
 and it is the reason `strings.c` should be a separate patch from the other
 five rather than riding along.
 
+### The deletion's registration surface, measured before starting it
+
+Deleting five `.c` files is not five deletions. The archive's shape and the
+runtime's source inventory are asserted in eight places, and every one of
+them names files by path:
+
+| what | where | shape |
+| --- | --- | --- |
+| unity build | `src/runtime.c` | five `#include`s |
+| object list | `Makefile` `PHASE21_RUNTIME_OBJECTS` + 5 `.o` rules | delete the rules, do not leave them dangling |
+| archive members | `scripts/cranelift_feature_registry.schema.json` and the registry | `members` array, exact |
+| archive members | `scripts/phase21_full_compiler_native_qualification.py` | compares `ar t` output exactly |
+| archive members | three `phase21_*_native_source.sh` guards | fallback member lists |
+| helper sources | `scripts/phase17_opening.py` `required_sources` | a SET compared for equality |
+| helper rows | `scripts/cranelift_feature_registry.json` `source_path` | **57 rows**: arena 10, host_io 8, file_io 26, scratch 6, collections 7 |
+| a guard that COMPILES one | `scripts/phase17_retained_c_runtime_parity.sh` | `cc -O2 -c src/runtime/arena.c` |
+
+The last two are the ones that make this a patch rather than a chore. The
+57 rows are per-helper provenance, so they move to the Rust crate rather
+than disappearing, and `phase17_retained_c_runtime_parity.sh` builds
+`arena.c` directly — a guard whose whole subject is the retained C runtime
+has to be rescoped, not deleted, under the invert-don't-delete rule.
+
+`phase17_opening.py`'s `required_sources` still names `fiber.c` and
+`approved_scalar_imports.c`, both already deleted, so that guard is red on
+this branch before this patch touches anything. Control it against the
+branch base before reading any failure there as new — #457 is the fix in
+flight.
+
+Patch 25.6 did this for one file and it was nine files and 733 deletions.
+Five files with 57 provenance rows is the same shape at five times the
+width, which is why it is its own commit and not a tail on the ports.
+
 ### A stale-archive bug in the build graph, and the same one in the harness
 
     $(PHASE25_RUNTIME_RS): src/runtime-rs/src/lib.rs src/runtime-rs/Cargo.toml

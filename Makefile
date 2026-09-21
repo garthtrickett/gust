@@ -244,7 +244,26 @@ build/phase21-runtime/strings.o: src/runtime/strings.c src/runtime/core_headers.
 # would test Gust calling Gust and the contract would evaporate (O1).
 # Symbol names are byte-identical, so the 26 dependent files are unchanged.
 
-$(PHASE25_RUNTIME_RS): src/runtime-rs/src/lib.rs src/runtime-rs/Cargo.toml
+# Patch 25.5: the prerequisite list is a WILDCARD, and it has to be.
+#
+# It used to name src/runtime-rs/src/lib.rs and Cargo.toml. That was true
+# when the crate was lib.rs, and quietly stopped being true at the first
+# `pub mod`: the crate is now seven files, and editing fiber.rs, arena.rs,
+# collections.rs or file_io.rs did not make make rebuild the archive. The
+# build then linked YESTERDAY'S runtime and passed -- the worst shape a
+# build bug takes, because nothing fails and the green means nothing.
+#
+# scripts/phase25_runtime_rs_abi_smoke.sh had the identical bug in the
+# identical place: it skipped the cargo build when an archive already
+# existed, so the harness reported on code it had not compiled. Both were
+# written while being careful about everything else in the same file.
+#
+# cargo does its own change detection, so running it unconditionally would
+# also be correct; the wildcard keeps make's own graph honest, which is
+# what the incremental-build comment at the top of this file promises.
+PHASE25_RUNTIME_RS_SRCS = $(wildcard src/runtime-rs/src/*.rs) src/runtime-rs/Cargo.toml
+
+$(PHASE25_RUNTIME_RS): $(PHASE25_RUNTIME_RS_SRCS)
 	$(CARGO) build --release --manifest-path src/runtime-rs/Cargo.toml
 
 # One object joins the runtime archive, not the crate's 310 members.
