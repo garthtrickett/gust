@@ -71,7 +71,11 @@ EXPECTED_AMENDMENTS = [
         "observed_native_status_before": 47,
         "focused_replays_per_backend": 32,
         "synchronization_authority": "scheduler_owned_pending_fiber_count_with_full_barrier_result_publication",
-        "runtime_implementation": "src/runtime/fiber.c",
+        # Patch 25.6 deleted fiber.c. This field names where the
+        # scheduler lives, not what 21.17 did, so it follows the
+        # implementation rather than freezing a path to a file that
+        # no longer exists.
+        "runtime_implementation": "src/runtime-rs/src/fiber.rs",
         "changes_runtime_symbols": False,
         "changes_abi_or_layout": False,
         "changes_accepted_gust_meaning": False,

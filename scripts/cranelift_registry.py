@@ -104,6 +104,7 @@ TOP_FIELDS = {
     "issue447_resolver_scoping",
     "issue431_full_compiler_baseline",
     "patch251_no_c_falsifier",
+    "patch256_fiber_global_asm",
     "patch254_runtime_crate",
     "issue451_inventory_ownership",
     "issue436_justfile_population",
@@ -3034,7 +3035,14 @@ def validate_phase17_retained_c_authority_structure(registry):
                 f"{component_id}: helper count disagrees with Patch 17.1")
         require(row["retention_reason"] in PHASE17_RETAINED_C_REASONS,
                 f"{component_id}: retention reason is not justified")
-        require(row["owned_source_path"].startswith("src/runtime/")
+        # Patch 25.6: the fiber component's owned source is Rust now, not
+        # C. The three conditions this check was written for are unchanged
+        # -- in-tree, not generated, not a build artifact -- so the prefix
+        # widens to the runtime crate rather than the check relaxing. The
+        # authority is "retained non-Gust", and Phase 25 is what makes the
+        # non-Gust half Rust instead of C.
+        require((row["owned_source_path"].startswith("src/runtime/")
+                 or row["owned_source_path"].startswith("src/runtime-rs/src/"))
                 and "generated" not in row["owned_source_path"]
                 and "build/" not in row["owned_source_path"],
                 f"{component_id}: owned source is not a repository runtime file")

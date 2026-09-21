@@ -65,7 +65,7 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - Observed Native Status Before: `47`
 - Focused Replays Per Backend: `32`
 - Synchronization Authority: `scheduler_owned_pending_fiber_count_with_full_barrier_result_publication`
-- Runtime Implementation: `src/runtime/fiber.c`
+- Runtime Implementation: `src/runtime-rs/src/fiber.rs`
 - Changes Runtime Symbols: `false`
 - Changes Abi Or Layout: `false`
 - Changes Accepted Gust Meaning: `false`

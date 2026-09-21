@@ -431,8 +431,21 @@ def validate() -> dict:
                 f"{helper_id}: missing helper source path {source_path}")
         source_text = (ROOT / source_path).read_text(encoding="utf-8")
         if helper.get("symbol_kind") == "exact_c_symbol":
-            require(re.search(rf"\b{re.escape(symbol)}\s*\(", source_text)
-                    is not None,
+            # A C or Rust definition is spelled `symbol(`. Patch 25.6 moved
+            # two symbols into a `global_asm!` unit, where a definition is a
+            # `.global` directive plus a label and there is no parenthesis
+            # anywhere. Both halves are required, not just the label: a
+            # bare `symbol:` also spells a goto target and a struct field
+            # initialiser, so accepting it alone would let a file that
+            # merely mentions the name pass as the file that defines it.
+            defines_in_c = re.search(rf"\b{re.escape(symbol)}\s*\(",
+                                     source_text) is not None
+            defines_in_asm = (
+                re.search(rf"^\s*\"\.global\s+_?{re.escape(symbol)}\"",
+                          source_text, re.MULTILINE) is not None
+                and re.search(rf"^\s*\"_?{re.escape(symbol)}:\"",
+                              source_text, re.MULTILINE) is not None)
+            require(defines_in_c or defines_in_asm,
                     f"{helper_id}: exact symbol is absent from {source_path}")
         else:
             probes = [part.replace("*", "") for part in symbol.split("/")]
@@ -467,7 +480,13 @@ def validate() -> dict:
         # source path changes.
         "src/runtime-rs/src/lib.rs", "src/runtime/file_io.c",
         "src/runtime/host_io.c", "src/runtime/strings.c",
-        "src/runtime/fiber.c",
+        # Patch 25.6: fiber.c is deleted. Its sixteen ordinary exports are
+        # in the crate's fiber.rs; the two assembly symbols are in
+        # fiber_asm.rs, where `global_asm!` defines them. Both paths are
+        # named, rather than one standing in for the crate, so the
+        # per-symbol probe below still checks the unit that defines it.
+        "src/runtime-rs/src/fiber.rs",
+        "src/runtime-rs/src/fiber_asm.rs",
         "compiler/codegen.gst",
     }
     require(source_paths == required_sources,
