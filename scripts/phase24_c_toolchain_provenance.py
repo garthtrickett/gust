@@ -37,6 +37,7 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import os
 import re
 from pathlib import Path
 
@@ -794,9 +795,91 @@ def resolve_input(token: str, lines: list, lineno: int) -> dict:
                          f"{via_param['why']}")
         return record
 
+    # A `make <target>` invocation IS a producer -- it just names the rule
+    # instead of spelling the command. Resolve one hop further: find the
+    # target in the Makefile and classify ITS recipe. Without this, a script
+    # that correctly delegates to the build system reads as provenance-less,
+    # which is the opposite of the truth.
+    via_make = resolve_through_make(name, lines, lineno)
+    if via_make:
+        record["klass"] = via_make["klass"]
+        record["why"] = (f"{key} is built by a make target; "
+                         f"{via_make['why']}")
+        return record
+
     record["klass"] = ""
     record["why"] = f"no producer resolved for {key}"
     return record
+
+
+MAKE_ASSIGN = re.compile(r'^([A-Za-z_][A-Za-z0-9_]*)\s*[:?]?=\s*(.+)$')
+MAKE_VAR_REF = re.compile(r'\$[({]([A-Za-z_][A-Za-z0-9_]*)[)}]')
+MAKE_INVOKE = re.compile(r'^\s*make\s+"?\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?"?\s*$')
+
+
+def resolve_through_make(name: str, lines: list, lineno: int) -> dict:
+    """Classify an input that a nearby `make $VAR` invocation builds.
+
+    Only resolves when the make target is the SAME variable that names the
+    input, so it cannot launder an unrelated target's provenance onto this
+    file.
+    """
+    target_var = None
+    for prior in reversed(lines[:lineno]):
+        hit = MAKE_INVOKE.match(prior)
+        if hit:
+            target_var = hit.group(1)
+            break
+    if not target_var:
+        return {}
+    # The variable must be assigned the path we are resolving.
+    assign = re.compile(
+        r'^\s*' + re.escape(target_var) + r'="?([^"\n]+)"?\s*$')
+    built = None
+    for prior in lines[:lineno]:
+        hit = assign.match(prior)
+        if hit:
+            built = hit.group(1).strip()
+    if not built or os.path.basename(built) != os.path.basename(name):
+        return {}
+    makefile = ROOT / "Makefile"
+    if not makefile.is_file():
+        return {}
+    mk = makefile.read_text(encoding="utf-8", errors="replace").splitlines()
+    stem = os.path.basename(built)
+    # Makefile targets are frequently variables -- $(PHASE25_RUNTIME_RS_OBJ)
+    # rather than the path. Matching the literal filename against the target
+    # text alone finds nothing, so expand simple assignments first. Measured:
+    # without this the resolver returned empty for a file the Makefile plainly
+    # builds, which reads identically to having no producer at all.
+    makevars = {}
+    for mline in mk:
+        hit = MAKE_ASSIGN.match(mline)
+        if hit:
+            makevars[hit.group(1)] = hit.group(2).strip()
+
+    def expand(text: str) -> str:
+        for _ in range(4):
+            replaced = MAKE_VAR_REF.sub(
+                lambda mo: makevars.get(mo.group(1), mo.group(0)), text)
+            if replaced == text:
+                break
+            text = replaced
+        return text
+
+    for idx, mline in enumerate(mk):
+        if ":" not in mline or mline.startswith("\t"):
+            continue
+        if stem not in expand(mline.split(":")[0]):
+            continue
+        for recipe in mk[idx + 1:idx + 40]:
+            if recipe and not recipe.startswith("\t"):
+                break
+            klass = classify_producer(recipe)
+            if klass:
+                return {"klass": klass,
+                        "why": f"Makefile builds {stem} with a {klass} producer"}
+    return {}
 
 
 LOCAL_PARAM = re.compile(r'^\s*local\s+([A-Za-z_][A-Za-z0-9_]*)="?\$\{?([0-9]+)\}?"?\s*$')
