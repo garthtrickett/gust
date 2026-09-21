@@ -2266,6 +2266,37 @@ def normalize_phase23_text_surfaces(
     # Patch 25.1 is the newest successor, so it runs FIRST. It only ADDS a
     # surface -- the expected-failure list -- so the added-row requirement
     # from PR #444's review carries the whole contract.
+    # Patch 25.8a merged AFTER 25.1, so it is newer and runs FIRST. The
+    # two blocks were written on parallel branches and each inserted
+    # itself where it landed, which left file order disagreeing with
+    # merge order -- and the chain is defined by merge order.
+    seedwire_surface = registry.get(
+        "phase258_release_mechanics", {}).get("text_surface_successor")
+    if seedwire_surface is not None:
+        require(seedwire_surface.get("contract_version") ==
+                "phase258_release_mechanics_text_surface_successor_v1" and
+                seedwire_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Patch 25.8a release mechanics text surface successor drifted")
+        sw_paths = list(seedwire_surface["registered_changed_paths"])
+        sw_pre = {r["path"]: r for r
+                  in seedwire_surface["previous_changed_text_surfaces"]}
+        sw_post = {r["path"]: r for r
+                   in seedwire_surface["current_changed_text_surfaces"]}
+        require(sorted(sw_pre) == sorted(sw_paths) == sorted(sw_post),
+                "Patch 25.8a registered paths and rows disagree")
+        sw_live = {r["path"]: r for r in rows if r["path"] in sw_paths}
+        require(sorted(sw_live) == sorted(sw_paths),
+                "Patch 25.8a registered text surface is missing from the scan")
+        require(sw_live in (sw_pre, sw_post),
+                "Patch 25.8a changed text surfaces are partial or "
+                "substituted: the live rows match neither the complete "
+                "predecessor state nor the complete successor state "
+                f"({sorted(p for p in sw_paths if sw_live[p] != sw_post[p])} differ from post)")
+        rows = [dict(sw_pre.get(r["path"], r)) for r in rows]
+        rows.sort(key=lambda r: str(r["path"]))
+        by_path = {r["path"]: r for r in rows}
+
     falsifier_surface = registry.get(
         "patch251_no_c_falsifier", {}).get("text_surface_successor")
     if falsifier_surface is not None:
@@ -2313,33 +2344,6 @@ def normalize_phase23_text_surfaces(
     # Makefile, because wiring GUST_BOOTSTRAP_SEED into gust_bootstrap is
     # what turns the offline path from a documented claim into a route the
     # build actually takes.
-    seedwire_surface = registry.get(
-        "phase258_release_mechanics", {}).get("text_surface_successor")
-    if seedwire_surface is not None:
-        require(seedwire_surface.get("contract_version") ==
-                "phase258_release_mechanics_text_surface_successor_v1" and
-                seedwire_surface.get(
-                    "partial_extra_or_substituted_surface") == "rejected",
-                "Patch 25.8a release mechanics text surface successor drifted")
-        sw_paths = list(seedwire_surface["registered_changed_paths"])
-        sw_pre = {r["path"]: r for r
-                  in seedwire_surface["previous_changed_text_surfaces"]}
-        sw_post = {r["path"]: r for r
-                   in seedwire_surface["current_changed_text_surfaces"]}
-        require(sorted(sw_pre) == sorted(sw_paths) == sorted(sw_post),
-                "Patch 25.8a registered paths and rows disagree")
-        sw_live = {r["path"]: r for r in rows if r["path"] in sw_paths}
-        require(sorted(sw_live) == sorted(sw_paths),
-                "Patch 25.8a registered text surface is missing from the scan")
-        require(sw_live in (sw_pre, sw_post),
-                "Patch 25.8a changed text surfaces are partial or "
-                "substituted: the live rows match neither the complete "
-                "predecessor state nor the complete successor state "
-                f"({sorted(p for p in sw_paths if sw_live[p] != sw_post[p])} differ from post)")
-        rows = [dict(sw_pre.get(r["path"], r)) for r in rows]
-        rows.sort(key=lambda r: str(r["path"]))
-        by_path = {r["path"]: r for r in rows}
-
     ownership_surface = registry.get(
         "issue451_inventory_ownership", {}).get("text_surface_successor")
     if ownership_surface is not None:
