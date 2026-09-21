@@ -1342,7 +1342,7 @@
               "observed_native_status_before": 47,
               "focused_replays_per_backend": 32,
               "synchronization_authority": "scheduler_owned_pending_fiber_count_with_full_barrier_result_publication",
-              "runtime_implementation": "src/runtime/fiber.c",
+              "runtime_implementation": "src/runtime-rs/src/fiber.rs",
               "changes_runtime_symbols": false,
               "changes_abi_or_layout": false,
               "changes_accepted_gust_meaning": false,
@@ -1948,7 +1948,7 @@
           },
           "runtime_package": {
             "path": "build/gust-runtime-package.a",
-            "retained_components": ["src/runtime/arena.c","src/runtime/host_io.c","src/runtime/file_io.c","src/runtime/scratch.c","src/runtime/fiber.c"],
+            "retained_components": ["src/runtime/arena.c","src/runtime/host_io.c","src/runtime/file_io.c","src/runtime/scratch.c","src/runtime-rs/src/fiber.rs"],
             "new_or_changed_runtime_symbols": []
           },
           "worker_contract": {
