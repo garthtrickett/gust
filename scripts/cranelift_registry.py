@@ -112,6 +112,7 @@ TOP_FIELDS = {
     "phase25_roadmap_draft",
     "phase258_release_mechanics",
     "phase25_bootstrap_seed_policy",
+    "phase253_freestanding_subset",
     "phase24_closure",
     "phase398_retained_spelling_removal",
     "phase24_frozen_oracle_replacement",

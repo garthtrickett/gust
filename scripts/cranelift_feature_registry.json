@@ -27889,7 +27889,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "17ae0a1d7ef98718dbb8f278a3b4f47dcc506441563ee6cae8b7ffb74e41eec0",
+          "digest": "03b4c86e8f3ca03152d334654090ad0647bcb5a49987f36fd26020e7921e8860",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -27936,6 +27936,80 @@
       ],
       "registered_changed_paths": [
         "Makefile",
+        "scripts/cranelift_registry.py"
+      ]
+    }
+  },
+  "phase253_freestanding_subset": {
+    "text_surface_successor": {
+      "contract_version": "phase253_freestanding_subset_text_surface_successor_v1",
+      "current_changed_text_surfaces": [
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "d42e6a0c4c8098bfc5fa77387549c7f9a2af1aaa45c86714d9700d5c054e5a6c",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 8
+          },
+          "owner": "cranelift",
+          "path": ".github/workflows/pr-fast.yml",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "d29096d03a4409e4dd1f324820fdba10922fab2767daf40c08103e3c7c92cd97",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        }
+      ],
+      "partial_extra_or_substituted_surface": "rejected",
+      "previous_changed_text_surfaces": [
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "3b3c0c51c2c761928c58fcd82367000e9e0993b34213e12c780f8a3205f8ebe4",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 8
+          },
+          "owner": "cranelift",
+          "path": ".github/workflows/pr-fast.yml",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "17ae0a1d7ef98718dbb8f278a3b4f47dcc506441563ee6cae8b7ffb74e41eec0",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        }
+      ],
+      "registered_changed_paths": [
+        ".github/workflows/pr-fast.yml",
         "scripts/cranelift_registry.py"
       ]
     }
