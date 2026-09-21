@@ -11,7 +11,11 @@ on:
       - 'src/runtime/host_io.c'
       - 'src/runtime/file_io.c'
       - 'src/runtime/scratch.c'
-      - 'src/runtime/fiber.c'
+      # Patch 25.6: fiber.c became src/runtime-rs/src/fiber.rs and
+      # fiber_asm.rs. The filter follows the implementation, or this job
+      # stops running on the changes it exists to catch.
+      - 'src/runtime-rs/src/fiber.rs'
+      - 'src/runtime-rs/src/fiber_asm.rs'
       - 'scripts/cranelift_feature_registry.json'
       - 'scripts/cranelift_feature_registry.schema.json'
       - 'scripts/cranelift_registry.py'
@@ -36,7 +40,11 @@ on:
       - 'src/runtime/host_io.c'
       - 'src/runtime/file_io.c'
       - 'src/runtime/scratch.c'
-      - 'src/runtime/fiber.c'
+      # Patch 25.6: fiber.c became src/runtime-rs/src/fiber.rs and
+      # fiber_asm.rs. The filter follows the implementation, or this job
+      # stops running on the changes it exists to catch.
+      - 'src/runtime-rs/src/fiber.rs'
+      - 'src/runtime-rs/src/fiber_asm.rs'
       - 'scripts/cranelift_feature_registry.json'
       - 'scripts/cranelift_feature_registry.schema.json'
       - 'scripts/cranelift_registry.py'

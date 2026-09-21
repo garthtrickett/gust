@@ -10,6 +10,14 @@ wrong_brand_fixture="tests/stdlib_s1_clone_wrong_brand_rejected.gst"
 moved_destination_fixture="tests/stdlib_s1_clone_moved_destination_rejected.gst"
 freed_destination_fixture="tests/stdlib_s1_clone_freed_destination_rejected.gst"
 build_dir="build/guards/stdlib_s1_clone_destination"
+
+# Patch 25.6: src/runtime.c is no longer a complete runtime. fiber.c is
+# deleted and its eighteen exports live in the runtime crate, and codegen
+# emits a gust_yield() call in every loop of every compiled Gust program,
+# so this link needs the crate object. Built through make so a stale one
+# cannot be linked silently.
+runtime_obj="build/phase25-runtime-rs/gust_runtime_rs_exports.o"
+make "$runtime_obj"
 expected_status=65
 
 if [ ! -x ./gust ]; then
@@ -113,7 +121,8 @@ fi
 for variant in inferred explicit; do
   cat src/runtime.c "$build_dir/$variant-default.c" >"$build_dir/$variant-final.c"
   "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-    "$build_dir/$variant-final.c" -o "$build_dir/$variant-program"
+    "$build_dir/$variant-final.c" "$runtime_obj" \
+    -o "$build_dir/$variant-program"
   if "$build_dir/$variant-program" \
       >"$build_dir/$variant-runtime.stdout" 2>"$build_dir/$variant-runtime.stderr"; then
     actual_status=0

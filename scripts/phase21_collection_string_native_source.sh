@@ -17,7 +17,8 @@ import json
 record = json.load(open("scripts/cranelift_feature_registry.json"))
 print(1 if record.get("phase21_full_compiler_native_qualification", {}).get("status") == "patch21_14_complete" else 0)
 ')"
-expected_runtime_members="arena.o host_io.o file_io.o scratch.o fiber.o "
+# Patch 25.6: fiber.o left the archive with fiber.c.
+expected_runtime_members="arena.o host_io.o file_io.o scratch.o "
 successor_runtime_symbols=()
 if test "$full_compiler_live" = 1; then
   expected_runtime_members="$(python3 -c '
@@ -42,7 +43,8 @@ rg -n ' T os_LogStr$' "$build_root/runtime-symbols.txt" >/dev/null
 actual_runtime_symbols="$(awk 'NF == 3 && ($2 == "T" || $2 == "B") {print $3}' \
   "$build_root/runtime-symbols.txt" | sort)"
 expected_runtime_symbols="$(printf '%s\n' \
-  get_num_threads_to_use gust_context_switch gust_fiber_create \
+  get_num_threads_to_use gust_check_fail gust_tick \
+  gust_context_switch gust_fiber_create \
   gust_fiber_entry_wrapper gust_fiber_exit gust_fiber_free gust_fiber_switch \
   gust_scheduler_destroy gust_scheduler_init gust_scheduler_spawn \
   gust_shard_loop gust_yield \

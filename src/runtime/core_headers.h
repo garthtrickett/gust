@@ -339,6 +339,17 @@ void gust_scheduler_spawn(size_t stack_size, void (*entry_fn)(void*), void* arg)
 void gust_scheduler_destroy(void);
 void gust_yield(void);
 
+/* Patch 25.6: the abort every emitted bounds check calls.
+   Replaces 1,963 inline printf/exit pairs in the seed with one call
+   site each, so compiled Gust no longer carries stdio for the sole
+   purpose of reporting an index error. Defined in src/runtime-rs. */
+void gust_check_fail(const char* what, int line);
+
+/* Patch 25.6: the preemption tick. Was an inline decrement of the
+   thread-local gust_loop_ticks; stable Rust cannot export a C-visible
+   __thread data symbol, so the counter moved behind a call. */
+void gust_tick(void);
+
 struct std_Vector_str os_Args(os_Arena* ctx);
 struct Slice_unsigned_char os_MockPayload(void);
 void os_LogStr(struct Slice_unsigned_char s);

@@ -609,3 +609,372 @@ not a C-free repository.
 Two of three owed measurements are resolved — determinism holds, the poison
 test found the blocker above. The third is blocked behind the same
 dependency and stays owed.
+
+---
+
+# Patch 25.6 — findings before completing the port
+
+## The port is additive today, and that is not a valid intermediate state
+
+`fiber_asm.rs` adds all eight `global_asm!` blocks, but `src/runtime/fiber.c`
+is untouched: still 719 lines, still eight `__asm__` blocks, still defining
+`gust_context_switch` and `gust_fiber_entry_wrapper`. The assembly now exists
+twice.
+
+Measured: the Rust crate's *entire* public surface — the three `tiny_host_*`
+fixtures from 25.4 and both fiber functions — compiles into a **single**
+codegen unit object. So the two definitions are not merely duplicated in the
+tree, they are duplicated in one archive:
+
+    gust_runtime_rs-<hash>.gust_runtime_rs.<hash>-cgu.0.rcgu.o
+        T gust_context_switch
+        T gust_fiber_entry_wrapper
+        T tiny_host_add_i32
+        T tiny_host_add_one_i32
+        T tiny_host_is_positive_i32
+
+`fiber.o` is pulled from `gust-runtime-package.a` for `gust_yield`, and the
+crate object is pulled for `tiny_host_*`. Both get pulled, so both sets of
+definitions enter the link and it fails on duplicate symbols. The collision is
+latent only because 25.4's original recipe merged all 310 members and the
+archive was never exercised this way; the single-member extraction that
+replaced it makes the crate object unconditionally present.
+
+**So the deletion from `fiber.c` must land in the same patch as the addition
+to Rust.** There is no green intermediate.
+
+## `gust_yield` is the reason this patch gates 25.5
+
+The Exit Gate already requires `src/runtime/` to contain no `.c`, so the 579
+non-assembly lines were always in scope. What the entry does not convey is why
+they are urgent, and Patch 25.5 measured it: **codegen emits `gust_yield()`
+into every `while` loop and every recursive function**, unconditionally
+(`codegen.gst:4018`, `:3870`). `gust_yield` is defined at `fiber.c:336` and is
+a real scheduler function — `pthread_mutex_lock`, `sched_yield`, the shard
+run-queue — not a stub.
+
+So `fiber.c` is not "the last runtime file" in the sense of least-connected.
+It is the one every compiled Gust program reaches on every loop iteration,
+which is why 25.6 must precede 25.5 rather than follow it.
+
+The hard part of this patch is therefore the 579 lines, not the 140 that are
+done. `no_std` has no pthread, so the scheduler port needs either raw futex
+syscalls or a libc dependency the crate does not currently take. That choice
+is this patch's real subject and is not yet made.
+
+## What 25.6 CANNOT fix, stated so it is not assumed
+
+Patch 25.5's finding named two injected dependencies. This patch removes one
+of them from C, and cannot touch the other.
+
+`printf`/`exit` in slice bounds checks is a **codegen** property, not a runtime
+one: `codegen.gst:1647`, `:1677`, `:1697`, `:2000`, `:2088`, `:2992` emit the
+calls inline into every Gust function that indexes. Porting `fiber.c` to Rust
+does not remove a single one of them — they are in the compiler's own emitted
+output, including the compiler itself.
+
+Clearing that needs codegen to call a runtime-provided abort instead of
+inlining `printf`/`exit`, which is a change to the emitter and belongs with
+whoever owns the freestanding subset, not here. Recorded because 25.5's
+finding could be read as handing both problems to this patch, and only one of
+them is ours.
+
+## The 579 lines: what they need, and the `no_std` decision they force
+
+The earlier finding said the hard part of this patch is the 579 non-assembly
+lines and that the choice between raw syscalls and a libc dependency "is not
+yet made". Enumerating what `fiber.c` actually calls makes the choice, and it
+is not the one the crate's current shape implies.
+
+Host surface, counted:
+
+    pthread_mutex_lock / _unlock        40
+    pthread_mutex_init / _destroy        4
+    pthread_create / _join / _self       4
+    pthread_setaffinity_np               1   (Linux)
+    pthread_mach_thread_np               1   (macOS)
+    sched_yield                          4
+    malloc / free                        8
+    __sync_* atomics                     4
+    printf / exit                        8
+    usleep, sysconf, getenv, atoi        4
+
+Two of those groups are free. The `__sync_*` builtins map onto
+`core::sync::atomic` with no libc at all, and `malloc`/`free` are only used
+for the fiber struct and its stack, which a Rust port can own outright.
+
+**The mutexes are what force the decision.** 44 of the calls are mutex
+operations, and `pthread_mutex_t` is an OPAQUE type whose size and alignment
+are libc- and platform-specific. Measured here: 40 bytes, align 8, on glibc
+x86_64. Not measured, because no second libc is installed on this machine --
+but the type is opaque precisely so that it may differ, and musl and macOS
+are known to differ from glibc.
+
+A `#![no_std]` port must therefore hand-declare that type as a byte array of
+a guessed size per platform. Guess low and the mutex scribbles over adjacent
+memory; guess high and it merely wastes space. Both are silent. And this
+patch is committed to **all four platform quadrants** (O2, D6), three of
+which are unbuilt here -- so three of the four guesses could not be checked
+even in principle by this machine.
+
+That is the argument against `no_std` for this module, and it is
+structural rather than a matter of taste: the one thing 25.6 must not do is
+introduce a defect that only appears on the quadrants nobody builds.
+
+**What that means for 25.4's `#![no_std]`.** Phase 25's gate is *no C
+compiler*, not *no libc* -- linking libc requires no `cc`. So using `std`,
+which supplies `Mutex` and `thread` with no layout to guess, costs the phase
+nothing it is trying to buy. But it does reverse a decision 25.4 recorded
+deliberately, so it is stated here as a decision to be taken rather than
+taken quietly in a commit that looks like a port.
+
+The options, ranked:
+
+  1. **Crate becomes `std`.** `std::sync::Mutex`, `std::thread`. No opaque
+     layouts, all four quadrants correct by construction. Reverses 25.4's
+     `#![no_std]` and `panic = "abort"` shape.
+  2. **Stay `no_std`, bind pthread per platform.** Preserves 25.4, but puts
+     a hand-maintained ABI table in the one file whose bugs appear only on
+     unbuilt platforms.
+  3. **Raw futex syscalls.** Most work, and Linux-only, so it fails O2 on
+     its own.
+
+Option 1 unless someone names a reason the crate must stay `no_std` that is
+stronger than the layout hazard. The fixtures from 25.4 do not need
+`no_std`; they need to be FOREIGN, which they remain either way.
+
+## Sizing `gust_check_fail` before anyone starts it
+
+The emitter's libc surface section above names seven `printf`/`exit` sites in
+`codegen.gst` and proposes one runtime-provided noreturn to replace them.
+Seven emission SITES is not seven emissions. Counted in the current seed:
+
+    Vector bounds check failed   1960
+    Slice  bounds check failed      1
+    Pool   bounds check failed      1
+    HashMap GetRef missing key      1
+                                 ----
+                                 1963 inline printf/exit pairs
+                                      across 1,723 of 66,002 lines
+
+So the change replaces **1,963 inline `printf(...); exit(1);` pairs with
+1,963 calls to one function**, and removes `printf` and `exit` from emitted
+code entirely — one definition remains, in the runtime, where 25.5 and 25.6
+can move it to Rust along with everything else. That is the single largest
+reduction available in the emitter's libc surface.
+
+Two things the distribution tells us. Vector indexing is 99.8% of it, so a
+change that handled only `Slice` would look complete and do nothing. And
+`Slice` appearing exactly once confirms from a second direction what the
+25.5 probe found: the compiler's own sources reach bytes through
+`std.str_byte_at` (84 uses), not through `s[i]`, so slice indexing is rare
+in the code the compiler compiles even though it is common in the language.
+
+**It moves the seed** — 1,723 lines of `gust_v4.c` — so it needs a bootstrap
+and should ride with a patch already paying for one rather than buying a
+66,002-line republication of its own. This patch pays for one. Sized here so
+that decision is made against a number instead of an impression.
+
+## The port cannot be incremental, measured
+
+Before writing any Rust, the obvious question is where to start. Looking for
+a self-contained corner, the mutex pool reads like one: 75 lines, its own
+`gust_mutex_pool`, its own lock. It is not. `std_Mutex_Lock_impl` blocks by
+suspending the running fiber onto a wait queue and calling
+`gust_fiber_switch` — so it needs the fiber representation, `active_shard`,
+the shard's `active_fiber`, and the context switch itself.
+
+Counting which of `fiber.c`'s twenty functions touch the shared state
+(`gust_Fiber`, `gust_SchedulerShard`, `active_shard`, `gust_shards`,
+`gust_num_shards`, `gust_pending_fibers`, `gust_scheduler_running`,
+`gust_fiber_switch`, `gust_context_switch`, `gust_loop_ticks`):
+
+    touch nothing shared     4   get_num_threads_to_use, std_Mutex_Alloc,
+                                 std_Channel_Alloc, the entry wrapper
+    touch 1-3                7
+    touch 4-6                9   including both Channel primitives, both
+                                 Mutex primitives, yield, spawn, the shard
+                                 loop, init and destroy
+
+Sixteen of twenty. There is no leaf to move first, because every blocking
+primitive in this file blocks the same way: change the fiber's state, push it
+on a queue, switch. That is not incidental coupling, it is what a
+cooperative scheduler IS.
+
+**So Patch 25.6 is one commit of roughly 719 lines, not a sequence.** Taken
+with the earlier finding — that the assembly must be deleted in the same
+commit that adds it, or the two definitions collide in one archive — the
+whole file moves at once or not at all.
+
+That raises the stakes on the `no_std` question rather than settling it
+differently. Writing 719 lines of unsafe systems code in one commit, with
+hand-guessed `pthread_mutex_t` layouts, on three platform quadrants that
+cannot be built here, is not a risk worth taking to preserve a crate
+attribute. `std` supplies `Mutex` and `thread` with no layout to guess, and
+the phase's gate is *no C compiler*, not *no libc*.
+
+## The fiber benchmark, measured at last — and `gust_tick` costs 26%
+
+25.6's Exit Gate says the 25.0 fiber benchmark must not regress. That
+benchmark was never built: the roadmap's own table records it as
+**unmeasured**, so the gate cited an artifact that did not exist and could
+not have been evaluated either way.
+
+Built and run. A tick-dominated hot loop, 200M iterations, seven runs,
+median, same machine, same `-O2`:
+
+    pre-change compiler  (inline `--gust_loop_ticks`)   0.58 s
+    post-change compiler (`gust_tick()` call)           0.73 s
+                                                        +26%
+
+About 0.75 ns per iteration, which is a non-inlined call plus a TLS access.
+The two binaries differ only in the tick: same source, same runtime, one
+emits two inline decrements and the other two calls.
+
+**This is the worst case, and it should be read as one.** The loop body does
+a single add, so the tick is most of the work. Real code does more per
+iteration and the relative cost falls. But 26% on the pathological case is
+not nothing, and it is the number the gate has to be argued against.
+
+Why the call exists at all: `gust_loop_ticks` was a thread-local *int*, and
+stable Rust cannot export a C-visible `__thread` data symbol. The counter
+could not move as data, only as a function.
+
+Three ways out, none free:
+
+  * **Accept it.** Defensible only with evidence from realistic code, which
+    this measurement is not.
+  * **Inline the fast path.** Emit the decrement inline and call only when
+    the tick expires — but that needs the thread-local back, which is the
+    thing stable Rust cannot give.
+  * **LTO across the C/Rust boundary**, so the call inlines. Plausible, and
+    it changes the build rather than the language.
+
+Recorded as a decision owed, not a detail. A 26% regression on loop-heavy
+code is the kind of thing that gets discovered by a user rather than a
+patch, and 25.6 cannot claim its Exit Gate clause while it stands.
+
+### LTO does not recover it, and the regression is on a dying route
+
+Two follow-up measurements settle the `gust_tick` question, one negatively
+and one in the change's favour.
+
+**LTO across the C/Rust boundary does nothing.** Built the crate with
+`lto = true` and the benchmark with `-flto`:
+
+    inline decrement (baseline)   0.58 s
+    gust_tick(), no LTO           0.71 s
+    gust_tick(), LTO both sides   0.74 s
+
+No improvement — slightly worse. GCC's LTO and Rust's LLVM LTO are not
+interoperable, so nothing inlines across the boundary. That option is
+eliminated by measurement rather than by argument, which is worth more than
+leaving it on the list as plausible.
+
+**The regression is confined to the generated-C route, which 25.10 deletes.**
+The preemption tick is emitted by `codegen.gst` alone. The native backend
+knows `gust_yield` as a callable runtime symbol
+(`main.rs:15588`, `:16649` — a `RuntimeCall` and a required-symbol entry)
+but **never injects a tick into loops**. So the surviving route does not pay
+this cost and never did; the route that pays it is on the deletion list.
+
+That makes the trade defensible on its own terms: a 26% worst-case cost on
+a path being removed, in exchange for the last thread-local data symbol
+leaving the runtime. It should still be stated in 25.6's record rather than
+discovered later, because until 25.9 and 25.10 land, the compiler itself is
+built through the route that pays it.
+
+### A pre-existing gap this uncovered: native code never preempts
+
+If `codegen.gst` is the only emitter that injects the tick, then natively
+compiled Gust has **no automatic preemption** — a fiber that loops without
+calling `gust_yield` explicitly never yields. The generated-C route
+preempts every `GUST_TICK_INTERVAL` iterations; the native route does not.
+
+This is not caused by anything in Phase 25 and predates this patch. It
+matters here only because Phase 25's end state is the native route, so
+"cooperative scheduling works" is inherited from a path that is being
+deleted. Flagged for an owner rather than fixed in a patch about `fiber.c`:
+deciding whether the native backend should inject a tick is a scheduler
+question, not a porting one.
+
+---
+
+# Patch 25.6 — two guards that were already red on main
+
+## What happened
+
+Patch 25.6 edits `compiler/codegen.gst`. Two stdlib-lane workflows are
+path-filtered on that file, so this patch is the first thing in weeks to fire
+them, and both failed:
+
+    guard-stdlib-s1-str-surface
+    guard-stdlib-s1-collection-receivers
+
+## They fail identically on main, measured
+
+Run on a worktree at `main@8acfc3f3`, the same script, the same fixtures:
+
+    tests/test_str_surface_regression.gst        line 25, exit 1
+    tests/test_hashmap_reference_receiver.gst    line 24, exit 1
+
+Both print, byte for byte, the diagnostic they print on this branch:
+
+    decision=deferred capability=phase13_generic_source_to_mir
+    reason_code=deferred_p13_parameter_argument_target_dependent_abi
+    Cranelift backend selection is valid, but the source-level route is
+    not connected yet.
+
+So this patch did not break them. It made CI look.
+
+## Why nobody knew
+
+`str-surface` last succeeded on main on **2026-08-20**.
+`collection-receivers` last succeeded on main on **2026-09-10**.
+
+Every run since has been cancelled by a subsequent push, and neither
+workflow fires unless `compiler/codegen.gst` or `compiler/typechecker.gst`
+changes. Main has absorbed the Phase 24 closure and Patches 25.0 through
+25.4 in that window with these two guards never executing.
+
+## The mechanism
+
+`scripts/run-gust-file.sh` is cranelift-only. Its own comments say the
+MIR-to-C arm is gone -- "there is no longer a compiler invocation to reach".
+Both fixtures take a `&Arena` parameter and return `str`, which the native
+route defers as a Phase 13 target-dependent-ABI capability. They used to
+reach a fallback; Phase 24's backend removal took it away and left two
+guards that cannot compile their own fixtures.
+
+That is a Phase 24 residue of the kind `#398` and `#424` name: a consumer
+left pointing at a route that no longer exists.
+
+## What this patch does NOT do, and why
+
+It does not repair them. Three options were weighed:
+
+**Restore a fallback in `run-gust-file.sh`.** Around thirty scripts and four
+justfile recipes call it. A fallback that fires on a deferred capability
+would silence a genuine native-route regression in any of them, and the
+instrument is shared across lanes. Measured first: the five guards that
+assert the deferral diagnostic read it from their own compile logs, not from
+this script, so they would NOT break -- but that only makes the change
+possible, not safe.
+
+**Point the two recipes at the bootstrap emitter,** the route the test runner
+already uses for all 311 tests. This restores what they measure, because
+neither guard is about the native route: one pins the observable values of
+`str`, the other pins HashMap lowering through a reference. But it changes
+which route a stdlib-lane guard exercises, and that is the stdlib lane's
+judgement, not this patch's.
+
+**Leave them red and say so.** Chosen. Neither check is in the required set
+-- the `Protect main` ruleset requires exactly one, `Codex / Trusted actor` --
+so they do not gate a merge. What they do is tell the truth about a part of
+the tree that has been broken for between eleven days and a month.
+
+Recording this rather than repairing it is deliberate. Making a red guard
+green by changing what it measures is how a suite stops being evidence, and
+Patch 25.11 has already had to be renumbered once in this phase for claiming
+an Exit Gate that was not met.
+

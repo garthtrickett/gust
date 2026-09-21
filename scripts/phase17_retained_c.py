@@ -152,8 +152,11 @@ def check_registry(root: Path) -> dict:
         if row.get("retention_reason") not in RETENTION_REASONS:
             fail(f"{cid}: retention reason is not justified")
         source = row.get("owned_source_path", "")
-        if (not source.startswith("src/runtime/") or "generated" in source
-                or "build/" in source):
+        # Patch 25.6: see scripts/cranelift_registry.py for why the
+        # runtime crate counts as a repository runtime file.
+        if ((not source.startswith("src/runtime/")
+             and not source.startswith("src/runtime-rs/src/"))
+                or "generated" in source or "build/" in source):
             fail(f"{cid}: owned source is not a repository runtime file")
         if not (root / source).is_file():
             fail(f"{cid}: owned source does not exist: {source}")

@@ -849,6 +849,12 @@ row would make it pass while measuring less, which is #423 again.
 
 ## P3 — does a `#![no_std]` staticlib actually work · **RESOLVED: yes, measured**
 
+> **SUPERSEDED by P17 for the SCHEDULER, still true as written.** P3 asked
+> whether a `no_std` staticlib builds and exports its symbols. It does, and
+> that answer is unchanged. What P3 did not ask is whether `no_std` can hold
+> the scheduler, and Patch 25.6 measured that it cannot. See P17.
+
+
 Recorded so the first patch does not rediscover it. A `staticlib` crate with
 `#![no_std]`, `panic = "abort"`, a trivial `#[panic_handler]`, three
 `#[no_mangle] extern "C"` fixtures and a `global_asm!` block builds clean and
@@ -989,6 +995,47 @@ D1's release 0 is minted from today's `gust_v4.c` **before** D5 deletes the
 emitter — already satisfied by the sequence, which puts release mechanics at
 step 9 and emitter deletion at step 11, and noted here so a future reorder
 does not quietly break it.
+
+## P17 — can the runtime crate stay `#![no_std]` · **RESOLVED: no, once the scheduler moves — and Phase 25's gate is *no C compiler*, not *no libc***
+
+P3 established that a `no_std` staticlib builds and exports its symbols, and
+that remains true. It was answered against a crate holding three scalar
+fixtures and a `global_asm!` block. `fiber.c`'s scheduler is a different
+question and Patch 25.6 had to answer it.
+
+**`pthread_mutex_t` decides it.** Forty-four of `fiber.c`'s calls are mutex
+operations, and that type is OPAQUE — its size and alignment belong to the
+libc, not to any standard. Measured here: 40 bytes, align 8, glibc x86_64.
+NOT measured for musl or macOS, because no second libc is installed on this
+machine; the type is opaque precisely so it may differ.
+
+A `no_std` port must therefore hand-declare it as a guessed byte array per
+platform. Guess low and the mutex writes over adjacent memory; guess high
+and it merely wastes space. **Both are silent.** This patch is committed to
+all four platform quadrants (O2, D6) and three cannot be built here, so
+three of the four guesses would be unverifiable in principle — a defect that
+appears only where nobody builds is the worst shape available.
+
+`cpu_set_t` is the same trap a second time, for thread affinity. That one
+was avoidable by going to the kernel's `sched_setaffinity` ABI — a byte size
+and a bitmask, both stable — instead of the libc struct. The mutex has no
+such escape.
+
+**What `std` costs the phase: nothing it is buying.** The gate is a build
+and test with no C COMPILER. Linking libc requires no `cc`. `std` supplies
+`Mutex` and `thread` with no layout to guess, and `panic = "abort"` is kept,
+so the abort behaviour 25.4's fixtures relied on is unchanged.
+
+The alternative considered and rejected: pinning the toolchain to nightly
+for `#[thread_local]`. That is a far larger commitment than one attribute
+justifies, and it would bind the bootstrap chain — the thing D7 wants
+auditable — to an unstable compiler.
+
+**What this does not rescue.** `gust_loop_ticks` was a thread-local *int*,
+and `std` does not help there either: stable Rust cannot export a C-visible
+`__thread` data symbol at all. That counter moved behind a call, at a
+measured cost — see the roadmap's benchmark section, and note the cost falls
+on the generated-C route that 25.10 deletes.
 
 ## Measurements owed before the first patch
 

@@ -2263,9 +2263,47 @@ def normalize_phase23_text_surfaces(
     # newest-first discipline as every link below it.
     # Phase 25's seed-policy record is newest, so it runs FIRST. It adds one
     # document and moves docs/ROADMAP_TAIL.md; no code or route changes.
-    # Patch 25.4 merges AFTER 25.8a and 25.1, so it is the newest link in
-    # this chain and runs FIRST. The union resolution that brought it here
-    # appended it at the END, which is file order, not merge order -- and
+    # Patch 25.6 merges AFTER 25.4, so it is the newest link here and runs
+    # FIRST. It changes twelve enrolled surfaces and adds none: fiber.c is
+    # deleted, but fiber.c was never enrolled -- it matched no surface
+    # pattern -- so the scan's row count is unchanged at 590 and this block
+    # is a pure projection, with no added or removed half to carry.
+    #
+    # A thirteenth surface moved and is deliberately NOT here. Patch 25.6
+    # also edits docs/PHASE25_BOOTSTRAP_SEED_POLICY.md, which the seed
+    # policy block below carries as an ADDED surface -- and an added
+    # surface has one registered row, not a predecessor/successor pair, so
+    # there is nothing for this block to project it back to. Its row is
+    # updated in place there instead. Projecting it here would hand that
+    # block the pre-25.6 digest and fail it.
+    fiber_surface = registry.get(
+        "patch256_fiber_global_asm", {}).get("text_surface_successor")
+    if fiber_surface is not None:
+        require(fiber_surface.get("contract_version") ==
+                "patch256_fiber_global_asm_text_surface_successor_v1" and
+                fiber_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Patch 25.6 fiber global_asm text surface successor drifted")
+        fb_paths = list(fiber_surface["registered_changed_paths"])
+        fb_pre = {r["path"]: r for r
+                  in fiber_surface["previous_changed_text_surfaces"]}
+        fb_post = {r["path"]: r for r
+                   in fiber_surface["current_changed_text_surfaces"]}
+        require(sorted(fb_pre) == sorted(fb_paths) == sorted(fb_post),
+                "Patch 25.6 registered paths and rows disagree")
+        fb_live = {r["path"]: r for r in rows if r["path"] in fb_paths}
+        require(sorted(fb_live) == sorted(fb_paths),
+                "Patch 25.6 registered text surface is missing from the scan")
+        require(fb_live in (fb_pre, fb_post),
+                "Patch 25.6 changed text surfaces are partial or "
+                "substituted: the live rows match neither the complete "
+                "predecessor state nor the complete successor state "
+                f"({sorted(p for p in fb_paths if fb_live[p] != fb_post[p])} differ from post)")
+        rows = [dict(fb_pre.get(r["path"], r)) for r in rows]
+    # Patch 25.4 merges AFTER 25.8a and 25.1, so it runs before both of
+    # them, and after 25.6, which is newer still. The union resolution
+    # that brought it here appended it at the END, which is file order,
+    # not merge order -- and
     # the chain is defined by merge order. Moved, because leaving it last
     # made 25.8a compare live rows against a state 25.4 had not yet
     # projected back.

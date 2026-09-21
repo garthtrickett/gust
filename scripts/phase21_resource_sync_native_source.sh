@@ -8,7 +8,8 @@ mkdir -p "$build_root"
 make phase10-native-package
 driver="$PWD/build/gust-native-backend"
 runtime="$PWD/build/gust-runtime-package.a"
-expected_runtime_members="arena.o host_io.o file_io.o scratch.o fiber.o "
+# Patch 25.6: fiber.o left the archive with fiber.c.
+expected_runtime_members="arena.o host_io.o file_io.o scratch.o "
 full_compiler_live="$(python3 -c '
 import json
 record = json.load(open("scripts/cranelift_feature_registry.json"))
