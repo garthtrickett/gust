@@ -900,3 +900,57 @@ pub extern "C" fn gust_tick() {
         gust_yield();
     }
 }
+
+// ---- strings.c's two arena-taking functions -----------------------------
+//
+// Patch 25.5 moved nine of strings.c's eleven functions to Gust. These two
+// stayed, and the reason is measured rather than stylistic: both allocate N
+// RAW BYTES from a caller-supplied arena, and Gust has no spelling for that.
+// `os.ArenaAlloc` takes one argument -- the allocator -- because Gust
+// allocates by TYPE through `ctx[T]` and codegen supplies the `sizeof`.
+// `os.ScratchAlloc` does take a byte count, which is why std_str_slice could
+// move, but scratch resets and a clone must outlive the scope.
+//
+// D2 allows Rust as the per-file fallback "on its own merits". Needing an
+// operation the language does not express is a merit.
+
+/// `typedef struct { void* BaseAddress; size_t Offset; size_t Capacity; } os_Arena`
+/// -- core_headers.h:49-53. `#[repr(C)]` because the C half still passes
+/// these pointers in.
+#[repr(C)]
+pub struct OsArena {
+    pub base_address: *mut c_void,
+    pub offset: usize,
+    pub capacity: usize,
+}
+
+extern "C" {
+    fn os_ArenaAlloc(arena: *mut OsArena, size: i32) -> i32;
+}
+
+/// The C slice `Slice_unsigned_char`, returned by value.
+#[repr(C)]
+pub struct SliceU8 {
+    pub data: *mut u8,
+    pub len: i32,
+}
+
+/// `Slice_unsigned_char std_Clone_str(os_Arena* arena, Slice_unsigned_char s)`.
+///
+/// # Safety
+/// `arena` must be a live arena; `s` must be a valid slice.
+#[no_mangle]
+pub unsafe extern "C" fn std_Clone_str(arena: *mut OsArena, s: SliceU8) -> SliceU8 {
+    if s.data.is_null() || s.len <= 0 {
+        return SliceU8 { data: std::ptr::null_mut(), len: 0 };
+    }
+    let offset = os_ArenaAlloc(arena, s.len);
+    // GUST_ARENA_OFFSET(offset) is ((size_t)(uint32_t)(offset)) -- the cast
+    // through uint32_t is load-bearing, not decoration: a negative i32 must
+    // become a large positive offset, exactly as the C does, or the copy
+    // lands before the arena base.
+    let byte_offset = (offset as u32) as usize;
+    let dest = (*arena).base_address.cast::<u8>().add(byte_offset);
+    std::ptr::copy_nonoverlapping(s.data, dest, s.len as usize);
+    SliceU8 { data: dest, len: s.len }
+}
