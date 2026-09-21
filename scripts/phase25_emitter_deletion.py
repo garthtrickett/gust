@@ -29,6 +29,17 @@ ROOT = Path(__file__).resolve().parents[1]
 ENTRY_SPELLING = "bootstrap-emitter"
 AUTHORITY = "GUST_BOOTSTRAP_EMITTER"
 CALLERS = ("Makefile", "justfile", "compiler/test_runner_entry.gst")
+# Scoped to CALLERS on purpose: these are the sites that INVOKE the emitter.
+# The authority is named in other files too -- guards that assert its
+# presence or absence, and this script -- and counting those would make the
+# number move whenever a guard is edited.
+MANIFEST = ROOT / "docs/RELEASE_MANIFEST.json"
+
+
+def releases() -> list:
+    if not MANIFEST.is_file():
+        return []
+    return json.loads(MANIFEST.read_text(encoding="utf-8")).get("releases", [])
 
 
 def require(condition: bool, message: str) -> None:
@@ -61,6 +72,7 @@ def report() -> dict:
         "entry_total": sum(entry.values()),
         "authority_sites": sum(count(AUTHORITY, p) for p in CALLERS),
         "seed_present": (ROOT / "gust_v4.c").is_file(),
+        "release_count": len(releases()),
     }
 
 
@@ -76,12 +88,36 @@ def validate() -> None:
             f"{r['entry_total']} bootstrap-emitter sites remain but the "
             "emitter is gone. An entry with no emitter is dead machinery "
             "and every caller is now broken.")
+    # The AUTHORITY is the other half of the entry and was counted but
+    # never asserted. `--backend bootstrap-emitter` is the spelling; the
+    # GUST_BOOTSTRAP_EMITTER environment variable is what the callers set
+    # to reach the same code. Deleting one and leaving the other passed
+    # this guard, which made "both or neither" true of only one of them.
+    require(not (r["emitter_present"] and r["authority_sites"] == 0),
+            "the emitter is still in compiler/codegen.gst but no caller "
+            "sets GUST_BOOTSTRAP_EMITTER. The authority is half the entry "
+            "and it went without the emitter.")
+    require(not (not r["emitter_present"] and r["authority_sites"] > 0),
+            f"{r['authority_sites']} GUST_BOOTSTRAP_EMITTER references "
+            "remain but the emitter is gone. Every one of them now names "
+            "an authority over code that does not exist.")
     if not r["emitter_present"]:
-        print("guard-cranelift-phase25-emitter-deletion: ok (emitter and "
-              "entry both removed)")
+        # 25.9's ordering, enforced from this side. The emitter is what
+        # regenerates gust_v4.c, so deleting it without a release having
+        # been minted leaves no way to produce a seed ever again.
+        #
+        # This replaces `require(r["seed_present"] or True, "")`, which was
+        # a tautology with an empty message: it could not fail, and it
+        # occupied the place where the ordering check was supposed to be.
+        require(r["release_count"] > 0,
+                "the emitter is gone and NO release exists. The emitter is "
+                "what regenerates gust_v4.c, so this order leaves no route "
+                "to a seed at all. Patch 25.9 mints release 0 first; that "
+                "is not a convention, it is the only entry point left.")
+        print("guard-cranelift-phase25-emitter-deletion: ok (emitter, entry "
+              f"and authority all removed; {r['release_count']} releases "
+              "provide the bootstrap route)")
         return
-    # Pre-deletion: enforce the ordering from 25.9's other side.
-    require(r["seed_present"] or True, "")
     print("guard-cranelift-phase25-emitter-deletion: emitter present with "
           f"{r['entry_total']} entry sites across "
           f"{len([p for p,c in r['entry_spelling_sites'].items() if c])} "
