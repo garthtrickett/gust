@@ -1,6 +1,42 @@
 {
   "schema": "scripts/cranelift_feature_registry.schema.json",
   "phase25_runtime_port_invocations": {
+    "production_audit_transition": {
+      "contract_version": "phase25_runtime_port_audit_transition_v1",
+      "current_audit": {
+        "active_non_bootstrap_live_c_lane_count": 0,
+        "active_non_bootstrap_live_c_owner": null,
+        "non_bootstrap_retained_test_surface_count": 2,
+        "phase25_bootstrap_explicit_c_count": 0,
+        "repository_explicit_c_count": 2,
+        "repository_invocation_count": 159,
+        "supported_production_or_release_explicit_c_count": 0,
+        "supported_surface_count": 6,
+        "supported_surface_manifest_digest": "cf0282ee017ba3d16c0779c2e2e3b505cca760caf34ef61553a1177f483e3591",
+        "unknown_downstream_count": 0
+      },
+      "moved_fields": [
+        "repository_invocation_count",
+        "supported_surface_manifest_digest"
+      ],
+      "partial_or_substituted_audit": "rejected",
+      "previous_audit": {
+        "active_non_bootstrap_live_c_lane_count": 0,
+        "active_non_bootstrap_live_c_owner": null,
+        "non_bootstrap_retained_test_surface_count": 2,
+        "phase25_bootstrap_explicit_c_count": 0,
+        "repository_explicit_c_count": 2,
+        "repository_invocation_count": 158,
+        "supported_production_or_release_explicit_c_count": 0,
+        "supported_surface_count": 6,
+        "supported_surface_manifest_digest": "f13b79860e2ba912e2b80e66a26f252f31c61420264070e74bcbfcf03fecc336",
+        "unknown_downstream_count": 0
+      },
+      "reason": {
+        "repository_invocation_count": "the strings differential emits the Gust side and scripts/*.sh is inside the invocation scan",
+        "supported_surface_manifest_digest": "the Makefile is a supported surface and this phase edits it"
+      }
+    },
     "added_invocation_count": 1,
     "added_invocation_rows": [
       {
