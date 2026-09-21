@@ -954,3 +954,82 @@ pub unsafe extern "C" fn std_Clone_str(arena: *mut OsArena, s: SliceU8) -> Slice
     std::ptr::copy_nonoverlapping(s.data, dest, s.len as usize);
     SliceU8 { data: dest, len: s.len }
 }
+
+/// `struct std_Vector_str { Slice_unsigned_char* data; int len; int capacity; os_Arena* arena; }`
+/// -- core_headers.h:103-108.
+#[repr(C)]
+pub struct VectorStr {
+    pub data: *mut SliceU8,
+    pub len: i32,
+    pub capacity: i32,
+    pub arena: *mut OsArena,
+}
+
+/// The growth half of `os_VectorPush`, which is a MACRO in core_headers.h
+/// rather than a function, so it cannot be called from here.
+///
+/// # Safety
+/// `vec` must be a valid vector with a live arena.
+unsafe fn vector_push_str(vec: &mut VectorStr, value: SliceU8) {
+    if vec.len >= vec.capacity {
+        let new_cap = if vec.capacity == 0 { 8 } else { vec.capacity * 2 };
+        let bytes = new_cap * (std::mem::size_of::<SliceU8>() as i32);
+        let offset = os_ArenaAlloc(vec.arena, bytes);
+        let new_data = (*vec.arena).base_address
+            .cast::<u8>()
+            .add((offset as u32) as usize)
+            .cast::<SliceU8>();
+        if !vec.data.is_null() && vec.len > 0 {
+            std::ptr::copy_nonoverlapping(vec.data, new_data, vec.len as usize);
+        }
+        vec.data = new_data;
+        vec.capacity = new_cap;
+    }
+    vec.data.add(vec.len as usize).write(value);
+    vec.len += 1;
+}
+
+/// `struct std_Vector_str std_str_split(Slice_unsigned_char s, Slice_unsigned_char delim, os_Arena* ctx)`.
+///
+/// The last of strings.c. It stayed out of Gust for the same reason
+/// std_Clone_str did -- raw arena bytes -- and additionally because
+/// os_VectorPush is a macro, so even a Gust caller could not reach it.
+///
+/// # Safety
+/// `s`, `delim` and `ctx` must be valid.
+#[no_mangle]
+pub unsafe extern "C" fn std_str_split(s: SliceU8, delim: SliceU8, ctx: *mut OsArena) -> VectorStr {
+    let mut vec = VectorStr {
+        data: std::ptr::null_mut(), len: 0, capacity: 0, arena: ctx,
+    };
+    if delim.len == 0 {
+        // The C emits one single-byte slice per input byte.
+        for i in 0..s.len {
+            vector_push_str(&mut vec, SliceU8 { data: s.data.add(i as usize), len: 1 });
+        }
+        return vec;
+    }
+    let mut start = 0i32;
+    let mut i = 0i32;
+    while i <= s.len - delim.len {
+        let hit = std::slice::from_raw_parts(s.data.add(i as usize), delim.len as usize)
+            == std::slice::from_raw_parts(delim.data, delim.len as usize);
+        if hit {
+            vector_push_str(&mut vec, SliceU8 {
+                data: s.data.add(start as usize), len: i - start,
+            });
+            i += delim.len;
+            start = i;
+        } else {
+            i += 1;
+        }
+    }
+    // The C's trailing `if (start <= s.len)` is always true here, and emits
+    // the final segment. Kept as an unconditional push so the element count
+    // matches: a split with no match still yields one element, the whole
+    // string, which several callers rely on.
+    vector_push_str(&mut vec, SliceU8 {
+        data: s.data.add(start as usize), len: s.len - start,
+    });
+    vec
+}
