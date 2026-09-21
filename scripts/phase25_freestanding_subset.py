@@ -75,7 +75,20 @@ LAYERS = {
 # close arena -> fiber -> scratch -> arena. Exempted here so the layer check
 # reports what the author controls; Patch 25.6 is what actually removes it,
 # which is why 25.6 now precedes 25.5.
-CODEGEN_INJECTED = frozenset({"gust_yield"})
+CODEGEN_INJECTED = frozenset({
+    # Emitted into every `while` loop and recursive function
+    # (codegen.gst:4018, :3870). Patch 25.6 replaced the inline
+    # `--gust_loop_ticks` decrement with this call, because a thread-local
+    # data symbol cannot be exported from stable Rust.
+    "gust_tick",
+    # What gust_tick calls when the tick expires. Still reachable from
+    # emitted code, so still not the author's choice.
+    "gust_yield",
+    # Emitted into every slice, vector, pool index and HashMap miss --
+    # 1,963 sites in the seed before Patch 25.6 replaced the inline
+    # printf/exit pairs with this one call.
+    "gust_check_fail",
+})
 
 
 # Pinned for the same reason FORBIDDEN_FLOOR is, and the omission was the
