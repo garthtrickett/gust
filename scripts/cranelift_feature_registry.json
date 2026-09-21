@@ -41773,6 +41773,21 @@
           "removal_phase": "25"
         },
         {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "a52665e9238263ea89998e5431934203907cab84bb89722c362e7b47b7c076f4",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 3,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE17_OPENING.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
           "classification": "production_or_release_migration",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "deprecate_or_migrate_under_23_8_and_23_12",
@@ -41926,6 +41941,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "b59a8e4c6259cab7d61fb16dd2cfbc0d984f2cc3e5aa0820f8a77f7c659425f6",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 21
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_scheduler_main_result.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "75d5294ba9f0544197ea5b49443441133e01445540cbdfd40f2a71dad1f6c04e",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -41954,6 +41984,21 @@
           "owner": "cranelift",
           "path": "Makefile",
           "removal_phase": "25"
+        },
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "afb1e98867fe080543ef8244814cd153d255771cc99d4e15c87e5a0b78931de7",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 3,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE17_OPENING.md",
+          "removal_phase": "not_removed_by_phase23"
         },
         {
           "classification": "production_or_release_migration",
@@ -42109,6 +42154,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "df1bd11cac8547ac93b1c1856510f2aa3757106ec706fd14e8c2bdaf54e55221",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 21
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_scheduler_main_result.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "400a74509bf41a2608a099d960edf45edde3b7d663c3c8d80c041f1fcfaa85be",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -42123,6 +42183,7 @@
       ],
       "registered_changed_paths": [
         "Makefile",
+        "compiler/CRANELIFT_PHASE17_OPENING.md",
         "compiler/codegen.gst",
         "docs/PHASE25_ROADMAP.md",
         "gust_v4.c",
@@ -42133,6 +42194,7 @@
         "scripts/phase21_collection_string_native_source.sh",
         "scripts/phase21_filesystem_allocation_native_source.sh",
         "scripts/phase21_full_compiler_native_qualification.py",
+        "scripts/phase21_scheduler_main_result.py",
         "scripts/phase24_c_toolchain_provenance.py"
       ]
     }

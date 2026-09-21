@@ -13,7 +13,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 TASK = ROOT / "TASK.md"
-RUNTIME = ROOT / "src/runtime/fiber.c"
+# Patch 25.6 ported fiber.c to the runtime crate. Both paths are named:
+# the assertions below check the replacement AND the absence of what it
+# replaced, because an assertion that quietly follows its subject to a new
+# file cannot tell you the old one is gone.
+RETIRED_RUNTIME = ROOT / "src/runtime/fiber.c"
+RUNTIME = ROOT / "src/runtime-rs/src/fiber.rs"
 LEVELS = ROOT / "scripts/cranelift_test_levels.json"
 PR_FAST = ROOT / ".github/workflows/pr-fast.yml"
 WORKFLOW = ROOT / ".github/workflows/phase21-scheduler-main-result.yml"
@@ -35,7 +40,7 @@ EXPECTED = {
     "synchronization_authority": (
         "scheduler_owned_pending_fiber_count_with_full_barrier_result_publication"
     ),
-    "runtime_implementation": "src/runtime/fiber.c",
+    "runtime_implementation": "src/runtime-rs/src/fiber.rs",
     "changes_runtime_symbols": False,
     "changes_abi_or_layout": False,
     "changes_accepted_gust_meaning": False,
@@ -67,22 +72,38 @@ def validate() -> None:
         "TASK.md does not mark Patch 21.17a DONE",
     )
 
+    require(
+        not RETIRED_RUNTIME.is_file(),
+        "src/runtime/fiber.c is back; the completion primitive has two homes",
+    )
     runtime = RUNTIME.read_text(encoding="utf-8")
+    # The C used `__sync_*` builtins, which are full barriers. SeqCst is the
+    # equivalent, and the property 21.17a turns on is the barrier, not the
+    # spelling: a host thread that observes zero pending fibers must also
+    # observe the fiber's published result. A Relaxed ordering here would
+    # keep the count correct and lose exactly that, so the ordering is named
+    # in each fragment rather than matched loosely.
     for fragment in (
-        "static int gust_pending_fibers = 0;",
-        "__sync_add_and_fetch(&gust_pending_fibers, 1);",
-        "__sync_sub_and_fetch(&gust_pending_fibers, 1);",
-        "__sync_fetch_and_add(&gust_pending_fibers, 0) > 0",
+        "pub(crate) static PENDING_FIBERS: AtomicI32 = AtomicI32::new(0);",
+        "PENDING_FIBERS.fetch_add(1, Ordering::SeqCst);",
+        "PENDING_FIBERS.fetch_sub(1, Ordering::SeqCst);",
+        "PENDING_FIBERS.load(Ordering::SeqCst) > 0",
     ):
         require(fragment in runtime, f"runtime completion primitive missing: {fragment}")
+    for retired in (
+        "__sync_add_and_fetch(&gust_pending_fibers, 1);",
+        "__sync_sub_and_fetch(&gust_pending_fibers, 1);",
+    ):
+        require(retired not in runtime,
+                f"the retired C completion primitive is still here: {retired}")
     require(
-        runtime.index("__sync_add_and_fetch(&gust_pending_fibers, 1);")
-        < runtime.index("target->run_queue_tail->next = fiber;"),
+        runtime.index("PENDING_FIBERS.fetch_add(1, Ordering::SeqCst);")
+        < runtime.index("q.run_queue_tail = fiber;"),
         "pending ownership must be established before publishing the queued fiber",
     )
     require(
-        runtime.index("__sync_sub_and_fetch(&gust_pending_fibers, 1);")
-        < runtime.index("gust_fiber_free(next);"),
+        runtime.index("PENDING_FIBERS.fetch_sub(1, Ordering::SeqCst);")
+        < runtime.index("gust_fiber_free(next)"),
         "terminal completion must be published before freeing the fiber",
     )
 
