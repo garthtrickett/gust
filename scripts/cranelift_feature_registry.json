@@ -28005,11 +28005,11 @@
             "classification": "historical_only",
             "current_route": "tracked_MIR_to_C_or_generated_C_surface",
             "deprecation_action": "preserve_as_historical_evidence",
-            "digest": "21194f254467e1171a5df075ca6577802d14f087b711434d6ed37ef44cd2e50b",
+            "digest": "00b6a95be74f83e63028b6729fbbb143512c147cd278108fdd030f888c7d4ad2",
             "falsifier": "historical_record_is_reclassified_as_live_support",
             "match_counts": {
               "explicit_backend_spelling": 0,
-              "generated_c_contract": 2,
+              "generated_c_contract": 4,
               "mir_to_c_name": 2
             },
             "owner": "cranelift",

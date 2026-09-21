@@ -632,3 +632,47 @@ Three ways out, none free:
 Recorded as a decision owed, not a detail. A 26% regression on loop-heavy
 code is the kind of thing that gets discovered by a user rather than a
 patch, and 25.6 cannot claim its Exit Gate clause while it stands.
+
+### LTO does not recover it, and the regression is on a dying route
+
+Two follow-up measurements settle the `gust_tick` question, one negatively
+and one in the change's favour.
+
+**LTO across the C/Rust boundary does nothing.** Built the crate with
+`lto = true` and the benchmark with `-flto`:
+
+    inline decrement (baseline)   0.58 s
+    gust_tick(), no LTO           0.71 s
+    gust_tick(), LTO both sides   0.74 s
+
+No improvement — slightly worse. GCC's LTO and Rust's LLVM LTO are not
+interoperable, so nothing inlines across the boundary. That option is
+eliminated by measurement rather than by argument, which is worth more than
+leaving it on the list as plausible.
+
+**The regression is confined to the generated-C route, which 25.10 deletes.**
+The preemption tick is emitted by `codegen.gst` alone. The native backend
+knows `gust_yield` as a callable runtime symbol
+(`main.rs:15588`, `:16649` — a `RuntimeCall` and a required-symbol entry)
+but **never injects a tick into loops**. So the surviving route does not pay
+this cost and never did; the route that pays it is on the deletion list.
+
+That makes the trade defensible on its own terms: a 26% worst-case cost on
+a path being removed, in exchange for the last thread-local data symbol
+leaving the runtime. It should still be stated in 25.6's record rather than
+discovered later, because until 25.9 and 25.10 land, the compiler itself is
+built through the route that pays it.
+
+### A pre-existing gap this uncovered: native code never preempts
+
+If `codegen.gst` is the only emitter that injects the tick, then natively
+compiled Gust has **no automatic preemption** — a fiber that loops without
+calling `gust_yield` explicitly never yields. The generated-C route
+preempts every `GUST_TICK_INTERVAL` iterations; the native route does not.
+
+This is not caused by anything in Phase 25 and predates this patch. It
+matters here only because Phase 25's end state is the native route, so
+"cooperative scheduling works" is inherited from a path that is being
+deleted. Flagged for an owner rather than fixed in a patch about `fiber.c`:
+deciding whether the native backend should inject a tick is a scheduler
+question, not a porting one.
