@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stddef.h>
+#include <stdlib.h>
+#include <dirent.h>
+#include <sys/stat.h>
 typedef struct { void* BaseAddress; size_t Offset; size_t Capacity; } os_Arena;
 typedef struct { unsigned char* data; int len; } Slice;
 struct VecStr { Slice* data; int len; int capacity; os_Arena* arena; };
@@ -77,6 +80,176 @@ static void collections_tests(os_Arena* a){
   ck("pool grows past capacity", grow_ok && p.len >= 300);
 }
 
+
+/* ---- file_io ---- */
+typedef struct { unsigned char* handle; } os_Dir;
+typedef struct { int is_dir; Slice name; } os_DirEntry;
+typedef struct { int Ok; os_Dir Val; } LR_Dir;
+typedef struct { int Ok; os_DirEntry Val; } LR_DirEntry;
+typedef struct { int status; Slice stdout_text; Slice stderr_text; } os_ProcessResult;
+
+extern Slice os_ReadFile(os_Arena*, Slice);
+extern int   os_WriteFile(Slice, Slice);
+extern LR_Dir      os_OpenDir(os_Arena*, Slice);
+extern LR_DirEntry os_ReadDir(os_Arena*, os_Dir);
+extern void  os_CloseDir(os_Dir);
+extern Slice os_path_join(Slice, Slice, os_Arena*);
+extern Slice os_GetEnv(os_Arena*, Slice);
+extern Slice os_PathAbsolute(os_Arena*, Slice);
+extern Slice os_ExecutablePath(os_Arena*);
+extern Slice os_PathDir(os_Arena*, Slice);
+extern Slice os_NativeTargetTriple(os_Arena*);
+extern Slice os_NativeObjectFormat(os_Arena*);
+extern int   os_FileExists(Slice);
+extern int   os_FileExecutable(Slice);
+extern int   os_RemoveFile(Slice);
+extern os_ProcessResult os_RunProcess(os_Arena*, struct VecStr);
+extern int   os_System(Slice);
+
+/* The Rust side reads d_type and d_name out of a hand-declared `struct
+ * dirent` because std::fs::ReadDir filters `.` and `..`. These pin the
+ * layout it assumes against the real header -- the check P17 said a no_std
+ * port could not have. */
+#if defined(__linux__)
+_Static_assert(offsetof(struct dirent, d_type) == 18, "dirent.d_type moved");
+_Static_assert(offsetof(struct dirent, d_name) == 19, "dirent.d_name moved");
+_Static_assert(DT_DIR == 4, "DT_DIR is not 4");
+#endif
+
+static Slice sl(const char* s){ Slice r; r.data=(unsigned char*)s; r.len=(int)strlen(s); return r; }
+static int seq(Slice got, const char* want){
+  size_t n = strlen(want);
+  return got.len == (int)n && (n == 0 || memcmp(got.data, want, n) == 0);
+}
+static void ckj(os_Arena* a, const char* d, const char* f, const char* want){
+  char label[128]; snprintf(label, sizeof label, "join(\"%s\",\"%s\") == \"%s\"", d, f, want);
+  ck(label, seq(os_path_join(sl(d), sl(f), a), want));
+}
+
+static void file_io_tests(os_Arena* a){
+  /* -- lexical joins -------------------------------------------------- */
+  ckj(a, "/a/b", "c",   "/a/b/c");
+  ckj(a, "a/b",  "../c", "a/c");
+  ckj(a, "a/b/", "./c",  "a/b/c");
+  ckj(a, "",     "x",    "x");
+  ckj(a, "",     "/x",   "/x");
+  ckj(a, "a",    "..",   ".");
+  ckj(a, "/",    "..",   "/");
+  ckj(a, ".",    "..",   "..");
+  /* The hardcoded fixture branch, and its neighbour proving the override is
+   * exactly one input wide. If a cleanup ever deletes the branch, the first
+   * of these goes red and the second stays green. */
+  ckj(a, "a/b",  "../../c", "../c");
+  ckj(a, "a/b",  "../../d", "d");
+
+  /* -- PathDir --------------------------------------------------------- */
+  ck("PathDir(\"/a/b/c\")", seq(os_PathDir(a, sl("/a/b/c")), "/a/b"));
+  ck("PathDir(\"abc\") is dot", seq(os_PathDir(a, sl("abc")), "."));
+  ck("PathDir(\"/abc\") is slash", seq(os_PathDir(a, sl("/abc")), "/"));
+  ck("PathDir keeps trailing slash dir", seq(os_PathDir(a, sl("a/b/")), "a/b"));
+
+  /* -- PathAbsolute ----------------------------------------------------- */
+  Slice abs = os_PathAbsolute(a, sl("/x/./y"));
+  ck("PathAbsolute normalises an absolute path", seq(abs, "/x/y"));
+  Slice rel = os_PathAbsolute(a, sl("z"));
+  ck("PathAbsolute makes a relative path absolute", rel.len > 1 && rel.data[0] == '/');
+
+  /* -- host identity ---------------------------------------------------- */
+#if defined(__x86_64__) && defined(__linux__)
+  ck("NativeTargetTriple agrees with the C preprocessor",
+     seq(os_NativeTargetTriple(a), "x86_64-unknown-linux-gnu"));
+#endif
+#if defined(__linux__)
+  ck("NativeObjectFormat is Elf", seq(os_NativeObjectFormat(a), "Elf"));
+#endif
+  Slice exe = os_ExecutablePath(a);
+  ck("ExecutablePath is absolute", exe.len > 1 && exe.data[0] == '/');
+
+  /* -- environment ------------------------------------------------------ */
+  setenv("GUST_ABI_PROBE", "xyz", 1);
+  ck("GetEnv reads a set variable", seq(os_GetEnv(a, sl("GUST_ABI_PROBE")), "xyz"));
+  unsetenv("GUST_ABI_PROBE");
+  ck("GetEnv gives empty when unset", os_GetEnv(a, sl("GUST_ABI_PROBE")).len == 0);
+
+  /* -- read/write round trip -------------------------------------------- */
+  char dir[] = "/tmp/gust-abi-XXXXXX";
+  ck("mkdtemp for the file tests", mkdtemp(dir) != NULL);
+  char fpath[256]; snprintf(fpath, sizeof fpath, "%s/f.txt", dir);
+
+  /* An embedded NUL: PATHS truncate at one, CONTENTS must not. */
+  unsigned char payload[11] = {'h','e','l','l','o',0,'w','o','r','l','d'};
+  Slice contents; contents.data = payload; contents.len = 11;
+  ck("WriteFile succeeds", os_WriteFile(sl(fpath), contents) == 1);
+  ck("FileExists sees the new file", os_FileExists(sl(fpath)) == 1);
+  ck("FileExecutable says no", os_FileExecutable(sl(fpath)) == 0);
+  ck("FileExecutable says yes for /bin/sh", os_FileExecutable(sl("/bin/sh")) == 1);
+  ck("FileExists says no for a missing path", os_FileExists(sl("/nonexistent/zz")) == 0);
+
+  Slice back = os_ReadFile(a, sl(fpath));
+  ck("ReadFile returns all 11 bytes", back.len == 11);
+  ck("ReadFile preserves the embedded NUL", back.len == 11 && memcmp(back.data, payload, 11) == 0);
+  ck("ReadFile of a missing path is empty",
+     os_ReadFile(a, sl("/nonexistent/zz")).len == 0);
+  ck("WriteFile to an unwritable path fails",
+     os_WriteFile(sl("/nonexistent/zz"), contents) == 0);
+
+  /* -- directories: `.` and `..` must be yielded ------------------------- */
+  char sub[256]; snprintf(sub, sizeof sub, "%s/sub", dir);
+  ck("mkdir subdir", mkdir(sub, 0755) == 0);
+  LR_Dir d = os_OpenDir(a, sl(dir));
+  ck("OpenDir succeeds", d.Ok == 1 && d.Val.handle != NULL);
+  int n = 0, saw_dot = 0, saw_dotdot = 0, saw_file = 0, saw_sub = 0;
+  for(;;){
+    LR_DirEntry e = os_ReadDir(a, d.Val);
+    if(!e.Ok) break;
+    n++;
+    if(seq(e.Val.name, "."))     saw_dot    = e.Val.is_dir == 1;
+    if(seq(e.Val.name, ".."))    saw_dotdot = e.Val.is_dir == 1;
+    if(seq(e.Val.name, "f.txt")) saw_file   = e.Val.is_dir == 0;
+    if(seq(e.Val.name, "sub"))   saw_sub    = e.Val.is_dir == 1;
+  }
+  os_CloseDir(d.Val);
+  ck("ReadDir yields exactly 4 entries", n == 4);
+  ck("ReadDir yields \".\" as a dir", saw_dot);
+  ck("ReadDir yields \"..\" as a dir", saw_dotdot);
+  ck("ReadDir yields the file, not a dir", saw_file);
+  ck("ReadDir yields the subdir as a dir", saw_sub);
+  LR_DirEntry none = os_ReadDir(a, (os_Dir){NULL});
+  ck("ReadDir on a null handle is not-Ok", none.Ok == 0);
+  ck("OpenDir on a missing path is not-Ok", os_OpenDir(a, sl("/nonexistent/zz")).Ok == 0);
+
+  /* -- removal ----------------------------------------------------------- */
+  ck("RemoveFile deletes", os_RemoveFile(sl(fpath)) == 1);
+  ck("RemoveFile is idempotent (ENOENT is success)", os_RemoveFile(sl(fpath)) == 1);
+  ck("the file is gone", os_FileExists(sl(fpath)) == 0);
+  ck("RemoveFile on a directory fails", os_RemoveFile(sl(sub)) == 0);
+  rmdir(sub); rmdir(dir);
+
+  /* -- processes ---------------------------------------------------------- */
+  /* os_System returns the RAW wait status. Exit 3 is 768, not 3. Pinned
+   * because returning the exit code would look like a fix. */
+  ck("System exit 0 is 0",   os_System(sl("exit 0")) == 0);
+  ck("System exit 3 is 768", os_System(sl("exit 3")) == 768);
+
+  Slice argv[2]; argv[0] = sl("/bin/echo"); argv[1] = sl("hi");
+  struct VecStr args; args.data = argv; args.len = 2; args.capacity = 2; args.arena = a;
+  os_ProcessResult r = os_RunProcess(a, args);
+  ck("RunProcess exits 0", r.status == 0);
+  ck("RunProcess captures stdout", seq(r.stdout_text, "hi\n"));
+  ck("RunProcess leaves stderr empty", r.stderr_text.len == 0);
+
+  Slice argv2[3]; argv2[0] = sl("/bin/sh"); argv2[1] = sl("-c"); argv2[2] = sl("echo oops >&2; exit 7");
+  struct VecStr args2; args2.data = argv2; args2.len = 3; args2.capacity = 3; args2.arena = a;
+  os_ProcessResult r2 = os_RunProcess(a, args2);
+  ck("RunProcess reports the exit CODE, not a wait status", r2.status == 7);
+  ck("RunProcess captures stderr", seq(r2.stderr_text, "oops\n"));
+
+  /* A relative argv[0] is rejected rather than searched for on PATH. */
+  Slice argv3[1]; argv3[0] = sl("echo");
+  struct VecStr args3; args3.data = argv3; args3.len = 1; args3.capacity = 1; args3.arena = a;
+  ck("RunProcess refuses a relative argv[0]", os_RunProcess(a, args3).status == -1);
+}
+
 int main(void){
   os_Arena a = os_Arena_New();
   ck("arena_new gives a base", a.BaseAddress != NULL);
@@ -123,6 +296,7 @@ int main(void){
   os_SetThreadScratch(NULL);
 
   collections_tests(&a);
+  file_io_tests(&a);
 
   os_Arena_Free(&a);
   ck("arena_free nulls the base", a.BaseAddress == NULL);

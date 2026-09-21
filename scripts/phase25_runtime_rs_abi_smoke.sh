@@ -13,7 +13,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 ARCHIVE=src/runtime-rs/target/release/libgust_runtime_rs.a
-[ -f "$ARCHIVE" ] || cargo build --release --manifest-path src/runtime-rs/Cargo.toml
+# ALWAYS rebuild. The `[ -f "$ARCHIVE" ] ||` guard that used to be here
+# silently tested the PREVIOUS build after a source edit -- a green run
+# that says nothing about the code you just changed, which is the exact
+# failure this harness exists to catch.
+cargo build --release --manifest-path src/runtime-rs/Cargo.toml
 out=$(mktemp -d)/abi_smoke
 "${CC:-cc}" -O1 -pthread src/runtime-rs/abi-tests/abi_smoke.c "$ARCHIVE" -o "$out"
 "$out"
