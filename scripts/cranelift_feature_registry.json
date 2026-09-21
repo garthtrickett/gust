@@ -44,6 +44,55 @@
     },
     "escaping_the_census_by_relocation": "rejected",
     "owner": "cranelift",
+    "phase22_relay_invocation_successor": {
+      "added_invocation_count": 2,
+      "contract_version": "patch255_runtime_port_invocation_addition_v1",
+      "current_relay_inventory": {
+        "consumer_class_counts": {
+          "already_explicit_or_parser_probe": 141,
+          "cranelift_C_or_diagnostic_guard": 2,
+          "help_surface_probe": 3,
+          "intentional_default_selection_probe": 4,
+          "invocation_parser_probe": 2
+        },
+        "owner_counts": {
+          "cranelift": 147,
+          "stdlib": 5
+        },
+        "selection_counts": {
+          "explicit_bootstrap_emitter": 15,
+          "explicit_c": 3,
+          "explicit_cranelift": 120,
+          "explicit_invalid_or_parser_probe": 3,
+          "implicit_default": 11
+        },
+        "total": 152,
+        "unclassified_count": 0
+      },
+      "escaping_the_census_by_relocation": "rejected",
+      "previous_relay_inventory": {
+        "consumer_class_counts": {
+          "already_explicit_or_parser_probe": 139,
+          "cranelift_C_or_diagnostic_guard": 2,
+          "help_surface_probe": 3,
+          "intentional_default_selection_probe": 4,
+          "invocation_parser_probe": 2
+        },
+        "owner_counts": {
+          "cranelift": 145,
+          "stdlib": 5
+        },
+        "selection_counts": {
+          "explicit_bootstrap_emitter": 13,
+          "explicit_c": 3,
+          "explicit_cranelift": 120,
+          "explicit_invalid_or_parser_probe": 3,
+          "implicit_default": 11
+        },
+        "total": 150,
+        "unclassified_count": 0
+      }
+    },
     "previous_summary": {
       "consumer_class_counts": {
         "already_explicit_or_parser_probe": 144,
@@ -66,55 +115,6 @@
       "total": 158,
       "unclassified_count": 0
     },
-    "phase22_relay_invocation_successor": {
-        "added_invocation_count": 2,
-        "contract_version": "patch255_runtime_port_invocation_addition_v1",
-        "current_relay_inventory": {
-            "consumer_class_counts": {
-                "already_explicit_or_parser_probe": 141,
-                "cranelift_C_or_diagnostic_guard": 2,
-                "help_surface_probe": 3,
-                "intentional_default_selection_probe": 4,
-                "invocation_parser_probe": 2
-            },
-            "owner_counts": {
-                "cranelift": 147,
-                "stdlib": 5
-            },
-            "selection_counts": {
-                "explicit_bootstrap_emitter": 15,
-                "explicit_c": 3,
-                "explicit_cranelift": 120,
-                "explicit_invalid_or_parser_probe": 3,
-                "implicit_default": 11
-            },
-            "total": 152,
-            "unclassified_count": 0
-        },
-        "escaping_the_census_by_relocation": "rejected",
-        "previous_relay_inventory": {
-            "consumer_class_counts": {
-                "already_explicit_or_parser_probe": 139,
-                "cranelift_C_or_diagnostic_guard": 2,
-                "help_surface_probe": 3,
-                "intentional_default_selection_probe": 4,
-                "invocation_parser_probe": 2
-            },
-            "owner_counts": {
-                "cranelift": 145,
-                "stdlib": 5
-            },
-            "selection_counts": {
-                "explicit_bootstrap_emitter": 13,
-                "explicit_c": 3,
-                "explicit_cranelift": 120,
-                "explicit_invalid_or_parser_probe": 3,
-                "implicit_default": 11
-            },
-            "total": 150,
-            "unclassified_count": 0
-        }
-    },
     "production_audit_transition": {
       "contract_version": "phase25_runtime_port_audit_transition_v1",
       "current_audit": {
@@ -126,7 +126,7 @@
         "repository_invocation_count": 160,
         "supported_production_or_release_explicit_c_count": 0,
         "supported_surface_count": 6,
-        "supported_surface_manifest_digest": "2aa8a632aa35387c26bea85a8870c5746ef499ec46248134cd5d801667b65e77",
+        "supported_surface_manifest_digest": "6d33d2cb86373cdd95e09b9956d4f6319ab50b806e2f7b9393c269c768e7be09",
         "unknown_downstream_count": 0
       },
       "moved_fields": [
@@ -143,7 +143,7 @@
         "repository_invocation_count": 158,
         "supported_production_or_release_explicit_c_count": 0,
         "supported_surface_count": 6,
-        "supported_surface_manifest_digest": "ffea76d400897457cbda24ba8bfc27011a403fb31d4404643768c2bfd1728e3c",
+        "supported_surface_manifest_digest": "d233da7f66bf99daaa6c83077c66d8dce89e212a72d8e1815a4edf387a3af45c",
         "unknown_downstream_count": 0
       },
       "reason": {
@@ -34971,7 +34971,7 @@
         "repository_invocation_count": 158,
         "supported_production_or_release_explicit_c_count": 0,
         "supported_surface_count": 6,
-        "supported_surface_manifest_digest": "ffea76d400897457cbda24ba8bfc27011a403fb31d4404643768c2bfd1728e3c",
+        "supported_surface_manifest_digest": "d233da7f66bf99daaa6c83077c66d8dce89e212a72d8e1815a4edf387a3af45c",
         "unknown_downstream_count": 0
       },
       "partial_extra_or_substituted_audit": "rejected",
@@ -41812,7 +41812,7 @@
           "classification": "bootstrap_phase25",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_exact_C_bootstrap_dependency",
-          "digest": "ed927a8efafc1da41f245845ff80ba9cc7be263c80d19ca7d9bb9a2dda137e13",
+          "digest": "8ddfb7704f559cde874a0a0cd3eea32a913d13b7a37dd3417cc49df49931663e",
           "falsifier": "bootstrap_surface_is_missing_changed_or_reclassified",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -42190,7 +42190,7 @@
           "classification": "bootstrap_phase25",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_exact_C_bootstrap_dependency",
-          "digest": "10fdfd6da020bf9c33320cb8f95df059003859788322d0ac43dd08a6916b3e19",
+          "digest": "8ec32a4d253e566787cfb85ac41592e5998fcc5e61d99fed5ed0e7018641fd9e",
           "falsifier": "bootstrap_surface_is_missing_changed_or_reclassified",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -42615,7 +42615,7 @@
           "classification": "bootstrap_phase25",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_exact_C_bootstrap_dependency",
-          "digest": "10fdfd6da020bf9c33320cb8f95df059003859788322d0ac43dd08a6916b3e19",
+          "digest": "8ec32a4d253e566787cfb85ac41592e5998fcc5e61d99fed5ed0e7018641fd9e",
           "falsifier": "bootstrap_surface_is_missing_changed_or_reclassified",
           "match_counts": {
             "explicit_backend_spelling": 0,
