@@ -698,7 +698,70 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
     require(fiber_diff["previous_lines"] == fiber_identities[0]["line_count"] and
             fiber_diff["current_lines"] == fiber_identities[1]["line_count"],
             "Patch 25.6 seed diff does not match its exact pre/post identities")
-    return fiber_identities
+    # Patch 25.5 moves it again, and this one grows: 2,381 lines in, 8 out,
+    # +2,373 to 68,375. Six runtime C files stop being compiled into the
+    # unity build and nine strings.c functions are emitted from Gust, so the
+    # seed carries emitted code it did not carry before.
+    port_transition = record.get("phase255_seed_transition")
+    if port_transition is None:
+        return fiber_identities
+    require(port_transition == {
+            "accepted_live_seed_identities": [
+                    {
+                            "line_count": 66002,
+                            "seed_digest": "6992b00adc5790710fbad4689ab9408fdfe55c2500a50f11a557b741ad87725f",
+                            "state": "pre_publication"
+                    },
+                    {
+                            "line_count": 68375,
+                            "seed_digest": "0bac2f0fa208dd355c112b2f0bc1a75cceb4206325c33cc0d60836abf94abfdb",
+                            "state": "post_publication"
+                    }
+            ],
+            "accounted_compiler_authorities": [
+                    "phase255_runtime_to_gust"
+            ],
+            "authority_base_main": "8acfc3f3e613b7305bf6d7e2d0b00ac55a202369",
+            "closure_transition": "collapse_to_post_publication_after_seed_merge",
+            "contract_version": "phase255_runtime_to_gust_seed_reconvergence_transition_v1",
+            "generated_seed_diff": {
+                    "current_lines": 68375,
+                    "deletions": 8,
+                    "insertions": 2381,
+                    "line_delta": 2373,
+                    "previous_lines": 66002
+            },
+            "partial_or_unregistered_identity": "rejected",
+            "predecessor_seed_authority": "patch256_fiber_global_asm_seed_reconvergence_transition_v1",
+            "seed_pr_policy": "gust_v4_c_only",
+            "status": "ready_for_seed_publication"
+    }, "Patch 25.5 seed transition drifted")
+    port_identities = port_transition["accepted_live_seed_identities"]
+    require([row["state"] for row in port_identities] ==
+            ["pre_publication", "post_publication"],
+            "Patch 25.5 seed transition state order drifted")
+    require(len({(row["line_count"], row["seed_digest"])
+                 for row in port_identities}) == 2,
+            "Patch 25.5 seed transition identities are not distinct")
+    require(port_identities[0] == {
+        "state": "pre_publication",
+        "line_count": fiber_identities[1]["line_count"],
+        "seed_digest": fiber_identities[1]["seed_digest"],
+    }, "Patch 25.5 does not start from the landed Patch 25.6 identity")
+    for name in port_transition["accounted_compiler_authorities"]:
+        require(isinstance(registry.get(name), dict),
+                "Patch 25.5 accounts a compiler authority that is not "
+                f"registered: {name}")
+    port_diff = port_transition["generated_seed_diff"]
+    require(port_diff["current_lines"] - port_diff["previous_lines"] ==
+            port_diff["line_delta"] and
+            port_diff["insertions"] - port_diff["deletions"] ==
+            port_diff["line_delta"],
+            "Patch 25.5 seed line delta is inconsistent")
+    require(port_diff["previous_lines"] == port_identities[0]["line_count"] and
+            port_diff["current_lines"] == port_identities[1]["line_count"],
+            "Patch 25.5 seed diff does not match its exact pre/post identities")
+    return port_identities
 
 
 def accepted_live_seed_line_counts(record: dict) -> set[int]:
@@ -842,7 +905,8 @@ def validate() -> dict:
              record[transition]["accepted_live_seed_identities"][1].items()
              if key != "state"}
             for transition in
-            ("phase398_seed_transition", "phase256_seed_transition")
+            ("phase398_seed_transition", "phase256_seed_transition",
+             "phase255_seed_transition")
             if record.get(transition) is not None]:
         # Issue #398's era. This seed is compiled from an entry that REMOVED
         # the retained spellings, so its help cannot advertise them.
