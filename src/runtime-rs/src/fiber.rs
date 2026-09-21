@@ -836,3 +836,67 @@ pub unsafe extern "C" fn std_Channel_Recv_impl(chan_idx: i32, out_ptr: *mut c_vo
         }
     }
 }
+
+// ---- emitted-code abort -------------------------------------------------
+
+/// The abort every bounds check calls, replacing an inline `printf` + `exit`.
+///
+/// Codegen emits 1,963 of those pairs into the current seed -- 1,960 Vector
+/// bounds checks, plus one each for Slice, Pool and a HashMap miss, across
+/// 1,723 of `gust_v4.c`'s 66,002 lines. Each pair is `printf("... at line
+/// %d\n", __LINE__); exit(1);`, so every compiled Gust function that indexes
+/// anything carries libc's stdio. One definition here replaces all of them,
+/// and it lives in the runtime, where the rest of the phase is already
+/// moving away from C.
+///
+/// Writes to stderr, not stdout. The C used `printf`, which interleaves a
+/// crash message into a program's real output -- a compiler emitting to
+/// stdout would corrupt its own artifact while reporting the bug.
+///
+/// # Safety
+/// `what` must be a NUL-terminated C string with static lifetime.
+#[no_mangle]
+pub unsafe extern "C" fn gust_check_fail(what: *const i8, line: i32) -> ! {
+    let msg = if what.is_null() {
+        "bounds check failed"
+    } else {
+        std::ffi::CStr::from_ptr(what).to_str().unwrap_or("bounds check failed")
+    };
+    eprintln!("{msg} at line {line}");
+    std::process::exit(1);
+}
+
+/// The preemption tick, as a CALL rather than a thread-local counter.
+///
+/// `fiber.c` exported `GUST_THREAD_LOCAL int gust_loop_ticks`, and codegen
+/// emitted `--gust_loop_ticks <= 0` inline into every loop. Stable Rust
+/// cannot export a C-visible `__thread` DATA symbol -- `thread_local!` is a
+/// Rust-internal, and `#[thread_local]` is nightly-only. So the counter
+/// cannot move as data; it moves as a function.
+///
+/// That is a real trade, not a free translation: an inline decrement becomes
+/// a call on every loop iteration of every compiled Gust program. The
+/// alternatives were keeping one `__thread int` in C -- which the phase
+/// exists to remove -- or pinning the toolchain to nightly for one
+/// attribute, which is a far larger commitment than this costs.
+///
+/// **This patch cannot show the trade is acceptable.** 25.6's Exit Gate
+/// requires the 25.0 fiber benchmark not to regress, and the roadmap records
+/// that benchmark as *unmeasured*. A gate against an absent baseline cannot
+/// be evaluated, so the benchmark has to be taken before this claims to pass.
+#[no_mangle]
+pub extern "C" fn gust_tick() {
+    let due = LOOP_TICKS.with(|t| {
+        let n = t.get() - 1;
+        if n <= 0 {
+            t.set(GUST_TICK_INTERVAL);
+            true
+        } else {
+            t.set(n);
+            false
+        }
+    });
+    if due {
+        gust_yield();
+    }
+}

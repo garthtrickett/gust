@@ -16,6 +16,13 @@ PHASE10_NATIVE_BACKEND_SOURCES = $(wildcard compiler/experiments/cranelift/src/*
 PHASE10_NATIVE_BACKEND_TARGET_DIR = build/phase10-native-backend-cargo
 PHASE10_NATIVE_BACKEND_BUILT_BIN = $(PHASE10_NATIVE_BACKEND_TARGET_DIR)/release/gust-cranelift-experiment
 PHASE21_RUNTIME_PACKAGE = build/gust-runtime-package.a
+# Patch 25.6: defined HERE, above first use. Make expands prerequisite
+# lists immediately, so a definition further down is empty at that
+# point -- silently, since an undefined variable expands to nothing.
+# Measured with --warn-undefined-variables after a "fix" that was a
+# no-op: the link lines were edited and the link was unchanged.
+PHASE25_RUNTIME_RS = src/runtime-rs/target/release/libgust_runtime_rs.a
+
 PHASE21_RUNTIME_OBJECTS = build/phase21-runtime/arena.o build/phase21-runtime/host_io.o build/phase21-runtime/file_io.o build/phase21-runtime/scratch.o build/phase21-runtime/collections.o build/phase21-runtime/strings.o
 
 PHASE10_DIAG_CC ?= clang
@@ -40,10 +47,10 @@ RUNTIME_SRCS  = src/runtime.c $(wildcard src/runtime/*.c) $(wildcard src/runtime
 
 all: phase10-native-package
 
-gust_bootstrap: gust_v4.c $(RUNTIME_SRCS)
+gust_bootstrap: gust_v4.c $(RUNTIME_SRCS) $(PHASE25_RUNTIME_RS)
 	mkdir -p build
 	cat src/runtime.c gust_v4.c > build/gust_bootstrap_final.c
-	${CC} ${CFLAGS} ${INCLUDES} build/gust_bootstrap_final.c -o gust_bootstrap
+	${CC} ${CFLAGS} ${INCLUDES} build/gust_bootstrap_final.c $(PHASE25_RUNTIME_RS) -o gust_bootstrap
 
 build/gust_stage1_compiler.c: export GUST_BOOTSTRAP_EMITTER = 1
 build/gust_stage1_compiler.c: gust_bootstrap $(COMPILER_SRCS) tools/normalize_generated_arena_offsets.py
@@ -90,7 +97,7 @@ build/gust_stage1_compiler.c: gust_bootstrap $(COMPILER_SRCS) tools/normalize_ge
 
 build/gust_stage1_bin: build/gust_stage1_compiler.c $(RUNTIME_SRCS)
 	cat src/runtime.c build/gust_stage1_compiler.c > build/gust_stage1_final.c
-	${CC} ${CFLAGS} ${INCLUDES} build/gust_stage1_final.c -o build/gust_stage1_bin
+	${CC} ${CFLAGS} ${INCLUDES} build/gust_stage1_final.c $(PHASE25_RUNTIME_RS) -o build/gust_stage1_bin
 
 diagnose-phase10-stage1: export GUST_BOOTSTRAP_EMITTER = 1
 diagnose-phase10-stage1: build/gust_stage1_compiler.c $(RUNTIME_SRCS)
@@ -171,9 +178,9 @@ build/gust_compiler.c: build/gust_stage1_bin $(COMPILER_SRCS)
 	sync
 
 ## just "make" doesnt do anything need to run "make gust"
-gust: build/gust_compiler.c $(RUNTIME_SRCS)
+gust: build/gust_compiler.c $(RUNTIME_SRCS) $(PHASE25_RUNTIME_RS)
 	cat src/runtime.c build/gust_compiler.c > build/gust_final.c
-	${CC} ${CFLAGS} ${INCLUDES} build/gust_final.c -o gust
+	${CC} ${CFLAGS} ${INCLUDES} build/gust_final.c $(PHASE25_RUNTIME_RS) -o gust
 
 build/gust-native-backend: $(PHASE10_NATIVE_BACKEND_MANIFEST) $(PHASE10_NATIVE_BACKEND_LOCK) $(PHASE10_NATIVE_BACKEND_SOURCES)
 	mkdir -p build
@@ -224,7 +231,6 @@ build/phase21-runtime/strings.o: src/runtime/strings.c src/runtime/core_headers.
 # crate src/runtime-rs. The fixtures must stay FOREIGN -- a Gust rewrite
 # would test Gust calling Gust and the contract would evaporate (O1).
 # Symbol names are byte-identical, so the 26 dependent files are unchanged.
-PHASE25_RUNTIME_RS = src/runtime-rs/target/release/libgust_runtime_rs.a
 
 $(PHASE25_RUNTIME_RS): src/runtime-rs/src/lib.rs src/runtime-rs/Cargo.toml
 	cargo build --release --manifest-path src/runtime-rs/Cargo.toml
@@ -261,7 +267,7 @@ bootstrap: gust
 	@# Stage 2: Use the new 'gust' binary to compile the compiler again
 	./gust --backend bootstrap-emitter compiler/test_runner_entry.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_stage2.c && sync
 	@cat src/runtime.c build/gust_stage2.c > build/gust_stage2_final.c
-	@${CC} ${CFLAGS} ${INCLUDES} build/gust_stage2_final.c -o build/gust_stage2_bin
+	@${CC} ${CFLAGS} ${INCLUDES} build/gust_stage2_final.c $(PHASE25_RUNTIME_RS) -o build/gust_stage2_bin
 	@# Stage 3: Use the Stage 2 binary to compile the compiler a third time
 	./build/gust_stage2_bin --backend bootstrap-emitter compiler/test_runner_entry.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_stage3.c && sync
 	@# Stage 4: Assert byte-by-byte identity between Stage 2 and Stage 3 C files

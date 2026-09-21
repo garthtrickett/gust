@@ -74,3 +74,4 @@ yarn-error.log*
 # is how four CI reds happened on Patch 24.12.
 __pycache__/
 *.pyc
+/src/runtime-rs/target/

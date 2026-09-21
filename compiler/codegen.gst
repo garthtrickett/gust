@@ -1644,7 +1644,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 res = std.Concat(res, index_str);
                 res = std.Concat(res, " >= ");
                 res = std.Concat(res, alloc_str);
-                res = std.Concat(res, ".len) { printf(\"Slice bounds check failed at line %d\\n\", __LINE__); exit(1); } &(");
+                res = std.Concat(res, ".len) { gust_check_fail(\"Slice bounds check failed\", __LINE__); } &(");
                 res = std.Concat(res, alloc_str);
                 res = std.Concat(res, ".data[");
                 res = std.Concat(res, index_str);
@@ -1674,7 +1674,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 res = std.Concat(res, " >= ");
                 res = std.Concat(res, alloc_str);
                 res = std.Concat(res, arrow_or_dot);
-                res = std.Concat(res, "len) { printf(\"Vector bounds check failed at line %d\\n\", __LINE__); exit(1); } &(");
+                res = std.Concat(res, "len) { gust_check_fail(\"Vector bounds check failed\", __LINE__); } &(");
                 res = std.Concat(res, alloc_str);
                 res = std.Concat(res, arrow_or_dot);
                 res = std.Concat(res, "data[");
@@ -1694,7 +1694,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 res = std.Concat(res, " >= ");
                 res = std.Concat(res, alloc_str);
                 res = std.Concat(res, arrow_or_dot);
-                res = std.Concat(res, "len) { printf(\"Pool bounds check failed at line %d\\n\", __LINE__); exit(1); } &(");
+                res = std.Concat(res, "len) { gust_check_fail(\"Pool bounds check failed\", __LINE__); } &(");
                 res = std.Concat(res, alloc_str);
                 res = std.Concat(res, arrow_or_dot);
                 res = std.Concat(res, "data[");
@@ -1997,7 +1997,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         vector_set_res = std.Concat(vector_set_res, "; if (_gust_vector_set_idx < 0 || _gust_vector_set_idx >= ");
                         vector_set_res = std.Concat(vector_set_res, left_str);
                         vector_set_res = std.Concat(vector_set_res, vector_set_arrow_or_dot);
-                        vector_set_res = std.Concat(vector_set_res, "len) { printf(\"Vector bounds check failed at line %d\\n\", __LINE__); exit(1); } ");
+                        vector_set_res = std.Concat(vector_set_res, "len) { gust_check_fail(\"Vector bounds check failed\", __LINE__); } ");
                         vector_set_res = std.Concat(vector_set_res, left_str);
                         vector_set_res = std.Concat(vector_set_res, vector_set_arrow_or_dot);
                         vector_set_res = std.Concat(vector_set_res, "data[_gust_vector_set_idx] = ");
@@ -2085,7 +2085,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         vector_get_ref_res = std.Concat(vector_get_ref_res, " >= ");
                         vector_get_ref_res = std.Concat(vector_get_ref_res, left_str);
                         vector_get_ref_res = std.Concat(vector_get_ref_res, vector_get_ref_arrow_or_dot);
-                        vector_get_ref_res = std.Concat(vector_get_ref_res, "len) { printf(\"Vector bounds check failed at line %d\\n\", __LINE__); exit(1); } &(");
+                        vector_get_ref_res = std.Concat(vector_get_ref_res, "len) { gust_check_fail(\"Vector bounds check failed\", __LINE__); } &(");
                         vector_get_ref_res = std.Concat(vector_get_ref_res, left_str);
                         vector_get_ref_res = std.Concat(vector_get_ref_res, vector_get_ref_arrow_or_dot);
                         vector_get_ref_res = std.Concat(vector_get_ref_res, "data[");
@@ -2221,7 +2221,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                         res_getref_map = std.Concat(res_getref_map, k_str_getref_map);
                         res_getref_map = std.Concat(res_getref_map, ", ");
                         res_getref_map = std.Concat(res_getref_map, is_str_key_str);
-                        res_getref_map = std.Concat(res_getref_map, ")) { printf(\"HashMap GetRef missing key at line %d\\n\", __LINE__); exit(1); } os_HashMapRef(");
+                        res_getref_map = std.Concat(res_getref_map, ")) { gust_check_fail(\"HashMap GetRef missing key\", __LINE__); } os_HashMapRef(");
                         res_getref_map = std.Concat(res_getref_map, left_argument);
                         res_getref_map = std.Concat(res_getref_map, ", ");
                         res_getref_map = std.Concat(res_getref_map, k_str_getref_map);
@@ -2989,7 +2989,7 @@ func codegen_generate_expression(expr_idx: Index[ast.Expression[ctx], ctx], env:
                 vector_get_ref_alias_res = std.Concat(vector_get_ref_alias_res, " >= ");
                 vector_get_ref_alias_res = std.Concat(vector_get_ref_alias_res, vec_str_vector_getref_alias);
                 vector_get_ref_alias_res = std.Concat(vector_get_ref_alias_res, vector_get_ref_alias_arrow_or_dot);
-                vector_get_ref_alias_res = std.Concat(vector_get_ref_alias_res, "len) { printf(\"Vector bounds check failed at line %d\\n\", __LINE__); exit(1); } &(");
+                vector_get_ref_alias_res = std.Concat(vector_get_ref_alias_res, "len) { gust_check_fail(\"Vector bounds check failed\", __LINE__); } &(");
                 vector_get_ref_alias_res = std.Concat(vector_get_ref_alias_res, vec_str_vector_getref_alias);
                 vector_get_ref_alias_res = std.Concat(vector_get_ref_alias_res, vector_get_ref_alias_arrow_or_dot);
                 vector_get_ref_alias_res = std.Concat(vector_get_ref_alias_res, "data[");
@@ -3867,7 +3867,7 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
             
             mut is_recursive := codegen_is_function_recursive(body_idx, f_name, ctx);
             if is_recursive == 1 {
-                mut check_str := "    if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }\n";
+                mut check_str := "    gust_tick();\n";
                 body_c = std.Concat(check_str, body_c);
             }
             
@@ -4015,7 +4015,7 @@ func codegen_generate_statement(stmt_idx: Index[ast.Statement[ctx], ctx], env: &
                 mut body_str := codegen_generate_block_statement(ctx[stmt_idx].While.body, env, ctx);
                 (*env).codegen_active_defers.Pop();
                 
-                mut check_str := "        if (GUST_UNLIKELY(--gust_loop_ticks <= 0)) { gust_loop_ticks = GUST_TICK_INTERVAL; gust_yield(); }\n";
+                mut check_str := "        gust_tick();\n";
                 body_str = std.Concat(check_str, body_str);
                 
                 mut res := std.Concat("    while (", cond_str);
