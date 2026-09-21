@@ -460,7 +460,12 @@ def validate() -> dict:
     required_sources = {
         "src/runtime/arena.c", "src/runtime/scratch.c",
         "src/runtime/collections.c", "src/runtime/core_headers.h",
-        "src/runtime/approved_scalar_imports.c", "src/runtime/file_io.c",
+        # Patch 25.4: the tiny_host_* fixtures moved to the no_std Rust
+        # crate. They must stay FOREIGN -- a Gust rewrite would test
+        # Gust calling Gust and the contract would evaporate (O1) --
+        # and their symbol names are byte-identical, so only the
+        # source path changes.
+        "src/runtime-rs/src/lib.rs", "src/runtime/file_io.c",
         "src/runtime/host_io.c", "src/runtime/strings.c",
         "src/runtime/fiber.c",
         "compiler/codegen.gst",

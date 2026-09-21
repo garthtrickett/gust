@@ -16,7 +16,7 @@ PHASE10_NATIVE_BACKEND_SOURCES = $(wildcard compiler/experiments/cranelift/src/*
 PHASE10_NATIVE_BACKEND_TARGET_DIR = build/phase10-native-backend-cargo
 PHASE10_NATIVE_BACKEND_BUILT_BIN = $(PHASE10_NATIVE_BACKEND_TARGET_DIR)/release/gust-cranelift-experiment
 PHASE21_RUNTIME_PACKAGE = build/gust-runtime-package.a
-PHASE21_RUNTIME_OBJECTS = build/phase21-runtime/arena.o build/phase21-runtime/host_io.o build/phase21-runtime/file_io.o build/phase21-runtime/scratch.o build/phase21-runtime/fiber.o build/phase21-runtime/collections.o build/phase21-runtime/strings.o build/phase21-runtime/approved_scalar_imports.o
+PHASE21_RUNTIME_OBJECTS = build/phase21-runtime/arena.o build/phase21-runtime/host_io.o build/phase21-runtime/file_io.o build/phase21-runtime/scratch.o build/phase21-runtime/fiber.o build/phase21-runtime/collections.o build/phase21-runtime/strings.o
 
 PHASE10_DIAG_CC ?= clang
 PHASE10_DIAG_CFLAGS ?= -O0 -g3 -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address,undefined -fsanitize-address-use-after-scope -fno-sanitize-recover=all -pthread
@@ -229,13 +229,50 @@ build/phase21-runtime/strings.o: src/runtime/strings.c src/runtime/core_headers.
 	mkdir -p build/phase21-runtime
 	$(CC) $(CFLAGS) -Isrc/runtime -c src/runtime/strings.c -o $@
 
-build/phase21-runtime/approved_scalar_imports.o: src/runtime/approved_scalar_imports.c src/runtime/core_headers.h
-	mkdir -p build/phase21-runtime
-	$(CC) $(CFLAGS) -Isrc/runtime -c src/runtime/approved_scalar_imports.c -o $@
+# Patch 25.4: approved_scalar_imports.c is rehomed to the no_std Rust
+# crate src/runtime-rs. The fixtures must stay FOREIGN -- a Gust rewrite
+# would test Gust calling Gust and the contract would evaporate (O1).
+# Symbol names are byte-identical, so the 26 dependent files are unchanged.
+PHASE25_RUNTIME_RS = src/runtime-rs/target/release/libgust_runtime_rs.a
 
-$(PHASE21_RUNTIME_PACKAGE): $(PHASE21_RUNTIME_OBJECTS)
+$(PHASE25_RUNTIME_RS): src/runtime-rs/src/lib.rs src/runtime-rs/Cargo.toml
+	$(CARGO) build --release --manifest-path src/runtime-rs/Cargo.toml
+
+# Only the crate's own codegen unit joins the runtime archive. The staticlib
+# has 310 members; 309 are core and compiler_builtins, which would add 7 MB
+# and a second definition of memcpy beside libc's. The member is selected by
+# CONTENT -- the one defining the fixtures -- because both hashes in its
+# filename change on every rebuild, and it fails loudly when absent: an
+# `|| true` here would make a missing fixture look like a built one.
+# Its exports are then narrowed to the three fixtures. The crate's codegen
+# unit also defines Rust's panic handler, whose symbol carries a CONTENT
+# HASH -- three parity guards compare the archive's defined-symbol set
+# exactly, and a hash that moves whenever the crate changes would make
+# those lists churn forever. The C file exported exactly three symbols;
+# so does its replacement.
+PHASE25_RUNTIME_RS_OBJ = build/phase25-runtime-rs/gust_runtime_rs_fixtures.o
+
+$(PHASE25_RUNTIME_RS_OBJ): $(PHASE25_RUNTIME_RS)
+	@rm -rf build/phase25-runtime-rs
+	@mkdir -p build/phase25-runtime-rs
+	@member=$$(nm --print-armap $(PHASE25_RUNTIME_RS) 2>/dev/null \
+		| awk '/^Archive index:/{a=1;next} a && $$1=="tiny_host_add_i32"{print $$NF; exit}'); \
+	if [ -z "$$member" ]; then \
+		echo 'no src/runtime-rs member defines tiny_host_add_i32' >&2; exit 1; \
+	fi; \
+	cd build/phase25-runtime-rs && ar x ../../$(PHASE25_RUNTIME_RS) "$$member" \
+		&& mv "$$member" member.o
+	objcopy --keep-global-symbol=tiny_host_add_one_i32 \
+	        --keep-global-symbol=tiny_host_add_i32 \
+	        --keep-global-symbol=tiny_host_is_positive_i32 \
+	        build/phase25-runtime-rs/member.o $@
+	@rm -f build/phase25-runtime-rs/member.o
+
+$(PHASE21_RUNTIME_PACKAGE): $(PHASE21_RUNTIME_OBJECTS) $(PHASE25_RUNTIME_RS_OBJ)
 	@rm -f build/.gust-runtime-package.a.tmp
-	ar rcs build/.gust-runtime-package.a.tmp $(PHASE21_RUNTIME_OBJECTS)
+	# The Rust fixture object joins the runtime archive, so the archive keeps
+	# one name and one shape while its contents move language.
+	ar rcs build/.gust-runtime-package.a.tmp $(PHASE21_RUNTIME_OBJECTS) $(PHASE25_RUNTIME_RS_OBJ)
 	mv build/.gust-runtime-package.a.tmp $(PHASE21_RUNTIME_PACKAGE)
 
 phase10-native-package: gust build/gust-native-backend $(PHASE21_RUNTIME_PACKAGE)
