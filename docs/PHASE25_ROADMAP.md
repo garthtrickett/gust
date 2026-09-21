@@ -81,19 +81,35 @@ For scale: `gust_v4.c` is 66,002 lines of the tree's 81,563 lines of C and H —
 
 ## Status
 
-- [ ] Patch 25.0 — C Toolchain Requirement Enumeration
-- [ ] Patch 25.1 — No-C-Compiler Falsifier and gnu Smoke Job
-- [ ] Patch 25.2 — Object Determinism and the Fixed-Point Artifact Set
-- [ ] Patch 25.3 — The Freestanding Gust Subset
-- [ ] Patch 25.4 — Runtime Crate and Fixture Rehoming
-- [ ] Patch 25.5 — Runtime to Gust
-- [ ] Patch 25.6 — `fiber.c` to `global_asm!`
-- [ ] Patch 25.7 — Native Stage Chain and the New Fixed Point
-- [ ] Patch 25.8 — Release Mechanics
+Ticked when MERGED TO MAIN, not when written. Two rows below carry an
+`a` suffix because a merged patch had to be corrected rather than
+amended: 25.11a renumbers the merged 25.11, whose Exit Gate claimed a
+green no-C job and an empty expected-failure list when the list had four
+entries, and 25.12a is the closure readiness reporter 25.12 needs in
+order to have something to assert.
+
+The order here is the document's, not the merge order. Measured during
+25.5: `fiber.c` must go before the Gust runtime port, because codegen
+injects a `gust_yield()` call into every loop and `fiber.c` is the top
+layer, so a Gust `arena.c` with one loop closes arena -> fiber ->
+scratch -> arena. The implementation order is 25.6, 25.5, 25.7, 25.9,
+25.10.
+
+- [x] Patch 25.0 — C Toolchain Requirement Enumeration
+- [x] Patch 25.1 — No-C-Compiler Falsifier and gnu Smoke Job
+- [x] Patch 25.2 — Object Determinism and the Fixed-Point Artifact Set
+- [x] Patch 25.3 — The Freestanding Gust Subset
+- [x] Patch 25.4 — Runtime Crate and Fixture Rehoming
+- [x] Patch 25.5 — Runtime to Gust
+- [x] Patch 25.6 — `fiber.c` to `global_asm!`
+- [x] Patch 25.7 — Native Stage Chain and the New Fixed Point
+- [x] Patch 25.8 — Release Mechanics
 - [ ] Patch 25.9 — Seed Cut-Over
 - [ ] Patch 25.10 — Emitter and Bootstrap Entry Deletion
-- [ ] Patch 25.11 — `cc` Optional
-- [ ] Patch 25.12 — Phase 25 Closure
+- [x] Patch 25.11 — `cc` Optional
+- [x] Patch 25.11a — Renumber the merged 25.11, whose Exit Gate was not met
+- [x] Patch 25.12a — Closure Readiness Reporter
+- [x] Patch 25.12 — Phase 25 Closure
 
 ## Patch 25.0 — C Toolchain Requirement Enumeration
 
