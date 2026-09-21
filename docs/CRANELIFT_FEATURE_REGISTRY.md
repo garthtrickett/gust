@@ -481,7 +481,7 @@ Patch 17.14 proves the migrated Phase 17 capabilities compose. The differential 
 
 - Audit version: `phase17_deferred_residue_audit_v1`
 - Opening rows disposed: `17`
-- Inventoried helpers disposed: `79` (66 migrated, 4 excluded, 9 narrowly deferred)
+- Inventoried helpers disposed: `80` (66 migrated, 5 excluded, 9 narrowly deferred)
 - Retained C components with a named destination: `8`
 - Narrow deferred rows: `8`
 
@@ -496,7 +496,7 @@ Every retained C component names a narrow deferred row as its removal or reasses
 - Closure version: `phase17_closure_v1`
 - Status: `phase17_closed_native_runtime_boundary`
 - Opening rows disposed: `17`
-- Inventoried helpers disposed: `79`
+- Inventoried helpers disposed: `80`
 - Retained C components with a named destination: `8`
 - Narrow future-phase deferrals: `8`
 

@@ -23896,9 +23896,9 @@
     "status": "phase17_closed_native_runtime_boundary",
     "opening_entry_count": 17,
     "migrated_entry_count": 17,
-    "inventoried_helper_count": 79,
+    "inventoried_helper_count": 80,
     "migrated_helper_count": 66,
-    "excluded_helper_count": 4,
+    "excluded_helper_count": 5,
     "narrowly_deferred_helper_count": 9,
     "retained_component_count": 8,
     "narrow_deferred_row_count": 8,
@@ -24242,6 +24242,12 @@
         "helper_id": "p17_helper_std_str_eq",
         "disposition": "migrated",
         "terminating_authority": "phase17_memory_runtime_authority.selected_operations",
+        "narrow_deferred_row": ""
+      },
+      {
+        "helper_id": "p17_helper_std_str_bounds_fail",
+        "disposition": "excluded",
+        "terminating_authority": "",
         "narrow_deferred_row": ""
       },
       {
@@ -24754,6 +24760,10 @@
       {
         "helper_id": "p17_helper_os_mockpayload",
         "reason": "test_fixture_payload_not_a_runtime_operation"
+      },
+      {
+        "helper_id": "p17_helper_std_str_bounds_fail",
+        "reason": "bounds_check_abort_handler_not_a_memory_operation"
       },
       {
         "helper_id": "p17_helper_os_is_key_corrupted",
@@ -41932,7 +41942,7 @@
           "classification": "production_or_release_migration",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "review_claims_in_23_8_and_23_12",
-          "digest": "8ad4a7b5ed24ef62f840a61d2ad8aeec5027a959b207e94c35dc8d535b93e7de",
+          "digest": "c52cf13605c9b19f4993c59f8e67aaae98730767d492696472d31f9e93190089",
           "falsifier": "live_documentation_claim_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -42052,7 +42062,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "133dc49039f1d787d0a2536e8afad7f747dc6f6092981f32e4a9184cdbb2d898",
+          "digest": "c09cf3923c0239bae7d02c5a700b524dd29b0a8e0d8a60e03072e74321a298b7",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -42082,7 +42092,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "b359df29d361c8f8aa627cd0acb6f08f9d6c0684ca28bf30979d1ae03c2a01e1",
+          "digest": "2e8f9cc82ee4f1905811d7ce1ded8787991317c9a67f09bc17daf89d9b292fbb",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
