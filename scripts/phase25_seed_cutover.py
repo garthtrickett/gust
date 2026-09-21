@@ -72,6 +72,36 @@ def validate() -> None:
             "entry point: no seed, no release, and no way to build the "
             "compiler that would have produced either. Release 0 is minted "
             "before the seed is removed, not after.")
+    # ... and a release that is merely LISTED is not a replacement route.
+    #
+    # Measured against this guard in a sandbox: a hand-written manifest
+    # entry with an all-zero sha256 satisfied "a release exists" and the
+    # guard said the replacement route was in place. The seed would be gone
+    # and the thing named as its replacement would be a string.
+    #
+    # Patch 25.8 already owns what makes a release verifiable, so this
+    # checks the shape it defined rather than inventing a second one: every
+    # release names a tag, and every artifact carries a 64-hex digest that
+    # is not all zeros. Whether the BYTES match is 25.8's verify-seed, which
+    # needs the artifact present; this is the part that can be asserted from
+    # the repository alone.
+    for index, release in enumerate(releases()):
+        where = f"releases[{index}]"
+        require(isinstance(release, dict) and release.get("tag"),
+                f"{where} has no tag; a release is an annotated tag, an "
+                "artifact set and a manifest (Patch 25.8)")
+        artifacts = release.get("artifacts")
+        require(isinstance(artifacts, list) and artifacts,
+                f"{where} lists no artifacts: nothing to bootstrap from")
+        for spot, artifact in enumerate(artifacts):
+            digest = (artifact or {}).get("sha256", "")
+            require(isinstance(digest, str) and len(digest) == 64 and
+                    all(c in "0123456789abcdef" for c in digest) and
+                    set(digest) != {"0"},
+                    f"{where}.artifacts[{spot}] has no usable sha256: "
+                    f"{digest!r}. An unverifiable artifact is not a "
+                    "replacement for the seed -- it is a promise that one "
+                    "exists.")
     print("guard-cranelift-phase25-seed-cutover: ok (seed absent, "
           f"{record['release_count']} releases provide the replacement "
           "route)")
