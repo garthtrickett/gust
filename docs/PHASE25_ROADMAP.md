@@ -364,11 +364,30 @@ its Cranelift worker as a **sibling on disk**. Copy the binary next to
 `build/phase10-package/bin/gust-native-backend` and the identical
 invocation succeeds.
 
-So 25.7 is a packaging and driver-discovery patch, not a compilation one.
-The stage chain cannot be a sequence of binaries in a build directory
-unless each stage is placed beside a driver, or discovery learns a second
-strategy (an env var, or a path relative to the invoked binary rather than
-a sibling of it).
+**CORRECTED, twenty minutes later.** I wrote here that discovery needed to
+"learn a second strategy". It already has one. `mir_native_backend_discover_driver`
+takes an `explicit_path` that is checked BEFORE the sibling, and it is
+sourced from `GUST_NATIVE_BACKEND_DRIVER`
+(`mir_native_backend_source_route.gst:691`). Measured:
+
+    GUST_NATIVE_BACKEND_DRIVER=$PWD/build/phase10-package/bin/gust-native-backend \
+        /tmp/native_compiler --backend cranelift -o /tmp/native_c3 \
+        compiler/test_runner_entry.gst
+
+exits 0 from `/tmp` and reproduces `0b072748d4d8fd78f699e202` exactly.
+
+The compiler even prints the answer: `test_runner_entry.gst:51` says
+"Set GUST_NATIVE_BACKEND_DRIVER to an absolute executable path". I read
+the discovery function, saw the sibling branch fail, and concluded a
+strategy was missing without reading the branch above it or the error
+path's own advice. Reading the code that FAILED, rather than the code that
+chooses, is what produced a wrong design conclusion from a correct
+measurement.
+
+So 25.7 needs no compiler change at all. It reduces to a script that
+builds the native stage chain with that variable set, asserts
+`stage_n == stage_n+1`, and runs beside the generated-C fixed point in one
+CI job.
 
 **This changes what the patch has to prove.** Two of the exit gate's three
 clauses are already demonstrable: the native fixed point holds, and the
