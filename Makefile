@@ -259,31 +259,32 @@ $(PHASE25_RUNTIME_RS): $(PHASE25_RUNTIME_RS_SRCS)
 #
 # Patch 25.4 got that object by extracting the single archive member that
 # defined the fixtures, which worked while the crate was no_std and the
-# fixtures called nothing. Patch 25.6 moved the scheduler in, and the
-# scheduler uses std: the extracted member now carries 45 undefined
-# references into core, alloc and std, which live in the 309 members the
-# extraction discards. It builds and then fails at link.
+# fixtures called nothing. Patch 25.6 moved the scheduler in and Patch
+# 25.5 moved five more runtime files: the extracted member now carries
+# undefined references into core, alloc and std, which live in the 309
+# members the extraction discards. It builds and then fails at link.
 #
-# So the object is produced by a partial link instead. The twenty-one
-# exports are the roots, --gc-sections drops what they do not reach, and
-# the result is self-contained apart from libc. Its exports are then
-# narrowed to exactly those twenty-one -- the set the two deleted C files
-# exported between them -- which also localises the memcpy that
+# So the object is produced by a partial link instead. The exports below
+# are the roots, --gc-sections drops what they do not reach, and the
+# result is self-contained apart from libc. Its exports are then narrowed
+# to exactly that list, which also localises the memcpy that
 # compiler_builtins brings along, so it can no longer collide with libc's.
-# Three parity guards compare the archive's defined-symbol set exactly, so
-# that set has to be a named list and not "whatever ended up global":
-# Rust's panic handler symbol carries a content hash that moves on every
-# crate change, and would make those lists churn forever.
+#
+# The list is NAMED rather than "whatever ended up global". Three parity
+# guards compare the archive's defined-symbol set exactly, and the crate's
+# codegen unit also defines Rust's panic handler, whose symbol carries a
+# content hash that moves on every crate change -- deriving the list from
+# the object would make those guards churn forever and assert nothing.
 #
 # The roots are checked after the link, not assumed. ld does not fail on a
 # -u it cannot satisfy, so a renamed export would otherwise leave a quietly
 # smaller object and surface much later as an undefined symbol.
 PHASE25_RUNTIME_RS_EXPORTS = \
-	tiny_host_add_one_i32 \
-	tiny_host_add_i32 \
-	tiny_host_is_positive_i32 \
+	get_num_threads_to_use \
 	gust_check_fail \
+	gust_context_switch \
 	gust_fiber_create \
+	gust_fiber_entry_wrapper \
 	gust_fiber_exit \
 	gust_fiber_free \
 	gust_fiber_switch \
@@ -293,30 +294,78 @@ PHASE25_RUNTIME_RS_EXPORTS = \
 	gust_shard_loop \
 	gust_tick \
 	gust_yield \
-	get_num_threads_to_use \
+	os_ArenaAlloc \
+	os_Arena_Free \
+	os_Arena_New \
+	os_Arena_Validate \
+	os_Args \
+	os_CloseDir \
+	os_ExecutablePath \
+	os_FileExecutable \
+	os_FileExists \
+	os_GetEnv \
+	os_GetThreadScratch_raw \
+	os_HashMapClear_impl \
+	os_HashMapContains_impl \
+	os_HashMapRef_impl \
+	os_HashMapRemove_impl \
+	os_LogError \
+	os_LogInt \
+	os_LogStr \
+	os_MockPayload \
+	os_NativeObjectFormat \
+	os_NativeTargetTriple \
+	os_OpenDir \
+	os_PathAbsolute \
+	os_PathDir \
+	os_ReadDir \
+	os_ReadFile \
+	os_RemoveFile \
+	os_RunProcess \
+	os_ScratchAlloc \
+	os_ScratchReset \
+	os_SetThreadScratch \
+	os_System \
+	os_WriteFile \
+	os_argc \
+	os_argv \
+	os_path_join \
 	std_Channel_Alloc \
 	std_Channel_Recv_impl \
 	std_Channel_Send_impl \
+	std_Clone_str \
+	std_GenerationalSwap \
 	std_Mutex_Alloc \
 	std_Mutex_Lock_impl \
-	std_Mutex_Unlock_impl
+	std_Mutex_Unlock_impl \
+	std_PoolAlloc_impl \
+	std_PoolFree_impl \
+	std_str_split \
+	tiny_host_add_i32 \
+	tiny_host_add_one_i32 \
+	tiny_host_is_positive_i32
+
+# Both archives are narrowed the same way, so the recipe is written once.
+# $(1) staticlib, $(2) output object, $(3) scratch directory.
+define narrow_runtime_rs
+@rm -rf $(3)
+@mkdir -p $(3)
+ld -r --gc-sections -o $(3)/combined.o \
+	$(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),-u $(sym)) \
+	--start-group $(1) --end-group
+objcopy $(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),--keep-global-symbol=$(sym)) \
+	$(3)/combined.o $(2)
+@rm -f $(3)/combined.o
+@defined=$$(nm -g --defined-only $(2) | awk '$$2 ~ /^[TDBRW]$$/ {print $$3}' | sort); \
+expected=$$(printf '%s\n' $(PHASE25_RUNTIME_RS_EXPORTS) | sort); \
+if [ "$$defined" != "$$expected" ]; then \
+	echo 'src/runtime-rs exports drifted from the registered set: $(2)' >&2; \
+	diff <(echo "$$expected") <(echo "$$defined") >&2; exit 1; \
+fi
+endef
 
 $(PHASE25_RUNTIME_RS_OBJ): $(PHASE25_RUNTIME_RS)
-	@rm -rf build/phase25-runtime-rs
-	@mkdir -p build/phase25-runtime-rs
-	ld -r --gc-sections -o build/phase25-runtime-rs/combined.o \
-		$(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),-u $(sym)) \
-		--start-group $(PHASE25_RUNTIME_RS) --end-group
-	objcopy $(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),--keep-global-symbol=$(sym)) \
-		build/phase25-runtime-rs/combined.o $@
-	@rm -f build/phase25-runtime-rs/combined.o
-	@defined=$$(nm -g --defined-only $@ | awk '$$2 ~ /^[TDBRW]$$/ {print $$3}' | sort); \
-	expected=$$(printf '%s\n' $(PHASE25_RUNTIME_RS_EXPORTS) | sort); \
-	if [ "$$defined" != "$$expected" ]; then \
-		echo 'src/runtime-rs exports drifted from the registered set' >&2; \
-		diff <(echo "$$expected") <(echo "$$defined") >&2; exit 1; \
-	fi
-
+	$(call narrow_runtime_rs,$(PHASE25_RUNTIME_RS),$@,build/phase25-runtime-rs)
 
 # Patch 25.5: the GUST_DEBUG arena, as a SECOND ARCHIVE.
 #
