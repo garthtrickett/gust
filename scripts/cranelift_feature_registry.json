@@ -18678,6 +18678,18 @@
           "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
         },
         {
+          "id": "p17_helper_std_str_bounds_fail",
+          "symbol_identity": "std_str_bounds_fail",
+          "symbol_kind": "exact_c_symbol",
+          "source_path": "src/runtime/strings.c",
+          "reachability": "runtime_component_internal",
+          "inventory_owner": "compiler_allocation_string_runtime_planner",
+          "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
+          "owning_phase17_entry_id": "p17_allocation_string_runtime",
+          "initial_classification": "classification_pending_patch17_1",
+          "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+        },
+        {
           "id": "p17_helper_std_str_slice",
           "symbol_identity": "std_str_slice",
           "symbol_kind": "exact_c_symbol",
@@ -19710,6 +19722,14 @@
         "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
       },
       {
+        "helper_id": "p17_helper_std_str_bounds_fail",
+        "symbol_identity": "std_str_bounds_fail",
+        "classification": "retained_c_runtime_component",
+        "component_id": "runtime_component:strings",
+        "reason_code": "runtime_helper_classified_retained_c_component",
+        "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
+      },
+      {
         "helper_id": "p17_helper_std_str_slice",
         "symbol_identity": "std_str_slice",
         "classification": "retained_c_runtime_component",
@@ -20675,7 +20695,7 @@
       {
         "component_id": "runtime_component:strings",
         "owned_source_path": "src/runtime/strings.c",
-        "helper_count": 11,
+        "helper_count": 12,
         "retention_reason": "awaiting_pure_gust_migration",
         "destination_phase": "phase18",
         "removal_criterion": "retired_when_complete_unicode_and_locale_behaviour_compiles_through_mir_tracked_by_p18_pure_gust_collections_and_strings",
@@ -20691,7 +20711,7 @@
         "target_applicability": "all_declared_host_targets_from_phase14_target_authority"
       }
     ],
-    "retained_helper_count": 72,
+    "retained_helper_count": 73,
     "rejection_classes": [
       "runtime_retained_c_anonymous_object",
       "runtime_retained_c_program_specific_generation",
@@ -41807,7 +41827,7 @@
           "classification": "historical_only",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_as_historical_evidence",
-          "digest": "a52665e9238263ea89998e5431934203907cab84bb89722c362e7b47b7c076f4",
+          "digest": "499caa66b95a5afcc73483473ef385f4becb8a4328532b9d130d100517990d0e",
           "falsifier": "historical_record_is_reclassified_as_live_support",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -41892,6 +41912,21 @@
           "owner": "cranelift",
           "path": "compiler/codegen.gst",
           "removal_phase": "24_or_25_as_registered"
+        },
+        {
+          "classification": "production_or_release_migration",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "review_claims_in_23_8_and_23_12",
+          "digest": "8ad4a7b5ed24ef62f840a61d2ad8aeec5027a959b207e94c35dc8d535b93e7de",
+          "falsifier": "live_documentation_claim_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 6,
+            "mir_to_c_name": 4
+          },
+          "owner": "cranelift",
+          "path": "docs/CRANELIFT_FEATURE_REGISTRY.md",
+          "removal_phase": "24_or_25_as_claim_requires"
         },
         {
           "classification": "bootstrap_phase25",
@@ -42242,6 +42277,21 @@
           "removal_phase": "24_or_25_as_registered"
         },
         {
+          "classification": "production_or_release_migration",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "review_claims_in_23_8_and_23_12",
+          "digest": "6a672b929091ac5a0f22b0862774ba20331541b3a43309db02f409f28afaec86",
+          "falsifier": "live_documentation_claim_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 6,
+            "mir_to_c_name": 4
+          },
+          "owner": "cranelift",
+          "path": "docs/CRANELIFT_FEATURE_REGISTRY.md",
+          "removal_phase": "24_or_25_as_claim_requires"
+        },
+        {
           "classification": "bootstrap_phase25",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_exact_C_bootstrap_dependency",
@@ -42490,6 +42540,7 @@
         "compiler/CRANELIFT_PHASE22_OPENING.md",
         "compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md",
         "compiler/codegen.gst",
+        "docs/CRANELIFT_FEATURE_REGISTRY.md",
         "gust_v4.c",
         "scripts/cranelift_registry.py",
         "scripts/cranelift_test_levels.json",

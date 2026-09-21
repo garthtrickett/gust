@@ -20,7 +20,7 @@ This semantic opening snapshot selects only native runtime ABI, helper classific
 ## Derived opening totals
 
 - Opening rows: `17`
-- Inventoried C-dependent helpers: `79`
+- Inventoried C-dependent helpers: `80`
 - Phase 16 residual capabilities classified: `16`
 - Planned CI families: `12`
 
@@ -125,6 +125,7 @@ This semantic opening snapshot selects only native runtime ABI, helper classific
 | p17_helper_os_logstr | os_LogStr | exact_c_symbol | src/runtime-rs/src/host_io.rs | runtime_public_surface | p17_io_filesystem_runtime | compiler_io_filesystem_runtime_planner | compiler_io_filesystem_runtime_verifier | classification_pending_patch17_1 | all_declared_host_targets_from_phase14_target_authority |
 | p17_helper_os_logerror | os_LogError | exact_c_symbol | src/runtime-rs/src/host_io.rs | runtime_public_surface | p17_io_filesystem_runtime | compiler_io_filesystem_runtime_planner | compiler_io_filesystem_runtime_verifier | classification_pending_patch17_1 | all_declared_host_targets_from_phase14_target_authority |
 | p17_helper_std_str_eq | std_str_eq | exact_c_symbol | src/runtime/strings.c | runtime_public_surface | p17_allocation_string_runtime | compiler_allocation_string_runtime_planner | compiler_allocation_string_runtime_verifier | classification_pending_patch17_1 | all_declared_host_targets_from_phase14_target_authority |
+| p17_helper_std_str_bounds_fail | std_str_bounds_fail | exact_c_symbol | src/runtime/strings.c | runtime_component_internal | p17_allocation_string_runtime | compiler_allocation_string_runtime_planner | compiler_allocation_string_runtime_verifier | classification_pending_patch17_1 | all_declared_host_targets_from_phase14_target_authority |
 | p17_helper_std_str_slice | std_str_slice | exact_c_symbol | src/runtime/strings.c | runtime_public_surface | p17_allocation_string_runtime | compiler_allocation_string_runtime_planner | compiler_allocation_string_runtime_verifier | classification_pending_patch17_1 | all_declared_host_targets_from_phase14_target_authority |
 | p17_helper_std_str_byte_at | std_str_byte_at | exact_c_symbol | src/runtime/strings.c | runtime_public_surface | p17_allocation_string_runtime | compiler_allocation_string_runtime_planner | compiler_allocation_string_runtime_verifier | classification_pending_patch17_1 | all_declared_host_targets_from_phase14_target_authority |
 | p17_helper_std_str_find | std_str_find | exact_c_symbol | src/runtime/strings.c | runtime_public_surface | p17_allocation_string_runtime | compiler_allocation_string_runtime_planner | compiler_allocation_string_runtime_verifier | classification_pending_patch17_1 | all_declared_host_targets_from_phase14_target_authority |
