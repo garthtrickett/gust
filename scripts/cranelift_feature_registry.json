@@ -6306,8 +6306,8 @@
           "state": "pre_publication"
         },
         {
-          "line_count": 68375,
-          "seed_digest": "0bac2f0fa208dd355c112b2f0bc1a75cceb4206325c33cc0d60836abf94abfdb",
+          "line_count": 68384,
+          "seed_digest": "9b26b95c42ede32dcc6a248a183ed558f238e1f23f7bf906f2a59487a7236933",
           "state": "post_publication"
         }
       ],
@@ -6318,10 +6318,10 @@
       "closure_transition": "collapse_to_post_publication_after_seed_merge",
       "contract_version": "phase255_runtime_to_gust_seed_reconvergence_transition_v1",
       "generated_seed_diff": {
-        "current_lines": 68375,
-        "deletions": 8,
-        "insertions": 2381,
-        "line_delta": 2373,
+        "current_lines": 68384,
+        "deletions": 2700,
+        "insertions": 5082,
+        "line_delta": 2382,
         "previous_lines": 66002
       },
       "partial_or_unregistered_identity": "rejected",
@@ -41809,6 +41809,21 @@
       "contract_version": "phase255_runtime_to_gust_text_surface_successor_v1",
       "current_changed_text_surfaces": [
         {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "f1667325f46dd4eaee57582c6e7851ae791dc38f2d53c45d5f4245defd890af0",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 1
+          },
+          "owner": "stdlib",
+          "path": "tests/cranelift/phase17_runtime_authority_review.txt",
+          "removal_phase": "24"
+        },
+        {
           "classification": "bootstrap_phase25",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_exact_C_bootstrap_dependency",
@@ -41902,7 +41917,7 @@
           "classification": "production_or_release_migration",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "deprecate_or_migrate_under_23_8_and_23_12",
-          "digest": "d666a3bf6fd03b0bb78054d2d9983fcee144b1e2dd5ca48439db606134c18b78",
+          "digest": "90004c249f6e95f18fbd3dabafb3462916547854bb7ff5ddd7c2f029f883cdea",
           "falsifier": "production_or_release_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -41932,7 +41947,7 @@
           "classification": "bootstrap_phase25",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_exact_C_bootstrap_dependency",
-          "digest": "0bac2f0fa208dd355c112b2f0bc1a75cceb4206325c33cc0d60836abf94abfdb",
+          "digest": "9b26b95c42ede32dcc6a248a183ed558f238e1f23f7bf906f2a59487a7236933",
           "falsifier": "bootstrap_surface_is_missing_changed_or_reclassified",
           "match_counts": {
             "explicit_backend_spelling": 2,
@@ -42097,7 +42112,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "634c6b9cf66befb3dd705f3fe77eb82134db862ca2bc3417efdf94005573f01d",
+          "digest": "1ac5ce2604000c3b6fb5340dde5adfaeba20be64af445d469146bf83b057ce90",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 5,
@@ -42186,6 +42201,21 @@
       ],
       "partial_extra_or_substituted_surface": "rejected",
       "previous_changed_text_surfaces": [
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "c32de4bbc0f45dc2698972fad966aa46be9f4ef94de020fe75f9360bd4f2cc0e",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 1
+          },
+          "owner": "stdlib",
+          "path": "tests/cranelift/phase17_runtime_authority_review.txt",
+          "removal_phase": "24"
+        },
         {
           "classification": "bootstrap_phase25",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
@@ -42563,6 +42593,7 @@
         }
       ],
       "registered_changed_paths": [
+        "tests/cranelift/phase17_runtime_authority_review.txt",
         "Makefile",
         "compiler/CRANELIFT_PHASE17_OPENING.md",
         "compiler/CRANELIFT_PHASE21_COLLECTION_STRING_NATIVE_SOURCE.md",

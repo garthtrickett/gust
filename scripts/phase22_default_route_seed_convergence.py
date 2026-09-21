@@ -698,10 +698,14 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
     require(fiber_diff["previous_lines"] == fiber_identities[0]["line_count"] and
             fiber_diff["current_lines"] == fiber_identities[1]["line_count"],
             "Patch 25.6 seed diff does not match its exact pre/post identities")
-    # Patch 25.5 moves it again, and this one grows: 2,381 lines in, 8 out,
-    # +2,373 to 68,375. Six runtime C files stop being compiled into the
-    # unity build and nine strings.c functions are emitted from Gust, so the
-    # seed carries emitted code it did not carry before.
+    # Patch 25.5 moves it again, and this one grows: measured against the
+    # authority base, 5,082 lines in and 2,700 out, +2,382 to 68,384. Six
+    # runtime C files stop being compiled into the unity build and nine
+    # strings.c functions are emitted from Gust, so the seed carries emitted
+    # code it did not carry before. The last +9 of that is the built-in
+    # struct suppression: a unit with no `main` no longer receives
+    # APIRequest and SessionNode, and the seed carries the codegen change
+    # that decides it.
     port_transition = record.get("phase255_seed_transition")
     if port_transition is None:
         return fiber_identities
@@ -713,8 +717,8 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
                             "state": "pre_publication"
                     },
                     {
-                            "line_count": 68375,
-                            "seed_digest": "0bac2f0fa208dd355c112b2f0bc1a75cceb4206325c33cc0d60836abf94abfdb",
+                            "line_count": 68384,
+                            "seed_digest": "9b26b95c42ede32dcc6a248a183ed558f238e1f23f7bf906f2a59487a7236933",
                             "state": "post_publication"
                     }
             ],
@@ -725,10 +729,10 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
             "closure_transition": "collapse_to_post_publication_after_seed_merge",
             "contract_version": "phase255_runtime_to_gust_seed_reconvergence_transition_v1",
             "generated_seed_diff": {
-                    "current_lines": 68375,
-                    "deletions": 8,
-                    "insertions": 2381,
-                    "line_delta": 2373,
+                    "current_lines": 68384,
+                    "deletions": 2700,
+                    "insertions": 5082,
+                    "line_delta": 2382,
                     "previous_lines": 66002
             },
             "partial_or_unregistered_identity": "rejected",

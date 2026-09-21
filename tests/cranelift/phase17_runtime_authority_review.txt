@@ -17,7 +17,7 @@ contract counts:
 helper classifications:
   stable_runtime_library_function: 3
   rust_runtime_component: 0
-  retained_c_runtime_component: 72
+  retained_c_runtime_component: 73
   pure_gust_runtime_component: 0
   obsolete_helper: 4
 
