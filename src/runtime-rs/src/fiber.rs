@@ -965,12 +965,26 @@ pub struct VectorStr {
     pub arena: *mut OsArena,
 }
 
+/// Allocate `n` raw bytes from `arena` and return a pointer to them.
+///
+/// The uint32 cast in GUST_ARENA_OFFSET is reproduced here once, rather
+/// than at each call site: a negative offset must become a large positive
+/// one exactly as the C does.
+///
+/// # Safety
+/// `arena` must be live.
+pub(crate) unsafe fn arena_alloc_bytes(arena: *mut OsArena, n: i32) -> *mut u8 {
+    let offset = os_ArenaAlloc(arena, n);
+    (*arena).base_address.cast::<u8>().add((offset as u32) as usize)
+}
+
+
 /// The growth half of `os_VectorPush`, which is a MACRO in core_headers.h
 /// rather than a function, so it cannot be called from here.
 ///
 /// # Safety
 /// `vec` must be a valid vector with a live arena.
-unsafe fn vector_push_str(vec: &mut VectorStr, value: SliceU8) {
+pub(crate) unsafe fn vector_push_str(vec: &mut VectorStr, value: SliceU8) {
     if vec.len >= vec.capacity {
         let new_cap = if vec.capacity == 0 { 8 } else { vec.capacity * 2 };
         let bytes = new_cap * (std::mem::size_of::<SliceU8>() as i32);
