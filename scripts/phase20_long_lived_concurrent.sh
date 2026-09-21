@@ -33,8 +33,15 @@ fi
 "$worker" compiler-mir-ingestion-object "$canonical_mir" \
   "$build_root/native.o" >"$build_root/native.compile.stdout" \
   2>"$build_root/native.compile.stderr"
+# Patch 25.6: src/runtime.c no longer supplies the scheduler. fiber.c is
+# deleted and its eighteen exports -- including the std_Mutex_* and
+# std_Channel_* this probe calls -- come from the runtime crate now, so
+# the link needs that object explicitly. Built through make so a stale one
+# cannot be linked silently.
+runtime_obj="build/phase25-runtime-rs/gust_runtime_rs_exports.o"
+make "$runtime_obj"
 "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-  src/runtime.c "$probe" "$build_root/native.o" \
+  src/runtime.c "$probe" "$build_root/native.o" "$runtime_obj" \
   -o "$build_root/native-program"
 
 mir_status="$(cat "$build_root/mir-to-c.status")"

@@ -101,8 +101,15 @@ fi
 ./gust --backend bootstrap-emitter "$compiler_source" |
   grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" >"$build_dir/stage2.c"
 cat src/runtime.c "$build_dir/stage2.c" >"$build_dir/stage2-final.c"
+# Patch 25.6: src/runtime.c is no longer a complete runtime. fiber.c is
+# deleted and its eighteen exports live in the runtime crate, and codegen
+# emits a gust_yield() call in every loop of every compiled Gust program,
+# so this link needs the crate object. Built through make so a stale one
+# cannot be linked silently.
+runtime_obj="build/phase25-runtime-rs/gust_runtime_rs_exports.o"
+make "$runtime_obj"
 "${CC:-cc}" ${CFLAGS:--O2 -Wall -pthread} ${INCLUDES:--Isrc} \
-  "$build_dir/stage2-final.c" -o "$build_dir/stage2-bin"
+  "$build_dir/stage2-final.c" "$runtime_obj" -o "$build_dir/stage2-bin"
 "$build_dir/stage2-bin" --backend bootstrap-emitter "$compiler_source" |
   grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" >"$build_dir/stage3.c"
 cmp -s "$build_dir/stage2.c" "$build_dir/stage3.c" || fail "stage 2 and stage 3 C are not byte-identical"
