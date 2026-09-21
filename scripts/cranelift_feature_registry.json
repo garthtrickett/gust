@@ -1,5 +1,66 @@
 {
   "schema": "scripts/cranelift_feature_registry.schema.json",
+  "phase25_runtime_port_invocations": {
+    "added_invocation_count": 1,
+    "added_invocation_rows": [
+      {
+        "invocation_marker": "./gust_bootstrap \"$ENTRY\" --backend bootstrap-emitter",
+        "line": 38,
+        "path": "scripts/phase25_strings_gust_parity.sh",
+        "reason": "the strings differential must emit the Gust side to compare it against the frozen C reference",
+        "selection": "explicit_bootstrap_emitter"
+      }
+    ],
+    "change_reason": "patch25_5_strings_parity_harness_emits_the_gust_side_so_the_census_gains_one_bootstrap_emitter_invocation",
+    "contract_version": "phase25_runtime_port_invocation_successor_v1",
+    "current_summary": {
+      "consumer_class_counts": {
+        "already_explicit_or_parser_probe": 145,
+        "cranelift_C_or_diagnostic_guard": 5,
+        "help_surface_probe": 3,
+        "intentional_default_selection_probe": 4,
+        "invocation_parser_probe": 2
+      },
+      "owner_counts": {
+        "cranelift": 154,
+        "stdlib": 5
+      },
+      "selection_counts": {
+        "explicit_bootstrap_emitter": 14,
+        "explicit_c": 2,
+        "explicit_cranelift": 126,
+        "explicit_invalid_or_parser_probe": 3,
+        "implicit_default": 14
+      },
+      "total": 159,
+      "unclassified_count": 0
+    },
+    "escaping_the_census_by_relocation": "rejected",
+    "owner": "cranelift",
+    "previous_summary": {
+      "consumer_class_counts": {
+        "already_explicit_or_parser_probe": 144,
+        "cranelift_C_or_diagnostic_guard": 5,
+        "help_surface_probe": 3,
+        "intentional_default_selection_probe": 4,
+        "invocation_parser_probe": 2
+      },
+      "owner_counts": {
+        "cranelift": 153,
+        "stdlib": 5
+      },
+      "selection_counts": {
+        "explicit_bootstrap_emitter": 13,
+        "explicit_c": 2,
+        "explicit_cranelift": 126,
+        "explicit_invalid_or_parser_probe": 3,
+        "implicit_default": 14
+      },
+      "total": 158,
+      "unclassified_count": 0
+    },
+    "status": "patch25_5_in_progress"
+  },
   "schema_version": 1,
   "registry_version": 17,
   "registry_status": "phase17_opening_native_runtime_boundary_inventory",

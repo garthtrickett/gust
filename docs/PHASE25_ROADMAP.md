@@ -918,14 +918,28 @@ Any one missing and this reads as a violation.
 ### One semantic difference, recorded rather than smoothed over
 
 The C returns the slice **by value** and allocates nothing. The Gust version
-takes 16 bytes of scratch per call. Scratch is a bump allocator that resets,
-so the cost is small, but "allocates nothing" and "allocates 16 bytes" are
+took 16 bytes of scratch per call. Scratch is a bump allocator that resets,
+so the cost was small, but "allocates nothing" and "allocates 16 bytes" are
 not the same claim, and `std_str_slice` is called 165 times across the
-compiler's own sources. Whether that matters is a measurement nobody has
-taken; it is recorded here so the port is not described as behaviour-identical
-when it is behaviour-equivalent.
+compiler's own sources.
+
+**RESOLVED 2026-09-21, and it needed no new surface either.** A struct local
+— `mut hdr: StrHeader;` then field assignment — emits `StrHeader hdr` on the
+stack and the return copies it out by value. Scratch was never required; the
+first version reached for `os.ScratchAlloc` because that was the allocation
+primitive already in hand. The port is allocation-free, like the C, so the
+difference is removed rather than merely measured.
 
 ## `strings.c`: 9 of 11 in Gust, and the last two need arena bytes Gust cannot ask for
+
+**CORRECTED 2026-09-21.** The table below was right about the destination and
+wrong about the state: the file had **eight** functions, not nine.
+`std_parse_int` was listed here and absent from `compiler/runtime/strings.gst`.
+The sentence "All nine match" was never true when it was written — nothing
+had compared them. It is true now, and checked by
+`scripts/phase25_strings_gust_parity.sh` rather than asserted. See
+[Deleting the runtime C](#deleting-the-runtime-c-five-files-are-free-strings-costs-a-generation)
+below for what the comparison found.
 
 Nine of `strings.c`'s eleven functions are Gust, each emitting a signature
 compared against the C rather than eyeballed:
@@ -940,9 +954,116 @@ compared against the C rather than eyeballed:
     Slice_unsigned_char std_str_slice(Slice_unsigned_char, int, int)
     Slice_unsigned_char std_str_trim(Slice_unsigned_char)
 
-All nine match. `std_str_trim` calls `std_str_slice`, which the layering
-rule permits only because a module may call what it defines — a narrowing
-made earlier today after this exact case failed.
+All nine now match, against a frozen copy of the C rather than against
+memory. `std_str_trim` calls `std_str_slice`, which the layering rule
+permits only because a module may call what it defines — a narrowing made
+earlier today after this exact case failed.
+
+## Deleting the runtime C: five files are free, `strings.c` costs a generation
+
+**The branch does not link today, and that is not a tidiness problem.**
+Measured by compiling the unity build and linking it against the crate:
+
+    cc /tmp/probe_main.c /tmp/unity.o libgust_runtime_rs.a
+    multiple definition of `os_ArenaAlloc' ... first defined here
+    multiple definition of `os_Arena_New'  ... first defined here
+    ... 40+ more
+
+The archive is ONE member — Patch 25.6 made it so deliberately — so pulling
+in `tiny_host_add_i32` pulls in every ported function beside it. While the C
+originals are still compiled into the unity build, every one of them
+collides. So the deletion is what makes the branch build, and it cannot be
+deferred to a follow-up patch.
+
+### Five of the six delete without touching the seed
+
+`arena.c`, `scratch.c`, `collections.c`, `file_io.c` and `host_io.c` have
+their symbols in the archive, and the archive is already on every link line.
+Removing their `#include`s changes no compiler source, so the emitted C is
+unchanged and `gust_v4.c` does not move. Deletion, Makefile object rules, and
+the registry rows — the shape Patch 25.6 already established when it deleted
+`fiber.c` (nine files, 733 deletions).
+
+`strings.c` must lose `std_Clone_str` and `std_str_split` in the same commit:
+those two ARE in the archive, so they collide like the rest. The other nine
+stay in C for one more generation.
+
+### The ninth and the seed: why `strings.c` is different
+
+Its remaining nine functions move to **Gust**, not to Rust, so they arrive
+as emitted C inside the compiler's own translation unit. That creates an
+ordering problem the other five do not have:
+
+1. `gust_bootstrap` is built from the committed seed `gust_v4.c`. The
+   current seed calls `std_str_eq` and friends and does not define them.
+2. Adding `import "runtime/strings.gst"` to a compiler entry makes
+   stage 1/2/3 emit the nine. While `strings.c` is still in the unity
+   build, that is a duplicate definition — in the same translation unit,
+   so it is a compile error, not a link one.
+3. Deleting `strings.c` first leaves the old seed with no definitions.
+
+The way through is one local bootstrap and one commit. Locally: drop the
+include, add the import, and link `gust_bootstrap` against a temporary
+object built from the retained `strings.c`. `make bootstrap` then
+republishes `gust_v4.c` from stage 3, and the new seed contains the nine.
+Commit the new seed together with the deletion and the import; a clean
+checkout builds `gust_bootstrap` from the new seed, which already defines
+them, so the temporary object is never needed again and is not committed.
+
+This is the two-generation rule as a process, collapsed into one commit,
+and it is the reason `strings.c` should be a separate patch from the other
+five rather than riding along.
+
+### A stale-archive bug in the build graph, and the same one in the harness
+
+    $(PHASE25_RUNTIME_RS): src/runtime-rs/src/lib.rs src/runtime-rs/Cargo.toml
+
+The crate now has six source files. Editing `file_io.rs` or `collections.rs`
+does not make `make` rebuild the archive, so a build links yesterday's
+runtime and passes. The identical bug was in
+`scripts/phase25_runtime_rs_abi_smoke.sh`, which skipped the rebuild when an
+archive already existed — a harness reporting green about code it had not
+compiled. Both are fixed; the pattern is worth naming because both were
+written by someone (me) who had just been careful about everything else in
+the same file.
+
+### `file_io.c`: four places where the faithful port is not the obvious one
+
+- **`os_System` returns the RAW wait status.** `exit 3` is 768. Returning
+  `WEXITSTATUS` would read as a fix and would silently change every caller
+  doing arithmetic on the result. Pinned by a test that says so.
+- **`os_ReadDir` must keep yielding `.` and `..`.** `std::fs::ReadDir`
+  filters them. Swapping it in would change what the runtime returns and
+  would look like simplification — so this reads `d_type` and `d_name` out
+  of a hand-declared `struct dirent`, which is exactly the layout-guessing
+  trap P17 named. Paid for rather than assumed: `abi_smoke.c`
+  `_Static_assert`s the offsets against the real header AND walks a real
+  directory. Off Linux the layout cannot be checked from this lane (Darwin
+  has an extra `d_namlen`; x86_64 Apple uses `readdir$INODE64`), so
+  non-Linux takes the `std::fs::ReadDir` path with the divergence stated in
+  the code rather than a second guess.
+- **Paths truncate at an interior NUL; contents do not.** `CString` would
+  have turned a truncation into a new error path.
+- **`os_path_join`'s hardcoded `a/b` + `../../c` -> `../c` CONTRADICTS its
+  own rules.** The general algorithm gives `c`, and the neighbouring input
+  `../../d` still gives `d`, so the override is one input wide and probably
+  encodes a wrong fixture. Both inputs are pinned so it cannot be tidied
+  away silently. Worth an explicit ruling in a later patch; it is not a
+  porting decision.
+
+### What `s[i]` actually emits, since the earlier note was wrong
+
+`s[i]` does **not** emit a bare `s.data[i]`. Measured in the emitted C:
+
+    (*({ if (i < 0 || i >= s.len) { gust_check_fail("Slice bounds check failed", __LINE__); } &(s.data[i]); }))
+
+So the Gust ports never lost the bounds check. What they lost was the
+DIAGNOSTIC — stderr and a generic message where the C printed a
+function-specific one to stdout — and, in `std_str_slice`, the check was
+answering a different question: `start >= s.len` where the C asked
+`end > s.len`. That let the over-long slice through and rejected the empty
+tail slice, which is legal and common. Both are fixed and both are pinned
+by the abort half of the parity harness.
 
 ### The two that do not port, and why
 

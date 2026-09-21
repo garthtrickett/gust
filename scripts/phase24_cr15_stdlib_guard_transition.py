@@ -1154,6 +1154,58 @@ def _issue398_summary_successor(registry: dict, previous: dict) -> dict:
                 (ROOT / str(row["path"])).read_text(encoding="utf-8"),
                 f"the retained explicit-C invocation in {row['path']} no "
                 "longer asserts that the spelling is refused")
+
+    # Patch 25.5 is the first link that ADDS to the census rather than
+    # reducing it. Every link above asserts `current["total"] <
+    # previous["total"]`, because every one of them was retiring something.
+    # Porting the runtime goes the other way: the strings differential has
+    # to emit the Gust side to compare it, and that is a real backend
+    # invocation the census is entitled to know about.
+    #
+    # The scan covers Makefile, justfile*, root and scripts/*.sh,
+    # tests/*.gst and scripts/*.py. tools/ is NOT scanned, so moving the
+    # invocation one directory over would have made this green for free.
+    # That is evading an enumeration whose entire purpose is to know where
+    # the backend is invoked, so the registered node names the temptation
+    # and rejects it rather than leaving it to be rediscovered.
+    previous = current
+    added = registry.get("phase25_runtime_port_invocations")
+    if added is None:
+        return previous
+    current = added.get("current_summary")
+    require(added.get("contract_version") ==
+            "phase25_runtime_port_invocation_successor_v1" and
+            added.get("owner") == "cranelift" and
+            added.get("previous_summary") == previous and
+            isinstance(current, dict) and
+            added.get("escaping_the_census_by_relocation") == "rejected",
+            "Patch 25.5 Phase 22 invocation successor drifted")
+    rows = added.get("added_invocation_rows", [])
+    count = added.get("added_invocation_count")
+    require(isinstance(count, int) and count == len(rows) > 0,
+            "Patch 25.5 registered an invocation addition with no rows")
+    require(current["total"] - previous["total"] == count and
+            current["unclassified_count"] == previous["unclassified_count"]
+            == 0,
+            "the Patch 25.5 invocation addition does not balance against a "
+            "fully classified census")
+    # Only the selections the rows claim may move, and only by as many rows
+    # as claim them. An addition that quietly re-points an existing
+    # invocation would otherwise balance on the total alone.
+    claimed: dict[str, int] = {}
+    for row in rows:
+        claimed[str(row["selection"])] = claimed.get(str(row["selection"]), 0) + 1
+    for name in set(previous["selection_counts"]) | set(
+            current["selection_counts"]):
+        require(current["selection_counts"].get(name, 0) -
+                previous["selection_counts"].get(name, 0) ==
+                claimed.get(name, 0),
+                f"Patch 25.5 moved a selection it does not claim: {name}")
+    for row in rows:
+        require(str(row["invocation_marker"]) in
+                (ROOT / str(row["path"])).read_text(encoding="utf-8"),
+                f"the registered Patch 25.5 invocation in {row['path']} is "
+                "no longer there")
     return current
 
 
