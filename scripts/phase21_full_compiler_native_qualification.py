@@ -92,12 +92,12 @@ def validate() -> dict:
                 # eighteen exports now come from the crate member.
                 "arena.o", "host_io.o", "file_io.o", "scratch.o",
                 # Patch 25.4: approved_scalar_imports.o left the archive
-                # when its fixtures were rehomed to the no_std Rust crate
+                # when its fixtures were rehomed to the Rust runtime crate
                 # src/runtime-rs. The archive keeps its name and shape; a
                 # member moved language. Symbol names are unchanged, so
                 # nothing that CALLS tiny_host_* needed editing.
                 "collections.o", "strings.o",
-                "gust_runtime_rs_fixtures.o",
+                "gust_runtime_rs_exports.o",
             ],
             "symbol_policy": "existing_registered_runtime_symbols_only",
         },

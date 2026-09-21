@@ -22,6 +22,7 @@ PHASE21_RUNTIME_PACKAGE = build/gust-runtime-package.a
 # Measured with --warn-undefined-variables after a "fix" that was a
 # no-op: the link lines were edited and the link was unchanged.
 PHASE25_RUNTIME_RS = src/runtime-rs/target/release/libgust_runtime_rs.a
+PHASE25_RUNTIME_RS_OBJ = build/phase25-runtime-rs/gust_runtime_rs_exports.o
 
 PHASE21_RUNTIME_OBJECTS = build/phase21-runtime/arena.o build/phase21-runtime/host_io.o build/phase21-runtime/file_io.o build/phase21-runtime/scratch.o build/phase21-runtime/collections.o build/phase21-runtime/strings.o
 
@@ -47,7 +48,7 @@ RUNTIME_SRCS  = src/runtime.c $(wildcard src/runtime/*.c) $(wildcard src/runtime
 
 all: phase10-native-package
 
-gust_bootstrap: gust_v4.c $(RUNTIME_SRCS) $(PHASE25_RUNTIME_RS)
+gust_bootstrap: gust_v4.c $(RUNTIME_SRCS) $(PHASE25_RUNTIME_RS_OBJ)
 	mkdir -p build
 	@# Patch 25.8a: the offline seed path, wired here rather than only
 	@# described. GUST_BOOTSTRAP_SEED names a published bridge binary;
@@ -60,7 +61,7 @@ gust_bootstrap: gust_v4.c $(RUNTIME_SRCS) $(PHASE25_RUNTIME_RS)
 		install -m 0755 "$$GUST_BOOTSTRAP_SEED" gust_bootstrap; \
 	else \
 		cat src/runtime.c gust_v4.c > build/gust_bootstrap_final.c; \
-		${CC} ${CFLAGS} ${INCLUDES} build/gust_bootstrap_final.c $(PHASE25_RUNTIME_RS) -o gust_bootstrap; \
+		${CC} ${CFLAGS} ${INCLUDES} build/gust_bootstrap_final.c $(PHASE25_RUNTIME_RS_OBJ) -o gust_bootstrap; \
 	fi
 
 build/gust_stage1_compiler.c: export GUST_BOOTSTRAP_EMITTER = 1
@@ -238,7 +239,7 @@ build/phase21-runtime/strings.o: src/runtime/strings.c src/runtime/core_headers.
 	mkdir -p build/phase21-runtime
 	$(CC) $(CFLAGS) -Isrc/runtime -c src/runtime/strings.c -o $@
 
-# Patch 25.4: approved_scalar_imports.c is rehomed to the no_std Rust
+# Patch 25.4: approved_scalar_imports.c is rehomed to the Rust
 # crate src/runtime-rs. The fixtures must stay FOREIGN -- a Gust rewrite
 # would test Gust calling Gust and the contract would evaporate (O1).
 # Symbol names are byte-identical, so the 26 dependent files are unchanged.
@@ -246,55 +247,67 @@ build/phase21-runtime/strings.o: src/runtime/strings.c src/runtime/core_headers.
 $(PHASE25_RUNTIME_RS): src/runtime-rs/src/lib.rs src/runtime-rs/Cargo.toml
 	$(CARGO) build --release --manifest-path src/runtime-rs/Cargo.toml
 
-# Only the crate's own codegen unit joins the runtime archive. The staticlib
-# has 310 members; 309 are core and compiler_builtins, which would add 7 MB
-# and a second definition of memcpy beside libc's. The member is selected by
-# CONTENT -- the one defining the fixtures -- because both hashes in its
-# filename change on every rebuild, and it fails loudly when absent: an
-# `|| true` here would make a missing fixture look like a built one.
-# Its exports are then narrowed to a NAMED list: the three fixtures plus the
-# eighteen exports Patch 25.6 moved here from fiber.c. A named list rather
-# than "keep whatever is global", because the crate's codegen
-# unit also defines Rust's panic handler, whose symbol carries a CONTENT
-# HASH -- three parity guards compare the archive's defined-symbol set
-# exactly, and a hash that moves whenever the crate changes would make
-# those lists churn forever. The two C files exported exactly twenty-one
-# symbols between them; so does their replacement.
-PHASE25_RUNTIME_RS_OBJ = build/phase25-runtime-rs/gust_runtime_rs_fixtures.o
+# One object joins the runtime archive, not the crate's 310 members.
+#
+# Patch 25.4 got that object by extracting the single archive member that
+# defined the fixtures, which worked while the crate was no_std and the
+# fixtures called nothing. Patch 25.6 moved the scheduler in, and the
+# scheduler uses std: the extracted member now carries 45 undefined
+# references into core, alloc and std, which live in the 309 members the
+# extraction discards. It builds and then fails at link.
+#
+# So the object is produced by a partial link instead. The twenty-one
+# exports are the roots, --gc-sections drops what they do not reach, and
+# the result is self-contained apart from libc. Its exports are then
+# narrowed to exactly those twenty-one -- the set the two deleted C files
+# exported between them -- which also localises the memcpy that
+# compiler_builtins brings along, so it can no longer collide with libc's.
+# Three parity guards compare the archive's defined-symbol set exactly, so
+# that set has to be a named list and not "whatever ended up global":
+# Rust's panic handler symbol carries a content hash that moves on every
+# crate change, and would make those lists churn forever.
+#
+# The roots are checked after the link, not assumed. ld does not fail on a
+# -u it cannot satisfy, so a renamed export would otherwise leave a quietly
+# smaller object and surface much later as an undefined symbol.
+PHASE25_RUNTIME_RS_EXPORTS = \
+	tiny_host_add_one_i32 \
+	tiny_host_add_i32 \
+	tiny_host_is_positive_i32 \
+	gust_check_fail \
+	gust_fiber_create \
+	gust_fiber_exit \
+	gust_fiber_free \
+	gust_fiber_switch \
+	gust_scheduler_destroy \
+	gust_scheduler_init \
+	gust_scheduler_spawn \
+	gust_shard_loop \
+	gust_tick \
+	gust_yield \
+	get_num_threads_to_use \
+	std_Channel_Alloc \
+	std_Channel_Recv_impl \
+	std_Channel_Send_impl \
+	std_Mutex_Alloc \
+	std_Mutex_Lock_impl \
+	std_Mutex_Unlock_impl
 
 $(PHASE25_RUNTIME_RS_OBJ): $(PHASE25_RUNTIME_RS)
 	@rm -rf build/phase25-runtime-rs
 	@mkdir -p build/phase25-runtime-rs
-	@member=$$(nm --print-armap $(PHASE25_RUNTIME_RS) 2>/dev/null \
-		| awk '/^Archive index:/{a=1;next} a && $$1=="tiny_host_add_i32"{print $$NF; exit}'); \
-	if [ -z "$$member" ]; then \
-		echo 'no src/runtime-rs member defines tiny_host_add_i32' >&2; exit 1; \
-	fi; \
-	cd build/phase25-runtime-rs && ar x ../../$(PHASE25_RUNTIME_RS) "$$member" \
-		&& mv "$$member" member.o
-	objcopy --keep-global-symbol=tiny_host_add_one_i32 \
-	        --keep-global-symbol=tiny_host_add_i32 \
-	        --keep-global-symbol=tiny_host_is_positive_i32 \
-	        --keep-global-symbol=gust_check_fail \
-	        --keep-global-symbol=gust_fiber_create \
-	        --keep-global-symbol=gust_fiber_exit \
-	        --keep-global-symbol=gust_fiber_free \
-	        --keep-global-symbol=gust_fiber_switch \
-	        --keep-global-symbol=gust_scheduler_destroy \
-	        --keep-global-symbol=gust_scheduler_init \
-	        --keep-global-symbol=gust_scheduler_spawn \
-	        --keep-global-symbol=gust_shard_loop \
-	        --keep-global-symbol=gust_tick \
-	        --keep-global-symbol=gust_yield \
-	        --keep-global-symbol=get_num_threads_to_use \
-	        --keep-global-symbol=std_Channel_Alloc \
-	        --keep-global-symbol=std_Channel_Recv_impl \
-	        --keep-global-symbol=std_Channel_Send_impl \
-	        --keep-global-symbol=std_Mutex_Alloc \
-	        --keep-global-symbol=std_Mutex_Lock_impl \
-	        --keep-global-symbol=std_Mutex_Unlock_impl \
-	        build/phase25-runtime-rs/member.o $@
-	@rm -f build/phase25-runtime-rs/member.o
+	ld -r --gc-sections -o build/phase25-runtime-rs/combined.o \
+		$(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),-u $(sym)) \
+		--start-group $(PHASE25_RUNTIME_RS) --end-group
+	objcopy $(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),--keep-global-symbol=$(sym)) \
+		build/phase25-runtime-rs/combined.o $@
+	@rm -f build/phase25-runtime-rs/combined.o
+	@defined=$$(nm -g --defined-only $@ | awk '$$2 ~ /^[TDBRW]$$/ {print $$3}' | sort); \
+	expected=$$(printf '%s\n' $(PHASE25_RUNTIME_RS_EXPORTS) | sort); \
+	if [ "$$defined" != "$$expected" ]; then \
+		echo 'src/runtime-rs exports drifted from the registered set' >&2; \
+		diff <(echo "$$expected") <(echo "$$defined") >&2; exit 1; \
+	fi
 
 $(PHASE21_RUNTIME_PACKAGE): $(PHASE21_RUNTIME_OBJECTS) $(PHASE25_RUNTIME_RS_OBJ)
 	@rm -f build/.gust-runtime-package.a.tmp

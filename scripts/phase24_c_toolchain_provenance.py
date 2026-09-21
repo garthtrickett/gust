@@ -856,7 +856,7 @@ def resolve_through_make(name: str, lines: list, lineno: int) -> dict:
     # `make` invocation names IS the thing being built, so accept it.
     #
     # This failed ONLY in CI. Locally an earlier resolver short-circuited
-    # because build/phase25-runtime-rs/gust_runtime_rs_fixtures.o already
+    # because build/phase25-runtime-rs/gust_runtime_rs_exports.o already
     # existed on disk from a previous build; in a clean checkout it does
     # not. Running the guard, and even running its just recipe, both passed
     # -- the environment that differed was a build artifact, not a command

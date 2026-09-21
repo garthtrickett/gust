@@ -2249,7 +2249,7 @@
           },
           "runtime_package": {
             "format": "static_archive",
-            "members": ["arena.o","host_io.o","file_io.o","scratch.o","collections.o","strings.o","gust_runtime_rs_fixtures.o"],
+            "members": ["arena.o","host_io.o","file_io.o","scratch.o","collections.o","strings.o","gust_runtime_rs_exports.o"],
             "symbol_policy": "existing_registered_runtime_symbols_only"
           },
           "resource_cleanup_transport": {
