@@ -36,8 +36,8 @@
 
 | ID | Reachability area | Owning row | Source |
 | --- | --- | --- | --- |
-| `p18_host_native_target_triple` | target_selection | `p18_target_authority` | `src/runtime/file_io.c` |
-| `p18_host_native_object_format` | target_selection | `p18_object_format` | `src/runtime/file_io.c` |
+| `p18_host_native_target_triple` | target_selection | `p18_target_authority` | `src/runtime-rs/src/file_io.rs` |
+| `p18_host_native_object_format` | target_selection | `p18_object_format` | `src/runtime-rs/src/file_io.rs` |
 | `p18_host_cranelift_native_isa` | cranelift_lowering | `p18_target_authority` | `compiler/experiments/cranelift/src/main.rs` |
 | `p18_host_object_builder_isa` | object_emission | `p18_object_format` | `compiler/experiments/cranelift/src/main.rs` |
 | `p18_host_relocation_defaults` | object_emission | `p18_relocation_model` | `compiler/experiments/cranelift/src/main.rs` |
