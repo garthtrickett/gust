@@ -924,3 +924,55 @@ not the same claim, and `std_str_slice` is called 165 times across the
 compiler's own sources. Whether that matters is a measurement nobody has
 taken; it is recorded here so the port is not described as behaviour-identical
 when it is behaviour-equivalent.
+
+## `strings.c`: 9 of 11 in Gust, and the last two need arena bytes Gust cannot ask for
+
+Nine of `strings.c`'s eleven functions are Gust, each emitting a signature
+compared against the C rather than eyeballed:
+
+    int           std_str_eq(Slice_unsigned_char, Slice_unsigned_char)
+    unsigned char std_str_byte_at(Slice_unsigned_char, int)
+    unsigned char std_is_alpha(unsigned char)
+    unsigned char std_is_digit(unsigned char)
+    unsigned char std_is_whitespace(unsigned char)
+    int           std_str_find(Slice_unsigned_char, Slice_unsigned_char)
+    int           std_parse_int(Slice_unsigned_char)
+    Slice_unsigned_char std_str_slice(Slice_unsigned_char, int, int)
+    Slice_unsigned_char std_str_trim(Slice_unsigned_char)
+
+All nine match. `std_str_trim` calls `std_str_slice`, which the layering
+rule permits only because a module may call what it defines — a narrowing
+made earlier today after this exact case failed.
+
+### The two that do not port, and why
+
+`std_Clone_str` and `std_str_split` both need to allocate **N raw bytes
+from a caller-supplied arena**. Gust cannot express that.
+
+Measured: `os.ArenaAlloc` in Gust takes ONE argument, the allocator, and
+the typechecker rejects a second — "os_ArenaAlloc expects exactly 1
+argument (the allocator variable)". Gust allocates by TYPE, through
+`ctx[T]`, and codegen turns that into the two-argument C call with a
+`sizeof`. There is no Gust spelling for "give me 47 bytes from this arena".
+
+`os.ScratchAlloc` does take a byte count (`register_fn(env,
+"os.ScratchAlloc", p_int, ...)`), which is why `std_str_slice` works — it
+needs 16 bytes of scratch for a header. Scratch and arena are not
+interchangeable: scratch resets, and a cloned string must outlive the
+current scope, which is the whole point of taking the arena parameter.
+
+So the gap is specific and small: **a byte-count arena allocation**. Three
+ways out, in order of preference:
+
+  1. **Leave both in the runtime crate**, in Rust, beside the fixtures. D2
+     already allows Rust as the per-file fallback "on its own merits", and
+     two functions needing raw allocation is a merit.
+  2. **Add a byte-count arena builtin** to match `os.ScratchAlloc`. New
+     language surface, so an OD-register question under O3's rule.
+  3. Have them call a C or Rust helper for the allocation and stay Gust
+     otherwise — which is option 1 with extra steps.
+
+Recommending 1. It keeps the language honest — `ctx[T]` is a typed
+allocator and raw byte allocation is a different operation — and it costs
+nothing the phase is trying to buy, since the runtime crate is where the
+non-Gust remainder was always going to live.
