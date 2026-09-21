@@ -104,6 +104,7 @@ TOP_FIELDS = {
     "issue447_resolver_scoping",
     "issue431_full_compiler_baseline",
     "patch251_no_c_falsifier",
+    "patch254_runtime_crate",
     "issue451_inventory_ownership",
     "issue436_justfile_population",
     "issue436_provenance_resolver",
@@ -2543,7 +2544,12 @@ def validate_phase17_runtime_authority_structure(registry):
         source = inventory[helper_id]
         require(row["symbol_identity"] == source["symbol_identity"],
                 f"{helper_id}: classification symbol differs from inventory")
-        if source["source_path"] == "src/runtime/approved_scalar_imports.c":
+        # Patch 25.4: the approved scalar imports moved to the no_std
+        # Rust crate. Their classification is unchanged -- they are
+        # still stable runtime library functions reached through FFI,
+        # and that is the whole point: the fixtures must stay FOREIGN
+        # or the contract they test evaporates. Only the path moved.
+        if source["source_path"] == "src/runtime-rs/src/lib.rs":
             expected_classification = "stable_runtime_library_function"
             expected_reason = "runtime_helper_classified_stable_library_import"
         elif source["symbol_kind"] == "generated_c_symbol_family":

@@ -26,8 +26,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 # `tree-sitter-gust` is excepted by name, not by silence. Measured in Patch
-# 25.0: `Makefile:262` is `test: gust require_just` and never names
-# `test_tree_sitter`; no workflow mentions tree-sitter; the only routes are
+# 25.0: the Makefile's `test:` target is `test: gust require_just` and never
+# names `test_tree_sitter`. Cited by content, not by line: Patch 25.4 inserted
+# the runtime-rs rules above it and moved it from :262 to :272, which a line
+# citation would have recorded as a silent falsehood.
+# No workflow mentions tree-sitter; the only routes are
 # `make test_tree_sitter` and a justfile recipe that passes `CC=cc` itself.
 # Against D10's operational test it is optional, so the phase's closure
 # sentence claims a C-free build and test of Gust, not a C-free repository.

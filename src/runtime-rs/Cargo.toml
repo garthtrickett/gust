@@ -1,0 +1,20 @@
+# Patch 25.4: the Rust half of the Phase 25 runtime.
+#
+# Created BEFORE the Gust runtime port, not after. D3 sequenced fiber.c
+# last, but O1 found the crate is needed first: the tiny_host_* fixtures
+# have to move somewhere foreign before 25.5 starts moving runtime files,
+# and 26 files depend on those three symbols.
+[package]
+name = "gust-runtime-rs"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "gust_runtime_rs"
+crate-type = ["staticlib"]
+
+[profile.release]
+panic = "abort"
+
+[profile.dev]
+panic = "abort"
