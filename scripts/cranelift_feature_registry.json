@@ -9479,6 +9479,21 @@
           "classification": "historical_only",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "bab7b8a812738d72488f8560d1f789473a3230b460efd271df0f607c8f235f02",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "mir_to_c_name": 3,
+            "generated_c_contract": 0
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE14_LAYOUT_AUTHORITY.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
           "digest": "afb1e98867fe080543ef8244814cd153d255771cc99d4e15c87e5a0b78931de7",
           "falsifier": "historical_record_is_reclassified_as_live_support",
           "match_counts": {
@@ -9692,6 +9707,21 @@
           "classification": "historical_only",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "600ada7c763cd69bc44c59775a275a4d4ea467d207962e70333a35381702c4cf",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "mir_to_c_name": 3,
+            "generated_c_contract": 0
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE14_LAYOUT_AUTHORITY.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
           "digest": "30bcbbcf6b538c9ceb8faed7478fd50e48ea6771206c043e6c4df67aab693df5",
           "falsifier": "historical_record_is_reclassified_as_live_support",
           "match_counts": {
@@ -9872,6 +9902,7 @@
       "registered_changed_paths": [
         ".gitignore",
         "Makefile",
+        "compiler/CRANELIFT_PHASE14_LAYOUT_AUTHORITY.md",
         "compiler/CRANELIFT_PHASE17_OPENING.md",
         "compiler/CRANELIFT_PHASE20_OPENING.md",
         "compiler/CRANELIFT_PHASE21_COMPLETE_GUARD_SUITE.md",

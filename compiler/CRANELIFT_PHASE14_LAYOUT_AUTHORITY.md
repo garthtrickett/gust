@@ -34,10 +34,10 @@ CRANELIFT_PHASE14_LAYOUT_AUTHORITY_NEXT_PATCH: 14.8
 ## Consumers
 
 - `canonical_mir`: `compiler/mir.gst:type_layout_references`
-- `mir_to_c`: `compiler/mir_layout_mir_to_c.gst`
 - `cranelift_worker`: `compiler/experiments/cranelift/src/main.rs:Phase14RequestLayoutTable`
-- `runtime_descriptor`: `compiler/mir_layout_runtime_descriptor.gst`
 - `diagnostics`: `compiler/mir_layout_diagnostics.gst`
+- `mir_to_c`: `compiler/mir_layout_mir_to_c.gst`
+- `runtime_descriptor`: `compiler/mir_layout_runtime_descriptor.gst`
 
 ## Request rejection classes
 
