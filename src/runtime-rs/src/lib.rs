@@ -48,3 +48,4 @@ pub mod fiber;
 pub mod host_io;
 pub mod scratch;
 pub mod arena;
+pub mod collections;
