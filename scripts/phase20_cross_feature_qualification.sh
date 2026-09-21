@@ -27,16 +27,23 @@ test ! -s "$build_root/mir-to-c.compile.stderr"
 if [ ! -x "$worker" ]; then
   make "$worker"
 fi
+
 "$worker" compiler-mir-validate-fixture "$canonical_mir" \
   >"$build_root/native.validate.stdout" \
   2>"$build_root/native.validate.stderr"
 "$worker" compiler-mir-ingestion-object "$canonical_mir" \
   "$build_root/native.o" >"$build_root/native.compile.stdout" \
   2>"$build_root/native.compile.stderr"
-# Patch 25.4 rehomed the tiny_host_* fixtures out of src/runtime.c into the
-# Rust runtime crate (no_std then; Patch 25.6 dropped that), so the unity build no longer supplies them and this
-# link needs the crate object explicitly. The canonical MIR fixture calls
-# tiny_host_add_i32, so omitting it fails at link, not at run.
+# src/runtime.c is no longer a complete runtime, so this link needs the
+# crate object explicitly. Patch 25.4 moved the tiny_host_* fixtures out;
+# Patch 25.6 moved fiber.c; Patch 25.5 moved five more files, and a program
+# built from src/runtime.c plus its own C now fails on undefined
+# os_Arena_New and friends. The canonical MIR fixture calls
+# tiny_host_add_i32, so omitting the object fails at link, not at run.
+#
+# Built through make, so the wildcard prerequisite rebuilds it when the
+# crate changes -- a stale object here would link yesterday's runtime and
+# pass, which is the worst shape a build bug takes.
 fixtures_obj="build/phase25-runtime-rs/gust_runtime_rs_exports.o"
 make "$fixtures_obj"
 "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \

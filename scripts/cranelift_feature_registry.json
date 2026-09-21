@@ -12,7 +12,7 @@
         "repository_invocation_count": 159,
         "supported_production_or_release_explicit_c_count": 0,
         "supported_surface_count": 6,
-        "supported_surface_manifest_digest": "cf0282ee017ba3d16c0779c2e2e3b505cca760caf34ef61553a1177f483e3591",
+        "supported_surface_manifest_digest": "25646ad9acafbce4a901dd73212e1ad961d2618be1a215a9bad4a7abc07942f6",
         "unknown_downstream_count": 0
       },
       "moved_fields": [
@@ -40547,7 +40547,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "1fad850c5ce6eaf60221aae26e11096bbcdc6f54fc7bc8f81bf07bb759853a75",
+          "digest": "65a8115b08b629da8f45a3eba5e4720ba4d772d486fde569e3facf08c8eea62d",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,

@@ -22544,7 +22544,7 @@ run-step52-positive-batch:
     rg -n -F 'compiler/typechecker_resource_return_cleanup_mixed_scheduled_terminal_states_test_entry.gst' build/test_runner_step52_positive.c >/dev/null
     rg -n -F 'compiler/typechecker_resource_scope_exit_mixed_scheduled_terminal_states_test_entry.gst' build/test_runner_step52_positive.c >/dev/null
     cat src/runtime.c build/test_runner_step52_positive.c > build/test_runner_step52_positive_final.c
-    CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_step52_positive_final.c -o build/test_runner_step52_positive_bin
+    CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; RT_A=src/runtime-rs/target/release/libgust_runtime_rs.a; RT_C=src/runtime-rs/target/canary/release/libgust_runtime_rs.a; make "$RT_A" "$RT_C"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_step52_positive_final.c "$RT_A" -o build/test_runner_step52_positive_bin
     echo "🏃 Running native batched Step 5.2 positive runner..."
     ./build/test_runner_step52_positive_bin
     echo "✅ Batched Step 5.2 positive fixture runner passed."
@@ -22611,7 +22611,7 @@ make-test-suite:
     echo "⚙️  Compiling native Gust test runner..."
     GUST_BOOTSTRAP_EMITTER=1 ./gust --backend bootstrap-emitter tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
     cat src/runtime.c build/test_runner.c > build/test_runner_final.c
-    CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_final.c -o build/test_runner_bin
+    CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; RT_A=src/runtime-rs/target/release/libgust_runtime_rs.a; RT_C=src/runtime-rs/target/canary/release/libgust_runtime_rs.a; make "$RT_A" "$RT_C"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_final.c "$RT_A" -o build/test_runner_bin
     echo "🏃 Running native Gust test runner..."
     GUST_BOOTSTRAP_EMITTER=1 ./build/test_runner_bin
     make test_tree_sitter
@@ -22651,7 +22651,7 @@ make-test-suite-parallel:
     echo "⚙️  Compiling native Gust test runner..."
     GUST_BOOTSTRAP_EMITTER=1 ./gust --backend bootstrap-emitter tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
     cat src/runtime.c build/test_runner.c > build/test_runner_final.c
-    CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_final.c -o build/test_runner_bin
+    CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; RT_A=src/runtime-rs/target/release/libgust_runtime_rs.a; RT_C=src/runtime-rs/target/canary/release/libgust_runtime_rs.a; make "$RT_A" "$RT_C"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_final.c "$RT_A" -o build/test_runner_bin
     echo "🏃 Running native Gust test runner..."
     GUST_BOOTSTRAP_EMITTER=1 ./build/test_runner_bin
     make test_tree_sitter

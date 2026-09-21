@@ -23,6 +23,8 @@ PHASE21_RUNTIME_PACKAGE = build/gust-runtime-package.a
 # no-op: the link lines were edited and the link was unchanged.
 PHASE25_RUNTIME_RS = src/runtime-rs/target/release/libgust_runtime_rs.a
 PHASE25_RUNTIME_RS_OBJ = build/phase25-runtime-rs/gust_runtime_rs_exports.o
+PHASE25_RUNTIME_RS_CANARY = src/runtime-rs/target/canary/release/libgust_runtime_rs.a
+PHASE25_RUNTIME_RS_CANARY_OBJ = build/phase25-runtime-rs-canary/gust_runtime_rs_exports.o
 
 PHASE21_RUNTIME_OBJECTS = build/phase21-runtime/strings.o
 
@@ -121,6 +123,7 @@ diagnose-phase10-stage1: build/gust_stage1_compiler.c $(RUNTIME_SRCS)
 	cat src/runtime.c build/gust_stage1_compiler.c > build/diagnostics/phase10-stage1/gust_stage1_sanitized.c
 	$(PHASE10_DIAG_CC) $(PHASE10_DIAG_CFLAGS) $(INCLUDES) \
 		build/diagnostics/phase10-stage1/gust_stage1_sanitized.c \
+		$(PHASE25_RUNTIME_RS) \
 		-o build/diagnostics/phase10-stage1/gust_stage1_sanitized
 	@rm -f \
 		build/diagnostics/phase10-stage1/stdout.log \
@@ -313,6 +316,26 @@ $(PHASE25_RUNTIME_RS_OBJ): $(PHASE25_RUNTIME_RS)
 		echo 'src/runtime-rs exports drifted from the registered set' >&2; \
 		diff <(echo "$$expected") <(echo "$$defined") >&2; exit 1; \
 	fi
+
+
+# Patch 25.5: the GUST_DEBUG arena, as a SECOND ARCHIVE.
+#
+# arena.c picked its allocator with `#ifdef GUST_DEBUG`, per translation
+# unit, so `-DGUST_DEBUG` on a test's own compile line switched the arena
+# to the canary layout. A Rust staticlib is built once and linked into
+# both, so the switch moved to the build. tests/test_runner.gst links this
+# object for exactly the tests it compiles with -DGUST_DEBUG.
+#
+# Separate --target-dir, not a rebuild in place: sharing one would make
+# the two archives evict each other and whichever was built second would
+# be the only one that existed.
+$(PHASE25_RUNTIME_RS_CANARY): $(PHASE25_RUNTIME_RS_SRCS)
+	$(CARGO) build --release --features gust_debug \
+		--manifest-path src/runtime-rs/Cargo.toml \
+		--target-dir src/runtime-rs/target/canary
+
+$(PHASE25_RUNTIME_RS_CANARY_OBJ): $(PHASE25_RUNTIME_RS_CANARY)
+	$(call narrow_runtime_rs,$(PHASE25_RUNTIME_RS_CANARY),$@,build/phase25-runtime-rs-canary)
 
 $(PHASE21_RUNTIME_PACKAGE): $(PHASE21_RUNTIME_OBJECTS) $(PHASE25_RUNTIME_RS_OBJ)
 	@rm -f build/.gust-runtime-package.a.tmp
