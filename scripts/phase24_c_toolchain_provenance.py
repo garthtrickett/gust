@@ -824,9 +824,16 @@ def resolve_through_make(name: str, lines: list, lineno: int) -> dict:
     input, so it cannot launder an unrelated target's provenance onto this
     file.
     """
+    # `lines` is a list of (lineno, text) PAIRS, as resolve_through_parameter
+    # shows. Iterating it as though it held bare strings hands a tuple to
+    # re.match, which is a TypeError -- and my first version did exactly
+    # that, then passed a hand-built list of strings in its own test, so the
+    # test agreed with the bug. Use the real shape.
     target_var = None
-    for prior in reversed(lines[:lineno]):
-        hit = MAKE_INVOKE.match(prior)
+    for row_lineno, text in reversed(lines):
+        if row_lineno >= lineno:
+            continue
+        hit = MAKE_INVOKE.match(text)
         if hit:
             target_var = hit.group(1)
             break
@@ -836,8 +843,10 @@ def resolve_through_make(name: str, lines: list, lineno: int) -> dict:
     assign = re.compile(
         r'^\s*' + re.escape(target_var) + r'="?([^"\n]+)"?\s*$')
     built = None
-    for prior in lines[:lineno]:
-        hit = assign.match(prior)
+    for row_lineno, text in lines:
+        if row_lineno >= lineno:
+            break
+        hit = assign.match(text)
         if hit:
             built = hit.group(1).strip()
     if not built or os.path.basename(built) != os.path.basename(name):
