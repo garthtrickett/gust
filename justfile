@@ -22611,7 +22611,7 @@ make-test-suite:
     echo "⚙️  Compiling native Gust test runner..."
     GUST_BOOTSTRAP_EMITTER=1 ./gust --backend bootstrap-emitter tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
     cat src/runtime.c build/test_runner.c > build/test_runner_final.c
-    CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_final.c -o build/test_runner_bin
+    RS_OBJ=build/phase25-runtime-rs/gust_runtime_rs_exports.o; make "$RS_OBJ"; CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_final.c "$RS_OBJ" -o build/test_runner_bin
     echo "🏃 Running native Gust test runner..."
     GUST_BOOTSTRAP_EMITTER=1 ./build/test_runner_bin
     make test_tree_sitter
@@ -22651,7 +22651,7 @@ make-test-suite-parallel:
     echo "⚙️  Compiling native Gust test runner..."
     GUST_BOOTSTRAP_EMITTER=1 ./gust --backend bootstrap-emitter tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
     cat src/runtime.c build/test_runner.c > build/test_runner_final.c
-    CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_final.c -o build/test_runner_bin
+    RS_OBJ=build/phase25-runtime-rs/gust_runtime_rs_exports.o; make "$RS_OBJ"; CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_final.c "$RS_OBJ" -o build/test_runner_bin
     echo "🏃 Running native Gust test runner..."
     GUST_BOOTSTRAP_EMITTER=1 ./build/test_runner_bin
     make test_tree_sitter

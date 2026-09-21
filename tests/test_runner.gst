@@ -202,6 +202,13 @@ func run_test(t: Test[ctx]) int {
         os.WriteFile(final_c, final_c_content);
 
         mut compile_c_cmd := std.Concat("cc -O2 -Wall -pthread -Isrc ", final_c);
+        // Patch 25.6: src/runtime.c is not a complete runtime any more.
+        // fiber.c is gone and codegen emits a gust_yield() call in every
+        // loop of every compiled program, so EVERY test links this object,
+        // not just the ones that spawn a fiber. The narrowed object rather
+        // than the staticlib: it is self-contained apart from libc, where
+        // the 310-member archive would also offer its own memcpy.
+        compile_c_cmd = std.Concat(compile_c_cmd, " build/phase25-runtime-rs/gust_runtime_rs_exports.o");
         if is_neg == 2 || std.str_find(path, "canary") != 0 - 1 || std.str_find(path, "sanitizer") != 0 - 1 {
             compile_c_cmd = std.Concat(compile_c_cmd, " -fsanitize=address -DGUST_DEBUG");
         }
