@@ -24001,3 +24001,29 @@ guard-cranelift-phase24-close:
     python3 scripts/cranelift_test_levels.py validate
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase24-close | grep -F $'guard-cranelift-phase24-close\t1\t' >/dev/null
     python3 scripts/phase24_closure.py validate
+
+# Patch 25.5: the three guards this patch added, wired so they RUN.
+#
+# Written and passing locally is not the same as running. Without these
+# recipes and the workflow that calls them, src/runtime/strings.c could
+# drift out of sync with compiler/runtime/strings.gst and nothing would
+# say so -- a generated file with no staleness check is just a stale file
+# waiting to happen. Measured before writing them: zero references to any
+# of these three script names in the justfile or in .github/workflows.
+#
+# Appended rather than inserted: Patch 24.0c's manifest for this file is
+# keyed on line numbers, so a mid-file recipe moves every recipe below it.
+guard-cranelift-phase25-runtime-strings-generated:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ./scripts/phase25_runtime_strings_generated.sh
+
+guard-cranelift-phase25-strings-gust-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ./scripts/phase25_strings_gust_parity.sh
+
+guard-cranelift-phase25-runtime-rs-abi-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ./scripts/phase25_runtime_rs_abi_smoke.sh
