@@ -222,11 +222,17 @@ func run_test(t: Test[ctx]) int {
             debug_build = 1;
         }
         mut compile_c_cmd := std.Concat("cc -O2 -Wall -pthread -Isrc ", final_c);
+        // The NARROWED objects, not the staticlibs. Each is self-contained
+        // apart from libc and exports exactly the registered symbol set;
+        // the 310-member archive would also offer its own memcpy beside
+        // libc's. The canary object is the same crate built with the
+        // gust_debug feature, which is where GUST_DEBUG moved when arena.c
+        // stopped being a per-translation-unit #ifdef.
         if debug_build == 1 {
-            compile_c_cmd = std.Concat(compile_c_cmd, " src/runtime-rs/target/canary/release/libgust_runtime_rs.a");
+            compile_c_cmd = std.Concat(compile_c_cmd, " build/phase25-runtime-rs-canary/gust_runtime_rs_exports.o");
             compile_c_cmd = std.Concat(compile_c_cmd, " -fsanitize=address -DGUST_DEBUG");
         } else {
-            compile_c_cmd = std.Concat(compile_c_cmd, " src/runtime-rs/target/release/libgust_runtime_rs.a");
+            compile_c_cmd = std.Concat(compile_c_cmd, " build/phase25-runtime-rs/gust_runtime_rs_exports.o");
         }
         compile_c_cmd = std.Concat(compile_c_cmd, " -o ");
         compile_c_cmd = std.Concat(compile_c_cmd, bin_path);
