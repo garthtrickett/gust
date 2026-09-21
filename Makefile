@@ -429,7 +429,13 @@ endef
 # would settle it is one `make build/phase25-runtime-rs/...` on either
 # macOS quadrant.
 
-$(PHASE25_RUNTIME_RS_OBJ): $(PHASE25_RUNTIME_RS)
+# The export set lives in THIS file, so the Makefile is a real input to both
+# narrowed objects. Without it here, editing PHASE25_RUNTIME_RS_EXPORTS leaves
+# a stale object carrying the old symbol set, and the drift check inside the
+# define passes because it compares the object against the list it was built
+# from, not the list as it now reads. Measured on 25.6: make reported the
+# object up to date after the export list changed.
+$(PHASE25_RUNTIME_RS_OBJ): $(PHASE25_RUNTIME_RS) Makefile
 	$(call narrow_runtime_rs,$(PHASE25_RUNTIME_RS),$@,build/phase25-runtime-rs)
 
 # Patch 25.5: the GUST_DEBUG arena, as a SECOND ARCHIVE.
@@ -448,7 +454,7 @@ $(PHASE25_RUNTIME_RS_CANARY): $(PHASE25_RUNTIME_RS_SRCS)
 		--manifest-path src/runtime-rs/Cargo.toml \
 		--target-dir src/runtime-rs/target/canary
 
-$(PHASE25_RUNTIME_RS_CANARY_OBJ): $(PHASE25_RUNTIME_RS_CANARY)
+$(PHASE25_RUNTIME_RS_CANARY_OBJ): $(PHASE25_RUNTIME_RS_CANARY) Makefile
 	$(call narrow_runtime_rs,$(PHASE25_RUNTIME_RS_CANARY),$@,build/phase25-runtime-rs-canary)
 
 $(PHASE21_RUNTIME_PACKAGE): $(PHASE21_RUNTIME_OBJECTS) $(PHASE25_RUNTIME_RS_OBJ)
