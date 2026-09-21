@@ -1014,6 +1014,44 @@ This is the two-generation rule as a process, collapsed into one commit,
 and it is the reason `strings.c` should be a separate patch from the other
 five rather than riding along.
 
+### Two Gust facts that cost a build cycle each, and one that did not
+
+Writing the include-guard helper hit both of these in a row. Neither is
+documented anywhere and neither error names its cause.
+
+**`guard` is a RESERVED KEYWORD** (`compiler/lexer.gst:164`, token tag 27).
+A local named `guard` produced ten of these:
+
+    ParserError at 4184:9: Syntax Error: Expected valid statement inside block
+    ParserError at 4184:15: Syntax Error: Expected valid statement inside block
+    ... two per line, for five more lines
+
+The message names neither a keyword nor the right line — the parser loses
+sync and then fails on everything after it, so the first error is below the
+cause, not at it. A four-line repro found it in one run; reading the errors
+where they appeared would not have.
+
+**A function cannot RETURN a `std.Concat` result.**
+
+    Semantic Error: Escape analysis violation.
+    Returning scratchpad-allocated view of type Str
+
+`std.Concat` allocates in scratch, and scratch cannot escape its frame.
+This kills the obvious shape — a small helper that builds a string and
+returns it — as a DESIGN, not just as written. The way through is the one
+the surrounding code already uses: accumulate into a local the caller
+already owns and push that. `std_str_slice` hit the same wall earlier in
+this patch and a stack local was the answer there too, so it is worth
+stating as a rule: **in Gust, build strings into a caller-owned local, do
+not return them from helpers.**
+
+**And one that turned out fine:** `#` in a string literal is legal.
+`codegen.gst` never emitted one before this patch, which looked like
+evidence of a lexer limitation, but a `mir_memory_access` lowering
+module already writes `"#include <stdint.h>\n"` at line 69. Absence of a pattern is not
+evidence it is forbidden — checking took one grep and would otherwise have
+produced an elaborate workaround for a problem that does not exist.
+
 ### Wiring `strings.gst` in: three assumptions tested, two survived
 
 The last step of 25.5 is making the nine Gust functions reach every

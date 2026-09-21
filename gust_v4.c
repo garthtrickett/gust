@@ -3436,25 +3436,36 @@ void typechecker__typechecker_validate_query_predicates_when_scope_bypassed(ast_
 int typechecker__types_match(ast__Type expected, ast__Type actual, os_Arena* ctx);
 
 // Structures
+#ifndef GUST_STRUCT_APIRequest_DEFINED
+#define GUST_STRUCT_APIRequest_DEFINED
 struct APIRequest {
     int Active;
     int SessionID;
     int UserID;
 };
+#endif
 
+#ifndef GUST_STRUCT_CompilerBackendSelection_Cranelift_DEFINED
+#define GUST_STRUCT_CompilerBackendSelection_Cranelift_DEFINED
 struct CompilerBackendSelection_Cranelift {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_CompilerBackendSelection_MirToC_DEFINED
+#define GUST_STRUCT_CompilerBackendSelection_MirToC_DEFINED
 struct CompilerBackendSelection_MirToC {
     char dummy;
 };
+#endif
 
 typedef enum {
     CompilerBackendSelection_Tag__MirToC = 0,
     CompilerBackendSelection_Tag__Cranelift = 1,
 } CompilerBackendSelection_Tag;
 
+#ifndef GUST_STRUCT_CompilerBackendSelection_DEFINED
+#define GUST_STRUCT_CompilerBackendSelection_DEFINED
 struct CompilerBackendSelection {
     int tag;
     union {
@@ -3462,7 +3473,10 @@ struct CompilerBackendSelection {
         struct CompilerBackendSelection_MirToC MirToC;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_CompilerInvocation_DEFINED
+#define GUST_STRUCT_CompilerInvocation_DEFINED
 struct CompilerInvocation {
     CompilerBackendSelection backend;
     int backend_was_explicit;
@@ -3470,22 +3484,35 @@ struct CompilerInvocation {
     int output_was_explicit;
     Slice_unsigned_char source_path;
 };
+#endif
 
+#ifndef GUST_STRUCT_errors__ErrorKind_CodegenError_DEFINED
+#define GUST_STRUCT_errors__ErrorKind_CodegenError_DEFINED
 struct errors__ErrorKind_CodegenError {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_errors__ErrorKind_LexerError_DEFINED
+#define GUST_STRUCT_errors__ErrorKind_LexerError_DEFINED
 struct errors__ErrorKind_LexerError {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_errors__ErrorKind_ParserError_DEFINED
+#define GUST_STRUCT_errors__ErrorKind_ParserError_DEFINED
 struct errors__ErrorKind_ParserError {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_errors__ErrorKind_TypeError_DEFINED
+#define GUST_STRUCT_errors__ErrorKind_TypeError_DEFINED
 struct errors__ErrorKind_TypeError {
     char dummy;
 };
+#endif
 
 typedef enum {
     errors__ErrorKind_Tag__LexerError = 0,
@@ -3494,6 +3521,8 @@ typedef enum {
     errors__ErrorKind_Tag__CodegenError = 3,
 } errors__ErrorKind_Tag;
 
+#ifndef GUST_STRUCT_errors__ErrorKind_DEFINED
+#define GUST_STRUCT_errors__ErrorKind_DEFINED
 struct errors__ErrorKind {
     int tag;
     union {
@@ -3503,91 +3532,146 @@ struct errors__ErrorKind {
         struct errors__ErrorKind_TypeError TypeError;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_token__Position_DEFINED
+#define GUST_STRUCT_token__Position_DEFINED
 struct token__Position {
     int column;
     int line;
     int offset;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__Span_DEFINED
+#define GUST_STRUCT_token__Span_DEFINED
 struct token__Span {
     token__Position end;
     token__Position start;
 };
+#endif
 
+#ifndef GUST_STRUCT_errors__CompilerError_DEFINED
+#define GUST_STRUCT_errors__CompilerError_DEFINED
 struct errors__CompilerError {
     Slice_unsigned_char file_path;
     errors__ErrorKind kind;
     Slice_unsigned_char message;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_FileParserError_DEFINED
+#define GUST_STRUCT_FileParserError_DEFINED
 struct FileParserError {
     errors__CompilerError err;
     Slice_unsigned_char file_path;
 };
+#endif
 
+#ifndef GUST_STRUCT_LookupResult_Index_std_Vector_typechecker__ResourceCleanupAction_DEFINED
+#define GUST_STRUCT_LookupResult_Index_std_Vector_typechecker__ResourceCleanupAction_DEFINED
 struct LookupResult_Index_std_Vector_typechecker__ResourceCleanupAction {
     unsigned char Ok;
     int Val;
 };
+#endif
 
+#ifndef GUST_STRUCT_LookupResult_Index_typechecker__OriginSet_DEFINED
+#define GUST_STRUCT_LookupResult_Index_typechecker__OriginSet_DEFINED
 struct LookupResult_Index_typechecker__OriginSet {
     unsigned char Ok;
     int Val;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Type_Arena_DEFINED
+#define GUST_STRUCT_ast__Type_Arena_DEFINED
 struct ast__Type_Arena {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Type_Bool_DEFINED
+#define GUST_STRUCT_ast__Type_Bool_DEFINED
 struct ast__Type_Bool {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Type_Byte_DEFINED
+#define GUST_STRUCT_ast__Type_Byte_DEFINED
 struct ast__Type_Byte {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Type_Generic_DEFINED
+#define GUST_STRUCT_ast__Type_Generic_DEFINED
 struct ast__Type_Generic {
     int args;
     Slice_unsigned_char name;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Type_Index_DEFINED
+#define GUST_STRUCT_ast__Type_Index_DEFINED
 struct ast__Type_Index {
     int brand;
     Slice_unsigned_char struct_name;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Type_Int_DEFINED
+#define GUST_STRUCT_ast__Type_Int_DEFINED
 struct ast__Type_Int {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Type_RawPointer_DEFINED
+#define GUST_STRUCT_ast__Type_RawPointer_DEFINED
 struct ast__Type_RawPointer {
     int inner;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Type_Reference_DEFINED
+#define GUST_STRUCT_ast__Type_Reference_DEFINED
 struct ast__Type_Reference {
     int brand;
     int inner;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Type_Slice_DEFINED
+#define GUST_STRUCT_ast__Type_Slice_DEFINED
 struct ast__Type_Slice {
     int inner;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Type_Str_DEFINED
+#define GUST_STRUCT_ast__Type_Str_DEFINED
 struct ast__Type_Str {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Type_Struct_DEFINED
+#define GUST_STRUCT_ast__Type_Struct_DEFINED
 struct ast__Type_Struct {
     int brand;
     Slice_unsigned_char struct_name;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Type_Void_DEFINED
+#define GUST_STRUCT_ast__Type_Void_DEFINED
 struct ast__Type_Void {
     char dummy;
 };
+#endif
 
 typedef enum {
     ast__Type_Tag__Int = 0,
@@ -3604,6 +3688,8 @@ typedef enum {
     ast__Type_Tag__Reference = 11,
 } ast__Type_Tag;
 
+#ifndef GUST_STRUCT_ast__Type_DEFINED
+#define GUST_STRUCT_ast__Type_DEFINED
 struct ast__Type {
     int tag;
     union {
@@ -3621,27 +3707,42 @@ struct ast__Type {
         struct ast__Type_Void Void;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_LookupResult_ast__Type_DEFINED
+#define GUST_STRUCT_LookupResult_ast__Type_DEFINED
 struct LookupResult_ast__Type {
     unsigned char Ok;
     ast__Type Val;
 };
+#endif
 
+#ifndef GUST_STRUCT_LookupResult_int_DEFINED
+#define GUST_STRUCT_LookupResult_int_DEFINED
 struct LookupResult_int {
     unsigned char Ok;
     int Val;
 };
+#endif
 
+#ifndef GUST_STRUCT_LookupResult_std_Vector_str_DEFINED
+#define GUST_STRUCT_LookupResult_std_Vector_str_DEFINED
 struct LookupResult_std_Vector_str {
     unsigned char Ok;
     std_Vector_str Val;
 };
+#endif
 
+#ifndef GUST_STRUCT_LookupResult_str_DEFINED
+#define GUST_STRUCT_LookupResult_str_DEFINED
 struct LookupResult_str {
     unsigned char Ok;
     Slice_unsigned_char Val;
 };
+#endif
 
+#ifndef GUST_STRUCT_typechecker__ArenaLifecycleState_DEFINED
+#define GUST_STRUCT_typechecker__ArenaLifecycleState_DEFINED
 struct typechecker__ArenaLifecycleState {
     int allocation_observations;
     Slice_unsigned_char arena_identity;
@@ -3650,41 +3751,62 @@ struct typechecker__ArenaLifecycleState {
     int state;
     int write_observations;
 };
+#endif
 
+#ifndef GUST_STRUCT_LookupResult_typechecker__ArenaLifecycleState_DEFINED
+#define GUST_STRUCT_LookupResult_typechecker__ArenaLifecycleState_DEFINED
 struct LookupResult_typechecker__ArenaLifecycleState {
     unsigned char Ok;
     typechecker__ArenaLifecycleState Val;
 };
+#endif
 
+#ifndef GUST_STRUCT_typechecker__BrandIdentity_DEFINED
+#define GUST_STRUCT_typechecker__BrandIdentity_DEFINED
 struct typechecker__BrandIdentity {
     Slice_unsigned_char arena_identity;
     Slice_unsigned_char brand_origin;
     int is_arena;
 };
+#endif
 
+#ifndef GUST_STRUCT_LookupResult_typechecker__BrandIdentity_DEFINED
+#define GUST_STRUCT_LookupResult_typechecker__BrandIdentity_DEFINED
 struct LookupResult_typechecker__BrandIdentity {
     unsigned char Ok;
     typechecker__BrandIdentity Val;
 };
+#endif
 
+#ifndef GUST_STRUCT_typechecker__EnumTemplate_DEFINED
+#define GUST_STRUCT_typechecker__EnumTemplate_DEFINED
 struct typechecker__EnumTemplate {
     int brand_parameter_index;
     int generics;
     int variants;
 };
+#endif
 
+#ifndef GUST_STRUCT_LookupResult_typechecker__EnumTemplate_DEFINED
+#define GUST_STRUCT_LookupResult_typechecker__EnumTemplate_DEFINED
 struct LookupResult_typechecker__EnumTemplate {
     unsigned char Ok;
     typechecker__EnumTemplate Val;
 };
+#endif
 
+#ifndef GUST_STRUCT_typechecker__AddressOriginMetadata_DEFINED
+#define GUST_STRUCT_typechecker__AddressOriginMetadata_DEFINED
 struct typechecker__AddressOriginMetadata {
     int is_raw_derived;
     int is_safe_arena;
     int is_sandbox_derived;
     int is_unknown;
 };
+#endif
 
+#ifndef GUST_STRUCT_typechecker__ExpressionProvenance_DEFINED
+#define GUST_STRUCT_typechecker__ExpressionProvenance_DEFINED
 struct typechecker__ExpressionProvenance {
     typechecker__AddressOriginMetadata address_origin;
     int legacy_origins;
@@ -3693,19 +3815,28 @@ struct typechecker__ExpressionProvenance {
     Slice_unsigned_char trusted_scope_identity;
     Slice_unsigned_char trusted_scope_origin_kind;
 };
+#endif
 
+#ifndef GUST_STRUCT_LookupResult_typechecker__ExpressionProvenance_DEFINED
+#define GUST_STRUCT_LookupResult_typechecker__ExpressionProvenance_DEFINED
 struct LookupResult_typechecker__ExpressionProvenance {
     unsigned char Ok;
     typechecker__ExpressionProvenance Val;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_ast__Type_DEFINED
+#define GUST_STRUCT_std_Vector_ast__Type_DEFINED
 struct std_Vector_ast__Type {
     os_Arena* arena;
     int capacity;
     ast__Type* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_typechecker__FunctionSignature_DEFINED
+#define GUST_STRUCT_typechecker__FunctionSignature_DEFINED
 struct typechecker__FunctionSignature {
     Slice_unsigned_char extern_abi;
     Slice_unsigned_char extern_symbol_name;
@@ -3721,12 +3852,18 @@ struct typechecker__FunctionSignature {
     int return_origins;
     ast__Type return_type;
 };
+#endif
 
+#ifndef GUST_STRUCT_LookupResult_typechecker__FunctionSignature_DEFINED
+#define GUST_STRUCT_LookupResult_typechecker__FunctionSignature_DEFINED
 struct LookupResult_typechecker__FunctionSignature {
     unsigned char Ok;
     typechecker__FunctionSignature Val;
 };
+#endif
 
+#ifndef GUST_STRUCT_typechecker__LinearResourceRecord_DEFINED
+#define GUST_STRUCT_typechecker__LinearResourceRecord_DEFINED
 struct typechecker__LinearResourceRecord {
     Slice_unsigned_char destructor_name;
     int is_borrowed;
@@ -3737,35 +3874,53 @@ struct typechecker__LinearResourceRecord {
     Slice_unsigned_char type_name;
     Slice_unsigned_char variable_name;
 };
+#endif
 
+#ifndef GUST_STRUCT_LookupResult_typechecker__LinearResourceRecord_DEFINED
+#define GUST_STRUCT_LookupResult_typechecker__LinearResourceRecord_DEFINED
 struct LookupResult_typechecker__LinearResourceRecord {
     unsigned char Ok;
     typechecker__LinearResourceRecord Val;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Statement_Assignment_DEFINED
+#define GUST_STRUCT_ast__Statement_Assignment_DEFINED
 struct ast__Statement_Assignment {
     int left;
     token__Span span;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Statement_Defer_DEFINED
+#define GUST_STRUCT_ast__Statement_Defer_DEFINED
 struct ast__Statement_Defer {
     int expr;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Statement_EnumDecl_DEFINED
+#define GUST_STRUCT_ast__Statement_EnumDecl_DEFINED
 struct ast__Statement_EnumDecl {
     int generics;
     Slice_unsigned_char name;
     token__Span span;
     int variants;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Statement_Expression_DEFINED
+#define GUST_STRUCT_ast__Statement_Expression_DEFINED
 struct ast__Statement_Expression {
     int expr;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Statement_FunctionDecl_DEFINED
+#define GUST_STRUCT_ast__Statement_FunctionDecl_DEFINED
 struct ast__Statement_FunctionDecl {
     int body;
     Slice_unsigned_char extern_abi;
@@ -3781,7 +3936,10 @@ struct ast__Statement_FunctionDecl {
     int return_type;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Statement_Guard_DEFINED
+#define GUST_STRUCT_ast__Statement_Guard_DEFINED
 struct ast__Statement_Guard {
     int else_body;
     int is_mut;
@@ -3789,31 +3947,46 @@ struct ast__Statement_Guard {
     token__Span span;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Statement_If_DEFINED
+#define GUST_STRUCT_ast__Statement_If_DEFINED
 struct ast__Statement_If {
     int alternative;
     int condition;
     int consequence;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Statement_Import_DEFINED
+#define GUST_STRUCT_ast__Statement_Import_DEFINED
 struct ast__Statement_Import {
     Slice_unsigned_char alias;
     Slice_unsigned_char path;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Statement_Match_DEFINED
+#define GUST_STRUCT_ast__Statement_Match_DEFINED
 struct ast__Statement_Match {
     int cases;
     int expression;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Statement_Return_DEFINED
+#define GUST_STRUCT_ast__Statement_Return_DEFINED
 struct ast__Statement_Return {
     int expr;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Statement_StructDecl_DEFINED
+#define GUST_STRUCT_ast__Statement_StructDecl_DEFINED
 struct ast__Statement_StructDecl {
     Slice_unsigned_char declared_destructor_name;
     int fields;
@@ -3828,12 +4001,18 @@ struct ast__Statement_StructDecl {
     Slice_unsigned_char scope_field;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Statement_UnsafeBlock_DEFINED
+#define GUST_STRUCT_ast__Statement_UnsafeBlock_DEFINED
 struct ast__Statement_UnsafeBlock {
     int body;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Statement_VarDecl_DEFINED
+#define GUST_STRUCT_ast__Statement_VarDecl_DEFINED
 struct ast__Statement_VarDecl {
     int is_mut;
     Slice_unsigned_char name;
@@ -3841,12 +4020,16 @@ struct ast__Statement_VarDecl {
     int value;
     int var_type;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Statement_While_DEFINED
+#define GUST_STRUCT_ast__Statement_While_DEFINED
 struct ast__Statement_While {
     int body;
     int condition;
     token__Span span;
 };
+#endif
 
 typedef enum {
     ast__Statement_Tag__Import = 0,
@@ -3865,6 +4048,8 @@ typedef enum {
     ast__Statement_Tag__Expression = 13,
 } ast__Statement_Tag;
 
+#ifndef GUST_STRUCT_ast__Statement_DEFINED
+#define GUST_STRUCT_ast__Statement_DEFINED
 struct ast__Statement {
     int tag;
     union {
@@ -3884,7 +4069,10 @@ struct ast__Statement {
         struct ast__Statement_While While;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_typechecker__ProtectedResourceFunction_DEFINED
+#define GUST_STRUCT_typechecker__ProtectedResourceFunction_DEFINED
 struct typechecker__ProtectedResourceFunction {
     Slice_unsigned_char file;
     Slice_unsigned_char guard_name;
@@ -3893,12 +4081,18 @@ struct typechecker__ProtectedResourceFunction {
     typechecker__FunctionSignature signature;
     ast__Statement statement;
 };
+#endif
 
+#ifndef GUST_STRUCT_LookupResult_typechecker__ProtectedResourceFunction_DEFINED
+#define GUST_STRUCT_LookupResult_typechecker__ProtectedResourceFunction_DEFINED
 struct LookupResult_typechecker__ProtectedResourceFunction {
     unsigned char Ok;
     typechecker__ProtectedResourceFunction Val;
 };
+#endif
 
+#ifndef GUST_STRUCT_typechecker__ResourceAcquisitionObligation_DEFINED
+#define GUST_STRUCT_typechecker__ResourceAcquisitionObligation_DEFINED
 struct typechecker__ResourceAcquisitionObligation {
     Slice_unsigned_char cleanup_condition;
     int declaration_order;
@@ -3910,12 +4104,18 @@ struct typechecker__ResourceAcquisitionObligation {
     Slice_unsigned_char storage_name;
     Slice_unsigned_char type_name;
 };
+#endif
 
+#ifndef GUST_STRUCT_LookupResult_typechecker__ResourceAcquisitionObligation_DEFINED
+#define GUST_STRUCT_LookupResult_typechecker__ResourceAcquisitionObligation_DEFINED
 struct LookupResult_typechecker__ResourceAcquisitionObligation {
     unsigned char Ok;
     typechecker__ResourceAcquisitionObligation Val;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_HashMap_str_ast__Type_DEFINED
+#define GUST_STRUCT_std_HashMap_str_ast__Type_DEFINED
 struct std_HashMap_str_ast__Type {
     os_Arena* arena;
     int capacity;
@@ -3924,99 +4124,153 @@ struct std_HashMap_str_ast__Type {
     int* occupied;
     ast__Type* values;
 };
+#endif
 
+#ifndef GUST_STRUCT_typechecker__StructLayout_DEFINED
+#define GUST_STRUCT_typechecker__StructLayout_DEFINED
 struct typechecker__StructLayout {
     int brand;
     std_HashMap_str_ast__Type fields;
 };
+#endif
 
+#ifndef GUST_STRUCT_LookupResult_typechecker__StructLayout_DEFINED
+#define GUST_STRUCT_LookupResult_typechecker__StructLayout_DEFINED
 struct LookupResult_typechecker__StructLayout {
     unsigned char Ok;
     typechecker__StructLayout Val;
 };
+#endif
 
+#ifndef GUST_STRUCT_typechecker__StructTemplate_DEFINED
+#define GUST_STRUCT_typechecker__StructTemplate_DEFINED
 struct typechecker__StructTemplate {
     int brand_parameter_index;
     int fields;
     int generics;
 };
+#endif
 
+#ifndef GUST_STRUCT_LookupResult_typechecker__StructTemplate_DEFINED
+#define GUST_STRUCT_LookupResult_typechecker__StructTemplate_DEFINED
 struct LookupResult_typechecker__StructTemplate {
     unsigned char Ok;
     typechecker__StructTemplate Val;
 };
+#endif
 
+#ifndef GUST_STRUCT_SessionNode_DEFINED
+#define GUST_STRUCT_SessionNode_DEFINED
 struct SessionNode {
     int Next;
     int SessionID;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__BlockStatement_DEFINED
+#define GUST_STRUCT_ast__BlockStatement_DEFINED
 struct ast__BlockStatement {
     token__Span span;
     int statements;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Expression_AddressOf_DEFINED
+#define GUST_STRUCT_ast__Expression_AddressOf_DEFINED
 struct ast__Expression_AddressOf {
     int expr;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Expression_AsCast_DEFINED
+#define GUST_STRUCT_ast__Expression_AsCast_DEFINED
 struct ast__Expression_AsCast {
     int is_reference;
     int left;
     token__Span span;
     int target_type;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Expression_Binary_DEFINED
+#define GUST_STRUCT_ast__Expression_Binary_DEFINED
 struct ast__Expression_Binary {
     int left;
     Slice_unsigned_char op;
     int right;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Expression_Bool_DEFINED
+#define GUST_STRUCT_ast__Expression_Bool_DEFINED
 struct ast__Expression_Bool {
     token__Span span;
     int val;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Expression_Call_DEFINED
+#define GUST_STRUCT_ast__Expression_Call_DEFINED
 struct ast__Expression_Call {
     int arguments;
     int function;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Expression_Dereference_DEFINED
+#define GUST_STRUCT_ast__Expression_Dereference_DEFINED
 struct ast__Expression_Dereference {
     int expr;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Expression_Empty_DEFINED
+#define GUST_STRUCT_ast__Expression_Empty_DEFINED
 struct ast__Expression_Empty {
     token__Span span;
     int target_type;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Expression_Identifier_DEFINED
+#define GUST_STRUCT_ast__Expression_Identifier_DEFINED
 struct ast__Expression_Identifier {
     Slice_unsigned_char name;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Expression_IndexAccess_DEFINED
+#define GUST_STRUCT_ast__Expression_IndexAccess_DEFINED
 struct ast__Expression_IndexAccess {
     int allocator;
     int index;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Expression_Integer_DEFINED
+#define GUST_STRUCT_ast__Expression_Integer_DEFINED
 struct ast__Expression_Integer {
     token__Span span;
     int val;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Expression_Move_DEFINED
+#define GUST_STRUCT_ast__Expression_Move_DEFINED
 struct ast__Expression_Move {
     int expr;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Expression_Query_DEFINED
+#define GUST_STRUCT_ast__Expression_Query_DEFINED
 struct ast__Expression_Query {
     int cross_tenant_capability;
     int joins;
@@ -4026,22 +4280,32 @@ struct ast__Expression_Query {
     token__Span span;
     int terminal;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Expression_Selector_DEFINED
+#define GUST_STRUCT_ast__Expression_Selector_DEFINED
 struct ast__Expression_Selector {
     int left;
     Slice_unsigned_char right;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Expression_String_DEFINED
+#define GUST_STRUCT_ast__Expression_String_DEFINED
 struct ast__Expression_String {
     token__Span span;
     Slice_unsigned_char val;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Expression_Take_DEFINED
+#define GUST_STRUCT_ast__Expression_Take_DEFINED
 struct ast__Expression_Take {
     int expr;
     token__Span span;
 };
+#endif
 
 typedef enum {
     ast__Expression_Tag__Identifier = 0,
@@ -4061,6 +4325,8 @@ typedef enum {
     ast__Expression_Tag__Query = 14,
 } ast__Expression_Tag;
 
+#ifndef GUST_STRUCT_ast__Expression_DEFINED
+#define GUST_STRUCT_ast__Expression_DEFINED
 struct ast__Expression {
     int tag;
     union {
@@ -4081,74 +4347,110 @@ struct ast__Expression {
         struct ast__Expression_Take Take;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__FieldDef_DEFINED
+#define GUST_STRUCT_ast__FieldDef_DEFINED
 struct ast__FieldDef {
     ast__Type field_type;
     Slice_unsigned_char name;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__MatchCase_DEFINED
+#define GUST_STRUCT_ast__MatchCase_DEFINED
 struct ast__MatchCase {
     int body;
     int fields;
     token__Span span;
     Slice_unsigned_char variant_name;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Parameter_DEFINED
+#define GUST_STRUCT_ast__Parameter_DEFINED
 struct ast__Parameter {
     Slice_unsigned_char name;
     ast__Type param_type;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__Program_DEFINED
+#define GUST_STRUCT_ast__Program_DEFINED
 struct ast__Program {
     token__Span span;
     int statements;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__QueryJoin_DEFINED
+#define GUST_STRUCT_ast__QueryJoin_DEFINED
 struct ast__QueryJoin {
     Slice_unsigned_char binding_name;
     Slice_unsigned_char entity_name;
     int predicate;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__QueryRoot_DEFINED
+#define GUST_STRUCT_ast__QueryRoot_DEFINED
 struct ast__QueryRoot {
     Slice_unsigned_char binding_name;
     Slice_unsigned_char entity_name;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_ast__VariantDef_DEFINED
+#define GUST_STRUCT_ast__VariantDef_DEFINED
 struct ast__VariantDef {
     int fields;
     Slice_unsigned_char name;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_codegen__CodegenStringHeader_DEFINED
+#define GUST_STRUCT_codegen__CodegenStringHeader_DEFINED
 struct codegen__CodegenStringHeader {
     unsigned char* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_codegen__Codegen_DEFINED
+#define GUST_STRUCT_codegen__Codegen_DEFINED
 struct codegen__Codegen {
     Slice_unsigned_char current_alloc_struct;
     std_Vector_str current_params;
     typechecker__TypeEnvironment* env;
 };
+#endif
 
+#ifndef GUST_STRUCT_errors__Result_ast__Type_Err_DEFINED
+#define GUST_STRUCT_errors__Result_ast__Type_Err_DEFINED
 struct errors__Result_ast__Type_Err {
     int error;
 };
+#endif
 
+#ifndef GUST_STRUCT_errors__Result_ast__Type_Ok_DEFINED
+#define GUST_STRUCT_errors__Result_ast__Type_Ok_DEFINED
 struct errors__Result_ast__Type_Ok {
     ast__Type val;
 };
+#endif
 
 typedef enum {
     errors__Result_ast__Type_Tag__Ok = 0,
     errors__Result_ast__Type_Tag__Err = 1,
 } errors__Result_ast__Type_Tag;
 
+#ifndef GUST_STRUCT_errors__Result_ast__Type_DEFINED
+#define GUST_STRUCT_errors__Result_ast__Type_DEFINED
 struct errors__Result_ast__Type {
     int tag;
     union {
@@ -4156,20 +4458,29 @@ struct errors__Result_ast__Type {
         struct errors__Result_ast__Type_Ok Ok;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_errors__Result_int_Err_DEFINED
+#define GUST_STRUCT_errors__Result_int_Err_DEFINED
 struct errors__Result_int_Err {
     int error;
 };
+#endif
 
+#ifndef GUST_STRUCT_errors__Result_int_Ok_DEFINED
+#define GUST_STRUCT_errors__Result_int_Ok_DEFINED
 struct errors__Result_int_Ok {
     int val;
 };
+#endif
 
 typedef enum {
     errors__Result_int_Tag__Ok = 0,
     errors__Result_int_Tag__Err = 1,
 } errors__Result_int_Tag;
 
+#ifndef GUST_STRUCT_errors__Result_int_DEFINED
+#define GUST_STRUCT_errors__Result_int_DEFINED
 struct errors__Result_int {
     int tag;
     union {
@@ -4177,7 +4488,10 @@ struct errors__Result_int {
         struct errors__Result_int_Ok Ok;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_lexer__Lexer_DEFINED
+#define GUST_STRUCT_lexer__Lexer_DEFINED
 struct lexer__Lexer {
     unsigned char ch;
     int column;
@@ -4186,12 +4500,18 @@ struct lexer__Lexer {
     int position;
     int read_position;
 };
+#endif
 
+#ifndef GUST_STRUCT_lexer__StringHeader_DEFINED
+#define GUST_STRUCT_lexer__StringHeader_DEFINED
 struct lexer__StringHeader {
     unsigned char* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirAggregateBlockReference_DEFINED
+#define GUST_STRUCT_mir__MirAggregateBlockReference_DEFINED
 struct mir__MirAggregateBlockReference {
     Slice_unsigned_char block_id;
     int is_join;
@@ -4200,26 +4520,42 @@ struct mir__MirAggregateBlockReference {
     int param_count;
     int total_block_argument_count;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirAggregateTransportOperationKind_BlockParamDeclare_DEFINED
+#define GUST_STRUCT_mir__MirAggregateTransportOperationKind_BlockParamDeclare_DEFINED
 struct mir__MirAggregateTransportOperationKind_BlockParamDeclare {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirAggregateTransportOperationKind_EarlyReturn_DEFINED
+#define GUST_STRUCT_mir__MirAggregateTransportOperationKind_EarlyReturn_DEFINED
 struct mir__MirAggregateTransportOperationKind_EarlyReturn {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirAggregateTransportOperationKind_EdgeArgumentPass_DEFINED
+#define GUST_STRUCT_mir__MirAggregateTransportOperationKind_EdgeArgumentPass_DEFINED
 struct mir__MirAggregateTransportOperationKind_EdgeArgumentPass {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirAggregateTransportOperationKind_JoinObserve_DEFINED
+#define GUST_STRUCT_mir__MirAggregateTransportOperationKind_JoinObserve_DEFINED
 struct mir__MirAggregateTransportOperationKind_JoinObserve {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirAggregateTransportOperationKind_LoopCarry_DEFINED
+#define GUST_STRUCT_mir__MirAggregateTransportOperationKind_LoopCarry_DEFINED
 struct mir__MirAggregateTransportOperationKind_LoopCarry {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir__MirAggregateTransportOperationKind_Tag__BlockParamDeclare = 0,
@@ -4229,6 +4565,8 @@ typedef enum {
     mir__MirAggregateTransportOperationKind_Tag__EarlyReturn = 4,
 } mir__MirAggregateTransportOperationKind_Tag;
 
+#ifndef GUST_STRUCT_mir__MirAggregateTransportOperationKind_DEFINED
+#define GUST_STRUCT_mir__MirAggregateTransportOperationKind_DEFINED
 struct mir__MirAggregateTransportOperationKind {
     int tag;
     union {
@@ -4239,7 +4577,10 @@ struct mir__MirAggregateTransportOperationKind {
         struct mir__MirAggregateTransportOperationKind_LoopCarry LoopCarry;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirAggregateTransportOperationReference_DEFINED
+#define GUST_STRUCT_mir__MirAggregateTransportOperationReference_DEFINED
 struct mir__MirAggregateTransportOperationReference {
     Slice_unsigned_char block_label;
     int component_index;
@@ -4250,7 +4591,10 @@ struct mir__MirAggregateTransportOperationReference {
     Slice_unsigned_char target_id;
     Slice_unsigned_char value_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirAggregateValueReference_DEFINED
+#define GUST_STRUCT_mir__MirAggregateValueReference_DEFINED
 struct mir__MirAggregateValueReference {
     int alignment;
     int block_argument_count;
@@ -4264,7 +4608,10 @@ struct mir__MirAggregateValueReference {
     Slice_unsigned_char value_id;
     Slice_unsigned_char variant_name;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirArrayLayoutReference_DEFINED
+#define GUST_STRUCT_mir__MirArrayLayoutReference_DEFINED
 struct mir__MirArrayLayoutReference {
     int alignment;
     Slice_unsigned_char array_type_id;
@@ -4277,38 +4624,63 @@ struct mir__MirArrayLayoutReference {
     Slice_unsigned_char target_id;
     int total_size;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirArraySliceOperationKind_ArrayInit_DEFINED
+#define GUST_STRUCT_mir__MirArraySliceOperationKind_ArrayInit_DEFINED
 struct mir__MirArraySliceOperationKind_ArrayInit {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirArraySliceOperationKind_ArrayToSlice_DEFINED
+#define GUST_STRUCT_mir__MirArraySliceOperationKind_ArrayToSlice_DEFINED
 struct mir__MirArraySliceOperationKind_ArrayToSlice {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirArraySliceOperationKind_BoundedIndex_DEFINED
+#define GUST_STRUCT_mir__MirArraySliceOperationKind_BoundedIndex_DEFINED
 struct mir__MirArraySliceOperationKind_BoundedIndex {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirArraySliceOperationKind_ElementAddress_DEFINED
+#define GUST_STRUCT_mir__MirArraySliceOperationKind_ElementAddress_DEFINED
 struct mir__MirArraySliceOperationKind_ElementAddress {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirArraySliceOperationKind_ElementLoad_DEFINED
+#define GUST_STRUCT_mir__MirArraySliceOperationKind_ElementLoad_DEFINED
 struct mir__MirArraySliceOperationKind_ElementLoad {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirArraySliceOperationKind_ElementStore_DEFINED
+#define GUST_STRUCT_mir__MirArraySliceOperationKind_ElementStore_DEFINED
 struct mir__MirArraySliceOperationKind_ElementStore {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirArraySliceOperationKind_SliceLength_DEFINED
+#define GUST_STRUCT_mir__MirArraySliceOperationKind_SliceLength_DEFINED
 struct mir__MirArraySliceOperationKind_SliceLength {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirArraySliceOperationKind_Subslice_DEFINED
+#define GUST_STRUCT_mir__MirArraySliceOperationKind_Subslice_DEFINED
 struct mir__MirArraySliceOperationKind_Subslice {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir__MirArraySliceOperationKind_Tag__ArrayInit = 0,
@@ -4321,6 +4693,8 @@ typedef enum {
     mir__MirArraySliceOperationKind_Tag__Subslice = 7,
 } mir__MirArraySliceOperationKind_Tag;
 
+#ifndef GUST_STRUCT_mir__MirArraySliceOperationKind_DEFINED
+#define GUST_STRUCT_mir__MirArraySliceOperationKind_DEFINED
 struct mir__MirArraySliceOperationKind {
     int tag;
     union {
@@ -4334,7 +4708,10 @@ struct mir__MirArraySliceOperationKind {
         struct mir__MirArraySliceOperationKind_Subslice Subslice;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirArraySliceOperationReference_DEFINED
+#define GUST_STRUCT_mir__MirArraySliceOperationReference_DEFINED
 struct mir__MirArraySliceOperationReference {
     Slice_unsigned_char array_id;
     Slice_unsigned_char element_type_id;
@@ -4348,7 +4725,10 @@ struct mir__MirArraySliceOperationReference {
     int start;
     Slice_unsigned_char target_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirArrayValueReference_DEFINED
+#define GUST_STRUCT_mir__MirArrayValueReference_DEFINED
 struct mir__MirArrayValueReference {
     Slice_unsigned_char array_id;
     Slice_unsigned_char array_layout_id;
@@ -4356,14 +4736,20 @@ struct mir__MirArrayValueReference {
     Slice_unsigned_char element_type_id;
     Slice_unsigned_char lifetime_region;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirBlock_DEFINED
+#define GUST_STRUCT_mir__MirBlock_DEFINED
 struct mir__MirBlock {
     int id;
     token__Span span;
     int statements;
     int terminator;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirEnumLayoutReference_DEFINED
+#define GUST_STRUCT_mir__MirEnumLayoutReference_DEFINED
 struct mir__MirEnumLayoutReference {
     int alignment;
     Slice_unsigned_char discriminant_assignment;
@@ -4381,26 +4767,42 @@ struct mir__MirEnumLayoutReference {
     Slice_unsigned_char target_id;
     int variant_count;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirEnumOperationKind_MatchBranch_DEFINED
+#define GUST_STRUCT_mir__MirEnumOperationKind_MatchBranch_DEFINED
 struct mir__MirEnumOperationKind_MatchBranch {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirEnumOperationKind_PayloadProject_DEFINED
+#define GUST_STRUCT_mir__MirEnumOperationKind_PayloadProject_DEFINED
 struct mir__MirEnumOperationKind_PayloadProject {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirEnumOperationKind_TagRead_DEFINED
+#define GUST_STRUCT_mir__MirEnumOperationKind_TagRead_DEFINED
 struct mir__MirEnumOperationKind_TagRead {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirEnumOperationKind_VariantConstruct_DEFINED
+#define GUST_STRUCT_mir__MirEnumOperationKind_VariantConstruct_DEFINED
 struct mir__MirEnumOperationKind_VariantConstruct {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirEnumOperationKind_VariantTest_DEFINED
+#define GUST_STRUCT_mir__MirEnumOperationKind_VariantTest_DEFINED
 struct mir__MirEnumOperationKind_VariantTest {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir__MirEnumOperationKind_Tag__VariantConstruct = 0,
@@ -4410,6 +4812,8 @@ typedef enum {
     mir__MirEnumOperationKind_Tag__MatchBranch = 4,
 } mir__MirEnumOperationKind_Tag;
 
+#ifndef GUST_STRUCT_mir__MirEnumOperationKind_DEFINED
+#define GUST_STRUCT_mir__MirEnumOperationKind_DEFINED
 struct mir__MirEnumOperationKind {
     int tag;
     union {
@@ -4420,7 +4824,10 @@ struct mir__MirEnumOperationKind {
         struct mir__MirEnumOperationKind_VariantTest VariantTest;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirEnumOperationReference_DEFINED
+#define GUST_STRUCT_mir__MirEnumOperationReference_DEFINED
 struct mir__MirEnumOperationReference {
     Slice_unsigned_char operation_id;
     mir__MirEnumOperationKind operation_kind;
@@ -4430,7 +4837,10 @@ struct mir__MirEnumOperationReference {
     Slice_unsigned_char value_id;
     Slice_unsigned_char variant_name;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirEnumValueReference_DEFINED
+#define GUST_STRUCT_mir__MirEnumValueReference_DEFINED
 struct mir__MirEnumValueReference {
     int discriminant;
     Slice_unsigned_char enum_layout_id;
@@ -4441,7 +4851,10 @@ struct mir__MirEnumValueReference {
     Slice_unsigned_char value_id;
     Slice_unsigned_char variant_name;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirFunction_DEFINED
+#define GUST_STRUCT_mir__MirFunction_DEFINED
 struct mir__MirFunction {
     int blocks;
     int entry_block;
@@ -4451,38 +4864,63 @@ struct mir__MirFunction {
     Slice_unsigned_char return_type;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirIntegerConversionKind_BitReinterpret_DEFINED
+#define GUST_STRUCT_mir__MirIntegerConversionKind_BitReinterpret_DEFINED
 struct mir__MirIntegerConversionKind_BitReinterpret {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirIntegerConversionKind_BoolToInteger_DEFINED
+#define GUST_STRUCT_mir__MirIntegerConversionKind_BoolToInteger_DEFINED
 struct mir__MirIntegerConversionKind_BoolToInteger {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirIntegerConversionKind_CheckedNumeric_DEFINED
+#define GUST_STRUCT_mir__MirIntegerConversionKind_CheckedNumeric_DEFINED
 struct mir__MirIntegerConversionKind_CheckedNumeric {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirIntegerConversionKind_IntegerToBool_DEFINED
+#define GUST_STRUCT_mir__MirIntegerConversionKind_IntegerToBool_DEFINED
 struct mir__MirIntegerConversionKind_IntegerToBool {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirIntegerConversionKind_SignExtend_DEFINED
+#define GUST_STRUCT_mir__MirIntegerConversionKind_SignExtend_DEFINED
 struct mir__MirIntegerConversionKind_SignExtend {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirIntegerConversionKind_Truncate_DEFINED
+#define GUST_STRUCT_mir__MirIntegerConversionKind_Truncate_DEFINED
 struct mir__MirIntegerConversionKind_Truncate {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirIntegerConversionKind_WrappingNumeric_DEFINED
+#define GUST_STRUCT_mir__MirIntegerConversionKind_WrappingNumeric_DEFINED
 struct mir__MirIntegerConversionKind_WrappingNumeric {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirIntegerConversionKind_ZeroExtend_DEFINED
+#define GUST_STRUCT_mir__MirIntegerConversionKind_ZeroExtend_DEFINED
 struct mir__MirIntegerConversionKind_ZeroExtend {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir__MirIntegerConversionKind_Tag__SignExtend = 0,
@@ -4495,6 +4933,8 @@ typedef enum {
     mir__MirIntegerConversionKind_Tag__IntegerToBool = 7,
 } mir__MirIntegerConversionKind_Tag;
 
+#ifndef GUST_STRUCT_mir__MirIntegerConversionKind_DEFINED
+#define GUST_STRUCT_mir__MirIntegerConversionKind_DEFINED
 struct mir__MirIntegerConversionKind {
     int tag;
     union {
@@ -4508,7 +4948,10 @@ struct mir__MirIntegerConversionKind {
         struct mir__MirIntegerConversionKind_ZeroExtend ZeroExtend;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirIntegerConversionReference_DEFINED
+#define GUST_STRUCT_mir__MirIntegerConversionReference_DEFINED
 struct mir__MirIntegerConversionReference {
     mir__MirIntegerConversionKind conversion_kind;
     Slice_unsigned_char destination_layout_id;
@@ -4524,29 +4967,45 @@ struct mir__MirIntegerConversionReference {
     int source_width;
     Slice_unsigned_char target_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirLocal_DEFINED
+#define GUST_STRUCT_mir__MirLocal_DEFINED
 struct mir__MirLocal {
     int id;
     Slice_unsigned_char local_type;
     Slice_unsigned_char name;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirMemoryAccessOperationKind_AggregateCopy_DEFINED
+#define GUST_STRUCT_mir__MirMemoryAccessOperationKind_AggregateCopy_DEFINED
 struct mir__MirMemoryAccessOperationKind_AggregateCopy {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirMemoryAccessOperationKind_LayoutOffset_DEFINED
+#define GUST_STRUCT_mir__MirMemoryAccessOperationKind_LayoutOffset_DEFINED
 struct mir__MirMemoryAccessOperationKind_LayoutOffset {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirMemoryAccessOperationKind_Load_DEFINED
+#define GUST_STRUCT_mir__MirMemoryAccessOperationKind_Load_DEFINED
 struct mir__MirMemoryAccessOperationKind_Load {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirMemoryAccessOperationKind_Store_DEFINED
+#define GUST_STRUCT_mir__MirMemoryAccessOperationKind_Store_DEFINED
 struct mir__MirMemoryAccessOperationKind_Store {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir__MirMemoryAccessOperationKind_Tag__Load = 0,
@@ -4555,6 +5014,8 @@ typedef enum {
     mir__MirMemoryAccessOperationKind_Tag__LayoutOffset = 3,
 } mir__MirMemoryAccessOperationKind_Tag;
 
+#ifndef GUST_STRUCT_mir__MirMemoryAccessOperationKind_DEFINED
+#define GUST_STRUCT_mir__MirMemoryAccessOperationKind_DEFINED
 struct mir__MirMemoryAccessOperationKind {
     int tag;
     union {
@@ -4564,7 +5025,10 @@ struct mir__MirMemoryAccessOperationKind {
         struct mir__MirMemoryAccessOperationKind_Store Store;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirMemoryAccessReference_DEFINED
+#define GUST_STRUCT_mir__MirMemoryAccessReference_DEFINED
 struct mir__MirMemoryAccessReference {
     Slice_unsigned_char accessed_layout_id;
     Slice_unsigned_char accessed_type_id;
@@ -4589,26 +5053,42 @@ struct mir__MirMemoryAccessReference {
     int source_offset;
     Slice_unsigned_char target_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirNativeBoundaryKind_ExternFunction_DEFINED
+#define GUST_STRUCT_mir__MirNativeBoundaryKind_ExternFunction_DEFINED
 struct mir__MirNativeBoundaryKind_ExternFunction {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirNativeBoundaryKind_LayoutSensitiveCall_DEFINED
+#define GUST_STRUCT_mir__MirNativeBoundaryKind_LayoutSensitiveCall_DEFINED
 struct mir__MirNativeBoundaryKind_LayoutSensitiveCall {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirNativeBoundaryKind_NotNativeBoundary_DEFINED
+#define GUST_STRUCT_mir__MirNativeBoundaryKind_NotNativeBoundary_DEFINED
 struct mir__MirNativeBoundaryKind_NotNativeBoundary {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirNativeBoundaryKind_RuntimeCall_DEFINED
+#define GUST_STRUCT_mir__MirNativeBoundaryKind_RuntimeCall_DEFINED
 struct mir__MirNativeBoundaryKind_RuntimeCall {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirNativeBoundaryKind_UnsafeNativeCall_DEFINED
+#define GUST_STRUCT_mir__MirNativeBoundaryKind_UnsafeNativeCall_DEFINED
 struct mir__MirNativeBoundaryKind_UnsafeNativeCall {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir__MirNativeBoundaryKind_Tag__NotNativeBoundary = 0,
@@ -4618,6 +5098,8 @@ typedef enum {
     mir__MirNativeBoundaryKind_Tag__LayoutSensitiveCall = 4,
 } mir__MirNativeBoundaryKind_Tag;
 
+#ifndef GUST_STRUCT_mir__MirNativeBoundaryKind_DEFINED
+#define GUST_STRUCT_mir__MirNativeBoundaryKind_DEFINED
 struct mir__MirNativeBoundaryKind {
     int tag;
     union {
@@ -4628,44 +5110,72 @@ struct mir__MirNativeBoundaryKind {
         struct mir__MirNativeBoundaryKind_UnsafeNativeCall UnsafeNativeCall;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirNativeBoundaryMetadata_DEFINED
+#define GUST_STRUCT_mir__MirNativeBoundaryMetadata_DEFINED
 struct mir__MirNativeBoundaryMetadata {
     mir__MirNativeBoundaryKind boundary_kind;
     Slice_unsigned_char function_name;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirPointerOperationKind_AddressOfLocal_DEFINED
+#define GUST_STRUCT_mir__MirPointerOperationKind_AddressOfLocal_DEFINED
 struct mir__MirPointerOperationKind_AddressOfLocal {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirPointerOperationKind_NonNullToNullable_DEFINED
+#define GUST_STRUCT_mir__MirPointerOperationKind_NonNullToNullable_DEFINED
 struct mir__MirPointerOperationKind_NonNullToNullable {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirPointerOperationKind_NullPointer_DEFINED
+#define GUST_STRUCT_mir__MirPointerOperationKind_NullPointer_DEFINED
 struct mir__MirPointerOperationKind_NullPointer {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirPointerOperationKind_NullableToNonNullChecked_DEFINED
+#define GUST_STRUCT_mir__MirPointerOperationKind_NullableToNonNullChecked_DEFINED
 struct mir__MirPointerOperationKind_NullableToNonNullChecked {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirPointerOperationKind_PointerEqual_DEFINED
+#define GUST_STRUCT_mir__MirPointerOperationKind_PointerEqual_DEFINED
 struct mir__MirPointerOperationKind_PointerEqual {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirPointerOperationKind_PointerNonNullTest_DEFINED
+#define GUST_STRUCT_mir__MirPointerOperationKind_PointerNonNullTest_DEFINED
 struct mir__MirPointerOperationKind_PointerNonNullTest {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirPointerOperationKind_PointerNotEqual_DEFINED
+#define GUST_STRUCT_mir__MirPointerOperationKind_PointerNotEqual_DEFINED
 struct mir__MirPointerOperationKind_PointerNotEqual {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirPointerOperationKind_PointerNullTest_DEFINED
+#define GUST_STRUCT_mir__MirPointerOperationKind_PointerNullTest_DEFINED
 struct mir__MirPointerOperationKind_PointerNullTest {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir__MirPointerOperationKind_Tag__AddressOfLocal = 0,
@@ -4678,6 +5188,8 @@ typedef enum {
     mir__MirPointerOperationKind_Tag__NullableToNonNullChecked = 7,
 } mir__MirPointerOperationKind_Tag;
 
+#ifndef GUST_STRUCT_mir__MirPointerOperationKind_DEFINED
+#define GUST_STRUCT_mir__MirPointerOperationKind_DEFINED
 struct mir__MirPointerOperationKind {
     int tag;
     union {
@@ -4691,7 +5203,10 @@ struct mir__MirPointerOperationKind {
         struct mir__MirPointerOperationKind_PointerNullTest PointerNullTest;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirPointerOperationReference_DEFINED
+#define GUST_STRUCT_mir__MirPointerOperationReference_DEFINED
 struct mir__MirPointerOperationReference {
     Slice_unsigned_char destination_pointer_type_id;
     Slice_unsigned_char operation_id;
@@ -4704,7 +5219,10 @@ struct mir__MirPointerOperationReference {
     Slice_unsigned_char source_pointer_type_id;
     Slice_unsigned_char target_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirPointerTypeReference_DEFINED
+#define GUST_STRUCT_mir__MirPointerTypeReference_DEFINED
 struct mir__MirPointerTypeReference {
     Slice_unsigned_char address_space;
     Slice_unsigned_char mutability;
@@ -4716,7 +5234,10 @@ struct mir__MirPointerTypeReference {
     Slice_unsigned_char pointer_type_id;
     Slice_unsigned_char target_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirPrimitiveScalarReference_DEFINED
+#define GUST_STRUCT_mir__MirPrimitiveScalarReference_DEFINED
 struct mir__MirPrimitiveScalarReference {
     int bit_width;
     Slice_unsigned_char layout_id;
@@ -4724,7 +5245,10 @@ struct mir__MirPrimitiveScalarReference {
     Slice_unsigned_char target_id;
     Slice_unsigned_char type_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirProgramBundleBlockParameter_DEFINED
+#define GUST_STRUCT_mir__MirProgramBundleBlockParameter_DEFINED
 struct mir__MirProgramBundleBlockParameter {
     Slice_unsigned_char block_label;
     Slice_unsigned_char function_name;
@@ -4732,7 +5256,10 @@ struct mir__MirProgramBundleBlockParameter {
     int ordinal;
     Slice_unsigned_char value_type;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirProgramBundleModule_DEFINED
+#define GUST_STRUCT_mir__MirProgramBundleModule_DEFINED
 struct mir__MirProgramBundleModule {
     int block_parameters;
     Slice_unsigned_char canonical_format;
@@ -4745,26 +5272,42 @@ struct mir__MirProgramBundleModule {
     int resource_metadata_count;
     int symbols;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirProgramBundleSymbolLinkage_BundleExport_DEFINED
+#define GUST_STRUCT_mir__MirProgramBundleSymbolLinkage_BundleExport_DEFINED
 struct mir__MirProgramBundleSymbolLinkage_BundleExport {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirProgramBundleSymbolLinkage_ExportedEntry_DEFINED
+#define GUST_STRUCT_mir__MirProgramBundleSymbolLinkage_ExportedEntry_DEFINED
 struct mir__MirProgramBundleSymbolLinkage_ExportedEntry {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirProgramBundleSymbolLinkage_ImportedBundle_DEFINED
+#define GUST_STRUCT_mir__MirProgramBundleSymbolLinkage_ImportedBundle_DEFINED
 struct mir__MirProgramBundleSymbolLinkage_ImportedBundle {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirProgramBundleSymbolLinkage_ImportedHost_DEFINED
+#define GUST_STRUCT_mir__MirProgramBundleSymbolLinkage_ImportedHost_DEFINED
 struct mir__MirProgramBundleSymbolLinkage_ImportedHost {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirProgramBundleSymbolLinkage_ModuleLocal_DEFINED
+#define GUST_STRUCT_mir__MirProgramBundleSymbolLinkage_ModuleLocal_DEFINED
 struct mir__MirProgramBundleSymbolLinkage_ModuleLocal {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir__MirProgramBundleSymbolLinkage_Tag__ExportedEntry = 0,
@@ -4774,6 +5317,8 @@ typedef enum {
     mir__MirProgramBundleSymbolLinkage_Tag__ImportedBundle = 4,
 } mir__MirProgramBundleSymbolLinkage_Tag;
 
+#ifndef GUST_STRUCT_mir__MirProgramBundleSymbolLinkage_DEFINED
+#define GUST_STRUCT_mir__MirProgramBundleSymbolLinkage_DEFINED
 struct mir__MirProgramBundleSymbolLinkage {
     int tag;
     union {
@@ -4784,19 +5329,28 @@ struct mir__MirProgramBundleSymbolLinkage {
         struct mir__MirProgramBundleSymbolLinkage_ModuleLocal ModuleLocal;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirProgramBundleSymbol_DEFINED
+#define GUST_STRUCT_mir__MirProgramBundleSymbol_DEFINED
 struct mir__MirProgramBundleSymbol {
     Slice_unsigned_char link_name;
     mir__MirProgramBundleSymbolLinkage linkage;
     Slice_unsigned_char name;
     Slice_unsigned_char signature;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirProgramBundle_DEFINED
+#define GUST_STRUCT_mir__MirProgramBundle_DEFINED
 struct mir__MirProgramBundle {
     Slice_unsigned_char entry_symbol;
     int modules;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirProgram_DEFINED
+#define GUST_STRUCT_mir__MirProgram_DEFINED
 struct mir__MirProgram {
     int aggregate_block_references;
     int aggregate_operation_references;
@@ -4827,30 +5381,49 @@ struct mir__MirProgram {
     int struct_value_references;
     int type_layout_references;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirProvenanceKind_LocalBinding_DEFINED
+#define GUST_STRUCT_mir__MirProvenanceKind_LocalBinding_DEFINED
 struct mir__MirProvenanceKind_LocalBinding {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirProvenanceKind_NativeBoundary_DEFINED
+#define GUST_STRUCT_mir__MirProvenanceKind_NativeBoundary_DEFINED
 struct mir__MirProvenanceKind_NativeBoundary {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirProvenanceKind_Parameter_DEFINED
+#define GUST_STRUCT_mir__MirProvenanceKind_Parameter_DEFINED
 struct mir__MirProvenanceKind_Parameter {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirProvenanceKind_ResourceDestructor_DEFINED
+#define GUST_STRUCT_mir__MirProvenanceKind_ResourceDestructor_DEFINED
 struct mir__MirProvenanceKind_ResourceDestructor {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirProvenanceKind_ReturnValue_DEFINED
+#define GUST_STRUCT_mir__MirProvenanceKind_ReturnValue_DEFINED
 struct mir__MirProvenanceKind_ReturnValue {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirProvenanceKind_Unknown_DEFINED
+#define GUST_STRUCT_mir__MirProvenanceKind_Unknown_DEFINED
 struct mir__MirProvenanceKind_Unknown {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir__MirProvenanceKind_Tag__Unknown = 0,
@@ -4861,6 +5434,8 @@ typedef enum {
     mir__MirProvenanceKind_Tag__ResourceDestructor = 5,
 } mir__MirProvenanceKind_Tag;
 
+#ifndef GUST_STRUCT_mir__MirProvenanceKind_DEFINED
+#define GUST_STRUCT_mir__MirProvenanceKind_DEFINED
 struct mir__MirProvenanceKind {
     int tag;
     union {
@@ -4872,29 +5447,45 @@ struct mir__MirProvenanceKind {
         struct mir__MirProvenanceKind_Unknown Unknown;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirProvenanceMetadata_DEFINED
+#define GUST_STRUCT_mir__MirProvenanceMetadata_DEFINED
 struct mir__MirProvenanceMetadata {
     Slice_unsigned_char origin_name;
     mir__MirProvenanceKind provenance_kind;
     token__Span span;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirResourceKind_DirectoryResource_DEFINED
+#define GUST_STRUCT_mir__MirResourceKind_DirectoryResource_DEFINED
 struct mir__MirResourceKind_DirectoryResource {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirResourceKind_LinearResource_DEFINED
+#define GUST_STRUCT_mir__MirResourceKind_LinearResource_DEFINED
 struct mir__MirResourceKind_LinearResource {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirResourceKind_NativeHandleResource_DEFINED
+#define GUST_STRUCT_mir__MirResourceKind_NativeHandleResource_DEFINED
 struct mir__MirResourceKind_NativeHandleResource {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirResourceKind_NonResource_DEFINED
+#define GUST_STRUCT_mir__MirResourceKind_NonResource_DEFINED
 struct mir__MirResourceKind_NonResource {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir__MirResourceKind_Tag__NonResource = 0,
@@ -4903,6 +5494,8 @@ typedef enum {
     mir__MirResourceKind_Tag__NativeHandleResource = 3,
 } mir__MirResourceKind_Tag;
 
+#ifndef GUST_STRUCT_mir__MirResourceKind_DEFINED
+#define GUST_STRUCT_mir__MirResourceKind_DEFINED
 struct mir__MirResourceKind {
     int tag;
     union {
@@ -4912,30 +5505,49 @@ struct mir__MirResourceKind {
         struct mir__MirResourceKind_NonResource NonResource;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirResourceState_Borrowed_DEFINED
+#define GUST_STRUCT_mir__MirResourceState_Borrowed_DEFINED
 struct mir__MirResourceState_Borrowed {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirResourceState_Closed_DEFINED
+#define GUST_STRUCT_mir__MirResourceState_Closed_DEFINED
 struct mir__MirResourceState_Closed {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirResourceState_DestructorScheduled_DEFINED
+#define GUST_STRUCT_mir__MirResourceState_DestructorScheduled_DEFINED
 struct mir__MirResourceState_DestructorScheduled {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirResourceState_Moved_DEFINED
+#define GUST_STRUCT_mir__MirResourceState_Moved_DEFINED
 struct mir__MirResourceState_Moved {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirResourceState_Owned_DEFINED
+#define GUST_STRUCT_mir__MirResourceState_Owned_DEFINED
 struct mir__MirResourceState_Owned {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirResourceState_Untracked_DEFINED
+#define GUST_STRUCT_mir__MirResourceState_Untracked_DEFINED
 struct mir__MirResourceState_Untracked {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir__MirResourceState_Tag__Untracked = 0,
@@ -4946,6 +5558,8 @@ typedef enum {
     mir__MirResourceState_Tag__DestructorScheduled = 5,
 } mir__MirResourceState_Tag;
 
+#ifndef GUST_STRUCT_mir__MirResourceState_DEFINED
+#define GUST_STRUCT_mir__MirResourceState_DEFINED
 struct mir__MirResourceState {
     int tag;
     union {
@@ -4957,14 +5571,20 @@ struct mir__MirResourceState {
         struct mir__MirResourceState_Untracked Untracked;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirResourceMetadata_DEFINED
+#define GUST_STRUCT_mir__MirResourceMetadata_DEFINED
 struct mir__MirResourceMetadata {
     int local_id;
     mir__MirResourceKind resource_kind;
     mir__MirResourceState resource_state;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirSliceReference_DEFINED
+#define GUST_STRUCT_mir__MirSliceReference_DEFINED
 struct mir__MirSliceReference {
     int data_known_null;
     Slice_unsigned_char element_type_id;
@@ -4976,30 +5596,49 @@ struct mir__MirSliceReference {
     Slice_unsigned_char source_array_id;
     int start;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStackSlotOperationKind_AddressOf_DEFINED
+#define GUST_STRUCT_mir__MirStackSlotOperationKind_AddressOf_DEFINED
 struct mir__MirStackSlotOperationKind_AddressOf {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStackSlotOperationKind_Assign_DEFINED
+#define GUST_STRUCT_mir__MirStackSlotOperationKind_Assign_DEFINED
 struct mir__MirStackSlotOperationKind_Assign {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStackSlotOperationKind_BoundedAggregateCopy_DEFINED
+#define GUST_STRUCT_mir__MirStackSlotOperationKind_BoundedAggregateCopy_DEFINED
 struct mir__MirStackSlotOperationKind_BoundedAggregateCopy {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStackSlotOperationKind_Declare_DEFINED
+#define GUST_STRUCT_mir__MirStackSlotOperationKind_Declare_DEFINED
 struct mir__MirStackSlotOperationKind_Declare {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStackSlotOperationKind_Initialize_DEFINED
+#define GUST_STRUCT_mir__MirStackSlotOperationKind_Initialize_DEFINED
 struct mir__MirStackSlotOperationKind_Initialize {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStackSlotOperationKind_Read_DEFINED
+#define GUST_STRUCT_mir__MirStackSlotOperationKind_Read_DEFINED
 struct mir__MirStackSlotOperationKind_Read {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir__MirStackSlotOperationKind_Tag__Declare = 0,
@@ -5010,6 +5649,8 @@ typedef enum {
     mir__MirStackSlotOperationKind_Tag__BoundedAggregateCopy = 5,
 } mir__MirStackSlotOperationKind_Tag;
 
+#ifndef GUST_STRUCT_mir__MirStackSlotOperationKind_DEFINED
+#define GUST_STRUCT_mir__MirStackSlotOperationKind_DEFINED
 struct mir__MirStackSlotOperationKind {
     int tag;
     union {
@@ -5021,7 +5662,10 @@ struct mir__MirStackSlotOperationKind {
         struct mir__MirStackSlotOperationKind_Read Read;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStackSlotOperationReference_DEFINED
+#define GUST_STRUCT_mir__MirStackSlotOperationReference_DEFINED
 struct mir__MirStackSlotOperationReference {
     Slice_unsigned_char contained_layout_id;
     Slice_unsigned_char contained_type_id;
@@ -5034,7 +5678,10 @@ struct mir__MirStackSlotOperationReference {
     Slice_unsigned_char source_slot_id;
     Slice_unsigned_char target_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStackSlotReference_DEFINED
+#define GUST_STRUCT_mir__MirStackSlotReference_DEFINED
 struct mir__MirStackSlotReference {
     Slice_unsigned_char address_escape_policy;
     int alignment;
@@ -5050,49 +5697,74 @@ struct mir__MirStackSlotReference {
     Slice_unsigned_char storage_class;
     Slice_unsigned_char target_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStmt_ArraySliceOperation_DEFINED
+#define GUST_STRUCT_mir__MirStmt_ArraySliceOperation_DEFINED
 struct mir__MirStmt_ArraySliceOperation {
     int operation;
     token__Span span;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStmt_CallOperation_DEFINED
+#define GUST_STRUCT_mir__MirStmt_CallOperation_DEFINED
 struct mir__MirStmt_CallOperation {
     int operation;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStmt_Expr_DEFINED
+#define GUST_STRUCT_mir__MirStmt_Expr_DEFINED
 struct mir__MirStmt_Expr {
     token__Span span;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStmt_LocalSet_DEFINED
+#define GUST_STRUCT_mir__MirStmt_LocalSet_DEFINED
 struct mir__MirStmt_LocalSet {
     int local_id;
     token__Span span;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStmt_MemoryAccess_DEFINED
+#define GUST_STRUCT_mir__MirStmt_MemoryAccess_DEFINED
 struct mir__MirStmt_MemoryAccess {
     int operation;
     token__Span span;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStmt_Nop_DEFINED
+#define GUST_STRUCT_mir__MirStmt_Nop_DEFINED
 struct mir__MirStmt_Nop {
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStmt_ResourceOperation_DEFINED
+#define GUST_STRUCT_mir__MirStmt_ResourceOperation_DEFINED
 struct mir__MirStmt_ResourceOperation {
     int operation;
     token__Span span;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStmt_StackSlotOperation_DEFINED
+#define GUST_STRUCT_mir__MirStmt_StackSlotOperation_DEFINED
 struct mir__MirStmt_StackSlotOperation {
     int operation;
     token__Span span;
     int value;
 };
+#endif
 
 typedef enum {
     mir__MirStmt_Tag__Nop = 0,
@@ -5105,6 +5777,8 @@ typedef enum {
     mir__MirStmt_Tag__CallOperation = 7,
 } mir__MirStmt_Tag;
 
+#ifndef GUST_STRUCT_mir__MirStmt_DEFINED
+#define GUST_STRUCT_mir__MirStmt_DEFINED
 struct mir__MirStmt {
     int tag;
     union {
@@ -5118,7 +5792,10 @@ struct mir__MirStmt {
         struct mir__MirStmt_StackSlotOperation StackSlotOperation;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStringLiteralReference_DEFINED
+#define GUST_STRUCT_mir__MirStringLiteralReference_DEFINED
 struct mir__MirStringLiteralReference {
     int byte_length;
     Slice_unsigned_char encoding;
@@ -5127,34 +5804,56 @@ struct mir__MirStringLiteralReference {
     Slice_unsigned_char storage_kind;
     Slice_unsigned_char symbol_name;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStringViewOperationKind_ByteAt_DEFINED
+#define GUST_STRUCT_mir__MirStringViewOperationKind_ByteAt_DEFINED
 struct mir__MirStringViewOperationKind_ByteAt {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStringViewOperationKind_ByteEqual_DEFINED
+#define GUST_STRUCT_mir__MirStringViewOperationKind_ByteEqual_DEFINED
 struct mir__MirStringViewOperationKind_ByteEqual {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStringViewOperationKind_IsEmpty_DEFINED
+#define GUST_STRUCT_mir__MirStringViewOperationKind_IsEmpty_DEFINED
 struct mir__MirStringViewOperationKind_IsEmpty {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStringViewOperationKind_Length_DEFINED
+#define GUST_STRUCT_mir__MirStringViewOperationKind_Length_DEFINED
 struct mir__MirStringViewOperationKind_Length {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStringViewOperationKind_LiteralCreate_DEFINED
+#define GUST_STRUCT_mir__MirStringViewOperationKind_LiteralCreate_DEFINED
 struct mir__MirStringViewOperationKind_LiteralCreate {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStringViewOperationKind_Slice_DEFINED
+#define GUST_STRUCT_mir__MirStringViewOperationKind_Slice_DEFINED
 struct mir__MirStringViewOperationKind_Slice {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStringViewOperationKind_ViewCreate_DEFINED
+#define GUST_STRUCT_mir__MirStringViewOperationKind_ViewCreate_DEFINED
 struct mir__MirStringViewOperationKind_ViewCreate {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir__MirStringViewOperationKind_Tag__LiteralCreate = 0,
@@ -5166,6 +5865,8 @@ typedef enum {
     mir__MirStringViewOperationKind_Tag__ByteEqual = 6,
 } mir__MirStringViewOperationKind_Tag;
 
+#ifndef GUST_STRUCT_mir__MirStringViewOperationKind_DEFINED
+#define GUST_STRUCT_mir__MirStringViewOperationKind_DEFINED
 struct mir__MirStringViewOperationKind {
     int tag;
     union {
@@ -5178,7 +5879,10 @@ struct mir__MirStringViewOperationKind {
         struct mir__MirStringViewOperationKind_ViewCreate ViewCreate;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStringViewOperationReference_DEFINED
+#define GUST_STRUCT_mir__MirStringViewOperationReference_DEFINED
 struct mir__MirStringViewOperationReference {
     int index;
     int length;
@@ -5191,7 +5895,10 @@ struct mir__MirStringViewOperationReference {
     Slice_unsigned_char target_id;
     Slice_unsigned_char view_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStringViewReference_DEFINED
+#define GUST_STRUCT_mir__MirStringViewReference_DEFINED
 struct mir__MirStringViewReference {
     int data_known_null;
     int length;
@@ -5200,7 +5907,10 @@ struct mir__MirStringViewReference {
     int start;
     Slice_unsigned_char view_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStructLayoutReference_DEFINED
+#define GUST_STRUCT_mir__MirStructLayoutReference_DEFINED
 struct mir__MirStructLayoutReference {
     int alignment;
     int field_count;
@@ -5210,22 +5920,35 @@ struct mir__MirStructLayoutReference {
     Slice_unsigned_char struct_type_id;
     Slice_unsigned_char target_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStructOperationKind_Construct_DEFINED
+#define GUST_STRUCT_mir__MirStructOperationKind_Construct_DEFINED
 struct mir__MirStructOperationKind_Construct {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStructOperationKind_FieldAddress_DEFINED
+#define GUST_STRUCT_mir__MirStructOperationKind_FieldAddress_DEFINED
 struct mir__MirStructOperationKind_FieldAddress {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStructOperationKind_FieldLoad_DEFINED
+#define GUST_STRUCT_mir__MirStructOperationKind_FieldLoad_DEFINED
 struct mir__MirStructOperationKind_FieldLoad {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStructOperationKind_FieldStore_DEFINED
+#define GUST_STRUCT_mir__MirStructOperationKind_FieldStore_DEFINED
 struct mir__MirStructOperationKind_FieldStore {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir__MirStructOperationKind_Tag__Construct = 0,
@@ -5234,6 +5957,8 @@ typedef enum {
     mir__MirStructOperationKind_Tag__FieldStore = 3,
 } mir__MirStructOperationKind_Tag;
 
+#ifndef GUST_STRUCT_mir__MirStructOperationKind_DEFINED
+#define GUST_STRUCT_mir__MirStructOperationKind_DEFINED
 struct mir__MirStructOperationKind {
     int tag;
     union {
@@ -5243,7 +5968,10 @@ struct mir__MirStructOperationKind {
         struct mir__MirStructOperationKind_FieldStore FieldStore;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStructOperationReference_DEFINED
+#define GUST_STRUCT_mir__MirStructOperationReference_DEFINED
 struct mir__MirStructOperationReference {
     Slice_unsigned_char field_path;
     Slice_unsigned_char operation_id;
@@ -5252,7 +5980,10 @@ struct mir__MirStructOperationReference {
     Slice_unsigned_char target_id;
     Slice_unsigned_char value_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirStructValueReference_DEFINED
+#define GUST_STRUCT_mir__MirStructValueReference_DEFINED
 struct mir__MirStructValueReference {
     Slice_unsigned_char flow_origin;
     Slice_unsigned_char layout_id;
@@ -5260,27 +5991,40 @@ struct mir__MirStructValueReference {
     Slice_unsigned_char storage_region;
     Slice_unsigned_char value_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirTerminator_Branch_DEFINED
+#define GUST_STRUCT_mir__MirTerminator_Branch_DEFINED
 struct mir__MirTerminator_Branch {
     int condition;
     int else_block;
     token__Span span;
     int then_block;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirTerminator_Jump_DEFINED
+#define GUST_STRUCT_mir__MirTerminator_Jump_DEFINED
 struct mir__MirTerminator_Jump {
     token__Span span;
     int target_block;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirTerminator_Return_DEFINED
+#define GUST_STRUCT_mir__MirTerminator_Return_DEFINED
 struct mir__MirTerminator_Return {
     token__Span span;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirTerminator_ReturnVoid_DEFINED
+#define GUST_STRUCT_mir__MirTerminator_ReturnVoid_DEFINED
 struct mir__MirTerminator_ReturnVoid {
     token__Span span;
 };
+#endif
 
 typedef enum {
     mir__MirTerminator_Tag__ReturnVoid = 0,
@@ -5289,6 +6033,8 @@ typedef enum {
     mir__MirTerminator_Tag__Branch = 3,
 } mir__MirTerminator_Tag;
 
+#ifndef GUST_STRUCT_mir__MirTerminator_DEFINED
+#define GUST_STRUCT_mir__MirTerminator_DEFINED
 struct mir__MirTerminator {
     int tag;
     union {
@@ -5298,89 +6044,129 @@ struct mir__MirTerminator {
         struct mir__MirTerminator_ReturnVoid ReturnVoid;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirTypeLayoutReference_DEFINED
+#define GUST_STRUCT_mir__MirTypeLayoutReference_DEFINED
 struct mir__MirTypeLayoutReference {
     Slice_unsigned_char layout_id;
     Slice_unsigned_char type_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirValue_AbiCallResult_DEFINED
+#define GUST_STRUCT_mir__MirValue_AbiCallResult_DEFINED
 struct mir__MirValue_AbiCallResult {
     int operation;
     token__Span span;
     Slice_unsigned_char value_type;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirValue_ArraySliceOperation_DEFINED
+#define GUST_STRUCT_mir__MirValue_ArraySliceOperation_DEFINED
 struct mir__MirValue_ArraySliceOperation {
     int operands;
     int operation;
     token__Span span;
     Slice_unsigned_char value_type;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirValue_BoolLiteral_DEFINED
+#define GUST_STRUCT_mir__MirValue_BoolLiteral_DEFINED
 struct mir__MirValue_BoolLiteral {
     token__Span span;
     int val;
     Slice_unsigned_char value_type;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirValue_Call_DEFINED
+#define GUST_STRUCT_mir__MirValue_Call_DEFINED
 struct mir__MirValue_Call {
     int args;
     Slice_unsigned_char callee;
     token__Span span;
     Slice_unsigned_char value_type;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirValue_IntLiteral_DEFINED
+#define GUST_STRUCT_mir__MirValue_IntLiteral_DEFINED
 struct mir__MirValue_IntLiteral {
     token__Span span;
     int val;
     Slice_unsigned_char value_type;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirValue_IntegerConvert_DEFINED
+#define GUST_STRUCT_mir__MirValue_IntegerConvert_DEFINED
 struct mir__MirValue_IntegerConvert {
     int conversion;
     int operand;
     token__Span span;
     Slice_unsigned_char value_type;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirValue_LocalRead_DEFINED
+#define GUST_STRUCT_mir__MirValue_LocalRead_DEFINED
 struct mir__MirValue_LocalRead {
     int local_id;
     token__Span span;
     Slice_unsigned_char value_type;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirValue_MemoryAccess_DEFINED
+#define GUST_STRUCT_mir__MirValue_MemoryAccess_DEFINED
 struct mir__MirValue_MemoryAccess {
     int operands;
     int operation;
     token__Span span;
     Slice_unsigned_char value_type;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirValue_PointerOperation_DEFINED
+#define GUST_STRUCT_mir__MirValue_PointerOperation_DEFINED
 struct mir__MirValue_PointerOperation {
     int operands;
     int operation;
     token__Span span;
     Slice_unsigned_char value_type;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirValue_ResourceRead_DEFINED
+#define GUST_STRUCT_mir__MirValue_ResourceRead_DEFINED
 struct mir__MirValue_ResourceRead {
     Slice_unsigned_char carrier_id;
     token__Span span;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirValue_StringLiteral_DEFINED
+#define GUST_STRUCT_mir__MirValue_StringLiteral_DEFINED
 struct mir__MirValue_StringLiteral {
     token__Span span;
     Slice_unsigned_char val;
     Slice_unsigned_char value_type;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir__MirValue_StringViewOperation_DEFINED
+#define GUST_STRUCT_mir__MirValue_StringViewOperation_DEFINED
 struct mir__MirValue_StringViewOperation {
     int operands;
     int operation;
     token__Span span;
     Slice_unsigned_char value_type;
 };
+#endif
 
 typedef enum {
     mir__MirValue_Tag__IntLiteral = 0,
@@ -5397,6 +6183,8 @@ typedef enum {
     mir__MirValue_Tag__AbiCallResult = 11,
 } mir__MirValue_Tag;
 
+#ifndef GUST_STRUCT_mir__MirValue_DEFINED
+#define GUST_STRUCT_mir__MirValue_DEFINED
 struct mir__MirValue {
     int tag;
     union {
@@ -5414,7 +6202,10 @@ struct mir__MirValue {
         struct mir__MirValue_StringViewOperation StringViewOperation;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_aggregate_transport__MirAggregateBlockParam_DEFINED
+#define GUST_STRUCT_mir_aggregate_transport__MirAggregateBlockParam_DEFINED
 struct mir_aggregate_transport__MirAggregateBlockParam {
     int block_argument_count;
     Slice_unsigned_char class_name;
@@ -5424,7 +6215,10 @@ struct mir_aggregate_transport__MirAggregateBlockParam {
     Slice_unsigned_char transport_policy;
     Slice_unsigned_char type_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_aggregate_transport__MirAggregateBlock_DEFINED
+#define GUST_STRUCT_mir_aggregate_transport__MirAggregateBlock_DEFINED
 struct mir_aggregate_transport__MirAggregateBlock {
     Slice_unsigned_char block_id;
     int is_join;
@@ -5433,23 +6227,35 @@ struct mir_aggregate_transport__MirAggregateBlock {
     int params;
     int total_block_argument_count;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_aggregate_transport__MirAggregateBlockQuery_DEFINED
+#define GUST_STRUCT_mir_aggregate_transport__MirAggregateBlockQuery_DEFINED
 struct mir_aggregate_transport__MirAggregateBlockQuery {
     int found;
     mir_aggregate_transport__MirAggregateBlock value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_aggregate_transport__MirAggregateClassPolicy_DEFINED
+#define GUST_STRUCT_mir_aggregate_transport__MirAggregateClassPolicy_DEFINED
 struct mir_aggregate_transport__MirAggregateClassPolicy {
     Slice_unsigned_char arity_rule;
     Slice_unsigned_char class_name;
     Slice_unsigned_char transport_policy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_aggregate_transport__MirAggregateClassPolicyQuery_DEFINED
+#define GUST_STRUCT_mir_aggregate_transport__MirAggregateClassPolicyQuery_DEFINED
 struct mir_aggregate_transport__MirAggregateClassPolicyQuery {
     int found;
     mir_aggregate_transport__MirAggregateClassPolicy value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_aggregate_transport__MirAggregateComponent_DEFINED
+#define GUST_STRUCT_mir_aggregate_transport__MirAggregateComponent_DEFINED
 struct mir_aggregate_transport__MirAggregateComponent {
     int component_index;
     Slice_unsigned_char name;
@@ -5458,7 +6264,10 @@ struct mir_aggregate_transport__MirAggregateComponent {
     Slice_unsigned_char type_id;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_aggregate_transport__MirAggregateEdge_DEFINED
+#define GUST_STRUCT_mir_aggregate_transport__MirAggregateEdge_DEFINED
 struct mir_aggregate_transport__MirAggregateEdge {
     int argument_value_ids;
     Slice_unsigned_char edge_id;
@@ -5466,12 +6275,18 @@ struct mir_aggregate_transport__MirAggregateEdge {
     Slice_unsigned_char from_label;
     Slice_unsigned_char to_label;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_aggregate_transport__MirAggregateEdgeQuery_DEFINED
+#define GUST_STRUCT_mir_aggregate_transport__MirAggregateEdgeQuery_DEFINED
 struct mir_aggregate_transport__MirAggregateEdgeQuery {
     int found;
     mir_aggregate_transport__MirAggregateEdge value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_aggregate_transport__MirAggregateEvaluation_DEFINED
+#define GUST_STRUCT_mir_aggregate_transport__MirAggregateEvaluation_DEFINED
 struct mir_aggregate_transport__MirAggregateEvaluation {
     int arity;
     int offset;
@@ -5479,7 +6294,10 @@ struct mir_aggregate_transport__MirAggregateEvaluation {
     int success;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_aggregate_transport__MirAggregateOperation_DEFINED
+#define GUST_STRUCT_mir_aggregate_transport__MirAggregateOperation_DEFINED
 struct mir_aggregate_transport__MirAggregateOperation {
     Slice_unsigned_char block_label;
     int component_index;
@@ -5495,12 +6313,18 @@ struct mir_aggregate_transport__MirAggregateOperation {
     Slice_unsigned_char target_id;
     Slice_unsigned_char value_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_aggregate_transport__MirAggregateOperationQuery_DEFINED
+#define GUST_STRUCT_mir_aggregate_transport__MirAggregateOperationQuery_DEFINED
 struct mir_aggregate_transport__MirAggregateOperationQuery {
     int found;
     mir_aggregate_transport__MirAggregateOperation value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_aggregate_transport__MirAggregateTransportTable_DEFINED
+#define GUST_STRUCT_mir_aggregate_transport__MirAggregateTransportTable_DEFINED
 struct mir_aggregate_transport__MirAggregateTransportTable {
     Slice_unsigned_char abi_policy;
     int blocks;
@@ -5517,7 +6341,10 @@ struct mir_aggregate_transport__MirAggregateTransportTable {
     Slice_unsigned_char transport_authority;
     int values;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_aggregate_transport__MirAggregateValue_DEFINED
+#define GUST_STRUCT_mir_aggregate_transport__MirAggregateValue_DEFINED
 struct mir_aggregate_transport__MirAggregateValue {
     int alignment;
     Slice_unsigned_char class_name;
@@ -5533,12 +6360,18 @@ struct mir_aggregate_transport__MirAggregateValue {
     Slice_unsigned_char value_id;
     Slice_unsigned_char variant_name;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_aggregate_transport__MirAggregateValueQuery_DEFINED
+#define GUST_STRUCT_mir_aggregate_transport__MirAggregateValueQuery_DEFINED
 struct mir_aggregate_transport__MirAggregateValueQuery {
     int found;
     mir_aggregate_transport__MirAggregateValue value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_array_slice__MirArrayLayout_DEFINED
+#define GUST_STRUCT_mir_array_slice__MirArrayLayout_DEFINED
 struct mir_array_slice__MirArrayLayout {
     int alignment;
     Slice_unsigned_char array_type_id;
@@ -5553,18 +6386,27 @@ struct mir_array_slice__MirArrayLayout {
     Slice_unsigned_char target_triple;
     int total_size;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_array_slice__MirArrayLayoutQuery_DEFINED
+#define GUST_STRUCT_mir_array_slice__MirArrayLayoutQuery_DEFINED
 struct mir_array_slice__MirArrayLayoutQuery {
     mir_array_slice__MirArrayLayout array_layout;
     int found;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_array_slice__MirArraySliceElementLayoutQuery_DEFINED
+#define GUST_STRUCT_mir_array_slice__MirArraySliceElementLayoutQuery_DEFINED
 struct mir_array_slice__MirArraySliceElementLayoutQuery {
     int alignment;
     int found;
     int size;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_array_slice__MirArraySliceEvaluation_DEFINED
+#define GUST_STRUCT_mir_array_slice__MirArraySliceEvaluation_DEFINED
 struct mir_array_slice__MirArraySliceEvaluation {
     int address_offset;
     Slice_unsigned_char reason_code;
@@ -5573,7 +6415,10 @@ struct mir_array_slice__MirArraySliceEvaluation {
     int success;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_array_slice__MirArraySliceOperation_DEFINED
+#define GUST_STRUCT_mir_array_slice__MirArraySliceOperation_DEFINED
 struct mir_array_slice__MirArraySliceOperation {
     Slice_unsigned_char array_id;
     Slice_unsigned_char element_type_id;
@@ -5594,12 +6439,18 @@ struct mir_array_slice__MirArraySliceOperation {
     int stored_value;
     Slice_unsigned_char target_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_array_slice__MirArraySliceOperationQuery_DEFINED
+#define GUST_STRUCT_mir_array_slice__MirArraySliceOperationQuery_DEFINED
 struct mir_array_slice__MirArraySliceOperationQuery {
     int found;
     mir_array_slice__MirArraySliceOperation operation;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_array_slice__MirArraySliceTable_DEFINED
+#define GUST_STRUCT_mir_array_slice__MirArraySliceTable_DEFINED
 struct mir_array_slice__MirArraySliceTable {
     int array_layouts;
     int arrays;
@@ -5616,7 +6467,10 @@ struct mir_array_slice__MirArraySliceTable {
     Slice_unsigned_char unsized_storage_policy;
     Slice_unsigned_char variable_length_array_policy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_array_slice__MirArrayValue_DEFINED
+#define GUST_STRUCT_mir_array_slice__MirArrayValue_DEFINED
 struct mir_array_slice__MirArrayValue {
     Slice_unsigned_char array_id;
     Slice_unsigned_char array_layout_id;
@@ -5624,12 +6478,18 @@ struct mir_array_slice__MirArrayValue {
     int elements;
     Slice_unsigned_char lifetime_region;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_array_slice__MirArrayValueQuery_DEFINED
+#define GUST_STRUCT_mir_array_slice__MirArrayValueQuery_DEFINED
 struct mir_array_slice__MirArrayValueQuery {
     mir_array_slice__MirArrayValue array_value;
     int found;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_array_slice__MirSliceLayout_DEFINED
+#define GUST_STRUCT_mir_array_slice__MirSliceLayout_DEFINED
 struct mir_array_slice__MirSliceLayout {
     int alignment;
     int data_pointer_offset;
@@ -5649,12 +6509,18 @@ struct mir_array_slice__MirSliceLayout {
     Slice_unsigned_char target_id;
     Slice_unsigned_char target_triple;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_array_slice__MirSliceLayoutQuery_DEFINED
+#define GUST_STRUCT_mir_array_slice__MirSliceLayoutQuery_DEFINED
 struct mir_array_slice__MirSliceLayoutQuery {
     int found;
     mir_array_slice__MirSliceLayout slice_layout;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_array_slice__MirSliceValue_DEFINED
+#define GUST_STRUCT_mir_array_slice__MirSliceValue_DEFINED
 struct mir_array_slice__MirSliceValue {
     int data_known_null;
     Slice_unsigned_char element_type_id;
@@ -5667,12 +6533,18 @@ struct mir_array_slice__MirSliceValue {
     Slice_unsigned_char source_lifetime_region;
     int start;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_array_slice__MirSliceValueQuery_DEFINED
+#define GUST_STRUCT_mir_array_slice__MirSliceValueQuery_DEFINED
 struct mir_array_slice__MirSliceValueQuery {
     int found;
     mir_array_slice__MirSliceValue slice_value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_enum__MirEnumEvaluation_DEFINED
+#define GUST_STRUCT_mir_enum__MirEnumEvaluation_DEFINED
 struct mir_enum__MirEnumEvaluation {
     int arm_index;
     int offset;
@@ -5681,7 +6553,10 @@ struct mir_enum__MirEnumEvaluation {
     int tag;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_enum__MirEnumLayout_DEFINED
+#define GUST_STRUCT_mir_enum__MirEnumLayout_DEFINED
 struct mir_enum__MirEnumLayout {
     int alignment;
     Slice_unsigned_char discriminant_assignment;
@@ -5702,12 +6577,18 @@ struct mir_enum__MirEnumLayout {
     int variant_count;
     int variants;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_enum__MirEnumLayoutQuery_DEFINED
+#define GUST_STRUCT_mir_enum__MirEnumLayoutQuery_DEFINED
 struct mir_enum__MirEnumLayoutQuery {
     mir_enum__MirEnumLayout enum_layout;
     int found;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_enum__MirEnumOperation_DEFINED
+#define GUST_STRUCT_mir_enum__MirEnumOperation_DEFINED
 struct mir_enum__MirEnumOperation {
     int expect_success;
     int expected_arm_index;
@@ -5723,12 +6604,18 @@ struct mir_enum__MirEnumOperation {
     Slice_unsigned_char value_id;
     Slice_unsigned_char variant_name;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_enum__MirEnumOperationQuery_DEFINED
+#define GUST_STRUCT_mir_enum__MirEnumOperationQuery_DEFINED
 struct mir_enum__MirEnumOperationQuery {
     int found;
     mir_enum__MirEnumOperation operation;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_enum__MirEnumTable_DEFINED
+#define GUST_STRUCT_mir_enum__MirEnumTable_DEFINED
 struct mir_enum__MirEnumTable {
     Slice_unsigned_char discriminant_policy;
     Slice_unsigned_char format;
@@ -5743,7 +6630,10 @@ struct mir_enum__MirEnumTable {
     Slice_unsigned_char target_triple;
     int values;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_enum__MirEnumValue_DEFINED
+#define GUST_STRUCT_mir_enum__MirEnumValue_DEFINED
 struct mir_enum__MirEnumValue {
     int discriminant;
     Slice_unsigned_char enum_layout_id;
@@ -5754,12 +6644,18 @@ struct mir_enum__MirEnumValue {
     Slice_unsigned_char value_id;
     Slice_unsigned_char variant_name;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_enum__MirEnumValueQuery_DEFINED
+#define GUST_STRUCT_mir_enum__MirEnumValueQuery_DEFINED
 struct mir_enum__MirEnumValueQuery {
     mir_enum__MirEnumValue enum_value;
     int found;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_enum__MirEnumVariant_DEFINED
+#define GUST_STRUCT_mir_enum__MirEnumVariant_DEFINED
 struct mir_enum__MirEnumVariant {
     int declaration_index;
     int discriminant;
@@ -5775,12 +6671,18 @@ struct mir_enum__MirEnumVariant {
     Slice_unsigned_char variant_id;
     Slice_unsigned_char variant_name;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_enum__MirEnumVariantQuery_DEFINED
+#define GUST_STRUCT_mir_enum__MirEnumVariantQuery_DEFINED
 struct mir_enum__MirEnumVariantQuery {
     int found;
     mir_enum__MirEnumVariant variant;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_abi_authority__MirAbiCallSitePlan_DEFINED
+#define GUST_STRUCT_mir_function_abi_authority__MirAbiCallSitePlan_DEFINED
 struct mir_function_abi_authority__MirAbiCallSitePlan {
     Slice_unsigned_char actual_abi_id;
     int argument_placement_ids;
@@ -5794,12 +6696,18 @@ struct mir_function_abi_authority__MirAbiCallSitePlan {
     Slice_unsigned_char target_id;
     Slice_unsigned_char target_triple;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_abi_authority__MirAbiCallPlanQuery_DEFINED
+#define GUST_STRUCT_mir_function_abi_authority__MirAbiCallPlanQuery_DEFINED
 struct mir_function_abi_authority__MirAbiCallPlanQuery {
     int found;
     mir_function_abi_authority__MirAbiCallSitePlan value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_abi_authority__MirAbiValueClassification_DEFINED
+#define GUST_STRUCT_mir_function_abi_authority__MirAbiValueClassification_DEFINED
 struct mir_function_abi_authority__MirAbiValueClassification {
     int align_bytes;
     Slice_unsigned_char classification_id;
@@ -5812,12 +6720,18 @@ struct mir_function_abi_authority__MirAbiValueClassification {
     Slice_unsigned_char type_id;
     Slice_unsigned_char value_class;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_abi_authority__MirAbiClassificationQuery_DEFINED
+#define GUST_STRUCT_mir_function_abi_authority__MirAbiClassificationQuery_DEFINED
 struct mir_function_abi_authority__MirAbiClassificationQuery {
     int found;
     mir_function_abi_authority__MirAbiValueClassification value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_abi_authority__MirAbiCompatibilityDecision_DEFINED
+#define GUST_STRUCT_mir_function_abi_authority__MirAbiCompatibilityDecision_DEFINED
 struct mir_function_abi_authority__MirAbiCompatibilityDecision {
     Slice_unsigned_char actual_abi_id;
     int compatible;
@@ -5825,12 +6739,18 @@ struct mir_function_abi_authority__MirAbiCompatibilityDecision {
     Slice_unsigned_char expected_abi_id;
     Slice_unsigned_char reason_code;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_abi_authority__MirAbiCompatibilityQuery_DEFINED
+#define GUST_STRUCT_mir_function_abi_authority__MirAbiCompatibilityQuery_DEFINED
 struct mir_function_abi_authority__MirAbiCompatibilityQuery {
     int compatible;
     Slice_unsigned_char reason_code;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_abi_authority__MirAbiMirReference_DEFINED
+#define GUST_STRUCT_mir_function_abi_authority__MirAbiMirReference_DEFINED
 struct mir_function_abi_authority__MirAbiMirReference {
     Slice_unsigned_char abi_id;
     Slice_unsigned_char call_plan_id;
@@ -5840,7 +6760,10 @@ struct mir_function_abi_authority__MirAbiMirReference {
     Slice_unsigned_char mir_result_id;
     Slice_unsigned_char reference_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_abi_authority__MirAbiParameterPlacement_DEFINED
+#define GUST_STRUCT_mir_function_abi_authority__MirAbiParameterPlacement_DEFINED
 struct mir_function_abi_authority__MirAbiParameterPlacement {
     Slice_unsigned_char abi_id;
     Slice_unsigned_char classification_id;
@@ -5853,12 +6776,18 @@ struct mir_function_abi_authority__MirAbiParameterPlacement {
     Slice_unsigned_char placement_id;
     Slice_unsigned_char resource_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_abi_authority__MirAbiParameterPlacementQuery_DEFINED
+#define GUST_STRUCT_mir_function_abi_authority__MirAbiParameterPlacementQuery_DEFINED
 struct mir_function_abi_authority__MirAbiParameterPlacementQuery {
     int found;
     mir_function_abi_authority__MirAbiParameterPlacement value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_abi_authority__MirAbiResultPlacement_DEFINED
+#define GUST_STRUCT_mir_function_abi_authority__MirAbiResultPlacement_DEFINED
 struct mir_function_abi_authority__MirAbiResultPlacement {
     Slice_unsigned_char abi_id;
     Slice_unsigned_char classification_id;
@@ -5871,12 +6800,18 @@ struct mir_function_abi_authority__MirAbiResultPlacement {
     Slice_unsigned_char resource_id;
     Slice_unsigned_char result_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_abi_authority__MirAbiResultPlacementQuery_DEFINED
+#define GUST_STRUCT_mir_function_abi_authority__MirAbiResultPlacementQuery_DEFINED
 struct mir_function_abi_authority__MirAbiResultPlacementQuery {
     int found;
     mir_function_abi_authority__MirAbiResultPlacement value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_abi_authority__MirDynamicFramePlan_DEFINED
+#define GUST_STRUCT_mir_function_abi_authority__MirDynamicFramePlan_DEFINED
 struct mir_function_abi_authority__MirDynamicFramePlan {
     int alignment_bytes;
     int bounded;
@@ -5888,12 +6823,18 @@ struct mir_function_abi_authority__MirDynamicFramePlan {
     Slice_unsigned_char target_id;
     Slice_unsigned_char target_triple;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_abi_authority__MirDynamicFramePlanQuery_DEFINED
+#define GUST_STRUCT_mir_function_abi_authority__MirDynamicFramePlanQuery_DEFINED
 struct mir_function_abi_authority__MirDynamicFramePlanQuery {
     int found;
     mir_function_abi_authority__MirDynamicFramePlan value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_abi_authority__MirFunctionAbiAuthorityTable_DEFINED
+#define GUST_STRUCT_mir_function_abi_authority__MirFunctionAbiAuthorityTable_DEFINED
 struct mir_function_abi_authority__MirFunctionAbiAuthorityTable {
     int call_plans;
     Slice_unsigned_char classification_policy;
@@ -5911,7 +6852,10 @@ struct mir_function_abi_authority__MirFunctionAbiAuthorityTable {
     Slice_unsigned_char target_id;
     Slice_unsigned_char target_triple;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_abi_authority__MirFunctionAbiIdentity_DEFINED
+#define GUST_STRUCT_mir_function_abi_authority__MirFunctionAbiIdentity_DEFINED
 struct mir_function_abi_authority__MirFunctionAbiIdentity {
     Slice_unsigned_char abi_id;
     Slice_unsigned_char calling_convention;
@@ -5922,22 +6866,34 @@ struct mir_function_abi_authority__MirFunctionAbiIdentity {
     Slice_unsigned_char target_id;
     Slice_unsigned_char target_triple;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_abi_authority__MirFunctionAbiQuery_DEFINED
+#define GUST_STRUCT_mir_function_abi_authority__MirFunctionAbiQuery_DEFINED
 struct mir_function_abi_authority__MirFunctionAbiQuery {
     int found;
     mir_function_abi_authority__MirFunctionAbiIdentity value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_abi_authority__MirFunctionAbiTableValidation_DEFINED
+#define GUST_STRUCT_mir_function_abi_authority__MirFunctionAbiTableValidation_DEFINED
 struct mir_function_abi_authority__MirFunctionAbiTableValidation {
     Slice_unsigned_char reason_code;
     int valid;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_call__MirArgumentRepresentation_DEFINED
+#define GUST_STRUCT_mir_function_call__MirArgumentRepresentation_DEFINED
 struct mir_function_call__MirArgumentRepresentation {
     Slice_unsigned_char materialization;
     Slice_unsigned_char passing_mode;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_call__MirCallOperand_DEFINED
+#define GUST_STRUCT_mir_function_call__MirCallOperand_DEFINED
 struct mir_function_call__MirCallOperand {
     Slice_unsigned_char abi_value_id;
     Slice_unsigned_char call_id;
@@ -5956,39 +6912,64 @@ struct mir_function_call__MirCallOperand {
     Slice_unsigned_char value_id;
     Slice_unsigned_char value_type_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_call__MirCallOperandQuery_DEFINED
+#define GUST_STRUCT_mir_function_call__MirCallOperandQuery_DEFINED
 struct mir_function_call__MirCallOperandQuery {
     int found;
     mir_function_call__MirCallOperand value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_call__MirCallOperationKind_ArgumentMaterialization_DEFINED
+#define GUST_STRUCT_mir_function_call__MirCallOperationKind_ArgumentMaterialization_DEFINED
 struct mir_function_call__MirCallOperationKind_ArgumentMaterialization {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_call__MirCallOperationKind_DirectCall_DEFINED
+#define GUST_STRUCT_mir_function_call__MirCallOperationKind_DirectCall_DEFINED
 struct mir_function_call__MirCallOperationKind_DirectCall {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_call__MirCallOperationKind_FunctionAbiDeclaration_DEFINED
+#define GUST_STRUCT_mir_function_call__MirCallOperationKind_FunctionAbiDeclaration_DEFINED
 struct mir_function_call__MirCallOperationKind_FunctionAbiDeclaration {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_call__MirCallOperationKind_HiddenArgument_DEFINED
+#define GUST_STRUCT_mir_function_call__MirCallOperationKind_HiddenArgument_DEFINED
 struct mir_function_call__MirCallOperationKind_HiddenArgument {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_call__MirCallOperationKind_HiddenResultStorage_DEFINED
+#define GUST_STRUCT_mir_function_call__MirCallOperationKind_HiddenResultStorage_DEFINED
 struct mir_function_call__MirCallOperationKind_HiddenResultStorage {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_call__MirCallOperationKind_PostCallNormalization_DEFINED
+#define GUST_STRUCT_mir_function_call__MirCallOperationKind_PostCallNormalization_DEFINED
 struct mir_function_call__MirCallOperationKind_PostCallNormalization {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_call__MirCallOperationKind_ResultExtraction_DEFINED
+#define GUST_STRUCT_mir_function_call__MirCallOperationKind_ResultExtraction_DEFINED
 struct mir_function_call__MirCallOperationKind_ResultExtraction {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir_function_call__MirCallOperationKind_Tag__FunctionAbiDeclaration = 0,
@@ -6000,6 +6981,8 @@ typedef enum {
     mir_function_call__MirCallOperationKind_Tag__PostCallNormalization = 6,
 } mir_function_call__MirCallOperationKind_Tag;
 
+#ifndef GUST_STRUCT_mir_function_call__MirCallOperationKind_DEFINED
+#define GUST_STRUCT_mir_function_call__MirCallOperationKind_DEFINED
 struct mir_function_call__MirCallOperationKind {
     int tag;
     union {
@@ -6012,7 +6995,10 @@ struct mir_function_call__MirCallOperationKind {
         struct mir_function_call__MirCallOperationKind_ResultExtraction ResultExtraction;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_call__MirCallOperation_DEFINED
+#define GUST_STRUCT_mir_function_call__MirCallOperation_DEFINED
 struct mir_function_call__MirCallOperation {
     int argument_abi_ids;
     Slice_unsigned_char call_id;
@@ -6029,7 +7015,10 @@ struct mir_function_call__MirCallOperation {
     Slice_unsigned_char target_id;
     Slice_unsigned_char target_triple;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_call__MirFunctionAbiDeclaration_DEFINED
+#define GUST_STRUCT_mir_function_call__MirFunctionAbiDeclaration_DEFINED
 struct mir_function_call__MirFunctionAbiDeclaration {
     Slice_unsigned_char abi_id;
     Slice_unsigned_char calling_convention;
@@ -6042,12 +7031,18 @@ struct mir_function_call__MirFunctionAbiDeclaration {
     Slice_unsigned_char target_id;
     Slice_unsigned_char target_triple;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_call__MirFunctionAbiDeclarationQuery_DEFINED
+#define GUST_STRUCT_mir_function_call__MirFunctionAbiDeclarationQuery_DEFINED
 struct mir_function_call__MirFunctionAbiDeclarationQuery {
     int found;
     mir_function_call__MirFunctionAbiDeclaration value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_call__MirFunctionCallTable_DEFINED
+#define GUST_STRUCT_mir_function_call__MirFunctionCallTable_DEFINED
 struct mir_function_call__MirFunctionCallTable {
     int declarations;
     Slice_unsigned_char evaluation_policy;
@@ -6061,18 +7056,27 @@ struct mir_function_call__MirFunctionCallTable {
     Slice_unsigned_char target_id;
     Slice_unsigned_char target_triple;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_function_call__MirFunctionCallValidation_DEFINED
+#define GUST_STRUCT_mir_function_call__MirFunctionCallValidation_DEFINED
 struct mir_function_call__MirFunctionCallValidation {
     Slice_unsigned_char reason_code;
     int valid;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_integer_conversion__MirIntegerConversionResult_DEFINED
+#define GUST_STRUCT_mir_integer_conversion__MirIntegerConversionResult_DEFINED
 struct mir_integer_conversion__MirIntegerConversionResult {
     Slice_unsigned_char reason_code;
     int success;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_integer_conversion__MirIntegerConversionRule_DEFINED
+#define GUST_STRUCT_mir_integer_conversion__MirIntegerConversionRule_DEFINED
 struct mir_integer_conversion__MirIntegerConversionRule {
     Slice_unsigned_char destination_layout_id;
     Slice_unsigned_char destination_signedness;
@@ -6092,12 +7096,18 @@ struct mir_integer_conversion__MirIntegerConversionRule {
     int target_required;
     Slice_unsigned_char target_triple;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_integer_conversion__MirIntegerConversionRuleQuery_DEFINED
+#define GUST_STRUCT_mir_integer_conversion__MirIntegerConversionRuleQuery_DEFINED
 struct mir_integer_conversion__MirIntegerConversionRuleQuery {
     int found;
     mir_integer_conversion__MirIntegerConversionRule rule;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_integer_conversion__MirIntegerConversionSample_DEFINED
+#define GUST_STRUCT_mir_integer_conversion__MirIntegerConversionSample_DEFINED
 struct mir_integer_conversion__MirIntegerConversionSample {
     Slice_unsigned_char context_kind;
     int expect_success;
@@ -6108,7 +7118,10 @@ struct mir_integer_conversion__MirIntegerConversionSample {
     Slice_unsigned_char rule_name;
     Slice_unsigned_char sample_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_integer_conversion__MirIntegerConversionTable_DEFINED
+#define GUST_STRUCT_mir_integer_conversion__MirIntegerConversionTable_DEFINED
 struct mir_integer_conversion__MirIntegerConversionTable {
     Slice_unsigned_char format;
     int rules;
@@ -6116,18 +7129,27 @@ struct mir_integer_conversion__MirIntegerConversionTable {
     Slice_unsigned_char target_id;
     Slice_unsigned_char target_triple;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_integer_conversion__MirIntegerConversionValidation_DEFINED
+#define GUST_STRUCT_mir_integer_conversion__MirIntegerConversionValidation_DEFINED
 struct mir_integer_conversion__MirIntegerConversionValidation {
     Slice_unsigned_char reason_code;
     mir_integer_conversion__MirIntegerConversionRule rule;
     int valid;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_layout__MirElementStrideQuery_DEFINED
+#define GUST_STRUCT_mir_layout__MirElementStrideQuery_DEFINED
 struct mir_layout__MirElementStrideQuery {
     int found;
     int stride;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_layout__MirFieldLayout_DEFINED
+#define GUST_STRUCT_mir_layout__MirFieldLayout_DEFINED
 struct mir_layout__MirFieldLayout {
     int alignment;
     Slice_unsigned_char field_id;
@@ -6137,12 +7159,18 @@ struct mir_layout__MirFieldLayout {
     int size;
     Slice_unsigned_char type_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_layout__MirFieldLayoutQuery_DEFINED
+#define GUST_STRUCT_mir_layout__MirFieldLayoutQuery_DEFINED
 struct mir_layout__MirFieldLayoutQuery {
     mir_layout__MirFieldLayout field;
     int found;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_layout__MirTargetLayout_DEFINED
+#define GUST_STRUCT_mir_layout__MirTargetLayout_DEFINED
 struct mir_layout__MirTargetLayout {
     int decisions_frozen;
     Slice_unsigned_char endianness;
@@ -6154,14 +7182,20 @@ struct mir_layout__MirTargetLayout {
     Slice_unsigned_char target_id;
     Slice_unsigned_char target_triple;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_layout__MirLayoutTable_DEFINED
+#define GUST_STRUCT_mir_layout__MirLayoutTable_DEFINED
 struct mir_layout__MirLayoutTable {
     Slice_unsigned_char format;
     int layouts;
     int memory_accesses;
     mir_layout__MirTargetLayout target;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_layout__MirMemoryAccessLayout_DEFINED
+#define GUST_STRUCT_mir_layout__MirMemoryAccessLayout_DEFINED
 struct mir_layout__MirMemoryAccessLayout {
     Slice_unsigned_char access_id;
     int byte_width;
@@ -6172,17 +7206,26 @@ struct mir_layout__MirMemoryAccessLayout {
     Slice_unsigned_char type_id;
     int write_allowed;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_layout__MirMemoryAccessValidation_DEFINED
+#define GUST_STRUCT_mir_layout__MirMemoryAccessValidation_DEFINED
 struct mir_layout__MirMemoryAccessValidation {
     Slice_unsigned_char reason_code;
     int valid;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_layout__MirScalarValueValidation_DEFINED
+#define GUST_STRUCT_mir_layout__MirScalarValueValidation_DEFINED
 struct mir_layout__MirScalarValueValidation {
     Slice_unsigned_char reason_code;
     int valid;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_layout__MirTypeLayout_DEFINED
+#define GUST_STRUCT_mir_layout__MirTypeLayout_DEFINED
 struct mir_layout__MirTypeLayout {
     int alignment;
     int bit_width;
@@ -6197,12 +7240,18 @@ struct mir_layout__MirTypeLayout {
     Slice_unsigned_char validity_kind;
     int variants;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_layout__MirTypeLayoutQuery_DEFINED
+#define GUST_STRUCT_mir_layout__MirTypeLayoutQuery_DEFINED
 struct mir_layout__MirTypeLayoutQuery {
     int found;
     mir_layout__MirTypeLayout layout;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_layout__MirVariantLayout_DEFINED
+#define GUST_STRUCT_mir_layout__MirVariantLayout_DEFINED
 struct mir_layout__MirVariantLayout {
     int discriminant;
     Slice_unsigned_char payload_layout_id;
@@ -6211,12 +7260,18 @@ struct mir_layout__MirVariantLayout {
     Slice_unsigned_char variant_id;
     Slice_unsigned_char variant_name;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_layout__MirVariantLayoutQuery_DEFINED
+#define GUST_STRUCT_mir_layout__MirVariantLayoutQuery_DEFINED
 struct mir_layout__MirVariantLayoutQuery {
     int found;
     mir_layout__MirVariantLayout variant;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_memory_access__MirMemoryAccessOperation_DEFINED
+#define GUST_STRUCT_mir_memory_access__MirMemoryAccessOperation_DEFINED
 struct mir_memory_access__MirMemoryAccessOperation {
     Slice_unsigned_char accessed_layout_id;
     Slice_unsigned_char accessed_type_id;
@@ -6245,12 +7300,18 @@ struct mir_memory_access__MirMemoryAccessOperation {
     int source_offset;
     Slice_unsigned_char target_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_memory_access__MirMemoryAccessOperationQuery_DEFINED
+#define GUST_STRUCT_mir_memory_access__MirMemoryAccessOperationQuery_DEFINED
 struct mir_memory_access__MirMemoryAccessOperationQuery {
     int found;
     mir_memory_access__MirMemoryAccessOperation operation;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_memory_access__MirMemoryAccessTable_DEFINED
+#define GUST_STRUCT_mir_memory_access__MirMemoryAccessTable_DEFINED
 struct mir_memory_access__MirMemoryAccessTable {
     Slice_unsigned_char format;
     Slice_unsigned_char initialization_policy;
@@ -6263,24 +7324,36 @@ struct mir_memory_access__MirMemoryAccessTable {
     Slice_unsigned_char unaligned_policy;
     Slice_unsigned_char zero_sized_policy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_memory_access__MirMemoryAccessValidation_DEFINED
+#define GUST_STRUCT_mir_memory_access__MirMemoryAccessValidation_DEFINED
 struct mir_memory_access__MirMemoryAccessValidation {
     Slice_unsigned_char reason_code;
     int valid;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_block_parameter_loop_source__MirNativeBlockParameterArm_DEFINED
+#define GUST_STRUCT_mir_native_backend_block_parameter_loop_source__MirNativeBlockParameterArm_DEFINED
 struct mir_native_backend_block_parameter_loop_source__MirNativeBlockParameterArm {
     int first_delta;
     int represented;
     int second_delta;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_block_parameter_loop_source__MirNativeBlockParameterDelta_DEFINED
+#define GUST_STRUCT_mir_native_backend_block_parameter_loop_source__MirNativeBlockParameterDelta_DEFINED
 struct mir_native_backend_block_parameter_loop_source__MirNativeBlockParameterDelta {
     int delta;
     int represented;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_block_parameter_loop_source__MirNativeBlockParameterLoopModel_DEFINED
+#define GUST_STRUCT_mir_native_backend_block_parameter_loop_source__MirNativeBlockParameterLoopModel_DEFINED
 struct mir_native_backend_block_parameter_loop_source__MirNativeBlockParameterLoopModel {
     Slice_unsigned_char diagnostic;
     int expected_exit;
@@ -6300,7 +7373,10 @@ struct mir_native_backend_block_parameter_loop_source__MirNativeBlockParameterLo
     int second_then_delta;
     Slice_unsigned_char source_path;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_block_parameter_loop_source__MirNativeBlockParameterLoopSourceResult_DEFINED
+#define GUST_STRUCT_mir_native_backend_block_parameter_loop_source__MirNativeBlockParameterLoopSourceResult_DEFINED
 struct mir_native_backend_block_parameter_loop_source__MirNativeBlockParameterLoopSourceResult {
     mir__MirProgramBundle bundle;
     int deferred;
@@ -6309,30 +7385,49 @@ struct mir_native_backend_block_parameter_loop_source__MirNativeBlockParameterLo
     Slice_unsigned_char reason_code;
     int represented;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_capability__MirNativeBackendCapabilityClassification_InvalidCompilerMir_DEFINED
+#define GUST_STRUCT_mir_native_backend_capability__MirNativeBackendCapabilityClassification_InvalidCompilerMir_DEFINED
 struct mir_native_backend_capability__MirNativeBackendCapabilityClassification_InvalidCompilerMir {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_capability__MirNativeBackendCapabilityClassification_Supported_DEFINED
+#define GUST_STRUCT_mir_native_backend_capability__MirNativeBackendCapabilityClassification_Supported_DEFINED
 struct mir_native_backend_capability__MirNativeBackendCapabilityClassification_Supported {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_capability__MirNativeBackendCapabilityClassification_UnsupportedOperation_DEFINED
+#define GUST_STRUCT_mir_native_backend_capability__MirNativeBackendCapabilityClassification_UnsupportedOperation_DEFINED
 struct mir_native_backend_capability__MirNativeBackendCapabilityClassification_UnsupportedOperation {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_capability__MirNativeBackendCapabilityClassification_UnsupportedRuntimeImport_DEFINED
+#define GUST_STRUCT_mir_native_backend_capability__MirNativeBackendCapabilityClassification_UnsupportedRuntimeImport_DEFINED
 struct mir_native_backend_capability__MirNativeBackendCapabilityClassification_UnsupportedRuntimeImport {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_capability__MirNativeBackendCapabilityClassification_UnsupportedTargetRequirement_DEFINED
+#define GUST_STRUCT_mir_native_backend_capability__MirNativeBackendCapabilityClassification_UnsupportedTargetRequirement_DEFINED
 struct mir_native_backend_capability__MirNativeBackendCapabilityClassification_UnsupportedTargetRequirement {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_capability__MirNativeBackendCapabilityClassification_UnsupportedTypeOrAbi_DEFINED
+#define GUST_STRUCT_mir_native_backend_capability__MirNativeBackendCapabilityClassification_UnsupportedTypeOrAbi_DEFINED
 struct mir_native_backend_capability__MirNativeBackendCapabilityClassification_UnsupportedTypeOrAbi {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir_native_backend_capability__MirNativeBackendCapabilityClassification_Tag__Supported = 0,
@@ -6343,6 +7438,8 @@ typedef enum {
     mir_native_backend_capability__MirNativeBackendCapabilityClassification_Tag__InvalidCompilerMir = 5,
 } mir_native_backend_capability__MirNativeBackendCapabilityClassification_Tag;
 
+#ifndef GUST_STRUCT_mir_native_backend_capability__MirNativeBackendCapabilityClassification_DEFINED
+#define GUST_STRUCT_mir_native_backend_capability__MirNativeBackendCapabilityClassification_DEFINED
 struct mir_native_backend_capability__MirNativeBackendCapabilityClassification {
     int tag;
     union {
@@ -6354,26 +7451,42 @@ struct mir_native_backend_capability__MirNativeBackendCapabilityClassification {
         struct mir_native_backend_capability__MirNativeBackendCapabilityClassification_UnsupportedTypeOrAbi UnsupportedTypeOrAbi;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_capability__MirNativeBackendCapabilityPlan_DEFINED
+#define GUST_STRUCT_mir_native_backend_capability__MirNativeBackendCapabilityPlan_DEFINED
 struct mir_native_backend_capability__MirNativeBackendCapabilityPlan {
     int requirements;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_capability__MirNativeBackendRequirementKind_Operation_DEFINED
+#define GUST_STRUCT_mir_native_backend_capability__MirNativeBackendRequirementKind_Operation_DEFINED
 struct mir_native_backend_capability__MirNativeBackendRequirementKind_Operation {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_capability__MirNativeBackendRequirementKind_RuntimeImport_DEFINED
+#define GUST_STRUCT_mir_native_backend_capability__MirNativeBackendRequirementKind_RuntimeImport_DEFINED
 struct mir_native_backend_capability__MirNativeBackendRequirementKind_RuntimeImport {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_capability__MirNativeBackendRequirementKind_TargetRequirement_DEFINED
+#define GUST_STRUCT_mir_native_backend_capability__MirNativeBackendRequirementKind_TargetRequirement_DEFINED
 struct mir_native_backend_capability__MirNativeBackendRequirementKind_TargetRequirement {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_capability__MirNativeBackendRequirementKind_TypeOrAbi_DEFINED
+#define GUST_STRUCT_mir_native_backend_capability__MirNativeBackendRequirementKind_TypeOrAbi_DEFINED
 struct mir_native_backend_capability__MirNativeBackendRequirementKind_TypeOrAbi {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir_native_backend_capability__MirNativeBackendRequirementKind_Tag__Operation = 0,
@@ -6382,6 +7495,8 @@ typedef enum {
     mir_native_backend_capability__MirNativeBackendRequirementKind_Tag__TargetRequirement = 3,
 } mir_native_backend_capability__MirNativeBackendRequirementKind_Tag;
 
+#ifndef GUST_STRUCT_mir_native_backend_capability__MirNativeBackendRequirementKind_DEFINED
+#define GUST_STRUCT_mir_native_backend_capability__MirNativeBackendRequirementKind_DEFINED
 struct mir_native_backend_capability__MirNativeBackendRequirementKind {
     int tag;
     union {
@@ -6391,7 +7506,10 @@ struct mir_native_backend_capability__MirNativeBackendRequirementKind {
         struct mir_native_backend_capability__MirNativeBackendRequirementKind_TypeOrAbi TypeOrAbi;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_capability__MirNativeBackendCapabilityResult_DEFINED
+#define GUST_STRUCT_mir_native_backend_capability__MirNativeBackendCapabilityResult_DEFINED
 struct mir_native_backend_capability__MirNativeBackendCapabilityResult {
     Slice_unsigned_char block_label;
     mir_native_backend_capability__MirNativeBackendCapabilityClassification classification;
@@ -6402,14 +7520,20 @@ struct mir_native_backend_capability__MirNativeBackendCapabilityResult {
     int ordinal;
     mir_native_backend_capability__MirNativeBackendRequirementKind requirement_kind;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_capability__MirNativeBackendCapabilitySet_DEFINED
+#define GUST_STRUCT_mir_native_backend_capability__MirNativeBackendCapabilitySet_DEFINED
 struct mir_native_backend_capability__MirNativeBackendCapabilitySet {
     int operations;
     int runtime_imports;
     int target_requirements;
     int types_and_abis;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_capability__MirNativeBackendRequirement_DEFINED
+#define GUST_STRUCT_mir_native_backend_capability__MirNativeBackendRequirement_DEFINED
 struct mir_native_backend_capability__MirNativeBackendRequirement {
     Slice_unsigned_char block_label;
     Slice_unsigned_char feature;
@@ -6418,18 +7542,28 @@ struct mir_native_backend_capability__MirNativeBackendRequirement {
     Slice_unsigned_char module_path;
     int ordinal;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_capability__MirNativeBackendRouteDecisionKind_Deferred_DEFINED
+#define GUST_STRUCT_mir_native_backend_capability__MirNativeBackendRouteDecisionKind_Deferred_DEFINED
 struct mir_native_backend_capability__MirNativeBackendRouteDecisionKind_Deferred {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_capability__MirNativeBackendRouteDecisionKind_SourceOrTypeFailure_DEFINED
+#define GUST_STRUCT_mir_native_backend_capability__MirNativeBackendRouteDecisionKind_SourceOrTypeFailure_DEFINED
 struct mir_native_backend_capability__MirNativeBackendRouteDecisionKind_SourceOrTypeFailure {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_capability__MirNativeBackendRouteDecisionKind_Supported_DEFINED
+#define GUST_STRUCT_mir_native_backend_capability__MirNativeBackendRouteDecisionKind_Supported_DEFINED
 struct mir_native_backend_capability__MirNativeBackendRouteDecisionKind_Supported {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir_native_backend_capability__MirNativeBackendRouteDecisionKind_Tag__Supported = 0,
@@ -6437,6 +7571,8 @@ typedef enum {
     mir_native_backend_capability__MirNativeBackendRouteDecisionKind_Tag__SourceOrTypeFailure = 2,
 } mir_native_backend_capability__MirNativeBackendRouteDecisionKind_Tag;
 
+#ifndef GUST_STRUCT_mir_native_backend_capability__MirNativeBackendRouteDecisionKind_DEFINED
+#define GUST_STRUCT_mir_native_backend_capability__MirNativeBackendRouteDecisionKind_DEFINED
 struct mir_native_backend_capability__MirNativeBackendRouteDecisionKind {
     int tag;
     union {
@@ -6445,7 +7581,10 @@ struct mir_native_backend_capability__MirNativeBackendRouteDecisionKind {
         struct mir_native_backend_capability__MirNativeBackendRouteDecisionKind_Supported Supported;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_capability__MirNativeBackendRouteDecision_DEFINED
+#define GUST_STRUCT_mir_native_backend_capability__MirNativeBackendRouteDecision_DEFINED
 struct mir_native_backend_capability__MirNativeBackendRouteDecision {
     Slice_unsigned_char capability_id;
     int column;
@@ -6456,18 +7595,27 @@ struct mir_native_backend_capability__MirNativeBackendRouteDecision {
     Slice_unsigned_char reason_code;
     Slice_unsigned_char source_path;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_collection_string_source__MirNativeCollectionStringEffect_DEFINED
+#define GUST_STRUCT_mir_native_backend_collection_string_source__MirNativeCollectionStringEffect_DEFINED
 struct mir_native_backend_collection_string_source__MirNativeCollectionStringEffect {
     int int_value;
     int kind;
     Slice_unsigned_char string_value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_collection_string_source__MirNativeCollectionStringIntValue_DEFINED
+#define GUST_STRUCT_mir_native_backend_collection_string_source__MirNativeCollectionStringIntValue_DEFINED
 struct mir_native_backend_collection_string_source__MirNativeCollectionStringIntValue {
     int represented;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_collection_string_source__MirNativeCollectionStringModel_DEFINED
+#define GUST_STRUCT_mir_native_backend_collection_string_source__MirNativeCollectionStringModel_DEFINED
 struct mir_native_backend_collection_string_source__MirNativeCollectionStringModel {
     mir_native_backend_collection_string_source__MirNativeCollectionStringEffect after;
     int aggregate_result_call;
@@ -6482,31 +7630,46 @@ struct mir_native_backend_collection_string_source__MirNativeCollectionStringMod
     int string_operation_count;
     mir_native_backend_collection_string_source__MirNativeCollectionStringEffect then_effect;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_collection_string_source__MirNativeCollectionStringSourceResult_DEFINED
+#define GUST_STRUCT_mir_native_backend_collection_string_source__MirNativeCollectionStringSourceResult_DEFINED
 struct mir_native_backend_collection_string_source__MirNativeCollectionStringSourceResult {
     mir__MirProgramBundle bundle;
     Slice_unsigned_char diagnostic;
     int invalid;
     int represented;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_collection_string_source__MirNativeCollectionStringStringValue_DEFINED
+#define GUST_STRUCT_mir_native_backend_collection_string_source__MirNativeCollectionStringStringValue_DEFINED
 struct mir_native_backend_collection_string_source__MirNativeCollectionStringStringValue {
     int represented;
     Slice_unsigned_char value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_direct_call_source__MirNativeDirectCallArgument_DEFINED
+#define GUST_STRUCT_mir_native_backend_direct_call_source__MirNativeDirectCallArgument_DEFINED
 struct mir_native_backend_direct_call_source__MirNativeDirectCallArgument {
     int kind;
     int parameter_index;
     int value;
     Slice_unsigned_char value_type;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_direct_call_source__MirNativeDirectCallEvaluation_DEFINED
+#define GUST_STRUCT_mir_native_backend_direct_call_source__MirNativeDirectCallEvaluation_DEFINED
 struct mir_native_backend_direct_call_source__MirNativeDirectCallEvaluation {
     int valid;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_direct_call_source__MirNativeDirectCallFunction_DEFINED
+#define GUST_STRUCT_mir_native_backend_direct_call_source__MirNativeDirectCallFunction_DEFINED
 struct mir_native_backend_direct_call_source__MirNativeDirectCallFunction {
     int arguments;
     Slice_unsigned_char callee;
@@ -6531,7 +7694,10 @@ struct mir_native_backend_direct_call_source__MirNativeDirectCallFunction {
     int source_column;
     int source_line;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_direct_call_source__MirNativeDirectCallModel_DEFINED
+#define GUST_STRUCT_mir_native_backend_direct_call_source__MirNativeDirectCallModel_DEFINED
 struct mir_native_backend_direct_call_source__MirNativeDirectCallModel {
     int deferred;
     Slice_unsigned_char diagnostic;
@@ -6544,7 +7710,10 @@ struct mir_native_backend_direct_call_source__MirNativeDirectCallModel {
     int represented;
     Slice_unsigned_char source_path;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_direct_call_source__MirNativeDirectCallSourceResult_DEFINED
+#define GUST_STRUCT_mir_native_backend_direct_call_source__MirNativeDirectCallSourceResult_DEFINED
 struct mir_native_backend_direct_call_source__MirNativeDirectCallSourceResult {
     mir__MirProgramBundle bundle;
     int deferred;
@@ -6553,26 +7722,42 @@ struct mir_native_backend_direct_call_source__MirNativeDirectCallSourceResult {
     Slice_unsigned_char reason_code;
     int represented;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification_ExplicitPathNotAbsolute_DEFINED
+#define GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification_ExplicitPathNotAbsolute_DEFINED
 struct mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification_ExplicitPathNotAbsolute {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification_ExplicitUnavailable_DEFINED
+#define GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification_ExplicitUnavailable_DEFINED
 struct mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification_ExplicitUnavailable {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification_FoundExplicit_DEFINED
+#define GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification_FoundExplicit_DEFINED
 struct mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification_FoundExplicit {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification_FoundSibling_DEFINED
+#define GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification_FoundSibling_DEFINED
 struct mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification_FoundSibling {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification_SiblingUnavailable_DEFINED
+#define GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification_SiblingUnavailable_DEFINED
 struct mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification_SiblingUnavailable {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification_Tag__FoundExplicit = 0,
@@ -6582,6 +7767,8 @@ typedef enum {
     mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification_Tag__SiblingUnavailable = 4,
 } mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification_Tag;
 
+#ifndef GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification_DEFINED
+#define GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification_DEFINED
 struct mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification {
     int tag;
     union {
@@ -6592,52 +7779,86 @@ struct mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification 
         struct mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification_SiblingUnavailable SiblingUnavailable;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverDiscoveryResult_DEFINED
+#define GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverDiscoveryResult_DEFINED
 struct mir_native_backend_driver__MirNativeBackendDriverDiscoveryResult {
     mir_native_backend_driver__MirNativeBackendDriverDiscoveryClassification classification;
     Slice_unsigned_char detail;
     Slice_unsigned_char path;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_BundleFormatMismatch_DEFINED
+#define GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_BundleFormatMismatch_DEFINED
 struct mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_BundleFormatMismatch {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_CanonicalMirFormatMismatch_DEFINED
+#define GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_CanonicalMirFormatMismatch_DEFINED
 struct mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_CanonicalMirFormatMismatch {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_CapabilityInventoryInvalid_DEFINED
+#define GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_CapabilityInventoryInvalid_DEFINED
 struct mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_CapabilityInventoryInvalid {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_Compatible_DEFINED
+#define GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_Compatible_DEFINED
 struct mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_Compatible {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_LinkCapabilityMismatch_DEFINED
+#define GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_LinkCapabilityMismatch_DEFINED
 struct mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_LinkCapabilityMismatch {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_Malformed_DEFINED
+#define GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_Malformed_DEFINED
 struct mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_Malformed {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_ObjectFormatMismatch_DEFINED
+#define GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_ObjectFormatMismatch_DEFINED
 struct mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_ObjectFormatMismatch {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_PipelineTaxonomyMismatch_DEFINED
+#define GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_PipelineTaxonomyMismatch_DEFINED
 struct mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_PipelineTaxonomyMismatch {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_ProtocolMismatch_DEFINED
+#define GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_ProtocolMismatch_DEFINED
 struct mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_ProtocolMismatch {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_TargetMismatch_DEFINED
+#define GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_TargetMismatch_DEFINED
 struct mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_TargetMismatch {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_Tag__Compatible = 0,
@@ -6652,6 +7873,8 @@ typedef enum {
     mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_Tag__CapabilityInventoryInvalid = 9,
 } mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_Tag;
 
+#ifndef GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_DEFINED
+#define GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_DEFINED
 struct mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification {
     int tag;
     union {
@@ -6667,12 +7890,18 @@ struct mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification 
         struct mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification_TargetMismatch TargetMismatch;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshakeResult_DEFINED
+#define GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshakeResult_DEFINED
 struct mir_native_backend_driver__MirNativeBackendDriverHandshakeResult {
     mir_native_backend_driver__MirNativeBackendDriverHandshakeClassification classification;
     Slice_unsigned_char detail;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshake_DEFINED
+#define GUST_STRUCT_mir_native_backend_driver__MirNativeBackendDriverHandshake_DEFINED
 struct mir_native_backend_driver__MirNativeBackendDriverHandshake {
     int canonical_mir_formats;
     Slice_unsigned_char driver_name;
@@ -6690,7 +7919,10 @@ struct mir_native_backend_driver__MirNativeBackendDriverHandshake {
     Slice_unsigned_char target_triple;
     int types_and_abis;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_filesystem_allocation_source__MirNativeFilesystemAllocationModel_DEFINED
+#define GUST_STRUCT_mir_native_backend_filesystem_allocation_source__MirNativeFilesystemAllocationModel_DEFINED
 struct mir_native_backend_filesystem_allocation_source__MirNativeFilesystemAllocationModel {
     int allocation_size;
     Slice_unsigned_char arena_name;
@@ -6705,20 +7937,29 @@ struct mir_native_backend_filesystem_allocation_source__MirNativeFilesystemAlloc
     int stored_value;
     Slice_unsigned_char write_local;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_filesystem_allocation_source__MirNativeFilesystemAllocationResult_DEFINED
+#define GUST_STRUCT_mir_native_backend_filesystem_allocation_source__MirNativeFilesystemAllocationResult_DEFINED
 struct mir_native_backend_filesystem_allocation_source__MirNativeFilesystemAllocationResult {
     mir__MirProgramBundle bundle;
     Slice_unsigned_char diagnostic;
     int invalid;
     int represented;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_full_program_source__MirNativeFullProgramEnum_DEFINED
+#define GUST_STRUCT_mir_native_backend_full_program_source__MirNativeFullProgramEnum_DEFINED
 struct mir_native_backend_full_program_source__MirNativeFullProgramEnum {
     Slice_unsigned_char erased_name;
     Slice_unsigned_char name;
     int variants;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_full_program_source__MirNativeFullProgramFunction_DEFINED
+#define GUST_STRUCT_mir_native_backend_full_program_source__MirNativeFullProgramFunction_DEFINED
 struct mir_native_backend_full_program_source__MirNativeFullProgramFunction {
     int body;
     int body_node_index;
@@ -6731,7 +7972,10 @@ struct mir_native_backend_full_program_source__MirNativeFullProgramFunction {
     Slice_unsigned_char return_type;
     Slice_unsigned_char source_name;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_full_program_source__MirNativeFullProgramLayout_DEFINED
+#define GUST_STRUCT_mir_native_backend_full_program_source__MirNativeFullProgramLayout_DEFINED
 struct mir_native_backend_full_program_source__MirNativeFullProgramLayout {
     Slice_unsigned_char brand;
     Slice_unsigned_char erased_name;
@@ -6742,7 +7986,10 @@ struct mir_native_backend_full_program_source__MirNativeFullProgramLayout {
     Slice_unsigned_char layout_abi;
     Slice_unsigned_char name;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_full_program_source__MirNativeFullProgramModel_DEFINED
+#define GUST_STRUCT_mir_native_backend_full_program_source__MirNativeFullProgramModel_DEFINED
 struct mir_native_backend_full_program_source__MirNativeFullProgramModel {
     Slice_unsigned_char diagnostic;
     int entry_function_index;
@@ -6755,7 +8002,10 @@ struct mir_native_backend_full_program_source__MirNativeFullProgramModel {
     int non_scalar_signature_count;
     int represented;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_full_program_source__MirNativeFullProgramNode_DEFINED
+#define GUST_STRUCT_mir_native_backend_full_program_source__MirNativeFullProgramNode_DEFINED
 struct mir_native_backend_full_program_source__MirNativeFullProgramNode {
     int children;
     int integer_operand;
@@ -6769,7 +8019,10 @@ struct mir_native_backend_full_program_source__MirNativeFullProgramNode {
     Slice_unsigned_char text_operand;
     Slice_unsigned_char type_identity;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_full_program_source__MirNativeFullProgramSourceResult_DEFINED
+#define GUST_STRUCT_mir_native_backend_full_program_source__MirNativeFullProgramSourceResult_DEFINED
 struct mir_native_backend_full_program_source__MirNativeFullProgramSourceResult {
     mir__MirProgramBundle bundle;
     int deferred;
@@ -6778,38 +8031,60 @@ struct mir_native_backend_full_program_source__MirNativeFullProgramSourceResult 
     Slice_unsigned_char reason_code;
     int represented;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_full_program_source__MirNativeFullProgramStringHeader_DEFINED
+#define GUST_STRUCT_mir_native_backend_full_program_source__MirNativeFullProgramStringHeader_DEFINED
 struct mir_native_backend_full_program_source__MirNativeFullProgramStringHeader {
     unsigned char* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericConstEnv_DEFINED
+#define GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericConstEnv_DEFINED
 struct mir_native_backend_generic_source__MirNativeGenericConstEnv {
     int names;
     int represented;
     int values;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericConstValue_DEFINED
+#define GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericConstValue_DEFINED
 struct mir_native_backend_generic_source__MirNativeGenericConstValue {
     int known;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericEligibility_InvalidCanonicalMir_DEFINED
+#define GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericEligibility_InvalidCanonicalMir_DEFINED
 struct mir_native_backend_generic_source__MirNativeGenericEligibility_InvalidCanonicalMir {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericEligibility_LoweredAndEligible_DEFINED
+#define GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericEligibility_LoweredAndEligible_DEFINED
 struct mir_native_backend_generic_source__MirNativeGenericEligibility_LoweredAndEligible {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericEligibility_NativeCapabilityUnsupported_DEFINED
+#define GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericEligibility_NativeCapabilityUnsupported_DEFINED
 struct mir_native_backend_generic_source__MirNativeGenericEligibility_NativeCapabilityUnsupported {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericEligibility_SourceFeatureNotRepresented_DEFINED
+#define GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericEligibility_SourceFeatureNotRepresented_DEFINED
 struct mir_native_backend_generic_source__MirNativeGenericEligibility_SourceFeatureNotRepresented {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir_native_backend_generic_source__MirNativeGenericEligibility_Tag__LoweredAndEligible = 0,
@@ -6818,6 +8093,8 @@ typedef enum {
     mir_native_backend_generic_source__MirNativeGenericEligibility_Tag__InvalidCanonicalMir = 3,
 } mir_native_backend_generic_source__MirNativeGenericEligibility_Tag;
 
+#ifndef GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericEligibility_DEFINED
+#define GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericEligibility_DEFINED
 struct mir_native_backend_generic_source__MirNativeGenericEligibility {
     int tag;
     union {
@@ -6827,38 +8104,63 @@ struct mir_native_backend_generic_source__MirNativeGenericEligibility {
         struct mir_native_backend_generic_source__MirNativeGenericEligibility_SourceFeatureNotRepresented SourceFeatureNotRepresented;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericShape_ImportedCall_DEFINED
+#define GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericShape_ImportedCall_DEFINED
 struct mir_native_backend_generic_source__MirNativeGenericShape_ImportedCall {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericShape_LiteralBranch_DEFINED
+#define GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericShape_LiteralBranch_DEFINED
 struct mir_native_backend_generic_source__MirNativeGenericShape_LiteralBranch {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericShape_LiteralReturn_DEFINED
+#define GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericShape_LiteralReturn_DEFINED
 struct mir_native_backend_generic_source__MirNativeGenericShape_LiteralReturn {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericShape_LocalCall_DEFINED
+#define GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericShape_LocalCall_DEFINED
 struct mir_native_backend_generic_source__MirNativeGenericShape_LocalCall {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericShape_LocalMerge_DEFINED
+#define GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericShape_LocalMerge_DEFINED
 struct mir_native_backend_generic_source__MirNativeGenericShape_LocalMerge {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericShape_LocalReturn_DEFINED
+#define GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericShape_LocalReturn_DEFINED
 struct mir_native_backend_generic_source__MirNativeGenericShape_LocalReturn {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericShape_PositiveLocalBranch_DEFINED
+#define GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericShape_PositiveLocalBranch_DEFINED
 struct mir_native_backend_generic_source__MirNativeGenericShape_PositiveLocalBranch {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericShape_ScalarExpression_DEFINED
+#define GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericShape_ScalarExpression_DEFINED
 struct mir_native_backend_generic_source__MirNativeGenericShape_ScalarExpression {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir_native_backend_generic_source__MirNativeGenericShape_Tag__LiteralReturn = 0,
@@ -6871,6 +8173,8 @@ typedef enum {
     mir_native_backend_generic_source__MirNativeGenericShape_Tag__PositiveLocalBranch = 7,
 } mir_native_backend_generic_source__MirNativeGenericShape_Tag;
 
+#ifndef GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericShape_DEFINED
+#define GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericShape_DEFINED
 struct mir_native_backend_generic_source__MirNativeGenericShape {
     int tag;
     union {
@@ -6884,7 +8188,10 @@ struct mir_native_backend_generic_source__MirNativeGenericShape {
         struct mir_native_backend_generic_source__MirNativeGenericShape_ScalarExpression ScalarExpression;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericModel_DEFINED
+#define GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericModel_DEFINED
 struct mir_native_backend_generic_source__MirNativeGenericModel {
     Slice_unsigned_char call_link_name;
     Slice_unsigned_char call_name;
@@ -6901,19 +8208,28 @@ struct mir_native_backend_generic_source__MirNativeGenericModel {
     Slice_unsigned_char source_path;
     int then_value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericScalarExpression_DEFINED
+#define GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericScalarExpression_DEFINED
 struct mir_native_backend_generic_source__MirNativeGenericScalarExpression {
     int add_count;
     int literal_total;
     int represented;
     int uses_local;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericSelectorFold_DEFINED
+#define GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericSelectorFold_DEFINED
 struct mir_native_backend_generic_source__MirNativeGenericSelectorFold {
     int represented;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericSourceResult_DEFINED
+#define GUST_STRUCT_mir_native_backend_generic_source__MirNativeGenericSourceResult_DEFINED
 struct mir_native_backend_generic_source__MirNativeGenericSourceResult {
     mir__MirProgramBundle bundle;
     Slice_unsigned_char diagnostic;
@@ -6921,28 +8237,40 @@ struct mir_native_backend_generic_source__MirNativeGenericSourceResult {
     mir_native_backend_capability__MirNativeBackendCapabilityPlan plan;
     Slice_unsigned_char reason_code;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_int_DEFINED
+#define GUST_STRUCT_std_Vector_int_DEFINED
 struct std_Vector_int {
     os_Arena* arena;
     int capacity;
     int* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_native_backend_local_state_source__MirNativeLocalStateProvenance_DEFINED
+#define GUST_STRUCT_std_Vector_mir_native_backend_local_state_source__MirNativeLocalStateProvenance_DEFINED
 struct std_Vector_mir_native_backend_local_state_source__MirNativeLocalStateProvenance {
     os_Arena* arena;
     int capacity;
     mir_native_backend_local_state_source__MirNativeLocalStateProvenance* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_native_backend_local_state_source__MirNativeLocalStateWrite_DEFINED
+#define GUST_STRUCT_std_Vector_mir_native_backend_local_state_source__MirNativeLocalStateWrite_DEFINED
 struct std_Vector_mir_native_backend_local_state_source__MirNativeLocalStateWrite {
     os_Arena* arena;
     int capacity;
     mir_native_backend_local_state_source__MirNativeLocalStateWrite* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_local_state_source__MirNativeLocalStateBlockResult_DEFINED
+#define GUST_STRUCT_mir_native_backend_local_state_source__MirNativeLocalStateBlockResult_DEFINED
 struct mir_native_backend_local_state_source__MirNativeLocalStateBlockResult {
     Slice_unsigned_char diagnostic;
     std_Vector_int initialized;
@@ -6952,14 +8280,20 @@ struct mir_native_backend_local_state_source__MirNativeLocalStateBlockResult {
     std_Vector_int values;
     std_Vector_mir_native_backend_local_state_source__MirNativeLocalStateWrite writes;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_local_state_source__MirNativeLocalStateBuilder_DEFINED
+#define GUST_STRUCT_mir_native_backend_local_state_source__MirNativeLocalStateBuilder_DEFINED
 struct mir_native_backend_local_state_source__MirNativeLocalStateBuilder {
     int capacity;
     unsigned char* data;
     int length;
     int valid;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_local_state_source__MirNativeLocalStateExpression_DEFINED
+#define GUST_STRUCT_mir_native_backend_local_state_source__MirNativeLocalStateExpression_DEFINED
 struct mir_native_backend_local_state_source__MirNativeLocalStateExpression {
     int add_count;
     int failure_tag;
@@ -6972,7 +8306,10 @@ struct mir_native_backend_local_state_source__MirNativeLocalStateExpression {
     int target_read_count;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_local_state_source__MirNativeLocalStateModel_DEFINED
+#define GUST_STRUCT_mir_native_backend_local_state_source__MirNativeLocalStateModel_DEFINED
 struct mir_native_backend_local_state_source__MirNativeLocalStateModel {
     int condition_local_index;
     Slice_unsigned_char diagnostic;
@@ -6992,7 +8329,10 @@ struct mir_native_backend_local_state_source__MirNativeLocalStateModel {
     Slice_unsigned_char source_path;
     std_Vector_mir_native_backend_local_state_source__MirNativeLocalStateWrite then_writes;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_local_state_source__MirNativeLocalStateProvenance_DEFINED
+#define GUST_STRUCT_mir_native_backend_local_state_source__MirNativeLocalStateProvenance_DEFINED
 struct mir_native_backend_local_state_source__MirNativeLocalStateProvenance {
     int block_index;
     int column;
@@ -7001,25 +8341,37 @@ struct mir_native_backend_local_state_source__MirNativeLocalStateProvenance {
     int local_index;
     int statement_index;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_local_state_source__MirNativeLocalStateSourceResult_DEFINED
+#define GUST_STRUCT_mir_native_backend_local_state_source__MirNativeLocalStateSourceResult_DEFINED
 struct mir_native_backend_local_state_source__MirNativeLocalStateSourceResult {
     mir__MirProgramBundle bundle;
     Slice_unsigned_char diagnostic;
     int invalid;
     int represented;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_local_state_source__MirNativeLocalStateStringHeader_DEFINED
+#define GUST_STRUCT_mir_native_backend_local_state_source__MirNativeLocalStateStringHeader_DEFINED
 struct mir_native_backend_local_state_source__MirNativeLocalStateStringHeader {
     unsigned char* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_local_state_source__MirNativeLocalStateWrite_DEFINED
+#define GUST_STRUCT_mir_native_backend_local_state_source__MirNativeLocalStateWrite_DEFINED
 struct mir_native_backend_local_state_source__MirNativeLocalStateWrite {
     int kind;
     int target_index;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_metadata_source__MirNativeMetadataSourceResult_DEFINED
+#define GUST_STRUCT_mir_native_backend_metadata_source__MirNativeMetadataSourceResult_DEFINED
 struct mir_native_backend_metadata_source__MirNativeMetadataSourceResult {
     mir__MirProgramBundle bundle;
     int deferred;
@@ -7028,7 +8380,10 @@ struct mir_native_backend_metadata_source__MirNativeMetadataSourceResult {
     Slice_unsigned_char reason_code;
     int represented;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_module_import_source__MirNativeModuleImportArgument_DEFINED
+#define GUST_STRUCT_mir_native_backend_module_import_source__MirNativeModuleImportArgument_DEFINED
 struct mir_native_backend_module_import_source__MirNativeModuleImportArgument {
     int kind;
     Slice_unsigned_char local_name;
@@ -7036,12 +8391,18 @@ struct mir_native_backend_module_import_source__MirNativeModuleImportArgument {
     int value;
     Slice_unsigned_char value_type;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_module_import_source__MirNativeModuleImportEvaluation_DEFINED
+#define GUST_STRUCT_mir_native_backend_module_import_source__MirNativeModuleImportEvaluation_DEFINED
 struct mir_native_backend_module_import_source__MirNativeModuleImportEvaluation {
     int valid;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_module_import_source__MirNativeModuleImportFunction_DEFINED
+#define GUST_STRUCT_mir_native_backend_module_import_source__MirNativeModuleImportFunction_DEFINED
 struct mir_native_backend_module_import_source__MirNativeModuleImportFunction {
     int arguments;
     int boundary_kind;
@@ -7069,7 +8430,10 @@ struct mir_native_backend_module_import_source__MirNativeModuleImportFunction {
     int second_parameter;
     Slice_unsigned_char source_name;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_module_import_source__MirNativeModuleImportHostCall_DEFINED
+#define GUST_STRUCT_mir_native_backend_module_import_source__MirNativeModuleImportHostCall_DEFINED
 struct mir_native_backend_module_import_source__MirNativeModuleImportHostCall {
     int arguments;
     int boundary_kind;
@@ -7079,7 +8443,10 @@ struct mir_native_backend_module_import_source__MirNativeModuleImportHostCall {
     int source_line;
     int valid;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_module_import_source__MirNativeModuleImportHost_DEFINED
+#define GUST_STRUCT_mir_native_backend_module_import_source__MirNativeModuleImportHost_DEFINED
 struct mir_native_backend_module_import_source__MirNativeModuleImportHost {
     int boundary_kind;
     Slice_unsigned_char link_name;
@@ -7088,7 +8455,10 @@ struct mir_native_backend_module_import_source__MirNativeModuleImportHost {
     int parameter_types;
     Slice_unsigned_char return_type;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_module_import_source__MirNativeModuleImportModel_DEFINED
+#define GUST_STRUCT_mir_native_backend_module_import_source__MirNativeModuleImportModel_DEFINED
 struct mir_native_backend_module_import_source__MirNativeModuleImportModel {
     Slice_unsigned_char diagnostic;
     int entry_index;
@@ -7100,14 +8470,20 @@ struct mir_native_backend_module_import_source__MirNativeModuleImportModel {
     int module_prefixes;
     int represented;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_module_import_source__MirNativeModuleImportSourceResult_DEFINED
+#define GUST_STRUCT_mir_native_backend_module_import_source__MirNativeModuleImportSourceResult_DEFINED
 struct mir_native_backend_module_import_source__MirNativeModuleImportSourceResult {
     mir__MirProgramBundle bundle;
     Slice_unsigned_char diagnostic;
     int invalid;
     int represented;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_parameter_argument_source__MirNativeParameterArgumentHelper_DEFINED
+#define GUST_STRUCT_mir_native_backend_parameter_argument_source__MirNativeParameterArgumentHelper_DEFINED
 struct mir_native_backend_parameter_argument_source__MirNativeParameterArgumentHelper {
     Slice_unsigned_char name;
     std_Vector_int parameter_columns;
@@ -7115,7 +8491,10 @@ struct mir_native_backend_parameter_argument_source__MirNativeParameterArgumentH
     std_Vector_str parameter_names;
     int represented;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_parameter_argument_source__MirNativeParameterArgumentModel_DEFINED
+#define GUST_STRUCT_mir_native_backend_parameter_argument_source__MirNativeParameterArgumentModel_DEFINED
 struct mir_native_backend_parameter_argument_source__MirNativeParameterArgumentModel {
     Slice_unsigned_char call_result_local;
     int deferred;
@@ -7141,7 +8520,10 @@ struct mir_native_backend_parameter_argument_source__MirNativeParameterArgumentM
     Slice_unsigned_char second_local;
     Slice_unsigned_char source_path;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_parameter_argument_source__MirNativeParameterArgumentSourceResult_DEFINED
+#define GUST_STRUCT_mir_native_backend_parameter_argument_source__MirNativeParameterArgumentSourceResult_DEFINED
 struct mir_native_backend_parameter_argument_source__MirNativeParameterArgumentSourceResult {
     mir__MirProgramBundle bundle;
     int deferred;
@@ -7150,7 +8532,10 @@ struct mir_native_backend_parameter_argument_source__MirNativeParameterArgumentS
     Slice_unsigned_char reason_code;
     int represented;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_pointer__MirPointerTable_DEFINED
+#define GUST_STRUCT_mir_pointer__MirPointerTable_DEFINED
 struct mir_pointer__MirPointerTable {
     Slice_unsigned_char default_address_space;
     Slice_unsigned_char format;
@@ -7159,7 +8544,10 @@ struct mir_pointer__MirPointerTable {
     Slice_unsigned_char target_id;
     Slice_unsigned_char target_triple;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_stack_slot__MirStackSlotTable_DEFINED
+#define GUST_STRUCT_mir_stack_slot__MirStackSlotTable_DEFINED
 struct mir_stack_slot__MirStackSlotTable {
     Slice_unsigned_char address_escape_policy;
     Slice_unsigned_char format;
@@ -7169,7 +8557,10 @@ struct mir_stack_slot__MirStackSlotTable {
     Slice_unsigned_char target_id;
     Slice_unsigned_char target_triple;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_string_view__MirStringViewLayout_DEFINED
+#define GUST_STRUCT_mir_string_view__MirStringViewLayout_DEFINED
 struct mir_string_view__MirStringViewLayout {
     int alignment;
     int data_pointer_offset;
@@ -7184,7 +8575,10 @@ struct mir_string_view__MirStringViewLayout {
     Slice_unsigned_char target_triple;
     Slice_unsigned_char view_type_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_string_view__MirStringViewTable_DEFINED
+#define GUST_STRUCT_mir_string_view__MirStringViewTable_DEFINED
 struct mir_string_view__MirStringViewTable {
     Slice_unsigned_char allocation_policy;
     Slice_unsigned_char concatenation_policy;
@@ -7203,7 +8597,10 @@ struct mir_string_view__MirStringViewTable {
     mir_string_view__MirStringViewLayout view_layout;
     int views;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_struct_layout__MirStructTable_DEFINED
+#define GUST_STRUCT_mir_struct_layout__MirStructTable_DEFINED
 struct mir_struct_layout__MirStructTable {
     Slice_unsigned_char aggregate_abi_policy;
     Slice_unsigned_char field_order_policy;
@@ -7217,7 +8614,10 @@ struct mir_struct_layout__MirStructTable {
     Slice_unsigned_char target_triple;
     int values;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_request__MirNativeBackendRequest_DEFINED
+#define GUST_STRUCT_mir_native_backend_request__MirNativeBackendRequest_DEFINED
 struct mir_native_backend_request__MirNativeBackendRequest {
     mir_aggregate_transport__MirAggregateTransportTable aggregate_table;
     mir_array_slice__MirArraySliceTable array_slice_table;
@@ -7236,7 +8636,10 @@ struct mir_native_backend_request__MirNativeBackendRequest {
     mir_struct_layout__MirStructTable struct_table;
     Slice_unsigned_char target_triple;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_resource_sync_source__MirNativeResourceFunctionEffect_DEFINED
+#define GUST_STRUCT_mir_native_backend_resource_sync_source__MirNativeResourceFunctionEffect_DEFINED
 struct mir_native_backend_resource_sync_source__MirNativeResourceFunctionEffect {
     int cleanup_kind;
     int count;
@@ -7247,14 +8650,20 @@ struct mir_native_backend_resource_sync_source__MirNativeResourceFunctionEffect 
     int return_value;
     int second;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_resource_sync_source__MirNativeResourceModule_DEFINED
+#define GUST_STRUCT_mir_native_backend_resource_sync_source__MirNativeResourceModule_DEFINED
 struct mir_native_backend_resource_sync_source__MirNativeResourceModule {
     Slice_unsigned_char acquire_name;
     Slice_unsigned_char consume_name;
     Slice_unsigned_char prefix;
     int represented;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_resource_sync_source__MirNativeResourceSyncModel_DEFINED
+#define GUST_STRUCT_mir_native_backend_resource_sync_source__MirNativeResourceSyncModel_DEFINED
 struct mir_native_backend_resource_sync_source__MirNativeResourceSyncModel {
     int cleanup_kinds;
     int effects;
@@ -7263,33 +8672,48 @@ struct mir_native_backend_resource_sync_source__MirNativeResourceSyncModel {
     Slice_unsigned_char source_path;
     Slice_unsigned_char worker_name;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_resource_sync_source__MirNativeResourceSyncResult_DEFINED
+#define GUST_STRUCT_mir_native_backend_resource_sync_source__MirNativeResourceSyncResult_DEFINED
 struct mir_native_backend_resource_sync_source__MirNativeResourceSyncResult {
     mir__MirProgramBundle bundle;
     Slice_unsigned_char diagnostic;
     int invalid;
     int represented;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_scalar_expression_source__MirNativeScalarConstBinary_DEFINED
+#define GUST_STRUCT_mir_native_backend_scalar_expression_source__MirNativeScalarConstBinary_DEFINED
 struct mir_native_backend_scalar_expression_source__MirNativeScalarConstBinary {
     int known;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_scalar_expression_source__MirNativeScalarExpressionBuilder_DEFINED
+#define GUST_STRUCT_mir_native_backend_scalar_expression_source__MirNativeScalarExpressionBuilder_DEFINED
 struct mir_native_backend_scalar_expression_source__MirNativeScalarExpressionBuilder {
     int capacity;
     unsigned char* data;
     int length;
     int valid;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStep_DEFINED
+#define GUST_STRUCT_std_Vector_mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStep_DEFINED
 struct std_Vector_mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStep {
     os_Arena* arena;
     int capacity;
     mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStep* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_scalar_expression_source__MirNativeScalarExpressionPlan_DEFINED
+#define GUST_STRUCT_mir_native_backend_scalar_expression_source__MirNativeScalarExpressionPlan_DEFINED
 struct mir_native_backend_scalar_expression_source__MirNativeScalarExpressionPlan {
     int add_count;
     int expected_value;
@@ -7300,7 +8724,10 @@ struct mir_native_backend_scalar_expression_source__MirNativeScalarExpressionPla
     std_Vector_mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStep steps;
     int sub_count;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_scalar_expression_source__MirNativeScalarExpressionModel_DEFINED
+#define GUST_STRUCT_mir_native_backend_scalar_expression_source__MirNativeScalarExpressionModel_DEFINED
 struct mir_native_backend_scalar_expression_source__MirNativeScalarExpressionModel {
     int else_value;
     int is_comparison_branch;
@@ -7311,25 +8738,38 @@ struct mir_native_backend_scalar_expression_source__MirNativeScalarExpressionMod
     Slice_unsigned_char source_path;
     int then_value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_scalar_expression_source__MirNativeScalarExpressionSourceResult_DEFINED
+#define GUST_STRUCT_mir_native_backend_scalar_expression_source__MirNativeScalarExpressionSourceResult_DEFINED
 struct mir_native_backend_scalar_expression_source__MirNativeScalarExpressionSourceResult {
     mir__MirProgramBundle bundle;
     Slice_unsigned_char diagnostic;
     int invalid;
     int represented;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStepKind_AddI32Literal_DEFINED
+#define GUST_STRUCT_mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStepKind_AddI32Literal_DEFINED
 struct mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStepKind_AddI32Literal {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStepKind_MulI32Literal_DEFINED
+#define GUST_STRUCT_mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStepKind_MulI32Literal_DEFINED
 struct mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStepKind_MulI32Literal {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStepKind_SubI32Literal_DEFINED
+#define GUST_STRUCT_mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStepKind_SubI32Literal_DEFINED
 struct mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStepKind_SubI32Literal {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStepKind_Tag__AddI32Literal = 0,
@@ -7337,6 +8777,8 @@ typedef enum {
     mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStepKind_Tag__MulI32Literal = 2,
 } mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStepKind_Tag;
 
+#ifndef GUST_STRUCT_mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStepKind_DEFINED
+#define GUST_STRUCT_mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStepKind_DEFINED
 struct mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStepKind {
     int tag;
     union {
@@ -7345,40 +8787,65 @@ struct mir_native_backend_scalar_expression_source__MirNativeScalarExpressionSte
         struct mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStepKind_SubI32Literal SubI32Literal;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStep_DEFINED
+#define GUST_STRUCT_mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStep_DEFINED
 struct mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStep {
     mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStepKind kind;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStringHeader_DEFINED
+#define GUST_STRUCT_mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStringHeader_DEFINED
 struct mir_native_backend_scalar_expression_source__MirNativeScalarExpressionStringHeader {
     unsigned char* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_source_route__MirNativeDiagnosticClass_CanonicalMirVerificationError_DEFINED
+#define GUST_STRUCT_mir_native_backend_source_route__MirNativeDiagnosticClass_CanonicalMirVerificationError_DEFINED
 struct mir_native_backend_source_route__MirNativeDiagnosticClass_CanonicalMirVerificationError {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_source_route__MirNativeDiagnosticClass_DriverHandshakeError_DEFINED
+#define GUST_STRUCT_mir_native_backend_source_route__MirNativeDiagnosticClass_DriverHandshakeError_DEFINED
 struct mir_native_backend_source_route__MirNativeDiagnosticClass_DriverHandshakeError {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_source_route__MirNativeDiagnosticClass_ObjectLinkPublicationError_DEFINED
+#define GUST_STRUCT_mir_native_backend_source_route__MirNativeDiagnosticClass_ObjectLinkPublicationError_DEFINED
 struct mir_native_backend_source_route__MirNativeDiagnosticClass_ObjectLinkPublicationError {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_source_route__MirNativeDiagnosticClass_SourceTypeError_DEFINED
+#define GUST_STRUCT_mir_native_backend_source_route__MirNativeDiagnosticClass_SourceTypeError_DEFINED
 struct mir_native_backend_source_route__MirNativeDiagnosticClass_SourceTypeError {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_source_route__MirNativeDiagnosticClass_UnsupportedNativeCapability_DEFINED
+#define GUST_STRUCT_mir_native_backend_source_route__MirNativeDiagnosticClass_UnsupportedNativeCapability_DEFINED
 struct mir_native_backend_source_route__MirNativeDiagnosticClass_UnsupportedNativeCapability {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_source_route__MirNativeDiagnosticClass_WorkerLoweringError_DEFINED
+#define GUST_STRUCT_mir_native_backend_source_route__MirNativeDiagnosticClass_WorkerLoweringError_DEFINED
 struct mir_native_backend_source_route__MirNativeDiagnosticClass_WorkerLoweringError {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir_native_backend_source_route__MirNativeDiagnosticClass_Tag__SourceTypeError = 0,
@@ -7389,6 +8856,8 @@ typedef enum {
     mir_native_backend_source_route__MirNativeDiagnosticClass_Tag__ObjectLinkPublicationError = 5,
 } mir_native_backend_source_route__MirNativeDiagnosticClass_Tag;
 
+#ifndef GUST_STRUCT_mir_native_backend_source_route__MirNativeDiagnosticClass_DEFINED
+#define GUST_STRUCT_mir_native_backend_source_route__MirNativeDiagnosticClass_DEFINED
 struct mir_native_backend_source_route__MirNativeDiagnosticClass {
     int tag;
     union {
@@ -7400,13 +8869,19 @@ struct mir_native_backend_source_route__MirNativeDiagnosticClass {
         struct mir_native_backend_source_route__MirNativeDiagnosticClass_WorkerLoweringError WorkerLoweringError;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_source_route__MirNativeDiagnosticLocation_DEFINED
+#define GUST_STRUCT_mir_native_backend_source_route__MirNativeDiagnosticLocation_DEFINED
 struct mir_native_backend_source_route__MirNativeDiagnosticLocation {
     int column;
     int line;
     Slice_unsigned_char source_path;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_source_route__MirNativeScalarSourceRouteResult_DEFINED
+#define GUST_STRUCT_mir_native_backend_source_route__MirNativeScalarSourceRouteResult_DEFINED
 struct mir_native_backend_source_route__MirNativeScalarSourceRouteResult {
     int column;
     mir_native_backend_capability__MirNativeBackendRouteDecision decision;
@@ -7415,7 +8890,10 @@ struct mir_native_backend_source_route__MirNativeScalarSourceRouteResult {
     Slice_unsigned_char source_path;
     int status;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_structured_cfg_source__MirNativeStructuredCfgBlock_DEFINED
+#define GUST_STRUCT_mir_native_backend_structured_cfg_source__MirNativeStructuredCfgBlock_DEFINED
 struct mir_native_backend_structured_cfg_source__MirNativeStructuredCfgBlock {
     int condition_local_index;
     int first_target_index;
@@ -7428,14 +8906,20 @@ struct mir_native_backend_structured_cfg_source__MirNativeStructuredCfgBlock {
     int terminator_kind;
     std_Vector_mir_native_backend_local_state_source__MirNativeLocalStateWrite writes;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_native_backend_structured_cfg_source__MirNativeStructuredCfgBlock_DEFINED
+#define GUST_STRUCT_std_Vector_mir_native_backend_structured_cfg_source__MirNativeStructuredCfgBlock_DEFINED
 struct std_Vector_mir_native_backend_structured_cfg_source__MirNativeStructuredCfgBlock {
     os_Arena* arena;
     int capacity;
     mir_native_backend_structured_cfg_source__MirNativeStructuredCfgBlock* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_structured_cfg_source__MirNativeStructuredCfgModel_DEFINED
+#define GUST_STRUCT_mir_native_backend_structured_cfg_source__MirNativeStructuredCfgModel_DEFINED
 struct mir_native_backend_structured_cfg_source__MirNativeStructuredCfgModel {
     std_Vector_mir_native_backend_structured_cfg_source__MirNativeStructuredCfgBlock blocks;
     int branch_count;
@@ -7452,14 +8936,20 @@ struct mir_native_backend_structured_cfg_source__MirNativeStructuredCfgModel {
     int represented;
     Slice_unsigned_char source_path;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_structured_cfg_source__MirNativeStructuredCfgState_DEFINED
+#define GUST_STRUCT_mir_native_backend_structured_cfg_source__MirNativeStructuredCfgState_DEFINED
 struct mir_native_backend_structured_cfg_source__MirNativeStructuredCfgState {
     int block_index;
     std_Vector_int initialized;
     int selected;
     std_Vector_int values;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_structured_cfg_source__MirNativeStructuredCfgConditionResult_DEFINED
+#define GUST_STRUCT_mir_native_backend_structured_cfg_source__MirNativeStructuredCfgConditionResult_DEFINED
 struct mir_native_backend_structured_cfg_source__MirNativeStructuredCfgConditionResult {
     Slice_unsigned_char diagnostic;
     int invalid;
@@ -7468,14 +8958,20 @@ struct mir_native_backend_structured_cfg_source__MirNativeStructuredCfgCondition
     int represented;
     mir_native_backend_structured_cfg_source__MirNativeStructuredCfgState state;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_native_backend_structured_cfg_source__MirNativeStructuredCfgState_DEFINED
+#define GUST_STRUCT_std_Vector_mir_native_backend_structured_cfg_source__MirNativeStructuredCfgState_DEFINED
 struct std_Vector_mir_native_backend_structured_cfg_source__MirNativeStructuredCfgState {
     os_Arena* arena;
     int capacity;
     mir_native_backend_structured_cfg_source__MirNativeStructuredCfgState* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_structured_cfg_source__MirNativeStructuredCfgLowerResult_DEFINED
+#define GUST_STRUCT_mir_native_backend_structured_cfg_source__MirNativeStructuredCfgLowerResult_DEFINED
 struct mir_native_backend_structured_cfg_source__MirNativeStructuredCfgLowerResult {
     Slice_unsigned_char diagnostic;
     int invalid;
@@ -7483,7 +8979,10 @@ struct mir_native_backend_structured_cfg_source__MirNativeStructuredCfgLowerResu
     int represented;
     std_Vector_mir_native_backend_structured_cfg_source__MirNativeStructuredCfgState states;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_native_backend_structured_cfg_source__MirNativeStructuredCfgSourceResult_DEFINED
+#define GUST_STRUCT_mir_native_backend_structured_cfg_source__MirNativeStructuredCfgSourceResult_DEFINED
 struct mir_native_backend_structured_cfg_source__MirNativeStructuredCfgSourceResult {
     mir__MirProgramBundle bundle;
     int deferred;
@@ -7492,13 +8991,19 @@ struct mir_native_backend_structured_cfg_source__MirNativeStructuredCfgSourceRes
     Slice_unsigned_char reason_code;
     int represented;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_pointer__MirPointerEvaluation_DEFINED
+#define GUST_STRUCT_mir_pointer__MirPointerEvaluation_DEFINED
 struct mir_pointer__MirPointerEvaluation {
     Slice_unsigned_char reason_code;
     int success;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_pointer__MirPointerOperation_DEFINED
+#define GUST_STRUCT_mir_pointer__MirPointerOperation_DEFINED
 struct mir_pointer__MirPointerOperation {
     Slice_unsigned_char context_kind;
     Slice_unsigned_char destination_pointer_type_id;
@@ -7518,12 +9023,18 @@ struct mir_pointer__MirPointerOperation {
     Slice_unsigned_char source_pointer_type_id;
     Slice_unsigned_char target_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_pointer__MirPointerOperationQuery_DEFINED
+#define GUST_STRUCT_mir_pointer__MirPointerOperationQuery_DEFINED
 struct mir_pointer__MirPointerOperationQuery {
     int found;
     mir_pointer__MirPointerOperation operation;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_pointer__MirPointerType_DEFINED
+#define GUST_STRUCT_mir_pointer__MirPointerType_DEFINED
 struct mir_pointer__MirPointerType {
     Slice_unsigned_char address_space;
     Slice_unsigned_char mutability;
@@ -7536,24 +9047,36 @@ struct mir_pointer__MirPointerType {
     Slice_unsigned_char target_id;
     Slice_unsigned_char target_triple;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_pointer__MirPointerSelection_DEFINED
+#define GUST_STRUCT_mir_pointer__MirPointerSelection_DEFINED
 struct mir_pointer__MirPointerSelection {
     mir_pointer__MirPointerType pointer_type;
     Slice_unsigned_char reason_code;
     int valid;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_pointer__MirPointerTypeQuery_DEFINED
+#define GUST_STRUCT_mir_pointer__MirPointerTypeQuery_DEFINED
 struct mir_pointer__MirPointerTypeQuery {
     int found;
     mir_pointer__MirPointerType pointer_type;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_primitive_layout__MirDeclaredTargetQuery_DEFINED
+#define GUST_STRUCT_mir_primitive_layout__MirDeclaredTargetQuery_DEFINED
 struct mir_primitive_layout__MirDeclaredTargetQuery {
     int found;
     Slice_unsigned_char object_format;
     mir_layout__MirTargetLayout target;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_authority__MirCleanupObligation_DEFINED
+#define GUST_STRUCT_mir_resource_authority__MirCleanupObligation_DEFINED
 struct mir_resource_authority__MirCleanupObligation {
     Slice_unsigned_char cleanup_id;
     Slice_unsigned_char cleanup_reason;
@@ -7570,12 +9093,18 @@ struct mir_resource_authority__MirCleanupObligation {
     Slice_unsigned_char source_location;
     Slice_unsigned_char target_block;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_authority__MirCleanupObligationQuery_DEFINED
+#define GUST_STRUCT_mir_resource_authority__MirCleanupObligationQuery_DEFINED
 struct mir_resource_authority__MirCleanupObligationQuery {
     int found;
     mir_resource_authority__MirCleanupObligation value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_authority__MirCloseCapability_DEFINED
+#define GUST_STRUCT_mir_resource_authority__MirCloseCapability_DEFINED
 struct mir_resource_authority__MirCloseCapability {
     Slice_unsigned_char close_capability_id;
     Slice_unsigned_char repeated_close_policy;
@@ -7585,12 +9114,18 @@ struct mir_resource_authority__MirCloseCapability {
     Slice_unsigned_char target_id;
     Slice_unsigned_char target_triple;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_authority__MirCloseCapabilityQuery_DEFINED
+#define GUST_STRUCT_mir_resource_authority__MirCloseCapabilityQuery_DEFINED
 struct mir_resource_authority__MirCloseCapabilityQuery {
     int found;
     mir_resource_authority__MirCloseCapability value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_authority__MirDestructorIdentity_DEFINED
+#define GUST_STRUCT_mir_resource_authority__MirDestructorIdentity_DEFINED
 struct mir_resource_authority__MirDestructorIdentity {
     Slice_unsigned_char descriptor_id;
     Slice_unsigned_char destructor_id;
@@ -7599,12 +9134,18 @@ struct mir_resource_authority__MirDestructorIdentity {
     Slice_unsigned_char target_id;
     Slice_unsigned_char target_triple;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_authority__MirDestructorIdentityQuery_DEFINED
+#define GUST_STRUCT_mir_resource_authority__MirDestructorIdentityQuery_DEFINED
 struct mir_resource_authority__MirDestructorIdentityQuery {
     int found;
     mir_resource_authority__MirDestructorIdentity value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_authority__MirResourceAuthorityTable_DEFINED
+#define GUST_STRUCT_mir_resource_authority__MirResourceAuthorityTable_DEFINED
 struct mir_resource_authority__MirResourceAuthorityTable {
     Slice_unsigned_char cleanup_policy;
     int cleanups;
@@ -7622,7 +9163,10 @@ struct mir_resource_authority__MirResourceAuthorityTable {
     Slice_unsigned_char target_triple;
     int transitions;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_authority__MirResourceIdentity_DEFINED
+#define GUST_STRUCT_mir_resource_authority__MirResourceIdentity_DEFINED
 struct mir_resource_authority__MirResourceIdentity {
     Slice_unsigned_char cleanup_policy;
     Slice_unsigned_char close_capability_id;
@@ -7641,18 +9185,27 @@ struct mir_resource_authority__MirResourceIdentity {
     Slice_unsigned_char target_triple;
     Slice_unsigned_char value_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_authority__MirResourceIdentityQuery_DEFINED
+#define GUST_STRUCT_mir_resource_authority__MirResourceIdentityQuery_DEFINED
 struct mir_resource_authority__MirResourceIdentityQuery {
     int found;
     mir_resource_authority__MirResourceIdentity value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_authority__MirResourceJoinResult_DEFINED
+#define GUST_STRUCT_mir_resource_authority__MirResourceJoinResult_DEFINED
 struct mir_resource_authority__MirResourceJoinResult {
     Slice_unsigned_char reason_code;
     Slice_unsigned_char resulting_state;
     int valid;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_authority__MirResourceMirReference_DEFINED
+#define GUST_STRUCT_mir_resource_authority__MirResourceMirReference_DEFINED
 struct mir_resource_authority__MirResourceMirReference {
     Slice_unsigned_char cleanup_id;
     Slice_unsigned_char mir_operation_id;
@@ -7660,7 +9213,10 @@ struct mir_resource_authority__MirResourceMirReference {
     Slice_unsigned_char reference_id;
     Slice_unsigned_char resource_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_authority__MirResourceStateJoin_DEFINED
+#define GUST_STRUCT_mir_resource_authority__MirResourceStateJoin_DEFINED
 struct mir_resource_authority__MirResourceStateJoin {
     int all_paths_agree;
     int cleanup_obligation_live;
@@ -7672,29 +9228,44 @@ struct mir_resource_authority__MirResourceStateJoin {
     Slice_unsigned_char resulting_state;
     int valid;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_authority__MirResourceState_DEFINED
+#define GUST_STRUCT_mir_resource_authority__MirResourceState_DEFINED
 struct mir_resource_authority__MirResourceState {
     Slice_unsigned_char program_point;
     Slice_unsigned_char resource_id;
     Slice_unsigned_char state;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_authority__MirResourceStateQuery_DEFINED
+#define GUST_STRUCT_mir_resource_authority__MirResourceStateQuery_DEFINED
 struct mir_resource_authority__MirResourceStateQuery {
     int found;
     mir_resource_authority__MirResourceState value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_authority__MirResourceTableValidation_DEFINED
+#define GUST_STRUCT_mir_resource_authority__MirResourceTableValidation_DEFINED
 struct mir_resource_authority__MirResourceTableValidation {
     Slice_unsigned_char reason_code;
     int valid;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_authority__MirResourceTransitionValidation_DEFINED
+#define GUST_STRUCT_mir_resource_authority__MirResourceTransitionValidation_DEFINED
 struct mir_resource_authority__MirResourceTransitionValidation {
     Slice_unsigned_char reason_code;
     Slice_unsigned_char resulting_state;
     int valid;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_authority__MirResourceTransition_DEFINED
+#define GUST_STRUCT_mir_resource_authority__MirResourceTransition_DEFINED
 struct mir_resource_authority__MirResourceTransition {
     Slice_unsigned_char cleanup_id;
     Slice_unsigned_char control_flow_edge;
@@ -7707,26 +9278,42 @@ struct mir_resource_authority__MirResourceTransition {
     Slice_unsigned_char source_location;
     Slice_unsigned_char transition_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceCarrierKind_AggregateField_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceCarrierKind_AggregateField_DEFINED
 struct mir_resource_value__MirResourceCarrierKind_AggregateField {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceCarrierKind_BranchArgument_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceCarrierKind_BranchArgument_DEFINED
 struct mir_resource_value__MirResourceCarrierKind_BranchArgument {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceCarrierKind_Local_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceCarrierKind_Local_DEFINED
 struct mir_resource_value__MirResourceCarrierKind_Local {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceCarrierKind_LoopCarry_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceCarrierKind_LoopCarry_DEFINED
 struct mir_resource_value__MirResourceCarrierKind_LoopCarry {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceCarrierKind_StackSlot_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceCarrierKind_StackSlot_DEFINED
 struct mir_resource_value__MirResourceCarrierKind_StackSlot {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir_resource_value__MirResourceCarrierKind_Tag__Local = 0,
@@ -7736,6 +9323,8 @@ typedef enum {
     mir_resource_value__MirResourceCarrierKind_Tag__AggregateField = 4,
 } mir_resource_value__MirResourceCarrierKind_Tag;
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceCarrierKind_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceCarrierKind_DEFINED
 struct mir_resource_value__MirResourceCarrierKind {
     int tag;
     union {
@@ -7746,7 +9335,10 @@ struct mir_resource_value__MirResourceCarrierKind {
         struct mir_resource_value__MirResourceCarrierKind_StackSlot StackSlot;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceCarrier_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceCarrier_DEFINED
 struct mir_resource_value__MirResourceCarrier {
     Slice_unsigned_char backend_symbol;
     Slice_unsigned_char carrier_id;
@@ -7760,12 +9352,18 @@ struct mir_resource_value__MirResourceCarrier {
     Slice_unsigned_char storage_id;
     Slice_unsigned_char value_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceCarrierQuery_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceCarrierQuery_DEFINED
 struct mir_resource_value__MirResourceCarrierQuery {
     int found;
     mir_resource_value__MirResourceCarrier value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceFlowEdge_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceFlowEdge_DEFINED
 struct mir_resource_value__MirResourceFlowEdge {
     Slice_unsigned_char edge_id;
     Slice_unsigned_char from_block;
@@ -7776,7 +9374,10 @@ struct mir_resource_value__MirResourceFlowEdge {
     Slice_unsigned_char to_block;
     Slice_unsigned_char value_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceMirTable_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceMirTable_DEFINED
 struct mir_resource_value__MirResourceMirTable {
     int carriers;
     Slice_unsigned_char copy_policy;
@@ -7792,12 +9393,18 @@ struct mir_resource_value__MirResourceMirTable {
     Slice_unsigned_char target_triple;
     int values;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceMirValidation_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceMirValidation_DEFINED
 struct mir_resource_value__MirResourceMirValidation {
     Slice_unsigned_char reason_code;
     int valid;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceMoveDiagnostic_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceMoveDiagnostic_DEFINED
 struct mir_resource_value__MirResourceMoveDiagnostic {
     Slice_unsigned_char attempted_operation;
     Slice_unsigned_char invalid_use_site;
@@ -7807,45 +9414,73 @@ struct mir_resource_value__MirResourceMoveDiagnostic {
     Slice_unsigned_char resource_declaration;
     Slice_unsigned_char resource_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceMoveValidation_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceMoveValidation_DEFINED
 struct mir_resource_value__MirResourceMoveValidation {
     mir_resource_value__MirResourceMoveDiagnostic diagnostic;
     Slice_unsigned_char reason_code;
     Slice_unsigned_char resulting_state;
     int valid;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceOperationKind_Declare_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceOperationKind_Declare_DEFINED
 struct mir_resource_value__MirResourceOperationKind_Declare {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceOperationKind_ExplicitClose_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceOperationKind_ExplicitClose_DEFINED
 struct mir_resource_value__MirResourceOperationKind_ExplicitClose {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceOperationKind_Initialize_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceOperationKind_Initialize_DEFINED
 struct mir_resource_value__MirResourceOperationKind_Initialize {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceOperationKind_InvokeDestructor_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceOperationKind_InvokeDestructor_DEFINED
 struct mir_resource_value__MirResourceOperationKind_InvokeDestructor {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceOperationKind_MarkDestroyed_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceOperationKind_MarkDestroyed_DEFINED
 struct mir_resource_value__MirResourceOperationKind_MarkDestroyed {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceOperationKind_Move_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceOperationKind_Move_DEFINED
 struct mir_resource_value__MirResourceOperationKind_Move {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceOperationKind_Read_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceOperationKind_Read_DEFINED
 struct mir_resource_value__MirResourceOperationKind_Read {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceOperationKind_ScheduleCleanup_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceOperationKind_ScheduleCleanup_DEFINED
 struct mir_resource_value__MirResourceOperationKind_ScheduleCleanup {
     char dummy;
 };
+#endif
 
 typedef enum {
     mir_resource_value__MirResourceOperationKind_Tag__Declare = 0,
@@ -7858,6 +9493,8 @@ typedef enum {
     mir_resource_value__MirResourceOperationKind_Tag__MarkDestroyed = 7,
 } mir_resource_value__MirResourceOperationKind_Tag;
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceOperationKind_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceOperationKind_DEFINED
 struct mir_resource_value__MirResourceOperationKind {
     int tag;
     union {
@@ -7871,7 +9508,10 @@ struct mir_resource_value__MirResourceOperationKind {
         struct mir_resource_value__MirResourceOperationKind_ScheduleCleanup ScheduleCleanup;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceOperation_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceOperation_DEFINED
 struct mir_resource_value__MirResourceOperation {
     Slice_unsigned_char cleanup_id;
     Slice_unsigned_char close_capability_id;
@@ -7887,19 +9527,28 @@ struct mir_resource_value__MirResourceOperation {
     Slice_unsigned_char source_location;
     Slice_unsigned_char value_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceOperationQuery_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceOperationQuery_DEFINED
 struct mir_resource_value__MirResourceOperationQuery {
     int found;
     mir_resource_value__MirResourceOperation value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceStorageState_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceStorageState_DEFINED
 struct mir_resource_value__MirResourceStorageState {
     int found;
     Slice_unsigned_char move_site;
     Slice_unsigned_char resource_id;
     Slice_unsigned_char state;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceValue_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceValue_DEFINED
 struct mir_resource_value__MirResourceValue {
     Slice_unsigned_char cleanup_policy;
     Slice_unsigned_char close_capability_id;
@@ -7913,12 +9562,18 @@ struct mir_resource_value__MirResourceValue {
     Slice_unsigned_char source_location;
     Slice_unsigned_char value_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_resource_value__MirResourceValueQuery_DEFINED
+#define GUST_STRUCT_mir_resource_value__MirResourceValueQuery_DEFINED
 struct mir_resource_value__MirResourceValueQuery {
     int found;
     mir_resource_value__MirResourceValue value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_stack_slot__MirStackSlotOperation_DEFINED
+#define GUST_STRUCT_mir_stack_slot__MirStackSlotOperation_DEFINED
 struct mir_stack_slot__MirStackSlotOperation {
     Slice_unsigned_char contained_layout_id;
     Slice_unsigned_char contained_type_id;
@@ -7935,12 +9590,18 @@ struct mir_stack_slot__MirStackSlotOperation {
     Slice_unsigned_char source_slot_id;
     Slice_unsigned_char target_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_stack_slot__MirStackSlotOperationQuery_DEFINED
+#define GUST_STRUCT_mir_stack_slot__MirStackSlotOperationQuery_DEFINED
 struct mir_stack_slot__MirStackSlotOperationQuery {
     int found;
     mir_stack_slot__MirStackSlotOperation operation;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_stack_slot__MirStackSlot_DEFINED
+#define GUST_STRUCT_mir_stack_slot__MirStackSlot_DEFINED
 struct mir_stack_slot__MirStackSlot {
     Slice_unsigned_char address_escape_policy;
     int alignment;
@@ -7958,18 +9619,27 @@ struct mir_stack_slot__MirStackSlot {
     Slice_unsigned_char target_id;
     Slice_unsigned_char target_triple;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_stack_slot__MirStackSlotQuery_DEFINED
+#define GUST_STRUCT_mir_stack_slot__MirStackSlotQuery_DEFINED
 struct mir_stack_slot__MirStackSlotQuery {
     int found;
     mir_stack_slot__MirStackSlot slot;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_stack_slot__MirStackSlotValidation_DEFINED
+#define GUST_STRUCT_mir_stack_slot__MirStackSlotValidation_DEFINED
 struct mir_stack_slot__MirStackSlotValidation {
     Slice_unsigned_char reason_code;
     int valid;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_string_view__MirStringLiteralStorage_DEFINED
+#define GUST_STRUCT_mir_string_view__MirStringLiteralStorage_DEFINED
 struct mir_string_view__MirStringLiteralStorage {
     int byte_length;
     Slice_unsigned_char bytes_hex;
@@ -7981,12 +9651,18 @@ struct mir_string_view__MirStringLiteralStorage {
     Slice_unsigned_char storage_kind;
     Slice_unsigned_char symbol_name;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_string_view__MirStringLiteralQuery_DEFINED
+#define GUST_STRUCT_mir_string_view__MirStringLiteralQuery_DEFINED
 struct mir_string_view__MirStringLiteralQuery {
     int found;
     mir_string_view__MirStringLiteralStorage literal;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_string_view__MirStringViewEvaluation_DEFINED
+#define GUST_STRUCT_mir_string_view__MirStringViewEvaluation_DEFINED
 struct mir_string_view__MirStringViewEvaluation {
     Slice_unsigned_char reason_code;
     int result_length;
@@ -7994,7 +9670,10 @@ struct mir_string_view__MirStringViewEvaluation {
     int success;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_string_view__MirStringViewOperation_DEFINED
+#define GUST_STRUCT_mir_string_view__MirStringViewOperation_DEFINED
 struct mir_string_view__MirStringViewOperation {
     int expect_success;
     Slice_unsigned_char expected_reason_code;
@@ -8012,12 +9691,18 @@ struct mir_string_view__MirStringViewOperation {
     Slice_unsigned_char target_id;
     Slice_unsigned_char view_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_string_view__MirStringViewOperationQuery_DEFINED
+#define GUST_STRUCT_mir_string_view__MirStringViewOperationQuery_DEFINED
 struct mir_string_view__MirStringViewOperationQuery {
     int found;
     mir_string_view__MirStringViewOperation operation;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_string_view__MirStringView_DEFINED
+#define GUST_STRUCT_mir_string_view__MirStringView_DEFINED
 struct mir_string_view__MirStringView {
     int data_known_null;
     int length;
@@ -8027,26 +9712,38 @@ struct mir_string_view__MirStringView {
     int start;
     Slice_unsigned_char view_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_string_view__MirStringViewQuery_DEFINED
+#define GUST_STRUCT_mir_string_view__MirStringViewQuery_DEFINED
 struct mir_string_view__MirStringViewQuery {
     int found;
     mir_string_view__MirStringView view;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_struct_layout__MirStructEvaluation_DEFINED
+#define GUST_STRUCT_mir_struct_layout__MirStructEvaluation_DEFINED
 struct mir_struct_layout__MirStructEvaluation {
     int offset;
     Slice_unsigned_char reason_code;
     int success;
     int value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_struct_layout__MirStructFieldLayoutQuery_DEFINED
+#define GUST_STRUCT_mir_struct_layout__MirStructFieldLayoutQuery_DEFINED
 struct mir_struct_layout__MirStructFieldLayoutQuery {
     int alignment;
     int found;
     int is_aggregate;
     int size;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_struct_layout__MirStructField_DEFINED
+#define GUST_STRUCT_mir_struct_layout__MirStructField_DEFINED
 struct mir_struct_layout__MirStructField {
     int alignment;
     int declaration_index;
@@ -8058,12 +9755,18 @@ struct mir_struct_layout__MirStructField {
     int size;
     Slice_unsigned_char type_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_struct_layout__MirStructFieldQuery_DEFINED
+#define GUST_STRUCT_mir_struct_layout__MirStructFieldQuery_DEFINED
 struct mir_struct_layout__MirStructFieldQuery {
     int found;
     mir_struct_layout__MirStructField value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_struct_layout__MirStructLayout_DEFINED
+#define GUST_STRUCT_mir_struct_layout__MirStructLayout_DEFINED
 struct mir_struct_layout__MirStructLayout {
     int alignment;
     int field_count;
@@ -8076,12 +9779,18 @@ struct mir_struct_layout__MirStructLayout {
     Slice_unsigned_char target_id;
     Slice_unsigned_char target_triple;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_struct_layout__MirStructLayoutQuery_DEFINED
+#define GUST_STRUCT_mir_struct_layout__MirStructLayoutQuery_DEFINED
 struct mir_struct_layout__MirStructLayoutQuery {
     int found;
     mir_struct_layout__MirStructLayout value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_struct_layout__MirStructLeaf_DEFINED
+#define GUST_STRUCT_mir_struct_layout__MirStructLeaf_DEFINED
 struct mir_struct_layout__MirStructLeaf {
     int alignment;
     int offset;
@@ -8089,13 +9798,19 @@ struct mir_struct_layout__MirStructLeaf {
     int size;
     Slice_unsigned_char type_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_struct_layout__MirStructLeafQuery_DEFINED
+#define GUST_STRUCT_mir_struct_layout__MirStructLeafQuery_DEFINED
 struct mir_struct_layout__MirStructLeafQuery {
     int found;
     int index;
     mir_struct_layout__MirStructLeaf value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_struct_layout__MirStructOperation_DEFINED
+#define GUST_STRUCT_mir_struct_layout__MirStructOperation_DEFINED
 struct mir_struct_layout__MirStructOperation {
     int expect_success;
     int expected_offset;
@@ -8109,12 +9824,18 @@ struct mir_struct_layout__MirStructOperation {
     Slice_unsigned_char target_id;
     Slice_unsigned_char value_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_struct_layout__MirStructOperationQuery_DEFINED
+#define GUST_STRUCT_mir_struct_layout__MirStructOperationQuery_DEFINED
 struct mir_struct_layout__MirStructOperationQuery {
     int found;
     mir_struct_layout__MirStructOperation value;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_struct_layout__MirStructValue_DEFINED
+#define GUST_STRUCT_mir_struct_layout__MirStructValue_DEFINED
 struct mir_struct_layout__MirStructValue {
     Slice_unsigned_char flow_origin;
     Slice_unsigned_char layout_id;
@@ -8122,211 +9843,365 @@ struct mir_struct_layout__MirStructValue {
     Slice_unsigned_char storage_region;
     Slice_unsigned_char value_id;
 };
+#endif
 
+#ifndef GUST_STRUCT_mir_struct_layout__MirStructValueQuery_DEFINED
+#define GUST_STRUCT_mir_struct_layout__MirStructValueQuery_DEFINED
 struct mir_struct_layout__MirStructValueQuery {
     int found;
     mir_struct_layout__MirStructValue value;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Ampersand_DEFINED
+#define GUST_STRUCT_token__TokenType_Ampersand_DEFINED
 struct token__TokenType_Ampersand {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_As_DEFINED
+#define GUST_STRUCT_token__TokenType_As_DEFINED
 struct token__TokenType_As {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Assign_DEFINED
+#define GUST_STRUCT_token__TokenType_Assign_DEFINED
 struct token__TokenType_Assign {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Asterisk_DEFINED
+#define GUST_STRUCT_token__TokenType_Asterisk_DEFINED
 struct token__TokenType_Asterisk {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Bool_DEFINED
+#define GUST_STRUCT_token__TokenType_Bool_DEFINED
 struct token__TokenType_Bool {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Colon_DEFINED
+#define GUST_STRUCT_token__TokenType_Colon_DEFINED
 struct token__TokenType_Colon {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Comma_DEFINED
+#define GUST_STRUCT_token__TokenType_Comma_DEFINED
 struct token__TokenType_Comma {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Defer_DEFINED
+#define GUST_STRUCT_token__TokenType_Defer_DEFINED
 struct token__TokenType_Defer {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Dot_DEFINED
+#define GUST_STRUCT_token__TokenType_Dot_DEFINED
 struct token__TokenType_Dot {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Else_DEFINED
+#define GUST_STRUCT_token__TokenType_Else_DEFINED
 struct token__TokenType_Else {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Empty_DEFINED
+#define GUST_STRUCT_token__TokenType_Empty_DEFINED
 struct token__TokenType_Empty {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Enum_DEFINED
+#define GUST_STRUCT_token__TokenType_Enum_DEFINED
 struct token__TokenType_Enum {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Eof_DEFINED
+#define GUST_STRUCT_token__TokenType_Eof_DEFINED
 struct token__TokenType_Eof {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Eq_DEFINED
+#define GUST_STRUCT_token__TokenType_Eq_DEFINED
 struct token__TokenType_Eq {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_EqEq_DEFINED
+#define GUST_STRUCT_token__TokenType_EqEq_DEFINED
 struct token__TokenType_EqEq {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Extern_DEFINED
+#define GUST_STRUCT_token__TokenType_Extern_DEFINED
 struct token__TokenType_Extern {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_False_DEFINED
+#define GUST_STRUCT_token__TokenType_False_DEFINED
 struct token__TokenType_False {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_FatArrow_DEFINED
+#define GUST_STRUCT_token__TokenType_FatArrow_DEFINED
 struct token__TokenType_FatArrow {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Func_DEFINED
+#define GUST_STRUCT_token__TokenType_Func_DEFINED
 struct token__TokenType_Func {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Gt_DEFINED
+#define GUST_STRUCT_token__TokenType_Gt_DEFINED
 struct token__TokenType_Gt {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Guard_DEFINED
+#define GUST_STRUCT_token__TokenType_Guard_DEFINED
 struct token__TokenType_Guard {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Hash_DEFINED
+#define GUST_STRUCT_token__TokenType_Hash_DEFINED
 struct token__TokenType_Hash {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Ident_DEFINED
+#define GUST_STRUCT_token__TokenType_Ident_DEFINED
 struct token__TokenType_Ident {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_If_DEFINED
+#define GUST_STRUCT_token__TokenType_If_DEFINED
 struct token__TokenType_If {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Illegal_DEFINED
+#define GUST_STRUCT_token__TokenType_Illegal_DEFINED
 struct token__TokenType_Illegal {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Import_DEFINED
+#define GUST_STRUCT_token__TokenType_Import_DEFINED
 struct token__TokenType_Import {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Int_DEFINED
+#define GUST_STRUCT_token__TokenType_Int_DEFINED
 struct token__TokenType_Int {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_LBrace_DEFINED
+#define GUST_STRUCT_token__TokenType_LBrace_DEFINED
 struct token__TokenType_LBrace {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_LBracket_DEFINED
+#define GUST_STRUCT_token__TokenType_LBracket_DEFINED
 struct token__TokenType_LBracket {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_LParen_DEFINED
+#define GUST_STRUCT_token__TokenType_LParen_DEFINED
 struct token__TokenType_LParen {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Lt_DEFINED
+#define GUST_STRUCT_token__TokenType_Lt_DEFINED
 struct token__TokenType_Lt {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Match_DEFINED
+#define GUST_STRUCT_token__TokenType_Match_DEFINED
 struct token__TokenType_Match {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Minus_DEFINED
+#define GUST_STRUCT_token__TokenType_Minus_DEFINED
 struct token__TokenType_Minus {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Move_DEFINED
+#define GUST_STRUCT_token__TokenType_Move_DEFINED
 struct token__TokenType_Move {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Mut_DEFINED
+#define GUST_STRUCT_token__TokenType_Mut_DEFINED
 struct token__TokenType_Mut {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_NotEq_DEFINED
+#define GUST_STRUCT_token__TokenType_NotEq_DEFINED
 struct token__TokenType_NotEq {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Plus_DEFINED
+#define GUST_STRUCT_token__TokenType_Plus_DEFINED
 struct token__TokenType_Plus {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_RBrace_DEFINED
+#define GUST_STRUCT_token__TokenType_RBrace_DEFINED
 struct token__TokenType_RBrace {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_RBracket_DEFINED
+#define GUST_STRUCT_token__TokenType_RBracket_DEFINED
 struct token__TokenType_RBracket {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_RParen_DEFINED
+#define GUST_STRUCT_token__TokenType_RParen_DEFINED
 struct token__TokenType_RParen {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Return_DEFINED
+#define GUST_STRUCT_token__TokenType_Return_DEFINED
 struct token__TokenType_Return {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Semicolon_DEFINED
+#define GUST_STRUCT_token__TokenType_Semicolon_DEFINED
 struct token__TokenType_Semicolon {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Slash_DEFINED
+#define GUST_STRUCT_token__TokenType_Slash_DEFINED
 struct token__TokenType_Slash {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_String_DEFINED
+#define GUST_STRUCT_token__TokenType_String_DEFINED
 struct token__TokenType_String {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Struct_DEFINED
+#define GUST_STRUCT_token__TokenType_Struct_DEFINED
 struct token__TokenType_Struct {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Take_DEFINED
+#define GUST_STRUCT_token__TokenType_Take_DEFINED
 struct token__TokenType_Take {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_True_DEFINED
+#define GUST_STRUCT_token__TokenType_True_DEFINED
 struct token__TokenType_True {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Type_DEFINED
+#define GUST_STRUCT_token__TokenType_Type_DEFINED
 struct token__TokenType_Type {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_Unsafe_DEFINED
+#define GUST_STRUCT_token__TokenType_Unsafe_DEFINED
 struct token__TokenType_Unsafe {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_token__TokenType_While_DEFINED
+#define GUST_STRUCT_token__TokenType_While_DEFINED
 struct token__TokenType_While {
     char dummy;
 };
+#endif
 
 typedef enum {
     token__TokenType_Tag__Eof = 0,
@@ -8381,6 +10256,8 @@ typedef enum {
     token__TokenType_Tag__Hash = 49,
 } token__TokenType_Tag;
 
+#ifndef GUST_STRUCT_token__TokenType_DEFINED
+#define GUST_STRUCT_token__TokenType_DEFINED
 struct token__TokenType {
     int tag;
     union {
@@ -8436,32 +10313,47 @@ struct token__TokenType {
         struct token__TokenType_While While;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_token__Token_DEFINED
+#define GUST_STRUCT_token__Token_DEFINED
 struct token__Token {
     Slice_unsigned_char literal;
     token__Span span;
     token__TokenType token_type;
 };
+#endif
 
+#ifndef GUST_STRUCT_parser__ParseResult_DEFINED
+#define GUST_STRUCT_parser__ParseResult_DEFINED
 struct parser__ParseResult {
     int Ok;
     token__Token Val;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_errors__CompilerError_DEFINED
+#define GUST_STRUCT_std_Vector_errors__CompilerError_DEFINED
 struct std_Vector_errors__CompilerError {
     os_Arena* arena;
     int capacity;
     errors__CompilerError* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_token__Token_DEFINED
+#define GUST_STRUCT_std_Vector_token__Token_DEFINED
 struct std_Vector_token__Token {
     os_Arena* arena;
     int capacity;
     token__Token* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_parser__Parser_DEFINED
+#define GUST_STRUCT_parser__Parser_DEFINED
 struct parser__Parser {
     token__Token cur_token;
     std_Vector_errors__CompilerError errors;
@@ -8470,12 +10362,18 @@ struct parser__Parser {
     token__Token peek_token;
     std_Vector_token__Token pushback_tokens;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_GraphNode_str_DEFINED
+#define GUST_STRUCT_std_GraphNode_str_DEFINED
 struct std_GraphNode_str {
     std_Vector_int edges;
     Slice_unsigned_char value;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Pool_std_GraphNode_str_DEFINED
+#define GUST_STRUCT_std_Pool_std_GraphNode_str_DEFINED
 struct std_Pool_std_GraphNode_str {
     os_Arena* arena;
     int capacity;
@@ -8485,11 +10383,17 @@ struct std_Pool_std_GraphNode_str {
     int len;
     int* occupied;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Graph_str_DEFINED
+#define GUST_STRUCT_std_Graph_str_DEFINED
 struct std_Graph_str {
     std_Pool_std_GraphNode_str nodes;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_HashMap_str_Index_std_Vector_typechecker__ResourceCleanupAction_DEFINED
+#define GUST_STRUCT_std_HashMap_str_Index_std_Vector_typechecker__ResourceCleanupAction_DEFINED
 struct std_HashMap_str_Index_std_Vector_typechecker__ResourceCleanupAction {
     os_Arena* arena;
     int capacity;
@@ -8498,7 +10402,10 @@ struct std_HashMap_str_Index_std_Vector_typechecker__ResourceCleanupAction {
     int* occupied;
     int* values;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_HashMap_str_Index_typechecker__OriginSet_DEFINED
+#define GUST_STRUCT_std_HashMap_str_Index_typechecker__OriginSet_DEFINED
 struct std_HashMap_str_Index_typechecker__OriginSet {
     os_Arena* arena;
     int capacity;
@@ -8507,7 +10414,10 @@ struct std_HashMap_str_Index_typechecker__OriginSet {
     int* occupied;
     int* values;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_HashMap_str_int_DEFINED
+#define GUST_STRUCT_std_HashMap_str_int_DEFINED
 struct std_HashMap_str_int {
     os_Arena* arena;
     int capacity;
@@ -8516,7 +10426,10 @@ struct std_HashMap_str_int {
     int* occupied;
     int* values;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_HashMap_str_std_Vector_str_DEFINED
+#define GUST_STRUCT_std_HashMap_str_std_Vector_str_DEFINED
 struct std_HashMap_str_std_Vector_str {
     os_Arena* arena;
     int capacity;
@@ -8525,7 +10438,10 @@ struct std_HashMap_str_std_Vector_str {
     int* occupied;
     std_Vector_str* values;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_HashMap_str_str_DEFINED
+#define GUST_STRUCT_std_HashMap_str_str_DEFINED
 struct std_HashMap_str_str {
     os_Arena* arena;
     int capacity;
@@ -8534,7 +10450,10 @@ struct std_HashMap_str_str {
     int* occupied;
     Slice_unsigned_char* values;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_HashMap_str_typechecker__ArenaLifecycleState_DEFINED
+#define GUST_STRUCT_std_HashMap_str_typechecker__ArenaLifecycleState_DEFINED
 struct std_HashMap_str_typechecker__ArenaLifecycleState {
     os_Arena* arena;
     int capacity;
@@ -8543,7 +10462,10 @@ struct std_HashMap_str_typechecker__ArenaLifecycleState {
     int* occupied;
     typechecker__ArenaLifecycleState* values;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_HashMap_str_typechecker__BrandIdentity_DEFINED
+#define GUST_STRUCT_std_HashMap_str_typechecker__BrandIdentity_DEFINED
 struct std_HashMap_str_typechecker__BrandIdentity {
     os_Arena* arena;
     int capacity;
@@ -8552,7 +10474,10 @@ struct std_HashMap_str_typechecker__BrandIdentity {
     int* occupied;
     typechecker__BrandIdentity* values;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_HashMap_str_typechecker__EnumTemplate_DEFINED
+#define GUST_STRUCT_std_HashMap_str_typechecker__EnumTemplate_DEFINED
 struct std_HashMap_str_typechecker__EnumTemplate {
     os_Arena* arena;
     int capacity;
@@ -8561,7 +10486,10 @@ struct std_HashMap_str_typechecker__EnumTemplate {
     int* occupied;
     typechecker__EnumTemplate* values;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_HashMap_str_typechecker__ExpressionProvenance_DEFINED
+#define GUST_STRUCT_std_HashMap_str_typechecker__ExpressionProvenance_DEFINED
 struct std_HashMap_str_typechecker__ExpressionProvenance {
     os_Arena* arena;
     int capacity;
@@ -8570,7 +10498,10 @@ struct std_HashMap_str_typechecker__ExpressionProvenance {
     int* occupied;
     typechecker__ExpressionProvenance* values;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_HashMap_str_typechecker__FunctionSignature_DEFINED
+#define GUST_STRUCT_std_HashMap_str_typechecker__FunctionSignature_DEFINED
 struct std_HashMap_str_typechecker__FunctionSignature {
     os_Arena* arena;
     int capacity;
@@ -8579,7 +10510,10 @@ struct std_HashMap_str_typechecker__FunctionSignature {
     int* occupied;
     typechecker__FunctionSignature* values;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_HashMap_str_typechecker__LinearResourceRecord_DEFINED
+#define GUST_STRUCT_std_HashMap_str_typechecker__LinearResourceRecord_DEFINED
 struct std_HashMap_str_typechecker__LinearResourceRecord {
     os_Arena* arena;
     int capacity;
@@ -8588,7 +10522,10 @@ struct std_HashMap_str_typechecker__LinearResourceRecord {
     int* occupied;
     typechecker__LinearResourceRecord* values;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_HashMap_str_typechecker__ProtectedResourceFunction_DEFINED
+#define GUST_STRUCT_std_HashMap_str_typechecker__ProtectedResourceFunction_DEFINED
 struct std_HashMap_str_typechecker__ProtectedResourceFunction {
     os_Arena* arena;
     int capacity;
@@ -8597,7 +10534,10 @@ struct std_HashMap_str_typechecker__ProtectedResourceFunction {
     int* occupied;
     typechecker__ProtectedResourceFunction* values;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_HashMap_str_typechecker__ResourceAcquisitionObligation_DEFINED
+#define GUST_STRUCT_std_HashMap_str_typechecker__ResourceAcquisitionObligation_DEFINED
 struct std_HashMap_str_typechecker__ResourceAcquisitionObligation {
     os_Arena* arena;
     int capacity;
@@ -8606,7 +10546,10 @@ struct std_HashMap_str_typechecker__ResourceAcquisitionObligation {
     int* occupied;
     typechecker__ResourceAcquisitionObligation* values;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_HashMap_str_typechecker__StructLayout_DEFINED
+#define GUST_STRUCT_std_HashMap_str_typechecker__StructLayout_DEFINED
 struct std_HashMap_str_typechecker__StructLayout {
     os_Arena* arena;
     int capacity;
@@ -8615,7 +10558,10 @@ struct std_HashMap_str_typechecker__StructLayout {
     int* occupied;
     typechecker__StructLayout* values;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_HashMap_str_typechecker__StructTemplate_DEFINED
+#define GUST_STRUCT_std_HashMap_str_typechecker__StructTemplate_DEFINED
 struct std_HashMap_str_typechecker__StructTemplate {
     os_Arena* arena;
     int capacity;
@@ -8624,20 +10570,29 @@ struct std_HashMap_str_typechecker__StructTemplate {
     int* occupied;
     typechecker__StructTemplate* values;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Option_ast__Type_None_DEFINED
+#define GUST_STRUCT_std_Option_ast__Type_None_DEFINED
 struct std_Option_ast__Type_None {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Option_ast__Type_Some_DEFINED
+#define GUST_STRUCT_std_Option_ast__Type_Some_DEFINED
 struct std_Option_ast__Type_Some {
     ast__Type val;
 };
+#endif
 
 typedef enum {
     std_Option_ast__Type_Tag__Some = 0,
     std_Option_ast__Type_Tag__None = 1,
 } std_Option_ast__Type_Tag;
 
+#ifndef GUST_STRUCT_std_Option_ast__Type_DEFINED
+#define GUST_STRUCT_std_Option_ast__Type_DEFINED
 struct std_Option_ast__Type {
     int tag;
     union {
@@ -8645,20 +10600,29 @@ struct std_Option_ast__Type {
         struct std_Option_ast__Type_Some Some;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Option_int_None_DEFINED
+#define GUST_STRUCT_std_Option_int_None_DEFINED
 struct std_Option_int_None {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Option_int_Some_DEFINED
+#define GUST_STRUCT_std_Option_int_Some_DEFINED
 struct std_Option_int_Some {
     int val;
 };
+#endif
 
 typedef enum {
     std_Option_int_Tag__Some = 0,
     std_Option_int_Tag__None = 1,
 } std_Option_int_Tag;
 
+#ifndef GUST_STRUCT_std_Option_int_DEFINED
+#define GUST_STRUCT_std_Option_int_DEFINED
 struct std_Option_int {
     int tag;
     union {
@@ -8666,20 +10630,29 @@ struct std_Option_int {
         struct std_Option_int_Some Some;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Option_typechecker__StructLayout_None_DEFINED
+#define GUST_STRUCT_std_Option_typechecker__StructLayout_None_DEFINED
 struct std_Option_typechecker__StructLayout_None {
     char dummy;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Option_typechecker__StructLayout_Some_DEFINED
+#define GUST_STRUCT_std_Option_typechecker__StructLayout_Some_DEFINED
 struct std_Option_typechecker__StructLayout_Some {
     typechecker__StructLayout val;
 };
+#endif
 
 typedef enum {
     std_Option_typechecker__StructLayout_Tag__Some = 0,
     std_Option_typechecker__StructLayout_Tag__None = 1,
 } std_Option_typechecker__StructLayout_Tag;
 
+#ifndef GUST_STRUCT_std_Option_typechecker__StructLayout_DEFINED
+#define GUST_STRUCT_std_Option_typechecker__StructLayout_DEFINED
 struct std_Option_typechecker__StructLayout {
     int tag;
     union {
@@ -8687,861 +10660,1233 @@ struct std_Option_typechecker__StructLayout {
         struct std_Option_typechecker__StructLayout_Some Some;
     };
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_FileParserError_DEFINED
+#define GUST_STRUCT_std_Vector_FileParserError_DEFINED
 struct std_Vector_FileParserError {
     os_Arena* arena;
     int capacity;
     FileParserError* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_ast__Expression_DEFINED
+#define GUST_STRUCT_std_Vector_ast__Expression_DEFINED
 struct std_Vector_ast__Expression {
     os_Arena* arena;
     int capacity;
     ast__Expression* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_ast__FieldDef_DEFINED
+#define GUST_STRUCT_std_Vector_ast__FieldDef_DEFINED
 struct std_Vector_ast__FieldDef {
     os_Arena* arena;
     int capacity;
     ast__FieldDef* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_ast__MatchCase_DEFINED
+#define GUST_STRUCT_std_Vector_ast__MatchCase_DEFINED
 struct std_Vector_ast__MatchCase {
     os_Arena* arena;
     int capacity;
     ast__MatchCase* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_ast__Parameter_DEFINED
+#define GUST_STRUCT_std_Vector_ast__Parameter_DEFINED
 struct std_Vector_ast__Parameter {
     os_Arena* arena;
     int capacity;
     ast__Parameter* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_ast__Program_DEFINED
+#define GUST_STRUCT_std_Vector_ast__Program_DEFINED
 struct std_Vector_ast__Program {
     os_Arena* arena;
     int capacity;
     ast__Program* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_ast__QueryJoin_DEFINED
+#define GUST_STRUCT_std_Vector_ast__QueryJoin_DEFINED
 struct std_Vector_ast__QueryJoin {
     os_Arena* arena;
     int capacity;
     ast__QueryJoin* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_ast__QueryRoot_DEFINED
+#define GUST_STRUCT_std_Vector_ast__QueryRoot_DEFINED
 struct std_Vector_ast__QueryRoot {
     os_Arena* arena;
     int capacity;
     ast__QueryRoot* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_ast__Statement_DEFINED
+#define GUST_STRUCT_std_Vector_ast__Statement_DEFINED
 struct std_Vector_ast__Statement {
     os_Arena* arena;
     int capacity;
     ast__Statement* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_ast__VariantDef_DEFINED
+#define GUST_STRUCT_std_Vector_ast__VariantDef_DEFINED
 struct std_Vector_ast__VariantDef {
     os_Arena* arena;
     int capacity;
     ast__VariantDef* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirAggregateBlockReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirAggregateBlockReference_DEFINED
 struct std_Vector_mir__MirAggregateBlockReference {
     os_Arena* arena;
     int capacity;
     mir__MirAggregateBlockReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirAggregateTransportOperationReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirAggregateTransportOperationReference_DEFINED
 struct std_Vector_mir__MirAggregateTransportOperationReference {
     os_Arena* arena;
     int capacity;
     mir__MirAggregateTransportOperationReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirAggregateValueReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirAggregateValueReference_DEFINED
 struct std_Vector_mir__MirAggregateValueReference {
     os_Arena* arena;
     int capacity;
     mir__MirAggregateValueReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirArrayLayoutReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirArrayLayoutReference_DEFINED
 struct std_Vector_mir__MirArrayLayoutReference {
     os_Arena* arena;
     int capacity;
     mir__MirArrayLayoutReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirArraySliceOperationReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirArraySliceOperationReference_DEFINED
 struct std_Vector_mir__MirArraySliceOperationReference {
     os_Arena* arena;
     int capacity;
     mir__MirArraySliceOperationReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirArrayValueReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirArrayValueReference_DEFINED
 struct std_Vector_mir__MirArrayValueReference {
     os_Arena* arena;
     int capacity;
     mir__MirArrayValueReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirBlock_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirBlock_DEFINED
 struct std_Vector_mir__MirBlock {
     os_Arena* arena;
     int capacity;
     mir__MirBlock* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirEnumLayoutReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirEnumLayoutReference_DEFINED
 struct std_Vector_mir__MirEnumLayoutReference {
     os_Arena* arena;
     int capacity;
     mir__MirEnumLayoutReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirEnumOperationReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirEnumOperationReference_DEFINED
 struct std_Vector_mir__MirEnumOperationReference {
     os_Arena* arena;
     int capacity;
     mir__MirEnumOperationReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirEnumValueReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirEnumValueReference_DEFINED
 struct std_Vector_mir__MirEnumValueReference {
     os_Arena* arena;
     int capacity;
     mir__MirEnumValueReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirFunction_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirFunction_DEFINED
 struct std_Vector_mir__MirFunction {
     os_Arena* arena;
     int capacity;
     mir__MirFunction* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirIntegerConversionReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirIntegerConversionReference_DEFINED
 struct std_Vector_mir__MirIntegerConversionReference {
     os_Arena* arena;
     int capacity;
     mir__MirIntegerConversionReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirLocal_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirLocal_DEFINED
 struct std_Vector_mir__MirLocal {
     os_Arena* arena;
     int capacity;
     mir__MirLocal* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirMemoryAccessReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirMemoryAccessReference_DEFINED
 struct std_Vector_mir__MirMemoryAccessReference {
     os_Arena* arena;
     int capacity;
     mir__MirMemoryAccessReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirNativeBoundaryMetadata_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirNativeBoundaryMetadata_DEFINED
 struct std_Vector_mir__MirNativeBoundaryMetadata {
     os_Arena* arena;
     int capacity;
     mir__MirNativeBoundaryMetadata* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirPointerOperationReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirPointerOperationReference_DEFINED
 struct std_Vector_mir__MirPointerOperationReference {
     os_Arena* arena;
     int capacity;
     mir__MirPointerOperationReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirPointerTypeReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirPointerTypeReference_DEFINED
 struct std_Vector_mir__MirPointerTypeReference {
     os_Arena* arena;
     int capacity;
     mir__MirPointerTypeReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirPrimitiveScalarReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirPrimitiveScalarReference_DEFINED
 struct std_Vector_mir__MirPrimitiveScalarReference {
     os_Arena* arena;
     int capacity;
     mir__MirPrimitiveScalarReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirProgramBundleBlockParameter_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirProgramBundleBlockParameter_DEFINED
 struct std_Vector_mir__MirProgramBundleBlockParameter {
     os_Arena* arena;
     int capacity;
     mir__MirProgramBundleBlockParameter* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirProgramBundleModule_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirProgramBundleModule_DEFINED
 struct std_Vector_mir__MirProgramBundleModule {
     os_Arena* arena;
     int capacity;
     mir__MirProgramBundleModule* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirProgramBundleSymbol_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirProgramBundleSymbol_DEFINED
 struct std_Vector_mir__MirProgramBundleSymbol {
     os_Arena* arena;
     int capacity;
     mir__MirProgramBundleSymbol* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirProvenanceMetadata_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirProvenanceMetadata_DEFINED
 struct std_Vector_mir__MirProvenanceMetadata {
     os_Arena* arena;
     int capacity;
     mir__MirProvenanceMetadata* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirResourceMetadata_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirResourceMetadata_DEFINED
 struct std_Vector_mir__MirResourceMetadata {
     os_Arena* arena;
     int capacity;
     mir__MirResourceMetadata* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirSliceReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirSliceReference_DEFINED
 struct std_Vector_mir__MirSliceReference {
     os_Arena* arena;
     int capacity;
     mir__MirSliceReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirStackSlotOperationReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirStackSlotOperationReference_DEFINED
 struct std_Vector_mir__MirStackSlotOperationReference {
     os_Arena* arena;
     int capacity;
     mir__MirStackSlotOperationReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirStackSlotReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirStackSlotReference_DEFINED
 struct std_Vector_mir__MirStackSlotReference {
     os_Arena* arena;
     int capacity;
     mir__MirStackSlotReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirStmt_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirStmt_DEFINED
 struct std_Vector_mir__MirStmt {
     os_Arena* arena;
     int capacity;
     mir__MirStmt* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirStringLiteralReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirStringLiteralReference_DEFINED
 struct std_Vector_mir__MirStringLiteralReference {
     os_Arena* arena;
     int capacity;
     mir__MirStringLiteralReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirStringViewOperationReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirStringViewOperationReference_DEFINED
 struct std_Vector_mir__MirStringViewOperationReference {
     os_Arena* arena;
     int capacity;
     mir__MirStringViewOperationReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirStringViewReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirStringViewReference_DEFINED
 struct std_Vector_mir__MirStringViewReference {
     os_Arena* arena;
     int capacity;
     mir__MirStringViewReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirStructLayoutReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirStructLayoutReference_DEFINED
 struct std_Vector_mir__MirStructLayoutReference {
     os_Arena* arena;
     int capacity;
     mir__MirStructLayoutReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirStructOperationReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirStructOperationReference_DEFINED
 struct std_Vector_mir__MirStructOperationReference {
     os_Arena* arena;
     int capacity;
     mir__MirStructOperationReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirStructValueReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirStructValueReference_DEFINED
 struct std_Vector_mir__MirStructValueReference {
     os_Arena* arena;
     int capacity;
     mir__MirStructValueReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirTypeLayoutReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirTypeLayoutReference_DEFINED
 struct std_Vector_mir__MirTypeLayoutReference {
     os_Arena* arena;
     int capacity;
     mir__MirTypeLayoutReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir__MirValue_DEFINED
+#define GUST_STRUCT_std_Vector_mir__MirValue_DEFINED
 struct std_Vector_mir__MirValue {
     os_Arena* arena;
     int capacity;
     mir__MirValue* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_aggregate_transport__MirAggregateBlockParam_DEFINED
+#define GUST_STRUCT_std_Vector_mir_aggregate_transport__MirAggregateBlockParam_DEFINED
 struct std_Vector_mir_aggregate_transport__MirAggregateBlockParam {
     os_Arena* arena;
     int capacity;
     mir_aggregate_transport__MirAggregateBlockParam* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_aggregate_transport__MirAggregateBlock_DEFINED
+#define GUST_STRUCT_std_Vector_mir_aggregate_transport__MirAggregateBlock_DEFINED
 struct std_Vector_mir_aggregate_transport__MirAggregateBlock {
     os_Arena* arena;
     int capacity;
     mir_aggregate_transport__MirAggregateBlock* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_aggregate_transport__MirAggregateClassPolicy_DEFINED
+#define GUST_STRUCT_std_Vector_mir_aggregate_transport__MirAggregateClassPolicy_DEFINED
 struct std_Vector_mir_aggregate_transport__MirAggregateClassPolicy {
     os_Arena* arena;
     int capacity;
     mir_aggregate_transport__MirAggregateClassPolicy* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_aggregate_transport__MirAggregateComponent_DEFINED
+#define GUST_STRUCT_std_Vector_mir_aggregate_transport__MirAggregateComponent_DEFINED
 struct std_Vector_mir_aggregate_transport__MirAggregateComponent {
     os_Arena* arena;
     int capacity;
     mir_aggregate_transport__MirAggregateComponent* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_aggregate_transport__MirAggregateEdge_DEFINED
+#define GUST_STRUCT_std_Vector_mir_aggregate_transport__MirAggregateEdge_DEFINED
 struct std_Vector_mir_aggregate_transport__MirAggregateEdge {
     os_Arena* arena;
     int capacity;
     mir_aggregate_transport__MirAggregateEdge* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_aggregate_transport__MirAggregateOperation_DEFINED
+#define GUST_STRUCT_std_Vector_mir_aggregate_transport__MirAggregateOperation_DEFINED
 struct std_Vector_mir_aggregate_transport__MirAggregateOperation {
     os_Arena* arena;
     int capacity;
     mir_aggregate_transport__MirAggregateOperation* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_aggregate_transport__MirAggregateValue_DEFINED
+#define GUST_STRUCT_std_Vector_mir_aggregate_transport__MirAggregateValue_DEFINED
 struct std_Vector_mir_aggregate_transport__MirAggregateValue {
     os_Arena* arena;
     int capacity;
     mir_aggregate_transport__MirAggregateValue* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_array_slice__MirArrayLayout_DEFINED
+#define GUST_STRUCT_std_Vector_mir_array_slice__MirArrayLayout_DEFINED
 struct std_Vector_mir_array_slice__MirArrayLayout {
     os_Arena* arena;
     int capacity;
     mir_array_slice__MirArrayLayout* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_array_slice__MirArraySliceOperation_DEFINED
+#define GUST_STRUCT_std_Vector_mir_array_slice__MirArraySliceOperation_DEFINED
 struct std_Vector_mir_array_slice__MirArraySliceOperation {
     os_Arena* arena;
     int capacity;
     mir_array_slice__MirArraySliceOperation* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_array_slice__MirArrayValue_DEFINED
+#define GUST_STRUCT_std_Vector_mir_array_slice__MirArrayValue_DEFINED
 struct std_Vector_mir_array_slice__MirArrayValue {
     os_Arena* arena;
     int capacity;
     mir_array_slice__MirArrayValue* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_array_slice__MirSliceLayout_DEFINED
+#define GUST_STRUCT_std_Vector_mir_array_slice__MirSliceLayout_DEFINED
 struct std_Vector_mir_array_slice__MirSliceLayout {
     os_Arena* arena;
     int capacity;
     mir_array_slice__MirSliceLayout* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_array_slice__MirSliceValue_DEFINED
+#define GUST_STRUCT_std_Vector_mir_array_slice__MirSliceValue_DEFINED
 struct std_Vector_mir_array_slice__MirSliceValue {
     os_Arena* arena;
     int capacity;
     mir_array_slice__MirSliceValue* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_enum__MirEnumLayout_DEFINED
+#define GUST_STRUCT_std_Vector_mir_enum__MirEnumLayout_DEFINED
 struct std_Vector_mir_enum__MirEnumLayout {
     os_Arena* arena;
     int capacity;
     mir_enum__MirEnumLayout* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_enum__MirEnumOperation_DEFINED
+#define GUST_STRUCT_std_Vector_mir_enum__MirEnumOperation_DEFINED
 struct std_Vector_mir_enum__MirEnumOperation {
     os_Arena* arena;
     int capacity;
     mir_enum__MirEnumOperation* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_enum__MirEnumValue_DEFINED
+#define GUST_STRUCT_std_Vector_mir_enum__MirEnumValue_DEFINED
 struct std_Vector_mir_enum__MirEnumValue {
     os_Arena* arena;
     int capacity;
     mir_enum__MirEnumValue* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_enum__MirEnumVariant_DEFINED
+#define GUST_STRUCT_std_Vector_mir_enum__MirEnumVariant_DEFINED
 struct std_Vector_mir_enum__MirEnumVariant {
     os_Arena* arena;
     int capacity;
     mir_enum__MirEnumVariant* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_function_abi_authority__MirAbiCallSitePlan_DEFINED
+#define GUST_STRUCT_std_Vector_mir_function_abi_authority__MirAbiCallSitePlan_DEFINED
 struct std_Vector_mir_function_abi_authority__MirAbiCallSitePlan {
     os_Arena* arena;
     int capacity;
     mir_function_abi_authority__MirAbiCallSitePlan* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_function_abi_authority__MirAbiCompatibilityDecision_DEFINED
+#define GUST_STRUCT_std_Vector_mir_function_abi_authority__MirAbiCompatibilityDecision_DEFINED
 struct std_Vector_mir_function_abi_authority__MirAbiCompatibilityDecision {
     os_Arena* arena;
     int capacity;
     mir_function_abi_authority__MirAbiCompatibilityDecision* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_function_abi_authority__MirAbiMirReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir_function_abi_authority__MirAbiMirReference_DEFINED
 struct std_Vector_mir_function_abi_authority__MirAbiMirReference {
     os_Arena* arena;
     int capacity;
     mir_function_abi_authority__MirAbiMirReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_function_abi_authority__MirAbiParameterPlacement_DEFINED
+#define GUST_STRUCT_std_Vector_mir_function_abi_authority__MirAbiParameterPlacement_DEFINED
 struct std_Vector_mir_function_abi_authority__MirAbiParameterPlacement {
     os_Arena* arena;
     int capacity;
     mir_function_abi_authority__MirAbiParameterPlacement* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_function_abi_authority__MirAbiResultPlacement_DEFINED
+#define GUST_STRUCT_std_Vector_mir_function_abi_authority__MirAbiResultPlacement_DEFINED
 struct std_Vector_mir_function_abi_authority__MirAbiResultPlacement {
     os_Arena* arena;
     int capacity;
     mir_function_abi_authority__MirAbiResultPlacement* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_function_abi_authority__MirAbiValueClassification_DEFINED
+#define GUST_STRUCT_std_Vector_mir_function_abi_authority__MirAbiValueClassification_DEFINED
 struct std_Vector_mir_function_abi_authority__MirAbiValueClassification {
     os_Arena* arena;
     int capacity;
     mir_function_abi_authority__MirAbiValueClassification* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_function_abi_authority__MirDynamicFramePlan_DEFINED
+#define GUST_STRUCT_std_Vector_mir_function_abi_authority__MirDynamicFramePlan_DEFINED
 struct std_Vector_mir_function_abi_authority__MirDynamicFramePlan {
     os_Arena* arena;
     int capacity;
     mir_function_abi_authority__MirDynamicFramePlan* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_function_abi_authority__MirFunctionAbiIdentity_DEFINED
+#define GUST_STRUCT_std_Vector_mir_function_abi_authority__MirFunctionAbiIdentity_DEFINED
 struct std_Vector_mir_function_abi_authority__MirFunctionAbiIdentity {
     os_Arena* arena;
     int capacity;
     mir_function_abi_authority__MirFunctionAbiIdentity* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_function_call__MirCallOperand_DEFINED
+#define GUST_STRUCT_std_Vector_mir_function_call__MirCallOperand_DEFINED
 struct std_Vector_mir_function_call__MirCallOperand {
     os_Arena* arena;
     int capacity;
     mir_function_call__MirCallOperand* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_function_call__MirCallOperation_DEFINED
+#define GUST_STRUCT_std_Vector_mir_function_call__MirCallOperation_DEFINED
 struct std_Vector_mir_function_call__MirCallOperation {
     os_Arena* arena;
     int capacity;
     mir_function_call__MirCallOperation* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_function_call__MirFunctionAbiDeclaration_DEFINED
+#define GUST_STRUCT_std_Vector_mir_function_call__MirFunctionAbiDeclaration_DEFINED
 struct std_Vector_mir_function_call__MirFunctionAbiDeclaration {
     os_Arena* arena;
     int capacity;
     mir_function_call__MirFunctionAbiDeclaration* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_integer_conversion__MirIntegerConversionRule_DEFINED
+#define GUST_STRUCT_std_Vector_mir_integer_conversion__MirIntegerConversionRule_DEFINED
 struct std_Vector_mir_integer_conversion__MirIntegerConversionRule {
     os_Arena* arena;
     int capacity;
     mir_integer_conversion__MirIntegerConversionRule* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_integer_conversion__MirIntegerConversionSample_DEFINED
+#define GUST_STRUCT_std_Vector_mir_integer_conversion__MirIntegerConversionSample_DEFINED
 struct std_Vector_mir_integer_conversion__MirIntegerConversionSample {
     os_Arena* arena;
     int capacity;
     mir_integer_conversion__MirIntegerConversionSample* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_layout__MirFieldLayout_DEFINED
+#define GUST_STRUCT_std_Vector_mir_layout__MirFieldLayout_DEFINED
 struct std_Vector_mir_layout__MirFieldLayout {
     os_Arena* arena;
     int capacity;
     mir_layout__MirFieldLayout* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_layout__MirMemoryAccessLayout_DEFINED
+#define GUST_STRUCT_std_Vector_mir_layout__MirMemoryAccessLayout_DEFINED
 struct std_Vector_mir_layout__MirMemoryAccessLayout {
     os_Arena* arena;
     int capacity;
     mir_layout__MirMemoryAccessLayout* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_layout__MirTypeLayout_DEFINED
+#define GUST_STRUCT_std_Vector_mir_layout__MirTypeLayout_DEFINED
 struct std_Vector_mir_layout__MirTypeLayout {
     os_Arena* arena;
     int capacity;
     mir_layout__MirTypeLayout* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_layout__MirVariantLayout_DEFINED
+#define GUST_STRUCT_std_Vector_mir_layout__MirVariantLayout_DEFINED
 struct std_Vector_mir_layout__MirVariantLayout {
     os_Arena* arena;
     int capacity;
     mir_layout__MirVariantLayout* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_memory_access__MirMemoryAccessOperation_DEFINED
+#define GUST_STRUCT_std_Vector_mir_memory_access__MirMemoryAccessOperation_DEFINED
 struct std_Vector_mir_memory_access__MirMemoryAccessOperation {
     os_Arena* arena;
     int capacity;
     mir_memory_access__MirMemoryAccessOperation* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_native_backend_capability__MirNativeBackendRequirement_DEFINED
+#define GUST_STRUCT_std_Vector_mir_native_backend_capability__MirNativeBackendRequirement_DEFINED
 struct std_Vector_mir_native_backend_capability__MirNativeBackendRequirement {
     os_Arena* arena;
     int capacity;
     mir_native_backend_capability__MirNativeBackendRequirement* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_native_backend_direct_call_source__MirNativeDirectCallArgument_DEFINED
+#define GUST_STRUCT_std_Vector_mir_native_backend_direct_call_source__MirNativeDirectCallArgument_DEFINED
 struct std_Vector_mir_native_backend_direct_call_source__MirNativeDirectCallArgument {
     os_Arena* arena;
     int capacity;
     mir_native_backend_direct_call_source__MirNativeDirectCallArgument* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_native_backend_direct_call_source__MirNativeDirectCallFunction_DEFINED
+#define GUST_STRUCT_std_Vector_mir_native_backend_direct_call_source__MirNativeDirectCallFunction_DEFINED
 struct std_Vector_mir_native_backend_direct_call_source__MirNativeDirectCallFunction {
     os_Arena* arena;
     int capacity;
     mir_native_backend_direct_call_source__MirNativeDirectCallFunction* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramEnum_DEFINED
+#define GUST_STRUCT_std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramEnum_DEFINED
 struct std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramEnum {
     os_Arena* arena;
     int capacity;
     mir_native_backend_full_program_source__MirNativeFullProgramEnum* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramFunction_DEFINED
+#define GUST_STRUCT_std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramFunction_DEFINED
 struct std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramFunction {
     os_Arena* arena;
     int capacity;
     mir_native_backend_full_program_source__MirNativeFullProgramFunction* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramLayout_DEFINED
+#define GUST_STRUCT_std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramLayout_DEFINED
 struct std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramLayout {
     os_Arena* arena;
     int capacity;
     mir_native_backend_full_program_source__MirNativeFullProgramLayout* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramNode_DEFINED
+#define GUST_STRUCT_std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramNode_DEFINED
 struct std_Vector_mir_native_backend_full_program_source__MirNativeFullProgramNode {
     os_Arena* arena;
     int capacity;
     mir_native_backend_full_program_source__MirNativeFullProgramNode* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_native_backend_module_import_source__MirNativeModuleImportArgument_DEFINED
+#define GUST_STRUCT_std_Vector_mir_native_backend_module_import_source__MirNativeModuleImportArgument_DEFINED
 struct std_Vector_mir_native_backend_module_import_source__MirNativeModuleImportArgument {
     os_Arena* arena;
     int capacity;
     mir_native_backend_module_import_source__MirNativeModuleImportArgument* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_native_backend_module_import_source__MirNativeModuleImportFunction_DEFINED
+#define GUST_STRUCT_std_Vector_mir_native_backend_module_import_source__MirNativeModuleImportFunction_DEFINED
 struct std_Vector_mir_native_backend_module_import_source__MirNativeModuleImportFunction {
     os_Arena* arena;
     int capacity;
     mir_native_backend_module_import_source__MirNativeModuleImportFunction* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_native_backend_module_import_source__MirNativeModuleImportHost_DEFINED
+#define GUST_STRUCT_std_Vector_mir_native_backend_module_import_source__MirNativeModuleImportHost_DEFINED
 struct std_Vector_mir_native_backend_module_import_source__MirNativeModuleImportHost {
     os_Arena* arena;
     int capacity;
     mir_native_backend_module_import_source__MirNativeModuleImportHost* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_native_backend_resource_sync_source__MirNativeResourceFunctionEffect_DEFINED
+#define GUST_STRUCT_std_Vector_mir_native_backend_resource_sync_source__MirNativeResourceFunctionEffect_DEFINED
 struct std_Vector_mir_native_backend_resource_sync_source__MirNativeResourceFunctionEffect {
     os_Arena* arena;
     int capacity;
     mir_native_backend_resource_sync_source__MirNativeResourceFunctionEffect* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_pointer__MirPointerOperation_DEFINED
+#define GUST_STRUCT_std_Vector_mir_pointer__MirPointerOperation_DEFINED
 struct std_Vector_mir_pointer__MirPointerOperation {
     os_Arena* arena;
     int capacity;
     mir_pointer__MirPointerOperation* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_pointer__MirPointerType_DEFINED
+#define GUST_STRUCT_std_Vector_mir_pointer__MirPointerType_DEFINED
 struct std_Vector_mir_pointer__MirPointerType {
     os_Arena* arena;
     int capacity;
     mir_pointer__MirPointerType* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_resource_authority__MirCleanupObligation_DEFINED
+#define GUST_STRUCT_std_Vector_mir_resource_authority__MirCleanupObligation_DEFINED
 struct std_Vector_mir_resource_authority__MirCleanupObligation {
     os_Arena* arena;
     int capacity;
     mir_resource_authority__MirCleanupObligation* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_resource_authority__MirCloseCapability_DEFINED
+#define GUST_STRUCT_std_Vector_mir_resource_authority__MirCloseCapability_DEFINED
 struct std_Vector_mir_resource_authority__MirCloseCapability {
     os_Arena* arena;
     int capacity;
     mir_resource_authority__MirCloseCapability* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_resource_authority__MirDestructorIdentity_DEFINED
+#define GUST_STRUCT_std_Vector_mir_resource_authority__MirDestructorIdentity_DEFINED
 struct std_Vector_mir_resource_authority__MirDestructorIdentity {
     os_Arena* arena;
     int capacity;
     mir_resource_authority__MirDestructorIdentity* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_resource_authority__MirResourceIdentity_DEFINED
+#define GUST_STRUCT_std_Vector_mir_resource_authority__MirResourceIdentity_DEFINED
 struct std_Vector_mir_resource_authority__MirResourceIdentity {
     os_Arena* arena;
     int capacity;
     mir_resource_authority__MirResourceIdentity* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_resource_authority__MirResourceMirReference_DEFINED
+#define GUST_STRUCT_std_Vector_mir_resource_authority__MirResourceMirReference_DEFINED
 struct std_Vector_mir_resource_authority__MirResourceMirReference {
     os_Arena* arena;
     int capacity;
     mir_resource_authority__MirResourceMirReference* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_resource_authority__MirResourceStateJoin_DEFINED
+#define GUST_STRUCT_std_Vector_mir_resource_authority__MirResourceStateJoin_DEFINED
 struct std_Vector_mir_resource_authority__MirResourceStateJoin {
     os_Arena* arena;
     int capacity;
     mir_resource_authority__MirResourceStateJoin* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_resource_authority__MirResourceState_DEFINED
+#define GUST_STRUCT_std_Vector_mir_resource_authority__MirResourceState_DEFINED
 struct std_Vector_mir_resource_authority__MirResourceState {
     os_Arena* arena;
     int capacity;
     mir_resource_authority__MirResourceState* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_resource_authority__MirResourceTransition_DEFINED
+#define GUST_STRUCT_std_Vector_mir_resource_authority__MirResourceTransition_DEFINED
 struct std_Vector_mir_resource_authority__MirResourceTransition {
     os_Arena* arena;
     int capacity;
     mir_resource_authority__MirResourceTransition* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_resource_value__MirResourceCarrier_DEFINED
+#define GUST_STRUCT_std_Vector_mir_resource_value__MirResourceCarrier_DEFINED
 struct std_Vector_mir_resource_value__MirResourceCarrier {
     os_Arena* arena;
     int capacity;
     mir_resource_value__MirResourceCarrier* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_resource_value__MirResourceFlowEdge_DEFINED
+#define GUST_STRUCT_std_Vector_mir_resource_value__MirResourceFlowEdge_DEFINED
 struct std_Vector_mir_resource_value__MirResourceFlowEdge {
     os_Arena* arena;
     int capacity;
     mir_resource_value__MirResourceFlowEdge* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_resource_value__MirResourceOperation_DEFINED
+#define GUST_STRUCT_std_Vector_mir_resource_value__MirResourceOperation_DEFINED
 struct std_Vector_mir_resource_value__MirResourceOperation {
     os_Arena* arena;
     int capacity;
     mir_resource_value__MirResourceOperation* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_resource_value__MirResourceValue_DEFINED
+#define GUST_STRUCT_std_Vector_mir_resource_value__MirResourceValue_DEFINED
 struct std_Vector_mir_resource_value__MirResourceValue {
     os_Arena* arena;
     int capacity;
     mir_resource_value__MirResourceValue* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_stack_slot__MirStackSlotOperation_DEFINED
+#define GUST_STRUCT_std_Vector_mir_stack_slot__MirStackSlotOperation_DEFINED
 struct std_Vector_mir_stack_slot__MirStackSlotOperation {
     os_Arena* arena;
     int capacity;
     mir_stack_slot__MirStackSlotOperation* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_stack_slot__MirStackSlot_DEFINED
+#define GUST_STRUCT_std_Vector_mir_stack_slot__MirStackSlot_DEFINED
 struct std_Vector_mir_stack_slot__MirStackSlot {
     os_Arena* arena;
     int capacity;
     mir_stack_slot__MirStackSlot* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_string_view__MirStringLiteralStorage_DEFINED
+#define GUST_STRUCT_std_Vector_mir_string_view__MirStringLiteralStorage_DEFINED
 struct std_Vector_mir_string_view__MirStringLiteralStorage {
     os_Arena* arena;
     int capacity;
     mir_string_view__MirStringLiteralStorage* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_string_view__MirStringViewOperation_DEFINED
+#define GUST_STRUCT_std_Vector_mir_string_view__MirStringViewOperation_DEFINED
 struct std_Vector_mir_string_view__MirStringViewOperation {
     os_Arena* arena;
     int capacity;
     mir_string_view__MirStringViewOperation* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_string_view__MirStringView_DEFINED
+#define GUST_STRUCT_std_Vector_mir_string_view__MirStringView_DEFINED
 struct std_Vector_mir_string_view__MirStringView {
     os_Arena* arena;
     int capacity;
     mir_string_view__MirStringView* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_struct_layout__MirStructField_DEFINED
+#define GUST_STRUCT_std_Vector_mir_struct_layout__MirStructField_DEFINED
 struct std_Vector_mir_struct_layout__MirStructField {
     os_Arena* arena;
     int capacity;
     mir_struct_layout__MirStructField* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_struct_layout__MirStructLayout_DEFINED
+#define GUST_STRUCT_std_Vector_mir_struct_layout__MirStructLayout_DEFINED
 struct std_Vector_mir_struct_layout__MirStructLayout {
     os_Arena* arena;
     int capacity;
     mir_struct_layout__MirStructLayout* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_struct_layout__MirStructLeaf_DEFINED
+#define GUST_STRUCT_std_Vector_mir_struct_layout__MirStructLeaf_DEFINED
 struct std_Vector_mir_struct_layout__MirStructLeaf {
     os_Arena* arena;
     int capacity;
     mir_struct_layout__MirStructLeaf* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_struct_layout__MirStructOperation_DEFINED
+#define GUST_STRUCT_std_Vector_mir_struct_layout__MirStructOperation_DEFINED
 struct std_Vector_mir_struct_layout__MirStructOperation {
     os_Arena* arena;
     int capacity;
     mir_struct_layout__MirStructOperation* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_mir_struct_layout__MirStructValue_DEFINED
+#define GUST_STRUCT_std_Vector_mir_struct_layout__MirStructValue_DEFINED
 struct std_Vector_mir_struct_layout__MirStructValue {
     os_Arena* arena;
     int capacity;
     mir_struct_layout__MirStructValue* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_typechecker__ExpressionProvenance_DEFINED
+#define GUST_STRUCT_std_Vector_typechecker__ExpressionProvenance_DEFINED
 struct std_Vector_typechecker__ExpressionProvenance {
     os_Arena* arena;
     int capacity;
     typechecker__ExpressionProvenance* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_typechecker__PrefixMapEntry_DEFINED
+#define GUST_STRUCT_std_Vector_typechecker__PrefixMapEntry_DEFINED
 struct std_Vector_typechecker__PrefixMapEntry {
     os_Arena* arena;
     int capacity;
     typechecker__PrefixMapEntry* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_typechecker__ProtectedResourceDerivedFunction_DEFINED
+#define GUST_STRUCT_std_Vector_typechecker__ProtectedResourceDerivedFunction_DEFINED
 struct std_Vector_typechecker__ProtectedResourceDerivedFunction {
     os_Arena* arena;
     int capacity;
     typechecker__ProtectedResourceDerivedFunction* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_typechecker__QueryScopeObligation_DEFINED
+#define GUST_STRUCT_std_Vector_typechecker__QueryScopeObligation_DEFINED
 struct std_Vector_typechecker__QueryScopeObligation {
     os_Arena* arena;
     int capacity;
     typechecker__QueryScopeObligation* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_typechecker__ResolvedTypeEntry_DEFINED
+#define GUST_STRUCT_std_Vector_typechecker__ResolvedTypeEntry_DEFINED
 struct std_Vector_typechecker__ResolvedTypeEntry {
     os_Arena* arena;
     int capacity;
     typechecker__ResolvedTypeEntry* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_std_Vector_typechecker__ResourceCleanupAction_DEFINED
+#define GUST_STRUCT_std_Vector_typechecker__ResourceCleanupAction_DEFINED
 struct std_Vector_typechecker__ResourceCleanupAction {
     os_Arena* arena;
     int capacity;
     typechecker__ResourceCleanupAction* data;
     int len;
 };
+#endif
 
+#ifndef GUST_STRUCT_typechecker__AddressOriginRecord_DEFINED
+#define GUST_STRUCT_typechecker__AddressOriginRecord_DEFINED
 struct typechecker__AddressOriginRecord {
     Slice_unsigned_char kind;
     Slice_unsigned_char label;
 };
+#endif
 
+#ifndef GUST_STRUCT_typechecker__OriginSet_DEFINED
+#define GUST_STRUCT_typechecker__OriginSet_DEFINED
 struct typechecker__OriginSet {
     std_HashMap_str_int map;
 };
+#endif
 
+#ifndef GUST_STRUCT_typechecker__PrefixMapEntry_DEFINED
+#define GUST_STRUCT_typechecker__PrefixMapEntry_DEFINED
 struct typechecker__PrefixMapEntry {
     Slice_unsigned_char prefix;
     std_Vector_typechecker__ResolvedTypeEntry types;
 };
+#endif
 
+#ifndef GUST_STRUCT_typechecker__ProtectedResourceDerivedFunction_DEFINED
+#define GUST_STRUCT_typechecker__ProtectedResourceDerivedFunction_DEFINED
 struct typechecker__ProtectedResourceDerivedFunction {
     Slice_unsigned_char file;
     Slice_unsigned_char identity;
@@ -9550,7 +11895,10 @@ struct typechecker__ProtectedResourceDerivedFunction {
     ast__Statement statement;
     std_HashMap_str_ast__Type substitutions;
 };
+#endif
 
+#ifndef GUST_STRUCT_typechecker__QueryScopeObligation_DEFINED
+#define GUST_STRUCT_typechecker__QueryScopeObligation_DEFINED
 struct typechecker__QueryScopeObligation {
     Slice_unsigned_char binding_identity;
     int discharged;
@@ -9560,13 +11908,19 @@ struct typechecker__QueryScopeObligation {
     Slice_unsigned_char scope_identity;
     int source_order;
 };
+#endif
 
+#ifndef GUST_STRUCT_typechecker__ResolvedTypeEntry_DEFINED
+#define GUST_STRUCT_typechecker__ResolvedTypeEntry_DEFINED
 struct typechecker__ResolvedTypeEntry {
     int end_offset;
     int start_offset;
     ast__Type val_type;
 };
+#endif
 
+#ifndef GUST_STRUCT_typechecker__ResourceCleanupAction_DEFINED
+#define GUST_STRUCT_typechecker__ResourceCleanupAction_DEFINED
 struct typechecker__ResourceCleanupAction {
     Slice_unsigned_char cleanup_condition;
     int declaration_order;
@@ -9577,12 +11931,18 @@ struct typechecker__ResourceCleanupAction {
     Slice_unsigned_char storage_name;
     Slice_unsigned_char type_name;
 };
+#endif
 
+#ifndef GUST_STRUCT_typechecker__Scope_DEFINED
+#define GUST_STRUCT_typechecker__Scope_DEFINED
 struct typechecker__Scope {
     std_HashMap_str_ast__Type bindings;
     int parent;
 };
+#endif
 
+#ifndef GUST_STRUCT_typechecker__TypeEnvironment_DEFINED
+#define GUST_STRUCT_typechecker__TypeEnvironment_DEFINED
 struct typechecker__TypeEnvironment {
     std_HashMap_str_int active_monomorphizations;
     std_HashMap_str_str arena_lifecycle_bindings;
@@ -9653,6 +12013,7 @@ struct typechecker__TypeEnvironment {
     std_HashMap_str_typechecker__ExpressionProvenance variable_provenance;
     std_HashMap_str_ast__Type variable_types;
 };
+#endif
 
 // pthread_wrapper forward declarations
 void* lexer__read_char_pthread_wrapper(void* arg);
@@ -36786,7 +39147,12 @@ Slice_unsigned_char codegen__codegen_generate(std_Vector_ast__Program programs, 
     enum_decl = (({ Slice_unsigned_char _s1 = enum_decl; Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     enum_decl = (({ Slice_unsigned_char _s1 = enum_decl; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_Tag;\n\n", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     os_VectorPush(&(chunks), enum_decl);
-    Slice_unsigned_char struct_decl = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"struct ", 7 }); Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char struct_decl = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"#ifndef GUST_STRUCT_", 20 }); Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    struct_decl = (({ Slice_unsigned_char _s1 = struct_decl; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_DEFINED\n#define GUST_STRUCT_", 29 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    struct_decl = (({ Slice_unsigned_char _s1 = struct_decl; Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    struct_decl = (({ Slice_unsigned_char _s1 = struct_decl; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_DEFINED\n", 9 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    struct_decl = (({ Slice_unsigned_char _s1 = struct_decl; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"struct ", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    struct_decl = (({ Slice_unsigned_char _s1 = struct_decl; Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     struct_decl = (({ Slice_unsigned_char _s1 = struct_decl; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" {\n", 3 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     struct_decl = (({ Slice_unsigned_char _s1 = struct_decl; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"    int tag;\n", 13 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     struct_decl = (({ Slice_unsigned_char _s1 = struct_decl; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"    union {\n", 12 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
@@ -36805,10 +39171,16 @@ Slice_unsigned_char codegen__codegen_generate(std_Vector_ast__Program programs, 
     k_var = (k_var + 1);
     }
     struct_decl = (({ Slice_unsigned_char _s1 = struct_decl; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"    };\n", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
-    struct_decl = (({ Slice_unsigned_char _s1 = struct_decl; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"};\n\n", 4 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    struct_decl = (({ Slice_unsigned_char _s1 = struct_decl; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"};\n", 3 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    struct_decl = (({ Slice_unsigned_char _s1 = struct_decl; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"#endif\n\n", 8 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     os_VectorPush(&(chunks), struct_decl);
     } else {
-    Slice_unsigned_char struct_decl = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"struct ", 7 }); Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    Slice_unsigned_char struct_decl = (({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"#ifndef GUST_STRUCT_", 20 }); Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    struct_decl = (({ Slice_unsigned_char _s1 = struct_decl; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_DEFINED\n#define GUST_STRUCT_", 29 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    struct_decl = (({ Slice_unsigned_char _s1 = struct_decl; Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    struct_decl = (({ Slice_unsigned_char _s1 = struct_decl; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"_DEFINED\n", 9 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    struct_decl = (({ Slice_unsigned_char _s1 = struct_decl; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"struct ", 7 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    struct_decl = (({ Slice_unsigned_char _s1 = struct_decl; Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     struct_decl = (({ Slice_unsigned_char _s1 = struct_decl; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)" {\n", 3 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     std_Vector_str f_keys = typechecker__typechecker_get_sorted_keys_type(&(layout.fields), ctx);
     if ((f_keys.len == 0)) {
@@ -36830,7 +39202,8 @@ Slice_unsigned_char codegen__codegen_generate(std_Vector_ast__Program programs, 
     j = (j + 1);
     }
     }
-    struct_decl = (({ Slice_unsigned_char _s1 = struct_decl; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"};\n\n", 4 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    struct_decl = (({ Slice_unsigned_char _s1 = struct_decl; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"};\n", 3 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
+    struct_decl = (({ Slice_unsigned_char _s1 = struct_decl; Slice_unsigned_char _s2 = ((Slice_unsigned_char){ (unsigned char*)"#endif\n\n", 8 }); char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); }));
     os_VectorPush(&(chunks), struct_decl);
     }
     }
@@ -36907,14 +39280,14 @@ Slice_unsigned_char codegen__codegen_generate(std_Vector_ast__Program programs, 
     t_struct.Struct.brand = 0xFFFFFFFF;
     int has_bool = codegen__codegen_has_boolean_fields(t_struct, env, ctx);
     if ((has_bool == 1)) {
-    LookupResult_str _guard_res_orig_key_4698_17 = {0};
-    _guard_res_orig_key_4698_17 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(erased_to_original), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(erased_to_original), key, 1); } res; });
-    if (!_guard_res_orig_key_4698_17.Ok) {
+    LookupResult_str _guard_res_orig_key_4732_17 = {0};
+    _guard_res_orig_key_4732_17 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(erased_to_original), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(erased_to_original), key, 1); } res; });
+    if (!_guard_res_orig_key_4732_17.Ok) {
         os_LogStr((({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"🚨 CRITICAL COMPILER BUG: erased_to_original.Get failed for key: ", 67 }); Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
     exit(1);
     return std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"", 0 }));
     }
-    Slice_unsigned_char orig_key = _guard_res_orig_key_4698_17.Val;
+    Slice_unsigned_char orig_key = _guard_res_orig_key_4732_17.Val;
     std_Option_typechecker__StructLayout layout_lookup = ({ std_Option_typechecker__StructLayout _gust_map_get_opt_result = {0}; int _gust_map_get_opt_ok = os_HashMapContains(&((*(env)).struct_registry), orig_key, 1); if (_gust_map_get_opt_ok) { _gust_map_get_opt_result.tag = std_Option_typechecker__StructLayout_Tag__Some; _gust_map_get_opt_result.Some.val = *os_HashMapRef(&((*(env)).struct_registry), orig_key, 1); } else { _gust_map_get_opt_result.tag = std_Option_typechecker__StructLayout_Tag__None; } _gust_map_get_opt_result; });
     switch (layout_lookup.tag) {
         case std_Option_typechecker__StructLayout_Tag__Some: {

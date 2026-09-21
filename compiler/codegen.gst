@@ -4570,7 +4570,15 @@ typedef void Any;
                         chunks.Push(enum_decl);
 
                         // 2. Generate struct with anonymous union
-                        mut struct_decl := std.Concat("struct ", key);
+                        //
+                        // Patch 25.5: include-guarded. See the plain-struct
+                        // site below for why.
+                        mut struct_decl := std.Concat("#ifndef GUST_STRUCT_", key);
+                        struct_decl = std.Concat(struct_decl, "_DEFINED\n#define GUST_STRUCT_");
+                        struct_decl = std.Concat(struct_decl, key);
+                        struct_decl = std.Concat(struct_decl, "_DEFINED\n");
+                        struct_decl = std.Concat(struct_decl, "struct ");
+                        struct_decl = std.Concat(struct_decl, key);
                         struct_decl = std.Concat(struct_decl, " {\n");
                         struct_decl = std.Concat(struct_decl, "    int tag;\n");
                         struct_decl = std.Concat(struct_decl, "    union {\n");
@@ -4590,10 +4598,35 @@ typedef void Any;
                             k_var = k_var + 1;
                         }
                         struct_decl = std.Concat(struct_decl, "    };\n");
-                        struct_decl = std.Concat(struct_decl, "};\n\n");
+                        struct_decl = std.Concat(struct_decl, "};\n");
+                        struct_decl = std.Concat(struct_decl, "#endif\n\n");
                         chunks.Push(struct_decl);
                     } else {
-                        mut struct_decl := std.Concat("struct ", key);
+                        // Patch 25.5: every emitted struct is include-guarded.
+                        //
+                        // APIRequest and SessionNode are BUILT-INS, registered
+                        // in typechecker.gst and emitted into every program
+                        // whether or not it mentions them. That was invisible
+                        // while exactly one emitted unit ever appeared in a
+                        // translation unit. It stops being invisible the
+                        // moment a second one does: 25.5 emits the runtime's
+                        // own strings module and cats it in front of the
+                        // program, and the two definitions collide with
+                        // "redefinition of struct APIRequest".
+                        //
+                        // A guard rather than reachability-gated emission.
+                        // Emitting built-ins only when referenced is the
+                        // better fix and a much larger one -- it is a
+                        // reachability analysis, and two test entries depend
+                        // on those built-ins existing. This is three lines per
+                        // struct and makes emitted C concatenation-safe in
+                        // general rather than for this one case.
+                        mut struct_decl := std.Concat("#ifndef GUST_STRUCT_", key);
+                        struct_decl = std.Concat(struct_decl, "_DEFINED\n#define GUST_STRUCT_");
+                        struct_decl = std.Concat(struct_decl, key);
+                        struct_decl = std.Concat(struct_decl, "_DEFINED\n");
+                        struct_decl = std.Concat(struct_decl, "struct ");
+                        struct_decl = std.Concat(struct_decl, key);
                         struct_decl = std.Concat(struct_decl, " {\n");
                         
                         mut f_keys := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
@@ -4615,7 +4648,8 @@ typedef void Any;
                                 j = j + 1;
                             } 
                         }
-                        struct_decl = std.Concat(struct_decl, "};\n\n");
+                        struct_decl = std.Concat(struct_decl, "};\n");
+                        struct_decl = std.Concat(struct_decl, "#endif\n\n");
                         chunks.Push(struct_decl);
                     }
                 }
