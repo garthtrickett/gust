@@ -41,7 +41,8 @@ nm -g --defined-only "$runtime_package" >"$build_root/runtime-symbols.txt"
 actual_runtime_symbols="$(awk 'NF == 3 && ($2 == "T" || $2 == "B") {print $3}' \
   "$build_root/runtime-symbols.txt" | sort)"
 expected_runtime_symbols="$(printf '%s\n' \
-  get_num_threads_to_use gust_context_switch gust_fiber_create \
+  get_num_threads_to_use gust_check_fail gust_tick \
+  gust_context_switch gust_fiber_create \
   gust_fiber_entry_wrapper gust_fiber_exit gust_fiber_free gust_fiber_switch \
   gust_scheduler_destroy gust_scheduler_init gust_scheduler_spawn \
   gust_shard_loop gust_yield \

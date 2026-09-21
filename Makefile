@@ -284,6 +284,8 @@ PHASE25_RUNTIME_RS_EXPORTS = \
 	tiny_host_add_i32 \
 	tiny_host_is_positive_i32 \
 	gust_check_fail \
+	gust_context_switch \
+	gust_fiber_entry_wrapper \
 	gust_fiber_create \
 	gust_fiber_exit \
 	gust_fiber_free \
@@ -325,7 +327,12 @@ PHASE25_RUNTIME_RS_EXPORTS = \
 # macOS quadrant.
 PHASE25_UNAME_S := $(shell uname -s)
 
-$(PHASE25_RUNTIME_RS_OBJ): $(PHASE25_RUNTIME_RS)
+# The export set lives in THIS file, so the Makefile is a real input to
+# the narrowed object. Without it here, editing PHASE25_RUNTIME_RS_EXPORTS
+# leaves a stale object that still carries the old symbol set, and the
+# drift check below passes because it compares the object against the
+# list it was built from, not the list as it now reads.
+$(PHASE25_RUNTIME_RS_OBJ): $(PHASE25_RUNTIME_RS) Makefile
 	@rm -rf build/phase25-runtime-rs
 	@mkdir -p build/phase25-runtime-rs
 ifeq ($(PHASE25_UNAME_S),Darwin)
