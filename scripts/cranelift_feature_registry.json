@@ -20162,7 +20162,7 @@
         "fiber.o",
         "collections.o",
         "strings.o",
-        "approved_scalar_imports.o"
+        "gust_runtime_rs_fixtures.o"
       ],
       "symbol_policy": "existing_registered_runtime_symbols_only"
     },
