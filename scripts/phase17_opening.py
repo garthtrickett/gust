@@ -470,16 +470,26 @@ def validate() -> dict:
                 f"{helper_id}: target applicability drifted")
         helper_owner_counts[owner_id] += 1
 
+    # Patch 25.5: five of these moved to src/runtime-rs and their helper
+    # rows moved with them. The helpers still exist and still export the
+    # same exact C symbols -- what changed is the language of the unit
+    # that defines them, which is precisely what a source inventory is
+    # for. Leaving the rows pointing at deleted .c files would have made
+    # this set agree with a registry that describes files nobody can open.
     required_sources = {
-        "src/runtime/arena.c", "src/runtime/scratch.c",
-        "src/runtime/collections.c", "src/runtime/core_headers.h",
+        # Patch 25.5 ported five of the runtime's C files to the crate:
+        # arena.c, scratch.c, collections.c, file_io.c and host_io.c. The
+        # symbols did not move, only their language, so every helper row
+        # keeps its identity and only the source path changes.
+        "src/runtime-rs/src/arena.rs", "src/runtime-rs/src/scratch.rs",
+        "src/runtime-rs/src/collections.rs", "src/runtime/core_headers.h",
         # Patch 25.4: the tiny_host_* fixtures moved to the Rust runtime
         # crate. They must stay FOREIGN -- a Gust rewrite would test
         # Gust calling Gust and the contract would evaporate (O1) --
         # and their symbol names are byte-identical, so only the
         # source path changes.
-        "src/runtime-rs/src/lib.rs", "src/runtime/file_io.c",
-        "src/runtime/host_io.c", "src/runtime/strings.c",
+        "src/runtime-rs/src/lib.rs", "src/runtime-rs/src/file_io.rs",
+        "src/runtime-rs/src/host_io.rs", "src/runtime/strings.c",
         # Patch 25.6: fiber.c is deleted. Its sixteen ordinary exports are
         # in the crate's fiber.rs; the two assembly symbols are in
         # fiber_asm.rs, where `global_asm!` defines them. Both paths are

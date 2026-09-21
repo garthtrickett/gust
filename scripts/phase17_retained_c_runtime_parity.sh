@@ -12,11 +12,34 @@ trap 'status=$?; echo "Phase 17.7 retained C parity failed: stage=$stage status=
 bash scripts/run-gust-file.sh compiler/mir_retained_c_runtime_smoke_test_entry.gst
 rg -n -F 'SUCCESS: Phase 17.7 retained C runtime smoke passed' to.log >/dev/null
 
+# Patch 25.5 rescoped this from arena.c to strings.c, and did NOT delete
+# the assertion. arena.c is in the Rust crate now, so the obligation moved
+# rather than ending: what this stage checks is that the retained C runtime
+# -- whatever is left of it -- compiles from its OWN sources with no
+# program-derived fragment on the command line. Dropping the stage because
+# its subject moved would have quietly stopped asserting that.
+#
+# So the check is two-sided. arena.c must be ABSENT, and the symbols it
+# used to define must be PRESENT in the archive. Either half alone passes
+# for the wrong reason: a missing file proves nothing if nothing replaced
+# it, and a defined symbol proves nothing if the C is still there too.
+stage="confirm the ported runtime C is gone and its symbols moved, not vanished"
+for gone in arena scratch collections file_io host_io; do
+  if test -e "src/runtime/$gone.c"; then
+    echo "src/runtime/$gone.c is back; Patch 25.5 moved it to src/runtime-rs" >&2; false
+  fi
+done
+cargo build --release --manifest-path src/runtime-rs/Cargo.toml >"$build_dir/cargo-rs.log" 2>&1
+archive="src/runtime-rs/target/release/libgust_runtime_rs.a"
+for symbol in os_Arena_New os_ArenaAlloc os_Arena_Free os_Arena_Validate; do
+  nm -g "$archive" | rg -n -F " T $symbol" >/dev/null
+done
+
 # The retained component compiles independently of any user program: only its
 # own owned sources, no program-derived fragment on the command line.
 stage="compile the retained C component independently of program compilation"
-cc -O2 -c src/runtime/arena.c -I src/runtime -o "$build_dir/arena.o" 2>"$build_dir/cc.log"
-test -f "$build_dir/arena.o"
+cc -O2 -c src/runtime/strings.c -I src/runtime -o "$build_dir/strings.o" 2>"$build_dir/cc.log"
+test -f "$build_dir/strings.o"
 
 # Observable behaviour is compared through a direct C host, matching what
 # MIR-to-C and explicit Cranelift both see from the same component.
@@ -38,7 +61,11 @@ int main(void) {
     return 0;
 }
 PROBE
-if cc -O2 -I src/runtime "$build_dir/probe.c" "$build_dir/arena.o" -o "$build_dir/probe" 2>"$build_dir/link.log"; then
+# The probe is unchanged -- the same four arena entry points, through the
+# component's own header rather than hand-written externs. It links against
+# the crate archive now instead of arena.o, which is the point: the
+# observable behaviour has to survive the move, not just the symbols.
+if cc -O2 -I src/runtime "$build_dir/probe.c" "$archive" -pthread -o "$build_dir/probe" 2>"$build_dir/link.log"; then
   "$build_dir/probe" >"$build_dir/probe.out"
   rg -n -F 'RETAINED C PARITY OK' "$build_dir/probe.out" >/dev/null
 else
@@ -49,7 +76,7 @@ else
   if rg -n -e 'generated' -e 'shim' "$build_dir/link.log" >/dev/null; then
     echo "retained C link referenced generated program source" >&2; false
   fi
-  echo "note: arena.o requires declared sibling runtime units; no generated C involved"
+  echo "note: the probe requires declared sibling runtime units; no generated C involved"
 fi
 
 # No retained C source may be derived from a compiled program.

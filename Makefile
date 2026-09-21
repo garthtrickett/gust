@@ -24,7 +24,7 @@ PHASE21_RUNTIME_PACKAGE = build/gust-runtime-package.a
 PHASE25_RUNTIME_RS = src/runtime-rs/target/release/libgust_runtime_rs.a
 PHASE25_RUNTIME_RS_OBJ = build/phase25-runtime-rs/gust_runtime_rs_exports.o
 
-PHASE21_RUNTIME_OBJECTS = build/phase21-runtime/arena.o build/phase21-runtime/host_io.o build/phase21-runtime/file_io.o build/phase21-runtime/scratch.o build/phase21-runtime/collections.o build/phase21-runtime/strings.o
+PHASE21_RUNTIME_OBJECTS = build/phase21-runtime/strings.o
 
 PHASE10_DIAG_CC ?= clang
 PHASE10_DIAG_CFLAGS ?= -O0 -g3 -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address,undefined -fsanitize-address-use-after-scope -fno-sanitize-recover=all -pthread
@@ -209,32 +209,18 @@ build/gust-native-backend: $(PHASE10_NATIVE_BACKEND_MANIFEST) $(PHASE10_NATIVE_B
 	install -m 0755 "$(PHASE10_NATIVE_BACKEND_BUILT_BIN)" build/.gust-native-backend.tmp
 	mv build/.gust-native-backend.tmp build/gust-native-backend
 
-build/phase21-runtime/arena.o: src/runtime/arena.c src/runtime/core_headers.h
-	mkdir -p build/phase21-runtime
-	$(CC) $(CFLAGS) -Isrc/runtime -c src/runtime/arena.c -o $@
-
-build/phase21-runtime/host_io.o: src/runtime/host_io.c src/runtime/core_headers.h
-	mkdir -p build/phase21-runtime
-	$(CC) $(CFLAGS) -Isrc/runtime -c src/runtime/host_io.c -o $@
-
-build/phase21-runtime/file_io.o: src/runtime/file_io.c src/runtime/core_headers.h
-	mkdir -p build/phase21-runtime
-	$(CC) $(CFLAGS) -Isrc/runtime -c src/runtime/file_io.c -o $@
-
 # Patch 25.6: fiber.c is gone. Its eighteen exports -- the scheduler, the
 # context switch, and the Mutex/Channel primitives -- are defined in
 # src/runtime-rs and reach the archive through the crate member. The .o
 # rule is removed rather than left dangling: a rule whose source does not
 # exist fails only when something asks for it.
 
-build/phase21-runtime/scratch.o: src/runtime/scratch.c src/runtime/core_headers.h
-	mkdir -p build/phase21-runtime
-	$(CC) $(CFLAGS) -Isrc/runtime -c src/runtime/scratch.c -o $@
-
-build/phase21-runtime/collections.o: src/runtime/collections.c src/runtime/core_headers.h
-	mkdir -p build/phase21-runtime
-	$(CC) $(CFLAGS) -Isrc/runtime -c src/runtime/collections.c -o $@
-
+# Patch 25.5: arena.o, host_io.o, file_io.o, scratch.o and collections.o
+# are gone with their sources. Their symbols did not go anywhere -- they
+# are defined in src/runtime-rs and reach this archive through the crate
+# member, exactly as fiber's eighteen did in 25.6. A member left; no
+# symbol did. The rules are deleted rather than left pointing at missing
+# sources, because such a rule fails only when something asks for it.
 build/phase21-runtime/strings.o: src/runtime/strings.c src/runtime/core_headers.h
 	mkdir -p build/phase21-runtime
 	$(CC) $(CFLAGS) -Isrc/runtime -c src/runtime/strings.c -o $@

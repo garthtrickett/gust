@@ -58,32 +58,6 @@ Slice_unsigned_char std_str_trim(Slice_unsigned_char s) {
     return res;
 }
 
-struct std_Vector_str std_str_split(Slice_unsigned_char s, Slice_unsigned_char delim, os_Arena* ctx) {
-    struct std_Vector_str vec = (struct std_Vector_str){ .data = NULL, .len = 0, .capacity = 0, .arena = ctx };
-    if (delim.len == 0) {
-        for (int i = 0; i < s.len; i++) {
-            Slice_unsigned_char element = (Slice_unsigned_char){ s.data + i, 1 };
-            os_VectorPush(&vec, element);
-        }
-        return vec;
-    }
-    int start = 0;
-    for (int i = 0; i <= s.len - delim.len; ) {
-        if (memcmp(s.data + i, delim.data, delim.len) == 0) {
-            Slice_unsigned_char part = (Slice_unsigned_char){ s.data + start, i - start };
-            os_VectorPush(&vec, part);
-            i += delim.len;
-            start = i;
-        } else {
-            i++;
-        }
-    }
-    if (start <= s.len) {
-        Slice_unsigned_char part = (Slice_unsigned_char){ s.data + start, s.len - start };
-        os_VectorPush(&vec, part);
-    }
-    return vec;
-}
 
 unsigned char std_is_alpha(unsigned char b) {
     return ((b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') || b == '_') ? 1 : 0;
@@ -119,12 +93,12 @@ int std_parse_int(Slice_unsigned_char s) {
     return result * sign;
 }
 
-Slice_unsigned_char std_Clone_str(os_Arena* arena, Slice_unsigned_char s) {
-    if (s.data == NULL || s.len <= 0) {
-        return (Slice_unsigned_char){ NULL, 0 };
-    }
-    int offset = os_ArenaAlloc(arena, s.len);
-    unsigned char* dest = (unsigned char*)((char*)arena->BaseAddress + GUST_ARENA_OFFSET(offset));
-    memcpy(dest, s.data, s.len);
-    return (Slice_unsigned_char){ dest, s.len };
-}
+/* Patch 25.5: std_Clone_str and std_str_split are NOT here any more. Both
+   need N raw bytes from a caller-supplied arena and Gust has no spelling
+   for that -- os.ArenaAlloc takes one argument, the allocator, because
+   Gust allocates by TYPE through ctx[T]. They went to src/runtime-rs under
+   D2's per-file fallback, and leaving the C copies here would collide with
+   the crate's single archive member. The other nine follow them out next
+   patch, to Gust; compiler/runtime/strings.gst already holds them and
+   scripts/phase25_strings_gust_parity.sh already compares them against a
+   frozen copy of this file. */
