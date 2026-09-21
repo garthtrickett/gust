@@ -24027,3 +24027,12 @@ guard-cranelift-phase25-runtime-rs-abi-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
     ./scripts/phase25_runtime_rs_abi_smoke.sh
+
+# Patch 25.7: the native fixed point.
+#
+# Appended for the same reason as 25.5's three above -- the Patch 24.0c
+# manifest for this file is keyed on line numbers.
+guard-cranelift-phase25-native-fixed-point:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ./scripts/phase25_native_fixed_point.sh
