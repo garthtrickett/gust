@@ -1,0 +1,10 @@
+{
+  "version": "phase25_release_manifest_v1",
+  "policy": {
+    "what_is_committed": "This manifest only. Binaries are release assets. P15 narrowed D1's option B from a committed binary to a published binary with a committed digest: committing per-platform blobs writes them into git history forever, which is the opacity D1's own ranking held against option C.",
+    "offline": "GUST_BOOTSTRAP_SEED=/path takes a local artifact and verifies it here. Fetching is a convenience, never the critical path -- a chain that can only be fetched is not auditable by anyone who does not already trust the host.",
+    "floor": "N-1. Release N builds from N-1; nothing older is promised. Tags and assets are kept forever because they cost nothing, but the supported path is one step, and a chain nobody exercises is already broken. The published bridge binary is the escape when the chain breaks -- that is what option B is for.",
+    "attestation": "Two layers. The fixed-point proof says what the artifact IS and anyone can regenerate it. A signed manifest says who published it. If they disagree the fixed point wins and the release is withdrawn: a signature on a blob nobody can reproduce is trust, not verification."
+  },
+  "releases": []
+}

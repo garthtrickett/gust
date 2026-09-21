@@ -42,8 +42,19 @@ all: phase10-native-package
 
 gust_bootstrap: gust_v4.c $(RUNTIME_SRCS)
 	mkdir -p build
-	cat src/runtime.c gust_v4.c > build/gust_bootstrap_final.c
-	${CC} ${CFLAGS} ${INCLUDES} build/gust_bootstrap_final.c -o gust_bootstrap
+	@# Patch 25.8a: the offline seed path, wired here rather than only
+	@# described. GUST_BOOTSTRAP_SEED names a published bridge binary;
+	@# it is verified against the committed manifest BEFORE it is used,
+	@# because an unverified seed is exactly what D1 option B exists to
+	@# avoid. Unset, the ordinary compile-from-source route runs.
+	@if [ -n "$$GUST_BOOTSTRAP_SEED" ]; then \
+		echo "offline seed: $$GUST_BOOTSTRAP_SEED"; \
+		python3 scripts/phase25_release_manifest.py verify-seed; \
+		install -m 0755 "$$GUST_BOOTSTRAP_SEED" gust_bootstrap; \
+	else \
+		cat src/runtime.c gust_v4.c > build/gust_bootstrap_final.c; \
+		${CC} ${CFLAGS} ${INCLUDES} build/gust_bootstrap_final.c -o gust_bootstrap; \
+	fi
 
 build/gust_stage1_compiler.c: export GUST_BOOTSTRAP_EMITTER = 1
 build/gust_stage1_compiler.c: gust_bootstrap $(COMPILER_SRCS) tools/normalize_generated_arena_offsets.py

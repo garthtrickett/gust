@@ -1,0 +1,31 @@
+name: Cranelift Phase 25 Release Manifest
+
+concurrency:
+  group: phase25-release-manifest-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+on:
+  pull_request:
+    paths:
+      - 'docs/RELEASE_MANIFEST.json'
+      - 'scripts/phase25_release_manifest.py'
+      - '.github/workflows/phase25-release-manifest.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/RELEASE_MANIFEST.json'
+      - 'scripts/phase25_release_manifest.py'
+      - '.github/workflows/phase25-release-manifest.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  manifest:
+    name: Phase 25 release manifest
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: guard-cranelift-phase25-release-manifest
+        run: python3 scripts/phase25_release_manifest.py validate
