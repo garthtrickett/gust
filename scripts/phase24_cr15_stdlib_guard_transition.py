@@ -2263,6 +2263,48 @@ def normalize_phase23_text_surfaces(
     # newest-first discipline as every link below it.
     # Phase 25's seed-policy record is newest, so it runs FIRST. It adds one
     # document and moves docs/ROADMAP_TAIL.md; no code or route changes.
+    # Patch 25.1 is the newest successor, so it runs FIRST. It only ADDS a
+    # surface -- the expected-failure list -- so the added-row requirement
+    # from PR #444's review carries the whole contract.
+    falsifier_surface = registry.get(
+        "patch251_no_c_falsifier", {}).get("text_surface_successor")
+    if falsifier_surface is not None:
+        require(falsifier_surface.get("contract_version") ==
+                "patch251_no_c_falsifier_text_surface_successor_v1" and
+                falsifier_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Patch 25.1 falsifier text surface successor drifted")
+        fs_paths = list(falsifier_surface["registered_changed_paths"])
+        fs_pre = {r["path"]: r for r
+                  in falsifier_surface["previous_changed_text_surfaces"]}
+        fs_post = {r["path"]: r for r
+                   in falsifier_surface["current_changed_text_surfaces"]}
+        require(sorted(fs_pre) == sorted(fs_paths) == sorted(fs_post),
+                "Patch 25.1 registered paths and rows disagree")
+        fs_chg = {r["path"]: r for r in rows if r["path"] in fs_paths}
+        require(sorted(fs_chg) == sorted(fs_paths),
+                "Patch 25.1 registered text surface is missing from scan")
+        require(fs_chg in (fs_pre, fs_post),
+                "Patch 25.1 changed text surfaces are partial or "
+                f"substituted ({sorted(p for p in fs_paths if fs_chg[p] != fs_post[p])} differ from post)")
+        rows = [dict(fs_pre.get(r["path"], r)) for r in rows]
+        fs_added = set(falsifier_surface["added_text_surfaces"])
+        fs_rows = {r["path"]: r for r
+                   in falsifier_surface["added_text_surface_rows"]}
+        require(sorted(fs_rows) == sorted(fs_added),
+                "Patch 25.1 added paths and rows disagree")
+        fs_live = {r["path"]: r for r in rows if r["path"] in fs_added}
+        require(sorted(fs_live) == sorted(fs_added),
+                "Patch 25.1 added text surface is missing from the scan: "
+                f"{sorted(fs_added - set(fs_live))}")
+        for path in sorted(fs_added):
+            require(fs_live[path] == fs_rows[path],
+                    "Patch 25.1 added text surface does not match its "
+                    f"registered row: {path}")
+        rows = [r for r in rows if r["path"] not in fs_added]
+        rows.sort(key=lambda r: str(r["path"]))
+        by_path = {r["path"]: r for r in rows}
+
     # Issue #451 is the newest successor, so it runs FIRST. Three files:
     # the provenance guard (justfile enabled), the retirement inventory
     # (three recipes owned by phase25) and cranelift_registry.py, which

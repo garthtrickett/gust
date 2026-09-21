@@ -27224,7 +27224,72 @@
         ]
       }
     },
-    "issue451_inventory_ownership": {
+      "patch251_no_c_falsifier": {
+      "status": "patch251_no_c_falsifier_expected_red",
+      "text_surface_successor": {
+        "added_text_surface_rows": [
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "a5eaec1081f72f70600409bd471bdb1058c87627c223aa37914c309073a53188",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "generated_c_contract": 1,
+              "mir_to_c_name": 0
+            },
+            "owner": "cranelift",
+            "path": "scripts/phase25_no_c_expected_failures.json",
+            "removal_phase": "24"
+          }
+        ],
+        "added_text_surfaces": [
+          "scripts/phase25_no_c_expected_failures.json"
+        ],
+        "contract_version": "patch251_no_c_falsifier_text_surface_successor_v1",
+        "current_changed_text_surfaces": [
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "d89a8b941933a03fbc1cdf0358b27eacf4038dd02565e6099200e58de5857849",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "generated_c_contract": 5,
+              "mir_to_c_name": 61
+            },
+            "owner": "cranelift",
+            "path": "scripts/cranelift_registry.py",
+            "removal_phase": "24"
+          }
+        ],
+        "partial_extra_or_substituted_surface": "rejected",
+        "previous_changed_text_surfaces": [
+          {
+            "classification": "archive_candidate",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "digest": "167863b7dcf905766231db9be3c3c0bf304cfb7f9b8629234d512c4ab95b95d7",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "generated_c_contract": 5,
+              "mir_to_c_name": 61
+            },
+            "owner": "cranelift",
+            "path": "scripts/cranelift_registry.py",
+            "removal_phase": "24"
+          }
+        ],
+        "registered_changed_paths": [
+          "scripts/cranelift_registry.py"
+        ],
+        "removed_text_surfaces": []
+      }
+    },
+  "issue451_inventory_ownership": {
       "status": "issue451_three_recipes_owned_by_phase25",
       "text_surface_successor": {
         "contract_version": "issue451_inventory_ownership_text_surface_successor_v1",
