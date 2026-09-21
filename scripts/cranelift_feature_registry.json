@@ -28077,11 +28077,11 @@
           "classification": "historical_only",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_as_historical_evidence",
-          "digest": "1029299b5ea3620aa18b82970ca2a23ed13137b86baf0bfc688f9817920963e2",
+          "digest": "2718a9e42e06be144e5048b1a74b4a6467184dfbd3b3acfec1077729e2f5f7f9",
           "falsifier": "historical_record_is_reclassified_as_live_support",
           "match_counts": {
             "explicit_backend_spelling": 0,
-            "generated_c_contract": 1,
+            "generated_c_contract": 2,
             "mir_to_c_name": 1
           },
           "owner": "cranelift",
