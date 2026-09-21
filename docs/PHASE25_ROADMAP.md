@@ -167,10 +167,34 @@ on it.
   no debug info today, so that clause is currently vacuous; state it so, and
   it applies automatically when debug info appears (P11).
 
-**Exit Gate:** two independent builds from different directories produce
-byte-identical objects for the named artifact set; the remap prefix is a
-constant; and if determinism holds only after excluding sections, those
-sections are named and the fixed point is recorded as the narrower one.
+**Exit Gate:** the artifact set, the remap prefix and the section policy are
+fixed in code; the remap prefix is a pinned constant; and **both vacuity
+claims carry falsifiers that fire when they stop being vacuous** — the
+debug-info one when the driver emits debug info, the remap one when a remap
+appears.
+
+**The two-build comparison moved to Patch 25.7.** It was written here first
+and cannot be performed here, measured 2026-09-20:
+
+- **No remap mechanism exists.** `REMAP_PREFIX` is pinned but nothing in
+  `compiler/experiments/cranelift/src/` applies it, so comparing two builds
+  would compare two unremapped builds.
+- **The native route emits a linked executable, not objects.** `--backend
+  cranelift -o X src.gst` produces an ELF PIE with a BuildID, `crtstuff.c`
+  and `__libc_start_main` in it. O7 excludes linked executables precisely
+  because comparing them proves the linker deterministic. The per-source
+  objects the artifact set names exist only transiently inside that link.
+- **The paths are not there yet anyway.** That artifact contains zero
+  occurrences of the checkout path, so the nondeterminism the remap exists to
+  remove is not observable today — the remap clause is vacuous for the same
+  reason the debug-info clause is. (Narrow measurement: one small source, one
+  architecture, a native backend borrowed from another worktree. Enough to
+  show paths are absent here, not enough to claim it for all 898 sources.)
+
+Patch 25.7's exit gate already reads "the native fixed point holds across two
+independent builds" over "the artifact set fixed in 25.2", so the obligation
+is not dropped — it is stated once, in the patch that builds the stage chain
+the comparison needs.
 
 ## Patch 25.3 — The Freestanding Gust Subset
 

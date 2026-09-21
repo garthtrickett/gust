@@ -1,0 +1,37 @@
+name: Cranelift Phase 25 Fixed-Point Artifact Set
+
+# Patch 25.2 fixes what D4's native fixed point compares. Wired in the same
+# patch that creates it -- #437 and #445 are what unexecuted guards look
+# like later.
+
+on:
+  pull_request:
+    paths:
+      - 'compiler/**'
+      - 'scripts/phase25_fixed_point_artifact_set.py'
+      - '.github/workflows/phase25-fixed-point-artifact-set.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compiler/**'
+      - 'scripts/phase25_fixed_point_artifact_set.py'
+      - '.github/workflows/phase25-fixed-point-artifact-set.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  artifact-set:
+    name: Phase 25 fixed-point artifact set
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: guard-cranelift-phase25-fixed-point-artifact-set
+        run: python3 scripts/phase25_fixed_point_artifact_set.py validate
+      - name: report
+        run: python3 scripts/phase25_fixed_point_artifact_set.py report
