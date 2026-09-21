@@ -490,6 +490,12 @@ def validate() -> dict:
         # source path changes.
         "src/runtime-rs/src/lib.rs", "src/runtime-rs/src/file_io.rs",
         "src/runtime-rs/src/host_io.rs", "src/runtime/strings.c",
+        # Patch 25.5: nine of strings.c's eleven functions went to Gust and
+        # are GENERATED back into strings.c, which is why that path stays.
+        # The two that allocate raw arena bytes went to Rust instead --
+        # Gust has no spelling for "N bytes from this arena" -- so the file
+        # has two source units, not one.
+        "src/runtime-rs/src/strings.rs",
         # Patch 25.6: fiber.c is deleted. Its sixteen ordinary exports are
         # in the crate's fiber.rs; the two assembly symbols are in
         # fiber_asm.rs, where `global_asm!` defines them. Both paths are

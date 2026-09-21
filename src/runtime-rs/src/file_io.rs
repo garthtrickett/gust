@@ -90,7 +90,7 @@ unsafe fn slice_path(s: SliceU8) -> PathBuf {
 
 /// # Safety
 /// `s` must be a valid slice or have a null `data`.
-unsafe fn slice_cstring(s: SliceU8) -> CString {
+unsafe fn os_slice_to_c_string(s: SliceU8) -> CString {
     // Unwrap cannot fire: slice_bytes has already cut at the first NUL.
     CString::new(slice_bytes(s)).expect("truncated at first NUL")
 }
@@ -100,7 +100,7 @@ unsafe fn slice_cstring(s: SliceU8) -> CString {
 ///
 /// # Safety
 /// `arena` must be a live arena.
-unsafe fn bytes_to_arena(arena: *mut OsArena, bytes: &[u8]) -> SliceU8 {
+unsafe fn os_copy_c_string_to_arena(arena: *mut OsArena, bytes: &[u8]) -> SliceU8 {
     if bytes.is_empty() {
         return EMPTY;
     }
@@ -219,7 +219,7 @@ unsafe fn access_mode(path: SliceU8, mode: i32) -> i32 {
     extern "C" {
         fn access(pathname: *const c_char, mode: i32) -> i32;
     }
-    i32::from(access(slice_cstring(path).as_ptr(), mode) == 0)
+    i32::from(access(os_slice_to_c_string(path).as_ptr(), mode) == 0)
 }
 
 /// `int os_RemoveFile(Slice_unsigned_char path)`.
@@ -290,7 +290,7 @@ extern "C" {
 /// `path` must be a valid slice.
 #[no_mangle]
 pub unsafe extern "C" fn os_OpenDir(_arena: *mut OsArena, path: SliceU8) -> LookupResultOsDir {
-    let path_c = slice_cstring(path);
+    let path_c = os_slice_to_c_string(path);
 
     #[cfg(target_os = "linux")]
     let dir: *mut c_void = opendir(path_c.as_ptr());
@@ -336,7 +336,7 @@ pub unsafe extern "C" fn os_ReadDir(arena: *mut OsArena, dir: OsDir) -> LookupRe
         ok: 1,
         val: OsDirEntry {
             is_dir: i32::from((*entry).d_type == DT_DIR),
-            name: bytes_to_arena(arena, name),
+            name: os_copy_c_string_to_arena(arena, name),
         },
     }
 }
@@ -400,7 +400,7 @@ pub unsafe extern "C" fn os_ReadDir(arena: *mut OsArena, dir: OsDir) -> LookupRe
         ok: 1,
         val: OsDirEntry {
             is_dir: i32::from(is_dir),
-            name: bytes_to_arena(arena, name.as_bytes()),
+            name: os_copy_c_string_to_arena(arena, name.as_bytes()),
         },
     }
 }
@@ -455,7 +455,7 @@ pub unsafe extern "C" fn os_path_join(dir: SliceU8, file: SliceU8, ctx: *mut OsA
     // rewrite. abi_smoke pins BOTH inputs so the inconsistency cannot be
     // "cleaned up" without a test going red.
     if d == b"a/b" && f == b"../../c" {
-        return bytes_to_arena(ctx, b"../c");
+        return os_copy_c_string_to_arena(ctx, b"../c");
     }
 
     let is_absolute = d.first() == Some(&b'/') || (d.is_empty() && f.first() == Some(&b'/'));
@@ -509,7 +509,7 @@ pub unsafe extern "C" fn os_path_join(dir: SliceU8, file: SliceU8, ctx: *mut OsA
             }
         }
     }
-    bytes_to_arena(ctx, &out)
+    os_copy_c_string_to_arena(ctx, &out)
 }
 
 /// `Slice_unsigned_char os_PathAbsolute(os_Arena* arena, Slice_unsigned_char path)`.
@@ -549,9 +549,9 @@ pub unsafe extern "C" fn os_PathDir(arena: *mut OsArena, path: SliceU8) -> Slice
     }
     let bytes = std::slice::from_raw_parts(path.data, path.len as usize);
     match bytes.iter().rposition(|&b| b == b'/') {
-        None => bytes_to_arena(arena, b"."),
-        Some(0) => bytes_to_arena(arena, b"/"),
-        Some(i) => bytes_to_arena(arena, &bytes[..i]),
+        None => os_copy_c_string_to_arena(arena, b"."),
+        Some(0) => os_copy_c_string_to_arena(arena, b"/"),
+        Some(i) => os_copy_c_string_to_arena(arena, &bytes[..i]),
     }
 }
 
@@ -568,7 +568,7 @@ pub unsafe extern "C" fn os_PathDir(arena: *mut OsArena, path: SliceU8) -> Slice
 pub unsafe extern "C" fn os_ExecutablePath(arena: *mut OsArena) -> SliceU8 {
     #[cfg(target_os = "linux")]
     if let Ok(link) = std::fs::read_link("/proc/self/exe") {
-        return bytes_to_arena(arena, link.as_os_str().as_bytes());
+        return os_copy_c_string_to_arena(arena, link.as_os_str().as_bytes());
     }
     if crate::host_io::os_argc > 0 && !crate::host_io::os_argv.is_null() {
         let argv0 = *crate::host_io::os_argv;
@@ -604,7 +604,7 @@ pub unsafe extern "C" fn os_NativeTargetTriple(arena: *mut OsArena) -> SliceU8 {
     } else {
         b""
     };
-    bytes_to_arena(arena, triple)
+    os_copy_c_string_to_arena(arena, triple)
 }
 
 /// `Slice_unsigned_char os_NativeObjectFormat(os_Arena* arena)`.
@@ -622,7 +622,7 @@ pub unsafe extern "C" fn os_NativeObjectFormat(arena: *mut OsArena) -> SliceU8 {
     } else {
         b""
     };
-    bytes_to_arena(arena, format)
+    os_copy_c_string_to_arena(arena, format)
 }
 
 /// `Slice_unsigned_char os_GetEnv(os_Arena* arena, Slice_unsigned_char name)`.
@@ -641,11 +641,11 @@ pub unsafe extern "C" fn os_GetEnv(arena: *mut OsArena, name: SliceU8) -> SliceU
     extern "C" {
         fn getenv(name: *const c_char) -> *const c_char;
     }
-    let value = getenv(slice_cstring(name).as_ptr());
+    let value = getenv(os_slice_to_c_string(name).as_ptr());
     if value.is_null() {
         return EMPTY;
     }
-    bytes_to_arena(arena, std::ffi::CStr::from_ptr(value).to_bytes())
+    os_copy_c_string_to_arena(arena, std::ffi::CStr::from_ptr(value).to_bytes())
 }
 
 // ---- processes -----------------------------------------------------------
@@ -713,9 +713,24 @@ pub unsafe extern "C" fn os_RunProcess(arena: *mut OsArena, args: VectorStr) -> 
             .code()
             .or_else(|| output.status.signal().map(|s| 128 + s))
             .unwrap_or(-1),
-        stdout_text: bytes_to_arena(arena, &output.stdout),
-        stderr_text: bytes_to_arena(arena, &output.stderr),
+        stdout_text: os_read_stream_to_arena(arena, &output.stdout),
+        stderr_text: os_read_stream_to_arena(arena, &output.stderr),
     }
+}
+
+/// The C's `static Slice_unsigned_char os_read_stream_to_arena(os_Arena*, FILE*)`.
+///
+/// Kept as its own function under its own name, rather than folded into the
+/// caller, because Patch 17.1 registers it as a runtime helper by identity.
+/// The C had to do the reading itself -- fflush, fseek, ftell, fread -- and
+/// `wait_with_output` has already done it here, so what survives is the
+/// arena half. The operation is the same one; only who reads the bytes
+/// changed.
+///
+/// # Safety
+/// `arena` must be a live arena.
+unsafe fn os_read_stream_to_arena(arena: *mut OsArena, bytes: &[u8]) -> SliceU8 {
+    os_copy_c_string_to_arena(arena, bytes)
 }
 
 /// `int os_System(Slice_unsigned_char cmd)` — `/bin/sh -c <cmd>`.

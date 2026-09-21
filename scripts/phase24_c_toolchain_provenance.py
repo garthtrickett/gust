@@ -193,11 +193,23 @@ def split_tokens(line: str) -> list:
     return tokens
 
 
-def command_inputs(line: str) -> tuple:
+# A resolved variable value that names something a compiler reads, as
+# opposed to one that holds flags. Deliberately narrow: an unknown suffix
+# stays skipped rather than becoming a mystery input.
+SOURCE_LIKE = re.compile(r'\.(c|h|o|a|s|S|cc|cpp)$')
+
+
+def command_inputs(line: str, lines: list = ()) -> tuple:
     """Return (inputs, is_query) for a cc command line.
 
     Inputs are the non-flag arguments that name something the compiler
     reads. Redirections, the -o target, and flag values are excluded.
+
+    `lines` is the enclosing scope, used only to tell an uppercase shell
+    variable holding FLAGS from one holding a FILE. Without it the rule
+    below skips both, and a compiler input spelled `"$REF"` disappears --
+    not as unresolved provenance, which is a failure, but as no input at
+    all, which reads like a toolchain query and passes.
     """
     tokens = split_tokens(line)
     # Drop everything from the first redirection or pipeline operator on:
@@ -243,8 +255,15 @@ def command_inputs(line: str) -> tuple:
             # ${CFLAGS:--O2 ...} / ${INCLUDES:--Isrc}: flag defaults
             continue
         if bare.startswith("$") and re.fullmatch(r'\$\{?[A-Z_]+\}?', bare):
-            # a bare uppercase variable holding flags
-            continue
+            # A bare uppercase variable usually holds flags -- CFLAGS,
+            # INCLUDES -- so it is not an input. But the convention is
+            # only a convention: `REF=tools/phase25_strings_reference.c`
+            # then `"$REF"` is a source file, and skipping it silently
+            # left that cc invocation with zero inputs.
+            name = variable_name(bare)
+            resolved = resolve_variable(name, lines) if (name and lines) else None
+            if not (resolved and SOURCE_LIKE.search(resolved)):
+                continue
         if not bare:
             continue
         inputs.append(bare)
@@ -662,6 +681,15 @@ def resolve_input(token: str, lines: list, lineno: int) -> dict:
     record = {"token": bare}
 
     literal = bare.lstrip("./")
+    # cargo_artifact FIRST, and deliberately: a built .a exists in a warm
+    # worktree and not in a clean CI checkout, so an existence test that
+    # ran first would call the same path a tracked source here and a rust
+    # archive there. The class would then depend on whether someone had
+    # run cargo, which is not a property of the tree.
+    if "$" not in bare and cargo_artifact(literal):
+        record["klass"] = RUST_ARCHIVE
+        record["why"] = f"{literal} is built from a crate in this tree"
+        return record
     if "$" not in bare and (ROOT / literal).exists():
         record["klass"] = RETAINED_RUNTIME_C
         record["why"] = f"tracked repo source {literal}"
@@ -678,14 +706,14 @@ def resolve_input(token: str, lines: list, lineno: int) -> dict:
     # A resolved path that exists is hand-written source, wherever the token
     # reached it from: `"$probe"` naming compiler/fixtures/*.c is no more a
     # backend product than `src/runtime/arena.c` spelled literally.
-    if "$" not in expression and (ROOT / expression.lstrip("./")).exists():
-        record["klass"] = RETAINED_RUNTIME_C
-        record["why"] = f"tracked repo source {expression}"
-        return record
-
     if "$" not in expression and cargo_artifact(expression):
         record["klass"] = RUST_ARCHIVE
         record["why"] = f"{expression} is built from a crate in this tree"
+        return record
+
+    if "$" not in expression and (ROOT / expression.lstrip("./")).exists():
+        record["klass"] = RETAINED_RUNTIME_C
+        record["why"] = f"tracked repo source {expression}"
         return record
 
     key = tail_key(expression)
@@ -1178,7 +1206,8 @@ def scan_script(path: Path) -> dict:
         # Parse from the compiler head, not the line start: a line like
         # `CC_BIN=...; CFLAGS_VAL=...; "$CC_BIN" ...` would otherwise offer
         # its leading assignments as compiler inputs.
-        inputs, is_query = command_inputs(line[head.start("cc"):])
+        inputs, is_query = command_inputs(
+            line[head.start("cc"):], scoped.get(lineno, lines))
         invocations.append(
             {
                 "file": rel,

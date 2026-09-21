@@ -1,44 +1,15 @@
 {
   "schema": "scripts/cranelift_feature_registry.schema.json",
   "phase25_runtime_port_invocations": {
-    "production_audit_transition": {
-      "contract_version": "phase25_runtime_port_audit_transition_v1",
-      "current_audit": {
-        "active_non_bootstrap_live_c_lane_count": 0,
-        "active_non_bootstrap_live_c_owner": null,
-        "non_bootstrap_retained_test_surface_count": 2,
-        "phase25_bootstrap_explicit_c_count": 0,
-        "repository_explicit_c_count": 2,
-        "repository_invocation_count": 159,
-        "supported_production_or_release_explicit_c_count": 0,
-        "supported_surface_count": 6,
-        "supported_surface_manifest_digest": "25646ad9acafbce4a901dd73212e1ad961d2618be1a215a9bad4a7abc07942f6",
-        "unknown_downstream_count": 0
-      },
-      "moved_fields": [
-        "repository_invocation_count",
-        "supported_surface_manifest_digest"
-      ],
-      "partial_or_substituted_audit": "rejected",
-      "previous_audit": {
-        "active_non_bootstrap_live_c_lane_count": 0,
-        "active_non_bootstrap_live_c_owner": null,
-        "non_bootstrap_retained_test_surface_count": 2,
-        "phase25_bootstrap_explicit_c_count": 0,
-        "repository_explicit_c_count": 2,
-        "repository_invocation_count": 158,
-        "supported_production_or_release_explicit_c_count": 0,
-        "supported_surface_count": 6,
-        "supported_surface_manifest_digest": "f13b79860e2ba912e2b80e66a26f252f31c61420264070e74bcbfcf03fecc336",
-        "unknown_downstream_count": 0
-      },
-      "reason": {
-        "repository_invocation_count": "the strings differential emits the Gust side and scripts/*.sh is inside the invocation scan",
-        "supported_surface_manifest_digest": "the Makefile is a supported surface and this phase edits it"
-      }
-    },
-    "added_invocation_count": 1,
+    "added_invocation_count": 2,
     "added_invocation_rows": [
+      {
+        "invocation_marker": "./gust --backend bootstrap-emitter \"$SOURCE\"",
+        "line": 61,
+        "path": "scripts/phase25_runtime_strings_generated.sh",
+        "reason": "strings.c is GENERATED from compiler/runtime/strings.gst, so the generator and its staleness guard invoke the emitter",
+        "selection": "explicit_bootstrap_emitter"
+      },
       {
         "invocation_marker": "./gust_bootstrap \"$ENTRY\" --backend bootstrap-emitter",
         "line": 38,
@@ -51,24 +22,24 @@
     "contract_version": "phase25_runtime_port_invocation_successor_v1",
     "current_summary": {
       "consumer_class_counts": {
-        "already_explicit_or_parser_probe": 145,
+        "already_explicit_or_parser_probe": 146,
         "cranelift_C_or_diagnostic_guard": 5,
         "help_surface_probe": 3,
         "intentional_default_selection_probe": 4,
         "invocation_parser_probe": 2
       },
       "owner_counts": {
-        "cranelift": 154,
+        "cranelift": 155,
         "stdlib": 5
       },
       "selection_counts": {
-        "explicit_bootstrap_emitter": 14,
+        "explicit_bootstrap_emitter": 15,
         "explicit_c": 2,
         "explicit_cranelift": 126,
         "explicit_invalid_or_parser_probe": 3,
         "implicit_default": 14
       },
-      "total": 159,
+      "total": 160,
       "unclassified_count": 0
     },
     "escaping_the_census_by_relocation": "rejected",
@@ -94,6 +65,42 @@
       },
       "total": 158,
       "unclassified_count": 0
+    },
+    "production_audit_transition": {
+      "contract_version": "phase25_runtime_port_audit_transition_v1",
+      "current_audit": {
+        "active_non_bootstrap_live_c_lane_count": 0,
+        "active_non_bootstrap_live_c_owner": null,
+        "non_bootstrap_retained_test_surface_count": 2,
+        "phase25_bootstrap_explicit_c_count": 0,
+        "repository_explicit_c_count": 2,
+        "repository_invocation_count": 160,
+        "supported_production_or_release_explicit_c_count": 0,
+        "supported_surface_count": 6,
+        "supported_surface_manifest_digest": "2aa8a632aa35387c26bea85a8870c5746ef499ec46248134cd5d801667b65e77",
+        "unknown_downstream_count": 0
+      },
+      "moved_fields": [
+        "repository_invocation_count",
+        "supported_surface_manifest_digest"
+      ],
+      "partial_or_substituted_audit": "rejected",
+      "previous_audit": {
+        "active_non_bootstrap_live_c_lane_count": 0,
+        "active_non_bootstrap_live_c_owner": null,
+        "non_bootstrap_retained_test_surface_count": 2,
+        "phase25_bootstrap_explicit_c_count": 0,
+        "repository_explicit_c_count": 2,
+        "repository_invocation_count": 158,
+        "supported_production_or_release_explicit_c_count": 0,
+        "supported_surface_count": 6,
+        "supported_surface_manifest_digest": "ffea76d400897457cbda24ba8bfc27011a403fb31d4404643768c2bfd1728e3c",
+        "unknown_downstream_count": 0
+      },
+      "reason": {
+        "repository_invocation_count": "the strings differential emits the Gust side and scripts/*.sh is inside the invocation scan",
+        "supported_surface_manifest_digest": "the Makefile is a supported surface and this phase edits it"
+      }
     },
     "status": "patch25_5_in_progress"
   },
@@ -3548,9 +3555,9 @@
     "runtime_package": {
       "path": "build/gust-runtime-package.a",
       "retained_components": [
-        "src/runtime/arena.c",
-        "src/runtime/host_io.c",
-        "src/runtime/file_io.c"
+        "src/runtime-rs/src/arena.rs",
+        "src/runtime-rs/src/host_io.rs",
+        "src/runtime-rs/src/file_io.rs"
       ],
       "provided_symbols": [
         "os_ArenaAlloc",
@@ -3747,9 +3754,9 @@
     "runtime_package": {
       "path": "build/gust-runtime-package.a",
       "retained_components": [
-        "src/runtime/arena.c",
-        "src/runtime/host_io.c",
-        "src/runtime/file_io.c"
+        "src/runtime-rs/src/arena.rs",
+        "src/runtime-rs/src/host_io.rs",
+        "src/runtime-rs/src/file_io.rs"
       ],
       "selected_imports": [
         "os_Arena_New",
@@ -3878,10 +3885,10 @@
     "runtime_package": {
       "path": "build/gust-runtime-package.a",
       "retained_components": [
-        "src/runtime/arena.c",
-        "src/runtime/host_io.c",
-        "src/runtime/file_io.c",
-        "src/runtime/scratch.c",
+        "src/runtime-rs/src/arena.rs",
+        "src/runtime-rs/src/host_io.rs",
+        "src/runtime-rs/src/file_io.rs",
+        "src/runtime-rs/src/scratch.rs",
         "src/runtime-rs/src/fiber.rs"
       ],
       "new_or_changed_runtime_symbols": []
@@ -17573,7 +17580,7 @@
         {
           "id": "p18_host_native_target_triple",
           "assumption": "target_triple_selected_by_build_host_preprocessor_macros",
-          "source_path": "src/runtime/file_io.c",
+          "source_path": "src/runtime-rs/src/file_io.rs",
           "reachability_area": "target_selection",
           "inventory_owner": "compiler_target_authority_planner",
           "diagnostic_owner": "compiler_target_authority_verifier",
@@ -17584,7 +17591,7 @@
         {
           "id": "p18_host_native_object_format",
           "assumption": "object_format_selected_by_build_host_preprocessor_macros",
-          "source_path": "src/runtime/file_io.c",
+          "source_path": "src/runtime-rs/src/file_io.rs",
           "reachability_area": "target_selection",
           "inventory_owner": "compiler_object_format_planner",
           "diagnostic_owner": "compiler_object_format_verifier",
@@ -18244,7 +18251,7 @@
           "id": "p17_helper_os_arena_validate",
           "symbol_identity": "os_Arena_Validate",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/arena.c",
+          "source_path": "src/runtime-rs/src/arena.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18256,7 +18263,7 @@
           "id": "p17_helper_os_arena_new",
           "symbol_identity": "os_Arena_New",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/arena.c",
+          "source_path": "src/runtime-rs/src/arena.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18268,7 +18275,7 @@
           "id": "p17_helper_os_arena_free",
           "symbol_identity": "os_Arena_Free",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/arena.c",
+          "source_path": "src/runtime-rs/src/arena.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18280,7 +18287,7 @@
           "id": "p17_helper_std_generationalswap",
           "symbol_identity": "std_GenerationalSwap",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/arena.c",
+          "source_path": "src/runtime-rs/src/arena.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18292,7 +18299,7 @@
           "id": "p17_helper_os_arenaalloc",
           "symbol_identity": "os_ArenaAlloc",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/arena.c",
+          "source_path": "src/runtime-rs/src/arena.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18304,7 +18311,7 @@
           "id": "p17_helper_os_logint",
           "symbol_identity": "os_LogInt",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/arena.c",
+          "source_path": "src/runtime-rs/src/arena.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_io_filesystem_runtime_planner",
           "diagnostic_owner": "compiler_io_filesystem_runtime_verifier",
@@ -18316,7 +18323,7 @@
           "id": "p17_helper_os_setthreadscratch",
           "symbol_identity": "os_SetThreadScratch",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/scratch.c",
+          "source_path": "src/runtime-rs/src/scratch.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18328,7 +18335,7 @@
           "id": "p17_helper_os_getthreadscratch_raw",
           "symbol_identity": "os_GetThreadScratch_raw",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/scratch.c",
+          "source_path": "src/runtime-rs/src/scratch.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18340,7 +18347,7 @@
           "id": "p17_helper_os_scratchalloc",
           "symbol_identity": "os_ScratchAlloc",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/scratch.c",
+          "source_path": "src/runtime-rs/src/scratch.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18352,7 +18359,7 @@
           "id": "p17_helper_os_scratchreset",
           "symbol_identity": "os_ScratchReset",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/scratch.c",
+          "source_path": "src/runtime-rs/src/scratch.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18400,7 +18407,7 @@
           "id": "p17_helper_os_hashmapref_impl",
           "symbol_identity": "os_HashMapRef_impl",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/collections.c",
+          "source_path": "src/runtime-rs/src/collections.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18412,7 +18419,7 @@
           "id": "p17_helper_os_hashmapcontains_impl",
           "symbol_identity": "os_HashMapContains_impl",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/collections.c",
+          "source_path": "src/runtime-rs/src/collections.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18424,7 +18431,7 @@
           "id": "p17_helper_os_hashmapremove_impl",
           "symbol_identity": "os_HashMapRemove_impl",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/collections.c",
+          "source_path": "src/runtime-rs/src/collections.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18436,7 +18443,7 @@
           "id": "p17_helper_os_hashmapclear_impl",
           "symbol_identity": "os_HashMapClear_impl",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/collections.c",
+          "source_path": "src/runtime-rs/src/collections.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18448,7 +18455,7 @@
           "id": "p17_helper_std_poolalloc_impl",
           "symbol_identity": "std_PoolAlloc_impl",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/collections.c",
+          "source_path": "src/runtime-rs/src/collections.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18460,7 +18467,7 @@
           "id": "p17_helper_std_poolfree_impl",
           "symbol_identity": "std_PoolFree_impl",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/collections.c",
+          "source_path": "src/runtime-rs/src/collections.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18508,7 +18515,7 @@
           "id": "p17_helper_os_args",
           "symbol_identity": "os_Args",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/host_io.c",
+          "source_path": "src/runtime-rs/src/host_io.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_io_filesystem_runtime_planner",
           "diagnostic_owner": "compiler_io_filesystem_runtime_verifier",
@@ -18520,7 +18527,7 @@
           "id": "p17_helper_os_mockpayload",
           "symbol_identity": "os_MockPayload",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/host_io.c",
+          "source_path": "src/runtime-rs/src/host_io.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_io_filesystem_runtime_planner",
           "diagnostic_owner": "compiler_io_filesystem_runtime_verifier",
@@ -18532,7 +18539,7 @@
           "id": "p17_helper_os_logstr",
           "symbol_identity": "os_LogStr",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/host_io.c",
+          "source_path": "src/runtime-rs/src/host_io.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_io_filesystem_runtime_planner",
           "diagnostic_owner": "compiler_io_filesystem_runtime_verifier",
@@ -18544,7 +18551,7 @@
           "id": "p17_helper_os_logerror",
           "symbol_identity": "os_LogError",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/host_io.c",
+          "source_path": "src/runtime-rs/src/host_io.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_io_filesystem_runtime_planner",
           "diagnostic_owner": "compiler_io_filesystem_runtime_verifier",
@@ -18616,7 +18623,7 @@
           "id": "p17_helper_std_str_split",
           "symbol_identity": "std_str_split",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/strings.c",
+          "source_path": "src/runtime-rs/src/strings.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18676,7 +18683,7 @@
           "id": "p17_helper_std_clone_str",
           "symbol_identity": "std_Clone_str",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/strings.c",
+          "source_path": "src/runtime-rs/src/strings.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18688,7 +18695,7 @@
           "id": "p17_helper_os_readfile",
           "symbol_identity": "os_ReadFile",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/file_io.c",
+          "source_path": "src/runtime-rs/src/file_io.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_io_filesystem_runtime_planner",
           "diagnostic_owner": "compiler_io_filesystem_runtime_verifier",
@@ -18700,7 +18707,7 @@
           "id": "p17_helper_os_writefile",
           "symbol_identity": "os_WriteFile",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/file_io.c",
+          "source_path": "src/runtime-rs/src/file_io.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_io_filesystem_runtime_planner",
           "diagnostic_owner": "compiler_io_filesystem_runtime_verifier",
@@ -18712,7 +18719,7 @@
           "id": "p17_helper_os_path_join",
           "symbol_identity": "os_path_join",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/file_io.c",
+          "source_path": "src/runtime-rs/src/file_io.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_io_filesystem_runtime_planner",
           "diagnostic_owner": "compiler_io_filesystem_runtime_verifier",
@@ -18724,7 +18731,7 @@
           "id": "p17_helper_os_getenv",
           "symbol_identity": "os_GetEnv",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/file_io.c",
+          "source_path": "src/runtime-rs/src/file_io.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_io_filesystem_runtime_planner",
           "diagnostic_owner": "compiler_io_filesystem_runtime_verifier",
@@ -18736,7 +18743,7 @@
           "id": "p17_helper_os_executablepath",
           "symbol_identity": "os_ExecutablePath",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/file_io.c",
+          "source_path": "src/runtime-rs/src/file_io.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_io_filesystem_runtime_planner",
           "diagnostic_owner": "compiler_io_filesystem_runtime_verifier",
@@ -18748,7 +18755,7 @@
           "id": "p17_helper_os_pathabsolute",
           "symbol_identity": "os_PathAbsolute",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/file_io.c",
+          "source_path": "src/runtime-rs/src/file_io.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_io_filesystem_runtime_planner",
           "diagnostic_owner": "compiler_io_filesystem_runtime_verifier",
@@ -18760,7 +18767,7 @@
           "id": "p17_helper_os_pathdir",
           "symbol_identity": "os_PathDir",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/file_io.c",
+          "source_path": "src/runtime-rs/src/file_io.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_io_filesystem_runtime_planner",
           "diagnostic_owner": "compiler_io_filesystem_runtime_verifier",
@@ -18772,7 +18779,7 @@
           "id": "p17_helper_os_fileexists",
           "symbol_identity": "os_FileExists",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/file_io.c",
+          "source_path": "src/runtime-rs/src/file_io.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_io_filesystem_runtime_planner",
           "diagnostic_owner": "compiler_io_filesystem_runtime_verifier",
@@ -18784,7 +18791,7 @@
           "id": "p17_helper_os_fileexecutable",
           "symbol_identity": "os_FileExecutable",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/file_io.c",
+          "source_path": "src/runtime-rs/src/file_io.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_io_filesystem_runtime_planner",
           "diagnostic_owner": "compiler_io_filesystem_runtime_verifier",
@@ -18796,7 +18803,7 @@
           "id": "p17_helper_os_removefile",
           "symbol_identity": "os_RemoveFile",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/file_io.c",
+          "source_path": "src/runtime-rs/src/file_io.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_io_filesystem_runtime_planner",
           "diagnostic_owner": "compiler_io_filesystem_runtime_verifier",
@@ -18808,7 +18815,7 @@
           "id": "p17_helper_os_runprocess",
           "symbol_identity": "os_RunProcess",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/file_io.c",
+          "source_path": "src/runtime-rs/src/file_io.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_io_filesystem_runtime_planner",
           "diagnostic_owner": "compiler_io_filesystem_runtime_verifier",
@@ -18820,7 +18827,7 @@
           "id": "p17_helper_os_system",
           "symbol_identity": "os_System",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/file_io.c",
+          "source_path": "src/runtime-rs/src/file_io.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_io_filesystem_runtime_planner",
           "diagnostic_owner": "compiler_io_filesystem_runtime_verifier",
@@ -18832,7 +18839,7 @@
           "id": "p17_helper_os_opendir",
           "symbol_identity": "os_OpenDir",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/file_io.c",
+          "source_path": "src/runtime-rs/src/file_io.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_resource_runtime_planner",
           "diagnostic_owner": "compiler_resource_runtime_verifier",
@@ -18844,7 +18851,7 @@
           "id": "p17_helper_os_readdir",
           "symbol_identity": "os_ReadDir",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/file_io.c",
+          "source_path": "src/runtime-rs/src/file_io.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_resource_runtime_planner",
           "diagnostic_owner": "compiler_resource_runtime_verifier",
@@ -18856,7 +18863,7 @@
           "id": "p17_helper_os_closedir",
           "symbol_identity": "os_CloseDir",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/file_io.c",
+          "source_path": "src/runtime-rs/src/file_io.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_resource_runtime_planner",
           "diagnostic_owner": "compiler_resource_runtime_verifier",
@@ -18868,7 +18875,7 @@
           "id": "p17_helper_os_nativetargettriple",
           "symbol_identity": "os_NativeTargetTriple",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/file_io.c",
+          "source_path": "src/runtime-rs/src/file_io.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_runtime_package_planner",
           "diagnostic_owner": "compiler_runtime_package_verifier",
@@ -18880,7 +18887,7 @@
           "id": "p17_helper_os_nativeobjectformat",
           "symbol_identity": "os_NativeObjectFormat",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/file_io.c",
+          "source_path": "src/runtime-rs/src/file_io.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_runtime_package_planner",
           "diagnostic_owner": "compiler_runtime_package_verifier",
@@ -18892,7 +18899,7 @@
           "id": "p17_helper_os_copy_c_string_to_arena",
           "symbol_identity": "os_copy_c_string_to_arena",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/file_io.c",
+          "source_path": "src/runtime-rs/src/file_io.rs",
           "reachability": "runtime_component_internal",
           "inventory_owner": "compiler_io_filesystem_runtime_planner",
           "diagnostic_owner": "compiler_io_filesystem_runtime_verifier",
@@ -18904,7 +18911,7 @@
           "id": "p17_helper_os_slice_to_c_string",
           "symbol_identity": "os_slice_to_c_string",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/file_io.c",
+          "source_path": "src/runtime-rs/src/file_io.rs",
           "reachability": "runtime_component_internal",
           "inventory_owner": "compiler_io_filesystem_runtime_planner",
           "diagnostic_owner": "compiler_io_filesystem_runtime_verifier",
@@ -18916,7 +18923,7 @@
           "id": "p17_helper_os_read_stream_to_arena",
           "symbol_identity": "os_read_stream_to_arena",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/file_io.c",
+          "source_path": "src/runtime-rs/src/file_io.rs",
           "reachability": "runtime_component_internal",
           "inventory_owner": "compiler_io_filesystem_runtime_planner",
           "diagnostic_owner": "compiler_io_filesystem_runtime_verifier",
@@ -20507,7 +20514,7 @@
     "retained_components": [
       {
         "component_id": "runtime_component:arena",
-        "owned_source_path": "src/runtime/arena.c",
+        "owned_source_path": "src/runtime-rs/src/arena.rs",
         "helper_count": 6,
         "retention_reason": "host_platform_primitive_no_gust_equivalent",
         "destination_phase": "phase18",
@@ -20516,7 +20523,7 @@
       },
       {
         "component_id": "runtime_component:collections",
-        "owned_source_path": "src/runtime/collections.c",
+        "owned_source_path": "src/runtime-rs/src/collections.rs",
         "helper_count": 6,
         "retention_reason": "awaiting_pure_gust_migration",
         "destination_phase": "phase18",
@@ -20543,7 +20550,7 @@
       },
       {
         "component_id": "runtime_component:file_io",
-        "owned_source_path": "src/runtime/file_io.c",
+        "owned_source_path": "src/runtime-rs/src/file_io.rs",
         "helper_count": 20,
         "retention_reason": "host_platform_primitive_no_gust_equivalent",
         "destination_phase": "phase18",
@@ -20552,7 +20559,7 @@
       },
       {
         "component_id": "runtime_component:host_io",
-        "owned_source_path": "src/runtime/host_io.c",
+        "owned_source_path": "src/runtime-rs/src/host_io.rs",
         "helper_count": 4,
         "retention_reason": "host_platform_primitive_no_gust_equivalent",
         "destination_phase": "phase18",
@@ -20570,7 +20577,7 @@
       },
       {
         "component_id": "runtime_component:scratch",
-        "owned_source_path": "src/runtime/scratch.c",
+        "owned_source_path": "src/runtime-rs/src/scratch.rs",
         "helper_count": 4,
         "retention_reason": "host_platform_primitive_no_gust_equivalent",
         "destination_phase": "phase18",
@@ -40547,7 +40554,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "65a8115b08b629da8f45a3eba5e4720ba4d772d486fde569e3facf08c8eea62d",
+          "digest": "1fad850c5ce6eaf60221aae26e11096bbcdc6f54fc7bc8f81bf07bb759853a75",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -41669,6 +41676,391 @@
     "v2_vector_count": 29,
     "v2_vectors_digest": "a69b383d5c156b1e9e88ea34b03df827e11f8a142da823e61215865e45a71f2f",
     "version": "phase24_frozen_oracle_replacement_v1"
+  },
+  "phase255_runtime_to_gust": {
+    "status": "phase255_runtime_ported_to_gust_and_rust",
+    "text_surface_successor": {
+      "contract_version": "phase255_runtime_to_gust_text_surface_successor_v1",
+      "current_changed_text_surfaces": [
+        {
+          "classification": "bootstrap_phase25",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_exact_C_bootstrap_dependency",
+          "digest": "ed927a8efafc1da41f245845ff80ba9cc7be263c80d19ca7d9bb9a2dda137e13",
+          "falsifier": "bootstrap_surface_is_missing_changed_or_reclassified",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 16,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "Makefile",
+          "removal_phase": "25"
+        },
+        {
+          "classification": "production_or_release_migration",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "deprecate_or_migrate_under_23_8_and_23_12",
+          "digest": "d666a3bf6fd03b0bb78054d2d9983fcee144b1e2dd5ca48439db606134c18b78",
+          "falsifier": "production_or_release_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 178,
+            "mir_to_c_name": 0
+          },
+          "owner": "cranelift",
+          "path": "compiler/codegen.gst",
+          "removal_phase": "24_or_25_as_registered"
+        },
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "bbde10770e0e021fb42b85c97cd10d7b5e4aaa9f5da9615d3002ac5f2aaa24a6",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 4,
+            "mir_to_c_name": 2
+          },
+          "owner": "cranelift",
+          "path": "docs/PHASE25_ROADMAP.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "bootstrap_phase25",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_exact_C_bootstrap_dependency",
+          "digest": "0bac2f0fa208dd355c112b2f0bc1a75cceb4206325c33cc0d60836abf94abfdb",
+          "falsifier": "bootstrap_surface_is_missing_changed_or_reclassified",
+          "match_counts": {
+            "explicit_backend_spelling": 2,
+            "generated_c_contract": 190,
+            "mir_to_c_name": 105
+          },
+          "owner": "cranelift",
+          "path": "gust_v4.c",
+          "removal_phase": "25"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "60b8e992e3f5db74e099ab2294f23eb1f7e257a92d581e791c1b44bace4d23a9",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "f830f77bb0644dcab3161355dfbb26ecd88f069a21e71303406b6286a5850d6f",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 3,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase17_opening.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "7739c79067c6e9e2d388cdab3390196fd9e7e07c55c9012d4f0fa6a1bf19b296",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 4
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase17_retained_c_runtime_parity.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "61519582a56a5e69cf1571cb3da7833312b58eb278bf52d6280ac7b174256000",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 9
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase20_cross_feature_qualification.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "7b669113e8c5a7b889ba23d6c3c2ef2f20bd83ee6a1b78cf4faf145a9225fed4",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 0
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_collection_string_native_source.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "01854c938743bacd830a5be32dcbcbc3bb6f1ec29005286dae68cf290266946e",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 0
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_filesystem_allocation_native_source.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "6a6d5e2dfd6aff8e371a5128a359579ccef7e59604c5fa611320d4f26aba7765",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 3,
+            "mir_to_c_name": 3
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_full_compiler_native_qualification.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "a90514aa630aebef1098e0f2f2343ebc45f21107001743731521ef33889eb74e",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 2,
+            "generated_c_contract": 3,
+            "mir_to_c_name": 4
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase24_c_toolchain_provenance.py",
+          "removal_phase": "24"
+        }
+      ],
+      "partial_extra_or_substituted_surface": "rejected",
+      "previous_changed_text_surfaces": [
+        {
+          "classification": "bootstrap_phase25",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_exact_C_bootstrap_dependency",
+          "digest": "10fdfd6da020bf9c33320cb8f95df059003859788322d0ac43dd08a6916b3e19",
+          "falsifier": "bootstrap_surface_is_missing_changed_or_reclassified",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 16,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "Makefile",
+          "removal_phase": "25"
+        },
+        {
+          "classification": "production_or_release_migration",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "deprecate_or_migrate_under_23_8_and_23_12",
+          "digest": "c1797f1521e73312a6fa3be23f6e612e55ef4fbbe8968d3c317aed703bcbe174",
+          "falsifier": "production_or_release_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 178,
+            "mir_to_c_name": 0
+          },
+          "owner": "cranelift",
+          "path": "compiler/codegen.gst",
+          "removal_phase": "24_or_25_as_registered"
+        },
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "06f9222f9f1e5d47d73182251f36be9a5e3f03cd56d7418447f38908946d18a8",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 4,
+            "mir_to_c_name": 2
+          },
+          "owner": "cranelift",
+          "path": "docs/PHASE25_ROADMAP.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "bootstrap_phase25",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_exact_C_bootstrap_dependency",
+          "digest": "6992b00adc5790710fbad4689ab9408fdfe55c2500a50f11a557b741ad87725f",
+          "falsifier": "bootstrap_surface_is_missing_changed_or_reclassified",
+          "match_counts": {
+            "explicit_backend_spelling": 2,
+            "generated_c_contract": 190,
+            "mir_to_c_name": 105
+          },
+          "owner": "cranelift",
+          "path": "gust_v4.c",
+          "removal_phase": "25"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "edc578df7525911e5294adedfef4b18f1db308d80a93e7e2d3a814f0b27ba2bf",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "128115bbfb697b285de6f33d20674ee41c94912eeb66730ec3cb428af87f22a1",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 3,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase17_opening.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "37ba9b138d23e0fb8ce9523c7d2318a4e6d3e515806590a09d8f56209008a163",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 4
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase17_retained_c_runtime_parity.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "76f30f9e31d72cff16c0ffc576a33d863fd8309c2b18d735d1abbbf60ebb1d67",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 9
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase20_cross_feature_qualification.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "c867eeb1c1737a38acc8ffb90dad64b118c67a812e5c472019782bad296e6049",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 0
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_collection_string_native_source.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "0981d30a8c2b360191846de1d76d98c59c2674629ec61b1832c2a56164426ce9",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 0
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_filesystem_allocation_native_source.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "8407206b0c1ac87b359398881861a324c5dccbfcf3ac00587f12e0bed2750a7e",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 3,
+            "mir_to_c_name": 3
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_full_compiler_native_qualification.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "400a74509bf41a2608a099d960edf45edde3b7d663c3c8d80c041f1fcfaa85be",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 2,
+            "generated_c_contract": 3,
+            "mir_to_c_name": 4
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase24_c_toolchain_provenance.py",
+          "removal_phase": "24"
+        }
+      ],
+      "registered_changed_paths": [
+        "Makefile",
+        "compiler/codegen.gst",
+        "docs/PHASE25_ROADMAP.md",
+        "gust_v4.c",
+        "scripts/cranelift_registry.py",
+        "scripts/phase17_opening.py",
+        "scripts/phase17_retained_c_runtime_parity.sh",
+        "scripts/phase20_cross_feature_qualification.sh",
+        "scripts/phase21_collection_string_native_source.sh",
+        "scripts/phase21_filesystem_allocation_native_source.sh",
+        "scripts/phase21_full_compiler_native_qualification.py",
+        "scripts/phase24_c_toolchain_provenance.py"
+      ]
+    }
   },
   "patch256_fiber_global_asm": {
     "status": "patch256_fiber_c_ported_to_the_runtime_crate",

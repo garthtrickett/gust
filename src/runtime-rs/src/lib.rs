@@ -50,3 +50,4 @@ pub mod scratch;
 pub mod arena;
 pub mod collections;
 pub mod file_io;
+pub mod strings;

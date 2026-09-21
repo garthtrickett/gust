@@ -2289,6 +2289,40 @@ def normalize_phase23_text_surfaces(
                 "rejected",
                 "Patch 24.12 text surface successor drifted")
         oracle_paths = list(oracle_surface["registered_changed_paths"])
+    # Patch 25.5 merges after 25.6, so it is the newest link and runs
+    # FIRST. Twelve enrolled surfaces changed; none were added or removed.
+    # Deleting five C files removed no row, because none of the five was
+    # enrolled -- the scan matches on CONTENT, and a runtime .c mentioning
+    # no backend spelling was never in it. The count stays at 581.
+    #
+    # docs/PHASE25_BOOTSTRAP_SEED_POLICY.md changed here too and is
+    # deliberately absent, for the reason given in the 25.6 block below:
+    # it is an ADDED surface with a single registered row, so there is no
+    # predecessor state to project it back to.
+    port_surface = registry.get(
+        "phase255_runtime_to_gust", {}).get("text_surface_successor")
+    if port_surface is not None:
+        require(port_surface.get("contract_version") ==
+                "phase255_runtime_to_gust_text_surface_successor_v1" and
+                port_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Patch 25.5 runtime-to-Gust text surface successor drifted")
+        pt_paths = list(port_surface["registered_changed_paths"])
+        pt_pre = {r["path"]: r for r
+                  in port_surface["previous_changed_text_surfaces"]}
+        pt_post = {r["path"]: r for r
+                   in port_surface["current_changed_text_surfaces"]}
+        require(sorted(pt_pre) == sorted(pt_paths) == sorted(pt_post),
+                "Patch 25.5 registered paths and rows disagree")
+        pt_live = {r["path"]: r for r in rows if r["path"] in pt_paths}
+        require(sorted(pt_live) == sorted(pt_paths),
+                "Patch 25.5 registered text surface is missing from the scan")
+        require(pt_live in (pt_pre, pt_post),
+                "Patch 25.5 changed text surfaces are partial or "
+                "substituted: the live rows match neither the complete "
+                "predecessor state nor the complete successor state "
+                f"({sorted(p for p in pt_paths if pt_live[p] != pt_post[p])} differ from post)")
+        rows = [dict(pt_pre.get(r["path"], r)) for r in rows]
     # Patch 24.13 runs before 24.12b for the same reason 24.12b runs before
     # 24.12a: the newest link projects the tree back to the state the older
     # successors were registered against, so each hands the next the tree it

@@ -18,13 +18,13 @@ contract counts:
   semantic_type: 1
 
 frozen retained C inventory:
-  runtime_component:arena	6	src/runtime/arena.c	host_platform_primitive_no_gust_equivalent	-> phase18
-  runtime_component:collections	6	src/runtime/collections.c	awaiting_pure_gust_migration	-> phase18
+  runtime_component:arena	6	src/runtime-rs/src/arena.rs	host_platform_primitive_no_gust_equivalent	-> phase18
+  runtime_component:collections	6	src/runtime-rs/src/collections.rs	awaiting_pure_gust_migration	-> phase18
   runtime_component:core_headers	3	src/runtime/core_headers.h	host_platform_primitive_no_gust_equivalent	-> phase18
   runtime_component:fiber	18	src/runtime-rs/src/fiber.rs	host_platform_primitive_no_gust_equivalent	-> phase18
-  runtime_component:file_io	20	src/runtime/file_io.c	host_platform_primitive_no_gust_equivalent	-> phase18
-  runtime_component:host_io	4	src/runtime/host_io.c	host_platform_primitive_no_gust_equivalent	-> phase18
-  runtime_component:scratch	4	src/runtime/scratch.c	host_platform_primitive_no_gust_equivalent	-> phase18
+  runtime_component:file_io	20	src/runtime-rs/src/file_io.rs	host_platform_primitive_no_gust_equivalent	-> phase18
+  runtime_component:host_io	4	src/runtime-rs/src/host_io.rs	host_platform_primitive_no_gust_equivalent	-> phase18
+  runtime_component:scratch	4	src/runtime-rs/src/scratch.rs	host_platform_primitive_no_gust_equivalent	-> phase18
   runtime_component:strings	11	src/runtime/strings.c	awaiting_pure_gust_migration	-> phase18
 
 rejection classes:
