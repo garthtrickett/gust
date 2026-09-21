@@ -13363,7 +13363,7 @@
         "semantic_or_intrinsic_recognition": 977,
         "serialization": 1
       },
-      "complete_manifest_digest": "ad5ed0e3baec0992c26994c0973f23c18a1d2c8abc2fed0ed0431dca74a7252f",
+      "complete_manifest_digest": "54a05cc7e713467eb9bf8a6a24c5d04b8523da2fb147bda37a372daae51ad6d9",
       "partition_manifest_digests": {
         "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
         "diagnostic": "29ec6817181dd3c2aa996580a8d3e178cf0088c7e8adde072526b970a04eb1a4",
@@ -13372,7 +13372,7 @@
         "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7",
         "serialization": "cd26d44606f736374209054c0fc91d72f950946ad84fad1a5e6efb6c7fc4f5b9"
       },
-      "semantic_manifest_digest": "030d25e96846a10f22b1638e71834f9dcb36f896fb7f1b58a86fa31ef08a97bd",
+      "semantic_manifest_digest": "bf0b6967614445d3ddde84d28bbb737157d79d6ed78ee86ed3764fbe4ba9de3b",
       "semantic_site_count": 977,
       "site_count": 1760,
       "source_file_count": 1082,
@@ -41902,7 +41902,7 @@
           "classification": "historical_only",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_as_historical_evidence",
-          "digest": "f33e3c14a48ead943480fac3b67b73591b940088c1babac90929a5c8dbc0280a",
+          "digest": "51d5ae1d1499f8c0714e4955647ca4df3cacde8603bb39d2cc6db8b2c62e2067",
           "falsifier": "historical_record_is_reclassified_as_live_support",
           "match_counts": {
             "explicit_backend_spelling": 0,
