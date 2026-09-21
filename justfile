@@ -12528,9 +12528,9 @@ guard-cranelift-phase13-broader-imported-runtime-calls-parity:
     done
 
     required_runtime_symbols=(
-      'int32_t tiny_host_add_one_i32(int32_t value)'
-      'int32_t tiny_host_add_i32(int32_t left, int32_t right)'
-      'int32_t tiny_host_is_positive_i32(int32_t value)'
+      'pub extern "C" fn tiny_host_add_one_i32(value: i32) -> i32'
+      'pub extern "C" fn tiny_host_add_i32(left: i32, right: i32) -> i32'
+      'pub extern "C" fn tiny_host_is_positive_i32(value: i32) -> i32'
     )
     for symbol in "${required_runtime_symbols[@]}"; do
       rg -n -F "$symbol" "$runtime_source" >/dev/null
