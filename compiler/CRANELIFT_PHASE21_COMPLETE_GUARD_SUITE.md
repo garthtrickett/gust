@@ -24,15 +24,15 @@ Generated from `scripts/cranelift_feature_registry.json` by
 
 | Reason | Cases |
 | --- | ---: |
-| `deferred_p13_parameter_argument_aggregate_parameter` | 3 |
+| `source_feature_not_represented` | 74 |
 | `deferred_p13_parameter_argument_target_dependent_abi` | 25 |
-| `deferred_p13_structured_cfg_condition_operator` | 3 |
 | `deferred_p13_structured_cfg_condition_shape` | 7 |
 | `deferred_p13_structured_cfg_loop_or_backedge` | 5 |
+| `deferred_p13_parameter_argument_aggregate_parameter` | 3 |
+| `deferred_p13_structured_cfg_condition_operator` | 3 |
 | `deferred_p13_structured_cfg_non_reducible_shape` | 2 |
-| `inconsistent_abi_equivalent_import_signature` | 1 |
-| `source_feature_not_represented` | 74 |
 | `source_or_type_failure` | 1 |
+| `inconsistent_abi_equivalent_import_signature` | 1 |
 
 ## Explicit oracle preconditions
 

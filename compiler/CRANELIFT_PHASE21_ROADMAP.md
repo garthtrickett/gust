@@ -28,114 +28,114 @@ Generated from `scripts/cranelift_feature_registry.json` by
 
 - Status: `complete`
 - Capability: `native_rebuild_workflow_dependency_correction`
-- Changes Compiler Semantics: `false`
-- Exact Head Pull Request Successes: `5`
-- Merge Sha: `df8a7861b3f78e604e4f64519e785245ea801125`
 - Reason: `post_merge_review_proved_the_generated_arena_offset_normalizer_was_a_compiler_input_missing_from_native_rebuild_workflow_paths`
+- Merge Sha: `df8a7861b3f78e604e4f64519e785245ea801125`
+- Exact Head Pull Request Successes: `5`
+- Changes Compiler Semantics: `false`
 
 ### Patch 21.16b
 
 - Status: `complete`
 - Capability: `generic_native_compiler_large_function_allocation_scaling`
-- Abort Peak Rss Kib: `4198784`
-- Abort Signal: `6`
+- Trigger: `patch21_17_inherited_phase20_generated_large_function_replay`
+- Passing Operation Counts: `64,128,256`
 - Aborting Operation Counts: `512,768,1024`
-- Boundary: `existing_Gust_MIR_ABI_layout_and_runtime_symbol_authority_only_no_cohort_reduction_budget_weakening_arena_capacity_bypass_module_exception_or_fallback`
+- Abort Signal: `6`
+- Abort Peak Rss Kib: `4198784`
+- Required Operation Count: `1024`
+- Passing Case Count: `34`
+- Observed Large Function Peak Rss Kib: `95488`
+- Post Merge Correction: `compiler_origin_selection_and_local_state_linear_canonical_transport`
+- Compiler Origin Policy: `GUST_COMPILER_is_consumed_by_the_inherited_scale_harness_and_names_the_Cranelift_built_compiler_under_test`
+- Corrected Emitter: `compiler/mir_native_backend_local_state_source.gst`
 - Byte Identity Operation Count: `256`
 - Byte Identity Policy: `pre_correction_and_corrected_Cranelift_built_compilers_emit_cmp_identical_canonical_bundles_and_native_artifacts`
 - Changes Compiler Semantics: `false`
-- Compiler Origin Policy: `GUST_COMPILER_is_consumed_by_the_inherited_scale_harness_and_names_the_Cranelift_built_compiler_under_test`
-- Corrected Emitter: `compiler/mir_native_backend_local_state_source.gst`
 - Falsifier: `the_Cranelift_built_compiler_completes_the_unchanged_1024_operation_cohort_with_MIR_to_C_parity_inside_registered_budgets`
-- Observed Large Function Peak Rss Kib: `95488`
-- Passing Case Count: `34`
-- Passing Operation Counts: `64,128,256`
-- Post Merge Correction: `compiler_origin_selection_and_local_state_linear_canonical_transport`
-- Required Operation Count: `1024`
-- Trigger: `patch21_17_inherited_phase20_generated_large_function_replay`
+- Boundary: `existing_Gust_MIR_ABI_layout_and_runtime_symbol_authority_only_no_cohort_reduction_budget_weakening_arena_capacity_bypass_module_exception_or_fallback`
 
 ### Patch 21.17a
 
 - Status: `complete`
 - Capability: `generic_scheduler_main_result_completion`
-- Boundary: `generic_scheduler_completion_only_no_gate_weakening_fixture_exception_other_runtime_semantics_stdlib_CR15_or_patch21_18`
-- Changes Abi Or Layout: `false`
-- Changes Accepted Gust Meaning: `false`
-- Changes Runtime Symbols: `false`
+- Trigger: `patch21_17_inherited_phase20_long_lived_concurrent_replay`
+- Operator Date: `2026-08-28`
 - Expected Exit Status: `47`
-- Falsifier: `every_focused_MIR_to_C_and_Cranelift_replay_returns_47_with_identical_empty_streams_and_the_patch21_17_full_inherited_replay_passes`
-- Focused Replays Per Backend: `32`
 - Observed Mir To C Statuses Before: `0,47`
 - Observed Native Status Before: `47`
-- Operator Date: `2026-08-28`
-- Runtime Implementation: `src/runtime/fiber.c`
+- Focused Replays Per Backend: `32`
 - Synchronization Authority: `scheduler_owned_pending_fiber_count_with_full_barrier_result_publication`
-- Trigger: `patch21_17_inherited_phase20_long_lived_concurrent_replay`
+- Runtime Implementation: `src/runtime/fiber.c`
+- Changes Runtime Symbols: `false`
+- Changes Abi Or Layout: `false`
+- Changes Accepted Gust Meaning: `false`
+- Falsifier: `every_focused_MIR_to_C_and_Cranelift_replay_returns_47_with_identical_empty_streams_and_the_patch21_17_full_inherited_replay_passes`
+- Boundary: `generic_scheduler_completion_only_no_gate_weakening_fixture_exception_other_runtime_semantics_stdlib_CR15_or_patch21_18`
 
 ### Patch 21.17b
 
 - Status: `complete`
 - Capability: `historical_dependency_beachhead_prose_scope_correction`
-- Boundary: `guard_population_classification_only_no_gate_weakening_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change`
-- Changes Compiler Semantics: `false`
-- Correction: `compiler_CRANELIFT_review_markdown_is_excluded_from_the_production_reference_scan`
+- Trigger Run Id: `33171071194`
 - Failed Guard: `guard-cranelift-dependency-beachhead`
 - Failure Class: `generated_compiler_review_prose_false_positive`
-- Falsifier: `the_focused_beachhead_guard_and_replacement_phase9_core_Historical_Full_shard_pass_while_production_source_remains_scanned`
+- Correction: `compiler_CRANELIFT_review_markdown_is_excluded_from_the_production_reference_scan`
 - Production Scan Scope: `compiler_src_tests_root_manifests_and_Makefile_unchanged`
-- Trigger Run Id: `33171071194`
+- Changes Compiler Semantics: `false`
+- Falsifier: `the_focused_beachhead_guard_and_replacement_phase9_core_Historical_Full_shard_pass_while_production_source_remains_scanned`
+- Boundary: `guard_population_classification_only_no_gate_weakening_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change`
 
 ### Patch 21.17c
 
 - Status: `complete`
 - Capability: `historical_driver_handshake_fixture_reconciliation`
-- Boundary: `fixture_reconciliation_only_no_validator_worker_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change`
-- Changes Compiler Semantics: `false`
-- Correction: `positive_and_protocol_mismatch_fixture_handshakes_advertise_v1_v2_and_gust_compiler_executable_mir_v1`
-- Existing Authority: `patch21_14_exact_three_format_driver_handshake_contract`
+- Trigger Run Id: `33177003376`
 - Failed Guard: `guard-cranelift-phase10-driver-handshake-contract`
 - Failure Class: `positive_fixture_omitted_existing_full_program_canonical_format`
+- Existing Authority: `patch21_14_exact_three_format_driver_handshake_contract`
+- Correction: `positive_and_protocol_mismatch_fixture_handshakes_advertise_v1_v2_and_gust_compiler_executable_mir_v1`
+- Changes Compiler Semantics: `false`
 - Falsifier: `the_focused_phase10_handshake_guard_and_replacement_phase10_Historical_Full_shard_pass_without_validator_or_worker_change`
-- Trigger Run Id: `33177003376`
+- Boundary: `fixture_reconciliation_only_no_validator_worker_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change`
 
 ### Patch 21.17d
 
 - Status: `complete`
 - Capability: `historical_phase9f_import_ABI_fixture_reconciliation`
-- Boundary: `negative_fixture_and_guard_expectation_only_no_validator_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change`
-- Changes Compiler Semantics: `false`
-- Correction: `replace_obsolete_void_import_witness_with_unsupported_usize_return_import_witness`
-- Existing Authority: `phase9f_import_scalar_ABI_allowlist_and_patch21_9_call_result_type_validation`
+- Trigger Run Id: `33177003376`
 - Failed Guard: `guard-cranelift-phase9f-call-import-schema-validator`
 - Failure Class: `negative_fixture_used_admitted_void_return_ABI_and_reached_call_result_validation`
+- Existing Authority: `phase9f_import_scalar_ABI_allowlist_and_patch21_9_call_result_type_validation`
+- Correction: `replace_obsolete_void_import_witness_with_unsupported_usize_return_import_witness`
+- Changes Compiler Semantics: `false`
 - Falsifier: `the_focused_phase9f_schema_guard_and_replacement_phase9_core_Historical_Full_shard_pass_without_validator_or_compiler_change`
-- Trigger Run Id: `33177003376`
+- Boundary: `negative_fixture_and_guard_expectation_only_no_validator_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change`
 
 ### Patch 21.17e
 
 - Status: `complete`
 - Capability: `historical_driver_handshake_inventory_reconciliation`
-- Boundary: `guard_inventory_expectation_only_no_worker_validator_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change`
-- Changes Compiler Semantics: `false`
-- Correction: `require_gust_compiler_executable_mir_v1_and_exact_3_28_16_19_3_worker_inventory`
-- Existing Authority: `patch21_14_full_program_canonical_MIR_worker_inventory`
+- Trigger Run Id: `33194593462`
 - Failed Guard: `guard-cranelift-phase10-driver-handshake-contract`
 - Failure Class: `guard_froze_pre_patch21_14_worker_capability_inventory`
+- Existing Authority: `patch21_14_full_program_canonical_MIR_worker_inventory`
+- Correction: `require_gust_compiler_executable_mir_v1_and_exact_3_28_16_19_3_worker_inventory`
+- Changes Compiler Semantics: `false`
 - Falsifier: `the_focused_phase10_handshake_guard_and_replacement_phase10_Historical_Full_shard_pass_without_worker_validator_or_compiler_change`
-- Trigger Run Id: `33194593462`
+- Boundary: `guard_inventory_expectation_only_no_worker_validator_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change`
 
 ### Patch 21.17f
 
 - Status: `complete`
 - Capability: `historical_driver_handshake_manifest_freeze`
-- Boundary: `guard_manifest_expectation_and_negative_falsifiers_only_no_worker_validator_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change`
-- Changes Compiler Semantics: `false`
-- Correction: `compare_complete_ordered_handshake_manifest_and_reject_same_count_substitutions_in_every_category`
-- Existing Authority: `patch21_14_exact_ordered_worker_capability_manifest`
+- Trigger Run Id: `33205727452`
 - Failed Guard: `guard-cranelift-phase10-driver-handshake-contract`
 - Failure Class: `guard_compared_only_inventory_counts_and_missed_same_count_substitutions`
+- Existing Authority: `patch21_14_exact_ordered_worker_capability_manifest`
+- Correction: `compare_complete_ordered_handshake_manifest_and_reject_same_count_substitutions_in_every_category`
+- Changes Compiler Semantics: `false`
 - Falsifier: `the_focused_phase10_guard_rejects_same_count_substitutions_for_canonical_format_operation_type_ABI_runtime_import_and_target_requirement`
-- Trigger Run Id: `33205727452`
+- Boundary: `guard_manifest_expectation_and_negative_falsifiers_only_no_worker_validator_compiler_MIR_backend_ABI_layout_runtime_symbol_seed_default_backend_Stdlib_CR15_or_phase22_change`
 
 ## OD-8
 
@@ -179,9 +179,9 @@ Generated from `scripts/cranelift_feature_registry.json` by
 
 ## Roadmap-patch boundary
 
-- `phase22_default_backend_flip`: `out_of_scope`
-- `roadmap_patch_changes_abi_layout_or_runtime_symbols`: `false`
-- `roadmap_patch_changes_bootstrap_seed`: `false`
 - `roadmap_patch_changes_compiler_semantics`: `false`
 - `roadmap_patch_changes_mir_or_backends`: `false`
+- `roadmap_patch_changes_abi_layout_or_runtime_symbols`: `false`
+- `roadmap_patch_changes_bootstrap_seed`: `false`
 - `roadmap_patch_edits_stdlib`: `false`
+- `phase22_default_backend_flip`: `out_of_scope`

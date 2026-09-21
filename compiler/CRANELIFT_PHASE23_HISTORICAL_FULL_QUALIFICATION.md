@@ -37,13 +37,13 @@ Generated from `scripts/cranelift_feature_registry.json`; do not edit by hand.
 
 ## Registered coverage
 
-- assurance_report_only: `phase23_assurance_phase_a_v1, phase23_assurance_phase_b_v1`
-- bootstrap_fixed_point: `phase23_cross_feature_qualification_v1`
 - final_implementation: `phase23_cross_feature_qualification_v1`
-- focused_compatibility_successor: `phase23_mir_to_c_focused_live_v1`
-- historical_population: `.github/workflows/cranelift-historical-full.yml`
 - issue_health: `phase23_mir_evidence_owner_v1, phase23_resource_acquisition_parity_v1, phase23_same_scope_declaration_v1`
+- assurance_report_only: `phase23_assurance_phase_a_v1, phase23_assurance_phase_b_v1`
+- focused_compatibility_successor: `phase23_mir_to_c_focused_live_v1`
 - native_default_package_no_fallback: `phase23_production_release_audit_v1`
+- bootstrap_fixed_point: `phase23_cross_feature_qualification_v1`
+- historical_population: `.github/workflows/cranelift-historical-full.yml`
 
 Only a change that alters the Historical workload or final
 implementation artifact invalidates this run. This generated

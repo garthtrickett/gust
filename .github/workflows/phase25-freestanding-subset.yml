@@ -1,0 +1,33 @@
+name: Cranelift Phase 25 Freestanding Subset
+
+# Patch 25.3. Wired in the patch that creates it. The guard is armed and
+# vacuous until 25.5 produces the first freestanding object, and it says so
+# rather than passing silently.
+
+on:
+  pull_request:
+    paths:
+      - 'src/runtime/**'
+      - 'scripts/phase25_freestanding_subset.py'
+      - '.github/workflows/phase25-freestanding-subset.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/runtime/**'
+      - 'scripts/phase25_freestanding_subset.py'
+      - '.github/workflows/phase25-freestanding-subset.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  subset:
+    name: Phase 25 freestanding subset
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: guard-cranelift-phase25-freestanding-subset
+        run: python3 scripts/phase25_freestanding_subset.py validate
+      - name: report
+        run: python3 scripts/phase25_freestanding_subset.py report

@@ -33,11 +33,11 @@ Generated from `scripts/cranelift_feature_registry.json`. Do not edit by hand.
 - Corrected material finding: `#265` / `PRRT_kwDOS1ExJc6dfJGe`
 - Correction: `exact_six_command_manifest_with_negative_substitution_guards`
 - Unresolved material findings: `0`
-- bootstrap_route: `explicit_mir_to_c`
 - explicit_c_oracle_and_rollback: `qualified`
-- fallback: `forbidden`
 - package_and_install: `qualified`
+- bootstrap_route: `explicit_mir_to_c`
 - pull_request_ci: `exact_full_head_sha_required`
+- fallback: `forbidden`
 
 This is the operator-selected single exact-final-main qualification,
 not a repeated daily soak. It records no Gust semantic, MIR/lowering,
