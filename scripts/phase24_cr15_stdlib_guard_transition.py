@@ -2289,6 +2289,53 @@ def normalize_phase23_text_surfaces(
                 "rejected",
                 "Patch 24.12 text surface successor drifted")
         oracle_paths = list(oracle_surface["registered_changed_paths"])
+    # Patch 25.10 merges after 25.7, so it is the newest link and runs
+    # FIRST. It records a finding and changes no route, so what moves is
+    # the roadmap and the registry key above.
+    emitter_del_surface = registry.get(
+        "phase2510_emitter_deletion", {}).get("text_surface_successor")
+    if emitter_del_surface is not None:
+        require(emitter_del_surface.get("contract_version") ==
+                "phase2510_emitter_deletion_text_surface_successor_v1" and
+                emitter_del_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Patch 25.10 emitter deletion text surface successor drifted")
+        ed_paths = list(emitter_del_surface["registered_changed_paths"])
+        ed_pre = {r["path"]: r for r
+                  in emitter_del_surface["previous_changed_text_surfaces"]}
+        ed_post = {r["path"]: r for r
+                   in emitter_del_surface["current_changed_text_surfaces"]}
+        require(sorted(ed_pre) == sorted(ed_paths) == sorted(ed_post),
+                "Patch 25.10 registered paths and rows disagree")
+        ed_live = {r["path"]: r for r in rows if r["path"] in ed_paths}
+        require(sorted(ed_live) == sorted(ed_paths),
+                "Patch 25.10 registered text surface is missing from the scan")
+        require(ed_live in (ed_pre, ed_post),
+                "Patch 25.10 changed text surfaces are partial or "
+                "substituted: the live rows match neither the complete "
+                "predecessor state nor the complete successor state "
+                f"({sorted(p for p in ed_paths if ed_live[p] != ed_post[p])} differ from post)")
+        rows = [dict(ed_pre.get(r["path"], r)) for r in rows]
+        # The guard this patch adds is itself an enrolled surface: the scan
+        # matches on CONTENT, and a script about `--backend bootstrap-emitter`
+        # necessarily contains the spelling. Added surfaces carry one
+        # registered row rather than a pre/post pair, and are dropped from
+        # the rows the older links see -- those links were registered
+        # against a tree where this file did not exist.
+        ed_added = set(emitter_del_surface["added_text_surfaces"])
+        ed_rows = {r["path"]: r for r
+                   in emitter_del_surface["added_text_surface_rows"]}
+        require(sorted(ed_rows) == sorted(ed_added),
+                "Patch 25.10 added paths and rows disagree")
+        ed_live_added = {r["path"]: r for r in rows if r["path"] in ed_added}
+        require(sorted(ed_live_added) == sorted(ed_added),
+                "Patch 25.10 added text surface is missing from the scan: "
+                f"{sorted(ed_added - set(ed_live_added))}")
+        for path in sorted(ed_added):
+            require(ed_live_added[path] == ed_rows[path],
+                    "Patch 25.10 added text surface does not match its "
+                    f"registered row: {path}")
+        rows = [r for r in rows if r["path"] not in ed_added]
     # Patch 25.7 merges after 25.5, so it is the newest link and runs
     # FIRST. It adds a guard and a workflow step and changes no route, so
     # what moves here is the roadmap, the justfile and the surfaces its

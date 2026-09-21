@@ -104,6 +104,7 @@ TOP_FIELDS = {
     "issue447_resolver_scoping",
     "issue431_full_compiler_baseline",
     "patch251_no_c_falsifier",
+    "phase2510_emitter_deletion",
     "phase257_native_stage_chain",
     "phase255_runtime_to_gust",
     "patch256_fiber_global_asm",

@@ -41783,6 +41783,101 @@
     "v2_vectors_digest": "a69b383d5c156b1e9e88ea34b03df827e11f8a142da823e61215865e45a71f2f",
     "version": "phase24_frozen_oracle_replacement_v1"
   },
+  "phase2510_emitter_deletion": {
+    "status": "phase2510_emitter_deletion_guarded",
+    "text_surface_successor": {
+      "added_text_surface_rows": [
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "fbd65d860fe4dca2aaf6cd0ef5e8a5fb94547a13d87b349bfc18107af5a12649",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 0
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase25_emitter_deletion.py",
+          "removal_phase": "24"
+        }
+      ],
+      "added_text_surfaces": [
+        "scripts/phase25_emitter_deletion.py"
+      ],
+      "contract_version": "phase2510_emitter_deletion_text_surface_successor_v1",
+      "current_changed_text_surfaces": [
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "91708c8234b01fc7746d5d8e55b8c2b915fc631f523a3489a48b7ac965634698",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 8,
+            "mir_to_c_name": 2
+          },
+          "owner": "cranelift",
+          "path": "docs/PHASE25_ROADMAP.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "e823e636821b2f4b1934ac70d5036505aa8ac3ef1c7e282df634b82e6d9c945a",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        }
+      ],
+      "partial_extra_or_substituted_surface": "rejected",
+      "previous_changed_text_surfaces": [
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "ecded821b1de2f927ac22e0d619f7a9f86dcd06e9ab5db48bdae89449e2a012b",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 7,
+            "mir_to_c_name": 2
+          },
+          "owner": "cranelift",
+          "path": "docs/PHASE25_ROADMAP.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "4cb9e37e139dab1fe8410c62e383e6a3184cb8ace1f17c2a08daca03c625c322",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        }
+      ],
+      "registered_changed_paths": [
+        "docs/PHASE25_ROADMAP.md",
+        "scripts/cranelift_registry.py"
+      ]
+    }
+  },
   "phase257_native_stage_chain": {
     "status": "phase257_native_stage_chain_guarded",
     "text_surface_successor": {
