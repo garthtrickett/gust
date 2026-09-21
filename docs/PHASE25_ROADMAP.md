@@ -878,3 +878,49 @@ matters here only because Phase 25's end state is the native route, so
 deleted. Flagged for an owner rather than fixed in a patch about `fiber.c`:
 deciding whether the native backend should inject a tick is a scheduler
 question, not a porting one.
+
+## Constructing a `str` in Gust: solved, and it needed no new surface
+
+The four `strings.c` functions left after the pure ones all need the same
+thing — build a `str` from a pointer and a length — and every construction
+path Gust offers (`std.Concat`, `std.Clone`, `std.str_slice`) is itself a
+runtime call, which is circular when the function being written IS
+`std_str_slice`.
+
+It is not a gap. `compiler/lexer.gst:147-155` already does it:
+
+```gust
+unsafe {
+    mut h  := os.ScratchAlloc(16);
+    mut hp := (h + 0) as *StrHeader;      // type StrHeader struct { data: *byte, len: int }
+    (*hp).data = (&s[start]) as *byte;
+    (*hp).len  = end - start;
+    return *(((hp as *str) + 0) as *str);
+}
+```
+
+A `str` is `{ data, len }`, so a struct of that shape, a pointer cast and a
+deref reconstruct one. The `unsafe` block is required — pointer arithmetic
+and raw casts are rejected outside one, which is the compiler telling the
+truth about what this is.
+
+Compiled, `std_str_slice` emits
+`Slice_unsigned_char std_str_slice(Slice_unsigned_char s, int start, int end)`
+— byte-identical to the C — and references exactly three things:
+`gust_check_fail` (injected), `os_ScratchAlloc` (layer 1, a downward call
+from layer 2, legal) and itself.
+
+**Three separate fixes from this phase had to hold at once for that to
+pass**: the injected-primitive exemption, the layer order permitting
+downward calls, and the narrowing that lets a module call what it defines.
+Any one missing and this reads as a violation.
+
+### One semantic difference, recorded rather than smoothed over
+
+The C returns the slice **by value** and allocates nothing. The Gust version
+takes 16 bytes of scratch per call. Scratch is a bump allocator that resets,
+so the cost is small, but "allocates nothing" and "allocates 16 bytes" are
+not the same claim, and `std_str_slice` is called 165 times across the
+compiler's own sources. Whether that matters is a measurement nobody has
+taken; it is recorded here so the port is not described as behaviour-identical
+when it is behaviour-equivalent.
