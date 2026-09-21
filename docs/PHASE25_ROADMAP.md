@@ -324,6 +324,64 @@ and the fiber benchmark from 25.0 has not regressed.
 **Exit Gate:** the native fixed point holds across two independent builds; the
 old fixed point still passes; both are green in the same run.
 
+# Patch 25.7 — findings before implementation: the native fixed point already holds
+
+Measured 2026-09-21 on the 25.5 tree, in three commands. The plan says
+"replace the generated-C fixed point with the native one", which assumes
+the native one has to be built. It does not.
+
+**1. The Cranelift backend compiles the WHOLE compiler.**
+
+    ./build/phase10-package/bin/gust --backend cranelift \
+        -o /tmp/native_compiler compiler/test_runner_entry.gst
+
+exits 0 in 94 seconds and produces an 11,008,664-byte executable. This is
+not new capability — `phase21_full_compiler_native_qualification` is
+`patch21_14_complete` against the same entry — but the qualification
+produces MIR and objects, and what 25.7 needs is a runnable compiler.
+
+**2. That binary IS a compiler.** `--help` prints the driver's usage, and
+it compiles the compiler again.
+
+**3. stage1 and stage2 are BYTE-IDENTICAL.**
+
+    0b072748d4d8fd78f699e202  /tmp/native_compiler
+    0b072748d4d8fd78f699e202  /tmp/native_compiler2
+
+`stage_n == stage_n+1` over the native artifact set. That is the exit
+gate's first clause, and it already passes.
+
+## The one real blocker, and it is not codegen
+
+Stage 2 fails when the stage-1 binary is run from `/tmp`:
+
+    Native backend driver discovery error:
+    sibling native backend driver path is unavailable or not executable
+
+It fails AFTER 94 seconds of successful work — the capability decision is
+`supported`, generic source-to-MIR completes — because the compiler locates
+its Cranelift worker as a **sibling on disk**. Copy the binary next to
+`build/phase10-package/bin/gust-native-backend` and the identical
+invocation succeeds.
+
+So 25.7 is a packaging and driver-discovery patch, not a compilation one.
+The stage chain cannot be a sequence of binaries in a build directory
+unless each stage is placed beside a driver, or discovery learns a second
+strategy (an env var, or a path relative to the invoked binary rather than
+a sibling of it).
+
+**This changes what the patch has to prove.** Two of the exit gate's three
+clauses are already demonstrable: the native fixed point holds, and the
+generated-C fixed point converged on this same tree tonight. The third --
+both green in the same run -- is the actual deliverable, and it needs the
+driver-discovery fix first or the native half cannot be scripted at all.
+
+**Do not read the byte-identical result as "25.7 is done."** It was
+measured by hand, from a package directory, with the driver already in
+place. A patch has to make it reproducible from a clean checkout and
+assert it in CI, and the discovery behaviour above is what stands between
+those two states.
+
 ## Patch 25.8 — Release Mechanics
 
 **Purpose:** build what D1 bootstraps from. **Before** the seed cut-over,
