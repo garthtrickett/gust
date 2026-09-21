@@ -196,6 +196,16 @@ def object_layer(obj) -> int:
     return LAYERS.get(obj.stem, -1)
 
 
+def defined_symbols(obj) -> set:
+    """Symbols the object itself defines."""
+    names = set()
+    for line in run_tool(["nm", "--defined-only", str(obj)], obj).splitlines():
+        parts = line.split()
+        if len(parts) >= 3 and parts[-2] in {"T", "D", "B", "R"}:
+            names.add(parts[-1])
+    return names
+
+
 def upward_calls(obj, referenced: set, forbidden: set) -> list:
     """Calls to the object's OWN layer or higher -- the real violation.
 
@@ -204,9 +214,22 @@ def upward_calls(obj, referenced: set, forbidden: set) -> list:
     an object whose layer nobody declared cannot be shown to respect one.
     """
     mine = object_layer(obj)
+    # A module may call what it DEFINES. That is ordinary composition, not a
+    # layering violation: std_str_trim calling std_str_slice is how the C
+    # writes it too, and both live in strings.
+    #
+    # This narrows a check added in response to review. The finding was that
+    # `nm -u` misses a symbol an object both defines and calls -- true, and
+    # the relocation table fixes it. But the conclusion drawn from it, that
+    # such a call is a violation, was wrong: the question the subset asks is
+    # whether a module calls UPWARD into the runtime, and its own functions
+    # are not upward of themselves. Measured: without this, a Gust strings.o
+    # was rejected for calling the std_str_slice it defines, which is the
+    # first thing Patch 25.5 needs to write.
+    own = defined_symbols(obj)
     bad = []
     for symbol in sorted(referenced & forbidden):
-        if symbol in CODEGEN_INJECTED:
+        if symbol in CODEGEN_INJECTED or symbol in own:
             continue
         theirs = symbol_layer(symbol)
         if mine < 0 or theirs < 0 or theirs >= mine:
