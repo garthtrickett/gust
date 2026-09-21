@@ -126,7 +126,7 @@
         "repository_invocation_count": 160,
         "supported_production_or_release_explicit_c_count": 0,
         "supported_surface_count": 6,
-        "supported_surface_manifest_digest": "6d33d2cb86373cdd95e09b9956d4f6319ab50b806e2f7b9393c269c768e7be09",
+        "supported_surface_manifest_digest": "ca2e3830f391878086d1c8e3475583fe5585585f993f9555f3bc1cbdbd88da6d",
         "unknown_downstream_count": 0
       },
       "moved_fields": [
@@ -143,7 +143,7 @@
         "repository_invocation_count": 158,
         "supported_production_or_release_explicit_c_count": 0,
         "supported_surface_count": 6,
-        "supported_surface_manifest_digest": "d233da7f66bf99daaa6c83077c66d8dce89e212a72d8e1815a4edf387a3af45c",
+        "supported_surface_manifest_digest": "7e582fcd6fee813d1d440a8f291d0ef1b09c6670aaf61857c159c0c46e0029c2",
         "unknown_downstream_count": 0
       },
       "reason": {
@@ -34971,7 +34971,7 @@
         "repository_invocation_count": 158,
         "supported_production_or_release_explicit_c_count": 0,
         "supported_surface_count": 6,
-        "supported_surface_manifest_digest": "d233da7f66bf99daaa6c83077c66d8dce89e212a72d8e1815a4edf387a3af45c",
+        "supported_surface_manifest_digest": "7e582fcd6fee813d1d440a8f291d0ef1b09c6670aaf61857c159c0c46e0029c2",
         "unknown_downstream_count": 0
       },
       "partial_extra_or_substituted_audit": "rejected",
@@ -41887,7 +41887,7 @@
           "classification": "bootstrap_phase25",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_exact_C_bootstrap_dependency",
-          "digest": "8ddfb7704f559cde874a0a0cd3eea32a913d13b7a37dd3417cc49df49931663e",
+          "digest": "913f57b5818e5dfd54e4aa8cdc2682f533410ffe12f4c155e4c68af41a5c5975",
           "falsifier": "bootstrap_surface_is_missing_changed_or_reclassified",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -42067,7 +42067,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "7739c79067c6e9e2d388cdab3390196fd9e7e07c55c9012d4f0fa6a1bf19b296",
+          "digest": "c302708050444b689bf014c5ba7ddd026c9b6f032c2e21ce1f2a649cdf35d684",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -42112,7 +42112,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "7b669113e8c5a7b889ba23d6c3c2ef2f20bd83ee6a1b78cf4faf145a9225fed4",
+          "digest": "133dc49039f1d787d0a2536e8afad7f747dc6f6092981f32e4a9184cdbb2d898",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -42142,7 +42142,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "01854c938743bacd830a5be32dcbcbc3bb6f1ec29005286dae68cf290266946e",
+          "digest": "b359df29d361c8f8aa627cd0acb6f08f9d6c0684ca28bf30979d1ae03c2a01e1",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -42217,7 +42217,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "75d5294ba9f0544197ea5b49443441133e01445540cbdfd40f2a71dad1f6c04e",
+          "digest": "e0a077a99224c47a0bddd52b97faac0ba2b2e608646f83321f239da09cee05ce",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 2,
@@ -42265,7 +42265,7 @@
           "classification": "bootstrap_phase25",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_exact_C_bootstrap_dependency",
-          "digest": "8ec32a4d253e566787cfb85ac41592e5998fcc5e61d99fed5ed0e7018641fd9e",
+          "digest": "3efe47b895106dd14334063e3c2014d05266b5ed33b360be5c3281c14f09af2b",
           "falsifier": "bootstrap_surface_is_missing_changed_or_reclassified",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -42490,7 +42490,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "c867eeb1c1737a38acc8ffb90dad64b118c67a812e5c472019782bad296e6049",
+          "digest": "ab248236c6974fd9692c1673ee0025dd7a414a763832cc986c94e4f432c49f09",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -42520,7 +42520,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "0981d30a8c2b360191846de1d76d98c59c2674629ec61b1832c2a56164426ce9",
+          "digest": "d6455d41fa5d29e871a55f9b43c1202a48a888a80f996f3e80261c3077b145fe",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -42595,7 +42595,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "400a74509bf41a2608a099d960edf45edde3b7d663c3c8d80c041f1fcfaa85be",
+          "digest": "627de7749e1908104f7a0b0f6cfaebd0efb41098a7d12959b997e2951060df20",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 2,
@@ -42690,7 +42690,7 @@
           "classification": "bootstrap_phase25",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_exact_C_bootstrap_dependency",
-          "digest": "8ec32a4d253e566787cfb85ac41592e5998fcc5e61d99fed5ed0e7018641fd9e",
+          "digest": "3efe47b895106dd14334063e3c2014d05266b5ed33b360be5c3281c14f09af2b",
           "falsifier": "bootstrap_surface_is_missing_changed_or_reclassified",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -42840,7 +42840,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "c867eeb1c1737a38acc8ffb90dad64b118c67a812e5c472019782bad296e6049",
+          "digest": "ab248236c6974fd9692c1673ee0025dd7a414a763832cc986c94e4f432c49f09",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -42855,7 +42855,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "0981d30a8c2b360191846de1d76d98c59c2674629ec61b1832c2a56164426ce9",
+          "digest": "d6455d41fa5d29e871a55f9b43c1202a48a888a80f996f3e80261c3077b145fe",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -42945,7 +42945,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "400a74509bf41a2608a099d960edf45edde3b7d663c3c8d80c041f1fcfaa85be",
+          "digest": "627de7749e1908104f7a0b0f6cfaebd0efb41098a7d12959b997e2951060df20",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 2,
