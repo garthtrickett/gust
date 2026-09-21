@@ -591,3 +591,44 @@ hand-guessed `pthread_mutex_t` layouts, on three platform quadrants that
 cannot be built here, is not a risk worth taking to preserve a crate
 attribute. `std` supplies `Mutex` and `thread` with no layout to guess, and
 the phase's gate is *no C compiler*, not *no libc*.
+
+## The fiber benchmark, measured at last — and `gust_tick` costs 26%
+
+25.6's Exit Gate says the 25.0 fiber benchmark must not regress. That
+benchmark was never built: the roadmap's own table records it as
+**unmeasured**, so the gate cited an artifact that did not exist and could
+not have been evaluated either way.
+
+Built and run. A tick-dominated hot loop, 200M iterations, seven runs,
+median, same machine, same `-O2`:
+
+    pre-change compiler  (inline `--gust_loop_ticks`)   0.58 s
+    post-change compiler (`gust_tick()` call)           0.73 s
+                                                        +26%
+
+About 0.75 ns per iteration, which is a non-inlined call plus a TLS access.
+The two binaries differ only in the tick: same source, same runtime, one
+emits two inline decrements and the other two calls.
+
+**This is the worst case, and it should be read as one.** The loop body does
+a single add, so the tick is most of the work. Real code does more per
+iteration and the relative cost falls. But 26% on the pathological case is
+not nothing, and it is the number the gate has to be argued against.
+
+Why the call exists at all: `gust_loop_ticks` was a thread-local *int*, and
+stable Rust cannot export a C-visible `__thread` data symbol. The counter
+could not move as data, only as a function.
+
+Three ways out, none free:
+
+  * **Accept it.** Defensible only with evidence from realistic code, which
+    this measurement is not.
+  * **Inline the fast path.** Emit the decrement inline and call only when
+    the tick expires — but that needs the thread-local back, which is the
+    thing stable Rust cannot give.
+  * **LTO across the C/Rust boundary**, so the call inlines. Plausible, and
+    it changes the build rather than the language.
+
+Recorded as a decision owed, not a detail. A 26% regression on loop-heavy
+code is the kind of thing that gets discovered by a user rather than a
+patch, and 25.6 cannot claim its Exit Gate clause while it stands.
