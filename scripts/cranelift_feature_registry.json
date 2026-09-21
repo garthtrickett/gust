@@ -4575,11 +4575,6 @@
     "runtime_package": {
       "format": "static_archive",
       "members": [
-        "arena.o",
-        "host_io.o",
-        "file_io.o",
-        "scratch.o",
-        "collections.o",
         "strings.o",
         "gust_runtime_rs_exports.o"
       ],
@@ -6254,68 +6249,68 @@
         "committed_seed_remains": "preregistration_state_A_superseded_by_landed_C"
       }
     },
-            "phase255_seed_transition": {
-              "accepted_live_seed_identities": [
-                    {
-                          "line_count": 66002,
-                          "seed_digest": "6992b00adc5790710fbad4689ab9408fdfe55c2500a50f11a557b741ad87725f",
-                          "state": "pre_publication"
-                    },
-                    {
-                          "line_count": 68375,
-                          "seed_digest": "0bac2f0fa208dd355c112b2f0bc1a75cceb4206325c33cc0d60836abf94abfdb",
-                          "state": "post_publication"
-                    }
-              ],
-              "accounted_compiler_authorities": [
-                    "phase255_runtime_to_gust"
-              ],
-              "authority_base_main": "8acfc3f3e613b7305bf6d7e2d0b00ac55a202369",
-              "closure_transition": "collapse_to_post_publication_after_seed_merge",
-              "contract_version": "phase255_runtime_to_gust_seed_reconvergence_transition_v1",
-              "generated_seed_diff": {
-                    "current_lines": 68375,
-                    "deletions": 8,
-                    "insertions": 2381,
-                    "line_delta": 2373,
-                    "previous_lines": 66002
-              },
-              "partial_or_unregistered_identity": "rejected",
-              "predecessor_seed_authority": "patch256_fiber_global_asm_seed_reconvergence_transition_v1",
-              "seed_pr_policy": "gust_v4_c_only",
-              "status": "ready_for_seed_publication"
+    "phase255_seed_transition": {
+      "accepted_live_seed_identities": [
+        {
+          "line_count": 66002,
+          "seed_digest": "6992b00adc5790710fbad4689ab9408fdfe55c2500a50f11a557b741ad87725f",
+          "state": "pre_publication"
         },
+        {
+          "line_count": 68375,
+          "seed_digest": "0bac2f0fa208dd355c112b2f0bc1a75cceb4206325c33cc0d60836abf94abfdb",
+          "state": "post_publication"
+        }
+      ],
+      "accounted_compiler_authorities": [
+        "phase255_runtime_to_gust"
+      ],
+      "authority_base_main": "8acfc3f3e613b7305bf6d7e2d0b00ac55a202369",
+      "closure_transition": "collapse_to_post_publication_after_seed_merge",
+      "contract_version": "phase255_runtime_to_gust_seed_reconvergence_transition_v1",
+      "generated_seed_diff": {
+        "current_lines": 68375,
+        "deletions": 8,
+        "insertions": 2381,
+        "line_delta": 2373,
+        "previous_lines": 66002
+      },
+      "partial_or_unregistered_identity": "rejected",
+      "predecessor_seed_authority": "patch256_fiber_global_asm_seed_reconvergence_transition_v1",
+      "seed_pr_policy": "gust_v4_c_only",
+      "status": "ready_for_seed_publication"
+    },
     "phase256_seed_transition": {
-              "accepted_live_seed_identities": [
-                    {
-                          "line_count": 66002,
-                          "seed_digest": "6e2f45f4276cb63e97902141088b50c2886a6de5132d5ad5384c9070b950bb6f",
-                          "state": "pre_publication"
-                    },
-                    {
-                          "line_count": 66002,
-                          "seed_digest": "6992b00adc5790710fbad4689ab9408fdfe55c2500a50f11a557b741ad87725f",
-                          "state": "post_publication"
-                    }
-              ],
-              "accounted_compiler_authorities": [
-                    "patch256_fiber_global_asm"
-              ],
-              "authority_base_main": "8acfc3f3e613b7305bf6d7e2d0b00ac55a202369",
-              "closure_transition": "collapse_to_post_publication_after_seed_merge",
-              "contract_version": "patch256_fiber_global_asm_seed_reconvergence_transition_v1",
-              "generated_seed_diff": {
-                    "current_lines": 66002,
-                    "deletions": 2691,
-                    "insertions": 2691,
-                    "line_delta": 0,
-                    "previous_lines": 66002
-              },
-              "partial_or_unregistered_identity": "rejected",
-              "predecessor_seed_authority": "phase398_retained_spelling_removal_seed_reconvergence_transition_v1",
-              "seed_pr_policy": "gust_v4_c_only",
-              "status": "ready_for_seed_publication"
+      "accepted_live_seed_identities": [
+        {
+          "line_count": 66002,
+          "seed_digest": "6e2f45f4276cb63e97902141088b50c2886a6de5132d5ad5384c9070b950bb6f",
+          "state": "pre_publication"
         },
+        {
+          "line_count": 66002,
+          "seed_digest": "6992b00adc5790710fbad4689ab9408fdfe55c2500a50f11a557b741ad87725f",
+          "state": "post_publication"
+        }
+      ],
+      "accounted_compiler_authorities": [
+        "patch256_fiber_global_asm"
+      ],
+      "authority_base_main": "8acfc3f3e613b7305bf6d7e2d0b00ac55a202369",
+      "closure_transition": "collapse_to_post_publication_after_seed_merge",
+      "contract_version": "patch256_fiber_global_asm_seed_reconvergence_transition_v1",
+      "generated_seed_diff": {
+        "current_lines": 66002,
+        "deletions": 2691,
+        "insertions": 2691,
+        "line_delta": 0,
+        "previous_lines": 66002
+      },
+      "partial_or_unregistered_identity": "rejected",
+      "predecessor_seed_authority": "phase398_retained_spelling_removal_seed_reconvergence_transition_v1",
+      "seed_pr_policy": "gust_v4_c_only",
+      "status": "ready_for_seed_publication"
+    },
     "phase398_seed_transition": {
       "accepted_live_seed_identities": [
         {
@@ -13543,7 +13538,7 @@
     "phase26_27_docs_consumer_successor": {
       "contract_version": "phase24_phase26_27_docs_consumer_successor_v1",
       "status": "ready_for_exact_phase26_27_docs_rebase",
-      "authority_base_main": "35ed329bde30a63b40178dc43c60d4da89ac7cd5",
+      "authority_base_main": "0000000000000000000000000000000000000000",
       "owning_docs_pull_request": 318,
       "owning_docs_exact_head_sha": "8c9cb859ac81bff2e8a4ba59985f965d1832197c",
       "accepted_live_states": [
