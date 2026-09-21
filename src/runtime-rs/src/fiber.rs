@@ -924,9 +924,7 @@ pub struct OsArena {
     pub capacity: usize,
 }
 
-extern "C" {
-    fn os_ArenaAlloc(arena: *mut OsArena, size: i32) -> i32;
-}
+use crate::arena::os_ArenaAlloc;
 
 /// The C slice `Slice_unsigned_char`, returned by value.
 #[repr(C)]
@@ -944,7 +942,7 @@ pub unsafe extern "C" fn std_Clone_str(arena: *mut OsArena, s: SliceU8) -> Slice
     if s.data.is_null() || s.len <= 0 {
         return SliceU8 { data: std::ptr::null_mut(), len: 0 };
     }
-    let offset = os_ArenaAlloc(arena, s.len);
+    let offset = os_ArenaAlloc(arena, s.len as usize);
     // GUST_ARENA_OFFSET(offset) is ((size_t)(uint32_t)(offset)) -- the cast
     // through uint32_t is load-bearing, not decoration: a negative i32 must
     // become a large positive offset, exactly as the C does, or the copy
@@ -974,7 +972,7 @@ pub struct VectorStr {
 /// # Safety
 /// `arena` must be live.
 pub(crate) unsafe fn arena_alloc_bytes(arena: *mut OsArena, n: i32) -> *mut u8 {
-    let offset = os_ArenaAlloc(arena, n);
+    let offset = os_ArenaAlloc(arena, n as usize);
     (*arena).base_address.cast::<u8>().add((offset as u32) as usize)
 }
 
@@ -988,7 +986,7 @@ pub(crate) unsafe fn vector_push_str(vec: &mut VectorStr, value: SliceU8) {
     if vec.len >= vec.capacity {
         let new_cap = if vec.capacity == 0 { 8 } else { vec.capacity * 2 };
         let bytes = new_cap * (std::mem::size_of::<SliceU8>() as i32);
-        let offset = os_ArenaAlloc(vec.arena, bytes);
+        let offset = os_ArenaAlloc(vec.arena, bytes as usize);
         let new_data = (*vec.arena).base_address
             .cast::<u8>()
             .add((offset as u32) as usize)

@@ -12,10 +12,7 @@ use crate::fiber::OsArena;
 
 const GUST_SCRATCH_SIZE: usize = 131072;
 
-extern "C" {
-    fn os_Arena_New() -> OsArena;
-    fn os_ArenaAlloc(arena: *mut OsArena, size: i32) -> i32;
-}
+use crate::arena::{os_Arena_New, os_ArenaAlloc};
 
 thread_local! {
     /// The 128 KB fallback buffer, used when a program has NOT opted in to
@@ -78,7 +75,7 @@ pub unsafe extern "C" fn os_ScratchAlloc(size: usize) -> *mut std::ffi::c_void {
             }
             let arena: &mut OsArena = slot.as_mut().unwrap();
             let ptr: *mut OsArena = arena;
-            let offset = os_ArenaAlloc(ptr, size as i32);
+            let offset = os_ArenaAlloc(ptr, size);
             (*ptr).base_address.cast::<u8>().add((offset as u32) as usize).cast()
         });
     }
