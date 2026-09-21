@@ -56,8 +56,15 @@ if rg -n -e 'std_HashMap_str_int_application_arena' \
 fi
 
 cat src/runtime.c "$build_dir/explicit.c" >"$build_dir/final.c"
+# Patch 25.6: src/runtime.c is no longer a complete runtime. fiber.c is
+# deleted and its eighteen exports live in the runtime crate, and codegen
+# emits a gust_yield() call in every loop of every compiled Gust program,
+# so this link needs the crate object. Built through make so a stale one
+# cannot be linked silently.
+runtime_obj="build/phase25-runtime-rs/gust_runtime_rs_exports.o"
+make "$runtime_obj"
 "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-  "$build_dir/final.c" -o "$build_dir/mir-to-c-program"
+  "$build_dir/final.c" "$runtime_obj" -o "$build_dir/mir-to-c-program"
 if "$build_dir/mir-to-c-program" \
     >"$build_dir/runtime.stdout" 2>"$build_dir/runtime.stderr"; then
   actual_status=0
