@@ -41792,12 +41792,12 @@
           "classification": "historical_only",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_as_historical_evidence",
-          "digest": "ecded821b1de2f927ac22e0d619f7a9f86dcd06e9ab5db48bdae89449e2a012b",
+          "digest": "60ec61a35c709f36736d45197b04781c3c53289de78a035cfedb84fd1f024073",
           "falsifier": "historical_record_is_reclassified_as_live_support",
           "match_counts": {
             "explicit_backend_spelling": 0,
             "generated_c_contract": 7,
-            "mir_to_c_name": 2
+            "mir_to_c_name": 3
           },
           "owner": "cranelift",
           "path": "docs/PHASE25_ROADMAP.md",
@@ -41840,12 +41840,12 @@
           "classification": "historical_only",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_as_historical_evidence",
-          "digest": "bbde10770e0e021fb42b85c97cd10d7b5e4aaa9f5da9615d3002ac5f2aaa24a6",
+          "digest": "3984e415a417751663872652d5b713bbd23ad929a0ab9266a36df291bf68b0ee",
           "falsifier": "historical_record_is_reclassified_as_live_support",
           "match_counts": {
             "explicit_backend_spelling": 0,
             "generated_c_contract": 4,
-            "mir_to_c_name": 2
+            "mir_to_c_name": 3
           },
           "owner": "cranelift",
           "path": "docs/PHASE25_ROADMAP.md",
