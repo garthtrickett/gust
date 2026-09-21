@@ -49,8 +49,19 @@ all: phase10-native-package
 
 gust_bootstrap: gust_v4.c $(RUNTIME_SRCS) $(PHASE25_RUNTIME_RS)
 	mkdir -p build
-	cat src/runtime.c gust_v4.c > build/gust_bootstrap_final.c
-	${CC} ${CFLAGS} ${INCLUDES} build/gust_bootstrap_final.c $(PHASE25_RUNTIME_RS) -o gust_bootstrap
+	@# Patch 25.8a: the offline seed path, wired here rather than only
+	@# described. GUST_BOOTSTRAP_SEED names a published bridge binary;
+	@# it is verified against the committed manifest BEFORE it is used,
+	@# because an unverified seed is exactly what D1 option B exists to
+	@# avoid. Unset, the ordinary compile-from-source route runs.
+	@if [ -n "$$GUST_BOOTSTRAP_SEED" ]; then \
+		echo "offline seed: $$GUST_BOOTSTRAP_SEED"; \
+		python3 scripts/phase25_release_manifest.py verify-seed; \
+		install -m 0755 "$$GUST_BOOTSTRAP_SEED" gust_bootstrap; \
+	else \
+		cat src/runtime.c gust_v4.c > build/gust_bootstrap_final.c; \
+		${CC} ${CFLAGS} ${INCLUDES} build/gust_bootstrap_final.c $(PHASE25_RUNTIME_RS) -o gust_bootstrap; \
+	fi
 
 build/gust_stage1_compiler.c: export GUST_BOOTSTRAP_EMITTER = 1
 build/gust_stage1_compiler.c: gust_bootstrap $(COMPILER_SRCS) tools/normalize_generated_arena_offsets.py
@@ -233,16 +244,63 @@ build/phase21-runtime/strings.o: src/runtime/strings.c src/runtime/core_headers.
 # Symbol names are byte-identical, so the 26 dependent files are unchanged.
 
 $(PHASE25_RUNTIME_RS): src/runtime-rs/src/lib.rs src/runtime-rs/Cargo.toml
-	cargo build --release --manifest-path src/runtime-rs/Cargo.toml
+	$(CARGO) build --release --manifest-path src/runtime-rs/Cargo.toml
 
-$(PHASE21_RUNTIME_PACKAGE): $(PHASE21_RUNTIME_OBJECTS) $(PHASE25_RUNTIME_RS)
+# Only the crate's own codegen unit joins the runtime archive. The staticlib
+# has 310 members; 309 are core and compiler_builtins, which would add 7 MB
+# and a second definition of memcpy beside libc's. The member is selected by
+# CONTENT -- the one defining the fixtures -- because both hashes in its
+# filename change on every rebuild, and it fails loudly when absent: an
+# `|| true` here would make a missing fixture look like a built one.
+# Its exports are then narrowed to a NAMED list: the three fixtures plus the
+# eighteen exports Patch 25.6 moved here from fiber.c. A named list rather
+# than "keep whatever is global", because the crate's codegen
+# unit also defines Rust's panic handler, whose symbol carries a CONTENT
+# HASH -- three parity guards compare the archive's defined-symbol set
+# exactly, and a hash that moves whenever the crate changes would make
+# those lists churn forever. The two C files exported exactly twenty-one
+# symbols between them; so does their replacement.
+PHASE25_RUNTIME_RS_OBJ = build/phase25-runtime-rs/gust_runtime_rs_fixtures.o
+
+$(PHASE25_RUNTIME_RS_OBJ): $(PHASE25_RUNTIME_RS)
+	@rm -rf build/phase25-runtime-rs
+	@mkdir -p build/phase25-runtime-rs
+	@member=$$(nm --print-armap $(PHASE25_RUNTIME_RS) 2>/dev/null \
+		| awk '/^Archive index:/{a=1;next} a && $$1=="tiny_host_add_i32"{print $$NF; exit}'); \
+	if [ -z "$$member" ]; then \
+		echo 'no src/runtime-rs member defines tiny_host_add_i32' >&2; exit 1; \
+	fi; \
+	cd build/phase25-runtime-rs && ar x ../../$(PHASE25_RUNTIME_RS) "$$member" \
+		&& mv "$$member" member.o
+	objcopy --keep-global-symbol=tiny_host_add_one_i32 \
+	        --keep-global-symbol=tiny_host_add_i32 \
+	        --keep-global-symbol=tiny_host_is_positive_i32 \
+	        --keep-global-symbol=gust_check_fail \
+	        --keep-global-symbol=gust_fiber_create \
+	        --keep-global-symbol=gust_fiber_exit \
+	        --keep-global-symbol=gust_fiber_free \
+	        --keep-global-symbol=gust_fiber_switch \
+	        --keep-global-symbol=gust_scheduler_destroy \
+	        --keep-global-symbol=gust_scheduler_init \
+	        --keep-global-symbol=gust_scheduler_spawn \
+	        --keep-global-symbol=gust_shard_loop \
+	        --keep-global-symbol=gust_tick \
+	        --keep-global-symbol=gust_yield \
+	        --keep-global-symbol=get_num_threads_to_use \
+	        --keep-global-symbol=std_Channel_Alloc \
+	        --keep-global-symbol=std_Channel_Recv_impl \
+	        --keep-global-symbol=std_Channel_Send_impl \
+	        --keep-global-symbol=std_Mutex_Alloc \
+	        --keep-global-symbol=std_Mutex_Lock_impl \
+	        --keep-global-symbol=std_Mutex_Unlock_impl \
+	        build/phase25-runtime-rs/member.o $@
+	@rm -f build/phase25-runtime-rs/member.o
+
+$(PHASE21_RUNTIME_PACKAGE): $(PHASE21_RUNTIME_OBJECTS) $(PHASE25_RUNTIME_RS_OBJ)
 	@rm -f build/.gust-runtime-package.a.tmp
-	# The Rust crate's members join the runtime archive, so the archive
-	# keeps one name and one shape while its contents move language.
-	ar rcs build/.gust-runtime-package.a.tmp $(PHASE21_RUNTIME_OBJECTS)
-	cd build && ar x --output . ../$(PHASE25_RUNTIME_RS) 2>/dev/null || true
-	ar q build/.gust-runtime-package.a.tmp $$(ar t $(PHASE25_RUNTIME_RS) | sed 's|^|build/|') 2>/dev/null || \
-		ar q build/.gust-runtime-package.a.tmp $(PHASE25_RUNTIME_RS)
+	# The Rust fixture object joins the runtime archive, so the archive keeps
+	# one name and one shape while its contents move language.
+	ar rcs build/.gust-runtime-package.a.tmp $(PHASE21_RUNTIME_OBJECTS) $(PHASE25_RUNTIME_RS_OBJ)
 	mv build/.gust-runtime-package.a.tmp $(PHASE21_RUNTIME_PACKAGE)
 
 phase10-native-package: gust build/gust-native-backend $(PHASE21_RUNTIME_PACKAGE)

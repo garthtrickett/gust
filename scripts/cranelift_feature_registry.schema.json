@@ -100,6 +100,7 @@
     "phase24_15_package_docs_registry",
     "issue447_resolver_scoping",
     "issue431_full_compiler_baseline",
+    "patch251_no_c_falsifier",
     "patch254_runtime_crate",
     "issue451_inventory_ownership",
     "issue436_justfile_population",
@@ -107,7 +108,9 @@
     "issue437_parity_residue_adjudication",
     "phase24_16_residue_audit",
     "phase25_roadmap_draft",
+    "phase258_release_mechanics",
     "phase25_bootstrap_seed_policy",
+    "phase253_freestanding_subset",
     "phase24_closure",
     "phase398_retained_spelling_removal",
     "phase24_frozen_oracle_replacement",
@@ -2245,7 +2248,7 @@
           },
           "runtime_package": {
             "format": "static_archive",
-            "members": ["arena.o","host_io.o","file_io.o","scratch.o","collections.o","strings.o","libgust_runtime_rs.a"],
+            "members": ["arena.o","host_io.o","file_io.o","scratch.o","collections.o","strings.o","gust_runtime_rs_fixtures.o"],
             "symbol_policy": "existing_registered_runtime_symbols_only"
           },
           "resource_cleanup_transport": {

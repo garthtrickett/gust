@@ -68,6 +68,7 @@ yarn-error.log*
 /build/guards/cranelift_mir_to_c_differential_native/
 
 /src/runtime/rust/target/
+/src/runtime-rs/target/
 
 # Patch 24.12b: byte-compiled Python is a build artifact, not evidence. A
 # tracked .pyc is a tracked file to every guard that greps the census, which

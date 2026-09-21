@@ -2263,9 +2263,15 @@ def normalize_phase23_text_surfaces(
     # newest-first discipline as every link below it.
     # Phase 25's seed-policy record is newest, so it runs FIRST. It adds one
     # document and moves docs/ROADMAP_TAIL.md; no code or route changes.
-    # Patch 25.4 is the newest successor, so it runs FIRST. It carries the
-    # Makefile (the C fixture's object left the runtime object list) and
-    # the phase21 qualification guard (its runtime_package members moved).
+    # Patch 25.4 merges AFTER 25.8a and 25.1, so it is the newest link in
+    # this chain and runs FIRST. The union resolution that brought it here
+    # appended it at the END, which is file order, not merge order -- and
+    # the chain is defined by merge order. Moved, because leaving it last
+    # made 25.8a compare live rows against a state 25.4 had not yet
+    # projected back.
+    # It carries the Makefile (the C fixture's object left the runtime
+    # object list) and the phase21 qualification guard (its
+    # runtime_package members moved).
     crate_surface = registry.get(
         "patch254_runtime_crate", {}).get("text_surface_successor")
     if crate_surface is not None:
@@ -2290,6 +2296,76 @@ def normalize_phase23_text_surfaces(
                 "predecessor state nor the complete successor state "
                 f"({sorted(p for p in cr_paths if cr_live[p] != cr_post[p])} differ from post)")
         rows = [dict(cr_pre.get(r["path"], r)) for r in rows]
+    # Patch 25.1 is the newest successor, so it runs FIRST. It only ADDS a
+    # surface -- the expected-failure list -- so the added-row requirement
+    # from PR #444's review carries the whole contract.
+    # Patch 25.8a merged AFTER 25.1, so it is newer and runs FIRST. The
+    # two blocks were written on parallel branches and each inserted
+    # itself where it landed, which left file order disagreeing with
+    # merge order -- and the chain is defined by merge order.
+    seedwire_surface = registry.get(
+        "phase258_release_mechanics", {}).get("text_surface_successor")
+    if seedwire_surface is not None:
+        require(seedwire_surface.get("contract_version") ==
+                "phase258_release_mechanics_text_surface_successor_v1" and
+                seedwire_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Patch 25.8a release mechanics text surface successor drifted")
+        sw_paths = list(seedwire_surface["registered_changed_paths"])
+        sw_pre = {r["path"]: r for r
+                  in seedwire_surface["previous_changed_text_surfaces"]}
+        sw_post = {r["path"]: r for r
+                   in seedwire_surface["current_changed_text_surfaces"]}
+        require(sorted(sw_pre) == sorted(sw_paths) == sorted(sw_post),
+                "Patch 25.8a registered paths and rows disagree")
+        sw_live = {r["path"]: r for r in rows if r["path"] in sw_paths}
+        require(sorted(sw_live) == sorted(sw_paths),
+                "Patch 25.8a registered text surface is missing from the scan")
+        require(sw_live in (sw_pre, sw_post),
+                "Patch 25.8a changed text surfaces are partial or "
+                "substituted: the live rows match neither the complete "
+                "predecessor state nor the complete successor state "
+                f"({sorted(p for p in sw_paths if sw_live[p] != sw_post[p])} differ from post)")
+        rows = [dict(sw_pre.get(r["path"], r)) for r in rows]
+        rows.sort(key=lambda r: str(r["path"]))
+        by_path = {r["path"]: r for r in rows}
+
+    falsifier_surface = registry.get(
+        "patch251_no_c_falsifier", {}).get("text_surface_successor")
+    if falsifier_surface is not None:
+        require(falsifier_surface.get("contract_version") ==
+                "patch251_no_c_falsifier_text_surface_successor_v1" and
+                falsifier_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Patch 25.1 falsifier text surface successor drifted")
+        fs_paths = list(falsifier_surface["registered_changed_paths"])
+        fs_pre = {r["path"]: r for r
+                  in falsifier_surface["previous_changed_text_surfaces"]}
+        fs_post = {r["path"]: r for r
+                   in falsifier_surface["current_changed_text_surfaces"]}
+        require(sorted(fs_pre) == sorted(fs_paths) == sorted(fs_post),
+                "Patch 25.1 registered paths and rows disagree")
+        fs_chg = {r["path"]: r for r in rows if r["path"] in fs_paths}
+        require(sorted(fs_chg) == sorted(fs_paths),
+                "Patch 25.1 registered text surface is missing from scan")
+        require(fs_chg in (fs_pre, fs_post),
+                "Patch 25.1 changed text surfaces are partial or "
+                f"substituted ({sorted(p for p in fs_paths if fs_chg[p] != fs_post[p])} differ from post)")
+        rows = [dict(fs_pre.get(r["path"], r)) for r in rows]
+        fs_added = set(falsifier_surface["added_text_surfaces"])
+        fs_rows = {r["path"]: r for r
+                   in falsifier_surface["added_text_surface_rows"]}
+        require(sorted(fs_rows) == sorted(fs_added),
+                "Patch 25.1 added paths and rows disagree")
+        fs_live = {r["path"]: r for r in rows if r["path"] in fs_added}
+        require(sorted(fs_live) == sorted(fs_added),
+                "Patch 25.1 added text surface is missing from the scan: "
+                f"{sorted(fs_added - set(fs_live))}")
+        for path in sorted(fs_added):
+            require(fs_live[path] == fs_rows[path],
+                    "Patch 25.1 added text surface does not match its "
+                    f"registered row: {path}")
+        rows = [r for r in rows if r["path"] not in fs_added]
         rows.sort(key=lambda r: str(r["path"]))
         by_path = {r["path"]: r for r in rows}
 
@@ -2297,6 +2373,10 @@ def normalize_phase23_text_surfaces(
     # the provenance guard (justfile enabled), the retirement inventory
     # (three recipes owned by phase25) and cranelift_registry.py, which
     # moves because adding a top-level key edits TOP_FIELDS.
+    # Patch 25.8a is the newest successor, so it runs FIRST. One path: the
+    # Makefile, because wiring GUST_BOOTSTRAP_SEED into gust_bootstrap is
+    # what turns the offline path from a documented claim into a route the
+    # build actually takes.
     ownership_surface = registry.get(
         "issue451_inventory_ownership", {}).get("text_surface_successor")
     if ownership_surface is not None:

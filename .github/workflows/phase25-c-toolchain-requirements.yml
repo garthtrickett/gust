@@ -1,0 +1,43 @@
+name: Cranelift Phase 25 C Toolchain Requirements
+
+# Patch 25.0's enumeration needs an execution route in the same patch that
+# creates it. #437 adjudicated 28 guards that had none, and #445 found a
+# harness that had rotted unseen for exactly that reason.
+
+on:
+  pull_request:
+    paths:
+      - 'Makefile'
+      - 'justfile'
+      - '.github/workflows/**'
+      - 'scripts/phase25_c_toolchain_requirements.py'
+      - 'docs/PHASE25_ROADMAP.md'
+  push:
+    branches: [main]
+    paths:
+      - 'Makefile'
+      - 'justfile'
+      - '.github/workflows/**'
+      - 'scripts/phase25_c_toolchain_requirements.py'
+      - 'docs/PHASE25_ROADMAP.md'
+
+# Branch-keyed concurrency: superseded PR runs are cancelled so they stop
+# consuming runner capacity, and main is never cancelled.
+concurrency:
+  group: phase25-c-toolchain-requirements-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  requirements:
+    name: Phase 25 C toolchain requirements
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: guard-cranelift-phase25-c-toolchain-requirements
+        run: python3 scripts/phase25_c_toolchain_requirements.py validate
+      - name: report
+        run: python3 scripts/phase25_c_toolchain_requirements.py report

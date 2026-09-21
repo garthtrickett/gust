@@ -1,4 +1,4 @@
-# Phase 25 — Bootstrap and Residual C Retirement · **DRAFT, NOT ACTIVATED**
+# Phase 25 — Bootstrap and Residual C Retirement · **ACTIVATED 2026-09-20**
 
 **Lane:** Cranelift. Branches follow `codex/phase25-<patch>-<slug>`.
 
@@ -8,9 +8,16 @@ This is the patch breakdown Phase 25 did not have. `docs/PHASE25_BOOTSTRAP_SEED_
 decides *what* and *in what order*; it is a decision record, not a task list.
 This file is the task list.
 
-**It is a draft and Phase 25 is not activated.** `TASK.md` states that "later
-phases still need their own activation", and Phase 24's activation explicitly
-does not authorize Phase 25 bootstrap-route work. Activation is the operator's.
+**Phase 25 was activated by the operator on 2026-09-20**, which is what
+`TASK.md`'s "later phases still need their own activation" requires and what
+Phase 24's activation explicitly withheld.
+
+**`TASK.md` has not yet been updated and still names Phase 24 as the active
+Cranelift roadmap.** That contradiction is real and is Patch 25.12's work:
+127 scripts read `TASK.md` and several assert an immutable Phase N record,
+so moving the active-roadmap pointer needs its own patch and a full sweep.
+Until then this file is the Phase 25 task list and `TASK.md` is the Phase 24
+record; a reader who needs the active roadmap should read both.
 
 **Its lane ownership is unresolved, and that is flagged rather than
 assumed.** `AGENTS.md:10-14` gives Docs/vision the `docs/` set while stating it
@@ -160,10 +167,34 @@ on it.
   no debug info today, so that clause is currently vacuous; state it so, and
   it applies automatically when debug info appears (P11).
 
-**Exit Gate:** two independent builds from different directories produce
-byte-identical objects for the named artifact set; the remap prefix is a
-constant; and if determinism holds only after excluding sections, those
-sections are named and the fixed point is recorded as the narrower one.
+**Exit Gate:** the artifact set, the remap prefix and the section policy are
+fixed in code; the remap prefix is a pinned constant; and **both vacuity
+claims carry falsifiers that fire when they stop being vacuous** — the
+debug-info one when the driver emits debug info, the remap one when a remap
+appears.
+
+**The two-build comparison moved to Patch 25.7.** It was written here first
+and cannot be performed here, measured 2026-09-20:
+
+- **No remap mechanism exists.** `REMAP_PREFIX` is pinned but nothing in
+  `compiler/experiments/cranelift/src/` applies it, so comparing two builds
+  would compare two unremapped builds.
+- **The native route emits a linked executable, not objects.** `--backend
+  cranelift -o X src.gst` produces an ELF PIE with a BuildID, `crtstuff.c`
+  and `__libc_start_main` in it. O7 excludes linked executables precisely
+  because comparing them proves the linker deterministic. The per-source
+  objects the artifact set names exist only transiently inside that link.
+- **The paths are not there yet anyway.** That artifact contains zero
+  occurrences of the checkout path, so the nondeterminism the remap exists to
+  remove is not observable today — the remap clause is vacuous for the same
+  reason the debug-info clause is. (Narrow measurement: one small source, one
+  architecture, a native backend borrowed from another worktree. Enough to
+  show paths are absent here, not enough to claim it for all 898 sources.)
+
+Patch 25.7's exit gate already reads "the native fixed point holds across two
+independent builds" over "the artifact set fixed in 25.2", so the obligation
+is not dropped — it is stated once, in the patch that builds the stage chain
+the comparison needs.
 
 ## Patch 25.3 — The Freestanding Gust Subset
 
@@ -374,6 +405,33 @@ removed assertion inverted; `make gust` and the native fixed point pass.
 **Exit Gate:** the no-C job is green; `$CC` still works; the probe-then-error
 path is tested; the D8 job's expected-failure list is empty.
 
+## Patch 25.12a — Closure Readiness Reporter
+
+**Purpose:** measure distance to closure, so 25.12 has something to assert
+against instead of an argument that the conditions hold.
+
+Split out of 25.12 after review: 25.12's Exit Gate requires the falsifier
+promoted, the closure sentence written AND `TASK.md` moved with all 127
+reader scripts swept. A patch that lands only the reporter would publish
+under an identity whose gate it does not meet, which is the split this
+project's one-patch-one-publication rule exists to prevent.
+
+**Steps:**
+
+- Report each closure condition and what owes it: runtime `.c` files (25.5,
+  25.6), `gust_v4.c` (25.9), emitter residue (25.10), the expected-failure
+  list (25.1, 25.11), and the active-roadmap declaration (25.12).
+- Every condition is derived, not asserted: a recursive scan for runtime C, a
+  `git ls-files` sweep for emitter residue, the parsed `# Phase N` headings
+  for the active roadmap, and the tracked falsifier list's own schema.
+- **An absent input is never a satisfied condition.** A missing
+  expected-failure list reads as an outstanding condition, not an exhausted
+  one; an uninspectable file is not a clean file.
+
+**Exit Gate:** the reporter names every outstanding condition with its owning
+patch; each condition's check is shown to both fire and clear; and the
+closure sentence is printed only when none remain.
+
 ## Patch 25.12 — Phase 25 Closure
 
 **Purpose:** promote the falsifier and write the terminal record.
@@ -390,6 +448,150 @@ path is tested; the D8 job's expected-failure list is empty.
 **Exit Gate:** the no-C job is required and green; the closure sentence names
 its exceptions; `TASK.md` carries the Phase 25 record and every prior
 immutable record still validates.
+
+---
+
+# Patch 25.0 — C Toolchain Requirement Enumeration · **IN PROGRESS**
+
+Phase 25 activated by the operator on 2026-09-20. This is the phase's first
+patch and the pre-work the sequence names: enumerate what actually requires
+a C toolchain, **from the tree rather than from the registers**, because
+Phase 24 closed on "28 registered live-C cases" and `#398`, `#422`, `#424`
+and `#451` each found something the registers missed.
+
+## The enumeration
+
+Derived by category with a separate measurement each, rather than one
+pattern. A single regex over the tree matched `as` and `cc` as substrings
+inside `.gst` sources — over-approximating and then tuning until the number
+looks right is how a heuristic gets mistaken for a measurement.
+
+| category | measurement | count |
+| --- | --- | --- |
+| `cc` invocation sites | `phase24_c_toolchain_provenance report`, justfile now enabled (#436) | **102 invocations, 0 unresolved** |
+| Makefile C compilation | `$(CC)` recipe lines | **11** |
+| `tree-sitter` grammar tests | `tree-sitter test` / `parse` sites in Makefile and justfile | **2** |
+| Rust linker driver | rustc defaults to `cc` on `*-linux-gnu` (D9) | every cargo link |
+
+The 102 sites classify as: `script-authored-c` 69, `native-object` 57,
+`frozen-oracle-c` 12, `layout-oracle-c` 10, `retained-runtime-c` 7,
+`bootstrap-chain-c` 4, `rust-archive` 1, `toolchain-query` 1. Zero
+unresolved, every site owned.
+
+## `tree-sitter-gust` — **RESOLVED: out of scope, excepted by name**
+
+The roadmap left this open because it is ~12,900 lines, about 16% of the
+tree's C, and the `tree-sitter` CLI compiles `src/parser.c`. Measured, it is
+not reachable from anything the exit gate covers:
+
+- **`make test` does not depend on it.** `Makefile:262` reads
+  `test: gust require_just`; `test_tree_sitter` is a separate `.PHONY`
+  target that nothing else names as a prerequisite.
+- **No workflow invokes it.** Zero matches for `tree-sitter` across
+  `.github/workflows/`.
+- **Reachable only by explicit opt-in** — `make test_tree_sitter`, or
+  `justfile:22605 test-tree-sitter-fast-c`, which passes `CC=cc` itself.
+
+Against D10's operational test — absent from the machine, does a
+hello-world and the full suite still build and run? — the answer is yes.
+The grammar is editor tooling; the compiler has its own lexer and parser in
+`compiler/*.gst`.
+
+So it is **excepted by name**, and the closure sentence must say so rather
+than imply the repository contains no C. Silence here would read as
+oversight at the gate, which is the failure this patch exists to prevent.
+
+## Owed measurements
+
+**Cranelift object determinism — MEASURED, holds.** D4's prerequisite.
+`compiler-mir-ingestion-object` over the same MIR fixture:
+
+```
+3 runs, same input     -> b3022feb0a142668e0200aa9   (632 bytes each)
+same input, other path -> b3022feb0a142668e0200aa9
+```
+
+Byte-identical and path-independent, so D4's fixed point over emitted
+objects is well-founded and 25.2 does not grow a repair. Scope stated
+honestly: one fixture, one architecture, one machine. It rules out the
+cheap failure mode — embedded timestamps, addresses or input paths — not
+the whole claim; O7's artifact set is the compiler's own objects, which is
+a much larger surface.
+
+Two false starts are recorded because both would have produced a *fabricated*
+non-determinism result: a wrong-format fixture and a deliberately-invalid
+rejection fixture, each exiting 2 with no output, on which a naive `cmp`
+reports "differ". Check the artifact exists before comparing it.
+
+**D9's poison test past `std`** and **the fiber benchmark on musl** remain
+unmeasured and are still Patch 25.0 work.
+
+**D9's poison test past `std` — MEASURED, and it found a blocker.** Linking
+the *real* runtime archive with every C compiler poisoned does **not** work,
+for a reason nobody had measured:
+
+```
+rustc --target x86_64-unknown-linux-musl -C linker=rust-lld \
+      -C linker-flavor=ld.lld -C link-arg=build/gust-runtime-package.a
+  rust-lld: error: undefined symbol: __fprintf_chk
+  rust-lld: error: undefined symbol: __printf_chk
+  rust-lld: error: undefined symbol: __isoc23_strtol
+```
+
+`build/gust-runtime-package.a` is compiled against **glibc** and carries
+**9 glibc-specific undefined symbols** — `__printf_chk`, `__fprintf_chk`,
+`__memcpy_chk`, `__isoc23_strtol`, `__stack_chk` among them. These are
+glibc's FORTIFY and ISO-C23 shims; musl provides none of them.
+
+Also recorded: `-lpthread` does not exist on musl, where pthread lives in
+libc. The earlier `std`-only measurement never touched either fact.
+
+**What this means for D9 and D9a.** The C-free musl link cannot be proved
+while the runtime is C, because the runtime archive would itself have to be
+rebuilt for musl — which needs a C compiler. The gate is unreachable until
+the runtime stops being C.
+
+That is not a contradiction in the plan; it is the plan's ordering being
+right for a reason that had not been measured. D1 already sequences the
+**runtime before the seed and before the linker driver**, on the argument
+that every binary links the runtime. This is a second, independent reason
+for the same order, and a sharper one: **Patch 25.11 cannot pass its own
+exit gate until Patches 25.5 and 25.6 land.**
+
+D9 stands as written — `cc` stops being required — but its proof moves from
+Patch 25.0 to after the runtime port. The roadmap's step 12 already sits
+there; what changes is that this is now a hard dependency rather than a
+tidy ordering.
+
+**Fiber benchmark on musl — BLOCKED by the same root cause, not run.**
+Benchmarking fibers under musl means building the C runtime for musl, and
+the finding above says the runtime is glibc-bound. No musl C toolchain is
+installed either (`musl-gcc` absent, zero musl packages), so the benchmark
+cannot be run today even by installing one without first making the runtime
+musl-clean.
+
+Recorded as blocked rather than skipped: D9a treats it as owed before the
+D8 job is called performance-representative, and that obligation survives.
+It moves behind the runtime port with D9's proof, for the same reason and
+by the same dependency.
+
+## What Patch 25.0 changes about the plan
+
+Nothing in D1-D10 is contradicted. One dependency hardens:
+
+> **Patch 25.11 (`cc` optional) cannot pass its own exit gate until
+> Patches 25.5 and 25.6 land.** The runtime must stop being C before a
+> C-free link is provable, because the runtime archive is glibc-bound.
+
+And one scope question closes: **`tree-sitter-gust` is excepted by name**,
+so the phase's closure sentence claims a C-free *build and test of Gust*,
+not a C-free repository.
+
+Two of three owed measurements are resolved — determinism holds, the poison
+test found the blocker above. The third is blocked behind the same
+dependency and stays owed.
+
+---
 
 # Patch 25.6 — findings before completing the port
 
