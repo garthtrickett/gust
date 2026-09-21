@@ -351,6 +351,23 @@ it compiles the compiler again.
 `stage_n == stage_n+1` over the native artifact set. That is the exit
 gate's first clause, and it already passes.
 
+**That hash is NOT a pin.** It is the value for the tree it was measured
+on, and it moves whenever the compiler's own sources do — re-running the
+guard after this patch's codegen change gave
+`35de72c589fd1a6ec7d0c9493672799804ec2356188830531191ed00f75519a9`, and
+both stages still agreed. The property is the equality, not the constant.
+Quoting the number without saying so invites someone to register it as a
+frozen digest, which would make every compiler change look like a
+fixed-point failure.
+
+**Verified from a CLEAN CHECKOUT**, not just from a populated build
+directory: a scratch worktree with no `build/` runs
+`make phase10-native-package` itself and still reaches the fixed point.
+That check exists because the Phase 24 provenance guard passed locally and
+failed in CI on exactly this difference — a leftover object let an earlier
+resolver short-circuit — so "the guard passes" means nothing until it
+passes somewhere CI-shaped.
+
 ## The one real blocker, and it is not codegen
 
 Stage 2 fails when the stage-1 binary is run from `/tmp`:
