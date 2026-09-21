@@ -496,7 +496,26 @@ emitter is dead machinery, an emitter no entry can reach is #424 (D5).
 **Exit Gate:** no emitter, no bootstrap-emitter entry, no caller; every
 removed assertion inverted; `make gust` and the native fixed point pass.
 
-## Patch 25.11 — `cc` Optional
+## Patch 25.11a — `cc` Optional: policy and measurement
+
+**Purpose:** land the linker-driver policy and the measurement behind it, so
+the rest of the phase has something to hold `cc` to.
+
+Renumbered after the fact. What merged in #459 is the policy guard and D9's
+measurement; 25.11's Exit Gate also requires the no-C job GREEN and the D8
+expected-failure list EMPTY, and both were untrue at merge — the list had
+four entries and the job is expected-red by design until 25.5, 25.6, 25.9
+and 25.10 land. 25.2, 25.8 and 25.12 were each split for exactly this reason
+before merging; this one was not, and merged claiming a gate it did not meet.
+Recorded rather than quietly rewritten, because a merged patch whose gate was
+never checked is the thing the split exists to prevent.
+
+**Exit Gate:** `$CC` reaches the linker invocation and the check fails when
+it stops; the host-native default and no-silent-fallback claims are derived
+from the worker rather than asserted; and D9's musl + `rust-lld` measurement
+is recorded with its gnu counterexample.
+
+## Patch 25.11 — `cc` Optional: the gate
 
 **Purpose:** make `cc` not required, while keeping it supported.
 
