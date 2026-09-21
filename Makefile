@@ -244,7 +244,16 @@ build/phase21-runtime/strings.o: src/runtime/strings.c src/runtime/core_headers.
 # would test Gust calling Gust and the contract would evaporate (O1).
 # Symbol names are byte-identical, so the 26 dependent files are unchanged.
 
-$(PHASE25_RUNTIME_RS): src/runtime-rs/src/lib.rs src/runtime-rs/Cargo.toml
+# WILDCARD, and it has to be. This listed lib.rs and Cargo.toml, which was
+# true when the crate WAS lib.rs and quietly stopped being true at the
+# first `pub mod`. Patch 25.6 adds fiber.rs and fiber_asm.rs: editing
+# either left the archive considered up to date, Make skipped the recipe,
+# and Cargo's own change detection never ran -- so the build linked
+# YESTERDAY'S scheduler and passed. That is the worst shape a build bug
+# takes, because nothing fails.
+PHASE25_RUNTIME_RS_SRCS = $(wildcard src/runtime-rs/src/*.rs) src/runtime-rs/Cargo.toml
+
+$(PHASE25_RUNTIME_RS): $(PHASE25_RUNTIME_RS_SRCS)
 	$(CARGO) build --release --manifest-path src/runtime-rs/Cargo.toml
 
 # One object joins the runtime archive, not the crate's 310 members.
@@ -293,16 +302,47 @@ PHASE25_RUNTIME_RS_EXPORTS = \
 	std_Mutex_Lock_impl \
 	std_Mutex_Unlock_impl
 
+# The partial link is PLATFORM-SPECIFIC, and this patch is committed to
+# four quadrants: macOS-x86_64, Linux-x86_64, macOS-aarch64, Linux-aarch64.
+# fiber_asm.rs preserves all four; a GNU-only build rule would have kept
+# the assembly portable and made the build that consumes it Linux-only.
+#
+# ELF (GNU ld + objcopy): --gc-sections drops what the roots do not reach,
+# --start-group resolves the archive's internal cycles, and objcopy
+# localises everything outside the export list.
+#
+# Mach-O (ld64): none of those options exist. Dead-stripping is
+# -dead_strip, archives need no group because ld64 iterates to a fixed
+# point, and there is no objcopy -- ld64 does the narrowing itself with
+# -exported_symbol, which localises the rest in the same pass. Mach-O
+# symbols carry a leading underscore, so the export list is prefixed.
+#
+# UNVERIFIED ON THIS HOST. The Linux arm is measured; the Darwin arm is
+# written from ld64's documented options and has not been run, exactly as
+# this patch's three unbuilt assembly quadrants are text-compared rather
+# than byte-compared. Labelled rather than presented as tested: what
+# would settle it is one `make build/phase25-runtime-rs/...` on either
+# macOS quadrant.
+PHASE25_UNAME_S := $(shell uname -s)
+
 $(PHASE25_RUNTIME_RS_OBJ): $(PHASE25_RUNTIME_RS)
 	@rm -rf build/phase25-runtime-rs
 	@mkdir -p build/phase25-runtime-rs
+ifeq ($(PHASE25_UNAME_S),Darwin)
+	ld -r -dead_strip -o $@ \
+		$(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),-u _$(sym)) \
+		$(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),-exported_symbol _$(sym)) \
+		$(PHASE25_RUNTIME_RS)
+else
 	ld -r --gc-sections -o build/phase25-runtime-rs/combined.o \
 		$(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),-u $(sym)) \
 		--start-group $(PHASE25_RUNTIME_RS) --end-group
 	objcopy $(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),--keep-global-symbol=$(sym)) \
 		build/phase25-runtime-rs/combined.o $@
 	@rm -f build/phase25-runtime-rs/combined.o
-	@defined=$$(nm -g --defined-only $@ | awk '$$2 ~ /^[TDBRW]$$/ {print $$3}' | sort); \
+endif
+	@defined=$$(nm -g --defined-only $@ | awk '$$2 ~ /^[TDBRW]$$/ {print $$3}' \
+		| sed 's/^_//' | sort); \
 	expected=$$(printf '%s\n' $(PHASE25_RUNTIME_RS_EXPORTS) | sort); \
 	if [ "$$defined" != "$$expected" ]; then \
 		echo 'src/runtime-rs exports drifted from the registered set' >&2; \
