@@ -8,7 +8,7 @@ from the compiler.
 
 Sources of truth:
   * `std.*` names the typechecker registers        -> the user-facing named surface
-  * `std_*` C symbols in src/runtime/              -> the runtime surface
+  * `std_*` symbols in src/runtime/ and src/runtime-rs/ -> the runtime surface
   * Phase 17 helper rows in the Cranelift registry -> the symbols with an owner
   * collection method names the typechecker dispatches on a receiver
 
@@ -28,6 +28,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 TYPECHECKER = ROOT / "compiler/typechecker.gst"
 RUNTIME_DIR = ROOT / "src/runtime"
+RUNTIME_RS_DIR = ROOT / "src/runtime-rs/src"
 REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 OUTPUT = ROOT / "docs/STDLIB_SURFACE_INVENTORY.md"
 
@@ -42,11 +43,41 @@ def registered_std_names() -> list[str]:
 
 
 def runtime_symbols() -> dict[str, str]:
-    """`std_*` C symbols, mapped to the file that defines them."""
+    """`std_*` runtime symbols, mapped to the file that defines them.
+
+    Patch 25.5/25.6: the runtime is no longer only C. Six of its files are
+    Rust in src/runtime-rs, and the symbols did not move -- they are the
+    same C-ABI names. Scanning only src/runtime/*.c after the port reports
+    17 symbols instead of 20 and calls the missing three "runtime symbols
+    with no Phase 17 row", which is the scanner describing its own blind
+    spot as a finding about the tree.
+
+    The Rust probe is the same shape as the C one and deliberately so: a
+    `#[no_mangle] pub extern "C" fn std_X(` is a definition in exactly the
+    sense the C probe means.
+    """
     found: dict[str, str] = {}
     for c in sorted(RUNTIME_DIR.glob("*.c")):
-        for name in re.findall(r"\bstd_[A-Za-z0-9_]+(?=\s*\()", read(c)):
+        # DEFINITIONS, not mentions. The old probe matched `std_X` followed
+        # by `(`, which is also what a forward declaration looks like. That
+        # was harmless while every .c here was hand-written; src/runtime/
+        # strings.c is GENERATED now and the emitter declares `std_Yield`
+        # twice without defining it, so the loose probe reported a symbol
+        # this runtime does not provide.
+        text = read(c)
+        for name in re.findall(
+                r"\b(std_[A-Za-z0-9_]+)\s*\([^;{]*\)\s*\{", text):
+            if name.endswith("_pthread_wrapper"):
+                # Emitter scaffolding: one thread-entry shim per function
+                # that can be spawned. Not a runtime surface -- it exists
+                # because codegen needs a void*(void*) to hand pthread.
+                continue
             found.setdefault(name, f"src/runtime/{c.name}")
+    for rs in sorted(RUNTIME_RS_DIR.glob("*.rs")):
+        for name in re.findall(
+                r'#\[no_mangle\]\s*(?:pub\s+)?(?:unsafe\s+)?extern\s+"C"\s+fn\s+'
+                r"(std_[A-Za-z0-9_]+)\s*\(", read(rs)):
+            found.setdefault(name, f"src/runtime-rs/src/{rs.name}")
     return dict(sorted(found.items()))
 
 
@@ -107,7 +138,7 @@ def render() -> str:
     add("| | |")
     add("| --- | --- |")
     add(f"| `std.*` names the typechecker registers | {len(names)} |")
-    add(f"| `std_*` C symbols in `src/runtime/` | {len(symbols)} |")
+    add(f"| `std_*` runtime symbols in `src/runtime/` and `src/runtime-rs/` | {len(symbols)} |")
     add(f"| Phase 17 helper rows | {len(rows)} |")
     add(f"| **runtime symbols with no Phase 17 row** | **{len(unowned)}** |")
     add(f"| helper rows with no runtime symbol | {len(orphan_rows)} |")

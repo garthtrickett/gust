@@ -621,7 +621,58 @@ def _backend_removal_successor(registry: dict, previous: dict) -> dict:
         require(previous["selection_counts"].get(name, 0) ==
                 current["selection_counts"].get(name, 0),
                 f"Patch 24.13 moved a selection it does not claim: {name}")
-    return _issue398_successor(registry, current, "relay")
+    return _patch255_successor(
+        registry, _issue398_successor(registry, current, "relay"), "relay")
+
+
+def _patch255_successor(registry: dict, previous: dict, census: str) -> dict:
+    """Advance the census by Patch 25.5's ADDED invocations.
+
+    Every link before this one reduces: the chain was built by patches
+    retiring a spelling. Porting the runtime goes the other way. The
+    strings differential has to emit the Gust side to compare it against
+    the frozen C reference, and the generator that produces strings.c
+    from strings.gst invokes the emitter too -- two real backend
+    invocations the census is entitled to know about.
+
+    Stated as an identity on the delta rather than as growth, for the
+    same reason the seed transitions are: a census that can only be
+    asserted to shrink cannot describe a phase that adds anything, and
+    "it went up, so skip the check" is how a census stops being one.
+    """
+    successor = registry.get("phase25_runtime_port_invocations", {}).get(
+        "phase22_relay_invocation_successor")
+    if successor is None:
+        return previous
+    key = {"relay": "relay_inventory", "unfiltered": "summary"}[census]
+    current = successor.get(f"current_{key}")
+    require(successor.get("contract_version") ==
+            "patch255_runtime_port_invocation_addition_v1" and
+            successor.get(f"previous_{key}") == previous and
+            isinstance(current, dict) and
+            successor.get("escaping_the_census_by_relocation") == "rejected",
+            f"Patch 25.5 {census} invocation successor drifted")
+    require(current["unclassified_count"] == previous["unclassified_count"]
+            == 0,
+            f"Patch 25.5 must leave the {census} census fully classified")
+    added = successor.get("added_invocation_count")
+    require(isinstance(added, int) and added > 0 and
+            current["total"] - previous["total"] == added,
+            f"the Patch 25.5 {census} census total must rise by exactly the "
+            f"added invocations: {previous['total']} -> {current['total']} "
+            f"against {added}")
+    # Only the selection the addition claims may move, and only by as many
+    # as claim it. An addition that quietly re-points an existing
+    # invocation would otherwise balance on the total alone.
+    for name in set(previous["selection_counts"]) | set(
+            current["selection_counts"]):
+        delta = (current["selection_counts"].get(name, 0) -
+                 previous["selection_counts"].get(name, 0))
+        expected = added if name == "explicit_bootstrap_emitter" else 0
+        require(delta == expected,
+                f"Patch 25.5 moved a selection it does not claim in the "
+                f"{census} census: {name} by {delta}, expected {expected}")
+    return current
 
 
 def _issue398_successor(registry: dict, previous: dict, census: str) -> dict:
