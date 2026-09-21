@@ -155,7 +155,14 @@ jobs:
   level1:
     name: Level 1 contracts
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # Measured 2026-09-20 across six runs: this job does 41-43 minutes of
+    # work. At 45 it has a 4% margin and has now been killed mid-step at
+    # 45m14s twice, on "Phase 23 closure", with nothing wrong. It is the
+    # largest job here and was the only one under 60 -- build, guard,
+    # phase20-nested-brand-annotation and final all already use 60.
+    # Raising a timeout weakens no check: the same guards run and must
+    # still pass. It only stops the job dying with work left to do.
+    timeout-minutes: 60
     needs: build
 
     steps:
