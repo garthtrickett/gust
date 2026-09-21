@@ -898,7 +898,6 @@ deleted. Flagged for an owner rather than fixed in a patch about `fiber.c`:
 deciding whether the native backend should inject a tick is a scheduler
 question, not a porting one.
 
-<<<<<<< HEAD
 ## Constructing a `str` in Gust: solved, and it needed no new surface
 
 The four `strings.c` functions left after the pure ones all need the same
@@ -1251,7 +1250,9 @@ Recommending 1. It keeps the language honest — `ctx[T]` is a typed
 allocator and raw byte allocation is a different operation — and it costs
 nothing the phase is trying to buy, since the runtime crate is where the
 non-Gust remainder was always going to live.
-=======
+
+---
+
 ---
 
 # Patch 25.6 — two guards that were already red on main
@@ -1331,5 +1332,3 @@ Recording this rather than repairing it is deliberate. Making a red guard
 green by changing what it measures is how a suite stops being evidence, and
 Patch 25.11 has already had to be renumbered once in this phase for claiming
 an Exit Gate that was not met.
-
->>>>>>> codex/phase25-6-fiber-global-asm
