@@ -559,7 +559,25 @@ def check() -> None:
                 production_transition["previous_audit"].get(field),
                 f"closure changed production audit field: {field}")
     if derivation_production_transition is not None:
+        # Patch 25.5/25.6: this is the fourth independent reader of the
+        # production-audit chain, after the audit guard itself, the CR-15
+        # closure and the preflight closure. Each keeps its own idea of
+        # what "current" means, and this one took the RAW live scan --
+        # correct while #398 was the tail, wrong the moment a later patch
+        # registered a transition in front of it.
+        #
+        # Projected back through the registered transitions rather than
+        # re-pinned here, so the closure keeps asserting #398's own
+        # landed identity rather than whatever the tree looks like today.
         current_audit = production_module.scan()
+        for later in ("phase25_runtime_port_invocations",):
+            node = registry.get(later, {}).get("production_audit_transition")
+            if node is None:
+                continue
+            require(node.get("current_audit") == current_audit,
+                    f"{later} production audit transition does not describe "
+                    "the live tree; the closure cannot project through it")
+            current_audit = node["previous_audit"]
         retirement_production = registry.get(
             "phase24_frozen_oracle_replacement", {}).get(
                 "production_audit_transition")
