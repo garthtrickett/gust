@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::error::Error;
 use std::fs;
 use std::io::{Error as IoError, ErrorKind};
@@ -1181,7 +1181,16 @@ impl<'a> FullProgramCompiler<'a> {
 
     fn declare_runtime_calls(&mut self) -> Result<(), Box<dyn Error>> {
         let internal: HashSet<_> = self.functions.keys().map(String::as_str).collect();
-        let mut specs: HashMap<String, (Vec<String>, String)> = HashMap::new();
+        // Patch 25.7: BTreeMap, not HashMap. This map is ITERATED below to
+        // declare the runtime imports, and cranelift-object's
+        // declare_function calls object.add_symbol immediately, so iteration
+        // order IS symbol-table order. With a HashMap that is Rust's
+        // randomized hash order, so every compilation emitted the same 48
+        // undefined symbols in a different sequence and no two objects were
+        // byte-identical -- including a compiler with itself. The linker
+        // normalised it away, which is why comparing linked binaries never
+        // saw it and OD-15's strict binary identity looked satisfied.
+        let mut specs: BTreeMap<String, (Vec<String>, String)> = BTreeMap::new();
         for node in &self.program.nodes {
             if node.kind != "Call"
                 || is_inline_call(self.program, node)
