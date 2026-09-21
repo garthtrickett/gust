@@ -201,8 +201,12 @@ func run_test(t: Test[ctx]) int {
         final_c_content = std.Concat(final_c_content, clean_c_content);
         os.WriteFile(final_c, final_c_content);
 
-        // Patch 25.5: the runtime archive joins this link. src/runtime.c
-        // used to carry the whole C runtime, so a program plus that file
+        // Patch 25.6 first: fiber.c is gone and codegen emits a
+        // gust_yield() call in every loop of every compiled program, so
+        // EVERY test links this object -- not just the ones that spawn a
+        // fiber. Then Patch 25.5: five more runtime files join it.
+        // src/runtime.c used to carry the whole C runtime, so a program
+        // plus that file
         // was a complete unit; five of those files are Rust now and their
         // symbols only arrive through the archive. Without it every test
         // binary fails on undefined os_Arena_New, os_Args and os_LogStr --

@@ -989,6 +989,7 @@ deleted. Flagged for an owner rather than fixed in a patch about `fiber.c`:
 deciding whether the native backend should inject a tick is a scheduler
 question, not a porting one.
 
+<<<<<<< HEAD
 ## Constructing a `str` in Gust: solved, and it needed no new surface
 
 The four `strings.c` functions left after the pure ones all need the same
@@ -1341,3 +1342,85 @@ Recommending 1. It keeps the language honest — `ctx[T]` is a typed
 allocator and raw byte allocation is a different operation — and it costs
 nothing the phase is trying to buy, since the runtime crate is where the
 non-Gust remainder was always going to live.
+=======
+---
+
+# Patch 25.6 — two guards that were already red on main
+
+## What happened
+
+Patch 25.6 edits `compiler/codegen.gst`. Two stdlib-lane workflows are
+path-filtered on that file, so this patch is the first thing in weeks to fire
+them, and both failed:
+
+    guard-stdlib-s1-str-surface
+    guard-stdlib-s1-collection-receivers
+
+## They fail identically on main, measured
+
+Run on a worktree at `main@8acfc3f3`, the same script, the same fixtures:
+
+    tests/test_str_surface_regression.gst        line 25, exit 1
+    tests/test_hashmap_reference_receiver.gst    line 24, exit 1
+
+Both print, byte for byte, the diagnostic they print on this branch:
+
+    decision=deferred capability=phase13_generic_source_to_mir
+    reason_code=deferred_p13_parameter_argument_target_dependent_abi
+    Cranelift backend selection is valid, but the source-level route is
+    not connected yet.
+
+So this patch did not break them. It made CI look.
+
+## Why nobody knew
+
+`str-surface` last succeeded on main on **2026-08-20**.
+`collection-receivers` last succeeded on main on **2026-09-10**.
+
+Every run since has been cancelled by a subsequent push, and neither
+workflow fires unless `compiler/codegen.gst` or `compiler/typechecker.gst`
+changes. Main has absorbed the Phase 24 closure and Patches 25.0 through
+25.4 in that window with these two guards never executing.
+
+## The mechanism
+
+`scripts/run-gust-file.sh` is cranelift-only. Its own comments say the
+MIR-to-C arm is gone -- "there is no longer a compiler invocation to reach".
+Both fixtures take a `&Arena` parameter and return `str`, which the native
+route defers as a Phase 13 target-dependent-ABI capability. They used to
+reach a fallback; Phase 24's backend removal took it away and left two
+guards that cannot compile their own fixtures.
+
+That is a Phase 24 residue of the kind `#398` and `#424` name: a consumer
+left pointing at a route that no longer exists.
+
+## What this patch does NOT do, and why
+
+It does not repair them. Three options were weighed:
+
+**Restore a fallback in `run-gust-file.sh`.** Around thirty scripts and four
+justfile recipes call it. A fallback that fires on a deferred capability
+would silence a genuine native-route regression in any of them, and the
+instrument is shared across lanes. Measured first: the five guards that
+assert the deferral diagnostic read it from their own compile logs, not from
+this script, so they would NOT break -- but that only makes the change
+possible, not safe.
+
+**Point the two recipes at the bootstrap emitter,** the route the test runner
+already uses for all 311 tests. This restores what they measure, because
+neither guard is about the native route: one pins the observable values of
+`str`, the other pins HashMap lowering through a reference. But it changes
+which route a stdlib-lane guard exercises, and that is the stdlib lane's
+judgement, not this patch's.
+
+**Leave them red and say so.** Chosen. Neither check is in the required set
+-- the `Protect main` ruleset requires exactly one, `Codex / Trusted actor` --
+so they do not gate a merge. What they do is tell the truth about a part of
+the tree that has been broken for between eleven days and a month.
+
+Recording this rather than repairing it is deliberate. Making a red guard
+green by changing what it measures is how a suite stops being evidence, and
+Patch 25.11 has already had to be renumbered once in this phase for claiming
+an Exit Gate that was not met.
+
+>>>>>>> codex/phase25-6-fiber-global-asm
