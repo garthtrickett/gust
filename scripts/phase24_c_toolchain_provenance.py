@@ -58,6 +58,20 @@ NATIVE_OBJECT = "native-object"          # Cranelift output; cc links it
 RETAINED_RUNTIME_C = "retained-runtime-c"  # hand-written, Phase 17.7
 SCRIPT_AUTHORED_C = "script-authored-c"  # heredoc probe, not a backend product
 RUST_ARCHIVE = "rust-archive"            # Phase 17.6 staticlib
+
+# Patch 25.6's narrowing: `ld -r` partially links the Rust staticlib and
+# `objcopy --keep-global-symbol` strips it to the declared export set, so the
+# product is an OBJECT derived from an archive.
+#
+# It is not a rust-archive. The archive is a separate census input that is
+# linked whole; this object is the narrowed subset of it, and the difference
+# is the entire reason 25.6 exists. Folding them together makes the two
+# indistinguishable at exactly the point the phase needs them distinguished.
+#
+# It is not a native-object either: no Cranelift runs here. Scoring it as one
+# would credit the native backend with something the system linker produced,
+# and which producer is which is what this guard is for.
+RUST_NARROWED_OBJECT = "rust-narrowed-object"
 TOOLCHAIN_QUERY = "toolchain-query"      # --version / -dumpmachine, no input
 
 # C replayed from the frozen oracle (#398). Retained, and a class of its own
@@ -78,7 +92,7 @@ FROZEN_ORACLE_C = "frozen-oracle-c"
 
 RETAINED = frozenset(
     {NATIVE_OBJECT, RETAINED_RUNTIME_C, SCRIPT_AUTHORED_C, RUST_ARCHIVE,
-     TOOLCHAIN_QUERY, FROZEN_ORACLE_C}
+     TOOLCHAIN_QUERY, FROZEN_ORACLE_C, RUST_NARROWED_OBJECT}
 )
 
 # Ownership for surviving backend-product invocations. 24.14 removes the
@@ -273,6 +287,12 @@ NATIVE_EMIT = re.compile(
     r'cargo\s+run[^\n]*experiments/cranelift'
 )
 ARCHIVE_PRODUCER = re.compile(r'cargo\s+build|--manifest-path|staticlib')
+# `ld -r` is a partial link, not a program link, and `objcopy
+# --keep-global-symbol` is the narrowing half of the same step. Both spellings
+# appear because the Makefile branches on the host: Mach-O does it in one `ld`
+# with -exported_symbol, ELF needs the two commands.
+NARROWED_OBJECT_PRODUCER = re.compile(
+    r'\bld\s+-r\b|\bobjcopy\s+[^\n]*--keep-global-symbol')
 AUTHORED_WRITE = re.compile(r'<<[-~]?\s*[\'"]?[A-Za-z_]+|printf\s|echo\s|cat\s+>')
 # A file taken from `<prefix>.compile.stdout` came out of the frozen oracle:
 # that suffix is written by `phase24_frozen_oracle.py materialize` and by
@@ -351,6 +371,8 @@ def classify_producer(line: str, source: str = "") -> str:
         return BACKEND_PRODUCT
     if NATIVE_EMIT.search(line):
         return NATIVE_OBJECT
+    if NARROWED_OBJECT_PRODUCER.search(line):
+        return RUST_NARROWED_OBJECT
     if ARCHIVE_PRODUCER.search(line):
         return RUST_ARCHIVE
     if AUTHORED_WRITE.search(line):
@@ -814,6 +836,8 @@ def resolve_input(token: str, lines: list, lineno: int) -> dict:
 
 MAKE_ASSIGN = re.compile(r'^([A-Za-z_][A-Za-z0-9_]*)\s*[:?]?=\s*(.+)$')
 MAKE_VAR_REF = re.compile(r'\$[({]([A-Za-z_][A-Za-z0-9_]*)[)}]')
+MAKE_CONDITIONAL = re.compile(
+    r'^\s*(?:ifeq|ifneq|ifdef|ifndef|else|endif)\b')
 MAKE_INVOKE = re.compile(r'^\s*make\s+"?\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?"?\s*$')
 
 
@@ -897,11 +921,31 @@ def resolve_through_make(name: str, lines: list, lineno: int) -> dict:
             continue
         for recipe in mk[idx + 1:idx + 40]:
             if recipe and not recipe.startswith("\t"):
+                # A conditional directive is legal INSIDE a rule body and is
+                # not tab-prefixed, so "first line without a tab" is not the
+                # end of the recipe. Patch 25.6 branches the narrowing on
+                # $(PHASE25_UNAME_S), which put an `ifeq` two lines into the
+                # recipe -- the scan stopped there, saw only `@rm`/`@mkdir`,
+                # and reported a file the Makefile plainly builds as having
+                # no producer. Skip the directives; still stop at anything
+                # else, which is the next target or assignment.
+                if MAKE_CONDITIONAL.match(recipe):
+                    continue
                 break
             klass = classify_producer(recipe)
             if klass:
                 return {"klass": klass,
                         "why": f"Makefile builds {stem} with a {klass} producer"}
+            # Everything after the line that writes $@ is verification, not
+            # production, and classifying on it is how an unclassified
+            # producer passes for the wrong reason. Measured: with the
+            # narrowed-object class removed, the scan ran on past the `ld`
+            # and `objcopy` to the export-drift check's `printf` sixteen
+            # lines below, matched AUTHORED_WRITE, and called six linker
+            # outputs `script-authored-c` -- retained, so the guard stayed
+            # green. Stopping here makes that removal fail instead.
+            if "$@" in recipe:
+                break
     return {}
 
 
