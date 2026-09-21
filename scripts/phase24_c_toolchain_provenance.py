@@ -690,7 +690,8 @@ def resolve_input(token: str, lines: list, lineno: int) -> dict:
         record["klass"] = RUST_ARCHIVE
         record["why"] = f"{literal} is built from a crate in this tree"
         return record
-    if "$" not in bare and (ROOT / literal).exists():
+    if "$" not in bare and (ROOT / literal).exists() \
+            and not literal.startswith("build/"):
         record["klass"] = RETAINED_RUNTIME_C
         record["why"] = f"tracked repo source {literal}"
         return record
@@ -711,7 +712,8 @@ def resolve_input(token: str, lines: list, lineno: int) -> dict:
         record["why"] = f"{expression} is built from a crate in this tree"
         return record
 
-    if "$" not in expression and (ROOT / expression.lstrip("./")).exists():
+    if "$" not in expression and (ROOT / expression.lstrip("./")).exists() \
+            and not expression.lstrip("./").startswith("build/"):
         record["klass"] = RETAINED_RUNTIME_C
         record["why"] = f"tracked repo source {expression}"
         return record
@@ -842,6 +844,27 @@ def resolve_input(token: str, lines: list, lineno: int) -> dict:
 
 MAKE_ASSIGN = re.compile(r'^([A-Za-z_][A-Za-z0-9_]*)\s*[:?]?=\s*(.+)$')
 MAKE_VAR_REF = re.compile(r'\$[({]([A-Za-z_][A-Za-z0-9_]*)[)}]')
+MAKE_CALL = re.compile(r'\$\(call\s+([A-Za-z_][A-Za-z0-9_]*)\s*,')
+
+
+def make_defines(mk: list) -> dict:
+    """Map each `define NAME ... endef` block to its body lines."""
+    blocks: dict[str, list] = {}
+    name = None
+    for line in mk:
+        head = re.match(r'^define\s+([A-Za-z_][A-Za-z0-9_]*)', line)
+        if head:
+            name = head.group(1)
+            blocks[name] = []
+            continue
+        if line.strip() == 'endef':
+            name = None
+            continue
+        if name:
+            blocks[name].append(line)
+    return blocks
+
+
 MAKE_INVOKE = re.compile(r'^\s*make\s+"?\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?"?\s*$')
 
 
@@ -918,18 +941,49 @@ def resolve_through_make(name: str, lines: list, lineno: int) -> dict:
             text = replaced
         return text
 
+    defines = make_defines(mk)
     for idx, mline in enumerate(mk):
         if ":" not in mline or mline.startswith("\t"):
             continue
         if stem not in expand(mline.split(":")[0]):
             continue
+        body = []
         for recipe in mk[idx + 1:idx + 40]:
             if recipe and not recipe.startswith("\t"):
                 break
+            body.append(recipe)
+        for recipe in body:
             klass = classify_producer(recipe)
             if klass:
                 return {"klass": klass,
                         "why": f"Makefile builds {stem} with a {klass} producer"}
+        # Before descending into a factored recipe: judge by what the rule
+        # is BUILT FROM. A target whose prerequisite is a cargo artifact is
+        # derived from that crate however its recipe is spelled. This runs
+        # ahead of the $(call) scan on purpose -- the narrowing recipe
+        # contains an `echo` in its drift-check error branch, and matching
+        # that would class a Rust object as script-authored C. Which is
+        # exactly how the pre-factoring version of this rule resolved.
+        prereqs = expand(mline.split(":", 1)[1]).split()
+        for prereq in prereqs:
+            if cargo_artifact(prereq.lstrip("./")):
+                return {"klass": RUST_ARCHIVE,
+                        "why": f"Makefile builds {stem} from {prereq}, "
+                               "which is built from a crate in this tree"}
+        for recipe in body:
+            # A recipe factored into `define NAME ... endef` and invoked
+            # with $(call NAME,...) is still a recipe. Without this the
+            # factoring alone makes a producer invisible, and the input
+            # reads as having none.
+            called = MAKE_CALL.search(recipe)
+            if called and called.group(1) in defines:
+                for inner in defines[called.group(1)]:
+                    klass = classify_producer(inner)
+                    if klass:
+                        return {"klass": klass,
+                                "why": f"Makefile builds {stem} with a "
+                                       f"{klass} producer, through "
+                                       f"$(call {called.group(1)})"}
     return {}
 
 
