@@ -26,16 +26,25 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      # Tags, not just the branch. O8 says a release IS an annotated tag and
-      # the guard checks that with `git cat-file -t`, which can only answer
-      # about objects this checkout has. The default checkout fetches none,
-      # so the guard reported "gust-seed-0 is not an annotated tag in this
-      # repository" -- true of the runner, false of the repository, and the
-      # wrong half to believe. Fetching is the fix; relaxing the check to
-      # accept an absent tag would make it pass on a release that was never
-      # tagged at all.
+      # Tags AND the history they point into. O8 says a release IS an
+      # annotated tag and the guard checks that with `git cat-file -t`,
+      # which can only answer about objects this checkout has. The default
+      # checkout fetches neither, so the guard reported "gust-seed-0 is not
+      # an annotated tag in this repository" -- true of the runner, false
+      # of the repository, and the wrong half to believe.
+      #
+      # `fetch-tags: true` alone did NOT fix it, measured on run
+      # 35691190572. With the default `fetch-depth: 1`, git fetches only
+      # tags whose targets are inside the fetched depth, and gust-seed-0
+      # points at main@d2e72abb, which a depth-1 checkout of a PR merge ref
+      # does not contain. So the depth has to go too.
+      #
+      # Fetching is the fix rather than relaxing the check: tolerating an
+      # absent tag would make this pass on a release that was never tagged
+      # at all, which is the one thing it exists to catch.
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           fetch-tags: true
       - name: guard-cranelift-phase25-release-manifest
         run: python3 scripts/phase25_release_manifest.py validate
