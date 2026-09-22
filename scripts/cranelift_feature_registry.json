@@ -20693,7 +20693,7 @@
       },
       {
         "component_id": "runtime_component:strings",
-        "owned_source_path": "src/runtime/strings.c",
+        "owned_source_path": "src/runtime-rs/src/strings.rs",
         "helper_count": 12,
         "retention_reason": "awaiting_pure_gust_migration",
         "destination_phase": "phase18",
