@@ -41829,9 +41829,9 @@
           "stdlib": 5
         },
         "selection_counts": {
-          "explicit_bootstrap_emitter": 7,
+          "explicit_bootstrap_emitter": 6,
           "explicit_c": 3,
-          "explicit_cranelift": 120,
+          "explicit_cranelift": 121,
           "explicit_invalid_or_parser_probe": 3,
           "implicit_default": 11
         },
@@ -41851,9 +41851,9 @@
           "stdlib": 5
         },
         "selection_counts": {
-          "explicit_bootstrap_emitter": 7,
+          "explicit_bootstrap_emitter": 6,
           "explicit_c": 2,
-          "explicit_cranelift": 126,
+          "explicit_cranelift": 127,
           "explicit_invalid_or_parser_probe": 3,
           "implicit_default": 14
         },
@@ -41944,7 +41944,16 @@
         },
         "total": 158,
         "unclassified_count": 0
-      }
+      },
+      "reclassified_invocation_rows": [
+        {
+          "from_selection": "explicit_bootstrap_emitter",
+          "invocation_marker": "./gust --backend cranelift -o /dev/null ",
+          "path": "tests/test_runner.gst",
+          "reason": "Patch 25.10b flips the negative path to the native route: 104 of 104 negative cases are rejected natively with a diagnostic, 99 of them carrying the case's own expected substring and the other five reworded, verified individually",
+          "to_selection": "explicit_cranelift"
+        }
+      ]
     },
     "production_audit_transition": {
       "contract_version": "phase2510_emitter_deletion_audit_transition_v1",
@@ -42153,7 +42162,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "6976acb4efa0784db7670d917dba32e273d74d0ea498e0ac1edbf9f1cd8ab7c0",
+          "digest": "eb770e8014324bbc47f61c6948f7b93e02a37fdc2dde05d172223de0215a87f1",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 3,

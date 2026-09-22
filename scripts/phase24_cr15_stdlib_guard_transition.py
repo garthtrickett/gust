@@ -1292,19 +1292,38 @@ def _issue398_summary_successor(registry: dict, previous: dict) -> dict:
     require(isinstance(emitter_count, int)
             and emitter_count == len(emitter_gone) > 0,
             "Patch 25.10 registered an invocation departure with no rows")
-    require(previous["total"] - current["total"] == emitter_count and
-            current["unclassified_count"] == 0,
+    require(current["unclassified_count"] == 0,
             "the Patch 25.10 invocation departure does not balance against "
             "a fully classified census")
     emitter_claimed = {}
     for row in emitter_gone:
         emitter_claimed[str(row["selection"])] = emitter_claimed.get(
             str(row["selection"]), 0) + 1
+    # Patch 25.10 both DEPARTS and RECLASSIFIES, and the two are counted
+    # separately. Seven invocations leave; one does not leave at all, it
+    # CHANGES SPELLING -- the runner's negative path flips from
+    # explicit_bootstrap_emitter to explicit_cranelift, so
+    # explicit_cranelift goes UP by one while the departures go down.
+    #
+    # The guard caught this and its own comment says why it exists: "an
+    # addition that quietly re-points an existing invocation would
+    # otherwise balance on the total alone". A departure-only claim would
+    # have made a reclassification look like a disappearance.
+    reclassified = emitter_departure.get("reclassified_invocation_rows", [])
+    gained = {}
+    for row in reclassified:
+        gained[str(row["to_selection"])] = gained.get(
+            str(row["to_selection"]), 0) + 1
+        emitter_claimed[str(row["from_selection"])] = emitter_claimed.get(
+            str(row["from_selection"]), 0) + 1
+    require(previous["total"] - current["total"] == emitter_count,
+            "the Patch 25.10 census total must fall by exactly the "
+            "departures; a reclassification does not change the total")
     for name in set(previous["selection_counts"]) | set(
             current["selection_counts"]):
         require(previous["selection_counts"].get(name, 0) -
                 current["selection_counts"].get(name, 0) ==
-                emitter_claimed.get(name, 0),
+                emitter_claimed.get(name, 0) - gained.get(name, 0),
                 f"Patch 25.10 moved a selection it does not claim: {name}")
 
     return current

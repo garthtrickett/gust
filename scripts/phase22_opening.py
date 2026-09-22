@@ -668,11 +668,23 @@ def _patch2510_departure(registry: dict, previous: dict, census: str) -> dict:
             f"the Patch 25.10 {census} census total must fall by exactly "
             f"the departed invocations: {previous['total']} -> "
             f"{current['total']} against {gone}")
+    # Departures AND one reclassification -- see the note in
+    # phase24_cr15_stdlib_guard_transition.py. The runner's negative path
+    # changes spelling rather than leaving, so explicit_cranelift rises by
+    # one while the departures fall.
+    reclassified = departure.get("reclassified_invocation_rows", [])
+    lost = {"explicit_bootstrap_emitter": gone}
+    gained = {}
+    for row in reclassified:
+        lost[str(row["from_selection"])] = lost.get(
+            str(row["from_selection"]), 0) + 1
+        gained[str(row["to_selection"])] = gained.get(
+            str(row["to_selection"]), 0) + 1
     for name in set(previous["selection_counts"]) | set(
             current["selection_counts"]):
         delta = (previous["selection_counts"].get(name, 0) -
                  current["selection_counts"].get(name, 0))
-        expected = gone if name == "explicit_bootstrap_emitter" else 0
+        expected = lost.get(name, 0) - gained.get(name, 0)
         require(delta == expected,
                 f"Patch 25.10 moved a selection it does not claim in the "
                 f"{census} census: {name} by {delta}, expected {expected}")

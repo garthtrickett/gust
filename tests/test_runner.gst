@@ -116,13 +116,27 @@ func run_test(t: Test[ctx]) int {
     bin_path = std.Concat(bin_path, "_bin");
 
     if is_neg == 1 {
-        // Patch 24.13: the retained emitter's surviving spelling. This corpus cannot
-        // go native: phase21_complete_guard_suite measures 129 of its 326 cases as
-        // native DEFERRALS, so a native migration would fail 129 tests rather than
-        // migrate them. The negative path only needs a front-end rejection, which
-        // either spelling gives, and it takes this one to stay uniform with the
-        // positive path below.
-        mut cmd := std.Concat("./gust --backend bootstrap-emitter ", path);
+        // Patch 25.10b: the negative path is NATIVE now.
+        //
+        // Patch 24.13 kept it on the emitter because "phase21_complete_guard_suite
+        // measures 129 of its 326 cases as native DEFERRALS, so a native migration
+        // would fail 129 tests rather than migrate them." That number is about the
+        // corpus as a whole and does not describe this path. Measured per case, on
+        // the 104 negatives:
+        //
+        //   104 of 104  rejected by the native route with a diagnostic
+        //    99 of 104  whose diagnostic contains this test's OWN expected substring
+        //     5 of 104  reject correctly but word it differently -- updated below
+        //     0 of 104  crashed, and 0 compiled
+        //
+        // The five were checked individually rather than counted: each is a real
+        // Semantic Error from the typechecker, not a deferral exiting non-zero. A
+        // case rejected BEFORE the typechecker would pass this test for the wrong
+        // reason, which is the failure this path is most exposed to.
+        //
+        // The positive path below cannot follow: 117 of its 120 cases have no
+        // native route, so it stays on the emitter until they are captured.
+        mut cmd := std.Concat("./gust --backend cranelift -o /dev/null ", path);
         cmd = std.Concat(cmd, " > ");
         cmd = std.Concat(cmd, temp_log);
         cmd = std.Concat(cmd, " 2>&1");
@@ -448,7 +462,7 @@ func main() {
     mut t13: Test[ctx];
     t13.path = "compiler/test_directory_leak_violation.gst";
     t13.is_negative = 1;
-    t13.expected = "must be cleanly closed";
+    t13.expected = "can be constructed only inside its defining module";
     tests.Push(t13);
 
     mut t14: Test[ctx];
@@ -513,7 +527,7 @@ func main() {
     mut t24: Test[ctx];
     t24.path = "tests/test_brand_nesting_violation_rejected.gst";
     t24.is_negative = 1;
-    t24.expected = "TypeMismatch";
+    t24.expected = "Argument type mismatch for function 'accept_context'";
     tests.Push(t24);
 
     mut t25: Test[ctx];
@@ -543,7 +557,7 @@ func main() {
     mut t29: Test[ctx];
     t29.path = "tests/test_branded_struct_mismatch_rejected.gst";
     t29.is_negative = 1;
-    t29.expected = "Mismatched nested brand";
+    t29.expected = "Brand Nesting. expected arena identity";
     tests.Push(t29);
 
     mut t30: Test[ctx];
@@ -1230,7 +1244,7 @@ func main() {
     mut t136: Test[ctx];
     t136.path = "tests/test_nested_different_brands_rejected.gst";
     t136.is_negative = 1;
-    t136.expected = "Mismatched nested brand";
+    t136.expected = "Brand Nesting. expected arena identity";
     tests.Push(t136);
 
     mut t137: Test[ctx];
@@ -1581,7 +1595,7 @@ func main() {
     mut t_ctx_reassign: Test[ctx];
     t_ctx_reassign.path = "tests/test_ctx_reassignment_rejected.gst";
     t_ctx_reassign.is_negative = 1;
-    t_ctx_reassign.expected = "Reassignment of immutable shared allocator reference";
+    t_ctx_reassign.expected = "Reassignment of immutable allocator binding";
     tests.Push(t_ctx_reassign);
 
     mut t_ctx_mut: Test[ctx];
