@@ -211,9 +211,38 @@ build/gust_compiler.c: build/gust_stage1_bin $(COMPILER_SRCS)
 	sync
 
 ## just "make" doesnt do anything need to run "make gust"
-gust: build/gust_compiler.c $(RUNTIME_SRCS) $(PHASE25_RUNTIME_RS)
-	cat src/runtime.c build/gust_compiler.c > build/gust_final.c
-	${CC} ${CFLAGS} ${INCLUDES} build/gust_final.c $(PHASE25_RUNTIME_RS) -o gust
+#
+# Patch 25.10: ONE STEP, AND NO C. This was
+#
+#   gust_bootstrap --backend bootstrap-emitter <bridge entry>  -> stage1 C
+#   $(CC) stage1 C                                             -> stage1 bin
+#   stage1 bin --backend bootstrap-emitter <entry>             -> compiler C
+#   cat src/runtime.c compiler C | $(CC)                       -> gust
+#
+# two emitter invocations and two host-compiler invocations to build the
+# compiler. With the emitter deleted there is no stage one, so `make gust`
+# either flips onto the native route or stops existing.
+#
+# MEASURED BEFORE COMMITTING TO IT, because "the native route can build the
+# compiler" is exactly the kind of claim that should not be assumed: the
+# fetched bridge compiled compiler/test_runner_entry.gst straight through
+# to a 9.8MB executable that answers --help, with no emitter and no $(CC)
+# anywhere in the path. Patch 25.7's fixed point already did this twice --
+# its stage1 and stage2 ARE this command -- so the capability was proven
+# before this patch used it.
+#
+# The driver is a prerequisite and NOT circular: build/gust-native-backend
+# comes from a cargo manifest and does not depend on gust. Only
+# phase10-native-package depends on gust, and only to package it.
+gust: gust_bootstrap $(COMPILER_SRCS) build/gust-native-backend $(PHASE21_RUNTIME_PACKAGE)
+	@rm -rf build/native-build/bin
+	mkdir -p build/native-build/bin
+	install -m 0755 gust_bootstrap build/native-build/bin/gust
+	install -m 0755 build/gust-native-backend build/native-build/bin/gust-native-backend
+	install -m 0644 $(PHASE21_RUNTIME_PACKAGE) build/native-build/bin/gust-runtime-package.a
+	./build/native-build/bin/gust --backend cranelift -o build/.gust.tmp compiler/test_runner_entry.gst
+	@test -x build/.gust.tmp || { echo "❌ the native route produced no executable"; exit 1; }
+	mv build/.gust.tmp gust
 
 build/gust-native-backend: $(PHASE10_NATIVE_BACKEND_MANIFEST) $(PHASE10_NATIVE_BACKEND_LOCK) $(PHASE10_NATIVE_BACKEND_SOURCES)
 	mkdir -p build
@@ -505,26 +534,34 @@ phase10-native-package: gust build/gust-native-backend $(PHASE21_RUNTIME_PACKAGE
 # Exported target-specifically rather than inline on each command, so the two
 # invocation lines below stay byte-identical to what the route-flip and
 # seed-convergence manifests pin.
-bootstrap: export GUST_BOOTSTRAP_EMITTER = 1
+# Patch 25.10: THE C FIXED POINT IS RETIRED, and this target is inverted
+# rather than deleted.
+#
+# It compared build/gust_stage2.c against build/gust_stage3.c for byte
+# identity -- the current compiler emitting its own C, twice. With the
+# emitter deleted there is no stage two, so the comparison has no operands.
+#
+# Deleting the target would leave `make bootstrap` as "no rule to make
+# target", which tells a caller nothing about what happened to the
+# property. The property did not go away: Patch 25.7 moved it to the
+# EMITTED OBJECTS, stage_n == stage_n+1, which is a strictly stronger
+# statement than identical C -- Patch 25.2's artifact set excludes linked
+# executables by name because the linker normalises differences away, and
+# it was doing exactly that until 25.7's BTreeMap fix.
+#
+# So this target now says where the fixed point went and runs it.
 bootstrap: gust
-	@echo "⚙️  Beginning fixed-point bootstrap verification..."
-	@# Stage 2: Use the new 'gust' binary to compile the compiler again
-	./gust --backend bootstrap-emitter compiler/test_runner_entry.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_stage2.c && sync
-	@cat src/runtime.c build/gust_stage2.c > build/gust_stage2_final.c
-	@${CC} ${CFLAGS} ${INCLUDES} build/gust_stage2_final.c $(PHASE25_RUNTIME_RS) -o build/gust_stage2_bin
-	@# Stage 3: Use the Stage 2 binary to compile the compiler a third time
-	./build/gust_stage2_bin --backend bootstrap-emitter compiler/test_runner_entry.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_stage3.c && sync
-	@# Stage 4: Assert byte-by-byte identity between Stage 2 and Stage 3 C files
-	@diff -u build/gust_stage2.c build/gust_stage3.c && echo "✅ Fixed-point bootstrap convergence achieved!"
-	@# Patch 25.9: the seed is NOT republished here any more. This line
-	@# was `cp build/gust_stage3.c gust_v4.c`, the route that regenerated
-	@# the committed seed; with the seed deleted there is nothing to
-	@# write back, and leaving it would recreate the file this patch
-	@# exists to remove. The fixed point above still runs and still
-	@# asserts stage2 == stage3 -- that assertion is the point, and it
-	@# does not depend on a file being written.
-	cp build/gust_stage2_bin gust_bootstrap
-	touch build/gust_compiler.c
+	@echo "⚙️  The C fixed point is retired. Patch 25.10 deleted the emitter,"
+	@echo "   so there is no stage-two C to compare against stage three."
+	@echo "   The fixed point moved to the emitted OBJECTS in Patch 25.7:"
+	@echo "   stage_n == stage_n+1, which the linker cannot normalise away."
+	@echo "   Running it now."
+	./scripts/phase25_native_fixed_point.sh
+	@# Patch 25.9 removed the seed republication from here; Patch 25.10
+	@# removes the stage-two binary that replaced it as the bootstrap.
+	@# gust_bootstrap is the fetched, digest-verified bridge now, and
+	@# overwriting it with a locally built binary would substitute an
+	@# unverified artifact for a verified one.
 	touch gust
 
 test: gust require_just
