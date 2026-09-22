@@ -43316,6 +43316,21 @@
           "classification": "historical_only",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "bbf03726e92561f356920205f0dca7f5300facd619304bb1d53e61362633f3c8",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 3,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE17_OPENING.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
           "digest": "cf59ae3e38b2f43efcd4c16ee39cc0e33c18c3458633fbfcc8b616a8dc80320a",
           "falsifier": "historical_record_is_reclassified_as_live_support",
           "match_counts": {
@@ -43514,6 +43529,21 @@
           "classification": "historical_only",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "499caa66b95a5afcc73483473ef385f4becb8a4328532b9d130d100517990d0e",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 3,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE17_OPENING.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
           "digest": "71c4d04a59b3d11276128b9b31e36f6a00689971af30776caafc37b265310db9",
           "falsifier": "historical_record_is_reclassified_as_live_support",
           "match_counts": {
@@ -43693,6 +43723,7 @@
       ],
       "registered_changed_paths": [
         "Makefile",
+        "compiler/CRANELIFT_PHASE17_OPENING.md",
         "compiler/CRANELIFT_PHASE22_OPENING.md",
         "docs/PHASE25_ROADMAP.md",
         "scripts/cranelift_registry.py",
