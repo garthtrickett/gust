@@ -146,11 +146,113 @@ def emitter_present() -> bool:
                for line in source.read_text(encoding="utf-8").splitlines())
 
 
+def refusal_probes() -> list:
+    """Sites that invoke the retired spelling in order to prove it is REFUSED.
+
+    The census is a raw text count, so it cannot tell a caller the deletion
+    BROKE from a probe that proves the deletion LANDED. Two sites are the
+    latter: the justfile's bootstrap-emitter-output recipe and the C migration
+    arm both ask for the spelling and require the refusal by name.
+
+    Registered per site with BOTH halves -- the invocation text and the
+    refusal message it requires -- and both are checked here. A probe that
+    stops asserting the refusal stops counting as a probe and goes back to
+    being a live caller, which is the only thing that makes this subtraction
+    safe to make.
+    """
+    registry = json.loads(
+        (ROOT / "scripts/cranelift_feature_registry.json").read_text(
+            encoding="utf-8"))
+    record = registry.get("phase2510_emitter_deletion", {}).get(
+        "emitter_refusal_probes")
+    if record is None:
+        return []
+    require(record.get("contract_version") ==
+            "phase2510_emitter_refusal_probe_v1" and
+            record.get("partial_or_unasserted_probe") == "rejected",
+            "Patch 25.10 emitter refusal probe record drifted")
+    out = []
+    for probe in record["probes"]:
+        text = (ROOT / probe["path"]).read_text(encoding="utf-8",
+                                                errors="replace")
+        require(probe["invocation"] in text,
+                f"a registered refusal probe is not in {probe['path']}: "
+                f"{probe['invocation']}")
+        require(probe["required_refusal"] in text,
+                f"the refusal probe in {probe['path']} no longer requires the "
+                f"refusal it is registered for: {probe['required_refusal']}")
+        out.append(probe)
+    return out
+
+
+def comment_occurrences(path: str) -> int:
+    """Occurrences on comment lines. Prose is not a call.
+
+    The same distinction that had to be made for emitter_present(), which
+    read the emitter as PRESENT because a comment explaining its deletion
+    named it. Here it works the other way: four of the thirteen counted
+    "sites" are comments recording what was removed and why, and counting
+    them means the guard can only be satisfied by deleting the record of
+    the change.
+    """
+    target = ROOT / path
+    if not target.is_file():
+        return 0
+    return sum(
+        line.count(ENTRY_SPELLING)
+        for line in target.read_text(encoding="utf-8",
+                                     errors="replace").splitlines()
+        if line.lstrip().startswith(("#", "//")))
+
+
+def registered_non_callers() -> list:
+    """Sites that NAME the spelling without calling it, registered per site.
+
+    Two kinds: the branch in the entry that refuses the spelling by name, and
+    a failure message that names what it is asserting the absence of. Both
+    have to keep naming it -- a retirement nobody can read is worse than the
+    flag staying -- so counting them as callers would mean the only way to
+    satisfy the symmetry assertion is to stop telling users what happened.
+
+    Registered with their exact text and verified present, so this cannot
+    become a blanket exemption for a file.
+    """
+    registry = json.loads(
+        (ROOT / "scripts/cranelift_feature_registry.json").read_text(
+            encoding="utf-8"))
+    record = registry.get("phase2510_emitter_deletion", {}).get(
+        "emitter_refusal_probes")
+    if record is None:
+        return []
+    out = []
+    for site in record.get("non_caller_sites", []):
+        text = (ROOT / site["path"]).read_text(encoding="utf-8",
+                                                errors="replace")
+        require(site["text"] in text,
+                f"a registered non-caller site is not in {site['path']}: "
+                f"{site['text'][:60]}")
+        out.append(site)
+    return out
+
+
 def report() -> dict:
-    entry = {p: count(ENTRY_SPELLING, p) for p in CALLERS}
+    probes = refusal_probes()
+    non_callers = registered_non_callers()
+    excluded: dict = {}
+    for probe in probes:
+        excluded[probe["path"]] = excluded.get(probe["path"], 0) + \
+            probe["invocation"].count(ENTRY_SPELLING)
+    for site in non_callers:
+        excluded[site["path"]] = excluded.get(site["path"], 0) + \
+            site["text"].count(ENTRY_SPELLING)
+    entry = {p: count(ENTRY_SPELLING, p) - excluded.get(p, 0)
+             - comment_occurrences(p)
+             for p in CALLERS}
     return {
         "version": "phase25_emitter_deletion_v1",
         "emitter_present": emitter_present(),
+        "refusal_probe_sites": sum(excluded.values()),
+        "comment_sites": sum(comment_occurrences(p) for p in CALLERS),
         "entry_spelling_sites": entry,
         "entry_total": sum(entry.values()),
         "authority_sites": sum(count(AUTHORITY, p) for p in CALLERS),

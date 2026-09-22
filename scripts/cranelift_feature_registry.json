@@ -41839,6 +41839,37 @@
     "status": "patch25_10b_negative_path_native"
   },
   "phase2510_emitter_deletion": {
+    "emitter_refusal_probes": {
+      "change_reason": "Two sites invoke the retired spelling in order to prove it is REFUSED, and the symmetry assertion counted them as live callers because the census is a raw text count. A probe that asks for a deleted route and requires the refusal is evidence the deletion landed, not a caller that the deletion broke. Registered per site with BOTH halves -- the invocation text and the refusal message it requires -- so a probe that stops asserting the refusal stops counting as a probe.",
+      "contract_version": "phase2510_emitter_refusal_probe_v1",
+      "non_caller_sites": [
+        {
+          "kind": "refusal_implementation",
+          "path": "compiler/test_runner_entry.gst",
+          "reason": "the branch that REFUSES the spelling by name. It is what makes the retirement legible to someone who knew the flag, so it has to name it -- counting it as a caller would mean the only way to satisfy the guard is to stop telling users what happened.",
+          "text": "if std.str_eq(backend_name, \"bootstrap-emitter\") == 1 {"
+        },
+        {
+          "kind": "diagnostic_message",
+          "path": "scripts/phase22_explicit_c_migration.sh",
+          "reason": "a failure message naming the spelling it is asserting the absence of. Text inside a diagnostic string is not an invocation.",
+          "text": "fail \"the bridge still accepts --backend bootstrap-emitter; Patch 25.10 deleted the emitter\""
+        }
+      ],
+      "partial_or_unasserted_probe": "rejected",
+      "probes": [
+        {
+          "invocation": "bootstrap-emitter-output \\\n      ./gust --backend bootstrap-emitter -o \"$output_path\" \"$source_fixture\"",
+          "path": "justfile",
+          "required_refusal": "the bootstrap C emitter was deleted in Patch 25.10"
+        },
+        {
+          "invocation": "./gust_bootstrap --backend bootstrap-emitter \"$fixture\"",
+          "path": "scripts/phase22_explicit_c_migration.sh",
+          "required_refusal": "bootstrap C emitter was deleted in Patch 25.10"
+        }
+      ]
+    },
     "frozen_inventory_departures": {
       "change_reason": "Patch 20.2 froze the legacy string-cleaner inventory at 48 occurrences across two owner files. Patch 25.10 deletes the emitter, taking compiler/codegen.gst's two calls with it. 20.2's numbers are left as written -- they are a true statement about what 20.2 froze -- and the departure is registered on top, so the guard subtracts a recorded removal rather than being handed a new frozen total with no account of the difference.",
       "compiler_import_graph": {
@@ -42155,7 +42186,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "60aca699bac37afc35b0bccf252e0141f7d818d48debbc404b0c22d35b83e3c9",
+          "digest": "40d2990472f93ca3e3c999f3af8d486fb66a9e58af24560528cf5677b0019a82",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
