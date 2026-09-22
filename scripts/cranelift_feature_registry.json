@@ -42388,6 +42388,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "dcb00fa1891283f5ccf3a962630ad72a50e683817e91b0c79f0e4a04f5bdc1f2",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 1,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 9
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_compiler_support_native_qualification.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "a869443f1723b823a6b98a57a9c1fcd0b54011dc056d215e0d48c04a6552aadf",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -42766,6 +42781,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "237191a32c27713942c3b73872fb7a3494a6424fac414dedb9b785fb99b1d0fd",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 1,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 9
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_compiler_support_native_qualification.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "c8b0afb9b1c5a1039b498b25d002c3d75b4ff90b9ade4361ad5c0da320a4414f",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -42929,6 +42959,7 @@
         "scripts/phase20_contextual_generic_constructor.py",
         "scripts/phase20_resource_rooted_access.py",
         "scripts/phase20_resource_scope_cleanup.py",
+        "scripts/phase21_compiler_support_native_qualification.py",
         "scripts/phase21_inert_scoped_query_records.py",
         "scripts/phase21_opening.py",
         "scripts/phase21_selected_compiler_module_qualification.py",
