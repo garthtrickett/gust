@@ -42229,6 +42229,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "e669e2addc001fc044b111e9a94fd49237fb666fefa80bd6a5caf2219efed0cc",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 24
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase14_closure.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "9b4bb0f7e8f02773c7db73a8ddfb99306f45c4f9b3d9db7e318a3d38eece18e5",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -42298,6 +42313,21 @@
           },
           "owner": "cranelift",
           "path": "scripts/phase20_contextual_generic_constructor.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "5659fe9c71348fca6d8c10ea37e6dc6b3cf08a5eca8ed34579fb50507fa17819",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase20_resource_rooted_access.py",
           "removal_phase": "24"
         },
         {
@@ -42562,6 +42592,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "93d3508e5263a1c9371ef54adb220ec23a68c1361e55bf209087ebedac15c460",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 2,
+            "mir_to_c_name": 23
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase14_closure.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "f830f77bb0644dcab3161355dfbb26ecd88f069a21e71303406b6286a5850d6f",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -42631,6 +42676,21 @@
           },
           "owner": "cranelift",
           "path": "scripts/phase20_contextual_generic_constructor.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "b6b9b5589f8c5cd828a45aa369f633ebd9da2150a27ef78b9c932ea2e7816098",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase20_resource_rooted_access.py",
           "removal_phase": "24"
         },
         {
@@ -42792,11 +42852,13 @@
         "compiler/test_runner_entry.gst",
         "docs/PHASE25_ROADMAP.md",
         "scripts/cranelift_registry.py",
+        "scripts/phase14_closure.py",
         "scripts/phase17_opening.py",
         "scripts/phase19_classification.py",
         "scripts/phase19_gust_name_list_removed.py",
         "scripts/phase19_representation.py",
         "scripts/phase20_contextual_generic_constructor.py",
+        "scripts/phase20_resource_rooted_access.py",
         "scripts/phase20_resource_scope_cleanup.py",
         "scripts/phase21_inert_scoped_query_records.py",
         "scripts/phase21_opening.py",
