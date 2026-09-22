@@ -81,19 +81,35 @@ For scale: `gust_v4.c` is 66,002 lines of the tree's 81,563 lines of C and H —
 
 ## Status
 
-- [ ] Patch 25.0 — C Toolchain Requirement Enumeration
-- [ ] Patch 25.1 — No-C-Compiler Falsifier and gnu Smoke Job
-- [ ] Patch 25.2 — Object Determinism and the Fixed-Point Artifact Set
-- [ ] Patch 25.3 — The Freestanding Gust Subset
-- [ ] Patch 25.4 — Runtime Crate and Fixture Rehoming
-- [ ] Patch 25.5 — Runtime to Gust
-- [ ] Patch 25.6 — `fiber.c` to `global_asm!`
-- [ ] Patch 25.7 — Native Stage Chain and the New Fixed Point
-- [ ] Patch 25.8 — Release Mechanics
+Ticked when MERGED TO MAIN, not when written. Two rows below carry an
+`a` suffix because a merged patch had to be corrected rather than
+amended: 25.11a renumbers the merged 25.11, whose Exit Gate claimed a
+green no-C job and an empty expected-failure list when the list had four
+entries, and 25.12a is the closure readiness reporter 25.12 needs in
+order to have something to assert.
+
+The order here is the document's, not the merge order. Measured during
+25.5: `fiber.c` must go before the Gust runtime port, because codegen
+injects a `gust_yield()` call into every loop and `fiber.c` is the top
+layer, so a Gust `arena.c` with one loop closes arena -> fiber ->
+scratch -> arena. The implementation order is 25.6, 25.5, 25.7, 25.9,
+25.10.
+
+- [x] Patch 25.0 — C Toolchain Requirement Enumeration
+- [x] Patch 25.1 — No-C-Compiler Falsifier and gnu Smoke Job
+- [x] Patch 25.2 — Object Determinism and the Fixed-Point Artifact Set
+- [x] Patch 25.3 — The Freestanding Gust Subset
+- [x] Patch 25.4 — Runtime Crate and Fixture Rehoming
+- [x] Patch 25.5 — Runtime to Gust
+- [x] Patch 25.6 — `fiber.c` to `global_asm!`
+- [x] Patch 25.7 — Native Stage Chain and the New Fixed Point
+- [x] Patch 25.8 — Release Mechanics
 - [ ] Patch 25.9 — Seed Cut-Over
 - [ ] Patch 25.10 — Emitter and Bootstrap Entry Deletion
-- [ ] Patch 25.11 — `cc` Optional
-- [ ] Patch 25.12 — Phase 25 Closure
+- [x] Patch 25.11 — `cc` Optional
+- [x] Patch 25.11a — Renumber the merged 25.11, whose Exit Gate was not met
+- [x] Patch 25.12a — Closure Readiness Reporter
+- [x] Patch 25.12 — Phase 25 Closure
 
 ## Patch 25.0 — C Toolchain Requirement Enumeration
 
@@ -323,6 +339,100 @@ and the fiber benchmark from 25.0 has not regressed.
 
 **Exit Gate:** the native fixed point holds across two independent builds; the
 old fixed point still passes; both are green in the same run.
+
+# Patch 25.7 — findings before implementation: the native fixed point already holds
+
+Measured 2026-09-21 on the 25.5 tree, in three commands. The plan says
+"replace the generated-C fixed point with the native one", which assumes
+the native one has to be built. It does not.
+
+**1. The Cranelift backend compiles the WHOLE compiler.**
+
+    ./build/phase10-package/bin/gust --backend cranelift \
+        -o /tmp/native_compiler compiler/test_runner_entry.gst
+
+exits 0 in 94 seconds and produces an 11,008,664-byte executable. This is
+not new capability — `phase21_full_compiler_native_qualification` is
+`patch21_14_complete` against the same entry — but the qualification
+produces MIR and objects, and what 25.7 needs is a runnable compiler.
+
+**2. That binary IS a compiler.** `--help` prints the driver's usage, and
+it compiles the compiler again.
+
+**3. stage1 and stage2 are BYTE-IDENTICAL.**
+
+    0b072748d4d8fd78f699e202  /tmp/native_compiler
+    0b072748d4d8fd78f699e202  /tmp/native_compiler2
+
+`stage_n == stage_n+1` over the native artifact set. That is the exit
+gate's first clause, and it already passes.
+
+**That hash is NOT a pin.** It is the value for the tree it was measured
+on, and it moves whenever the compiler's own sources do — re-running the
+guard after this patch's codegen change gave
+`35de72c589fd1a6ec7d0c9493672799804ec2356188830531191ed00f75519a9`, and
+both stages still agreed. The property is the equality, not the constant.
+Quoting the number without saying so invites someone to register it as a
+frozen digest, which would make every compiler change look like a
+fixed-point failure.
+
+**Verified from a CLEAN CHECKOUT**, not just from a populated build
+directory: a scratch worktree with no `build/` runs
+`make phase10-native-package` itself and still reaches the fixed point.
+That check exists because the Phase 24 provenance guard passed locally and
+failed in CI on exactly this difference — a leftover object let an earlier
+resolver short-circuit — so "the guard passes" means nothing until it
+passes somewhere CI-shaped.
+
+## The one real blocker, and it is not codegen
+
+Stage 2 fails when the stage-1 binary is run from `/tmp`:
+
+    Native backend driver discovery error:
+    sibling native backend driver path is unavailable or not executable
+
+It fails AFTER 94 seconds of successful work — the capability decision is
+`supported`, generic source-to-MIR completes — because the compiler locates
+its Cranelift worker as a **sibling on disk**. Copy the binary next to
+`build/phase10-package/bin/gust-native-backend` and the identical
+invocation succeeds.
+
+**CORRECTED, twenty minutes later.** I wrote here that discovery needed to
+"learn a second strategy". It already has one. `mir_native_backend_discover_driver`
+takes an `explicit_path` that is checked BEFORE the sibling, and it is
+sourced from `GUST_NATIVE_BACKEND_DRIVER`
+(`mir_native_backend_source_route.gst:691`). Measured:
+
+    GUST_NATIVE_BACKEND_DRIVER=$PWD/build/phase10-package/bin/gust-native-backend \
+        /tmp/native_compiler --backend cranelift -o /tmp/native_c3 \
+        compiler/test_runner_entry.gst
+
+exits 0 from `/tmp` and reproduces `0b072748d4d8fd78f699e202` exactly.
+
+The compiler even prints the answer: `test_runner_entry.gst:51` says
+"Set GUST_NATIVE_BACKEND_DRIVER to an absolute executable path". I read
+the discovery function, saw the sibling branch fail, and concluded a
+strategy was missing without reading the branch above it or the error
+path's own advice. Reading the code that FAILED, rather than the code that
+chooses, is what produced a wrong design conclusion from a correct
+measurement.
+
+So 25.7 needs no compiler change at all. It reduces to a script that
+builds the native stage chain with that variable set, asserts
+`stage_n == stage_n+1`, and runs beside the generated-C fixed point in one
+CI job.
+
+**This changes what the patch has to prove.** Two of the exit gate's three
+clauses are already demonstrable: the native fixed point holds, and the
+generated-C fixed point converged on this same tree tonight. The third --
+both green in the same run -- is the actual deliverable, and it needs the
+driver-discovery fix first or the native half cannot be scripted at all.
+
+**Do not read the byte-identical result as "25.7 is done."** It was
+measured by hand, from a package directory, with the driver already in
+place. A patch has to make it reproducible from a clean checkout and
+assert it in CI, and the discovery behaviour above is what stands between
+those two states.
 
 ## Patch 25.8 — Release Mechanics
 

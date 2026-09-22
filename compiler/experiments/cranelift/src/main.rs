@@ -13202,6 +13202,17 @@ fn parse_phase10_program_mir_bundle(
 fn validate_phase10_backend_request_path(
     request_path: &Path,
 ) -> Result<(), Box<dyn Error>> {
+    // Patch 25.7 diagnosis aid, third of the same kind: the route writes this
+    // request and deletes it, so the driver cannot be replayed on the exact
+    // input a run used. With request + bundle retained, the driver can be run
+    // twice with `gust` out of the loop entirely -- which is the only way to
+    // tell "one driver process is nondeterministic" from "the invocation
+    // varies". Applied at BOTH read sites; the anchor matched twice.
+    if let Some(keep_dir) = env::var_os("GUST_NATIVE_KEEP_OBJECTS") {
+        let keep_dir = PathBuf::from(keep_dir);
+        let _ = fs::create_dir_all(&keep_dir);
+        let _ = fs::copy(request_path, keep_dir.join("phase10.request"));
+    }
     let request_contents = fs::read_to_string(request_path).map_err(|error| {
         phase10_backend_request_error(
             Phase10BackendRequestStage::RequestParse,
@@ -13249,6 +13260,19 @@ fn validate_phase10_backend_request_path(
         ));
     }
 
+    // Patch 25.7 diagnosis aid, same shape as GUST_NATIVE_KEEP_OBJECTS: the
+    // route writes this bundle and deletes it, so nothing downstream can ask
+    // whether two runs produced the same MIR. Applied at BOTH read sites --
+    // the anchor matched twice and picking one would have measured whichever
+    // path I guessed.
+    if let Some(keep_dir) = env::var_os("GUST_NATIVE_KEEP_OBJECTS") {
+        let keep_dir = PathBuf::from(keep_dir);
+        let _ = fs::create_dir_all(&keep_dir);
+        let _ = fs::copy(
+            &request.program_mir_bundle_path,
+            keep_dir.join("program.mir.bundle"),
+        );
+    }
     let bundle_contents =
         fs::read_to_string(&request.program_mir_bundle_path).map_err(
             |error| {
@@ -16172,6 +16196,17 @@ fn validate_phase11_module_import_runtime_module(
 fn compile_phase10_scalar_metadata_request_path(
     request_path: &Path,
 ) -> Result<(), Box<dyn Error>> {
+    // Patch 25.7 diagnosis aid, third of the same kind: the route writes this
+    // request and deletes it, so the driver cannot be replayed on the exact
+    // input a run used. With request + bundle retained, the driver can be run
+    // twice with `gust` out of the loop entirely -- which is the only way to
+    // tell "one driver process is nondeterministic" from "the invocation
+    // varies". Applied at BOTH read sites; the anchor matched twice.
+    if let Some(keep_dir) = env::var_os("GUST_NATIVE_KEEP_OBJECTS") {
+        let keep_dir = PathBuf::from(keep_dir);
+        let _ = fs::create_dir_all(&keep_dir);
+        let _ = fs::copy(request_path, keep_dir.join("phase10.request"));
+    }
     let request_contents = fs::read_to_string(request_path).map_err(|error| {
         phase10_backend_request_error(
             Phase10BackendRequestStage::RequestParse,
@@ -16208,6 +16243,19 @@ fn compile_phase10_scalar_metadata_request_path(
         ));
     }
 
+    // Patch 25.7 diagnosis aid, same shape as GUST_NATIVE_KEEP_OBJECTS: the
+    // route writes this bundle and deletes it, so nothing downstream can ask
+    // whether two runs produced the same MIR. Applied at BOTH read sites --
+    // the anchor matched twice and picking one would have measured whichever
+    // path I guessed.
+    if let Some(keep_dir) = env::var_os("GUST_NATIVE_KEEP_OBJECTS") {
+        let keep_dir = PathBuf::from(keep_dir);
+        let _ = fs::create_dir_all(&keep_dir);
+        let _ = fs::copy(
+            &request.program_mir_bundle_path,
+            keep_dir.join("program.mir.bundle"),
+        );
+    }
     let bundle_contents =
         fs::read_to_string(&request.program_mir_bundle_path).map_err(
             |error| {
@@ -16513,6 +16561,36 @@ fn compile_phase10_scalar_metadata_request_path(
         }
     }
     let mut object_cleanup_error = None;
+    // Patch 25.7: retain the emitted objects when asked, BEFORE deleting them.
+    //
+    // Patch 25.2's artifact set says what the fixed point is over, in its own
+    // excludes: "linked executables -- would prove the linker deterministic
+    // (D4)". Comparing the two stage binaries measures the link. These
+    // objects ARE the artifact set, and they existed all along -- written as
+    // siblings of the output and removed a few lines below, so nothing could
+    // hash them.
+    //
+    // Named by module index rather than by output path: the sibling name
+    // carries `native-stage1` or `native-stage2`, which differ between the
+    // two stages being compared, so copying the name across would make every
+    // object look changed.
+    if let Some(ref keep_dir) = env::var_os("GUST_NATIVE_KEEP_OBJECTS") {
+        let keep_dir = PathBuf::from(keep_dir);
+        fs::create_dir_all(&keep_dir).map_err(|error| {
+            format!("could not create GUST_NATIVE_KEEP_OBJECTS directory {}: {error}",
+                    keep_dir.display())
+        })?;
+        for (module_index, object_path) in object_paths.iter().enumerate() {
+            if !object_path.exists() {
+                continue;
+            }
+            let retained = keep_dir.join(format!("module-{module_index}.o"));
+            fs::copy(object_path, &retained).map_err(|error| {
+                format!("could not retain source-route object {} as {}: {error}",
+                        object_path.display(), retained.display())
+            })?;
+        }
+    }
     for object_path in &object_paths {
         if object_path.exists() {
             if let Err(error) = fs::remove_file(object_path) {

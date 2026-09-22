@@ -2289,6 +2289,34 @@ def normalize_phase23_text_surfaces(
                 "rejected",
                 "Patch 24.12 text surface successor drifted")
         oracle_paths = list(oracle_surface["registered_changed_paths"])
+    # Patch 25.7 merges after 25.5, so it is the newest link and runs
+    # FIRST. It adds a guard and a workflow step and changes no route, so
+    # what moves here is the roadmap, the justfile and the surfaces its
+    # own findings edited.
+    chain_surface = registry.get(
+        "phase257_native_stage_chain", {}).get("text_surface_successor")
+    if chain_surface is not None:
+        require(chain_surface.get("contract_version") ==
+                "phase257_native_stage_chain_text_surface_successor_v1" and
+                chain_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Patch 25.7 native stage chain text surface successor drifted")
+        ch_paths = list(chain_surface["registered_changed_paths"])
+        ch_pre = {r["path"]: r for r
+                  in chain_surface["previous_changed_text_surfaces"]}
+        ch_post = {r["path"]: r for r
+                   in chain_surface["current_changed_text_surfaces"]}
+        require(sorted(ch_pre) == sorted(ch_paths) == sorted(ch_post),
+                "Patch 25.7 registered paths and rows disagree")
+        ch_live = {r["path"]: r for r in rows if r["path"] in ch_paths}
+        require(sorted(ch_live) == sorted(ch_paths),
+                "Patch 25.7 registered text surface is missing from the scan")
+        require(ch_live in (ch_pre, ch_post),
+                "Patch 25.7 changed text surfaces are partial or "
+                "substituted: the live rows match neither the complete "
+                "predecessor state nor the complete successor state "
+                f"({sorted(p for p in ch_paths if ch_live[p] != ch_post[p])} differ from post)")
+        rows = [dict(ch_pre.get(r["path"], r)) for r in rows]
     # Patch 25.5 merges after 25.6, so it is the newest link and runs
     # FIRST. Twelve enrolled surfaces changed; none were added or removed.
     # Deleting five C files removed no row, because none of the five was

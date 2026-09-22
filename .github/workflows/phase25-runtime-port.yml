@@ -1,6 +1,7 @@
 name: Cranelift Phase 25 Runtime Port
 
-# Patch 25.5. Three guards that had no workflow, so they never ran.
+# Patch 25.5, extended by Patch 25.7. Guards that had no workflow, so they
+# never ran.
 #
 # The staleness guard is the load-bearing one: src/runtime/strings.c is
 # GENERATED from compiler/runtime/strings.gst and checked in, because
@@ -37,3 +38,12 @@ jobs:
 
       - name: Strings port matches the frozen C reference
         run: just guard-cranelift-phase25-strings-gust-parity
+
+      # Patch 25.7. Last, because it is the most expensive step here: it
+      # builds the compiler twice. Measured at 2m51s warm and about eleven
+      # minutes from a clean checkout, where it builds the native package
+      # itself -- which is what the job's 60-minute budget is sized on. It
+      # is measured rather than assumed; the Level 1 job spent this whole
+      # phase being killed at 45 minutes because its budget was a guess.
+      - name: Native fixed point
+        run: just guard-cranelift-phase25-native-fixed-point
