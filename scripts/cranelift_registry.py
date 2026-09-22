@@ -105,6 +105,12 @@ TOP_FIELDS = {
     "issue431_full_compiler_baseline",
     "patch251_no_c_falsifier",
     "phase257_native_stage_chain",
+    # Patch 25.9: the seed cut-over. Carries the text-surface DEPARTURE for
+    # gust_v4.c -- the file is deleted, so it stops producing a manifest row
+    # and the row has to be projected back for every older link that
+    # registered it -- and the ordinary changed-surface successor for the
+    # two files 25.9 edits.
+    "phase259_seed_cutover",
     "phase255_runtime_to_gust",
     "patch256_fiber_global_asm",
     "patch254_runtime_crate",
