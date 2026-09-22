@@ -6306,8 +6306,8 @@
           "state": "pre_publication"
         },
         {
-          "line_count": 68375,
-          "seed_digest": "0bac2f0fa208dd355c112b2f0bc1a75cceb4206325c33cc0d60836abf94abfdb",
+          "line_count": 68384,
+          "seed_digest": "9b26b95c42ede32dcc6a248a183ed558f238e1f23f7bf906f2a59487a7236933",
           "state": "post_publication"
         }
       ],
@@ -6318,10 +6318,10 @@
       "closure_transition": "collapse_to_post_publication_after_seed_merge",
       "contract_version": "phase255_runtime_to_gust_seed_reconvergence_transition_v1",
       "generated_seed_diff": {
-        "current_lines": 68375,
-        "deletions": 8,
-        "insertions": 2381,
-        "line_delta": 2373,
+        "current_lines": 68384,
+        "deletions": 2700,
+        "insertions": 5082,
+        "line_delta": 2382,
         "previous_lines": 66002
       },
       "partial_or_unregistered_identity": "rejected",
@@ -13363,7 +13363,7 @@
         "semantic_or_intrinsic_recognition": 977,
         "serialization": 1
       },
-      "complete_manifest_digest": "ad5ed0e3baec0992c26994c0973f23c18a1d2c8abc2fed0ed0431dca74a7252f",
+      "complete_manifest_digest": "54a05cc7e713467eb9bf8a6a24c5d04b8523da2fb147bda37a372daae51ad6d9",
       "partition_manifest_digests": {
         "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
         "diagnostic": "29ec6817181dd3c2aa996580a8d3e178cf0088c7e8adde072526b970a04eb1a4",
@@ -13372,7 +13372,7 @@
         "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7",
         "serialization": "cd26d44606f736374209054c0fc91d72f950946ad84fad1a5e6efb6c7fc4f5b9"
       },
-      "semantic_manifest_digest": "030d25e96846a10f22b1638e71834f9dcb36f896fb7f1b58a86fa31ef08a97bd",
+      "semantic_manifest_digest": "bf0b6967614445d3ddde84d28bbb737157d79d6ed78ee86ed3764fbe4ba9de3b",
       "semantic_site_count": 977,
       "site_count": 1760,
       "source_file_count": 1082,
@@ -23896,9 +23896,9 @@
     "status": "phase17_closed_native_runtime_boundary",
     "opening_entry_count": 17,
     "migrated_entry_count": 17,
-    "inventoried_helper_count": 79,
+    "inventoried_helper_count": 80,
     "migrated_helper_count": 66,
-    "excluded_helper_count": 4,
+    "excluded_helper_count": 5,
     "narrowly_deferred_helper_count": 9,
     "retained_component_count": 8,
     "narrow_deferred_row_count": 8,
@@ -24242,6 +24242,12 @@
         "helper_id": "p17_helper_std_str_eq",
         "disposition": "migrated",
         "terminating_authority": "phase17_memory_runtime_authority.selected_operations",
+        "narrow_deferred_row": ""
+      },
+      {
+        "helper_id": "p17_helper_std_str_bounds_fail",
+        "disposition": "excluded",
+        "terminating_authority": "",
         "narrow_deferred_row": ""
       },
       {
@@ -24754,6 +24760,10 @@
       {
         "helper_id": "p17_helper_os_mockpayload",
         "reason": "test_fixture_payload_not_a_runtime_operation"
+      },
+      {
+        "helper_id": "p17_helper_std_str_bounds_fail",
+        "reason": "bounds_check_abort_handler_not_a_memory_operation"
       },
       {
         "helper_id": "p17_helper_os_is_key_corrupted",
@@ -41946,6 +41956,21 @@
       "contract_version": "phase255_runtime_to_gust_text_surface_successor_v1",
       "current_changed_text_surfaces": [
         {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "f1667325f46dd4eaee57582c6e7851ae791dc38f2d53c45d5f4245defd890af0",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 1
+          },
+          "owner": "stdlib",
+          "path": "tests/cranelift/phase17_runtime_authority_review.txt",
+          "removal_phase": "24"
+        },
+        {
           "classification": "bootstrap_phase25",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_exact_C_bootstrap_dependency",
@@ -42024,7 +42049,7 @@
           "classification": "historical_only",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_as_historical_evidence",
-          "digest": "f33e3c14a48ead943480fac3b67b73591b940088c1babac90929a5c8dbc0280a",
+          "digest": "51d5ae1d1499f8c0714e4955647ca4df3cacde8603bb39d2cc6db8b2c62e2067",
           "falsifier": "historical_record_is_reclassified_as_live_support",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -42039,7 +42064,7 @@
           "classification": "production_or_release_migration",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "deprecate_or_migrate_under_23_8_and_23_12",
-          "digest": "d666a3bf6fd03b0bb78054d2d9983fcee144b1e2dd5ca48439db606134c18b78",
+          "digest": "90004c249f6e95f18fbd3dabafb3462916547854bb7ff5ddd7c2f029f883cdea",
           "falsifier": "production_or_release_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -42054,7 +42079,7 @@
           "classification": "production_or_release_migration",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "review_claims_in_23_8_and_23_12",
-          "digest": "8ad4a7b5ed24ef62f840a61d2ad8aeec5027a959b207e94c35dc8d535b93e7de",
+          "digest": "c52cf13605c9b19f4993c59f8e67aaae98730767d492696472d31f9e93190089",
           "falsifier": "live_documentation_claim_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -42069,7 +42094,7 @@
           "classification": "bootstrap_phase25",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_exact_C_bootstrap_dependency",
-          "digest": "0bac2f0fa208dd355c112b2f0bc1a75cceb4206325c33cc0d60836abf94abfdb",
+          "digest": "9b26b95c42ede32dcc6a248a183ed558f238e1f23f7bf906f2a59487a7236933",
           "falsifier": "bootstrap_surface_is_missing_changed_or_reclassified",
           "match_counts": {
             "explicit_backend_spelling": 2,
@@ -42174,7 +42199,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "133dc49039f1d787d0a2536e8afad7f747dc6f6092981f32e4a9184cdbb2d898",
+          "digest": "c09cf3923c0239bae7d02c5a700b524dd29b0a8e0d8a60e03072e74321a298b7",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -42204,7 +42229,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "b359df29d361c8f8aa627cd0acb6f08f9d6c0684ca28bf30979d1ae03c2a01e1",
+          "digest": "2e8f9cc82ee4f1905811d7ce1ded8787991317c9a67f09bc17daf89d9b292fbb",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -42234,7 +42259,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "634c6b9cf66befb3dd705f3fe77eb82134db862ca2bc3417efdf94005573f01d",
+          "digest": "1ac5ce2604000c3b6fb5340dde5adfaeba20be64af445d469146bf83b057ce90",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 5,
@@ -42323,6 +42348,21 @@
       ],
       "partial_extra_or_substituted_surface": "rejected",
       "previous_changed_text_surfaces": [
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "c32de4bbc0f45dc2698972fad966aa46be9f4ef94de020fe75f9360bd4f2cc0e",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 1
+          },
+          "owner": "stdlib",
+          "path": "tests/cranelift/phase17_runtime_authority_review.txt",
+          "removal_phase": "24"
+        },
         {
           "classification": "bootstrap_phase25",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
@@ -42700,6 +42740,7 @@
         }
       ],
       "registered_changed_paths": [
+        "tests/cranelift/phase17_runtime_authority_review.txt",
         "Makefile",
         "compiler/CRANELIFT_PHASE17_OPENING.md",
         "compiler/CRANELIFT_PHASE21_COLLECTION_STRING_NATIVE_SOURCE.md",

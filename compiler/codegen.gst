@@ -4542,8 +4542,42 @@ typedef void Any;
                     codegen_log_trace("👁️", std.Format("codegen_generate: transpiling structure layout for %s", key), ctx);
                 }
 
+                // Patch 25.5: a built-in struct is not emitted into a unit
+                // that has no `main`.
+                //
+                // APIRequest and SessionNode are registered in
+                // typechecker.gst and emitted into EVERY unit whether or not
+                // it mentions them. The include guards below make two
+                // freshly-emitted units safe to concatenate, but they cannot
+                // help against C that was emitted before the guards existed
+                // and can never be re-emitted -- which is exactly what
+                // scripts/phase24_frozen_oracle.py replays. Four stdlib
+                // parity guards do `cat src/runtime.c <frozen program C>`,
+                // and src/runtime.c now includes the GENERATED strings.c, so
+                // the runtime's copy of these structs collides with the
+                // frozen one. Measured: redefinition of struct APIRequest at
+                // inferred-final.c:87 against src/runtime/strings.c:54.
+                //
+                // A unit with no `main` is a runtime module, not a program.
+                // It has no reason to carry the built-ins, and not emitting
+                // them removes the collision at the source instead of
+                // teaching four harnesses to work around it. This is the
+                // roadmap's deferred option 2 narrowed to the case that bites:
+                // not a reachability analysis, just "programs get built-ins".
+                // The two test entries that depend on the built-ins existing
+                // are entries, so they have a `main` and are unaffected.
+                mut emit_this_struct := 1;
+                if std.str_eq(orig_key, "APIRequest") == 1 ||
+                   std.str_eq(orig_key, "SessionNode") == 1 {
+                    mut main_lookup := (*env).function_registry.Get("main");
+                    if main_lookup.Ok {
+                        emit_this_struct = 1;
+                    } else {
+                        emit_this_struct = 0;
+                    }
+                }
                 mut layout_lookup := (*env).struct_registry.Get(orig_key);
-                if layout_lookup.Ok {
+                if layout_lookup.Ok && emit_this_struct == 1 {
                     mut layout := layout_lookup.Val;
                     mut lookup_enum := (*env).enum_registry.Get(orig_key);
                     
