@@ -42068,7 +42068,7 @@
         "repository_invocation_count": 152,
         "supported_production_or_release_explicit_c_count": 0,
         "supported_surface_count": 6,
-        "supported_surface_manifest_digest": "90a5e361219baed53991930e24c967e76a9279c578088257e1d9b48c8b61bd23",
+        "supported_surface_manifest_digest": "073acf04bbee5008c3d0c6df07e24387ab42a408e946f632c63bcb3689a77eb5",
         "unknown_downstream_count": 0
       },
       "moved_fields": [
@@ -42221,10 +42221,25 @@
           "removal_phase": "24"
         },
         {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "6c92eeb4d5d684906ff301670ce88d77e336e3207a0adc2ea6ca0009a41926f6",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": ".gitignore",
+          "removal_phase": "24"
+        },
+        {
           "classification": "bootstrap_phase25",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_exact_C_bootstrap_dependency",
-          "digest": "7207c07d3cf0b583fd920a7bd533e893fe9c86a933439b69e098cf3fbf22a049",
+          "digest": "926c91580a28290720efc49da4ba6e2a8bbdcb3ca32b7adfa6934f8c07f97a40",
           "falsifier": "bootstrap_surface_is_missing_changed_or_reclassified",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -42734,6 +42749,21 @@
           "removal_phase": "24"
         },
         {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "b88e634741470c1cdeb40582a684e523571c663115335004c2feabaed486aebe",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": ".gitignore",
+          "removal_phase": "24"
+        },
+        {
           "classification": "bootstrap_phase25",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_exact_C_bootstrap_dependency",
@@ -43231,6 +43261,7 @@
       ],
       "registered_changed_paths": [
         ".github/workflows/phase19-seed-convergence.yml",
+        ".gitignore",
         "Makefile",
         "compiler/CRANELIFT_PHASE17_OPENING.md",
         "compiler/CRANELIFT_PHASE21_OPENING.md",

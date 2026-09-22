@@ -138,6 +138,21 @@ gust: gust_bootstrap $(COMPILER_SRCS) build/gust-native-backend $(PHASE21_RUNTIM
 	./build/native-build/bin/gust --backend cranelift -o build/.gust.tmp compiler/test_runner_entry.gst
 	@test -x build/.gust.tmp || { echo "❌ the native route produced no executable"; exit 1; }
 	mv build/.gust.tmp gust
+	@# Patch 25.10: the root compiler binary is now NATIVE-ONLY and resolves
+	@# its backend driver as a SIBLING. Before this patch it carried the
+	@# emitter and worked standalone, so every recipe that invokes it on a
+	@# source file inherited that and now fails driver discovery at the repo
+	@# root:
+	@#
+	@#   Native backend driver discovery error: sibling native backend
+	@#   driver path is unavailable or not executable
+	@#
+	@# That took down step51-policy and six step52-* heavy-shard guards on
+	@# PR #470. Installing the other two artifacts beside it makes the repo
+	@# root the same three-artifact sibling unit Patch 22's delivery
+	@# contract names, rather than a loose binary outside it.
+	install -m 0755 build/gust-native-backend gust-native-backend
+	install -m 0644 $(PHASE21_RUNTIME_PACKAGE) gust-runtime-package.a
 
 build/gust-native-backend: $(PHASE10_NATIVE_BACKEND_MANIFEST) $(PHASE10_NATIVE_BACKEND_LOCK) $(PHASE10_NATIVE_BACKEND_SOURCES)
 	mkdir -p build
