@@ -299,7 +299,27 @@ def validate() -> dict:
         source = path.read_text(encoding="utf-8")
         if any(token in source for token in directory_tokens):
             actual_directory_files.append(relative(path))
-    require(actual_directory_files == DIRECTORY_VOCABULARY_FILES,
+    # Patch 25.10 deletes the emitter, which emitted the directory calls into
+    # C, so codegen.gst stops speaking this vocabulary. Subtracted from the
+    # pinned list by a REGISTERED departure rather than edited out of it, so
+    # the guard checks an accounted removal.
+    #
+    # Order is preserved rather than re-sorted: the pinned list is compared
+    # by equality, so filtering it keeps the comparison exactly as strict on
+    # the 22 that remain. A file that departed AND one that appeared would
+    # still fail, which a set comparison would let through.
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    departed_directory_files = registry.get(
+        "phase2510_emitter_deletion", {}).get(
+            "frozen_inventory_departures", {}).get(
+                "directory_vocabulary", {}).get("departed_owner_files", [])
+    for path in departed_directory_files:
+        require(path not in actual_directory_files,
+                f"Patch 25.10 records {path} as leaving the directory "
+                "vocabulary, but it still speaks it")
+    expected_directory_files = [path for path in DIRECTORY_VOCABULARY_FILES
+                                if path not in departed_directory_files]
+    require(actual_directory_files == expected_directory_files,
             "compiler-owned directory vocabulary inventory drifted: " +
             repr(actual_directory_files))
 

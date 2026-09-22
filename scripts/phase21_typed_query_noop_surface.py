@@ -93,10 +93,22 @@ def validate() -> dict:
     require("stmt_struct_parse.StructDecl.is_scoped_entity = is_scoped_entity_decl" in parser and
             "stmt_struct_parse.StructDecl.scope_field = scoped_entity_field_decl" in parser,
             "scoped declaration metadata is not populated")
+    # Patch 25.10 deletes the emitter, so the codegen delegation goes. The
+    # other two are the live routes and stay required: the typechecker still
+    # checks the terminal, and the generic native source still lowers it.
+    # Measured rather than assumed -- typechecker names Query.terminal six
+    # times, the generic source once, codegen none.
+    #
+    # The codegen clause is inverted rather than dropped. A delegation that
+    # came back to a deleted emitter would mean someone had resurrected it,
+    # and a clause that simply vanishes from this conjunction would not say
+    # so. Kept separate from the two live ones so the failure names which.
     require("return check_expression(expr.Query.terminal" in typechecker and
-            "ctx[expr_idx].Query.terminal, env, ctx" in codegen and
             "ctx[expression.Query.terminal], env, ctx" in generic,
             "terminal delegation is incomplete")
+    require("Query.terminal" not in codegen,
+            "Patch 25.10 deletes the emitter but a typed-query terminal "
+            "delegation survives in codegen.gst")
     successor = registry.get("phase21_trusted_scope_provenance")
     if successor is None:
         for source in (ast, parser, typechecker, codegen, generic):

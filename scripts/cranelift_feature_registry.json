@@ -41859,6 +41859,12 @@
         "reason": "the seven functions that survive in codegen.gst are type erasure and expression metadata helpers for the native route. They need ast, token and typechecker; the emitter needed errors and the two MIR function authorities, and those three import edges go with it. The module count does not move: all three modules are still imported by others."
       },
       "contract_version": "phase2510_frozen_inventory_departure_v1",
+      "directory_vocabulary": {
+        "departed_owner_files": [
+          "compiler/codegen.gst"
+        ],
+        "reason": "Patch 20.x pins which compiler sources speak the directory vocabulary -- os.OpenDir, os.ReadDir, os.CloseDir. The emitter emitted those calls into C; with it deleted, codegen.gst stops naming them. Exactly one of the 23 pinned files leaves and none is added."
+      },
       "partial_or_substituted_departure": "rejected",
       "selected_module_reachability": {
         "departed_reachable_edges": 7,
@@ -42448,6 +42454,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "25ef517bc259090659cb1c3d0c4ddf5d9c19b0868e0ad2396cf700a23d5aa644",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 4
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_typed_query_noop_surface.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "4d67c64e2acfa3433f4cceea407893b7f4dff2ea459f87a81888abf9002049e0",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -42841,6 +42862,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "0f1cb16f8a0a0c5f1f0322604d7e2c2f03ace550ac5adba1b24e49201972563b",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 4
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_typed_query_noop_surface.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "f62a6d12a03aac0f8d211006523ae90f2186d6b2cc7ceadaa0580a4e869bee7f",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -42963,6 +42999,7 @@
         "scripts/phase21_inert_scoped_query_records.py",
         "scripts/phase21_opening.py",
         "scripts/phase21_selected_compiler_module_qualification.py",
+        "scripts/phase21_typed_query_noop_surface.py",
         "scripts/phase22_default_route_flip.py",
         "scripts/phase22_explicit_c_migration.py",
         "scripts/phase22_explicit_c_migration.sh",
