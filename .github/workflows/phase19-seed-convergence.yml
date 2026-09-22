@@ -130,9 +130,29 @@ jobs:
       - name: Three-stage bootstrap convergence
         if: steps.seed_scope.outputs.required == 'true'
         run: CC=cc CFLAGS="-O0 -w -pthread" make bootstrap
-      - name: Stage 2 and stage 3 are byte-identical
+      - name: The C fixed point is retired, and its stages are not produced
         if: steps.seed_scope.outputs.required == 'true'
-        run: cmp build/gust_stage2.c build/gust_stage3.c
+        # Patch 25.10 inverts `make bootstrap`. It used to emit stage-two and
+        # stage-three C and this step compared them; there is no emitter, so
+        # those files are never written and `cmp` fails on missing operands --
+        # which reads as a convergence failure rather than as a retirement.
+        #
+        # Inverted the same way the step below it was when the seed went: the
+        # claim that is still worth making is that the C stages are GONE and
+        # the fixed point that replaced them RAN. The bootstrap target itself
+        # runs scripts/phase25_native_fixed_point.sh and fails if the objects
+        # diverge, so this step asserts the shape rather than re-running it.
+        run: |
+          for stale in build/gust_stage2.c build/gust_stage3.c; do
+            if [ -e "$stale" ]; then
+              echo "::error::$stale exists after the bootstrap; the C fixed" \
+                   "point was retired in Patch 25.10 and nothing should be" \
+                   "emitting stage C again"
+              exit 1
+            fi
+          done
+          echo "no stage-two or stage-three C: the fixed point is the native" \
+               "one, over emitted objects"
       - name: Regeneration does not recreate the deleted seed
         if: steps.seed_scope.outputs.required == 'true'
         run: |
