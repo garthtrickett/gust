@@ -40,7 +40,15 @@ this differential would then be comparing the oracle against itself."
 fi
 
 RUNTIME=build/gust-runtime-package.a
-[ -f "$RUNTIME" ] || fail "$RUNTIME is missing. Run: make $RUNTIME"
+# Built here rather than required here. Two reasons, and the second is the
+# one that changed my mind: the script becomes self-sufficient, and the C
+# toolchain provenance guard can then resolve where the archive came from
+# -- it follows `make <target>` one hop into the Makefile, but it cannot
+# follow a sentence telling a human to run make. An input whose producer
+# the guard cannot name reads as provenance-less, which for the one
+# artifact this whole differential links against is the wrong answer.
+make "$RUNTIME"
+[ -f "$RUNTIME" ] || fail "$RUNTIME is missing and make did not build it"
 
 # The archive must have NO C member. This is the property 25.11 needs and
 # it is asserted here rather than inferred from the member list living in

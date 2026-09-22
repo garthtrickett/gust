@@ -102,8 +102,34 @@ def validate() -> dict:
     require(not returned, f"retired root Rust package returned: {returned}")
 
     require((ROOT / "src/runtime.c").is_file(), "load-bearing src/runtime.c is missing")
+    # Patch 25.10a INVERTS this. It required src/runtime/*.c to be
+    # non-empty -- a live C runtime existing at all -- because Phase 19's
+    # concern was a retired Rust PROTOTYPE returning, and the C runtime
+    # was the thing that had legitimately replaced it.
+    #
+    # There is no C runtime now. 25.5 and 25.6 ported five files to the
+    # crate and this patch retires strings.c, the last one. The claim
+    # worth making is the same claim inverted: the C modules are gone AND
+    # the symbols they defined are somewhere, because an empty directory
+    # with nothing replacing it is a broken runtime, not a ported one.
+    #
+    # The replacement is asserted by digest rather than by existence:
+    # build/gust-runtime-package.a is checked for exactly one member by
+    # scripts/phase17_retained_c_runtime_parity.sh, and the ten string
+    # symbols are checked there by name. This guard does not duplicate
+    # that -- it asserts the absence half and points at the other.
     runtime_modules = sorted((ROOT / "src/runtime").glob("*.c"))
-    require(runtime_modules, "src/runtime/*.c contains no live runtime modules")
+    require(not runtime_modules,
+            "src/runtime/*.c is back: "
+            f"{[m.name for m in runtime_modules]}. Patch 25.10a retired "
+            "the last C runtime module into src/runtime-rs; a file here "
+            "means C is back on the runtime's critical path, which "
+            "scripts/phase17_retained_c_runtime_parity.sh also checks "
+            "from the archive side.")
+    require((ROOT / "src/runtime-rs/src/strings.rs").is_file(),
+            "the C runtime is gone and src/runtime-rs/src/strings.rs is "
+            "not there to have replaced it. Absence alone is half an "
+            "inverted assertion.")
     for crate, required_files in (
         ("src/runtime/rust", ("Cargo.toml", "Cargo.lock", "src/lib.rs")),
         ("compiler/experiments/cranelift", ("Cargo.toml", "Cargo.lock", "src/main.rs")),

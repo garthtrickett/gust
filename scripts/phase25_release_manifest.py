@@ -187,11 +187,29 @@ def fetch_seed() -> None:
     tag = release["tag"]
     candidates = [e for e in release["artifacts"]
                   if e.get("role") == BRIDGE_ROLE and e.get("target") == host]
-    require(candidates,
-            f"release {tag} publishes no {BRIDGE_ROLE} for {host}. The "
-            "escape hatch for an unbootstrappable host is the published "
-            "bridge, so a release without one for this platform cannot seed "
-            "it.")
+    if not candidates:
+        # A stranded host gets instructions, not an abort. Release 0
+        # publishes one bridge (x86_64-linux) while Phase 18 declares five
+        # triples -- so this is reachable, and saying only "no bridge for
+        # you" leaves someone with a deleted seed and no next step.
+        #
+        # The route below is not a workaround: the manifest publishes
+        # gust_v4.c itself as a `source_seed` with a committed digest, so
+        # verifying it is exactly as strong as verifying a bridge. What is
+        # missing is the automation, not the artifact -- Patch 25.9a.
+        sources = [e for release in releases
+                   for e in release["artifacts"]
+                   if e.get("role") == SOURCE_SEED_ROLE]
+        published = sorted({e.get("target") for e in release["artifacts"]
+                            if e.get("role") == BRIDGE_ROLE})
+        require(sources,
+                f"release {tag} publishes no {BRIDGE_ROLE} for {host} -- it "
+                f"publishes {published} -- and no {SOURCE_SEED_ROLE} to "
+                "fall back to. There is then no way to bootstrap this host "
+                f"at all. The offline path is {SEED_ENV}=<a verified "
+                "bridge>.")
+        build_from_source_seed(tag, sources[-1], destination, host, published)
+        return
     require(len(candidates) == 1,
             f"release {tag} lists {len(candidates)} bridge binaries for "
             f"{host}; which one is the seed is then a guess.")
@@ -223,6 +241,80 @@ def fetch_seed() -> None:
     print(f"guard-cranelift-phase25-release-manifest: {entry['name']} from "
           f"{tag} verified ({source}) and installed as {destination} "
           f"for {host}")
+
+
+def build_from_source_seed(tag, entry, destination, host, published):
+    """Patch 25.9a: bootstrap a host no release publishes a bridge for.
+
+    THIS IS A REGRESSION FIX, not a new feature. Before Patch 25.9 every
+    host could build from the committed `gust_v4.c` with a C compiler.
+    Deleting it left exactly one bootstrappable host -- release 0
+    publishes an x86_64-linux bridge and Phase 18 declares five triples --
+    so macOS and aarch64 developers lost their entry point. A reviewer
+    raised it on #467 and was right.
+
+    The artifact was already there. Release 0 publishes `gust_v4.c` itself
+    as a `source_seed` with a committed digest and line count, so this
+    route is verified exactly as strongly as the bridge route: same
+    manifest, same check, before use rather than after. What differs is
+    that it needs a host C compiler, and the bridge route does not.
+
+    That is the trade and it is worth stating plainly. Patch 25.11's claim
+    is that the DEFAULT route needs no C compiler, and this is not the
+    default -- it runs only when no bridge matches the host. "No C
+    compiler on the default path" is not "no C compiler anywhere", and a
+    host with no bridge and no fallback has no path at all, which is
+    worse.
+
+    THE SEED IS NEVER WRITTEN TO ITS OLD PATH. Ten guards assert
+    `gust_v4.c` is absent from the tree; materialising it at the repo root
+    -- even briefly -- would make those guards race a build. It goes to
+    build/.
+    """
+    require(shutil.which("cc") or os.environ.get("CC"),
+            f"no {BRIDGE_ROLE} for {host} (published: {published}), so the "
+            f"bootstrap falls back to compiling the published "
+            f"{SOURCE_SEED_ROLE} -- and that needs a C compiler, which is "
+            "not on PATH. Set CC, or supply a prebuilt bridge with "
+            f"{SEED_ENV}=<path>.")
+    work = ROOT / "build" / "source-seed"
+    work.mkdir(parents=True, exist_ok=True)
+    seed = work / entry["name"]
+    if not (seed.is_file() and digest(seed) == entry["digest"]):
+        download_asset(tag, entry["name"], seed)
+        got = digest(seed)
+        require(got == entry["digest"],
+                f"{entry['name']} from {tag} has digest {got}, but the "
+                f"committed manifest says {entry['digest']}. Same rule as "
+                "the bridge route: the release is withdrawn, not the "
+                "manifest amended.")
+    lines = len(seed.read_text(encoding="utf-8", errors="replace").splitlines())
+    require(entry.get("lines") in (None, lines),
+            f"{entry['name']} has {lines} lines but the manifest publishes "
+            f"{entry['lines']}. The digest matched, so this is a manifest "
+            "that disagrees with itself.")
+    final = work / "gust_bootstrap_final.c"
+    final.write_bytes((ROOT / "src/runtime.c").read_bytes() + seed.read_bytes())
+    runtime_obj = ROOT / "build/phase25-runtime-rs/gust_runtime_rs_exports.o"
+    require(runtime_obj.is_file(),
+            f"{runtime_obj} is missing; the source-seed route links the "
+            "Rust runtime object and cannot build without it.")
+    cc = os.environ.get("CC", "cc")
+    built = work / "gust_bootstrap"
+    result = subprocess.run(
+        [cc, "-O2", "-w", "-pthread", "-Isrc", "-Isrc/runtime",
+         str(final), str(runtime_obj), "-o", str(built)],
+        cwd=ROOT, capture_output=True, text=True)
+    require(result.returncode == 0,
+            f"compiling the published {SOURCE_SEED_ROLE} failed:\n"
+            f"{result.stderr.strip()[:600]}")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(built, destination)
+    destination.chmod(0o755)
+    print(f"guard-cranelift-phase25-release-manifest: no {BRIDGE_ROLE} for "
+          f"{host}; built {destination} from the published "
+          f"{SOURCE_SEED_ROLE} {entry['name']} ({lines} lines, digest "
+          f"verified) with {cc}")
 
 
 def verify_seed() -> None:
