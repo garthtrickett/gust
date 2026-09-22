@@ -39,9 +39,13 @@ EXCEPTED = {
 }
 
 
-def make_cc_recipes() -> list:
+CC_RECIPE = re.compile(r'^\s*[-@+]*\s*\$[({]CC[)}]')
+
+
+def make_cc_recipes(text: str | None = None) -> list:
     """Makefile lines that compile C with $(CC)."""
-    text = (ROOT / "Makefile").read_text(encoding="utf-8")
+    if text is None:
+        text = (ROOT / "Makefile").read_text(encoding="utf-8")
     return [
         n for n, line in enumerate(text.splitlines(), 1)
         # Make command prefixes -- `@` silent, `-` ignore-errors, `+`
@@ -49,7 +53,7 @@ def make_cc_recipes() -> list:
         # $(CC) at the start missed Makefile:252's `@${CC} ...`, so this
         # reported 11 lines where the tree has 12. A miscount in the patch
         # whose whole purpose is measurement.
-        if re.match(r'^\s*[-@+]*\s*\$[({]CC[)}]', line)
+        if CC_RECIPE.match(line)
     ]
 
 
@@ -108,9 +112,35 @@ def require(condition: bool, message: str) -> None:
 
 def validate() -> None:
     record = report()
-    require(record["makefile_cc_recipe_lines"],
-            "no $(CC) recipe lines found in the Makefile; the scan is broken, "
-            "not the tree -- the bootstrap chain compiles C today")
+    # Patch 25.0 wrote this as an instrument check: zero $(CC) lines had to
+    # mean the scanner was broken, because the bootstrap chain compiled C.
+    # Patch 25.10 deletes that chain, so zero becomes the RESULT -- and the
+    # phase's whole point. The assertion inverts rather than being dropped,
+    # because "the Makefile compiles no C" is the claim worth holding.
+    #
+    # But an empty list from a clean tree and an empty list from a broken
+    # scanner look identical, and this guard's original comment is a record
+    # of the scanner having been wrong before: requiring $(CC) at the start
+    # missed `@${CC}` and reported 11 where the tree had 12. So the scanner
+    # is exercised against a synthetic Makefile carrying every prefix form it
+    # has ever had to cope with. A regex that stops matching now fails here
+    # instead of quietly reporting success.
+    probe = "\n".join((
+        "target:",
+        "\t$(CC) -c a.c -o a.o",
+        "\t@${CC} -c b.c -o b.o",
+        "\t-$(CC) -c c.c -o c.o",
+        "\t+${CC} -c d.c -o d.o",
+        "\t@echo not a compile",
+    ))
+    require(len(make_cc_recipes(probe)) == 4,
+            "the $(CC) scanner no longer finds lines it is meant to find "
+            f"({len(make_cc_recipes(probe))} of 4 in a synthetic probe), so "
+            "the empty result below would prove nothing")
+    require(not record["makefile_cc_recipe_lines"],
+            "the Makefile still compiles C with $(CC) at lines "
+            f"{record['makefile_cc_recipe_lines']}, but Patch 25.10 deletes "
+            "the bootstrap chain that needed a C toolchain")
     require(record["tree_sitter_sites"],
             "no tree-sitter sites found; the exception below describes "
             "something that is no longer there")
