@@ -2872,11 +2872,19 @@ def normalize_phase23_text_surfaces(
                    in falsifier_surface["added_text_surface_rows"]}
         require(sorted(fs_rows) == sorted(fs_added),
                 "Patch 25.1 added paths and rows disagree")
-        fs_live = {r["path"]: r for r in rows if r["path"] in fs_added}
-        require(sorted(fs_live) == sorted(fs_added),
+        # Patch 25.10 clears the bootstrap-chain-compiles-c entry from this
+        # file, as that entry's own cleared_by scheduled. Its prose carried
+        # the file's only surface-pattern match, so removing it takes the
+        # whole file out of the enrolled set -- still tracked, no longer a
+        # surface. Same disenrolment record as the generated inventory review,
+        # and the same reason it is not a departure: the file is right there,
+        # and one more sentence about generated C would put it back.
+        fs_expected = {p for p in fs_added if p not in disenrolled}
+        fs_live = {r["path"]: r for r in rows if r["path"] in fs_expected}
+        require(sorted(fs_live) == sorted(fs_expected),
                 "Patch 25.1 added text surface is missing from the scan: "
                 f"{sorted(fs_added - set(fs_live))}")
-        for path in sorted(fs_added):
+        for path in sorted(fs_expected):
             require(fs_live[path] == fs_rows[path],
                     "Patch 25.1 added text surface does not match its "
                     f"registered row: {path}")

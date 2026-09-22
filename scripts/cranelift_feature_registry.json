@@ -36493,11 +36493,11 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "4d57c7cbc5ab9d2964cb1d09b3ed3198a579909ee867fd9214d44c9153323727",
+          "digest": "d4cab9d24a833b0d0c8dde78a960ce7b2fec8239432d3ff676ed4d895178cce0",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
-            "generated_c_contract": 1,
+            "generated_c_contract": 0,
             "mir_to_c_name": 0
           },
           "owner": "cranelift",
@@ -42161,7 +42161,8 @@
       "change_reason": "compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md is GENERATED from the live scan. Patch 25.10 deletes the emitter, so the semantic spellings it inventoried go with it and the regenerated document no longer names a retired spelling anywhere -- it stops enrolling as a text surface while remaining a tracked file. That is not a DEPARTURE: a deleted file cannot come back silently, a generated document can, the moment something re-adds a spelling to it. So it is recorded separately and asserted the opposite way -- the file must still EXIST and must produce NO manifest row. Five registered links name this surface: 25.5, 25.6, 25.7, 24.12b and the S1.8 implementation successor.",
       "contract_version": "phase2510_emitter_deletion_text_surface_disenrolment_v1",
       "disenrolled_paths": [
-        "compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md"
+        "compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md",
+        "scripts/phase25_no_c_expected_failures.json"
       ],
       "partial_or_substituted_disenrolment": "rejected"
     },
