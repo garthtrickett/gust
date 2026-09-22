@@ -16297,8 +16297,8 @@
         },
         {
           "id": "ha_seed_encodes_behaviour",
-          "assumption": "the committed bootstrap seed encodes the current spelling-derived behaviour",
-          "source_path": "gust_v4.c",
+          "assumption": "the published bootstrap bridge, pinned by digest in the release manifest, encodes the current spelling-derived behaviour",
+          "source_path": "docs/RELEASE_MANIFEST.json",
           "reachability_area": "argument_representation",
           "inventory_owner": "compiler_argument_representation_planner",
           "diagnostic_owner": "compiler_argument_representation_verifier",
