@@ -44,6 +44,8 @@ import hashlib
 import json
 import platform
 import re
+import shutil
+import tempfile
 import subprocess
 import os
 from pathlib import Path
@@ -93,6 +95,67 @@ def load() -> dict:
     if not MANIFEST.is_file():
         return {"version": "phase25_release_manifest_v1", "releases": []}
     return json.loads(MANIFEST.read_text(encoding="utf-8"))
+
+
+def fetch_seed() -> None:
+    """Obtain the newest release's bridge compiler for this host, verified.
+
+    Patch 25.9: this is the DEFAULT bootstrap route now that gust_v4.c is
+    gone. The committed digest is checked before the artifact is used, not
+    after -- a fetched binary nobody verified is precisely what D1's option B
+    exists to avoid, and "it downloaded successfully" is not verification.
+
+    The offline path (GUST_BOOTSTRAP_SEED) still wins when it is set. A chain
+    that can ONLY be fetched is not auditable by anyone who does not already
+    trust the host, which is the whole reason that variable exists.
+    """
+    destination = Path(os.environ.get("GUST_SEED_DESTINATION", "gust_bootstrap"))
+    record = load()
+    releases = record.get("releases", [])
+    require(releases,
+            "the manifest lists no releases, so there is nothing to bootstrap "
+            "from. Release 0 must be minted before gust_v4.c is deleted; if "
+            "you are seeing this in a tree with no seed, the two halves of "
+            "Patch 25.9 have been separated.")
+    host = host_target()
+    # N-1: the newest release is the only supported one. The floor is stated
+    # in the manifest policy and is not a suggestion -- a chain nobody
+    # exercises is already broken.
+    release = releases[-1]
+    tag = release["tag"]
+    candidates = [e for e in release["artifacts"]
+                  if e.get("role") == BRIDGE_ROLE and e.get("target") == host]
+    require(candidates,
+            f"release {tag} publishes no {BRIDGE_ROLE} for {host}. The "
+            "escape hatch for an unbootstrappable host is the published "
+            "bridge, so a release without one for this platform cannot seed "
+            "it.")
+    require(len(candidates) == 1,
+            f"release {tag} lists {len(candidates)} bridge binaries for "
+            f"{host}; which one is the seed is then a guess.")
+    entry = candidates[0]
+    with tempfile.TemporaryDirectory() as work:
+        staged = Path(work) / entry["name"]
+        fetched = subprocess.run(
+            ["gh", "release", "download", tag, "--pattern", entry["name"],
+             "--dir", work], cwd=ROOT, capture_output=True, text=True)
+        require(fetched.returncode == 0,
+                f"could not download {entry['name']} from {tag}: "
+                f"{fetched.stderr.strip()[:200]}. The offline path is "
+                f"{SEED_ENV}=<path to a verified bridge>.")
+        got = digest(staged)
+        # BEFORE install, not after. A verified-then-replaced artifact is the
+        # same hole as an unverified one.
+        require(got == entry["digest"],
+                f"{entry['name']} from {tag} has digest {got}, but the "
+                f"committed manifest says {entry['digest']}. The release and "
+                "the manifest disagree; per the attestation policy the "
+                "release is withdrawn, not the manifest amended.")
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(staged, destination)
+        destination.chmod(0o755)
+    print(f"guard-cranelift-phase25-release-manifest: {entry['name']} from "
+          f"{tag} verified and installed as {destination} for {host}")
 
 
 def verify_seed() -> None:
@@ -202,12 +265,14 @@ def validate() -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command",
-                        choices=["validate", "verify-seed", "report"])
+                        choices=["validate", "verify-seed", "fetch-seed", "report"])
     args = parser.parse_args()
     if args.command == "report":
         print(json.dumps(load(), indent=2, sort_keys=True))
     elif args.command == "verify-seed":
         verify_seed()
+    elif args.command == "fetch-seed":
+        fetch_seed()
     else:
         validate()
     return 0

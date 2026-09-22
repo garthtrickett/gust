@@ -104,7 +104,7 @@ scratch -> arena. The implementation order is 25.6, 25.5, 25.7, 25.9,
 - [x] Patch 25.6 — `fiber.c` to `global_asm!`
 - [x] Patch 25.7 — Native Stage Chain and the New Fixed Point
 - [x] Patch 25.8 — Release Mechanics
-- [ ] Patch 25.9 — Seed Cut-Over
+- [x] Patch 25.9 — Seed Cut-Over
 - [ ] Patch 25.10 — Emitter and Bootstrap Entry Deletion
 - [x] Patch 25.11 — `cc` Optional
 - [x] Patch 25.11a — Renumber the merged 25.11, whose Exit Gate was not met

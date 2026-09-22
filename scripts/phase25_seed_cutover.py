@@ -94,11 +94,17 @@ def validate() -> None:
         require(isinstance(artifacts, list) and artifacts,
                 f"{where} lists no artifacts: nothing to bootstrap from")
         for spot, artifact in enumerate(artifacts):
-            digest = (artifact or {}).get("sha256", "")
+            # Patch 25.9: the key is "digest", not "sha256". The comment
+            # above says this checks "the shape 25.8 defined rather than
+            # inventing a second one" -- and then read a field 25.8 does
+            # not write, which is inventing a second one by accident. It
+            # went unnoticed because there were no releases to check; the
+            # first real manifest entry failed here immediately.
+            digest = (artifact or {}).get("digest", "")
             require(isinstance(digest, str) and len(digest) == 64 and
                     all(c in "0123456789abcdef" for c in digest) and
                     set(digest) != {"0"},
-                    f"{where}.artifacts[{spot}] has no usable sha256: "
+                    f"{where}.artifacts[{spot}] has no usable digest: "
                     f"{digest!r}. An unverifiable artifact is not a "
                     "replacement for the seed -- it is a promise that one "
                     "exists.")

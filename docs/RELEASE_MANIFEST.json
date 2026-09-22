@@ -6,5 +6,34 @@
     "floor": "N-1. Release N builds from N-1; nothing older is promised. Tags and assets are kept forever because they cost nothing, but the supported path is one step, and a chain nobody exercises is already broken. The published bridge binary is the escape when the chain breaks -- that is what option B is for.",
     "attestation": "Two layers. The fixed-point proof says what the artifact IS and anyone can regenerate it. A signed manifest says who published it. If they disagree the fixed point wins and the release is withdrawn: a signature on a blob nobody can reproduce is trust, not verification."
   },
-  "releases": []
+  "releases": [
+    {
+      "tag": "gust-seed-0",
+      "commit": "d2e72abb6325ce73f49a3b6bff8ea30143cc98b6",
+      "artifacts": [
+        {
+          "name": "FIXED_POINT_PROOF.txt",
+          "digest": "78c26e4db195ea38d48abf191c64d6f9132c1e71c2cbfe3e890166ee0f481d8d",
+          "role": "fixed_point_proof"
+        },
+        {
+          "name": "gust-bridge-x86_64-unknown-linux-gnu",
+          "digest": "450563cc814c91be8023ec04e2aa21f56b090f68bca2ebbf8c13be04dd748bc8",
+          "role": "bridge_compiler",
+          "target": "x86_64-linux",
+          "target_vocabulary": "host_target() in scripts/phase25_release_manifest.py, which is platform.machine()-platform.system(). NOT the Rust triple -- the asset FILENAME carries that, and the two disagreeing is what the fetch route caught on its first run.",
+          "reproducible": false,
+          "why_not_reproducible": "built by the host C compiler, so the digest depends on its version and flags; published for identification, not verification"
+        },
+        {
+          "name": "gust_v4.c",
+          "digest": "9b26b95c42ede32dcc6a248a183ed558f238e1f23f7bf906f2a59487a7236933",
+          "role": "source_seed"
+        }
+      ],
+      "fixed_point_proof": "FIXED_POINT_PROOF.txt",
+      "attested_object_digest": "19026c3918e643e821e08a238f044b9b81a814888c0b277d7efacbff6195045b",
+      "signature": "UNSIGNED: no signing key exists for this repository. A key generated for the occasion would attest to nothing while appearing to attest to something, so the absence is recorded rather than fabricated. Per this manifest's own attestation policy the fixed-point proof is the layer that wins, and this release carries it."
+    }
+  ]
 }

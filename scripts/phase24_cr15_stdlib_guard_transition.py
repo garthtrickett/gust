@@ -2138,6 +2138,64 @@ def rebase_s1_8_surface(registry: dict, rows: list) -> list:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    # Patch 25.9 runs FIRST because it is the newest link, and because it is
+    # a DEPARTURE rather than a change: gust_v4.c is deleted, so it stops
+    # producing a manifest row at all. Every block below this one registered
+    # the seed as a surface that exists, and they are right -- it did, when
+    # they were written. Restoring the row here lets them go on comparing
+    # what they froze, instead of rewriting their evidence for a file that
+    # was genuinely present at the time.
+    #
+    # The alternative, deleting the seed's row from each older block, is the
+    # move that looks tidier and quietly destroys the record.
+    departure = (registry.get("phase259_seed_cutover", {})
+                 .get("text_surface_departure"))
+    if departure is not None:
+        require(departure.get("contract_version") ==
+                "phase259_seed_cutover_text_surface_departure_v1" and
+                departure.get("partial_or_substituted_departure") ==
+                "rejected",
+                "Patch 25.9 seed departure record drifted")
+        departed = list(departure["departed_paths"])
+        live = {row["path"] for row in rows}
+        present = [path for path in departed if path in live]
+        require(not present,
+                f"Patch 25.9 records {present} as departed, but they still "
+                "produce a manifest row. A departure that did not happen is "
+                "a row restored on top of a live one, counted twice.")
+        restored = departure["departed_previous_rows"]
+        require(sorted(row["path"] for row in restored) == sorted(departed),
+                "Patch 25.9 does not carry exactly one previous row per "
+                "departed surface")
+        rows = sorted(list(rows) + [dict(row) for row in restored],
+                      key=lambda row: str(row["path"]))
+    # ...and then 25.9's ordinary changed surfaces, projected back the same
+    # way every other link does it. The departure above and this are two
+    # different things and both are needed: one row LEFT the scan, two
+    # others CHANGED, and a block that handled only the departure would
+    # leave the changed pair looking like drift to 25.5.
+    cutover = (registry.get("phase259_seed_cutover", {})
+               .get("text_surface_successor"))
+    if cutover is not None:
+        require(cutover.get("contract_version") ==
+                "phase259_seed_cutover_text_surface_successor_v1" and
+                cutover.get("partial_extra_or_substituted_surface") ==
+                "rejected",
+                "Patch 25.9 seed cut-over text surface successor drifted")
+        sc_paths = list(cutover["registered_changed_paths"])
+        sc_pre = {r["path"]: r for r in cutover["previous_changed_text_surfaces"]}
+        sc_post = {r["path"]: r for r in cutover["current_changed_text_surfaces"]}
+        require(sorted(sc_pre) == sorted(sc_paths) == sorted(sc_post),
+                "Patch 25.9 registered paths and rows disagree")
+        sc_live = {r["path"]: r for r in rows if r["path"] in sc_paths}
+        require(sorted(sc_live) == sorted(sc_paths),
+                "Patch 25.9 registered text surface is missing from the scan")
+        require(sc_live in (sc_pre, sc_post),
+                "Patch 25.9 changed text surfaces are partial or substituted: "
+                "the live rows match neither the complete predecessor state "
+                "nor the complete successor state "
+                f"({sorted(p for p in sc_paths if sc_live[p] != sc_post[p])} differ from post)")
+        rows = [dict(sc_pre.get(r["path"], r)) for r in rows]
     rows = drop_class_appended_text_surfaces(registry, rows)
     living_paths = class_living_paths(
         pinned_manifest_class_contract(registry))

@@ -103,6 +103,7 @@
     "patch251_no_c_falsifier",
     "phase2510_emitter_deletion",
     "phase257_native_stage_chain",
+    "phase259_seed_cutover",
     "phase255_runtime_to_gust",
     "patch256_fiber_global_asm",
     "patch254_runtime_crate",
