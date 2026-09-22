@@ -42244,6 +42244,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "ab5d28ec8d12b9ceb803b5d3e0cb2294ab092cd038e81449c37eb0d9c2100744",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 4,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase19_classification.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "23bb699c7eb6b9da4454fd27b9ee481b2f9555908653ede6def5f81d00936faa",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -42502,6 +42517,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "2b0b36b60c29cd1a6104d1e9902682fb7c52685113df48134e7872bb6cab3799",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase19_classification.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "28966991e24b5633d45f1c3a9da04fe04c8fca9eecc73f2d85fb1ec968ee9821",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -42643,6 +42673,7 @@
         "docs/PHASE25_ROADMAP.md",
         "scripts/cranelift_registry.py",
         "scripts/phase17_opening.py",
+        "scripts/phase19_classification.py",
         "scripts/phase19_gust_name_list_removed.py",
         "scripts/phase21_inert_scoped_query_records.py",
         "scripts/phase22_default_route_flip.py",
