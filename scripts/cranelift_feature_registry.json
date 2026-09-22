@@ -41839,6 +41839,17 @@
     "status": "patch25_10b_negative_path_native"
   },
   "phase2510_emitter_deletion": {
+    "frozen_inventory_departures": {
+      "change_reason": "Patch 20.2 froze the legacy string-cleaner inventory at 48 occurrences across two owner files. Patch 25.10 deletes the emitter, taking compiler/codegen.gst's two calls with it. 20.2's numbers are left as written -- they are a true statement about what 20.2 froze -- and the departure is registered on top, so the guard subtracts a recorded removal rather than being handed a new frozen total with no account of the difference.",
+      "contract_version": "phase2510_frozen_inventory_departure_v1",
+      "partial_or_substituted_departure": "rejected",
+      "string_cleaner": {
+        "departed_occurrences": 2,
+        "departed_owner_files": [
+          "compiler/codegen.gst"
+        ]
+      }
+    },
     "invocation_departure": {
       "change_reason": "the five Makefile invocations of the C stage chain. All five are explicit_bootstrap_emitter and all five go with the rules that ran them: the stage-one emission from the bridge entry, the diagnose-phase10-stage1 sanitizer build, the final compiler emission, and stages two and three of the C fixed point.",
       "contract_version": "phase2510_emitter_deletion_invocation_departure_v1",
