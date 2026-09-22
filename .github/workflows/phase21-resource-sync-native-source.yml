@@ -7,10 +7,10 @@ on:
       - 'Makefile'
       - 'compiler/*.gst'
       - 'compiler/experiments/cranelift/**'
-      - 'src/runtime/arena.c'
-      - 'src/runtime/host_io.c'
-      - 'src/runtime/file_io.c'
-      - 'src/runtime/scratch.c'
+      - 'src/runtime-rs/src/arena.rs'
+      - 'src/runtime-rs/src/host_io.rs'
+      - 'src/runtime-rs/src/file_io.rs'
+      - 'src/runtime-rs/src/scratch.rs'
       # Patch 25.6: fiber.c became src/runtime-rs/src/fiber.rs and
       # fiber_asm.rs. The filter follows the implementation, or this job
       # stops running on the changes it exists to catch.
@@ -36,10 +36,10 @@ on:
       - 'Makefile'
       - 'compiler/*.gst'
       - 'compiler/experiments/cranelift/**'
-      - 'src/runtime/arena.c'
-      - 'src/runtime/host_io.c'
-      - 'src/runtime/file_io.c'
-      - 'src/runtime/scratch.c'
+      - 'src/runtime-rs/src/arena.rs'
+      - 'src/runtime-rs/src/host_io.rs'
+      - 'src/runtime-rs/src/file_io.rs'
+      - 'src/runtime-rs/src/scratch.rs'
       # Patch 25.6: fiber.c became src/runtime-rs/src/fiber.rs and
       # fiber_asm.rs. The filter follows the implementation, or this job
       # stops running on the changes it exists to catch.

@@ -101,6 +101,7 @@
     "issue447_resolver_scoping",
     "issue431_full_compiler_baseline",
     "patch251_no_c_falsifier",
+    "phase255_runtime_to_gust",
     "patch256_fiber_global_asm",
     "patch254_runtime_crate",
     "issue451_inventory_ownership",
@@ -111,6 +112,7 @@
     "phase25_roadmap_draft",
     "phase258_release_mechanics",
     "phase25_bootstrap_seed_policy",
+    "phase25_runtime_port_invocations",
     "phase253_freestanding_subset",
     "phase24_closure",
     "phase398_retained_spelling_removal",
@@ -1823,7 +1825,7 @@
           },
           "runtime_package": {
             "path": "build/gust-runtime-package.a",
-            "retained_components": ["src/runtime/arena.c","src/runtime/host_io.c","src/runtime/file_io.c"],
+            "retained_components": ["src/runtime-rs/src/arena.rs","src/runtime-rs/src/host_io.rs","src/runtime-rs/src/file_io.rs"],
             "provided_symbols": ["os_ArenaAlloc","os_Arena_Free","os_Arena_New","os_Arena_Validate","os_Args","os_CloseDir","os_ExecutablePath","os_FileExecutable","os_FileExists","os_GetEnv","os_LogError","os_LogInt","os_LogStr","os_MockPayload","os_NativeObjectFormat","os_NativeTargetTriple","os_OpenDir","os_PathAbsolute","os_PathDir","os_ReadDir","os_ReadFile","os_RemoveFile","os_RunProcess","os_System","os_WriteFile","os_argc","os_argv","os_path_join","std_GenerationalSwap"],
             "selected_imports": ["os_LogInt","os_LogStr"],
             "new_or_changed_runtime_symbols": []
@@ -1893,7 +1895,7 @@
           },
           "runtime_package": {
             "path": "build/gust-runtime-package.a",
-            "retained_components": ["src/runtime/arena.c","src/runtime/host_io.c","src/runtime/file_io.c"],
+            "retained_components": ["src/runtime-rs/src/arena.rs","src/runtime-rs/src/host_io.rs","src/runtime-rs/src/file_io.rs"],
             "selected_imports": ["os_Arena_New","os_Arena_Free","os_ArenaAlloc","os_WriteFile","os_ReadFile","os_LogInt","os_LogStr"],
             "new_or_changed_runtime_symbols": []
           },
@@ -1948,7 +1950,7 @@
           },
           "runtime_package": {
             "path": "build/gust-runtime-package.a",
-            "retained_components": ["src/runtime/arena.c","src/runtime/host_io.c","src/runtime/file_io.c","src/runtime/scratch.c","src/runtime-rs/src/fiber.rs"],
+            "retained_components": ["src/runtime-rs/src/arena.rs","src/runtime-rs/src/host_io.rs","src/runtime-rs/src/file_io.rs","src/runtime-rs/src/scratch.rs","src/runtime-rs/src/fiber.rs"],
             "new_or_changed_runtime_symbols": []
           },
           "worker_contract": {
@@ -2249,7 +2251,7 @@
           },
           "runtime_package": {
             "format": "static_archive",
-            "members": ["arena.o","host_io.o","file_io.o","scratch.o","collections.o","strings.o","gust_runtime_rs_exports.o"],
+            "members": ["strings.o","gust_runtime_rs_exports.o"],
             "symbol_policy": "existing_registered_runtime_symbols_only"
           },
           "resource_cleanup_transport": {

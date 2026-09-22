@@ -22544,7 +22544,7 @@ run-step52-positive-batch:
     rg -n -F 'compiler/typechecker_resource_return_cleanup_mixed_scheduled_terminal_states_test_entry.gst' build/test_runner_step52_positive.c >/dev/null
     rg -n -F 'compiler/typechecker_resource_scope_exit_mixed_scheduled_terminal_states_test_entry.gst' build/test_runner_step52_positive.c >/dev/null
     cat src/runtime.c build/test_runner_step52_positive.c > build/test_runner_step52_positive_final.c
-    CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_step52_positive_final.c -o build/test_runner_step52_positive_bin
+    CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; RT_A=src/runtime-rs/target/release/libgust_runtime_rs.a; RT_C=src/runtime-rs/target/canary/release/libgust_runtime_rs.a; make "$RT_A" "$RT_C"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_step52_positive_final.c "$RT_A" -o build/test_runner_step52_positive_bin
     echo "🏃 Running native batched Step 5.2 positive runner..."
     ./build/test_runner_step52_positive_bin
     echo "✅ Batched Step 5.2 positive fixture runner passed."
@@ -22611,7 +22611,7 @@ make-test-suite:
     echo "⚙️  Compiling native Gust test runner..."
     GUST_BOOTSTRAP_EMITTER=1 ./gust --backend bootstrap-emitter tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
     cat src/runtime.c build/test_runner.c > build/test_runner_final.c
-    RS_OBJ=build/phase25-runtime-rs/gust_runtime_rs_exports.o; make "$RS_OBJ"; CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_final.c "$RS_OBJ" -o build/test_runner_bin
+    CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; RT_O=build/phase25-runtime-rs/gust_runtime_rs_exports.o; RT_CO=build/phase25-runtime-rs-canary/gust_runtime_rs_exports.o; make "$RT_O" "$RT_CO"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_final.c "$RT_O" -o build/test_runner_bin
     echo "🏃 Running native Gust test runner..."
     GUST_BOOTSTRAP_EMITTER=1 ./build/test_runner_bin
     make test_tree_sitter
@@ -22651,7 +22651,7 @@ make-test-suite-parallel:
     echo "⚙️  Compiling native Gust test runner..."
     GUST_BOOTSTRAP_EMITTER=1 ./gust --backend bootstrap-emitter tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
     cat src/runtime.c build/test_runner.c > build/test_runner_final.c
-    RS_OBJ=build/phase25-runtime-rs/gust_runtime_rs_exports.o; make "$RS_OBJ"; CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_final.c "$RS_OBJ" -o build/test_runner_bin
+    CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; RT_O=build/phase25-runtime-rs/gust_runtime_rs_exports.o; RT_CO=build/phase25-runtime-rs-canary/gust_runtime_rs_exports.o; make "$RT_O" "$RT_CO"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_final.c "$RT_O" -o build/test_runner_bin
     echo "🏃 Running native Gust test runner..."
     GUST_BOOTSTRAP_EMITTER=1 ./build/test_runner_bin
     make test_tree_sitter
@@ -24001,3 +24001,29 @@ guard-cranelift-phase24-close:
     python3 scripts/cranelift_test_levels.py validate
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase24-close | grep -F $'guard-cranelift-phase24-close\t1\t' >/dev/null
     python3 scripts/phase24_closure.py validate
+
+# Patch 25.5: the three guards this patch added, wired so they RUN.
+#
+# Written and passing locally is not the same as running. Without these
+# recipes and the workflow that calls them, src/runtime/strings.c could
+# drift out of sync with compiler/runtime/strings.gst and nothing would
+# say so -- a generated file with no staleness check is just a stale file
+# waiting to happen. Measured before writing them: zero references to any
+# of these three script names in the justfile or in .github/workflows.
+#
+# Appended rather than inserted: Patch 24.0c's manifest for this file is
+# keyed on line numbers, so a mid-file recipe moves every recipe below it.
+guard-cranelift-phase25-runtime-strings-generated:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ./scripts/phase25_runtime_strings_generated.sh
+
+guard-cranelift-phase25-strings-gust-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ./scripts/phase25_strings_gust_parity.sh
+
+guard-cranelift-phase25-runtime-rs-abi-smoke:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ./scripts/phase25_runtime_rs_abi_smoke.sh

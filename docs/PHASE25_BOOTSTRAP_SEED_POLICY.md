@@ -996,6 +996,44 @@ emitter — already satisfied by the sequence, which puts release mechanics at
 step 9 and emitter deletion at step 11, and noted here so a future reorder
 does not quietly break it.
 
+## P16 — the five `compiler/fixtures/*.c` files · **RESOLVED: three follow the runtime strand and stay foreign, two are frozen evidence and are not this phase's business**
+
+269 lines across five files that no D, O or P row covered. They are not one
+kind of thing, which is why a single row for "the fixtures" was never going to
+be right. Measured rather than assumed:
+
+**The three `phase20_*_probe.c` (141 lines) are real `cc` input.**
+`scripts/phase20_cross_feature_qualification.sh:36-38` compiles them on one
+command line *with* `src/runtime.c`:
+
+    "${CC:-cc}" ${CFLAGS} -Isrc src/runtime.c "$concurrent_probe" "$probe" \
+      "$build_root/native.o" -o "$build_root/native-program"
+
+So they belong to the **runtime strand** and their disposition follows it.
+They stay **foreign** for the same reason O1 keeps `tiny_host_*` foreign: they
+exist to prove Gust-compiled objects link against C the compiler did not
+produce, and rewriting them in Gust would test Gust calling Gust and the
+contract would evaporate. They go where the runtime's foreign fixtures went in
+Patch 25.4 — the `no_std` Rust crate — not to Gust.
+
+**The two `phase21_query_shape_*.expected.c` (128 lines) are frozen witness
+evidence.** They are `generated_c_golden` values inside
+`phase21_inert_scoped_query_records.semantic_delta_witnesses`, and nothing
+compiles or diffs them: the only references outside the registry and schema
+are `paths:` trigger filters in
+`.github/workflows/phase21-inert-scoped-query-records.yml` and one mention in
+`compiler/CRANELIFT_PHASE21_INERT_SCOPED_QUERY_RECORDS.md`. No script reads
+them.
+
+They are therefore C-shaped *data*, not C the toolchain builds. Phase 25
+retires C that `cc` compiles; nothing ever hands these to `cc`. They are a
+closed record's evidence, and a closed record stays true of its patch — so
+they are **retained, not retired**, and deleting them would falsify a Phase 21
+observation rather than advance a Phase 25 one.
+
+This is why the count matters: of the 269 lines, **141 are in scope and 128
+are not**, and the phase's closure sentence should say so rather than claim
+the fixtures directory was cleared.
 ## P17 — can the runtime crate stay `#![no_std]` · **RESOLVED: no, once the scheduler moves — and Phase 25's gate is *no C compiler*, not *no libc***
 
 P3 established that a `no_std` staticlib builds and exports its symbols, and

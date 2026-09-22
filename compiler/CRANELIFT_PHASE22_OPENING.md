@@ -9,7 +9,7 @@ Do not edit by hand.
 - Next patch: `22.2`
 - Observed main: `c157c86674624fd298c2f65e98ed8f4df85cb175`
 - Opening-baseline executable compiler invocations: `269`
-- Live successor executable compiler invocations: `150`
+- Live successor executable compiler invocations: `152`
 - Unclassified invocations: `0`
 - Relay state: `exact_post_relay_only`
 - Landed owning PR: `#264`
@@ -35,12 +35,12 @@ Do not edit by hand.
 
 ## Landed successor invocation summary
 
-- Landed selection `explicit_bootstrap_emitter`: `13`
+- Landed selection `explicit_bootstrap_emitter`: `15`
 - Landed selection `explicit_c`: `3`
 - Landed selection `explicit_cranelift`: `120`
 - Landed selection `explicit_invalid_or_parser_probe`: `3`
 - Landed selection `implicit_default`: `11`
-- Landed consumer class `already_explicit_or_parser_probe`: `139`
+- Landed consumer class `already_explicit_or_parser_probe`: `141`
 - Landed consumer class `cranelift_C_or_diagnostic_guard`: `2`
 - Landed consumer class `help_surface_probe`: `3`
 - Landed consumer class `intentional_default_selection_probe`: `4`
@@ -203,6 +203,8 @@ Do not edit by hand.
 | `scripts/phase22_opening.sh` | `none` | `implicit_default` | `intentional_default_selection_probe` | `cranelift` | `current_default_route_observation` | `22.6_flip_expectation_only` | `probe_is_migrated_before_the_default_route_changes` |
 | `scripts/phase22_opening.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/phase22_preflip_default_cohort.py` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
+| `scripts/phase25_runtime_strings_generated.sh` | `none` | `explicit_bootstrap_emitter` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
+| `scripts/phase25_strings_gust_parity.sh` | `none` | `explicit_bootstrap_emitter` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/run-gust-file.sh` | `none` | `explicit_c` | `already_explicit_or_parser_probe` | `cranelift` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/stdlib_s1_branded_collections_parity.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `stdlib` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |
 | `scripts/stdlib_s1_clone_destination_parity.sh` | `none` | `explicit_cranelift` | `already_explicit_or_parser_probe` | `stdlib` | `selected_backend_contract` | `preserve_explicit_selection` | `explicit_selection_is_removed_or_routes_to_a_different_backend` |

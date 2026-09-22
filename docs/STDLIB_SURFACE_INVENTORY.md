@@ -12,8 +12,8 @@ was described from memory. This file describes it from the compiler.
 | | |
 | --- | --- |
 | `std.*` names the typechecker registers | 38 |
-| `std_*` runtime symbols in `src/runtime/` and `src/runtime-rs/` | 20 |
-| Phase 17 helper rows | 21 |
+| `std_*` runtime symbols in `src/runtime/` and `src/runtime-rs/` | 21 |
+| Phase 17 helper rows | 22 |
 | **runtime symbols with no Phase 17 row** | **0** |
 | helper rows with no runtime symbol | 1 |
 | collection methods dispatched on a receiver | 28 |
@@ -29,22 +29,23 @@ than anything this inventory introduces.
 | `std_Channel_Alloc` | `src/runtime-rs/src/fiber.rs` | `p17_threading_runtime` |
 | `std_Channel_Recv_impl` | `src/runtime-rs/src/fiber.rs` | `p17_threading_runtime` |
 | `std_Channel_Send_impl` | `src/runtime-rs/src/fiber.rs` | `p17_threading_runtime` |
-| `std_Clone_str` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
-| `std_GenerationalSwap` | `src/runtime/arena.c` | `p17_allocation_string_runtime` |
+| `std_Clone_str` | `src/runtime-rs/src/strings.rs` | `p17_allocation_string_runtime` |
+| `std_GenerationalSwap` | `src/runtime-rs/src/arena.rs` | `p17_allocation_string_runtime` |
 | `std_Mutex_Alloc` | `src/runtime-rs/src/fiber.rs` | `p17_threading_runtime` |
 | `std_Mutex_Lock_impl` | `src/runtime-rs/src/fiber.rs` | `p17_threading_runtime` |
 | `std_Mutex_Unlock_impl` | `src/runtime-rs/src/fiber.rs` | `p17_threading_runtime` |
-| `std_PoolAlloc_impl` | `src/runtime/collections.c` | `p17_allocation_string_runtime` |
-| `std_PoolFree_impl` | `src/runtime/collections.c` | `p17_allocation_string_runtime` |
+| `std_PoolAlloc_impl` | `src/runtime-rs/src/collections.rs` | `p17_allocation_string_runtime` |
+| `std_PoolFree_impl` | `src/runtime-rs/src/collections.rs` | `p17_allocation_string_runtime` |
 | `std_is_alpha` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
 | `std_is_digit` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
 | `std_is_whitespace` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
 | `std_parse_int` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
+| `std_str_bounds_fail` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
 | `std_str_byte_at` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
 | `std_str_eq` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
 | `std_str_find` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
 | `std_str_slice` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
-| `std_str_split` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
+| `std_str_split` | `src/runtime-rs/src/strings.rs` | `p17_allocation_string_runtime` |
 | `std_str_trim` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
 
 ## Helper rows with no runtime symbol

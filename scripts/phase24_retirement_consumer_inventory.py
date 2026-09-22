@@ -1292,8 +1292,14 @@ HARNESS_REFERENCE_FORMS = (
      re.compile(r"\bbash\s+scripts/[A-Za-z0-9_.-]+\.sh")),
     ("assignment to a variable",
      re.compile(r"""=\s*['"]?scripts/[A-Za-z0-9_.-]+\.sh""")),
+    # `./` is optional. Patch 25.5 wrote three recipes as
+    # `./scripts/x.sh`, which is the same call and was not an accounted
+    # form, so the sweep failed rather than demanding rows for them --
+    # which is the check working, and the fix is to account for the form
+    # rather than to respell the callers into the one form it knew.
     ("invoked as a bare executable",
-     re.compile(r"^\s*(?:\S+=\S+\s+)*scripts/[A-Za-z0-9_.-]+\.sh(?:\s|$)")),
+     re.compile(r"^\s*(?:\S+=\S+\s+)*\./?scripts/[A-Za-z0-9_.-]+\.sh(?:\s|$)"
+                .replace("\\./?", "(?:\\./)?"))),
     # Spans the whole line deliberately: "the line is a comment" is a property
     # of the line, and the span has to reach the reference for the overlap
     # test below to see it.

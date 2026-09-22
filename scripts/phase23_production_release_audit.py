@@ -78,6 +78,65 @@ def surface(path: str, role: str, markers: tuple[str, ...]) -> dict[str, object]
     }
 
 
+
+def phase25_runtime_port_audit(registry: dict, live: dict) -> dict:
+    """Peel Patch 25.5's changes off the live audit, or return it unchanged.
+
+    Every transition below this one ends by comparing its registered
+    `current_audit` against the LIVE scan, because each was the newest
+    thing to touch the audit when it was written. Issue #398's block does
+    exactly that. Patch 25.5 is newer, so without a link here its two
+    changes reach #398's comparison and it reports that ITS OWN transition
+    drifted -- a failure that names the wrong patch and says nothing about
+    what moved.
+
+    So this registers Patch 25.5's delta and hands the earlier links the
+    state they were written against. It is the same chain shape as the
+    Phase 22 census successor, and like that one it ADDS where every
+    predecessor reduced.
+
+    Two fields move and they have different causes, which is why they are
+    registered separately rather than as one digest bump:
+
+      repository_invocation_count       the strings differential has to
+                                        emit the Gust side, and scripts/*.sh
+                                        is inside the invocation scan
+      supported_surface_manifest_digest the Makefile is a supported
+                                        surface and this phase edits it
+    """
+    node = registry.get("phase25_runtime_port_invocations", {}).get(
+        "production_audit_transition")
+    if node is None:
+        return live
+    previous = node.get("previous_audit")
+    require(node.get("contract_version") ==
+            "phase25_runtime_port_audit_transition_v1" and
+            node.get("current_audit") == live and
+            isinstance(previous, dict) and
+            node.get("partial_or_substituted_audit") == "rejected",
+            "Patch 25.5 production audit transition drifted")
+    moved = sorted(key for key in set(previous) | set(live)
+                   if previous.get(key) != live.get(key))
+    require(moved == sorted(node.get("moved_fields", [])),
+            "Patch 25.5 moved a production audit field it does not "
+            f"register: {moved}")
+    # The invocation count and the Phase 22 census are two measurements of
+    # one thing. If they disagree, one of them is measuring something else.
+    successor = registry.get("phase25_runtime_port_invocations", {})
+    added = successor.get("added_invocation_count")
+    require(live["repository_invocation_count"] -
+            previous["repository_invocation_count"] == added,
+            "the Patch 25.5 production audit and invocation successor "
+            "disagree about how many invocations it adds")
+    require(live["repository_explicit_c_count"] ==
+            previous["repository_explicit_c_count"] and
+            live["phase25_bootstrap_explicit_c_count"] ==
+            previous["phase25_bootstrap_explicit_c_count"],
+            "Patch 25.5 must not move explicit-C counts; it ports the "
+            "runtime, it does not retire a spelling")
+    return previous
+
+
 def scan() -> dict[str, object]:
     opening = load_opening()
     invocations = opening.scan_invocations()
@@ -284,6 +343,7 @@ def validate() -> tuple[dict, dict[str, object]]:
             "route_contract", {}).get("non_bootstrap_live_lane_count") == 1,
             "focused live-C predecessor drifted")
     summary = scan()
+    summary = phase25_runtime_port_audit(registry, summary)
     closure_transition = registry.get("phase23_closure", {}).get(
         "production_audit_transition")
     derivation_transition = registry.get("phase24_cr15_derivation", {}).get(

@@ -23,8 +23,10 @@ PHASE21_RUNTIME_PACKAGE = build/gust-runtime-package.a
 # no-op: the link lines were edited and the link was unchanged.
 PHASE25_RUNTIME_RS = src/runtime-rs/target/release/libgust_runtime_rs.a
 PHASE25_RUNTIME_RS_OBJ = build/phase25-runtime-rs/gust_runtime_rs_exports.o
+PHASE25_RUNTIME_RS_CANARY = src/runtime-rs/target/canary/release/libgust_runtime_rs.a
+PHASE25_RUNTIME_RS_CANARY_OBJ = build/phase25-runtime-rs-canary/gust_runtime_rs_exports.o
 
-PHASE21_RUNTIME_OBJECTS = build/phase21-runtime/arena.o build/phase21-runtime/host_io.o build/phase21-runtime/file_io.o build/phase21-runtime/scratch.o build/phase21-runtime/collections.o build/phase21-runtime/strings.o
+PHASE21_RUNTIME_OBJECTS = build/phase21-runtime/strings.o
 
 PHASE10_DIAG_CC ?= clang
 PHASE10_DIAG_CFLAGS ?= -O0 -g3 -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address,undefined -fsanitize-address-use-after-scope -fno-sanitize-recover=all -pthread
@@ -121,6 +123,7 @@ diagnose-phase10-stage1: build/gust_stage1_compiler.c $(RUNTIME_SRCS)
 	cat src/runtime.c build/gust_stage1_compiler.c > build/diagnostics/phase10-stage1/gust_stage1_sanitized.c
 	$(PHASE10_DIAG_CC) $(PHASE10_DIAG_CFLAGS) $(INCLUDES) \
 		build/diagnostics/phase10-stage1/gust_stage1_sanitized.c \
+		$(PHASE25_RUNTIME_RS) \
 		-o build/diagnostics/phase10-stage1/gust_stage1_sanitized
 	@rm -f \
 		build/diagnostics/phase10-stage1/stdout.log \
@@ -209,32 +212,18 @@ build/gust-native-backend: $(PHASE10_NATIVE_BACKEND_MANIFEST) $(PHASE10_NATIVE_B
 	install -m 0755 "$(PHASE10_NATIVE_BACKEND_BUILT_BIN)" build/.gust-native-backend.tmp
 	mv build/.gust-native-backend.tmp build/gust-native-backend
 
-build/phase21-runtime/arena.o: src/runtime/arena.c src/runtime/core_headers.h
-	mkdir -p build/phase21-runtime
-	$(CC) $(CFLAGS) -Isrc/runtime -c src/runtime/arena.c -o $@
-
-build/phase21-runtime/host_io.o: src/runtime/host_io.c src/runtime/core_headers.h
-	mkdir -p build/phase21-runtime
-	$(CC) $(CFLAGS) -Isrc/runtime -c src/runtime/host_io.c -o $@
-
-build/phase21-runtime/file_io.o: src/runtime/file_io.c src/runtime/core_headers.h
-	mkdir -p build/phase21-runtime
-	$(CC) $(CFLAGS) -Isrc/runtime -c src/runtime/file_io.c -o $@
-
 # Patch 25.6: fiber.c is gone. Its eighteen exports -- the scheduler, the
 # context switch, and the Mutex/Channel primitives -- are defined in
 # src/runtime-rs and reach the archive through the crate member. The .o
 # rule is removed rather than left dangling: a rule whose source does not
 # exist fails only when something asks for it.
 
-build/phase21-runtime/scratch.o: src/runtime/scratch.c src/runtime/core_headers.h
-	mkdir -p build/phase21-runtime
-	$(CC) $(CFLAGS) -Isrc/runtime -c src/runtime/scratch.c -o $@
-
-build/phase21-runtime/collections.o: src/runtime/collections.c src/runtime/core_headers.h
-	mkdir -p build/phase21-runtime
-	$(CC) $(CFLAGS) -Isrc/runtime -c src/runtime/collections.c -o $@
-
+# Patch 25.5: arena.o, host_io.o, file_io.o, scratch.o and collections.o
+# are gone with their sources. Their symbols did not go anywhere -- they
+# are defined in src/runtime-rs and reach this archive through the crate
+# member, exactly as fiber's eighteen did in 25.6. A member left; no
+# symbol did. The rules are deleted rather than left pointing at missing
+# sources, because such a rule fails only when something asks for it.
 build/phase21-runtime/strings.o: src/runtime/strings.c src/runtime/core_headers.h
 	mkdir -p build/phase21-runtime
 	$(CC) $(CFLAGS) -Isrc/runtime -c src/runtime/strings.c -o $@
@@ -244,13 +233,23 @@ build/phase21-runtime/strings.o: src/runtime/strings.c src/runtime/core_headers.
 # would test Gust calling Gust and the contract would evaporate (O1).
 # Symbol names are byte-identical, so the 26 dependent files are unchanged.
 
-# WILDCARD, and it has to be. This listed lib.rs and Cargo.toml, which was
-# true when the crate WAS lib.rs and quietly stopped being true at the
-# first `pub mod`. Patch 25.6 adds fiber.rs and fiber_asm.rs: editing
-# either left the archive considered up to date, Make skipped the recipe,
-# and Cargo's own change detection never ran -- so the build linked
-# YESTERDAY'S scheduler and passed. That is the worst shape a build bug
-# takes, because nothing fails.
+# Patch 25.5: the prerequisite list is a WILDCARD, and it has to be.
+#
+# It used to name src/runtime-rs/src/lib.rs and Cargo.toml. That was true
+# when the crate was lib.rs, and quietly stopped being true at the first
+# `pub mod`: the crate is now seven files, and editing fiber.rs, arena.rs,
+# collections.rs or file_io.rs did not make make rebuild the archive. The
+# build then linked YESTERDAY'S runtime and passed -- the worst shape a
+# build bug takes, because nothing fails and the green means nothing.
+#
+# scripts/phase25_runtime_rs_abi_smoke.sh had the identical bug in the
+# identical place: it skipped the cargo build when an archive already
+# existed, so the harness reported on code it had not compiled. Both were
+# written while being careful about everything else in the same file.
+#
+# cargo does its own change detection, so running it unconditionally would
+# also be correct; the wildcard keeps make's own graph honest, which is
+# what the incremental-build comment at the top of this file promises.
 PHASE25_RUNTIME_RS_SRCS = $(wildcard src/runtime-rs/src/*.rs) src/runtime-rs/Cargo.toml
 
 $(PHASE25_RUNTIME_RS): $(PHASE25_RUNTIME_RS_SRCS)
@@ -260,33 +259,32 @@ $(PHASE25_RUNTIME_RS): $(PHASE25_RUNTIME_RS_SRCS)
 #
 # Patch 25.4 got that object by extracting the single archive member that
 # defined the fixtures, which worked while the crate was no_std and the
-# fixtures called nothing. Patch 25.6 moved the scheduler in, and the
-# scheduler uses std: the extracted member now carries 45 undefined
-# references into core, alloc and std, which live in the 309 members the
-# extraction discards. It builds and then fails at link.
+# fixtures called nothing. Patch 25.6 moved the scheduler in and Patch
+# 25.5 moved five more runtime files: the extracted member now carries
+# undefined references into core, alloc and std, which live in the 309
+# members the extraction discards. It builds and then fails at link.
 #
-# So the object is produced by a partial link instead. The twenty-one
-# exports are the roots, --gc-sections drops what they do not reach, and
-# the result is self-contained apart from libc. Its exports are then
-# narrowed to exactly those twenty-one -- the set the two deleted C files
-# exported between them -- which also localises the memcpy that
+# So the object is produced by a partial link instead. The exports below
+# are the roots, --gc-sections drops what they do not reach, and the
+# result is self-contained apart from libc. Its exports are then narrowed
+# to exactly that list, which also localises the memcpy that
 # compiler_builtins brings along, so it can no longer collide with libc's.
-# Three parity guards compare the archive's defined-symbol set exactly, so
-# that set has to be a named list and not "whatever ended up global":
-# Rust's panic handler symbol carries a content hash that moves on every
-# crate change, and would make those lists churn forever.
+#
+# The list is NAMED rather than "whatever ended up global". Three parity
+# guards compare the archive's defined-symbol set exactly, and the crate's
+# codegen unit also defines Rust's panic handler, whose symbol carries a
+# content hash that moves on every crate change -- deriving the list from
+# the object would make those guards churn forever and assert nothing.
 #
 # The roots are checked after the link, not assumed. ld does not fail on a
 # -u it cannot satisfy, so a renamed export would otherwise leave a quietly
 # smaller object and surface much later as an undefined symbol.
 PHASE25_RUNTIME_RS_EXPORTS = \
-	tiny_host_add_one_i32 \
-	tiny_host_add_i32 \
-	tiny_host_is_positive_i32 \
+	get_num_threads_to_use \
 	gust_check_fail \
 	gust_context_switch \
-	gust_fiber_entry_wrapper \
 	gust_fiber_create \
+	gust_fiber_entry_wrapper \
 	gust_fiber_exit \
 	gust_fiber_free \
 	gust_fiber_switch \
@@ -296,13 +294,118 @@ PHASE25_RUNTIME_RS_EXPORTS = \
 	gust_shard_loop \
 	gust_tick \
 	gust_yield \
-	get_num_threads_to_use \
+	os_ArenaAlloc \
+	os_Arena_Free \
+	os_Arena_New \
+	os_Arena_Validate \
+	os_Args \
+	os_CloseDir \
+	os_ExecutablePath \
+	os_FileExecutable \
+	os_FileExists \
+	os_GetEnv \
+	os_GetThreadScratch_raw \
+	os_HashMapClear_impl \
+	os_HashMapContains_impl \
+	os_HashMapRef_impl \
+	os_HashMapRemove_impl \
+	os_LogError \
+	os_LogInt \
+	os_LogStr \
+	os_MockPayload \
+	os_NativeObjectFormat \
+	os_NativeTargetTriple \
+	os_OpenDir \
+	os_PathAbsolute \
+	os_PathDir \
+	os_ReadDir \
+	os_ReadFile \
+	os_RemoveFile \
+	os_RunProcess \
+	os_ScratchAlloc \
+	os_ScratchReset \
+	os_SetThreadScratch \
+	os_System \
+	os_WriteFile \
+	os_argc \
+	os_argv \
+	os_path_join \
 	std_Channel_Alloc \
 	std_Channel_Recv_impl \
 	std_Channel_Send_impl \
+	std_Clone_str \
+	std_GenerationalSwap \
 	std_Mutex_Alloc \
 	std_Mutex_Lock_impl \
-	std_Mutex_Unlock_impl
+	std_Mutex_Unlock_impl \
+	std_PoolAlloc_impl \
+	std_PoolFree_impl \
+	std_str_split \
+	tiny_host_add_i32 \
+	tiny_host_add_one_i32 \
+	tiny_host_is_positive_i32
+
+# Both archives are narrowed the same way, so the recipe is written once.
+# $(1) staticlib, $(2) output object, $(3) scratch directory.
+# The partial link is PLATFORM-SPECIFIC, and Patch 25.6 commits this
+# tree to four quadrants: macOS-x86_64, Linux-x86_64, macOS-aarch64,
+# Linux-aarch64. fiber_asm.rs preserves all four; a GNU-only build rule
+# would keep the assembly portable and make the build that consumes it
+# Linux-only.
+#
+# ELF (GNU ld + objcopy): --gc-sections drops what the roots do not
+# reach, --start-group resolves the archive's internal cycles, and
+# objcopy localises everything outside the export list.
+#
+# Mach-O (ld64): none of those options exist. Dead-stripping is
+# -dead_strip, archives need no group because ld64 iterates to a fixed
+# point, and there is no objcopy -- ld64 narrows with -exported_symbol
+# and localises the rest in the same pass. Mach-O symbols carry a
+# leading underscore, so the export list is prefixed and the drift check
+# strips it back off.
+#
+# Selected with `ifeq` at parse time rather than a shell test inside the
+# recipe, because the two arms are different COMMANDS, not different
+# arguments -- one is two steps and one is one.
+#
+# THE DARWIN ARM IS UNVERIFIED ON THIS HOST. It is written from ld64's
+# documented options and has not been run, exactly as this tree's three
+# unbuilt assembly quadrants are text-compared rather than byte-compared.
+# Labelled rather than presented as tested: one `make
+# build/phase25-runtime-rs/gust_runtime_rs_exports.o` on either macOS
+# quadrant settles it.
+PHASE25_UNAME_S := $(shell uname -s)
+
+ifeq ($(PHASE25_UNAME_S),Darwin)
+define narrow_runtime_rs_link
+ld -r -dead_strip -o $(2) \
+	$(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),-u _$(sym)) \
+	$(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),-exported_symbol _$(sym)) \
+	$(1)
+endef
+else
+define narrow_runtime_rs_link
+ld -r --gc-sections -o $(3)/combined.o \
+	$(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),-u $(sym)) \
+	--start-group $(1) --end-group
+objcopy $(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),--keep-global-symbol=$(sym)) \
+	$(3)/combined.o $(2)
+@rm -f $(3)/combined.o
+endef
+endif
+
+define narrow_runtime_rs
+@rm -rf $(3)
+@mkdir -p $(3)
+$(call narrow_runtime_rs_link,$(1),$(2),$(3))
+@defined=$$(nm -g --defined-only $(2) | awk '$$2 ~ /^[TDBRW]$$/ {print $$3}' \
+	| sed 's/^_//' | sort); \
+expected=$$(printf '%s\n' $(PHASE25_RUNTIME_RS_EXPORTS) | sort); \
+if [ "$$defined" != "$$expected" ]; then \
+	echo 'src/runtime-rs exports drifted from the registered set: $(2)' >&2; \
+	diff <(echo "$$expected") <(echo "$$defined") >&2; exit 1; \
+fi
+endef
 
 # The partial link is PLATFORM-SPECIFIC, and this patch is committed to
 # four quadrants: macOS-x86_64, Linux-x86_64, macOS-aarch64, Linux-aarch64.
@@ -325,36 +428,34 @@ PHASE25_RUNTIME_RS_EXPORTS = \
 # than byte-compared. Labelled rather than presented as tested: what
 # would settle it is one `make build/phase25-runtime-rs/...` on either
 # macOS quadrant.
-PHASE25_UNAME_S := $(shell uname -s)
 
-# The export set lives in THIS file, so the Makefile is a real input to
-# the narrowed object. Without it here, editing PHASE25_RUNTIME_RS_EXPORTS
-# leaves a stale object that still carries the old symbol set, and the
-# drift check below passes because it compares the object against the
-# list it was built from, not the list as it now reads.
+# The export set lives in THIS file, so the Makefile is a real input to both
+# narrowed objects. Without it here, editing PHASE25_RUNTIME_RS_EXPORTS leaves
+# a stale object carrying the old symbol set, and the drift check inside the
+# define passes because it compares the object against the list it was built
+# from, not the list as it now reads. Measured on 25.6: make reported the
+# object up to date after the export list changed.
 $(PHASE25_RUNTIME_RS_OBJ): $(PHASE25_RUNTIME_RS) Makefile
-	@rm -rf build/phase25-runtime-rs
-	@mkdir -p build/phase25-runtime-rs
-ifeq ($(PHASE25_UNAME_S),Darwin)
-	ld -r -dead_strip -o $@ \
-		$(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),-u _$(sym)) \
-		$(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),-exported_symbol _$(sym)) \
-		$(PHASE25_RUNTIME_RS)
-else
-	ld -r --gc-sections -o build/phase25-runtime-rs/combined.o \
-		$(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),-u $(sym)) \
-		--start-group $(PHASE25_RUNTIME_RS) --end-group
-	objcopy $(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),--keep-global-symbol=$(sym)) \
-		build/phase25-runtime-rs/combined.o $@
-	@rm -f build/phase25-runtime-rs/combined.o
-endif
-	@defined=$$(nm -g --defined-only $@ | awk '$$2 ~ /^[TDBRW]$$/ {print $$3}' \
-		| sed 's/^_//' | sort); \
-	expected=$$(printf '%s\n' $(PHASE25_RUNTIME_RS_EXPORTS) | sort); \
-	if [ "$$defined" != "$$expected" ]; then \
-		echo 'src/runtime-rs exports drifted from the registered set' >&2; \
-		diff <(echo "$$expected") <(echo "$$defined") >&2; exit 1; \
-	fi
+	$(call narrow_runtime_rs,$(PHASE25_RUNTIME_RS),$@,build/phase25-runtime-rs)
+
+# Patch 25.5: the GUST_DEBUG arena, as a SECOND ARCHIVE.
+#
+# arena.c picked its allocator with `#ifdef GUST_DEBUG`, per translation
+# unit, so `-DGUST_DEBUG` on a test's own compile line switched the arena
+# to the canary layout. A Rust staticlib is built once and linked into
+# both, so the switch moved to the build. tests/test_runner.gst links this
+# object for exactly the tests it compiles with -DGUST_DEBUG.
+#
+# Separate --target-dir, not a rebuild in place: sharing one would make
+# the two archives evict each other and whichever was built second would
+# be the only one that existed.
+$(PHASE25_RUNTIME_RS_CANARY): $(PHASE25_RUNTIME_RS_SRCS)
+	$(CARGO) build --release --features gust_debug \
+		--manifest-path src/runtime-rs/Cargo.toml \
+		--target-dir src/runtime-rs/target/canary
+
+$(PHASE25_RUNTIME_RS_CANARY_OBJ): $(PHASE25_RUNTIME_RS_CANARY) Makefile
+	$(call narrow_runtime_rs,$(PHASE25_RUNTIME_RS_CANARY),$@,build/phase25-runtime-rs-canary)
 
 $(PHASE21_RUNTIME_PACKAGE): $(PHASE21_RUNTIME_OBJECTS) $(PHASE25_RUNTIME_RS_OBJ)
 	@rm -f build/.gust-runtime-package.a.tmp

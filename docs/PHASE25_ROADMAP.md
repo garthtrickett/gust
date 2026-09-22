@@ -898,6 +898,361 @@ deleted. Flagged for an owner rather than fixed in a patch about `fiber.c`:
 deciding whether the native backend should inject a tick is a scheduler
 question, not a porting one.
 
+## Constructing a `str` in Gust: solved, and it needed no new surface
+
+The four `strings.c` functions left after the pure ones all need the same
+thing — build a `str` from a pointer and a length — and every construction
+path Gust offers (`std.Concat`, `std.Clone`, `std.str_slice`) is itself a
+runtime call, which is circular when the function being written IS
+`std_str_slice`.
+
+It is not a gap. `compiler/lexer.gst:147-155` already does it:
+
+```gust
+unsafe {
+    mut h  := os.ScratchAlloc(16);
+    mut hp := (h + 0) as *StrHeader;      // type StrHeader struct { data: *byte, len: int }
+    (*hp).data = (&s[start]) as *byte;
+    (*hp).len  = end - start;
+    return *(((hp as *str) + 0) as *str);
+}
+```
+
+A `str` is `{ data, len }`, so a struct of that shape, a pointer cast and a
+deref reconstruct one. The `unsafe` block is required — pointer arithmetic
+and raw casts are rejected outside one, which is the compiler telling the
+truth about what this is.
+
+Compiled, `std_str_slice` emits
+`Slice_unsigned_char std_str_slice(Slice_unsigned_char s, int start, int end)`
+— byte-identical to the C — and references exactly three things:
+`gust_check_fail` (injected), `os_ScratchAlloc` (layer 1, a downward call
+from layer 2, legal) and itself.
+
+**Three separate fixes from this phase had to hold at once for that to
+pass**: the injected-primitive exemption, the layer order permitting
+downward calls, and the narrowing that lets a module call what it defines.
+Any one missing and this reads as a violation.
+
+### One semantic difference, recorded rather than smoothed over
+
+The C returns the slice **by value** and allocates nothing. The Gust version
+took 16 bytes of scratch per call. Scratch is a bump allocator that resets,
+so the cost was small, but "allocates nothing" and "allocates 16 bytes" are
+not the same claim, and `std_str_slice` is called 165 times across the
+compiler's own sources.
+
+**RESOLVED 2026-09-21, and it needed no new surface either.** A struct local
+— `mut hdr: StrHeader;` then field assignment — emits `StrHeader hdr` on the
+stack and the return copies it out by value. Scratch was never required; the
+first version reached for `os.ScratchAlloc` because that was the allocation
+primitive already in hand. The port is allocation-free, like the C, so the
+difference is removed rather than merely measured.
+
+## `strings.c`: 9 of 11 in Gust, and the last two need arena bytes Gust cannot ask for
+
+**CORRECTED 2026-09-21.** The table below was right about the destination and
+wrong about the state: the file had **eight** functions, not nine.
+`std_parse_int` was listed here and absent from `compiler/runtime/strings.gst`.
+The sentence "All nine match" was never true when it was written — nothing
+had compared them. It is true now, and checked by
+`scripts/phase25_strings_gust_parity.sh` rather than asserted. See
+[Deleting the runtime C](#deleting-the-runtime-c-five-files-are-free-strings-costs-a-generation)
+below for what the comparison found.
+
+Nine of `strings.c`'s eleven functions are Gust, each emitting a signature
+compared against the C rather than eyeballed:
+
+    int           std_str_eq(Slice_unsigned_char, Slice_unsigned_char)
+    unsigned char std_str_byte_at(Slice_unsigned_char, int)
+    unsigned char std_is_alpha(unsigned char)
+    unsigned char std_is_digit(unsigned char)
+    unsigned char std_is_whitespace(unsigned char)
+    int           std_str_find(Slice_unsigned_char, Slice_unsigned_char)
+    int           std_parse_int(Slice_unsigned_char)
+    Slice_unsigned_char std_str_slice(Slice_unsigned_char, int, int)
+    Slice_unsigned_char std_str_trim(Slice_unsigned_char)
+
+All nine now match, against a frozen copy of the C rather than against
+memory. `std_str_trim` calls `std_str_slice`, which the layering rule
+permits only because a module may call what it defines — a narrowing made
+earlier today after this exact case failed.
+
+## Deleting the runtime C: five files are free, `strings.c` costs a generation
+
+**The branch does not link today, and that is not a tidiness problem.**
+Measured by compiling the unity build and linking it against the crate:
+
+    cc /tmp/probe_main.c /tmp/unity.o libgust_runtime_rs.a
+    multiple definition of `os_ArenaAlloc' ... first defined here
+    multiple definition of `os_Arena_New'  ... first defined here
+    ... 40+ more
+
+The archive is ONE member — Patch 25.6 made it so deliberately — so pulling
+in `tiny_host_add_i32` pulls in every ported function beside it. While the C
+originals are still compiled into the unity build, every one of them
+collides. So the deletion is what makes the branch build, and it cannot be
+deferred to a follow-up patch.
+
+### Five of the six delete without touching the seed
+
+`arena.c`, `scratch.c`, `collections.c`, `file_io.c` and `host_io.c` have
+their symbols in the archive, and the archive is already on every link line.
+Removing their `#include`s changes no compiler source, so the emitted C is
+unchanged and `gust_v4.c` does not move. Deletion, Makefile object rules, and
+the registry rows — the shape Patch 25.6 already established when it deleted
+`fiber.c` (nine files, 733 deletions).
+
+`strings.c` must lose `std_Clone_str` and `std_str_split` in the same commit:
+those two ARE in the archive, so they collide like the rest. The other nine
+stay in C for one more generation.
+
+### The ninth and the seed: why `strings.c` is different
+
+Its remaining nine functions move to **Gust**, not to Rust, so they arrive
+as emitted C inside the compiler's own translation unit. That creates an
+ordering problem the other five do not have:
+
+1. `gust_bootstrap` is built from the committed seed `gust_v4.c`. The
+   current seed calls `std_str_eq` and friends and does not define them.
+2. Adding `import "runtime/strings.gst"` to a compiler entry makes
+   stage 1/2/3 emit the nine. While `strings.c` is still in the unity
+   build, that is a duplicate definition — in the same translation unit,
+   so it is a compile error, not a link one.
+3. Deleting `strings.c` first leaves the old seed with no definitions.
+
+The way through is one local bootstrap and one commit. Locally: drop the
+include, add the import, and link `gust_bootstrap` against a temporary
+object built from the retained `strings.c`. `make bootstrap` then
+republishes `gust_v4.c` from stage 3, and the new seed contains the nine.
+Commit the new seed together with the deletion and the import; a clean
+checkout builds `gust_bootstrap` from the new seed, which already defines
+them, so the temporary object is never needed again and is not committed.
+
+This is the two-generation rule as a process, collapsed into one commit,
+and it is the reason `strings.c` should be a separate patch from the other
+five rather than riding along.
+
+### Two Gust facts that cost a build cycle each, and one that did not
+
+Writing the include-guard helper hit both of these in a row. Neither is
+documented anywhere and neither error names its cause.
+
+**`guard` is a RESERVED KEYWORD** (`compiler/lexer.gst:164`, token tag 27).
+A local named `guard` produced ten of these:
+
+    ParserError at 4184:9: Syntax Error: Expected valid statement inside block
+    ParserError at 4184:15: Syntax Error: Expected valid statement inside block
+    ... two per line, for five more lines
+
+The message names neither a keyword nor the right line — the parser loses
+sync and then fails on everything after it, so the first error is below the
+cause, not at it. A four-line repro found it in one run; reading the errors
+where they appeared would not have.
+
+**A function cannot RETURN a `std.Concat` result.**
+
+    Semantic Error: Escape analysis violation.
+    Returning scratchpad-allocated view of type Str
+
+`std.Concat` allocates in scratch, and scratch cannot escape its frame.
+This kills the obvious shape — a small helper that builds a string and
+returns it — as a DESIGN, not just as written. The way through is the one
+the surrounding code already uses: accumulate into a local the caller
+already owns and push that. `std_str_slice` hit the same wall earlier in
+this patch and a stack local was the answer there too, so it is worth
+stating as a rule: **in Gust, build strings into a caller-owned local, do
+not return them from helpers.**
+
+**And one that turned out fine:** `#` in a string literal is legal.
+`codegen.gst` never emitted one before this patch, which looked like
+evidence of a lexer limitation, but a `mir_memory_access` lowering
+module already writes `"#include <stdint.h>\n"` at line 69. Absence of a pattern is not
+evidence it is forbidden — checking took one grep and would otherwise have
+produced an elaborate workaround for a problem that does not exist.
+
+### Wiring `strings.gst` in: three assumptions tested, two survived
+
+The last step of 25.5 is making the nine Gust functions reach every
+compiled program, not just the compiler. Programs are built as
+`cat src/runtime.c program.c`, so once `strings.c` goes they have no
+definitions. Three things had to be true for the cheap answer to work.
+
+**1. The emitter can emit a module with no `main`.** TRUE, and it was not
+obvious — every other use of `--backend bootstrap-emitter` in this repo
+names a program entry. `compiler/runtime/strings.gst` emits 314 lines
+containing all nine functions, the `std_str_bounds_fail` helper, and no
+`main`. Deterministic: two emits are byte-identical.
+
+**2. That output compiles inside the runtime translation unit.** TRUE.
+`core_headers.h` + the emitted module compiles with zero errors and zero
+redefinition warnings, exporting 16 `std_*` symbols. The emitter's own
+preamble says *"Builtin slice structs are runtime-owned in
+src/runtime/core_headers.h"*, so it already expects to coexist.
+
+**3. It can be concatenated in FRONT of an emitted program.** **FALSE**,
+and this is the blocker:
+
+    cat core_headers.h strings_module.c program.c | cc
+    error: redefinition of `struct APIRequest'
+    error: redefinition of `struct SessionNode'
+
+`APIRequest` and `SessionNode` are BUILT-IN structs, registered in
+`compiler/typechecker.gst:7742` and emitted unconditionally into every
+program. So the runtime prelude and the program each define them and the
+concatenation that has worked since the beginning stops working. Nothing
+about the Gust port causes this; it is a property of the emitter that only
+shows up the first time two emitted units are concatenated.
+
+**Three ways out, in order of preference:**
+
+  1. **Guard the built-in struct emission** with `#ifndef` /
+     `#define` per struct. Three lines per built-in, local to codegen,
+     and it makes emitted C concatenation-safe in general rather than
+     just for this case. Moves the seed — but this step needs a bootstrap
+     anyway, so it rides along at no extra cost.
+  2. **Emit built-ins only when referenced.** Correct, and strictly
+     better, but it is a reachability analysis in codegen and a much
+     larger change than this patch should carry. Worth its own patch.
+  3. **Post-process the generated module** to strip the duplicate struct
+     definitions. Cheapest and worst: fragile text surgery over generated
+     C, which breaks silently the next time the emitter's layout changes.
+
+Recommending 1, with 2 recorded as the follow-up it deserves.
+
+**Two tests depend on those built-ins** —
+`compiler/codegen_initializer_test_entry.gst` and
+`compiler/typechecker_templates_test_entry.gst` — so option 2 cannot
+simply delete them from the prelude, and option 1 must keep the
+definitions, only guard them.
+
+**The generated file is a second seed, and should be named one.** It has
+to be checked in: `gust_bootstrap` is built from `gust_v4.c` plus
+`src/runtime.c`, and generating the strings C needs a compiler, so a
+build-time rule is circular. Checked in and regenerated by a guard that
+diffs, exactly as `gust_v4.c` is. That is a real cost to state plainly —
+314 lines of transpiled C in the tree, which will churn whenever the
+emitter's preamble changes — and it is the reason Patch 25.9 exists.
+
+### The deletion's registration surface, measured before starting it
+
+Deleting five `.c` files is not five deletions. The archive's shape and the
+runtime's source inventory are asserted in eight places, and every one of
+them names files by path:
+
+| what | where | shape |
+| --- | --- | --- |
+| unity build | `src/runtime.c` | five `#include`s |
+| object list | `Makefile` `PHASE21_RUNTIME_OBJECTS` + 5 `.o` rules | delete the rules, do not leave them dangling |
+| archive members | `scripts/cranelift_feature_registry.schema.json` and the registry | `members` array, exact |
+| archive members | `scripts/phase21_full_compiler_native_qualification.py` | compares `ar t` output exactly |
+| archive members | three `phase21_*_native_source.sh` guards | fallback member lists |
+| helper sources | `scripts/phase17_opening.py` `required_sources` | a SET compared for equality |
+| helper rows | `scripts/cranelift_feature_registry.json` `source_path` | **57 rows**: arena 10, host_io 8, file_io 26, scratch 6, collections 7 |
+| a guard that COMPILES one | `scripts/phase17_retained_c_runtime_parity.sh` | `cc -O2 -c src/runtime/arena.c` |
+
+The last two are the ones that make this a patch rather than a chore. The
+57 rows are per-helper provenance, so they move to the Rust crate rather
+than disappearing, and `phase17_retained_c_runtime_parity.sh` builds
+`arena.c` directly — a guard whose whole subject is the retained C runtime
+has to be rescoped, not deleted, under the invert-don't-delete rule.
+
+`phase17_opening.py`'s `required_sources` still names `fiber.c` and
+`approved_scalar_imports.c`, both already deleted, so that guard is red on
+this branch before this patch touches anything. Control it against the
+branch base before reading any failure there as new — #457 is the fix in
+flight.
+
+Patch 25.6 did this for one file and it was nine files and 733 deletions.
+Five files with 57 provenance rows is the same shape at five times the
+width, which is why it is its own commit and not a tail on the ports.
+
+### A stale-archive bug in the build graph, and the same one in the harness
+
+    $(PHASE25_RUNTIME_RS): src/runtime-rs/src/lib.rs src/runtime-rs/Cargo.toml
+
+The crate now has six source files. Editing `file_io.rs` or `collections.rs`
+does not make `make` rebuild the archive, so a build links yesterday's
+runtime and passes. The identical bug was in
+`scripts/phase25_runtime_rs_abi_smoke.sh`, which skipped the rebuild when an
+archive already existed — a harness reporting green about code it had not
+compiled. Both are fixed; the pattern is worth naming because both were
+written by someone (me) who had just been careful about everything else in
+the same file.
+
+### `file_io.c`: four places where the faithful port is not the obvious one
+
+- **`os_System` returns the RAW wait status.** `exit 3` is 768. Returning
+  `WEXITSTATUS` would read as a fix and would silently change every caller
+  doing arithmetic on the result. Pinned by a test that says so.
+- **`os_ReadDir` must keep yielding `.` and `..`.** `std::fs::ReadDir`
+  filters them. Swapping it in would change what the runtime returns and
+  would look like simplification — so this reads `d_type` and `d_name` out
+  of a hand-declared `struct dirent`, which is exactly the layout-guessing
+  trap P17 named. Paid for rather than assumed: `abi_smoke.c`
+  `_Static_assert`s the offsets against the real header AND walks a real
+  directory. Off Linux the layout cannot be checked from this lane (Darwin
+  has an extra `d_namlen`; x86_64 Apple uses `readdir$INODE64`), so
+  non-Linux takes the `std::fs::ReadDir` path with the divergence stated in
+  the code rather than a second guess.
+- **Paths truncate at an interior NUL; contents do not.** `CString` would
+  have turned a truncation into a new error path.
+- **`os_path_join`'s hardcoded `a/b` + `../../c` -> `../c` CONTRADICTS its
+  own rules.** The general algorithm gives `c`, and the neighbouring input
+  `../../d` still gives `d`, so the override is one input wide and probably
+  encodes a wrong fixture. Both inputs are pinned so it cannot be tidied
+  away silently. Worth an explicit ruling in a later patch; it is not a
+  porting decision.
+
+### What `s[i]` actually emits, since the earlier note was wrong
+
+`s[i]` does **not** emit a bare `s.data[i]`. Measured in the emitted C:
+
+    (*({ if (i < 0 || i >= s.len) { gust_check_fail("Slice bounds check failed", __LINE__); } &(s.data[i]); }))
+
+So the Gust ports never lost the bounds check. What they lost was the
+DIAGNOSTIC — stderr and a generic message where the C printed a
+function-specific one to stdout — and, in `std_str_slice`, the check was
+answering a different question: `start >= s.len` where the C asked
+`end > s.len`. That let the over-long slice through and rejected the empty
+tail slice, which is legal and common. Both are fixed and both are pinned
+by the abort half of the parity harness.
+
+### The two that do not port, and why
+
+`std_Clone_str` and `std_str_split` both need to allocate **N raw bytes
+from a caller-supplied arena**. Gust cannot express that.
+
+Measured: `os.ArenaAlloc` in Gust takes ONE argument, the allocator, and
+the typechecker rejects a second — "os_ArenaAlloc expects exactly 1
+argument (the allocator variable)". Gust allocates by TYPE, through
+`ctx[T]`, and codegen turns that into the two-argument C call with a
+`sizeof`. There is no Gust spelling for "give me 47 bytes from this arena".
+
+`os.ScratchAlloc` does take a byte count (`register_fn(env,
+"os.ScratchAlloc", p_int, ...)`), which is why `std_str_slice` works — it
+needs 16 bytes of scratch for a header. Scratch and arena are not
+interchangeable: scratch resets, and a cloned string must outlive the
+current scope, which is the whole point of taking the arena parameter.
+
+So the gap is specific and small: **a byte-count arena allocation**. Three
+ways out, in order of preference:
+
+  1. **Leave both in the runtime crate**, in Rust, beside the fixtures. D2
+     already allows Rust as the per-file fallback "on its own merits", and
+     two functions needing raw allocation is a merit.
+  2. **Add a byte-count arena builtin** to match `os.ScratchAlloc`. New
+     language surface, so an OD-register question under O3's rule.
+  3. Have them call a C or Rust helper for the allocation and stay Gust
+     otherwise — which is option 1 with extra steps.
+
+Recommending 1. It keeps the language honest — `ctx[T]` is a typed
+allocator and raw byte allocation is a different operation — and it costs
+nothing the phase is trying to buy, since the runtime crate is where the
+non-Gust remainder was always going to live.
+
+---
+
 ---
 
 # Patch 25.6 — two guards that were already red on main
@@ -977,4 +1332,3 @@ Recording this rather than repairing it is deliberate. Making a red guard
 green by changing what it measures is how a suite stops being evidence, and
 Patch 25.11 has already had to be renumbered once in this phase for claiming
 an Exit Gate that was not met.
-

@@ -207,11 +207,23 @@ def split_tokens(line: str) -> list:
     return tokens
 
 
-def command_inputs(line: str) -> tuple:
+# A resolved variable value that names something a compiler reads, as
+# opposed to one that holds flags. Deliberately narrow: an unknown suffix
+# stays skipped rather than becoming a mystery input.
+SOURCE_LIKE = re.compile(r'\.(c|h|o|a|s|S|cc|cpp)$')
+
+
+def command_inputs(line: str, lines: list = ()) -> tuple:
     """Return (inputs, is_query) for a cc command line.
 
     Inputs are the non-flag arguments that name something the compiler
     reads. Redirections, the -o target, and flag values are excluded.
+
+    `lines` is the enclosing scope, used only to tell an uppercase shell
+    variable holding FLAGS from one holding a FILE. Without it the rule
+    below skips both, and a compiler input spelled `"$REF"` disappears --
+    not as unresolved provenance, which is a failure, but as no input at
+    all, which reads like a toolchain query and passes.
     """
     tokens = split_tokens(line)
     # Drop everything from the first redirection or pipeline operator on:
@@ -257,8 +269,15 @@ def command_inputs(line: str) -> tuple:
             # ${CFLAGS:--O2 ...} / ${INCLUDES:--Isrc}: flag defaults
             continue
         if bare.startswith("$") and re.fullmatch(r'\$\{?[A-Z_]+\}?', bare):
-            # a bare uppercase variable holding flags
-            continue
+            # A bare uppercase variable usually holds flags -- CFLAGS,
+            # INCLUDES -- so it is not an input. But the convention is
+            # only a convention: `REF=tools/phase25_strings_reference.c`
+            # then `"$REF"` is a source file, and skipping it silently
+            # left that cc invocation with zero inputs.
+            name = variable_name(bare)
+            resolved = resolve_variable(name, lines) if (name and lines) else None
+            if not (resolved and SOURCE_LIKE.search(resolved)):
+                continue
         if not bare:
             continue
         inputs.append(bare)
@@ -684,7 +703,17 @@ def resolve_input(token: str, lines: list, lineno: int) -> dict:
     record = {"token": bare}
 
     literal = bare.lstrip("./")
-    if "$" not in bare and (ROOT / literal).exists():
+    # cargo_artifact FIRST, and deliberately: a built .a exists in a warm
+    # worktree and not in a clean CI checkout, so an existence test that
+    # ran first would call the same path a tracked source here and a rust
+    # archive there. The class would then depend on whether someone had
+    # run cargo, which is not a property of the tree.
+    if "$" not in bare and cargo_artifact(literal):
+        record["klass"] = RUST_ARCHIVE
+        record["why"] = f"{literal} is built from a crate in this tree"
+        return record
+    if "$" not in bare and (ROOT / literal).exists() \
+            and not literal.startswith("build/"):
         record["klass"] = RETAINED_RUNTIME_C
         record["why"] = f"tracked repo source {literal}"
         return record
@@ -700,14 +729,15 @@ def resolve_input(token: str, lines: list, lineno: int) -> dict:
     # A resolved path that exists is hand-written source, wherever the token
     # reached it from: `"$probe"` naming compiler/fixtures/*.c is no more a
     # backend product than `src/runtime/arena.c` spelled literally.
-    if "$" not in expression and (ROOT / expression.lstrip("./")).exists():
-        record["klass"] = RETAINED_RUNTIME_C
-        record["why"] = f"tracked repo source {expression}"
-        return record
-
     if "$" not in expression and cargo_artifact(expression):
         record["klass"] = RUST_ARCHIVE
         record["why"] = f"{expression} is built from a crate in this tree"
+        return record
+
+    if "$" not in expression and (ROOT / expression.lstrip("./")).exists() \
+            and not expression.lstrip("./").startswith("build/"):
+        record["klass"] = RETAINED_RUNTIME_C
+        record["why"] = f"tracked repo source {expression}"
         return record
 
     key = tail_key(expression)
@@ -838,7 +868,58 @@ MAKE_ASSIGN = re.compile(r'^([A-Za-z_][A-Za-z0-9_]*)\s*[:?]?=\s*(.+)$')
 MAKE_VAR_REF = re.compile(r'\$[({]([A-Za-z_][A-Za-z0-9_]*)[)}]')
 MAKE_CONDITIONAL = re.compile(
     r'^\s*(?:ifeq|ifneq|ifdef|ifndef|else|endif)\b')
+
+
+MAKE_CALL = re.compile(r'\$\(call\s+([A-Za-z_][A-Za-z0-9_]*)\s*,')
+
+
+def make_defines(mk: list) -> dict:
+    """Map each `define NAME ... endef` block to its body lines."""
+    blocks: dict[str, list] = {}
+    name = None
+    for line in mk:
+        head = re.match(r'^define\s+([A-Za-z_][A-Za-z0-9_]*)', line)
+        if head:
+            name = head.group(1)
+            blocks[name] = []
+            continue
+        if line.strip() == 'endef':
+            name = None
+            continue
+        if name:
+            blocks[name].append(line)
+    return blocks
+
+
 MAKE_INVOKE = re.compile(r'^\s*make\s+"?\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?"?\s*$')
+
+
+def classify_through_calls(recipe: str, defines: dict, stem: str,
+                           depth: int = 4, seen: frozenset = frozenset()) -> dict:
+    """Follow $(call NAME,...) into define bodies, recursively, and classify.
+
+    Returns the first classification found, with the call chain in `why` so a
+    reader can retrace it. Empty when nothing in reach classifies -- an honest
+    gap, which the prerequisite fallback then gets a chance at.
+    """
+    called = MAKE_CALL.search(recipe)
+    if not called:
+        return {}
+    name = called.group(1)
+    if depth <= 0 or name in seen or name not in defines:
+        return {}
+    for inner in defines[name]:
+        klass = classify_producer(inner)
+        if klass:
+            return {"klass": klass,
+                    "why": f"Makefile builds {stem} with a {klass} producer, "
+                           f"through $(call {name})"}
+        deeper = classify_through_calls(inner, defines, stem, depth - 1,
+                                        seen | {name})
+        if deeper:
+            deeper["why"] += f", reached through $(call {name})"
+            return deeper
+    return {}
 
 
 def resolve_through_make(name: str, lines: list, lineno: int) -> dict:
@@ -914,11 +995,13 @@ def resolve_through_make(name: str, lines: list, lineno: int) -> dict:
             text = replaced
         return text
 
+    defines = make_defines(mk)
     for idx, mline in enumerate(mk):
         if ":" not in mline or mline.startswith("\t"):
             continue
         if stem not in expand(mline.split(":")[0]):
             continue
+        body = []
         for recipe in mk[idx + 1:idx + 40]:
             if recipe and not recipe.startswith("\t"):
                 # A conditional directive is legal INSIDE a rule body and is
@@ -932,20 +1015,56 @@ def resolve_through_make(name: str, lines: list, lineno: int) -> dict:
                 if MAKE_CONDITIONAL.match(recipe):
                     continue
                 break
+            body.append(recipe)
+        for recipe in body:
             klass = classify_producer(recipe)
             if klass:
                 return {"klass": klass,
                         "why": f"Makefile builds {stem} with a {klass} producer"}
             # Everything after the line that writes $@ is verification, not
             # production, and classifying on it is how an unclassified
-            # producer passes for the wrong reason. Measured: with the
-            # narrowed-object class removed, the scan ran on past the `ld`
-            # and `objcopy` to the export-drift check's `printf` sixteen
-            # lines below, matched AUTHORED_WRITE, and called six linker
-            # outputs `script-authored-c` -- retained, so the guard stayed
-            # green. Stopping here makes that removal fail instead.
+            # producer passes for the wrong reason. Measured on 25.6: with the
+            # narrowed-object class removed, the scan ran past the `ld` and
+            # `objcopy` to the export-drift check's `printf` sixteen lines
+            # below, matched AUTHORED_WRITE, and called six linker outputs
+            # script-authored-c -- retained, so the guard stayed green.
             if "$@" in recipe:
                 break
+        for recipe in body:
+            # A recipe factored into `define NAME ... endef` and invoked
+            # with $(call NAME,...) is still a recipe. Without this the
+            # factoring alone makes a producer invisible, and the input
+            # reads as having none.
+            #
+            # The descent is RECURSIVE because the factoring is two deep:
+            # the rule calls narrow_runtime_rs, whose body calls
+            # narrow_runtime_rs_link, whose body holds the `ld -r` and the
+            # `objcopy`. A one-level descent reaches only the inner $(call)
+            # and classifies nothing, which is why the prerequisite fallback
+            # below used to have to run first and answer rust-archive for an
+            # object. Bounded and cycle-guarded: a define that calls itself
+            # must not spin, and depth is a stand-in for "a human can still
+            # follow this", not a real limit of make.
+            hit = classify_through_calls(recipe, defines, stem)
+            if hit:
+                return hit
+        # Fallback BEHIND the $(call) descent, not ahead of it. 25.5 put this
+        # first because the narrowing recipe carries an `echo` in its
+        # drift-check branch and AUTHORED_WRITE would match it, calling a Rust
+        # object script-authored C. 25.6 fixed that at the root instead:
+        # NARROWED_OBJECT_PRODUCER matches the `ld -r` line, which comes before
+        # the `echo` and is checked before AUTHORED_WRITE, so the descent
+        # returns the right class unaided. Kept and moved rather than deleted
+        # -- it still catches a rule whose recipe cannot be classified at all.
+        # Ahead of the descent it SHADOWED the descent and answered
+        # rust-archive for something that is an object and not an archive,
+        # which would have made 25.6's class dead code on this tree.
+        prereqs = expand(mline.split(":", 1)[1]).split()
+        for prereq in prereqs:
+            if cargo_artifact(prereq.lstrip("./")):
+                return {"klass": RUST_ARCHIVE,
+                        "why": f"Makefile builds {stem} from {prereq}, "
+                               "which is built from a crate in this tree"}
     return {}
 
 
@@ -1222,7 +1341,8 @@ def scan_script(path: Path) -> dict:
         # Parse from the compiler head, not the line start: a line like
         # `CC_BIN=...; CFLAGS_VAL=...; "$CC_BIN" ...` would otherwise offer
         # its leading assignments as compiler inputs.
-        inputs, is_query = command_inputs(line[head.start("cc"):])
+        inputs, is_query = command_inputs(
+            line[head.start("cc"):], scoped.get(lineno, lines))
         invocations.append(
             {
                 "file": rel,
@@ -1283,6 +1403,9 @@ def scan() -> dict:
     return {"scripts": scripts}
 
 
+OBJECT_IN_WHY = re.compile(r"\bbuilds (\S+\.o)\b")
+
+
 def population(report: dict) -> dict:
     invocations = [i for s in report["scripts"] for i in s["invocations"]]
     dead = [
@@ -1293,6 +1416,7 @@ def population(report: dict) -> dict:
     by_class = {}
     unresolved = []
     backend = []
+    mislabelled = []
     for inv in invocations:
         where = {"file": inv["file"], "line": inv["line"],
                  "recipe": inv.get("recipe", "")}
@@ -1310,6 +1434,26 @@ def population(report: dict) -> dict:
                 backend.append({**where, "why": record["why"]})
             else:
                 by_class.setdefault(klass, []).append(where)
+                # An object file is never hand-authored C. SCRIPT_AUTHORED_C is
+                # the permissive last resort in classify_producer, and a
+                # permissive last resort cannot tell you a new kind of producer
+                # arrived -- it files it under the fallback and the guard stays
+                # green. Both 25.5 and 25.6 hit this and worked around it from
+                # opposite ends; this is the invariant they were each
+                # protecting, stated where it can fail.
+                # Match on the RESOLVED name, not the token. A cc line spells
+                # the input `"$runtime_obj"` and the tokenizer hands back
+                # `runtime_obj`, so a token test finds no `.o` and this check
+                # silently never fires -- measured, on the first version of it.
+                # `why` carries the resolved stem: "Makefile builds <name> ...".
+                resolved_name = OBJECT_IN_WHY.search(record.get("why", ""))
+                if klass == SCRIPT_AUTHORED_C and (
+                        record.get("token", "").endswith(".o") or resolved_name):
+                    mislabelled.append(
+                        {**where,
+                         "token": (resolved_name.group(1) if resolved_name
+                                   else record["token"]),
+                         "why": record["why"]})
     return {
         "invocations": len(invocations),
         "dead_bindings": dead,
@@ -1317,6 +1461,7 @@ def population(report: dict) -> dict:
         "members": {k: sorted({(w["file"], w["line"]) for w in v}) for k, v in by_class.items()},
         "backend_product": backend,
         "unresolved": unresolved,
+        "mislabelled_objects": mislabelled,
     }
 
 
@@ -1448,6 +1593,18 @@ def validate() -> dict:
         + ". An input whose producer cannot be resolved fails here rather than "
         "passing as retained: a new cc site, or a new way of producing its "
         "input, must be classified before it lands.",
+    )
+
+    require(
+        not pop["mislabelled_objects"],
+        "object inputs classified as hand-authored C: "
+        + ", ".join(
+            f"{m['file']}:{m['line']} ({m['token']})"
+            for m in pop["mislabelled_objects"][:6]
+        )
+        + ". An object is produced by a tool, so this means the resolver "
+        "reached a heredoc or an echo instead of the producer -- the class is "
+        "wrong even though nothing else failed.",
     )
 
     owners = {}

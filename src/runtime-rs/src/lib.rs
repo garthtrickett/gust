@@ -45,3 +45,9 @@ pub extern "C" fn tiny_host_is_positive_i32(value: i32) -> i32 {
 
 mod fiber_asm;
 pub mod fiber;
+pub mod host_io;
+pub mod scratch;
+pub mod arena;
+pub mod collections;
+pub mod file_io;
+pub mod strings;

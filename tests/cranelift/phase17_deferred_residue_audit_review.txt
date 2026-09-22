@@ -1,9 +1,9 @@
 Patch 17.15 — Deferred Residue and Runtime-Coverage Audit
 
 opening_rows	17
-inventoried_helpers	79
+inventoried_helpers	80
 migrated_helpers	66
-excluded_helpers	4
+excluded_helpers	5
 removed_helpers	0
 narrowly_deferred_helpers	9
 retained_components	8

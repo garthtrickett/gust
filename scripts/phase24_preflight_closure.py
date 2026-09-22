@@ -121,9 +121,12 @@ def validate() -> dict:
     convergence = registry.get("phase22_default_route_seed_convergence", {})
     successor_key = None
     for key in ("phase24_13_seed_transition", "phase398_seed_transition",
-                # Patch 25.6. The loop takes the LAST key that is present,
-                # so this order is the merge order and is load-bearing.
-                "phase256_seed_transition"):
+                # Patch 25.6 then Patch 25.5, in merge order, because the
+                # loop takes the LAST key that is present and the last one
+                # present has to be the newest. 25.6 moves the seed at
+                # 1,963 abort sites; 25.5 moves it again when six runtime
+                # C files leave the unity build.
+                "phase256_seed_transition", "phase255_seed_transition"):
         if isinstance(convergence.get(key), dict):
             successor_key = key
     transition = convergence.get(successor_key) if successor_key else None

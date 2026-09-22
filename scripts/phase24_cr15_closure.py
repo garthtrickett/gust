@@ -180,13 +180,16 @@ SEED_SUCCESSOR_TRANSITIONS = (
     # entry and the help text, so the seed the old gust_bootstrap produces no
     # longer matches the one this compiler emits.
     "phase398_seed_transition",
-    # Patch 25.6. Named for the same reason as every link above: the guard
-    # consults a successor only when it is listed here, so registering the
-    # transition block is deliberately not enough to widen what the live
-    # seed may be. This patch reconverges the seed because codegen stops
-    # inlining a printf/exit pair at 1,963 abort sites and calls the
-    # runtime's gust_check_fail instead.
+    # Patch 25.6, then Patch 25.5. Named for the same reason as every link
+    # above: the guard consults a successor only when it is listed here, so
+    # registering the transition block is deliberately not enough to widen
+    # what the live seed may be. 25.6 reconverges the seed because codegen
+    # stops inlining a printf/exit pair at 1,963 abort sites and calls the
+    # runtime instead; 25.5 because six runtime C files stop being compiled
+    # into the unity build and nine strings.c functions arrive emitted from
+    # Gust.
     "phase256_seed_transition",
+    "phase255_seed_transition",
 )
 
 

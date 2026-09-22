@@ -9,6 +9,16 @@ name = "gust-runtime-rs"
 version = "0.1.0"
 edition = "2021"
 
+# Patch 25.5: the GUST_DEBUG arena, as a FEATURE rather than an #ifdef.
+#
+# arena.c chose its allocator with `#ifdef GUST_DEBUG`, per translation
+# unit, so one source served both builds. A staticlib is built once, so the
+# switch has to move to the build: this feature produces a second archive
+# and the test runner links it for exactly the tests it compiles with
+# -DGUST_DEBUG. See src/arena.rs.
+[features]
+gust_debug = []
+
 [lib]
 name = "gust_runtime_rs"
 crate-type = ["staticlib"]

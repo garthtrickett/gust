@@ -201,16 +201,42 @@ func run_test(t: Test[ctx]) int {
         final_c_content = std.Concat(final_c_content, clean_c_content);
         os.WriteFile(final_c, final_c_content);
 
-        mut compile_c_cmd := std.Concat("cc -O2 -Wall -pthread -Isrc ", final_c);
-        // Patch 25.6: src/runtime.c is not a complete runtime any more.
-        // fiber.c is gone and codegen emits a gust_yield() call in every
-        // loop of every compiled program, so EVERY test links this object,
-        // not just the ones that spawn a fiber. The narrowed object rather
-        // than the staticlib: it is self-contained apart from libc, where
-        // the 310-member archive would also offer its own memcpy.
-        compile_c_cmd = std.Concat(compile_c_cmd, " build/phase25-runtime-rs/gust_runtime_rs_exports.o");
+        // Patch 25.6 first: fiber.c is gone and codegen emits a
+        // gust_yield() call in every loop of every compiled program, so
+        // EVERY test links this object -- not just the ones that spawn a
+        // fiber. Then Patch 25.5: five more runtime files join it.
+        // src/runtime.c used to carry the whole C runtime, so a program
+        // plus that file
+        // was a complete unit; five of those files are Rust now and their
+        // symbols only arrive through the archive. Without it every test
+        // binary fails on undefined os_Arena_New, os_Args and os_LogStr --
+        // measured, not anticipated: the emitted e2e_process_args test
+        // links and runs with the archive and does not link without it.
+        //
+        // Patch 25.5, second half: WHICH archive depends on GUST_DEBUG.
+        // arena.c chose its allocator with #ifdef per translation unit, so
+        // -DGUST_DEBUG on this line used to switch the arena to the canary
+        // layout. A Rust staticlib is built once, so the choice moved to
+        // the build and there are two archives. Linking the plain one here
+        // silently disarms e2e_arena_canary_corruption_detection -- it
+        // "exits cleanly" instead of aborting, which is a negative test
+        // that has stopped being able to fail.
+        mut debug_build := 0;
         if is_neg == 2 || std.str_find(path, "canary") != 0 - 1 || std.str_find(path, "sanitizer") != 0 - 1 {
+            debug_build = 1;
+        }
+        mut compile_c_cmd := std.Concat("cc -O2 -Wall -pthread -Isrc ", final_c);
+        // The NARROWED objects, not the staticlibs. Each is self-contained
+        // apart from libc and exports exactly the registered symbol set;
+        // the 310-member archive would also offer its own memcpy beside
+        // libc's. The canary object is the same crate built with the
+        // gust_debug feature, which is where GUST_DEBUG moved when arena.c
+        // stopped being a per-translation-unit #ifdef.
+        if debug_build == 1 {
+            compile_c_cmd = std.Concat(compile_c_cmd, " build/phase25-runtime-rs-canary/gust_runtime_rs_exports.o");
             compile_c_cmd = std.Concat(compile_c_cmd, " -fsanitize=address -DGUST_DEBUG");
+        } else {
+            compile_c_cmd = std.Concat(compile_c_cmd, " build/phase25-runtime-rs/gust_runtime_rs_exports.o");
         }
         compile_c_cmd = std.Concat(compile_c_cmd, " -o ");
         compile_c_cmd = std.Concat(compile_c_cmd, bin_path);

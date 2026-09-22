@@ -1154,6 +1154,58 @@ def _issue398_summary_successor(registry: dict, previous: dict) -> dict:
                 (ROOT / str(row["path"])).read_text(encoding="utf-8"),
                 f"the retained explicit-C invocation in {row['path']} no "
                 "longer asserts that the spelling is refused")
+
+    # Patch 25.5 is the first link that ADDS to the census rather than
+    # reducing it. Every link above asserts `current["total"] <
+    # previous["total"]`, because every one of them was retiring something.
+    # Porting the runtime goes the other way: the strings differential has
+    # to emit the Gust side to compare it, and that is a real backend
+    # invocation the census is entitled to know about.
+    #
+    # The scan covers Makefile, justfile*, root and scripts/*.sh,
+    # tests/*.gst and scripts/*.py. tools/ is NOT scanned, so moving the
+    # invocation one directory over would have made this green for free.
+    # That is evading an enumeration whose entire purpose is to know where
+    # the backend is invoked, so the registered node names the temptation
+    # and rejects it rather than leaving it to be rediscovered.
+    previous = current
+    added = registry.get("phase25_runtime_port_invocations")
+    if added is None:
+        return previous
+    current = added.get("current_summary")
+    require(added.get("contract_version") ==
+            "phase25_runtime_port_invocation_successor_v1" and
+            added.get("owner") == "cranelift" and
+            added.get("previous_summary") == previous and
+            isinstance(current, dict) and
+            added.get("escaping_the_census_by_relocation") == "rejected",
+            "Patch 25.5 Phase 22 invocation successor drifted")
+    rows = added.get("added_invocation_rows", [])
+    count = added.get("added_invocation_count")
+    require(isinstance(count, int) and count == len(rows) > 0,
+            "Patch 25.5 registered an invocation addition with no rows")
+    require(current["total"] - previous["total"] == count and
+            current["unclassified_count"] == previous["unclassified_count"]
+            == 0,
+            "the Patch 25.5 invocation addition does not balance against a "
+            "fully classified census")
+    # Only the selections the rows claim may move, and only by as many rows
+    # as claim them. An addition that quietly re-points an existing
+    # invocation would otherwise balance on the total alone.
+    claimed: dict[str, int] = {}
+    for row in rows:
+        claimed[str(row["selection"])] = claimed.get(str(row["selection"]), 0) + 1
+    for name in set(previous["selection_counts"]) | set(
+            current["selection_counts"]):
+        require(current["selection_counts"].get(name, 0) -
+                previous["selection_counts"].get(name, 0) ==
+                claimed.get(name, 0),
+                f"Patch 25.5 moved a selection it does not claim: {name}")
+    for row in rows:
+        require(str(row["invocation_marker"]) in
+                (ROOT / str(row["path"])).read_text(encoding="utf-8"),
+                f"the registered Patch 25.5 invocation in {row['path']} is "
+                "no longer there")
     return current
 
 
@@ -2237,6 +2289,40 @@ def normalize_phase23_text_surfaces(
                 "rejected",
                 "Patch 24.12 text surface successor drifted")
         oracle_paths = list(oracle_surface["registered_changed_paths"])
+    # Patch 25.5 merges after 25.6, so it is the newest link and runs
+    # FIRST. Twelve enrolled surfaces changed; none were added or removed.
+    # Deleting five C files removed no row, because none of the five was
+    # enrolled -- the scan matches on CONTENT, and a runtime .c mentioning
+    # no backend spelling was never in it. The count stays at 581.
+    #
+    # docs/PHASE25_BOOTSTRAP_SEED_POLICY.md changed here too and is
+    # deliberately absent, for the reason given in the 25.6 block below:
+    # it is an ADDED surface with a single registered row, so there is no
+    # predecessor state to project it back to.
+    port_surface = registry.get(
+        "phase255_runtime_to_gust", {}).get("text_surface_successor")
+    if port_surface is not None:
+        require(port_surface.get("contract_version") ==
+                "phase255_runtime_to_gust_text_surface_successor_v1" and
+                port_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Patch 25.5 runtime-to-Gust text surface successor drifted")
+        pt_paths = list(port_surface["registered_changed_paths"])
+        pt_pre = {r["path"]: r for r
+                  in port_surface["previous_changed_text_surfaces"]}
+        pt_post = {r["path"]: r for r
+                   in port_surface["current_changed_text_surfaces"]}
+        require(sorted(pt_pre) == sorted(pt_paths) == sorted(pt_post),
+                "Patch 25.5 registered paths and rows disagree")
+        pt_live = {r["path"]: r for r in rows if r["path"] in pt_paths}
+        require(sorted(pt_live) == sorted(pt_paths),
+                "Patch 25.5 registered text surface is missing from the scan")
+        require(pt_live in (pt_pre, pt_post),
+                "Patch 25.5 changed text surfaces are partial or "
+                "substituted: the live rows match neither the complete "
+                "predecessor state nor the complete successor state "
+                f"({sorted(p for p in pt_paths if pt_live[p] != pt_post[p])} differ from post)")
+        rows = [dict(pt_pre.get(r["path"], r)) for r in rows]
     # Patch 24.13 runs before 24.12b for the same reason 24.12b runs before
     # 24.12a: the newest link projects the tree back to the state the older
     # successors were registered against, so each hands the next the tree it

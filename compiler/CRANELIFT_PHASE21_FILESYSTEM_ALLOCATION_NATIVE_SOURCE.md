@@ -59,7 +59,7 @@ Generated from `scripts/cranelift_feature_registry.json` by
 - Arena index reassignment clears allocation provenance
 - Arena free or reinitialization clears allocation provenance for that arena
 - Allocation size must fit native `size_t`; adding the runtime's seven alignment bytes must not overflow
-- Runtime archive: `build/gust-runtime-package.a` from `src/runtime/arena.c, src/runtime/host_io.c, src/runtime/file_io.c`
+- Runtime archive: `build/gust-runtime-package.a` from `src/runtime-rs/src/arena.rs, src/runtime-rs/src/host_io.rs, src/runtime-rs/src/file_io.rs`
 - New or changed runtime symbols: none
 - Generated C or fallback in the qualified route: none
 

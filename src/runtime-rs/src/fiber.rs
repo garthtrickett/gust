@@ -900,3 +900,84 @@ pub extern "C" fn gust_tick() {
         gust_yield();
     }
 }
+
+// ---- strings.c's two arena-taking functions -----------------------------
+//
+// Patch 25.5 moved nine of strings.c's eleven functions to Gust. These two
+// stayed, and the reason is measured rather than stylistic: both allocate N
+// RAW BYTES from a caller-supplied arena, and Gust has no spelling for that.
+// `os.ArenaAlloc` takes one argument -- the allocator -- because Gust
+// allocates by TYPE through `ctx[T]` and codegen supplies the `sizeof`.
+// `os.ScratchAlloc` does take a byte count, which is why std_str_slice could
+// move, but scratch resets and a clone must outlive the scope.
+//
+// D2 allows Rust as the per-file fallback "on its own merits". Needing an
+// operation the language does not express is a merit.
+
+/// `typedef struct { void* BaseAddress; size_t Offset; size_t Capacity; } os_Arena`
+/// -- core_headers.h:49-53. `#[repr(C)]` because the C half still passes
+/// these pointers in.
+#[repr(C)]
+pub struct OsArena {
+    pub base_address: *mut c_void,
+    pub offset: usize,
+    pub capacity: usize,
+}
+
+use crate::arena::os_ArenaAlloc;
+
+/// The C slice `Slice_unsigned_char`, returned by value.
+#[repr(C)]
+pub struct SliceU8 {
+    pub data: *mut u8,
+    pub len: i32,
+}
+
+
+/// `struct std_Vector_str { Slice_unsigned_char* data; int len; int capacity; os_Arena* arena; }`
+/// -- core_headers.h:103-108.
+#[repr(C)]
+pub struct VectorStr {
+    pub data: *mut SliceU8,
+    pub len: i32,
+    pub capacity: i32,
+    pub arena: *mut OsArena,
+}
+
+/// Allocate `n` raw bytes from `arena` and return a pointer to them.
+///
+/// The uint32 cast in GUST_ARENA_OFFSET is reproduced here once, rather
+/// than at each call site: a negative offset must become a large positive
+/// one exactly as the C does.
+///
+/// # Safety
+/// `arena` must be live.
+pub(crate) unsafe fn arena_alloc_bytes(arena: *mut OsArena, n: i32) -> *mut u8 {
+    let offset = os_ArenaAlloc(arena, n as usize);
+    (*arena).base_address.cast::<u8>().add((offset as u32) as usize)
+}
+
+
+/// The growth half of `os_VectorPush`, which is a MACRO in core_headers.h
+/// rather than a function, so it cannot be called from here.
+///
+/// # Safety
+/// `vec` must be a valid vector with a live arena.
+pub(crate) unsafe fn vector_push_str(vec: &mut VectorStr, value: SliceU8) {
+    if vec.len >= vec.capacity {
+        let new_cap = if vec.capacity == 0 { 8 } else { vec.capacity * 2 };
+        let bytes = new_cap * (std::mem::size_of::<SliceU8>() as i32);
+        let offset = os_ArenaAlloc(vec.arena, bytes as usize);
+        let new_data = (*vec.arena).base_address
+            .cast::<u8>()
+            .add((offset as u32) as usize)
+            .cast::<SliceU8>();
+        if !vec.data.is_null() && vec.len > 0 {
+            std::ptr::copy_nonoverlapping(vec.data, new_data, vec.len as usize);
+        }
+        vec.data = new_data;
+        vec.capacity = new_cap;
+    }
+    vec.data.add(vec.len as usize).write(value);
+    vec.len += 1;
+}

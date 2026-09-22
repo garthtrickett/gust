@@ -88,15 +88,19 @@ def validate() -> dict:
         record.get("runtime_package") == {
             "format": "static_archive",
             "members": [
-                # Patch 25.6: fiber.o left too -- fiber.c is gone and its
-                # eighteen exports now come from the crate member.
-                "arena.o", "host_io.o", "file_io.o", "scratch.o",
-                # Patch 25.4: approved_scalar_imports.o left the archive
-                # when its fixtures were rehomed to the Rust runtime crate
-                # src/runtime-rs. The archive keeps its name and shape; a
-                # member moved language. Symbol names are unchanged, so
-                # nothing that CALLS tiny_host_* needed editing.
-                "collections.o", "strings.o",
+                # Patch 25.5: arena.o, host_io.o, file_io.o, scratch.o and
+                # collections.o left with their sources, the same way
+                # fiber.o left in 25.6 and approved_scalar_imports.o left
+                # in 25.4. Five members moved language; NO symbol moved.
+                # Everything they defined is in the crate object and this
+                # list is compared against `ar t` exactly, so the shrink
+                # has to be registered here or the archive stops matching
+                # its own authority.
+                #
+                # strings.o is the last C member. Its nine remaining
+                # functions go to Gust rather than Rust, which needs a
+                # seed generation the other five did not.
+                "strings.o",
                 "gust_runtime_rs_exports.o",
             ],
             "symbol_policy": "existing_registered_runtime_symbols_only",

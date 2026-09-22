@@ -115,8 +115,9 @@ def validate() -> dict:
     }, "canonical arena-access validation contract drifted")
     runtime = record.get("runtime_package", {})
     require(runtime.get("retained_components") == [
-        "src/runtime/arena.c", "src/runtime/host_io.c",
-        "src/runtime/file_io.c",
+        # Patch 25.5: Rust components, unchanged symbols.
+        "src/runtime-rs/src/arena.rs", "src/runtime-rs/src/host_io.rs",
+        "src/runtime-rs/src/file_io.rs",
     ] and runtime.get("new_or_changed_runtime_symbols") == [],
             "retained runtime package boundary drifted")
     worker_contract = record.get("worker_contract", {})
@@ -184,8 +185,11 @@ def validate() -> dict:
         require(marker in parity_script,
                 f"malformed arena-MIR evidence lacks {marker}")
     makefile = MAKEFILE.read_text(encoding="utf-8")
-    for marker in ("src/runtime/arena.c", "src/runtime/host_io.c",
-                   "src/runtime/file_io.c", "build/gust-runtime-package.a"):
+    # Patch 25.5: see the collection-string guard for why these markers
+    # follow the archive rather than the deleted .c files.
+    for marker in ("src/runtime-rs/target/release/libgust_runtime_rs.a",
+                   "gust_runtime_rs_exports.o",
+                   "build/gust-runtime-package.a"):
         require(marker in makefile, f"runtime archive build lacks {marker}")
 
     task = TASK.read_text(encoding="utf-8")

@@ -1,0 +1,39 @@
+name: Cranelift Phase 25 Runtime Port
+
+# Patch 25.5. Three guards that had no workflow, so they never ran.
+#
+# The staleness guard is the load-bearing one: src/runtime/strings.c is
+# GENERATED from compiler/runtime/strings.gst and checked in, because
+# gust_bootstrap is built from gust_v4.c plus src/runtime.c and emitting
+# the file needs a compiler -- a build-time rule is circular. A generated
+# file that is checked in and never re-diffed is a stale file waiting to
+# happen.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  runtime-port:
+    name: runtime port
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: extractions/setup-just@v2
+
+      # Cheap and independent of the compiler: link a C caller against the
+      # Rust crate and run it. First, so it fails fast.
+      - name: ABI smoke
+        run: just guard-cranelift-phase25-runtime-rs-abi-smoke
+
+      # These two need ./gust, which the bootstrap produces.
+      - name: Build the compiler
+        run: make gust
+
+      - name: Generated runtime strings are in sync
+        run: just guard-cranelift-phase25-runtime-strings-generated
+
+      - name: Strings port matches the frozen C reference
+        run: just guard-cranelift-phase25-strings-gust-parity
