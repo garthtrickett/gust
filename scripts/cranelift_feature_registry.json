@@ -41860,6 +41860,17 @@
       },
       "contract_version": "phase2510_frozen_inventory_departure_v1",
       "partial_or_substituted_departure": "rejected",
+      "selected_module_reachability": {
+        "departed_reachable_edges": 7,
+        "departed_reachable_modules": [
+          "mir_function_abi_authority.gst",
+          "mir_function_call.gst",
+          "mir_layout.gst",
+          "mir_resource_authority.gst"
+        ],
+        "reason": "Patch 21.x pins, per selected module, how much of the compiler its imports reach. Deleting the emitter cuts three of codegen.gst's six imports, and four modules leave the codegen-rooted subgraph with them: the two MIR function authorities it imported directly, plus mir_layout and mir_resource_authority which were reachable only through those. Seven edges go -- the three direct ones and four that had no other path from codegen. This is the CODEGEN-ROOTED graph, not the whole compiler: all four modules are still imported elsewhere, which is why the whole-compiler module count does not move.",
+        "selected_module": "codegen.gst"
+      },
       "string_cleaner": {
         "departed_occurrences": 2,
         "departed_owner_files": [
@@ -42407,6 +42418,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "8476fe6e9b2fcefc4017759e53b962e4c00a63eab5ac7d1ecb93144a82de6d8e",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 4,
+            "mir_to_c_name": 12
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_selected_compiler_module_qualification.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "4d67c64e2acfa3433f4cceea407893b7f4dff2ea459f87a81888abf9002049e0",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -42770,6 +42796,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "3c159290cb5e6a2c6f467dfdfebef5a039a67daf3403d24fd10aa83f5d7b7bb6",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 4,
+            "mir_to_c_name": 12
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_selected_compiler_module_qualification.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "f62a6d12a03aac0f8d211006523ae90f2186d6b2cc7ceadaa0580a4e869bee7f",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -42890,6 +42931,7 @@
         "scripts/phase20_resource_scope_cleanup.py",
         "scripts/phase21_inert_scoped_query_records.py",
         "scripts/phase21_opening.py",
+        "scripts/phase21_selected_compiler_module_qualification.py",
         "scripts/phase22_default_route_flip.py",
         "scripts/phase22_explicit_c_migration.py",
         "scripts/phase22_explicit_c_migration.sh",
