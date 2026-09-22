@@ -2255,9 +2255,56 @@ def rebase_s1_8_surface(registry: dict, rows: list) -> list:
     return rebased
 
 
+def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
+    """Surfaces Patch 25.10 takes OUT of the enrolled set without deleting.
+
+    compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md is generated
+    from the live scan. With the emitter deleted the semantic spellings it
+    inventoried are gone, so the regenerated document names no retired
+    spelling and stops matching -- while remaining a tracked file.
+
+    That is NOT a departure and is deliberately not folded into
+    departed_paths. A deleted file cannot quietly come back; a generated
+    document can, the moment something re-adds a spelling to it. So the record
+    is separate and the assertion is the OPPOSITE PAIR: the file must still
+    EXIST, and it must produce NO manifest row. Folding the two together would
+    let a deletion pass as a disenrolment and vice versa.
+
+    FIVE links registered this surface -- 25.5, 25.6, 25.7, 24.12b and the
+    S1.8 implementation successor -- so the subtraction lives here rather than
+    being copied into each of them. An earlier attempt drove it into the links
+    by regex and touched 23, which is fitting rather than measuring.
+    """
+    disenrolment = registry.get("phase2510_emitter_deletion", {}).get(
+        "text_surface_disenrolment")
+    if disenrolment is None:
+        return set()
+    require(disenrolment.get("contract_version") ==
+            "phase2510_emitter_deletion_text_surface_disenrolment_v1" and
+            disenrolment.get("partial_or_substituted_disenrolment") ==
+            "rejected",
+            "Patch 25.10 text surface disenrolment record drifted")
+    live_scan = {row["path"] for row in rows}
+    out = set()
+    for path in disenrolment["disenrolled_paths"]:
+        require((ROOT / path).is_file(),
+                f"Patch 25.10 records {path} as disenrolled, but the file is "
+                "gone -- that is a departure, and departures restore a "
+                "previous row where disenrolments do not")
+        require(path not in live_scan,
+                f"Patch 25.10 records {path} as disenrolled, but it still "
+                "produces a manifest row")
+        out.add(path)
+    return out
+
+
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    # Computed once for every link below. Five of them registered the
+    # surface Patch 25.10 disenrols, so each subtracts the SAME set rather
+    # than carrying its own idea of what left.
+    disenrolled = phase2510_disenrolled_paths(registry, rows)
     # ORDER CORRECTED ON THE MERGE. Patch 25.9's comment below still says
     # it runs FIRST "because it is the newest link", and that was true on
     # its own branch. On this tree 25.10a and then 25.10 landed after it,
@@ -2615,14 +2662,17 @@ def normalize_phase23_text_surfaces(
                    in chain_surface["current_changed_text_surfaces"]}
         require(sorted(ch_pre) == sorted(ch_paths) == sorted(ch_post),
                 "Patch 25.7 registered paths and rows disagree")
-        ch_live = {r["path"]: r for r in rows if r["path"] in ch_paths}
-        require(sorted(ch_live) == sorted(ch_paths),
+        ch_expected = [p for p in ch_paths if p not in disenrolled]
+        ch_pre = {k: r for k, r in ch_pre.items() if k in ch_expected}
+        ch_post = {k: r for k, r in ch_post.items() if k in ch_expected}
+        ch_live = {r["path"]: r for r in rows if r["path"] in ch_expected}
+        require(sorted(ch_live) == sorted(ch_expected),
                 "Patch 25.7 registered text surface is missing from the scan")
         require(ch_live in (ch_pre, ch_post),
                 "Patch 25.7 changed text surfaces are partial or "
                 "substituted: the live rows match neither the complete "
                 "predecessor state nor the complete successor state "
-                f"({sorted(p for p in ch_paths if ch_live[p] != ch_post[p])} differ from post)")
+                f"({sorted(p for p in ch_expected if ch_live[p] != ch_post[p])} differ from post)")
         rows = [dict(ch_pre.get(r["path"], r)) for r in rows]
     # Patch 25.5 merges after 25.6, so it is the newest link and runs
     # FIRST. Twelve enrolled surfaces changed; none were added or removed.
@@ -2649,14 +2699,17 @@ def normalize_phase23_text_surfaces(
                    in port_surface["current_changed_text_surfaces"]}
         require(sorted(pt_pre) == sorted(pt_paths) == sorted(pt_post),
                 "Patch 25.5 registered paths and rows disagree")
-        pt_live = {r["path"]: r for r in rows if r["path"] in pt_paths}
-        require(sorted(pt_live) == sorted(pt_paths),
+        pt_expected = [p for p in pt_paths if p not in disenrolled]
+        pt_pre = {k: r for k, r in pt_pre.items() if k in pt_expected}
+        pt_post = {k: r for k, r in pt_post.items() if k in pt_expected}
+        pt_live = {r["path"]: r for r in rows if r["path"] in pt_expected}
+        require(sorted(pt_live) == sorted(pt_expected),
                 "Patch 25.5 registered text surface is missing from the scan")
         require(pt_live in (pt_pre, pt_post),
                 "Patch 25.5 changed text surfaces are partial or "
                 "substituted: the live rows match neither the complete "
                 "predecessor state nor the complete successor state "
-                f"({sorted(p for p in pt_paths if pt_live[p] != pt_post[p])} differ from post)")
+                f"({sorted(p for p in pt_expected if pt_live[p] != pt_post[p])} differ from post)")
         rows = [dict(pt_pre.get(r["path"], r)) for r in rows]
     # Patch 24.13 runs before 24.12b for the same reason 24.12b runs before
     # 24.12a: the newest link projects the tree back to the state the older
@@ -2712,14 +2765,17 @@ def normalize_phase23_text_surfaces(
                    in fiber_surface["current_changed_text_surfaces"]}
         require(sorted(fb_pre) == sorted(fb_paths) == sorted(fb_post),
                 "Patch 25.6 registered paths and rows disagree")
-        fb_live = {r["path"]: r for r in rows if r["path"] in fb_paths}
-        require(sorted(fb_live) == sorted(fb_paths),
+        fb_expected = [p for p in fb_paths if p not in disenrolled]
+        fb_pre = {k: r for k, r in fb_pre.items() if k in fb_expected}
+        fb_post = {k: r for k, r in fb_post.items() if k in fb_expected}
+        fb_live = {r["path"]: r for r in rows if r["path"] in fb_expected}
+        require(sorted(fb_live) == sorted(fb_expected),
                 "Patch 25.6 registered text surface is missing from the scan")
         require(fb_live in (fb_pre, fb_post),
                 "Patch 25.6 changed text surfaces are partial or "
                 "substituted: the live rows match neither the complete "
                 "predecessor state nor the complete successor state "
-                f"({sorted(p for p in fb_paths if fb_live[p] != fb_post[p])} differ from post)")
+                f"({sorted(p for p in fb_expected if fb_live[p] != fb_post[p])} differ from post)")
         rows = [dict(fb_pre.get(r["path"], r)) for r in rows]
     # Patch 25.4 merges AFTER 25.8a and 25.1, so it runs before both of
     # them, and after 25.6, which is newer still. The union resolution
@@ -3382,11 +3438,15 @@ def normalize_phase23_text_surfaces(
         require(sorted(conversion_pre) == sorted(conversion_paths) and
                 sorted(conversion_post) == sorted(conversion_paths),
                 "Patch 24.12b registered paths and rows disagree")
+        # 24.12b uses a per-path loop rather than a whole-dict comparison,
+        # so the subtraction applies to the iteration as well as the set.
+        conversion_expected = [path for path in conversion_paths
+                               if path not in disenrolled]
         conversion_live = {row["path"]: row for row in rows
-                           if row["path"] in conversion_paths}
-        require(sorted(conversion_live) == sorted(conversion_paths),
+                           if row["path"] in conversion_expected}
+        require(sorted(conversion_live) == sorted(conversion_expected),
                 "Patch 24.12b registered text surface is missing")
-        for path in conversion_paths:
+        for path in conversion_expected:
             require(conversion_live[path] in (conversion_pre[path],
                                               conversion_post[path]),
                     "Patch 24.12b changed text surfaces are partial or "
@@ -3419,7 +3479,8 @@ def normalize_phase23_text_surfaces(
                 "Patch 24.12a text surface successor drifted")
         emitter_paths = list(emitter_surface["registered_changed_paths"])
     solely_24_2f = [path for path in changed_paths
-                    if path not in auth_paths and path not in oracle_paths]
+                    if path not in auth_paths and path not in oracle_paths
+                    and path not in disenrolled]
     changed_rows = [row for row in rows if row["path"] in solely_24_2f]
     require(changed_rows == [row for row in transition["current_changed_text_surfaces"]
                              if row["path"] in solely_24_2f],

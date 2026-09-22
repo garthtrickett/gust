@@ -13355,26 +13355,26 @@
     "inventory_summary": {
       "classification_counts": {
         "comment": 2,
-        "diagnostic": 16,
-        "fixture_or_evidence": 744,
-        "mangling_or_generated_name": 12,
+        "diagnostic": 10,
+        "fixture_or_evidence": 679,
+        "mangling_or_generated_name": 9,
         "non_decision_comparison": 8,
-        "semantic_or_intrinsic_recognition": 977,
+        "semantic_or_intrinsic_recognition": 680,
         "serialization": 1
       },
-      "complete_manifest_digest": "39d3963dce60ac343d01bf6e638b8f88d5e60bb20d9dbeb7fcab2ba8406dee82",
+      "complete_manifest_digest": "f9fb1f9ac2bf5f18042645a2bd2364e3c0dba406cd924e48f4c473c5032fab1f",
       "partition_manifest_digests": {
         "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
-        "diagnostic": "57ed1e71797a9e3e5b62bb6ed50d71bdc2c88c8b00d63faec998dfda6e60a1d1",
-        "fixture_or_evidence": "ebc99fcbf9471eee32e00cc224a7891d5bc0189d88758c2a8726f511e016b197",
-        "mangling_or_generated_name": "b7eec05abb5aa6523d56ebca635261fd1d553fedf9d5e09b85c30d72981ae3ae",
+        "diagnostic": "52d11080dc22abdd47297e596a4a9794aaf43a4e4455ee7c6666cfa9767b1034",
+        "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+        "mangling_or_generated_name": "f2c6d856ed3923254cbc9e167320d3409a49579ff300db521a0b7516c7d7f4b2",
         "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7",
         "serialization": "cd26d44606f736374209054c0fc91d72f950946ad84fad1a5e6efb6c7fc4f5b9"
       },
-      "semantic_manifest_digest": "52bdc624a72f89952b7d0cd0f6e7886d13f0501001203ea06f34a78f4a45cce5",
-      "semantic_site_count": 977,
-      "site_count": 1760,
-      "source_file_count": 1082,
+      "semantic_manifest_digest": "9ddb628f1a35041343fbef01dd91ae931ba000ae97e5d807d26c8435d26f47b2",
+      "semantic_site_count": 680,
+      "site_count": 1389,
+      "source_file_count": 1079,
       "unknown_site_count": 0
     },
     "review_view": "compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md",
@@ -42125,6 +42125,14 @@
         }
       ],
       "partial_or_substituted_departure": "rejected"
+    },
+    "text_surface_disenrolment": {
+      "change_reason": "compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md is GENERATED from the live scan. Patch 25.10 deletes the emitter, so the semantic spellings it inventoried go with it and the regenerated document no longer names a retired spelling anywhere -- it stops enrolling as a text surface while remaining a tracked file. That is not a DEPARTURE: a deleted file cannot come back silently, a generated document can, the moment something re-adds a spelling to it. So it is recorded separately and asserted the opposite way -- the file must still EXIST and must produce NO manifest row. Five registered links name this surface: 25.5, 25.6, 25.7, 24.12b and the S1.8 implementation successor.",
+      "contract_version": "phase2510_emitter_deletion_text_surface_disenrolment_v1",
+      "disenrolled_paths": [
+        "compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md"
+      ],
+      "partial_or_substituted_disenrolment": "rejected"
     },
     "text_surface_successor": {
       "added_text_surface_rows": [
