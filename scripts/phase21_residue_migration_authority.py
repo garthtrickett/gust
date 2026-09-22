@@ -199,9 +199,28 @@ def validate() -> dict:
     require(set(declared_modules) == historical_reachable and
             graph.get("module_count") == len(historical_reachable) == 38,
             "compiler graph leaves a module unclassified")
+    # Patch 25.10 deletes the emitter, and three of codegen.gst's six import
+    # edges go with it: the seven functions that survive are type-erasure and
+    # expression-metadata helpers for the native route, which need ast, token
+    # and typechecker but not errors or the two MIR function authorities.
+    #
+    # Registered as departed EDGES rather than a new total, so the record says
+    # what left instead of only that the number changed -- and each departed
+    # edge must actually be absent from the live graph. The module count is
+    # deliberately untouched: all three modules are still imported by others,
+    # so nothing became unreachable and 38 still holds above.
+    departure = registry.get("phase2510_emitter_deletion", {}).get(
+        "frozen_inventory_departures", {}).get("compiler_import_graph", {})
+    departed_edges = {tuple(edge) for edge in departure.get("departed_edges", [])}
+    for module, dependency in sorted(departed_edges):
+        require(dependency not in edges.get(module, []),
+                f"Patch 25.10 records the import edge {module} -> {dependency} "
+                "as departed, but it is still in the compiler graph")
     require(graph.get("import_edge_count") ==
-            historical_edge_count == 116,
-            "compiler graph leaves an import edge unclassified")
+            historical_edge_count + len(departed_edges) == 116,
+            "compiler graph leaves an import edge unclassified: "
+            f"{historical_edge_count} live plus {len(departed_edges)} "
+            "registered as departed is not the 116 the authority pins")
     module_slice = {
         module: row["order"] for row in slices for module in row["modules"]
     }

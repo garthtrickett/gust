@@ -41841,6 +41841,23 @@
   "phase2510_emitter_deletion": {
     "frozen_inventory_departures": {
       "change_reason": "Patch 20.2 froze the legacy string-cleaner inventory at 48 occurrences across two owner files. Patch 25.10 deletes the emitter, taking compiler/codegen.gst's two calls with it. 20.2's numbers are left as written -- they are a true statement about what 20.2 froze -- and the departure is registered on top, so the guard subtracts a recorded removal rather than being handed a new frozen total with no account of the difference.",
+      "compiler_import_graph": {
+        "departed_edges": [
+          [
+            "codegen.gst",
+            "errors.gst"
+          ],
+          [
+            "codegen.gst",
+            "mir_function_abi_authority.gst"
+          ],
+          [
+            "codegen.gst",
+            "mir_function_call.gst"
+          ]
+        ],
+        "reason": "the seven functions that survive in codegen.gst are type erasure and expression metadata helpers for the native route. They need ast, token and typechecker; the emitter needed errors and the two MIR function authorities, and those three import edges go with it. The module count does not move: all three modules are still imported by others."
+      },
       "contract_version": "phase2510_frozen_inventory_departure_v1",
       "partial_or_substituted_departure": "rejected",
       "string_cleaner": {
