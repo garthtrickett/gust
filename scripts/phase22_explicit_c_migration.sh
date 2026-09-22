@@ -12,11 +12,21 @@ fail() {
 }
 
 test -x ./gust || fail "requires the built ./gust compiler"
-test -x ./gust_bootstrap || fail "requires the checked-in-seed compiler"
+test -x ./gust_bootstrap || fail "requires the bootstrap compiler"
 
 rm -rf "$build_dir"
 mkdir -p "$build_dir"
-seed_before="$(sha256sum gust_v4.c | awk '{print $1}')"
+# Patch 25.9: gust_v4.c is deleted, so this pair inverts with it. It read
+# the seed's digest before and after, and compared them at the end, to
+# assert "this guard did not modify the checked-in seed". `sha256sum` on a
+# missing path does not return a digest, it exits 1 -- which is how this
+# guard failed on the seed cut-over PR.
+#
+# The claim survives the deletion; only its polarity changes. What the
+# guard must not do now is CREATE the seed: it bootstraps, and Patch 25.9
+# removed the line that copied stage 3 output over gust_v4.c. If the file
+# is back afterwards, that line is back.
+test ! -e gust_v4.c || fail "gust_v4.c exists before this guard runs; Patch 25.9 deleted it"
 
 # Patch 24.13: the explicit-C emission arms are retired with the spellings they
 # exercised. This guard is Phase 22's record of migrating consumers TO explicit
@@ -114,7 +124,6 @@ make "$runtime_obj"
   grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" >"$build_dir/stage3.c"
 cmp -s "$build_dir/stage2.c" "$build_dir/stage3.c" || fail "stage 2 and stage 3 C are not byte-identical"
 
-seed_after="$(sha256sum gust_v4.c | awk '{print $1}')"
-test "$seed_before" = "$seed_after" || fail "Patch 22.2 modified the checked-in bootstrap seed"
+test ! -e gust_v4.c || fail "this guard regenerated gust_v4.c. Patch 25.9 removed the copy of stage 3 output over the seed; if the file is back, so is that line."
 
 echo "$guard: ok"
