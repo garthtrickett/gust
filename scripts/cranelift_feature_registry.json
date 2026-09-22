@@ -42024,7 +42024,8 @@
                 "scripts/phase22_default_route_seed_convergence.py",
                 "scripts/phase24_cr15_closure.py",
                 "scripts/phase21_native_feature_seed_convergence.py",
-                "scripts/phase21_tenant_scope_seed_convergence.py"
+                "scripts/phase21_tenant_scope_seed_convergence.py",
+                "scripts/phase22_explicit_c_migration.sh"
           ],
           "previous_changed_text_surfaces": [
                 {
@@ -42145,6 +42146,21 @@
                       },
                       "owner": "cranelift",
                       "path": "scripts/phase21_tenant_scope_seed_convergence.py",
+                      "removal_phase": "24"
+                },
+                {
+                      "classification": "archive_candidate",
+                      "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+                      "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+                      "digest": "bfab141c7d821a3371cfba5a538e610dfc1f8280ceab615c4617dadc86b39f77",
+                      "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+                      "match_counts": {
+                            "explicit_backend_spelling": 1,
+                            "generated_c_contract": 5,
+                            "mir_to_c_name": 5
+                      },
+                      "owner": "cranelift",
+                      "path": "scripts/phase22_explicit_c_migration.sh",
                       "removal_phase": "24"
                 }
           ],
@@ -42267,6 +42283,21 @@
                       },
                       "owner": "cranelift",
                       "path": "scripts/phase21_tenant_scope_seed_convergence.py",
+                      "removal_phase": "24"
+                },
+                {
+                      "classification": "archive_candidate",
+                      "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+                      "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+                      "digest": "a0c477f18b9ffdf316d6b4b2ffc3f4a9feb424d355e80d015345f1659521b2de",
+                      "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+                      "match_counts": {
+                            "explicit_backend_spelling": 1,
+                            "generated_c_contract": 5,
+                            "mir_to_c_name": 5
+                      },
+                      "owner": "cranelift",
+                      "path": "scripts/phase22_explicit_c_migration.sh",
                       "removal_phase": "24"
                 }
           ],
