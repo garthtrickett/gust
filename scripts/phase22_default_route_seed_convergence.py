@@ -1155,14 +1155,27 @@ def validate() -> dict:
     # pinned this same command text -- a harness reference has as many
     # owners as there are guards naming it, and missing one leaves the pair
     # disagreeing about what the workflow should say.
+    # Patch 25.10 retires the C fixed point. `cmp build/gust_stage2.c
+    # build/gust_stage3.c` compares two files the emitter emitted; with no
+    # emitter they are never written, so it fails on missing operands rather
+    # than on divergence. FOUR scripts pin this command into the workflow and
+    # all four move together -- they were found by enumerating
+    # `grep -rln "gust_stage2.c build/gust_stage3.c" scripts/*.py`, after two
+    # of them were found one at a time from CI error text and the third
+    # turned out to word its message differently.
     for command in (
         "make bootstrap",
-        "cmp build/gust_stage2.c build/gust_stage3.c",
         "if [ -e gust_v4.c ]; then",
         "git ls-files --error-unmatch gust_v4.c",
     ):
         require(command in workflow,
                 f"authoritative fixed-point workflow lacks {command}")
+    require("cmp build/gust_stage2.c build/gust_stage3.c" not in workflow,
+            "the fixed-point workflow still compares stage-two and "
+            "stage-three C, which Patch 25.10 retired with the emitter")
+    require("for stale in build/gust_stage2.c build/gust_stage3.c" in workflow,
+            "the fixed-point workflow dropped the C stage comparison without "
+            "asserting the stages are gone")
     require("git diff --exit-code -- gust_v4.c" not in workflow,
             "the authoritative fixed-point workflow still runs `git diff "
             "--exit-code -- gust_v4.c`, which cannot fail now that the seed "
