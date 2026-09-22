@@ -47,7 +47,10 @@ import re
 import shutil
 import tempfile
 import subprocess
+import time
 import os
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -61,7 +64,66 @@ SHA256_RE = re.compile(r"[0-9a-f]{64}")
 # Every artifact declares what it is. Without this, the seed lookup treated
 # the fixed-point proof log as a bootstrap compiler.
 BRIDGE_ROLE = "bridge_compiler"
-ARTIFACT_ROLES = frozenset({BRIDGE_ROLE, "fixed_point_proof", "source_seed"})
+SOURCE_SEED_ROLE = "source_seed"
+ARTIFACT_ROLES = frozenset(
+    {BRIDGE_ROLE, "fixed_point_proof", SOURCE_SEED_ROLE})
+
+# Release assets are fetched over PLAIN HTTPS, not through `gh`.
+#
+# `gh release download` needs a token. Every CI job that runs `make gust`
+# now bootstraps through this path, and most of them have no `GH_TOKEN` in
+# scope -- the first push of Patch 25.9 failed ~150 jobs with `gh`'s "could
+# not find any host configurations", which is an authentication error
+# wearing the costume of a missing release. An anonymous GET on a public
+# release asset needs no credential at all, so the fetch route stops
+# depending on who is running it.
+#
+# Dropping `gh` costs nothing in trust: the credential never authenticated
+# the BYTES, only the caller. What authenticates the bytes is the committed
+# digest, checked below before the artifact is installed.
+RELEASE_BASE_ENV = "GUST_SEED_RELEASE_BASE_URL"
+DEFAULT_RELEASE_BASE = "https://github.com/garthtrickett/gust/releases/download"
+
+# A fetched artifact is keyed by its DIGEST, not by its name, so the cache
+# cannot serve a stale binary under a name that was republished: a changed
+# artifact is simply a different key and misses.
+SEED_CACHE = ROOT / "build" / "seed-cache"
+
+# One download, widening waits. `scripts/install-just-ci.sh` retried five
+# times inside ~20 seconds and treated a GitHub 504 band as a hard failure;
+# a fetch on the critical path of every build gets a real backoff.
+FETCH_ATTEMPTS = 5
+FETCH_BACKOFF = (2, 5, 15, 30)
+
+
+def release_asset_url(tag: str, name: str) -> str:
+    base = os.environ.get(RELEASE_BASE_ENV, DEFAULT_RELEASE_BASE).rstrip("/")
+    return f"{base}/{tag}/{name}"
+
+
+def download_asset(tag: str, name: str, destination: Path) -> None:
+    """Fetch one public release asset, retrying transient HTTP failures.
+
+    Nothing here decides whether the bytes are the right ones. That is the
+    caller's digest check, and keeping the two apart is deliberate -- a
+    downloader that also validates tends to grow a path where a retry
+    silently accepts a different artifact than the first attempt.
+    """
+    url = release_asset_url(tag, name)
+    last = ""
+    for attempt in range(FETCH_ATTEMPTS):
+        try:
+            with urllib.request.urlopen(url, timeout=120) as response:
+                destination.write_bytes(response.read())
+            return
+        except (urllib.error.URLError, OSError) as exc:
+            last = f"{type(exc).__name__}: {exc}"
+            if attempt < len(FETCH_BACKOFF):
+                time.sleep(FETCH_BACKOFF[attempt])
+    require(False,
+            f"could not download {name} from {tag} at {url} after "
+            f"{FETCH_ATTEMPTS} attempts: {last[:200]}. The offline path is "
+            f"{SEED_ENV}=<path to a verified bridge>.")
 
 
 def host_target() -> str:
@@ -134,28 +196,33 @@ def fetch_seed() -> None:
             f"release {tag} lists {len(candidates)} bridge binaries for "
             f"{host}; which one is the seed is then a guess.")
     entry = candidates[0]
-    with tempfile.TemporaryDirectory() as work:
-        staged = Path(work) / entry["name"]
-        fetched = subprocess.run(
-            ["gh", "release", "download", tag, "--pattern", entry["name"],
-             "--dir", work], cwd=ROOT, capture_output=True, text=True)
-        require(fetched.returncode == 0,
-                f"could not download {entry['name']} from {tag}: "
-                f"{fetched.stderr.strip()[:200]}. The offline path is "
-                f"{SEED_ENV}=<path to a verified bridge>.")
-        got = digest(staged)
-        # BEFORE install, not after. A verified-then-replaced artifact is the
-        # same hole as an unverified one.
-        require(got == entry["digest"],
-                f"{entry['name']} from {tag} has digest {got}, but the "
-                f"committed manifest says {entry['digest']}. The release and "
-                "the manifest disagree; per the attestation policy the "
-                "release is withdrawn, not the manifest amended.")
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(staged, destination)
-        destination.chmod(0o755)
+    # The cache is checked by re-hashing, never by trusting the filename.
+    # `make gust` can run several times inside one job and this is now on
+    # the critical path of every build in the matrix.
+    cached = SEED_CACHE / entry["digest"]
+    source = "cache"
+    if not (cached.is_file() and digest(cached) == entry["digest"]):
+        source = "download"
+        with tempfile.TemporaryDirectory() as work:
+            staged = Path(work) / entry["name"]
+            download_asset(tag, entry["name"], staged)
+            got = digest(staged)
+            # BEFORE install, not after. A verified-then-replaced artifact is
+            # the same hole as an unverified one -- which is also why the
+            # cache is only populated once the digest has matched.
+            require(got == entry["digest"],
+                    f"{entry['name']} from {tag} has digest {got}, but the "
+                    f"committed manifest says {entry['digest']}. The release "
+                    "and the manifest disagree; per the attestation policy "
+                    "the release is withdrawn, not the manifest amended.")
+            SEED_CACHE.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(staged, cached)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(cached, destination)
+    destination.chmod(0o755)
     print(f"guard-cranelift-phase25-release-manifest: {entry['name']} from "
-          f"{tag} verified and installed as {destination} for {host}")
+          f"{tag} verified ({source}) and installed as {destination} "
+          f"for {host}")
 
 
 def verify_seed() -> None:
@@ -248,6 +315,22 @@ def validate() -> None:
                 require(entry.get("target"),
                         f"{tag}/{name} is a {BRIDGE_ROLE} with no target; a "
                         "bridge binary is only a seed on its own platform.")
+            if entry["role"] == SOURCE_SEED_ROLE:
+                # The seed's line count is published, not just its digest.
+                # Ten guards assert "the chain's last registered seed is the
+                # one that shipped"; with `gust_v4.c` deleted they resolve
+                # that from the release. A digest alone lets the LINE half
+                # of every one of those pairs be read back out of the same
+                # registry it is checking, which is the registry agreeing
+                # with itself. Publishing the count makes it a real
+                # cross-record comparison -- and it is verifiable against
+                # the downloadable artifact, which the registry is not.
+                require(isinstance(entry.get("lines"), int)
+                        and entry["lines"] > 0,
+                        f"{tag}/{name} is a {SOURCE_SEED_ROLE} with no "
+                        "positive integer `lines`; the deleted seed's line "
+                        "count then has no published record to check "
+                        "against.")
             roles.append(entry["role"])
         require(BRIDGE_ROLE in roles,
                 f"{tag} publishes no {BRIDGE_ROLE}, so nothing in it can "

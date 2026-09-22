@@ -7,7 +7,10 @@ import argparse
 import json
 from pathlib import Path
 
-from phase22_default_route_seed_convergence import accepted_live_seed_line_count
+from phase22_default_route_seed_convergence import (
+    accepted_live_seed_line_count,
+    published_seed_line_count,
+)
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -124,12 +127,29 @@ def validate() -> dict:
                         phase22_diff = phase22_seed.get("generated_seed_diff")
                         require(isinstance(phase22_diff, dict),
                                 "Patch 22.6a seed authority omits generated diff accounting")
-                        live_seed_lines = accepted_live_seed_line_count(
-                            phase22_seed,
-                            len(SEED.read_text(encoding="utf-8").splitlines()))
-    seed_text = SEED.read_text(encoding="utf-8")
-    require(len(seed_text.splitlines()) == live_seed_lines,
-            "committed seed line count drifted")
+                        if SEED.is_file():
+                            live_seed_lines = accepted_live_seed_line_count(
+                                phase22_seed,
+                                len(SEED.read_text(
+                                    encoding="utf-8").splitlines()))
+                        else:
+                            live_seed_lines = published_seed_line_count(
+                                phase22_seed)
+    # Patch 25.9 deleted the seed. With no file to read, "the committed seed
+    # is current" becomes "the published seed is the one the chain ends on",
+    # which published_seed_line_count established above. What is left to
+    # assert here is that the file has not come BACK: a regenerated
+    # gust_v4.c in the tree means the republish route returned, and the next
+    # commit carries 68,384 lines nobody asked for.
+    if SEED.is_file():
+        require(len(SEED.read_text(encoding="utf-8").splitlines())
+                == live_seed_lines,
+                "committed seed line count drifted")
+    else:
+        require(live_seed_lines is not None,
+                "the seed is absent and no line count was resolved from the "
+                "published `source_seed`, so this guard would pass without "
+                "checking anything")
 
     workflow = WORKFLOW.read_text(encoding="utf-8")
     for token in (
