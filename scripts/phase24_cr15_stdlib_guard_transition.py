@@ -1201,11 +1201,67 @@ def _issue398_summary_successor(registry: dict, previous: dict) -> dict:
                 previous["selection_counts"].get(name, 0) ==
                 claimed.get(name, 0),
                 f"Patch 25.5 moved a selection it does not claim: {name}")
+    # A DEPARTURE IS NOT A CHANGE. Patch 25.10a deletes both files Patch
+    # 25.5 added an invocation to, and a deleted path does not produce a
+    # census row to re-read -- this loop raised FileNotFoundError rather
+    # than failing with a diagnosis. Rows the newer link registers as
+    # departed are checked for ABSENCE instead, which is the same
+    # assertion inverted rather than a hole: a file that came back with
+    # its invocation intact still fails here.
+    departed = {
+        str(row["path"]) for row in
+        registry.get("phase2510a_strings_retirement", {})
+                .get("invocation_departure", {})
+                .get("departed_invocation_rows", [])
+    }
     for row in rows:
+        path = str(row["path"])
+        if path in departed:
+            require(not (ROOT / path).exists(),
+                    f"{path} is registered as departed by Patch 25.10a but "
+                    "is present; the invocation it carries is back in the "
+                    "census without a row for it")
+            continue
         require(str(row["invocation_marker"]) in
-                (ROOT / str(row["path"])).read_text(encoding="utf-8"),
+                (ROOT / path).read_text(encoding="utf-8"),
                 f"the registered Patch 25.5 invocation in {row['path']} is "
                 "no longer there")
+
+    # Patch 25.10a reverses exactly what Patch 25.5 added. Both of 25.5's
+    # added rows are in scripts it deletes, so its census returns to the
+    # summary 25.5 recorded as its predecessor -- which is asserted here
+    # rather than described, because "the counts went back" is the kind of
+    # claim that is easy to state and easy to have wrong by one.
+    previous = current
+    departure = registry.get("phase2510a_strings_retirement", {}).get(
+        "invocation_departure")
+    if departure is None:
+        return previous
+    current = departure.get("current_summary")
+    require(departure.get("contract_version") ==
+            "phase2510a_strings_invocation_departure_v1" and
+            departure.get("owner") == "cranelift" and
+            departure.get("previous_summary") == previous and
+            isinstance(current, dict) and
+            departure.get("escaping_the_census_by_relocation") == "rejected",
+            "Patch 25.10a Phase 22 invocation departure drifted")
+    gone = departure.get("departed_invocation_rows", [])
+    count = departure.get("departed_invocation_count")
+    require(isinstance(count, int) and count == len(gone) > 0,
+            "Patch 25.10a registered an invocation departure with no rows")
+    require(previous["total"] - current["total"] == count and
+            current["unclassified_count"] == 0,
+            "the Patch 25.10a invocation departure does not balance against "
+            "a fully classified census")
+    claimed = {}
+    for row in gone:
+        claimed[str(row["selection"])] = claimed.get(str(row["selection"]), 0) + 1
+    for name in set(previous["selection_counts"]) | set(
+            current["selection_counts"]):
+        require(previous["selection_counts"].get(name, 0) -
+                current["selection_counts"].get(name, 0) ==
+                claimed.get(name, 0),
+                f"Patch 25.10a moved a selection it does not claim: {name}")
     return current
 
 
