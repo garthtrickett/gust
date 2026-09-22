@@ -65,19 +65,25 @@ PROBE
 # component's own header rather than hand-written externs. It links against
 # the crate archive now instead of arena.o, which is the point: the
 # observable behaviour has to survive the move, not just the symbols.
-if cc -O2 -I src/runtime "$build_dir/probe.c" "$archive" -pthread -o "$build_dir/probe" 2>"$build_dir/link.log"; then
-  "$build_dir/probe" >"$build_dir/probe.out"
-  rg -n -F 'RETAINED C PARITY OK' "$build_dir/probe.out" >/dev/null
-else
-  # A link needing declared sibling runtime units is not a defect; independent
-  # compilation is what this patch asserts. But it must fail on undefined
-  # symbols only, never by reaching for generated program C.
-  rg -n -F 'undefined reference' "$build_dir/link.log" >/dev/null
-  if rg -n -e 'generated' -e 'shim' "$build_dir/link.log" >/dev/null; then
-    echo "retained C link referenced generated program source" >&2; false
-  fi
-  echo "note: the probe requires declared sibling runtime units; no generated C involved"
+# The link must SUCCEED. It did not have to before: the probe linked arena.o
+# alone, which is incomplete by design, so an undefined reference meant "needs
+# its sibling units" and an `else` branch accepted it. This patch links the
+# complete crate archive, and against a complete archive an unresolved
+# reference means the ported component is unusable -- so that branch could no
+# longer be right, and it would have swallowed the next real regression in
+# silence because it exited 0 and skipped the behavioural probe below.
+# Measured at the time of the change: the link already succeeded, so requiring
+# it changes nothing observable today and closes the hole for later.
+cc -O2 -I src/runtime "$build_dir/probe.c" "$archive" -pthread \
+  -o "$build_dir/probe" 2>"$build_dir/link.log"
+# Kept from the deleted branch rather than dropped with it: whatever the link
+# does, it must not have reached for generated C. An assertion that only ran
+# on the failure path asserted nothing on the path we actually take.
+if rg -n -e 'generated' -e 'shim' "$build_dir/link.log" >/dev/null; then
+  echo "retained C link referenced generated program source" >&2; false
 fi
+"$build_dir/probe" >"$build_dir/probe.out"
+rg -n -F 'RETAINED C PARITY OK' "$build_dir/probe.out" >/dev/null
 
 # No retained C source may be derived from a compiled program.
 stage="confirm no program-derived C source is owned by the component"

@@ -101,7 +101,22 @@ pub unsafe extern "C" fn os_ScratchAlloc(size: usize) -> *mut std::ffi::c_void {
 /// see the note above: that arena is shared by every fiber on the thread,
 /// and rewinding it here would free memory other fibers still hold. The C
 /// has the same asymmetry.
+///
+/// The 0xA5 poisoning is part of the contract, not a debugging nicety. The C
+/// fills the released bytes before rewinding, entirely inside
+/// `#ifdef GUST_DEBUG` (`src/runtime/scratch.c:74-80` on main), so a debug
+/// build turns a stale-pointer read into a visible 0xA5 instead of the value
+/// that was there. Dropping it made the debug archive silently WEAKER than
+/// the C it replaces: write 42, reset, reallocate, and the read returns 42
+/// rather than 165. `arena.rs` ports its canary path behind the same feature;
+/// this one was missed, which is what makes it a port defect rather than a
+/// design choice.
 #[no_mangle]
 pub extern "C" fn os_ScratchReset() {
+    #[cfg(feature = "gust_debug")]
+    SCRATCH_BUFFER.with(|buf| {
+        let end = SCRATCH_OFFSET.with(|off| off.get());
+        buf.borrow_mut()[..end].fill(0xA5);
+    });
     SCRATCH_OFFSET.with(|off| off.set(0));
 }

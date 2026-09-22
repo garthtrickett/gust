@@ -6,7 +6,7 @@ request_format: gust.compiler_retained_c_runtime.v1
 witness_format: gust.retained_c_runtime_witness.v1
 linkage_policy: separately_compiled_component_no_program_derived_c_source
 generation_policy: no_generated_headers_wrapper_bodies_or_fragments_derived_from_canonical_mir
-retained_helper_count: 72
+retained_helper_count: 73
 
 contract counts:
   boundary: 1
@@ -25,7 +25,7 @@ frozen retained C inventory:
   runtime_component:file_io	20	src/runtime-rs/src/file_io.rs	host_platform_primitive_no_gust_equivalent	-> phase18
   runtime_component:host_io	4	src/runtime-rs/src/host_io.rs	host_platform_primitive_no_gust_equivalent	-> phase18
   runtime_component:scratch	4	src/runtime-rs/src/scratch.rs	host_platform_primitive_no_gust_equivalent	-> phase18
-  runtime_component:strings	11	src/runtime/strings.c	awaiting_pure_gust_migration	-> phase18
+  runtime_component:strings	12	src/runtime/strings.c	awaiting_pure_gust_migration	-> phase18
 
 rejection classes:
   runtime_retained_c_anonymous_object

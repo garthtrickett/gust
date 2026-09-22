@@ -49,23 +49,6 @@ void std_Yield(void);
 void std_str_bounds_fail(Slice_unsigned_char what);
 
 // Structures
-#ifndef GUST_STRUCT_APIRequest_DEFINED
-#define GUST_STRUCT_APIRequest_DEFINED
-struct APIRequest {
-    int Active;
-    int SessionID;
-    int UserID;
-};
-#endif
-
-#ifndef GUST_STRUCT_SessionNode_DEFINED
-#define GUST_STRUCT_SessionNode_DEFINED
-struct SessionNode {
-    int Next;
-    int SessionID;
-};
-#endif
-
 #ifndef GUST_STRUCT_StrHeader_DEFINED
 #define GUST_STRUCT_StrHeader_DEFINED
 struct StrHeader {

@@ -13,8 +13,8 @@ was described from memory. This file describes it from the compiler.
 | --- | --- |
 | `std.*` names the typechecker registers | 38 |
 | `std_*` runtime symbols in `src/runtime/` and `src/runtime-rs/` | 21 |
-| Phase 17 helper rows | 21 |
-| **runtime symbols with no Phase 17 row** | **1** |
+| Phase 17 helper rows | 22 |
+| **runtime symbols with no Phase 17 row** | **0** |
 | helper rows with no runtime symbol | 1 |
 | collection methods dispatched on a receiver | 28 |
 
@@ -40,7 +40,7 @@ than anything this inventory introduces.
 | `std_is_digit` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
 | `std_is_whitespace` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
 | `std_parse_int` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
-| `std_str_bounds_fail` | `src/runtime/strings.c` | **none** |
+| `std_str_bounds_fail` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
 | `std_str_byte_at` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
 | `std_str_eq` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
 | `std_str_find` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
