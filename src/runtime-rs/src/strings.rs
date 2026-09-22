@@ -303,14 +303,32 @@ pub unsafe extern "C" fn std_parse_int(s: SliceU8) -> i32 {
         _ => {}
     }
     let mut result = 0i32;
-    while index < s.len {
+    // SENTINEL SHAPE, not a condition-controlled loop, and the difference
+    // is observable. The C is `while (go == 1) { gust_tick(); if (index >=
+    // len) go = 0; else ... }` -- the tick happens at the top of EVERY
+    // iteration including the one that discovers termination. A
+    // `while index < s.len` loop exits without that final tick, so a
+    // sign-only input, or any input ending after its last digit, ticks one
+    // fewer time than the C did.
+    //
+    // gust_tick() decrements the scheduler counter and can call
+    // gust_yield(), so the count is fiber scheduling, not bookkeeping. The
+    // 7,792-comparison differential cannot see this: it compares RETURN
+    // VALUES, and both loops return the same integer.
+    let mut go = true;
+    while go {
         gust_tick();
-        let c = at(&s, index);
-        if !c.is_ascii_digit() {
-            break;
+        if index >= s.len {
+            go = false;
+        } else {
+            let c = at(&s, index);
+            if c.is_ascii_digit() {
+                result = result.wrapping_mul(10).wrapping_add((c - b'0') as i32);
+                index += 1;
+            } else {
+                go = false;
+            }
         }
-        result = result.wrapping_mul(10).wrapping_add((c - b'0') as i32);
-        index += 1;
     }
     result.wrapping_mul(sign)
 }
@@ -321,21 +339,32 @@ pub unsafe extern "C" fn std_parse_int(s: SliceU8) -> i32 {
 /// `s` must be a valid slice.
 #[no_mangle]
 pub unsafe extern "C" fn std_str_trim(s: SliceU8) -> SliceU8 {
+    // Both loops take the sentinel shape for the same reason std_parse_int
+    // does: the C ticks on the terminating iteration too. An empty or
+    // all-whitespace slice is where the two shapes diverge most.
     let mut start = 0;
-    while start < s.len {
+    let mut go = true;
+    while go {
         gust_tick();
-        if std_is_whitespace(at(&s, start)) == 0 {
-            break;
+        if start >= s.len {
+            go = false;
+        } else if std_is_whitespace(at(&s, start)) == 1 {
+            start += 1;
+        } else {
+            go = false;
         }
-        start += 1;
     }
     let mut end = s.len;
-    while end > start {
+    let mut go2 = true;
+    while go2 {
         gust_tick();
-        if std_is_whitespace(at(&s, end - 1)) == 0 {
-            break;
+        if end <= start {
+            go2 = false;
+        } else if std_is_whitespace(at(&s, end - 1)) == 1 {
+            end -= 1;
+        } else {
+            go2 = false;
         }
-        end -= 1;
     }
     std_str_slice(s, start, end)
 }
