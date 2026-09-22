@@ -95,6 +95,14 @@ MENTIONS = (
     "scripts/phase24_filename_behavior_characterization.py",
     "scripts/phase24_historical_full_qualification.py",
     "scripts/phase25_closure.py",
+    # Patch 25.10. Both ASSERT the spelling rather than running it:
+    # phase22_explicit_c_migration pins the refusal block that tells a caller
+    # who asks for it that it was removed, and the inversion suite writes it
+    # into tests/test_runner.gst as a probe and takes it back out. A probe
+    # that puts the spelling in the tree is still not a caller of the
+    # emitter -- nothing here starts a compiler with it.
+    "scripts/phase22_explicit_c_migration.py",
+    "scripts/phase2510b_relay_remigration_inversions.py",
 )
 CALLERS = INVOKERS
 MANIFEST = ROOT / "docs/RELEASE_MANIFEST.json"
@@ -120,11 +128,22 @@ def count(needle: str, path: str) -> int:
 
 
 def emitter_present() -> bool:
-    """The emitter itself, not the spelling that reaches it."""
-    out = subprocess.run(
-        ["grep", "-c", "codegen_generate", str(ROOT / "compiler" / "codegen.gst")],
-        capture_output=True, text=True)
-    return out.returncode == 0 and int(out.stdout.strip() or 0) > 0
+    """The emitter itself, not the spelling that reaches it.
+
+    Matched on the DEFINITION and over non-comment lines only. A bare name
+    match read the emitter as present after Patch 25.10 deleted it, because
+    the comment at the top of codegen.gst explaining the deletion says
+    "reachable only from codegen_generate". That is the fourth time this
+    phase that prose quoting a retired spelling registered as a use, and the
+    only time it mattered this much: it left the symmetry assertion below
+    satisfied for the wrong reason, so a tree with the emitter gone and 13
+    live entry sites reported ok.
+    """
+    source = ROOT / "compiler" / "codegen.gst"
+    if not source.is_file():
+        return False
+    return any(line.lstrip().startswith("func codegen_generate(")
+               for line in source.read_text(encoding="utf-8").splitlines())
 
 
 def report() -> dict:

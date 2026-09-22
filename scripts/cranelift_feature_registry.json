@@ -42102,11 +42102,11 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "f1016a3e68a73c793b3e958d0626efc0ade12bc4d7ab7f98e6743b5f78b59345",
+          "digest": "60aca699bac37afc35b0bccf252e0141f7d818d48debbc404b0c22d35b83e3c9",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
-            "generated_c_contract": 1,
+            "generated_c_contract": 2,
             "mir_to_c_name": 0
           },
           "owner": "cranelift",
