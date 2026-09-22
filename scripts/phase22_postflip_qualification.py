@@ -83,9 +83,29 @@ def validate() -> dict:
         "all: phase10-native-package",
         "phase10-native-package: gust build/gust-native-backend $(PHASE21_RUNTIME_PACKAGE)",
         "install: phase10-native-package",
-        "./gust --backend bootstrap-emitter compiler/test_runner_entry.gst",
+        # Patch 25.10 rebases the last marker again. Patch 24.11 created the
+        # bootstrap-only entry for this one caller and 24.13 pointed it here;
+        # 25.10 deletes the emitter, so the step it named does not exist. The
+        # marker follows the caller rather than being dropped: `make gust` is
+        # now ONE native compile, and the claim is that the seed path reaches
+        # the compiler through the native route.
+        "./build/native-build/bin/gust --backend cranelift "
+        "-o build/.gust.tmp compiler/test_runner_entry.gst",
     ):
         require(marker in makefile, f"build/install contract marker missing: {marker}")
+    # Inverted rather than dropped: the native marker above would still pass
+    # if an emitter step were ALSO present on the seed path. Scoped to lines
+    # make can execute for the reason given below -- written as a raw
+    # substring first, and the inversion probe that adds the retired command
+    # as a COMMENT is what caught it, one line under a comment saying not to
+    # do that.
+    live_lines = [line for line in makefile.splitlines()
+                  if not line.lstrip().startswith("#")]
+    require(not any("--backend bootstrap-emitter "
+                    "compiler/test_runner_entry.gst" in line
+                    for line in live_lines),
+            "the Makefile still drives the seed through the emitter Patch "
+            "25.10 deleted")
     # Inverted rather than dropped: the rebased marker above would still pass
     # if the retired spelling were ALSO present on the seed path, so the claim
     # that it is gone is asserted separately.
@@ -113,10 +133,19 @@ def validate() -> dict:
                 require(marker not in makefile,
                         "the Makefile still drives the seed through a "
                         f"spelling Patch 24.13 removed: {marker}")
-    require(makefile.count("--backend bootstrap-emitter") == 5,
-            "the five Makefile bootstrap callers do not all reach the "
-            "bootstrap-only entry: "
-            f"{makefile.count('--backend bootstrap-emitter')} of 5")
+    # Patch 25.10 takes the five bootstrap callers to none, with the stage
+    # chain they belonged to. The count cannot stay on raw occurrences: the
+    # Makefile keeps a comment recording the four-step chain that was removed
+    # and why the native route replaces it, and prose quoting a retired
+    # spelling is not an invocation of it -- a distinction this phase has had
+    # to make three times already. Counted over lines that are not comments,
+    # so the history survives while a caller coming back anywhere make can
+    # execute it -- recipe line, variable, or conditional -- still fails.
+    emitter_callers = [line for line in live_lines
+                       if "--backend bootstrap-emitter" in line]
+    require(not emitter_callers,
+            "the Makefile still invokes the bootstrap emitter Patch 25.10 "
+            f"deleted: {emitter_callers}")
 
     readme = README.read_text(encoding="utf-8")
     # Issue #398 rebases the first two. "by default" was accurate while there
