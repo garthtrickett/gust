@@ -1262,6 +1262,51 @@ def _issue398_summary_successor(registry: dict, previous: dict) -> dict:
                 current["selection_counts"].get(name, 0) ==
                 claimed.get(name, 0),
                 f"Patch 25.10a moved a selection it does not claim: {name}")
+    # Patch 25.10 goes LAST here, and that is not the same discipline as
+    # the text-surface chain in this same file. That chain projects the
+    # tree BACKWARDS and runs newest-first. This one walks summaries
+    # FORWARDS in time -- `previous = current` then read the next link --
+    # so the newest patch is appended, not prepended. Putting 25.10
+    # ahead of 25.10a here handed it 25.10a's predecessor and failed as
+    # "invocation departure drifted", which names the symptom and not
+    # the ordering.
+    #
+    # It removes the five Makefile invocations of the C stage chain;
+    # both censuses read the same registry node, as 25.10a's pair does.
+    previous = current
+    emitter_departure = registry.get("phase2510_emitter_deletion", {}).get(
+        "invocation_departure")
+    if emitter_departure is None:
+        return previous
+    current = emitter_departure.get("current_summary")
+    require(emitter_departure.get("contract_version") ==
+            "phase2510_emitter_deletion_invocation_departure_v1" and
+            emitter_departure.get("owner") == "cranelift" and
+            emitter_departure.get("previous_summary") == previous and
+            isinstance(current, dict) and
+            emitter_departure.get(
+                "escaping_the_census_by_relocation") == "rejected",
+            "Patch 25.10 Phase 22 invocation departure drifted")
+    emitter_gone = emitter_departure.get("departed_invocation_rows", [])
+    emitter_count = emitter_departure.get("departed_invocation_count")
+    require(isinstance(emitter_count, int)
+            and emitter_count == len(emitter_gone) > 0,
+            "Patch 25.10 registered an invocation departure with no rows")
+    require(previous["total"] - current["total"] == emitter_count and
+            current["unclassified_count"] == 0,
+            "the Patch 25.10 invocation departure does not balance against "
+            "a fully classified census")
+    emitter_claimed = {}
+    for row in emitter_gone:
+        emitter_claimed[str(row["selection"])] = emitter_claimed.get(
+            str(row["selection"]), 0) + 1
+    for name in set(previous["selection_counts"]) | set(
+            current["selection_counts"]):
+        require(previous["selection_counts"].get(name, 0) -
+                current["selection_counts"].get(name, 0) ==
+                emitter_claimed.get(name, 0),
+                f"Patch 25.10 moved a selection it does not claim: {name}")
+
     return current
 
 
@@ -2194,6 +2239,135 @@ def rebase_s1_8_surface(registry: dict, rows: list) -> list:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    # ORDER CORRECTED ON THE MERGE. Patch 25.9's comment below still says
+    # it runs FIRST "because it is the newest link", and that was true on
+    # its own branch. On this tree 25.10a and then 25.10 landed after it,
+    # so they lead and 25.9 follows -- newest-first, as every link here
+    # does. Left 25.9's wording alone rather than rewriting a record of
+    # what was true when it was written; the ordering is what has to be
+    # right, and it is stated here.
+    # MERGE ORDER, and it is not arbitrary: Patch 25.10 is newer than
+    # 25.10a, which is newer than 25.7, so they run in that order and
+    # each hands the next the tree it was registered against. 25.10a
+    # is 25.10's prerequisite -- it takes two explicit_bootstrap_emitter
+    # sites out of the census before 25.10 counts them -- so putting
+    # 25.10a first here would hand 25.10 a tree one patch behind.
+    # A DEPARTURE FIRST, for the reason 25.9's block gives about the seed:
+    # compiler/test_runner_bootstrap_bridge_entry.gst is deleted, so it
+    # stops producing a manifest row, and Patch 24.13 registered it as a
+    # surface that exists. It did exist when 24.13 was written. Restoring
+    # the row here lets 24.13 go on comparing what it froze, instead of
+    # its evidence being edited for a file that was genuinely present.
+    #
+    # The tidier-looking move -- deleting the bridge entry's row from
+    # 24.13's block -- destroys the record.
+    emitter_departure_surface = registry.get(
+        "phase2510_emitter_deletion", {}).get("text_surface_departure")
+    if emitter_departure_surface is not None:
+        require(emitter_departure_surface.get("contract_version") ==
+                "phase2510_emitter_deletion_text_surface_departure_v1" and
+                emitter_departure_surface.get(
+                    "partial_or_substituted_departure") == "rejected",
+                "Patch 25.10 emitter departure record drifted")
+        departed = list(emitter_departure_surface["departed_paths"])
+        live = {row["path"] for row in rows}
+        present = [path for path in departed if path in live]
+        require(not present,
+                f"Patch 25.10 records {present} as departed, but they still "
+                "produce a manifest row. A departure that did not happen is "
+                "a row restored on top of a live one, counted twice.")
+        restored = emitter_departure_surface["departed_previous_rows"]
+        require(sorted(row["path"] for row in restored) == sorted(departed),
+                "Patch 25.10 does not carry exactly one previous row per "
+                "departed surface")
+        rows = sorted(list(rows) + [dict(row) for row in restored],
+                      key=lambda row: str(row["path"]))
+    # Patch 25.10 merges after 25.7, so it is the newest link and runs
+    # FIRST. It records a finding and changes no route, so what moves is
+    # the roadmap and the registry key above.
+    emitter_del_surface = registry.get(
+        "phase2510_emitter_deletion", {}).get("text_surface_successor")
+    if emitter_del_surface is not None:
+        require(emitter_del_surface.get("contract_version") ==
+                "phase2510_emitter_deletion_text_surface_successor_v1" and
+                emitter_del_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Patch 25.10 emitter deletion text surface successor drifted")
+        ed_paths = list(emitter_del_surface["registered_changed_paths"])
+        ed_pre = {r["path"]: r for r
+                  in emitter_del_surface["previous_changed_text_surfaces"]}
+        ed_post = {r["path"]: r for r
+                   in emitter_del_surface["current_changed_text_surfaces"]}
+        require(sorted(ed_pre) == sorted(ed_paths) == sorted(ed_post),
+                "Patch 25.10 registered paths and rows disagree")
+        ed_live = {r["path"]: r for r in rows if r["path"] in ed_paths}
+        require(sorted(ed_live) == sorted(ed_paths),
+                "Patch 25.10 registered text surface is missing from the scan")
+        require(ed_live in (ed_pre, ed_post),
+                "Patch 25.10 changed text surfaces are partial or "
+                "substituted: the live rows match neither the complete "
+                "predecessor state nor the complete successor state "
+                f"({sorted(p for p in ed_paths if ed_live[p] != ed_post[p])} differ from post)")
+        rows = [dict(ed_pre.get(r["path"], r)) for r in rows]
+        # The guard this patch adds is itself an enrolled surface: the scan
+        # matches on CONTENT, and a script about `--backend bootstrap-emitter`
+        # necessarily contains the spelling. Added surfaces carry one
+        # registered row rather than a pre/post pair, and are dropped from
+        # the rows the older links see -- those links were registered
+        # against a tree where this file did not exist.
+        ed_added = set(emitter_del_surface["added_text_surfaces"])
+        ed_rows = {r["path"]: r for r
+                   in emitter_del_surface["added_text_surface_rows"]}
+        require(sorted(ed_rows) == sorted(ed_added),
+                "Patch 25.10 added paths and rows disagree")
+        ed_live_added = {r["path"]: r for r in rows if r["path"] in ed_added}
+        require(sorted(ed_live_added) == sorted(ed_added),
+                "Patch 25.10 added text surface is missing from the scan: "
+                f"{sorted(ed_added - set(ed_live_added))}")
+        for path in sorted(ed_added):
+            require(ed_live_added[path] == ed_rows[path],
+                    "Patch 25.10 added text surface does not match its "
+                    f"registered row: {path}")
+        rows = [r for r in rows if r["path"] not in ed_added]
+    # Patch 25.10a is newer than 25.7, so it runs FIRST and projects the
+    # tree back to the state 25.7's successor was registered against. Same
+    # newest-first discipline as every link below it.
+    #
+    # It retires src/runtime/strings.c into the Rust crate. That file is
+    # DELETED, but it never matched a surface pattern -- generated C with
+    # no mention of generated C in it -- so, exactly as with fiber.c in
+    # 25.6, there is no departed half for this block to carry and the
+    # scan's row count is unchanged.
+    #
+    # Seven surfaces move, and two of them are this registration itself:
+    # cranelift_registry.py and the schema both list the top-level key
+    # this patch adds, so registering the change changes them. That is the
+    # toll having a toll, not a mistake -- they are carried here rather
+    # than left to fail the older links they are pinned in.
+    strings_surface = registry.get(
+        "phase2510a_strings_retirement", {}).get("text_surface_successor")
+    if strings_surface is not None:
+        require(strings_surface.get("contract_version") ==
+                "phase2510a_strings_retirement_text_surface_successor_v1" and
+                strings_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Patch 25.10a strings retirement text surface successor drifted")
+        st_paths = list(strings_surface["registered_changed_paths"])
+        st_pre = {r["path"]: r for r
+                  in strings_surface["previous_changed_text_surfaces"]}
+        st_post = {r["path"]: r for r
+                   in strings_surface["current_changed_text_surfaces"]}
+        require(sorted(st_pre) == sorted(st_paths) == sorted(st_post),
+                "Patch 25.10a registered paths and rows disagree")
+        st_live = {r["path"]: r for r in rows if r["path"] in st_paths}
+        require(sorted(st_live) == sorted(st_paths),
+                "Patch 25.10a registered text surface is missing from the scan")
+        require(st_live in (st_pre, st_post),
+                "Patch 25.10a changed text surfaces are partial or "
+                "substituted: the live rows match neither the complete "
+                "predecessor state nor the complete successor state "
+                f"({sorted(p for p in st_paths if st_live[p] != st_post[p])} differ from post)")
+        rows = [dict(st_pre.get(r["path"], r)) for r in rows]
     # Patch 25.9 runs FIRST because it is the newest link, and because it is
     # a DEPARTURE rather than a change: gust_v4.c is deleted, so it stops
     # producing a manifest row at all. Every block below this one registered
@@ -2403,98 +2577,6 @@ def normalize_phase23_text_surfaces(
                 "rejected",
                 "Patch 24.12 text surface successor drifted")
         oracle_paths = list(oracle_surface["registered_changed_paths"])
-    # MERGE ORDER, and it is not arbitrary: Patch 25.10 is newer than
-    # 25.10a, which is newer than 25.7, so they run in that order and
-    # each hands the next the tree it was registered against. 25.10a
-    # is 25.10's prerequisite -- it takes two explicit_bootstrap_emitter
-    # sites out of the census before 25.10 counts them -- so putting
-    # 25.10a first here would hand 25.10 a tree one patch behind.
-    # Patch 25.10 merges after 25.7, so it is the newest link and runs
-    # FIRST. It records a finding and changes no route, so what moves is
-    # the roadmap and the registry key above.
-    emitter_del_surface = registry.get(
-        "phase2510_emitter_deletion", {}).get("text_surface_successor")
-    if emitter_del_surface is not None:
-        require(emitter_del_surface.get("contract_version") ==
-                "phase2510_emitter_deletion_text_surface_successor_v1" and
-                emitter_del_surface.get(
-                    "partial_extra_or_substituted_surface") == "rejected",
-                "Patch 25.10 emitter deletion text surface successor drifted")
-        ed_paths = list(emitter_del_surface["registered_changed_paths"])
-        ed_pre = {r["path"]: r for r
-                  in emitter_del_surface["previous_changed_text_surfaces"]}
-        ed_post = {r["path"]: r for r
-                   in emitter_del_surface["current_changed_text_surfaces"]}
-        require(sorted(ed_pre) == sorted(ed_paths) == sorted(ed_post),
-                "Patch 25.10 registered paths and rows disagree")
-        ed_live = {r["path"]: r for r in rows if r["path"] in ed_paths}
-        require(sorted(ed_live) == sorted(ed_paths),
-                "Patch 25.10 registered text surface is missing from the scan")
-        require(ed_live in (ed_pre, ed_post),
-                "Patch 25.10 changed text surfaces are partial or "
-                "substituted: the live rows match neither the complete "
-                "predecessor state nor the complete successor state "
-                f"({sorted(p for p in ed_paths if ed_live[p] != ed_post[p])} differ from post)")
-        rows = [dict(ed_pre.get(r["path"], r)) for r in rows]
-        # The guard this patch adds is itself an enrolled surface: the scan
-        # matches on CONTENT, and a script about `--backend bootstrap-emitter`
-        # necessarily contains the spelling. Added surfaces carry one
-        # registered row rather than a pre/post pair, and are dropped from
-        # the rows the older links see -- those links were registered
-        # against a tree where this file did not exist.
-        ed_added = set(emitter_del_surface["added_text_surfaces"])
-        ed_rows = {r["path"]: r for r
-                   in emitter_del_surface["added_text_surface_rows"]}
-        require(sorted(ed_rows) == sorted(ed_added),
-                "Patch 25.10 added paths and rows disagree")
-        ed_live_added = {r["path"]: r for r in rows if r["path"] in ed_added}
-        require(sorted(ed_live_added) == sorted(ed_added),
-                "Patch 25.10 added text surface is missing from the scan: "
-                f"{sorted(ed_added - set(ed_live_added))}")
-        for path in sorted(ed_added):
-            require(ed_live_added[path] == ed_rows[path],
-                    "Patch 25.10 added text surface does not match its "
-                    f"registered row: {path}")
-        rows = [r for r in rows if r["path"] not in ed_added]
-    # Patch 25.10a is newer than 25.7, so it runs FIRST and projects the
-    # tree back to the state 25.7's successor was registered against. Same
-    # newest-first discipline as every link below it.
-    #
-    # It retires src/runtime/strings.c into the Rust crate. That file is
-    # DELETED, but it never matched a surface pattern -- generated C with
-    # no mention of generated C in it -- so, exactly as with fiber.c in
-    # 25.6, there is no departed half for this block to carry and the
-    # scan's row count is unchanged.
-    #
-    # Seven surfaces move, and two of them are this registration itself:
-    # cranelift_registry.py and the schema both list the top-level key
-    # this patch adds, so registering the change changes them. That is the
-    # toll having a toll, not a mistake -- they are carried here rather
-    # than left to fail the older links they are pinned in.
-    strings_surface = registry.get(
-        "phase2510a_strings_retirement", {}).get("text_surface_successor")
-    if strings_surface is not None:
-        require(strings_surface.get("contract_version") ==
-                "phase2510a_strings_retirement_text_surface_successor_v1" and
-                strings_surface.get(
-                    "partial_extra_or_substituted_surface") == "rejected",
-                "Patch 25.10a strings retirement text surface successor drifted")
-        st_paths = list(strings_surface["registered_changed_paths"])
-        st_pre = {r["path"]: r for r
-                  in strings_surface["previous_changed_text_surfaces"]}
-        st_post = {r["path"]: r for r
-                   in strings_surface["current_changed_text_surfaces"]}
-        require(sorted(st_pre) == sorted(st_paths) == sorted(st_post),
-                "Patch 25.10a registered paths and rows disagree")
-        st_live = {r["path"]: r for r in rows if r["path"] in st_paths}
-        require(sorted(st_live) == sorted(st_paths),
-                "Patch 25.10a registered text surface is missing from the scan")
-        require(st_live in (st_pre, st_post),
-                "Patch 25.10a changed text surfaces are partial or "
-                "substituted: the live rows match neither the complete "
-                "predecessor state nor the complete successor state "
-                f"({sorted(p for p in st_paths if st_live[p] != st_post[p])} differ from post)")
-        rows = [dict(st_pre.get(r["path"], r)) for r in rows]
     # Patch 25.7 merges after 25.5, so it is the newest link and runs
     # FIRST. It adds a guard and a workflow step and changes no route, so
     # what moves here is the roadmap, the justfile and the surfaces its

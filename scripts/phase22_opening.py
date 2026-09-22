@@ -621,12 +621,62 @@ def _backend_removal_successor(registry: dict, previous: dict) -> dict:
         require(previous["selection_counts"].get(name, 0) ==
                 current["selection_counts"].get(name, 0),
                 f"Patch 24.13 moved a selection it does not claim: {name}")
-    return _patch2510a_departure(
+    return _patch2510_departure(
         registry,
-        _patch255_successor(
-            registry, _issue398_successor(registry, current, "relay"),
+        _patch2510a_departure(
+            registry,
+            _patch255_successor(
+                registry, _issue398_successor(registry, current, "relay"),
+                "relay"),
             "relay"),
         "relay")
+
+
+def _patch2510_departure(registry: dict, previous: dict, census: str) -> dict:
+    """Retire the five Makefile invocations the emitter deletion removes.
+
+    Newest first: this runs before _patch2510a_departure, which runs
+    before _patch255_successor. Both censuses read the SAME registry node,
+    for the reason 25.10a's link already gives -- two readers with two
+    records is how they drift into two different answers.
+
+    The five are the C stage chain: the stage-one emission from the
+    bridge entry, the stage-one diagnose build, the final compiler
+    emission, and the stage-two and stage-three emissions in the C fixed
+    point. All five are explicit_bootstrap_emitter and all five are gone
+    with the rules that ran them.
+    """
+    departure = registry.get("phase2510_emitter_deletion", {}).get(
+        "invocation_departure")
+    if departure is None:
+        return previous
+    key = {"relay": "relay_inventory", "unfiltered": "summary"}[census]
+    current = departure.get(f"current_{key}")
+    require(departure.get("contract_version") ==
+            "phase2510_emitter_deletion_invocation_departure_v1" and
+            departure.get("owner") == "cranelift" and
+            departure.get(f"previous_{key}") == previous and
+            isinstance(current, dict) and
+            departure.get("escaping_the_census_by_relocation") == "rejected",
+            f"Patch 25.10 {census} invocation departure drifted")
+    require(current["unclassified_count"] == previous["unclassified_count"]
+            == 0,
+            f"Patch 25.10 must leave the {census} census fully classified")
+    gone = departure.get("departed_invocation_count")
+    require(isinstance(gone, int) and gone > 0 and
+            previous["total"] - current["total"] == gone,
+            f"the Patch 25.10 {census} census total must fall by exactly "
+            f"the departed invocations: {previous['total']} -> "
+            f"{current['total']} against {gone}")
+    for name in set(previous["selection_counts"]) | set(
+            current["selection_counts"]):
+        delta = (previous["selection_counts"].get(name, 0) -
+                 current["selection_counts"].get(name, 0))
+        expected = gone if name == "explicit_bootstrap_emitter" else 0
+        require(delta == expected,
+                f"Patch 25.10 moved a selection it does not claim in the "
+                f"{census} census: {name} by {delta}, expected {expected}")
+    return current
 
 
 def _patch2510a_departure(registry: dict, previous: dict, census: str) -> dict:
