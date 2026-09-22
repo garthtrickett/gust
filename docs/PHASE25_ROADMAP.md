@@ -1066,7 +1066,9 @@ wrong about the state: the file had **eight** functions, not nine.
 `std_parse_int` was listed here and absent from `compiler/runtime/strings.gst`.
 The sentence "All nine match" was never true when it was written — nothing
 had compared them. It is true now, and checked by
-`scripts/phase25_strings_gust_parity.sh` rather than asserted. See
+`scripts/phase25_strings_rust_parity.sh` rather than asserted — Patch
+25.10a retired the Gust/C differential this sentence originally named,
+because Patch 25.10 leaves it with only one side. See
 [Deleting the runtime C](#deleting-the-runtime-c-five-files-are-free-strings-costs-a-generation)
 below for what the comparison found.
 

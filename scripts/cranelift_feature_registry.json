@@ -42951,6 +42951,21 @@
           "removal_phase": "25"
         },
         {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "51c897db2f99d5d9f11417e862f8f26ece369a95b7951dd7184a9affbcd2b993",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 7,
+            "mir_to_c_name": 3
+          },
+          "owner": "cranelift",
+          "path": "docs/PHASE25_ROADMAP.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
@@ -42993,6 +43008,21 @@
           },
           "owner": "cranelift",
           "path": "scripts/phase17_opening.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "780e01d5ee81b8f81179377ffb08dc11b945dc7778b489d143189da2607a2430",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 4
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase17_retained_c_runtime_parity.sh",
           "removal_phase": "24"
         },
         {
@@ -43074,6 +43104,21 @@
           "removal_phase": "25"
         },
         {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "d48fdf3e9ecbb2aaf65c24822dfc63bdf49ac6907d28d3a262c8a399caee997b",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 7,
+            "mir_to_c_name": 3
+          },
+          "owner": "cranelift",
+          "path": "docs/PHASE25_ROADMAP.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
@@ -43116,6 +43161,21 @@
           },
           "owner": "cranelift",
           "path": "scripts/phase17_opening.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "c302708050444b689bf014c5ba7ddd026c9b6f032c2e21ce1f2a649cdf35d684",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 4
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase17_retained_c_runtime_parity.sh",
           "removal_phase": "24"
         },
         {
@@ -43181,9 +43241,11 @@
       ],
       "registered_changed_paths": [
         "Makefile",
+        "docs/PHASE25_ROADMAP.md",
         "scripts/cranelift_registry.py",
         "scripts/cranelift_test_levels.json",
         "scripts/phase17_opening.py",
+        "scripts/phase17_retained_c_runtime_parity.sh",
         "scripts/phase21_collection_string_native_source.sh",
         "scripts/phase21_filesystem_allocation_native_source.sh",
         "scripts/phase21_full_compiler_native_qualification.py",
