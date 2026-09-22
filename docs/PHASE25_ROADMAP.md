@@ -1506,6 +1506,19 @@ neither guard is about the native route: one pins the observable values of
 which route a stdlib-lane guard exercises, and that is the stdlib lane's
 judgement, not this patch's.
 
+**Patch 25.10 update: the second option has EXPIRED.** "Point the two
+recipes at the bootstrap emitter" was viable when this was written and is
+not any more, because this patch deletes the emitter. The repair space is
+now one option narrower: restore a fallback in `run-gust-file.sh`, with
+the shared-instrument risk recorded above, or land the Phase 13 capability
+`deferred_p13_parameter_argument_target_dependent_abi` and let both
+fixtures compile natively.
+
+That is worth stating because it is a cost this patch imposes on someone
+else's lane. Recording a deferred repair does not freeze the options it
+was chosen from, and an option can be removed by an unrelated patch
+without anyone noticing.
+
 **Leave them red and say so.** Chosen. Neither check is in the required set
 -- the `Protect main` ruleset requires exactly one, `Codex / Trusted actor` --
 so they do not gate a merge. What they do is tell the truth about a part of
