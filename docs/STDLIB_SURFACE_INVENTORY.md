@@ -36,17 +36,17 @@ than anything this inventory introduces.
 | `std_Mutex_Unlock_impl` | `src/runtime-rs/src/fiber.rs` | `p17_threading_runtime` |
 | `std_PoolAlloc_impl` | `src/runtime-rs/src/collections.rs` | `p17_allocation_string_runtime` |
 | `std_PoolFree_impl` | `src/runtime-rs/src/collections.rs` | `p17_allocation_string_runtime` |
-| `std_is_alpha` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
-| `std_is_digit` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
-| `std_is_whitespace` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
-| `std_parse_int` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
-| `std_str_bounds_fail` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
-| `std_str_byte_at` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
-| `std_str_eq` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
-| `std_str_find` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
-| `std_str_slice` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
+| `std_is_alpha` | `src/runtime-rs/src/strings.rs` | `p17_allocation_string_runtime` |
+| `std_is_digit` | `src/runtime-rs/src/strings.rs` | `p17_allocation_string_runtime` |
+| `std_is_whitespace` | `src/runtime-rs/src/strings.rs` | `p17_allocation_string_runtime` |
+| `std_parse_int` | `src/runtime-rs/src/strings.rs` | `p17_allocation_string_runtime` |
+| `std_str_bounds_fail` | `src/runtime-rs/src/strings.rs` | `p17_allocation_string_runtime` |
+| `std_str_byte_at` | `src/runtime-rs/src/strings.rs` | `p17_allocation_string_runtime` |
+| `std_str_eq` | `src/runtime-rs/src/strings.rs` | `p17_allocation_string_runtime` |
+| `std_str_find` | `src/runtime-rs/src/strings.rs` | `p17_allocation_string_runtime` |
+| `std_str_slice` | `src/runtime-rs/src/strings.rs` | `p17_allocation_string_runtime` |
 | `std_str_split` | `src/runtime-rs/src/strings.rs` | `p17_allocation_string_runtime` |
-| `std_str_trim` | `src/runtime/strings.c` | `p17_allocation_string_runtime` |
+| `std_str_trim` | `src/runtime-rs/src/strings.rs` | `p17_allocation_string_runtime` |
 
 ## Helper rows with no runtime symbol
 
