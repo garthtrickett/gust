@@ -162,7 +162,21 @@ jobs:
     # phase20-nested-brand-annotation and final all already use 60.
     # Raising a timeout weakens no check: the same guards run and must
     # still pass. It only stops the job dying with work left to do.
-    timeout-minutes: 60
+    #
+    # 2026-09-22: the same thing happened again at the new wall, four times,
+    # at 60m22s and 60m23s. The job has NOT grown -- three runs measured the
+    # same day all report 169 steps:
+    #
+    #   main          12:28:48Z -> 13:07:51Z   39m03s  success
+    #   25.9 branch   09:37:49Z -> 10:36:35Z   58m46s  success
+    #   25.10a (#468) 14:45:49Z -> cancelled   60m22s  125 of 169 steps
+    #
+    # Identical work, a 1.5x spread. So this is runner contention, not a
+    # regression and not step growth, and a wall set at ~1.4x the median gets
+    # hit whenever a runner is slow. 90 is ~2.2x the median, which covers the
+    # observed tail and still catches a job that has genuinely hung rather
+    # than letting it burn the full six hours.
+    timeout-minutes: 90
     needs: build
 
     steps:
