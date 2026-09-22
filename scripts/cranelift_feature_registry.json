@@ -13363,16 +13363,16 @@
         "semantic_or_intrinsic_recognition": 977,
         "serialization": 1
       },
-      "complete_manifest_digest": "54a05cc7e713467eb9bf8a6a24c5d04b8523da2fb147bda37a372daae51ad6d9",
+      "complete_manifest_digest": "39d3963dce60ac343d01bf6e638b8f88d5e60bb20d9dbeb7fcab2ba8406dee82",
       "partition_manifest_digests": {
         "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
-        "diagnostic": "29ec6817181dd3c2aa996580a8d3e178cf0088c7e8adde072526b970a04eb1a4",
+        "diagnostic": "57ed1e71797a9e3e5b62bb6ed50d71bdc2c88c8b00d63faec998dfda6e60a1d1",
         "fixture_or_evidence": "ebc99fcbf9471eee32e00cc224a7891d5bc0189d88758c2a8726f511e016b197",
         "mangling_or_generated_name": "b7eec05abb5aa6523d56ebca635261fd1d553fedf9d5e09b85c30d72981ae3ae",
         "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7",
         "serialization": "cd26d44606f736374209054c0fc91d72f950946ad84fad1a5e6efb6c7fc4f5b9"
       },
-      "semantic_manifest_digest": "bf0b6967614445d3ddde84d28bbb737157d79d6ed78ee86ed3764fbe4ba9de3b",
+      "semantic_manifest_digest": "52bdc624a72f89952b7d0cd0f6e7886d13f0501001203ea06f34a78f4a45cce5",
       "semantic_site_count": 977,
       "site_count": 1760,
       "source_file_count": 1082,
@@ -41819,6 +41819,21 @@
       "contract_version": "phase257_native_stage_chain_text_surface_successor_v1",
       "current_changed_text_surfaces": [
         {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "a09f2a902788fbfb304f25c1320844aa8defe66765df598ba1d41b95cc126ac4",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 184,
+            "mir_to_c_name": 0
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
@@ -41882,6 +41897,21 @@
       "partial_extra_or_substituted_surface": "rejected",
       "previous_changed_text_surfaces": [
         {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "51d5ae1d1499f8c0714e4955647ca4df3cacde8603bb39d2cc6db8b2c62e2067",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 184,
+            "mir_to_c_name": 0
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
@@ -41943,6 +41973,7 @@
         }
       ],
       "registered_changed_paths": [
+        "compiler/CRANELIFT_PHASE24_SEMANTIC_SPELLING_INVENTORY.md",
         "compiler/experiments/cranelift/src/full_program.rs",
         "compiler/experiments/cranelift/src/main.rs",
         "scripts/cranelift_registry.py",
