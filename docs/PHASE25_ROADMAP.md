@@ -105,6 +105,7 @@ scratch -> arena. The implementation order is 25.6, 25.5, 25.7, 25.9,
 - [x] Patch 25.7 — Native Stage Chain and the New Fixed Point
 - [x] Patch 25.8 — Release Mechanics
 - [x] Patch 25.9 — Seed Cut-Over
+- [ ] Patch 25.10a — `strings.c` Retirement
 - [ ] Patch 25.10 — Emitter and Bootstrap Entry Deletion
 - [x] Patch 25.11 — `cc` Optional
 - [x] Patch 25.11a — Renumber the merged 25.11, whose Exit Gate was not met
@@ -479,6 +480,76 @@ rather than translated.
 **Exit Gate:** `gust_v4.c` is absent; a fresh checkout bootstraps from a
 release and reaches the fixed point; the seed-convergence guards assert
 absence plus replacement.
+
+## Patch 25.10a — `strings.c` Retirement
+
+**Purpose:** retire `src/runtime/strings.c`, the phase's SECOND SEED, and
+with it the last C the runtime archive contains.
+
+This patch is not in the original plan and was not foreseen by it. Patch
+25.5 moved nine of `strings.c`'s eleven functions to Gust and checked in
+the emitted C; its own generator named what that was — *"a second
+generated artifact in the tree, like `gust_v4.c`, and the honest name for
+that is a second seed"* — and gave one reason for checking it in:
+`gust_bootstrap` was built from `gust_v4.c` plus `src/runtime.c`, so
+emitting the file needed a compiler and a build-time rule would be
+circular.
+
+**Patch 25.9 removed that premise and Patch 25.10 removes the escape.**
+The bootstrap is a downloaded, digest-verified bridge now, so the
+circularity is gone — but once the emitter is deleted, the file's header
+(*"edit the Gust and re-run the script"*) names a script that cannot run.
+That is worse than hand-written C: edit `strings.gst` and the shipped
+object silently never changes.
+
+**The in-thesis fix is not available, and this is measured, not assumed:**
+
+```
+$ gust --backend cranelift -o /tmp/strings compiler/runtime/strings.gst
+gust_native_capability_decision: decision=deferred
+    capability=phase13_generic_source_to_mir
+Cranelift backend selection is valid, but the source-level route is not
+connected yet.
+```
+
+Building `strings.o` from the Gust is a **Phase 13** residue, not
+something this phase can clear. So the choice is freeze the C or finish
+the file in Rust, and `scripts/phase25_no_c_expected_failures.json`
+decides it: `runtime-archive-is-glibc-bound` and `runtime-sources-are-c`
+are both recorded `cleared_by: 25.5 and 25.6 — the runtime stops being
+C`, and **neither is cleared** while `$(CC)` compiles `strings.c` into
+`build/gust-runtime-package.a`. Freezing documents the second seed; it
+does not take the C compiler off the runtime's critical path, which is
+exactly what 25.11 needs.
+
+**Steps:**
+
+- Port the ten functions to `src/runtime-rs/src/strings.rs`, beside
+  `std_Clone_str` and `std_str_split`, which D2's per-file fallback
+  already put there.
+- Empty `PHASE21_RUNTIME_OBJECTS` and delete the `strings.o` rule, the
+  `#include "runtime/strings.c"` and the file.
+- Replace the Gust/C differential — which 25.10 leaves with only one side
+  — with `scripts/phase25_strings_rust_parity.sh`, comparing the Rust
+  against the retired C itself.
+- Keep `compiler/runtime/strings.gst` as the behavioural reference and the
+  thing to compile when `phase13_generic_source_to_mir` lands.
+
+**Two properties of the emitted C are load-bearing** and were easy to drop
+in a port: `gust_tick()` at the top of every loop body, which is the fiber
+preemption point — without it `std_str_find` over a long haystack stops
+yielding, a scheduler regression no string test would show — and bounds
+failures going through `gust_check_fail` rather than a Rust panic.
+
+**Exit Gate:** `src/runtime/strings.c` is absent; `ar t
+build/gust-runtime-package.a` returns exactly `gust_runtime_rs_exports.o`;
+the differential passes against the retired C pinned by git blob; the
+Phase 17 helper inventory names no C source unit.
+
+**Relationship to 25.10:** a prerequisite, and a partial down-payment. Both
+of Patch 25.5's registered invocation rows are in the two scripts this
+patch deletes, and both are `explicit_bootstrap_emitter` — so 25.10's
+census falls from 26 entry sites to 24 before it starts.
 
 ## Patch 25.10 — Emitter and Bootstrap Entry Deletion
 
@@ -1066,7 +1137,9 @@ wrong about the state: the file had **eight** functions, not nine.
 `std_parse_int` was listed here and absent from `compiler/runtime/strings.gst`.
 The sentence "All nine match" was never true when it was written — nothing
 had compared them. It is true now, and checked by
-`scripts/phase25_strings_gust_parity.sh` rather than asserted. See
+`scripts/phase25_strings_rust_parity.sh` rather than asserted — Patch
+25.10a retired the Gust/C differential this sentence originally named,
+because Patch 25.10 leaves it with only one side. See
 [Deleting the runtime C](#deleting-the-runtime-c-five-files-are-free-strings-costs-a-generation)
 below for what the comparison found.
 

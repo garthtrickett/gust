@@ -97,10 +97,20 @@ def validate() -> dict:
                 # has to be registered here or the archive stops matching
                 # its own authority.
                 #
-                # strings.o is the last C member. Its nine remaining
-                # functions go to Gust rather than Rust, which needs a
-                # seed generation the other five did not.
-                "strings.o",
+                # Patch 25.10a: strings.o is GONE, and the archive is
+                # now one Rust object and nothing else. It was "the last C
+                # member" through five patches; its nine pure functions
+                # went to Gust in 25.5 and the emitted C was checked in as
+                # a second seed, which 25.10 makes unregenerable by
+                # deleting the emitter. The native route still defers on
+                # compiler/runtime/strings.gst
+                # (capability=phase13_generic_source_to_mir), so they are
+                # in src/runtime-rs beside std_Clone_str and
+                # std_str_split until that lands.
+                #
+                # This list is compared against `ar t` exactly, so a
+                # C member reappearing fails here rather than quietly
+                # putting $(CC) back on the runtime's critical path.
                 "gust_runtime_rs_exports.o",
             ],
             "symbol_policy": "existing_registered_runtime_symbols_only",

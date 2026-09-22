@@ -6,7 +6,7 @@ name: Stdlib S1 Str Surface
 on:
   pull_request:
     paths:
-      - 'src/runtime/strings.c'
+      - 'src/runtime-rs/src/strings.rs'
       - 'compiler/typechecker.gst'
       - 'compiler/codegen.gst'
       - 'tests/test_str_surface_regression.gst'
@@ -14,7 +14,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'src/runtime/strings.c'
+      - 'src/runtime-rs/src/strings.rs'
       - 'tests/test_str_surface_regression.gst'
       - '.github/workflows/stdlib-s1-str-surface.yml'
   workflow_dispatch:

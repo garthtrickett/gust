@@ -9,13 +9,16 @@
    multiple-definition errors, which is why this deletion is the same
    commit as the port rather than a follow-up tidy.
 
-   strings.c is the exception and stays for one more generation. Its nine
-   remaining functions go to GUST, not Rust, so they arrive as emitted C
-   inside this translation unit -- and the seed that builds gust_bootstrap
-   does not contain them yet. See docs/PHASE25_ROADMAP.md for the ordering.
-   Its other two, std_Clone_str and std_str_split, are already in the crate
-   and are removed from it here for the same collision reason. */
-#include "runtime/strings.c"
+   strings.c was the exception and is now gone too (Patch 25.10a). Patch
+   25.5 sent its nine pure functions to Gust and checked in the emitted C,
+   calling it what it was: a second seed. Patch 25.10 deletes the emitter,
+   so that file's own header -- "edit the Gust and re-run the script" --
+   would have named a script that cannot run. The native route still
+   defers on compiler/runtime/strings.gst
+   (capability=phase13_generic_source_to_mir), so the nine went to
+   src/runtime-rs beside std_Clone_str and std_str_split, which were
+   already there. compiler/runtime/strings.gst stays as the behavioural
+   reference to compile when that capability lands. */
 /* Patch 25.4: approved_scalar_imports.c moved to the Rust runtime crate
    src/runtime-rs (no_std then; Patch 25.6 dropped that when the scheduler
    followed). The tiny_host_* fixtures must stay FOREIGN -- a Gust

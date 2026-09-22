@@ -24013,16 +24013,6 @@ guard-cranelift-phase24-close:
 #
 # Appended rather than inserted: Patch 24.0c's manifest for this file is
 # keyed on line numbers, so a mid-file recipe moves every recipe below it.
-guard-cranelift-phase25-runtime-strings-generated:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    ./scripts/phase25_runtime_strings_generated.sh
-
-guard-cranelift-phase25-strings-gust-parity:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    ./scripts/phase25_strings_gust_parity.sh
-
 guard-cranelift-phase25-runtime-rs-abi-smoke:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -24036,3 +24026,25 @@ guard-cranelift-phase25-native-fixed-point:
     #!/usr/bin/env bash
     set -euo pipefail
     ./scripts/phase25_native_fixed_point.sh
+
+# Patch 25.10a. Appended, like every recipe above it.
+#
+# Two recipes were DELETED here rather than appended-around, which the
+# "append only" note above does not cover and is worth stating: Patch
+# 24.3b projected the `line` coordinate out of the invocation manifest
+# digest, precisely so an unrelated edit above a row stops reading as
+# drift. What the manifest still pins is the justfile's whole-file
+# digest, which a deletion moves exactly as an addition does. So the
+# constraint is "re-pin the digest", not "never remove a recipe".
+#
+# The two that went are guard-cranelift-phase25-runtime-strings-generated
+# and guard-cranelift-phase25-strings-gust-parity. Both existed to keep a
+# GENERATED src/runtime/strings.c honest; this patch deletes that file.
+#
+# This replacement is far cheaper than either: it needs the runtime
+# archive, not ./gust, because it links a driver against the archive and
+# a pinned oracle blob rather than compiling anything with the compiler.
+guard-cranelift-phase25-strings-rust-parity:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    ./scripts/phase25_strings_rust_parity.sh

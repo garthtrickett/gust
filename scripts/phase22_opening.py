@@ -621,8 +621,62 @@ def _backend_removal_successor(registry: dict, previous: dict) -> dict:
         require(previous["selection_counts"].get(name, 0) ==
                 current["selection_counts"].get(name, 0),
                 f"Patch 24.13 moved a selection it does not claim: {name}")
-    return _patch255_successor(
-        registry, _issue398_successor(registry, current, "relay"), "relay")
+    return _patch2510a_departure(
+        registry,
+        _patch255_successor(
+            registry, _issue398_successor(registry, current, "relay"),
+            "relay"),
+        "relay")
+
+
+def _patch2510a_departure(registry: dict, previous: dict, census: str) -> dict:
+    """Retire the two invocations Patch 25.5 added.
+
+    THERE ARE TWO CENSUSES, filtered differently, and this is the second
+    one. The unfiltered chain's copy of this link lives in
+    scripts/phase24_cr15_stdlib_guard_transition.py. They read the SAME
+    registry node, which is the only thing keeping them from drifting
+    into two different answers about what departed.
+
+    Patch 25.10a deletes both scripts that carried 25.5's added rows, so
+    this is 25.5 run backwards: the relay census returns to exactly the
+    inventory 25.5 recorded as its predecessor, 152 -> 150, and the only
+    selection that moves is explicit_bootstrap_emitter, 15 -> 13.
+
+    Asserted as an identity rather than as "it went back down", for the
+    same reason 25.5 asserted its addition as one: a census that is only
+    checked for direction is not a census.
+    """
+    departure = registry.get("phase2510a_strings_retirement", {}).get(
+        "invocation_departure")
+    if departure is None:
+        return previous
+    key = {"relay": "relay_inventory", "unfiltered": "summary"}[census]
+    current = departure.get(f"current_{key}")
+    require(departure.get("contract_version") ==
+            "phase2510a_strings_invocation_departure_v1" and
+            departure.get(f"previous_{key}") == previous and
+            isinstance(current, dict) and
+            departure.get("escaping_the_census_by_relocation") == "rejected",
+            f"Patch 25.10a {census} invocation departure drifted")
+    require(current["unclassified_count"] == previous["unclassified_count"]
+            == 0,
+            f"Patch 25.10a must leave the {census} census fully classified")
+    gone = departure.get("departed_invocation_count")
+    require(isinstance(gone, int) and gone > 0 and
+            previous["total"] - current["total"] == gone,
+            f"the Patch 25.10a {census} census total must fall by exactly "
+            f"the departed invocations: {previous['total']} -> "
+            f"{current['total']} against {gone}")
+    for name in set(previous["selection_counts"]) | set(
+            current["selection_counts"]):
+        delta = (previous["selection_counts"].get(name, 0) -
+                 current["selection_counts"].get(name, 0))
+        expected = gone if name == "explicit_bootstrap_emitter" else 0
+        require(delta == expected,
+                f"Patch 25.10a moved a selection it does not claim in the "
+                f"{census} census: {name} by {delta}, expected {expected}")
+    return current
 
 
 def _patch255_successor(registry: dict, previous: dict, census: str) -> dict:

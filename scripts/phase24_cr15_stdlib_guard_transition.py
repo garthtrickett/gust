@@ -1201,11 +1201,67 @@ def _issue398_summary_successor(registry: dict, previous: dict) -> dict:
                 previous["selection_counts"].get(name, 0) ==
                 claimed.get(name, 0),
                 f"Patch 25.5 moved a selection it does not claim: {name}")
+    # A DEPARTURE IS NOT A CHANGE. Patch 25.10a deletes both files Patch
+    # 25.5 added an invocation to, and a deleted path does not produce a
+    # census row to re-read -- this loop raised FileNotFoundError rather
+    # than failing with a diagnosis. Rows the newer link registers as
+    # departed are checked for ABSENCE instead, which is the same
+    # assertion inverted rather than a hole: a file that came back with
+    # its invocation intact still fails here.
+    departed = {
+        str(row["path"]) for row in
+        registry.get("phase2510a_strings_retirement", {})
+                .get("invocation_departure", {})
+                .get("departed_invocation_rows", [])
+    }
     for row in rows:
+        path = str(row["path"])
+        if path in departed:
+            require(not (ROOT / path).exists(),
+                    f"{path} is registered as departed by Patch 25.10a but "
+                    "is present; the invocation it carries is back in the "
+                    "census without a row for it")
+            continue
         require(str(row["invocation_marker"]) in
-                (ROOT / str(row["path"])).read_text(encoding="utf-8"),
+                (ROOT / path).read_text(encoding="utf-8"),
                 f"the registered Patch 25.5 invocation in {row['path']} is "
                 "no longer there")
+
+    # Patch 25.10a reverses exactly what Patch 25.5 added. Both of 25.5's
+    # added rows are in scripts it deletes, so its census returns to the
+    # summary 25.5 recorded as its predecessor -- which is asserted here
+    # rather than described, because "the counts went back" is the kind of
+    # claim that is easy to state and easy to have wrong by one.
+    previous = current
+    departure = registry.get("phase2510a_strings_retirement", {}).get(
+        "invocation_departure")
+    if departure is None:
+        return previous
+    current = departure.get("current_summary")
+    require(departure.get("contract_version") ==
+            "phase2510a_strings_invocation_departure_v1" and
+            departure.get("owner") == "cranelift" and
+            departure.get("previous_summary") == previous and
+            isinstance(current, dict) and
+            departure.get("escaping_the_census_by_relocation") == "rejected",
+            "Patch 25.10a Phase 22 invocation departure drifted")
+    gone = departure.get("departed_invocation_rows", [])
+    count = departure.get("departed_invocation_count")
+    require(isinstance(count, int) and count == len(gone) > 0,
+            "Patch 25.10a registered an invocation departure with no rows")
+    require(previous["total"] - current["total"] == count and
+            current["unclassified_count"] == 0,
+            "the Patch 25.10a invocation departure does not balance against "
+            "a fully classified census")
+    claimed = {}
+    for row in gone:
+        claimed[str(row["selection"])] = claimed.get(str(row["selection"]), 0) + 1
+    for name in set(previous["selection_counts"]) | set(
+            current["selection_counts"]):
+        require(previous["selection_counts"].get(name, 0) -
+                current["selection_counts"].get(name, 0) ==
+                claimed.get(name, 0),
+                f"Patch 25.10a moved a selection it does not claim: {name}")
     return current
 
 
@@ -2138,6 +2194,52 @@ def rebase_s1_8_surface(registry: dict, rows: list) -> list:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    # ORDER CORRECTED WHEN 25.9 LANDED ON MAIN. Its stanza below still
+    # says it runs FIRST "because it is the newest link", which was true
+    # when it was written and is left as a record of that. 25.10a is
+    # newer, so it leads -- newest-first, as every link here does. The
+    # merge put 25.9's stanza above 25.10a's purely because of where git
+    # placed the hunk, and that fails as "changed text surfaces are
+    # partial", which names the ROWS and not the ordering.
+    # Patch 25.10a is newer than 25.7, so it runs FIRST and projects the
+    # tree back to the state 25.7's successor was registered against. Same
+    # newest-first discipline as every link below it.
+    #
+    # It retires src/runtime/strings.c into the Rust crate. That file is
+    # DELETED, but it never matched a surface pattern -- generated C with
+    # no mention of generated C in it -- so, exactly as with fiber.c in
+    # 25.6, there is no departed half for this block to carry and the
+    # scan's row count is unchanged.
+    #
+    # Seven surfaces move, and two of them are this registration itself:
+    # cranelift_registry.py and the schema both list the top-level key
+    # this patch adds, so registering the change changes them. That is the
+    # toll having a toll, not a mistake -- they are carried here rather
+    # than left to fail the older links they are pinned in.
+    strings_surface = registry.get(
+        "phase2510a_strings_retirement", {}).get("text_surface_successor")
+    if strings_surface is not None:
+        require(strings_surface.get("contract_version") ==
+                "phase2510a_strings_retirement_text_surface_successor_v1" and
+                strings_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Patch 25.10a strings retirement text surface successor drifted")
+        st_paths = list(strings_surface["registered_changed_paths"])
+        st_pre = {r["path"]: r for r
+                  in strings_surface["previous_changed_text_surfaces"]}
+        st_post = {r["path"]: r for r
+                   in strings_surface["current_changed_text_surfaces"]}
+        require(sorted(st_pre) == sorted(st_paths) == sorted(st_post),
+                "Patch 25.10a registered paths and rows disagree")
+        st_live = {r["path"]: r for r in rows if r["path"] in st_paths}
+        require(sorted(st_live) == sorted(st_paths),
+                "Patch 25.10a registered text surface is missing from the scan")
+        require(st_live in (st_pre, st_post),
+                "Patch 25.10a changed text surfaces are partial or "
+                "substituted: the live rows match neither the complete "
+                "predecessor state nor the complete successor state "
+                f"({sorted(p for p in st_paths if st_live[p] != st_post[p])} differ from post)")
+        rows = [dict(st_pre.get(r["path"], r)) for r in rows]
     # Patch 25.9 runs FIRST because it is the newest link, and because it is
     # a DEPARTURE rather than a change: gust_v4.c is deleted, so it stops
     # producing a manifest row at all. Every block below this one registered

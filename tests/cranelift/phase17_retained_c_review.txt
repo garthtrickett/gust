@@ -25,7 +25,7 @@ frozen retained C inventory:
   runtime_component:file_io	20	src/runtime-rs/src/file_io.rs	host_platform_primitive_no_gust_equivalent	-> phase18
   runtime_component:host_io	4	src/runtime-rs/src/host_io.rs	host_platform_primitive_no_gust_equivalent	-> phase18
   runtime_component:scratch	4	src/runtime-rs/src/scratch.rs	host_platform_primitive_no_gust_equivalent	-> phase18
-  runtime_component:strings	12	src/runtime/strings.c	awaiting_pure_gust_migration	-> phase18
+  runtime_component:strings	12	src/runtime-rs/src/strings.rs	awaiting_pure_gust_migration	-> phase18
 
 rejection classes:
   runtime_retained_c_anonymous_object

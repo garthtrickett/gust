@@ -112,6 +112,7 @@ TOP_FIELDS = {
     # two files 25.9 edits.
     "phase259_seed_cutover",
     "phase255_runtime_to_gust",
+    "phase2510a_strings_retirement",
     "patch256_fiber_global_asm",
     "patch254_runtime_crate",
     "issue451_inventory_ownership",

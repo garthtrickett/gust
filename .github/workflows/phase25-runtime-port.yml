@@ -3,12 +3,11 @@ name: Cranelift Phase 25 Runtime Port
 # Patch 25.5, extended by Patch 25.7. Guards that had no workflow, so they
 # never ran.
 #
-# The staleness guard is the load-bearing one: src/runtime/strings.c is
-# GENERATED from compiler/runtime/strings.gst and checked in, because
-# gust_bootstrap is built from gust_v4.c plus src/runtime.c and emitting
-# the file needs a compiler -- a build-time rule is circular. A generated
-# file that is checked in and never re-diffed is a stale file waiting to
-# happen.
+# Patch 25.10a retired the staleness guard with the file it watched.
+# src/runtime/strings.c was GENERATED from compiler/runtime/strings.gst
+# and checked in, so it needed re-diffing on every change; it is now in
+# src/runtime-rs and there is nothing to go stale. What replaces the two
+# steps is a differential against the retired C, pinned by git blob.
 on:
   pull_request:
   push:
@@ -20,7 +19,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
+      # FULL HISTORY, for the strings differential below. Its oracle is
+      # the retired src/runtime/strings.c, pinned by git BLOB rather than
+      # by path -- the path is deleted and "the version in the last
+      # commit" drifts. A blob is only resolvable if the checkout has the
+      # history containing it, and the default checkout is shallow, so
+      # the guard reported exactly what it was written to report:
+      #
+      #   blob 8495f318... is not in this repository; the oracle is the
+      #   retired src/runtime/strings.c, a shallow clone without history
+      #   cannot run this differential.
+      #
+      # The alternative -- committing a copy of the oracle as a fixture --
+      # would re-create a checked-in duplicate of the file this patch
+      # exists to delete. Fetching history is the cheaper of the two.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
       - uses: extractions/setup-just@v2
 
@@ -29,15 +44,20 @@ jobs:
       - name: ABI smoke
         run: just guard-cranelift-phase25-runtime-rs-abi-smoke
 
+      # Patch 25.10a. Also before `make gust`, and deliberately so: the
+      # two steps this replaces needed the compiler, and this one does
+      # not. It links a C driver against the runtime archive and against
+      # the retired src/runtime/strings.c, fetched by its pinned git
+      # blob and renamed with objcopy so both sides can coexist. Nothing
+      # here compiles Gust, so a disagreement between the Rust runtime
+      # and the C it replaced is reported in seconds rather than after a
+      # bootstrap.
+      - name: Strings runtime matches the C it replaced
+        run: just guard-cranelift-phase25-strings-rust-parity
+
       # These two need ./gust, which the bootstrap produces.
       - name: Build the compiler
         run: make gust
-
-      - name: Generated runtime strings are in sync
-        run: just guard-cranelift-phase25-runtime-strings-generated
-
-      - name: Strings port matches the frozen C reference
-        run: just guard-cranelift-phase25-strings-gust-parity
 
       # Patch 25.7. Last, because it is the most expensive step here: it
       # builds the compiler twice. Measured at 2m51s warm and about eleven
