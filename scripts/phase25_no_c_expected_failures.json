@@ -40,7 +40,9 @@
    "id": "rustc-defaults-to-cc-on-gnu",
    "reason": "rustc uses cc as its linker driver on *-linux-gnu, including for the musl self-contained target, so a C-free link needs -C linker=rust-lld explicitly.",
    "measured_by": "D9",
-   "cleared_by": "25.11 -- cc optional, musl + rust-lld proved here"
+   "cleared_by": "25.11 -- cc optional, musl + rust-lld proved here",
+   "observable_signature": "linker `cc` not found",
+   "observable_note": "Newly observable, and it is the FIRST failure on a clean checkout: cargo builds the native backend before anything links, and rustc invokes cc for its build scripts. Measured by Patch 25.10 from CI, not locally -- a tree with build/gust-native-backend already present gets past this and fails at the link step instead, which is a different entry."
   },
   {
    "id": "native-link-driver-is-cc",
@@ -48,7 +50,7 @@
    "measured_by": "Patch 25.10, by running the workload after the bootstrap chain was deleted",
    "cleared_by": "an internal or non-cc link step for the native backend -- lld, or a linker invoked directly rather than through a C driver. Not by any further C deletion, because there is no C left to delete on this path.",
    "observable_signature": "kind=linker_unavailable|linker spawn failed",
-   "observable_note": "Newly observable. It was always true and never the thing that failed, because the Makefile died at its first $(CC) line before the native route was reached. Patch 25.10 deleted that chain, so this became the failure rather than becoming a fact."
+   "observable_note": "Observable only once the native backend is already built. On a clean no-C checkout rustc-defaults-to-cc-on-gnu fires first, so this is the SECOND barrier on that path, not the first. Both are real; they are different programs reaching for cc -- rustc for its build scripts, and the Gust backend for its own link step."
   }
  ],
  "excepted": [
