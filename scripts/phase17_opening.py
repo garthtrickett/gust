@@ -489,12 +489,21 @@ def validate() -> dict:
         # and their symbol names are byte-identical, so only the
         # source path changes.
         "src/runtime-rs/src/lib.rs", "src/runtime-rs/src/file_io.rs",
-        "src/runtime-rs/src/host_io.rs", "src/runtime/strings.c",
-        # Patch 25.5: nine of strings.c's eleven functions went to Gust and
-        # are GENERATED back into strings.c, which is why that path stays.
-        # The two that allocate raw arena bytes went to Rust instead --
-        # Gust has no spelling for "N bytes from this arena" -- so the file
-        # has two source units, not one.
+        "src/runtime-rs/src/host_io.rs",
+        # Patch 25.10a: src/runtime/strings.c is GONE, and with it the
+        # last C source unit in this inventory. Patch 25.5 sent nine of
+        # its eleven functions to Gust and generated them back into that
+        # path, which is why it stayed -- but Patch 25.10 deletes the
+        # emitter, so the file could no longer be regenerated from the
+        # Gust it claims to come from, and the native route still defers
+        # on compiler/runtime/strings.gst
+        # (capability=phase13_generic_source_to_mir).
+        #
+        # All eleven are now one source unit again, in the crate, beside
+        # std_Clone_str and std_str_split which were already there. The
+        # symbols did not move; only their language did, so every helper
+        # row keeps its identity and only the source path changes -- the
+        # same shape as the five files 25.5 ported.
         "src/runtime-rs/src/strings.rs",
         # Patch 25.6: fiber.c is deleted. Its sixteen ordinary exports are
         # in the crate's fiber.rs; the two assembly symbols are in

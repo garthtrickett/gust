@@ -570,7 +570,13 @@ def check() -> None:
         # re-pinned here, so the closure keeps asserting #398's own
         # landed identity rather than whatever the tree looks like today.
         current_audit = production_module.scan()
-        for later in ("phase25_runtime_port_invocations",):
+        # Newest FIRST. Patch 25.10a retires src/runtime/strings.c into
+        # the Rust crate and the Makefile is a supported surface, so it
+        # moves the manifest digest in front of 25.5. Appending it
+        # instead would hand 25.5 a tree one patch ahead of what it
+        # recorded, and the loop would fail on the wrong link.
+        for later in ("phase2510a_strings_retirement",
+                      "phase25_runtime_port_invocations"):
             node = registry.get(later, {}).get("production_audit_transition")
             if node is None:
                 continue

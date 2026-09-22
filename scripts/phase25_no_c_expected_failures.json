@@ -1,39 +1,61 @@
 {
-  "version": "phase25_no_c_expected_failures_v1",
-  "contract": "The no-C-compiler job is expected to FAIL while this list is non-empty, and expected to fail ONLY for reasons on it. A failure whose reason is absent here is a regression, not progress. The list is the phase's schedule: it shrinks patch by patch, and the job becomes required when it empties -- by a patch that says so, never automatically.",
-  "entries": [
-    {
-      "id": "runtime-archive-is-glibc-bound",
-      "reason": "build/gust-runtime-package.a carries glibc-only undefined symbols (__printf_chk, __fprintf_chk, __memcpy_chk, __isoc23_strtol, __stack_chk), so it cannot link against musl and the C-free link cannot be proved.",
-      "measured_by": "Patch 25.0",
-      "cleared_by": "25.5 and 25.6 -- the runtime stops being C"
+ "version": "phase25_no_c_expected_failures_v1",
+ "contract": "The no-C-compiler job is expected to FAIL while this list is non-empty, and expected to fail ONLY for reasons on it. A failure whose reason is absent here is a regression, not progress. The list is the phase's schedule: it shrinks patch by patch, and the job becomes required when it empties -- by a patch that says so, never automatically.",
+ "entries": [
+  {
+   "id": "runtime-archive-is-glibc-bound",
+   "reason": "build/gust-runtime-package.a carries glibc-only undefined symbols, so it cannot link against musl and the C-free link cannot be proved.",
+   "measured_by": "Patch 25.0, RE-MEASURED by Patch 25.10a",
+   "cleared_by": "NOT 25.5/25.6, and not by removing C at all -- Patch 25.10a removed the last C from this archive and the entry survived. Clearing it needs a musl Rust target (x86_64-unknown-linux-musl), because the remaining symbols come from Rust's std.",
+   "patch2510a_measurement": {
+    "the_five_symbols_this_entry_named_are_gone": {
+     "__printf_chk": 0,
+     "__fprintf_chk": 0,
+     "__memcpy_chk": 0,
+     "__isoc23_strtol": 0,
+     "__stack_chk_fail": 0
     },
-    {
-      "id": "runtime-sources-are-c",
-      "reason": "src/runtime/*.c is 1,968 hand-written lines compiled by $(CC); every binary links it.",
-      "measured_by": "Patch 25.0",
-      "cleared_by": "25.5 and 25.6"
-    },
-    {
-      "id": "bootstrap-chain-compiles-c",
-      "reason": "The Makefile assembles generated stage files with the host C compiler across 11 $(CC) recipe lines; gust_v4.c is 66,002 lines of generated C.",
-      "measured_by": "Patch 25.0",
-      "cleared_by": "25.9 seed cut-over and 25.10 emitter deletion",
-            "observable_signature": "cc: (command not found|No such file)",
-            "observable_note": "The only entry observable as a build FAILURE: with no compiler on PATH the Makefile dies at its first $(CC) line. The other three are structural facts about the tree, true whether or not a build is attempted, so they are measured rather than triggered."
-    },
-    {
-      "id": "rustc-defaults-to-cc-on-gnu",
-      "reason": "rustc uses cc as its linker driver on *-linux-gnu, including for the musl self-contained target, so a C-free link needs -C linker=rust-lld explicitly.",
-      "measured_by": "D9",
-      "cleared_by": "25.11 -- cc optional, musl + rust-lld proved here"
-    }
-  ],
-  "excepted": [
-    {
-      "id": "tree-sitter-gust",
-      "reason": "Editor tooling. Makefile:262 test target never names test_tree_sitter, no workflow mentions it, and the only routes are explicit opt-in. Optional under D10, so out of scope rather than on the schedule.",
-      "adjudicated_by": "Patch 25.0"
-    }
-  ]
+    "why": "they came from C compiled with -O2 -D_FORTIFY_SOURCE, and there is no C in the archive now",
+    "but_it_is_still_glibc_bound_via_rust_std": [
+     "__xpg_strerror_r",
+     "__res_init",
+     "gnu_get_libc_version",
+     "__cxa_thread_atexit_impl"
+    ],
+    "not_verified_by_linking": "no musl toolchain on the measuring host; this is a symbol census, not a link attempt"
+   }
+  },
+  {
+   "id": "runtime-sources-are-c",
+   "reason": "src/runtime/*.c is 1,968 hand-written lines compiled by $(CC); every binary links it.",
+   "measured_by": "Patch 25.0, RE-MEASURED by Patch 25.10a",
+   "cleared_by": "25.5, 25.6 and 25.10a for src/runtime/*.c; the last 29 lines are 25.10's, because src/runtime.c exists only to be cat-ed into emitted C",
+   "patch2510a_measurement": {
+    "src_runtime_c_files": 0,
+    "was": "1,968 hand-written lines across six files",
+    "remaining": "src/runtime.c, 29 lines, not compiled by $(CC) into the runtime -- it is the unity #include header for the emitted-C route"
+   }
+  },
+  {
+   "id": "bootstrap-chain-compiles-c",
+   "reason": "The Makefile assembles generated stage files with the host C compiler across 11 $(CC) recipe lines; gust_v4.c is 66,002 lines of generated C.",
+   "measured_by": "Patch 25.0",
+   "cleared_by": "25.9 seed cut-over and 25.10 emitter deletion",
+   "observable_signature": "cc: (command not found|No such file)",
+   "observable_note": "The only entry observable as a build FAILURE: with no compiler on PATH the Makefile dies at its first $(CC) line. The other three are structural facts about the tree, true whether or not a build is attempted, so they are measured rather than triggered."
+  },
+  {
+   "id": "rustc-defaults-to-cc-on-gnu",
+   "reason": "rustc uses cc as its linker driver on *-linux-gnu, including for the musl self-contained target, so a C-free link needs -C linker=rust-lld explicitly.",
+   "measured_by": "D9",
+   "cleared_by": "25.11 -- cc optional, musl + rust-lld proved here"
+  }
+ ],
+ "excepted": [
+  {
+   "id": "tree-sitter-gust",
+   "reason": "Editor tooling. Makefile:262 test target never names test_tree_sitter, no workflow mentions it, and the only routes are explicit opt-in. Optional under D10, so out of scope rather than on the schedule.",
+   "adjudicated_by": "Patch 25.0"
+  }
+ ]
 }

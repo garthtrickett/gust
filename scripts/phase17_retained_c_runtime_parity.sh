@@ -24,7 +24,7 @@ rg -n -F 'SUCCESS: Phase 17.7 retained C runtime smoke passed' to.log >/dev/null
 # for the wrong reason: a missing file proves nothing if nothing replaced
 # it, and a defined symbol proves nothing if the C is still there too.
 stage="confirm the ported runtime C is gone and its symbols moved, not vanished"
-for gone in arena scratch collections file_io host_io; do
+for gone in arena scratch collections file_io host_io strings; do
   if test -e "src/runtime/$gone.c"; then
     echo "src/runtime/$gone.c is back; Patch 25.5 moved it to src/runtime-rs" >&2; false
   fi
@@ -34,12 +34,45 @@ archive="src/runtime-rs/target/release/libgust_runtime_rs.a"
 for symbol in os_Arena_New os_ArenaAlloc os_Arena_Free os_Arena_Validate; do
   nm -g "$archive" | rg -n -F " T $symbol" >/dev/null
 done
+# Patch 25.10a: strings.c joins them, so the same two-sided check covers
+# its ten symbols. Listing them rather than trusting the file's absence is
+# the half that matters -- a deleted C file with nothing defining its
+# symbols is a broken runtime, not a ported one.
+for symbol in std_str_eq std_str_byte_at std_is_alpha std_is_digit \
+              std_is_whitespace std_str_find std_parse_int std_str_slice \
+              std_str_trim std_str_bounds_fail; do
+  nm -g "$archive" | rg -n -F " T $symbol" >/dev/null
+done
 
-# The retained component compiles independently of any user program: only its
-# own owned sources, no program-derived fragment on the command line.
-stage="compile the retained C component independently of program compilation"
-cc -O2 -c src/runtime/strings.c -I src/runtime -o "$build_dir/strings.o" 2>"$build_dir/cc.log"
-test -f "$build_dir/strings.o"
+# Patch 25.10a: THERE IS NO RETAINED C COMPONENT LEFT, and this stage
+# inverts with strings.c rather than being deleted with it.
+#
+# It compiled the retained component from its own sources, with no
+# program-derived fragment on the command line, to show the component was
+# independent of any user program. With strings.c in the Rust crate there
+# is nothing left to compile, so what is asserted instead is the stronger
+# thing that absence now buys: the runtime archive every natively compiled
+# program links has NO C member at all. $(CC) is off its critical path.
+#
+# Stated as the archive's contents rather than as "no .c files exist":
+# src/runtime.c and core_headers.h are still there, and neither is
+# compiled into the archive. The claim is about what the runtime IS, not
+# about which paths happen to remain.
+# SCOPE, because `make` runs first and that is easy to misread: this
+# checks what the BUILD produces, not what happens to be sitting in
+# build/. A stray object dropped in by hand is rebuilt away before the
+# comparison. That is the right scope -- the thing that could put C back
+# on this path is a Makefile rule, and that is exactly what this catches.
+stage="confirm the runtime archive retains no C member"
+package=build/gust-runtime-package.a
+make "$package" >"$build_dir/archive.log" 2>&1
+members="$(ar t "$package" | tr '\n' ' ')"
+if test "$members" != "gust_runtime_rs_exports.o "; then
+  echo "runtime archive members are '$members', expected exactly" >&2
+  echo "'gust_runtime_rs_exports.o '. A C member is back on the runtime's" >&2
+  echo "critical path, which is what Patch 25.10a removed." >&2
+  false
+fi
 
 # Observable behaviour is compared through a direct C host, matching what
 # MIR-to-C and explicit Cranelift both see from the same component.

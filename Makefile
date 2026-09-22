@@ -26,7 +26,15 @@ PHASE25_RUNTIME_RS_OBJ = build/phase25-runtime-rs/gust_runtime_rs_exports.o
 PHASE25_RUNTIME_RS_CANARY = src/runtime-rs/target/canary/release/libgust_runtime_rs.a
 PHASE25_RUNTIME_RS_CANARY_OBJ = build/phase25-runtime-rs-canary/gust_runtime_rs_exports.o
 
-PHASE21_RUNTIME_OBJECTS = build/phase21-runtime/strings.o
+# Patch 25.10a: EMPTY, and that is the point. This held
+# build/phase21-runtime/strings.o -- "the last C member", as four
+# separate guards said in a comment. With the nine pure string
+# functions in src/runtime-rs the runtime archive has no C in it at
+# all, so $(CC) is off the critical path of every natively compiled
+# program. Kept as a variable rather than deleted: the archive rule
+# still reads it, and an empty list is the assertion that there is
+# nothing left to add back without someone noticing.
+PHASE21_RUNTIME_OBJECTS =
 
 PHASE10_DIAG_CC ?= clang
 PHASE10_DIAG_CFLAGS ?= -O0 -g3 -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address,undefined -fsanitize-address-use-after-scope -fno-sanitize-recover=all -pthread
@@ -234,9 +242,6 @@ build/gust-native-backend: $(PHASE10_NATIVE_BACKEND_MANIFEST) $(PHASE10_NATIVE_B
 # member, exactly as fiber's eighteen did in 25.6. A member left; no
 # symbol did. The rules are deleted rather than left pointing at missing
 # sources, because such a rule fails only when something asks for it.
-build/phase21-runtime/strings.o: src/runtime/strings.c src/runtime/core_headers.h
-	mkdir -p build/phase21-runtime
-	$(CC) $(CFLAGS) -Isrc/runtime -c src/runtime/strings.c -o $@
 
 # Patch 25.4: approved_scalar_imports.c is rehomed to the Rust
 # crate src/runtime-rs. The fixtures must stay FOREIGN -- a Gust rewrite
@@ -350,7 +355,17 @@ PHASE25_RUNTIME_RS_EXPORTS = \
 	std_Mutex_Unlock_impl \
 	std_PoolAlloc_impl \
 	std_PoolFree_impl \
+	std_is_alpha \
+	std_is_digit \
+	std_is_whitespace \
+	std_parse_int \
+	std_str_bounds_fail \
+	std_str_byte_at \
+	std_str_eq \
+	std_str_find \
+	std_str_slice \
 	std_str_split \
+	std_str_trim \
 	tiny_host_add_i32 \
 	tiny_host_add_one_i32 \
 	tiny_host_is_positive_i32

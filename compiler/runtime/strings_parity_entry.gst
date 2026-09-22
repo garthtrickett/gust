@@ -2,8 +2,21 @@
 //
 // Runs the same 27 value cases and 4 bounds-failure cases as
 // tools/phase25_strings_reference.c, in the same order and the same output
-// format, so `diff` is the whole assertion. Driven by
-// scripts/phase25_strings_gust_parity.sh.
+// format, so `diff` is the whole assertion.
+//
+// Patch 25.10a: NOTHING DRIVES THIS TODAY. Its driver was
+// scripts/phase25_strings_gust_parity.sh, which emitted the Gust side
+// through the bootstrap emitter; that script is deleted and Patch 25.10
+// removes the emitter. Running it needs the native route, which defers on
+// compiler/runtime/strings.gst with
+// capability=phase13_generic_source_to_mir.
+//
+// Kept rather than deleted, and the distinction matters: strings.gst is
+// still the behavioural reference for src/runtime-rs/src/strings.rs, and
+// this is its runnable form for whoever connects that capability. What
+// checks the runtime TODAY is scripts/phase25_strings_rust_parity.sh,
+// which compares the Rust against the retired C itself rather than
+// against a hand-written reference.
 //
 // This is an ENTRY, not a library: it lives beside strings.gst rather than
 // in compiler/ so the COMPILER_SRCS wildcard does not pick it up.
