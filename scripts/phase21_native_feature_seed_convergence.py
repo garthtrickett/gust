@@ -7,7 +7,10 @@ import argparse
 import json
 from pathlib import Path
 
-from phase22_default_route_seed_convergence import accepted_live_seed_line_count
+from phase22_default_route_seed_convergence import (
+    accepted_live_seed_line_count,
+    published_seed_line_count,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
@@ -91,11 +94,19 @@ def validate() -> dict:
         successor_diff = successor.get("generated_seed_diff")
         require(isinstance(successor_diff, dict),
                 "Patch 22.6a seed authority omits generated diff accounting")
-        live_seed_lines = accepted_live_seed_line_count(
-            successor,
-            len(SEED.read_text(encoding="utf-8").splitlines()))
-    require(len(SEED.read_text(encoding="utf-8").splitlines()) ==
-            live_seed_lines, "committed seed line count drifted")
+        if SEED.is_file():
+            live_seed_lines = accepted_live_seed_line_count(
+                successor,
+                len(SEED.read_text(encoding="utf-8").splitlines()))
+        else:
+            live_seed_lines = published_seed_line_count(successor)
+    # Patch 25.9 deleted the seed. The currency claim now rides on the
+    # published `source_seed` (see published_seed_identity); what is left
+    # to check here is that the file has not come BACK. A regenerated
+    # gust_v4.c in the tree means the republish route returned.
+    if SEED.is_file():
+        require(len(SEED.read_text(encoding="utf-8").splitlines()) ==
+                live_seed_lines, "committed seed line count drifted")
     require("- [x] Patch 21.13a — Native-Feature Bootstrap Seed Reconvergence — DONE"
             in TASK.read_text(encoding="utf-8"),
             "TASK.md does not mark Patch 21.13a DONE")
@@ -108,13 +119,24 @@ def validate() -> dict:
     ):
         require(evidence in workflow,
                 f"authoritative seed workflow lacks {evidence}")
+    # Patch 25.9: inverted with the step it names, exactly as
+    # scripts/phase19_seed_convergence.py inverts it. `git diff --exit-code
+    # -- gust_v4.c` asserted "regeneration left the committed seed
+    # unchanged"; with the seed deleted the command passes on a path git
+    # knows nothing about, so requiring it here would pin the workflow to a
+    # step that had stopped checking.
     for command in (
         "make bootstrap",
         "cmp build/gust_stage2.c build/gust_stage3.c",
-        "git diff --exit-code -- gust_v4.c",
+        "if [ -e gust_v4.c ]; then",
+        "git ls-files --error-unmatch gust_v4.c",
     ):
         require(command in workflow,
                 f"authoritative fixed-point workflow lacks {command}")
+    require("git diff --exit-code -- gust_v4.c" not in workflow,
+            "the fixed-point workflow still runs `git diff --exit-code -- "
+            "gust_v4.c`. With the seed deleted that command cannot fail, so "
+            "the step reports success without checking anything.")
     selector = workflow.split("Select authoritative seed-convergence scope", 1)[1]
     selector = selector.split("Capability PR defers generated seed", 1)[0]
     for seed_owned_path in (

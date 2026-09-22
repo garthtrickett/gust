@@ -16,6 +16,10 @@ import hashlib
 import json
 from pathlib import Path
 
+from phase22_default_route_seed_convergence import (
+    published_source_seeds,
+)
+
 
 ROOT = Path(__file__).resolve().parent.parent
 GUARD = "guard-cranelift-phase24-preflight-closure"
@@ -95,8 +99,26 @@ def validate() -> dict:
             {"default_route": "cranelift", "fallback": "forbidden"},
             "no-fallback authority drifted")
     seed = node.get("bootstrap_authority", {})
-    live_digest = hashlib.sha256(SEED.read_bytes()).hexdigest()
-    live_lines = len(SEED.read_text(encoding="utf-8").splitlines())
+    # Patch 25.9 deleted the seed, so "live" is resolved from the artifact
+    # carrying the same bytes -- release 0's `source_seed`. Everything below
+    # is unchanged: the recorded preflight identity still cannot move, and a
+    # live identity that is neither the preflight one nor the one the named
+    # successor publishes still fails. Only the SOURCE of the live identity
+    # changed, from a file to a published artifact, because deleting a file
+    # must not be a way to make this guard stop asking.
+    if SEED.is_file():
+        live_digest = hashlib.sha256(SEED.read_bytes()).hexdigest()
+        live_lines = len(SEED.read_text(encoding="utf-8").splitlines())
+    else:
+        seeds = published_source_seeds()
+        require(len(seeds) == 1,
+                f"{len(seeds)} published `source_seed` artifacts; with the "
+                "file deleted there is then no single answer to what the "
+                "live seed is.")
+        live_digest, live_lines = next(iter(seeds.items()))
+        require(isinstance(live_lines, int),
+                "the published `source_seed` records no line count, so half "
+                "of the live identity would be unchecked here.")
     # The RECORD is the seed as Phase 24 preflight closed, and stays exactly
     # that. What cannot stay is the assertion that the live seed still equals
     # it: Patch 24.13 changes the compiler, so the seed reconverges, which is

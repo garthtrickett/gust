@@ -768,6 +768,77 @@ def accepted_live_seed_identities(record: dict) -> list[dict]:
     return port_identities
 
 
+def published_seed_identity(record: dict) -> dict:
+    """The identity of the seed Patch 25.9 deleted, taken from the release.
+
+    TEN separate guards read `gust_v4.c` to ask the same question -- "is the
+    committed seed still the one the chain registered?" -- and deleting the
+    file makes every one of them raise FileNotFoundError, not fail with a
+    diagnosis. Inverting them one at a time produced ten chances to write
+    ten slightly different replacement claims, so they share this instead.
+
+    The claim does not become vacuous when the file goes; it MOVES. Release 0
+    publishes those exact bytes as a `source_seed`, so "the committed seed is
+    current" becomes "the chain's last registered identity is the one that
+    was published". The published digest selects the registry row; the row
+    supplies the line count. Reading both out of the registry would have the
+    registry agreeing with itself, and reading both out of the manifest would
+    drop the chain entirely -- crossing them is the point, and the artifact
+    is downloadable, so the pair stays checkable from outside this tree.
+    """
+    return select_published_identity(accepted_live_seed_identities(record))
+
+
+def published_source_seeds() -> dict[str, int]:
+    """Published `source_seed` artifacts as digest -> line count."""
+    manifest = json.loads(
+        (ROOT / "docs/RELEASE_MANIFEST.json").read_text(encoding="utf-8"))
+    return {entry["digest"]: entry.get("lines")
+            for release in manifest.get("releases", [])
+            for entry in release.get("artifacts", [])
+            if entry.get("role") == "source_seed"}
+
+
+def select_published_identity(identities: list[dict]) -> dict:
+    """Pick the one registered identity release 0 published, by digest.
+
+    Split out from published_seed_identity because the registry is read two
+    incompatible ways: this module resolves a chain of transitions from one
+    node, while `phase24_cr15_closure` has its own same-named resolver over
+    a closed tuple of transition keys. They must not share a resolver -- the
+    closed tuple is deliberately un-wideable -- but they must share THIS,
+    or the "which bytes were the seed" answer forks in two.
+    """
+    published = published_source_seeds()
+    require(published,
+            "gust_v4.c is deleted and no release publishes it as a "
+            "`source_seed`, so its registered identity answers to nothing. "
+            "Absence is only half of an inverted assertion; the replacement "
+            "record has to be there too.")
+    rows = [row for row in identities if row["seed_digest"] in published]
+    require(len(rows) == 1,
+            f"{len(rows)} registered seed identities match a published "
+            "`source_seed` digest, so the registry chain and the release "
+            "disagree about which bytes were the last seed.")
+    row = rows[0]
+    # Both halves, from both records. Selecting the row by digest and then
+    # returning the row's own line count would leave the count checked by
+    # nothing -- the registry would be its own witness for half the
+    # identity. The manifest publishes the count too, so the two records
+    # have to agree before either is used.
+    require(published[row["seed_digest"]] == row["line_count"],
+            f"the published `source_seed` records "
+            f"{published[row['seed_digest']]} lines but the registry "
+            f"identity for the same digest records {row['line_count']}. "
+            "One of the two was edited without the other.")
+    return {"line_count": row["line_count"],
+            "seed_digest": row["seed_digest"]}
+
+
+def published_seed_line_count(record: dict) -> int:
+    return published_seed_identity(record)["line_count"]
+
+
 def accepted_live_seed_line_counts(record: dict) -> set[int]:
     return {row["line_count"] for row in accepted_live_seed_identities(record)}
 
