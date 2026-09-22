@@ -58,6 +58,20 @@ NATIVE_OBJECT = "native-object"          # Cranelift output; cc links it
 RETAINED_RUNTIME_C = "retained-runtime-c"  # hand-written, Phase 17.7
 SCRIPT_AUTHORED_C = "script-authored-c"  # heredoc probe, not a backend product
 RUST_ARCHIVE = "rust-archive"            # Phase 17.6 staticlib
+
+# Patch 25.6's narrowing: `ld -r` partially links the Rust staticlib and
+# `objcopy --keep-global-symbol` strips it to the declared export set, so the
+# product is an OBJECT derived from an archive.
+#
+# It is not a rust-archive. The archive is a separate census input that is
+# linked whole; this object is the narrowed subset of it, and the difference
+# is the entire reason 25.6 exists. Folding them together makes the two
+# indistinguishable at exactly the point the phase needs them distinguished.
+#
+# It is not a native-object either: no Cranelift runs here. Scoring it as one
+# would credit the native backend with something the system linker produced,
+# and which producer is which is what this guard is for.
+RUST_NARROWED_OBJECT = "rust-narrowed-object"
 TOOLCHAIN_QUERY = "toolchain-query"      # --version / -dumpmachine, no input
 
 # C replayed from the frozen oracle (#398). Retained, and a class of its own
@@ -78,7 +92,7 @@ FROZEN_ORACLE_C = "frozen-oracle-c"
 
 RETAINED = frozenset(
     {NATIVE_OBJECT, RETAINED_RUNTIME_C, SCRIPT_AUTHORED_C, RUST_ARCHIVE,
-     TOOLCHAIN_QUERY, FROZEN_ORACLE_C}
+     TOOLCHAIN_QUERY, FROZEN_ORACLE_C, RUST_NARROWED_OBJECT}
 )
 
 # Ownership for surviving backend-product invocations. 24.14 removes the
@@ -292,6 +306,12 @@ NATIVE_EMIT = re.compile(
     r'cargo\s+run[^\n]*experiments/cranelift'
 )
 ARCHIVE_PRODUCER = re.compile(r'cargo\s+build|--manifest-path|staticlib')
+# `ld -r` is a partial link, not a program link, and `objcopy
+# --keep-global-symbol` is the narrowing half of the same step. Both spellings
+# appear because the Makefile branches on the host: Mach-O does it in one `ld`
+# with -exported_symbol, ELF needs the two commands.
+NARROWED_OBJECT_PRODUCER = re.compile(
+    r'\bld\s+-r\b|\bobjcopy\s+[^\n]*--keep-global-symbol')
 AUTHORED_WRITE = re.compile(r'<<[-~]?\s*[\'"]?[A-Za-z_]+|printf\s|echo\s|cat\s+>')
 # A file taken from `<prefix>.compile.stdout` came out of the frozen oracle:
 # that suffix is written by `phase24_frozen_oracle.py materialize` and by
@@ -370,6 +390,8 @@ def classify_producer(line: str, source: str = "") -> str:
         return BACKEND_PRODUCT
     if NATIVE_EMIT.search(line):
         return NATIVE_OBJECT
+    if NARROWED_OBJECT_PRODUCER.search(line):
+        return RUST_NARROWED_OBJECT
     if ARCHIVE_PRODUCER.search(line):
         return RUST_ARCHIVE
     if AUTHORED_WRITE.search(line):
@@ -844,6 +866,10 @@ def resolve_input(token: str, lines: list, lineno: int) -> dict:
 
 MAKE_ASSIGN = re.compile(r'^([A-Za-z_][A-Za-z0-9_]*)\s*[:?]?=\s*(.+)$')
 MAKE_VAR_REF = re.compile(r'\$[({]([A-Za-z_][A-Za-z0-9_]*)[)}]')
+MAKE_CONDITIONAL = re.compile(
+    r'^\s*(?:ifeq|ifneq|ifdef|ifndef|else|endif)\b')
+
+
 MAKE_CALL = re.compile(r'\$\(call\s+([A-Za-z_][A-Za-z0-9_]*)\s*,')
 
 
@@ -866,6 +892,34 @@ def make_defines(mk: list) -> dict:
 
 
 MAKE_INVOKE = re.compile(r'^\s*make\s+"?\$\{?([A-Za-z_][A-Za-z0-9_]*)\}?"?\s*$')
+
+
+def classify_through_calls(recipe: str, defines: dict, stem: str,
+                           depth: int = 4, seen: frozenset = frozenset()) -> dict:
+    """Follow $(call NAME,...) into define bodies, recursively, and classify.
+
+    Returns the first classification found, with the call chain in `why` so a
+    reader can retrace it. Empty when nothing in reach classifies -- an honest
+    gap, which the prerequisite fallback then gets a chance at.
+    """
+    called = MAKE_CALL.search(recipe)
+    if not called:
+        return {}
+    name = called.group(1)
+    if depth <= 0 or name in seen or name not in defines:
+        return {}
+    for inner in defines[name]:
+        klass = classify_producer(inner)
+        if klass:
+            return {"klass": klass,
+                    "why": f"Makefile builds {stem} with a {klass} producer, "
+                           f"through $(call {name})"}
+        deeper = classify_through_calls(inner, defines, stem, depth - 1,
+                                        seen | {name})
+        if deeper:
+            deeper["why"] += f", reached through $(call {name})"
+            return deeper
+    return {}
 
 
 def resolve_through_make(name: str, lines: list, lineno: int) -> dict:
@@ -950,6 +1004,16 @@ def resolve_through_make(name: str, lines: list, lineno: int) -> dict:
         body = []
         for recipe in mk[idx + 1:idx + 40]:
             if recipe and not recipe.startswith("\t"):
+                # A conditional directive is legal INSIDE a rule body and is
+                # not tab-prefixed, so "first line without a tab" is not the
+                # end of the recipe. Patch 25.6 branches the narrowing on
+                # $(PHASE25_UNAME_S), which put an `ifeq` two lines into the
+                # recipe -- the scan stopped there, saw only `@rm`/`@mkdir`,
+                # and reported a file the Makefile plainly builds as having
+                # no producer. Skip the directives; still stop at anything
+                # else, which is the next target or assignment.
+                if MAKE_CONDITIONAL.match(recipe):
+                    continue
                 break
             body.append(recipe)
         for recipe in body:
@@ -957,33 +1021,50 @@ def resolve_through_make(name: str, lines: list, lineno: int) -> dict:
             if klass:
                 return {"klass": klass,
                         "why": f"Makefile builds {stem} with a {klass} producer"}
-        # Before descending into a factored recipe: judge by what the rule
-        # is BUILT FROM. A target whose prerequisite is a cargo artifact is
-        # derived from that crate however its recipe is spelled. This runs
-        # ahead of the $(call) scan on purpose -- the narrowing recipe
-        # contains an `echo` in its drift-check error branch, and matching
-        # that would class a Rust object as script-authored C. Which is
-        # exactly how the pre-factoring version of this rule resolved.
+            # Everything after the line that writes $@ is verification, not
+            # production, and classifying on it is how an unclassified
+            # producer passes for the wrong reason. Measured on 25.6: with the
+            # narrowed-object class removed, the scan ran past the `ld` and
+            # `objcopy` to the export-drift check's `printf` sixteen lines
+            # below, matched AUTHORED_WRITE, and called six linker outputs
+            # script-authored-c -- retained, so the guard stayed green.
+            if "$@" in recipe:
+                break
+        for recipe in body:
+            # A recipe factored into `define NAME ... endef` and invoked
+            # with $(call NAME,...) is still a recipe. Without this the
+            # factoring alone makes a producer invisible, and the input
+            # reads as having none.
+            #
+            # The descent is RECURSIVE because the factoring is two deep:
+            # the rule calls narrow_runtime_rs, whose body calls
+            # narrow_runtime_rs_link, whose body holds the `ld -r` and the
+            # `objcopy`. A one-level descent reaches only the inner $(call)
+            # and classifies nothing, which is why the prerequisite fallback
+            # below used to have to run first and answer rust-archive for an
+            # object. Bounded and cycle-guarded: a define that calls itself
+            # must not spin, and depth is a stand-in for "a human can still
+            # follow this", not a real limit of make.
+            hit = classify_through_calls(recipe, defines, stem)
+            if hit:
+                return hit
+        # Fallback BEHIND the $(call) descent, not ahead of it. 25.5 put this
+        # first because the narrowing recipe carries an `echo` in its
+        # drift-check branch and AUTHORED_WRITE would match it, calling a Rust
+        # object script-authored C. 25.6 fixed that at the root instead:
+        # NARROWED_OBJECT_PRODUCER matches the `ld -r` line, which comes before
+        # the `echo` and is checked before AUTHORED_WRITE, so the descent
+        # returns the right class unaided. Kept and moved rather than deleted
+        # -- it still catches a rule whose recipe cannot be classified at all.
+        # Ahead of the descent it SHADOWED the descent and answered
+        # rust-archive for something that is an object and not an archive,
+        # which would have made 25.6's class dead code on this tree.
         prereqs = expand(mline.split(":", 1)[1]).split()
         for prereq in prereqs:
             if cargo_artifact(prereq.lstrip("./")):
                 return {"klass": RUST_ARCHIVE,
                         "why": f"Makefile builds {stem} from {prereq}, "
                                "which is built from a crate in this tree"}
-        for recipe in body:
-            # A recipe factored into `define NAME ... endef` and invoked
-            # with $(call NAME,...) is still a recipe. Without this the
-            # factoring alone makes a producer invisible, and the input
-            # reads as having none.
-            called = MAKE_CALL.search(recipe)
-            if called and called.group(1) in defines:
-                for inner in defines[called.group(1)]:
-                    klass = classify_producer(inner)
-                    if klass:
-                        return {"klass": klass,
-                                "why": f"Makefile builds {stem} with a "
-                                       f"{klass} producer, through "
-                                       f"$(call {called.group(1)})"}
     return {}
 
 
@@ -1322,6 +1403,9 @@ def scan() -> dict:
     return {"scripts": scripts}
 
 
+OBJECT_IN_WHY = re.compile(r"\bbuilds (\S+\.o)\b")
+
+
 def population(report: dict) -> dict:
     invocations = [i for s in report["scripts"] for i in s["invocations"]]
     dead = [
@@ -1332,6 +1416,7 @@ def population(report: dict) -> dict:
     by_class = {}
     unresolved = []
     backend = []
+    mislabelled = []
     for inv in invocations:
         where = {"file": inv["file"], "line": inv["line"],
                  "recipe": inv.get("recipe", "")}
@@ -1349,6 +1434,26 @@ def population(report: dict) -> dict:
                 backend.append({**where, "why": record["why"]})
             else:
                 by_class.setdefault(klass, []).append(where)
+                # An object file is never hand-authored C. SCRIPT_AUTHORED_C is
+                # the permissive last resort in classify_producer, and a
+                # permissive last resort cannot tell you a new kind of producer
+                # arrived -- it files it under the fallback and the guard stays
+                # green. Both 25.5 and 25.6 hit this and worked around it from
+                # opposite ends; this is the invariant they were each
+                # protecting, stated where it can fail.
+                # Match on the RESOLVED name, not the token. A cc line spells
+                # the input `"$runtime_obj"` and the tokenizer hands back
+                # `runtime_obj`, so a token test finds no `.o` and this check
+                # silently never fires -- measured, on the first version of it.
+                # `why` carries the resolved stem: "Makefile builds <name> ...".
+                resolved_name = OBJECT_IN_WHY.search(record.get("why", ""))
+                if klass == SCRIPT_AUTHORED_C and (
+                        record.get("token", "").endswith(".o") or resolved_name):
+                    mislabelled.append(
+                        {**where,
+                         "token": (resolved_name.group(1) if resolved_name
+                                   else record["token"]),
+                         "why": record["why"]})
     return {
         "invocations": len(invocations),
         "dead_bindings": dead,
@@ -1356,6 +1461,7 @@ def population(report: dict) -> dict:
         "members": {k: sorted({(w["file"], w["line"]) for w in v}) for k, v in by_class.items()},
         "backend_product": backend,
         "unresolved": unresolved,
+        "mislabelled_objects": mislabelled,
     }
 
 
@@ -1487,6 +1593,18 @@ def validate() -> dict:
         + ". An input whose producer cannot be resolved fails here rather than "
         "passing as retained: a new cc site, or a new way of producing its "
         "input, must be classified before it lands.",
+    )
+
+    require(
+        not pop["mislabelled_objects"],
+        "object inputs classified as hand-authored C: "
+        + ", ".join(
+            f"{m['file']}:{m['line']} ({m['token']})"
+            for m in pop["mislabelled_objects"][:6]
+        )
+        + ". An object is produced by a tool, so this means the resolver "
+        "reached a heredoc or an echo instead of the producer -- the class is "
+        "wrong even though nothing else failed.",
     )
 
     owners = {}

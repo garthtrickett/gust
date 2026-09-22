@@ -39123,8 +39123,17 @@ Slice_unsigned_char codegen__codegen_generate(std_Vector_ast__Program programs, 
         ((Slice_unsigned_char){ (unsigned char*)_buf, _len });
     })), ctx);
     }
+    int emit_this_struct = 1;
+    if (((std_str_eq(orig_key, ((Slice_unsigned_char){ (unsigned char*)"APIRequest", 10 })) == 1) || (std_str_eq(orig_key, ((Slice_unsigned_char){ (unsigned char*)"SessionNode", 11 })) == 1))) {
+    LookupResult_typechecker__FunctionSignature main_lookup = ({ LookupResult_typechecker__FunctionSignature res = {0}; res.Ok = os_HashMapContains(&((*(env)).function_registry), ((Slice_unsigned_char){ (unsigned char*)"main", 4 }), 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).function_registry), ((Slice_unsigned_char){ (unsigned char*)"main", 4 }), 1); } res; });
+    if (main_lookup.Ok) {
+    emit_this_struct = 1;
+    } else {
+    emit_this_struct = 0;
+    }
+    }
     LookupResult_typechecker__StructLayout layout_lookup = ({ LookupResult_typechecker__StructLayout res = {0}; res.Ok = os_HashMapContains(&((*(env)).struct_registry), orig_key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).struct_registry), orig_key, 1); } res; });
-    if (layout_lookup.Ok) {
+    if ((layout_lookup.Ok && (emit_this_struct == 1))) {
     typechecker__StructLayout layout = layout_lookup.Val;
     LookupResult_std_Vector_str lookup_enum = ({ LookupResult_std_Vector_str res = {0}; res.Ok = os_HashMapContains(&((*(env)).enum_registry), orig_key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&((*(env)).enum_registry), orig_key, 1); } res; });
     if (lookup_enum.Ok) {
@@ -39280,14 +39289,14 @@ Slice_unsigned_char codegen__codegen_generate(std_Vector_ast__Program programs, 
     t_struct.Struct.brand = 0xFFFFFFFF;
     int has_bool = codegen__codegen_has_boolean_fields(t_struct, env, ctx);
     if ((has_bool == 1)) {
-    LookupResult_str _guard_res_orig_key_4732_17 = {0};
-    _guard_res_orig_key_4732_17 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(erased_to_original), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(erased_to_original), key, 1); } res; });
-    if (!_guard_res_orig_key_4732_17.Ok) {
+    LookupResult_str _guard_res_orig_key_4766_17 = {0};
+    _guard_res_orig_key_4766_17 = ({ LookupResult_str res = {0}; res.Ok = os_HashMapContains(&(erased_to_original), key, 1); if (res.Ok) { res.Val = *os_HashMapRef(&(erased_to_original), key, 1); } res; });
+    if (!_guard_res_orig_key_4766_17.Ok) {
         os_LogStr((({ Slice_unsigned_char _s1 = ((Slice_unsigned_char){ (unsigned char*)"🚨 CRITICAL COMPILER BUG: erased_to_original.Get failed for key: ", 67 }); Slice_unsigned_char _s2 = key; char* _buf = (char*)os_ScratchAlloc(_s1.len + _s2.len + 1); if (_s1.len > 0) memcpy(_buf, _s1.data, _s1.len); if (_s2.len > 0) memcpy(_buf + _s1.len, _s2.data, _s2.len); _buf[_s1.len + _s2.len] = 0; ((Slice_unsigned_char){ (unsigned char*)_buf, _s1.len + _s2.len }); })));
     exit(1);
     return std_Clone_str(ctx, ((Slice_unsigned_char){ (unsigned char*)"", 0 }));
     }
-    Slice_unsigned_char orig_key = _guard_res_orig_key_4732_17.Val;
+    Slice_unsigned_char orig_key = _guard_res_orig_key_4766_17.Val;
     std_Option_typechecker__StructLayout layout_lookup = ({ std_Option_typechecker__StructLayout _gust_map_get_opt_result = {0}; int _gust_map_get_opt_ok = os_HashMapContains(&((*(env)).struct_registry), orig_key, 1); if (_gust_map_get_opt_ok) { _gust_map_get_opt_result.tag = std_Option_typechecker__StructLayout_Tag__Some; _gust_map_get_opt_result.Some.val = *os_HashMapRef(&((*(env)).struct_registry), orig_key, 1); } else { _gust_map_get_opt_result.tag = std_Option_typechecker__StructLayout_Tag__None; } _gust_map_get_opt_result; });
     switch (layout_lookup.tag) {
         case std_Option_typechecker__StructLayout_Tag__Some: {

@@ -347,16 +347,59 @@ PHASE25_RUNTIME_RS_EXPORTS = \
 
 # Both archives are narrowed the same way, so the recipe is written once.
 # $(1) staticlib, $(2) output object, $(3) scratch directory.
-define narrow_runtime_rs
-@rm -rf $(3)
-@mkdir -p $(3)
+# The partial link is PLATFORM-SPECIFIC, and Patch 25.6 commits this
+# tree to four quadrants: macOS-x86_64, Linux-x86_64, macOS-aarch64,
+# Linux-aarch64. fiber_asm.rs preserves all four; a GNU-only build rule
+# would keep the assembly portable and make the build that consumes it
+# Linux-only.
+#
+# ELF (GNU ld + objcopy): --gc-sections drops what the roots do not
+# reach, --start-group resolves the archive's internal cycles, and
+# objcopy localises everything outside the export list.
+#
+# Mach-O (ld64): none of those options exist. Dead-stripping is
+# -dead_strip, archives need no group because ld64 iterates to a fixed
+# point, and there is no objcopy -- ld64 narrows with -exported_symbol
+# and localises the rest in the same pass. Mach-O symbols carry a
+# leading underscore, so the export list is prefixed and the drift check
+# strips it back off.
+#
+# Selected with `ifeq` at parse time rather than a shell test inside the
+# recipe, because the two arms are different COMMANDS, not different
+# arguments -- one is two steps and one is one.
+#
+# THE DARWIN ARM IS UNVERIFIED ON THIS HOST. It is written from ld64's
+# documented options and has not been run, exactly as this tree's three
+# unbuilt assembly quadrants are text-compared rather than byte-compared.
+# Labelled rather than presented as tested: one `make
+# build/phase25-runtime-rs/gust_runtime_rs_exports.o` on either macOS
+# quadrant settles it.
+PHASE25_UNAME_S := $(shell uname -s)
+
+ifeq ($(PHASE25_UNAME_S),Darwin)
+define narrow_runtime_rs_link
+ld -r -dead_strip -o $(2) \
+	$(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),-u _$(sym)) \
+	$(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),-exported_symbol _$(sym)) \
+	$(1)
+endef
+else
+define narrow_runtime_rs_link
 ld -r --gc-sections -o $(3)/combined.o \
 	$(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),-u $(sym)) \
 	--start-group $(1) --end-group
 objcopy $(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),--keep-global-symbol=$(sym)) \
 	$(3)/combined.o $(2)
 @rm -f $(3)/combined.o
-@defined=$$(nm -g --defined-only $(2) | awk '$$2 ~ /^[TDBRW]$$/ {print $$3}' | sort); \
+endef
+endif
+
+define narrow_runtime_rs
+@rm -rf $(3)
+@mkdir -p $(3)
+$(call narrow_runtime_rs_link,$(1),$(2),$(3))
+@defined=$$(nm -g --defined-only $(2) | awk '$$2 ~ /^[TDBRW]$$/ {print $$3}' \
+	| sed 's/^_//' | sort); \
 expected=$$(printf '%s\n' $(PHASE25_RUNTIME_RS_EXPORTS) | sort); \
 if [ "$$defined" != "$$expected" ]; then \
 	echo 'src/runtime-rs exports drifted from the registered set: $(2)' >&2; \
@@ -364,7 +407,35 @@ if [ "$$defined" != "$$expected" ]; then \
 fi
 endef
 
-$(PHASE25_RUNTIME_RS_OBJ): $(PHASE25_RUNTIME_RS)
+# The partial link is PLATFORM-SPECIFIC, and this patch is committed to
+# four quadrants: macOS-x86_64, Linux-x86_64, macOS-aarch64, Linux-aarch64.
+# fiber_asm.rs preserves all four; a GNU-only build rule would have kept
+# the assembly portable and made the build that consumes it Linux-only.
+#
+# ELF (GNU ld + objcopy): --gc-sections drops what the roots do not reach,
+# --start-group resolves the archive's internal cycles, and objcopy
+# localises everything outside the export list.
+#
+# Mach-O (ld64): none of those options exist. Dead-stripping is
+# -dead_strip, archives need no group because ld64 iterates to a fixed
+# point, and there is no objcopy -- ld64 does the narrowing itself with
+# -exported_symbol, which localises the rest in the same pass. Mach-O
+# symbols carry a leading underscore, so the export list is prefixed.
+#
+# UNVERIFIED ON THIS HOST. The Linux arm is measured; the Darwin arm is
+# written from ld64's documented options and has not been run, exactly as
+# this patch's three unbuilt assembly quadrants are text-compared rather
+# than byte-compared. Labelled rather than presented as tested: what
+# would settle it is one `make build/phase25-runtime-rs/...` on either
+# macOS quadrant.
+
+# The export set lives in THIS file, so the Makefile is a real input to both
+# narrowed objects. Without it here, editing PHASE25_RUNTIME_RS_EXPORTS leaves
+# a stale object carrying the old symbol set, and the drift check inside the
+# define passes because it compares the object against the list it was built
+# from, not the list as it now reads. Measured on 25.6: make reported the
+# object up to date after the export list changed.
+$(PHASE25_RUNTIME_RS_OBJ): $(PHASE25_RUNTIME_RS) Makefile
 	$(call narrow_runtime_rs,$(PHASE25_RUNTIME_RS),$@,build/phase25-runtime-rs)
 
 # Patch 25.5: the GUST_DEBUG arena, as a SECOND ARCHIVE.
@@ -383,7 +454,7 @@ $(PHASE25_RUNTIME_RS_CANARY): $(PHASE25_RUNTIME_RS_SRCS)
 		--manifest-path src/runtime-rs/Cargo.toml \
 		--target-dir src/runtime-rs/target/canary
 
-$(PHASE25_RUNTIME_RS_CANARY_OBJ): $(PHASE25_RUNTIME_RS_CANARY)
+$(PHASE25_RUNTIME_RS_CANARY_OBJ): $(PHASE25_RUNTIME_RS_CANARY) Makefile
 	$(call narrow_runtime_rs,$(PHASE25_RUNTIME_RS_CANARY),$@,build/phase25-runtime-rs-canary)
 
 $(PHASE21_RUNTIME_PACKAGE): $(PHASE21_RUNTIME_OBJECTS) $(PHASE25_RUNTIME_RS_OBJ)

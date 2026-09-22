@@ -320,7 +320,7 @@ Patch 16.0 is inventory-only. It selects function ABI, aggregate call, typed ind
 - Status: `ready_for_patch17_1`
 - Predecessor closure: `phase16_closed_function_abi_and_aggregate_call_semantics`
 - Opening rows: `17`
-- Inventoried C-dependent helpers: `79`
+- Inventoried C-dependent helpers: `80`
 - Registry-derived planned CI families: `12`
 - Phase 16 residuals split: `2`
 - Phase 16 residuals reassigned: `14`
@@ -334,9 +334,9 @@ Patch 17.0 is inventory-only. It selects the native runtime ABI, helper classifi
 - Table format: `gust.compiler_runtime_boundary_authority_table.v1`
 - Semantic types: `8`
 - Compiler-owned queries: `7`
-- Classified helpers: `79`
+- Classified helpers: `80`
 - Stable runtime-library functions: `3`
-- Retained C runtime components: `72`
+- Retained C runtime components: `73`
 - Obsolete generated-C helper families: `4`
 
 Patch 17.1 establishes compiler-owned runtime identities, exactly-one helper classification, requirements, compatibility decisions, and the Phase 9G link-plan handoff. It does not migrate helper implementations.
@@ -402,7 +402,7 @@ Patch 17.6 supports runtime helpers implemented in Rust as explicit, versioned r
 - Authority version: `phase17_retained_c_authority_v1`
 - Status: `ready_for_patch17_8`
 - Retained C components: `8`
-- Retained helpers: `72`
+- Retained helpers: `73`
 - Owned source prefix: `src/runtime/`
 
 Patch 17.7 freezes the retained C inventory as separately compiled, versioned, target-scoped components. Every component names its owned repository sources, a justified retention reason, and a concrete removal criterion with a destination phase, so retention is temporary by contract rather than open-ended. No retained C source is generated from a compiled program, and retained objects reach programs only through the same manifest path as Rust and Gust components.
@@ -481,7 +481,7 @@ Patch 17.14 proves the migrated Phase 17 capabilities compose. The differential 
 
 - Audit version: `phase17_deferred_residue_audit_v1`
 - Opening rows disposed: `17`
-- Inventoried helpers disposed: `79` (66 migrated, 4 excluded, 9 narrowly deferred)
+- Inventoried helpers disposed: `80` (66 migrated, 5 excluded, 9 narrowly deferred)
 - Retained C components with a named destination: `8`
 - Narrow deferred rows: `8`
 
@@ -496,7 +496,7 @@ Every retained C component names a narrow deferred row as its removal or reasses
 - Closure version: `phase17_closure_v1`
 - Status: `phase17_closed_native_runtime_boundary`
 - Opening rows disposed: `17`
-- Inventoried helpers disposed: `79`
+- Inventoried helpers disposed: `80`
 - Retained C components with a named destination: `8`
 - Narrow future-phase deferrals: `8`
 

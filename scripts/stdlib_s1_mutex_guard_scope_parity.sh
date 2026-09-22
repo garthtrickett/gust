@@ -161,7 +161,27 @@ test ! -s "$build_dir/raw-double-unlock.compile.stderr"
 cp "$build_dir/raw-double-unlock.compile.stdout" \
   "$build_dir/raw-double-unlock.log"
 python3 scripts/stdlib_s1_raw_double_unlock.py "$build_dir/raw-double-unlock.log"
-cat src/runtime.c >"$build_dir/raw-double-unlock.c"
+# Patch 25.5: core_headers.h, not src/runtime.c.
+#
+# This arm syntax-checks the emitted C, and src/runtime.c was only ever
+# here to supply declarations. It stopped being only declarations when
+# 25.5 made src/runtime/strings.c a GENERATED file: the emitter writes
+# the built-in structs -- APIRequest and SessionNode are registered in
+# typechecker.gst and emitted into every program whether referenced or
+# not -- so the unity build now DEFINES them. The frozen record defines
+# them too, and was captured before codegen include-guarded its struct
+# emission, so concatenating the two gives "redefinition of struct
+# APIRequest" and the recipe dies silently with its output redirected.
+#
+# Re-capturing the frozen record would make the symptom go away by
+# rewriting Issue #398 evidence. Reachability-gated emission is the real
+# fix and is deliberately out of 25.5's scope (codegen.gst:4605 says so).
+# Neither is needed here: declarations are what a syntax check wants, and
+# core_headers.h is exactly the declarations. Measured -- runtime.c gives
+# exit 1 on redefinitions, core_headers.h gives exit 0, and the record
+# alone gives exit 1 on `unknown type name os_Arena`, so the header is
+# load-bearing rather than removable.
+cat src/runtime/core_headers.h >"$build_dir/raw-double-unlock.c"
 cat "$build_dir/raw-double-unlock.log" >>"$build_dir/raw-double-unlock.c"
 "${CC:-cc}" -fsyntax-only -pthread -Isrc "$build_dir/raw-double-unlock.c" \
   >"$build_dir/raw-double-unlock.c-check.log" 2>&1

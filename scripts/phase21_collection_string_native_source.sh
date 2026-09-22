@@ -45,7 +45,12 @@ rg -n ' T os_LogStr$' "$build_root/runtime-symbols.txt" >/dev/null
 actual_runtime_symbols="$(awk 'NF == 3 && ($2 == "T" || $2 == "B") {print $3}' \
   "$build_root/runtime-symbols.txt" | sort)"
 expected_runtime_symbols="$(printf '%s\n' \
-  get_num_threads_to_use gust_context_switch gust_fiber_create \
+  get_num_threads_to_use gust_check_fail gust_tick \
+  StrHeader_IsValid std_str_bounds_fail \
+  std_is_alpha_pthread_wrapper std_is_digit_pthread_wrapper \
+  std_is_whitespace_pthread_wrapper std_parse_int_pthread_wrapper \
+  std_str_bounds_fail_pthread_wrapper std_str_trim_pthread_wrapper \
+  gust_context_switch gust_fiber_create \
   gust_fiber_entry_wrapper gust_fiber_exit gust_fiber_free gust_fiber_switch \
   gust_scheduler_destroy gust_scheduler_init gust_scheduler_spawn \
   gust_shard_loop gust_yield \
