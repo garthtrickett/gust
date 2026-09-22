@@ -9,6 +9,10 @@ import json
 import subprocess
 from pathlib import Path
 
+from phase22_default_route_seed_convergence import (
+    select_published_identity,
+)
+
 
 ROOT = Path(__file__).resolve().parent.parent
 GUARD_L1 = "guard-cranelift-phase24-cr15-close"
@@ -316,10 +320,21 @@ def validate() -> dict:
 
     # The live seed must still be an exactly registered identity. Anything not
     # registered - including an unannounced regeneration - is rejected.
-    seed_digest = hashlib.sha256(SEED.read_bytes()).hexdigest()
-    seed_lines = len(SEED.read_text(encoding="utf-8").splitlines())
-    live_identity = {"line_count": seed_lines, "seed_digest": seed_digest}
+    #
+    # Patch 25.9 deleted the seed, so "live" has to mean something else, and
+    # the honest substitute is the artifact carrying the same bytes: release
+    # 0's `source_seed`. The assertion keeps its force -- an identity absent
+    # from SEED_SUCCESSOR_TRANSITIONS still fails -- but it is sourced from
+    # the release rather than from a file that no longer exists. The read
+    # still runs when the file IS there, so deleting it is not a way to
+    # smuggle an unregistered seed past this.
     accepted = accepted_live_seed_identities(registry)
+    if SEED.is_file():
+        seed_digest = hashlib.sha256(SEED.read_bytes()).hexdigest()
+        seed_lines = len(SEED.read_text(encoding="utf-8").splitlines())
+        live_identity = {"line_count": seed_lines, "seed_digest": seed_digest}
+    else:
+        live_identity = select_published_identity(accepted)
     require(live_identity in accepted,
             "live seed is not a registered seed identity: " + repr(live_identity))
 

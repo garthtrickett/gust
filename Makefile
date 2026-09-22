@@ -58,20 +58,30 @@ RUNTIME_SRCS  = src/runtime.c $(wildcard src/runtime/*.c) $(wildcard src/runtime
 
 all: phase10-native-package
 
-gust_bootstrap: gust_v4.c $(RUNTIME_SRCS) $(PHASE25_RUNTIME_RS_OBJ)
+gust_bootstrap: $(RUNTIME_SRCS) $(PHASE25_RUNTIME_RS_OBJ) docs/RELEASE_MANIFEST.json
 	mkdir -p build
-	@# Patch 25.8a: the offline seed path, wired here rather than only
-	@# described. GUST_BOOTSTRAP_SEED names a published bridge binary;
-	@# it is verified against the committed manifest BEFORE it is used,
-	@# because an unverified seed is exactly what D1 option B exists to
-	@# avoid. Unset, the ordinary compile-from-source route runs.
+	@# Patch 25.9: there is no committed seed any more. gust_v4.c is gone
+	@# -- 66,002 lines, 81% of the tree's C, deleted rather than
+	@# translated -- so the bootstrap obtains a published bridge compiler
+	@# instead of compiling one from a checked-in blob.
+	@#
+	@# Two routes, and the offline one wins when it is set. 25.8a wired
+	@# GUST_BOOTSTRAP_SEED: it names a local bridge binary, verified
+	@# against the committed manifest BEFORE use. Unset, fetch-seed pulls
+	@# the newest release's bridge for this host and verifies its digest
+	@# before installing it -- before, not after, because a
+	@# verified-then-replaced artifact is the same hole as an unverified
+	@# one.
+	@#
+	@# The offline path is not a fallback, it is the audit path. A chain
+	@# that can ONLY be fetched is not auditable by anyone who does not
+	@# already trust the host, which is why that variable exists.
 	@if [ -n "$$GUST_BOOTSTRAP_SEED" ]; then \
 		echo "offline seed: $$GUST_BOOTSTRAP_SEED"; \
 		python3 scripts/phase25_release_manifest.py verify-seed; \
 		install -m 0755 "$$GUST_BOOTSTRAP_SEED" gust_bootstrap; \
 	else \
-		cat src/runtime.c gust_v4.c > build/gust_bootstrap_final.c; \
-		${CC} ${CFLAGS} ${INCLUDES} build/gust_bootstrap_final.c $(PHASE25_RUNTIME_RS_OBJ) -o gust_bootstrap; \
+		python3 scripts/phase25_release_manifest.py fetch-seed; \
 	fi
 
 build/gust_stage1_compiler.c: export GUST_BOOTSTRAP_EMITTER = 1
@@ -506,7 +516,13 @@ bootstrap: gust
 	./build/gust_stage2_bin --backend bootstrap-emitter compiler/test_runner_entry.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_stage3.c && sync
 	@# Stage 4: Assert byte-by-byte identity between Stage 2 and Stage 3 C files
 	@diff -u build/gust_stage2.c build/gust_stage3.c && echo "✅ Fixed-point bootstrap convergence achieved!"
-	cp build/gust_stage3.c gust_v4.c
+	@# Patch 25.9: the seed is NOT republished here any more. This line
+	@# was `cp build/gust_stage3.c gust_v4.c`, the route that regenerated
+	@# the committed seed; with the seed deleted there is nothing to
+	@# write back, and leaving it would recreate the file this patch
+	@# exists to remove. The fixed point above still runs and still
+	@# asserts stage2 == stage3 -- that assertion is the point, and it
+	@# does not depend on a file being written.
 	cp build/gust_stage2_bin gust_bootstrap
 	touch build/gust_compiler.c
 	touch gust

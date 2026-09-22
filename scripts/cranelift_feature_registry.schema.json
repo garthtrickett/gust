@@ -102,6 +102,7 @@
     "issue431_full_compiler_baseline",
     "patch251_no_c_falsifier",
     "phase257_native_stage_chain",
+    "phase259_seed_cutover",
     "phase255_runtime_to_gust",
     "phase2510a_strings_retirement",
     "patch256_fiber_global_asm",

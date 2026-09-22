@@ -40,7 +40,7 @@ stable, so the order of a list is part of its behaviour, not presentation.
 | `ha_gust_alloc_spelling` | container_classification | `p19_container_arena_classification` | `compiler/codegen.gst` | must_change |
 | `ha_gust_typechecker_brands` | type_naming | `p19_brand_identity` | `compiler/typechecker.gst` | must_change |
 | `ha_gust_default_brand` | brand_resolution | `p19_brand_identity` | `compiler/typechecker.gst` | must_change |
-| `ha_seed_encodes_behaviour` | argument_representation | `p19_argument_representation` | `gust_v4.c` | must_change |
+| `ha_seed_encodes_behaviour` | argument_representation | `p19_argument_representation` | `docs/RELEASE_MANIFEST.json` | must_change |
 
 ## Inherited residual rebase
 

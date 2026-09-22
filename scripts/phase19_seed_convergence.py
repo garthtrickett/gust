@@ -7,7 +7,7 @@ import argparse
 import json
 from pathlib import Path
 
-from phase22_default_route_seed_convergence import accepted_live_seed_line_count
+from phase22_default_route_seed_convergence import accepted_live_seed_line_counts
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -71,7 +71,42 @@ def validate() -> dict:
     require(all(set(row) == {"patch", "scope"} and row["scope"] for row in accounted),
             "seed accounting row shape drifted")
 
-    seed = SEED.read_text(encoding="utf-8")
+    # Patch 25.9: the committed seed is gone. INVERTED, not deleted --
+    # a dropped clause says nothing, and this one has to keep saying
+    # something or the deletion is unguarded.
+    #
+    # It asserted three things about gust_v4.c: a line count matching the
+    # registered transition, five compiler symbols present, and two retired
+    # spellings absent. All three were proxies for one claim -- "the
+    # committed seed IS the current compiler". With no committed seed the
+    # claim becomes "the bootstrap obtains a verified bridge instead", so
+    # that is what is asserted here: absence AND the replacement route.
+    require(not SEED.exists(),
+            f"{SEED.name} is back. Patch 25.9 deleted it -- 66,002 lines, "
+            "81% of the tree's C -- and the bootstrap now obtains a "
+            "published bridge compiler. A committed seed reappearing means "
+            "either the republish route was restored or someone checked one "
+            "in; both put the tree back in the state this patch removed.")
+    manifest = json.loads(
+        (ROOT / "docs/RELEASE_MANIFEST.json").read_text(encoding="utf-8"))
+    bridges = [entry
+               for release in manifest.get("releases", [])
+               for entry in release.get("artifacts", [])
+               if entry.get("role") == "bridge_compiler"]
+    require(bridges,
+            "the seed is absent and no release publishes a bridge_compiler, "
+            "so nothing can bootstrap this tree. Absence alone is not the "
+            "assertion -- the replacement route has to be there too, which "
+            "is the half an inverted guard usually forgets.")
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+    require("fetch-seed" in makefile and "GUST_BOOTSTRAP_SEED" in makefile,
+            "the Makefile bootstrap names neither fetch-seed nor "
+            "GUST_BOOTSTRAP_SEED, so the replacement route is listed in the "
+            "manifest and not wired to anything.")
+    require("cat src/runtime.c gust_v4.c" not in makefile,
+            "the Makefile still concatenates gust_v4.c: the compile-from-"
+            "committed-seed route is back, and the fetch route is dead code "
+            "beside it.")
     live_seed_lines = diff["current_lines"]
     successor = json.loads(REGISTRY.read_text(encoding="utf-8")).get(
         "phase20_seed_convergence"
@@ -137,19 +172,33 @@ def validate() -> dict:
                             phase22_diff = phase22_seed.get("generated_seed_diff")
                             require(isinstance(phase22_diff, dict),
                                     "Patch 22.6a seed authority omits generated diff accounting")
-                            live_seed_lines = accepted_live_seed_line_count(
-                                phase22_seed, len(seed.splitlines()))
-    require(len(seed.splitlines()) == live_seed_lines, "committed seed line count drifted")
-    for symbol in (
-        "typechecker__env_get_canonical_branded_type_name",
-        "typechecker__typechecker_is_arena_value_or_ref",
-        "struct mir_function_call__MirCallOperand",
-        "typechecker__env_pre_register_template_statement",
-        "typechecker__typechecker_complete_flattened_template_arguments",
-    ):
-        require(symbol in seed, f"regenerated seed is missing {symbol}")
+                            # Patch 25.9: there is no live seed to count.
+                            # This took the committed file's line count and
+                            # checked it against the registered transitions;
+                            # with the file gone the honest reading of the
+                            # chain is its own final state.
+                            live_seed_lines = accepted_live_seed_line_counts(
+                                phase22_seed)
+                            live_seed_lines = max(live_seed_lines)
+    # The line-count clause: the registered transition is kept as the
+    # historical record of what the seed WAS at cut-over, and is no longer
+    # compared against a file that does not exist.
+    require(isinstance(live_seed_lines, int) and live_seed_lines > 0,
+            "the registered seed transition has no line count, so the "
+            "record of what the seed was at cut-over is gone too")
+    # The retired-spelling clause survives the seed, because it was never
+    # really about the seed: it asserted that two Phase 19 spellings do not
+    # come back. The seed was a proxy for the compiler, so the check moves
+    # to the compiler's own sources, where a reappearance would originate.
+    sources = "\n".join(
+        path.read_text(encoding="utf-8", errors="replace")
+        for path in sorted((ROOT / "compiler").glob("*.gst")))
     for retired in ("phase19_legacy_brand_spellings", "phase19_spelling_rule"):
-        require(retired not in seed, f"regenerated seed retains {retired}")
+        require(retired not in sources,
+                f"compiler sources reintroduce {retired}. This was asserted "
+                "against the committed seed until Patch 25.9 removed it; the "
+                "claim is unchanged and now reads the source it was always "
+                "about.")
 
     workflow = WORKFLOW.read_text(encoding="utf-8")
     pull_request_section, push_section = workflow.split("  push:", 1)
@@ -157,12 +206,24 @@ def validate() -> dict:
             "compiler source changes must not force seed regeneration into capability PRs")
     require("'compiler/*.gst'" in push_section,
             "main compiler changes do not schedule the seed-drift detector")
+    # Patch 25.9: the third command is inverted with the step it names.
+    # `git diff --exit-code -- gust_v4.c` asserted "regeneration left the
+    # committed seed unchanged"; with the seed deleted that command passes
+    # on a path git knows nothing about, so the workflow kept a step that
+    # had stopped checking. The workflow now asserts the seed is NOT
+    # recreated, and this requires that form instead -- otherwise the
+    # harness reference and the harness drift apart silently.
     for command in (
         "make bootstrap",
         "cmp build/gust_stage2.c build/gust_stage3.c",
-        "git diff --exit-code -- gust_v4.c",
+        "if [ -e gust_v4.c ]; then",
+        "git ls-files --error-unmatch gust_v4.c",
     ):
         require(command in workflow, f"fixed-point workflow is missing {command!r}")
+    require("git diff --exit-code -- gust_v4.c" not in workflow,
+            "the fixed-point workflow still runs `git diff --exit-code -- "
+            "gust_v4.c`. With the seed deleted that command cannot fail, so "
+            "the step reports success without checking anything.")
     for token in (
         "fetch-depth: 0",
         "Select authoritative seed-convergence scope",

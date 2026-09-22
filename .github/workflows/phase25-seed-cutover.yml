@@ -1,0 +1,25 @@
+name: Cranelift Phase 25 Seed Cut-Over
+
+concurrency:
+  group: phase25-seed-cutover-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+on:
+  pull_request:
+    paths: ['gust_v4.c', 'docs/RELEASE_MANIFEST.json', 'scripts/phase25_seed_cutover.py', '.github/workflows/phase25-seed-cutover.yml']
+  push:
+    branches: [main]
+    paths: ['gust_v4.c', 'docs/RELEASE_MANIFEST.json', 'scripts/phase25_seed_cutover.py', '.github/workflows/phase25-seed-cutover.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  cutover:
+    name: Phase 25 seed cut-over
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: guard-cranelift-phase25-seed-cutover
+        run: python3 scripts/phase25_seed_cutover.py validate
