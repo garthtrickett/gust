@@ -9161,10 +9161,21 @@ guard-cranelift-phase10-backend-selection-contract:
       'Compiler invocation error: multiple source paths are not supported' \
       multiple-sources \
       ./gust "$source_fixture" compiler/mir_feature_local_binding_read_preservation_source.gst
+    # Patch 25.10: the refusal MOVED EARLIER, so the expected message
+    # changes with it. This asserted "the MIR-to-C backend does not accept
+    # -o" -- a complaint about the FLAG, reached only because the backend
+    # itself was still accepted. With the emitter deleted the spelling is
+    # refused at the invocation parser, before -o is ever considered.
+    #
+    # Kept as a probe rather than deleted: it is the only place that
+    # exercises the retired backend spelling together with -o, and a
+    # retired spelling that stops being probed is a spelling nobody
+    # notices coming back. GUST_BOOTSTRAP_EMITTER goes, because there is
+    # no authority left to satisfy.
     expect_invocation_failure \
-      'Compiler invocation error: the MIR-to-C backend does not accept -o' \
+      'the bootstrap C emitter was deleted in Patch 25.10' \
       bootstrap-emitter-output \
-      env GUST_BOOTSTRAP_EMITTER=1 ./gust --backend bootstrap-emitter -o "$output_path" "$source_fixture"
+      ./gust --backend bootstrap-emitter -o "$output_path" "$source_fixture"
     if rg -F '"phase22_native_implicit_output"' scripts/cranelift_feature_registry.json >/dev/null; then
       rg -n -F 'invocation.output_path = compiler_native_implicit_output_path(invocation.source_path, ctx);' "$compiler_entry" >/dev/null
     else
