@@ -926,15 +926,19 @@ FILE_ROWS = [
      'std.str_eq(backend_name, "mir-to-c")', "24.13", "retire"),
     ("compiler/test_runner_entry.gst",
      "the MIR-to-C backend does not accept -o", "24.14", "retire"),
+    # Patch 25.10 retires these five. The emitter call in the entry, the
+    # emitter itself, the bridge entry's two rows (the file is deleted with
+    # the stage chain), and the Makefile's build/gust_final.c, which was the
+    # product of the emission step that is gone.
     ("compiler/test_runner_entry.gst",
      "mut c_code := codegen.codegen_generate(programs, module_prefixes, &env, ctx);",
-     "25", "survive"),
+     "25", "retired-by-25.10"),
     ("compiler/codegen.gst",
      "func codegen_generate(programs: std.Vector[ast.Program[ctx], ctx]",
-     "25", "survive"),
+     "25", "retired-by-25.10"),
     ("compiler/test_runner_bootstrap_bridge_entry.gst",
      "mut c_code := codegen.codegen_generate(programs, module_prefixes, &env, ctx);",
-     "25", "survive"),
+     "25", "retired-by-25.10"),
     ("compiler/test_runner_bootstrap_bridge_entry.gst",
      # Patch 24.13 WIDENED this usage line rather than retiring it: the bridge
      # now also accepts the bootstrap-only entry, because Makefile:143 and the
@@ -943,9 +947,9 @@ FILE_ROWS = [
      # here -- the bridge is Phase-25-owned machinery and this patch does not
      # retire it, it only adds the entry the migrated callers need.
      "Usage: gust-bootstrap-bridge [--backend <mir-to-c|c|bootstrap-emitter>] <file.gst>",
-     "25", "survive"),
+     "25", "retired-by-25.10"),
     ("Makefile",
-     "build/gust_final.c", "24.14", "migrate"),
+     "build/gust_final.c", "24.14", "retired-by-25.10"),
     ("Makefile",
      'CC="${CC}" CFLAGS="${CFLAGS}" INCLUDES="${INCLUDES}" just make-test-suite',
      "24.14", "migrate"),
@@ -1560,6 +1564,21 @@ def check_family_actions() -> None:
 # folds dynamic dispatch into the graph, so 24.16 starts from a number that
 # means what it says.
 MENTION_ONLY_LIVENESS = (
+    # Patch 25.10 deletes the C stage chain, and the Makefile target this
+    # named went with it: diagnose-phase10-stage1 was a sanitizer build of the
+    # stage-one C, and there is no stage one. So it stops being reached by
+    # make and becomes live only by the registry naming it, which is what this
+    # ledger is for.
+    #
+    # It is NOT adjudicated as fine. justfile:22 still carries a recipe that
+    # runs `make diagnose-phase10-stage1`, so `just diagnose-phase10-stage1`
+    # now fails with "No rule to make target" -- a real dangling caller, not
+    # bookkeeping. It is left here rather than fixed in this patch because the
+    # justfile is append-only (the Patch 24.0c manifest is keyed on line
+    # numbers) and Issue #451 freezes its digest in both halves of a pair, so
+    # removing two lines from the middle of it is its own patch with its own
+    # re-registration. Recorded rather than silently absorbed.
+    "diagnose-phase10-stage1",
     # Issue #437 left this one here: it is adjudicated repair_required
     # rather than wired, because it fails when executed, so it still has no
     # execution route and is still live only by mention. Removing it would
@@ -2061,7 +2080,25 @@ def validate() -> dict:
         require(isinstance(registry.get(key), dict),
                 f"inventoried registry node is missing: {key}")
     check_retired_registry_claims(registry)
+    # Patch 25.10 is the owner these rows were waiting for. Five of them --
+    # four marked owner "25" and one Makefile row 24.14 marked "migrate" --
+    # name surfaces this patch removes, so requiring them PRESENT would ask
+    # the tree to keep the thing the inventory exists to retire.
+    #
+    # The rows are kept and their ACTION is what changes, following the
+    # retired-claim rule above: "the record survives; only the claim is
+    # retired, so deleting it asserts nothing". A retired row now requires
+    # ABSENCE -- and where the whole file went, that the file went. So a
+    # surface coming back fails, and so does a row that claims a retirement
+    # that did not happen.
     for path, needle, owner, action in FILE_ROWS:
+        if action.startswith("retired-by-25.10"):
+            if not (ROOT / path).is_file():
+                continue
+            require(needle not in read(path),
+                    f"a surface Patch 25.10 retires is back: {path}: "
+                    f"{needle[:48]}")
+            continue
         require(needle in read(path),
                 f"inventoried file lost its C surface: {path}: {needle[:48]}")
     for path, needle, owner in RETIRED_FILE_SURFACES:

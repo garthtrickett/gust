@@ -32860,7 +32860,7 @@
       "selected_entry": "--backend bootstrap-emitter",
       "status": "patch24_11_decided_patch24_13_lands"
     },
-    "inventory_digest": "a9305e8d7a5e8d717365fbc5606154044fc631d47a3c765bf015912f5590ae20",
+    "inventory_digest": "1447f8f621d7610d7db8722403250130a21b5b69642ca51441dd8e2987d76b71",
     "retired": {
       "by": "24.12a",
       "harnesses": [
@@ -33254,27 +33254,27 @@
         "owner_patch": "24.14"
       },
       {
-        "action": "survive",
+        "action": "retired-by-25.10",
         "id": "compiler/test_runner_entry.gst :: mut c_code := codegen.codegen_generate(p",
         "owner_patch": "25"
       },
       {
-        "action": "survive",
+        "action": "retired-by-25.10",
         "id": "compiler/codegen.gst :: func codegen_generate(programs: std.Vect",
         "owner_patch": "25"
       },
       {
-        "action": "survive",
+        "action": "retired-by-25.10",
         "id": "compiler/test_runner_bootstrap_bridge_entry.gst :: mut c_code := codegen.codegen_generate(p",
         "owner_patch": "25"
       },
       {
-        "action": "survive",
+        "action": "retired-by-25.10",
         "id": "compiler/test_runner_bootstrap_bridge_entry.gst :: Usage: gust-bootstrap-bridge [--backend ",
         "owner_patch": "25"
       },
       {
-        "action": "migrate",
+        "action": "retired-by-25.10",
         "id": "Makefile :: build/gust_final.c",
         "owner_patch": "24.14"
       },
@@ -42484,6 +42484,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "82e6ef541650dcc6665c866728acebf18c71e1b8b3926c2595d54e8aab26afa6",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 5,
+            "generated_c_contract": 13,
+            "mir_to_c_name": 19
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase22_default_route_seed_convergence.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "a7ce1d698f2a6b95f41acd86450bddce0e2b778c74943ebbcbb5d97eb2d5f3cf",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -42568,6 +42583,21 @@
           },
           "owner": "cranelift",
           "path": "scripts/phase24_c_toolchain_provenance.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "1bbd7c8814535b36dfdbb222cf1f14435d36a87b7d885d854bed480a7e226382",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 33,
+            "generated_c_contract": 8,
+            "mir_to_c_name": 86
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase24_retirement_consumer_inventory.py",
           "removal_phase": "24"
         }
       ],
@@ -42892,6 +42922,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "01fa8f2d89fc4abfe6b9e4d1edde96543e4610098b7eacccdf414f5c5fef6136",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 5,
+            "generated_c_contract": 13,
+            "mir_to_c_name": 19
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase22_default_route_seed_convergence.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "1bddb07d604b45c9a3bd249417bff2eea2c32340a6757de403c12c57ddf4e222",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -42977,6 +43022,21 @@
           "owner": "cranelift",
           "path": "scripts/phase24_c_toolchain_provenance.py",
           "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "933db88cb0dba8983da676d62bf5194c10b5cba49a6f87b1d706b551153f6404",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 33,
+            "generated_c_contract": 8,
+            "mir_to_c_name": 86
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase24_retirement_consumer_inventory.py",
+          "removal_phase": "24"
         }
       ],
       "registered_changed_paths": [
@@ -43001,12 +43061,14 @@
         "scripts/phase21_selected_compiler_module_qualification.py",
         "scripts/phase21_typed_query_noop_surface.py",
         "scripts/phase22_default_route_flip.py",
+        "scripts/phase22_default_route_seed_convergence.py",
         "scripts/phase22_explicit_c_migration.py",
         "scripts/phase22_explicit_c_migration.sh",
         "scripts/phase22_opening.py",
         "scripts/phase22_postflip_qualification.py",
         "scripts/phase23_closure.py",
-        "scripts/phase24_c_toolchain_provenance.py"
+        "scripts/phase24_c_toolchain_provenance.py",
+        "scripts/phase24_retirement_consumer_inventory.py"
       ]
     }
   },

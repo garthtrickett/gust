@@ -21,6 +21,11 @@ JUSTFILE = ROOT / "justfile"
 GUARD = "guard-cranelift-phase22-default-route-seed-convergence"
 
 
+# The one native compile that replaced the four-step C stage chain.
+NATIVE_SEED_STEP = ("./build/native-build/bin/gust --backend cranelift "
+                    "-o build/.gust.tmp compiler/test_runner_entry.gst")
+
+
 def require(condition: bool, message: str) -> None:
     if not condition:
         raise SystemExit(f"{GUARD}: {message}")
@@ -1103,6 +1108,11 @@ def validate() -> dict:
     # would pass just as well if a row silently went back to mir-to-c, or
     # vanished from the Makefile entirely. Each asserts both halves -- the
     # retired spelling absent AND the replacement present.
+    # Scoped to lines make can execute. The Makefile keeps a comment block
+    # recording the four-step chain 25.10 removed and why the native route
+    # replaces it; prose quoting a retired spelling is not an invocation of it.
+    executable = "\n".join(line for line in makefile.splitlines()
+                           if not line.lstrip().startswith("#"))
     for retired, rebased in (
         ("./gust_bootstrap --backend mir-to-c compiler/test_runner_bootstrap_bridge_entry.gst",
          "./gust_bootstrap --backend bootstrap-emitter compiler/test_runner_bootstrap_bridge_entry.gst"),
@@ -1116,9 +1126,19 @@ def validate() -> dict:
         require(retired not in makefile,
                 "Patch 24.13 removed generated-C backend selection, so this "
                 f"bootstrap row cannot select it again: {retired}")
-        require(rebased in makefile,
-                "the rebased bootstrap row is absent: the seed still has to "
-                f"reach the bootstrap-only entry: {rebased}")
+        # Patch 25.10 deletes the C stage chain, so all four rebased callers
+        # go with the rules that ran them. THIRD copy of this assertion in the
+        # tree -- phase22_default_route_flip and phase22_postflip_qualification
+        # carry the other two -- and all three flip the same way: both
+        # spellings absent, and the ONE native compile that replaced the whole
+        # chain present. A tree that deleted the chain and put nothing in its
+        # place fails, which is the "vanished passing as migrated" case.
+        require(rebased not in executable,
+                "a bootstrap caller still drives the seed through the emitter "
+                f"Patch 25.10 deleted: {rebased}")
+    require(NATIVE_SEED_STEP in executable,
+            "the seed path does not reach the compiler through the native "
+            f"route: {NATIVE_SEED_STEP}")
 
     workflow = WORKFLOW.read_text(encoding="utf-8")
     for evidence in (
