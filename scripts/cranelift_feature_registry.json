@@ -19267,7 +19267,7 @@
         {
           "id": "p17_helper_generated_is_valid_family",
           "symbol_identity": "*_IsValid",
-          "symbol_kind": "generated_c_symbol_family",
+          "symbol_kind": "retired_generated_c_symbol_family",
           "source_path": "compiler/codegen.gst",
           "reachability": "compiler_generated_c_shim",
           "inventory_owner": "compiler_generated_c_shim_elimination_planner",
@@ -19279,7 +19279,7 @@
         {
           "id": "p17_helper_generated_generational_clone_family",
           "symbol_identity": "std_GenerationalArena_Clone_*",
-          "symbol_kind": "generated_c_symbol_family",
+          "symbol_kind": "retired_generated_c_symbol_family",
           "source_path": "compiler/codegen.gst",
           "reachability": "compiler_generated_c_shim",
           "inventory_owner": "compiler_generated_c_shim_elimination_planner",
@@ -19291,7 +19291,7 @@
         {
           "id": "p17_helper_generated_pthread_wrapper_family",
           "symbol_identity": "*_pthread_wrapper",
-          "symbol_kind": "generated_c_symbol_family",
+          "symbol_kind": "retired_generated_c_symbol_family",
           "source_path": "compiler/codegen.gst",
           "reachability": "compiler_generated_c_shim",
           "inventory_owner": "compiler_generated_c_shim_elimination_planner",
@@ -19303,7 +19303,7 @@
         {
           "id": "p17_helper_generated_entry_wrapper_family",
           "symbol_identity": "gust_user_main/main",
-          "symbol_kind": "generated_c_symbol_family",
+          "symbol_kind": "retired_generated_c_symbol_family",
           "source_path": "compiler/codegen.gst",
           "reachability": "compiler_generated_c_shim",
           "inventory_owner": "compiler_generated_c_shim_elimination_planner",

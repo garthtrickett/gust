@@ -418,8 +418,15 @@ def validate() -> dict:
         require(symbol not in symbol_identities,
                 f"duplicate Phase 17 helper symbol identity: {symbol}")
         symbol_identities.add(symbol)
+        # `generated_c_symbol_family` is kept in the allowlist even though
+        # Patch 25.10 leaves no row using it. Removing the kind would make
+        # a future row that reintroduces a generated C family fail as
+        # "invalid symbol kind" -- a schema complaint -- instead of failing
+        # on the thing that matters, which is that something generates C
+        # again. The retired kind below is where the assertion lives.
         require(helper.get("symbol_kind")
-                in {"exact_c_symbol", "generated_c_symbol_family"},
+                in {"exact_c_symbol", "generated_c_symbol_family",
+                    "retired_generated_c_symbol_family"},
                 f"{helper_id}: invalid symbol kind")
         require(helper.get("reachability") in {
             "runtime_public_surface", "runtime_component_internal",
@@ -447,6 +454,28 @@ def validate() -> dict:
                               source_text, re.MULTILINE) is not None)
             require(defines_in_c or defines_in_asm,
                     f"{helper_id}: exact symbol is absent from {source_path}")
+        elif helper.get("symbol_kind") == "retired_generated_c_symbol_family":
+            # Patch 25.10 INVERTS these four rather than deleting them.
+            #
+            # They record C shim families the EMITTER generated --
+            # *_IsValid, std_GenerationalArena_Clone_*, *_pthread_wrapper
+            # and the gust_user_main/main entry pair. With the emitter
+            # deleted nothing generates C by any route, so the families
+            # cannot exist and the probe can never find them.
+            #
+            # Deleting the rows would make p17_generated_c_shim_elimination
+            # complete by having nothing left to point at, which is the
+            # shape of a claim that stopped being checked. Inverted, the
+            # rows say the opposite thing and still fail: the probe must be
+            # ABSENT from the file that used to emit it, so a family
+            # reappearing is caught.
+            probes = [part.replace("*", "") for part in symbol.split("/")]
+            present = [probe for probe in probes if probe and probe in source_text]
+            require(not present,
+                    f"{helper_id}: {present} is back in {source_path}. "
+                    "Patch 25.10 deleted the emitter, so no route generates "
+                    "this C shim family; a probe that matches again means "
+                    "an emitter came back.")
         else:
             probes = [part.replace("*", "") for part in symbol.split("/")]
             require(all(probe and probe in source_text for probe in probes),

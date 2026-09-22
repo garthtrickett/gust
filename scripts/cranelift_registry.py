@@ -2564,7 +2564,15 @@ def validate_phase17_runtime_authority_structure(registry):
         if source["source_path"] == "src/runtime-rs/src/lib.rs":
             expected_classification = "stable_runtime_library_function"
             expected_reason = "runtime_helper_classified_stable_library_import"
-        elif source["symbol_kind"] == "generated_c_symbol_family":
+        elif source["symbol_kind"] in ("generated_c_symbol_family",
+                                       "retired_generated_c_symbol_family"):
+            # Patch 25.10 retires the four families rather than
+            # reclassifying them. `obsolete_helper` was already the right
+            # word -- the emitter's C shims were obsolete the moment the
+            # native route stopped needing them -- and the retirement is
+            # recorded in symbol_kind, where the probe inverts, not here.
+            # Changing the classification too would make the same fact
+            # true in two places that can disagree.
             expected_classification = "obsolete_helper"
             expected_reason = "runtime_helper_classified_obsolete_generated_c_shim"
         else:
