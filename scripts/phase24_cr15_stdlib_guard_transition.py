@@ -2289,6 +2289,45 @@ def normalize_phase23_text_surfaces(
                 "rejected",
                 "Patch 24.12 text surface successor drifted")
         oracle_paths = list(oracle_surface["registered_changed_paths"])
+    # Patch 25.10a is newer than 25.7, so it runs FIRST and projects the
+    # tree back to the state 25.7's successor was registered against. Same
+    # newest-first discipline as every link below it.
+    #
+    # It retires src/runtime/strings.c into the Rust crate. That file is
+    # DELETED, but it never matched a surface pattern -- generated C with
+    # no mention of generated C in it -- so, exactly as with fiber.c in
+    # 25.6, there is no departed half for this block to carry and the
+    # scan's row count is unchanged.
+    #
+    # Seven surfaces move, and two of them are this registration itself:
+    # cranelift_registry.py and the schema both list the top-level key
+    # this patch adds, so registering the change changes them. That is the
+    # toll having a toll, not a mistake -- they are carried here rather
+    # than left to fail the older links they are pinned in.
+    strings_surface = registry.get(
+        "phase2510a_strings_retirement", {}).get("text_surface_successor")
+    if strings_surface is not None:
+        require(strings_surface.get("contract_version") ==
+                "phase2510a_strings_retirement_text_surface_successor_v1" and
+                strings_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Patch 25.10a strings retirement text surface successor drifted")
+        st_paths = list(strings_surface["registered_changed_paths"])
+        st_pre = {r["path"]: r for r
+                  in strings_surface["previous_changed_text_surfaces"]}
+        st_post = {r["path"]: r for r
+                   in strings_surface["current_changed_text_surfaces"]}
+        require(sorted(st_pre) == sorted(st_paths) == sorted(st_post),
+                "Patch 25.10a registered paths and rows disagree")
+        st_live = {r["path"]: r for r in rows if r["path"] in st_paths}
+        require(sorted(st_live) == sorted(st_paths),
+                "Patch 25.10a registered text surface is missing from the scan")
+        require(st_live in (st_pre, st_post),
+                "Patch 25.10a changed text surfaces are partial or "
+                "substituted: the live rows match neither the complete "
+                "predecessor state nor the complete successor state "
+                f"({sorted(p for p in st_paths if st_live[p] != st_post[p])} differ from post)")
+        rows = [dict(st_pre.get(r["path"], r)) for r in rows]
     # Patch 25.7 merges after 25.5, so it is the newest link and runs
     # FIRST. It adds a guard and a workflow step and changes no route, so
     # what moves here is the roadmap, the justfile and the surfaces its

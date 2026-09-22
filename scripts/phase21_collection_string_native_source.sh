@@ -19,8 +19,14 @@ print(1 if record.get("phase21_full_compiler_native_qualification", {}).get("sta
 ')"
 # Patch 25.5: five more members left with their sources -- arena.o,
 # host_io.o, file_io.o, scratch.o and collections.o are defined in
-# src/runtime-rs now. strings.o is the last C member.
-expected_runtime_members="strings.o "
+# src/runtime-rs now.
+# Patch 25.10a: and now there is no C member at all. strings.o was the
+# last one; its functions are in src/runtime-rs, so the archive is one
+# Rust object. This default is only reached when the Patch 21.14
+# qualification is not complete, in which case the registered list below
+# does not apply -- it is kept current rather than left saying "strings.o",
+# which would be a stale claim that happens never to be evaluated.
+expected_runtime_members="gust_runtime_rs_exports.o "
 successor_runtime_symbols=()
 if test "$full_compiler_live" = 1; then
   expected_runtime_members="$(python3 -c '

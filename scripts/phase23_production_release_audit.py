@@ -79,6 +79,47 @@ def surface(path: str, role: str, markers: tuple[str, ...]) -> dict[str, object]
 
 
 
+def phase2510a_strings_audit(registry: dict, live: dict) -> dict:
+    """Project the live audit back past Patch 25.10a.
+
+    Newest-first, the same discipline the text-surface chain uses: this
+    runs BEFORE the Patch 25.5 projection so that one is handed the tree
+    it was registered against rather than one a patch ahead.
+
+    ONE field moves. src/runtime/strings.c is retired into the Rust crate
+    and the Makefile is a supported surface, so its manifest digest moves
+    with it. Nothing else does, and that is the interesting part:
+
+      repository_invocation_count       UNCHANGED at 160. The new
+                                        differential is a link-and-compare
+                                        against a pinned blob; it never
+                                        invokes the compiler, so it adds
+                                        no row to the invocation scan.
+      repository_explicit_c_count       UNCHANGED at 2. Deleting a
+                                        GENERATED C file does not move the
+                                        explicit-C count, because that
+                                        count was never what src/runtime/
+                                        strings.c contributed to.
+    """
+    node = registry.get("phase2510a_strings_retirement", {}).get(
+        "production_audit_transition")
+    if node is None:
+        return live
+    previous = node.get("previous_audit")
+    require(node.get("contract_version") ==
+            "phase2510a_strings_audit_transition_v1" and
+            node.get("current_audit") == live and
+            isinstance(previous, dict) and
+            node.get("partial_or_substituted_audit") == "rejected",
+            "Patch 25.10a production audit transition drifted")
+    moved = sorted(key for key in set(previous) | set(live)
+                   if previous.get(key) != live.get(key))
+    require(moved == sorted(node.get("moved_fields", [])),
+            "Patch 25.10a moved a production audit field it does not "
+            f"register: {moved}")
+    return dict(previous)
+
+
 def phase25_runtime_port_audit(registry: dict, live: dict) -> dict:
     """Peel Patch 25.5's changes off the live audit, or return it unchanged.
 
@@ -343,6 +384,7 @@ def validate() -> tuple[dict, dict[str, object]]:
             "route_contract", {}).get("non_bootstrap_live_lane_count") == 1,
             "focused live-C predecessor drifted")
     summary = scan()
+    summary = phase2510a_strings_audit(registry, summary)
     summary = phase25_runtime_port_audit(registry, summary)
     closure_transition = registry.get("phase23_closure", {}).get(
         "production_audit_transition")

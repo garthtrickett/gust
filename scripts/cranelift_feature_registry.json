@@ -4624,7 +4624,6 @@
     "runtime_package": {
       "format": "static_archive",
       "members": [
-        "strings.o",
         "gust_runtime_rs_exports.o"
       ],
       "symbol_policy": "existing_registered_runtime_symbols_only"
@@ -18669,7 +18668,7 @@
           "id": "p17_helper_std_str_eq",
           "symbol_identity": "std_str_eq",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/strings.c",
+          "source_path": "src/runtime-rs/src/strings.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18681,7 +18680,7 @@
           "id": "p17_helper_std_str_bounds_fail",
           "symbol_identity": "std_str_bounds_fail",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/strings.c",
+          "source_path": "src/runtime-rs/src/strings.rs",
           "reachability": "runtime_component_internal",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18693,7 +18692,7 @@
           "id": "p17_helper_std_str_slice",
           "symbol_identity": "std_str_slice",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/strings.c",
+          "source_path": "src/runtime-rs/src/strings.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18705,7 +18704,7 @@
           "id": "p17_helper_std_str_byte_at",
           "symbol_identity": "std_str_byte_at",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/strings.c",
+          "source_path": "src/runtime-rs/src/strings.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18717,7 +18716,7 @@
           "id": "p17_helper_std_str_find",
           "symbol_identity": "std_str_find",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/strings.c",
+          "source_path": "src/runtime-rs/src/strings.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18729,7 +18728,7 @@
           "id": "p17_helper_std_str_trim",
           "symbol_identity": "std_str_trim",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/strings.c",
+          "source_path": "src/runtime-rs/src/strings.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18753,7 +18752,7 @@
           "id": "p17_helper_std_is_alpha",
           "symbol_identity": "std_is_alpha",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/strings.c",
+          "source_path": "src/runtime-rs/src/strings.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18765,7 +18764,7 @@
           "id": "p17_helper_std_is_digit",
           "symbol_identity": "std_is_digit",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/strings.c",
+          "source_path": "src/runtime-rs/src/strings.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18777,7 +18776,7 @@
           "id": "p17_helper_std_is_whitespace",
           "symbol_identity": "std_is_whitespace",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/strings.c",
+          "source_path": "src/runtime-rs/src/strings.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -18789,7 +18788,7 @@
           "id": "p17_helper_std_parse_int",
           "symbol_identity": "std_parse_int",
           "symbol_kind": "exact_c_symbol",
-          "source_path": "src/runtime/strings.c",
+          "source_path": "src/runtime-rs/src/strings.rs",
           "reachability": "runtime_public_surface",
           "inventory_owner": "compiler_allocation_string_runtime_planner",
           "diagnostic_owner": "compiler_allocation_string_runtime_verifier",
@@ -42828,6 +42827,270 @@
         "scripts/phase24_c_toolchain_provenance.py",
         "scripts/phase24_cr15_closure.py",
         "scripts/phase24_retirement_consumer_inventory.py"
+      ]
+    }
+  },
+  "phase2510a_strings_retirement": {
+    "production_audit_transition": {
+      "contract_version": "phase2510a_strings_audit_transition_v1",
+      "current_audit": {
+        "active_non_bootstrap_live_c_lane_count": 0,
+        "active_non_bootstrap_live_c_owner": null,
+        "non_bootstrap_retained_test_surface_count": 2,
+        "phase25_bootstrap_explicit_c_count": 0,
+        "repository_explicit_c_count": 2,
+        "repository_invocation_count": 160,
+        "supported_production_or_release_explicit_c_count": 0,
+        "supported_surface_count": 6,
+        "supported_surface_manifest_digest": "7ff1e1dcbd61bfd0e2623d71f1a11625c777d58d35b4fb5f369194108c551793",
+        "unknown_downstream_count": 0
+      },
+      "moved_fields": [
+        "supported_surface_manifest_digest"
+      ],
+      "partial_or_substituted_audit": "rejected",
+      "previous_audit": {
+        "active_non_bootstrap_live_c_lane_count": 0,
+        "active_non_bootstrap_live_c_owner": null,
+        "non_bootstrap_retained_test_surface_count": 2,
+        "phase25_bootstrap_explicit_c_count": 0,
+        "repository_explicit_c_count": 2,
+        "repository_invocation_count": 160,
+        "supported_production_or_release_explicit_c_count": 0,
+        "supported_surface_count": 6,
+        "supported_surface_manifest_digest": "ca2e3830f391878086d1c8e3475583fe5585585f993f9555f3bc1cbdbd88da6d",
+        "unknown_downstream_count": 0
+      },
+      "reason": {
+        "supported_surface_manifest_digest": "the Makefile is a supported surface and this patch empties PHASE21_RUNTIME_OBJECTS and deletes the strings.o rule"
+      }
+    },
+    "status": "patch25_10a_strings_retirement_complete",
+    "text_surface_successor": {
+      "contract_version": "phase2510a_strings_retirement_text_surface_successor_v1",
+      "current_changed_text_surfaces": [
+        {
+          "classification": "bootstrap_phase25",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_exact_C_bootstrap_dependency",
+          "digest": "e1d0617d4b081ef80dfd78488ce866283996c9c08f24de8cd3ed468bd8c5a9fc",
+          "falsifier": "bootstrap_surface_is_missing_changed_or_reclassified",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 16,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "Makefile",
+          "removal_phase": "25"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "988cb15b7cdb7796774b2c0032610e30eebd609072bc7c80f6354052943b54c9",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 3,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase17_opening.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "a0d1d34458cf7953e655d3f41bb644035d00378b4a1def7b729e0a695518ee82",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 0
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_collection_string_native_source.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "57cf4d22d531eecf191c385bcc36c06b0319186e06dbab871547a13bcc9de5ea",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 0
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_filesystem_allocation_native_source.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "482c06dbc7483a53aea8e76fe770b071d80dfe51aabc3fe8a6e9cee1b78977a6",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 3,
+            "mir_to_c_name": 3
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_full_compiler_native_qualification.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "6969e3b9d1fea5c238100d2ad651d26d9795441b04409a26ddf02725b5fa9779",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "a264b4dcd1632d4a42f07177572f5148ed1f835943bee5515c5beb4c48f8c849",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 25
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase23_closure.py",
+          "removal_phase": "24"
+        }
+      ],
+      "partial_extra_or_substituted_surface": "rejected",
+      "previous_changed_text_surfaces": [
+        {
+          "classification": "bootstrap_phase25",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_exact_C_bootstrap_dependency",
+          "digest": "913f57b5818e5dfd54e4aa8cdc2682f533410ffe12f4c155e4c68af41a5c5975",
+          "falsifier": "bootstrap_surface_is_missing_changed_or_reclassified",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 16,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "Makefile",
+          "removal_phase": "25"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "f830f77bb0644dcab3161355dfbb26ecd88f069a21e71303406b6286a5850d6f",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 3,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase17_opening.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "c09cf3923c0239bae7d02c5a700b524dd29b0a8e0d8a60e03072e74321a298b7",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 0
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_collection_string_native_source.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "2e8f9cc82ee4f1905811d7ce1ded8787991317c9a67f09bc17daf89d9b292fbb",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 0
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_filesystem_allocation_native_source.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "6a6d5e2dfd6aff8e371a5128a359579ccef7e59604c5fa611320d4f26aba7765",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 3,
+            "mir_to_c_name": 3
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_full_compiler_native_qualification.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "4cb9e37e139dab1fe8410c62e383e6a3184cb8ace1f17c2a08daca03c625c322",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "15f5018dcd9d0fad92b6dcdd3f8082484688dd6b9a2b96908678b01c4db2523c",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 25
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase23_closure.py",
+          "removal_phase": "24"
+        }
+      ],
+      "registered_changed_paths": [
+        "Makefile",
+        "scripts/phase17_opening.py",
+        "scripts/phase21_collection_string_native_source.sh",
+        "scripts/phase21_filesystem_allocation_native_source.sh",
+        "scripts/phase21_full_compiler_native_qualification.py",
+        "scripts/cranelift_registry.py",
+        "scripts/phase23_closure.py"
       ]
     }
   },

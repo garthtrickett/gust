@@ -103,6 +103,7 @@
     "patch251_no_c_falsifier",
     "phase257_native_stage_chain",
     "phase255_runtime_to_gust",
+    "phase2510a_strings_retirement",
     "patch256_fiber_global_asm",
     "patch254_runtime_crate",
     "issue451_inventory_ownership",
