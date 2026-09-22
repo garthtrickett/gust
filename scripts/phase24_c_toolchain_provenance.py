@@ -89,6 +89,7 @@ TOOLCHAIN_QUERY = "toolchain-query"      # --version / -dumpmachine, no input
 # backend produced -- which is exactly what Phase 25 will need to know when it
 # asks what still compiles C.
 FROZEN_ORACLE_C = "frozen-oracle-c"
+PINNED_BLOB_C = "pinned-blob-c"           # `git cat-file blob <sha>`, Patch 25.10a
 
 RETAINED = frozenset(
     {NATIVE_OBJECT, RETAINED_RUNTIME_C, SCRIPT_AUTHORED_C, RUST_ARCHIVE,
@@ -859,9 +860,94 @@ def resolve_input(token: str, lines: list, lineno: int) -> dict:
                          f"{via_make['why']}")
         return record
 
+    # `git cat-file blob <sha> > x.c` IS a producer, and a stronger one
+    # than most: the bytes are named by content hash, so the input cannot
+    # drift even if every path around it does. Patch 25.10a introduced it
+    # to recover src/runtime/strings.c after deleting the file -- the
+    # oracle for the Rust differential. Without this hop the script reads
+    # as provenance-less, which is the opposite of the truth.
+    via_blob = resolve_through_git_blob(key, lines, lineno)
+    if via_blob:
+        record["klass"] = PINNED_BLOB_C
+        record["why"] = via_blob
+        return record
+
     record["klass"] = ""
     record["why"] = f"no producer resolved for {key}"
     return record
+
+
+def resolve_through_git_blob(name, lines, lineno):
+    """A C input written by `git cat-file blob <sha>` or copied from a
+    tracked C file.
+
+    Keyed on the BASENAME, not on a shell variable: these are written to
+    `"$work/oracle.c"`, so the variable is the temp directory and the
+    thing that identifies the input is the filename. The two sibling
+    resolvers above key on a variable because the inputs they handle are
+    bound to one; keying this one the same way matched nothing, which is
+    how it first reported a gap for a file the script plainly writes.
+    """
+    if not (name and lines):
+        return None
+    base = re.escape(name.rsplit("/", 1)[-1])
+    blob = re.compile(rf"git\s+cat-file\s+blob\s+\"?\$?\{{?"
+                      rf"([0-9a-fA-F]{{40}}|\w+)\}}?\"?[^\n]*>\s*[^\n]*{base}")
+    copy = re.compile(rf"\bcp\s+([^\s]+\.c)\s+[^\n]*{base}")
+    # Objects, for the link step. `cc -c x.c -o y.o` and
+    # `objcopy ... a.o b.o` are producers as plainly as a redirect is;
+    # without them the LINK reads as provenance-less even though every
+    # compile above it resolved.
+    compiled = re.compile(rf"-c\s+[^\n]*?([^\s\"/]+\.c)[^\n]*-o\s+[^\n]*{base}")
+    objcopied = re.compile(rf"\bobjcopy\b[^\n]*?([^\s\"/]+\.o)\"?\s+[^\n]*{base}")
+    # `make <path ending in this basename>` earlier in the script. The
+    # sibling resolve_through_make hop keys on a shell VARIABLE; this one
+    # keys on the filename, for the same reason the rest of this resolver
+    # does -- the archive is referenced as "$RUNTIME" and written by
+    # `make "$RUNTIME"`, so the variable is the whole input and there is
+    # no separate name to bind.
+    made = re.compile(rf"^\s*make\s+[^\n]*{base}")
+    for row_lineno, line in lines:
+        if row_lineno >= lineno:
+            continue
+        m = blob.search(line)
+        if m:
+            return (f"{name} is recovered by `git cat-file blob` at "
+                    f"{m.group(1)}, so its bytes are pinned by content "
+                    "hash rather than by a path")
+        m = copy.search(line)
+        if m and (ROOT / m.group(1)).is_file():
+            return (f"{name} is copied from {m.group(1)}, a tracked "
+                    "hand-written C file")
+        m = compiled.search(line)
+        if m:
+            return (f"{name} is compiled from {m.group(1)} earlier in "
+                    "this script")
+        m = objcopied.search(line)
+        if m:
+            return (f"{name} is {m.group(1)} with symbols renamed by "
+                    "objcopy earlier in this script")
+        if made.search(line):
+            return (f"{name} is built by `make` earlier in this script, "
+                    "so the Makefile rule is its producer")
+    # `make "$VAR"` where VAR holds the path. One hop through the
+    # assignment, because the literal filename never appears on the make
+    # line -- which is how the first version of this hop missed it.
+    holders = {m.group(1) for row_lineno, line in lines
+               if row_lineno < lineno
+               for m in [re.match(rf"\s*(\w+)=[\"']?[^\s\"']*{base}[\"']?\s*$",
+                                  line)] if m}
+    if holders:
+        for row_lineno, line in lines:
+            if row_lineno >= lineno:
+                continue
+            for holder in holders:
+                if re.search(rf"^\s*make\s+[^\n]*\$\{{?{holder}\b", line):
+                    return (f"{name} is built by `make \"${holder}\"` "
+                            "earlier in this script, so the Makefile rule "
+                            "is its producer")
+    return None
+
 
 
 MAKE_ASSIGN = re.compile(r'^([A-Za-z_][A-Za-z0-9_]*)\s*[:?]?=\s*(.+)$')
@@ -967,6 +1053,15 @@ def resolve_through_make(name: str, lines: list, lineno: int) -> dict:
     # -- the environment that differed was a build artifact, not a command
     # or a variable.
     if not built:
+        return {}
+    # `name` is None when the input is not bound to a shell variable the
+    # caller could resolve -- an input written literally, or one whose
+    # variable holds a directory rather than the file. This CRASHED with
+    # `basename(None)` rather than failing, and it crashed only once a
+    # script both called `make` and had such an input, which is why it sat
+    # here unreached. A guard that raises TypeError instead of reporting a
+    # gap tells you nothing about the tree.
+    if name is None:
         return {}
     if os.path.basename(built) != os.path.basename(name) and name != target_var:
         return {}

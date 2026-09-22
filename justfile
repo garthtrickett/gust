@@ -24047,5 +24047,4 @@ guard-cranelift-phase25-native-fixed-point:
 guard-cranelift-phase25-strings-rust-parity:
     #!/usr/bin/env bash
     set -euo pipefail
-    make build/gust-runtime-package.a
     ./scripts/phase25_strings_rust_parity.sh
