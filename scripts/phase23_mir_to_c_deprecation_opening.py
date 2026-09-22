@@ -367,6 +367,38 @@ def owner_for_path(path: str) -> str:
     return "cranelift"
 
 
+def seed_state_digest() -> str:
+    """The digest that selects which registered state this tree is in.
+
+    Patch 25.9 deletes gust_v4.c, and this is a LOOKUP KEY, not a content
+    assertion -- dropping it would drop the selection with it. So it moves
+    to the artifact that now carries the same bytes: release 0 publishes
+    the seed as a `source_seed`, and its digest is the seed's final digest.
+
+    That keeps the key AND makes the published artifact load-bearing:
+    publish a different seed and this selection changes, which is exactly
+    the property the committed file used to provide.
+
+    Defined once and called from both sites. The two call sites are why
+    this is a function -- the anchor matched twice, and patching whichever
+    one was found first would have left the other reading a deleted file.
+    """
+    if SEED.exists():
+        return digest_bytes(SEED.read_bytes())
+    manifest = json.loads(
+        (ROOT / "docs/RELEASE_MANIFEST.json").read_text(encoding="utf-8"))
+    published = [entry
+                 for release in manifest.get("releases", [])
+                 for entry in release.get("artifacts", [])
+                 if entry.get("role") == "source_seed"]
+    require(published,
+            "the seed is deleted and no release publishes it as a "
+            "source_seed, so the digest that selects the registered state "
+            "has no source. Patch 25.9 requires the artifact, not just the "
+            "absence.")
+    return published[-1]["digest"]
+
+
 def scan_text_surfaces() -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
     for path in tracked_paths():
@@ -912,7 +944,7 @@ def projected_text_surfaces(
     require([row["state"] for row in states] ==
             ["post_publication"],
             "seed inventory projection state order drifted")
-    live_seed_digest = digest_bytes(SEED.read_bytes())
+    live_seed_digest = seed_state_digest()
     cr15_publication = registry.get(
         "phase24_cr15_seed_authority_consumer_transition", {}).get(
             "seed_publication_transition")
@@ -1188,7 +1220,7 @@ def validate() -> dict:
                 "partial_or_unregistered_inventory") == "rejected",
             "Patch 23.13 qualification inventory transition drifted")
     live_inventory = inventory_summary()
-    live_seed_digest = digest_bytes(SEED.read_bytes())
+    live_seed_digest = seed_state_digest()
     accepted_by_seed = {
         row["seed_digest"]: row
         for row in seed_transition["accepted_live_states"]

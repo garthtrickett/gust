@@ -133,11 +133,23 @@ jobs:
       - name: Stage 2 and stage 3 are byte-identical
         if: steps.seed_scope.outputs.required == 'true'
         run: cmp build/gust_stage2.c build/gust_stage3.c
-      - name: Regeneration leaves the committed seed unchanged
+      - name: Regeneration does not recreate the deleted seed
         if: steps.seed_scope.outputs.required == 'true'
         run: |
-          if git diff --quiet -- gust_v4.c; then
-            git diff --exit-code -- gust_v4.c
-          else
-            python3 scripts/phase22_default_route_seed_convergence.py check-regeneration
+          # Patch 25.9 deleted gust_v4.c. This step used to assert
+          # "regeneration leaves the committed seed unchanged", and with
+          # no seed `git diff -- gust_v4.c` reports nothing, so it passed
+          # while verifying nothing at all. Inverted to the claim that is
+          # still worth making: the bootstrap must not put the file back.
+          if [ -e gust_v4.c ]; then
+            echo "gust_v4.c exists after the bootstrap."
+            echo "Patch 25.9 removed the seed and the line that"
+            echo "republished it -- the copy of stage 3 output"
+            echo "If the file is back, so is that route."
+            exit 1
           fi
+          if git ls-files --error-unmatch gust_v4.c >/dev/null 2>&1; then
+            echo "gust_v4.c is tracked again; the deletion was reverted."
+            exit 1
+          fi
+          python3 scripts/phase22_default_route_seed_convergence.py check-regeneration

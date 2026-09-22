@@ -44,8 +44,13 @@ import hashlib
 import json
 import platform
 import re
+import shutil
+import tempfile
 import subprocess
+import time
 import os
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -59,7 +64,66 @@ SHA256_RE = re.compile(r"[0-9a-f]{64}")
 # Every artifact declares what it is. Without this, the seed lookup treated
 # the fixed-point proof log as a bootstrap compiler.
 BRIDGE_ROLE = "bridge_compiler"
-ARTIFACT_ROLES = frozenset({BRIDGE_ROLE, "fixed_point_proof", "source_seed"})
+SOURCE_SEED_ROLE = "source_seed"
+ARTIFACT_ROLES = frozenset(
+    {BRIDGE_ROLE, "fixed_point_proof", SOURCE_SEED_ROLE})
+
+# Release assets are fetched over PLAIN HTTPS, not through `gh`.
+#
+# `gh release download` needs a token. Every CI job that runs `make gust`
+# now bootstraps through this path, and most of them have no `GH_TOKEN` in
+# scope -- the first push of Patch 25.9 failed ~150 jobs with `gh`'s "could
+# not find any host configurations", which is an authentication error
+# wearing the costume of a missing release. An anonymous GET on a public
+# release asset needs no credential at all, so the fetch route stops
+# depending on who is running it.
+#
+# Dropping `gh` costs nothing in trust: the credential never authenticated
+# the BYTES, only the caller. What authenticates the bytes is the committed
+# digest, checked below before the artifact is installed.
+RELEASE_BASE_ENV = "GUST_SEED_RELEASE_BASE_URL"
+DEFAULT_RELEASE_BASE = "https://github.com/garthtrickett/gust/releases/download"
+
+# A fetched artifact is keyed by its DIGEST, not by its name, so the cache
+# cannot serve a stale binary under a name that was republished: a changed
+# artifact is simply a different key and misses.
+SEED_CACHE = ROOT / "build" / "seed-cache"
+
+# One download, widening waits. `scripts/install-just-ci.sh` retried five
+# times inside ~20 seconds and treated a GitHub 504 band as a hard failure;
+# a fetch on the critical path of every build gets a real backoff.
+FETCH_ATTEMPTS = 5
+FETCH_BACKOFF = (2, 5, 15, 30)
+
+
+def release_asset_url(tag: str, name: str) -> str:
+    base = os.environ.get(RELEASE_BASE_ENV, DEFAULT_RELEASE_BASE).rstrip("/")
+    return f"{base}/{tag}/{name}"
+
+
+def download_asset(tag: str, name: str, destination: Path) -> None:
+    """Fetch one public release asset, retrying transient HTTP failures.
+
+    Nothing here decides whether the bytes are the right ones. That is the
+    caller's digest check, and keeping the two apart is deliberate -- a
+    downloader that also validates tends to grow a path where a retry
+    silently accepts a different artifact than the first attempt.
+    """
+    url = release_asset_url(tag, name)
+    last = ""
+    for attempt in range(FETCH_ATTEMPTS):
+        try:
+            with urllib.request.urlopen(url, timeout=120) as response:
+                destination.write_bytes(response.read())
+            return
+        except (urllib.error.URLError, OSError) as exc:
+            last = f"{type(exc).__name__}: {exc}"
+            if attempt < len(FETCH_BACKOFF):
+                time.sleep(FETCH_BACKOFF[attempt])
+    require(False,
+            f"could not download {name} from {tag} at {url} after "
+            f"{FETCH_ATTEMPTS} attempts: {last[:200]}. The offline path is "
+            f"{SEED_ENV}=<path to a verified bridge>.")
 
 
 def host_target() -> str:
@@ -93,6 +157,164 @@ def load() -> dict:
     if not MANIFEST.is_file():
         return {"version": "phase25_release_manifest_v1", "releases": []}
     return json.loads(MANIFEST.read_text(encoding="utf-8"))
+
+
+def fetch_seed() -> None:
+    """Obtain the newest release's bridge compiler for this host, verified.
+
+    Patch 25.9: this is the DEFAULT bootstrap route now that gust_v4.c is
+    gone. The committed digest is checked before the artifact is used, not
+    after -- a fetched binary nobody verified is precisely what D1's option B
+    exists to avoid, and "it downloaded successfully" is not verification.
+
+    The offline path (GUST_BOOTSTRAP_SEED) still wins when it is set. A chain
+    that can ONLY be fetched is not auditable by anyone who does not already
+    trust the host, which is the whole reason that variable exists.
+    """
+    destination = Path(os.environ.get("GUST_SEED_DESTINATION", "gust_bootstrap"))
+    record = load()
+    releases = record.get("releases", [])
+    require(releases,
+            "the manifest lists no releases, so there is nothing to bootstrap "
+            "from. Release 0 must be minted before gust_v4.c is deleted; if "
+            "you are seeing this in a tree with no seed, the two halves of "
+            "Patch 25.9 have been separated.")
+    host = host_target()
+    # N-1: the newest release is the only supported one. The floor is stated
+    # in the manifest policy and is not a suggestion -- a chain nobody
+    # exercises is already broken.
+    release = releases[-1]
+    tag = release["tag"]
+    candidates = [e for e in release["artifacts"]
+                  if e.get("role") == BRIDGE_ROLE and e.get("target") == host]
+    if not candidates:
+        # A stranded host gets instructions, not an abort. Release 0
+        # publishes one bridge (x86_64-linux) while Phase 18 declares five
+        # triples -- so this is reachable, and saying only "no bridge for
+        # you" leaves someone with a deleted seed and no next step.
+        #
+        # The route below is not a workaround: the manifest publishes
+        # gust_v4.c itself as a `source_seed` with a committed digest, so
+        # verifying it is exactly as strong as verifying a bridge. What is
+        # missing is the automation, not the artifact -- Patch 25.9a.
+        sources = [e for release in releases
+                   for e in release["artifacts"]
+                   if e.get("role") == SOURCE_SEED_ROLE]
+        published = sorted({e.get("target") for e in release["artifacts"]
+                            if e.get("role") == BRIDGE_ROLE})
+        require(sources,
+                f"release {tag} publishes no {BRIDGE_ROLE} for {host} -- it "
+                f"publishes {published} -- and no {SOURCE_SEED_ROLE} to "
+                "fall back to. There is then no way to bootstrap this host "
+                f"at all. The offline path is {SEED_ENV}=<a verified "
+                "bridge>.")
+        build_from_source_seed(tag, sources[-1], destination, host, published)
+        return
+    require(len(candidates) == 1,
+            f"release {tag} lists {len(candidates)} bridge binaries for "
+            f"{host}; which one is the seed is then a guess.")
+    entry = candidates[0]
+    # The cache is checked by re-hashing, never by trusting the filename.
+    # `make gust` can run several times inside one job and this is now on
+    # the critical path of every build in the matrix.
+    cached = SEED_CACHE / entry["digest"]
+    source = "cache"
+    if not (cached.is_file() and digest(cached) == entry["digest"]):
+        source = "download"
+        with tempfile.TemporaryDirectory() as work:
+            staged = Path(work) / entry["name"]
+            download_asset(tag, entry["name"], staged)
+            got = digest(staged)
+            # BEFORE install, not after. A verified-then-replaced artifact is
+            # the same hole as an unverified one -- which is also why the
+            # cache is only populated once the digest has matched.
+            require(got == entry["digest"],
+                    f"{entry['name']} from {tag} has digest {got}, but the "
+                    f"committed manifest says {entry['digest']}. The release "
+                    "and the manifest disagree; per the attestation policy "
+                    "the release is withdrawn, not the manifest amended.")
+            SEED_CACHE.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(staged, cached)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(cached, destination)
+    destination.chmod(0o755)
+    print(f"guard-cranelift-phase25-release-manifest: {entry['name']} from "
+          f"{tag} verified ({source}) and installed as {destination} "
+          f"for {host}")
+
+
+def build_from_source_seed(tag, entry, destination, host, published):
+    """Patch 25.9a: bootstrap a host no release publishes a bridge for.
+
+    THIS IS A REGRESSION FIX, not a new feature. Before Patch 25.9 every
+    host could build from the committed `gust_v4.c` with a C compiler.
+    Deleting it left exactly one bootstrappable host -- release 0
+    publishes an x86_64-linux bridge and Phase 18 declares five triples --
+    so macOS and aarch64 developers lost their entry point. A reviewer
+    raised it on #467 and was right.
+
+    The artifact was already there. Release 0 publishes `gust_v4.c` itself
+    as a `source_seed` with a committed digest and line count, so this
+    route is verified exactly as strongly as the bridge route: same
+    manifest, same check, before use rather than after. What differs is
+    that it needs a host C compiler, and the bridge route does not.
+
+    That is the trade and it is worth stating plainly. Patch 25.11's claim
+    is that the DEFAULT route needs no C compiler, and this is not the
+    default -- it runs only when no bridge matches the host. "No C
+    compiler on the default path" is not "no C compiler anywhere", and a
+    host with no bridge and no fallback has no path at all, which is
+    worse.
+
+    THE SEED IS NEVER WRITTEN TO ITS OLD PATH. Ten guards assert
+    `gust_v4.c` is absent from the tree; materialising it at the repo root
+    -- even briefly -- would make those guards race a build. It goes to
+    build/.
+    """
+    require(shutil.which("cc") or os.environ.get("CC"),
+            f"no {BRIDGE_ROLE} for {host} (published: {published}), so the "
+            f"bootstrap falls back to compiling the published "
+            f"{SOURCE_SEED_ROLE} -- and that needs a C compiler, which is "
+            "not on PATH. Set CC, or supply a prebuilt bridge with "
+            f"{SEED_ENV}=<path>.")
+    work = ROOT / "build" / "source-seed"
+    work.mkdir(parents=True, exist_ok=True)
+    seed = work / entry["name"]
+    if not (seed.is_file() and digest(seed) == entry["digest"]):
+        download_asset(tag, entry["name"], seed)
+        got = digest(seed)
+        require(got == entry["digest"],
+                f"{entry['name']} from {tag} has digest {got}, but the "
+                f"committed manifest says {entry['digest']}. Same rule as "
+                "the bridge route: the release is withdrawn, not the "
+                "manifest amended.")
+    lines = len(seed.read_text(encoding="utf-8", errors="replace").splitlines())
+    require(entry.get("lines") in (None, lines),
+            f"{entry['name']} has {lines} lines but the manifest publishes "
+            f"{entry['lines']}. The digest matched, so this is a manifest "
+            "that disagrees with itself.")
+    final = work / "gust_bootstrap_final.c"
+    final.write_bytes((ROOT / "src/runtime.c").read_bytes() + seed.read_bytes())
+    runtime_obj = ROOT / "build/phase25-runtime-rs/gust_runtime_rs_exports.o"
+    require(runtime_obj.is_file(),
+            f"{runtime_obj} is missing; the source-seed route links the "
+            "Rust runtime object and cannot build without it.")
+    cc = os.environ.get("CC", "cc")
+    built = work / "gust_bootstrap"
+    result = subprocess.run(
+        [cc, "-O2", "-w", "-pthread", "-Isrc", "-Isrc/runtime",
+         str(final), str(runtime_obj), "-o", str(built)],
+        cwd=ROOT, capture_output=True, text=True)
+    require(result.returncode == 0,
+            f"compiling the published {SOURCE_SEED_ROLE} failed:\n"
+            f"{result.stderr.strip()[:600]}")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(built, destination)
+    destination.chmod(0o755)
+    print(f"guard-cranelift-phase25-release-manifest: no {BRIDGE_ROLE} for "
+          f"{host}; built {destination} from the published "
+          f"{SOURCE_SEED_ROLE} {entry['name']} ({lines} lines, digest "
+          f"verified) with {cc}")
 
 
 def verify_seed() -> None:
@@ -185,6 +407,22 @@ def validate() -> None:
                 require(entry.get("target"),
                         f"{tag}/{name} is a {BRIDGE_ROLE} with no target; a "
                         "bridge binary is only a seed on its own platform.")
+            if entry["role"] == SOURCE_SEED_ROLE:
+                # The seed's line count is published, not just its digest.
+                # Ten guards assert "the chain's last registered seed is the
+                # one that shipped"; with `gust_v4.c` deleted they resolve
+                # that from the release. A digest alone lets the LINE half
+                # of every one of those pairs be read back out of the same
+                # registry it is checking, which is the registry agreeing
+                # with itself. Publishing the count makes it a real
+                # cross-record comparison -- and it is verifiable against
+                # the downloadable artifact, which the registry is not.
+                require(isinstance(entry.get("lines"), int)
+                        and entry["lines"] > 0,
+                        f"{tag}/{name} is a {SOURCE_SEED_ROLE} with no "
+                        "positive integer `lines`; the deleted seed's line "
+                        "count then has no published record to check "
+                        "against.")
             roles.append(entry["role"])
         require(BRIDGE_ROLE in roles,
                 f"{tag} publishes no {BRIDGE_ROLE}, so nothing in it can "
@@ -202,12 +440,14 @@ def validate() -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command",
-                        choices=["validate", "verify-seed", "report"])
+                        choices=["validate", "verify-seed", "fetch-seed", "report"])
     args = parser.parse_args()
     if args.command == "report":
         print(json.dumps(load(), indent=2, sort_keys=True))
     elif args.command == "verify-seed":
         verify_seed()
+    elif args.command == "fetch-seed":
+        fetch_seed()
     else:
         validate()
     return 0
