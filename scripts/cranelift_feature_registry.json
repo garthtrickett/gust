@@ -41812,6 +41812,32 @@
     "v2_vectors_digest": "a69b383d5c156b1e9e88ea34b03df827e11f8a142da823e61215865e45a71f2f",
     "version": "phase24_frozen_oracle_replacement_v1"
   },
+  "phase2510b_runner_negative_path": {
+    "relay_remigration": {
+      "change_reason": "Patch 24.13 recorded where each retired mir-to-c site was migrated TO. Patch 25.10b migrates one of those destinations again: the runner's negative path moves from the bootstrap emitter to the native route, measured at 104 of 104 negative cases rejected natively with a diagnostic and 99 of 104 carrying the case's own expected substring (the other five reworded and verified individually). 24.13's record is left intact -- it is a true statement about what 24.13 did -- and this is the newer link.",
+      "contract_version": "phase2510b_relay_remigration_v1",
+      "migrations": [
+        {
+          "migrated_selection": "explicit_cranelift",
+          "migrated_site": {
+            "command": "mut cmd := std.Concat(\"./gust --backend cranelift -o /dev/null \", path);",
+            "compiler_token": "./gust",
+            "line": 139,
+            "path": "tests/test_runner.gst",
+            "recipe": "none"
+          },
+          "pinned_site": {
+            "command": "mut cmd := std.Concat(\"./gust --backend bootstrap-emitter \", path);",
+            "compiler_token": "./gust",
+            "line": 125,
+            "path": "tests/test_runner.gst",
+            "recipe": "none"
+          }
+        }
+      ]
+    },
+    "status": "patch25_10b_negative_path_native"
+  },
   "phase2510_emitter_deletion": {
     "invocation_departure": {
       "change_reason": "the five Makefile invocations of the C stage chain. All five are explicit_bootstrap_emitter and all five go with the rules that ran them: the stage-one emission from the bridge entry, the diagnose-phase10-stage1 sanitizer build, the final compiler emission, and stages two and three of the C fixed point.",
@@ -42114,6 +42140,21 @@
           "removal_phase": "24_or_25_as_registered"
         },
         {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "0d4c8b8e27617ff0f062c3e3140808de4affa038c6511e27fd906d40d32d99ea",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 8,
+            "mir_to_c_name": 3
+          },
+          "owner": "cranelift",
+          "path": "docs/PHASE25_ROADMAP.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
@@ -42252,6 +42293,21 @@
           "removal_phase": "24_or_25_as_registered"
         },
         {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "eef89d42cf6f4117213213d76c7513200450628edfb2149b937975bbb73268fe",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 7,
+            "mir_to_c_name": 3
+          },
+          "owner": "cranelift",
+          "path": "docs/PHASE25_ROADMAP.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
@@ -42346,6 +42402,7 @@
         "Makefile",
         "compiler/codegen.gst",
         "compiler/test_runner_entry.gst",
+        "docs/PHASE25_ROADMAP.md",
         "scripts/cranelift_registry.py",
         "scripts/phase17_opening.py",
         "scripts/phase22_explicit_c_migration.sh",

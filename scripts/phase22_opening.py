@@ -950,6 +950,7 @@ def validate_post_flip_relay_transition(
     # only accepted if the pinned site is ABSENT and its named replacement is
     # PRESENT -- deleting a relay site outright fails here, as does leaving the
     # mir-to-c spelling in place.
+    effective_migration: dict[tuple, str] = {}
     migration = relay.get("phase24_13_site_migration")
     if migration is not None:
         require(migration.get("contract_version") ==
@@ -962,28 +963,89 @@ def validate_post_flip_relay_transition(
                 relay.get("consumer_count") == 6,
                 "Patch 24.13 relay migration does not account for all six "
                 "sites")
-        live_keys = {tuple(row[field] for field in site_fields) for row in rows}
+        # Patch 24.3b: `line` is a coordinate. Any insertion above a row
+        # moves it, so a destination matched WITH its line turns an unrelated
+        # edit elsewhere in the file into migration drift. The command text
+        # is what the migration is about, so destinations are looked for in
+        # the tree without it -- which is also strictly stronger on the
+        # absence half: the pinned command must be gone from the whole file,
+        # not merely off the line it used to sit on.
+        placed = tuple(field for field in site_fields if field != "line")
+
+        def site_key(site: dict) -> tuple:
+            return tuple(site[field] for field in placed)
+
+        live_placed = {site_key(row) for row in rows}
+        # Patch 25.10b migrates one of 24.13's DESTINATIONS again: the
+        # runner's negative path leaves the bootstrap emitter for the native
+        # route. A migration record pins a destination rather than a state,
+        # so re-migrating a site trips it while merely editing one does not.
+        # 24.13's record stays exactly as written -- it is a true statement
+        # about what 24.13 did -- and this is the newer link. Where a
+        # successor claims one of 24.13's destinations, that destination is
+        # required ABSENT and the successor's own destination PRESENT, so a
+        # site that was quietly dropped still fails both halves.
+        remigration = registry.get("phase2510b_runner_negative_path", {}).get(
+            "relay_remigration", {})
+        remigrated: dict[tuple, dict] = {}
+        if remigration:
+            require(remigration.get("contract_version") ==
+                    "phase2510b_relay_remigration_v1",
+                    "Patch 25.10b relay re-migration successor drifted")
+            for entry in remigration.get("migrations", []):
+                key = site_key(entry["pinned_site"])
+                require(key not in remigrated,
+                        "Patch 25.10b re-migrates one site twice: "
+                        f"{entry['pinned_site']['path']}")
+                remigrated[key] = entry
+        claimed: set = set()
         for entry in migrations:
             pinned = tuple(entry["pinned_site"][field] for field in site_fields)
             moved = tuple(entry["migrated_site"][field] for field in site_fields)
             require(pinned in expected_sites,
                     f"Patch 24.13 migrates a site the manifest never pinned: "
                     f"{pinned[0]}:{pinned[1]}")
-            require(pinned not in live_keys,
+            require(site_key(entry["pinned_site"]) not in live_placed,
                     f"Patch 24.13 records {pinned[0]}:{pinned[1]} as migrated "
                     "but the mir-to-c site is still in the tree")
-            require(moved in live_keys,
-                    f"Patch 24.13 records a replacement for {pinned[0]}:"
-                    f"{pinned[1]} that is not in the tree")
             require("mir-to-c" not in str(entry["migrated_site"]["command"]),
                     f"Patch 24.13 replacement for {pinned[0]}:{pinned[1]} "
                     "still spells mir-to-c")
+            successor = remigrated.get(site_key(entry["migrated_site"]))
+            if successor is None:
+                require(site_key(entry["migrated_site"]) in live_placed,
+                        f"Patch 24.13 records a replacement for {pinned[0]}:"
+                        f"{pinned[1]} that is not in the tree")
+                effective = entry
+            else:
+                claimed.add(site_key(entry["migrated_site"]))
+                require(site_key(entry["migrated_site"]) not in live_placed,
+                        f"Patch 25.10b re-migrates {pinned[0]}:{pinned[1]} "
+                        "but 24.13's destination is still in the tree")
+                require(site_key(successor["migrated_site"]) in live_placed,
+                        "Patch 25.10b records a replacement for the 24.13 "
+                        f"destination at {pinned[0]}:{pinned[1]} that is not "
+                        "in the tree")
+                require("bootstrap-emitter" not in
+                        str(successor["migrated_site"]["command"]),
+                        f"Patch 25.10b replacement for {pinned[0]}:{pinned[1]} "
+                        "still spells bootstrap-emitter")
+                effective = successor
+                moved = tuple(successor["migrated_site"][field]
+                              for field in site_fields)
             expected_sites.discard(pinned)
             expected_sites.add(moved)
+            effective_migration[site_key(effective["migrated_site"])] = \
+                effective["migrated_selection"]
+        require(claimed == set(remigrated),
+                "Patch 25.10b re-migrates a site Patch 24.13 never migrated to")
+        placed_expected = {tuple(site[i] for i, field in
+                                 enumerate(site_fields) if field != "line")
+                           for site in expected_sites}
         live_sites = {
             tuple(row[field] for field in site_fields): row
             for row in rows
-            if tuple(row[field] for field in site_fields) in expected_sites
+            if tuple(row[field] for field in placed) in placed_expected
         }
     # Issue #398 retires the four relay sites 24.13 left spelled mir-to-c.
     # They are not migrated to another backend: they stop invoking a compiler
@@ -1030,10 +1092,13 @@ def validate_post_flip_relay_transition(
                     "frozen replay that replaces it")
             expected_sites.discard(pinned)
             retired_sites.add(pinned)
+        placed_expected = {tuple(site[i] for i, field in
+                                 enumerate(site_fields) if field != "line")
+                           for site in expected_sites}
         live_sites = {
             tuple(row[field] for field in site_fields): row
             for row in rows
-            if tuple(row[field] for field in site_fields) in expected_sites
+            if tuple(row[field] for field in placed) in placed_expected
         }
     require(len(expected_sites) == len(live_sites) ==
             relay.get("consumer_count") - len(retired_sites) and
@@ -1051,9 +1116,11 @@ def validate_post_flip_relay_transition(
     expected_site_selection = {}
     for key in live_sites:
         expected_site_selection[key] = "explicit_c"
-    for entry in (migration or {}).get("migrations", []):
-        moved = tuple(entry["migrated_site"][field] for field in site_fields)
-        expected_site_selection[moved] = entry["migrated_selection"]
+    for key in live_sites:
+        placed_key = tuple(key[i] for i, field in enumerate(site_fields)
+                           if field != "line")
+        if placed_key in effective_migration:
+            expected_site_selection[key] = effective_migration[placed_key]
     require({key: str(row["selection"]) for key, row in live_sites.items()} ==
             expected_site_selection and
             summary == effective_relay_inventory(registry, landed_authority),
@@ -1109,9 +1176,26 @@ def validate_landed_relay_command_substitution_rejection(
             ("--backend mir-to-c", "--backend c"),
             ("2>&1", "2>/dev/null"),
         )
-    else:
+    elif registry.get("phase2510b_runner_negative_path") is None:
         anchor_path = "tests/test_runner.gst"
         anchor_token = "mut cmd := std.Concat"
+        substitutions = (
+            # a different backend, the retired spelling coming back, and an
+            # edit that changes nothing about the selection at all
+            ("--backend bootstrap-emitter", "--backend cranelift"),
+            ("--backend bootstrap-emitter", "--backend mir-to-c"),
+            ("std.Concat(", "std.Concat( "),
+        )
+    else:
+        # Patch 25.10b takes the negative path native, so `mut cmd :=` no
+        # longer spells the emitter and every substitution above became a
+        # no-op on it -- which this harness reports rather than passing
+        # vacuously. The property is unchanged; it moves onto the compile
+        # path, the one relay site still invoking the emitter. That site is
+        # blocked on phase13_generic_source_to_mir, so this branch is the
+        # anchor until the positive corpus can go native too.
+        anchor_path = "tests/test_runner.gst"
+        anchor_token = "mut cmd_comp := std.Concat"
         substitutions = (
             # a different backend, the retired spelling coming back, and an
             # edit that changes nothing about the selection at all
