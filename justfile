@@ -21704,7 +21704,26 @@ guard-cranelift-dependency-beachhead:
         rg -v '^compiler/test_runner_entry\.gst:[0-9]+:[[:space:]]*os\.LogStr\("  gust --backend cranelift -o <output> <source\.gst>"\);$' |
         rg -v '^compiler/test_runner_entry\.gst:[0-9]+:[[:space:]]*os\.LogStr\("  gust --backend cranelift \[-o <output>\] <source\.gst>"\);$' |
         rg -v '^compiler/phase10_help\.txt:[0-9]+:  gust --backend cranelift -o <output> <source\.gst>$' |
-        rg -v '^compiler/phase10_help\.txt:[0-9]+:  gust --backend cranelift \[-o <output>\] <source\.gst>$' ||
+        rg -v '^compiler/phase10_help\.txt:[0-9]+:  gust --backend cranelift \[-o <output>\] <source\.gst>$' |
+        # Four production sites arrived with #468 and #470 and broke this
+        # guard ON MAIN: the last green Cranelift Historical Full was run
+        # 35706041434 (d2e72abb, 2026-09-22T08:39Z), and 35838623146 on
+        # 27d0aa00 failed here. It runs at Level 3 ONLY, so neither PR could
+        # see it -- 313 checks passed on #470 and none of them was this.
+        #
+        # Allowlisted per site and exact, NOT by widening the pattern. The
+        # tempting alternative -- deleting the now-redundant `--backend
+        # cranelift`, since Phase 22 made it the default -- was measured and
+        # REJECTED: it reclassifies all four from explicit_cranelift to
+        # implicit_default, which is precisely the falsifier Phase 22
+        # registers against these sites,
+        # `explicit_selection_is_removed_or_routes_to_a_different_backend`.
+        # Making the selection explicit was the point of that phase; an
+        # allowlist entry is the sanctioned way to record a vetted one.
+        rg -v '^Makefile:[0-9]+:\t\./build/native-build/bin/gust --backend cranelift -o build/\.gust\.tmp compiler/test_runner_entry\.gst$' |
+        rg -v '^src/runtime-rs/src/strings\.rs:[0-9]+://   \$ gust --backend cranelift -o /tmp/strings compiler/runtime/strings\.gst$' |
+        rg -v '^tests/test_runner\.gst:[0-9]+:        mut cmd := std\.Concat\("\./gust --backend cranelift -o /dev/null ", path\);$' |
+        rg -v '^tests/test_runner\.gst:[0-9]+:        mut cmd_comp := std\.Concat\("\./gust --backend cranelift -o ", bin_path\);$' ||
         true
     )"
     if [ -n "$production_refs" ]; then
