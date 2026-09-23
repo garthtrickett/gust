@@ -41915,7 +41915,7 @@
           "semantic_or_intrinsic_recognition": 680,
           "serialization": 1
         },
-        "complete_manifest_digest": "edc4e49c74cf1bc3186e19986c1489a6a66e79ce75ba0834c4e8721e9983dfe5",
+        "complete_manifest_digest": "00639edc0517ccfc685b57ce856dd1531de69ea85faccf0cc9d91984f02c8a61",
         "partition_manifest_digests": {
           "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
           "diagnostic": "52d11080dc22abdd47297e596a4a9794aaf43a4e4455ee7c6666cfa9767b1034",
@@ -41924,7 +41924,7 @@
           "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7",
           "serialization": "cd26d44606f736374209054c0fc91d72f950946ad84fad1a5e6efb6c7fc4f5b9"
         },
-        "semantic_manifest_digest": "c2003177c76fdd71beedb5a66c2f8f5f54d0792ebbf3e7232e802cd3f236058e",
+        "semantic_manifest_digest": "371c0d4af126be724df4dbc145800f5d84e503e7e367c190258556b50a449bfd",
         "semantic_site_count": 680,
         "site_count": 1389,
         "source_file_count": 1079,
