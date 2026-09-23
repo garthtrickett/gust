@@ -82,6 +82,17 @@ guard-positive file label:
     if [ -z "$expected_defer" ]; then
     echo "❌ $test_path no longer compiles on the native route, and it is not"
     echo "   one of the four Patch 24.13 recorded as losing run evidence."
+    # Patch 25.10 diagnostic. Seven heavy-shard guards fail here with
+    # "explicit native backend driver path is unavailable or not executable"
+    # while the line above reports the driver up to date, and the same recipe
+    # returns exit 0 locally -- including with the root sibling artifacts
+    # moved aside, so the local pass does not rest on artefacts CI lacks.
+    # The error offers two branches and `make` rules out only one: it checks
+    # MTIME, not MODE, so a restored artefact that lost its executable bit
+    # reads as up to date and still fails the handshake.
+    echo "   driver=$GUST_NATIVE_BACKEND_DRIVER"
+    ls -l "$GUST_NATIVE_BACKEND_DRIVER" 2>&1 || echo "   (driver path does not exist)"
+    [ -x "$GUST_NATIVE_BACKEND_DRIVER" ] && echo "   driver IS executable" || echo "   driver is NOT executable"
     cat "$log"
     exit 1
     fi
