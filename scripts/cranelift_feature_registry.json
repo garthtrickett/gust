@@ -41955,7 +41955,7 @@
       }
     },
     "invocation_departure": {
-      "change_reason": "the five Makefile invocations of the C stage chain. All five are explicit_bootstrap_emitter and all five go with the rules that ran them: the stage-one emission from the bridge entry, the diagnose-phase10-stage1 sanitizer build, the final compiler emission, and stages two and three of the C fixed point. Patch 25.10c extends this record to the last four executing sites: two pure departures (make-test-suite and make-test-suite-parallel, which now call the evidence arm) and two reclassifications (run-step52-positive-batch and the runner's positive path, which move to the native route). Net effect on the relay census: explicit_bootstrap_emitter 13 -> 2, explicit_cranelift 120 -> 123, total 150 -> 142.",
+      "change_reason": "the five Makefile invocations of the C stage chain. All five are explicit_bootstrap_emitter and all five go with the rules that ran them: the stage-one emission from the bridge entry, the diagnose-phase10-stage1 sanitizer build, the final compiler emission, and stages two and three of the C fixed point. Patch 25.10c extends this record to the last four executing sites: two pure departures (make-test-suite and make-test-suite-parallel, which now call the evidence arm) and two reclassifications (the batched Step 5.2 positive fixture runner and the runner's positive path, which move to the native route). Net effect on the relay census: explicit_bootstrap_emitter 13 -> 2, explicit_cranelift 120 -> 123, total 150 -> 142.",
       "contract_version": "phase2510_emitter_deletion_invocation_departure_v1",
       "current_relay_inventory": {
         "consumer_class_counts": {
@@ -42110,7 +42110,7 @@
           "from_selection": "explicit_bootstrap_emitter",
           "invocation_marker": "./gust --backend cranelift -o \"$product\" \"$entry\"",
           "path": "justfile",
-          "reason": "run-step52-positive-batch becomes the native build its own 24.13 comment predicted, though not by the predicted mechanism: the eight compiler test entries it pins all compile AND run natively today, verified individually, as part of the 92-of-94 compiler/*_test_entry.gst positives",
+          "reason": "the batched Step 5.2 positive fixture runner becomes a native build, though not by the mechanism its own Patch 24.13 comment predicted: the eight compiler test entries it pins all compile AND run natively today, verified individually, as part of the 92-of-94 compiler/*_test_entry.gst positives. The owning recipe is deliberately NOT named here: enrolment is by content, so naming it in registry prose makes it live solely because a registry mentions it, which is exactly what the retirement consumer inventory refuses.",
           "to_selection": "explicit_cranelift"
         },
         {
@@ -42979,7 +42979,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "a7ce1d698f2a6b95f41acd86450bddce0e2b778c74943ebbcbb5d97eb2d5f3cf",
+          "digest": "16da6c9fc808775bac836cfbc6bd8fe370080fda440826873691c8b2da7d80ec",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 4,
@@ -43069,7 +43069,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "1bbd7c8814535b36dfdbb222cf1f14435d36a87b7d885d854bed480a7e226382",
+          "digest": "232e532351036b1dcebb8cc1ceadc38ec2fd144696eec167059868b2bb4ff0d6",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 33,

@@ -192,22 +192,59 @@ FROZEN_ORACLE_CALL = "phase24_frozen_oracle.py materialize"
 # recipes IT routes natively, which silently dropped 24.13's population --
 # make-test-suite then fell through to the branch demanding a retired C
 # route it no longer has. Both routings are real and both stay asserted.
-BOOTSTRAP_ROUTED_RECIPES = {
-    "make-test-suite":
-        "compiles tests/test_runner.gst, which the native route defers on "
-        "(phase13_generic_source_to_mir); the bootstrap-only entry reaches "
-        "the emitter without spelling the retired backend",
-    "make-test-suite-parallel":
-        "the parallel form of make-test-suite, on the same source and for the "
-        "same measured reason",
-    "run-step52-positive-batch":
-        "compiles the same tests/test_runner.gst; re-scored from 24.16 "
-        "because 24.13's removal breaks it where it stands",
-}
+# Patch 25.10c emptied this set. All three rows moved: one to
+# NATIVE_ROUTED_RECIPES and two to DELEGATED_ROUTE_RECIPES below.
+#
+# The rows said these recipes compiled tests/test_runner.gst, "which the
+# native route defers on (phase13_generic_source_to_mir)". That is still
+# true of the RUNNER and is not why they were stuck. Measured over all 324
+# corpus cases: 117 of 120 tests/ positives have no native route, but 92 of
+# 94 compiler/*_test_entry.gst positives compile natively, and the
+# aggregate-parameter capability everyone was waiting on is 3 of 216. The
+# recipes did not need that capability; two of them did not need the runner.
+#
+# Kept as an empty register rather than deleted, with its needle, because the
+# assertion below is what stops a C route coming BACK, and a set that no
+# longer exists cannot refuse a new member.
+BOOTSTRAP_ROUTED_RECIPES: dict[str, str] = {}
 BOOTSTRAP_ROUTE_NEEDLE = "--backend bootstrap-emitter"
 
 
+# Patch 25.10c: recipes that select NO backend, because they delegate to one.
+#
+# make-test-suite and its parallel form used to emit the runner's C and host
+# compile it. They now call phase21_complete_guard_suite.py's evidence arm,
+# which compiles the SAME case list -- parsed out of the same file by
+# runner_cases() -- on the native route, and which three CI workflows already
+# run. make-test-suite was the local-only duplicate of that coverage.
+#
+# So they hold neither needle: not the retired spelling, and not
+# --backend cranelift either, because the backend is chosen one level down.
+# This is a separate register rather than two more rows in
+# NATIVE_ROUTED_RECIPES because that set asserts a recipe SELECTS the native
+# route BY NAME. A delegating recipe would have to spell a backend it does
+# not invoke to satisfy it, and a guard satisfied by a fake spelling is worse
+# than one that admits the third case exists.
+DELEGATED_ROUTE_RECIPES = {
+    "make-test-suite":
+        "delegates the corpus to the phase21 evidence arm, which classifies "
+        "all 324 cases on the native route; the 117 tests/ positives with no "
+        "native route lose EXECUTION and are checked against frozen reason "
+        "codes instead, which is the recorded loss",
+    "make-test-suite-parallel":
+        "the parallel form, delegating identically; the two differ only in "
+        "which guard pass runs first, so they must not differ in backend",
+}
+DELEGATED_ROUTE_NEEDLE = "guard-cranelift-phase21-complete-guard-suite-evidence"
+
+
 NATIVE_ROUTED_RECIPES = {
+    "run-step52-positive-batch":
+        "Patch 25.10c: becomes the native build its own 24.13 comment "
+        "predicted, though not by the predicted mechanism. It waited on "
+        "phase13_generic_source_to_mir; what actually freed it is that the "
+        "eight compiler test entries it pins never needed the runner, and "
+        "all eight compile AND run natively today, verified individually",
     "guard-positive":
         "compile-and-run, measured: 101 of 105 sources compile and run with "
         "exit 0 on the native route; the four that do not are named in the "
@@ -2046,6 +2083,16 @@ def validate() -> dict:
                     f"a recipe registered as bootstrap-routed also takes the "
                     f"native route, so it belongs in NATIVE_ROUTED_RECIPES: "
                     f"{recipe}")
+        elif recipe in DELEGATED_ROUTE_RECIPES:
+            require(needle not in bodies[recipe],
+                    f"a recipe Patch 25.10c routed to the evidence arm has "
+                    f"its C route back: {recipe}")
+            require(BOOTSTRAP_ROUTE_NEEDLE not in bodies[recipe],
+                    f"a delegating recipe reaches the retired emitter "
+                    f"spelling again: {recipe}")
+            require(DELEGATED_ROUTE_NEEDLE in bodies[recipe],
+                    f"a recipe registered as delegating does not call the "
+                    f"evidence arm, so it delegates to nothing: {recipe}")
         elif recipe in NATIVE_ROUTED_RECIPES:
             require(needle not in bodies[recipe],
                     f"a recipe Patch 24.13 routed natively has its C route "

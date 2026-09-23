@@ -231,17 +231,31 @@ def validate() -> tuple[dict, str]:
     # on some other backend fails the per-site selection.
     site_migration = post_flip_relay.get("phase24_13_site_migration")
     expected_selection = {site: "explicit_c" for site in pending_sites}
-    remigration = registry.get("phase2510b_runner_negative_path", {}).get(
-        "relay_remigration", {})
+    # 24.13 migrated TWO runner sites; 25.10b re-migrated the negative path
+    # and 25.10c the positive one. This is the SECOND reader of those nodes --
+    # phase22_opening.py is the first -- and both must read the same union,
+    # because two readers with two views is how they drift into two answers.
+    REMIGRATION_SUCCESSORS = (
+        ("phase2510b_runner_negative_path",
+         "phase2510b_relay_remigration_v1", "25.10b"),
+        ("phase2510c_runner_positive_path",
+         "phase2510c_relay_remigration_v1", "25.10c"),
+    )
     remigrated = {}
     claimed: set = set()
-    if remigration:
-        require(remigration.get("contract_version") ==
-                "phase2510b_relay_remigration_v1",
-                "Patch 25.10b relay re-migration successor drifted")
+    for node_name, contract, label in REMIGRATION_SUCCESSORS:
+        remigration = registry.get(node_name, {}).get("relay_remigration", {})
+        if not remigration:
+            continue
+        require(remigration.get("contract_version") == contract,
+                f"Patch {label} relay re-migration successor drifted")
         for entry in remigration.get("migrations", []):
-            remigrated[tuple(entry["pinned_site"][field]
-                             for field in pending_site_fields)] = entry
+            key = tuple(entry["pinned_site"][field]
+                        for field in pending_site_fields)
+            require(key not in remigrated,
+                    f"Patch {label} re-migrates a site another patch already "
+                    f"claimed: {entry['pinned_site']['path']}")
+            remigrated[key] = entry
     if site_migration is not None:
         require(site_migration.get("contract_version") ==
                 "phase24_13_six_site_relay_migration_v1",
@@ -316,7 +330,8 @@ def validate() -> tuple[dict, str]:
                 "a post-flip relay site registered as retired still makes an "
                 "invocation")
     require(claimed == set(remigrated),
-            "Patch 25.10b re-migrates a site Patch 24.13 never migrated to")
+            "a re-migration successor claims a site Patch 24.13 never "
+            "migrated to")
     require(len(pending_sites) + len(
                 site_retirement["retirements"] if site_retirement else []) == 6
             and pending_sites == set(live_pending_sites) and
