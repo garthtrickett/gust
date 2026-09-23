@@ -36,7 +36,7 @@ for required_file in \
   "$irreducible_fixture" "$non_decreasing_source" \
   "$early_return_deferred" "$nested_loop_deferred" \
   "$body_control_flow_deferred" "$condition_deferred" \
-  src/runtime.c ./gust
+  ./gust
 do
   if [ ! -e "$required_file" ]; then
     echo "Phase 13.5 general-loop evidence is missing $required_file" >&2

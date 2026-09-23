@@ -21,7 +21,7 @@ malformed_cases=(
 )
 
 for required in \
-  ./gust src/runtime.c "$rust_manifest" "$valid_fixture" \
+  ./gust "$rust_manifest" "$valid_fixture" \
   compiler/mir_native_backend_metadata_source.gst \
   compiler/mir_native_backend_generic_source.gst \
   compiler/experiments/cranelift/src/main.rs

@@ -2348,6 +2348,46 @@ def normalize_phase23_text_surfaces(
                 "departed surface")
         rows = sorted(list(rows) + [dict(row) for row in restored],
                       key=lambda row: str(row["path"]))
+    # Patch 25.12b is newer than 25.10, so IT runs first and projects the
+    # tree back to the state 25.10's successor was registered against. Same
+    # newest-first discipline as every link below: this chain walks
+    # BACKWARDS, so a new link PREPENDS. (The invocation-summary chains in
+    # phase22_opening.py and this file walk the other way and append; getting
+    # it wrong fails as "drifted" rather than as an ordering complaint.)
+    #
+    # It retires src/runtime.c, the last runtime C source. The file itself
+    # carries no departed half: it never matched a surface pattern -- its
+    # prose says "the emitted-C route" while the pattern is generated[-_ ]C
+    # -- so, exactly as with fiber.c in 25.6 and strings.c in 25.10a, there
+    # is no manifest row to depart and the scan's row count is unchanged.
+    # What moves is the seventeen surfaces that STOPPED naming it.
+    runtime_c_surface = registry.get(
+        "phase2512b_runtime_c_retirement", {}).get("text_surface_successor")
+    if runtime_c_surface is not None:
+        require(runtime_c_surface.get("contract_version") ==
+                "phase2512b_runtime_c_retirement_text_surface_successor_v1" and
+                runtime_c_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Patch 25.12b runtime-C retirement text surface successor "
+                "drifted")
+        rc_paths = list(runtime_c_surface["registered_changed_paths"])
+        rc_pre = {r["path"]: r for r
+                  in runtime_c_surface["previous_changed_text_surfaces"]}
+        rc_post = {r["path"]: r for r
+                   in runtime_c_surface["current_changed_text_surfaces"]}
+        require(sorted(rc_pre) == sorted(rc_paths) == sorted(rc_post),
+                "Patch 25.12b registered paths and rows disagree")
+        rc_live = {r["path"]: r for r in rows if r["path"] in rc_paths}
+        require(sorted(rc_live) == sorted(rc_paths),
+                "Patch 25.12b registered text surface is missing from the "
+                f"scan: {sorted(set(rc_paths) - set(rc_live))}")
+        require(rc_live in (rc_pre, rc_post),
+                "Patch 25.12b changed text surfaces are partial or "
+                "substituted: the live rows match neither the complete "
+                "predecessor state nor the complete successor state "
+                f"({sorted(p for p in rc_paths if rc_live[p] != rc_post[p])} "
+                "differ from post)")
+        rows = [dict(rc_pre.get(r["path"], r)) for r in rows]
     # Patch 25.10 merges after 25.7, so it is the newest link and runs
     # FIRST. It records a finding and changes no route, so what moves is
     # the roadmap and the registry key above.

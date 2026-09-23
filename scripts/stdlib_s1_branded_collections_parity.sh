@@ -121,7 +121,12 @@ if rg -n -e 'std_(Vector|HashMap|Pool|Graph|Mutex|Channel)_[A-Za-z0-9_]*applicat
 fi
 
 for variant in inferred explicit; do
-  cat src/runtime.c "$build_dir/$variant-default.c" >"$build_dir/$variant-final.c"
+  # Patch 25.12b: src/runtime.c is gone. It had been reduced to exactly
+  # two effective lines -- the two #includes below -- with its other 27
+  # recording which files had already left. These frozen-replay guards
+  # were its last three consumers.
+  { printf '#include "runtime/core_headers.h"\n#include <errno.h>\n'; \
+    cat "$build_dir/$variant-default.c"; } >"$build_dir/$variant-final.c"
   "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
     "$build_dir/$variant-final.c" "$runtime_obj" \
     -o "$build_dir/$variant-program"

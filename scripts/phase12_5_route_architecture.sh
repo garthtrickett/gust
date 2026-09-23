@@ -13,7 +13,7 @@ cargo_target="$build_root/cargo-target"
 for required_file in \
   "$novel_source" "$variant_source" "$unsupported_source" \
   "$registry_json" "$legacy_registry" "$rust_manifest" \
-  src/runtime.c ./gust
+  ./gust
 do
   if [ ! -e "$required_file" ]; then
     echo "Route architecture evidence is missing $required_file" >&2

@@ -536,6 +536,7 @@
     "guard-cranelift-phase15-deferred-residue-audit": 1,
     "guard-cranelift-phase15-resource-authority-contract": 1,
     "guard-cranelift-phase15-close": 1,
-    "guard-cranelift-phase24-close": 1
+    "guard-cranelift-phase24-close": 1,
+    "guard-cranelift-phase25-musl-c-free-link": 3
   }
 }

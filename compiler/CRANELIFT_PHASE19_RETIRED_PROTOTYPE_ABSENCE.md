@@ -32,7 +32,6 @@ These paths must remain absent:
 
 These live runtime and backend paths are outside the removal boundary:
 
-- `src/runtime.c`
 - `src/runtime/*.c`
 - `src/runtime/rust/`
 - `compiler/experiments/cranelift/`

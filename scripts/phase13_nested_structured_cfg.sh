@@ -32,7 +32,7 @@ for required_file in \
   "$malformed_parameters_fixture" "$unterminated_fixture" \
   "$invalid_early_return_fixture" \
   "$short_circuit_deferred" "$condition_deferred" \
-  src/runtime.c ./gust
+  ./gust
 do
   if [ ! -e "$required_file" ]; then
     echo "Phase 13.4 structured-CFG evidence is missing $required_file" >&2

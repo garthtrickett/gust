@@ -42,7 +42,7 @@ for required_file in \
   "$selected_source" "$repeated_source" "$join_source" "$loop_source" \
   "$direct_source" "$imported_source" "$wrong_arity_source" \
   "$wrong_type_source" "$aggregate_parameter_source" \
-  "$aggregate_return_source" "$target_abi_source" src/runtime.c ./gust
+  "$aggregate_return_source" "$target_abi_source" ./gust
 do
   if [ ! -e "$required_file" ]; then
     echo "Phase 13.6 parameter/argument evidence is missing $required_file" >&2

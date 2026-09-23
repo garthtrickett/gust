@@ -54,7 +54,11 @@ require_just:
 
 # Track all compiler and runtime source files to ensure correct incremental builds
 COMPILER_SRCS = $(wildcard compiler/*.gst)
-RUNTIME_SRCS  = src/runtime.c $(wildcard src/runtime/*.c) $(wildcard src/runtime/*.h)
+# Patch 25.12b: src/runtime.c is gone, so RUNTIME_SRCS is headers only --
+# src/runtime/*.c has matched nothing since 25.10a retired strings.c. A
+# deleted file left in a prerequisite list is not a stale comment: make
+# fails with "No rule to make target".
+RUNTIME_SRCS  = $(wildcard src/runtime/*.c) $(wildcard src/runtime/*.h)
 
 all: phase10-native-package
 

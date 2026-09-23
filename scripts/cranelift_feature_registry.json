@@ -15681,7 +15681,6 @@
       "src/typechecker/visitor.rs"
     ],
     "preserved_boundaries": [
-      "src/runtime.c",
       "src/runtime/*.c",
       "src/runtime/rust/",
       "compiler/experiments/cranelift/"
@@ -41830,6 +41829,682 @@
       ]
     },
     "status": "patch25_10b_negative_path_native"
+  },
+  "phase2512b_runtime_c_retirement": {
+    "deleted_source": {
+      "assertion_inverted": "scripts/phase19_retired_prototype_absence.py required this file to EXIST as a PRESERVED_BOUNDARIES marker. Inverted rather than dropped, the way 25.10a inverted the src/runtime/*.c claim beside it: the file must now be ABSENT, and the boundary entry is removed from both the tuple and this registry's phase19_retired_prototype_absence.preserved_boundaries.",
+      "path": "src/runtime.c",
+      "was_enrolled_text_surface": false,
+      "why_no_departure_row": "src/runtime.c never matched a surface pattern. Its prose says \"the emitted-C route\", and the pattern is generated[-_ ]C -- so it produced no manifest row to depart, exactly as fiber.c and strings.c did not in 25.6 and 25.10a."
+    },
+    "frozen_surface_transition": {
+      "change_reason": "Patch 25.12b deletes src/runtime.c. Three frozen-replay guards cat-ed it ahead of their recorded C for two #includes, and two phase20 guards passed it to cc as a source whose translation unit is EMPTY. Removing it changes what those live-C cases COMPILE, not which cases exist, so the population is preserved and only the identity moves -- count and case_id_manifest_digest hold while complete_identity_manifest_digest and owner_contract_manifest_digest move.",
+      "contract_version": "phase2512b_runtime_c_frozen_surface_transition_v1",
+      "current_live_c_case_surface": {
+        "case_id_manifest_digest": "689339d376a50c9c9039584af51d93683f1fa1c47e09aa9870920c4699118cbb",
+        "complete_identity_manifest_digest": "56d9adc1ffdb6fe50af5f10df98e53d0ca64dc80d6dfd4ee93b5d46db23d8271",
+        "consumer_class_counts": {
+          "already_explicit_or_parser_probe": 2
+        },
+        "count": 2,
+        "owner_contract_count": 2,
+        "owner_contract_manifest_digest": "c3e22010be4842ca9be3dae6a08c2556a1f0de62a4cce7833ed44fa102deb85c",
+        "owner_counts": {
+          "cranelift": 2
+        },
+        "selection_counts": {
+          "explicit_c": 2
+        }
+      },
+      "partial_or_unregistered_surface": "rejected",
+      "previous_live_c_case_surface": {
+        "case_id_manifest_digest": "689339d376a50c9c9039584af51d93683f1fa1c47e09aa9870920c4699118cbb",
+        "complete_identity_manifest_digest": "f50d47a2672521c486072436b2a15661ca8b47d4f7a1e895c9e4ec5e5c462e5e",
+        "consumer_class_counts": {
+          "already_explicit_or_parser_probe": 2
+        },
+        "count": 2,
+        "owner_contract_count": 2,
+        "owner_contract_manifest_digest": "072e480265d504ff80561e1786e3a86c6305f95944e83cd1d5fd1ee02e69fe10",
+        "owner_counts": {
+          "cranelift": 2
+        },
+        "selection_counts": {
+          "explicit_c": 2
+        }
+      }
+    },
+    "production_audit_transition": {
+      "change_reason": "Deleting src/runtime.c moves supported_surface_manifest_digest and nothing else. The supported surface is the set of files the production audit tracks; one of them left, so the manifest digest moves while every other field holds. The closure projects BACKWARDS through this chain, newest first, so this link is consulted before 25.10's and hands 25.10 the tree it registered against.",
+      "contract_version": "phase2512b_runtime_c_production_audit_transition_v1",
+      "current_audit": {
+        "active_non_bootstrap_live_c_lane_count": 0,
+        "active_non_bootstrap_live_c_owner": null,
+        "non_bootstrap_retained_test_surface_count": 2,
+        "phase25_bootstrap_explicit_c_count": 0,
+        "repository_explicit_c_count": 2,
+        "repository_invocation_count": 150,
+        "supported_production_or_release_explicit_c_count": 0,
+        "supported_surface_count": 6,
+        "supported_surface_manifest_digest": "7d774d1da3462984ff5bf8ce87dbd9551d58d689d271cab2fd3e5e9c1528ed20",
+        "unknown_downstream_count": 0
+      },
+      "previous_audit": {
+        "active_non_bootstrap_live_c_lane_count": 0,
+        "active_non_bootstrap_live_c_owner": null,
+        "non_bootstrap_retained_test_surface_count": 2,
+        "phase25_bootstrap_explicit_c_count": 0,
+        "repository_explicit_c_count": 2,
+        "repository_invocation_count": 150,
+        "supported_production_or_release_explicit_c_count": 0,
+        "supported_surface_count": 6,
+        "supported_surface_manifest_digest": "073acf04bbee5008c3d0c6df07e24387ab42a408e946f632c63bcb3689a77eb5",
+        "unknown_downstream_count": 0
+      }
+    },
+    "status": "patch25_12b_runtime_c_retired",
+    "text_surface_successor": {
+      "added_text_surface_rows": [],
+      "added_text_surfaces": [],
+      "change_reason": "Patch 25.12b deletes src/runtime.c, the last runtime C source in the tree. It had been reduced to TWO effective lines -- #include \"runtime/core_headers.h\" and #include <errno.h> -- with its other 27 recording which files had already left for src/runtime-rs in 25.4, 25.5, 25.6 and 25.10a. Seventeen enrolled surfaces move with it: three frozen-replay guards that cat-ed it for those two includes, two phase20 cc lines that passed it as a source (its translation unit is EMPTY, so dropping it is equivalent), eleven required-file precondition lists, and the Makefile, where it was a prerequisite of gust_bootstrap via RUNTIME_SRCS -- a deleted file left in a prerequisite list is not a stale comment, make fails with \"No rule to make target\".",
+      "contract_version": "phase2512b_runtime_c_retirement_text_surface_successor_v1",
+      "current_changed_text_surfaces": [
+        {
+          "classification": "bootstrap_phase25",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_exact_C_bootstrap_dependency",
+          "digest": "956f16faaeb425b950024644510ea2644ab387a080ef5c727aaef5d03c313179",
+          "falsifier": "bootstrap_surface_is_missing_changed_or_reclassified",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 3,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "Makefile",
+          "removal_phase": "25"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "c653eb5064b0482e12562f8e1abb15514b8d5ed5f70e741ba4489b165db0faab",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "ebce675b819d8d6168d287bf1417f5113bf08372f692cd11db28b778037fd721",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 30
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_test_levels.json",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "be13a0f209f5b1a156b3837cc74940baaaaf5b3aca25193afac129322cb94113",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 1,
+            "generated_c_contract": 2,
+            "mir_to_c_name": 23
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase12_5_route_architecture.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "23d8d726bef8ec492c7d47eeb51b3df46b109ce76b15abf76828b40e50eedbc4",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 6
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase13_broader_imported_runtime_calls.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "d9c53b3847b59442093d2fcb729d6c573a817ecbfe4370ac5fc2e4c7dabbf7c1",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 8
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase13_direct_call_graph.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "855887e38ba8480ee74a06a0af7aecec7098185afcf21fb6c6a5c6d9b42f1dc7",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 8
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase13_general_loop.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "d308a2d86f2ab8ccf1c4f11438206bb7a1256d4666e6b8c53415c2c1675a2137",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 8
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase13_multiple_locals_assignments.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "70ea8df1a1faa22d4c10e78e4be1d1f353db286084634b568ddfd0f1bfcf9da6",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 8
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase13_nested_structured_cfg.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "e14cbe70afac5d4691c9af5eba1b2a61fc48de8d2162fe8f3df60a8810692cd0",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 8
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase13_parameter_argument.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "552b6e704dc2d807895d9cb9213c01d130004be084de622007d02a9d20c1e610",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 11
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase13_registry_differential.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "3f8a0d9805372cd2ccc78da87db1c1827966b122127ac087f26b24dcfec48bea",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 10
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase13_scalar_expression.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "299463d24f1a4a4905bf0d65b2bf3c94d52104a7772545df0dc1ec379f810939",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 11
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase14_composition_differential.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "179c243f4523c02d6da719b3d3220178950ed1e848e3be2ca98d18d446183e6b",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 9
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase20_cross_feature_qualification.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "463734bc1d07c4c116c8c3fee6548030d52afa0b1801f86c2617fedbeb81a8e9",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 7
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase20_long_lived_concurrent.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "34cbe395e69c7453b837feb9d674fcbed701ba8be21230fea0782a7cb3cb3cb0",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 25
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase23_closure.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "94175540c66343b20bd16a98af324684376d9fc717382ba895c0473cb122f94f",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 2
+          },
+          "owner": "stdlib",
+          "path": "scripts/stdlib_s1_branded_collections_parity.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "4292d7b3dc06b4b976925ed8c1e32529f895f8c9061a09938f8fa636d177fbc5",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 2
+          },
+          "owner": "stdlib",
+          "path": "scripts/stdlib_s1_clone_destination_parity.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "ee7e47345762aee97da1bf0f6953543f4366c0f7e75e46022e0099a9cf425911",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 4
+          },
+          "owner": "stdlib",
+          "path": "scripts/stdlib_s1_composition_parity.sh",
+          "removal_phase": "24"
+        }
+      ],
+      "partial_extra_or_substituted_surface": "rejected",
+      "previous_changed_text_surfaces": [
+        {
+          "classification": "bootstrap_phase25",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_exact_C_bootstrap_dependency",
+          "digest": "926c91580a28290720efc49da4ba6e2a8bbdcb3ca32b7adfa6934f8c07f97a40",
+          "falsifier": "bootstrap_surface_is_missing_changed_or_reclassified",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 3,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "Makefile",
+          "removal_phase": "25"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "4f5cfb6ebe4ebd068444843a1920f82b6d140b8b5280ff8c697eedb6d9f996b8",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "c2fc3ae748a9a8e7b59a46bbb3f435c65eeeb07367d1fe7556acf8ce14aefe8f",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 30
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_test_levels.json",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "e2c0e82bba925fc864e6d9a1cf700887921f2b965731f90278289d9539251cfc",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 1,
+            "generated_c_contract": 2,
+            "mir_to_c_name": 23
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase12_5_route_architecture.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "a85b2a31c42eaba5bd56cf906965b36b1119e51ef9916c9e5a659936afc90b5d",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 6
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase13_broader_imported_runtime_calls.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "85ba35ebdc7192f47f802cb8a32f1d2cc140e3589a5ec42e1ccf549d998d6f21",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 8
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase13_direct_call_graph.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "f1ff78a173ca6c1838b03dbbe25cdc57571d26218ab26a550cf7fafc8b73adf1",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 8
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase13_general_loop.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "63dd16f5047bc6e5c0369df6a13eafe778cf2507d4c918fe70e5e0deee353fd1",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 8
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase13_multiple_locals_assignments.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "78fed9dcfe492c147c66129930e09426383d8692defc56c7d558ad13e94aedc6",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 8
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase13_nested_structured_cfg.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "00a0b8e7abd40971b5c260c8b1e1aa7e5e1ef647c50f9b15cc42cba2fe4acd45",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 8
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase13_parameter_argument.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "549c6b0b0b20372e4bae7a57072ff917116d2e7aab088d0dcddf0d09164051b1",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 11
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase13_registry_differential.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "3c415a820ed11fd6f879552e1f0950b790c0913de607567a36f51195860df066",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 10
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase13_scalar_expression.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "e2e0e97ed2dfddbba0850e6a94ce4ab0fddd84b644006e817292fee772cd8780",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 11
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase14_composition_differential.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "a585b7b1d8fa095a016beaa4e3b23e825fd9e99f7df0dc3071c93663d1775a8e",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 9
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase20_cross_feature_qualification.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "39e245c96c6f4333f4c7a0866d6d5450ce4e26bd40afd0dc41464b80f19b9429",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 7
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase20_long_lived_concurrent.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "83d21baa5ee231705fd90bb9552bfc6734a5792cc4af0fbb133ce633e24640da",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 25
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase23_closure.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "e11c2b58a564ed16fd21a04c71a20633616abbe62019db55f11b6f0c14a08ffa",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 2
+          },
+          "owner": "stdlib",
+          "path": "scripts/stdlib_s1_branded_collections_parity.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "3b27c02ff5685afa93a3f9431142784dfdd5fce108cd1302c3231e6fe0e27a0a",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 2
+          },
+          "owner": "stdlib",
+          "path": "scripts/stdlib_s1_clone_destination_parity.sh",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "c2f5472b377d3886f225b2616736355ecad076b0913ffc32b7ff995d7e608c08",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 4
+          },
+          "owner": "stdlib",
+          "path": "scripts/stdlib_s1_composition_parity.sh",
+          "removal_phase": "24"
+        }
+      ],
+      "registered_changed_paths": [
+        "Makefile",
+        "scripts/cranelift_registry.py",
+        "scripts/cranelift_test_levels.json",
+        "scripts/phase12_5_route_architecture.sh",
+        "scripts/phase13_broader_imported_runtime_calls.sh",
+        "scripts/phase13_direct_call_graph.sh",
+        "scripts/phase13_general_loop.sh",
+        "scripts/phase13_multiple_locals_assignments.sh",
+        "scripts/phase13_nested_structured_cfg.sh",
+        "scripts/phase13_parameter_argument.sh",
+        "scripts/phase13_registry_differential.sh",
+        "scripts/phase13_scalar_expression.sh",
+        "scripts/phase14_composition_differential.sh",
+        "scripts/phase20_cross_feature_qualification.sh",
+        "scripts/phase20_long_lived_concurrent.sh",
+        "scripts/phase23_closure.py",
+        "scripts/stdlib_s1_branded_collections_parity.sh",
+        "scripts/stdlib_s1_clone_destination_parity.sh",
+        "scripts/stdlib_s1_composition_parity.sh"
+      ]
+    }
   },
   "phase2510c_runner_positive_path": {
     "relay_remigration": {
