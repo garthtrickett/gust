@@ -24111,3 +24111,9 @@ guard-cranelift-phase25-strings-rust-parity:
     #!/usr/bin/env bash
     set -euo pipefail
     ./scripts/phase25_strings_rust_parity.sh
+
+guard-cranelift-phase25-musl-c-free-link:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Proving the C-free link with the Gust runtime archive in it..."
+    python3 scripts/phase25_musl_c_free_link.py validate

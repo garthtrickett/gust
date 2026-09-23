@@ -3,29 +3,6 @@
  "contract": "The no-C-compiler job is expected to FAIL while this list is non-empty, and expected to fail ONLY for reasons on it. A failure whose reason is absent here is a regression, not progress. The list is the phase's schedule: it shrinks patch by patch, and the job becomes required when it empties -- by a patch that says so, never automatically.",
  "entries": [
   {
-   "id": "runtime-archive-is-glibc-bound",
-   "reason": "build/gust-runtime-package.a carries glibc-only undefined symbols, so it cannot link against musl and the C-free link cannot be proved.",
-   "measured_by": "Patch 25.0, RE-MEASURED by Patch 25.10a",
-   "cleared_by": "NOT 25.5/25.6, and not by removing C at all -- Patch 25.10a removed the last C from this archive and the entry survived. Clearing it needs a musl Rust target (x86_64-unknown-linux-musl), because the remaining symbols come from Rust's std.",
-   "patch2510a_measurement": {
-    "the_five_symbols_this_entry_named_are_gone": {
-     "__printf_chk": 0,
-     "__fprintf_chk": 0,
-     "__memcpy_chk": 0,
-     "__isoc23_strtol": 0,
-     "__stack_chk_fail": 0
-    },
-    "why": "they came from C compiled with -O2 -D_FORTIFY_SOURCE, and there is no C in the archive now",
-    "but_it_is_still_glibc_bound_via_rust_std": [
-     "__xpg_strerror_r",
-     "__res_init",
-     "gnu_get_libc_version",
-     "__cxa_thread_atexit_impl"
-    ],
-    "not_verified_by_linking": "no musl toolchain on the measuring host; this is a symbol census, not a link attempt"
-   }
-  },
-  {
    "id": "rustc-defaults-to-cc-on-gnu",
    "reason": "rustc uses cc as its linker driver on *-linux-gnu, including for the musl self-contained target, so a C-free link needs -C linker=rust-lld explicitly.",
    "measured_by": "D9",
@@ -62,6 +39,19 @@
    ],
    "what_survives": "src/runtime.c: 2 effective lines (two #includes) plus 27 lines of history. It is a PRESERVED_BOUNDARIES marker that scripts/phase19_retired_prototype_absence.py REQUIRES to exist, and 98 tracked files name it. Deleting it is a separate change and is not what this entry claimed.",
    "not_cleared_with_it": "runtime-archive-is-glibc-bound shares the older prose above, but Patch 25.10a re-scoped it: the remaining symbols come from Rust's std, so it needs a musl Rust target and is NOT cleared by removing C."
+  },
+  {
+   "id": "runtime-archive-is-glibc-bound",
+   "reason_when_recorded": "build/gust-runtime-package.a carries glibc-only undefined symbols, so it cannot link against musl and the C-free link cannot be proved.",
+   "cleared_by": "Patch 25.12b, by the musl Rust target its own cleared_by named",
+   "evidence": [
+    "The entry's cleared_by: 'Clearing it needs a musl Rust target (x86_64-unknown-linux-musl), because the remaining symbols come from Rust's std.' That is exactly what was done.",
+    "scripts/phase25_musl_c_free_link.py builds the runtime crate for x86_64-unknown-linux-musl, links a program that CALLS gust_tick through rust-lld with cc/gcc/clang/c++/g++/cc1/ld/ld.gold/ld.bfd all poisoned to exit 99, runs it, and requires exit 7 and no INTERP segment.",
+    "Patch 25.11 had measured 'musl + rust-lld + ld.lld flavor WORKS: static-pie, exit 7' but could not include the runtime archive, and said so: 'THE GATE IS NOT PROVABLE UNTIL THE RUNTIME STOPS BEING C'. 25.5, 25.6 and 25.10a finished that; PHASE21_RUNTIME_OBJECTS is empty and the archive is ar rcs over one Rust object.",
+    "The five glibc symbols this entry named -- __printf_chk, __fprintf_chk, __memcpy_chk, __isoc23_strtol, __stack_chk -- are absent from the musl archive (nm --undefined-only: 0 each).",
+    "MUTATION-TESTED: with nothing poisoned the guard refuses to certify ('the poisoned cc did not fire'); with the archive off the link path it fails 'unable to find library'. Baseline restores byte-identical."
+   ],
+   "what_this_does_not_claim": "NOT that `make gust` is C-free on gnu. Patch 25.11 decided the user default stays the host target (O6) and that a gnu host with no C compiler ERRORS naming musl rather than silently switching (P10). 25.11 measured that no stock C-free link exists on gnu at all. This is the musl proof the phase always said it would be."
   }
  ]
 }
