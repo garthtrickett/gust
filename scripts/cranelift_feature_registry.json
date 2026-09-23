@@ -41902,6 +41902,60 @@
         "unknown_downstream_count": 0
       }
     },
+    "spelling_inventory_transition": {
+      "change_reason": "Deleting src/runtime.c edits inventoried LINES without adding or removing any spelling site: eleven required-file lists lose an entry, two cc lines lose an argument, three frozen-replay guards gain the two #includes the file used to supply. The inventory's site identity is path + line + classification, so both manifest digests move while every count holds. Patch 24.2's record is landed and is not re-pinned; this is the first successor it has needed.",
+      "contract_version": "phase2512b_spelling_inventory_transition_v1",
+      "current_inventory_summary": {
+        "classification_counts": {
+          "comment": 2,
+          "diagnostic": 10,
+          "fixture_or_evidence": 679,
+          "mangling_or_generated_name": 9,
+          "non_decision_comparison": 8,
+          "semantic_or_intrinsic_recognition": 680,
+          "serialization": 1
+        },
+        "complete_manifest_digest": "edc4e49c74cf1bc3186e19986c1489a6a66e79ce75ba0834c4e8721e9983dfe5",
+        "partition_manifest_digests": {
+          "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+          "diagnostic": "52d11080dc22abdd47297e596a4a9794aaf43a4e4455ee7c6666cfa9767b1034",
+          "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+          "mangling_or_generated_name": "f2c6d856ed3923254cbc9e167320d3409a49579ff300db521a0b7516c7d7f4b2",
+          "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7",
+          "serialization": "cd26d44606f736374209054c0fc91d72f950946ad84fad1a5e6efb6c7fc4f5b9"
+        },
+        "semantic_manifest_digest": "c2003177c76fdd71beedb5a66c2f8f5f54d0792ebbf3e7232e802cd3f236058e",
+        "semantic_site_count": 680,
+        "site_count": 1389,
+        "source_file_count": 1079,
+        "unknown_site_count": 0
+      },
+      "previous_inventory_summary": {
+        "classification_counts": {
+          "comment": 2,
+          "diagnostic": 10,
+          "fixture_or_evidence": 679,
+          "mangling_or_generated_name": 9,
+          "non_decision_comparison": 8,
+          "semantic_or_intrinsic_recognition": 680,
+          "serialization": 1
+        },
+        "complete_manifest_digest": "f9fb1f9ac2bf5f18042645a2bd2364e3c0dba406cd924e48f4c473c5032fab1f",
+        "partition_manifest_digests": {
+          "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+          "diagnostic": "52d11080dc22abdd47297e596a4a9794aaf43a4e4455ee7c6666cfa9767b1034",
+          "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+          "mangling_or_generated_name": "f2c6d856ed3923254cbc9e167320d3409a49579ff300db521a0b7516c7d7f4b2",
+          "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7",
+          "serialization": "cd26d44606f736374209054c0fc91d72f950946ad84fad1a5e6efb6c7fc4f5b9"
+        },
+        "semantic_manifest_digest": "9ddb628f1a35041343fbef01dd91ae931ba000ae97e5d807d26c8435d26f47b2",
+        "semantic_site_count": 680,
+        "site_count": 1389,
+        "source_file_count": 1079,
+        "unknown_site_count": 0
+      }
+    },
     "status": "patch25_12b_runtime_c_retired",
     "text_surface_successor": {
       "added_text_surface_rows": [],
@@ -41938,6 +41992,21 @@
           "owner": "cranelift",
           "path": "TASK.md",
           "removal_phase": "24_or_25_as_claim_requires"
+        },
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "c70f7026e76350eda31ef2f979aad5ee334b70544822d6e363ff9f93d4d07ca1",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 22
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE20_OPENING.md",
+          "removal_phase": "not_removed_by_phase23"
         },
         {
           "classification": "archive_candidate",
@@ -42273,6 +42342,21 @@
           "removal_phase": "24_or_25_as_claim_requires"
         },
         {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "6838cfff9a5ced5b1b46849a085dca3f474b527dfb720532b499866875cc125c",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 22
+          },
+          "owner": "cranelift",
+          "path": "compiler/CRANELIFT_PHASE20_OPENING.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
@@ -42576,6 +42660,7 @@
       "registered_changed_paths": [
         "Makefile",
         "TASK.md",
+        "compiler/CRANELIFT_PHASE20_OPENING.md",
         "compiler/experiments/cranelift/src/main.rs",
         "justfile",
         "scripts/cranelift_registry.py",

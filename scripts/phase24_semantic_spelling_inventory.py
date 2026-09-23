@@ -270,8 +270,40 @@ def validate() -> tuple[dict, list[dict], dict]:
             "f36d43e33cb2c0f5b66c801b82d5e27ebcfc0ddc",
             "authority base main drifted")
     require(value.get("review_view") == REVIEW_PATH, "review view drifted")
-    require(value.get("inventory_summary") == summary,
+    # Patch 25.12b adds the FIRST successor this record has needed. Its site
+    # identity is path + LINE + classification, so any patch that edits an
+    # inventoried file moves the digests even when it adds and removes
+    # nothing -- which is exactly what deleting src/runtime.c did: eleven
+    # required-file lists lost a line, two cc lines lost an argument, three
+    # replay guards gained the two #includes it used to supply. The counts
+    # are unchanged and both digests moved.
+    #
+    # Patch 24.2's record is LANDED, so it is not re-pinned. The successor
+    # carries the move and asserts its own arithmetic: same population,
+    # different identity. Re-pinning 24.2 would go green while overwriting a
+    # closed report.
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    spelling_successor = registry.get(
+        "phase2512b_runtime_c_retirement", {}).get(
+            "spelling_inventory_transition")
+    expected_summary = (summary if spelling_successor is None
+                        else spelling_successor["previous_inventory_summary"])
+    require(value.get("inventory_summary") == expected_summary,
             "live concrete-spelling inventory is not the exact registered manifest")
+    if spelling_successor is not None:
+        require(spelling_successor.get("contract_version") ==
+                "phase2512b_spelling_inventory_transition_v1" and
+                spelling_successor.get("current_inventory_summary") == summary,
+                "Patch 25.12b spelling-inventory successor does not end at "
+                "the live manifest")
+        was = spelling_successor["previous_inventory_summary"]
+        now = spelling_successor["current_inventory_summary"]
+        require(was.get("site_count") == now.get("site_count") and
+                was.get("complete_manifest_digest") !=
+                now.get("complete_manifest_digest"),
+                "Patch 25.12b must move spelling-inventory IDENTITY without "
+                "moving the population: it edits inventoried lines, it does "
+                "not add or remove spelling sites")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),

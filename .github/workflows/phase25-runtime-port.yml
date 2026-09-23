@@ -55,6 +55,17 @@ jobs:
       - name: Strings runtime matches the C it replaced
         run: just guard-cranelift-phase25-strings-rust-parity
 
+      # Patch 25.12b. The C-free claim, proved where this phase always said
+      # it would be: on musl. Two arms -- a program that CALLS into the
+      # runtime archive links through rust-lld with nine C drivers poisoned
+      # and runs as static-pie, and a musl host with no C compiler builds
+      # when rust-lld is configured. Needs docker for the host arm, which
+      # ubuntu-latest has, and the musl Rust target, which rustup adds below.
+      - name: Add the musl target the C-free proof runs on
+        run: rustup target add x86_64-unknown-linux-musl
+      - name: A C-free link, with the runtime archive in it
+        run: just guard-cranelift-phase25-musl-c-free-link
+
       # These two need ./gust, which the bootstrap produces.
       - name: Build the compiler
         run: make gust
