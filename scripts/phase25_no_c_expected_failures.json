@@ -8,7 +8,13 @@
    "measured_by": "D9",
    "cleared_by": "25.11 -- cc optional, musl + rust-lld proved here",
    "observable_signature": "linker `cc` not found",
-   "observable_note": "Newly observable, and it is the FIRST failure on a clean checkout: cargo builds the native backend before anything links, and rustc invokes cc for its build scripts. Measured by Patch 25.10 from CI, not locally -- a tree with build/gust-native-backend already present gets past this and fails at the link step instead, which is a different entry."
+   "observable_note": "Newly observable, and it is the FIRST failure on a clean checkout: cargo builds the native backend before anything links, and rustc invokes cc for its build scripts. Measured by Patch 25.10 from CI, not locally -- a tree with build/gust-native-backend already present gets past this and fails at the link step instead, which is a different entry.",
+   "patch2512b_measurement": {
+    "finding": "NOT specific to gnu. Measured on a musl HOST (rust:alpine, C compilers shadowed off PATH): `cargo build` of a trivial crate fails with `error: linker \\`cc\\` not found` -- this entry's own observable_signature. rustc defaults to cc as its linker driver on musl hosts too.",
+    "consequence": "Changing the falsifier's IMAGE cannot clear this. It is cleared by configuring the linker explicitly, which scripts/phase25_musl_c_free_link.py proves works: -C linker=rust-lld -C linker-flavor=ld.lld against the musl target links, runs and is static-pie.",
+    "why_the_workload_still_fails": "WORKLOAD is ['make','gust'], which cargo-builds the Cranelift backend. Building it for musl with cc poisoned fails in libm's BUILD SCRIPT -- a HOST binary linked for x86_64-unknown-linux-gnu -- because cargo builds build scripts for the host regardless of --target. Patch 25.11 measured that gnu + rust-lld has no C-free link at all (-lc -lm -ldl -lpthread -lrt -lutil -lgcc_s unfound), so on a gnu host this cannot be configured away.",
+    "what_would_clear_it": "A musl HOST for the no-C job, plus an explicit rust-lld linker configuration so the default never applies. Both halves are needed: the host alone does not (measured above), and the configuration alone does not (build scripts are host-linked)."
+   }
   },
   {
    "id": "native-link-driver-is-cc",
@@ -16,7 +22,16 @@
    "measured_by": "Patch 25.10, by running the workload after the bootstrap chain was deleted",
    "cleared_by": "an internal or non-cc link step for the native backend -- lld, or a linker invoked directly rather than through a C driver. Not by any further C deletion, because there is no C left to delete on this path.",
    "observable_signature": "kind=linker_unavailable|linker spawn failed",
-   "observable_note": "Observable only once the native backend is already built. On a clean no-C checkout rustc-defaults-to-cc-on-gnu fires first, so this is the SECOND barrier on that path, not the first. Both are real; they are different programs reaching for cc -- rustc for its build scripts, and the Gust backend for its own link step."
+   "observable_note": "Observable only once the native backend is already built. On a clean no-C checkout rustc-defaults-to-cc-on-gnu fires first, so this is the SECOND barrier on that path, not the first. Both are real; they are different programs reaching for cc -- rustc for its build scripts, and the Gust backend for its own link step.",
+   "patch2512b_measurement": {
+    "finding": "The mechanism is more tractable than the entry implies. There are only TWO CompilerMirLinkRequest constructors, and the executor is a generic command builder that already carries additional_linker_args -- so a non-cc linker is EXPRESSIBLE without rewriting it. The hardcoding is one line: main.rs:16532.",
+    "the_real_obstacle": "Not the plumbing, the link LINE. A direct rust-lld invocation must supply the self-contained crt objects AND enumerate Rust's std rlibs (libstd, libpanic_unwind, libobject, libmemchr, libaddr2line, libgimli, libcfg_if, librustc_demangle, libstd_detect, libhashbrown, librustc_std_workspace_alloc, libminiz_oxide, libadler2, libunwind, liblibc, libcore, liballoc, libcompiler_builtins), because the Gust runtime archive is Rust and depends on std. rustc computes that set; reproducing it in the backend is version-fragile.",
+    "two_designs": [
+     "Reimplement the link line: the backend enumerates crt objects and std rlibs from `rustc --print sysroot`. Self-contained but breaks whenever rustc's std layout moves.",
+     "Link THROUGH rustc with -C linker=rust-lld: rustc computes the rlibs, and no C compiler is involved anywhere. Needs the backend to emit a shim crate rather than hand raw objects to a linker, which is an architectural change."
+    ],
+    "not_attempted_here": "Patch 25.12b measured this and stopped rather than ship an unverifiable half-implementation. The backend has ZERO musl/lld/linker-flavor awareness across 37,338 lines of main.rs; this is a feature, not a patch."
+   }
   }
  ],
  "excepted": [
