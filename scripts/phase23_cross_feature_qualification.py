@@ -708,6 +708,20 @@ def validate_transition(record: dict, registry: dict) -> None:
                                     "rejected",
                                     "Patch 24.14 frozen surface successor "
                                     "drifted")
+                                # Patch 25.12b: this is the FOURTH reader of
+                                # this chain. Enumerated rather than found one
+                                # at a time -- five scripts read
+                                # phase398_retained_spelling_removal's
+                                # frozen_surface_transition, and each needs the
+                                # same tail or they disagree about what the
+                                # live surface is. 25.12b appends a link
+                                # (deleting src/runtime.c changes what these
+                                # cases COMPILE, not which exist), so #398 is
+                                # compared against its previous and the new
+                                # link against live.
+                                runtime_c_frozen = registry.get(
+                                    "phase2512b_runtime_c_retirement", {}).get(
+                                        "frozen_surface_transition")
                                 if spelling_frozen is not None:
                                     require(
                                         spelling_frozen.get(
@@ -716,12 +730,23 @@ def validate_transition(record: dict, registry: dict) -> None:
                                         and
                                         spelling_frozen.get(
                                             "current_live_c_case_surface") ==
-                                        live_frozen and
+                                        (runtime_c_frozen[
+                                            "previous_live_c_case_surface"]
+                                         if runtime_c_frozen is not None
+                                         else live_frozen) and
                                         spelling_frozen.get(
                                             "partial_or_unregistered_surface")
                                         == "rejected",
                                         "Issue #398 frozen surface successor "
                                         "drifted")
+                                    if runtime_c_frozen is not None:
+                                        require(
+                                            runtime_c_frozen.get(
+                                                "current_live_c_case_surface")
+                                            == live_frozen,
+                                            "Patch 25.12b frozen surface "
+                                            "successor does not end at the "
+                                            "live surface")
             # Compare the two ends of the link 24.0c registered, not the live
             # surface against 24.0c's start: with a successor in the chain the
             # live surface belongs to the successor, and reading it here would
