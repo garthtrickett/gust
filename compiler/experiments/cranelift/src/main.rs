@@ -16557,6 +16557,14 @@ fn compile_phase10_scalar_metadata_request_path(
     );
     let mut additional_linker_args: Vec<OsString> = Vec::new();
     let mut trailing_linker_args: Vec<OsString> = Vec::new();
+    // $CC binds the driver FIRST and unconditionally. Patch 25.11's policy
+    // guard checks both ends of this data flow -- the read must BIND
+    // linker_driver and the command must be built from that binding -- and
+    // an earlier draft of this patch put the read inside an else-branch,
+    // which broke the first end while keeping the behaviour identical. D9
+    // says cc stops being REQUIRED, not supported; the C route is still the
+    // default and still reads $CC.
+    let linker_driver = env::var_os("CC").unwrap_or_else(|| OsString::from("cc"));
     let linker_driver = if rustc_lld {
         let crate_path = compiler_mir_link_sibling_path(
             &request.output_path,
@@ -16591,7 +16599,7 @@ fn compile_phase10_scalar_metadata_request_path(
             OsString::from("rustc")
         }))
     } else {
-        env::var_os("CC").unwrap_or_else(|| OsString::from("cc"))
+        linker_driver
     };
     let link_request = CompilerMirLinkRequest {
         output_path: request.output_path.clone(),

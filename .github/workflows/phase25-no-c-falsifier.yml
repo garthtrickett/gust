@@ -94,6 +94,18 @@ jobs:
           set -e
           echo "$out"
           expected="$(python3 -c 'import json; print(len(json.load(open("scripts/phase25_no_c_expected_failures.json"))["entries"]))')"
+          # Patch 25.12b: the list emptied, and this step said what to do
+          # about it -- "this expected-red job and the contract it guards are
+          # what must change". P8 says that flip is a patch, never automatic,
+          # so the branch below IS the flip rather than a suppression.
+          if [ "$expected" -eq 0 ]; then
+            if [ "$status" -ne 0 ]; then
+              echo "::error::the expected-failure list is EMPTY, so this must now be GREEN, but check-environment exited $status" >&2
+              exit 1
+            fi
+            echo "promoted: the list is empty and the environment check passes"
+            exit 0
+          fi
           if [ "$status" -eq 0 ]; then
             echo "::error::the falsifier is GREEN: the C-free claim now holds, so this expected-red job and the contract it guards are what must change" >&2
             exit 1
@@ -119,6 +131,22 @@ jobs:
           status=$?
           set -e
           echo "$out"
+          entries="$(python3 -c 'import json; print(len(json.load(open("scripts/phase25_no_c_expected_failures.json"))["entries"]))')"
+          # Patch 25.12b: same flip. With an empty list run-workload asserts
+          # the gate on the route it is PROVABLE on -- the musl link and the
+          # musl host build, both with every C driver poisoned -- and still
+          # requires the gnu workload to fail, because Patch 25.11 measured
+          # that gnu has no C-free link and O6/P10 keep the host default.
+          # The old message here would have been actively wrong now: it says
+          # "while the expected-failure list is non-empty".
+          if [ "$entries" -eq 0 ]; then
+            if [ "$status" -ne 0 ]; then
+              echo "::error::the expected-failure list is EMPTY, so the gate must hold on the musl route, but run-workload exited $status" >&2
+              exit 1
+            fi
+            echo "promoted: gate proved on musl; gnu still requires a C driver by design"
+            exit 0
+          fi
           if [ "$status" -eq 0 ]; then
             echo "::error::the no-C workload SUCCEEDED while the expected-failure list is non-empty; the gate may now hold, which is a change this job must not pass silently" >&2
             exit 1
