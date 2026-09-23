@@ -27,6 +27,10 @@ test ! -s "$surface_root/stderr"
 worker="build/gust-native-backend"
 if [ ! -x "$worker" ]; then
   make "$worker"
+  # An artifact download drops the executable bit, and `make` compares
+  # MTIMES not MODES -- it reports "up to date" on a file that cannot
+  # run. chmod is the one repair make cannot do.
+  chmod +x "$worker"
 fi
 worker_abs="$PWD/$worker"
 

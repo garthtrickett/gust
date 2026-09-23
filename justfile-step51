@@ -188,6 +188,10 @@ guard-compile-pass file label:
     # building it if absent -- makes the two agree.
     if [ ! -x build/gust-native-backend ]; then
       make build/gust-native-backend
+      # An artifact download drops the executable bit, and `make`
+      # compares MTIMES not MODES -- so it reports "up to date" on a
+      # file that cannot run. chmod is the one repair make cannot do.
+      chmod +x build/gust-native-backend
     fi
     # The driver is not the whole native environment. `phase10-native-package`
     # depends on gust, the driver AND the runtime package, and a native link
@@ -310,6 +314,10 @@ guard-compile-fail file diagnostic label:
     # building it if absent -- makes the two agree.
     if [ ! -x build/gust-native-backend ]; then
       make build/gust-native-backend
+      # An artifact download drops the executable bit, and `make`
+      # compares MTIMES not MODES -- so it reports "up to date" on a
+      # file that cannot run. chmod is the one repair make cannot do.
+      chmod +x build/gust-native-backend
     fi
     # The driver is not the whole native environment. `phase10-native-package`
     # depends on gust, the driver AND the runtime package, and a native link
