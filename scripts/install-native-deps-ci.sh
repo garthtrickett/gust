@@ -126,5 +126,5 @@ for ((attempt = 1; attempt <= NATIVE_DEPS_CI_MAX_ATTEMPTS; attempt++)); do
         exit 1
     fi
 
-    sleep "$((attempt * 5))"
+    sleep "$((attempt * 20))"
 done
