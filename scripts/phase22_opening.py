@@ -985,19 +985,36 @@ def validate_post_flip_relay_transition(
         # successor claims one of 24.13's destinations, that destination is
         # required ABSENT and the successor's own destination PRESENT, so a
         # site that was quietly dropped still fails both halves.
-        remigration = registry.get("phase2510b_runner_negative_path", {}).get(
-            "relay_remigration", {})
+        # 24.13 migrated TWO runner sites. 25.10b re-migrated the first (the
+        # negative path); 25.10c re-migrates the second (the positive path),
+        # which is what frees the emitter to be deleted. Each patch keeps its
+        # OWN record: folding 25.10c into 25.10b's node would make that node
+        # stop being a true statement about what 25.10b did, and the two were
+        # measured separately -- 104 of 104 negative, 3 of 120 tests/ positive.
+        # So the successor set is the union, and a site may be claimed by
+        # exactly one patch.
+        SUCCESSORS = (
+            ("phase2510b_runner_negative_path",
+             "phase2510b_relay_remigration_v1", "25.10b"),
+            ("phase2510c_runner_positive_path",
+             "phase2510c_relay_remigration_v1", "25.10c"),
+        )
         remigrated: dict[tuple, dict] = {}
-        if remigration:
-            require(remigration.get("contract_version") ==
-                    "phase2510b_relay_remigration_v1",
-                    "Patch 25.10b relay re-migration successor drifted")
+        remigrated_owner: dict[tuple, str] = {}
+        for node_name, contract, label in SUCCESSORS:
+            remigration = registry.get(node_name, {}).get(
+                "relay_remigration", {})
+            if not remigration:
+                continue
+            require(remigration.get("contract_version") == contract,
+                    f"Patch {label} relay re-migration successor drifted")
             for entry in remigration.get("migrations", []):
                 key = site_key(entry["pinned_site"])
                 require(key not in remigrated,
-                        "Patch 25.10b re-migrates one site twice: "
-                        f"{entry['pinned_site']['path']}")
+                        f"Patch {label} re-migrates a site another patch "
+                        f"already claimed: {entry['pinned_site']['path']}")
                 remigrated[key] = entry
+                remigrated_owner[key] = label
         claimed: set = set()
         for entry in migrations:
             pinned = tuple(entry["pinned_site"][field] for field in site_fields)
@@ -1019,16 +1036,17 @@ def validate_post_flip_relay_transition(
                 effective = entry
             else:
                 claimed.add(site_key(entry["migrated_site"]))
+                owner = remigrated_owner[site_key(entry["migrated_site"])]
                 require(site_key(entry["migrated_site"]) not in live_placed,
-                        f"Patch 25.10b re-migrates {pinned[0]}:{pinned[1]} "
+                        f"Patch {owner} re-migrates {pinned[0]}:{pinned[1]} "
                         "but 24.13's destination is still in the tree")
                 require(site_key(successor["migrated_site"]) in live_placed,
-                        "Patch 25.10b records a replacement for the 24.13 "
+                        f"Patch {owner} records a replacement for the 24.13 "
                         f"destination at {pinned[0]}:{pinned[1]} that is not "
                         "in the tree")
                 require("bootstrap-emitter" not in
                         str(successor["migrated_site"]["command"]),
-                        f"Patch 25.10b replacement for {pinned[0]}:{pinned[1]} "
+                        f"Patch {owner} replacement for {pinned[0]}:{pinned[1]} "
                         "still spells bootstrap-emitter")
                 effective = successor
                 moved = tuple(successor["migrated_site"][field]
@@ -1038,7 +1056,8 @@ def validate_post_flip_relay_transition(
             effective_migration[site_key(effective["migrated_site"])] = \
                 effective["migrated_selection"]
         require(claimed == set(remigrated),
-                "Patch 25.10b re-migrates a site Patch 24.13 never migrated to")
+                "a re-migration successor claims a site Patch 24.13 never "
+                "migrated to")
         placed_expected = {tuple(site[i] for i, field in
                                  enumerate(site_fields) if field != "line")
                            for site in expected_sites}
@@ -1121,10 +1140,27 @@ def validate_post_flip_relay_transition(
                            if field != "line")
         if placed_key in effective_migration:
             expected_site_selection[key] = effective_migration[placed_key]
-    require({key: str(row["selection"]) for key, row in live_sites.items()} ==
-            expected_site_selection and
-            summary == effective_relay_inventory(registry, landed_authority),
-            "live invocation scan is not the exact landed six-site post-relay state")
+    # Patch 25.10c split this compound assertion. It conjoined a per-site
+    # selection map with a whole-inventory summary, so a failure said only
+    # "not the exact landed six-site post-relay state" and named neither the
+    # site that moved nor which half disagreed. Finding the row that moved is
+    # the first thing anyone needs.
+    live_selection = {key: str(row["selection"])
+                      for key, row in live_sites.items()}
+    if live_selection != expected_site_selection:
+        differing = sorted(
+            f"{k[0]}:{k[1]} live={live_selection.get(k, '<absent>')} "
+            f"expected={expected_site_selection.get(k, '<absent>')}"
+            for k in set(live_selection) ^ set(expected_site_selection)
+            or {k for k in live_selection
+                if live_selection[k] != expected_site_selection.get(k)})
+        require(False,
+                "live invocation selections disagree with the landed "
+                "post-relay state: " + "; ".join(differing[:6]))
+    require(summary == effective_relay_inventory(registry, landed_authority),
+            "the relay inventory summary is not the landed six-site "
+            f"post-relay state: live={summary} expected="
+            f"{effective_relay_inventory(registry, landed_authority)}")
     return "landed_post_relay", landed_authority
 
 
@@ -1186,14 +1222,12 @@ def validate_landed_relay_command_substitution_rejection(
             ("--backend bootstrap-emitter", "--backend mir-to-c"),
             ("std.Concat(", "std.Concat( "),
         )
-    else:
+    elif registry.get("phase2510c_runner_positive_path") is None:
         # Patch 25.10b takes the negative path native, so `mut cmd :=` no
         # longer spells the emitter and every substitution above became a
         # no-op on it -- which this harness reports rather than passing
         # vacuously. The property is unchanged; it moves onto the compile
-        # path, the one relay site still invoking the emitter. That site is
-        # blocked on phase13_generic_source_to_mir, so this branch is the
-        # anchor until the positive corpus can go native too.
+        # path, the one relay site still invoking the emitter.
         anchor_path = "tests/test_runner.gst"
         anchor_token = "mut cmd_comp := std.Concat"
         substitutions = (
@@ -1201,6 +1235,28 @@ def validate_landed_relay_command_substitution_rejection(
             # edit that changes nothing about the selection at all
             ("--backend bootstrap-emitter", "--backend cranelift"),
             ("--backend bootstrap-emitter", "--backend mir-to-c"),
+            ("std.Concat(", "std.Concat( "),
+        )
+    else:
+        # Patch 25.10c takes the POSITIVE path native too. The branch above
+        # called itself "the anchor until the positive corpus can go native",
+        # and that is now -- though not the way it expected. It was waiting on
+        # phase13_generic_source_to_mir; what actually happened is that the
+        # corpus split in two. 117 of 120 tests/ positives still have no
+        # native route, so the runner is no longer BUILT, and the site stops
+        # invoking the emitter because the emitter is gone.
+        #
+        # So neither runner path spells the emitter and all three emitter
+        # substitutions became no-ops. The property is unchanged -- mutate a
+        # live relay row's selection and the guard must notice -- but there is
+        # no emitter row left to mutate FROM. The probe mutates the native
+        # spelling instead, and the second case is the important one: it puts
+        # the RETIRED spelling back, which must still be caught.
+        anchor_path = "tests/test_runner.gst"
+        anchor_token = "mut cmd_comp := std.Concat"
+        substitutions = (
+            ("--backend cranelift", "--backend mir-to-c"),
+            ("--backend cranelift", "--backend bootstrap-emitter"),
             ("std.Concat(", "std.Concat( "),
         )
     for old, new in substitutions:

@@ -41831,6 +41831,32 @@
     },
     "status": "patch25_10b_negative_path_native"
   },
+  "phase2510c_runner_positive_path": {
+    "relay_remigration": {
+      "change_reason": "Patch 24.13 recorded where each retired mir-to-c site was migrated TO, and Patch 25.10b re-migrated the first of its two runner destinations. Patch 25.10c re-migrates the second: the runner's POSITIVE path moves from the bootstrap emitter to the native route, which is what lets the emitter and its authority be deleted. This is a separate record rather than a second entry in 25.10b's, because 25.10b's is a true statement about what 25.10b did and the two paths were measured separately -- the negative path at 104 of 104 rejected natively, the positive path at 3 of 120 tests/ cases compiling, which is why the positive corpus loses EXECUTION and is classified by phase21_complete_guard_suite.py's evidence arm instead.",
+      "contract_version": "phase2510c_relay_remigration_v1",
+      "migrations": [
+        {
+          "migrated_selection": "explicit_cranelift",
+          "migrated_site": {
+            "command": "mut cmd_comp := std.Concat(\"./gust --backend cranelift -o \", bin_path);",
+            "compiler_token": "./gust",
+            "line": 193,
+            "path": "tests/test_runner.gst",
+            "recipe": "none"
+          },
+          "pinned_site": {
+            "command": "mut cmd_comp := std.Concat(\"./gust --backend bootstrap-emitter \", path);",
+            "compiler_token": "./gust",
+            "line": 163,
+            "path": "tests/test_runner.gst",
+            "recipe": "none"
+          }
+        }
+      ]
+    },
+    "status": "patch25_10c_positive_path_native"
+  },
   "phase2510_emitter_deletion": {
     "emitter_refusal_probes": {
       "change_reason": "Two sites invoke the retired spelling in order to prove it is REFUSED, and the symmetry assertion counted them as live callers because the census is a raw text count. A probe that asks for a deleted route and requires the refusal is evidence the deletion landed, not a caller that the deletion broke. Registered per site with BOTH halves -- the invocation text and the refusal message it requires -- so a probe that stops asserting the refusal stops counting as a probe.",
@@ -41929,53 +41955,53 @@
       }
     },
     "invocation_departure": {
-      "change_reason": "the five Makefile invocations of the C stage chain. All five are explicit_bootstrap_emitter and all five go with the rules that ran them: the stage-one emission from the bridge entry, the diagnose-phase10-stage1 sanitizer build, the final compiler emission, and stages two and three of the C fixed point.",
+      "change_reason": "the five Makefile invocations of the C stage chain. All five are explicit_bootstrap_emitter and all five go with the rules that ran them: the stage-one emission from the bridge entry, the diagnose-phase10-stage1 sanitizer build, the final compiler emission, and stages two and three of the C fixed point. Patch 25.10c extends this record to the last four executing sites: two pure departures (make-test-suite and make-test-suite-parallel, which now call the evidence arm) and two reclassifications (run-step52-positive-batch and the runner's positive path, which move to the native route). Net effect on the relay census: explicit_bootstrap_emitter 13 -> 2, explicit_cranelift 120 -> 123, total 150 -> 142.",
       "contract_version": "phase2510_emitter_deletion_invocation_departure_v1",
       "current_relay_inventory": {
         "consumer_class_counts": {
-          "already_explicit_or_parser_probe": 133,
+          "already_explicit_or_parser_probe": 131,
           "cranelift_C_or_diagnostic_guard": 2,
           "help_surface_probe": 3,
           "intentional_default_selection_probe": 4,
           "invocation_parser_probe": 2
         },
         "owner_counts": {
-          "cranelift": 139,
+          "cranelift": 137,
           "stdlib": 5
         },
         "selection_counts": {
-          "explicit_bootstrap_emitter": 6,
+          "explicit_bootstrap_emitter": 2,
           "explicit_c": 3,
-          "explicit_cranelift": 121,
+          "explicit_cranelift": 123,
           "explicit_invalid_or_parser_probe": 3,
           "implicit_default": 11
         },
-        "total": 144,
+        "total": 142,
         "unclassified_count": 0
       },
       "current_summary": {
         "consumer_class_counts": {
-          "already_explicit_or_parser_probe": 138,
+          "already_explicit_or_parser_probe": 136,
           "cranelift_C_or_diagnostic_guard": 5,
           "help_surface_probe": 3,
           "intentional_default_selection_probe": 4,
           "invocation_parser_probe": 2
         },
         "owner_counts": {
-          "cranelift": 147,
+          "cranelift": 145,
           "stdlib": 5
         },
         "selection_counts": {
-          "explicit_bootstrap_emitter": 6,
+          "explicit_bootstrap_emitter": 2,
           "explicit_c": 2,
-          "explicit_cranelift": 127,
+          "explicit_cranelift": 129,
           "explicit_invalid_or_parser_probe": 3,
           "implicit_default": 14
         },
-        "total": 152,
+        "total": 150,
         "unclassified_count": 0
       },
-      "departed_invocation_count": 6,
+      "departed_invocation_count": 8,
       "departed_invocation_rows": [
         {
           "invocation_marker": "./gust_bootstrap --backend bootstrap-emitter compiler/test_runner_bootstrap_bridge_entry.gst",
@@ -42011,6 +42037,18 @@
           "invocation_marker": "--backend bootstrap-emitter",
           "path": "scripts/phase22_explicit_c_migration.sh",
           "reason": "the C fixed-point arm; its three emissions go with the emitter and the arm now runs the native fixed point",
+          "selection": "explicit_bootstrap_emitter"
+        },
+        {
+          "invocation_marker": "GUST_BOOTSTRAP_EMITTER=1 ./gust --backend bootstrap-emitter tests/test_runner.gst",
+          "path": "justfile",
+          "reason": "make-test-suite emitted the runner's C and host-compiled it; Patch 25.10c points the recipe at phase21_complete_guard_suite.py's evidence arm, which already compiles the same case list on the native route and which three CI workflows already run",
+          "selection": "explicit_bootstrap_emitter"
+        },
+        {
+          "invocation_marker": "GUST_BOOTSTRAP_EMITTER=1 ./gust --backend bootstrap-emitter tests/test_runner.gst | grep",
+          "path": "justfile",
+          "reason": "make-test-suite-parallel's copy of the same emission; the two recipes differ only in which guard pass runs first, so they must not differ in which backend compiles the corpus",
           "selection": "explicit_bootstrap_emitter"
         }
       ],
@@ -42067,6 +42105,20 @@
           "path": "tests/test_runner.gst",
           "reason": "Patch 25.10b flips the negative path to the native route: 104 of 104 negative cases are rejected natively with a diagnostic, 99 of them carrying the case's own expected substring and the other five reworded, verified individually",
           "to_selection": "explicit_cranelift"
+        },
+        {
+          "from_selection": "explicit_bootstrap_emitter",
+          "invocation_marker": "./gust --backend cranelift -o \"$product\" \"$entry\"",
+          "path": "justfile",
+          "reason": "run-step52-positive-batch becomes the native build its own 24.13 comment predicted, though not by the predicted mechanism: the eight compiler test entries it pins all compile AND run natively today, verified individually, as part of the 92-of-94 compiler/*_test_entry.gst positives",
+          "to_selection": "explicit_cranelift"
+        },
+        {
+          "from_selection": "explicit_bootstrap_emitter",
+          "invocation_marker": "./gust --backend cranelift -o ",
+          "path": "tests/test_runner.gst",
+          "reason": "Patch 25.10c flips the runner's POSITIVE path to the native route, completing what 25.10b did for the negative path. Unlike the negative path this is not a clean migration: 117 of 120 tests/ positives have no native route and now fail at the compile step, which is why no recipe builds this runner any more and why the case list is consumed by runner_cases() instead",
+          "to_selection": "explicit_cranelift"
         }
       ]
     },
@@ -42078,7 +42130,7 @@
         "non_bootstrap_retained_test_surface_count": 2,
         "phase25_bootstrap_explicit_c_count": 0,
         "repository_explicit_c_count": 2,
-        "repository_invocation_count": 152,
+        "repository_invocation_count": 150,
         "supported_production_or_release_explicit_c_count": 0,
         "supported_surface_count": 6,
         "supported_surface_manifest_digest": "073acf04bbee5008c3d0c6df07e24387ab42a408e946f632c63bcb3689a77eb5",
@@ -42200,7 +42252,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "40d2990472f93ca3e3c999f3af8d486fb66a9e58af24560528cf5677b0019a82",
+          "digest": "2aa6f0cc9174ef86f6914b176609eb8ed696f9351fc919185d9c93387df9acbb",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -42312,7 +42364,7 @@
           "classification": "historical_only",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_as_historical_evidence",
-          "digest": "3a76f6ee7bbb51b4c169f8bcf7c13fb272f50d09be39b0d4e965c97a648538d9",
+          "digest": "cf647e37011a8a8939cd245fc81a2d735d5763a60e4168df14fa849291de4e53",
           "falsifier": "historical_record_is_reclassified_as_live_support",
           "match_counts": {
             "explicit_backend_spelling": 6,
@@ -42417,7 +42469,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "a3863d5b77c1ff156677bd675e2d2e422a7e45edca32a999e01e03bee8b09951",
+          "digest": "4f5cfb6ebe4ebd068444843a1920f82b6d140b8b5280ff8c697eedb6d9f996b8",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 0,
@@ -42957,12 +43009,12 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "4538ced9e1a4e7d503441806b789b3d08e4d69b6eb8a88a0675587fadde87670",
+          "digest": "0d3a7f856253c711be186d2fc0aad9a49983ef64c194ee3b2da88233d39e160e",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
-            "explicit_backend_spelling": 4,
+            "explicit_backend_spelling": 5,
             "generated_c_contract": 12,
-            "mir_to_c_name": 22
+            "mir_to_c_name": 23
           },
           "owner": "cranelift",
           "path": "scripts/phase22_opening.py",
