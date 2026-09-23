@@ -62,7 +62,12 @@ jobs:
   no-c-image:
     name: Phase 25 no-C-compiler falsifier (expected red)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Patch 25.12b: 15 was sized for a job that only inspected PATH. With the
+    # list empty this job now PROVES the C-free route, and the host-build arm
+    # pulls rust:alpine and runs a cargo build inside it. A timeout here would
+    # read as the gate failing rather than as the job being underprovisioned,
+    # which is the worst possible confusion for this particular check.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       # Ubuntu runners ship a C compiler, so the falsifier must not see
@@ -81,6 +86,20 @@ jobs:
             ln -sf "$(command -v $b)" "$RUNNER_TEMP/nocc/$b" || true
           done
           echo "NOCC_PATH=$RUNNER_TEMP/nocc" >> "$GITHUB_ENV"
+      # Patch 25.12b: the musl target is the whole measurement now. With the
+      # expected-failure list empty, run-workload asserts the C-free link on
+      # the route this phase PROVES it on, and that route is
+      # x86_64-unknown-linux-musl -- rustup ships its self-contained libc.a,
+      # which is what lets rust-lld link with no C driver anywhere.
+      #
+      # The guard refuses to measure without it rather than reporting a pass,
+      # which is how CI said so: "the target is not installed, so there is
+      # nothing to measure". Installing it here is the fix; skipping on its
+      # absence would have turned the phase's central claim into a no-op.
+      - name: Install the musl target the C-free link is proved on
+        run: |
+          rustup target add x86_64-unknown-linux-musl
+          rustup target list --installed | grep -qx x86_64-unknown-linux-musl
       # The guard exits 1 on purpose: it is a pre-registered expected failure
       # that stays red until Phase 25 lands. A bare `run:` reads that intended
       # state as a broken job, so the assertion is inverted here instead of
