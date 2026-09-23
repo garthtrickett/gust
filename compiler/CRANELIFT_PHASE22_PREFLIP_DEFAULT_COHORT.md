@@ -13,10 +13,10 @@ Generated from `scripts/cranelift_feature_registry.json`. Do not edit by hand.
 
 ## Cohort
 
-- Inventory: `326` cases
-- Required native passes: `195`
+- Inventory: `324` cases
+- Required native passes: `194`
 - Classified non-default native deferrals: `121`
-- Oracle-precondition parity rejections: `10`
+- Oracle-precondition parity rejections: `9`
 - Required native deferrals: `0`
 - Unclassified results: `0`
 - Runtime divergences: `0`
