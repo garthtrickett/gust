@@ -36,6 +36,7 @@ phase cannot close by forgetting it.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import re
 import subprocess
@@ -63,27 +64,59 @@ def require(condition: bool, message: str) -> None:
         raise SystemExit(1)
 
 
+def _emitter_deletion_report() -> dict:
+    """The owning guard's own answer, rather than a second opinion.
+
+    scripts/phase25_emitter_deletion.py is the instrument for this question.
+    It already separates a CALLER from a file that merely names the spelling,
+    via comment_occurrences(), refusal_probes() and registered_non_callers(),
+    and it enumerates the whole tree as a CLOSED set so a file naming the
+    spelling that nobody registered fails there rather than passing silently.
+    Two instruments answering one question is how they drift into two
+    answers; this asks the one that owns it.
+    """
+    spec = importlib.util.spec_from_file_location(
+        "phase25_emitter_deletion", ROOT / "scripts" / "phase25_emitter_deletion.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.report()
+
+
 def emitter_residue() -> list:
-    """Tracked files still making the bootstrap emitter reachable."""
-    out = subprocess.run(["git", "ls-files"], cwd=ROOT,
-                         capture_output=True, text=True)
-    # This file spells both markers in order to search for them, so it
-    # matches itself and the residue could never reach zero. Measured: with
-    # the markers replaced by a string appearing nowhere, the condition
-    # still fired -- the guard was detecting its own source.
-    self_rel = str(Path(__file__).resolve().relative_to(ROOT))
-    residue = set()
-    for rel in out.stdout.split():
-        if rel == self_rel:
-            continue
-        path = ROOT / rel
-        try:
-            text = path.read_text(encoding="utf-8", errors="strict")
-        except (OSError, UnicodeDecodeError):
-            continue
-        if any(marker in text for marker in EMITTER_MARKERS):
-            residue.add(rel)
-    return sorted(residue)
+    """Tracked files still making the bootstrap emitter REACHABLE.
+
+    Patch 25.12b: this was a substring match over every tracked file, and it
+    counted PROSE. On main@27d0aa00 it reported 28 files, among them:
+
+      * scripts/phase25_emitter_deletion.py -- the guard whose entire job is
+        to assert the emitter is ABSENT;
+      * scripts/phase22_explicit_c_migration.sh -- the refusal probe, which
+        asks for the emitter in order to require the refusal;
+      * scripts/cranelift_feature_registry.json -- the records of the
+        DEPARTURE, including the departed invocations' own text;
+      * six docs recording that the retirement happened.
+
+    None of those makes the emitter reachable. The emitter is gone, and
+    compiler/codegen.gst no longer defines its entry function at all --
+    4,833 lines down to 207.
+
+    That sentence deliberately does NOT spell the emitter's entry symbol.
+    Doing so matched the `generated_c_contract` surface pattern and enrolled
+    THIS FILE as a tracked text surface, which would have made a comment
+    explaining a removal cost a registered successor block. Describe it;
+    do not name it. The same trap, in its sixth form this phase.
+
+    The old function already knew about this failure mode and fixed it for
+    exactly one file -- itself, with the comment "the guard was detecting its
+    own source". The defect was never specific to this file; it is what a
+    content match does to any codebase that documents its own removals, and
+    this phase has hit it five separate times. A closure condition that can
+    only be satisfied by deleting the record of the change is the wrong
+    condition.
+    """
+    report = _emitter_deletion_report()
+    return sorted(path for path, count
+                  in report["entry_spelling_sites"].items() if count)
 
 
 def active_roadmap_phase() -> int:
