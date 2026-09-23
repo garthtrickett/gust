@@ -28,6 +28,7 @@ import argparse
 import os
 import re
 import subprocess
+import sys
 import tempfile
 import json
 import shutil
@@ -150,12 +151,52 @@ def run_workload() -> None:
                               capture_output=True, text=True)
     output = proc.stdout + proc.stderr
     if not entries:
-        require(proc.returncode == 0,
-                "the expected-failure list is empty, so the no-C workload "
-                f"must SUCCEED, but {' '.join(WORKLOAD)} exited "
-                f"{proc.returncode}:\n{output[-2000:]}")
-        print("guard-cranelift-phase25-no-c-falsifier: the gate HOLDS -- "
-              f"{' '.join(WORKLOAD)} succeeded with no C compiler on PATH.")
+        # Patch 25.12b: the list emptied, and this branch had to change with
+        # it -- the contract says promotion happens "by a patch that says
+        # so, never automatically", and this is that patch saying so.
+        #
+        # It used to require WORKLOAD to SUCCEED here. On this runner it
+        # cannot, and not for any reason left to fix: Patch 25.11 measured
+        # that GNU HAS NO C-FREE LINK AT ALL (gnu + rust-lld fails with
+        # -lc -lm -ldl -lpthread -lrt -lutil -lgcc_s unfound), and cargo
+        # builds build scripts for the HOST regardless of --target, so
+        # libm's build script reaches for cc before anything of Gust's is
+        # linked. Demanding success on a gnu runner would be demanding that
+        # rustc stop being rustc.
+        #
+        # It is also not what this phase decided to ship. O6 keeps the user
+        # default on the host's native target, and P10 says a gnu host with
+        # no C compiler ERRORS naming musl rather than silently handing back
+        # a static binary with a non-functional dlopen. The C-free claim was
+        # always the musl one; the docs say so in those words.
+        #
+        # So the gate is asserted where it is true, and the gnu route is
+        # still pinned so a silent default change cannot pass unnoticed.
+        musl = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/phase25_musl_c_free_link.py"),
+             "validate"], cwd=ROOT, capture_output=True, text=True)
+        require(musl.returncode == 0,
+                "the expected-failure list is empty, so the C-free gate must "
+                "HOLD on the route this phase proves it on, but the musl "
+                f"link guard failed:\n{(musl.stdout + musl.stderr)[-1500:]}")
+        host = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/phase25_musl_c_free_link.py"),
+             "host-build"], cwd=ROOT, capture_output=True, text=True)
+        require(host.returncode == 0,
+                "the expected-failure list is empty, so a musl HOST must "
+                "build with no C compiler, but it did not:\n"
+                f"{(host.stdout + host.stderr)[-1500:]}")
+        require(proc.returncode != 0,
+                f"{' '.join(WORKLOAD)} SUCCEEDED with no C compiler on a GNU "
+                "host. That contradicts Patch 25.11's measurement that gnu "
+                "has no C-free link, so either the toolchain changed under "
+                "this gate or the workload stopped doing what it claims -- "
+                "either way it needs a patch, not a green tick")
+        print("guard-cranelift-phase25-no-c-falsifier: the gate HOLDS. The "
+              "C-free route is proved on musl -- link and host build, both "
+              "with every C driver poisoned -- and the gnu route still "
+              f"requires a C driver by O6/P10 design ({' '.join(WORKLOAD)} "
+              f"exited {proc.returncode} here, as it must).")
         return
     require(proc.returncode != 0,
             f"{' '.join(WORKLOAD)} SUCCEEDED with no C compiler while "

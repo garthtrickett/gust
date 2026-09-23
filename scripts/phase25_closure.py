@@ -51,10 +51,27 @@ FALSIFIER_LIST = ROOT / "scripts" / "phase25_no_c_expected_failures.json"
 # live in the tree today (27 and 13 tracked files).
 EMITTER_MARKERS = ("bootstrap-emitter", "GUST_BOOTSTRAP_EMITTER")
 
+# Patch 25.12b names the SECOND exception, on this file's own principle:
+# stating the exception is the difference between a closure and an oversight.
+#
+# The C-free route is the MUSL one, and that was never a late discovery --
+# Patch 25.11 measured it and the docs say "everything else is proved on
+# musl only". On gnu there is no C-free link at all: gnu + rust-lld fails
+# with -lc -lm -ldl -lpthread -lrt -lutil -lgcc_s unfound, and cargo links
+# build scripts for the HOST regardless of --target, so a gnu host reaches
+# for cc before anything of Gust's is linked. O6 keeps the user default on
+# the host target and P10 makes a no-C gnu host ERROR naming musl rather
+# than silently hand back a static binary with a broken dlopen.
+#
+# An unqualified sentence would be the oversight this file exists to avoid:
+# it would read as "Gust needs no C compiler anywhere", which is false on
+# the platform most users are on.
 CLOSURE_SENTENCE = (
-    "A clean machine builds and tests Gust without invoking a C compiler, "
-    "except tree-sitter-gust, which is editor tooling unreachable from "
-    "`make test` or CI."
+    "On the musl route, a clean machine builds and tests Gust without "
+    "invoking a C compiler, except tree-sitter-gust, which is editor "
+    "tooling unreachable from `make test` or CI. On a gnu host the link "
+    "still goes through a C driver: no C-free link exists there, and the "
+    "user default stays the host target by design (O6/P10)."
 )
 
 

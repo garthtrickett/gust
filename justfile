@@ -24117,3 +24117,5 @@ guard-cranelift-phase25-musl-c-free-link:
     set -euo pipefail
     echo "🔒 Proving the C-free link with the Gust runtime archive in it..."
     python3 scripts/phase25_musl_c_free_link.py validate
+    echo "🔒 Proving a musl HOST builds with no C compiler at all..."
+    python3 scripts/phase25_musl_c_free_link.py host-build

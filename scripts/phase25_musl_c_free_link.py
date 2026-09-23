@@ -198,6 +198,67 @@ def validate() -> None:
           f"through rust-lld, runs, and exits {SENTINEL} as a static-pie.")
 
 
+MUSL_HOST_IMAGE = "rust:alpine"
+
+
+def validate_host_build() -> None:
+    r"""The other half: a musl HOST builds with no C compiler at all.
+
+    scripts/phase25_musl_c_free_link.py proves the LINK. This proves the
+    BUILD, and they are different claims -- the no-C workload cargo-builds
+    the Cranelift backend before anything links, and cargo builds build
+    scripts for the HOST regardless of --target. On a gnu host that is
+    unfixable: Patch 25.11 measured that gnu has no C-free link at all
+    (-lc -lm -ldl -lpthread -lrt -lutil -lgcc_s unfound), so libm's build
+    script reaches for cc and there is nothing to configure.
+
+    Measured here rather than argued: rustc's DEFAULT linker driver is cc on
+    ANY host, musl included -- a musl image with the C compilers shadowed
+    off PATH fails with `error: linker \`cc\` not found`, which is the
+    expected-failure entry's own observable_signature. Configuring rust-lld
+    explicitly is what clears it, and on a musl host that build SUCCEEDS and
+    the binary RUNS.
+
+    So the entry is cleared by a configuration, not by an image swap, and
+    not by waiting for a toolchain change. Both halves are required and
+    neither is sufficient alone.
+    """
+    if shutil.which("docker") is None:
+        require(False,
+                "docker is unavailable, so the musl-host build claim cannot "
+                "be measured. This guard does not pass on a missing "
+                "instrument -- an unmeasurable claim is not a satisfied one")
+
+    script = (
+        'mkdir -p /nocc\n'
+        'for b in sh cargo rustc ls printf command tail head cat env; do\n'
+        '  p=$(command -v $b 2>/dev/null) && ln -sf "$p" /nocc/$b 2>/dev/null\n'
+        'done\n'
+        'export PATH=/nocc\n'
+        'command -v cc >/dev/null 2>&1 && { echo NOT-ARMED; exit 2; }\n'
+        'cd /tmp && cargo new --bin probe >/dev/null 2>&1 && cd /tmp/probe\n'
+        'RUSTFLAGS="-C linker=rust-lld -C linker-flavor=ld.lld" '
+        'cargo build --release >/tmp/b.log 2>&1 || { echo BUILD-FAILED; '
+        'tail -8 /tmp/b.log; exit 3; }\n'
+        './target/release/probe >/dev/null 2>&1 || { echo RUN-FAILED; exit 4; }\n'
+        'echo MUSL-HOST-C-FREE-OK\n'
+    )
+    built = subprocess.run(
+        ["docker", "run", "--rm", MUSL_HOST_IMAGE, "sh", "-c", script],
+        capture_output=True, text=True, timeout=1800)
+    out = built.stdout + built.stderr
+    require("NOT-ARMED" not in out,
+            "the musl image still had a C compiler on PATH, so a successful "
+            "build there would prove nothing")
+    require(built.returncode == 0 and "MUSL-HOST-C-FREE-OK" in out,
+            "a musl host with rust-lld configured did not build and run "
+            f"without a C compiler:\n{out[-1500:]}")
+    print("guard-cranelift-phase25-musl-c-free-link: ok. A musl host with no "
+          "C compiler on PATH builds and runs a Rust binary when rust-lld is "
+          "configured explicitly -- rustc's default driver is cc on every "
+          "host, so the configuration is what clears it.")
+
+
 def report() -> None:
     print(json.dumps({
         "version": "phase25_musl_c_free_link_v1",
@@ -210,9 +271,11 @@ def report() -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["validate", "report"])
+    parser.add_argument("command",
+                        choices=["validate", "host-build", "report"])
     args = parser.parse_args()
-    {"validate": validate, "report": report}[args.command]()
+    {"validate": validate, "host-build": validate_host_build,
+     "report": report}[args.command]()
     return 0
 
 
