@@ -49,14 +49,54 @@ test ! -e gust_v4.c || fail "gust_v4.c exists before this guard runs; Patch 25.9
 # the same correction already made for all five Makefile bootstrap callers.
 # The emitter is reached through the bootstrap-only entry instead, and the
 # assertions below are unchanged: clean stderr, non-empty C.
-# Patch 24.13: the bootstrap-emitter entry is authority-gated (review on
-# #421). Exported once, ABOVE the first use -- it sat below the seed emitter
-# when that line still spelled mir-to-c, and moving the line without moving
-# the export would have left the first caller ungated.
-export GUST_BOOTSTRAP_EMITTER=1
-./gust_bootstrap --backend bootstrap-emitter "$fixture" >"$build_dir/prepatch.c" 2>"$build_dir/prepatch.stderr"
-test ! -s "$build_dir/prepatch.stderr" || fail "the Phase-25-owned seed emitter emitted diagnostics"
-test -s "$build_dir/prepatch.c" || fail "the Phase-25-owned seed emitter produced no C"
+# Patch 25.10: the pre-patch emission is INVERTED. It ran the
+# Phase-25-owned seed emitter over the fixture and required clean stderr
+# and non-empty C. There is no emitter, and gust_bootstrap is a fetched
+# bridge that refuses the spelling, so the assertion becomes the one worth
+# making: asking for it is REFUSED, and refused by name.
+#
+# GUST_BOOTSTRAP_EMITTER goes with it. The authority existed to keep a
+# user from reaching the emitter through the public binary; with no
+# emitter there is nothing to gate, and an export that gates nothing reads
+# like a door on an empty room.
+set +e
+./gust_bootstrap --backend bootstrap-emitter "$fixture" \
+  >"$build_dir/prepatch.stdout" 2>"$build_dir/prepatch.stderr"
+prepatch_status=$?
+set -e
+test "$prepatch_status" -ne 0 ||
+  fail "the bridge still accepts --backend bootstrap-emitter; Patch 25.10 deleted the emitter"
+# Patch 25.10c: the property is "no C was emitted", not "stdout is empty",
+# and the refusal is the BRIDGE's, not this branch's.
+#
+# gust_bootstrap is a FETCHED binary from an earlier release. It refuses the
+# spelling on STDOUT, in its own Phase 24 wording, and cannot carry Patch
+# 25.10's message because it predates it. The two assertions replaced here
+# required an empty stdout and a 25.10-worded STDERR, which is the current
+# compiler's refusal behaviour asserted against a binary that cannot have it.
+# They failed while the property they exist to protect -- asking for the
+# emitter produces a refusal and no C -- held perfectly.
+#
+# So: no C on stdout, checked by what C actually looks like rather than by
+# byte count, and a refusal that names the spelling. Either wording is
+# accepted because either one IS a refusal by name; what is not accepted is
+# silence or emission.
+if rg -q -F '#include' "$build_dir/prepatch.stdout"; then
+  fail "a refused emitter invocation still wrote C to stdout"
+fi
+cat "$build_dir/prepatch.stdout" "$build_dir/prepatch.stderr" \
+  >"$build_dir/prepatch.combined"
+if ! rg -q -F -- '--backend bootstrap-emitter' "$build_dir/prepatch.combined"; then
+  fail "the refusal does not name the spelling it refused"
+fi
+# -F, not a regex: scripts/phase25_emitter_deletion.py registers this exact
+# string as a REQUIRED refusal for this file, and checks it by literal
+# presence. Escaping the dot for regex mode (25\.10) removed the literal and
+# broke that registration -- the guard fails naming the probe, not the regex.
+if ! rg -q -F -e 'bootstrap C emitter was deleted in Patch 25.10' \
+        -e 'bootstrap-only machinery' "$build_dir/prepatch.combined"; then
+  fail "the refusal does not name what happened to the spelling"
+fi
 
 set +e
 ./gust --backend C "$fixture" >"$build_dir/invalid.stdout" 2>"$build_dir/invalid.stderr"
@@ -101,28 +141,26 @@ else
     fail "help still offers C emission as the default route"
 fi
 
-# Patch 24.13: this is the BOOTSTRAP self-compilation fixed point, not a
-# consumer of the explicit-C route, so it takes the bootstrap spelling rather
-# than being retired. It mirrors Makefile:241 and :245 exactly -- same source
-# (compiler/test_runner_entry.gst), same filter, same stage2/stage3 comparison
-# -- and those two rows are the ones this patch moved to the bootstrap-only
-# entry. Using bootstrap-emitter here is not overloading a bootstrap name for a
-# non-bootstrap purpose; this arm IS bootstrap work.
-./gust --backend bootstrap-emitter "$compiler_source" |
-  grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" >"$build_dir/stage2.c"
-cat src/runtime.c "$build_dir/stage2.c" >"$build_dir/stage2-final.c"
-# Patch 25.6: src/runtime.c is no longer a complete runtime. fiber.c is
-# deleted and its eighteen exports live in the runtime crate, and codegen
-# emits a gust_yield() call in every loop of every compiled Gust program,
-# so this link needs the crate object. Built through make so a stale one
-# cannot be linked silently.
-runtime_obj="build/phase25-runtime-rs/gust_runtime_rs_exports.o"
-make "$runtime_obj"
-"${CC:-cc}" ${CFLAGS:--O2 -Wall -pthread} ${INCLUDES:--Isrc} \
-  "$build_dir/stage2-final.c" "$runtime_obj" -o "$build_dir/stage2-bin"
-"$build_dir/stage2-bin" --backend bootstrap-emitter "$compiler_source" |
-  grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" >"$build_dir/stage3.c"
-cmp -s "$build_dir/stage2.c" "$build_dir/stage3.c" || fail "stage 2 and stage 3 C are not byte-identical"
+# Patch 24.13 wrote, of the arm this replaces: "this is the BOOTSTRAP
+# self-compilation fixed point, not a consumer of the explicit-C route, so
+# it takes the bootstrap spelling rather than being retired... this arm IS
+# bootstrap work." That was right, and it is why the arm survived Phase 24.
+#
+# Patch 25.10: this arm mirrored the Makefile's C fixed point -- emit
+# stage two, concatenate the runtime, host-compile it, emit stage three
+# from that binary, compare the two for byte identity. All three emissions
+# are gone with the emitter, so the arm has no operands.
+#
+# Inverted the way `make bootstrap` was, and for the same reason: the
+# PROPERTY did not go away, it moved. Patch 25.7 put the fixed point on
+# the emitted OBJECTS, which is stronger than identical C -- Patch 25.2's
+# artifact set excludes linked executables by name because the linker
+# normalises differences away. Running the native guard here keeps this
+# script asserting a fixed point rather than asserting nothing.
+./scripts/phase25_native_fixed_point.sh >"$build_dir/native-fixed-point.log" 2>&1 ||
+  { cat "$build_dir/native-fixed-point.log" >&2; fail "the native fixed point does not hold"; }
+rg -F 'stage_n == stage_n+1' "$build_dir/native-fixed-point.log" >/dev/null ||
+  fail "the native fixed point ran but did not assert stage_n == stage_n+1"
 
 test ! -e gust_v4.c || fail "this guard regenerated gust_v4.c. Patch 25.9 removed the copy of stage 3 output over the seed; if the file is back, so is that line."
 

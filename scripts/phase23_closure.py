@@ -575,7 +575,16 @@ def check() -> None:
         # moves the manifest digest in front of 25.5. Appending it
         # instead would hand 25.5 a tree one patch ahead of what it
         # recorded, and the loop would fail on the wrong link.
-        for later in ("phase2510a_strings_retirement",
+        # Newest FIRST here -- this loop projects BACKWARDS, taking the
+        # live audit and walking it back through each later patch to the
+        # state #398 recorded. Patch 25.10 is newer than 25.10a, so it
+        # leads. (The invocation-summary chains in phase22_opening.py and
+        # phase24_cr15_stdlib_guard_transition.py walk the other way and
+        # append the newest link; same registry, opposite direction, and
+        # getting it wrong fails as "transition drifted" rather than as an
+        # ordering complaint.)
+        for later in ("phase2510_emitter_deletion",
+                      "phase2510a_strings_retirement",
                       "phase25_runtime_port_invocations"):
             node = registry.get(later, {}).get("production_audit_transition")
             if node is None:

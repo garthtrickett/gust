@@ -110,11 +110,46 @@ def validate() -> dict:
         if count:
             cleaner_files.append(path.relative_to(ROOT).as_posix())
             occurrence_count += count
-    require(occurrence_count == authority.get("frozen_string_cleaner_occurrences"),
-            "legacy string-cleaner inventory drifted; Patch 20.2 freezes 48 occurrences")
-    require(occurrence_count - 1 == authority.get("frozen_string_cleaner_callers"),
+    # Patch 25.10 deletes the emitter, taking compiler/codegen.gst's two
+    # strip_brand_prefix calls with it. Patch 20.2's frozen numbers are NOT
+    # edited -- they are a true statement about what 20.2 froze -- so the
+    # departure is registered and subtracted here. The guard then checks an
+    # accounted difference rather than being handed a new total with no story.
+    #
+    # Both halves are required: the departed owner file must be gone from the
+    # live inventory AND the occurrence arithmetic must come out exactly. A
+    # departure that removed a different number of calls than it claims fails,
+    # and so does one whose file still carries them.
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    departure = registry.get("phase2510_emitter_deletion", {}).get(
+        "frozen_inventory_departures", {})
+    departed_occurrences = 0
+    departed_files: list = []
+    if departure:
+        require(departure.get("contract_version") ==
+                "phase2510_frozen_inventory_departure_v1" and
+                departure.get("partial_or_substituted_departure") == "rejected",
+                "Patch 25.10 frozen inventory departure record drifted")
+        cleaner = departure["string_cleaner"]
+        departed_occurrences = cleaner["departed_occurrences"]
+        departed_files = list(cleaner["departed_owner_files"])
+        for path in departed_files:
+            require(path not in cleaner_files,
+                    f"Patch 25.10 records {path} as departing the legacy "
+                    "string-cleaner inventory, but it still carries calls")
+    require(occurrence_count + departed_occurrences ==
+            authority.get("frozen_string_cleaner_occurrences"),
+            "legacy string-cleaner inventory drifted: "
+            f"{occurrence_count} live plus {departed_occurrences} registered "
+            f"as departed is not the "
+            f"{authority.get('frozen_string_cleaner_occurrences')} Patch 20.2 "
+            "froze")
+    require(occurrence_count + departed_occurrences - 1 ==
+            authority.get("frozen_string_cleaner_callers"),
             "legacy string-cleaner caller count drifted")
-    require(cleaner_files == authority.get("frozen_string_cleaner_owner_files"),
+    require(cleaner_files == [path for path in
+                              authority.get("frozen_string_cleaner_owner_files")
+                              if path not in departed_files],
             "legacy brand string cleaner owner-file inventory drifted")
 
     require(FIXTURE.is_file(), "Phase 20 brand-matching semantic fixture is missing")

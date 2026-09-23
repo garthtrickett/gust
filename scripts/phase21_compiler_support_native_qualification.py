@@ -99,10 +99,43 @@ def validate() -> dict:
     selected = set(record.get("selected_modules_deferred_to_patch21_13", []))
     entry = record.get("entry_module_deferred_to_patch21_14")
     support = current_reachable - selected - {entry}
+    # Patch 25.10 deletes the emitter and takes three of codegen.gst's import
+    # edges with it. This is the SECOND consumer of that fact -- the same
+    # count is pinned in phase21_residue_migration_authority -- so it reads
+    # the SAME registered departure rather than keeping its own record, which
+    # could then disagree with it.
+    #
+    # The departed edges are filtered by the same authority_reachable set the
+    # live ones are, so the subtraction counts only edges this assertion would
+    # have counted. All three endpoints are compiler modules, so all three
+    # subtract; an edge registered as departed that this scope never counted
+    # would not, and the arithmetic below would catch it.
+    graph_departure = registry.get("phase2510_emitter_deletion", {}).get(
+        "frozen_inventory_departures", {}).get("compiler_import_graph", {})
+    departed_authority_edges = [
+        (source, dependency)
+        for source, dependency in (
+            tuple(edge) for edge in graph_departure.get("departed_edges", []))
+        if source in authority_reachable and dependency in authority_reachable
+    ]
+    departed_current_edges = [
+        tuple(edge) for edge in graph_departure.get("departed_edges", [])
+        if tuple(edge)[0] not in later_modules
+        and tuple(edge)[1] not in later_modules
+        and tuple(edge) not in later_edges
+    ]
+    for source, dependency in departed_authority_edges:
+        require((source, dependency) not in current_edges,
+                f"Patch 25.10 records the import edge {source} -> "
+                f"{dependency} as departed, but it is still in the graph")
     require(authority_reachable.issubset(current_reachable) and
             len(authority_reachable) == graph.get("module_count") == 38 and
-            len(authority_edges) == graph.get("import_edge_count") == 116,
-            "compiler graph drifted from Patch 21.8 authority")
+            len(authority_edges) + len(departed_authority_edges) ==
+            graph.get("import_edge_count") == 116,
+            "compiler graph drifted from Patch 21.8 authority: "
+            f"{len(authority_edges)} live edges plus "
+            f"{len(departed_authority_edges)} registered as departed against "
+            f"{graph.get('import_edge_count')} pinned")
     require(successors == [
         "mir_native_backend_collection_string_source.gst",
         "mir_native_backend_filesystem_allocation_source.gst",
@@ -111,8 +144,11 @@ def validate() -> dict:
             record.get("current_compiler_graph_module_count") ==
             len(current_reachable) == 41 and
             record.get("current_compiler_graph_import_edge_count") ==
-            len(current_edges) == 125,
-            "post-authority successor graph reconciliation drifted")
+            len(current_edges) + len(departed_current_edges) == 125,
+            "post-authority successor graph reconciliation drifted: "
+            f"{len(current_edges)} live edges plus "
+            f"{len(departed_current_edges)} registered as departed against "
+            f"{record.get('current_compiler_graph_import_edge_count')} pinned")
     require(selected == {"lexer.gst", "parser.gst", "resolver.gst",
                          "typechecker.gst", "mir.gst", "codegen.gst"},
             "Patch 21.13 selected-module boundary drifted")

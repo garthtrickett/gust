@@ -213,13 +213,27 @@ def validate() -> dict:
     # had stopped checking. The workflow now asserts the seed is NOT
     # recreated, and this requires that form instead -- otherwise the
     # harness reference and the harness drift apart silently.
+    # Patch 25.10 retires the C fixed point. `cmp build/gust_stage2.c
+    # build/gust_stage3.c` compares two files the emitter emitted; with no
+    # emitter they are never written, so it fails on missing operands rather
+    # than on divergence. FOUR scripts pin this command into the workflow and
+    # all four move together. They were enumerated with
+    #   grep -rln "gust_stage2.c build/gust_stage3.c" scripts/*.py
+    # after two were found one at a time from CI error text and this third one
+    # turned out to word its message differently -- "is missing" rather than
+    # "lacks" -- so searching for the message found two of four.
     for command in (
         "make bootstrap",
-        "cmp build/gust_stage2.c build/gust_stage3.c",
         "if [ -e gust_v4.c ]; then",
         "git ls-files --error-unmatch gust_v4.c",
     ):
         require(command in workflow, f"fixed-point workflow is missing {command!r}")
+    require("cmp build/gust_stage2.c build/gust_stage3.c" not in workflow,
+            "the fixed-point workflow still compares stage-two and "
+            "stage-three C, which Patch 25.10 retired with the emitter")
+    require("for stale in build/gust_stage2.c build/gust_stage3.c" in workflow,
+            "the fixed-point workflow dropped the C stage comparison without "
+            "asserting the stages are gone")
     require("git diff --exit-code -- gust_v4.c" not in workflow,
             "the fixed-point workflow still runs `git diff --exit-code -- "
             "gust_v4.c`. With the seed deleted that command cannot fail, so "

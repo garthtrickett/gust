@@ -108,12 +108,40 @@ def validate() -> dict:
         and [row.get("selected_module") for row in slices] == expected_order,
         "selected slices are missing, duplicated, or reordered",
     )
+    # Patch 25.10 deletes the emitter, which cuts three of codegen.gst's six
+    # imports and takes four modules out of the CODEGEN-ROOTED subgraph with
+    # them -- the two MIR function authorities it imported directly, plus
+    # mir_layout and mir_resource_authority, which had no other path from
+    # codegen. Registered by NAME rather than as a delta, and subtracted here.
+    #
+    # Exactly one slice moves. The other five are asserted unchanged by the
+    # same loop, which is the control: a deletion that reached further than
+    # the emitter would move a second slice and fail, and a departure record
+    # naming the wrong slice fails too.
+    reach_departure = registry.get("phase2510_emitter_deletion", {}).get(
+        "frozen_inventory_departures", {}).get("selected_module_reachability", {})
     for row in slices:
         reachable, edges = import_graph(row["selected_module"])
+        departed_modules: list = []
+        departed_edges = 0
+        if reach_departure.get("selected_module") == row["selected_module"]:
+            departed_modules = list(reach_departure["departed_reachable_modules"])
+            departed_edges = reach_departure["departed_reachable_edges"]
+            for module in departed_modules:
+                require(module not in reachable,
+                        f"Patch 25.10 records {module} as leaving the "
+                        f"{row['selected_module']} subgraph, but it is still "
+                        "reachable from it")
         require(
-            row.get("reachable_module_count") == len(reachable)
-            and row.get("reachable_import_edge_count") == len(edges),
-            f"{row['id']} reachable graph counts drifted",
+            row.get("reachable_module_count")
+            == len(reachable) + len(departed_modules)
+            and row.get("reachable_import_edge_count")
+            == len(edges) + departed_edges,
+            f"{row['id']} reachable graph counts drifted: "
+            f"{len(reachable)} modules and {len(edges)} edges live, plus "
+            f"{len(departed_modules)} and {departed_edges} registered as "
+            f"departed, against {row.get('reachable_module_count')} and "
+            f"{row.get('reachable_import_edge_count')} pinned",
         )
         fixture = ROOT / row.get("source_fixture", "")
         require(fixture.is_file(), f"{row['id']} fixture is missing")

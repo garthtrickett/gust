@@ -9161,10 +9161,21 @@ guard-cranelift-phase10-backend-selection-contract:
       'Compiler invocation error: multiple source paths are not supported' \
       multiple-sources \
       ./gust "$source_fixture" compiler/mir_feature_local_binding_read_preservation_source.gst
+    # Patch 25.10: the refusal MOVED EARLIER, so the expected message
+    # changes with it. This asserted "the MIR-to-C backend does not accept
+    # -o" -- a complaint about the FLAG, reached only because the backend
+    # itself was still accepted. With the emitter deleted the spelling is
+    # refused at the invocation parser, before -o is ever considered.
+    #
+    # Kept as a probe rather than deleted: it is the only place that
+    # exercises the retired backend spelling together with -o, and a
+    # retired spelling that stops being probed is a spelling nobody
+    # notices coming back. GUST_BOOTSTRAP_EMITTER goes, because there is
+    # no authority left to satisfy.
     expect_invocation_failure \
-      'Compiler invocation error: the MIR-to-C backend does not accept -o' \
+      'the bootstrap C emitter was deleted in Patch 25.10' \
       bootstrap-emitter-output \
-      env GUST_BOOTSTRAP_EMITTER=1 ./gust --backend bootstrap-emitter -o "$output_path" "$source_fixture"
+      ./gust --backend bootstrap-emitter -o "$output_path" "$source_fixture"
     if rg -F '"phase22_native_implicit_output"' scripts/cranelift_feature_registry.json >/dev/null; then
       rg -n -F 'invocation.output_path = compiler_native_implicit_output_path(invocation.source_path, ctx);' "$compiler_entry" >/dev/null
     else
@@ -10162,8 +10173,31 @@ guard-cranelift-phase10-packaging-help-ci:
       rm -f build/gust-native-backend
       rm -rf build/phase10-package
       make gust
-      if [ -e build/gust-native-backend ] || [ -e build/phase10-package ]; then
-        echo "make gust must remain compiler-only and must not build or stage the Rust worker."
+      # Patch 25.10c INVERTS the first half of this assertion.
+      #
+      # It used to require that `make gust` produce NEITHER
+      # build/gust-native-backend NOR build/phase10-package, on the grounds
+      # that make gust is compiler-only and packaging belongs to
+      # `make phase10-native-package`. The first half described a world where
+      # make gust ran the C emitter and host-compiled the result; it held
+      # trivially because nothing in that path wanted a native worker.
+      #
+      # Patch 25.10 makes `make gust` ONE NATIVE COMPILE. A native compile
+      # cannot happen without the native backend driver, so the worker is now
+      # a PREREQUISITE of the target, and requiring its absence requires the
+      # compiler not to be built the way this phase builds it. Deleting the
+      # clause would say nothing, so it is inverted: the worker must be
+      # PRESENT, because its absence would mean the native compile above did
+      # not really happen.
+      #
+      # The second half is untouched and is the one carrying the separation
+      # this guard exists for. Packaging is still not make gust's job.
+      if [ ! -x build/gust-native-backend ]; then
+        echo "make gust is a native compile now and must leave its backend driver staged; an absent worker means the compile did not take the native route."
+        exit 1
+      fi
+      if [ -e build/phase10-package ]; then
+        echo "make gust must not stage the phase10 package; packaging remains make phase10-native-package's job."
         exit 1
       fi
 
@@ -22513,40 +22547,44 @@ run-step52-positive-batch:
     rg -n -F 'compiler/typechecker_resource_assignment_bridge_test_entry.gst' tests/test_runner.gst >/dev/null
     rg -n -F 'compiler/typechecker_resource_return_cleanup_mixed_scheduled_terminal_states_test_entry.gst' tests/test_runner.gst >/dev/null
     rg -n -F 'compiler/typechecker_resource_scope_exit_mixed_scheduled_terminal_states_test_entry.gst' tests/test_runner.gst >/dev/null
-    mkdir -p build
-    echo "⚙️  Compiling native batched Step 5.2 positive runner from tests/test_runner.gst..."
-    # Patch 24.13: the retained emitter, reached by its surviving spelling.
+    mkdir -p build/step52-positive
+    # Patch 25.10c: this IS the native build its predecessor predicted, but
+    # not by the mechanism the prediction named.
     #
-    # tests/test_runner.gst CANNOT be compiled natively, and not for a reason
-    # this patch creates: the native route defers
-    # `phase13_generic_source_to_mir` with
-    # reason_code=deferred_p13_parameter_argument_aggregate_parameter. Phase 13
-    # owns that capability. There is also no frozen vector for this source, so
-    # the oracle cannot stand in.
+    # The Patch 24.13 comment replaced here said tests/test_runner.gst "CANNOT
+    # be compiled natively" because the native route defers
+    # deferred_p13_parameter_argument_aggregate_parameter, and that "when the
+    # Phase 13 capability lands, this becomes a native build". The first claim
+    # is still true of the RUNNER. The prediction is not: that reason code is
+    # 3 of 216 non-compiling positives, clearing it only relabels a case to
+    # the next code, and a bare `func main() { mut x := 1 + 2; }` has no
+    # native route either. Waiting for that capability would have waited
+    # forever for the wrong thing.
     #
-    # I ruled this out twice before reversing: Patch 24.11 rejected bucketing
-    # bootstrap-emitter AS explicit C, and #420 counts it as its own selection
-    # class. Neither objection survives contact with the actual choice here.
-    # 24.11 rejected ASSERTING the two spellings are the same thing; this only
-    # USES the surviving one. #420's contract requires the explicit-C drop to
-    # equal the rise across its destinations, and it still does -- what widens
-    # is which consumers the destination has, not whether the arithmetic holds.
+    # What lets this recipe go native is that the eight cases it pins never
+    # needed the runner. They are compiler test entries, and all eight
+    # compile AND run natively today -- measured 2026-09-23, part of the
+    # 92-of-94 compiler/*_test_entry.gst positives.
     #
-    # The alternative was deleting a working batched fixture runner because a
-    # different phase has not finished. That is a worse trade, and it is
-    # reversible: when the Phase 13 capability lands, this becomes a native
-    # build.
-    GUST_BOOTSTRAP_EMITTER=1 ./gust --backend bootstrap-emitter tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner_step52_positive.c
-    rg -n -F 'compiler/typechecker_resource_declaration_auto_registration_test_entry.gst' build/test_runner_step52_positive.c >/dev/null
-    rg -n -F 'compiler/typechecker_resource_assignment_auto_registration_test_entry.gst' build/test_runner_step52_positive.c >/dev/null
-    rg -n -F 'compiler/typechecker_resource_move_assignment_transfer_test_entry.gst' build/test_runner_step52_positive.c >/dev/null
-    rg -n -F 'compiler/typechecker_resource_reassignment_terminal_required_test_entry.gst' build/test_runner_step52_positive.c >/dev/null
-    rg -n -F 'compiler/typechecker_resource_return_cleanup_mixed_scheduled_terminal_states_test_entry.gst' build/test_runner_step52_positive.c >/dev/null
-    rg -n -F 'compiler/typechecker_resource_scope_exit_mixed_scheduled_terminal_states_test_entry.gst' build/test_runner_step52_positive.c >/dev/null
-    cat src/runtime.c build/test_runner_step52_positive.c > build/test_runner_step52_positive_final.c
-    CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; RT_A=src/runtime-rs/target/release/libgust_runtime_rs.a; RT_C=src/runtime-rs/target/canary/release/libgust_runtime_rs.a; make "$RT_A" "$RT_C"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_step52_positive_final.c "$RT_A" -o build/test_runner_step52_positive_bin
-    echo "🏃 Running native batched Step 5.2 positive runner..."
-    ./build/test_runner_step52_positive_bin
+    # The emitted-C presence assertions are INVERTED here, not dropped. They
+    # used to say "the emitter carried these cases into its C". They now say
+    # the stronger thing this phase actually wants -- the native route
+    # compiles and runs each of them. A dropped assertion says nothing.
+    echo "⚙️  Compiling the Step 5.2 positive entries on the native route..."
+    for entry in \
+      compiler/typechecker_resource_declaration_auto_registration_test_entry.gst \
+      compiler/typechecker_resource_assignment_auto_registration_test_entry.gst \
+      compiler/typechecker_resource_move_assignment_transfer_test_entry.gst \
+      compiler/typechecker_resource_reassignment_terminal_required_test_entry.gst \
+      compiler/typechecker_resource_declaration_bridge_test_entry.gst \
+      compiler/typechecker_resource_assignment_bridge_test_entry.gst \
+      compiler/typechecker_resource_return_cleanup_mixed_scheduled_terminal_states_test_entry.gst \
+      compiler/typechecker_resource_scope_exit_mixed_scheduled_terminal_states_test_entry.gst
+    do
+      product="build/step52-positive/$(basename "$entry" .gst)"
+      ./gust --backend cranelift -o "$product" "$entry"
+      "$product" >/dev/null
+    done
     echo "✅ Batched Step 5.2 positive fixture runner passed."
 
 run-step52-negative-batch:
@@ -22607,13 +22645,39 @@ test-tree-sitter-fast-c:
 
 make-test-suite:
     just make-test-guards
-    mkdir -p build
-    echo "⚙️  Compiling native Gust test runner..."
-    GUST_BOOTSTRAP_EMITTER=1 ./gust --backend bootstrap-emitter tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
-    cat src/runtime.c build/test_runner.c > build/test_runner_final.c
-    CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; RT_O=build/phase25-runtime-rs/gust_runtime_rs_exports.o; RT_CO=build/phase25-runtime-rs-canary/gust_runtime_rs_exports.o; make "$RT_O" "$RT_CO"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_final.c "$RT_O" -o build/test_runner_bin
-    echo "🏃 Running native Gust test runner..."
-    GUST_BOOTSTRAP_EMITTER=1 ./build/test_runner_bin
+    # Patch 25.10c: the corpus runs on the NATIVE route. The emitter arm is
+    # retired here, and this is the last thing pinning compiler/codegen.gst.
+    #
+    # This recipe used to emit C from tests/test_runner.gst, host-compile it,
+    # and run the resulting binary under GUST_BOOTSTRAP_EMITTER=1 so that each
+    # of its 324 cases was compiled by the emitter in turn. It was also a
+    # DUPLICATE: the same case list, parsed out of the same file by
+    # runner_cases(), is already compiled and checked by the evidence arm of
+    # scripts/phase21_complete_guard_suite.py, which three CI workflows run.
+    # make-test-suite was the local-only half of that pair.
+    #
+    # Measured over all 324 cases on the native route BEFORE retiring it:
+    #
+    #   104 of 104  compile-fail cases rejected with a genuine compile error
+    #               and no capability deferral at all -- fully served
+    #    92 of  94  compiler/*_test_entry.gst positives compile natively
+    #     3 of 120  tests/ positives compile natively
+    #     2 of   6  runtime-crash cases compile natively
+    #
+    # WHAT IS LOST, recorded here rather than absorbed: the 117 tests/
+    # positives and 4 runtime-crash cases with no native route stop being
+    # EXECUTED. The evidence arm classifies them against their frozen reason
+    # codes instead of running them. That is a real loss of a second opinion,
+    # the same trade Patch 24.13 made when it retired the oracle arm, and for
+    # the same reason -- what they were checked against no longer exists.
+    #
+    # It is NOT recoverable by finishing one Phase 13 capability. Of those 216
+    # non-compiling positives the dominant reason is
+    # source_feature_not_represented (70), while
+    # deferred_p13_parameter_argument_aggregate_parameter -- the code this
+    # path was long said to be waiting on -- is 3.
+    make gust phase10-native-package
+    just guard-cranelift-phase21-complete-guard-suite-evidence
     make test_tree_sitter
 
 make-test-suite-fast-c:
@@ -22647,13 +22711,12 @@ validate-native-fast-c:
 
 make-test-suite-parallel:
     just make-test-guards-parallel
-    mkdir -p build
-    echo "⚙️  Compiling native Gust test runner..."
-    GUST_BOOTSTRAP_EMITTER=1 ./gust --backend bootstrap-emitter tests/test_runner.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/test_runner.c
-    cat src/runtime.c build/test_runner.c > build/test_runner_final.c
-    CC_BIN="${CC:-cc}"; CFLAGS_VAL="${CFLAGS:--O2 -Wall -pthread}"; INCLUDES_VAL="${INCLUDES:--Isrc}"; RT_O=build/phase25-runtime-rs/gust_runtime_rs_exports.o; RT_CO=build/phase25-runtime-rs-canary/gust_runtime_rs_exports.o; make "$RT_O" "$RT_CO"; "$CC_BIN" $CFLAGS_VAL $INCLUDES_VAL build/test_runner_final.c "$RT_O" -o build/test_runner_bin
-    echo "🏃 Running native Gust test runner..."
-    GUST_BOOTSTRAP_EMITTER=1 ./build/test_runner_bin
+    # Patch 25.10c: the parallel arm follows make-test-suite onto the native
+    # route. See that recipe for the 324-case measurement and the recorded
+    # loss; the two differ only in which guard pass they run first, so they
+    # must not differ in which backend compiles the corpus.
+    make gust phase10-native-package
+    just guard-cranelift-phase21-complete-guard-suite-evidence
     make test_tree_sitter
 
 check:

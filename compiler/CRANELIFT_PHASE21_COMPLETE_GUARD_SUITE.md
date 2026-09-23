@@ -12,12 +12,12 @@ Generated from `scripts/cranelift_feature_registry.json` by
 
 ## Complete inventory
 
-- Total: `326`
-- Positive: `216`
+- Total: `324`
+- Positive: `214`
 - Compile-fail: `104`
 - Runtime-failure: `6`
-- Required native cases: `192`
-- Classified deferrals: `134`
+- Required native cases: `191`
+- Classified deferrals: `133`
 - Isolated serial shards: `2`
 
 ## Compile deferrals
@@ -36,7 +36,6 @@ Generated from `scripts/cranelift_feature_registry.json` by
 
 ## Explicit oracle preconditions
 
-- `compiler/codegen_initializer_test_entry.gst` — `oracle_positive_fixture_rejects_current_signature`; owner `self_hosted_test_runner_fixture`; destination `phase22_pre_default_guard_cleanup`
 - `tests/e2e_generational_arena_wrapper_migration.gst` — `oracle_positive_fixture_rejects_current_arena_identity`; owner `self_hosted_test_runner_fixture`; destination `phase22_pre_default_guard_cleanup`
 - `tests/e2e_parallel_zero_copy_parsing.gst` — `oracle_positive_fixture_rejects_current_spawn_argument`; owner `self_hosted_test_runner_fixture`; destination `phase22_pre_default_guard_cleanup`
 - `tests/e2e_fiber_channel_pipeline.gst` — `oracle_positive_fixture_rejects_current_spawn_argument`; owner `self_hosted_test_runner_fixture`; destination `phase22_pre_default_guard_cleanup`

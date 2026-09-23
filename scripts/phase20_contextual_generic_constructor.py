@@ -72,12 +72,26 @@ def validate() -> dict:
                 f"contextual typechecker evidence missing: {evidence}")
 
     codegen = CODEGEN.read_text(encoding="utf-8")
-    require("func codegen_contextual_constructor_struct_name(" in codegen,
-            "contextual MIR-to-C type consumer is missing")
-    require(codegen.count("codegen_contextual_constructor_struct_name(") == 7,
-            "all six constructor families must share one contextual codegen helper")
-    require("if codegen_ends_with(recorded, \"_Any\") == 0" in codegen,
-            "MIR-to-C does not distinguish a resolved result from the placeholder")
+    # Patch 25.10 deletes the C emitter, and this whole block described the
+    # emitter's half of contextual construction: one shared helper across six
+    # constructor families, and the _Any placeholder check. Measured, neither
+    # spelling survives anywhere under compiler/ -- and unlike Phase 20's
+    # cleanup markers, nothing inherited them: the native route has no
+    # contextual-constructor handling at all, because it never needed a C
+    # struct name.
+    #
+    # NO re-point is added here on purpose. The claim Patch 20.6 makes is that
+    # contextual construction resolves in the TYPE SYSTEM, and the nine
+    # typechecker assertions above already make it -- adding a tenth aimed at
+    # the same file would be a clause that cannot fail on its own. What is
+    # left is the absence, which can.
+    for retired in (
+        "codegen_contextual_constructor_struct_name",
+        "codegen_ends_with",
+    ):
+        require(retired not in codegen,
+                f"Patch 25.10 deletes the emitter but {retired} survives in "
+                "codegen.gst")
 
     inferred = (ROOT / authority["inferred_fixture"]).read_text(encoding="utf-8")
     explicit = (ROOT / authority["explicit_fixture"]).read_text(encoding="utf-8")

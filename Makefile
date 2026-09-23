@@ -47,7 +47,7 @@ SHELL = bash
 # Keep Make's explicit phony surface small. The Makefile remains the canonical
 # build graph for core aggregate commands; focused guard/report discovery lives
 # in justfile and concrete recipe names below rather than in a giant .PHONY list.
-.PHONY: all clean test bootstrap install test_tree_sitter require_just diagnose-phase10-stage1 phase10-native-package
+.PHONY: all clean test bootstrap install test_tree_sitter require_just phase10-native-package
 
 require_just:
 	@command -v just >/dev/null 2>&1 || { echo "❌ just is required for focused Make guards. Run nix develop or install just."; exit 1; }
@@ -84,136 +84,75 @@ gust_bootstrap: $(RUNTIME_SRCS) $(PHASE25_RUNTIME_RS_OBJ) docs/RELEASE_MANIFEST.
 		python3 scripts/phase25_release_manifest.py fetch-seed; \
 	fi
 
-build/gust_stage1_compiler.c: export GUST_BOOTSTRAP_EMITTER = 1
-build/gust_stage1_compiler.c: gust_bootstrap $(COMPILER_SRCS) tools/normalize_generated_arena_offsets.py
-	mkdir -p build
-	@rm -f \
-		build/gust_stage1_compiler.raw \
-		build/gust_stage1_compiler.filtered \
-		build/gust_stage1_compiler.tmp
-	@set +e; \
-	./gust_bootstrap --backend bootstrap-emitter compiler/test_runner_bootstrap_bridge_entry.gst > build/gust_stage1_compiler.raw 2>&1; \
-	status=$$?; \
-	set -e; \
-	if [ "$$status" -ne 0 ]; then \
-		echo "❌ Legacy bootstrap failed while generating the stage-one compiler:"; \
-		cat build/gust_stage1_compiler.raw; \
-		rm -f build/gust_stage1_compiler.filtered build/gust_stage1_compiler.tmp; \
-		exit "$$status"; \
-	fi; \
-	if ! grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" build/gust_stage1_compiler.raw > build/gust_stage1_compiler.filtered; then \
-		echo "❌ Legacy bootstrap succeeded but produced no filtered stage-one compiler C."; \
-		cat build/gust_stage1_compiler.raw; \
-		rm -f build/gust_stage1_compiler.filtered build/gust_stage1_compiler.tmp; \
-		exit 1; \
-	fi; \
-	if [ ! -s build/gust_stage1_compiler.filtered ]; then \
-		echo "❌ Filtered stage-one compiler C is empty."; \
-		cat build/gust_stage1_compiler.raw; \
-		rm -f build/gust_stage1_compiler.filtered build/gust_stage1_compiler.tmp; \
-		exit 1; \
-	fi; \
-	if ! $(PYTHON) tools/normalize_generated_arena_offsets.py \
-		build/gust_stage1_compiler.filtered \
-		build/gust_stage1_compiler.tmp; then \
-		echo "❌ Could not normalize the legacy bootstrap's generated arena pointer arithmetic."; \
-		rm -f build/gust_stage1_compiler.tmp; \
-		exit 1; \
-	fi; \
-	if [ ! -s build/gust_stage1_compiler.tmp ]; then \
-		echo "❌ Normalized stage-one compiler C is empty."; \
-		exit 1; \
-	fi
-	mv build/gust_stage1_compiler.tmp build/gust_stage1_compiler.c
-	sync
+# Patch 25.10: FOUR RULES DELETED HERE, not left pointing at a missing
+# emitter. They were the C stage chain:
+#
+#   build/gust_stage1_compiler.c   emitted by gust_bootstrap
+#   build/gust_stage1_bin          $(CC) of the above
+#   diagnose-phase10-stage1        a sanitizer build of the same C
+#   build/gust_compiler.c          emitted by the stage-one binary
+#
+# `gust` no longer depends on any of them -- it is one native compile now
+# -- so they are unreachable. A Make rule whose recipe cannot run fails
+# only when something asks for it, which is the worst time to find out,
+# and the Makefile already states that policy a few rules below: "The
+# rules are deleted rather than left pointing at missing sources."
+#
+# diagnose-phase10-stage1 goes with them and is NOT replaced. It existed
+# to debug a SIGSEGV in a stage-one binary built from emitted C; there is
+# no stage one. The native route's own diagnostics are the
+# gust_native_capability_decision and gust_backend_parity_diagnostic
+# lines, which it prints without needing a separate target.
 
-build/gust_stage1_bin: build/gust_stage1_compiler.c $(RUNTIME_SRCS)
-	cat src/runtime.c build/gust_stage1_compiler.c > build/gust_stage1_final.c
-	${CC} ${CFLAGS} ${INCLUDES} build/gust_stage1_final.c $(PHASE25_RUNTIME_RS) -o build/gust_stage1_bin
-
-diagnose-phase10-stage1: export GUST_BOOTSTRAP_EMITTER = 1
-diagnose-phase10-stage1: build/gust_stage1_compiler.c $(RUNTIME_SRCS)
-	@command -v "$(PHASE10_DIAG_CC)" >/dev/null 2>&1 || { \
-		echo "❌ $(PHASE10_DIAG_CC) is required for the Phase 10 stage-one sanitizer diagnostic."; \
-		exit 1; \
-	}
-	mkdir -p build/diagnostics/phase10-stage1
-	cat src/runtime.c build/gust_stage1_compiler.c > build/diagnostics/phase10-stage1/gust_stage1_sanitized.c
-	$(PHASE10_DIAG_CC) $(PHASE10_DIAG_CFLAGS) $(INCLUDES) \
-		build/diagnostics/phase10-stage1/gust_stage1_sanitized.c \
-		$(PHASE25_RUNTIME_RS) \
-		-o build/diagnostics/phase10-stage1/gust_stage1_sanitized
-	@rm -f \
-		build/diagnostics/phase10-stage1/stdout.log \
-		build/diagnostics/phase10-stage1/stderr.log \
-		build/diagnostics/phase10-stage1/exit-status.txt
-	@set +e; \
-	ASAN_OPTIONS='abort_on_error=1:detect_leaks=0:disable_coredump=0:fast_unwind_on_malloc=0:malloc_context_size=40:print_summary=1:symbolize=1:strict_string_checks=1:check_initialization_order=1:detect_stack_use_after_return=1' \
-	UBSAN_OPTIONS='halt_on_error=1:print_stacktrace=1:report_error_type=1' \
-		./build/diagnostics/phase10-stage1/gust_stage1_sanitized \
-		--backend bootstrap-emitter \
-		compiler/test_runner_entry.gst \
-		> build/diagnostics/phase10-stage1/stdout.log \
-		2> build/diagnostics/phase10-stage1/stderr.log; \
-	status=$$?; \
-	set -e; \
-	printf '%s\n' "$$status" > build/diagnostics/phase10-stage1/exit-status.txt; \
-	echo "──────────────── Phase 10 stage-one sanitizer stderr ────────────────"; \
-	cat build/diagnostics/phase10-stage1/stderr.log; \
-	echo "──────────────── Last 200 compiler trace lines ─────────────────────"; \
-	tail -n 200 build/diagnostics/phase10-stage1/stdout.log || true; \
-	echo "──────────────── Diagnostic artifacts ──────────────────────────────"; \
-	echo "status: build/diagnostics/phase10-stage1/exit-status.txt"; \
-	echo "stderr: build/diagnostics/phase10-stage1/stderr.log"; \
-	echo "stdout: build/diagnostics/phase10-stage1/stdout.log"; \
-	echo "binary: build/diagnostics/phase10-stage1/gust_stage1_sanitized"; \
-	if [ "$$status" -eq 0 ]; then \
-		echo "❌ Sanitized stage one unexpectedly compiled the final entry successfully."; \
-		exit 1; \
-	fi; \
-	if ! grep -a -E 'AddressSanitizer|UndefinedBehaviorSanitizer|runtime error:|SUMMARY:' \
-		build/diagnostics/phase10-stage1/stderr.log >/dev/null; then \
-		echo "⚠️ No sanitizer report was emitted. Run the generated binary under gdb or lldb using the command printed below."; \
-		echo "gdb --args build/diagnostics/phase10-stage1/gust_stage1_sanitized compiler/test_runner_entry.gst"; \
-	fi; \
-	exit "$$status"
-
-build/gust_compiler.c: export GUST_BOOTSTRAP_EMITTER = 1
-build/gust_compiler.c: build/gust_stage1_bin $(COMPILER_SRCS)
-	mkdir -p build
-	@rm -f build/gust_compiler.raw build/gust_compiler.tmp
-	@set +e; \
-	./build/gust_stage1_bin --backend bootstrap-emitter compiler/test_runner_entry.gst > build/gust_compiler.raw 2>&1; \
-	status=$$?; \
-	set -e; \
-	if [ "$$status" -ne 0 ]; then \
-		echo "❌ Stage-one compiler failed while generating the final compiler:"; \
-		cat build/gust_compiler.raw; \
-		if [ "$$status" -eq 139 ]; then \
-			echo "❌ Stage one terminated with SIGSEGV. Run: make diagnose-phase10-stage1"; \
-		fi; \
-		rm -f build/gust_compiler.tmp; \
-		exit "$$status"; \
-	fi; \
-	if ! grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" build/gust_compiler.raw > build/gust_compiler.tmp; then \
-		echo "❌ Stage-one compiler succeeded but produced no filtered final compiler C."; \
-		cat build/gust_compiler.raw; \
-		rm -f build/gust_compiler.tmp; \
-		exit 1; \
-	fi; \
-	if [ ! -s build/gust_compiler.tmp ]; then \
-		echo "❌ Filtered final compiler C is empty."; \
-		cat build/gust_compiler.raw; \
-		rm -f build/gust_compiler.tmp; \
-		exit 1; \
-	fi
-	mv build/gust_compiler.tmp build/gust_compiler.c
-	sync
 
 ## just "make" doesnt do anything need to run "make gust"
-gust: build/gust_compiler.c $(RUNTIME_SRCS) $(PHASE25_RUNTIME_RS)
-	cat src/runtime.c build/gust_compiler.c > build/gust_final.c
-	${CC} ${CFLAGS} ${INCLUDES} build/gust_final.c $(PHASE25_RUNTIME_RS) -o gust
+#
+# Patch 25.10: ONE STEP, AND NO C. This was
+#
+#   gust_bootstrap --backend bootstrap-emitter <bridge entry>  -> stage1 C
+#   $(CC) stage1 C                                             -> stage1 bin
+#   stage1 bin --backend bootstrap-emitter <entry>             -> compiler C
+#   cat src/runtime.c compiler C | $(CC)                       -> gust
+#
+# two emitter invocations and two host-compiler invocations to build the
+# compiler. With the emitter deleted there is no stage one, so `make gust`
+# either flips onto the native route or stops existing.
+#
+# MEASURED BEFORE COMMITTING TO IT, because "the native route can build the
+# compiler" is exactly the kind of claim that should not be assumed: the
+# fetched bridge compiled compiler/test_runner_entry.gst straight through
+# to a 9.8MB executable that answers --help, with no emitter and no $(CC)
+# anywhere in the path. Patch 25.7's fixed point already did this twice --
+# its stage1 and stage2 ARE this command -- so the capability was proven
+# before this patch used it.
+#
+# The driver is a prerequisite and NOT circular: build/gust-native-backend
+# comes from a cargo manifest and does not depend on gust. Only
+# phase10-native-package depends on gust, and only to package it.
+gust: gust_bootstrap $(COMPILER_SRCS) build/gust-native-backend $(PHASE21_RUNTIME_PACKAGE)
+	@rm -rf build/native-build/bin
+	mkdir -p build/native-build/bin
+	install -m 0755 gust_bootstrap build/native-build/bin/gust
+	install -m 0755 build/gust-native-backend build/native-build/bin/gust-native-backend
+	install -m 0644 $(PHASE21_RUNTIME_PACKAGE) build/native-build/bin/gust-runtime-package.a
+	./build/native-build/bin/gust --backend cranelift -o build/.gust.tmp compiler/test_runner_entry.gst
+	@test -x build/.gust.tmp || { echo "❌ the native route produced no executable"; exit 1; }
+	mv build/.gust.tmp gust
+	@# Patch 25.10: the root compiler binary is now NATIVE-ONLY and resolves
+	@# its backend driver as a SIBLING. Before this patch it carried the
+	@# emitter and worked standalone, so every recipe that invokes it on a
+	@# source file inherited that and now fails driver discovery at the repo
+	@# root:
+	@#
+	@#   Native backend driver discovery error: sibling native backend
+	@#   driver path is unavailable or not executable
+	@#
+	@# That took down step51-policy and six step52-* heavy-shard guards on
+	@# PR #470. Installing the other two artifacts beside it makes the repo
+	@# root the same three-artifact sibling unit Patch 22's delivery
+	@# contract names, rather than a loose binary outside it.
+	install -m 0755 build/gust-native-backend gust-native-backend
+	install -m 0644 $(PHASE21_RUNTIME_PACKAGE) gust-runtime-package.a
 
 build/gust-native-backend: $(PHASE10_NATIVE_BACKEND_MANIFEST) $(PHASE10_NATIVE_BACKEND_LOCK) $(PHASE10_NATIVE_BACKEND_SOURCES)
 	mkdir -p build
@@ -501,30 +440,34 @@ phase10-native-package: gust build/gust-native-backend $(PHASE21_RUNTIME_PACKAGE
 
 # Fixed-Point Bootstrap Verification
 #
-# Patch 24.13: the bootstrap-emitter entry requires GUST_BOOTSTRAP_EMITTER=1.
-# Exported target-specifically rather than inline on each command, so the two
-# invocation lines below stay byte-identical to what the route-flip and
-# seed-convergence manifests pin.
-bootstrap: export GUST_BOOTSTRAP_EMITTER = 1
+# Patch 25.10: THE C FIXED POINT IS RETIRED, and this target is inverted
+# rather than deleted.
+#
+# It compared build/gust_stage2.c against build/gust_stage3.c for byte
+# identity -- the current compiler emitting its own C, twice. With the
+# emitter deleted there is no stage two, so the comparison has no operands.
+#
+# Deleting the target would leave `make bootstrap` as "no rule to make
+# target", which tells a caller nothing about what happened to the
+# property. The property did not go away: Patch 25.7 moved it to the
+# EMITTED OBJECTS, stage_n == stage_n+1, which is a strictly stronger
+# statement than identical C -- Patch 25.2's artifact set excludes linked
+# executables by name because the linker normalises differences away, and
+# it was doing exactly that until 25.7's BTreeMap fix.
+#
+# So this target now says where the fixed point went and runs it.
 bootstrap: gust
-	@echo "⚙️  Beginning fixed-point bootstrap verification..."
-	@# Stage 2: Use the new 'gust' binary to compile the compiler again
-	./gust --backend bootstrap-emitter compiler/test_runner_entry.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_stage2.c && sync
-	@cat src/runtime.c build/gust_stage2.c > build/gust_stage2_final.c
-	@${CC} ${CFLAGS} ${INCLUDES} build/gust_stage2_final.c $(PHASE25_RUNTIME_RS) -o build/gust_stage2_bin
-	@# Stage 3: Use the Stage 2 binary to compile the compiler a third time
-	./build/gust_stage2_bin --backend bootstrap-emitter compiler/test_runner_entry.gst | grep -a -v -E "^(🔍|🎯|📥|🔄|⚙|🗄|✅|❌|👁|⚖)" > build/gust_stage3.c && sync
-	@# Stage 4: Assert byte-by-byte identity between Stage 2 and Stage 3 C files
-	@diff -u build/gust_stage2.c build/gust_stage3.c && echo "✅ Fixed-point bootstrap convergence achieved!"
-	@# Patch 25.9: the seed is NOT republished here any more. This line
-	@# was `cp build/gust_stage3.c gust_v4.c`, the route that regenerated
-	@# the committed seed; with the seed deleted there is nothing to
-	@# write back, and leaving it would recreate the file this patch
-	@# exists to remove. The fixed point above still runs and still
-	@# asserts stage2 == stage3 -- that assertion is the point, and it
-	@# does not depend on a file being written.
-	cp build/gust_stage2_bin gust_bootstrap
-	touch build/gust_compiler.c
+	@echo "⚙️  The C fixed point is retired. Patch 25.10 deleted the emitter,"
+	@echo "   so there is no stage-two C to compare against stage three."
+	@echo "   The fixed point moved to the emitted OBJECTS in Patch 25.7:"
+	@echo "   stage_n == stage_n+1, which the linker cannot normalise away."
+	@echo "   Running it now."
+	./scripts/phase25_native_fixed_point.sh
+	@# Patch 25.9 removed the seed republication from here; Patch 25.10
+	@# removes the stage-two binary that replaced it as the bootstrap.
+	@# gust_bootstrap is the fetched, digest-verified bridge now, and
+	@# overwriting it with a locally built binary would substitute an
+	@# unverified artifact for a verified one.
 	touch gust
 
 test: gust require_just

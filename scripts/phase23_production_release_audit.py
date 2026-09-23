@@ -79,6 +79,36 @@ def surface(path: str, role: str, markers: tuple[str, ...]) -> dict[str, object]
 
 
 
+def phase2510_emitter_audit(registry: dict, live: dict) -> dict:
+    """Project the live audit back past Patch 25.10.
+
+    Newest first: this runs BEFORE the 25.10a projection, which runs
+    before 25.5's, so each is handed the tree it was registered against.
+
+    This patch deletes the emitter, so it moves more of the audit than any
+    link below it: the supported-surface manifest (the Makefile lost its
+    whole C stage chain), the invocation count (every bootstrap-emitter
+    caller is gone), and the explicit-C count with them.
+    """
+    node = registry.get("phase2510_emitter_deletion", {}).get(
+        "production_audit_transition")
+    if node is None:
+        return live
+    previous = node.get("previous_audit")
+    require(node.get("contract_version") ==
+            "phase2510_emitter_deletion_audit_transition_v1" and
+            node.get("current_audit") == live and
+            isinstance(previous, dict) and
+            node.get("partial_or_substituted_audit") == "rejected",
+            "Patch 25.10 production audit transition drifted")
+    moved = sorted(key for key in set(previous) | set(live)
+                   if previous.get(key) != live.get(key))
+    require(moved == sorted(node.get("moved_fields", [])),
+            "Patch 25.10 moved a production audit field it does not "
+            f"register: {moved}")
+    return dict(previous)
+
+
 def phase2510a_strings_audit(registry: dict, live: dict) -> dict:
     """Project the live audit back past Patch 25.10a.
 
@@ -281,10 +311,26 @@ def scan() -> dict[str, object]:
     require(not bootstrap,
             "a Makefile bootstrap caller still selects explicit C: "
             f"{bootstrap}")
-    makefile_text = (ROOT / "Makefile").read_text(encoding="utf-8")
-    require(makefile_text.count("--backend bootstrap-emitter") == 5,
-            "the five bootstrap-entry callers Patch 24.13 landed are not all "
-            f"there: {makefile_text.count('--backend bootstrap-emitter')} of 5")
+    # Patch 25.10 INVERTS this. It required exactly five
+    # `--backend bootstrap-emitter` callers in the Makefile -- the count
+    # Patch 24.13 landed -- and the emitter is deleted, so the right
+    # assertion is that none of them invokes it.
+    #
+    # Counted over NON-COMMENT lines, not over the whole file. The
+    # Makefile still spells the flag twice, inside the comment that
+    # records what the C stage chain used to be, and that record is worth
+    # keeping. A raw `count == 0` would force the history to be deleted to
+    # make the guard pass, which is the wrong pressure: it would push a
+    # patch toward erasing the explanation rather than removing the
+    # caller.
+    makefile_lines = (ROOT / "Makefile").read_text(
+        encoding="utf-8").splitlines()
+    live_callers = [line for line in makefile_lines
+                    if "--backend bootstrap-emitter" in line
+                    and not line.lstrip().startswith("#")]
+    require(not live_callers,
+            "the Makefile still invokes the bootstrap emitter, which Patch "
+            f"25.10 deleted: {live_callers[:3]}")
     return {
         "supported_surface_count": len(supported),
         "supported_surface_manifest_digest": canonical_digest(supported),
@@ -384,6 +430,7 @@ def validate() -> tuple[dict, dict[str, object]]:
             "route_contract", {}).get("non_bootstrap_live_lane_count") == 1,
             "focused live-C predecessor drifted")
     summary = scan()
+    summary = phase2510_emitter_audit(registry, summary)
     summary = phase2510a_strings_audit(registry, summary)
     summary = phase25_runtime_port_audit(registry, summary)
     closure_transition = registry.get("phase23_closure", {}).get(

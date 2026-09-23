@@ -102,7 +102,17 @@ def validate() -> dict:
         "typechecker.env_get_canonical_branded_type_name(env, name, brand, ctx)" in codegen,
         "codegen does not delegate canonical branded-name lookup",
     )
-    for runner_path in (RUNNER, BOOTSTRAP_RUNNER):
+    # Patch 25.10 deletes the bootstrap bridge entry with the stage chain
+    # that was its only consumer. Inverted rather than dropped: asserting the
+    # ABSENCE keeps the claim falsifiable, where simply shortening the tuple
+    # would say nothing. Asserted before the loop, because reading a deleted
+    # path raises FileNotFoundError and names pathlib rather than the patch.
+    require(
+        not BOOTSTRAP_RUNNER.exists(),
+        f"{BOOTSTRAP_RUNNER.name} survives the stage chain Patch 25.10 "
+        "deleted, so this contract no longer covers every bootstrap entry",
+    )
+    for runner_path in (RUNNER,):
         runner = runner_path.read_text(encoding="utf-8")
         require(
             "typechecker.env_pre_register_template_statement" in runner,

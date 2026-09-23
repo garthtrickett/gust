@@ -115,25 +115,54 @@ def validate() -> dict:
         require(needle in cranelift, f"Cranelift representation consumer missing {needle!r}")
 
     codegen = CODEGEN.read_text(encoding="utf-8")
+    # Patch 25.10 deletes the C emitter. The six needles split three ways,
+    # measured rather than assumed:
+    #
+    #   the four codegen_*_argument_representation functions -> deleted
+    #   mir_abi_parameter_passing_mode_for_value_class       -> lives in
+    #                                   compiler/mir_function_abi_authority.gst
+    #   mir_call_argument_representation                     -> lives in
+    #                                        compiler/mir_function_call.gst
+    #
+    # The last two were named here because the emitter consumed them; they did
+    # not go with it, so they are asserted where they actually are. Patch
+    # 19.5's claim is that representation comes from the TYPE SYSTEM, and that
+    # is what those two files carry.
     for needle in (
         "func codegen_plan_argument_representation_for_value_class(",
         "func codegen_plan_argument_representation_for_type(",
         "func codegen_plan_argument_representation(",
         "func codegen_emit_argument_representation(",
-        "mir_abi_parameter_passing_mode_for_value_class",
-        "mir_call_argument_representation",
     ):
-        require(needle in codegen, f"self-hosted representation consumer missing {needle!r}")
-    generate = function_body(codegen, "codegen_generate_expression")
+        require(needle not in codegen,
+                f"Patch 25.10 deletes the emitter but {needle!r} survives in "
+                "codegen.gst")
+    # Only ONE row here. mir_abi_parameter_passing_mode_for_value_class is
+    # already required in compiler/mir_function_abi_authority.gst above, with
+    # its `func ` prefix, so re-pointing it here would be a second, weaker
+    # copy of a claim that already holds -- and the inversion proved it: every
+    # mutation that removes the needle trips the earlier clause first, so this
+    # one could never fail on its own. A check that cannot fail is a deleted
+    # test wearing a guard's clothes.
+    for owner, needle in (
+        ("compiler/mir_function_call.gst", "mir_call_argument_representation"),
+    ):
+        require(needle in (ROOT / owner).read_text(encoding="utf-8"),
+                f"representation authority missing from {owner}: {needle!r}")
+    # Scoped to codegen.gst as a whole rather than to codegen_generate_expression,
+    # which no longer exists. NOT widened to every compiler source: two of
+    # these strings are legitimate elsewhere -- std.Concat("&", appears in
+    # typechecker.gst and always did, and the original scope allowed it -- so a
+    # tree-wide sweep would fail on code this patch has no quarrel with. The
+    # claim is about what the surviving codegen helpers may do.
     for forbidden in (
         'std.Concat("&",',
         'arg_str = std.Concat("&", arg_str)',
         'mut ref_prefix := "&"',
         "codegen_brand_representation_is_pointer",
     ):
-        require(forbidden not in generate, f"codegen still prepends address-of from source text: {forbidden}")
-    require(generate.count("codegen_emit_argument_representation(") >= 20,
-            "argument and index lowering did not migrate completely")
+        require(forbidden not in codegen,
+                f"codegen still prepends address-of from source text: {forbidden}")
     require("phase19_argument_length(a);" not in codegen,
             "fixture-specific source recognizer entered codegen")
 

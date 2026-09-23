@@ -7,7 +7,7 @@
 Status: `patch24_11_complete`
 Authority base: `b7b1713cd65630b14ae92e46afd393990928a2e2`
 Rows: `109`
-Digest: `a9305e8d7a5e8d717365fbc5606154044fc631d47a3c765bf015912f5590ae20`
+Digest: `1447f8f621d7610d7db8722403250130a21b5b69642ca51441dd8e2987d76b71`
 
 ## Bootstrap-entry decision
 
@@ -115,7 +115,7 @@ Digest: `a9305e8d7a5e8d717365fbc5606154044fc631d47a3c765bf015912f5590ae20`
 ### 24.14
 
 - Makefile :: CC="${CC}" CFLAGS="${CFLAGS}" INCLUDES=" (migrate)
-- Makefile :: build/gust_final.c (migrate)
+- Makefile :: build/gust_final.c (retired-by-25.10)
 - compiler/test_runner_entry.gst :: the MIR-to-C backend does not accept -o (retire)
 - scripts/phase21_cranelift_built_compiler_programs.py (retire)
 
@@ -154,10 +154,10 @@ Digest: `a9305e8d7a5e8d717365fbc5606154044fc631d47a3c765bf015912f5590ae20`
 
 ### 25
 
-- compiler/codegen.gst :: func codegen_generate(programs: std.Vect (survive)
-- compiler/test_runner_bootstrap_bridge_entry.gst :: Usage: gust-bootstrap-bridge [--backend  (survive)
-- compiler/test_runner_bootstrap_bridge_entry.gst :: mut c_code := codegen.codegen_generate(p (survive)
-- compiler/test_runner_entry.gst :: mut c_code := codegen.codegen_generate(p (survive)
+- compiler/codegen.gst :: func codegen_generate(programs: std.Vect (retired-by-25.10)
+- compiler/test_runner_bootstrap_bridge_entry.gst :: Usage: gust-bootstrap-bridge [--backend  (retired-by-25.10)
+- compiler/test_runner_bootstrap_bridge_entry.gst :: mut c_code := codegen.codegen_generate(p (retired-by-25.10)
+- compiler/test_runner_entry.gst :: mut c_code := codegen.codegen_generate(p (retired-by-25.10)
 
 ### phase25
 

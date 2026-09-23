@@ -68,6 +68,10 @@ done
 
 if [ ! -x "$worker" ]; then
   make build/gust-native-backend
+  # An artifact download drops the executable bit, and `make` compares
+  # MTIMES not MODES -- it reports "up to date" on a file that cannot
+  # run. chmod is the one repair make cannot do.
+  chmod +x build/gust-native-backend
 fi
 "$worker" compiler-mir-validate-fixture "$canonical_mir" \
   >"$build_root/native.validate.stdout" 2>"$build_root/native.validate.stderr"

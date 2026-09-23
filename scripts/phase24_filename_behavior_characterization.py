@@ -208,14 +208,51 @@ def validate_static(value: dict) -> None:
     # runner entry, three in the bootstrap bridge, one in type_dump. Adding or
     # removing one still fails; moving one no longer does, because where it
     # sits was never the claim.
-    require(entrypoints == [
+    #
+    # Patch 25.10 deletes the bridge entry with the stage chain that was its
+    # only consumer. 24.13's manifest is NOT edited -- it stays a true
+    # statement about what 24.13 pinned -- so the departure is registered and
+    # consulted here, and the pinned row must still be present in the manifest
+    # for its departure to subtract. A row that vanished from the manifest
+    # without a registered departure still fails, and a departure whose file
+    # is still in the tree fails too.
+    departure = registry.get("phase2510_emitter_deletion", {}).get(
+        "source_departure", {})
+    departed_sources = departure.get("departed_sources", [])
+    if departed_sources:
+        require(departure.get("contract_version") ==
+                "phase2510_bridge_entry_departure_v1",
+                "Patch 25.10 source departure successor drifted")
+    departed = {}
+    for row in departed_sources:
+        require(not (ROOT / row["path"]).exists(),
+                f"Patch 25.10 records {row['path']} as departed but it is "
+                "still in the tree")
+        departed[row["path"]] = row["departed_current_file_input_count"]
+    pinned = [
         {"path": "compiler/test_runner_entry.gst", "count": 3},
         {"path": "compiler/test_runner_bootstrap_bridge_entry.gst",
          "count": 3},
         {"path": "compiler/type_dump_entry.gst", "count": 1},
-    ], "current_file input manifest drifted")
+    ]
+    for row in pinned:
+        if row["path"] in departed:
+            require(departed[row["path"]] == row["count"],
+                    f"Patch 25.10 records {row['path']} departing with "
+                    f"{departed[row['path']]} current_file inputs, not the "
+                    f"{row['count']} this manifest pinned")
+    require(entrypoints == pinned, "current_file input manifest drifted")
     for row in entrypoints:
-        lines = (ROOT / row["path"]).read_text(encoding="utf-8").splitlines()
+        if row["path"] in departed:
+            continue
+        source = ROOT / row["path"]
+        # Diagnosed rather than read straight: an unregistered deletion used
+        # to raise FileNotFoundError here, which names pathlib rather than
+        # the patch. Five guards in this phase failed that way.
+        require(source.is_file(),
+                f"{row['path']} is pinned by the current_file input manifest "
+                "but is not in the tree, and no departure records it")
+        lines = source.read_text(encoding="utf-8").splitlines()
         found = [index + 1 for index, text in enumerate(lines)
                  if "current_file =" in text]
         require(len(found) == row["count"],

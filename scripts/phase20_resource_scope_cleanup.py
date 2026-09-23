@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parent.parent
 REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 TYPECHECKER = ROOT / "compiler/typechecker.gst"
 CODEGEN = ROOT / "compiler/codegen.gst"
+NATIVE_FULL_PROGRAM = ROOT / "compiler/mir_native_backend_full_program_source.gst"
 TASK = ROOT / "TASK.md"
 REVIEW = ROOT / "compiler/CRANELIFT_PHASE20_RESOURCE_SCOPE_CLEANUP.md"
 PR_FAST = ROOT / ".github/workflows/pr-fast.yml"
@@ -66,15 +67,48 @@ def validate() -> dict:
             "open_directories still has an enforcement read")
 
     codegen = CODEGEN.read_text(encoding="utf-8")
+    # Patch 25.10 deletes the C emitter. These five markers did NOT all share
+    # a fate, and collapsing them into one clause would have lost that, so
+    # each was measured and re-pointed on what it turned out to be.
+    #
+    #   func codegen_generate_resource_cleanup_plan(   -> gone, no successor
+    #   func codegen_generate_active_defers(           -> gone, no successor
+    #   "return", ctx[stmt_idx].Return.span            -> C emission text, gone
+    #   action.cleanup_condition                       -> MOVED to the native route
+    #   codegen_resource_cleanup_c_function_name(      -> SURVIVES in codegen.gst
+    #
+    # The last one is one of the seven functions the native route still needs
+    # from codegen.gst, so it stays asserted where it is AND is asserted to be
+    # called from the native route -- a helper nobody calls is not evidence.
+    #
+    # The two deleted plan generators do have a successor, just not by name:
+    # the native route builds cleanup through resource_cleanup_plan_key and
+    # (*env).resource_cleanup_plans, dispatching to
+    # mir_native_full_program_resource_cleanup_expression. That is the
+    # replacement evidence, so "Patch 20.10 still has a cleanup plan" remains
+    # falsifiable instead of retiring with the emitter.
+    native = NATIVE_FULL_PROGRAM.read_text(encoding="utf-8")
     for evidence in (
         "func codegen_generate_resource_cleanup_plan(",
         "func codegen_generate_active_defers(",
         '"return", ctx[stmt_idx].Return.span',
-        "action.cleanup_condition",
-        "codegen_resource_cleanup_c_function_name(",
     ):
+        require(evidence not in codegen,
+                f"Patch 25.10 deletes the emitter but {evidence} survives in "
+                "codegen.gst")
+    for evidence in ("codegen_resource_cleanup_c_function_name(",):
         require(evidence in codegen,
                 f"Patch 20.10 codegen evidence missing: {evidence}")
+    for evidence in (
+        "codegen_resource_cleanup_c_function_name(",
+        "action.cleanup_condition",
+        "typechecker.resource_cleanup_plan_key(",
+        "(*env).resource_cleanup_plans.Get(",
+        "func mir_native_full_program_resource_cleanup_expression(",
+    ):
+        require(evidence in native,
+                f"Patch 20.10 cleanup evidence is missing from the native "
+                f"route that inherited it: {evidence}")
 
     source = (ROOT / authority["source_fixture"]).read_text(encoding="utf-8")
     for evidence in (

@@ -125,14 +125,33 @@ def validate() -> dict:
     # unchanged"; with the seed deleted the command passes on a path git
     # knows nothing about, so requiring it here would pin the workflow to a
     # step that had stopped checking.
+    # Patch 25.10 retires the C fixed point the same way 25.9 retired the
+    # seed check above: `cmp build/gust_stage2.c build/gust_stage3.c` compares
+    # two files the emitter used to emit, and with no emitter they are never
+    # written, so the command fails on missing operands rather than on
+    # divergence. Pinning it here would require the workflow to keep a step
+    # that can no longer check what it claims.
+    #
+    # Removed from the required list and required ABSENT below, with the
+    # assertion that replaced it required PRESENT -- so a workflow that
+    # dropped the C comparison and put nothing in its place fails too.
     for command in (
         "make bootstrap",
-        "cmp build/gust_stage2.c build/gust_stage3.c",
         "if [ -e gust_v4.c ]; then",
         "git ls-files --error-unmatch gust_v4.c",
     ):
         require(command in workflow,
                 f"authoritative fixed-point workflow lacks {command}")
+    require("cmp build/gust_stage2.c build/gust_stage3.c" not in workflow,
+            "the fixed-point workflow still compares stage-two and "
+            "stage-three C. Patch 25.10 deleted the emitter, so those files "
+            "are never written and the command fails on missing operands "
+            "rather than on divergence.")
+    require("build/gust_stage2.c build/gust_stage3.c; do" in workflow
+            or "for stale in build/gust_stage2.c build/gust_stage3.c" in workflow,
+            "the fixed-point workflow dropped the C stage comparison without "
+            "asserting the stages are gone; a retirement with nothing in its "
+            "place checks less than the step it replaced.")
     require("git diff --exit-code -- gust_v4.c" not in workflow,
             "the fixed-point workflow still runs `git diff --exit-code -- "
             "gust_v4.c`. With the seed deleted that command cannot fail, so "

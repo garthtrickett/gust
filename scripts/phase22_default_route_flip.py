@@ -28,6 +28,11 @@ GUARD_L1 = "guard-cranelift-phase22-default-route-flip-contract"
 GUARD_L2 = "guard-cranelift-phase22-default-route-flip-evidence"
 
 
+# The one native compile that replaced the four-step C stage chain.
+NATIVE_SEED_STEP = ("./build/native-build/bin/gust --backend cranelift "
+                    "-o build/.gust.tmp compiler/test_runner_entry.gst")
+
+
 def require(condition: bool, message: str) -> None:
     if not condition:
         raise SystemExit(f"{GUARD_L1}: {message}")
@@ -88,7 +93,11 @@ def validate() -> dict:
         'os.LogStr("  The generated-C backend was REMOVED in Phase 24; mir-to-c and c are rejected.");',
         "if invocation.backend.tag == 1 {",
         "native_source_route.mir_native_scalar_source_compile(",
-        "codegen.codegen_generate(programs, module_prefixes, &env, ctx)",
+        # Patch 25.10 deletes the emitter, so the codegen call that used to
+        # be pinned here is required ABSENT below instead. Inverted rather
+        # than dropped: a marker that simply disappears from this tuple makes
+        # no claim, and the claim this guard is for -- what the entry does
+        # with each route -- still has to be checkable.
     ):
         require(marker in entry, f"compiler route marker is missing: {marker}")
     for retired in (
@@ -101,11 +110,15 @@ def validate() -> dict:
                 f"{retired}")
     require(entry.count("native_source_route.mir_native_scalar_source_compile(") == 1,
             "default and explicit native forms do not share one route")
-    native_start = entry.index("if invocation.backend.tag == 1 {")
-    c_start = entry.index("mut c_code := codegen.codegen_generate(")
-    native_branch = entry[native_start:c_start]
-    require("codegen.codegen_generate(" not in native_branch,
-            "native route can fall back to MIR-to-C")
+    # Was: slice the entry from the native branch to the C branch and require
+    # the codegen call absent from that window. With the emitter deleted there
+    # is no C branch to slice to -- `.index` raised ValueError, which names
+    # str rather than the patch -- and the property is now stronger and
+    # simpler to state: there is no codegen call ANYWHERE in the entry, so the
+    # native route cannot fall back to MIR-to-C because nothing can.
+    require("codegen.codegen_generate(" not in entry,
+            "the entry still reaches a MIR-to-C codegen call Patch 25.10 "
+            "deleted, so the native route can still fall back")
     require("experimental" not in "\n".join(
         line.lower() for line in entry.splitlines() if "os.Log" in line),
         "active compiler diagnostics or help still call Cranelift experimental")
@@ -140,6 +153,13 @@ def validate() -> dict:
     # retired spelling must be ABSENT from every caller and the entry must be
     # PRESENT, so dropping a caller entirely fails just as loudly as
     # reintroducing the old one.
+    # Scoped to lines make can execute. The Makefile keeps a comment block
+    # recording the four-step chain 25.10 removed and why the native route
+    # replaces it, and prose quoting a retired spelling is not an invocation
+    # of it -- a distinction this phase has now had to make four times, once
+    # where it left a guard green for the wrong reason.
+    executable = "\n".join(line for line in makefile.splitlines()
+                           if not line.lstrip().startswith("#"))
     for retired, rebased in (
         ("./gust_bootstrap --backend mir-to-c compiler/test_runner_bootstrap_bridge_entry.gst",
          "./gust_bootstrap --backend bootstrap-emitter compiler/test_runner_bootstrap_bridge_entry.gst"),
@@ -152,8 +172,20 @@ def validate() -> dict:
     ):
         require(retired not in makefile,
                 f"a bootstrap caller selects the removed backend: {retired}")
-        require(rebased in makefile,
-                f"bootstrap route is not the explicit bootstrap entry: {rebased}")
+        # Patch 25.10 deletes the C stage chain, so all four rebased callers
+        # go with the rules that ran them. The pair does not collapse to one
+        # assertion: BOTH spellings are now required absent, and the native
+        # command that replaced the whole chain is required present below --
+        # so a caller coming back under either spelling fails, and a tree that
+        # deleted the chain without putting anything in its place fails too,
+        # which is the "vanished passing as migrated" case this phase keeps
+        # having to rule out.
+        require(rebased not in executable,
+                "a bootstrap caller still drives the seed through the emitter "
+                f"Patch 25.10 deleted: {rebased}")
+    require(NATIVE_SEED_STEP in executable,
+            "the seed path does not reach the compiler through the native "
+            f"route: {NATIVE_SEED_STEP}")
     implementation = record.get("implementation_patch", {})
     require(implementation.get("pull_request") == 259 and
             implementation.get("base_sha") ==

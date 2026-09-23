@@ -470,9 +470,28 @@ def validate() -> tuple[dict, list[MethodCall]]:
             "transitional Mutex.Lock return type changed during migration")
     require("[UnsafeMutexPrimitive]" in typechecker,
             "Patch 20.16d raw primitive enforcement is missing")
-    require("std_Mutex_Lock_impl(" in codegen and
-            "std_Mutex_Unlock_impl(" in codegen,
+    # Patch 25.10 deletes the C emitter. The Mutex lowering did not go with
+    # it: std_Mutex_Lock_impl / std_Mutex_Unlock_impl now appear in the native
+    # backend's resource and synchronization source, which is where the
+    # lowering lives once there is no C to emit. Re-pointed at the owner
+    # rather than inverted to absence, because this clause is about the
+    # lowering EXISTING, not about where it used to sit -- and asserting only
+    # that it left codegen.gst would stop noticing if it left the tree.
+    #
+    # The SPELLING differs and that is the point. The emitter wrote a C call,
+    # `std_Mutex_Lock_impl(`; the native route declares the symbol into a MIR
+    # program bundle, `"std_Mutex_Lock_impl"`. Carrying the call form over
+    # would have looked right and matched nothing -- a name test standing in
+    # for a behaviour test.
+    native_sync = (ROOT / "compiler/mir_native_backend_resource_sync_source.gst"
+                   ).read_text(encoding="utf-8")
+    require('"std_Mutex_Lock_impl"' in native_sync and
+            '"std_Mutex_Unlock_impl"' in native_sync,
             "transitional Mutex primitive lowering changed during migration")
+    require("std_Mutex_Lock_impl(" not in codegen and
+            "std_Mutex_Unlock_impl(" not in codegen,
+            "Patch 25.10 deletes the emitter but the Mutex lowering survives "
+            "in codegen.gst")
 
     task = TASK.read_text(encoding="utf-8")
     require("- [x] Patch 20.16c — Explicit-Unsafe Mutex Primitive Migration — DONE"

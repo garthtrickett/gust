@@ -456,10 +456,42 @@ def validate() -> dict:
         "compile_fail": sum(case["mode"] == 1 for case in cases),
         "runtime_failure": sum(case["mode"] == 2 for case in cases),
     }
-    require(inventory == observed == {
+    # Patch 25.10 deletes the two emitter test entries, so the two cases that
+    # compiled them go too. Subtracted from the pinned inventory by a
+    # REGISTERED departure rather than re-pinned: each departed case must be
+    # absent from the live corpus AND its file must actually be gone, so a
+    # case dropped for any other reason still fails.
+    #
+    # The frozen measurement_evidence above keeps runner_cases: 326. That is a
+    # true statement about run 34327601797 on 2026-09-09 and is not touched --
+    # a historical measurement does not change because the tree did.
+    departed_cases = registry.get("phase2510_emitter_deletion", {}).get(
+        "frozen_inventory_departures", {}).get("runner_corpus", {}).get(
+            "departed_cases", [])
+    live_names = {case["name"] for case in cases}
+    by_mode: dict = {}
+    by_bucket: dict = {}
+    for departed in departed_cases:
+        require(departed["name"] not in live_names,
+                f"Patch 25.10 records runner case {departed['name']} as "
+                "departed, but it is still declared")
+        require(not (ROOT / departed["path"]).is_file(),
+                f"Patch 25.10 records runner case {departed['name']} as "
+                f"departed, but {departed['path']} is still in the tree")
+        by_mode[departed["mode"]] = by_mode.get(departed["mode"], 0) + 1
+        by_bucket[departed["bucket"]] = by_bucket.get(departed["bucket"], 0) + 1
+    accounted = {
+        "total": observed["total"] + len(departed_cases),
+        "positive": observed["positive"] + by_mode.get(0, 0),
+        "compile_fail": observed["compile_fail"] + by_mode.get(1, 0),
+        "runtime_failure": observed["runtime_failure"] + by_mode.get(2, 0),
+    }
+    require(inventory == observed and accounted == {
         "total": 326, "positive": 216, "compile_fail": 104,
         "runtime_failure": 6,
-    }, "complete test-runner inventory drifted")
+    }, "complete test-runner inventory drifted: "
+       f"{observed} live plus {len(departed_cases)} registered as departed "
+       "is not the 326/216/104/6 this contract pins")
     require(record.get("execution_shards") == {
         "count": 2,
         "isolation": "detached_git_worktree_per_serial_shard",
@@ -501,21 +533,54 @@ def validate() -> dict:
 
     classification = record.get("classification", {})
     reason_counts = classification.get("compile_deferral_reason_counts", {})
+    # The partition moves with the two departed cases, and WHICH SIDE each
+    # goes to is derived, not chosen. The policy below reads "every inventory
+    # case is a required_native_pass or an owned reason_coded_deferral", so a
+    # case carrying a reason code is a deferral: t22's oracle row has
+    # reason_code oracle_positive_fixture_rejects_current_signature, and t23
+    # compiles natively (measured on main, exit 0). oracle_precondition_
+    # failures is a SUB-classification of the deferral side, not a third
+    # addend -- which is why 192 + 134 = 326 with 10 oracle rows inside 134.
+    departed_required = by_bucket.get("required_native", 0)
+    departed_deferral = by_bucket.get("classified_deferral", 0)
+    departed_oracle = sum(1 for d in departed_cases
+                          if d.get("oracle_precondition_row"))
     require(sum(reason_counts.values()) == 121 and
-            classification.get("oracle_precondition_failure_count") == 10 and
+            classification.get("oracle_precondition_failure_count")
+            + departed_oracle == 10 and
             classification.get("runtime_divergence_count") == 3 and
-            classification.get("required_native_case_count") == 192 and
-            classification.get("total_classified_deferral_count") == 134 and
-            192 + 134 == inventory["total"],
+            classification.get("required_native_case_count")
+            + departed_required == 192 and
+            classification.get("total_classified_deferral_count")
+            + departed_deferral == 134 and
+            (classification.get("required_native_case_count")
+             + classification.get("total_classified_deferral_count"))
+            == inventory["total"],
             "Patch 21.17 classification is incomplete")
     oracle_cases = classification.get("oracle_precondition_failures", [])
     runtime_cases = classification.get("runtime_divergences", [])
-    require(len(oracle_cases) == 10 and len(runtime_cases) == 3,
-            "explicit exceptional classification rows drifted")
+    # The per-row lists move with the counts above, by the same registered
+    # departure and never by re-pinning: t22's oracle row leaves because the
+    # fixture it names is deleted. `departed_oracle` is computed from the
+    # departure record, so a row vanishing for any other reason still fails.
+    require(len(oracle_cases) + departed_oracle == 10 and
+            len(runtime_cases) == 3,
+            "explicit exceptional classification rows drifted: "
+            f"{len(oracle_cases)} oracle rows plus {departed_oracle} "
+            "registered as departed is not the 10 this contract pins")
     all_paths = {case["path"] for case in cases}
     exceptional = {row["fixture"] for row in oracle_cases + runtime_cases}
-    require(len(exceptional) == 13 and exceptional <= all_paths,
-            "exceptional classification fixtures drifted")
+    # 13 = the 10 oracle rows plus the 3 runtime divergences. t22's oracle
+    # row departs with its fixture, so the count subtracts the same registered
+    # departure. The `<= all_paths` half is NOT relaxed: every surviving
+    # exceptional row must still name a case the runner declares, which is the
+    # half that would catch a row pointing at a file that is gone.
+    require(len(exceptional) + departed_oracle == 13 and
+            exceptional <= all_paths,
+            "exceptional classification fixtures drifted: "
+            f"{len(exceptional)} fixtures plus {departed_oracle} registered "
+            "as departed is not the 13 this contract pins, or a row names a "
+            "case the runner no longer declares")
     for row in oracle_cases + runtime_cases:
         require(row.get("owner") and row.get("destination") and
                 row.get("reason_code") and row.get("falsifier"),

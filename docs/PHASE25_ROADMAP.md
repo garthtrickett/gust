@@ -1506,6 +1506,19 @@ neither guard is about the native route: one pins the observable values of
 which route a stdlib-lane guard exercises, and that is the stdlib lane's
 judgement, not this patch's.
 
+**Patch 25.10 update: the second option has EXPIRED.** "Point the two
+recipes at the bootstrap emitter" was viable when this was written and is
+not any more, because this patch deletes the emitter. The repair space is
+now one option narrower: restore a fallback in `run-gust-file.sh`, with
+the shared-instrument risk recorded above, or land the Phase 13 capability
+`deferred_p13_parameter_argument_target_dependent_abi` and let both
+fixtures compile natively.
+
+That is worth stating because it is a cost this patch imposes on someone
+else's lane. Recording a deferred repair does not freeze the options it
+was chosen from, and an option can be removed by an unrelated patch
+without anyone noticing.
+
 **Leave them red and say so.** Chosen. Neither check is in the required set
 -- the `Protect main` ruleset requires exactly one, `Codex / Trusted actor` --
 so they do not gate a merge. What they do is tell the truth about a part of
@@ -1515,3 +1528,41 @@ Recording this rather than repairing it is deliberate. Making a red guard
 green by changing what it measures is how a suite stops being evidence, and
 Patch 25.11 has already had to be renumbered once in this phase for claiming
 an Exit Gate that was not met.
+
+---
+
+# Patch 25.10 — a finding, measured before the patch is written
+
+## Deleting the emitter breaks the route that generates `strings.c`
+
+Measured on the 25.7 tip: 15 entry sites spell `--backend bootstrap-emitter`
+(Makefile 6, justfile 6, `compiler/test_runner_entry.gst` 3) and 14 references
+name the `GUST_BOOTSTRAP_EMITTER` authority. Two of those references are not
+callers 25.10 can simply delete:
+
+    scripts/phase25_runtime_strings_generated.sh:61
+    scripts/phase25_strings_gust_parity.sh:38
+
+Patch 25.5 made `src/runtime/strings.c` a GENERATED file, emitted from
+`compiler/runtime/strings.gst`, with a staleness guard that re-emits it and
+diffs. Both of those invoke the bootstrap emitter, because that is what
+existed when they were written. Delete the emitter and the generated runtime
+file has no generator and its staleness guard has nothing to compare against
+-- the file becomes an orphan that says it is generated and cannot be.
+
+The roadmap's 25.10 step list does not mention this. It names the Makefile and
+justfile callers, which is where the sites were when the roadmap was written;
+25.5 added two more after it.
+
+**This is not an argument against 25.10.** It is an argument that 25.10 has a
+prerequisite the roadmap does not state: the two generation sites must move to
+the native route 25.7 qualifies before the emitter goes, or `strings.c` must
+stop being generated C. Whichever is chosen, it is 25.10's work and it has to
+happen in the same patch -- moving the callers first would leave an emitter
+nothing reaches, which is #424 (D5) again, and deleting first would leave a
+generated file with no generator.
+
+Recorded now rather than discovered during the deletion, because the deletion
+is the patch that cannot be half-done: an entry with no emitter is dead
+machinery and an emitter no entry can reach is the dead code #424 was filed
+about, which is why 25.10's guard asserts SYMMETRY rather than absence.

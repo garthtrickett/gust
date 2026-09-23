@@ -355,15 +355,25 @@ def validate_static_architecture(registry: dict) -> None:
     # this guard a marker on a line a later patch had to edit; it now closes
     # on the emitter call itself, which is the thing the native branch must
     # not reach and the same anchor phase22_default_route_flip.py uses.
-    native_branch_match = re.search(
-        r"if invocation\.backend\.tag == 1 \{(.*?)"
-        r"mut c_code := codegen\.codegen_generate\(",
-        compiler_entry,
-        re.DOTALL,
-    )
-    require(native_branch_match is not None, "cannot isolate explicit Cranelift route")
+    # Patch 25.10 deletes the emitter, so there is no C branch to slice TO
+    # and the search above matched nothing -- reported as "cannot isolate
+    # explicit Cranelift route", which describes the regex rather than the
+    # tree.
+    #
+    # This is the SECOND time this anchor has moved. Issue #398 moved it off a
+    # comment and onto the emitter call, on the reasoning that a guard should
+    # not be a marker on a line a later patch has to edit. The emitter call
+    # was a better anchor than the comment and still had the same defect: it
+    # was a thing this phase was always going to remove. What does not move is
+    # the property -- the entry must reach no MIR-to-C codegen call at all --
+    # and stated over the whole entry it is strictly stronger than over a
+    # window, because there is no window left for one to hide outside of.
     require(
-        "codegen.codegen_generate(" not in native_branch_match.group(1),
+        "if invocation.backend.tag == 1 {" in compiler_entry,
+        "cannot isolate explicit Cranelift route",
+    )
+    require(
+        "codegen.codegen_generate(" not in compiler_entry,
         "explicit Cranelift can fall back to MIR-to-C",
     )
     require(

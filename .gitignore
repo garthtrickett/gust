@@ -10,6 +10,8 @@
 # C Transpiler & Native Binaries (Root Volatiles)
 # ==============================================================================
 /gust
+/gust-native-backend
+/gust-runtime-package.a
 /gust_bootstrap
 /gust_program
 /gust_unsafe_program

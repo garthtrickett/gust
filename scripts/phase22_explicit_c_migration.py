@@ -231,6 +231,31 @@ def validate() -> tuple[dict, str]:
     # on some other backend fails the per-site selection.
     site_migration = post_flip_relay.get("phase24_13_site_migration")
     expected_selection = {site: "explicit_c" for site in pending_sites}
+    # 24.13 migrated TWO runner sites; 25.10b re-migrated the negative path
+    # and 25.10c the positive one. This is the SECOND reader of those nodes --
+    # phase22_opening.py is the first -- and both must read the same union,
+    # because two readers with two views is how they drift into two answers.
+    REMIGRATION_SUCCESSORS = (
+        ("phase2510b_runner_negative_path",
+         "phase2510b_relay_remigration_v1", "25.10b"),
+        ("phase2510c_runner_positive_path",
+         "phase2510c_relay_remigration_v1", "25.10c"),
+    )
+    remigrated = {}
+    claimed: set = set()
+    for node_name, contract, label in REMIGRATION_SUCCESSORS:
+        remigration = registry.get(node_name, {}).get("relay_remigration", {})
+        if not remigration:
+            continue
+        require(remigration.get("contract_version") == contract,
+                f"Patch {label} relay re-migration successor drifted")
+        for entry in remigration.get("migrations", []):
+            key = tuple(entry["pinned_site"][field]
+                        for field in pending_site_fields)
+            require(key not in remigrated,
+                    f"Patch {label} re-migrates a site another patch already "
+                    f"claimed: {entry['pinned_site']['path']}")
+            remigrated[key] = entry
     if site_migration is not None:
         require(site_migration.get("contract_version") ==
                 "phase24_13_six_site_relay_migration_v1",
@@ -243,6 +268,18 @@ def validate() -> tuple[dict, str]:
             require(pinned_key in pending_sites,
                     "Patch 24.13 migrates a site this manifest never pinned: "
                     f"{pinned_key[0]}")
+            successor = remigrated.get(moved_key)
+            if successor is not None:
+                # Patch 25.10b re-migrates one of 24.13's DESTINATIONS: the
+                # runner's negative path leaves the bootstrap emitter for the
+                # native route. Third copy of the same reasoning -- this
+                # manifest consults the SAME registered successor that
+                # phase22_opening.py does, rather than growing its own record
+                # of the move, which could then disagree with it.
+                claimed.add(moved_key)
+                moved_key = tuple(successor["migrated_site"][field]
+                                  for field in pending_site_fields)
+                entry = successor
             pending_sites.discard(pinned_key)
             pending_sites.add(moved_key)
             expected_selection.pop(pinned_key, None)
@@ -292,6 +329,9 @@ def validate() -> tuple[dict, str]:
                     for row in stdlib_rows),
                 "a post-flip relay site registered as retired still makes an "
                 "invocation")
+    require(claimed == set(remigrated),
+            "a re-migration successor claims a site Patch 24.13 never "
+            "migrated to")
     require(len(pending_sites) + len(
                 site_retirement["retirements"] if site_retirement else []) == 6
             and pending_sites == set(live_pending_sites) and
@@ -432,12 +472,38 @@ def validate() -> tuple[dict, str]:
     ):
         require(marker not in entry,
                 f"the compiler still advertises a removed route: {marker}")
-    require(entry.count("codegen.codegen_generate(programs, module_prefixes, &env, ctx)") == 1,
-            "explicit C spellings no longer share one MIR-to-C codegen call")
-    bridge = BRIDGE.read_text(encoding="utf-8")
-    require('std.str_eq(args[2], "mir-to-c") == 1' in bridge and
-            'std.str_eq(args[2], "c") == 1' in bridge,
-            "bootstrap bridge does not admit both explicit C spellings")
+    # Patch 25.10 deletes the emitter, so the one shared codegen call this
+    # pinned is gone. Inverted rather than dropped, and inverted in BOTH
+    # halves: the call must be absent, and the third retired spelling must be
+    # refused BY NAME in the same block shape as the two above. Asserting only
+    # the absence would pass on an entry that had quietly stopped answering
+    # `bootstrap-emitter` at all, which is the difference between a retired
+    # route and a typo -- the distinction the block above exists to make.
+    require("codegen.codegen_generate(" not in entry,
+            "the entry still reaches a MIR-to-C codegen call Patch 25.10 "
+            "deleted")
+    retired_emitter = (
+        'if std.str_eq(backend_name, "bootstrap-emitter") == 1 {\n'
+        '                compiler_invocation_fail(\n'
+        '                    "the bootstrap C emitter was deleted in Patch 25.10'
+    )
+    require(retired_emitter in entry,
+            "the retired bootstrap-emitter spelling is not refused by name: "
+            "the compiler must tell a caller who asks for it that it was "
+            "removed, not that it was never valid")
+    # Patch 25.10 deletes the bridge entry: it existed to give stage one a
+    # source, and there is no stage one. Inverted rather than dropped, and
+    # asserted as ABSENCE with a diagnosis rather than by reading the file --
+    # a guard that reads a deleted path raises FileNotFoundError and names
+    # pathlib rather than the patch, which is how five of these presented.
+    #
+    # The claim the read used to make -- that the bridge admits both explicit
+    # C spellings -- is not weakened by dropping it, because the entry it was
+    # a bridge TO now refuses those spellings by name, asserted above.
+    require(not BRIDGE.exists(),
+            "Patch 25.10 deletes the bootstrap bridge entry with the stage "
+            f"chain that was its only consumer, but {BRIDGE.name} is still "
+            "in the tree")
 
     task = TASK.read_text(encoding="utf-8")
     require("- [x] Patch 22.2 — Explicit C Route and No-op Consumer Migration — DONE"

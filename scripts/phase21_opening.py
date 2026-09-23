@@ -155,7 +155,16 @@ def validate() -> dict:
         # which is the thing not to do. The check below now DERIVES the
         # location and names the correct value when they disagree, so a patch
         # that moves main() is told the new number instead of bisecting for it.
-        "source_line": 281,
+        #
+        # Patch 25.10 is the FOURTH patch to move it, and it is the exact case
+        # the comment above names: a backend removal editing
+        # test_runner_entry.gst. Updated rather than retired, because the guard
+        # sanctions updating it and retiring the field would restructure Phase
+        # 21's opening authority from inside an emitter-deletion patch. The
+        # shape is still wrong -- a coordinate is a fact with a shelf life, and
+        # the uniqueness assertion below is the property that actually matters
+        # -- so retiring it belongs to a patch that owns this record.
+        "source_line": 277,
         "source_column": 1,
         "failure_stage": "before_driver_discovery",
         "artifact": "absent",

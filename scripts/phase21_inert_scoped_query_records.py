@@ -51,6 +51,15 @@ NORMAL_COMPILER_SURFACES = [
     "compiler/mir.gst",
     "compiler/codegen.gst",
     "compiler/test_runner_entry.gst",
+    # compiler/test_runner_bootstrap_bridge_entry.gst departed in Patch 25.10
+    # with the stage chain that was its only consumer. Its absence is asserted
+    # rather than merely assumed -- see DEPARTED_SOURCES below.
+]
+
+# Sources an earlier patch removed. Kept as a named set instead of deleted
+# from the list above, because a dropped row says nothing: if the file came
+# back, this contract would silently stop covering it.
+DEPARTED_SOURCES = [
     "compiler/test_runner_bootstrap_bridge_entry.gst",
 ]
 
@@ -111,6 +120,10 @@ def validate() -> dict:
             "inert obligation state is missing")
 
     module_name = Path(record["module"]).name
+    for surface in DEPARTED_SOURCES:
+        require(not (ROOT / surface).is_file(),
+                f"{surface} survives the patch that removed it, so this "
+                "contract no longer covers every normal compiler surface")
     for surface in NORMAL_COMPILER_SURFACES:
         source = (ROOT / surface).read_text(encoding="utf-8")
         require(module_name not in source,

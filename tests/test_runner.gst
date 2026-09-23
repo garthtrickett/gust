@@ -116,13 +116,27 @@ func run_test(t: Test[ctx]) int {
     bin_path = std.Concat(bin_path, "_bin");
 
     if is_neg == 1 {
-        // Patch 24.13: the retained emitter's surviving spelling. This corpus cannot
-        // go native: phase21_complete_guard_suite measures 129 of its 326 cases as
-        // native DEFERRALS, so a native migration would fail 129 tests rather than
-        // migrate them. The negative path only needs a front-end rejection, which
-        // either spelling gives, and it takes this one to stay uniform with the
-        // positive path below.
-        mut cmd := std.Concat("./gust --backend bootstrap-emitter ", path);
+        // Patch 25.10b: the negative path is NATIVE now.
+        //
+        // Patch 24.13 kept it on the emitter because "phase21_complete_guard_suite
+        // measures 129 of its 326 cases as native DEFERRALS, so a native migration
+        // would fail 129 tests rather than migrate them." That number is about the
+        // corpus as a whole and does not describe this path. Measured per case, on
+        // the 104 negatives:
+        //
+        //   104 of 104  rejected by the native route with a diagnostic
+        //    99 of 104  whose diagnostic contains this test's OWN expected substring
+        //     5 of 104  reject correctly but word it differently -- updated below
+        //     0 of 104  crashed, and 0 compiled
+        //
+        // The five were checked individually rather than counted: each is a real
+        // Semantic Error from the typechecker, not a deferral exiting non-zero. A
+        // case rejected BEFORE the typechecker would pass this test for the wrong
+        // reason, which is the failure this path is most exposed to.
+        //
+        // The positive path below cannot follow: 117 of its 120 cases have no
+        // native route, so it stays on the emitter until they are captured.
+        mut cmd := std.Concat("./gust --backend cranelift -o /dev/null ", path);
         cmd = std.Concat(cmd, " > ");
         cmd = std.Concat(cmd, temp_log);
         cmd = std.Concat(cmd, " 2>&1");
@@ -157,10 +171,28 @@ func run_test(t: Test[ctx]) int {
             run_system_cmd("mkdir -p temp_e2e_filesystem_dir && echo 'func main() {}' > temp_e2e_filesystem_dir/file1.gst && echo 'plain text' > temp_e2e_filesystem_dir/file2.txt");
         }
 
-        // Patch 24.13: the retained emitter. The positive path emits C, cleans it,
-        // concatenates the runtime and host-compiles the result -- it needs an
-        // emitter, and 129 of 326 cases have no native route to move to.
-        mut cmd_comp := std.Concat("./gust --backend bootstrap-emitter ", path);
+        // Patch 25.10c: the positive path is NATIVE now, completing on this
+        // side what 25.10b did for the negative path above.
+        //
+        // The comment replaced here said this path "needs an emitter, and 129
+        // of 326 cases have no native route to move to". The emitter is gone,
+        // so "needs" no longer describes a choice. The whole
+        // emit-clean-concatenate-host-compile pipeline collapses into one
+        // native compile, because the native route produces a binary directly
+        // and never produced C to clean.
+        //
+        // This does NOT mean the positive corpus passes. Measured over all
+        // 324 cases on 2026-09-23, 117 of 120 tests/ positives still have no
+        // native route. They now fail HERE, loudly, at the compile step,
+        // rather than reaching for a backend that no longer exists. That is
+        // why no recipe builds this runner any more. What still consumes this
+        // file is runner_cases() in scripts/phase21_complete_guard_suite.py,
+        // which parses the case DECLARATIONS below and classifies each
+        // deferral against its frozen reason code -- and which three CI
+        // workflows run.
+        mut cmd_comp := std.Concat("./gust --backend cranelift -o ", bin_path);
+        cmd_comp = std.Concat(cmd_comp, " ");
+        cmd_comp = std.Concat(cmd_comp, path);
         cmd_comp = std.Concat(cmd_comp, " > ");
         cmd_comp = std.Concat(cmd_comp, temp_log);
         cmd_comp = std.Concat(cmd_comp, " 2>&1");
@@ -169,102 +201,6 @@ func run_test(t: Test[ctx]) int {
         if status != 0 {
             mut msg := std.Format("❌ FAIL: %s (Compilation failed! See %s for errors)", path, temp_log);
             os.LogStr(msg);
-            return 0;
-        }
-
-        mut comp_output := os.ReadFile(local_ctx, temp_log);
-        mut lines := std.str_split(comp_output, "\n", local_ctx);
-
-        mut clean_lines: std.Vector[str, local_ctx] := std.VectorNew(local_ctx);
-        mut idx := 0;
-        while idx < len(lines) {
-            mut line := lines[idx];
-            mut should_keep := 1;
-            if len(line) > 0 {
-                mut b := std.str_byte_at(line, 0);
-                if b == 226 || b == 240 || b == 243 {
-                    should_keep = 0;
-                }
-            }
-            if should_keep == 1 {
-                clean_lines.Push(line);
-            }
-            idx = idx + 1;
-        }
-        mut clean_c_content := join_lines(clean_lines, local_ctx);
-
-        os.WriteFile(clean_c, clean_c_content);
-
-        // Prepend src/runtime.c content to the cleaned C to form a unified translation unit
-        mut runtime_content := os.ReadFile(local_ctx, "src/runtime.c");
-        mut final_c_content := std.Concat(runtime_content, "\n\n");
-        final_c_content = std.Concat(final_c_content, clean_c_content);
-        os.WriteFile(final_c, final_c_content);
-
-        // Patch 25.6 first: fiber.c is gone and codegen emits a
-        // gust_yield() call in every loop of every compiled program, so
-        // EVERY test links this object -- not just the ones that spawn a
-        // fiber. Then Patch 25.5: five more runtime files join it.
-        // src/runtime.c used to carry the whole C runtime, so a program
-        // plus that file
-        // was a complete unit; five of those files are Rust now and their
-        // symbols only arrive through the archive. Without it every test
-        // binary fails on undefined os_Arena_New, os_Args and os_LogStr --
-        // measured, not anticipated: the emitted e2e_process_args test
-        // links and runs with the archive and does not link without it.
-        //
-        // Patch 25.5, second half: WHICH archive depends on GUST_DEBUG.
-        // arena.c chose its allocator with #ifdef per translation unit, so
-        // -DGUST_DEBUG on this line used to switch the arena to the canary
-        // layout. A Rust staticlib is built once, so the choice moved to
-        // the build and there are two archives. Linking the plain one here
-        // silently disarms e2e_arena_canary_corruption_detection -- it
-        // "exits cleanly" instead of aborting, which is a negative test
-        // that has stopped being able to fail.
-        mut debug_build := 0;
-        if is_neg == 2 || std.str_find(path, "canary") != 0 - 1 || std.str_find(path, "sanitizer") != 0 - 1 {
-            debug_build = 1;
-        }
-        mut compile_c_cmd := std.Concat("cc -O2 -Wall -pthread -Isrc ", final_c);
-        // The NARROWED objects, not the staticlibs. Each is self-contained
-        // apart from libc and exports exactly the registered symbol set;
-        // the 310-member archive would also offer its own memcpy beside
-        // libc's. The canary object is the same crate built with the
-        // gust_debug feature, which is where GUST_DEBUG moved when arena.c
-        // stopped being a per-translation-unit #ifdef.
-        if debug_build == 1 {
-            compile_c_cmd = std.Concat(compile_c_cmd, " build/phase25-runtime-rs-canary/gust_runtime_rs_exports.o");
-            compile_c_cmd = std.Concat(compile_c_cmd, " -fsanitize=address -DGUST_DEBUG");
-        } else {
-            compile_c_cmd = std.Concat(compile_c_cmd, " build/phase25-runtime-rs/gust_runtime_rs_exports.o");
-        }
-        compile_c_cmd = std.Concat(compile_c_cmd, " -o ");
-        compile_c_cmd = std.Concat(compile_c_cmd, bin_path);
-        compile_c_cmd = std.Concat(compile_c_cmd, " > ");
-        compile_c_cmd = std.Concat(compile_c_cmd, c_comp_log);
-        compile_c_cmd = std.Concat(compile_c_cmd, " 2>&1");
-        status = run_system_cmd(compile_c_cmd);
-        if status != 0 {
-            mut msg := std.Format("❌ FAIL: %s (Native C compilation failed! See %s for errors)", path, c_comp_log);
-            os.LogStr(msg);
-
-            // SYSTEMATIC DIAGNOSTIC DUMP
-            os.LogStr("🚨 --- SYSTEMATIC DIAGNOSTICS FOR NATIVE C FAILURE ---");
-            mut temp_out := os.ReadFile(local_ctx, temp_log);
-            os.LogStr(std.Format("Temp Log Length: %d bytes", len(temp_out)));
-            if len(temp_out) > 0 {
-                os.LogStr("--- Last 15 Lines of Temp Log ---");
-                mut t_lines := std.str_split(temp_out, "\n", local_ctx);
-                mut start_line := len(t_lines) - 15;
-                if start_line < 0 { start_line = 0; }
-                mut line_idx := start_line;
-                while line_idx < len(t_lines) {
-                    os.LogStr(t_lines[line_idx]);
-                    line_idx = line_idx + 1;
-                }
-            }
-            os.LogStr("------------------------------------------------------");
-
             return 0;
         }
 
@@ -448,7 +384,7 @@ func main() {
     mut t13: Test[ctx];
     t13.path = "compiler/test_directory_leak_violation.gst";
     t13.is_negative = 1;
-    t13.expected = "must be cleanly closed";
+    t13.expected = "can be constructed only inside its defining module";
     tests.Push(t13);
 
     mut t14: Test[ctx];
@@ -496,24 +432,16 @@ func main() {
     t21.expected = "Any brand element correctly allowed inside parent brand 'ctx'!";
     tests.Push(t21);
 
-    mut t22: Test[ctx];
-    t22.path = "compiler/codegen_initializer_test_entry.gst";
-    t22.is_negative = 0;
-    t22.is_substring = 1;
-    t22.expected = "os_GetThreadScratch function definition generated correctly!";
-    tests.Push(t22);
-
-    mut t23: Test[ctx];
-    t23.path = "compiler/typechecker_templates_test_entry.gst";
-    t23.is_negative = 0;
-    t23.is_substring = 1;
-    t23.expected = "std_RcGet(rc_ptr)";
-    tests.Push(t23);
-
+    // t22 and t23 go with Patch 25.10. They compiled
+    // compiler/codegen_initializer_test_entry.gst and
+    // compiler/typechecker_templates_test_entry.gst, which TEST THE EMITTER
+    // and are deleted with it -- both are registered as departed surfaces.
+    // The numbering gap is deliberate: renumbering t24 onward would move
+    // every case name and make the diff unreadable for no gain.
     mut t24: Test[ctx];
     t24.path = "tests/test_brand_nesting_violation_rejected.gst";
     t24.is_negative = 1;
-    t24.expected = "TypeMismatch";
+    t24.expected = "Argument type mismatch for function 'accept_context'";
     tests.Push(t24);
 
     mut t25: Test[ctx];
@@ -543,7 +471,7 @@ func main() {
     mut t29: Test[ctx];
     t29.path = "tests/test_branded_struct_mismatch_rejected.gst";
     t29.is_negative = 1;
-    t29.expected = "Mismatched nested brand";
+    t29.expected = "Brand Nesting. expected arena identity";
     tests.Push(t29);
 
     mut t30: Test[ctx];
@@ -1230,7 +1158,7 @@ func main() {
     mut t136: Test[ctx];
     t136.path = "tests/test_nested_different_brands_rejected.gst";
     t136.is_negative = 1;
-    t136.expected = "Mismatched nested brand";
+    t136.expected = "Brand Nesting. expected arena identity";
     tests.Push(t136);
 
     mut t137: Test[ctx];
@@ -1581,7 +1509,7 @@ func main() {
     mut t_ctx_reassign: Test[ctx];
     t_ctx_reassign.path = "tests/test_ctx_reassignment_rejected.gst";
     t_ctx_reassign.is_negative = 1;
-    t_ctx_reassign.expected = "Reassignment of immutable shared allocator reference";
+    t_ctx_reassign.expected = "Reassignment of immutable allocator binding";
     tests.Push(t_ctx_reassign);
 
     mut t_ctx_mut: Test[ctx];

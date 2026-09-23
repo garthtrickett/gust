@@ -114,35 +114,31 @@ func compiler_parse_invocation(args: std.Vector[str, ctx], ctx: &Arena) Compiler
                     "the generated-C backend was removed in Phase 24: ",
                     backend_name));
             }
-            // Patch 24.11 decided this entry and Patch 24.13 lands it: the
-            // emitter survives as bootstrap-only machinery reusing the
-            // existing MirToC tag.
-            //
-            // Raised in review on #421: keeping the spelling out of help does
-            // not make it internal. Any user who knew the string could reach
-            // codegen_generate through the public binary, which left the
-            // publication path this patch retires open to anyone.
-            //
-            // It cannot move to a separate binary: `make bootstrap` compares
-            // build/gust_stage2.c against build/gust_stage3.c for byte
-            // identity, and that fixed point is the CURRENT compiler emitting
-            // its own C. Take the emitter out of ./gust and there is no stage
-            // two. So the entry stays and carries an authority instead: the
-            // caller must also set GUST_BOOTSTRAP_EMITTER=1, which the
-            // bootstrap chain's own recipes export and an ordinary invocation
-            // does not have.
+            // Patch 25.10: `bootstrap-emitter` joins them, refused rather
+            // than unknown. The distinction is the whole point of the block
+            // above: someone who knew the spelling is told what happened to
+            // it, not that it was never valid. Falling through to "unknown
+            // backend" would erase the difference between a retired route
+            // and a typo.
             if std.str_eq(backend_name, "bootstrap-emitter") == 1 {
-                if std.str_eq(
-                    os.GetEnv(ctx, "GUST_BOOTSTRAP_EMITTER"),
-                    "1"
-                ) == 0 {
-                    compiler_invocation_fail(
-                        "--backend bootstrap-emitter is bootstrap-only machinery, not a user-selectable backend; the generated-C backend was removed in Phase 24");
-                }
-                unsafe {
-                    invocation.backend.tag = 0; // MirToC, bootstrap-only
-                }
-            } else if std.str_eq(backend_name, "cranelift") == 1 {
+                compiler_invocation_fail(
+                    "the bootstrap C emitter was deleted in Patch 25.10 with this entry; the compiler emits no C by any route");
+            }
+            // Patch 24.11 kept the emitter as bootstrap-only machinery
+            // behind GUST_BOOTSTRAP_EMITTER=1, for one stated reason:
+            //
+            //   "It cannot move to a separate binary: `make bootstrap`
+            //    compares build/gust_stage2.c against build/gust_stage3.c
+            //    for byte identity, and that fixed point is the CURRENT
+            //    compiler emitting its own C. Take the emitter out of
+            //    ./gust and there is no stage two."
+            //
+            // Patch 25.7 replaced that fixed point with the NATIVE one --
+            // stage_n == stage_n+1 over emitted objects, not emitted C --
+            // so the reason expired before this patch removed the thing it
+            // was protecting. Both the branch and the GUST_BOOTSTRAP_EMITTER
+            // authority go; there is no tag 0 route left to reach.
+            if std.str_eq(backend_name, "cranelift") == 1 {
                 unsafe {
                     invocation.backend.tag = 1; // Cranelift
                 }
@@ -492,15 +488,15 @@ func main() {
         os.Exit(1);
     }
 
-    // Issue #398: both explicit C spellings are refused above, so the only
-    // way to reach this emitter is --backend bootstrap-emitter with
-    // GUST_BOOTSTRAP_EMITTER=1. It is bootstrap machinery now, not a
-    // user-selectable oracle. The poison above is unreachable from the
-    // retired spellings for the same reason; it still fires for the
-    // bootstrap entry, which is what the route-architecture evidence
-    // needs it for.
-    mut c_code := codegen.codegen_generate(programs, module_prefixes, &env, ctx);
-    os.LogStr(c_code);
+    // Patch 25.10: there is no emitter to reach. Every backend spelling
+    // that led here is refused at the invocation parser above, and
+    // codegen_generate no longer exists, so reaching this point at all
+    // means the native route returned without exiting -- which it does
+    // not do. Left as an explicit failure rather than a silent fallthrough
+    // to nothing: a compiler that produces no output and exits 0 is worse
+    // than one that says why.
+    os.LogError("no backend produced output; the native route is the only route and it did not exit");
+    os.Exit(1);
 }
 
 func compiler_string_ends_with(value: str, suffix: str) int {

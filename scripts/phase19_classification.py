@@ -132,52 +132,101 @@ def validate() -> dict:
             "dynamic raw/sandbox container fixture lacks explicit metadata")
 
     codegen = CODEGEN.read_text(encoding="utf-8")
-    for name, kind in (
-        ("codegen_is_slice_type", "slice"),
-        ("codegen_is_ptr_type", "pointer"),
-        ("codegen_is_vector_type", "vector"),
-        ("codegen_is_hashmap_type", "hashmap"),
-        ("codegen_is_pool_type", "pool"),
-    ):
-        body = function_body(codegen, name)
-        require("typechecker.typechecker_classify_type" in body and
-                f"typechecker_classification_{kind}()" in body,
-                f"{name} does not consume the shared classifier")
-        require("std.str_find" not in body and "std.str_eq" not in body,
-                f"{name} still classifies from spelling")
-    require("codegen_expression_is_arena_ptr" in codegen,
-            "arena pointer classification is not expression-type-derived")
-    require("codegen_is_arena_ptr" not in codegen,
-            "legacy identifier-based arena pointer classifier remains")
-    for forbidden in (
+    # Patch 25.10 deletes the C emitter, and with it every function this
+    # block asserted about: the five container classifiers, the arena-pointer
+    # classifier and codegen_generate_expression. `function_body` on a
+    # deleted name raises rather than diagnosing, so the block is inverted as
+    # a whole rather than clause by clause.
+    #
+    # MEASURED BEFORE CHOOSING THE REPLACEMENT CLAIM, because the obvious one
+    # is wrong. "The native route carries the behaviour" does not hold here:
+    # compiler/mir_native_backend_full_program_source.gst calls
+    # typechecker_classify_type ZERO times. It does not classify types the
+    # way the emitter did at all, so there is no consumer to re-point this
+    # at, and asserting one would be inventing a fact.
+    #
+    # What Patch 19.4 was actually protecting survives the route that
+    # motivated it: types must not be classified from their SPELLING. That is
+    # asserted over every compiler source below, which is broader than the
+    # original pair of files, and it is the half that can still fail. The
+    # other half -- how the emitter consumed the shared classifier -- retires
+    # with the emitter, because a claim about how deleted code behaved is not
+    # a test.
+    RETIRED_CLASSIFIERS = (
+        "codegen_is_slice_type", "codegen_is_ptr_type", "codegen_is_vector_type",
+        "codegen_is_hashmap_type", "codegen_is_pool_type",
+        "codegen_expression_is_arena_ptr", "codegen_is_arena_ptr",
+        "codegen_generate_expression",
+    )
+    FORBIDDEN_SPELLINGS = (
         'std.str_find(clean, "Vector_")',
         'std.str_find(clean, "HashMap_")',
         'std.str_find(clean, "Pool_")',
-    ):
-        require(forbidden not in typechecker and forbidden not in codegen,
-                f"container spelling classifier remains: {forbidden}")
+    )
+    emitter_present = any(
+        line.lstrip().startswith("func codegen_generate(")
+        for line in codegen.splitlines())
+    if emitter_present:
+        for name, kind in (
+            ("codegen_is_slice_type", "slice"),
+            ("codegen_is_ptr_type", "pointer"),
+            ("codegen_is_vector_type", "vector"),
+            ("codegen_is_hashmap_type", "hashmap"),
+            ("codegen_is_pool_type", "pool"),
+        ):
+            body = function_body(codegen, name)
+            require("typechecker.typechecker_classify_type" in body and
+                    f"typechecker_classification_{kind}()" in body,
+                    f"{name} does not consume the shared classifier")
+            require("std.str_find" not in body and "std.str_eq" not in body,
+                    f"{name} still classifies from spelling")
+        require("codegen_expression_is_arena_ptr" in codegen,
+                "arena pointer classification is not expression-type-derived")
+        require("codegen_is_arena_ptr" not in codegen,
+                "legacy identifier-based arena pointer classifier remains")
+        for forbidden in (
+            'std.str_find(clean, "Vector_")',
+            'std.str_find(clean, "HashMap_")',
+            'std.str_find(clean, "Pool_")',
+        ):
+            require(forbidden not in typechecker and forbidden not in codegen,
+                    f"container spelling classifier remains: {forbidden}")
 
-    generate_body = function_body(codegen, "codegen_generate_expression")
-    assertion = "Fatal Error: Phase 19 spelling override changed arena classification"
-    require("mut resolved_alloc_t := typechecker.env_resolve_type(env, alloc_t, ctx);" in generate_body and
-            "typechecker.typechecker_classify_resolved_type(resolved_alloc_t, typechecker.typechecker_classification_arena(), env, ctx)" in generate_body,
-            "index arena classification does not consume the resolved allocator type")
-    if isinstance(successor, dict):
-        require(assertion not in generate_body and "is_name_match" not in generate_body,
-                "Patch 19.8 left the retired compatibility override live")
-        require('import "phase19_spelling_rule.gst"' not in codegen,
-                "Patch 19.8 left the retired spelling authority imported")
+        generate_body = function_body(codegen, "codegen_generate_expression")
+        assertion = "Fatal Error: Phase 19 spelling override changed arena classification"
+        require("mut resolved_alloc_t := typechecker.env_resolve_type(env, alloc_t, ctx);" in generate_body and
+                "typechecker.typechecker_classify_resolved_type(resolved_alloc_t, typechecker.typechecker_classification_arena(), env, ctx)" in generate_body,
+                "index arena classification does not consume the resolved allocator type")
+        if isinstance(successor, dict):
+            require(assertion not in generate_body and "is_name_match" not in generate_body,
+                    "Patch 19.8 left the retired compatibility override live")
+            require('import "phase19_spelling_rule.gst"' not in codegen,
+                    "Patch 19.8 left the retired spelling authority imported")
+        else:
+            require(assertion in generate_body, "redundancy assertion is missing")
+            legacy_override = "mut is_name_match := 0;" in generate_body
+            converged_override = (
+                "mut is_name_match := spelling_rule.phase19_legacy_brand_spelling_in_expression(alloc_str, ctx);"
+                in generate_body
+            )
+            require(legacy_override or converged_override,
+                    "compatibility spelling override was removed before its retirement patch")
+            require(generate_body.find(assertion) < generate_body.find("if is_name_match == 1 {", generate_body.find(assertion)),
+                    "spelling override is applied before its redundancy assertion")
+
     else:
-        require(assertion in generate_body, "redundancy assertion is missing")
-        legacy_override = "mut is_name_match := 0;" in generate_body
-        converged_override = (
-            "mut is_name_match := spelling_rule.phase19_legacy_brand_spelling_in_expression(alloc_str, ctx);"
-            in generate_body
-        )
-        require(legacy_override or converged_override,
-                "compatibility spelling override was removed before its retirement patch")
-        require(generate_body.find(assertion) < generate_body.find("if is_name_match == 1 {", generate_body.find(assertion)),
-                "spelling override is applied before its redundancy assertion")
+        for name in RETIRED_CLASSIFIERS:
+            require(name not in codegen,
+                    f"{name} survives the emitter Patch 25.10 deleted, so "
+                    "this contract no longer describes the tree")
+        for forbidden in FORBIDDEN_SPELLINGS:
+            offenders = sorted(
+                source.relative_to(ROOT).as_posix()
+                for source in sorted((ROOT / "compiler").glob("*.gst"))
+                if forbidden in source.read_text(encoding="utf-8", errors="replace"))
+            require(not offenders,
+                    f"container spelling classifier is back: {forbidden} in "
+                    f"{offenders}")
 
     for fixture in record["fixtures"]:
         require((ROOT / fixture).is_file(), f"classification fixture missing: {fixture}")
