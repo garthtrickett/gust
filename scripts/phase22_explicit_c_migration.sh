@@ -89,7 +89,11 @@ cat "$build_dir/prepatch.stdout" "$build_dir/prepatch.stderr" \
 if ! rg -q -F -- '--backend bootstrap-emitter' "$build_dir/prepatch.combined"; then
   fail "the refusal does not name the spelling it refused"
 fi
-if ! rg -q -e 'bootstrap C emitter was deleted in Patch 25\.10' \
+# -F, not a regex: scripts/phase25_emitter_deletion.py registers this exact
+# string as a REQUIRED refusal for this file, and checks it by literal
+# presence. Escaping the dot for regex mode (25\.10) removed the literal and
+# broke that registration -- the guard fails naming the probe, not the regex.
+if ! rg -q -F -e 'bootstrap C emitter was deleted in Patch 25.10' \
         -e 'bootstrap-only machinery' "$build_dir/prepatch.combined"; then
   fail "the refusal does not name what happened to the spelling"
 fi

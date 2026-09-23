@@ -41873,6 +41873,11 @@
           "path": "scripts/phase22_explicit_c_migration.sh",
           "reason": "a failure message naming the spelling it is asserting the absence of. Text inside a diagnostic string is not an invocation.",
           "text": "fail \"the bridge still accepts --backend bootstrap-emitter; Patch 25.10 deleted the emitter\""
+        },
+        {
+          "path": "scripts/phase22_explicit_c_migration.sh",
+          "reason": "Patch 25.10c. An assertion that the refusal NAMES the spelling it refused has to contain that spelling -- there is no way to check for a token without writing it. Counting it as a caller would mean the only way to satisfy the symmetry assertion is to stop checking that the refusal is specific, which is the opposite of what this phase wants.",
+          "text": "if ! rg -q -F -- '--backend bootstrap-emitter' \"$build_dir/prepatch.combined\"; then"
         }
       ],
       "partial_or_unasserted_probe": "rejected",
@@ -42994,7 +42999,7 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
-          "digest": "c30d923900910584cbdfe414c79b0cb2a7c9f3808df7851ff413316bca77bc73",
+          "digest": "e7762b147491b5c41491517f7aaf2f0541722603a5ece4dae79f75de6b7a8bc8",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
             "explicit_backend_spelling": 1,
