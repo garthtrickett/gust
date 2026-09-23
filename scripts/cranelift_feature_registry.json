@@ -42342,6 +42342,21 @@
           "classification": "historical_only",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "9553df1771226f2256fa1ecb6cb13b62da44e9be550c1772333a9979ad2d1034",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "docs/PHASE21_CLOSURE.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
           "digest": "54e02849e02d7a8142023bc3f2c439ffd837ed04c02bb3046ceada95b029e790",
           "falsifier": "historical_record_is_reclassified_as_live_support",
           "match_counts": {
@@ -43110,6 +43125,21 @@
           "classification": "historical_only",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "3cc9b2d50c75fddc96d518452388d423d0516018af9de299cdfea8fd94617c49",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 1
+          },
+          "owner": "cranelift",
+          "path": "docs/PHASE21_CLOSURE.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
           "digest": "468a41390c6c9c1385597b346cc37f3b6883a775d06f882b1056e01861c6ab72",
           "falsifier": "historical_record_is_reclassified_as_live_support",
           "match_counts": {
@@ -43761,6 +43791,7 @@
         "compiler/CRANELIFT_PHASE22_OPENING.md",
         "compiler/codegen.gst",
         "compiler/test_runner_entry.gst",
+        "docs/PHASE21_CLOSURE.md",
         "docs/PHASE24_RETIREMENT_CONSUMER_INVENTORY.md",
         "docs/PHASE25_ROADMAP.md",
         "scripts/cranelift_registry.py",

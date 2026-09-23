@@ -234,9 +234,24 @@ def check() -> None:
     inventory = suite["inventory"]["total"]
     native = suite["classification"]["required_native_case_count"]
     deferred = suite["classification"]["total_classified_deferral_count"]
-    require((inventory, native, deferred) == (326, 192, 134) and
+    # The FOURTH consumer of these three numbers, and the one my first
+    # enumeration missed: it writes them as a tuple, so a grep for "== 326"
+    # or "== 134" does not find it. Same subtraction as the other three --
+    # Patch 25.10 retires two runner cases whose fixtures it deletes, t23 from
+    # the required-native side and t22 from the deferral side, and the
+    # departure record carries which is which.
+    departed = registry.get("phase2510_emitter_deletion", {}).get(
+        "frozen_inventory_departures", {}).get("runner_corpus", {}).get(
+            "departed_cases", [])
+    gone_required = sum(1 for d in departed if d.get("bucket") == "required_native")
+    gone_deferral = sum(1 for d in departed if d.get("bucket") == "classified_deferral")
+    require((inventory + len(departed), native + gone_required,
+             deferred + gone_deferral) == (326, 192, 134) and
             native + deferred == inventory,
-            "complete-suite classification does not account for all cases")
+            "complete-suite classification does not account for all cases: "
+            f"{(inventory, native, deferred)} live plus "
+            f"{(len(departed), gone_required, gone_deferral)} registered as "
+            "departed is not the (326, 192, 134) this closure pins")
     require(all(row.get("owner") and row.get("destination") and row.get("falsifier")
                 for key in ("oracle_precondition_failures", "runtime_divergences")
                 for row in suite["classification"][key]),

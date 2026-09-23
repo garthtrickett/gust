@@ -35,9 +35,9 @@ Phase 21 closes its declared tenant-scoped typed-query and Cranelift self-hostin
 
 ## Complete native guard-suite classification
 
-- Inventory cases: `326`
-- Required native cases: `192`
-- Owned deferrals: `134`
+- Inventory cases: `324`
+- Required native cases: `191`
+- Owned deferrals: `133`
 - Compiler origin: `Cranelift_built_full_compiler`
 - Target backend: `explicit_cranelift_no_fallback`
 
