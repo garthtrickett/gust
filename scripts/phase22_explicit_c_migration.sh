@@ -66,10 +66,33 @@ prepatch_status=$?
 set -e
 test "$prepatch_status" -ne 0 ||
   fail "the bridge still accepts --backend bootstrap-emitter; Patch 25.10 deleted the emitter"
-test ! -s "$build_dir/prepatch.stdout" ||
+# Patch 25.10c: the property is "no C was emitted", not "stdout is empty",
+# and the refusal is the BRIDGE's, not this branch's.
+#
+# gust_bootstrap is a FETCHED binary from an earlier release. It refuses the
+# spelling on STDOUT, in its own Phase 24 wording, and cannot carry Patch
+# 25.10's message because it predates it. The two assertions replaced here
+# required an empty stdout and a 25.10-worded STDERR, which is the current
+# compiler's refusal behaviour asserted against a binary that cannot have it.
+# They failed while the property they exist to protect -- asking for the
+# emitter produces a refusal and no C -- held perfectly.
+#
+# So: no C on stdout, checked by what C actually looks like rather than by
+# byte count, and a refusal that names the spelling. Either wording is
+# accepted because either one IS a refusal by name; what is not accepted is
+# silence or emission.
+if rg -q -F '#include' "$build_dir/prepatch.stdout"; then
   fail "a refused emitter invocation still wrote C to stdout"
-rg -F 'bootstrap C emitter was deleted in Patch 25.10' "$build_dir/prepatch.stderr" >/dev/null ||
+fi
+cat "$build_dir/prepatch.stdout" "$build_dir/prepatch.stderr" \
+  >"$build_dir/prepatch.combined"
+if ! rg -q -F -- '--backend bootstrap-emitter' "$build_dir/prepatch.combined"; then
+  fail "the refusal does not name the spelling it refused"
+fi
+if ! rg -q -e 'bootstrap C emitter was deleted in Patch 25\.10' \
+        -e 'bootstrap-only machinery' "$build_dir/prepatch.combined"; then
   fail "the refusal does not name what happened to the spelling"
+fi
 
 set +e
 ./gust --backend C "$fixture" >"$build_dir/invalid.stdout" 2>"$build_dir/invalid.stderr"
