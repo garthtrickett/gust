@@ -10173,8 +10173,31 @@ guard-cranelift-phase10-packaging-help-ci:
       rm -f build/gust-native-backend
       rm -rf build/phase10-package
       make gust
-      if [ -e build/gust-native-backend ] || [ -e build/phase10-package ]; then
-        echo "make gust must remain compiler-only and must not build or stage the Rust worker."
+      # Patch 25.10c INVERTS the first half of this assertion.
+      #
+      # It used to require that `make gust` produce NEITHER
+      # build/gust-native-backend NOR build/phase10-package, on the grounds
+      # that make gust is compiler-only and packaging belongs to
+      # `make phase10-native-package`. The first half described a world where
+      # make gust ran the C emitter and host-compiled the result; it held
+      # trivially because nothing in that path wanted a native worker.
+      #
+      # Patch 25.10 makes `make gust` ONE NATIVE COMPILE. A native compile
+      # cannot happen without the native backend driver, so the worker is now
+      # a PREREQUISITE of the target, and requiring its absence requires the
+      # compiler not to be built the way this phase builds it. Deleting the
+      # clause would say nothing, so it is inverted: the worker must be
+      # PRESENT, because its absence would mean the native compile above did
+      # not really happen.
+      #
+      # The second half is untouched and is the one carrying the separation
+      # this guard exists for. Packaging is still not make gust's job.
+      if [ ! -x build/gust-native-backend ]; then
+        echo "make gust is a native compile now and must leave its backend driver staged; an absent worker means the compile did not take the native route."
+        exit 1
+      fi
+      if [ -e build/phase10-package ]; then
+        echo "make gust must not stage the phase10 package; packaging remains make phase10-native-package's job."
         exit 1
       fi
 
