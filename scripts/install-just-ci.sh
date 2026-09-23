@@ -51,5 +51,9 @@ for ((attempt = 1; attempt <= JUST_CI_MAX_ATTEMPTS; attempt++)); do
         exit 1
     fi
 
-    sleep "$((attempt * 2))"
+    # The band must outlast the incident, not just the request. A
+    # GitHub 5xx band runs about a minute; 2+4+6+8 gives up after 20
+    # seconds, so every attempt lands inside the same outage and the
+    # retry loop reads as a hard failure. 10+20+30+40 spans 100s.
+    sleep "$((attempt * 10))"
 done
