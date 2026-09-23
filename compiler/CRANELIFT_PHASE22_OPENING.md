@@ -206,10 +206,10 @@ Do not edit by hand.
 
 ## Phase 21 native-capability handoff
 
-- Complete inventory: `326`
-- Required native cases: `192`
+- Complete inventory: `324`
+- Required native cases: `191`
 - Compile deferrals: `121`
-- Oracle precondition failures: `10`
+- Oracle precondition failures: `9`
 - Runtime divergences: `3`
 - Default policy: `unsupported_native_features_fail_clearly_without_C_fallback`
 - Cleanup destination: `22.5_pre_flip_default_cohort_qualification`

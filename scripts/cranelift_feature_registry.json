@@ -4895,8 +4895,8 @@
     "semantic_oracle": "same_Cranelift_built_compiler_explicit_mir_to_c",
     "inventory_source": "tests/test_runner.gst",
     "inventory": {
-      "total": 326,
-      "positive": 216,
+      "total": 324,
+      "positive": 214,
       "compile_fail": 104,
       "runtime_failure": 6
     },
@@ -4907,8 +4907,8 @@
       "memory_measurement": "aggregate_live_proc_tree_rss"
     },
     "classification": {
-      "required_native_case_count": 192,
-      "total_classified_deferral_count": 134,
+      "required_native_case_count": 191,
+      "total_classified_deferral_count": 133,
       "compile_deferral_reason_counts": {
         "source_feature_not_represented": 74,
         "deferred_p13_parameter_argument_target_dependent_abi": 25,
@@ -4920,77 +4920,70 @@
         "source_or_type_failure": 1,
         "inconsistent_abi_equivalent_import_signature": 1
       },
-      "oracle_precondition_failure_count": 10,
+      "oracle_precondition_failure_count": 9,
       "oracle_precondition_failures": [
         {
-          "fixture": "compiler/codegen_initializer_test_entry.gst",
-          "reason_code": "oracle_positive_fixture_rejects_current_signature",
-          "owner": "self_hosted_test_runner_fixture",
           "destination": "phase22_pre_default_guard_cleanup",
-          "falsifier": "the_same_Cranelift_built_compiler_accepts_the_fixture_through_MIR_to_C"
-        },
-        {
+          "falsifier": "the_same_Cranelift_built_compiler_accepts_the_fixture_through_MIR_to_C",
           "fixture": "tests/e2e_generational_arena_wrapper_migration.gst",
-          "reason_code": "oracle_positive_fixture_rejects_current_arena_identity",
           "owner": "self_hosted_test_runner_fixture",
-          "destination": "phase22_pre_default_guard_cleanup",
-          "falsifier": "the_same_Cranelift_built_compiler_accepts_the_fixture_through_MIR_to_C"
+          "reason_code": "oracle_positive_fixture_rejects_current_arena_identity"
         },
         {
+          "destination": "phase22_pre_default_guard_cleanup",
+          "falsifier": "the_same_Cranelift_built_compiler_accepts_the_fixture_through_MIR_to_C",
           "fixture": "tests/e2e_parallel_zero_copy_parsing.gst",
-          "reason_code": "oracle_positive_fixture_rejects_current_spawn_argument",
           "owner": "self_hosted_test_runner_fixture",
-          "destination": "phase22_pre_default_guard_cleanup",
-          "falsifier": "the_same_Cranelift_built_compiler_accepts_the_fixture_through_MIR_to_C"
+          "reason_code": "oracle_positive_fixture_rejects_current_spawn_argument"
         },
         {
+          "destination": "phase22_pre_default_guard_cleanup",
+          "falsifier": "the_same_Cranelift_built_compiler_accepts_the_fixture_through_MIR_to_C",
           "fixture": "tests/e2e_fiber_channel_pipeline.gst",
-          "reason_code": "oracle_positive_fixture_rejects_current_spawn_argument",
           "owner": "self_hosted_test_runner_fixture",
-          "destination": "phase22_pre_default_guard_cleanup",
-          "falsifier": "the_same_Cranelift_built_compiler_accepts_the_fixture_through_MIR_to_C"
+          "reason_code": "oracle_positive_fixture_rejects_current_spawn_argument"
         },
         {
+          "destination": "phase22_pre_default_guard_cleanup",
+          "falsifier": "the_same_Cranelift_built_compiler_accepts_the_fixture_through_MIR_to_C",
           "fixture": "tests/e2e_unsafe_nested_selector_subscript_field_write.gst",
-          "reason_code": "oracle_positive_fixture_rejects_current_arena_identity",
           "owner": "self_hosted_test_runner_fixture",
-          "destination": "phase22_pre_default_guard_cleanup",
-          "falsifier": "the_same_Cranelift_built_compiler_accepts_the_fixture_through_MIR_to_C"
+          "reason_code": "oracle_positive_fixture_rejects_current_arena_identity"
         },
         {
+          "destination": "phase22_pre_default_guard_cleanup",
+          "falsifier": "the_runner_expected_diagnostic_matches_the_oracle_rejection",
           "fixture": "compiler/test_directory_leak_violation.gst",
-          "reason_code": "oracle_negative_expectation_preempted_by_opaque_construction",
           "owner": "self_hosted_test_runner_fixture",
-          "destination": "phase22_pre_default_guard_cleanup",
-          "falsifier": "the_runner_expected_diagnostic_matches_the_oracle_rejection"
+          "reason_code": "oracle_negative_expectation_preempted_by_opaque_construction"
         },
         {
+          "destination": "phase22_pre_default_guard_cleanup",
+          "falsifier": "the_runner_expected_diagnostic_matches_the_oracle_rejection",
           "fixture": "tests/test_brand_nesting_violation_rejected.gst",
-          "reason_code": "oracle_negative_expectation_uses_retired_diagnostic",
           "owner": "self_hosted_test_runner_fixture",
-          "destination": "phase22_pre_default_guard_cleanup",
-          "falsifier": "the_runner_expected_diagnostic_matches_the_oracle_rejection"
+          "reason_code": "oracle_negative_expectation_uses_retired_diagnostic"
         },
         {
+          "destination": "phase22_pre_default_guard_cleanup",
+          "falsifier": "the_runner_expected_diagnostic_matches_the_oracle_rejection",
           "fixture": "tests/test_branded_struct_mismatch_rejected.gst",
-          "reason_code": "oracle_negative_expectation_uses_retired_diagnostic",
           "owner": "self_hosted_test_runner_fixture",
-          "destination": "phase22_pre_default_guard_cleanup",
-          "falsifier": "the_runner_expected_diagnostic_matches_the_oracle_rejection"
+          "reason_code": "oracle_negative_expectation_uses_retired_diagnostic"
         },
         {
+          "destination": "phase22_pre_default_guard_cleanup",
+          "falsifier": "the_runner_expected_diagnostic_matches_the_oracle_rejection",
           "fixture": "tests/test_nested_different_brands_rejected.gst",
-          "reason_code": "oracle_negative_expectation_uses_retired_diagnostic",
           "owner": "self_hosted_test_runner_fixture",
-          "destination": "phase22_pre_default_guard_cleanup",
-          "falsifier": "the_runner_expected_diagnostic_matches_the_oracle_rejection"
+          "reason_code": "oracle_negative_expectation_uses_retired_diagnostic"
         },
         {
-          "fixture": "tests/test_ctx_reassignment_rejected.gst",
-          "reason_code": "oracle_negative_expectation_uses_retired_diagnostic",
-          "owner": "self_hosted_test_runner_fixture",
           "destination": "phase22_pre_default_guard_cleanup",
-          "falsifier": "the_runner_expected_diagnostic_matches_the_oracle_rejection"
+          "falsifier": "the_runner_expected_diagnostic_matches_the_oracle_rejection",
+          "fixture": "tests/test_ctx_reassignment_rejected.gst",
+          "owner": "self_hosted_test_runner_fixture",
+          "reason_code": "oracle_negative_expectation_uses_retired_diagnostic"
         }
       ],
       "runtime_divergence_count": 3,
@@ -5232,10 +5225,10 @@
     },
     "native_capability_handoff": {
       "authority": "phase21_complete_guard_suite_v1",
-      "inventory_total": 326,
-      "required_native_case_count": 192,
+      "inventory_total": 324,
+      "required_native_case_count": 191,
       "compile_deferral_count": 121,
-      "oracle_precondition_failure_count": 10,
+      "oracle_precondition_failure_count": 9,
       "runtime_divergence_count": 3,
       "default_policy": "unsupported_native_features_fail_clearly_without_C_fallback",
       "cleanup_destination": "22.5_pre_flip_default_cohort_qualification"
@@ -5845,10 +5838,10 @@
       "other_default_initialization": "unchanged_zero"
     },
     "complete_guard_overlay": {
-      "inventory_total": 326,
-      "required_native_case_count": 195,
+      "inventory_total": 324,
+      "required_native_case_count": 194,
       "classified_nondefault_native_deferral_count": 121,
-      "oracle_precondition_parity_rejection_count": 10,
+      "oracle_precondition_parity_rejection_count": 9,
       "required_native_deferral_count": 0,
       "unclassified_result_count": 0,
       "runtime_divergence_count": 0
@@ -41897,6 +41890,26 @@
         "reason": "Patch 20.x pins which compiler sources speak the directory vocabulary -- os.OpenDir, os.ReadDir, os.CloseDir. The emitter emitted those calls into C; with it deleted, codegen.gst stops naming them. Exactly one of the 23 pinned files leaves and none is added."
       },
       "partial_or_substituted_departure": "rejected",
+      "runner_corpus": {
+        "bucket_derivation": "The classification policy reads \"every_inventory_case_is_a_required_native_pass_or_an_owned_reason_coded_deferral\" -- a strict partition, where a deferral is one carrying a REASON CODE. t22's oracle_precondition_failures row has reason_code oracle_positive_fixture_rejects_current_signature, so it is a deferral. t23 compiles natively (exit 0, measured on main at a9d043af where both entries and the emitter still exist), so it is a required-native pass. oracle_precondition_failures is a sub-classification of the deferral side, not a third addend, which is why 192 + 134 = 326 with 10 oracle rows inside the 134.",
+        "departed_cases": [
+          {
+            "bucket": "classified_deferral",
+            "mode": 0,
+            "name": "t22",
+            "oracle_precondition_row": true,
+            "path": "compiler/codegen_initializer_test_entry.gst"
+          },
+          {
+            "bucket": "required_native",
+            "mode": 0,
+            "name": "t23",
+            "oracle_precondition_row": false,
+            "path": "compiler/typechecker_templates_test_entry.gst"
+          }
+        ],
+        "reason": "both cases compile an emitter test entry, and both entries are deleted with the emitter -- already registered as departed text surfaces. Patch 25.10 removed the entries and left the cases declared, so the runner declared two tests for files that do not exist. Found by CI's `evidence` command, which COMPILES each declared case; `validate` checks the count and never asks whether the paths are there."
+      },
       "selected_module_reachability": {
         "departed_reachable_edges": 7,
         "departed_reachable_modules": [
@@ -42284,7 +42297,7 @@
           "classification": "historical_only",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "preserve_as_historical_evidence",
-          "digest": "c8c28ed52f1e0168598217d4ee2f2e77b1bd6e9671e3565e5c7391e77fc055c3",
+          "digest": "3a76f6ee7bbb51b4c169f8bcf7c13fb272f50d09be39b0d4e965c97a648538d9",
           "falsifier": "historical_record_is_reclassified_as_live_support",
           "match_counts": {
             "explicit_backend_spelling": 6,
@@ -42644,6 +42657,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "ac65da6e651480e044e24f008644e7c5f993a71c523ab6356d1f7107be36ea8b",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 2
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_complete_guard_suite.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "5a095a54536b9a86cd763f7d55bcbc40132d1a91c85babdad4e6226327b0f14f",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -42908,6 +42936,21 @@
           },
           "owner": "cranelift",
           "path": "scripts/phase22_postflip_qualification.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "6bd3264484aab262ce66d3f34898c1346e7b0444e2741b89885cdb6603fd5aa2",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 2
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase22_preflip_default_cohort.py",
           "removal_phase": "24"
         },
         {
@@ -43382,6 +43425,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "1407b45c0e67efb92fe51c7eff6fa257d946c02a58f78f5d62bfbf96ec0f2530",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 2
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase21_complete_guard_suite.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "ee4a1297e5f1ef7f1a79998711bede5ad60ab31892c5f28fcc69085f6186e23f",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -43652,6 +43710,21 @@
           "classification": "archive_candidate",
           "current_route": "tracked_MIR_to_C_or_generated_C_surface",
           "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "a8b06c04088765941a62436f948ee4b657e98e88a07e4eee9e19a05201d14785",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 2
+          },
+          "owner": "cranelift",
+          "path": "scripts/phase22_preflip_default_cohort.py",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
           "digest": "a264b4dcd1632d4a42f07177572f5148ed1f835943bee5515c5beb4c48f8c849",
           "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
           "match_counts": {
@@ -43709,6 +43782,7 @@
         "scripts/phase20_resource_rooted_access.py",
         "scripts/phase20_resource_scope_cleanup.py",
         "scripts/phase21_compiler_support_native_qualification.py",
+        "scripts/phase21_complete_guard_suite.py",
         "scripts/phase21_cross_tenant_capability.sh",
         "scripts/phase21_inert_scoped_query_records.py",
         "scripts/phase21_native_feature_seed_convergence.py",
@@ -43727,6 +43801,7 @@
         "scripts/phase22_explicit_c_migration.sh",
         "scripts/phase22_opening.py",
         "scripts/phase22_postflip_qualification.py",
+        "scripts/phase22_preflip_default_cohort.py",
         "scripts/phase23_closure.py",
         "scripts/phase24_retirement_consumer_inventory.py"
       ]

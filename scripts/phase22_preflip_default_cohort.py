@@ -114,11 +114,11 @@ def validate() -> dict:
     }, "post-merge default-Index correction authority drifted")
     overlay = record.get("complete_guard_overlay", {})
     require(overlay == {
-        "inventory_total": 326,
+        "inventory_total": 324,
         "required_native_case_count":
             historical["required_native_case_count"] + 3,
         "classified_nondefault_native_deferral_count": 121,
-        "oracle_precondition_parity_rejection_count": 10,
+        "oracle_precondition_parity_rejection_count": 9,
         "required_native_deferral_count": 0,
         "unclassified_result_count": 0,
         "runtime_divergence_count": 0,

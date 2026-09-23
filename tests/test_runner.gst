@@ -510,20 +510,12 @@ func main() {
     t21.expected = "Any brand element correctly allowed inside parent brand 'ctx'!";
     tests.Push(t21);
 
-    mut t22: Test[ctx];
-    t22.path = "compiler/codegen_initializer_test_entry.gst";
-    t22.is_negative = 0;
-    t22.is_substring = 1;
-    t22.expected = "os_GetThreadScratch function definition generated correctly!";
-    tests.Push(t22);
-
-    mut t23: Test[ctx];
-    t23.path = "compiler/typechecker_templates_test_entry.gst";
-    t23.is_negative = 0;
-    t23.is_substring = 1;
-    t23.expected = "std_RcGet(rc_ptr)";
-    tests.Push(t23);
-
+    // t22 and t23 go with Patch 25.10. They compiled
+    // compiler/codegen_initializer_test_entry.gst and
+    // compiler/typechecker_templates_test_entry.gst, which TEST THE EMITTER
+    // and are deleted with it -- both are registered as departed surfaces.
+    // The numbering gap is deliberate: renumbering t24 onward would move
+    // every case name and make the diff unreadable for no gain.
     mut t24: Test[ctx];
     t24.path = "tests/test_brand_nesting_violation_rejected.gst";
     t24.is_negative = 1;
