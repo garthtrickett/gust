@@ -49,6 +49,19 @@ guard-positive file label:
     # building it if absent -- makes the two agree.
     if [ ! -x build/gust-native-backend ]; then
       make build/gust-native-backend
+      # `make` cannot repair this case, and the check above cannot say so.
+      # In the heavy shard the driver arrives from an artifact download,
+      # which drops the executable bit:
+      #
+      #   -rw-r--r-- 1 runner runner 10002392 build/gust-native-backend
+      #   make: 'build/gust-native-backend' is up to date.
+      #
+      # `[ ! -x ]` detects it correctly, calls make, and make compares
+      # MTIMES not MODES -- so it declines, and the guard proceeds with a
+      # driver it cannot execute. That surfaced as "explicit native backend
+      # driver path is unavailable or not executable" on seven heavy-shard
+      # guards, which reads as a source that stopped compiling.
+      chmod +x build/gust-native-backend
     fi
     # The driver is not the whole native environment. `phase10-native-package`
     # depends on gust, the driver AND the runtime package, and a native link
