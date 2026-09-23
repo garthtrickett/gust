@@ -50,7 +50,15 @@ INVOKERS = (
     "Makefile",
     "justfile",
     "compiler/test_runner_entry.gst",
-    "tests/test_runner.gst",
+    # tests/test_runner.gst DEPARTED this list in Patch 25.10c. It was the
+    # last real invoker: its positive path built a command string around
+    # the spelling and handed it to run_system_cmd. That path is native
+    # now, so the file names the spelling zero times and keeping it here
+    # would assert a population that has moved -- which is exactly what
+    # the check below refuses. The file itself is NOT gone: it is still
+    # the corpus declaration parsed by runner_cases() in
+    # scripts/phase21_complete_guard_suite.py. A departure from this list
+    # is not a departure from the tree.
     "scripts/phase22_explicit_c_migration.sh",
     "scripts/phase25_runtime_strings_generated.sh",
     "scripts/phase25_strings_gust_parity.sh",
@@ -185,8 +193,18 @@ def refusal_probes() -> list:
     return out
 
 
-def comment_occurrences(path: str) -> int:
-    """Occurrences on comment lines. Prose is not a call.
+def comment_occurrences(path: str, needle: str = ENTRY_SPELLING) -> int:
+    """Occurrences of `needle` on comment lines. Prose is not a call.
+
+    Patch 25.10c parameterised the needle. It was hardcoded to
+    ENTRY_SPELLING, so the spelling census discounted prose and the
+    AUTHORITY census did not -- an asymmetry that stayed latent only
+    because the spelling check failed first and the authority check never
+    ran. Once the last real invoker went native, it fired on five
+    references of which FOUR predate this patch and all five are comments
+    (justfile:9173, phase22_explicit_c_migration.sh:58,
+    test_runner_entry.gst:128 and :139, plus the 25.10c comment recording
+    this very change). The reasoning below was always meant to cover both.
 
     The same distinction that had to be made for emitter_present(), which
     read the emitter as PRESENT because a comment explaining its deletion
@@ -199,7 +217,7 @@ def comment_occurrences(path: str) -> int:
     if not target.is_file():
         return 0
     return sum(
-        line.count(ENTRY_SPELLING)
+        line.count(needle)
         for line in target.read_text(encoding="utf-8",
                                      errors="replace").splitlines()
         if line.lstrip().startswith(("#", "//")))
@@ -255,7 +273,9 @@ def report() -> dict:
         "comment_sites": sum(comment_occurrences(p) for p in CALLERS),
         "entry_spelling_sites": entry,
         "entry_total": sum(entry.values()),
-        "authority_sites": sum(count(AUTHORITY, p) for p in CALLERS),
+        "authority_sites": sum(count(AUTHORITY, p)
+                               - comment_occurrences(p, AUTHORITY)
+                               for p in CALLERS),
         "seed_present": (ROOT / "gust_v4.c").is_file(),
         "release_count": len(releases()),
     }

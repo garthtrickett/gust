@@ -171,10 +171,28 @@ func run_test(t: Test[ctx]) int {
             run_system_cmd("mkdir -p temp_e2e_filesystem_dir && echo 'func main() {}' > temp_e2e_filesystem_dir/file1.gst && echo 'plain text' > temp_e2e_filesystem_dir/file2.txt");
         }
 
-        // Patch 24.13: the retained emitter. The positive path emits C, cleans it,
-        // concatenates the runtime and host-compiles the result -- it needs an
-        // emitter, and 129 of 326 cases have no native route to move to.
-        mut cmd_comp := std.Concat("./gust --backend bootstrap-emitter ", path);
+        // Patch 25.10c: the positive path is NATIVE now, completing on this
+        // side what 25.10b did for the negative path above.
+        //
+        // The comment replaced here said this path "needs an emitter, and 129
+        // of 326 cases have no native route to move to". The emitter is gone,
+        // so "needs" no longer describes a choice. The whole
+        // emit-clean-concatenate-host-compile pipeline collapses into one
+        // native compile, because the native route produces a binary directly
+        // and never produced C to clean.
+        //
+        // This does NOT mean the positive corpus passes. Measured over all
+        // 324 cases on 2026-09-23, 117 of 120 tests/ positives still have no
+        // native route. They now fail HERE, loudly, at the compile step,
+        // rather than reaching for a backend that no longer exists. That is
+        // why no recipe builds this runner any more. What still consumes this
+        // file is runner_cases() in scripts/phase21_complete_guard_suite.py,
+        // which parses the case DECLARATIONS below and classifies each
+        // deferral against its frozen reason code -- and which three CI
+        // workflows run.
+        mut cmd_comp := std.Concat("./gust --backend cranelift -o ", bin_path);
+        cmd_comp = std.Concat(cmd_comp, " ");
+        cmd_comp = std.Concat(cmd_comp, path);
         cmd_comp = std.Concat(cmd_comp, " > ");
         cmd_comp = std.Concat(cmd_comp, temp_log);
         cmd_comp = std.Concat(cmd_comp, " 2>&1");
@@ -183,102 +201,6 @@ func run_test(t: Test[ctx]) int {
         if status != 0 {
             mut msg := std.Format("❌ FAIL: %s (Compilation failed! See %s for errors)", path, temp_log);
             os.LogStr(msg);
-            return 0;
-        }
-
-        mut comp_output := os.ReadFile(local_ctx, temp_log);
-        mut lines := std.str_split(comp_output, "\n", local_ctx);
-
-        mut clean_lines: std.Vector[str, local_ctx] := std.VectorNew(local_ctx);
-        mut idx := 0;
-        while idx < len(lines) {
-            mut line := lines[idx];
-            mut should_keep := 1;
-            if len(line) > 0 {
-                mut b := std.str_byte_at(line, 0);
-                if b == 226 || b == 240 || b == 243 {
-                    should_keep = 0;
-                }
-            }
-            if should_keep == 1 {
-                clean_lines.Push(line);
-            }
-            idx = idx + 1;
-        }
-        mut clean_c_content := join_lines(clean_lines, local_ctx);
-
-        os.WriteFile(clean_c, clean_c_content);
-
-        // Prepend src/runtime.c content to the cleaned C to form a unified translation unit
-        mut runtime_content := os.ReadFile(local_ctx, "src/runtime.c");
-        mut final_c_content := std.Concat(runtime_content, "\n\n");
-        final_c_content = std.Concat(final_c_content, clean_c_content);
-        os.WriteFile(final_c, final_c_content);
-
-        // Patch 25.6 first: fiber.c is gone and codegen emits a
-        // gust_yield() call in every loop of every compiled program, so
-        // EVERY test links this object -- not just the ones that spawn a
-        // fiber. Then Patch 25.5: five more runtime files join it.
-        // src/runtime.c used to carry the whole C runtime, so a program
-        // plus that file
-        // was a complete unit; five of those files are Rust now and their
-        // symbols only arrive through the archive. Without it every test
-        // binary fails on undefined os_Arena_New, os_Args and os_LogStr --
-        // measured, not anticipated: the emitted e2e_process_args test
-        // links and runs with the archive and does not link without it.
-        //
-        // Patch 25.5, second half: WHICH archive depends on GUST_DEBUG.
-        // arena.c chose its allocator with #ifdef per translation unit, so
-        // -DGUST_DEBUG on this line used to switch the arena to the canary
-        // layout. A Rust staticlib is built once, so the choice moved to
-        // the build and there are two archives. Linking the plain one here
-        // silently disarms e2e_arena_canary_corruption_detection -- it
-        // "exits cleanly" instead of aborting, which is a negative test
-        // that has stopped being able to fail.
-        mut debug_build := 0;
-        if is_neg == 2 || std.str_find(path, "canary") != 0 - 1 || std.str_find(path, "sanitizer") != 0 - 1 {
-            debug_build = 1;
-        }
-        mut compile_c_cmd := std.Concat("cc -O2 -Wall -pthread -Isrc ", final_c);
-        // The NARROWED objects, not the staticlibs. Each is self-contained
-        // apart from libc and exports exactly the registered symbol set;
-        // the 310-member archive would also offer its own memcpy beside
-        // libc's. The canary object is the same crate built with the
-        // gust_debug feature, which is where GUST_DEBUG moved when arena.c
-        // stopped being a per-translation-unit #ifdef.
-        if debug_build == 1 {
-            compile_c_cmd = std.Concat(compile_c_cmd, " build/phase25-runtime-rs-canary/gust_runtime_rs_exports.o");
-            compile_c_cmd = std.Concat(compile_c_cmd, " -fsanitize=address -DGUST_DEBUG");
-        } else {
-            compile_c_cmd = std.Concat(compile_c_cmd, " build/phase25-runtime-rs/gust_runtime_rs_exports.o");
-        }
-        compile_c_cmd = std.Concat(compile_c_cmd, " -o ");
-        compile_c_cmd = std.Concat(compile_c_cmd, bin_path);
-        compile_c_cmd = std.Concat(compile_c_cmd, " > ");
-        compile_c_cmd = std.Concat(compile_c_cmd, c_comp_log);
-        compile_c_cmd = std.Concat(compile_c_cmd, " 2>&1");
-        status = run_system_cmd(compile_c_cmd);
-        if status != 0 {
-            mut msg := std.Format("❌ FAIL: %s (Native C compilation failed! See %s for errors)", path, c_comp_log);
-            os.LogStr(msg);
-
-            // SYSTEMATIC DIAGNOSTIC DUMP
-            os.LogStr("🚨 --- SYSTEMATIC DIAGNOSTICS FOR NATIVE C FAILURE ---");
-            mut temp_out := os.ReadFile(local_ctx, temp_log);
-            os.LogStr(std.Format("Temp Log Length: %d bytes", len(temp_out)));
-            if len(temp_out) > 0 {
-                os.LogStr("--- Last 15 Lines of Temp Log ---");
-                mut t_lines := std.str_split(temp_out, "\n", local_ctx);
-                mut start_line := len(t_lines) - 15;
-                if start_line < 0 { start_line = 0; }
-                mut line_idx := start_line;
-                while line_idx < len(t_lines) {
-                    os.LogStr(t_lines[line_idx]);
-                    line_idx = line_idx + 1;
-                }
-            }
-            os.LogStr("------------------------------------------------------");
-
             return 0;
         }
 
