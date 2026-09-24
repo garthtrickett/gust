@@ -33379,7 +33379,20 @@ fn compiler_mir_link_sibling_path(
     let mut sibling_name = OsString::from(".");
     sibling_name.push(file_name);
     sibling_name.push(suffix);
-    Ok(output_path.with_file_name(sibling_name))
+    let sibling = output_path.with_file_name(sibling_name);
+    // Patch 25.12b, review finding. The C route creates the output parent
+    // inside run_compiler_mir_link_request, but the rustc-lld route writes
+    // its generated crate BESIDE the output before ever reaching that, so
+    // `-o` under a directory that does not exist yet failed here with
+    // "No such file or directory" on the C-free route only. Created at the
+    // point the sibling path is handed out, so every caller inherits it
+    // rather than each one remembering.
+    if let Some(parent) = sibling.parent() {
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent)?;
+        }
+    }
+    Ok(sibling)
 }
 
 fn remove_compiler_mir_link_temp(temp_path: &Path) -> Result<(), Box<dyn Error>> {
@@ -33388,6 +33401,66 @@ fn remove_compiler_mir_link_temp(temp_path: &Path) -> Result<(), Box<dyn Error>>
         Err(error) if error.kind() == ErrorKind::NotFound => Ok(()),
         Err(error) => Err(error.into()),
     }
+}
+
+/// Patch 25.12b: the PROBE half of Patch 25.11's probe-then-error contract.
+///
+/// 25.11's Steps promise that on a gnu host with no C compiler the driver
+/// "probes, then errors naming `--target x86_64-unknown-linux-musl`", and its
+/// Exit Gate says that path is tested. Neither existed: the failure was a bare
+/// `linker spawn failed: No such file or directory (os error 2)`, which names
+/// no route and tells the user nothing. A review found it and the measurement
+/// confirmed it.
+///
+/// This is a real probe, not a fixed string. It looks for the musl std in the
+/// rustc sysroot, so the advice differs between "that route is available right
+/// now" and "install it first" -- advising a target that is not installed is
+/// how a diagnostic becomes another dead end.
+///
+/// It deliberately does NOT switch targets. O6 keeps the user default on the
+/// host's native target and P10 says silently switching would hand back a
+/// static binary with a non-functional dlopen as a side effect of the user's
+/// package list.
+const PHASE25_C_FREE_TARGET: &str = "x86_64-unknown-linux-musl";
+
+fn phase25_musl_std_is_installed() -> bool {
+    let sysroot = match Command::new("rustc").arg("--print").arg("sysroot").output() {
+        Ok(output) if output.status.success() => output.stdout,
+        _ => return false,
+    };
+    let sysroot = String::from_utf8_lossy(&sysroot).trim().to_string();
+    if sysroot.is_empty() {
+        return false;
+    }
+    Path::new(&sysroot)
+        .join("lib/rustlib")
+        .join(PHASE25_C_FREE_TARGET)
+        .join("lib")
+        .is_dir()
+}
+
+fn phase25_no_c_toolchain_advice(driver: &std::ffi::OsStr, kind: std::io::ErrorKind) -> String {
+    if kind != std::io::ErrorKind::NotFound {
+        return String::new();
+    }
+    let mut advice = format!(
+        "\nprobe: the linker driver {driver:?} is not on PATH, so this host has no \
+C toolchain reachable.\ngust does not switch targets on its own -- O6 keeps the \
+default on the host's native target, and P10 refuses to hand back a static binary \
+with a non-functional dlopen as a side effect of a package list.\nthe C-free route \
+is --target {PHASE25_C_FREE_TARGET}, selected with GUST_NATIVE_LINK_FLAVOR=rustc-lld.\n"
+    );
+    if phase25_musl_std_is_installed() {
+        advice.push_str(&format!(
+            "probe: {PHASE25_C_FREE_TARGET} IS installed here, so that route is available now.\n"
+        ));
+    } else {
+        advice.push_str(&format!(
+            "probe: {PHASE25_C_FREE_TARGET} is NOT installed here; run \
+`rustup target add {PHASE25_C_FREE_TARGET}` first.\n"
+        ));
+    }
+    advice
 }
 
 fn run_compiler_mir_link_request(
@@ -33489,11 +33562,17 @@ fn run_compiler_mir_link_request(
                 &stderr_log_path,
                 format!("linker spawn failed: {error}\n").as_bytes(),
             );
+            let advice = phase25_no_c_toolchain_advice(
+                request.linker_driver.as_os_str(), error.kind());
+            let _ = fs::write(
+                &stderr_log_path,
+                format!("linker spawn failed: {error}\n{advice}").as_bytes(),
+            );
             return Err(compiler_mir_pipeline_error(
                 CompilerMirPipelineStage::LinkerSpawn,
                 CompilerMirPipelineFailureKind::LinkerUnavailable,
                 format!(
-                    "compiler MIR linker spawn failed: {error}; stderr log: {}",
+                    "compiler MIR linker spawn failed: {error}; stderr log: {}{advice}",
                     stderr_log_path.display()
                 ),
             ));

@@ -66,12 +66,36 @@ EMITTER_MARKERS = ("bootstrap-emitter", "GUST_BOOTSTRAP_EMITTER")
 # An unqualified sentence would be the oversight this file exists to avoid:
 # it would read as "Gust needs no C compiler anywhere", which is false on
 # the platform most users are on.
+# NARROWED BY MEASUREMENT, after a review of Patch 25.12b.
+#
+# It used to say "on the musl route, a clean machine BUILDS AND TESTS Gust
+# without invoking a C compiler". Nothing in the tree proves that, and the
+# arm that appeared to -- phase25_musl_c_free_link.py host-build -- compiles
+# `cargo new`'s hello-world inside rust:alpine. The repository is never
+# mounted, so it measures the TOOLCHAIN's shape, not Gust's build.
+#
+# Worse, that stronger claim is not provable here at all today:
+# docs/RELEASE_MANIFEST.json publishes exactly one bridge,
+# gust-bridge-x86_64-unknown-linux-gnu, and `gust_bootstrap` obtains a seed
+# for the host. A gnu-linked seed does not run on musl, so a musl host cannot
+# reach the first step of the build. Proving the stronger sentence needs a
+# PUBLISHED MUSL BRIDGE -- release mechanics, Patch 25.8's territory, not a
+# guard tweak.
+#
+# So the sentence says what was measured. 25.12a's own rule is the reason:
+# an absent input is never a satisfied condition, and a sentence that outruns
+# its evidence is the one thing a closure record must not be.
 CLOSURE_SENTENCE = (
-    "On the musl route, a clean machine builds and tests Gust without "
-    "invoking a C compiler, except tree-sitter-gust, which is editor "
-    "tooling unreachable from `make test` or CI. On a gnu host the link "
-    "still goes through a C driver: no C-free link exists there, and the "
-    "user default stays the host target by design (O6/P10)."
+    "The C-free link is proved on musl: with cc, gcc, clang, c++, g++, cc1, "
+    "ld, ld.gold and ld.bfd all poisoned, the Gust runtime crate builds for "
+    "x86_64-unknown-linux-musl and a program calling gust_tick links through "
+    "rust-lld, runs, and exits as a static-pie. A musl HOST with no C "
+    "compiler is proved to link Rust with rust-lld, but Gust's own build is "
+    "NOT yet proved there: only a gnu bridge is published, and the bootstrap "
+    "needs a seed that runs on the host. On a gnu host the link still goes "
+    "through a C driver -- no C-free link exists there -- and the user "
+    "default stays the host target by design (O6/P10). tree-sitter-gust "
+    "remains excepted: editor tooling unreachable from `make test` or CI."
 )
 
 

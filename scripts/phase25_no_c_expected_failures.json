@@ -61,5 +61,25 @@
    ],
    "default_unchanged": "The C driver remains the default on the host target. Patch 25.11 decided the user default stays native (O6) and that a gnu host with no C compiler ERRORS naming musl rather than silently returning a static binary with a non-functional dlopen (P10). This adds a route; it switches no one."
   }
- ]
+ ],
+ "gnu_expected_outcomes": {
+  "contract": "With entries EMPTY the gnu workload must still FAIL, by O6/P10 design. A bare 'returncode != 0' is not that claim: a syntax error, a missing seed or an ordinary test regression exits nonzero too, and would green this gate just as readily as the intended diagnostic. Review finding on Patch 25.12b. So the failure is CLASSIFIED, the same discipline the non-empty branch applies through observable_signature.",
+  "probe_advice_signature": "x86_64-unknown-linux-musl",
+  "outcomes": [
+   {
+    "id": "linker-spawn-unavailable",
+    "signature": "stage=linker_spawn kind=linker_unavailable",
+    "when": "the native backend is already built, so the run reaches the link step",
+    "requires_probe_advice": true,
+    "why": "The path Patch 25.11 promised a probe-then-error on, and whose Exit Gate says that path is tested. This entry IS that test: the diagnostic must also name the C-free target, which it did not do before Patch 25.12b."
+   },
+   {
+    "id": "cargo-cannot-link-the-backend",
+    "signature": "error: linker `cc` not found",
+    "when": "the backend binary itself has not been built yet",
+    "requires_probe_advice": false,
+    "why": "MEASURED 2026-09-23, and it is why the probe-then-error is only half the story: with no cc at all, `make gust` dies building build/gust-native-backend before anything of Gust's is linked, so the compiler's own diagnostic is never reached. cargo builds the backend for the HOST and rustc's default driver is cc on every host. Registered rather than hidden -- a shape the gate meets in practice and does not name is a shape nobody is checking."
+   }
+  ]
+ }
 }

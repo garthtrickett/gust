@@ -182,9 +182,22 @@ def run_workload() -> None:
         host = subprocess.run(
             [sys.executable, str(ROOT / "scripts/phase25_musl_c_free_link.py"),
              "host-build"], cwd=ROOT, capture_output=True, text=True)
+        # WHAT THIS ARM PROVES, and a review of Patch 25.12b caught the
+        # earlier wording claiming more: it compiles `cargo new`'s
+        # hello-world inside rust:alpine. The repository is never mounted, so
+        # it measures that a musl host with no C compiler can LINK RUST
+        # through rust-lld -- the toolchain's shape, not Gust's build.
+        #
+        # Gust's build cannot be proved there yet for a reason outside this
+        # guard: docs/RELEASE_MANIFEST.json publishes only
+        # gust-bridge-x86_64-unknown-linux-gnu, and gust_bootstrap needs a
+        # seed that RUNS on the host, so a musl machine cannot reach step one.
+        # That needs a published musl bridge -- release mechanics -- and the
+        # closure sentence now says so rather than implying otherwise.
         require(host.returncode == 0,
-                "the expected-failure list is empty, so a musl HOST must "
-                "build with no C compiler, but it did not:\n"
+                "the expected-failure list is empty, so a musl HOST with no "
+                "C compiler must be able to link Rust through rust-lld, but "
+                "it could not:\n"
                 f"{(host.stdout + host.stderr)[-1500:]}")
         require(proc.returncode != 0,
                 f"{' '.join(WORKLOAD)} SUCCEEDED with no C compiler on a GNU "
@@ -192,11 +205,41 @@ def run_workload() -> None:
                 "has no C-free link, so either the toolchain changed under "
                 "this gate or the workload stopped doing what it claims -- "
                 "either way it needs a patch, not a green tick")
+        # CLASSIFY the failure. A review of Patch 25.12b caught this branch
+        # accepting any nonzero exit: a syntax error, a missing seed or an
+        # ordinary test regression would have greened the gate exactly as
+        # readily as the intended diagnostic. The non-empty branch below has
+        # always classified through observable_signature; dropping that
+        # discipline the moment the list emptied is precisely backwards,
+        # because from here on this branch is the ONLY one that runs.
+        gnu = record.get("gnu_expected_outcomes")
+        require(isinstance(gnu, dict) and gnu.get("outcomes"),
+                "the list is empty but registers no expected gnu outcome, so "
+                "there is nothing to classify the failure against")
+        hit = next((o for o in gnu["outcomes"]
+                    if str(o.get("signature", "")) in output), None)
+        require(hit is not None,
+                f"{' '.join(WORKLOAD)} failed on gnu for an UNREGISTERED "
+                "reason. The gate requires this route to fail by O6/P10 "
+                "design, but only in a registered shape -- an unregistered "
+                "one is a regression wearing the gate's clothes. Expected one "
+                f"of {[o['id'] for o in gnu['outcomes']]}. Observed:\n"
+                f"{output[-2000:]}")
+        # Patch 25.11's Exit Gate says the probe-then-error path is TESTED.
+        # This is that test, and it only applies to the outcome that reaches
+        # the compiler's own diagnostic.
+        if hit.get("requires_probe_advice"):
+            advice = str(gnu.get("probe_advice_signature", ""))
+            require(advice and advice in output,
+                    f"the gnu failure was {hit['id']}, which reaches the "
+                    "compiler's linker diagnostic, so Patch 25.11's "
+                    "probe-then-error must name the C-free target "
+                    f"{advice!r}. It did not. Observed:\n{output[-2000:]}")
         print("guard-cranelift-phase25-no-c-falsifier: the gate HOLDS. The "
-              "C-free route is proved on musl -- link and host build, both "
-              "with every C driver poisoned -- and the gnu route still "
-              f"requires a C driver by O6/P10 design ({' '.join(WORKLOAD)} "
-              f"exited {proc.returncode} here, as it must).")
+              "C-free link is proved on musl with every C driver poisoned, "
+              "and the gnu route still requires a C driver by O6/P10 design "
+              f"-- {' '.join(WORKLOAD)} exited {proc.returncode} as "
+              f"{hit['id']}, a registered shape.")
         return
     require(proc.returncode != 0,
             f"{' '.join(WORKLOAD)} SUCCEEDED with no C compiler while "
