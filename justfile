@@ -21696,17 +21696,74 @@ guard-cranelift-dependency-beachhead:
       exit 1
     fi
 
-    production_refs="$(
+    # Each per-site allowlist entry is a PIN, not a filter. The patterns
+    # accept any line number so ordinary edits above them do not break the
+    # guard -- but that alone would allowlist a COPY of an approved command
+    # elsewhere in the same file, which is a new unvetted production route
+    # and exactly what this guard promises to reject. So every entry must
+    # match EXACTLY ONCE: zero means the vetted site is gone and its entry
+    # is stale, two means someone duplicated it.
+    # EVERY VETTED SITE IS A PIN, NOT A FILTER. The patterns accept any line
+    # number so ordinary edits above a site do not break the guard -- but on
+    # their own that also allowlists a COPY of an approved command elsewhere
+    # in the same file, which is a new unvetted production route and the one
+    # thing this guard exists to reject. So each is first required to match
+    # EXACTLY ONCE: zero means the entry is stale, two means a duplicate.
+    #
+    # TWO STALE ENTRIES WERE REMOVED when this check went in. The allowlist
+    # carried `gust --backend cranelift -o <output> <source.gst>` for both
+    # the help text and the runner entry; the help was reworded to the
+    # `[-o <output>]` form and the entries were left behind. As `rg -v`
+    # filters they read as harmless noise -- and that was the hazard, since
+    # a stale entry pre-approves the exact command it names.
+    #
+    # The count and the filter repeat each pattern ON PURPOSE, and each line
+    # must keep its `printf`/`rg` prefix. is_non_invocation() in
+    # scripts/phase22_opening.py excludes lines beginning `rg `, so these
+    # spellings stay out of the invocation census; hoisting them into an
+    # array made the census gain two explicit_cranelift rows. The tail
+    # assertion below ties the two lists together, so a pattern added to one
+    # and not the other fails rather than drifting.
+
+    scoped_refs="$(
       rg -n -i 'cranelift_codegen|cranelift_frontend|cranelift_module|cranelift_native|cranelift_object|CraneliftBackend|backend[[:space:]]*[:=][[:space:]]*cranelift|--backend[=[:space:]]*cranelift' \
         compiler src tests Cargo.toml Cargo.lock Makefile 2>/dev/null |
         rg -v '^compiler/experiments/cranelift/' |
-        rg -v '^compiler/CRANELIFT_[^:]*\.md:' |
-        rg -v '^compiler/test_runner_entry\.gst:[0-9]+:[[:space:]]*os\.LogStr\("  gust --backend cranelift -o <output> <source\.gst>"\);$' |
-        rg -v '^compiler/test_runner_entry\.gst:[0-9]+:[[:space:]]*os\.LogStr\("  gust --backend cranelift \[-o <output>\] <source\.gst>"\);$' |
-        rg -v '^compiler/phase10_help\.txt:[0-9]+:  gust --backend cranelift -o <output> <source\.gst>$' |
-        rg -v '^compiler/phase10_help\.txt:[0-9]+:  gust --backend cranelift \[-o <output>\] <source\.gst>$' ||
+        rg -v '^compiler/CRANELIFT_[^:]*\.md:' ||
         true
     )"
+
+    printf '%s\n' "$scoped_refs" | rg -c '^compiler/test_runner_entry\.gst:[0-9]+:[[:space:]]*os\.LogStr\("  gust --backend cranelift \[-o <output>\] <source\.gst>"\);$' | rg -qx 1 ||
+      { echo "vetted Cranelift site must appear exactly once: 1"; exit 1; }
+    printf '%s\n' "$scoped_refs" | rg -c '^compiler/phase10_help\.txt:[0-9]+:  gust --backend cranelift \[-o <output>\] <source\.gst>$' | rg -qx 1 ||
+      { echo "vetted Cranelift site must appear exactly once: 2"; exit 1; }
+    printf '%s\n' "$scoped_refs" | rg -c '^Makefile:[0-9]+:\t\./build/native-build/bin/gust --backend cranelift -o build/\.gust\.tmp compiler/test_runner_entry\.gst$' | rg -qx 1 ||
+      { echo "vetted Cranelift site must appear exactly once: 3"; exit 1; }
+    printf '%s\n' "$scoped_refs" | rg -c '^src/runtime-rs/src/strings\.rs:[0-9]+://   \$ gust --backend cranelift -o /tmp/strings compiler/runtime/strings\.gst$' | rg -qx 1 ||
+      { echo "vetted Cranelift site must appear exactly once: 4"; exit 1; }
+    printf '%s\n' "$scoped_refs" | rg -c '^tests/test_runner\.gst:[0-9]+:        mut cmd := std\.Concat\("\./gust --backend cranelift -o /dev/null ", path\);$' | rg -qx 1 ||
+      { echo "vetted Cranelift site must appear exactly once: 5"; exit 1; }
+    printf '%s\n' "$scoped_refs" | rg -c '^tests/test_runner\.gst:[0-9]+:        mut cmd_comp := std\.Concat\("\./gust --backend cranelift -o ", bin_path\);$' | rg -qx 1 ||
+      { echo "vetted Cranelift site must appear exactly once: 6"; exit 1; }
+
+    production_refs="$(
+      printf '%s\n' "$scoped_refs" |
+        rg -v '^compiler/test_runner_entry\.gst:[0-9]+:[[:space:]]*os\.LogStr\("  gust --backend cranelift \[-o <output>\] <source\.gst>"\);$' |
+        rg -v '^compiler/phase10_help\.txt:[0-9]+:  gust --backend cranelift \[-o <output>\] <source\.gst>$' |
+        rg -v '^Makefile:[0-9]+:\t\./build/native-build/bin/gust --backend cranelift -o build/\.gust\.tmp compiler/test_runner_entry\.gst$' |
+        rg -v '^src/runtime-rs/src/strings\.rs:[0-9]+://   \$ gust --backend cranelift -o /tmp/strings compiler/runtime/strings\.gst$' |
+        rg -v '^tests/test_runner\.gst:[0-9]+:        mut cmd := std\.Concat\("\./gust --backend cranelift -o /dev/null ", path\);$' |
+        rg -v '^tests/test_runner\.gst:[0-9]+:        mut cmd_comp := std\.Concat\("\./gust --backend cranelift -o ", bin_path\);$'  ||
+        true
+    )"
+
+    scoped_n="$(printf '%s\n' "$scoped_refs" | rg -c . || true)"
+    kept_n="$(printf '%s\n' "$production_refs" | rg -c . || true)"
+    if [ "$(( ${scoped_n:-0} - ${kept_n:-0} ))" -ne 6 ]; then
+      echo "the vetted list and the filter disagree: ${scoped_n:-0} scanned, ${kept_n:-0} kept, expected exactly 6 removed"
+      exit 1
+    fi
+
     if [ -n "$production_refs" ]; then
       echo "Cranelift dependency beachhead must not add production codegen routes or imports yet:"
       echo "$production_refs"
