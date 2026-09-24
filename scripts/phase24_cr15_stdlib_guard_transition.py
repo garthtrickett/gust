@@ -2348,6 +2348,33 @@ def normalize_phase23_text_surfaces(
                 "departed surface")
         rows = sorted(list(rows) + [dict(row) for row in restored],
                       key=lambda row: str(row["path"]))
+    # The Phase 9G historical guard repair follows 25.12c. Project its
+    # registered text surfaces back before checking the older links: the
+    # justfile assertion changed with 25.12b's linker call, and adding this
+    # registry key also changes the registry loader's enrolled text.
+    history_guard_surface = registry.get(
+        "phase25_historical9g_guard_repair", {}).get("text_surface_successor")
+    if history_guard_surface is not None:
+        require(history_guard_surface.get("contract_version") ==
+                "phase25_historical9g_guard_repair_text_surface_successor_v1" and
+                history_guard_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Phase 9G historical guard repair text surface successor drifted")
+        hg_paths = list(history_guard_surface["registered_changed_paths"])
+        hg_pre = {r["path"]: r for r
+                  in history_guard_surface["previous_changed_text_surfaces"]}
+        hg_post = {r["path"]: r for r
+                   in history_guard_surface["current_changed_text_surfaces"]}
+        require(sorted(hg_pre) == sorted(hg_paths) == sorted(hg_post),
+                "Phase 9G historical guard repair paths and rows disagree")
+        hg_live = {r["path"]: r for r in rows if r["path"] in hg_paths}
+        require(sorted(hg_live) == sorted(hg_paths),
+                "Phase 9G historical guard repair text surface is missing "
+                f"from the scan: {sorted(set(hg_paths) - set(hg_live))}")
+        require(hg_live in (hg_pre, hg_post),
+                "Phase 9G historical guard repair text surfaces are partial "
+                "or substituted")
+        rows = [dict(hg_pre.get(r["path"], r)) for r in rows]
     # Patch 25.12c is newer than 25.12b, so it runs first. It is record
     # keeping, not a route change: the Phase 25 Status section had 25.10a
     # and 25.10 unticked though both merged, had no row for 25.12b, and still

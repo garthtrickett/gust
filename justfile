@@ -6942,7 +6942,13 @@ guard-cranelift-phase9g-link-driver-contract:
     printf '%s\n' "$link_driver_body" | rg -n -F 'validate_compiler_mir_link_request(&request)' >/dev/null
     printf '%s\n' "$link_driver_body" | rg -n -F 'Command::new(&request.linker_driver)' >/dev/null
     printf '%s\n' "$link_driver_body" | rg -n -F 'command.arg(linker_arg);' >/dev/null
-    printf '%s\n' "$link_driver_body" | rg -n -F 'command.arg(object_input);' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'link_inputs.extend(request.ordered_object_inputs.iter().cloned());' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'if request.link_via_rustc {' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'command.arg("-C");' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'let mut link_arg = OsString::from("link-arg=");' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'link_arg.push(link_input.as_os_str());' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'command.arg(link_arg);' >/dev/null
+    printf '%s\n' "$link_driver_body" | rg -n -F 'command.arg(link_input);' >/dev/null
     printf '%s\n' "$link_driver_body" | rg -n -F 'command.env(key, value);' >/dev/null
     printf '%s\n' "$link_driver_body" | rg -n -F 'command.output()' >/dev/null
     printf '%s\n' "$link_driver_body" | rg -n -F 'fs::write(&stdout_log_path, &process_output.stdout),' >/dev/null
@@ -8913,7 +8919,13 @@ guard-cranelift-phase9g-close:
 
     require_evidence link-driver "$link_driver_body" \
       'Command::new(&request.linker_driver)' \
-      'command.arg(object_input);' \
+      'link_inputs.extend(request.ordered_object_inputs.iter().cloned());' \
+      'if request.link_via_rustc {' \
+      'command.arg("-C");' \
+      'let mut link_arg = OsString::from("link-arg=");' \
+      'link_arg.push(link_input.as_os_str());' \
+      'command.arg(link_arg);' \
+      'command.arg(link_input);' \
       'command.arg(linker_arg);' \
       'fs::write(&stdout_log_path, &process_output.stdout),' \
       'fs::write(&stderr_log_path, &process_output.stderr),' \

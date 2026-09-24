@@ -48050,5 +48050,84 @@
       ]
     },
     "why_this_exists": "The Status section of docs/PHASE25_ROADMAP.md is the record the phase-completion loop checks, and it was wrong in both directions. 25.10a (#468) and 25.10 (#470) were unticked though both merged. 25.12 was ticked though its Exit Gate was not met, and 25.12b (#472), which corrected it, had no row at all. The Patch 25.0 heading still read IN PROGRESS. The section's own rule is 'ticked when merged to main', and this repo's convention is that a later patch ticks merged ones -- Patch 25.7 is what ticked 25.12 and 25.11a -- so 25.12b could not tick itself."
+  },
+  "phase25_historical9g_guard_repair": {
+    "status": "repair; align the Phase 9G Historical Full guard with the merged 25.12b linker input path",
+    "text_surface_successor": {
+      "added_text_surface_rows": [],
+      "added_text_surfaces": [],
+      "change_reason": "The justfile Phase 9G link-driver and closure guards assert the merged 25.12b input transport. The registry loader adds this successor key. Both enrolled surfaces change only by digest; all match counts hold.",
+      "contract_version": "phase25_historical9g_guard_repair_text_surface_successor_v1",
+      "current_changed_text_surfaces": [
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "d4fae57aa5d804ad4b94e4468a4492a23faead60ff55cadb1e3a5e41bb745472",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 1,
+            "generated_c_contract": 9,
+            "mir_to_c_name": 729
+          },
+          "owner": "cranelift",
+          "path": "justfile",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "4af3259ea615831fcc58accddb2ef6b7f7e5be41b727eabaa8be1c2e763bf54c",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        }
+      ],
+      "partial_extra_or_substituted_surface": "rejected",
+      "previous_changed_text_surfaces": [
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "03c9f588f5d3f67c49c39041f5b3e6d464ab43530e8e151658503ec9bee45e0c",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 1,
+            "generated_c_contract": 9,
+            "mir_to_c_name": 729
+          },
+          "owner": "cranelift",
+          "path": "justfile",
+          "removal_phase": "24"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "7c3fcf50d825c73b046932f71d434faa62842e0c8751066f6ce488b86f8a3f08",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        }
+      ],
+      "registered_changed_paths": [
+        "justfile",
+        "scripts/cranelift_registry.py"
+      ]
+    },
+    "why_this_exists": "Historical Full run 35953503752 failed in phase9g because the link-driver guard still required command.arg(object_input), removed by merged Patch 25.12b. The current driver sends inputs to rustc through -C link-arg and to C drivers positionally. The repair updates the link-driver assertion and its closure meta-gate without changing linker behavior."
   }
 }
