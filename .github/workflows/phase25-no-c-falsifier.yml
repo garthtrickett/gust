@@ -60,9 +60,20 @@ jobs:
         run: python3 scripts/phase25_no_c_falsifier.py validate
 
   no-c-image:
-    name: Phase 25 no-C-compiler falsifier (expected red)
+    # RENAMED by Patch 25.12b. The list is empty and this job PASSES, so
+    # "(expected red)" became false the moment the gate started holding --
+    # and 25.12's Exit Gate promotes this job to REQUIRED, which would have
+    # meant a required check whose own name says it is supposed to fail.
+    # The step names below drop it for the same reason; the messages inside
+    # the non-empty branch keep it, because there it is still true.
+    name: Phase 25 no-C-compiler falsifier
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Patch 25.12b: 15 was sized for a job that only inspected PATH. With the
+    # list empty this job now PROVES the C-free route, and the host-build arm
+    # pulls rust:alpine and runs a cargo build inside it. A timeout here would
+    # read as the gate failing rather than as the job being underprovisioned,
+    # which is the worst possible confusion for this particular check.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       # Ubuntu runners ship a C compiler, so the falsifier must not see
@@ -81,12 +92,26 @@ jobs:
             ln -sf "$(command -v $b)" "$RUNNER_TEMP/nocc/$b" || true
           done
           echo "NOCC_PATH=$RUNNER_TEMP/nocc" >> "$GITHUB_ENV"
+      # Patch 25.12b: the musl target is the whole measurement now. With the
+      # expected-failure list empty, run-workload asserts the C-free link on
+      # the route this phase PROVES it on, and that route is
+      # x86_64-unknown-linux-musl -- rustup ships its self-contained libc.a,
+      # which is what lets rust-lld link with no C driver anywhere.
+      #
+      # The guard refuses to measure without it rather than reporting a pass,
+      # which is how CI said so: "the target is not installed, so there is
+      # nothing to measure". Installing it here is the fix; skipping on its
+      # absence would have turned the phase's central claim into a no-op.
+      - name: Install the musl target the C-free link is proved on
+        run: |
+          rustup target add x86_64-unknown-linux-musl
+          rustup target list --installed | grep -qx x86_64-unknown-linux-musl
       # The guard exits 1 on purpose: it is a pre-registered expected failure
       # that stays red until Phase 25 lands. A bare `run:` reads that intended
       # state as a broken job, so the assertion is inverted here instead of
       # suppressed with continue-on-error -- which would also swallow a crash,
       # and would notice nothing on the day the contract finally clears.
-      - name: guard-cranelift-phase25-no-c-falsifier (expected red)
+      - name: guard-cranelift-phase25-no-c-falsifier
         run: |
           set +e
           out="$(env PATH="$NOCC_PATH" python3 scripts/phase25_no_c_falsifier.py check-environment 2>&1)"
@@ -94,6 +119,18 @@ jobs:
           set -e
           echo "$out"
           expected="$(python3 -c 'import json; print(len(json.load(open("scripts/phase25_no_c_expected_failures.json"))["entries"]))')"
+          # Patch 25.12b: the list emptied, and this step said what to do
+          # about it -- "this expected-red job and the contract it guards are
+          # what must change". P8 says that flip is a patch, never automatic,
+          # so the branch below IS the flip rather than a suppression.
+          if [ "$expected" -eq 0 ]; then
+            if [ "$status" -ne 0 ]; then
+              echo "::error::the expected-failure list is EMPTY, so this must now be GREEN, but check-environment exited $status" >&2
+              exit 1
+            fi
+            echo "promoted: the list is empty and the environment check passes"
+            exit 0
+          fi
           if [ "$status" -eq 0 ]; then
             echo "::error::the falsifier is GREEN: the C-free claim now holds, so this expected-red job and the contract it guards are what must change" >&2
             exit 1
@@ -112,13 +149,29 @@ jobs:
       # failure is classified against the tracked list. Same inversion: red
       # is required while the list is non-empty, and a failure for an
       # untracked reason is a regression, which the guard reports itself.
-      - name: guard-cranelift-phase25-no-c-falsifier run-workload (expected red)
+      - name: guard-cranelift-phase25-no-c-falsifier run-workload
         run: |
           set +e
           out="$(python3 scripts/phase25_no_c_falsifier.py run-workload 2>&1)"
           status=$?
           set -e
           echo "$out"
+          entries="$(python3 -c 'import json; print(len(json.load(open("scripts/phase25_no_c_expected_failures.json"))["entries"]))')"
+          # Patch 25.12b: same flip. With an empty list run-workload asserts
+          # the gate on the route it is PROVABLE on -- the musl link and the
+          # musl host build, both with every C driver poisoned -- and still
+          # requires the gnu workload to fail, because Patch 25.11 measured
+          # that gnu has no C-free link and O6/P10 keep the host default.
+          # The old message here would have been actively wrong now: it says
+          # "while the expected-failure list is non-empty".
+          if [ "$entries" -eq 0 ]; then
+            if [ "$status" -ne 0 ]; then
+              echo "::error::the expected-failure list is EMPTY, so the gate must hold on the musl route, but run-workload exited $status" >&2
+              exit 1
+            fi
+            echo "promoted: gate proved on musl; gnu still requires a C driver by design"
+            exit 0
+          fi
           if [ "$status" -eq 0 ]; then
             echo "::error::the no-C workload SUCCEEDED while the expected-failure list is non-empty; the gate may now hold, which is a change this job must not pass silently" >&2
             exit 1

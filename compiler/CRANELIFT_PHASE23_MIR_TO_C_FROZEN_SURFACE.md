@@ -58,7 +58,7 @@ invocation scanner. Do not edit by hand.
 
 | Case | Owner | Class | Compiler | Command identity | Owner-file identity | Complete identity |
 | --- | --- | --- | --- | --- | --- | --- |
-| `scripts/phase12_5_route_architecture.sh:none` | `cranelift` | `already_explicit_or_parser_probe` | `./gust` | `b90e6eac188c91e6b0c146dded0916acaa8c3eb1a264888c13af885f58805340` | `e2c0e82bba925fc864e6d9a1cf700887921f2b965731f90278289d9539251cfc` | `e436754e99d580b98156e1ce8850d2cc7dc720d63c5ac54f74a367f03c5df1ea` |
+| `scripts/phase12_5_route_architecture.sh:none` | `cranelift` | `already_explicit_or_parser_probe` | `./gust` | `b90e6eac188c91e6b0c146dded0916acaa8c3eb1a264888c13af885f58805340` | `be13a0f209f5b1a156b3837cc74940baaaaf5b3aca25193afac129322cb94113` | `e436754e99d580b98156e1ce8850d2cc7dc720d63c5ac54f74a367f03c5df1ea` |
 | `scripts/phase22_opening.sh:none` | `cranelift` | `already_explicit_or_parser_probe` | `./gust` | `c99cdf4da02f29c63f32fe3d729b3f5dfc520e5fd87c8e08b1113f64dc0581fa` | `973435a8f63bca9b944818a57d97c9f37f0ae030c9b394dab57dc1bdd8bb93bb` | `54fdad23a1eeee430bd57b421581d26a5c600f4de0aebb5aa05651ba87869ed7` |
 
 Patch 23.9 changes no accepted Gust meaning, MIR operation, backend

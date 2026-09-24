@@ -26,7 +26,7 @@ for required_file in \
   "$selected_source" "$call_source" "$duplicate_source" \
   "$type_mismatch_source" "$invalid_join_source" \
   "$uninitialized_source" "$unknown_local_source" "$loop_source" \
-  src/runtime.c ./gust
+  ./gust
 do
   if [ ! -e "$required_file" ]; then
     echo "Phase 13.3 local-state evidence is missing $required_file" >&2

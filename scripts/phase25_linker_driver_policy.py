@@ -78,18 +78,115 @@ def cc_reaches_the_linker() -> bool:
     return bool(binds) and invokes
 
 
-def worker_mentions_musl() -> bool:
-    """The falsifier for both policy claims below.
+FLAVOUR_GATE = 'env::var("GUST_NATIVE_LINK_FLAVOR")'
+FLAVOUR_VALUE = 'Ok("rustc-lld")'
+FLAVOUR_BRANCH = "let linker_driver = if rustc_lld {"
+# Patch 25.12b: the probe-then-error helper. Admitted as a diagnostic-only
+# region of the musl derivation, on the terms enforced just below.
+ADVICE_FN = "fn phase25_no_c_toolchain_advice("
+ADVICE_CONST = (
+    'const PHASE25_C_FREE_TARGET: &str = "' + MUSL_TARGET + '";'
+)
+ADVICE_MUST_NOT_CONTAIN = ("linker_driver", "link_request", FLAVOUR_GATE)
 
-    `user_default` and `no_silent_fallback` used to be hardcoded literals
-    that validate() re-read, so the guard stayed green for exactly the
-    regressions Patch 25.11 exists to prevent. They are now derived from one
-    measured fact: the worker does not mention musl anywhere, so it cannot
-    default to it and cannot silently fall back to it. The day musl appears
-    in the worker, that derivation stops holding and must be redone against
-    whatever the new code does.
+
+def worker_mentions_musl() -> bool:
+    """Kept as a measurement, no longer as the derivation.
+
+    Patch 25.11 derived `no_silent_fallback` from the worker's SILENCE on
+    musl: it could not default to what it never named. Patch 25.12b gives
+    the backend a C-free link route, so musl is named now and that
+    derivation is spent -- exactly as the note here said it would be.
     """
-    return "musl" in worker_text().lower()
+    return MUSL_TARGET in worker_text()
+
+
+def musl_is_opt_in_only() -> bool:
+    r"""The re-derivation: musl is reachable ONLY behind an explicit opt-in.
+
+    Silence is gone, so the claim has to be measured against what the code
+    actually does. Three facts, and all three must hold:
+
+      * the flavour gate exists and reads GUST_NATIVE_LINK_FLAVOR, matching
+        the single literal "rustc-lld" -- so nothing selects musl by
+        inference from a target triple, a host probe or a missing cc;
+      * EVERY mention of the musl target lies inside the branch that gate
+        guards, computed by brace-matching from the branch head rather than
+        by proximity, so a musl default added elsewhere in 37,000 lines
+        fails here;
+      * the else arm binds the $CC-derived driver, so the default path is
+        unchanged.
+
+    This is strictly weaker than the silence it replaces and says so. What
+    it still forbids is the regression Patch 25.11 cared about: a build that
+    quietly hands a user a static musl binary with a non-functional dlopen
+    because no C compiler was found (P10). Opting in is a deliberate act.
+    """
+    text = worker_text()
+    if text.count(FLAVOUR_GATE) != 1 or FLAVOUR_VALUE not in text:
+        return False
+    head = text.find(FLAVOUR_BRANCH)
+    if head < 0:
+        return False
+    start = head + len(FLAVOUR_BRANCH) - 1
+    depth, end = 0, None
+    for index in range(start, len(text)):
+        if text[index] == "{":
+            depth += 1
+        elif text[index] == "}":
+            depth -= 1
+            if depth == 0:
+                end = index
+                break
+    if end is None:
+        return False
+    inside = text[start:end]
+    # THE DIAGNOSTIC IS NOT A SELECTION, and P10 requires it by name.
+    #
+    # The rule above -- every musl mention inside the opt-in branch -- was
+    # exactly right while the only way to say "musl" was to select it. Patch
+    # 25.12b adds the probe-then-error Patch 25.11 promised, and P10 asks for
+    # an error that NAMES `--target x86_64-unknown-linux-musl`, which
+    # necessarily puts mentions outside the gate. Read literally the old rule
+    # forbids the thing P10 mandates.
+    #
+    # So the advice helper is admitted as a second region, and only on terms
+    # that keep it incapable of selecting anything: it is located by
+    # brace-matching from its own fn head, exactly as the branch is, and it
+    # must not mention the driver binding, the link request or the flavour
+    # gate. A musl default hidden in it would therefore still fail, and a
+    # musl default anywhere ELSE in 37,000 lines still fails as before.
+    advice_head = text.find(ADVICE_FN)
+    advice_inside = ""
+    if advice_head >= 0:
+        a_start = text.find("{", advice_head)
+        depth, a_end = 0, None
+        for index in range(a_start, len(text)):
+            if text[index] == "{":
+                depth += 1
+            elif text[index] == "}":
+                depth -= 1
+                if depth == 0:
+                    a_end = index
+                    break
+        if a_end is None:
+            return False
+        advice_inside = text[a_start:a_end]
+        if any(token in advice_inside for token in ADVICE_MUST_NOT_CONTAIN):
+            return False
+    # The name itself is a CONSTANT, not a selection. It is admitted by its
+    # exact declaration and only once, so `const ... = "musl"` cannot become
+    # a second, quieter way to reach the target.
+    if text.count(ADVICE_CONST) > 1:
+        return False
+    occurrences = text.count(MUSL_TARGET)
+    accounted = (inside.count(MUSL_TARGET)
+                 + advice_inside.count(MUSL_TARGET)
+                 + text.count(ADVICE_CONST))
+    if occurrences == 0 or accounted != occurrences:
+        return False
+    tail = text[end:end + 400]
+    return "} else {" in tail and "linker_driver" in tail
 
 
 def report() -> dict:
@@ -100,11 +197,23 @@ def report() -> dict:
         "cc_reaches_the_linker": cc_reaches_the_linker(),
         "worker_mentions_musl": worker_mentions_musl(),
         "gate_target": MUSL_TARGET,
-        "gate_blocked_until": ["25.5", "25.6"],
-        "gate_blocker": "the runtime archive is glibc-bound and cannot link "
-                        "against musl (Patch 25.0)",
-        "user_default": "host native target; musl is opt-in via --target",
-        "no_silent_fallback": not worker_mentions_musl(),
+        # Patch 25.12b: the blocker is gone. 25.5, 25.6 and 25.10a moved the
+        # runtime into src/runtime-rs, so the archive is pure Rust and builds
+        # for musl; scripts/phase25_musl_c_free_link.py links a program that
+        # CALLS into it with nine C drivers poisoned and runs the result as
+        # static-pie. Kept as a record of what blocked it rather than deleted,
+        # because "blocked until 25.5 and 25.6" was the reason D1's
+        # runtime-first ordering was right and that is worth not losing.
+        "gate_blocked_until": [],
+        "gate_was_blocked_until": ["25.5", "25.6"],
+        "gate_blocker": None,
+        "gate_was_blocked_by": "the runtime archive was glibc-bound and could "
+                               "not link against musl (Patch 25.0); cleared "
+                               "by Patch 25.12b",
+        "gate_proof": "scripts/phase25_musl_c_free_link.py",
+        "user_default": "host native target; musl is opt-in via GUST_NATIVE_LINK_FLAVOR=rustc-lld",
+        "musl_is_opt_in_only": musl_is_opt_in_only(),
+        "no_silent_fallback": musl_is_opt_in_only(),
     }
 
 
@@ -124,15 +233,22 @@ def validate() -> None:
     require(record["cc_required"] is False and record["cc_supported"] is True,
             "the policy record no longer says not-required-but-supported")
     require(record["no_silent_fallback"],
-            "the worker now mentions musl, so 'no silent fallback' and "
-            "'host native default' are no longer derivable from its silence "
-            "on the subject. They were hardcoded literals until now, which "
-            "kept this guard green for precisely the regression it exists "
-            "to catch: re-derive both against whatever the new code does.")
+            "musl is no longer reachable ONLY behind the explicit "
+            "GUST_NATIVE_LINK_FLAVOR=rustc-lld opt-in. Patch 25.11 derived "
+            "this from the worker's silence on musl; Patch 25.12b gives the "
+            "backend a C-free route, so it is derived from the code instead: "
+            "one flavour gate, every musl mention inside the branch that "
+            "gate guards, and an else arm that binds the $CC-derived driver. "
+            "One of those stopped holding, which is how a silent musl "
+            "default would look -- P10 says a binary the user did not ask "
+            "for is worse than an error they can act on.")
+    blocked = record["gate_blocked_until"]
+    standing = (f"blocked until {' and '.join(blocked)}" if blocked
+                else f"PROVED by {record['gate_proof']}")
     print("guard-cranelift-phase25-linker-driver-policy: ok "
-          "(cc not required, still supported via $CC; gate proved on "
-          f"{MUSL_TARGET}, blocked until "
-          f"{' and '.join(record['gate_blocked_until'])})")
+          "(cc not required, still supported via $CC; musl reachable only "
+          f"via GUST_NATIVE_LINK_FLAVOR=rustc-lld; gate on {MUSL_TARGET} "
+          f"{standing})")
 
 
 def main() -> int:

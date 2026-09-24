@@ -105,6 +105,7 @@ TOP_FIELDS = {
     "issue431_full_compiler_baseline",
     "patch251_no_c_falsifier",
     "phase2510b_runner_negative_path",
+    "phase2512b_runtime_c_retirement",
     "phase2510c_runner_positive_path",
     "phase2510_emitter_deletion",
     "phase257_native_stage_chain",

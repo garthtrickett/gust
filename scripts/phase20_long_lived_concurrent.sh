@@ -45,7 +45,7 @@ fi
 runtime_obj="build/phase25-runtime-rs/gust_runtime_rs_exports.o"
 make "$runtime_obj"
 "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-  src/runtime.c "$probe" "$build_root/native.o" "$runtime_obj" \
+  "$probe" "$build_root/native.o" "$runtime_obj" \
   -o "$build_root/native-program"
 
 mir_status="$(cat "$build_root/mir-to-c.status")"

@@ -33,7 +33,6 @@ RETIRED_ROOT_PACKAGE = (
     "src/typechecker/visitor.rs",
 )
 PRESERVED_BOUNDARIES = (
-    "src/runtime.c",
     "src/runtime/*.c",
     "src/runtime/rust/",
     "compiler/experiments/cranelift/",
@@ -101,7 +100,18 @@ def validate() -> dict:
     returned = [path for path in RETIRED_ROOT_PACKAGE if (ROOT / path).exists()]
     require(not returned, f"retired root Rust package returned: {returned}")
 
-    require((ROOT / "src/runtime.c").is_file(), "load-bearing src/runtime.c is missing")
+    # Patch 25.12b INVERTS this, as 25.10a inverted the line below it.
+    # It required src/runtime.c to EXIST, because Phase 19's concern was a
+    # retired Rust prototype returning and the C runtime was the thing that
+    # had legitimately replaced it. There is no C runtime now: 25.5, 25.6 and
+    # 25.10a moved every file to the crate, and this file had been reduced to
+    # two #includes serving three frozen-replay guards. Requiring its absence
+    # is the same claim inverted -- a dropped assertion would say nothing, and
+    # the prototype it guards against could return through a restored
+    # src/runtime.c as easily as through anything else.
+    require(not (ROOT / "src/runtime.c").exists(),
+            "src/runtime.c is back. Patch 25.12b retired it; the C runtime it\n"
+            "once unified has been in src/runtime-rs since 25.10a")
     # Patch 25.10a INVERTS this. It required src/runtime/*.c to be
     # non-empty -- a live C runtime existing at all -- because Phase 19's
     # concern was a retired Rust PROTOTYPE returning, and the C runtime

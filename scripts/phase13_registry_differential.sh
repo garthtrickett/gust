@@ -14,7 +14,7 @@ fi
 
 for required_file in \
   "$registry_json" "$family_runner" "$rust_manifest" \
-  src/runtime.c ./gust
+  ./gust
 do
   if [ ! -e "$required_file" ]; then
     echo "Registry differential harness is missing $required_file" >&2

@@ -35,7 +35,7 @@ for required_file in \
   "$invalid_result_fixture" "$direct_recursion_fixture" \
   "$mutual_recursion_fixture" "$selected_source" "$branch_source" \
   "$join_source" "$loop_source" "$direct_recursion_source" \
-  "$mutual_recursion_source" src/runtime.c ./gust
+  "$mutual_recursion_source" ./gust
 do
   if [ ! -e "$required_file" ]; then
     echo "Phase 13.7 direct-call graph evidence is missing $required_file" >&2

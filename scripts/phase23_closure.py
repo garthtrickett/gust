@@ -425,6 +425,16 @@ def check() -> None:
                         spelling_frozen = registry.get(
                             "phase398_retained_spelling_removal", {}).get(
                                 "frozen_surface_transition")
+                        # Patch 25.12b APPENDS to this chain. Unlike the
+                        # text-surface chain, which projects backwards and
+                        # prepends, this one walks FORWARDS: each link's
+                        # current is the next link's previous, and the TAIL's
+                        # current must equal the live surface. So Issue #398
+                        # stops being the tail and is compared against this
+                        # link's previous instead.
+                        runtime_c_frozen = registry.get(
+                            "phase2512b_runtime_c_retirement", {}).get(
+                                "frozen_surface_transition")
                         if toolchain_frozen is not None:
                             require(
                                 toolchain_frozen.get("contract_version") ==
@@ -487,7 +497,10 @@ def check() -> None:
                                         "current_live_c_case_surface"] and
                                     spelling_frozen.get(
                                         "current_live_c_case_surface") ==
-                                    current_frozen and
+                                    (current_frozen
+                                     if runtime_c_frozen is None
+                                     else runtime_c_frozen.get(
+                                         "previous_live_c_case_surface")) and
                                     spelling_frozen.get(
                                         "partial_or_unregistered_surface")
                                     == "rejected",
@@ -504,6 +517,49 @@ def check() -> None:
                                     "live-C case, so the owner must leave "
                                     "the split entirely: "
                                     f"{ended['owner_counts']}")
+                            if runtime_c_frozen is not None:
+                                # Patch 25.12b deletes src/runtime.c, which
+                                # three frozen-replay guards cat-ed for two
+                                # #includes and two phase20 cc lines passed as
+                                # a source. That changes what those cases
+                                # COMPILE, not which cases exist, so this is a
+                                # population-preserving identity move: count
+                                # and case_id_manifest_digest hold while the
+                                # complete-identity and owner-contract digests
+                                # move. Asserted as its own arithmetic, for the
+                                # reason review raised on #421 -- a successor
+                                # whose registered numbers disagree with its
+                                # own pre/post pair is not caught by the chain.
+                                require(
+                                    runtime_c_frozen.get("contract_version")
+                                    ==
+                                    "phase2512b_runtime_c_frozen_surface_transition_v1"
+                                    and
+                                    runtime_c_frozen.get(
+                                        "current_live_c_case_surface") ==
+                                    current_frozen and
+                                    runtime_c_frozen.get(
+                                        "partial_or_unregistered_surface")
+                                    == "rejected",
+                                    "Patch 25.12b frozen-surface closure "
+                                    "successor drifted")
+                                rc_started = runtime_c_frozen[
+                                    "previous_live_c_case_surface"]
+                                rc_ended = runtime_c_frozen[
+                                    "current_live_c_case_surface"]
+                                require(
+                                    rc_ended["count"] == rc_started["count"]
+                                    and
+                                    rc_ended["case_id_manifest_digest"] ==
+                                    rc_started["case_id_manifest_digest"] and
+                                    rc_ended[
+                                        "complete_identity_manifest_digest"]
+                                    != rc_started[
+                                        "complete_identity_manifest_digest"],
+                                    "Patch 25.12b must move the live-C case "
+                                    "IDENTITY without moving the population: "
+                                    "it changes what those cases compile, not "
+                                    "which cases exist")
                             require(
                                 before["complete_identity_manifest_digest"] !=
                                 after["complete_identity_manifest_digest"],
@@ -583,7 +639,9 @@ def check() -> None:
         # append the newest link; same registry, opposite direction, and
         # getting it wrong fails as "transition drifted" rather than as an
         # ordering complaint.)
-        for later in ("phase2510_emitter_deletion",
+        # Patch 25.12b is newer than 25.10, so it LEADS this list.
+        for later in ("phase2512b_runtime_c_retirement",
+                      "phase2510_emitter_deletion",
                       "phase2510a_strings_retirement",
                       "phase25_runtime_port_invocations"):
             node = registry.get(later, {}).get("production_audit_transition")

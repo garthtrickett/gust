@@ -331,6 +331,17 @@ def policy_accepts(record: dict, summary: dict[str, object]) -> bool:
         "phase398_retained_spelling_removal", {}).get(
         "frozen_surface_transition", {}).get(
         "current_live_c_case_surface", expected_live)
+    # Patch 25.12b is the tail now. Unlike Issue #398 it changes NEITHER
+    # membership nor count: deleting src/runtime.c changes what these cases
+    # COMPILE -- three of them cat-ed it for two #includes, two passed it to
+    # cc as an empty translation unit -- so case_id_manifest_digest holds
+    # while the complete-identity and owner-contract digests move. This
+    # override is what lets the closed Phase 23 record still be compared
+    # against a live scan of the tree that deletion produced.
+    expected_live = registry.get(
+        "phase2512b_runtime_c_retirement", {}).get(
+        "frozen_surface_transition", {}).get(
+        "current_live_c_case_surface", expected_live)
     return (
         record.get("capability_surface") == summary["capability_surface"] and
         expected_live == summary["live_c_case_surface"] and
@@ -764,14 +775,38 @@ def validate() -> tuple[dict, dict[str, object]]:
                                 "current_live_c_case_surface"]
                             probe_owner = spelling_transition.get(
                                 "retained_probe_owner")
+                            # Patch 25.12b: this is the SECOND reader of the
+                            # frozen live-C chain -- scripts/phase23_closure.py
+                            # is the first -- and both must see the same tail
+                            # or they disagree about what the live surface is.
+                            # 25.12b appends a link (deleting src/runtime.c
+                            # changes what these cases COMPILE, not which cases
+                            # exist), so Issue #398's current is now compared
+                            # against that link's previous, and the LINK's
+                            # current against live.
+                            runtime_c_transition = registry.get(
+                                "phase2512b_runtime_c_retirement", {}).get(
+                                    "frozen_surface_transition")
+                            expected_final = (
+                                summary["live_c_case_surface"]
+                                if runtime_c_transition is None
+                                else runtime_c_transition[
+                                    "previous_live_c_case_surface"])
                             require(
                                 spelling_transition.get("contract_version") ==
                                 "phase398_frozen_surface_transition_v1" and
-                                final == summary["live_c_case_surface"] and
+                                final == expected_final and
                                 spelling_transition.get(
                                     "partial_or_unregistered_surface") ==
                                 "rejected",
                                 "Issue #398 frozen live-C transition drifted")
+                            if runtime_c_transition is not None:
+                                require(
+                                    runtime_c_transition[
+                                        "current_live_c_case_surface"] ==
+                                    summary["live_c_case_surface"],
+                                    "Patch 25.12b frozen live-C transition "
+                                    "does not end at the live surface")
                             require(final["count"] < after["count"] and
                                     "stdlib" not in final["owner_counts"],
                                     "Issue #398 retires every Stdlib-owned "

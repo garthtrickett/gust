@@ -55,7 +55,12 @@ if rg -n -e 'std_HashMap_str_int_application_arena' \
   exit 1
 fi
 
-cat src/runtime.c "$build_dir/explicit.c" >"$build_dir/final.c"
+# Patch 25.12b: src/runtime.c is gone. It had been reduced to exactly
+# two effective lines -- the two #includes below -- with its other 27
+# recording which files had already left. These frozen-replay guards
+# were its last three consumers.
+{ printf '#include "runtime/core_headers.h"\n#include <errno.h>\n'; \
+  cat "$build_dir/explicit.c"; } >"$build_dir/final.c"
 # Patch 25.6: src/runtime.c is no longer a complete runtime. fiber.c is
 # deleted and its eighteen exports live in the runtime crate, and codegen
 # emits a gust_yield() call in every loop of every compiled Gust program,

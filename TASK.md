@@ -5950,3 +5950,38 @@ is decided by types instead of by names.
   **32586399260**, event `workflow_dispatch`, completed `success` on exact merged
   `main` **a95e40d8f1cd4e6d31212e98105026d38b488c9b**, with **17/17** successful
   jobs. The matching terminal state is recorded in `GUST_LANE_STATE.md`.
+
+# Phase 25 — Bootstrap and Residual C Retirement
+
+**Lane:** Cranelift. **Activated by the operator on 2026-09-20.**
+
+This heading is what makes Phase 25 the ACTIVE Cranelift roadmap. Until
+Patch 25.12b it was missing, and `scripts/phase25_closure.py` reported the
+contradiction the Phase 25 document itself flagged: the phase was activated
+on 2026-09-20 while `TASK.md` still named Phase 24 as active.
+
+**The breakdown stays in `docs/PHASE25_ROADMAP.md`**, which remains the task
+list. Only the active-roadmap POINTER moves here, and that is the smaller
+half of the move on purpose:
+
+  * The pointer is what `active_roadmap_phase()` reads -- the highest
+    `^# Phase (\d+)` heading in this file -- and it is the closure condition.
+  * Copying the 1,568-line breakdown in as well was measured and backed out.
+    It passes every guard, because `TASK.md` is a PROJECTED text surface and
+    editing it costs nothing. What it cannot do cheaply is leave one copy:
+    `docs/PHASE25_ROADMAP.md` is NOT projected, so retiring it to a stub
+    moves a digest pinned by the `current_changed_text_surfaces` rows of
+    three ALREADY-LANDED patches, which needs a new link prepended to the
+    text-surface chain -- and stubbing it also drops the
+    `--backend bootstrap-emitter` spelling it is registered as MENTIONING,
+    so the closed-set check in `scripts/phase25_emitter_deletion.py` would
+    need its own deregistration in the same patch.
+  * Two diverging copies would be worse than one document plus this pointer,
+    so the breakdown move should ride with a patch already paying the
+    chain-link toll rather than open that chain for a file move.
+
+**Phase 24's record below is untouched**, as is every `# Immutable Phase N
+Completion Record`. Those headings do not match `^# Phase (\d+)`, which the
+sweep confirmed: `phase21_closure --check`, `phase22_closure --check`,
+`phase20_seed_convergence`, `phase21_opening`, `phase21_roadmap` and
+`phase23_mir_to_c_archived_corpus` all pass with this section present.

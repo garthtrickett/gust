@@ -19,7 +19,7 @@ python3 "$family_runner" validate-family "$family" >/dev/null
 
 for required_file in \
   "$projector" "$family_runner" "$rust_manifest" \
-  src/runtime.c ./gust
+  ./gust
 do
   if [ ! -e "$required_file" ]; then
     echo "Phase 14 composition differential is missing $required_file" >&2

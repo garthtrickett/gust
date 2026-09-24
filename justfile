@@ -12313,7 +12313,14 @@ guard-cranelift-phase11-module-import-runtime-parity:
       'duplicate whole-program defined symbol'
       'ordered_object_inputs: object_paths.clone()'
       'additional_libraries: Vec::new()'
-      'additional_linker_args: Vec::new()'
+      # Patch 25.12b: the field is BUILT now, not a literal. It starts
+      # empty and stays empty on the C route; only the explicit
+      # GUST_NATIVE_LINK_FLAVOR=rustc-lld branch pushes into it. The
+      # declaration below asserts the same thing the literal did --
+      # the Phase 11 link request acquires no extra linker args by
+      # default -- and the negative pin further down still refuses a
+      # non-empty vec![] literal.
+      'let mut additional_linker_args: Vec<OsString> = Vec::new();'
       'environment_overrides: Vec::new()'
       'run_compiler_mir_link_request(link_request)'
       'const PHASE10_DRIVER_RUNTIME_IMPORTS: [&str;'
@@ -12553,7 +12560,14 @@ guard-cranelift-phase13-broader-imported-runtime-calls-parity:
       'fn build_host_is_positive_i32_body('
       'host_object: approved_host_object.clone()'
       'additional_libraries: Vec::new()'
-      'additional_linker_args: Vec::new()'
+      # Patch 25.12b: the field is BUILT now, not a literal. It starts
+      # empty and stays empty on the C route; only the explicit
+      # GUST_NATIVE_LINK_FLAVOR=rustc-lld branch pushes into it. The
+      # declaration below asserts the same thing the literal did --
+      # the Phase 11 link request acquires no extra linker args by
+      # default -- and the negative pin further down still refuses a
+      # non-empty vec![] literal.
+      'let mut additional_linker_args: Vec<OsString> = Vec::new();'
       'environment_overrides: Vec::new()'
       '.phase13-approved-scalar-host.o'
     )
@@ -24168,3 +24182,11 @@ guard-cranelift-phase25-strings-rust-parity:
     #!/usr/bin/env bash
     set -euo pipefail
     ./scripts/phase25_strings_rust_parity.sh
+
+guard-cranelift-phase25-musl-c-free-link:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "🔒 Proving the C-free link with the Gust runtime archive in it..."
+    python3 scripts/phase25_musl_c_free_link.py validate
+    echo "🔒 Proving a musl HOST builds with no C compiler at all..."
+    python3 scripts/phase25_musl_c_free_link.py host-build

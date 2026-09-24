@@ -18,7 +18,7 @@ for required_file in \
   "$canonical_fixture" "$malformed_fixture" \
   "$unsupported_divide" "$invalid_operand" \
   "$unsupported_conversion" "$layout_deferred" \
-  src/runtime.c ./gust
+  ./gust
 do
   if [ ! -e "$required_file" ]; then
     echo "Phase 13 scalar-expression evidence is missing $required_file" >&2

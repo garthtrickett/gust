@@ -90,17 +90,31 @@ def phase2510_emitter_audit(registry: dict, live: dict) -> dict:
     whole C stage chain), the invocation count (every bootstrap-emitter
     caller is gone), and the explicit-C count with them.
     """
+    # Patch 25.12b: the SECOND reader of the production-audit chain --
+    # scripts/phase23_closure.py is the first -- and both must see the same
+    # tail. 25.12b deletes src/runtime.c, which moves the supported-surface
+    # manifest digest and nothing else, so 25.10 is now compared against
+    # 25.12b's previous and 25.12b's current against live.
+    runtime_c_audit = registry.get(
+        "phase2512b_runtime_c_retirement", {}).get(
+            "production_audit_transition")
     node = registry.get("phase2510_emitter_deletion", {}).get(
         "production_audit_transition")
     if node is None:
         return live
     previous = node.get("previous_audit")
+    expected_current = (live if runtime_c_audit is None
+                        else runtime_c_audit.get("previous_audit"))
     require(node.get("contract_version") ==
             "phase2510_emitter_deletion_audit_transition_v1" and
-            node.get("current_audit") == live and
+            node.get("current_audit") == expected_current and
             isinstance(previous, dict) and
             node.get("partial_or_substituted_audit") == "rejected",
             "Patch 25.10 production audit transition drifted")
+    if runtime_c_audit is not None:
+        require(runtime_c_audit.get("current_audit") == live,
+                "Patch 25.12b production audit transition does not end at "
+                "the live audit")
     moved = sorted(key for key in set(previous) | set(live)
                    if previous.get(key) != live.get(key))
     require(moved == sorted(node.get("moved_fields", [])),

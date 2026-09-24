@@ -270,8 +270,14 @@ def evidence() -> None:
     compiler = ROOT / "build/phase10-package/bin/gust"
     driver = ROOT / "build/phase10-package/bin/gust-native-backend"
     runtime_package = ROOT / "build/phase10-package/bin/gust-runtime-package.a"
-    runtime = ROOT / "src/runtime.c"
-    for prerequisite in (compiler, driver, runtime_package, runtime):
+    # Patch 25.12b: src/runtime.c is gone, and this required it without ever
+    # using it. The binding was read once -- into the tuple below -- and
+    # never again: nothing here compiles C. It is a leftover of the
+    # emitter-only arm Patch 24.12b retired and inverted, which is exactly
+    # the shape a prerequisite check takes when the thing it guarded stops
+    # existing but the check stays. Removed rather than repointed, because
+    # there is nothing for it to point at.
+    for prerequisite in (compiler, driver, runtime_package):
         require(prerequisite.is_file(), f"missing prerequisite {prerequisite}")
 
     with tempfile.TemporaryDirectory(prefix="gust-phase24-resource-transfer-") as name:

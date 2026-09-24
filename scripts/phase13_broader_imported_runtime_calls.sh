@@ -30,7 +30,7 @@ for required_file in \
   "$generic_source" "$route_source" \
   compiler/mir_native_backend_module_import_source.gst \
   compiler/experiments/cranelift/src/main.rs \
-  src/runtime.c src/runtime-rs/src/lib.rs \
+  src/runtime-rs/src/lib.rs \
   compiler/phase13_runtime_module_helper_source.gst
  do
   test -f "$required_file"

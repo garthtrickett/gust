@@ -51,7 +51,7 @@ fi
 fixtures_obj="build/phase25-runtime-rs/gust_runtime_rs_exports.o"
 make "$fixtures_obj"
 "${CC:-cc}" ${CFLAGS:--O0 -w -pthread} -Isrc \
-  src/runtime.c "$concurrent_probe" "$probe" \
+  "$concurrent_probe" "$probe" \
   "$build_root/native.o" "$fixtures_obj" -o "$build_root/native-program"
 
 mir_status="$(cat "$build_root/mir-to-c.status")"
