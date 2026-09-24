@@ -33389,7 +33389,18 @@ fn compiler_mir_link_sibling_path(
     // rather than each one remembering.
     if let Some(parent) = sibling.parent() {
         if !parent.as_os_str().is_empty() {
-            fs::create_dir_all(parent)?;
+            // IGNORED ON PURPOSE, and the guard is why. Propagating this
+            // with `?` broke the registered `blocked-output` negative: a
+            // regular file sits where the output directory must go, and the
+            // contract is that it fails at stage=executable_publication
+            // kind=output_not_writable. A `?` here reports a different,
+            // earlier error and that diagnostic never happens.
+            //
+            // This helper hands out a path; the link runner owns the
+            // diagnosis. Creating the parent opportunistically is enough to
+            // fix the C-free route's `-o` under a missing directory, and
+            // leaves every registered failure to the code that names it.
+            let _ = fs::create_dir_all(parent);
         }
     }
     Ok(sibling)
