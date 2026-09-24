@@ -48055,6 +48055,84 @@
     },
     "why_this_exists": "The Status section of docs/PHASE25_ROADMAP.md is the record the phase-completion loop checks, and it was wrong in both directions. 25.10a (#468) and 25.10 (#470) were unticked though both merged. 25.12 was ticked though its Exit Gate was not met, and 25.12b (#472), which corrected it, had no row at all. The Patch 25.0 heading still read IN PROGRESS. The section's own rule is 'ticked when merged to main', and this repo's convention is that a later patch ticks merged ones -- Patch 25.7 is what ticked 25.12 and 25.11a -- so 25.12b could not tick itself."
   },
+  "phase26_activation_audit": {
+    "status": "phase26_activation_audit_registered",
+    "text_surface_successor": {
+      "contract_version": "phase26_activation_audit_text_surface_successor_v1",
+      "registered_changed_paths": [
+        "TASK.md",
+        "scripts/cranelift_registry.py"
+      ],
+      "previous_changed_text_surfaces": [
+        {
+          "path": "TASK.md",
+          "digest": "139c78d98062e77ebe46ff1535384c69fdb26e0dd1c9899eafa3296f7cbdc832",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "mir_to_c_name": 151,
+            "generated_c_contract": 44
+          },
+          "classification": "production_or_release_migration",
+          "owner": "cranelift",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "review_claims_in_23_8_and_23_12",
+          "removal_phase": "24_or_25_as_claim_requires",
+          "falsifier": "live_documentation_claim_is_missing_or_changes_identity"
+        },
+        {
+          "path": "scripts/cranelift_registry.py",
+          "digest": "4af3259ea615831fcc58accddb2ef6b7f7e5be41b727eabaa8be1c2e763bf54c",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "mir_to_c_name": 61,
+            "generated_c_contract": 5
+          },
+          "classification": "archive_candidate",
+          "owner": "cranelift",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "removal_phase": "24",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+        }
+      ],
+      "current_changed_text_surfaces": [
+        {
+          "path": "TASK.md",
+          "digest": "0b87a845917ff5a1e4ee52b7c5b6b1937a40665cb4f3b761bf2c798ff5b012b8",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "mir_to_c_name": 151,
+            "generated_c_contract": 44
+          },
+          "classification": "production_or_release_migration",
+          "owner": "cranelift",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "review_claims_in_23_8_and_23_12",
+          "removal_phase": "24_or_25_as_claim_requires",
+          "falsifier": "live_documentation_claim_is_missing_or_changes_identity"
+        },
+        {
+          "path": "scripts/cranelift_registry.py",
+          "digest": "fa78b9920e0f7c5a7f97826b9156bc9febf17f30cea6329f66b7b9a9fc6e3479",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "mir_to_c_name": 61,
+            "generated_c_contract": 5
+          },
+          "classification": "archive_candidate",
+          "owner": "cranelift",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "removal_phase": "24",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+        }
+      ],
+      "added_text_surfaces": [],
+      "added_text_surface_rows": [],
+      "partial_extra_or_substituted_surface": "rejected",
+      "change_reason": "Phase 26 activation advances the active roadmap pointer in TASK.md. The manifest validator and registry loader gain this newest-first successor. Older Phase 25 and Phase 23 surface identities remain frozen."
+    }
+  },
   "phase25_historical9g_guard_repair": {
     "status": "repair; align the Phase 9G Historical Full guard with the merged 25.12b linker input path",
     "text_surface_successor": {

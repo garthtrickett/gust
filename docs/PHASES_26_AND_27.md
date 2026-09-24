@@ -1,6 +1,19 @@
 # Phase 26 — systems safety, implicit context, and consolidation
 
-**Status:** planned; Phase 26 implementation has not been activated.
+**Status:** activated by the operator on 2026-09-24; implementation increments
+remain open. `TASK.md` now points to this plan as the active Cranelift roadmap.
+
+## Status
+
+- [ ] Patch 26.1 — Gated Raw Pointers, Unsafe Blocks, and FFI
+- [ ] Patch 26.2 — Generalized Linear-Resource Enforcement
+- [ ] Patch 26.3 — Implicit Context
+- [ ] Patch 26.4 — One Spelling of Absence
+- [ ] Patch 26.5 — Stdlib Safety-Surface Audit
+- [ ] Patch 26.6 — Native Release-Bridge Promotion
+
+These rows close only when their full exit gates below pass. Incremental
+implementation inside a row does not mark the row done.
 
 This is the canonical plan for Phase 26 — gated raw pointers and FFI, generalized
 linear resources, implicit context, and the consolidation work that follows.
@@ -47,6 +60,35 @@ compare each proposed step with the merged compiler and its guards, retain the
 already enforced safety floor, and identify the first remaining obligation.
 In particular, the A→B→C unsafe-syntax migration describes how that floor was
 introduced; it is not a request to turn enforcement back into a no-op.
+
+**Activation audit against merged `main` `f2738d56` (2026-09-24).** This audit
+classifies implementation state, not phase completion. The existing compiler
+already parses `unsafe` and `extern func`, rejects raw dereference and casts
+outside unsafe, and enforces direct extern-call unsafe context. Its provenance
+carrier and non-laundering checks cover safe constructors, local bindings,
+returns, calls, aggregate fields, container methods/readback, and unknown-origin
+safe-branded targets. These are an enforced floor; no Phase 26 patch may revert
+them to the original A-stage identity scopes.
+
+| Phase 26 work | Live evidence | First remaining obligation |
+| --- | --- | --- |
+| 26.1 FFI/native boundary | `compiler/typechecker.gst` has direct extern-call unsafe rejection and `FunctionSignature` FFI policy fields; `STEP51_DEFERRED_UNSAFE_SEMANTICS.md` calls ownership, escape, callback, and native-error policy unfinished | Specify and enforce a complete per-position FFI ownership and escape contract on the canonical path |
+| 26.1 layout | `compiler/parser.gst` accepts `#[repr(C)]` and `#[packed]`; `compiler/typechecker.gst` holds layout metadata and inert missing-C-layout predicates; `compiler/mir_struct_layout.gst` still defers packed structs | Select one layout authority and enforce C/packed/enum representation at FFI boundaries, including packed access |
+| 26.1 isolated arena and address escape | Provenance guards exist, but the design checkpoint says no wrapper codegen or transient arena API exists | Implement isolated-call allocation/lifetime and close the remaining escape and raw-null cases |
+| 26.2 resources | `open_linear_resources`, `#[linear]`, destructor registration, transfer states, and scope cleanup exist in `compiler/typechecker.gst`; the directory-specific map remains as a frozen shadow | Verify the generic `Resource[ctx,T]`/linear-index contracts and close the remaining declared Phase 26.2 leak and allocator-move cases |
+| 26.3 implicit context | No parser or lowering for `with ctx` or function `using ctx` appears in compiler source | Implement the one pre-semantic desugaring with the explicit-context exclusions below |
+| 26.4 absence | `get_opt` and `Option[T]` coexist with `LookupResult_T`, `map.Get`, and `empty[T]` in compiler source | Migrate file by file, then remove both legacy spellings as one row |
+| 26.5–26.6 safety audit and release | No completed Phase 26 stdlib audit or final-source native bridge promotion | Audit the three safe collection surfaces, then promote a verified tagged native bridge after final merged Phase 26 sources |
+
+The first implementation increment is **26.1D's FFI/native-call contract**.
+Start by enumerating external parameter and return positions and their existing
+metadata and validation paths; bind an explicit ownership/escape policy to the
+canonical signature before adding layout or isolated-arena behaviour. Keep
+26.1's later layout, isolated-arena, address-escape, provenance, and raw-null
+work as separate coherent increments with focused positive and negative
+evidence. The S1 collection-receiver native-call deferral exposed by Stdlib
+S2.0 is a separate Cranelift prerequisite and must not be folded into this
+FFI increment.
 
 ---
 
