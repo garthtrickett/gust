@@ -60,7 +60,13 @@ jobs:
         run: python3 scripts/phase25_no_c_falsifier.py validate
 
   no-c-image:
-    name: Phase 25 no-C-compiler falsifier (expected red)
+    # RENAMED by Patch 25.12b. The list is empty and this job PASSES, so
+    # "(expected red)" became false the moment the gate started holding --
+    # and 25.12's Exit Gate promotes this job to REQUIRED, which would have
+    # meant a required check whose own name says it is supposed to fail.
+    # The step names below drop it for the same reason; the messages inside
+    # the non-empty branch keep it, because there it is still true.
+    name: Phase 25 no-C-compiler falsifier
     runs-on: ubuntu-latest
     # Patch 25.12b: 15 was sized for a job that only inspected PATH. With the
     # list empty this job now PROVES the C-free route, and the host-build arm
@@ -105,7 +111,7 @@ jobs:
       # state as a broken job, so the assertion is inverted here instead of
       # suppressed with continue-on-error -- which would also swallow a crash,
       # and would notice nothing on the day the contract finally clears.
-      - name: guard-cranelift-phase25-no-c-falsifier (expected red)
+      - name: guard-cranelift-phase25-no-c-falsifier
         run: |
           set +e
           out="$(env PATH="$NOCC_PATH" python3 scripts/phase25_no_c_falsifier.py check-environment 2>&1)"
@@ -143,7 +149,7 @@ jobs:
       # failure is classified against the tracked list. Same inversion: red
       # is required while the list is non-empty, and a failure for an
       # untracked reason is a regression, which the guard reports itself.
-      - name: guard-cranelift-phase25-no-c-falsifier run-workload (expected red)
+      - name: guard-cranelift-phase25-no-c-falsifier run-workload
         run: |
           set +e
           out="$(python3 scripts/phase25_no_c_falsifier.py run-workload 2>&1)"
