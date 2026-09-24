@@ -1,5 +1,7 @@
 # Phase 26 — systems safety, implicit context, and consolidation
 
+**Status:** planned; Phase 26 implementation has not been activated.
+
 This is the canonical plan for Phase 26 — gated raw pointers and FFI, generalized
 linear resources, implicit context, and the consolidation work that follows.
 Phase 27 was retired on 2026-09-05; the rows that were properties rather than
@@ -26,6 +28,25 @@ decisions; this document owns execution order and patch planning.
 the Cranelift migration completes and C is deprecated. Renumbering it after the
 existing roadmap tail makes that order explicit: Phase 26 begins only after
 Phase 25 closes, apart from the already-built foundations recorded below.
+
+**Post-Phase-25 baseline (2026-09-24).** Phase 25 removed the checked-in C
+compiler seed, `gust_v4.c`. Normal bootstrap obtains a published bridge compiler
+whose digest is committed, and `make bootstrap` checks the native fixed point
+over emitted objects. The Phase 25 closure proof is narrower than a complete
+C-compiler-free Gust build: the C-free musl link probe passes, but no compatible
+musl bridge has been published for a full Gust build there, and the GNU host link
+still uses a C driver. Phase 26 planning must preserve that boundary; a green
+Phase 25 closure is not evidence that the broader launch gate has passed.
+The merged-main baseline is `ef60f765` (Historical Full run `35970098674` and
+no-C falsifier run `35970086292`, both successful); the exact boundary is the
+closure sentence in `scripts/phase25_closure.py`.
+
+The execution order below was written before the cut-over. Its 2026-08-20
+status snapshot is historical. Before activating the first Phase 26 increment,
+compare each proposed step with the merged compiler and its guards, retain the
+already enforced safety floor, and identify the first remaining obligation.
+In particular, the A→B→C unsafe-syntax migration describes how that floor was
+introduced; it is not a request to turn enforcement back into a no-op.
 
 ---
 
@@ -84,7 +105,11 @@ increment starts.
 
 ## Phase 26.1 — gated raw pointers, unsafe blocks, and FFI
 
-The staging is the interesting part, and it generalizes beyond this phase.
+The staging records the safe order for a self-hosted compiler. Recheck the live
+implementation before assigning new patches: Phase 25 already used unsafe-gated
+FFI and layout controls, so the original A→C steps cannot be assumed pending.
+The remaining D→F contracts need a current-state audit rather than a replay of
+the original no-op grammar stage.
 
 **A — additive grammar and no-op parsing.** Parse `unsafe`, `unsafe {}` blocks,
 and `unsafe func` signatures. Initially typecheck them as identity scopes with
@@ -266,29 +291,40 @@ removed; the audit records what it examined, not merely that it passed.
 
 ---
 
-## Phase 26.6 — the compiler output is promoted through the seed policy
+## Phase 26.6 — promote the native compiler through the release seed policy
 
 | Step | Work |
 | --- | --- |
-| 26.6 | Regenerate `gust_v4.c` from the merged `compiler/*.gst` under the repository's seed policy, in its own commit and pull request |
+| 26.6 | Publish the native bridge built from the final merged Phase 26 compiler sources as the next release's seed, with a committed digest, fixed-point proof, and explicit supported platforms |
 
 Formerly the second half of Phase 27.6. **The two halves of that row were
 separated deliberately.** The sum-type refactor of `Statement` and `Expression`
-is cleanup and lives in `docs/OPPORTUNISTIC_CLEANUP.md`; the seed promotion is a
-property the Level-3 claim rests on, because "the self-hosted compiler builds and
-bootstraps through the native path" is only checkable if the committed seed is
-the one generated from the merged compiler sources.
+is cleanup and lives in `docs/OPPORTUNISTIC_CLEANUP.md`; native bridge promotion
+is a property the Level-3 claim rests on. Phase 25 replaced the checked-in C
+seed with a previous-release bridge and an independently published, digest-pinned
+bridge escape. The compiler built from the final merged Phase 26 sources must
+become a verified bridge for the following release; a stale bridge cannot stand
+in as evidence about that compiler.
 
 Written as *"promote the consolidated result"* the obligation was hostage to a
 refactor that is now optional — no refactor, no consolidated result, no
-obligation. Written as a property of the seed it holds either way.
+obligation. Written as a property of the native release bridge it holds either
+way. This row does not revive the deleted C seed or assert that a bridge for
+the GNU host can bootstrap a musl host.
 
-`AGENTS.md` requires seed regeneration in its own commit and pull request with no
-other change. That rule governs this row; it is not relaxed by the row existing.
+Use Phase 25's release manifest and N-1 bootstrap policy: publish a tagged
+bridge and fixed-point proof, commit the artifact digest, verify the bridge
+before use, and state its host-platform scope. The release publication and
+manifest update are reviewed as their own change. A full no-C Gust build on a
+musl host still requires a compatible published musl bridge and its own test;
+the Phase 25 link-only probe does not satisfy that launch obligation.
 
-**Exit gate:** `make bootstrap` converges with stage 2 byte-identical to stage 3,
-the committed `gust_v4.c` is that output, and the regeneration landed as its own
-pull request.
+**Exit gate:** `make bootstrap` reaches the native emitted-object fixed point
+from the verified previous-release bridge; the compiler built from the final
+merged Phase 26 sources is published as a new tagged bridge with an artifact
+digest and fixed-point proof in the committed release manifest; its supported
+hosts are named, and the published bridge passes digest verification and an
+offline bootstrap. `gust_v4.c` remains absent.
 
 ---
 

@@ -78,17 +78,19 @@ This row was two obligations wearing one number, and they are separated here.
 - **The enum refactor and `match` migration are cleanup.** They change the
   compiler's internal representation, not what any Gust program means and not
   what the launch claims. Admitted to this register.
-- **The seed promotion is a launch obligation** and is now stated in
-  `docs/CRANELIFT_LAUNCH.md` §1. Level 3 claims that *the self-hosted compiler*
-  builds and bootstraps through the native path, and that is only checkable if
-  the committed `gust_v4.c` is the seed generated from the merged
-  `compiler/*.gst` sources rather than a stale ancestor of them.
+- **Native bridge promotion is a launch obligation** and is now stated in
+  `docs/CRANELIFT_LAUNCH.md` §1. Phase 25 deleted the checked-in C seed.
+  Level 3 claims that *the self-hosted compiler* builds and bootstraps through
+  the native path, so the final merged compiler sources must produce a tagged,
+  digest-pinned bridge and fixed-point proof for the following release under
+  the N-1 seed policy, rather than relying on a stale predecessor as evidence
+  about the final compiler.
 
 **The restatement matters as much as the preservation.** Written as *“promote
 the consolidated result”*, the seed obligation is hostage to a refactor that is
 now explicitly optional — if the enums never happen, there is no “consolidated
 result” to promote and the obligation quietly evaporates. Stated as a property
-of the seed itself, it holds whether or not the refactor is ever done.
+of the native release bridge, it holds whether or not the refactor is ever done.
 
 ## What the launch gate demanded before and after
 
@@ -103,7 +105,7 @@ requires it?”*
 | Phase 27 exit clause (a): 27.4 complete | nothing | **deliberately dropped** — see 27.4 above |
 | Phase 27 exit clause (a): 27.5 complete | §1, stated: the stdlib safety surface is audited | unchanged, and now named rather than inherited |
 | Phase 27 exit clause (a): 27.6 enum refactor complete | nothing | **deliberately dropped** — see 27.6 above |
-| Phase 27 exit clause (a): 27.6 seed promotion | §1, stated: promoted through the seed policy | unchanged, and no longer hostage to the refactor |
+| Phase 27 exit clause (a): 27.6 seed promotion | §1, stated: native bridge and fixed-point proof promoted through the release seed policy | preserved for the native bootstrap, and no longer hostage to the refactor |
 | Phase 27 exit clause (b): no ledger violation owned by Phase 27 | §1, stated: no `VIOLATED` row names the tail **or this document** | **raised** — see below |
 | Phase 27 exit clause (c): bootstrap converges | Phase 26's own exit gate, still inside the re-keyed enumeration | unchanged |
 | Phase 27 exit clause (d) = 27.6 seed promotion | as above | unchanged |
