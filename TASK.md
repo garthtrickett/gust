@@ -5985,3 +5985,14 @@ Completion Record`. Those headings do not match `^# Phase (\d+)`, which the
 sweep confirmed: `phase21_closure --check`, `phase22_closure --check`,
 `phase20_seed_convergence`, `phase21_opening`, `phase21_roadmap` and
 `phase23_mir_to_c_archived_corpus` all pass with this section present.
+
+# Phase 26 — Systems Safety, Implicit Context, and Consolidation
+
+**Lane:** Cranelift. **Activated by the operator on 2026-09-24.**
+
+`docs/PHASES_26_AND_27.md` is the canonical Phase 26 execution plan. This
+heading moves the active-roadmap pointer after Phase 25 closure; it does not
+reopen Phase 25 or revive its deleted C seed. The live-baseline audit in that
+plan identifies the first remaining Phase 26.1 obligation. Execute one bounded
+increment at a time under `AGENTS.md`'s shared-zone, validation, publication,
+and phase-closure policies. Phase 27 remains retired.

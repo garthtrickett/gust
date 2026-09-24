@@ -2301,6 +2301,35 @@ def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    # Phase 26 activation moves the active pointer in TASK.md. The older
+    # Patch 25.12b successor enrolled that file and must keep its exact
+    # historical post-state. Register the complete new control-plane change
+    # and project it back before any of the closed links below run.
+    activation = registry.get("phase26_activation_audit", {}).get(
+        "text_surface_successor")
+    require(isinstance(activation, dict) and
+            activation.get("contract_version") ==
+            "phase26_activation_audit_text_surface_successor_v1" and
+            activation.get("partial_extra_or_substituted_surface") ==
+            "rejected",
+            "Phase 26 activation text surface successor is missing or drifted")
+    activation_paths = list(activation["registered_changed_paths"])
+    activation_pre = {r["path"]: r for r in
+                      activation["previous_changed_text_surfaces"]}
+    activation_post = {r["path"]: r for r in
+                       activation["current_changed_text_surfaces"]}
+    require(sorted(activation_pre) == sorted(activation_paths) ==
+            sorted(activation_post),
+            "Phase 26 activation registered paths and rows disagree")
+    activation_live = {r["path"]: r for r in rows
+                       if r["path"] in activation_paths}
+    require(sorted(activation_live) == sorted(activation_paths),
+            "Phase 26 activation registered surface is missing from the scan")
+    require(activation_live == activation_post,
+            "Phase 26 activation text surfaces drifted from their registered "
+            "successor state")
+    rows = [dict(activation_pre.get(r["path"], r)) for r in rows]
+
     # Computed once for every link below. Five of them registered the
     # surface Patch 25.10 disenrols, so each subtracts the SAME set rather
     # than carrying its own idea of what left.
