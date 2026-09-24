@@ -14424,7 +14424,9 @@
               "- the stdlib safety surface is audited: no raw-pointer work leaks through",
               "`std.Vector`, `std.HashMap`, or `std.String`;",
               "- the compiler output this launch describes is promoted through the seed policy:",
-              "converging stage 2 against stage 3;",
+              "tagged native bridge for the next",
+              "committed artifact digest and fixed-point proof",
+              "native emitted-object fixed point;",
               "- no `VIOLATED` row in `docs/ONE_WAY_LEDGER.md` names the C-retirement tail or",
               "`docs/OPPORTUNISTIC_CLEANUP.md` as its remediation owner;"
             ],
@@ -14682,9 +14684,11 @@
             "bullet_prefix": "- the compiler output this launch describes is promoted through the seed policy:",
             "markers": [
               "- the compiler output this launch describes is promoted through the seed policy:",
-              "converging stage 2 against stage 3;"
+              "tagged native bridge for the next",
+              "committed artifact digest and fixed-point proof",
+              "native emitted-object fixed point;"
             ],
-            "reason": "Phase 27.6 was two obligations under one number. The sum-type refactor is cleanup; the seed promotion is what makes the Level-3 claim checkable, because 'the self-hosted compiler builds and bootstraps through the native path' is only verifiable if the committed seed is the one generated from the merged compiler sources. Restated as a property of the seed rather than as 'promote the consolidated result', so it is not hostage to a refactor that is now explicitly optional - written the old way, no refactor means no consolidated result and the obligation evaporates silently."
+            "reason": "Phase 27.6 was two obligations under one number. The sum-type refactor is cleanup; native bridge promotion is what makes the Level-3 claim checkable after Phase 25 removed the checked-in C seed. The final merged compiler sources must produce a tagged, digest-pinned bridge and emitted-object fixed-point proof for the following release under the N-1 policy. Restated as a property of the release bridge rather than as 'promote the consolidated result', so it is not hostage to a refactor that is now explicitly optional."
           },
           {
             "id": "ledger_remediation_owner",

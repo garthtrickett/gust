@@ -35,8 +35,9 @@ dated handoff:
 - the stdlib safety surface is audited: no raw-pointer work leaks through
   `std.Vector`, `std.HashMap`, or `std.String`;
 - the compiler output this launch describes is promoted through the seed policy:
-  `gust_v4.c` regenerated from the merged `compiler/*.gst`, with `make bootstrap`
-  converging stage 2 against stage 3;
+  the final merged compiler sources produce a tagged native bridge for the next
+  release, with a committed artifact digest and fixed-point proof, while
+  `make bootstrap` reaches the native emitted-object fixed point;
 - no `VIOLATED` row in `docs/ONE_WAY_LEDGER.md` names the C-retirement tail or
   `docs/OPPORTUNISTIC_CLEANUP.md` as its remediation owner;
 - all material review conversations are resolved; and
@@ -44,6 +45,16 @@ dated handoff:
 
 If any item is missing, delay outreach or lower the claim. Do not reinterpret an
 unfinished gate as a messaging problem.
+
+**Phase 25 is not a pass for the full no-C gate above.** Its measured closure
+proves a C-free musl link of the runtime crate and a Gust program, not a full
+Gust build and test on a musl host without a C compiler: only a GNU bridge is
+published. The GNU host link still uses a C driver. Before claiming Level 3's
+no-host-C wording, run the full supported build, test, package, and release
+path with the C toolchain poisoned, using a published bridge compatible with
+that host, and record exact artifacts and results. A later decision to narrow
+the public claim must change this gate explicitly; Phase 25's narrower sentence
+cannot silently satisfy it.
 
 ### Why three of these are stated rather than counted
 
@@ -55,7 +66,7 @@ retired and its consolidation rows adjudicated one at a time in
 would have dropped that phase's obligations without anyone deciding to.
 
 Three obligations were therefore lifted out of the retired phase and stated
-here as themselves — the stdlib safety-surface audit, the seed promotion, and
+here as themselves — the stdlib safety-surface audit, native bridge promotion, and
 the ledger-owner rule. The clause-by-clause before/after that shows nothing was
 lost is in `docs/OPPORTUNISTIC_CLEANUP.md`.
 
@@ -73,7 +84,7 @@ Use only the highest level whose evidence exists:
 | --- | --- | --- |
 | 1 | A named Gust feature cohort works through Cranelift. | Registry rows, focused differentials, and no-fallback guards. |
 | 2 | The complete declared production cohort compiles and behaves through Cranelift. | Whole-program corpus, selected registry closure, differential observables, and exact-main Historical Full. |
-| 3 | The self-hosted Gust compiler builds and runs through the native path, and normal supported bootstrap no longer requires generated C or a host C compiler. | Phase 25 closure, reproducible build/run/bootstrap transcript, exact hashes, no C code-generation fallback, and documented optional foreign-runtime exceptions. |
+| 3 | The self-hosted Gust compiler builds and runs through the native path, and normal supported bootstrap no longer requires generated C or a host C compiler. | Phase 25 closure **plus** the full no-C host-path proof above, a published compatible bridge, reproducible build/run/bootstrap transcript, exact hashes, no C code-generation fallback, and documented optional foreign-runtime exceptions. |
 | 4 | Gust is the first project in a precisely defined historical category. | Level 3 plus a narrow written definition and credible external confirmation that no known predecessor qualifies. |
 
 The post-tail launch targets **Level 3**. Never infer Level 3 merely because the
@@ -82,7 +93,8 @@ search.
 
 ## 3. Public wording
 
-The exact release text is written from closure evidence. A safe target shape is:
+The exact release text is written from closure evidence. The target shape below
+is licensed only after the separate full no-C host-path gate above passes:
 
 > Gust's self-hosted compiler now builds and runs through its Cranelift native
 > backend, and Gust's normal supported bootstrap no longer falls back to

@@ -211,9 +211,15 @@ the count.
 > retirement. **Full C removal is a separate policy decision** and should happen
 > only when each residual component has a justified replacement.
 
-**Exit gate:** a clean machine builds and tests Gust through the supported native
-bootstrap path without invoking a C compiler, except for explicitly documented
-optional foreign-runtime components.
+**Exit gate:** as corrected by Patch 25.12b, the runtime crate and a Gust program link
+and run for `x86_64-unknown-linux-musl` through `rust-lld` with the C toolchain
+poisoned; `gust_v4.c` and its regeneration route are absent; and native bootstrap
+reaches the emitted-object fixed point from a verified published bridge.
+The original clean-machine, full-build-and-test claim was narrowed because only
+a GNU bridge is published: a musl host without a C compiler cannot yet run
+Gust's bootstrap, and the GNU host link still uses a C driver. The stronger
+no-C build-and-test claim remains a separate launch gate. `tree-sitter-gust` is
+an explicit editor-tooling exception.
 
 ## Phase 26 — Systems safety, resources, and implicit context
 
@@ -227,13 +233,19 @@ Phase 26.3 adds `with ctx` and function-level `using ctx` as one pre-semantic
 desugaring mechanism. Phase 26.4 closes the one-way ledger's rule 45 by
 making `Option[T]` the only spelling of absence, migrating
 `map.Get`/`LookupResult_T` and removing the `empty[T]` sentinel as one
-inseparable row. The full plan, ordering, status snapshot, and stable legacy
-identifier policy live in `docs/PHASES_26_AND_27.md`.
+inseparable row. Phase 26.5 audits raw-pointer use behind the safe stdlib
+collection surface. Phase 26.6 promotes the final native compiler through the
+published bridge and digest-pinned release policy; it does not regenerate the
+deleted C seed. The full plan, ordering, historical status snapshot, and stable
+legacy identifier policy live in `docs/PHASES_26_AND_27.md`. Phase 26
+implementation awaits explicit activation.
 
 **Exit gate:** every Phase 26 increment has focused positive and negative
 evidence, stable diagnostics, the full compiler suite, and a converged
 Cranelift-native bootstrap; implicit context remains unavailable in unsafe, FFI,
-and resource-authority contexts.
+and resource-authority contexts. The final merged compiler has a published,
+verified native bridge and emitted-object fixed-point proof under the release
+seed policy.
 
 ## Phase 27 (retired)
 
