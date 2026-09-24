@@ -81,6 +81,13 @@ def cc_reaches_the_linker() -> bool:
 FLAVOUR_GATE = 'env::var("GUST_NATIVE_LINK_FLAVOR")'
 FLAVOUR_VALUE = 'Ok("rustc-lld")'
 FLAVOUR_BRANCH = "let linker_driver = if rustc_lld {"
+# Patch 25.12b: the probe-then-error helper. Admitted as a diagnostic-only
+# region of the musl derivation, on the terms enforced just below.
+ADVICE_FN = "fn phase25_no_c_toolchain_advice("
+ADVICE_CONST = (
+    'const PHASE25_C_FREE_TARGET: &str = "' + MUSL_TARGET + '";'
+)
+ADVICE_MUST_NOT_CONTAIN = ("linker_driver", "link_request", FLAVOUR_GATE)
 
 
 def worker_mentions_musl() -> bool:
@@ -134,8 +141,49 @@ def musl_is_opt_in_only() -> bool:
     if end is None:
         return False
     inside = text[start:end]
+    # THE DIAGNOSTIC IS NOT A SELECTION, and P10 requires it by name.
+    #
+    # The rule above -- every musl mention inside the opt-in branch -- was
+    # exactly right while the only way to say "musl" was to select it. Patch
+    # 25.12b adds the probe-then-error Patch 25.11 promised, and P10 asks for
+    # an error that NAMES `--target x86_64-unknown-linux-musl`, which
+    # necessarily puts mentions outside the gate. Read literally the old rule
+    # forbids the thing P10 mandates.
+    #
+    # So the advice helper is admitted as a second region, and only on terms
+    # that keep it incapable of selecting anything: it is located by
+    # brace-matching from its own fn head, exactly as the branch is, and it
+    # must not mention the driver binding, the link request or the flavour
+    # gate. A musl default hidden in it would therefore still fail, and a
+    # musl default anywhere ELSE in 37,000 lines still fails as before.
+    advice_head = text.find(ADVICE_FN)
+    advice_inside = ""
+    if advice_head >= 0:
+        a_start = text.find("{", advice_head)
+        depth, a_end = 0, None
+        for index in range(a_start, len(text)):
+            if text[index] == "{":
+                depth += 1
+            elif text[index] == "}":
+                depth -= 1
+                if depth == 0:
+                    a_end = index
+                    break
+        if a_end is None:
+            return False
+        advice_inside = text[a_start:a_end]
+        if any(token in advice_inside for token in ADVICE_MUST_NOT_CONTAIN):
+            return False
+    # The name itself is a CONSTANT, not a selection. It is admitted by its
+    # exact declaration and only once, so `const ... = "musl"` cannot become
+    # a second, quieter way to reach the target.
+    if text.count(ADVICE_CONST) > 1:
+        return False
     occurrences = text.count(MUSL_TARGET)
-    if occurrences == 0 or inside.count(MUSL_TARGET) != occurrences:
+    accounted = (inside.count(MUSL_TARGET)
+                 + advice_inside.count(MUSL_TARGET)
+                 + text.count(ADVICE_CONST))
+    if occurrences == 0 or accounted != occurrences:
         return False
     tail = text[end:end + 400]
     return "} else {" in tail and "linker_driver" in tail

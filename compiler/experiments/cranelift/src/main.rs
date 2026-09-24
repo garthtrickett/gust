@@ -33406,7 +33406,7 @@ fn remove_compiler_mir_link_temp(temp_path: &Path) -> Result<(), Box<dyn Error>>
 /// Patch 25.12b: the PROBE half of Patch 25.11's probe-then-error contract.
 ///
 /// 25.11's Steps promise that on a gnu host with no C compiler the driver
-/// "probes, then errors naming `--target x86_64-unknown-linux-musl`", and its
+/// "probes, then errors naming the musl target", and its
 /// Exit Gate says that path is tested. Neither existed: the failure was a bare
 /// `linker spawn failed: No such file or directory (os error 2)`, which names
 /// no route and tells the user nothing. A review found it and the measurement
