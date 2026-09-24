@@ -1797,6 +1797,11 @@ behavior if a source route is unsupported. File/socket resources, blocking
 networking, `map.get_opt` migration, and implicit `ctx` wait for their
 separate Phase 26 handoffs.
 
+The S2 module is importable by repository source through a relative path.
+Installed distributions currently contain three native artifacts and no Gust
+source modules. Packaging this module for installed users is a separate
+Cranelift-owned release handoff; S2 closure does not claim that distribution.
+
 The small consumer need is testing a request token or filename suffix without
 manually calculating slice bounds at every call site. The selected helpers
 are `starts_with`, `ends_with`, and `contains`; all are case-sensitive and
