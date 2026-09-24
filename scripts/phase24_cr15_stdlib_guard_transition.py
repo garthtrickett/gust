@@ -2348,6 +2348,39 @@ def normalize_phase23_text_surfaces(
                 "departed surface")
         rows = sorted(list(rows) + [dict(row) for row in restored],
                       key=lambda row: str(row["path"]))
+    # Patch 25.12c is newer than 25.12b, so it runs first. It is record
+    # keeping, not a route change: the Phase 25 Status section had 25.10a
+    # and 25.10 unticked though both merged, had no row for 25.12b, and still
+    # headed Patch 25.0 IN PROGRESS. docs/PHASE25_ROADMAP.md is pinned by
+    # three landed patches, so correcting it needs this link -- and the
+    # failure without it names Patch 25.10, the OLDER link that notices,
+    # because 25.12b's block does not carry the roadmap and passes it through.
+    status_surface = registry.get(
+        "phase2512c_status_record", {}).get("text_surface_successor")
+    if status_surface is not None:
+        require(status_surface.get("contract_version") ==
+                "phase2512c_status_record_text_surface_successor_v1" and
+                status_surface.get(
+                    "partial_extra_or_substituted_surface") == "rejected",
+                "Patch 25.12c status record text surface successor drifted")
+        sr_paths = list(status_surface["registered_changed_paths"])
+        sr_pre = {r["path"]: r for r
+                  in status_surface["previous_changed_text_surfaces"]}
+        sr_post = {r["path"]: r for r
+                   in status_surface["current_changed_text_surfaces"]}
+        require(sorted(sr_pre) == sorted(sr_paths) == sorted(sr_post),
+                "Patch 25.12c registered paths and rows disagree")
+        sr_live = {r["path"]: r for r in rows if r["path"] in sr_paths}
+        require(sorted(sr_live) == sorted(sr_paths),
+                "Patch 25.12c registered text surface is missing from the "
+                f"scan: {sorted(set(sr_paths) - set(sr_live))}")
+        require(sr_live in (sr_pre, sr_post),
+                "Patch 25.12c changed text surfaces are partial or "
+                "substituted: the live rows match neither the complete "
+                "predecessor state nor the complete successor state "
+                f"({sorted(p for p in sr_paths if sr_live[p] != sr_post[p])} "
+                "differ from post)")
+        rows = [dict(sr_pre.get(r["path"], r)) for r in rows]
     # Patch 25.12b is newer than 25.10, so IT runs first and projects the
     # tree back to the state 25.10's successor was registered against. Same
     # newest-first discipline as every link below: this chain walks

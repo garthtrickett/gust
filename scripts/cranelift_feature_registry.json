@@ -47971,5 +47971,84 @@
         "scripts/phase24_c_toolchain_provenance.py"
       ]
     }
+  },
+  "phase2512c_status_record": {
+    "status": "record keeping; corrects the Phase 25 Status section",
+    "text_surface_successor": {
+      "added_text_surface_rows": [],
+      "added_text_surfaces": [],
+      "change_reason": "Two enrolled surfaces move, both digest-only: every match_count holds on both rows. docs/PHASE25_ROADMAP.md gains the ticks, the 25.12b row and a paragraph explaining it, written to add no enrolled spelling. scripts/cranelift_registry.py gains this node's key -- the toll having a toll, as in 25.10a. The roadmap is pinned by three landed patches, which is why a checkbox edit needs a chain link.",
+      "contract_version": "phase2512c_status_record_text_surface_successor_v1",
+      "current_changed_text_surfaces": [
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "7851d35b013801ae2a9242628c28dbcba490e085deda279696909cf5217d06f8",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 8,
+            "mir_to_c_name": 3
+          },
+          "owner": "cranelift",
+          "path": "docs/PHASE25_ROADMAP.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "7c3fcf50d825c73b046932f71d434faa62842e0c8751066f6ce488b86f8a3f08",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        }
+      ],
+      "partial_extra_or_substituted_surface": "rejected",
+      "previous_changed_text_surfaces": [
+        {
+          "classification": "historical_only",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "preserve_as_historical_evidence",
+          "digest": "0d4c8b8e27617ff0f062c3e3140808de4affa038c6511e27fd906d40d32d99ea",
+          "falsifier": "historical_record_is_reclassified_as_live_support",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 8,
+            "mir_to_c_name": 3
+          },
+          "owner": "cranelift",
+          "path": "docs/PHASE25_ROADMAP.md",
+          "removal_phase": "not_removed_by_phase23"
+        },
+        {
+          "classification": "archive_candidate",
+          "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+          "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+          "digest": "c653eb5064b0482e12562f8e1abb15514b8d5ed5f70e741ba4489b165db0faab",
+          "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 5,
+            "mir_to_c_name": 61
+          },
+          "owner": "cranelift",
+          "path": "scripts/cranelift_registry.py",
+          "removal_phase": "24"
+        }
+      ],
+      "registered_changed_paths": [
+        "docs/PHASE25_ROADMAP.md",
+        "scripts/cranelift_registry.py"
+      ]
+    },
+    "why_this_exists": "The Status section of docs/PHASE25_ROADMAP.md is the record the phase-completion loop checks, and it was wrong in both directions. 25.10a (#468) and 25.10 (#470) were unticked though both merged. 25.12 was ticked though its Exit Gate was not met, and 25.12b (#472), which corrected it, had no row at all. The Patch 25.0 heading still read IN PROGRESS. The section's own rule is 'ticked when merged to main', and this repo's convention is that a later patch ticks merged ones -- Patch 25.7 is what ticked 25.12 and 25.11a -- so 25.12b could not tick itself."
   }
 }
