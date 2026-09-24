@@ -88,6 +88,18 @@ green no-C job and an empty expected-failure list when the list had four
 entries, and 25.12a is the closure readiness reporter 25.12 needs in
 order to have something to assert.
 
+25.12b is the 25.11a shape one patch later. The merged 25.12 was
+ticked, but its Exit Gate was not met: its closure sentence said a clean
+machine builds and tests Gust on musl with no C compiler, and nothing
+proved that. The host-build arm compiled a hello-world and never mounted
+the repository, and only a gnu bridge is published, so a musl host cannot
+reach the bootstrap's first step. 25.12b (#472) narrowed the sentence to
+what was measured, implemented and tested the probe-then-error 25.11 had
+promised, and classified the gnu no-C failure instead of accepting any
+nonzero exit. #473 is not a roadmap patch: it repaired main, whose Level 3
+Historical Full had been red since 27d0aa00 on a guard that PR CI never
+runs.
+
 The order here is the document's, not the merge order. Measured during
 25.5: `fiber.c` must go before the Gust runtime port, because codegen
 injects a `gust_yield()` call into every loop and `fiber.c` is the top
@@ -105,12 +117,13 @@ scratch -> arena. The implementation order is 25.6, 25.5, 25.7, 25.9,
 - [x] Patch 25.7 — Native Stage Chain and the New Fixed Point
 - [x] Patch 25.8 — Release Mechanics
 - [x] Patch 25.9 — Seed Cut-Over
-- [ ] Patch 25.10a — `strings.c` Retirement
-- [ ] Patch 25.10 — Emitter and Bootstrap Entry Deletion
+- [x] Patch 25.10a — `strings.c` Retirement
+- [x] Patch 25.10 — Emitter and Bootstrap Entry Deletion
 - [x] Patch 25.11 — `cc` Optional
 - [x] Patch 25.11a — Renumber the merged 25.11, whose Exit Gate was not met
 - [x] Patch 25.12a — Closure Readiness Reporter
 - [x] Patch 25.12 — Phase 25 Closure
+- [x] Patch 25.12b — Correct the merged 25.12, whose Exit Gate was not met
 
 ## Patch 25.0 — C Toolchain Requirement Enumeration
 
@@ -651,7 +664,7 @@ immutable record still validates.
 
 ---
 
-# Patch 25.0 — C Toolchain Requirement Enumeration · **IN PROGRESS**
+# Patch 25.0 — C Toolchain Requirement Enumeration · **DONE**
 
 Phase 25 activated by the operator on 2026-09-20. This is the phase's first
 patch and the pre-work the sequence names: enumerate what actually requires
