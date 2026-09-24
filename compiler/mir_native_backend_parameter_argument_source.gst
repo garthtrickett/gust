@@ -14,7 +14,8 @@ import "mir.gst" as mir;
 // It never inspects a source path, fixture name, or raw source text. Parameter
 // identity, declaration order, scalar type, namespace, and source position are
 // serialized as provenance metadata. Aggregate and target-dependent ABI shapes
-// remain precise pre-driver deferrals.
+// remain precise pre-driver deferrals. Reference parameters have an existing
+// Phase 16 direct pointer ABI and continue to the full-program canonical path.
 type MirNativeParameterArgumentHelper[ctx] struct {
     represented: int,
     name: str,
@@ -229,7 +230,8 @@ func mir_native_parameter_argument_scan_deferred(
                             ctx
                         );
                     }
-                    if parameter_class == 2 {
+                    if parameter_class == 2 &&
+                       parameters[parameter_index].param_type.tag != 11 { // Reference
                         model.source_path =
                             std.Clone(ctx, module_paths[0]);
                         return mir_native_parameter_argument_deferred_model(

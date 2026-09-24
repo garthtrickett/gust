@@ -625,7 +625,8 @@ def check() -> None:
         # Projected back through the registered transitions rather than
         # re-pinned here, so the closure keeps asserting #398's own
         # landed identity rather than whatever the tree looks like today.
-        current_audit = production_module.scan()
+        current_audit = production_module.project_reference_receiver_production_audit(
+            registry, production_module.scan())
         # Newest FIRST. Patch 25.10a retires src/runtime/strings.c into
         # the Rust crate and the Makefile is a supported surface, so it
         # moves the manifest digest in front of 25.5. Appending it

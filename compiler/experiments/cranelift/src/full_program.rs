@@ -2060,6 +2060,30 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         }
     }
 
+    fn lower_receiver_place(
+        &mut self,
+        builder: &mut FunctionBuilder<'_>,
+        node_index: usize,
+        allow_value: bool,
+    ) -> Result<(Place, String), Box<dyn Error>> {
+        let receiver_type = self.program.nodes[node_index].ty.clone();
+        if receiver_type.starts_with("Reference(") {
+            let inner_type = pointer_inner_type(&receiver_type)
+                .ok_or_else(|| invalid("reference receiver has no inner type"))?
+                .to_string();
+            let evaluated = self.lower_expression(builder, node_index, None)?;
+            let address = self.scalar(builder, evaluated, &receiver_type)?;
+            return Ok((Place { address }, inner_type));
+        }
+        let place = if allow_value {
+            let evaluated = self.lower_expression(builder, node_index, None)?;
+            self.evaluated_place(builder, evaluated, &receiver_type)?
+        } else {
+            self.lower_place(builder, node_index)?
+        };
+        Ok((place, receiver_type))
+    }
+
     fn lower_index_place(
         &mut self,
         builder: &mut FunctionBuilder<'_>,
@@ -2085,9 +2109,16 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
                 address: builder.ins().iadd(base, index64),
             });
         }
-        if struct_type_name(&receiver_node.ty).is_some_and(|name| name.starts_with("std_Vector_")) {
-            let receiver = self.lower_place(builder, node.children[0])?;
-            let (data_place, _) = self.field_place(builder, receiver, &receiver_node.ty, "data")?;
+        let vector_type = if receiver_node.ty.starts_with("Reference(") {
+            pointer_inner_type(&receiver_node.ty)
+                .ok_or_else(|| invalid("indexed reference receiver has no inner type"))?
+        } else {
+            &receiver_node.ty
+        };
+        if struct_type_name(vector_type).is_some_and(|name| name.starts_with("std_Vector_")) {
+            let (receiver, receiver_type) =
+                self.lower_receiver_place(builder, node.children[0], false)?;
+            let (data_place, _) = self.field_place(builder, receiver, &receiver_type, "data")?;
             let data = builder.ins().load(
                 self.pointer_type(),
                 MemFlags::trusted(),
@@ -2124,10 +2155,16 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         match node.kind.as_str() {
             "IndexRead" => {
                 let receiver = &self.program.nodes[node.children[0]];
-                if struct_type_name(&receiver.ty)
+                let receiver_type = if receiver.ty.starts_with("Reference(") {
+                    pointer_inner_type(&receiver.ty)
+                        .ok_or_else(|| invalid("borrowed reference receiver has no inner type"))?
+                } else {
+                    &receiver.ty
+                };
+                if struct_type_name(receiver_type)
                     .is_some_and(|name| name.starts_with("std_Vector_"))
                 {
-                    let layout = self.layouts.layout(&receiver.ty)?;
+                    let layout = self.layouts.layout(receiver_type)?;
                     let data_type = &layout
                         .fields
                         .get("data")
@@ -2700,9 +2737,7 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         node: &Node,
     ) -> Result<Evaluated, Box<dyn Error>> {
         let argument = node.children[1];
-        let ty = self.program.nodes[argument].ty.clone();
-        let value = self.lower_expression(builder, argument, None)?;
-        let place = self.evaluated_place(builder, value, &ty)?;
+        let (place, ty) = self.lower_receiver_place(builder, argument, true)?;
         let offset = if ty == "Str" {
             8
         } else {
@@ -3009,13 +3044,13 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         let receiver_index = self
             .inline_receiver_index(node)
             .ok_or_else(|| invalid("vector method lacks receiver"))?;
-        let receiver_type = self.program.nodes[receiver_index].ty.clone();
+        let (receiver, receiver_type) =
+            self.lower_receiver_place(builder, receiver_index, false)?;
         if !struct_type_name(&receiver_type).is_some_and(|value| value.starts_with("std_Vector_")) {
             return Err(invalid(format!(
                 "{name} receiver is not a vector: {receiver_type}"
             )));
         }
-        let receiver = self.lower_place(builder, receiver_index)?;
         let (data_field, data_type) =
             self.field_place(builder, receiver, &receiver_type, "data")?;
         let (len_field, _) = self.field_place(builder, receiver, &receiver_type, "len")?;
@@ -3213,14 +3248,14 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         let receiver_index = self
             .inline_receiver_index(node)
             .ok_or_else(|| invalid("hashmap method lacks receiver"))?;
-        let receiver_type = self.program.nodes[receiver_index].ty.clone();
+        let (map, receiver_type) =
+            self.lower_receiver_place(builder, receiver_index, false)?;
         if !struct_type_name(&receiver_type).is_some_and(|value| value.starts_with("std_HashMap_"))
         {
             return Err(invalid(format!(
                 "{name} receiver is not a hashmap: {receiver_type}"
             )));
         }
-        let map = self.lower_place(builder, receiver_index)?;
         let (_, keys_type) = self.field_place(builder, map, &receiver_type, "keys")?;
         let (_, values_type) = self.field_place(builder, map, &receiver_type, "values")?;
         let key_type = pointer_inner_type(&keys_type)
@@ -3578,8 +3613,8 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         let receiver_index = self
             .inline_receiver_index(node)
             .ok_or_else(|| invalid("graph method lacks receiver"))?;
-        let graph_type = self.program.nodes[receiver_index].ty.clone();
-        let graph = self.lower_place(builder, receiver_index)?;
+        let (graph, graph_type) =
+            self.lower_receiver_place(builder, receiver_index, false)?;
         let (pool, pool_type) = self.field_place(builder, graph, &graph_type, "nodes")?;
         let (data_field, data_type) = self.field_place(builder, pool, &pool_type, "data")?;
         let node_type = pointer_inner_type(&data_type)

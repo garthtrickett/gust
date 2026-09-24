@@ -22,6 +22,9 @@ wrong_type_source="compiler/phase11_direct_call_wrong_type_source.gst"
 aggregate_parameter_source="compiler/phase13_parameter_argument_aggregate_parameter_source.gst"
 aggregate_return_source="compiler/phase13_parameter_argument_aggregate_return_source.gst"
 target_abi_source="compiler/phase13_parameter_argument_target_abi_source.gst"
+reference_return_source="compiler/phase16_reference_return_deferred_source.gst"
+reference_receiver_source="compiler/phase16_reference_receiver_source.gst"
+reference_receiver_guard="scripts/phase16_reference_receiver_parity.sh"
 build_root="build/guards/cranelift_phase13_parameter_argument"
 cargo_target="$build_root/cargo-target"
 
@@ -42,7 +45,10 @@ for required_file in \
   "$selected_source" "$repeated_source" "$join_source" "$loop_source" \
   "$direct_source" "$imported_source" "$wrong_arity_source" \
   "$wrong_type_source" "$aggregate_parameter_source" \
-  "$aggregate_return_source" "$target_abi_source" ./gust
+  "$aggregate_return_source" "$target_abi_source" \
+  "$reference_return_source" \
+  "$reference_receiver_source" "$reference_receiver_guard" \
+  tests/test_hashmap_reference_receiver.gst ./gust
 do
   if [ ! -e "$required_file" ]; then
     echo "Phase 13.6 parameter/argument evidence is missing $required_file" >&2
@@ -297,8 +303,17 @@ assert_preserved_pre_driver_failure \
 assert_preserved_pre_driver_failure \
   "$target_abi_source" target-dependent-abi \
   deferred_p13_parameter_argument_target_dependent_abi deferred
+assert_preserved_pre_driver_failure \
+  "$reference_return_source" reference-return-abi \
+  deferred_p13_parameter_argument_target_dependent_abi deferred
 
 python3 "$family_runner" differential-rows direct-calls |
   rg -n -F 'p13_parameterized_local_call_branch_source_route' >/dev/null
+
+# Selected Phase 16 reference ABI positions now reach the full-program
+# canonical path. Keep their native evidence separate from the frozen Phase
+# 13.6 scalar differential cases and preserve the deferrals checked above.
+bash -n "$reference_receiver_guard"
+bash "$reference_receiver_guard" "$build_root/reference-receiver"
 
 echo "✅ Phase 13.6 parameter/argument evidence passed: ordered three-parameter identities, direct and imported multi-argument calls, repeated/expression/CFG/loop composition, six malformed MIR contracts, source type failures, and three precise ABI deferrals."
