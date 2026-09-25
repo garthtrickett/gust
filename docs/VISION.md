@@ -2383,6 +2383,8 @@ Initial package sources: Gust standard packages, organisation-owned packages, an
 
 A public registry may be introduced later. Any public registry must use signed releases, immutable artifacts, and provenance verification.
 
+The public proposal and reference-implementation process in §106 is separate from a package registry. A submission or vote does not approve a package for use or grant it capabilities.
+
 The capability system (Part V) is what makes a public registry survivable. Approval is a service tier; enforcement is the guarantee. A package obtained from any source still cannot execute authority it did not declare.
 
 ## 72. Lockfiles and provenance
@@ -2783,7 +2785,17 @@ Rolling upgrades require versioned messages, backward-compatible database change
 
 ## 106. Governance
 
-Language and capability evolution is governed through public proposals, compatibility reviews, and published migration plans. §0.8 commits to a credible neutral-governance path; this section is where that commitment becomes concrete.
+Language and capability evolution is governed through public proposals, compatibility reviews, and published migration plans.
+
+### 106.1 Community reference implementations — proposed
+
+> **Operator proposal, 2026-09-25; unimplemented.** This records how community work could enter the Gust roadmap. It does not activate a roadmap patch or imply that a submission site, voting system, or public package registry exists today.
+
+Contributors submit a proposal with a runnable Gust reference implementation, tests, the intended public API, required capabilities, supported targets, and known limitations. The proposal, source, discussion, vote tally, and review status are publicly visible so others can inspect and try the implementation before voting.
+
+Votes rank demand. The highest-ranked proposals that are ready for review are the default candidates when choosing the next ecosystem roadmap work. If a lower-ranked proposal is chosen because of a dependency, security, compatibility, or maintenance constraint, publish the reason. A vote does not by itself approve a design or make its code official.
+
+Promotion requires a compatibility and security review, a named maintainer, conformance tests, documentation, and a versioned release and migration plan. The reference implementation is the starting point; reviewers may adapt or replace it to meet Gust's guarantees. Accepted work becomes a Gust-owned standard-library or platform surface. Proposals that require new core-language semantics or authority changes follow their owning roadmap and decision process before promotion.
 
 After 1.0, Gust must not silently change program meaning, weaken memory-safety guarantees, weaken authorization guarantees, break stable wire formats, or remove stable features without a migration path and edition boundary.
 
