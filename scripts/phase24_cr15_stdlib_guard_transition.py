@@ -2342,6 +2342,35 @@ def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    str_direct = registry.get("phase26_activation_audit", {}).get(
+        "str_direct_call_prerequisite", {}).get("text_surface_successor", {})
+    str_rows = str_direct.get("changed_rows", [])
+    str_paths = {
+        "scripts/phase13_parameter_argument.sh",
+        "scripts/phase26_reference_receiver_registration.py",
+    }
+    require(str_direct.get("contract_version") ==
+            "phase26_str_direct_call_text_surface_successor_v1" and
+            str_direct.get("partial_extra_or_substituted_surface") ==
+            "rejected" and
+            {row.get("path") for row in str_rows} == str_paths and
+            len(str_rows) == len(str_paths),
+            "Str direct-call text surface successor drifted")
+    str_by_path = {row["path"]: row for row in str_rows}
+    live_str_rows = {row["path"]: row for row in rows
+                     if row["path"] in str_paths}
+    for path, changed in str_by_path.items():
+        live = live_str_rows.get(path)
+        require(live is not None and
+                live["digest"] == changed.get("current_digest") and
+                live["match_counts"] == changed.get("current_match_counts") and
+                len(changed.get("previous_digest", "")) == 64,
+                f"Str direct-call text surface drifted: {path}")
+    rows = [dict(row,
+                 digest=str_by_path[row["path"]]["previous_digest"],
+                 match_counts=str_by_path[row["path"]][
+                     "previous_match_counts"])
+            if row["path"] in str_by_path else row for row in rows]
     runtime = registry.get("phase26_activation_audit", {}).get(
         "runtime_formal_signature_prerequisite", {}).get(
             "text_surface_successor", {})

@@ -51,6 +51,8 @@ for required_file in \
   "$reference_receiver_source" "$reference_receiver_guard" \
   compiler/phase26_runtime_formal_signature_source.gst \
   compiler/phase26_runtime_formal_signature_wrong_type_source.gst \
+  compiler/phase26_str_direct_call_source.gst \
+  compiler/phase26_str_extern_deferred_source.gst \
   compiler/phase16_string_clone_source.gst \
   compiler/phase16_non_string_clone_deferred_source.gst \
   tests/test_hashmap_reference_receiver.gst ./gust
@@ -319,6 +321,9 @@ assert_preserved_pre_driver_failure \
   runtime-formal-wrong-type \
   'os.LogInt expects an Int/Byte/Index argument, but got Str' \
   source_or_type_failure
+assert_preserved_pre_driver_failure \
+  compiler/phase26_str_extern_deferred_source.gst str-extern-abi \
+  deferred_p13_parameter_argument_target_dependent_abi deferred
 
 python3 "$family_runner" differential-rows direct-calls |
   rg -n -F 'p13_parameterized_local_call_branch_source_route' >/dev/null
@@ -329,4 +334,8 @@ python3 "$family_runner" differential-rows direct-calls |
 bash -n "$reference_receiver_guard"
 bash "$reference_receiver_guard" "$build_root/reference-receiver"
 
-echo "✅ Phase 13.6 parameter/argument evidence passed: ordered three-parameter identities, direct and imported multi-argument calls, repeated/expression/CFG/loop composition, six malformed MIR contracts, source type failures, precise ABI deferrals, and native runtime formal signatures."
+# The Stdlib S1 guard owns all 33 string-surface outputs. This native ABI
+# admission must satisfy that unchanged guard in the Cranelift Level 2 lane.
+just guard-stdlib-s1-str-surface
+
+echo "✅ Phase 13.6 parameter/argument evidence passed: ordered three-parameter identities, direct and imported multi-argument calls, repeated/expression/CFG/loop composition, six malformed MIR contracts, source type failures, precise ABI deferrals, native runtime formals, and direct Str calls."

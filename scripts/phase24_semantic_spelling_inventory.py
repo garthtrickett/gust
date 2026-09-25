@@ -292,6 +292,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     runtime_successor = registry.get("phase26_activation_audit", {}).get(
         "runtime_formal_signature_prerequisite", {}).get(
             "spelling_inventory_successor")
+    str_successor = registry.get("phase26_activation_audit", {}).get(
+        "str_direct_call_prerequisite", {}).get(
+            "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -362,17 +365,44 @@ def validate() -> tuple[dict, list[dict], dict]:
                 ] and
                 runtime_successor.get("previous_inventory_summary") ==
                 reference_successor["current_inventory_summary"] and
-                runtime_successor.get("current_inventory_summary") == summary and
+                runtime_successor.get("current_inventory_summary") ==
+                (summary if str_successor is None else
+                 str_successor.get("previous_inventory_summary")) and
                 runtime_successor.get("partial_extra_or_substituted_inventory") ==
                 "rejected",
                 "runtime formal signature spelling successor drifted")
         was = runtime_successor["previous_inventory_summary"]
+        now = runtime_successor["current_inventory_summary"]
+        require(now["site_count"] == was["site_count"] and
+                now["semantic_site_count"] == was["semantic_site_count"] and
+                now["source_file_count"] == was["source_file_count"] + 2 and
+                now["unknown_site_count"] == 0 and
+                now["classification_counts"] == was["classification_counts"],
+                "runtime formal signature changed the spelling population")
+    if str_successor is not None:
+        require(runtime_successor is not None and
+                str_successor.get("contract_version") ==
+                "phase26_str_direct_call_spelling_successor_v1" and
+                str_successor.get("changed_source_paths") == [
+                    "compiler/mir_native_backend_parameter_argument_source.gst",
+                    "compiler/phase26_str_direct_call_source.gst",
+                    "compiler/phase26_str_extern_deferred_source.gst",
+                ] and
+                str_successor.get("previous_inventory_summary") ==
+                runtime_successor["current_inventory_summary"] and
+                str_successor.get("current_inventory_summary") == summary and
+                str_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected",
+                "Str direct-call spelling successor drifted")
+        was = str_successor["previous_inventory_summary"]
         require(summary["site_count"] == was["site_count"] and
                 summary["semantic_site_count"] == was["semantic_site_count"] and
                 summary["source_file_count"] == was["source_file_count"] + 2 and
                 summary["unknown_site_count"] == 0 and
-                summary["classification_counts"] == was["classification_counts"],
-                "runtime formal signature changed the spelling population")
+                summary["classification_counts"] == was["classification_counts"] and
+                summary["complete_manifest_digest"] ==
+                was["complete_manifest_digest"],
+                "Str direct calls changed an unregistered spelling site")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),
