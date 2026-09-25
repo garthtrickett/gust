@@ -194,6 +194,45 @@ def phase24_cr19_transition(registry: dict, cases: list[dict]) -> dict:
     return transition
 
 
+def phase26_reference_receiver_transition(registry: dict,
+                                          cases: list[dict]) -> dict:
+    """Exact successor for runner cases exposed by Reference parameters."""
+    successor = registry.get("phase26_activation_audit", {}).get(
+        "reference_receiver_prerequisite", {}).get(
+            "phase21_complete_suite_successor", {})
+    expected = {
+        "contract_version": "phase26_reference_receiver_phase21_successor_v1",
+        "status": "exact_reference_parameter_admission_overlay",
+        "admitted_runner_fixtures": [
+            "tests/test_safe_references_comprehensive_accepted.gst",
+        ],
+        "newly_deferred_runner_fixture": "tests/e2e_adt_pressure_test.gst",
+        "unresolved_member_runner_fixture":
+            "tests/test_reference_access_parsing_accepted.gst",
+        "previous_reason": "deferred_p13_parameter_argument_target_dependent_abi",
+        "current_reason": "deferred_p13_parameter_argument_aggregate_return",
+        "unresolved_member_reason":
+            "deferred_p14_full_program_unresolved_member_call",
+        "required_native_case_delta": 1,
+        "classified_deferral_delta": -1,
+        "reason_count_deltas": {
+            "deferred_p13_parameter_argument_target_dependent_abi": -3,
+            "deferred_p13_parameter_argument_aggregate_return": 1,
+            "deferred_p14_full_program_unresolved_member_call": 1,
+        },
+        "frozen_phase21_record": "unchanged",
+        "partial_extra_or_substituted_transition": "rejected",
+    }
+    require(successor == expected,
+            "Phase 26 Reference complete-suite transition drifted")
+    paths = {case["path"] for case in cases}
+    require(set(successor["admitted_runner_fixtures"]) <= paths and
+            successor["newly_deferred_runner_fixture"] in paths and
+            successor["unresolved_member_runner_fixture"] in paths,
+            "Phase 26 Reference transition fixture drifted from runner inventory")
+    return successor
+
+
 def _admission_block_is_exact(admission: dict) -> None:
     require(admission == {
         "contract_version": "phase24_cr19_post_image_admission_v1",
@@ -448,6 +487,7 @@ def validate() -> dict:
     cases = runner_cases()
     phase23_guard_defer_transition(registry, cases)
     phase24_cr19_transition(registry, cases)
+    phase26_reference_receiver_transition(registry, cases)
     phase24_cr19_post_image_admission(registry, cases)
     inventory = record.get("inventory", {})
     observed = {
@@ -978,7 +1018,19 @@ def evidence() -> None:
     transitions = [
         phase23_guard_defer_transition(_registry, cases),
         phase24_cr19_transition(_registry, cases),
+        phase26_reference_receiver_transition(_registry, cases),
     ]
+    phase26_transition = transitions[-1]
+    exact_phase26_cases = {
+        path: ("required", "") for path in
+        phase26_transition["admitted_runner_fixtures"]
+    }
+    exact_phase26_cases[phase26_transition["newly_deferred_runner_fixture"]] = (
+        "deferral", phase26_transition["current_reason"])
+    exact_phase26_cases[phase26_transition[
+        "unresolved_member_runner_fixture"]] = (
+            "deferral", phase26_transition["unresolved_member_reason"])
+    seen_phase26_cases: set[str] = set()
     # The per-case check asks whether a reason is registered at all, so it must
     # see reasons a successor introduces -- not only the frozen Phase 21 set.
     composed_reasons = dict(classification["compile_deferral_reason_counts"])
@@ -998,14 +1050,21 @@ def evidence() -> None:
                 index, shard_roots[shard_index], oracle_rows, runtime_rows,
                 composed_reasons,
             ))
-        for future in futures:
+        for case, future in zip(cases, futures):
             disposition, reason = future.result()
+            path = case["path"]
+            if path in exact_phase26_cases:
+                require((disposition, reason) == exact_phase26_cases[path],
+                        f"Phase 26 Reference case disposition drifted: {path}")
+                seen_phase26_cases.add(path)
             if disposition == "required":
                 required_count += 1
             else:
                 deferral_count += 1
             if reason:
                 reason_counts[reason] = reason_counts.get(reason, 0) + 1
+        require(seen_phase26_cases == set(exact_phase26_cases),
+                "Phase 26 Reference case inventory was not fully qualified")
     finally:
         for future in futures:
             if not future.done():
@@ -1014,13 +1073,16 @@ def evidence() -> None:
             executor.shutdown(wait=True, cancel_futures=True)
         remove_shards(shard_base, shard_roots)
 
-    # The terminal map is state-selected by the compiler-owned admission:
-    # the frozen-plus-overlay map on the main fixture, that map moved by
-    # exactly the measured post deltas on the held post image. Totals are
-    # preserved by the admission (deltas sum to zero), so the count
-    # assertion below stands unchanged on both states.
+    # The historical post-image admission selects its source-state map first.
+    # Reference parameter admission then moves only the three measured runner
+    # decisions, preserving the frozen record and both historical states.
     admitted = phase24_cr19_post_image_admission(_registry, cases)
-    require(reason_counts == admitted["expected_reason_counts"],
+    terminal_reasons = dict(admitted["expected_reason_counts"])
+    for reason, delta in transitions[-1]["reason_count_deltas"].items():
+        terminal_reasons[reason] = terminal_reasons.get(reason, 0) + delta
+    terminal_reasons = {reason: count for reason, count in
+                        terminal_reasons.items() if count != 0}
+    require(reason_counts == terminal_reasons,
             f"compile deferral population drifted: {reason_counts}")
     required_delta = sum(o["required_native_case_delta"] for o in transitions)
     deferral_delta = sum(o["classified_deferral_delta"] for o in transitions)

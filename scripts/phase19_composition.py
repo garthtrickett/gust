@@ -11,6 +11,7 @@ REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 TYPECHECKER = ROOT / "compiler/typechecker.gst"
 TASK = ROOT / "TASK.md"
 REVIEW = ROOT / "compiler/CRANELIFT_PHASE19_COMPOSITION.md"
+PARITY = ROOT / "scripts/phase19_composition_parity.sh"
 GUARD = "guard-cranelift-phase19-composition-contract"
 
 
@@ -43,6 +44,33 @@ def validate() -> dict:
     }
     for key, value in expected.items():
         require(record.get(key) == value, f"{key} drifted")
+
+    successor = registry.get("phase26_activation_audit", {}).get(
+        "reference_receiver_prerequisite", {}).get(
+            "phase19_non_string_clone_successor")
+    require(successor == {
+        "contract_version":
+            "phase26_reference_receiver_phase19_non_string_clone_successor_v1",
+        "source_fixture": record["source_fixture"],
+        "independent_negative_fixture":
+            "compiler/phase16_non_string_clone_deferred_source.gst",
+        "supported_string_fixture": "compiler/phase16_string_clone_source.gst",
+        "previous_reason": record["cranelift_reason_code"],
+        "current_reason": "deferred_p14_full_program_non_string_clone",
+        "failure_stage": record["cranelift_failure_stage"],
+        "frozen_exit_status": record["expected_exit_status"],
+        "no_c_fallback_or_native_artifact": True,
+        "partial_extra_or_substituted_transition": "rejected",
+    }, "Phase 26 non-string Clone successor drifted")
+    parity = PARITY.read_text(encoding="utf-8")
+    for token in (
+        successor["independent_negative_fixture"],
+        successor["current_reason"],
+        "GUST_TEST_MIR_TO_C_UNAVAILABLE=1",
+        'GUST_NATIVE_BACKEND_DRIVER="$PWD/$case_dir/deliberately-absent-driver"',
+        'test ! -e "$case_dir/native-program"',
+    ):
+        require(token in parity, f"Phase 19 parity lost {token!r}")
 
     require(record.get("composed_features") == [
         "branded_collection",
@@ -110,10 +138,13 @@ def validate() -> dict:
         in TASK.read_text(encoding="utf-8"),
         "TASK.md does not mark Patch 19.11 DONE",
     )
-    return record
+    effective = dict(record)
+    effective["phase26_successor"] = successor
+    return effective
 
 
 def render(record: dict) -> str:
+    successor = record["phase26_successor"]
     features = "\n".join(f"- `{feature}`" for feature in record["composed_features"])
     authorities = "\n".join(
         f"- `{authority}`" for authority in record["unaffected_authorities"])
@@ -143,8 +174,12 @@ lookup elides that known identity before resolving the existing runtime type.
 Explicit Cranelift is deferred by the compiler-owned
 `{record['cranelift_capability']}` decision with reason
 `{record['cranelift_reason_code']}` at `{record['cranelift_failure_stage']}`.
-The Level 2 guard requires that refusal and proves no C fallback or native
-artifact is published.
+That is the preserved Phase 19 classification. After Phase 26 admitted direct
+call Reference parameters, the same composition reaches a typed `std.Clone`
+of an `Index` and now defers with `{successor['current_reason']}` at
+`{successor['failure_stage']}`. The Level 2 guard checks that refusal and an
+independent `Index` Clone fixture, with no C fallback or native artifact.
+String Clone remains natively supported. The frozen exit status 91 is unchanged.
 
 ## Unaffected predecessor authorities
 

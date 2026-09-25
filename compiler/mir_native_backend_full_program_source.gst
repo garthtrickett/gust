@@ -2601,6 +2601,105 @@ func mir_native_full_program_runtime_signature_conflict(
     return std.Clone(ctx, "");
 }
 
+// A value receiver has native call authority only through an existing inline
+// operation or a declared function. Module selectors carry Void receivers and
+// resolve to runtime symbols separately. An unresolved value method must not
+// reach object linking as a literal name such as "value.Method".
+func mir_native_full_program_unresolved_member_call_diagnostic(
+    model: MirNativeFullProgramModel[ctx],
+    ctx: &Arena
+) str {
+    mut nodes: std.Vector[MirNativeFullProgramNode[ctx], ctx] :=
+        ctx[model.nodes];
+    mut functions: std.Vector[MirNativeFullProgramFunction[ctx], ctx] :=
+        ctx[model.functions];
+    mut index := 0;
+    while index < len(nodes) {
+        mut node := nodes[index];
+        if mir_native_full_program_is_runtime_call(
+               nodes, functions, node, ctx
+           ) == 1
+        {
+            mut children: std.Vector[int, ctx] := ctx[node.children];
+            if len(children) == 0 || children[0] < 0 ||
+               children[0] >= len(nodes) {
+                return std.Clone(
+                    ctx,
+                    "Native backend full-program deferral: runtime call has no valid callee node"
+                );
+            }
+            mut callee := nodes[children[0]];
+            if std.str_eq(callee.kind, "FieldOrMethodSelect") == 1 {
+                mut selector_children: std.Vector[int, ctx] :=
+                    ctx[callee.children];
+                if len(selector_children) != 1 ||
+                   selector_children[0] < 0 ||
+                   selector_children[0] >= len(nodes) {
+                    return std.Clone(
+                        ctx,
+                        "Native backend full-program deferral: member call has no valid receiver node"
+                    );
+                }
+                mut receiver := nodes[selector_children[0]];
+                if std.str_eq(receiver.type_identity, "Void") == 0 {
+                    mut message :=
+                        "Native backend full-program deferral: unresolved member call ";
+                    message = std.Concat(message, node.text_operand);
+                    message = std.Concat(message, " at line ");
+                    message = std.Concat(
+                        message,
+                        std.FormatInt(node.source_line)
+                    );
+                    message = std.Concat(
+                        message,
+                        " has no native inline or declared function authority"
+                    );
+                    return std.Clone(ctx, message);
+                }
+            }
+        }
+        index = index + 1;
+    }
+    return std.Clone(ctx, "");
+}
+
+// The native runtime's std_Clone entry point currently has the Str ABI.
+// Inspect resolved, typed call nodes before publishing a supported decision:
+// passing any other source type to that entry point would reinterpret its
+// value as a string header and could silently change program behaviour.
+func mir_native_full_program_non_string_clone_diagnostic(model: MirNativeFullProgramModel[ctx], ctx: &Arena) str {
+    mut nodes: std.Vector[MirNativeFullProgramNode[ctx], ctx] :=
+        ctx[model.nodes];
+    mut index := 0;
+    while index < len(nodes) {
+        mut node := nodes[index];
+        if std.str_eq(node.kind, "Call") == 1 &&
+           std.str_eq(node.second_text_operand, "std_Clone") == 1 {
+            mut children: std.Vector[int, ctx] := ctx[node.children];
+            if len(children) != 3 ||
+               children[2] < 0 || children[2] >= len(nodes) {
+                return std.Clone(
+                    ctx,
+                    "Native backend full-program deferral: std.Clone requires one typed source argument"
+                );
+            }
+            mut source_type := nodes[children[2]].type_identity;
+            if std.str_eq(source_type, "Str") == 0 {
+                mut message :=
+                    "Native backend full-program deferral: std.Clone source type ";
+                message = std.Concat(message, source_type);
+                message = std.Concat(
+                    message,
+                    " requires generic clone semantics; only Str is connected to the native runtime"
+                );
+                return std.Clone(ctx, message);
+            }
+        }
+        index = index + 1;
+    }
+    return std.Clone(ctx, "");
+}
+
 func mir_native_full_program_source_lower(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) MirNativeFullProgramSourceResult[ctx] {
     mut result: MirNativeFullProgramSourceResult[ctx];
     result.represented = 0;
@@ -2656,6 +2755,32 @@ func mir_native_full_program_source_lower(programs: std.Vector[ast.Program[ctx],
             "deferred_p14_full_program_inconsistent_runtime_signature"
         );
         result.diagnostic = conflict;
+        return result;
+    }
+
+    mut unresolved_member :=
+        mir_native_full_program_unresolved_member_call_diagnostic(model, ctx);
+    if len(unresolved_member) > 0 {
+        result.represented = 0;
+        result.deferred = 1;
+        result.reason_code = std.Clone(
+            ctx,
+            "deferred_p14_full_program_unresolved_member_call"
+        );
+        result.diagnostic = unresolved_member;
+        return result;
+    }
+
+    mut non_string_clone :=
+        mir_native_full_program_non_string_clone_diagnostic(model, ctx);
+    if len(non_string_clone) > 0 {
+        result.represented = 0;
+        result.deferred = 1;
+        result.reason_code = std.Clone(
+            ctx,
+            "deferred_p14_full_program_non_string_clone"
+        );
+        result.diagnostic = non_string_clone;
         return result;
     }
 

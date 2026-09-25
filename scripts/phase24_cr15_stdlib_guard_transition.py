@@ -2345,6 +2345,14 @@ def normalize_phase23_text_surfaces(
         phase22_path = successor.get("phase22_path")
         phase13_path = successor.get("phase13_path")
         added = successor.get("added_row")
+        corrective_rows = successor.get("corrective_changed_rows", [])
+        corrective_paths = {
+            "compiler/CRANELIFT_PHASE19_COMPOSITION.md",
+            "compiler/mir_native_backend_full_program_source.gst",
+            "scripts/phase19_composition.py",
+            "scripts/phase19_composition_parity.sh",
+            "scripts/phase21_complete_guard_suite.py",
+        }
         require(successor.get("contract_version") ==
                 "phase26_reference_receiver_phase23_text_surface_successor_v1" and
                 phase23_closure_path == "scripts/phase23_closure.py" and
@@ -2355,6 +2363,10 @@ def normalize_phase23_text_surfaces(
                 isinstance(added, dict) and
                 added.get("path") ==
                 "scripts/phase26_reference_receiver_registration.py" and
+                isinstance(corrective_rows, list) and
+                {row.get("path") for row in corrective_rows} ==
+                corrective_paths and len(corrective_rows) ==
+                len(corrective_paths) and
                 successor.get("partial_extra_or_substituted_surface") ==
                 "rejected",
                 "Phase 26 reference receiver text surface successor drifted")
@@ -2380,6 +2392,22 @@ def normalize_phase23_text_surfaces(
                 added_rows == [added],
                 "Phase 26 reference receiver text surfaces are missing, "
                 "extra, or substituted")
+        corrective_previous = {}
+        for changed in corrective_rows:
+            path = changed["path"]
+            live = [row for row in rows if row["path"] == path]
+            require(len(live) == 1 and
+                    live[0]["digest"] == changed.get("current_digest") and
+                    live[0]["match_counts"] ==
+                    changed.get("current_match_counts") and
+                    set(changed) == {"path", "previous_digest",
+                                     "current_digest", "previous_match_counts",
+                                     "current_match_counts"},
+                    f"Phase 26 corrective text surface drifted: {path}")
+            previous = dict(live[0])
+            previous["digest"] = changed["previous_digest"]
+            previous["match_counts"] = changed["previous_match_counts"]
+            corrective_previous[path] = previous
         previous_phase23_closure = dict(phase23_closure_rows[0])
         previous_phase23_closure["digest"] = successor[
             "previous_phase23_closure_digest"]
@@ -2396,6 +2424,7 @@ def normalize_phase23_text_surfaces(
                 previous_phase22 if row["path"] == phase22_path else
                 previous_phase13 if row["path"] == phase13_path else row
                 for row in rows if row["path"] != added["path"]]
+        rows = [corrective_previous.get(row["path"], row) for row in rows]
 
     # Phase 26 activation moves the active pointer in TASK.md. The older
     # Patch 25.12b successor enrolled that file and must keep its exact

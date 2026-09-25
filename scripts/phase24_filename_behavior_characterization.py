@@ -533,7 +533,43 @@ def run_observation(witness_id: str, route: str, side: str) -> dict:
     }
 
 
+def reference_receiver_filename_successor(value: dict) -> dict:
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    successor = registry.get("phase26_activation_audit", {}).get(
+        "reference_receiver_prerequisite", {}).get(
+            "phase24_filename_successor")
+    require(successor == {
+        "contract_version":
+            "phase26_reference_receiver_phase24_filename_successor_v1",
+        "witness_id": "tcs_guard",
+        "side": "neutral",
+        "previous_reason":
+            "deferred_p13_parameter_argument_target_dependent_abi",
+        "current_reason":
+            "deferred_p13_parameter_argument_aggregate_parameter",
+        "previous_observation": value["observations"]["tcs_guard"][
+            "explicit_cranelift"]["neutral"],
+        "current_observation": {
+            "exit_status": 1,
+            "stdout_bytes": 673,
+            "stdout_digest":
+                "f8db6e11f2c96b59735293f34b844cd27c1425c9e55db3ccd7b6fb8cbcdfbd0d",
+            "stderr_bytes": 0,
+            "stderr_digest": EMPTY_SHA256,
+            "native_artifact_present": False,
+        },
+        "selected_observation_unchanged": True,
+        "explicit_default_equal": True,
+        "partial_extra_or_substituted_observation": "rejected",
+    }, "Phase 26 filename observation successor drifted")
+    require(value["observations"]["tcs_guard"]["default_cranelift"]["neutral"] ==
+            successor["previous_observation"],
+            "frozen default and explicit neutral observations differ")
+    return successor
+
+
 def validate_transitions(value: dict) -> None:
+    reference_receiver_filename_successor(value)
     invocation = value.get("phase22_invocation_transition", {})
     require(invocation.get("contract_version") ==
             "phase24_filename_behavior_phase22_invocation_transition_v1" and
@@ -595,6 +631,8 @@ def evidence(value: dict) -> None:
     require(not native_artifact.exists(),
             "stale user.native obscures filename characterization")
     expected = value.get("observations")
+    successor = reference_receiver_filename_successor(value)
+    live_tcs: dict[str, dict[str, dict]] = {}
     require(set(expected) == set(FIXTURES), "observation witness set drifted")
     for witness_id in FIXTURES:
         selected_name, neutral_name = PAIR_NAMES[witness_id]
@@ -618,8 +656,16 @@ def evidence(value: dict) -> None:
                             "pre-removal observation, so the removal did not "
                             "take effect")
                     continue
-                require(actual == expected[witness_id][route][side],
+                current_expected = expected[witness_id][route][side]
+                if (witness_id == successor["witness_id"] and
+                        side == successor["side"] and
+                        route in ("explicit_cranelift", "default_cranelift")):
+                    current_expected = successor["current_observation"]
+                require(actual == current_expected,
                         f"{witness_id} {route} {side} observation drifted: {actual}")
+                if (witness_id == "tcs_guard" and
+                        route in ("explicit_cranelift", "default_cranelift")):
+                    live_tcs.setdefault(route, {})[side] = actual
                 require(actual["stderr_bytes"] == 0 and
                         actual["stderr_digest"] == EMPTY_SHA256,
                         f"{witness_id} {route} {side} stderr is not empty")
@@ -628,6 +674,12 @@ def evidence(value: dict) -> None:
         require(expected[witness_id]["explicit_cranelift"] ==
                 expected[witness_id]["default_cranelift"],
                 f"default and explicit Cranelift observations differ for {witness_id}")
+        if witness_id == "tcs_guard":
+            require(live_tcs.get("explicit_cranelift") ==
+                    live_tcs.get("default_cranelift") and
+                    set(live_tcs.get("explicit_cranelift", {})) ==
+                    {"selected", "neutral"},
+                    "current default and explicit Cranelift observations differ")
         # The removed route is compared LIVE against itself across the two
         # names, not against its recorded pre-removal observation: the refusal
         # must not depend on which filename was used, which is exactly what

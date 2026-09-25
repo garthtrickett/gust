@@ -23,6 +23,7 @@ aggregate_parameter_source="compiler/phase13_parameter_argument_aggregate_parame
 aggregate_return_source="compiler/phase13_parameter_argument_aggregate_return_source.gst"
 target_abi_source="compiler/phase13_parameter_argument_target_abi_source.gst"
 reference_return_source="compiler/phase16_reference_return_deferred_source.gst"
+unresolved_member_source="tests/test_reference_access_parsing_accepted.gst"
 reference_receiver_source="compiler/phase16_reference_receiver_source.gst"
 reference_receiver_guard="scripts/phase16_reference_receiver_parity.sh"
 build_root="build/guards/cranelift_phase13_parameter_argument"
@@ -46,8 +47,10 @@ for required_file in \
   "$direct_source" "$imported_source" "$wrong_arity_source" \
   "$wrong_type_source" "$aggregate_parameter_source" \
   "$aggregate_return_source" "$target_abi_source" \
-  "$reference_return_source" \
+  "$reference_return_source" "$unresolved_member_source" \
   "$reference_receiver_source" "$reference_receiver_guard" \
+  compiler/phase16_string_clone_source.gst \
+  compiler/phase16_non_string_clone_deferred_source.gst \
   tests/test_hashmap_reference_receiver.gst ./gust
 do
   if [ ! -e "$required_file" ]; then
@@ -306,6 +309,9 @@ assert_preserved_pre_driver_failure \
 assert_preserved_pre_driver_failure \
   "$reference_return_source" reference-return-abi \
   deferred_p13_parameter_argument_target_dependent_abi deferred
+assert_preserved_pre_driver_failure \
+  "$unresolved_member_source" unresolved-member-call \
+  deferred_p14_full_program_unresolved_member_call deferred
 
 python3 "$family_runner" differential-rows direct-calls |
   rg -n -F 'p13_parameterized_local_call_branch_source_route' >/dev/null

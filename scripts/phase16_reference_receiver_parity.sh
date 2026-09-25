@@ -49,5 +49,8 @@ run_reference_case \
 run_reference_case \
   compiler/phase16_reference_receiver_source.gst aggregate-and-vector \
   $'11\n2\n7\n5\nSUCCESS: native reference receivers\n'
+run_reference_case \
+  compiler/phase16_string_clone_source.gst string-clone \
+  $'native string clone\nSUCCESS: native string clone\n'
 
-echo "✅ Native direct-call reference receiver output, mutation, len, and vector indexing match exact expectations."
+echo "✅ Native reference receivers and Str Clone match exact output."

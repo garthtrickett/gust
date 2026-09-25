@@ -20,6 +20,7 @@ EXPECTED = {
     "positive_fixtures": [
         "tests/test_hashmap_reference_receiver.gst",
         "compiler/phase16_reference_receiver_source.gst",
+        "compiler/phase16_string_clone_source.gst",
     ],
     "exact_native_output_guard": "scripts/phase16_reference_receiver_parity.sh",
     "owning_level2_guard": "guard-cranelift-phase13-parameter-argument-parity",
@@ -29,6 +30,8 @@ EXPECTED = {
         "compiler/phase16_reference_return_deferred_source.gst",
     "preserved_deferred_reason":
         "deferred_p13_parameter_argument_target_dependent_abi",
+    "non_string_clone_negative_fixture":
+        "compiler/phase16_non_string_clone_deferred_source.gst",
     "physical_abi_changed": False,
 }
 EXPECTED_INVOCATION = {
@@ -82,6 +85,66 @@ def main() -> None:
         "unchanged_other_fields": True,
         "partial_extra_or_substituted_audit": "rejected",
     }
+    expected_record["phase21_complete_suite_successor"] = {
+        "contract_version": "phase26_reference_receiver_phase21_successor_v1",
+        "status": "exact_reference_parameter_admission_overlay",
+        "admitted_runner_fixtures": [
+            "tests/test_safe_references_comprehensive_accepted.gst",
+        ],
+        "newly_deferred_runner_fixture": "tests/e2e_adt_pressure_test.gst",
+        "unresolved_member_runner_fixture":
+            "tests/test_reference_access_parsing_accepted.gst",
+        "previous_reason": EXPECTED["preserved_deferred_reason"],
+        "current_reason": "deferred_p13_parameter_argument_aggregate_return",
+        "unresolved_member_reason":
+            "deferred_p14_full_program_unresolved_member_call",
+        "required_native_case_delta": 1,
+        "classified_deferral_delta": -1,
+        "reason_count_deltas": {
+            "deferred_p13_parameter_argument_target_dependent_abi": -3,
+            "deferred_p13_parameter_argument_aggregate_return": 1,
+            "deferred_p14_full_program_unresolved_member_call": 1,
+        },
+        "frozen_phase21_record": "unchanged",
+        "partial_extra_or_substituted_transition": "rejected",
+    }
+    expected_record["phase19_non_string_clone_successor"] = {
+        "contract_version":
+            "phase26_reference_receiver_phase19_non_string_clone_successor_v1",
+        "source_fixture": "compiler/phase19_cross_feature_composition_source.gst",
+        "independent_negative_fixture":
+            EXPECTED["non_string_clone_negative_fixture"],
+        "supported_string_fixture": "compiler/phase16_string_clone_source.gst",
+        "previous_reason": EXPECTED["preserved_deferred_reason"],
+        "current_reason": "deferred_p14_full_program_non_string_clone",
+        "failure_stage": "before_driver_discovery",
+        "frozen_exit_status": 91,
+        "no_c_fallback_or_native_artifact": True,
+        "partial_extra_or_substituted_transition": "rejected",
+    }
+    filename_record = registry["phase24_filename_behavior_characterization"]
+    expected_record["phase24_filename_successor"] = {
+        "contract_version":
+            "phase26_reference_receiver_phase24_filename_successor_v1",
+        "witness_id": "tcs_guard",
+        "side": "neutral",
+        "previous_reason": EXPECTED["preserved_deferred_reason"],
+        "current_reason": "deferred_p13_parameter_argument_aggregate_parameter",
+        "previous_observation": filename_record["observations"]["tcs_guard"][
+            "explicit_cranelift"]["neutral"],
+        "current_observation": {
+            "exit_status": 1,
+            "stdout_bytes": 673,
+            "stdout_digest":
+                "f8db6e11f2c96b59735293f34b844cd27c1425c9e55db3ccd7b6fb8cbcdfbd0d",
+            "stderr_bytes": 0,
+            "stderr_digest": hashlib.sha256(b"").hexdigest(),
+            "native_artifact_present": False,
+        },
+        "selected_observation_unchanged": True,
+        "explicit_default_equal": True,
+        "partial_extra_or_substituted_observation": "rejected",
+    }
     prior_spelling = registry["phase2512b_runtime_c_retirement"][
         "spelling_inventory_transition"]["current_inventory_summary"]
     expected_record["spelling_inventory_successor"] = {
@@ -92,8 +155,11 @@ def main() -> None:
         "predecessor_inventory_summary": prior_spelling,
         "changed_source_paths": [
             "compiler/experiments/cranelift/src/full_program.rs",
+            "compiler/mir_native_backend_full_program_source.gst",
             "compiler/phase16_reference_receiver_source.gst",
             "compiler/phase16_reference_return_deferred_source.gst",
+            "compiler/phase16_string_clone_source.gst",
+            "compiler/phase16_non_string_clone_deferred_source.gst",
         ],
         "current_inventory_summary": {
             "classification_counts": {
@@ -102,11 +168,11 @@ def main() -> None:
                 "fixture_or_evidence": 679,
                 "mangling_or_generated_name": 9,
                 "non_decision_comparison": 8,
-                "semantic_or_intrinsic_recognition": 680,
+                "semantic_or_intrinsic_recognition": 683,
                 "serialization": 1,
             },
             "complete_manifest_digest":
-                "6877d13f26af53ba1c73f860b8ce3a41ad875b8e617d1cccd50b5e9e6362150c",
+                "bd95861f3a2cd704f21ba7a3e187dcd118496020ce3038ca106487ebd3c4d63c",
             "partition_manifest_digests": {
                 "comment":
                     "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
@@ -122,10 +188,10 @@ def main() -> None:
                     "cd26d44606f736374209054c0fc91d72f950946ad84fad1a5e6efb6c7fc4f5b9",
             },
             "semantic_manifest_digest":
-                "04c1076acb211d9d31f7c50c55ed880848e94ad4406b27f43c1fabcdc919b582",
-            "semantic_site_count": 680,
-            "site_count": 1389,
-            "source_file_count": 1081,
+                "15a481959ef250b65239a316386832af8269e19efefb54ad3d3132b42495d1b7",
+            "semantic_site_count": 683,
+            "site_count": 1392,
+            "source_file_count": 1083,
             "unknown_site_count": 0,
         },
         "partial_extra_or_substituted_inventory": "rejected",
@@ -156,7 +222,7 @@ def main() -> None:
             "digest": digest("scripts/phase26_reference_receiver_registration.py"),
             "match_counts": {
                 "explicit_backend_spelling": 1,
-                "mir_to_c_name": 2,
+                "mir_to_c_name": 3,
                 "generated_c_contract": 1,
             },
             "classification": "archive_candidate",
@@ -168,11 +234,42 @@ def main() -> None:
         },
         "partial_extra_or_substituted_surface": "rejected",
     }
+    corrective_surfaces = [
+        ("compiler/CRANELIFT_PHASE19_COMPOSITION.md",
+         "9ca17624f319898c5b6240906d43ef4d0b34f829987b150a0b332e097b28cb5f",
+         (0, 1, 0), (0, 1, 0)),
+        ("compiler/mir_native_backend_full_program_source.gst",
+         "ad4b9607f51592b7f0e82217ab3999ef83cb953355bf510d597fba8f2d529f8a",
+         (0, 0, 1), (0, 0, 1)),
+        ("scripts/phase19_composition.py",
+         "a8b456eadbed5438ca792650540a9658530f4b041dac398d0385a9c5fdc4e14a",
+         (0, 2, 0), (0, 2, 0)),
+        ("scripts/phase19_composition_parity.sh",
+         "0e4384ff31a6352bf93bcb463fed0904d8c93d63ee559cd88e446b5b58cbdc1c",
+         (0, 8, 1), (0, 6, 1)),
+        ("scripts/phase21_complete_guard_suite.py",
+         "ac65da6e651480e044e24f008644e7c5f993a71c523ab6356d1f7107be36ea8b",
+         (0, 2, 0), (0, 2, 0)),
+    ]
+    count_names = ("explicit_backend_spelling", "mir_to_c_name",
+                   "generated_c_contract")
+    expected_record["phase23_text_surface_successor"][
+        "corrective_changed_rows"] = [{
+            "path": path,
+            "previous_digest": previous_digest,
+            "current_digest": digest(path),
+            "previous_match_counts": dict(zip(count_names, previous_counts)),
+            "current_match_counts": dict(zip(count_names, current_counts)),
+        } for path, previous_digest, previous_counts, current_counts
+        in corrective_surfaces]
     require(activation.get("reference_receiver_prerequisite") == expected_record,
             "selected reference receiver prerequisite record drifted")
     for path in (*EXPECTED["positive_fixtures"],
                  EXPECTED["preserved_deferred_fixture"],
                  EXPECTED["preserved_reference_return_fixture"],
+                 EXPECTED["non_string_clone_negative_fixture"],
+                 expected_record["phase21_complete_suite_successor"][
+                     "unresolved_member_runner_fixture"],
                  EXPECTED["exact_native_output_guard"]):
         require((ROOT / path).is_file(), f"missing registered input {path}")
 
@@ -187,6 +284,11 @@ def main() -> None:
             "Reference return ABI negative is no longer executed")
     require(EXPECTED["preserved_deferred_reason"] in phase13_guard,
             "registered negative reason is no longer asserted")
+    require('"$unresolved_member_source" unresolved-member-call' in
+            phase13_guard and
+            expected_record["phase21_complete_suite_successor"][
+                "unresolved_member_reason"] in phase13_guard,
+            "unresolved member call negative is no longer executed")
     native_guard = (ROOT / EXPECTED["exact_native_output_guard"]).read_text(
         encoding="utf-8")
     require("python3 scripts/phase26_reference_receiver_registration.py"
@@ -196,6 +298,15 @@ def main() -> None:
             "reference receiver evidence lacks native-only selection")
     require("--backend mir-to-c" not in native_guard,
             "reference receiver evidence revived C execution")
+    require(EXPECTED["positive_fixtures"][-1] in native_guard,
+            "native Str Clone positive is not executed")
+    phase19_guard = (ROOT / "scripts/phase19_composition_parity.sh").read_text(
+        encoding="utf-8")
+    require(EXPECTED["non_string_clone_negative_fixture"] in phase19_guard and
+            expected_record["phase19_non_string_clone_successor"][
+                "current_reason"] in phase19_guard and
+            "GUST_TEST_MIR_TO_C_UNAVAILABLE=1" in phase19_guard,
+            "Phase 19 no-fallback non-string Clone negative is not executed")
     print("✅ Selected native reference receiver prerequisite registration passed.")
 
 
