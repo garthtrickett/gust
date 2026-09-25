@@ -2346,7 +2346,9 @@ def normalize_phase23_text_surfaces(
         "str_direct_call_prerequisite", {}).get("text_surface_successor", {})
     str_rows = str_direct.get("changed_rows", [])
     str_paths = {
+        "compiler/mir_native_backend_full_program_source.gst",
         "scripts/phase13_parameter_argument.sh",
+        "scripts/phase21_complete_guard_suite.py",
         "scripts/phase26_reference_receiver_registration.py",
     }
     require(str_direct.get("contract_version") ==

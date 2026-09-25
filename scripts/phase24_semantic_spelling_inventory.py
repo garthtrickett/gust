@@ -384,7 +384,9 @@ def validate() -> tuple[dict, list[dict], dict]:
                 str_successor.get("contract_version") ==
                 "phase26_str_direct_call_spelling_successor_v1" and
                 str_successor.get("changed_source_paths") == [
+                    "compiler/mir_native_backend_full_program_source.gst",
                     "compiler/mir_native_backend_parameter_argument_source.gst",
+                    "compiler/phase26_runtime_slice_return_deferred_source.gst",
                     "compiler/phase26_str_direct_call_source.gst",
                     "compiler/phase26_str_extern_deferred_source.gst",
                 ] and
@@ -397,7 +399,7 @@ def validate() -> tuple[dict, list[dict], dict]:
         was = str_successor["previous_inventory_summary"]
         require(summary["site_count"] == was["site_count"] and
                 summary["semantic_site_count"] == was["semantic_site_count"] and
-                summary["source_file_count"] == was["source_file_count"] + 2 and
+                summary["source_file_count"] == was["source_file_count"] + 3 and
                 summary["unknown_site_count"] == 0 and
                 summary["classification_counts"] == was["classification_counts"] and
                 summary["complete_manifest_digest"] ==

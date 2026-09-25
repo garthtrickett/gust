@@ -365,12 +365,37 @@ def main() -> None:
     }
     require({key: str_direct.get(key) for key in str_base} == str_base and
             set(str_direct) == set(str_base) | {
+                "phase21_complete_suite_successor",
                 "spelling_inventory_successor", "text_surface_successor"},
             "Str direct-call prerequisite base drifted")
+    require(str_direct["phase21_complete_suite_successor"] == {
+        "contract_version": "phase26_str_direct_phase21_successor_v1",
+        "status": "exact_runtime_slice_return_deferral_overlay",
+        "admitted_runner_fixtures": [
+            "tests/test_return_parameter_view_accepted.gst",
+            "tests/test_return_static_literal_view_accepted.gst",
+            "tests/test_brand_erasure_utility_functions.gst",
+            "tests/e2e_codegen_assertions.gst",
+        ],
+        "runner_fixture": "tests/e2e_fallible_guard_bootstrap.gst",
+        "previous_reason":
+            "deferred_p13_parameter_argument_target_dependent_abi",
+        "current_reason": "deferred_p14_full_program_runtime_slice_return",
+        "required_native_case_delta": 4,
+        "classified_deferral_delta": -4,
+        "reason_count_deltas": {
+            "deferred_p13_parameter_argument_target_dependent_abi": -5,
+            "deferred_p14_full_program_runtime_slice_return": 1,
+        },
+        "frozen_phase21_record": "unchanged",
+        "partial_extra_or_substituted_transition": "rejected",
+    }, "Str direct-call Phase21 successor drifted")
     str_surfaces = str_direct["text_surface_successor"]
     str_rows = str_surfaces.get("changed_rows", [])
     required_str_paths = {
+        "compiler/mir_native_backend_full_program_source.gst",
         "scripts/phase13_parameter_argument.sh",
+        "scripts/phase21_complete_guard_suite.py",
         "scripts/phase26_reference_receiver_registration.py",
     }
     require(str_surfaces.get("contract_version") ==
@@ -406,7 +431,8 @@ def main() -> None:
                 row["previous_match_counts"],
                 f"Str direct-call text surface drifted: {row['path']}")
     for path in (str_base["positive_fixture"],
-                 str_base["extern_deferred_fixture"]):
+                 str_base["extern_deferred_fixture"],
+                 "compiler/phase26_runtime_slice_return_deferred_source.gst"):
         require((ROOT / path).is_file(), f"missing Str direct-call fixture: {path}")
     phase16_guard = (ROOT / "scripts/phase16_reference_receiver_parity.sh").read_text(
         encoding="utf-8")
@@ -415,6 +441,10 @@ def main() -> None:
     require("compiler/phase26_str_direct_call_source.gst str-direct-call" in
             phase16_guard and
             "compiler/phase26_str_extern_deferred_source.gst str-extern-abi" in
+            phase13_guard and
+            "compiler/phase26_runtime_slice_return_deferred_source.gst" in
+            phase13_guard and
+            "deferred_p14_full_program_runtime_slice_return deferred" in
             phase13_guard and
             "just guard-stdlib-s1-str-surface" in phase13_guard,
             "Str direct-call native or no-fallback guard is not executed")

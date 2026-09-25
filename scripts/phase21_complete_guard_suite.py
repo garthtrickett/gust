@@ -268,6 +268,51 @@ def phase26_runtime_formal_signature_transition(registry: dict,
     return successor
 
 
+def phase26_str_direct_call_transition(registry: dict,
+                                       cases: list[dict]) -> dict:
+    """Exact fail-closed successor exposed by direct Str call admission."""
+    successor = registry.get("phase26_activation_audit", {}).get(
+        "str_direct_call_prerequisite", {}).get(
+            "phase21_complete_suite_successor", {})
+    expected = {
+        "contract_version": "phase26_str_direct_phase21_successor_v1",
+        "status": "exact_runtime_slice_return_deferral_overlay",
+        "admitted_runner_fixtures": [
+            "tests/test_return_parameter_view_accepted.gst",
+            "tests/test_return_static_literal_view_accepted.gst",
+            "tests/test_brand_erasure_utility_functions.gst",
+            "tests/e2e_codegen_assertions.gst",
+        ],
+        "runner_fixture": "tests/e2e_fallible_guard_bootstrap.gst",
+        "previous_reason":
+            "deferred_p13_parameter_argument_target_dependent_abi",
+        "current_reason":
+            "deferred_p14_full_program_runtime_slice_return",
+        "required_native_case_delta": 4,
+        "classified_deferral_delta": -4,
+        "reason_count_deltas": {
+            "deferred_p13_parameter_argument_target_dependent_abi": -5,
+            "deferred_p14_full_program_runtime_slice_return": 1,
+        },
+        "frozen_phase21_record": "unchanged",
+        "partial_extra_or_substituted_transition": "rejected",
+    }
+    require(successor == expected,
+            "Phase 26 Str direct-call complete-suite transition drifted")
+    matching = [case for case in cases if case["path"] ==
+                successor["runner_fixture"]]
+    require(len(matching) == 1 and matching[0]["mode"] == 0,
+            "Phase 26 Str direct-call runner fixture drifted")
+    admitted = [case for case in cases if case["path"] in
+                successor["admitted_runner_fixtures"]]
+    require(len(admitted) == 4 and
+            {case["path"] for case in admitted} ==
+            set(successor["admitted_runner_fixtures"]) and
+            all(case["mode"] == 0 for case in admitted),
+            "Phase 26 Str direct-call admitted fixtures drifted")
+    return successor
+
+
 def _admission_block_is_exact(admission: dict) -> None:
     require(admission == {
         "contract_version": "phase24_cr19_post_image_admission_v1",
@@ -524,6 +569,7 @@ def validate() -> dict:
     phase24_cr19_transition(registry, cases)
     phase26_reference_receiver_transition(registry, cases)
     phase26_runtime_formal_signature_transition(registry, cases)
+    phase26_str_direct_call_transition(registry, cases)
     phase24_cr19_post_image_admission(registry, cases)
     inventory = record.get("inventory", {})
     observed = {
@@ -1056,9 +1102,11 @@ def evidence() -> None:
         phase24_cr19_transition(_registry, cases),
         phase26_reference_receiver_transition(_registry, cases),
         phase26_runtime_formal_signature_transition(_registry, cases),
+        phase26_str_direct_call_transition(_registry, cases),
     ]
-    phase26_transition = transitions[-2]
-    runtime_transition = transitions[-1]
+    phase26_transition = transitions[2]
+    runtime_transition = transitions[3]
+    str_transition = transitions[4]
     exact_phase26_cases = {
         path: ("required", "") for path in
         phase26_transition["admitted_runner_fixtures"]
@@ -1070,6 +1118,10 @@ def evidence() -> None:
             "deferral", phase26_transition["unresolved_member_reason"])
     exact_phase26_cases[runtime_transition["admitted_runner_fixture"]] = (
         "required", "")
+    exact_phase26_cases[str_transition["runner_fixture"]] = (
+        "deferral", str_transition["current_reason"])
+    for path in str_transition["admitted_runner_fixtures"]:
+        exact_phase26_cases[path] = ("required", "")
     seen_phase26_cases: set[str] = set()
     # The per-case check asks whether a reason is registered at all, so it must
     # see reasons a successor introduces -- not only the frozen Phase 21 set.
@@ -1118,7 +1170,7 @@ def evidence() -> None:
     # runner decisions, preserving the frozen record and historical states.
     admitted = phase24_cr19_post_image_admission(_registry, cases)
     terminal_reasons = dict(admitted["expected_reason_counts"])
-    for transition in transitions[-2:]:
+    for transition in transitions[2:]:
         for reason, delta in transition["reason_count_deltas"].items():
             terminal_reasons[reason] = terminal_reasons.get(reason, 0) + delta
     terminal_reasons = {reason: count for reason, count in

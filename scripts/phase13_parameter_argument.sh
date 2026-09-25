@@ -53,6 +53,7 @@ for required_file in \
   compiler/phase26_runtime_formal_signature_wrong_type_source.gst \
   compiler/phase26_str_direct_call_source.gst \
   compiler/phase26_str_extern_deferred_source.gst \
+  compiler/phase26_runtime_slice_return_deferred_source.gst \
   compiler/phase16_string_clone_source.gst \
   compiler/phase16_non_string_clone_deferred_source.gst \
   tests/test_hashmap_reference_receiver.gst ./gust
@@ -324,6 +325,10 @@ assert_preserved_pre_driver_failure \
 assert_preserved_pre_driver_failure \
   compiler/phase26_str_extern_deferred_source.gst str-extern-abi \
   deferred_p13_parameter_argument_target_dependent_abi deferred
+assert_preserved_pre_driver_failure \
+  compiler/phase26_runtime_slice_return_deferred_source.gst \
+  runtime-slice-return \
+  deferred_p14_full_program_runtime_slice_return deferred
 
 python3 "$family_runner" differential-rows direct-calls |
   rg -n -F 'p13_parameterized_local_call_branch_source_route' >/dev/null

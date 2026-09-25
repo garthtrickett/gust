@@ -48564,10 +48564,33 @@
       "unchanged_stdlib_guard": "guard-stdlib-s1-str-surface",
       "owning_level2_guard": "guard-cranelift-phase13-parameter-argument-parity",
       "new_compiler_invocation_sites": 0,
+      "phase21_complete_suite_successor": {
+        "contract_version": "phase26_str_direct_phase21_successor_v1",
+        "status": "exact_runtime_slice_return_deferral_overlay",
+        "admitted_runner_fixtures": [
+          "tests/test_return_parameter_view_accepted.gst",
+          "tests/test_return_static_literal_view_accepted.gst",
+          "tests/test_brand_erasure_utility_functions.gst",
+          "tests/e2e_codegen_assertions.gst"
+        ],
+        "runner_fixture": "tests/e2e_fallible_guard_bootstrap.gst",
+        "previous_reason": "deferred_p13_parameter_argument_target_dependent_abi",
+        "current_reason": "deferred_p14_full_program_runtime_slice_return",
+        "required_native_case_delta": 4,
+        "classified_deferral_delta": -4,
+        "reason_count_deltas": {
+          "deferred_p13_parameter_argument_target_dependent_abi": -5,
+          "deferred_p14_full_program_runtime_slice_return": 1
+        },
+        "frozen_phase21_record": "unchanged",
+        "partial_extra_or_substituted_transition": "rejected"
+      },
       "spelling_inventory_successor": {
         "contract_version": "phase26_str_direct_call_spelling_successor_v1",
         "changed_source_paths": [
+          "compiler/mir_native_backend_full_program_source.gst",
           "compiler/mir_native_backend_parameter_argument_source.gst",
+          "compiler/phase26_runtime_slice_return_deferred_source.gst",
           "compiler/phase26_str_direct_call_source.gst",
           "compiler/phase26_str_extern_deferred_source.gst"
         ],
@@ -48597,7 +48620,7 @@
           "unknown_site_count": 0
         },
         "current_inventory_summary": {
-          "source_file_count": 1087,
+          "source_file_count": 1088,
           "site_count": 1392,
           "semantic_site_count": 683,
           "semantic_manifest_digest": "15683d32304c7873948d65ac49bb84e29782689ae8a14d35bfc852bbd900a98d",
@@ -48628,9 +48651,24 @@
         "partial_extra_or_substituted_surface": "rejected",
         "changed_rows": [
           {
+            "path": "compiler/mir_native_backend_full_program_source.gst",
+            "previous_digest": "d9c1f1ac4630b75546ca3c43a9be05f24991a8c575e5e1e85bee1f321992d20a",
+            "current_digest": "e2e95a1e4092b56d124fc975c978a6449017ca5d9acce04d088f3364db1f23ff",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            }
+          },
+          {
             "path": "scripts/phase13_parameter_argument.sh",
             "previous_digest": "a78ece93724aae052769bc29b0a0b2fd22d0738cb88b4bb8661c72d675956cbb",
-            "current_digest": "db3c218ec820dab8c252fdac801c7b0ecb0a114141e41a5fc76749d20095b575",
+            "current_digest": "8422a48b57cee14caf1c0d437816d42543301c9939a9eee1492c720b5949e1d8",
             "previous_match_counts": {
               "explicit_backend_spelling": 0,
               "mir_to_c_name": 8,
@@ -48643,9 +48681,24 @@
             }
           },
           {
+            "path": "scripts/phase21_complete_guard_suite.py",
+            "previous_digest": "54d944bae9851f897367ca19501c8dc499af9277b7fb82211e8467c659ee181e",
+            "current_digest": "9cc4262e191b0836acd0928ef9c65f1f1cc619aa2e2046c1de5940703bbdd8f1",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 2,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 2,
+              "generated_c_contract": 0
+            }
+          },
+          {
             "path": "scripts/phase26_reference_receiver_registration.py",
             "previous_digest": "5ee1188081cb5a298b5cbcc3a5fb796767d0450e1b567ccfea9b82f8fe38aa94",
-            "current_digest": "66f0cb0bb4c2d6e089a94e5b7c29c86e35e3ba79e4cfb94b4c1ee8bcde87d1e1",
+            "current_digest": "17b9062000e22a390ec1108c8c5ec0ec7bd03d410cc432610fac9883bc977ec7",
             "previous_match_counts": {
               "explicit_backend_spelling": 1,
               "mir_to_c_name": 5,

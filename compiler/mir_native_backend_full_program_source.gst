@@ -2799,6 +2799,39 @@ func mir_native_full_program_non_string_clone_diagnostic(model: MirNativeFullPro
     return std.Clone(ctx, "");
 }
 
+// A runtime call returning Slice(T) by value needs a native aggregate-result
+// ABI that the full-program layout authority has not connected. Reject the
+// typed call before publishing a supported decision or discovering a driver.
+func mir_native_full_program_runtime_slice_return_diagnostic(
+    model: MirNativeFullProgramModel[ctx],
+    ctx: &Arena
+) str {
+    mut nodes: std.Vector[MirNativeFullProgramNode[ctx], ctx] :=
+        ctx[model.nodes];
+    mut functions: std.Vector[MirNativeFullProgramFunction[ctx], ctx] :=
+        ctx[model.functions];
+    mut index := 0;
+    while index < len(nodes) {
+        mut node := nodes[index];
+        if mir_native_full_program_is_runtime_call(
+               nodes, functions, node, ctx
+           ) == 1 &&
+           std.str_find(node.type_identity, "Slice(") == 0 {
+            mut message :=
+                "Native backend full-program deferral: runtime call ";
+            message = std.Concat(message, node.second_text_operand);
+            message = std.Concat(
+                message,
+                " returns a by-value slice without native layout and result ABI authority at line "
+            );
+            message = std.Concat(message, std.FormatInt(node.source_line));
+            return std.Clone(ctx, message);
+        }
+        index = index + 1;
+    }
+    return std.Clone(ctx, "");
+}
+
 func mir_native_full_program_source_lower(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) MirNativeFullProgramSourceResult[ctx] {
     mut result: MirNativeFullProgramSourceResult[ctx];
     result.represented = 0;
@@ -2883,6 +2916,19 @@ func mir_native_full_program_source_lower(programs: std.Vector[ast.Program[ctx],
             "deferred_p14_full_program_non_string_clone"
         );
         result.diagnostic = non_string_clone;
+        return result;
+    }
+
+    mut runtime_slice_return :=
+        mir_native_full_program_runtime_slice_return_diagnostic(model, ctx);
+    if len(runtime_slice_return) > 0 {
+        result.represented = 0;
+        result.deferred = 1;
+        result.reason_code = std.Clone(
+            ctx,
+            "deferred_p14_full_program_runtime_slice_return"
+        );
+        result.diagnostic = runtime_slice_return;
         return result;
     }
 
