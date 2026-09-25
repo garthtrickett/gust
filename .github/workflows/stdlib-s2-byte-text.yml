@@ -1,0 +1,34 @@
+name: Stdlib S2 Byte Text
+
+on:
+  pull_request:
+    paths:
+      - 'src/stdlib/byte_text.gst'
+      - 'tests/stdlib_s2_byte_text.gst'
+      - 'scripts/stdlib_s2_byte_text_native.sh'
+      - '.github/workflows/stdlib-s2-byte-text.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/stdlib/byte_text.gst'
+      - 'tests/stdlib_s2_byte_text.gst'
+      - 'scripts/stdlib_s2_byte_text_native.sh'
+      - '.github/workflows/stdlib-s2-byte-text.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  byte-text:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - name: guard-stdlib-s2-byte-text
+        run: bash scripts/stdlib_s2_byte_text_native.sh

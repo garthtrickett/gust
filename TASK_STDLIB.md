@@ -1769,7 +1769,7 @@ S2 does not activate Phase 26 or alter its compiler and runtime ownership.
 ### Status
 
 - [x] Patch S2.0 — Opening Inventory and Boundary — DONE
-- [ ] Patch S2.1 — Importable Byte String Predicates
+- [x] Patch S2.1 — Importable Byte String Predicates — DONE
 - [ ] Patch S2.2 — Closure Evidence
 
 Each patch is one initial PR from a `codex/stdlib-` branch. The lane advances
