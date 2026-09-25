@@ -289,6 +289,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     reference_successor = registry.get("phase26_activation_audit", {}).get(
         "reference_receiver_prerequisite", {}).get(
             "spelling_inventory_successor")
+    runtime_successor = registry.get("phase26_activation_audit", {}).get(
+        "runtime_formal_signature_prerequisite", {}).get(
+            "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -326,7 +329,9 @@ def validate() -> tuple[dict, list[dict], dict]:
                 ] and
                 reference_successor.get(
                     "partial_extra_or_substituted_inventory") == "rejected" and
-                reference_successor.get("current_inventory_summary") == summary,
+                reference_successor.get("current_inventory_summary") ==
+                (summary if runtime_successor is None else
+                 runtime_successor.get("previous_inventory_summary")),
                 "Phase 26 reference receiver spelling inventory successor "
                 "does not end at the live manifest")
         was = spelling_successor["current_inventory_summary"]
@@ -345,6 +350,29 @@ def validate() -> tuple[dict, list[dict], dict]:
                  now["partition_manifest_digests"][key]} == {"diagnostic"},
                 "Phase 26 reference receiver spelling inventory changed "
                 "unregistered site populations or partitions")
+    if runtime_successor is not None:
+        require(reference_successor is not None and
+                runtime_successor.get("contract_version") ==
+                "phase26_runtime_formal_signature_spelling_successor_v1" and
+                runtime_successor.get("changed_source_paths") == [
+                    "compiler/experiments/cranelift/src/full_program.rs",
+                    "compiler/mir_native_backend_full_program_source.gst",
+                    "compiler/phase26_runtime_formal_signature_source.gst",
+                    "compiler/phase26_runtime_formal_signature_wrong_type_source.gst",
+                ] and
+                runtime_successor.get("previous_inventory_summary") ==
+                reference_successor["current_inventory_summary"] and
+                runtime_successor.get("current_inventory_summary") == summary and
+                runtime_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected",
+                "runtime formal signature spelling successor drifted")
+        was = runtime_successor["previous_inventory_summary"]
+        require(summary["site_count"] == was["site_count"] and
+                summary["semantic_site_count"] == was["semantic_site_count"] and
+                summary["source_file_count"] == was["source_file_count"] + 2 and
+                summary["unknown_site_count"] == 0 and
+                summary["classification_counts"] == was["classification_counts"],
+                "runtime formal signature changed the spelling population")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),

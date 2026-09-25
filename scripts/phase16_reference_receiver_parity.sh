@@ -52,5 +52,8 @@ run_reference_case \
 run_reference_case \
   compiler/phase16_string_clone_source.gst string-clone \
   $'native string clone\nSUCCESS: native string clone\n'
+run_reference_case \
+  compiler/phase26_runtime_formal_signature_source.gst runtime-formal-signature \
+  $'1\n65\n1\n'
 
-echo "✅ Native reference receivers and Str Clone match exact output."
+echo "✅ Native reference receivers, Str Clone, and runtime formal signatures match exact output."

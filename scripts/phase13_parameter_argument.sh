@@ -49,6 +49,8 @@ for required_file in \
   "$aggregate_return_source" "$target_abi_source" \
   "$reference_return_source" "$unresolved_member_source" \
   "$reference_receiver_source" "$reference_receiver_guard" \
+  compiler/phase26_runtime_formal_signature_source.gst \
+  compiler/phase26_runtime_formal_signature_wrong_type_source.gst \
   compiler/phase16_string_clone_source.gst \
   compiler/phase16_non_string_clone_deferred_source.gst \
   tests/test_hashmap_reference_receiver.gst ./gust
@@ -312,6 +314,11 @@ assert_preserved_pre_driver_failure \
 assert_preserved_pre_driver_failure \
   "$unresolved_member_source" unresolved-member-call \
   deferred_p14_full_program_unresolved_member_call deferred
+assert_preserved_pre_driver_failure \
+  compiler/phase26_runtime_formal_signature_wrong_type_source.gst \
+  runtime-formal-wrong-type \
+  'os.LogInt expects an Int/Byte/Index argument, but got Str' \
+  source_or_type_failure
 
 python3 "$family_runner" differential-rows direct-calls |
   rg -n -F 'p13_parameterized_local_call_branch_source_route' >/dev/null
@@ -322,4 +329,4 @@ python3 "$family_runner" differential-rows direct-calls |
 bash -n "$reference_receiver_guard"
 bash "$reference_receiver_guard" "$build_root/reference-receiver"
 
-echo "✅ Phase 13.6 parameter/argument evidence passed: ordered three-parameter identities, direct and imported multi-argument calls, repeated/expression/CFG/loop composition, six malformed MIR contracts, source type failures, and three precise ABI deferrals."
+echo "✅ Phase 13.6 parameter/argument evidence passed: ordered three-parameter identities, direct and imported multi-argument calls, repeated/expression/CFG/loop composition, six malformed MIR contracts, source type failures, precise ABI deferrals, and native runtime formal signatures."
