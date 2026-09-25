@@ -2336,6 +2336,38 @@ def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    runtime = registry.get("phase26_activation_audit", {}).get(
+        "runtime_formal_signature_prerequisite", {}).get(
+            "text_surface_successor", {})
+    runtime_rows = runtime.get("changed_rows", [])
+    runtime_paths = {
+        "compiler/experiments/cranelift/src/full_program.rs",
+        "compiler/mir_native_backend_full_program_source.gst",
+        "scripts/phase13_parameter_argument.sh",
+        "scripts/phase21_complete_guard_suite.py",
+        "scripts/phase26_reference_receiver_registration.py",
+    }
+    require(runtime.get("contract_version") ==
+            "phase26_runtime_formal_signature_text_surface_successor_v1" and
+            runtime.get("partial_extra_or_substituted_surface") ==
+            "rejected" and
+            {row.get("path") for row in runtime_rows} == runtime_paths and
+            len(runtime_rows) == len(runtime_paths),
+            "runtime formal signature text surface successor drifted")
+    runtime_by_path = {row["path"]: row for row in runtime_rows}
+    live_by_path = {row["path"]: row for row in rows}
+    for path, changed in runtime_by_path.items():
+        live = live_by_path.get(path)
+        require(live is not None and
+                live["digest"] == changed.get("current_digest") and
+                live["match_counts"] == changed.get("current_match_counts") and
+                len(changed.get("previous_digest", "")) == 64,
+                f"runtime formal signature text surface drifted: {path}")
+    rows = [dict(row,
+                 digest=runtime_by_path[row["path"]]["previous_digest"],
+                 match_counts=runtime_by_path[row["path"]][
+                     "previous_match_counts"])
+            if row["path"] in runtime_by_path else row for row in rows]
     # The Stdlib S2 opening updates the S1 branded-collections guard's exact
     # native deferral reason after the Phase 26 reference-parameter repair.
     # Accept either the merged guard or that one measured successor, then

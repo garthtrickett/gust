@@ -2501,6 +2501,105 @@ func mir_native_full_program_runtime_call_spec(
     return std.Clone(ctx, spec);
 }
 
+// A registered runtime function owns its formal ABI. Materialize that existing
+// signature as an imported canonical function when the typechecker accepted a
+// narrower scalar argument for an Int parameter; the worker then lowers the
+// conversion through its ordinary typed call path instead of inferring an I8
+// import. Index already occupies I32, but still needs the formal identity.
+func mir_native_full_program_add_formal_runtime_signatures(
+    nodes_index: Index[std.Vector[MirNativeFullProgramNode[ctx], ctx], ctx],
+    functions_index: Index[std.Vector[MirNativeFullProgramFunction[ctx], ctx], ctx],
+    env: &typechecker.TypeEnvironment[ctx],
+    ctx: &Arena
+) {
+    mut nodes: std.Vector[MirNativeFullProgramNode[ctx], ctx] := ctx[nodes_index];
+    mut functions: std.Vector[MirNativeFullProgramFunction[ctx], ctx] :=
+        ctx[functions_index];
+    mut index := 0;
+    while index < len(nodes) {
+        mut node := nodes[index];
+        if mir_native_full_program_is_runtime_call(nodes, functions, node, ctx) == 1 {
+            mut children: std.Vector[int, ctx] := ctx[node.children];
+            mut module_call := 1;
+            if len(children) == 0 { module_call = 0; }
+            if len(children) > 0 {
+                mut callee := nodes[children[0]];
+                if std.str_eq(callee.kind, "FieldOrMethodSelect") == 1 {
+                    mut receiver_children: std.Vector[int, ctx] := ctx[callee.children];
+                    if len(receiver_children) != 1 ||
+                       std.str_eq(nodes[receiver_children[0]].type_identity, "Void") == 0 {
+                        module_call = 0;
+                    }
+                }
+            }
+            if module_call == 1 {
+                unsafe {
+                    mut found := (*env).function_registry.Get(node.second_text_operand);
+                    if found.Ok {
+                        mut sig := found.Val;
+                        mut actual_count := len(children) - 1;
+                        if len(sig.params) == actual_count {
+                            mut formal_types: std.Vector[str, ctx] := std.VectorNew(ctx);
+                            mut valid := 1;
+                            mut needs_formal := 0;
+                            mut position := 0;
+                            while position < actual_count {
+                                mut formal := mir_native_full_program_type_identity(
+                                    sig.params[position], env, ctx
+                                );
+                                mut actual := nodes[children[position + 1]].type_identity;
+                                if std.str_eq(formal, actual) == 0 {
+                                    if std.str_eq(formal, "Int") == 1 &&
+                                       (std.str_eq(actual, "Byte") == 1 ||
+                                        std.str_eq(actual, "Bool") == 1 ||
+                                        std.str_find(actual, "Index(") == 0) {
+                                        needs_formal = 1;
+                                    } else {
+                                        valid = 0;
+                                    }
+                                }
+                                formal_types.Push(formal);
+                                position = position + 1;
+                            }
+                            mut formal_return := mir_native_full_program_type_identity(
+                                sig.return_type, env, ctx
+                            );
+                            if std.str_eq(formal_return, node.type_identity) == 0 {
+                                valid = 0;
+                            }
+                            if valid == 1 && needs_formal == 1 {
+                                mut symbol := mir_native_full_program_runtime_symbol(node, ctx);
+                                mut function: MirNativeFullProgramFunction[ctx];
+                                function.module_index = 0;
+                                function.source_name = std.Clone(ctx, symbol);
+                                function.qualified_name = std.Clone(ctx, node.second_text_operand);
+                                function.is_extern = 1;
+                                function.extern_symbol_name = std.Clone(ctx, symbol);
+                                function.parameter_names = mir_native_full_program_empty_string_vector(ctx);
+                                function.parameter_types = mir_native_full_program_empty_string_vector(ctx);
+                                mut names: std.Vector[str, ctx] := std.VectorNew(ctx);
+                                position = 0;
+                                while position < actual_count {
+                                    names.Push(std.Concat("p", std.FormatInt(position)));
+                                    position = position + 1;
+                                }
+                                ctx.Set(function.parameter_names, names);
+                                ctx.Set(function.parameter_types, formal_types);
+                                function.return_type = std.Clone(ctx, formal_return);
+                                function.body = empty[Index[ast.BlockStatement[ctx], ctx]];
+                                function.body_node_index = 0 - 1;
+                                functions.Push(function);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        index = index + 1;
+    }
+    ctx.Set(functions_index, functions);
+}
+
 // CHECK 1 of 2 -- a call the compiler emitted with no callee identity.
 //
 // The worker rejects this too, but only after the planner has already printed
@@ -2745,6 +2844,9 @@ func mir_native_full_program_source_lower(programs: std.Vector[ast.Program[ctx],
         return result;
     }
 
+    mir_native_full_program_add_formal_runtime_signatures(
+        model.nodes, model.functions, env, ctx
+    );
     mut conflict :=
         mir_native_full_program_runtime_signature_conflict(model, ctx);
     if len(conflict) > 0 {

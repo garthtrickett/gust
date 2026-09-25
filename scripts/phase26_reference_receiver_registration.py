@@ -223,7 +223,7 @@ def main() -> None:
         "previous_full_program_digest":
             "8ac856fe6b96297898870e9339e9c9855368333a7d9825156d13e77a7c0d6417",
         "current_full_program_digest":
-            digest("compiler/experiments/cranelift/src/full_program.rs"),
+            "76d799b16eecac358c5539de53b97548e5a45eb6d7e4cb49bd1ca188d9ae37c6",
         "phase22_path": "scripts/phase22_opening.py",
         "previous_phase22_digest":
             "0d3a7f856253c711be186d2fc0aad9a49983ef64c194ee3b2da88233d39e160e",
@@ -231,10 +231,12 @@ def main() -> None:
         "phase13_path": "scripts/phase13_parameter_argument.sh",
         "previous_phase13_digest":
             "e14cbe70afac5d4691c9af5eba1b2a61fc48de8d2162fe8f3df60a8810692cd0",
-        "current_phase13_digest": digest("scripts/phase13_parameter_argument.sh"),
+        "current_phase13_digest":
+            "9991aa3731782994a9384f951b741419256bb6827d2f201bec1587ac6dd29048",
         "added_row": {
             "path": "scripts/phase26_reference_receiver_registration.py",
-            "digest": digest("scripts/phase26_reference_receiver_registration.py"),
+            "digest":
+                "b7fe3829188e9b9db736aeaee22d88649ebab1ba958fbc3ddfbaa434fec0f0c2",
             "match_counts": {
                 "explicit_backend_spelling": 1,
                 "mir_to_c_name": 4,
@@ -275,13 +277,83 @@ def main() -> None:
         "corrective_changed_rows"] = [{
             "path": path,
             "previous_digest": previous_digest,
-            "current_digest": digest(path),
+            "current_digest": (
+                "540c07e65ab191288e78f4bf7354f7fbd2ffb8fcf0e036ced81a96e927d80c5d"
+                if path == "compiler/mir_native_backend_full_program_source.gst"
+                else "576aff2b010f713b76bd098443047365cc897066a9ca96f45a19c5e42b421d8b"
+                if path == "scripts/phase21_complete_guard_suite.py"
+                else digest(path)
+            ),
             "previous_match_counts": dict(zip(count_names, previous_counts)),
             "current_match_counts": dict(zip(count_names, current_counts)),
         } for path, previous_digest, previous_counts, current_counts
         in corrective_surfaces]
     require(activation.get("reference_receiver_prerequisite") == expected_record,
             "selected reference receiver prerequisite record drifted")
+    runtime = activation.get("runtime_formal_signature_prerequisite", {})
+    runtime_base = {
+        "contract_version": "phase26_runtime_formal_signature_prerequisite_v1",
+        "status": "canonical_runtime_formal_scalar_calls_qualified",
+        "owner": "cranelift",
+        "separate_from_phase26_1d1_and_str_abi": True,
+        "canonical_signature_source": "typechecker_function_registry",
+        "physical_abi_changed": False,
+        "positive_fixture": "compiler/phase26_runtime_formal_signature_source.gst",
+        "wrong_type_fixture":
+            "compiler/phase26_runtime_formal_signature_wrong_type_source.gst",
+        "exact_native_output": "1\n65\n1\n",
+        "owning_level2_guard": "guard-cranelift-phase13-parameter-argument-parity",
+        "new_compiler_invocation_sites": 0,
+    }
+    require({key: runtime.get(key) for key in runtime_base} == runtime_base and
+            set(runtime) == set(runtime_base) | {
+                "phase21_complete_suite_successor", "text_surface_successor",
+                "spelling_inventory_successor"},
+            "runtime formal signature prerequisite base drifted")
+    require(runtime["phase21_complete_suite_successor"] == {
+        "contract_version": "phase26_runtime_formal_phase21_successor_v1",
+        "status": "exact_runtime_formal_scalar_admission_overlay",
+        "admitted_runner_fixture":
+            "compiler/typechecker_origins_test_entry.gst",
+        "required_output_substring":
+            "get_type_brand nested pointer lookup OK",
+        "previous_reason":
+            "deferred_p14_full_program_inconsistent_runtime_signature",
+        "required_native_case_delta": 1,
+        "classified_deferral_delta": -1,
+        "reason_count_deltas": {
+            "deferred_p14_full_program_inconsistent_runtime_signature": -1,
+        },
+        "frozen_phase21_record": "unchanged",
+        "partial_extra_or_substituted_transition": "rejected",
+    }, "runtime formal Phase 21 exact successor drifted")
+    runtime_surfaces = runtime["text_surface_successor"]
+    required_runtime_paths = {
+        "compiler/experiments/cranelift/src/full_program.rs",
+        "compiler/mir_native_backend_full_program_source.gst",
+        "scripts/phase13_parameter_argument.sh",
+        "scripts/phase21_complete_guard_suite.py",
+        "scripts/phase26_reference_receiver_registration.py",
+    }
+    runtime_rows = runtime_surfaces.get("changed_rows", [])
+    require(runtime_surfaces.get("contract_version") ==
+            "phase26_runtime_formal_signature_text_surface_successor_v1" and
+            runtime_surfaces.get("partial_extra_or_substituted_surface") ==
+            "rejected" and
+            {row.get("path") for row in runtime_rows} ==
+            required_runtime_paths and
+            len(runtime_rows) == len(required_runtime_paths),
+            "runtime formal signature text surface paths drifted")
+    for row in runtime_rows:
+        require(set(row) == {"path", "previous_digest", "current_digest",
+                             "previous_match_counts", "current_match_counts"} and
+                row["current_digest"] == digest(row["path"]) and
+                len(row["previous_digest"]) == 64 and
+                set(row["previous_match_counts"]) ==
+                {"explicit_backend_spelling", "mir_to_c_name", "generated_c_contract"} and
+                set(row["current_match_counts"]) ==
+                set(row["previous_match_counts"]),
+                f"runtime formal signature text surface drifted: {row['path']}")
     for path in (*EXPECTED["positive_fixtures"],
                  EXPECTED["preserved_deferred_fixture"],
                  EXPECTED["preserved_reference_return_fixture"],
@@ -318,6 +390,13 @@ def main() -> None:
             "reference receiver evidence revived C execution")
     require(EXPECTED["positive_fixtures"][-1] in native_guard,
             "native Str Clone positive is not executed")
+    require(runtime["positive_fixture"] in native_guard and
+            "runtime-formal-signature" in native_guard and
+            "1\\n65\\n1\\n" in native_guard and
+            runtime["wrong_type_fixture"] in phase13_guard and
+            "runtime-formal-wrong-type" in phase13_guard and
+            "source_or_type_failure" in phase13_guard,
+            "native runtime formal positive or fail-closed negative is not executed")
     phase19_guard = (ROOT / "scripts/phase19_composition_parity.sh").read_text(
         encoding="utf-8")
     require(EXPECTED["non_string_clone_negative_fixture"] in phase19_guard and

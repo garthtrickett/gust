@@ -1151,14 +1151,19 @@ impl<'a> FullProgramCompiler<'a> {
     fn declare_program(&mut self) -> Result<(), Box<dyn Error>> {
         for function in &self.program.functions {
             let (signature, abi) = function_signature(&self.module, function, &mut self.layouts)?;
-            let symbol = if function.qualified_name == "main" {
+            let symbol = if function.is_extern {
+                function.extern_symbol.as_str()
+            } else if function.qualified_name == "main" {
                 "gust_phase21_program_main"
             } else {
                 function.qualified_name.as_str()
             };
-            let id = self
-                .module
-                .declare_function(symbol, Linkage::Local, &signature)?;
+            let linkage = if function.is_extern {
+                Linkage::Import
+            } else {
+                Linkage::Local
+            };
+            let id = self.module.declare_function(symbol, linkage, &signature)?;
             self.functions.insert(
                 function.qualified_name.clone(),
                 Callable {
@@ -1455,7 +1460,9 @@ impl<'a> FullProgramCompiler<'a> {
     fn finish(mut self, output_path: &Path) -> Result<String, Box<dyn Error>> {
         self.declare_program()?;
         for index in 0..self.program.functions.len() {
-            self.define_function(index)?;
+            if !self.program.functions[index].is_extern {
+                self.define_function(index)?;
+            }
         }
         self.define_entry_functions()?;
         if let Some(parent) = output_path.parent() {

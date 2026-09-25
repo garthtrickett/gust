@@ -48378,6 +48378,174 @@
         "partial_extra_or_substituted_surface": "rejected"
       }
     },
+    "runtime_formal_signature_prerequisite": {
+      "contract_version": "phase26_runtime_formal_signature_prerequisite_v1",
+      "status": "canonical_runtime_formal_scalar_calls_qualified",
+      "owner": "cranelift",
+      "separate_from_phase26_1d1_and_str_abi": true,
+      "canonical_signature_source": "typechecker_function_registry",
+      "physical_abi_changed": false,
+      "positive_fixture": "compiler/phase26_runtime_formal_signature_source.gst",
+      "wrong_type_fixture": "compiler/phase26_runtime_formal_signature_wrong_type_source.gst",
+      "exact_native_output": "1\n65\n1\n",
+      "owning_level2_guard": "guard-cranelift-phase13-parameter-argument-parity",
+      "new_compiler_invocation_sites": 0,
+      "phase21_complete_suite_successor": {
+        "contract_version": "phase26_runtime_formal_phase21_successor_v1",
+        "status": "exact_runtime_formal_scalar_admission_overlay",
+        "admitted_runner_fixture": "compiler/typechecker_origins_test_entry.gst",
+        "required_output_substring": "get_type_brand nested pointer lookup OK",
+        "previous_reason": "deferred_p14_full_program_inconsistent_runtime_signature",
+        "required_native_case_delta": 1,
+        "classified_deferral_delta": -1,
+        "reason_count_deltas": {
+          "deferred_p14_full_program_inconsistent_runtime_signature": -1
+        },
+        "frozen_phase21_record": "unchanged",
+        "partial_extra_or_substituted_transition": "rejected"
+      },
+      "spelling_inventory_successor": {
+        "contract_version": "phase26_runtime_formal_signature_spelling_successor_v1",
+        "changed_source_paths": [
+          "compiler/experiments/cranelift/src/full_program.rs",
+          "compiler/mir_native_backend_full_program_source.gst",
+          "compiler/phase26_runtime_formal_signature_source.gst",
+          "compiler/phase26_runtime_formal_signature_wrong_type_source.gst"
+        ],
+        "previous_inventory_summary": {
+          "classification_counts": {
+            "comment": 2,
+            "diagnostic": 10,
+            "fixture_or_evidence": 679,
+            "mangling_or_generated_name": 9,
+            "non_decision_comparison": 8,
+            "semantic_or_intrinsic_recognition": 683,
+            "serialization": 1
+          },
+          "complete_manifest_digest": "bd95861f3a2cd704f21ba7a3e187dcd118496020ce3038ca106487ebd3c4d63c",
+          "partition_manifest_digests": {
+            "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+            "diagnostic": "6e82e2d2913cca3a5f24a7afa698738a3e8d23445820c6565a167ede70e2600a",
+            "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+            "mangling_or_generated_name": "f2c6d856ed3923254cbc9e167320d3409a49579ff300db521a0b7516c7d7f4b2",
+            "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7",
+            "serialization": "cd26d44606f736374209054c0fc91d72f950946ad84fad1a5e6efb6c7fc4f5b9"
+          },
+          "semantic_manifest_digest": "15a481959ef250b65239a316386832af8269e19efefb54ad3d3132b42495d1b7",
+          "semantic_site_count": 683,
+          "site_count": 1392,
+          "source_file_count": 1083,
+          "unknown_site_count": 0
+        },
+        "current_inventory_summary": {
+            "classification_counts": {
+              "comment": 2,
+              "diagnostic": 10,
+              "fixture_or_evidence": 679,
+              "mangling_or_generated_name": 9,
+              "non_decision_comparison": 8,
+              "semantic_or_intrinsic_recognition": 683,
+              "serialization": 1
+            },
+            "complete_manifest_digest": "c787e8bde00b9ba2ec5c24dd055737068ad7d4918fad41951fab944e9b047417",
+            "partition_manifest_digests": {
+              "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+              "diagnostic": "7336b0fc546bc12abad088fa9c251de5e38bf8b781d013b2d57e77371cdf2708",
+              "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+              "mangling_or_generated_name": "f2c6d856ed3923254cbc9e167320d3409a49579ff300db521a0b7516c7d7f4b2",
+              "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7",
+              "serialization": "cd26d44606f736374209054c0fc91d72f950946ad84fad1a5e6efb6c7fc4f5b9"
+            },
+            "semantic_manifest_digest": "15683d32304c7873948d65ac49bb84e29782689ae8a14d35bfc852bbd900a98d",
+            "semantic_site_count": 683,
+            "site_count": 1392,
+            "source_file_count": 1085,
+            "unknown_site_count": 0
+          },
+        "partial_extra_or_substituted_inventory": "rejected"
+      },
+      "text_surface_successor": {
+        "contract_version": "phase26_runtime_formal_signature_text_surface_successor_v1",
+        "partial_extra_or_substituted_surface": "rejected",
+        "changed_rows": [
+          {
+            "path": "compiler/experiments/cranelift/src/full_program.rs",
+            "previous_digest": "76d799b16eecac358c5539de53b97548e5a45eb6d7e4cb49bd1ca188d9ae37c6",
+            "current_digest": "e0a60d8c164b3b721337f0d9f4098b2845bf230922a92b944b0d4f552af5af91",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            }
+          },
+          {
+            "path": "compiler/mir_native_backend_full_program_source.gst",
+            "previous_digest": "540c07e65ab191288e78f4bf7354f7fbd2ffb8fcf0e036ced81a96e927d80c5d",
+            "current_digest": "d9c1f1ac4630b75546ca3c43a9be05f24991a8c575e5e1e85bee1f321992d20a",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            }
+          },
+          {
+            "path": "scripts/phase13_parameter_argument.sh",
+            "previous_digest": "9991aa3731782994a9384f951b741419256bb6827d2f201bec1587ac6dd29048",
+            "current_digest": "a78ece93724aae052769bc29b0a0b2fd22d0738cb88b4bb8661c72d675956cbb",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 8,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 8,
+              "generated_c_contract": 0
+            }
+          },
+          {
+            "path": "scripts/phase21_complete_guard_suite.py",
+            "previous_digest": "576aff2b010f713b76bd098443047365cc897066a9ca96f45a19c5e42b421d8b",
+            "current_digest": "54d944bae9851f897367ca19501c8dc499af9277b7fb82211e8467c659ee181e",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 2,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 2,
+              "generated_c_contract": 0
+            }
+          },
+          {
+            "path": "scripts/phase26_reference_receiver_registration.py",
+            "previous_digest": "b7fe3829188e9b9db736aeaee22d88649ebab1ba958fbc3ddfbaa434fec0f0c2",
+            "current_digest": "5ee1188081cb5a298b5cbcc3a5fb796767d0450e1b567ccfea9b82f8fe38aa94",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 4,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 5,
+              "generated_c_contract": 1
+            }
+          }
+      ]
+      }
+    },
     "text_surface_successor": {
       "contract_version": "phase26_activation_audit_text_surface_successor_v1",
       "registered_changed_paths": [
