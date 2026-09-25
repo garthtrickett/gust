@@ -280,6 +280,8 @@ def main() -> None:
             "current_digest": (
                 "540c07e65ab191288e78f4bf7354f7fbd2ffb8fcf0e036ced81a96e927d80c5d"
                 if path == "compiler/mir_native_backend_full_program_source.gst"
+                else "576aff2b010f713b76bd098443047365cc897066a9ca96f45a19c5e42b421d8b"
+                if path == "scripts/phase21_complete_guard_suite.py"
                 else digest(path)
             ),
             "previous_match_counts": dict(zip(count_names, previous_counts)),
@@ -301,21 +303,36 @@ def main() -> None:
             "compiler/phase26_runtime_formal_signature_wrong_type_source.gst",
         "exact_native_output": "1\n65\n1\n",
         "owning_level2_guard": "guard-cranelift-phase13-parameter-argument-parity",
-        "preserved_inconsistent_fixture":
-            "compiler/typechecker_origins_test_entry.gst",
-        "preserved_inconsistent_reason":
-            "deferred_p14_full_program_inconsistent_runtime_signature",
         "new_compiler_invocation_sites": 0,
     }
     require({key: runtime.get(key) for key in runtime_base} == runtime_base and
             set(runtime) == set(runtime_base) | {
-                "text_surface_successor", "spelling_inventory_successor"},
+                "phase21_complete_suite_successor", "text_surface_successor",
+                "spelling_inventory_successor"},
             "runtime formal signature prerequisite base drifted")
+    require(runtime["phase21_complete_suite_successor"] == {
+        "contract_version": "phase26_runtime_formal_phase21_successor_v1",
+        "status": "exact_runtime_formal_scalar_admission_overlay",
+        "admitted_runner_fixture":
+            "compiler/typechecker_origins_test_entry.gst",
+        "required_output_substring":
+            "get_type_brand nested pointer lookup OK",
+        "previous_reason":
+            "deferred_p14_full_program_inconsistent_runtime_signature",
+        "required_native_case_delta": 1,
+        "classified_deferral_delta": -1,
+        "reason_count_deltas": {
+            "deferred_p14_full_program_inconsistent_runtime_signature": -1,
+        },
+        "frozen_phase21_record": "unchanged",
+        "partial_extra_or_substituted_transition": "rejected",
+    }, "runtime formal Phase 21 exact successor drifted")
     runtime_surfaces = runtime["text_surface_successor"]
     required_runtime_paths = {
         "compiler/experiments/cranelift/src/full_program.rs",
         "compiler/mir_native_backend_full_program_source.gst",
         "scripts/phase13_parameter_argument.sh",
+        "scripts/phase21_complete_guard_suite.py",
         "scripts/phase26_reference_receiver_registration.py",
     }
     runtime_rows = runtime_surfaces.get("changed_rows", [])

@@ -233,6 +233,41 @@ def phase26_reference_receiver_transition(registry: dict,
     return successor
 
 
+def phase26_runtime_formal_signature_transition(registry: dict,
+                                                 cases: list[dict]) -> dict:
+    """Exact runner admission from canonical runtime formal scalar conversion."""
+    successor = registry.get("phase26_activation_audit", {}).get(
+        "runtime_formal_signature_prerequisite", {}).get(
+            "phase21_complete_suite_successor", {})
+    expected = {
+        "contract_version": "phase26_runtime_formal_phase21_successor_v1",
+        "status": "exact_runtime_formal_scalar_admission_overlay",
+        "admitted_runner_fixture":
+            "compiler/typechecker_origins_test_entry.gst",
+        "required_output_substring":
+            "get_type_brand nested pointer lookup OK",
+        "previous_reason":
+            "deferred_p14_full_program_inconsistent_runtime_signature",
+        "required_native_case_delta": 1,
+        "classified_deferral_delta": -1,
+        "reason_count_deltas": {
+            "deferred_p14_full_program_inconsistent_runtime_signature": -1,
+        },
+        "frozen_phase21_record": "unchanged",
+        "partial_extra_or_substituted_transition": "rejected",
+    }
+    require(successor == expected,
+            "Phase 26 runtime formal complete-suite transition drifted")
+    matching = [case for case in cases if case["path"] ==
+                successor["admitted_runner_fixture"]]
+    require(len(matching) == 1 and matching[0]["mode"] == 0 and
+            matching[0]["substring"] == 1 and
+            matching[0]["expected"] ==
+            successor["required_output_substring"],
+            "Phase 26 runtime formal runner expectation drifted")
+    return successor
+
+
 def _admission_block_is_exact(admission: dict) -> None:
     require(admission == {
         "contract_version": "phase24_cr19_post_image_admission_v1",
@@ -488,6 +523,7 @@ def validate() -> dict:
     phase23_guard_defer_transition(registry, cases)
     phase24_cr19_transition(registry, cases)
     phase26_reference_receiver_transition(registry, cases)
+    phase26_runtime_formal_signature_transition(registry, cases)
     phase24_cr19_post_image_admission(registry, cases)
     inventory = record.get("inventory", {})
     observed = {
@@ -1019,8 +1055,10 @@ def evidence() -> None:
         phase23_guard_defer_transition(_registry, cases),
         phase24_cr19_transition(_registry, cases),
         phase26_reference_receiver_transition(_registry, cases),
+        phase26_runtime_formal_signature_transition(_registry, cases),
     ]
-    phase26_transition = transitions[-1]
+    phase26_transition = transitions[-2]
+    runtime_transition = transitions[-1]
     exact_phase26_cases = {
         path: ("required", "") for path in
         phase26_transition["admitted_runner_fixtures"]
@@ -1030,6 +1068,8 @@ def evidence() -> None:
     exact_phase26_cases[phase26_transition[
         "unresolved_member_runner_fixture"]] = (
             "deferral", phase26_transition["unresolved_member_reason"])
+    exact_phase26_cases[runtime_transition["admitted_runner_fixture"]] = (
+        "required", "")
     seen_phase26_cases: set[str] = set()
     # The per-case check asks whether a reason is registered at all, so it must
     # see reasons a successor introduces -- not only the frozen Phase 21 set.
@@ -1074,12 +1114,13 @@ def evidence() -> None:
         remove_shards(shard_base, shard_roots)
 
     # The historical post-image admission selects its source-state map first.
-    # Reference parameter admission then moves only the three measured runner
-    # decisions, preserving the frozen record and both historical states.
+    # Reference parameter and runtime formal admission move only their named
+    # runner decisions, preserving the frozen record and historical states.
     admitted = phase24_cr19_post_image_admission(_registry, cases)
     terminal_reasons = dict(admitted["expected_reason_counts"])
-    for reason, delta in transitions[-1]["reason_count_deltas"].items():
-        terminal_reasons[reason] = terminal_reasons.get(reason, 0) + delta
+    for transition in transitions[-2:]:
+        for reason, delta in transition["reason_count_deltas"].items():
+            terminal_reasons[reason] = terminal_reasons.get(reason, 0) + delta
     terminal_reasons = {reason: count for reason, count in
                         terminal_reasons.items() if count != 0}
     require(reason_counts == terminal_reasons,

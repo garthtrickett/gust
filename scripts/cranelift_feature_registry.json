@@ -48389,9 +48389,21 @@
       "wrong_type_fixture": "compiler/phase26_runtime_formal_signature_wrong_type_source.gst",
       "exact_native_output": "1\n65\n1\n",
       "owning_level2_guard": "guard-cranelift-phase13-parameter-argument-parity",
-      "preserved_inconsistent_fixture": "compiler/typechecker_origins_test_entry.gst",
-      "preserved_inconsistent_reason": "deferred_p14_full_program_inconsistent_runtime_signature",
       "new_compiler_invocation_sites": 0,
+      "phase21_complete_suite_successor": {
+        "contract_version": "phase26_runtime_formal_phase21_successor_v1",
+        "status": "exact_runtime_formal_scalar_admission_overlay",
+        "admitted_runner_fixture": "compiler/typechecker_origins_test_entry.gst",
+        "required_output_substring": "get_type_brand nested pointer lookup OK",
+        "previous_reason": "deferred_p14_full_program_inconsistent_runtime_signature",
+        "required_native_case_delta": 1,
+        "classified_deferral_delta": -1,
+        "reason_count_deltas": {
+          "deferred_p14_full_program_inconsistent_runtime_signature": -1
+        },
+        "frozen_phase21_record": "unchanged",
+        "partial_extra_or_substituted_transition": "rejected"
+      },
       "spelling_inventory_successor": {
         "contract_version": "phase26_runtime_formal_signature_spelling_successor_v1",
         "changed_source_paths": [
@@ -48502,9 +48514,24 @@
             }
           },
           {
+            "path": "scripts/phase21_complete_guard_suite.py",
+            "previous_digest": "576aff2b010f713b76bd098443047365cc897066a9ca96f45a19c5e42b421d8b",
+            "current_digest": "54d944bae9851f897367ca19501c8dc499af9277b7fb82211e8467c659ee181e",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 2,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 2,
+              "generated_c_contract": 0
+            }
+          },
+          {
             "path": "scripts/phase26_reference_receiver_registration.py",
             "previous_digest": "b7fe3829188e9b9db736aeaee22d88649ebab1ba958fbc3ddfbaa434fec0f0c2",
-            "current_digest": "330f615be3cd675f13433f9807df0bac0510d604463ace5917d619d8a24d5470",
+            "current_digest": "5ee1188081cb5a298b5cbcc3a5fb796767d0450e1b567ccfea9b82f8fe38aa94",
             "previous_match_counts": {
               "explicit_backend_spelling": 1,
               "mir_to_c_name": 4,

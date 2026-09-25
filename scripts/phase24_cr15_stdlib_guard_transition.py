@@ -2344,6 +2344,7 @@ def normalize_phase23_text_surfaces(
         "compiler/experiments/cranelift/src/full_program.rs",
         "compiler/mir_native_backend_full_program_source.gst",
         "scripts/phase13_parameter_argument.sh",
+        "scripts/phase21_complete_guard_suite.py",
         "scripts/phase26_reference_receiver_registration.py",
     }
     require(runtime.get("contract_version") ==
