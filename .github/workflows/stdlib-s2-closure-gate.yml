@@ -1,0 +1,38 @@
+name: Stdlib S2 Closure Gate
+
+on:
+  pull_request:
+    paths:
+      - 'TASK_STDLIB.md'
+      - 'src/stdlib/byte_text.gst'
+      - 'tests/stdlib_s2_byte_text.gst'
+      - 'scripts/stdlib_s2_byte_text_native.sh'
+      - 'scripts/stdlib_s2_close.py'
+      - '.github/workflows/stdlib-s2-closure-gate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'TASK_STDLIB.md'
+      - 'src/stdlib/byte_text.gst'
+      - 'tests/stdlib_s2_byte_text.gst'
+      - 'scripts/stdlib_s2_byte_text_native.sh'
+      - 'scripts/stdlib_s2_close.py'
+      - '.github/workflows/stdlib-s2-closure-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  closure-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+      - name: guard-stdlib-s2-close
+        run: python3 scripts/stdlib_s2_close.py

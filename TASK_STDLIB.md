@@ -1770,7 +1770,7 @@ S2 does not activate Phase 26 or alter its compiler and runtime ownership.
 
 - [x] Patch S2.0 — Opening Inventory and Boundary — DONE
 - [x] Patch S2.1 — Importable Byte String Predicates — DONE
-- [ ] Patch S2.2 — Closure Evidence
+- [x] Patch S2.2 — Closure Evidence — DONE
 
 Each patch is one initial PR from a `codex/stdlib-` branch. The lane advances
 after the previous patch merges and its exact-head checks pass.
@@ -1842,3 +1842,12 @@ remain outside S2.
 
 **S2.2 exit gate:** Every S2 row is `DONE`, the S2 closure guard passes on the
 merged phase head, and the latest Historical Full run on `main` is green.
+
+### Closure record and residue
+
+The S2 closure guard checks the completed roadmap rows, the repository-relative
+import, the already registered string runtime symbols, and the native byte
+predicate behavior with explicit no-fallback execution. Phase S2 delivers byte
+predicates only. It does not package Gust source modules for installed users,
+provide Unicode character operations, migrate collection `Option` APIs, or add
+file, socket, or networking resources. Those remain separate handoffs.
