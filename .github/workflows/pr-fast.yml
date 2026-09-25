@@ -776,11 +776,39 @@ jobs:
       - name: Phase 20 mixed cross-feature qualification
         run: just guard-cranelift-phase20-cross-feature-qualification-parity
 
+  phase26-ffi-position:
+    name: Phase 26 FFI position policy
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install guard tools
+        run: |
+          bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+          bash scripts/install-just-ci.sh "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Download Gust build outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: gust-build
+          path: .
+
+      - name: Restore executable bit
+        run: chmod +x ./gust 2>/dev/null || true
+
+      - name: Phase 26 FFI position policy
+        run: just guard-cranelift-phase26-ffi-position-policy
+
   final:
     name: final diff check
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    needs: [guard, level1, phase20-nested-brand-annotation]
+    needs: [guard, level1, phase20-nested-brand-annotation, phase26-ffi-position]
 
     steps:
       - name: Checkout

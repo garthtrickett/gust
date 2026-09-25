@@ -674,7 +674,10 @@ type FunctionSignature[ctx] struct {
     requires_layout_metadata: int,
     requires_sandbox_arena: int,
     is_compile_time_only: int,
-    is_private: int
+    is_private: int,
+    ffi_param_policies: Index[std.Vector[str, ctx], ctx],
+    ffi_return_policy: str,
+    ffi_contract_verified: int
 }
 
 type ProtectedResourceFunction[ctx] struct {
@@ -705,6 +708,9 @@ func init_function_signature_ffi_defaults(sig: *FunctionSignature[ctx]) {
         (*sig).requires_sandbox_arena = 0;
         (*sig).is_compile_time_only = 0;
         (*sig).is_private = 0;
+        (*sig).ffi_param_policies = empty[Index[std.Vector[str, ctx], ctx]];
+        (*sig).ffi_return_policy = "";
+        (*sig).ffi_contract_verified = 0;
     }
 }
 
@@ -743,6 +749,76 @@ func function_signature_requires_sandbox_policy(sig: FunctionSignature[ctx]) int
         return 1;
     }
     return 0;
+}
+
+func env_validate_extern_ffi_positions(env: *TypeEnvironment[ctx], stmt: ast.Statement[ctx], sig: *FunctionSignature[ctx], ctx: &Arena) int {
+    unsafe {
+        mut declared_params: std.Vector[ast.Parameter[ctx], ctx] := ctx[stmt.FunctionDecl.params];
+        mut policies: std.Vector[str, ctx] := std.VectorNew(ctx);
+        mut i := 0;
+        while i < len(declared_params) {
+            mut declared := declared_params[i];
+            mut t := (*sig).params[i];
+            mut policy := declared.ffi_policy;
+            if stmt.FunctionDecl.is_extern == 0 {
+                if std.str_eq(policy, "") == 0 {
+                    report_error(2, "Semantic Error: [FFIAttributeNonExtern] FFI parameter ownership policy requires an extern declaration", declared.span, env, ctx);
+                    return 0;
+                }
+                i = i + 1;
+                continue;
+            }
+            if std.str_eq(policy, "transfer") == 1 || std.str_eq(policy, "retain") == 1 {
+                report_error(2, "Semantic Error: [FFITransferRetainUnsupported] External pointer transfer and retention are not qualified", declared.span, env, ctx);
+                return 0;
+            }
+            if std.str_eq(policy, "callback") == 1 || std.str_eq(policy, "native_error") == 1 {
+                report_error(2, "Semantic Error: [FFICallbackNativeErrorUnsupported] External callbacks and native error contracts are not qualified", declared.span, env, ctx);
+                return 0;
+            }
+            if t.tag == 0 || t.tag == 1 || t.tag == 2 { // Int, Byte, Bool
+                if std.str_eq(policy, "") == 0 && std.str_eq(policy, "value") == 0 {
+                    report_error(2, "Semantic Error: [FFIValuePolicy] Scalar external parameters have value ownership", declared.span, env, ctx);
+                    return 0;
+                }
+                policies.Push("value");
+            } else if t.tag == 5 || t.tag == 6 || t.tag == 9 || t.tag == 11 { // Str, Slice, RawPointer, Reference
+                if std.str_eq(policy, "") == 1 {
+                    report_error(2, "Semantic Error: [FFIBorrowPolicyRequired] External pointer, string, slice, and reference parameters require an explicit call-bounded borrow policy", declared.span, env, ctx);
+                    return 0;
+                }
+                if std.str_eq(policy, "borrow_read_call") == 0 && std.str_eq(policy, "borrow_write_call") == 0 {
+                    report_error(2, "Semantic Error: [FFIUnsupportedOwnershipPolicy] External parameter policy is not qualified", declared.span, env, ctx);
+                    return 0;
+                }
+                if std.str_eq(policy, "borrow_write_call") == 1 && t.tag != 9 {
+                    report_error(2, "Semantic Error: [FFIWriteRequiresRawPointer] Native writes require an explicitly unsafe raw-pointer position", declared.span, env, ctx);
+                    return 0;
+                }
+                policies.Push(std.Clone(ctx, policy));
+            } else {
+                report_error(2, "Semantic Error: [FFIByValueAggregateUnsupported] External by-value aggregate or unsupported parameter is not qualified", declared.span, env, ctx);
+                return 0;
+            }
+            i = i + 1;
+        }
+        if stmt.FunctionDecl.is_extern == 0 { return 1; }
+        mut ret := (*sig).return_type;
+        if ret.tag == 0 || ret.tag == 1 || ret.tag == 2 || ret.tag == 3 {
+            (*sig).ffi_return_policy = "value";
+        } else if ret.tag == 5 || ret.tag == 6 || ret.tag == 9 || ret.tag == 11 {
+            report_error(2, "Semantic Error: [FFIReturnedPointerUnsupported] External returned pointers, strings, slices, and references are not qualified", stmt.FunctionDecl.span, env, ctx);
+            return 0;
+        } else {
+            report_error(2, "Semantic Error: [FFIByValueAggregateUnsupported] External by-value aggregate or native error return is not qualified", stmt.FunctionDecl.span, env, ctx);
+            return 0;
+        }
+        mut index: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
+        ctx.Set(index, policies);
+        (*sig).ffi_param_policies = index;
+        (*sig).ffi_contract_verified = 1;
+        return 1;
+    }
 }
 
 type Scope[ctx] struct {
@@ -4941,6 +5017,53 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     report_error(2, msg, expr.Call.span, env, ctx);
                     mut dummy: ast.Type[ctx]; dummy.tag = 3; // Void
                     return dummy;
+                }
+
+                if sig.is_extern == 1 {
+                    if sig.ffi_contract_verified == 0 ||
+                       sig.ffi_param_policies == empty[Index[std.Vector[str, ctx], ctx]] ||
+                       std.str_eq(sig.ffi_return_policy, "value") == 0 {
+                        report_error(2, "Semantic Error: [FFIContractMissing] External call has no validated per-position ownership contract", expr.Call.span, env, ctx);
+                        mut missing_contract: ast.Type[ctx]; missing_contract.tag = 3;
+                        return missing_contract;
+                    }
+                    mut policies_call: std.Vector[str, ctx] := ctx[sig.ffi_param_policies];
+                    if len(policies_call) != len(sig.params) {
+                        report_error(2, "Semantic Error: [FFIContractMissing] External call ownership positions do not match its signature", expr.Call.span, env, ctx);
+                        mut missing_positions: ast.Type[ctx]; missing_positions.tag = 3;
+                        return missing_positions;
+                    }
+                    mut ffi_arg_index := 0;
+                    while ffi_arg_index < len(policies_call) {
+                        mut ffi_policy := policies_call[ffi_arg_index];
+                        mut ffi_formal := sig.params[ffi_arg_index];
+                        mut ffi_actual := evaluated_args[ffi_arg_index];
+                        if std.str_eq(ffi_policy, "value") == 1 {
+                            if ffi_formal.tag != 0 && ffi_formal.tag != 1 && ffi_formal.tag != 2 {
+                                report_error(2, "Semantic Error: [FFIContractMismatch] External value policy has a non-scalar formal position", expr.Call.span, env, ctx);
+                                mut bad_value: ast.Type[ctx]; bad_value.tag = 3;
+                                return bad_value;
+                            }
+                        } else if std.str_eq(ffi_policy, "borrow_read_call") == 1 ||
+                                  std.str_eq(ffi_policy, "borrow_write_call") == 1 {
+                            if ffi_formal.tag != 5 && ffi_formal.tag != 6 && ffi_formal.tag != 9 && ffi_formal.tag != 11 {
+                                report_error(2, "Semantic Error: [FFIContractMismatch] External borrowed position has a non-pointer formal type", expr.Call.span, env, ctx);
+                                mut bad_borrow: ast.Type[ctx]; bad_borrow.tag = 3;
+                                return bad_borrow;
+                            }
+                            if std.str_eq(ffi_policy, "borrow_write_call") == 1 &&
+                               (ffi_formal.tag != 9 || ffi_actual.tag != 9) {
+                                report_error(2, "Semantic Error: [FFIWriteRequiresRawPointer] Native writes require an explicitly unsafe raw-pointer argument", expr.Call.span, env, ctx);
+                                mut bad_write: ast.Type[ctx]; bad_write.tag = 3;
+                                return bad_write;
+                            }
+                        } else {
+                            report_error(2, "Semantic Error: [FFIContractMismatch] External call has an unsupported ownership position", expr.Call.span, env, ctx);
+                            mut bad_policy: ast.Type[ctx]; bad_policy.tag = 3;
+                            return bad_policy;
+                        }
+                        ffi_arg_index = ffi_arg_index + 1;
+                    }
                 }
 
                 mut call_brand_substitutions: std.HashMap[str, str, ctx] := std.HashMapNew(ctx);
@@ -11991,6 +12114,10 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
                 }
                 sig.return_type = env_resolve_type(env, source_return_type, ctx);
                 env_require_explicit_public_brand(env, source_return_type, sig.return_type, namespaced_name, stmt.FunctionDecl.span, ctx);
+            }
+
+            if env_validate_extern_ffi_positions(env, stmt, &sig, ctx) == 0 {
+                return;
             }
 
             env_register_function(env, namespaced_name, sig, ctx);

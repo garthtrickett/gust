@@ -284,6 +284,23 @@ def scan_summary(rows: list[dict[str, object]]) -> dict[str, object]:
 def phase22_relay_inventory_rows(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep Phase 22's closed relay identity while validating exact successors."""
+    ffi = registry.get("phase26_activation_audit", {}).get(
+        "ffi_position_policy_increment", {}).get("phase22_invocation_successor")
+    if ffi is not None:
+        added = ffi.get("added_rows")
+        path = "scripts/phase26_ffi_position_policy.sh"
+        require(ffi.get("contract_version") ==
+                "phase26_1d1_phase22_invocation_successor_v1" and
+                ffi.get("previous_total") == 151 and
+                ffi.get("current_total") == 155 and
+                ffi.get("partial_extra_or_substituted_invocation") ==
+                "rejected" and isinstance(added, list) and
+                len(added) == 4 and
+                [row for row in rows if row.get("path") == path] == added,
+                "Phase 26.1D1 external-call invocation rows are missing, "
+                "extra, or substituted")
+        rows = [row for row in rows if row.get("path") != path]
+
     # Phase 26's separate reference-argument prerequisite adds one explicit
     # native guard invocation. Validate it, then project it out of the closed
     # Phase 22 relay census; the live unfiltered census retains it.

@@ -1607,11 +1607,72 @@ func parse_function_decl_with_private(p: *Parser[ctx], is_private_decl: int, sta
                 (*p).errors.Push(err);
                 return empty[Index[ast.Statement[ctx], ctx]];
             }
+            mut param_ffi_policy := "";
+            if cur_token_is(p, 49) { // Hash = 49
+                next_token(p); // consume '#'
+                if cur_token_is(p, 15) == false { // LBracket = 15
+                    mut err_ffi_bracket: errors.CompilerError[Any];
+                    err_ffi_bracket.kind.tag = 1;
+                    err_ffi_bracket.message = "Expected '[' after '#' in parameter FFI attribute";
+                    err_ffi_bracket.span = (*p).cur_token.span;
+                    (*p).errors.Push(err_ffi_bracket);
+                    return empty[Index[ast.Statement[ctx], ctx]];
+                }
+                next_token(p);
+                if cur_token_is(p, 2) == false ||
+                   std.str_eq((*p).cur_token.literal, "ffi") == 0 {
+                    mut err_ffi_name: errors.CompilerError[Any];
+                    err_ffi_name.kind.tag = 1;
+                    err_ffi_name.message = "Expected ffi parameter attribute";
+                    err_ffi_name.span = (*p).cur_token.span;
+                    (*p).errors.Push(err_ffi_name);
+                    return empty[Index[ast.Statement[ctx], ctx]];
+                }
+                next_token(p);
+                if cur_token_is(p, 11) == false { // LParen = 11
+                    mut err_ffi_open: errors.CompilerError[Any];
+                    err_ffi_open.kind.tag = 1;
+                    err_ffi_open.message = "Expected '(' after ffi parameter attribute";
+                    err_ffi_open.span = (*p).cur_token.span;
+                    (*p).errors.Push(err_ffi_open);
+                    return empty[Index[ast.Statement[ctx], ctx]];
+                }
+                next_token(p);
+                if cur_token_is(p, 2) == false { // Ident = 2
+                    mut err_ffi_policy: errors.CompilerError[Any];
+                    err_ffi_policy.kind.tag = 1;
+                    err_ffi_policy.message = "Expected FFI parameter ownership policy";
+                    err_ffi_policy.span = (*p).cur_token.span;
+                    (*p).errors.Push(err_ffi_policy);
+                    return empty[Index[ast.Statement[ctx], ctx]];
+                }
+                param_ffi_policy = std.Clone(*ctx, (*p).cur_token.literal);
+                next_token(p);
+                if cur_token_is(p, 12) == false { // RParen = 12
+                    mut err_ffi_close: errors.CompilerError[Any];
+                    err_ffi_close.kind.tag = 1;
+                    err_ffi_close.message = "Expected ')' after FFI parameter ownership policy";
+                    err_ffi_close.span = (*p).cur_token.span;
+                    (*p).errors.Push(err_ffi_close);
+                    return empty[Index[ast.Statement[ctx], ctx]];
+                }
+                next_token(p);
+                if cur_token_is(p, 16) == false { // RBracket = 16
+                    mut err_ffi_end: errors.CompilerError[Any];
+                    err_ffi_end.kind.tag = 1;
+                    err_ffi_end.message = "Expected ']' after FFI parameter attribute";
+                    err_ffi_end.span = (*p).cur_token.span;
+                    (*p).errors.Push(err_ffi_end);
+                    return empty[Index[ast.Statement[ctx], ctx]];
+                }
+                next_token(p);
+            }
             mut param_end := (*p).cur_token.span;
 
             mut param: ast.Parameter[ctx];
             param.name = param_name;
             param.param_type = ctx[p_type];
+            param.ffi_policy = param_ffi_policy;
             param.span = merge_spans(param_start, param_end);
             params_vec.Push(param);
 

@@ -81,6 +81,7 @@ def surface(path: str, role: str, markers: tuple[str, ...]) -> dict[str, object]
 
 def project_reference_receiver_production_audit(registry: dict, live: dict) -> dict:
     """Project one registered native guard invocation off the closed audit."""
+    live = project_phase26_ffi_position_production_audit(registry, live)
     prerequisite = registry.get("phase26_activation_audit", {}).get(
         "reference_receiver_prerequisite", {})
     successor = prerequisite.get("production_audit_successor")
@@ -103,6 +104,33 @@ def project_reference_receiver_production_audit(registry: dict, live: dict) -> d
             "Phase 26 reference receiver production audit successor drifted")
     previous = dict(live)
     previous["repository_invocation_count"] = 150
+    return previous
+
+
+def project_phase26_ffi_position_production_audit(
+        registry: dict, live: dict) -> dict:
+    """Project the four D1 native probes off the closed production census."""
+    increment = registry.get("phase26_activation_audit", {}).get(
+        "ffi_position_policy_increment", {})
+    successor = increment.get("production_audit_successor")
+    if successor is None:
+        return live
+    rows = increment.get("phase22_invocation_successor", {}).get(
+        "added_rows", [])
+    require(successor == {
+        "contract_version": "phase26_1d1_production_audit_successor_v1",
+        "previous_repository_invocation_count": 151,
+        "current_repository_invocation_count": 155,
+        "added_invocation_path": "scripts/phase26_ffi_position_policy.sh",
+        "unchanged_other_fields": True,
+        "partial_extra_or_substituted_audit": "rejected",
+    } and len(rows) == 4 and
+            all(row.get("path") == successor["added_invocation_path"] and
+                row.get("selection") == "explicit_cranelift" for row in rows) and
+            live["repository_invocation_count"] == 155,
+            "Phase 26.1D1 production audit successor drifted")
+    previous = dict(live)
+    previous["repository_invocation_count"] = 151
     return previous
 
 

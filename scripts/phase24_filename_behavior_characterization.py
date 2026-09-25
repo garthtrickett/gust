@@ -174,8 +174,27 @@ def validate_static(value: dict) -> None:
             "live justfile successor digest drifted")
     require(value.get("review_view") == REVIEW.relative_to(ROOT).as_posix(),
             "review view drifted")
-    require(value.get("site_manifest") == source_sites(),
-            "filename-selected site manifest drifted")
+    live_sites = source_sites()
+    ffi_sites = registry.get("phase26_activation_audit", {}).get(
+        "ffi_position_policy_increment", {}).get("filename_site_successor")
+    if ffi_sites is None:
+        require(value.get("site_manifest") == live_sites,
+                "filename-selected site manifest drifted")
+    else:
+        previous_sites = value.get("site_manifest")
+        require(ffi_sites.get("contract_version") ==
+                "phase26_1d1_filename_site_successor_v1" and
+                ffi_sites.get("previous_sites") == previous_sites and
+                ffi_sites.get("current_sites") == live_sites and
+                ffi_sites.get("line_delta") == 127 and
+                ffi_sites.get("partial_extra_or_substituted_site") ==
+                "rejected" and len(previous_sites) == len(live_sites) == 3 and
+                all(now["line"] == before["line"] + 127 and
+                    {key: val for key, val in now.items() if key != "line"} ==
+                    {key: val for key, val in before.items() if key != "line"}
+                    for before, now in zip(previous_sites, live_sites)),
+                "Phase 26.1D1 filename sites changed beyond the registered "
+                "line shift")
     require([row["selector"] for row in value["site_manifest"]] ==
             ["test_tcs_", "test_index_", "test_tcs_"],
             "selector order or completeness drifted")

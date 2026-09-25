@@ -18,6 +18,7 @@
     }
   },
   "guards": {
+    "guard-cranelift-phase26-ffi-position-policy": 2,
     "guard-cranelift-phase25-native-fixed-point": 3,
     "guard-cranelift-phase25-runtime-rs-abi-smoke": 1,
     "guard-cranelift-phase25-strings-rust-parity": 2,

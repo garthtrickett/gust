@@ -24202,3 +24202,11 @@ guard-cranelift-phase25-musl-c-free-link:
     python3 scripts/phase25_musl_c_free_link.py validate
     echo "🔒 Proving a musl HOST builds with no C compiler at all..."
     python3 scripts/phase25_musl_c_free_link.py host-build
+
+# Phase 26.1D1: canonical per-position external ownership and escape policy.
+guard-cranelift-phase26-ffi-position-policy:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-ffi-position-policy | grep -F $'guard-cranelift-phase26-ffi-position-policy\t2\t' >/dev/null
+    python3 scripts/phase26_ffi_position_registration.py
+    bash scripts/phase26_ffi_position_policy.sh
