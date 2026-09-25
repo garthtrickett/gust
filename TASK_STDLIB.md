@@ -1759,3 +1759,86 @@ And without the implementation acquiring:
 
 Phase S1 closure does not claim a complete standard library, a text or Unicode
 API, networking, or production readiness.
+
+## Phase S2 — Byte String Composition
+
+**Activation:** The operator explicitly activated this bounded Stdlib phase on
+2026-09-24. The `AGENTS.md` phase completion loop applies through S2.2. Phase
+S2 does not activate Phase 26 or alter its compiler and runtime ownership.
+
+### Status
+
+- [x] Patch S2.0 — Opening Inventory and Boundary — DONE
+- [ ] Patch S2.1 — Importable Byte String Predicates
+- [ ] Patch S2.2 — Closure Evidence
+
+Each patch is one initial PR from a `codex/stdlib-` branch. The lane advances
+after the previous patch merges and its exact-head checks pass.
+
+### Opening inventory and boundary (S2.0)
+
+The current source already supports byte length with `len(str)`, content
+equality with `std.str_eq`, byte slicing with `std.str_slice`, and substring
+search with `std.str_find`. The string runtime was moved to
+`src/runtime-rs/src/strings.rs` in Phase 25; these calls retain their registered
+`std_*` symbols. `compiler/mir_gust_runtime_smoke_test_entry.gst` proves that
+an ordinary Gust source can import a relative `.gst` module. The existing
+native collection/string source family is
+`scripts/phase21_collection_string_native_source.sh`. Phase 24 removed the
+selectable C backend; historical MIR-to-C evidence is frozen, not a route for
+new S2 source fixtures.
+
+S2 adds only an importable, pure Gust module for **byte string** predicates.
+It introduces no new `std.*` or `std_*` name, compiler feature, resource form,
+runtime call, raw pointer, or dependency. It does not change the meaning of
+`str`, Unicode, bounds failure, or `Option`. Its native program uses ordinary
+module import and existing string operations, with explicit no-fallback
+behavior if a source route is unsupported. File/socket resources, blocking
+networking, `map.get_opt` migration, and implicit `ctx` wait for their
+separate Phase 26 handoffs.
+
+The S2 module is importable by repository source through a relative path.
+Installed distributions currently contain three native artifacts and no Gust
+source modules. Packaging this module for installed users is a separate
+Cranelift-owned release handoff; S2 closure does not claim that distribution.
+
+The small consumer need is testing a request token or filename suffix without
+manually calculating slice bounds at every call site. The selected helpers
+are `starts_with`, `ends_with`, and `contains`; all are case-sensitive and
+operate on bytes. Empty needles return true, including against an empty
+haystack. A needle longer than the haystack returns false. Prefix and suffix
+helpers check lengths before slicing, so this module never turns a normal
+negative predicate into the current process-ending out-of-range slice failure
+(CR-3). The module does not promise Unicode character boundaries.
+
+**S2.0 exit gate:** The current primitive and import paths are identified,
+the bounded semantics above are recorded, and S1 status rows remain intact.
+No implementation change ships in this opening patch.
+
+### Patch S2.1 — Importable Byte String Predicates
+
+Add `src/stdlib/byte_text.gst` with `starts_with`, `ends_with`, and `contains`
+as ordinary functions over `str`. Add a consumer in `tests/` that imports the
+module and checks empty strings, equal strings, missing matches, longer
+needles, prefix versus interior matches, suffixes, and multibyte UTF-8 byte
+sequences without claiming Unicode scalar semantics. Use the existing native
+source route and a focused Stdlib guard. The guard must assert observable
+results and explicit no-fallback behavior; it must not modify the frozen C
+corpus to fabricate a new oracle record.
+
+**S2.1 exit gate:** The importable module and consumer pass in the authoritative
+native CI environment. Each helper has behavior assertions for the declared
+boundary cases. No unsafe or new runtime symbol is introduced.
+
+### Patch S2.2 — Closure Evidence
+
+Recheck the S2 status rows, source imports, string behavior, symbol inventory,
+and S2.1 guard in an authoritative CI closure guard. Cite the latest completed
+successful `Cranelift Historical Full` run on `main` by run ID and conclusion,
+as required by `AGENTS.md`; a pending or failed latest run keeps S2 open.
+Record the residue explicitly: this module supplies byte predicates only,
+while richer strings, `Option` collection migration, resources, and networking
+remain outside S2.
+
+**S2.2 exit gate:** Every S2 row is `DONE`, the S2 closure guard passes on the
+merged phase head, and the latest Historical Full run on `main` is green.
