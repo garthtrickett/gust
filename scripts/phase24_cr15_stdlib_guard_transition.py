@@ -2351,6 +2351,7 @@ def normalize_phase23_text_surfaces(
             "compiler/mir_native_backend_full_program_source.gst",
             "scripts/phase19_composition.py",
             "scripts/phase19_composition_parity.sh",
+            "scripts/phase20_exact_brand_boundary.sh",
             "scripts/phase21_complete_guard_suite.py",
         }
         require(successor.get("contract_version") ==

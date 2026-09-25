@@ -48110,6 +48110,19 @@
         "no_c_fallback_or_native_artifact": true,
         "partial_extra_or_substituted_transition": "rejected"
       },
+      "phase20_non_string_clone_successor": {
+        "contract_version": "phase26_reference_receiver_phase20_non_string_clone_successor_v1",
+        "source_fixture": "compiler/phase20_exact_brand_boundary_source.gst",
+        "owning_level2_guard": "guard-cranelift-phase20-exact-brand-boundary-parity",
+        "frozen_mir_to_c_exit_status": 23,
+        "canonical_mir_native_exit_status": 23,
+        "previous_direct_route": "native_full_program_success",
+        "current_direct_reason": "deferred_p14_full_program_non_string_clone",
+        "failure_stage": "before_driver_discovery",
+        "no_c_fallback_or_native_artifact": true,
+        "frozen_phase20_record": "unchanged",
+        "partial_extra_or_substituted_transition": "rejected"
+      },
       "phase24_filename_successor": {
         "contract_version": "phase26_reference_receiver_phase24_filename_successor_v1",
         "witness_id": "tcs_guard",
@@ -48243,10 +48256,10 @@
         "current_phase13_digest": "9991aa3731782994a9384f951b741419256bb6827d2f201bec1587ac6dd29048",
         "added_row": {
           "path": "scripts/phase26_reference_receiver_registration.py",
-          "digest": "8d0aa2293a4c3511f63079b5d758bcb625c52688e6a53e1ac612d4c62b5e2549",
+          "digest": "b7fe3829188e9b9db736aeaee22d88649ebab1ba958fbc3ddfbaa434fec0f0c2",
           "match_counts": {
             "explicit_backend_spelling": 1,
-            "mir_to_c_name": 3,
+            "mir_to_c_name": 4,
             "generated_c_contract": 1
           },
           "classification": "archive_candidate",
@@ -48315,6 +48328,21 @@
               "explicit_backend_spelling": 0,
               "mir_to_c_name": 6,
               "generated_c_contract": 1
+            }
+          },
+          {
+            "path": "scripts/phase20_exact_brand_boundary.sh",
+            "previous_digest": "44c60de9d556605a47ac2283decd593833454ff5643cf9fa41795057e52a0ba9",
+            "current_digest": "ee10747bc342149b30f228f9f1a7b9ff4a9e4f4b64bdf59ff0ff1d57b16fb473",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 7,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 5,
+              "generated_c_contract": 0
             }
           },
           {

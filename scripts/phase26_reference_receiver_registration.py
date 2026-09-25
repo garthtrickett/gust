@@ -122,6 +122,21 @@ def main() -> None:
         "no_c_fallback_or_native_artifact": True,
         "partial_extra_or_substituted_transition": "rejected",
     }
+    expected_record["phase20_non_string_clone_successor"] = {
+        "contract_version":
+            "phase26_reference_receiver_phase20_non_string_clone_successor_v1",
+        "source_fixture": "compiler/phase20_exact_brand_boundary_source.gst",
+        "owning_level2_guard":
+            "guard-cranelift-phase20-exact-brand-boundary-parity",
+        "frozen_mir_to_c_exit_status": 23,
+        "canonical_mir_native_exit_status": 23,
+        "previous_direct_route": "native_full_program_success",
+        "current_direct_reason": "deferred_p14_full_program_non_string_clone",
+        "failure_stage": "before_driver_discovery",
+        "no_c_fallback_or_native_artifact": True,
+        "frozen_phase20_record": "unchanged",
+        "partial_extra_or_substituted_transition": "rejected",
+    }
     filename_record = registry["phase24_filename_behavior_characterization"]
     expected_record["phase24_filename_successor"] = {
         "contract_version":
@@ -222,7 +237,7 @@ def main() -> None:
             "digest": digest("scripts/phase26_reference_receiver_registration.py"),
             "match_counts": {
                 "explicit_backend_spelling": 1,
-                "mir_to_c_name": 3,
+                "mir_to_c_name": 4,
                 "generated_c_contract": 1,
             },
             "classification": "archive_candidate",
@@ -247,6 +262,9 @@ def main() -> None:
         ("scripts/phase19_composition_parity.sh",
          "0e4384ff31a6352bf93bcb463fed0904d8c93d63ee559cd88e446b5b58cbdc1c",
          (0, 8, 1), (0, 6, 1)),
+        ("scripts/phase20_exact_brand_boundary.sh",
+         "44c60de9d556605a47ac2283decd593833454ff5643cf9fa41795057e52a0ba9",
+         (0, 7, 0), (0, 5, 0)),
         ("scripts/phase21_complete_guard_suite.py",
          "ac65da6e651480e044e24f008644e7c5f993a71c523ab6356d1f7107be36ea8b",
          (0, 2, 0), (0, 2, 0)),
@@ -307,6 +325,14 @@ def main() -> None:
                 "current_reason"] in phase19_guard and
             "GUST_TEST_MIR_TO_C_UNAVAILABLE=1" in phase19_guard,
             "Phase 19 no-fallback non-string Clone negative is not executed")
+    phase20_guard = (ROOT / "scripts/phase20_exact_brand_boundary.sh").read_text(
+        encoding="utf-8")
+    require(expected_record["phase20_non_string_clone_successor"][
+                "current_direct_reason"] in phase20_guard and
+            "GUST_TEST_MIR_TO_C_UNAVAILABLE=1" in phase20_guard and
+            'test ! -e "$poison_marker"' in phase20_guard and
+            'test ! -e "$build_root/direct-native"' in phase20_guard,
+            "Phase 20 branded Index Clone deferral is not pinned")
     print("✅ Selected native reference receiver prerequisite registration passed.")
 
 
