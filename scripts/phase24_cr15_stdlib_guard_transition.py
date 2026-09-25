@@ -2336,6 +2336,38 @@ def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    # The Stdlib S2 opening updates the S1 branded-collections guard's exact
+    # native deferral reason after the Phase 26 reference-parameter repair.
+    # Accept either the merged guard or that one measured successor, then
+    # project it to the merged identity before closed Phase 25/23 links run.
+    branded = registry.get("phase26_activation_audit", {}).get(
+        "stdlib_s1_branded_collections_guard_successor")
+    require(branded == {
+        "contract_version": "phase26_s2_branded_collections_guard_successor_v1",
+        "path": "scripts/stdlib_s1_branded_collections_parity.sh",
+        "previous_digest":
+            "94175540c66343b20bd16a98af324684376d9fc717382ba895c0473cb122f94f",
+        "current_digest":
+            "2ab852165d09d4d4f4a4aa37446d68ddd212a5e578c6ce90cb202ad3ab8e6af9",
+        "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 1,
+            "mir_to_c_name": 2,
+        },
+        "owner": "cranelift",
+        "stdlib_pull_request": 477,
+        "partial_extra_or_substituted_surface": "rejected",
+    }, "Phase 26 Stdlib S1 branded-collections guard successor drifted")
+    branded_rows = [row for row in rows if row["path"] == branded["path"]]
+    require(len(branded_rows) == 1 and
+            branded_rows[0]["digest"] in (
+                branded["previous_digest"], branded["current_digest"]) and
+            branded_rows[0]["match_counts"] == branded["match_counts"],
+            "Phase 26 Stdlib S1 branded-collections guard is missing, "
+            "extra, or substituted")
+    rows = [dict(row, digest=branded["previous_digest"])
+            if row["path"] == branded["path"] else row for row in rows]
+
     prerequisite = registry.get("phase26_activation_audit", {}).get(
         "reference_receiver_prerequisite", {})
     successor = prerequisite.get("phase23_text_surface_successor")

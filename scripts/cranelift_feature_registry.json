@@ -48057,6 +48057,20 @@
   },
   "phase26_activation_audit": {
     "status": "phase26_activation_audit_registered",
+    "stdlib_s1_branded_collections_guard_successor": {
+      "contract_version": "phase26_s2_branded_collections_guard_successor_v1",
+      "path": "scripts/stdlib_s1_branded_collections_parity.sh",
+      "previous_digest": "94175540c66343b20bd16a98af324684376d9fc717382ba895c0473cb122f94f",
+      "current_digest": "2ab852165d09d4d4f4a4aa37446d68ddd212a5e578c6ce90cb202ad3ab8e6af9",
+      "match_counts": {
+        "explicit_backend_spelling": 0,
+        "generated_c_contract": 1,
+        "mir_to_c_name": 2
+      },
+      "owner": "cranelift",
+      "stdlib_pull_request": 477,
+      "partial_extra_or_substituted_surface": "rejected"
+    },
     "reference_receiver_prerequisite": {
       "contract_version": "phase26_reference_receiver_prerequisite_v1",
       "status": "selected_native_reference_argument_receiver_qualified",
