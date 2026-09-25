@@ -385,9 +385,14 @@ def provider_docs_falsifier_self_test(successor: dict) -> None:
 LIVING_SURFACE_COLLAPSE: dict = {}
 
 
-def provider_docs_state(coordination: dict) -> str:
+def provider_docs_state(coordination: dict, registry: dict) -> str:
     successor = provider_docs_successor(coordination)
     provider_docs_falsifier_self_test(successor)
+    # The later class contract registers additional living documents beyond
+    # S1.8's original set. Check their landed markers before projecting their
+    # live bytes onto this closed provider-docs manifest.
+    class_contract = pinned_manifest_class_contract(registry)
+    assert_class_living_content(class_contract)
     live: list[dict[str, object]] = []
     for path in successor["changed_paths"]:
         absolute = ROOT / path
@@ -405,7 +410,8 @@ def provider_docs_state(coordination: dict) -> str:
     state = classify_exact_file_manifest(successor, live)
     if state is None:
         collapse = LIVING_SURFACE_COLLAPSE.get("living_surfaces", [])
-        living_paths = {row["path"] for row in collapse}
+        living_paths = {row["path"] for row in collapse} | \
+            class_living_paths(class_contract)
         if living_paths:
             for candidate in successor["accepted_states"]:
                 projected = [
@@ -700,7 +706,7 @@ def s1_8_state(value: dict, registry: dict | None = None) -> str:
     workflow = s1_8_workflow_prerequisite_successor(
         coordination, successor)
     provider = provider_docs_successor(coordination)
-    provider_state = provider_docs_state(coordination)
+    provider_state = provider_docs_state(coordination, registry)
     collapse = landed_living_surface_collapse(successor)
     living_paths = {row["path"] for row in collapse["living_surfaces"]}
     live: list[dict[str, object]] = []
@@ -2819,7 +2825,7 @@ def normalize_phase23_text_surfaces(
     s1_successor = s1_8_successor(value)
     coordination = s1_8_coordination_successor(registry, s1_successor)
     provider = provider_docs_successor(coordination)
-    provider_state = provider_docs_state(coordination)
+    provider_state = provider_docs_state(coordination, registry)
     provider_text = provider["phase23_text_surface_transition"]
     provider_paths = provider_text["changed_paths"]
     by_live_path = {str(row["path"]): row for row in rows}
