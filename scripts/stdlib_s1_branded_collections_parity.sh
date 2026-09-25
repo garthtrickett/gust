@@ -175,9 +175,9 @@ assert_rejected "$incompatible_value_fixture" \
 assert_rejected "$moved_fixture" \
   'Semantic Error: Use of moved variable m'
 
-# Generic source-to-MIR is still outside the connected native cohort. Require
-# the compiler-owned deferral for both halves before driver discovery, with no
-# C fallback or native artifact.
+# The generic reference-parameter route is connected; these fixtures still
+# return aggregates, which remain deferred before driver discovery. Require
+# that precise compiler-owned reason, with no C fallback or native artifact.
 for variant in inferred explicit; do
   fixture_var="${variant}_fixture"
   fixture="${!fixture_var}"
@@ -189,7 +189,7 @@ for variant in inferred explicit; do
   fi
   for token in \
     'decision=deferred capability=phase13_generic_source_to_mir' \
-    'reason_code=deferred_p13_parameter_argument_target_dependent_abi' \
+    'reason_code=deferred_p13_parameter_argument_aggregate_return' \
     'expected_failure_stage=before_driver_discovery' \
     'class=unsupported_native_capability' \
     'source-level route is not connected yet'
