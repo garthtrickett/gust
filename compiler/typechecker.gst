@@ -12117,6 +12117,16 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
             }
 
             if env_validate_extern_ffi_positions(env, stmt, &sig, ctx) == 0 {
+                // Keep an invalid extern visible to independent declaration
+                // checks (for example Resource destructor validation). Its
+                // missing FFI contract still rejects any call before lowering.
+                if stmt.FunctionDecl.is_extern == 1 {
+                    sig.ffi_contract_verified = 0;
+                    env_register_function(env, namespaced_name, sig, ctx);
+                    env_register_function_declaration_module(
+                        env, namespaced_name, (*env).current_prefix, ctx
+                    );
+                }
                 return;
             }
 

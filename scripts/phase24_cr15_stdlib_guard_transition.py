@@ -2481,9 +2481,11 @@ def normalize_phase23_text_surfaces(
             ".github/workflows/pr-fast.yml",
             "compiler/typechecker.gst",
             "justfile",
+            "scripts/cranelift_ci_family.py",
             "scripts/cranelift_test_levels.json",
             "scripts/cranelift_test_levels.py",
             "scripts/phase22_opening.py",
+            "scripts/phase26_reference_receiver_registration.py",
         }
         require(ffi.get("contract_version") ==
                 "phase26_1d1_phase23_text_surface_successor_v1" and

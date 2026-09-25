@@ -227,7 +227,10 @@ def main() -> None:
         "phase22_path": "scripts/phase22_opening.py",
         "previous_phase22_digest":
             "0d3a7f856253c711be186d2fc0aad9a49983ef64c194ee3b2da88233d39e160e",
-        "current_phase22_digest": digest("scripts/phase22_opening.py"),
+        # This prerequisite is a closed predecessor. Phase 26.1D1 records
+        # the later Phase 22 edit in its own exact text-surface successor.
+        "current_phase22_digest":
+            "e5c3b58773d189acbf5a7523ec9674881d7375c7dc0cc6601f04cc36b77d9405",
         "phase13_path": "scripts/phase13_parameter_argument.sh",
         "previous_phase13_digest":
             "e14cbe70afac5d4691c9af5eba1b2a61fc48de8d2162fe8f3df60a8810692cd0",

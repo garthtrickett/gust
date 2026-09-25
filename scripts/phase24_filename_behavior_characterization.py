@@ -186,10 +186,10 @@ def validate_static(value: dict) -> None:
                 "phase26_1d1_filename_site_successor_v1" and
                 ffi_sites.get("previous_sites") == previous_sites and
                 ffi_sites.get("current_sites") == live_sites and
-                ffi_sites.get("line_delta") == 127 and
+                ffi_sites.get("line_delta") == 137 and
                 ffi_sites.get("partial_extra_or_substituted_site") ==
                 "rejected" and len(previous_sites) == len(live_sites) == 3 and
-                all(now["line"] == before["line"] + 127 and
+                all(now["line"] == before["line"] + 137 and
                     {key: val for key, val in now.items() if key != "line"} ==
                     {key: val for key, val in before.items() if key != "line"}
                     for before, now in zip(previous_sites, live_sites)),
