@@ -76,21 +76,36 @@ record = json.load(open("scripts/cranelift_feature_registry.json"))
 print(1 if record.get("phase21_full_compiler_native_qualification", {}).get("status") == "patch21_14_complete" else 0)
 ')"
 if test "$full_compiler_live" = 1; then
-  make build/gust-runtime-package.a
-  GUST_NATIVE_BACKEND_DRIVER="$PWD/$worker" \
-    ./gust --backend cranelift -o "$build_root/direct-native" "$positive" \
-      >"$build_root/direct.compile.stdout" \
-      2>"$build_root/direct.compile.stderr"
-  test ! -s "$build_root/direct.compile.stdout"
-  test ! -s "$build_root/direct.compile.stderr"
+  # The frozen source oracle and selected canonical MIR still prove the exact
+  # brand boundary. Full-program native admission now reaches both branded
+  # Index Clone calls, whose runtime entry has only a Str ABI.
   set +e
-  "$build_root/direct-native" >"$build_root/direct.stdout" \
-    2>"$build_root/direct.stderr"
+  GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
+  GUST_PHASE20_POISON_MARKER="$poison_marker" \
+  GUST_NATIVE_BACKEND_DRIVER="$poison" \
+    ./gust --backend cranelift -o "$build_root/direct-native" "$positive" \
+    >"$build_root/direct.compile.stdout" \
+    2>"$build_root/direct.compile.stderr"
   direct_status="$?"
   set -e
-  test "$direct_status" = "$mir_status"
-  cmp -s "$build_root/mir-to-c.stdout" "$build_root/direct.stdout"
-  cmp -s "$build_root/mir-to-c.stderr" "$build_root/direct.stderr"
+  test "$direct_status" -ne 0
+  test ! -e "$poison_marker"
+  rg -F 'decision=deferred capability=phase13_generic_source_to_mir' \
+    "$build_root/direct.compile.stdout" >/dev/null
+  rg -F 'reason_code=deferred_p14_full_program_non_string_clone' \
+    "$build_root/direct.compile.stdout" >/dev/null
+  rg -F 'expected_failure_stage=before_driver_discovery' \
+    "$build_root/direct.compile.stdout" >/dev/null
+  rg -F 'class=unsupported_native_capability' \
+    "$build_root/direct.compile.stdout" >/dev/null
+  test ! -s "$build_root/direct.compile.stderr"
+  test ! -e "$build_root/direct-native"
+  if find "$build_root" -maxdepth 1 -type f \
+      \( -name '*.c' -o -name '*.phase10.bundle' -o -name '*.phase10.request' \) \
+      -print -quit | grep -q .; then
+    echo 'Phase 20 branded Index Clone left a C or transient MIR artifact' >&2
+    exit 1
+  fi
 else
   set +e
   GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \

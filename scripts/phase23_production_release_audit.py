@@ -79,6 +79,33 @@ def surface(path: str, role: str, markers: tuple[str, ...]) -> dict[str, object]
 
 
 
+def project_reference_receiver_production_audit(registry: dict, live: dict) -> dict:
+    """Project one registered native guard invocation off the closed audit."""
+    prerequisite = registry.get("phase26_activation_audit", {}).get(
+        "reference_receiver_prerequisite", {})
+    successor = prerequisite.get("production_audit_successor")
+    if successor is None:
+        return live
+    invocation = prerequisite.get("phase22_invocation_successor", {}).get(
+        "added_row", {})
+    require(successor == {
+        "contract_version":
+            "phase26_reference_receiver_production_audit_successor_v1",
+        "previous_repository_invocation_count": 150,
+        "current_repository_invocation_count": 151,
+        "added_invocation_path":
+            "scripts/phase16_reference_receiver_parity.sh",
+        "unchanged_other_fields": True,
+        "partial_extra_or_substituted_audit": "rejected",
+    } and invocation.get("path") == successor["added_invocation_path"] and
+            invocation.get("selection") == "explicit_cranelift" and
+            live["repository_invocation_count"] == 151,
+            "Phase 26 reference receiver production audit successor drifted")
+    previous = dict(live)
+    previous["repository_invocation_count"] = 150
+    return previous
+
+
 def phase2510_emitter_audit(registry: dict, live: dict) -> dict:
     """Project the live audit back past Patch 25.10.
 
@@ -443,7 +470,7 @@ def validate() -> tuple[dict, dict[str, object]]:
     require(registry.get("phase23_mir_to_c_focused_live", {}).get(
             "route_contract", {}).get("non_bootstrap_live_lane_count") == 1,
             "focused live-C predecessor drifted")
-    summary = scan()
+    summary = project_reference_receiver_production_audit(registry, scan())
     summary = phase2510_emitter_audit(registry, summary)
     summary = phase2510a_strings_audit(registry, summary)
     summary = phase25_runtime_port_audit(registry, summary)

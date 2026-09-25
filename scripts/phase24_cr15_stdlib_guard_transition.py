@@ -1070,7 +1070,42 @@ def effective_phase22_summary(registry: dict, value: dict) -> dict:
             removal.get("retired_companion_default_count"),
             "a companion default arm was retired inside a relay-excluded row, "
             "which the two censuses cannot both be measuring")
-    return _issue398_summary_successor(registry, current)
+    return _phase26_reference_receiver_invocation_successor(
+        registry, _issue398_summary_successor(registry, current))
+
+
+def _phase26_reference_receiver_invocation_successor(
+        registry: dict, previous: dict) -> dict:
+    """Admit one native-only prerequisite invocation without rewriting Phase 22."""
+    successor = registry.get("phase26_activation_audit", {}).get(
+        "reference_receiver_prerequisite", {}).get(
+            "phase22_invocation_successor")
+    if successor is None:
+        return previous
+    row = successor.get("added_row")
+    require(successor.get("contract_version") ==
+            "phase26_reference_receiver_phase22_invocation_successor_v1" and
+            successor.get("previous_total") == previous["total"] == 150 and
+            successor.get("current_total") == 151 and
+            successor.get("partial_extra_or_substituted_invocation") ==
+            "rejected" and
+            isinstance(row, dict) and
+            row.get("path") == "scripts/phase16_reference_receiver_parity.sh" and
+            row.get("selection") == "explicit_cranelift" and
+            row.get("consumer_class") == "already_explicit_or_parser_probe" and
+            row.get("owner") == "cranelift",
+            "Phase 26 reference receiver invocation successor drifted")
+    current = copy.deepcopy(previous)
+    current["total"] += 1
+    for key, label in (("selection_counts", "selection"),
+                       ("consumer_class_counts", "consumer_class"),
+                       ("owner_counts", "owner")):
+        group = str(row[label])
+        current[key][group] = current[key].get(group, 0) + 1
+    require(current["total"] == successor["current_total"] and
+            current["unclassified_count"] == 0,
+            "Phase 26 reference receiver invocation census did not balance")
+    return current
 
 
 def _issue398_summary_successor(registry: dict, previous: dict) -> dict:
@@ -2301,6 +2336,97 @@ def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    prerequisite = registry.get("phase26_activation_audit", {}).get(
+        "reference_receiver_prerequisite", {})
+    successor = prerequisite.get("phase23_text_surface_successor")
+    if successor is not None:
+        phase23_closure_path = successor.get("phase23_closure_path")
+        full_program_path = successor.get("full_program_path")
+        phase22_path = successor.get("phase22_path")
+        phase13_path = successor.get("phase13_path")
+        added = successor.get("added_row")
+        corrective_rows = successor.get("corrective_changed_rows", [])
+        corrective_paths = {
+            "compiler/CRANELIFT_PHASE19_COMPOSITION.md",
+            "compiler/mir_native_backend_full_program_source.gst",
+            "scripts/phase19_composition.py",
+            "scripts/phase19_composition_parity.sh",
+            "scripts/phase20_exact_brand_boundary.sh",
+            "scripts/phase21_complete_guard_suite.py",
+        }
+        require(successor.get("contract_version") ==
+                "phase26_reference_receiver_phase23_text_surface_successor_v1" and
+                phase23_closure_path == "scripts/phase23_closure.py" and
+                full_program_path ==
+                "compiler/experiments/cranelift/src/full_program.rs" and
+                phase22_path == "scripts/phase22_opening.py" and
+                phase13_path == "scripts/phase13_parameter_argument.sh" and
+                isinstance(added, dict) and
+                added.get("path") ==
+                "scripts/phase26_reference_receiver_registration.py" and
+                isinstance(corrective_rows, list) and
+                {row.get("path") for row in corrective_rows} ==
+                corrective_paths and len(corrective_rows) ==
+                len(corrective_paths) and
+                successor.get("partial_extra_or_substituted_surface") ==
+                "rejected",
+                "Phase 26 reference receiver text surface successor drifted")
+        phase23_closure_rows = [row for row in rows
+                                if row["path"] == phase23_closure_path]
+        full_program_rows = [row for row in rows
+                             if row["path"] == full_program_path]
+        phase22_rows = [row for row in rows if row["path"] == phase22_path]
+        phase13_rows = [row for row in rows if row["path"] == phase13_path]
+        added_rows = [row for row in rows if row["path"] == added["path"]]
+        require(len(phase23_closure_rows) == 1 and
+                phase23_closure_rows[0]["digest"] ==
+                successor["current_phase23_closure_digest"] and
+                len(full_program_rows) == 1 and
+                full_program_rows[0]["digest"] ==
+                successor["current_full_program_digest"] and
+                len(phase22_rows) == 1 and
+                phase22_rows[0]["digest"] ==
+                successor["current_phase22_digest"] and
+                len(phase13_rows) == 1 and
+                phase13_rows[0]["digest"] ==
+                successor["current_phase13_digest"] and
+                added_rows == [added],
+                "Phase 26 reference receiver text surfaces are missing, "
+                "extra, or substituted")
+        corrective_previous = {}
+        for changed in corrective_rows:
+            path = changed["path"]
+            live = [row for row in rows if row["path"] == path]
+            require(len(live) == 1 and
+                    live[0]["digest"] == changed.get("current_digest") and
+                    live[0]["match_counts"] ==
+                    changed.get("current_match_counts") and
+                    set(changed) == {"path", "previous_digest",
+                                     "current_digest", "previous_match_counts",
+                                     "current_match_counts"},
+                    f"Phase 26 corrective text surface drifted: {path}")
+            previous = dict(live[0])
+            previous["digest"] = changed["previous_digest"]
+            previous["match_counts"] = changed["previous_match_counts"]
+            corrective_previous[path] = previous
+        previous_phase23_closure = dict(phase23_closure_rows[0])
+        previous_phase23_closure["digest"] = successor[
+            "previous_phase23_closure_digest"]
+        previous_full_program = dict(full_program_rows[0])
+        previous_full_program["digest"] = successor[
+            "previous_full_program_digest"]
+        previous_phase22 = dict(phase22_rows[0])
+        previous_phase22["digest"] = successor["previous_phase22_digest"]
+        previous_phase13 = dict(phase13_rows[0])
+        previous_phase13["digest"] = successor["previous_phase13_digest"]
+        rows = [previous_phase23_closure if row["path"] ==
+                phase23_closure_path else
+                previous_full_program if row["path"] == full_program_path else
+                previous_phase22 if row["path"] == phase22_path else
+                previous_phase13 if row["path"] == phase13_path else row
+                for row in rows if row["path"] != added["path"]]
+        rows = [corrective_previous.get(row["path"], row) for row in rows]
+
     # Phase 26 activation moves the active pointer in TASK.md. The older
     # Patch 25.12b successor enrolled that file and must keep its exact
     # historical post-state. Register the complete new control-plane change
@@ -3957,6 +4083,15 @@ def validate() -> tuple[dict, str]:
     opening = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(opening)
     rows = opening.scan_invocations()
+    prerequisite = registry.get("phase26_activation_audit", {}).get(
+        "reference_receiver_prerequisite", {})
+    invocation_successor = prerequisite.get("phase22_invocation_successor")
+    if invocation_successor is not None:
+        added = invocation_successor["added_row"]
+        require([row for row in rows if row.get("path") == added["path"]] ==
+                [added],
+                "Phase 26 reference receiver native invocation is missing, "
+                "extra, or substituted")
     require(opening.scan_summary(rows) ==
             effective_phase22_summary(registry, value),
             "effective Phase 22 aggregate drifted")

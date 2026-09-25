@@ -284,6 +284,22 @@ def scan_summary(rows: list[dict[str, object]]) -> dict[str, object]:
 def phase22_relay_inventory_rows(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep Phase 22's closed relay identity while validating exact successors."""
+    # Phase 26's separate reference-argument prerequisite adds one explicit
+    # native guard invocation. Validate it, then project it out of the closed
+    # Phase 22 relay census; the live unfiltered census retains it.
+    successor = registry.get("phase26_activation_audit", {}).get(
+        "reference_receiver_prerequisite", {}).get(
+            "phase22_invocation_successor")
+    if successor is not None:
+        added = successor.get("added_row")
+        require(isinstance(added, dict) and
+                successor.get("contract_version") ==
+                "phase26_reference_receiver_phase22_invocation_successor_v1" and
+                [row for row in rows if row.get("path") == added.get("path")]
+                == [added],
+                "Phase 26 native reference receiver relay successor is "
+                "missing, extra, or substituted")
+        rows = [row for row in rows if row != added]
     migration = registry.get("phase23_production_release_audit", {}).get(
         "phase22_closed_inventory_migration", {})
     require(migration.get("status") ==

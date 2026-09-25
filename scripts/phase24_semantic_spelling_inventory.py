@@ -286,6 +286,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     spelling_successor = registry.get(
         "phase2512b_runtime_c_retirement", {}).get(
             "spelling_inventory_transition")
+    reference_successor = registry.get("phase26_activation_audit", {}).get(
+        "reference_receiver_prerequisite", {}).get(
+            "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -293,7 +296,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     if spelling_successor is not None:
         require(spelling_successor.get("contract_version") ==
                 "phase2512b_spelling_inventory_transition_v1" and
-                spelling_successor.get("current_inventory_summary") == summary,
+                spelling_successor.get("current_inventory_summary") ==
+                (summary if reference_successor is None else
+                 reference_successor.get("predecessor_inventory_summary")),
                 "Patch 25.12b spelling-inventory successor does not end at "
                 "the live manifest")
         was = spelling_successor["previous_inventory_summary"]
@@ -304,6 +309,42 @@ def validate() -> tuple[dict, list[dict], dict]:
                 "Patch 25.12b must move spelling-inventory IDENTITY without "
                 "moving the population: it edits inventoried lines, it does "
                 "not add or remove spelling sites")
+    if reference_successor is not None:
+        require(spelling_successor is not None and
+                reference_successor.get("contract_version") ==
+                "phase26_reference_receiver_spelling_inventory_successor_v1" and
+                reference_successor.get("predecessor_complete_manifest_digest") ==
+                spelling_successor["current_inventory_summary"][
+                    "complete_manifest_digest"] and
+                reference_successor.get("changed_source_paths") == [
+                    "compiler/experiments/cranelift/src/full_program.rs",
+                    "compiler/mir_native_backend_full_program_source.gst",
+                    "compiler/phase16_reference_receiver_source.gst",
+                    "compiler/phase16_reference_return_deferred_source.gst",
+                    "compiler/phase16_string_clone_source.gst",
+                    "compiler/phase16_non_string_clone_deferred_source.gst",
+                ] and
+                reference_successor.get(
+                    "partial_extra_or_substituted_inventory") == "rejected" and
+                reference_successor.get("current_inventory_summary") == summary,
+                "Phase 26 reference receiver spelling inventory successor "
+                "does not end at the live manifest")
+        was = spelling_successor["current_inventory_summary"]
+        now = reference_successor["current_inventory_summary"]
+        require(now["site_count"] == was["site_count"] + 3 and
+                now["semantic_site_count"] == was["semantic_site_count"] + 3 and
+                now["classification_counts"][SEMANTIC] ==
+                was["classification_counts"][SEMANTIC] + 3 and
+                all(now["classification_counts"][kind] ==
+                    was["classification_counts"][kind]
+                    for kind in PARTITIONS) and
+                now["unknown_site_count"] == was["unknown_site_count"] == 0 and
+                now["source_file_count"] == was["source_file_count"] + 4 and
+                {key for key in was["partition_manifest_digests"]
+                 if was["partition_manifest_digests"][key] !=
+                 now["partition_manifest_digests"][key]} == {"diagnostic"},
+                "Phase 26 reference receiver spelling inventory changed "
+                "unregistered site populations or partitions")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),

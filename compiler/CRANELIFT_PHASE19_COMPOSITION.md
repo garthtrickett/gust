@@ -28,8 +28,12 @@ lookup elides that known identity before resolving the existing runtime type.
 Explicit Cranelift is deferred by the compiler-owned
 `phase13_generic_source_to_mir` decision with reason
 `deferred_p13_parameter_argument_target_dependent_abi` at `before_driver_discovery`.
-The Level 2 guard requires that refusal and proves no C fallback or native
-artifact is published.
+That is the preserved Phase 19 classification. After Phase 26 admitted direct
+call Reference parameters, the same composition reaches a typed `std.Clone`
+of an `Index` and now defers with `deferred_p14_full_program_non_string_clone` at
+`before_driver_discovery`. The Level 2 guard checks that refusal and an
+independent `Index` Clone fixture, with no C fallback or native artifact.
+String Clone remains natively supported. The frozen exit status 91 is unchanged.
 
 ## Unaffected predecessor authorities
 
