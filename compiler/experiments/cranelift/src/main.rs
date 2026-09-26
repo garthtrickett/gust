@@ -75,6 +75,7 @@ const HOST_ADD_I32_SYMBOL: &str = "tiny_host_add_i32";
 const EXTERN_PREDICATE_BRANCH_I32_SYMBOL: &str = "tiny_cranelift_extern_predicate_branch_i32";
 const HOST_IS_POSITIVE_I32_SYMBOL: &str = "tiny_host_is_positive_i32";
 const HOST_REPR_C_PROBE_SYMBOL: &str = "tiny_host_read_repr_c_probe";
+const HOST_REPR_C_WRITE_SYMBOL: &str = "tiny_host_write_repr_c_probe";
 const MIR_RETURN_INT_SYMBOL: &str = "tiny_cranelift_mir_return_int";
 const COMPILER_MIR_INGESTED_RETURN_INT_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_return_int";
@@ -15641,6 +15642,7 @@ fn emit_phase13_approved_scalar_host_object(
     output_path: &Path,
     include_scalar_hosts: bool,
     include_repr_c_probe: bool,
+    include_repr_c_write: bool,
 ) -> Result<(), Box<dyn Error>> {
     if let Some(parent) = output_path.parent() {
         fs::create_dir_all(parent)?;
@@ -15743,6 +15745,29 @@ fn emit_phase13_approved_scalar_host_object(
         let sum = builder.ins().iadd(first, middle_int);
         let sum = builder.ins().iadd(sum, last);
         builder.ins().return_(&[sum]);
+        builder.seal_all_blocks();
+        builder.finalize();
+        module.define_function(id, &mut context)?;
+        module.clear_context(&mut context);
+    }
+
+    if include_repr_c_write {
+        let mut signature = module.make_signature();
+        signature.params.push(AbiParam::new(module.target_config().pointer_type()));
+        let id = module.declare_function(HOST_REPR_C_WRITE_SYMBOL, Linkage::Export, &signature)?;
+        let mut context = module.make_context();
+        context.func.signature = signature;
+        let mut builder_context = FunctionBuilderContext::new();
+        let mut builder = FunctionBuilder::new(&mut context.func, &mut builder_context);
+        let entry = builder.create_block();
+        builder.append_block_params_for_function_params(entry);
+        builder.switch_to_block(entry);
+        let pointer = builder.block_params(entry)[0];
+        let middle = builder.ins().iconst(types::I32, 30);
+        let last = builder.ins().iconst(types::I8, 4);
+        builder.ins().store(MemFlags::new(), middle, pointer, 4);
+        builder.ins().store(MemFlags::new(), last, pointer, 8);
+        builder.ins().return_(&[]);
         builder.seal_all_blocks();
         builder.finalize();
         module.define_function(id, &mut context)?;
@@ -16321,6 +16346,7 @@ fn compile_phase10_scalar_metadata_request_path(
     let mut preserved_metadata_summaries = Vec::new();
     let mut requires_phase13_approved_scalar_host_object = false;
     let mut requires_phase26_repr_c_host_object = false;
+    let mut requires_phase26_repr_c_write_host_object = false;
 
     for (module_index, module_record) in bundle.modules.iter().enumerate() {
         preserved_metadata_count += module_record.metadata.len();
@@ -16401,6 +16427,9 @@ fn compile_phase10_scalar_metadata_request_path(
             }
             if full_program::selected_repr_c_probe_host(&module_record.canonical_mir)? {
                 requires_phase26_repr_c_host_object = true;
+            }
+            if full_program::selected_repr_c_write_host(&module_record.canonical_mir)? {
+                requires_phase26_repr_c_write_host_object = true;
             }
             full_program::lower_contents(
                 &module_record.canonical_mir,
@@ -16554,7 +16583,7 @@ fn compile_phase10_scalar_metadata_request_path(
         reported_object_name = &module_record.object_name;
     }
 
-    let approved_host_object = if requires_phase13_approved_scalar_host_object || requires_phase26_repr_c_host_object {
+    let approved_host_object = if requires_phase13_approved_scalar_host_object || requires_phase26_repr_c_host_object || requires_phase26_repr_c_write_host_object {
         let path = compiler_mir_link_sibling_path(
             &request.output_path,
             ".phase13-approved-scalar-host.o",
@@ -16563,6 +16592,7 @@ fn compile_phase10_scalar_metadata_request_path(
             &path,
             requires_phase13_approved_scalar_host_object,
             requires_phase26_repr_c_host_object,
+            requires_phase26_repr_c_write_host_object,
         )?;
         Some(path)
     } else {

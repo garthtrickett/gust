@@ -807,6 +807,9 @@ jobs:
       - name: Phase 26 borrowed repr C layout
         run: just guard-cranelift-phase26-ffi-repr-c-layout
 
+      - name: Phase 26 borrowed repr C raw pointer write
+        run: just guard-cranelift-phase26-ffi-repr-c-write
+
   final:
     name: final diff check
     runs-on: ubuntu-latest

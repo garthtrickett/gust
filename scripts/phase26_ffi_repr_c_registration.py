@@ -92,6 +92,10 @@ def main() -> None:
             "selected native invocation rows differ from scanner")
 
     surfaces = record["phase23_text_surface_successor"]
+    d3_surfaces = registry.get("phase26_activation_audit", {}).get(
+        "ffi_repr_c_write_increment", {}).get("phase23_text_surface_successor", {})
+    d3_changed = {row["path"]: row for row in
+                  d3_surfaces.get("changed_rows", [])}
     changed = surfaces.get("changed_rows", [])
     added = surfaces.get("added_row")
     require(surfaces.get("contract_version") ==
@@ -105,12 +109,21 @@ def main() -> None:
             "Phase23 text surface successor drifted")
     for row in changed:
         live_digest = hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest()
-        require(live_digest == row["current_digest"] and
+        successor = d3_changed.get(row["path"])
+        require((successor is None or
+                 successor["previous_digest"] == row["current_digest"]) and
+                live_digest == (successor["current_digest"] if successor
+                                else row["current_digest"]) and
                 len(row["previous_digest"]) == 64,
                 f"text surface digest drifted: {row['path']}")
+    added_successor = d3_changed.get(added["path"])
     require(hashlib.sha256(
                 (ROOT / added["path"]).read_bytes()).hexdigest() ==
-            added["digest"], "added registration text surface drifted")
+            (added_successor["current_digest"] if added_successor else
+             added["digest"]) and
+            (added_successor is None or
+             added_successor["previous_digest"] == added["digest"]),
+            "added registration text surface drifted")
 
     workflow = (ROOT / ".github/workflows/pr-fast.yml").read_text()
     justfile = (ROOT / "justfile").read_text()

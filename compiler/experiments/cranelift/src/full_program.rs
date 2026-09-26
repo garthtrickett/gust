@@ -4250,10 +4250,15 @@ pub fn lower_path(canonical_path: &Path, object_path: &Path) -> Result<String, B
 // The source planner has already checked the target C layout. Independently
 // pin the selected test host's canonical signature and physical placements
 // before the worker links its generated host object.
-pub fn selected_repr_c_probe_host(contents: &str) -> Result<bool, Box<dyn Error>> {
+fn selected_repr_c_probe_host_with_signature(
+    contents: &str,
+    symbol: &str,
+    parameter_type: &str,
+    result_type: &str,
+) -> Result<bool, Box<dyn Error>> {
     let program = parse(contents)?;
     let selected: Vec<_> = program.functions.iter().filter(|function| {
-        function.is_extern && function.extern_symbol == "tiny_host_read_repr_c_probe"
+        function.is_extern && function.extern_symbol == symbol
     }).collect();
     if selected.is_empty() {
         return Ok(false);
@@ -4263,9 +4268,9 @@ pub fn selected_repr_c_probe_host(contents: &str) -> Result<bool, Box<dyn Error>
     if program.target_triple != "x86_64-unknown-linux-gnu" || program.object_format != "Elf" {
         return Err(invalid("selected repr(C) test host target is unsupported"));
     }
-    if selected.len() != 1 || selected[0].result_type != "Int"
+    if selected.len() != 1 || selected[0].result_type != result_type
         || selected[0].parameters.len() != 1
-        || selected[0].parameters[0].1 != "Reference(Struct(\"FfiProbe\", None), None)" {
+        || selected[0].parameters[0].1 != parameter_type {
         return Err(invalid("selected repr(C) test host has an unapproved canonical signature"));
     }
     let layout = program.layouts.iter().find(|layout| layout.erased_name == "FfiProbe")
@@ -4284,6 +4289,24 @@ pub fn selected_repr_c_probe_host(contents: &str) -> Result<bool, Box<dyn Error>
         return Err(invalid("selected repr(C) test host physical layout disagrees"));
     }
     Ok(true)
+}
+
+pub fn selected_repr_c_probe_host(contents: &str) -> Result<bool, Box<dyn Error>> {
+    selected_repr_c_probe_host_with_signature(
+        contents,
+        "tiny_host_read_repr_c_probe",
+        "Reference(Struct(\"FfiProbe\", None), None)",
+        "Int",
+    )
+}
+
+pub fn selected_repr_c_write_host(contents: &str) -> Result<bool, Box<dyn Error>> {
+    selected_repr_c_probe_host_with_signature(
+        contents,
+        "tiny_host_write_repr_c_probe",
+        "RawPointer(Struct(\"FfiProbe\", None))",
+        "Void",
+    )
 }
 
 pub fn lower_contents(contents: &str, object_path: &Path) -> Result<String, Box<dyn Error>> {

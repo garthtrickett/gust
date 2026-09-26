@@ -215,9 +215,10 @@ func mir_native_parameter_argument_scan_deferred(
                     ctx[statement.FunctionDecl.params];
                 mut parameter_index := 0;
                 while parameter_index < len(parameters) {
+                    mut parameter := parameters[parameter_index];
                     mut parameter_class :=
                         mir_native_parameter_argument_type_class(
-                            parameters[parameter_index].param_type,
+                            parameter.param_type,
                             ctx
                         );
                     if parameter_class == 1 {
@@ -230,9 +231,20 @@ func mir_native_parameter_argument_scan_deferred(
                             ctx
                         );
                     }
+                    // D1 verifies the call-bounded write contract. The later
+                    // full-program preflight must still prove the C layout and
+                    // approve the exact host before any driver discovery.
+                    mut borrowed_write_struct := 0;
+                    if statement.FunctionDecl.is_extern == 1 &&
+                       parameter.param_type.tag == 9 &&
+                       std.str_eq(parameter.ffi_policy, "borrow_write_call") == 1 {
+                        mut inner := ctx[parameter.param_type.RawPointer.inner];
+                        if inner.tag == 8 { borrowed_write_struct = 1; }
+                    }
                     if parameter_class == 2 &&
-                       parameters[parameter_index].param_type.tag != 11 && // Reference
-                       (parameters[parameter_index].param_type.tag != 5 ||
+                       parameter.param_type.tag != 11 && // Reference
+                       borrowed_write_struct == 0 &&
+                       (parameter.param_type.tag != 5 ||
                         statement.FunctionDecl.is_extern == 1) { // Local Str
                         model.source_path =
                             std.Clone(ctx, module_paths[0]);

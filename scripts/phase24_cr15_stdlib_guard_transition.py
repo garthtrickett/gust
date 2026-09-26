@@ -1076,10 +1076,44 @@ def effective_phase22_summary(registry: dict, value: dict) -> dict:
             removal.get("retired_companion_default_count"),
             "a companion default arm was retired inside a relay-excluded row, "
             "which the two censuses cannot both be measuring")
-    return _phase26_ffi_repr_c_invocation_successor(registry,
-        _phase26_ffi_position_invocation_successor(registry,
-            _phase26_reference_receiver_invocation_successor(
-                registry, _issue398_summary_successor(registry, current))))
+    return _phase26_ffi_repr_c_write_invocation_successor(registry,
+        _phase26_ffi_repr_c_invocation_successor(registry,
+            _phase26_ffi_position_invocation_successor(registry,
+                _phase26_reference_receiver_invocation_successor(
+                    registry, _issue398_summary_successor(registry, current)))))
+
+
+def _phase26_ffi_repr_c_write_invocation_successor(registry: dict,
+        previous: dict) -> dict:
+    successor = registry.get("phase26_activation_audit", {}).get(
+        "ffi_repr_c_write_increment", {}).get("phase22_invocation_successor")
+    if successor is None:
+        return previous
+    rows = successor.get("added_rows")
+    require(successor.get("contract_version") ==
+            "phase26_1d3_phase22_invocation_successor_v1" and
+            successor.get("previous_total") == previous["total"] == 158 and
+            successor.get("current_total") == 160 and
+            successor.get("partial_extra_or_substituted_invocation") ==
+            "rejected" and isinstance(rows, list) and len(rows) == 2 and
+            all(row.get("path") == "scripts/phase26_ffi_repr_c_write.sh" and
+                row.get("selection") == "explicit_cranelift" and
+                row.get("consumer_class") ==
+                "already_explicit_or_parser_probe" and
+                row.get("owner") == "cranelift" for row in rows),
+            "Phase 26.1D3 invocation successor drifted")
+    current = copy.deepcopy(previous)
+    current["total"] += len(rows)
+    for row in rows:
+        for key, label in (("selection_counts", "selection"),
+                           ("consumer_class_counts", "consumer_class"),
+                           ("owner_counts", "owner")):
+            group = str(row[label])
+            current[key][group] = current[key].get(group, 0) + 1
+    require(current["total"] == successor["current_total"] and
+            current["unclassified_count"] == 0,
+            "Phase 26.1D3 invocation census did not balance")
+    return current
 
 
 def _phase26_ffi_repr_c_invocation_successor(registry: dict,
@@ -2412,6 +2446,47 @@ def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    d3 = registry.get("phase26_activation_audit", {}).get(
+        "ffi_repr_c_write_increment", {}).get("phase23_text_surface_successor")
+    if d3 is not None:
+        changed = d3.get("changed_rows")
+        added = d3.get("added_rows")
+        expected_paths = {
+            ".github/workflows/pr-fast.yml",
+            "compiler/experiments/cranelift/src/full_program.rs",
+            "compiler/experiments/cranelift/src/main.rs",
+            "compiler/mir_native_backend_full_program_source.gst",
+            "justfile", "scripts/cranelift_test_levels.json",
+            "scripts/phase22_opening.py",
+            "scripts/phase26_ffi_repr_c_registration.py",
+            "scripts/phase26_reference_receiver_registration.py",
+        }
+        require(d3.get("contract_version") ==
+                "phase26_1d3_phase23_text_surface_successor_v1" and
+                d3.get("partial_extra_or_substituted_surface") ==
+                "rejected" and isinstance(changed, list) and
+                {entry.get("path") for entry in changed} == expected_paths and
+                len(changed) == len(expected_paths) and
+                isinstance(added, list) and len(added) == 1 and
+                added[0].get("path") ==
+                "scripts/phase26_ffi_repr_c_write_registration.py",
+                "Phase 26.1D3 text surface successor shape drifted")
+        live = {row["path"]: row for row in rows}
+        require(live.get(added[0]["path"]) == added[0],
+                "Phase 26.1D3 added text surface drifted")
+        for entry in changed:
+            row = live.get(entry["path"])
+            require(row is not None and
+                    row["digest"] == entry["current_digest"] and
+                    row["match_counts"] == entry["current_match_counts"] and
+                    len(entry["previous_digest"]) == 64,
+                    f"Phase 26.1D3 text surface drifted: {entry['path']}")
+        rows = [dict(row,
+                     digest=next((entry["previous_digest"] for entry in changed
+                                  if entry["path"] == row["path"]), row["digest"]),
+                     match_counts=next((entry["previous_match_counts"] for entry in changed
+                                        if entry["path"] == row["path"]), row["match_counts"]))
+                for row in rows if row["path"] != added[0]["path"]]
     d2 = registry.get("phase26_activation_audit", {}).get(
         "ffi_repr_c_layout_increment", {}).get("phase23_text_surface_successor")
     if d2 is not None:

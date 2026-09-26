@@ -199,10 +199,15 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                     while parameter_index < len(parameters) {
                         mut parameter := parameters[parameter_index];
                         mut resolved := typechecker.env_resolve_type(env, parameter.param_type, ctx);
-                        if resolved.tag == 11 {
-                            mut inner := ctx[resolved.Reference.inner];
+                        if resolved.tag == 11 || resolved.tag == 9 {
+                            mut inner := resolved;
+                            if resolved.tag == 11 {
+                                inner = ctx[resolved.Reference.inner];
+                            } else {
+                                inner = ctx[resolved.RawPointer.inner];
+                            }
                             if inner.tag == 8 {
-                                if resolved.Reference.brand != empty[Index[str, ctx]] ||
+                                if (resolved.tag == 11 && resolved.Reference.brand != empty[Index[str, ctx]]) ||
                                    inner.Struct.brand != empty[Index[str, ctx]] {
                                     return "Native FFI test host requires an unbranded reference and struct";
                                 }
@@ -218,7 +223,8 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                                     return "Native FFI borrowed aggregate lacks a verified declaration";
                                 };
                                 if signature.ffi_contract_verified == 0 ||
-                                   std.str_eq(parameter.ffi_policy, "borrow_read_call") == 0 {
+                                   (resolved.tag == 11 && std.str_eq(parameter.ffi_policy, "borrow_read_call") == 0) ||
+                                   (resolved.tag == 9 && std.str_eq(parameter.ffi_policy, "borrow_write_call") == 0) {
                                     return "Native FFI borrowed aggregate ownership contract is unverified";
                                 }
                                 guard layout := (*env).struct_registry.Get(name) else {
@@ -281,11 +287,14 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                                 }
                                 mut host_symbol := statement.FunctionDecl.extern_symbol_name;
                                 if len(host_symbol) == 0 { host_symbol = statement.FunctionDecl.name; }
-                                if std.str_eq(host_symbol, "tiny_host_read_repr_c_probe") == 0 {
+                                if (resolved.tag == 11 && std.str_eq(host_symbol, "tiny_host_read_repr_c_probe") == 0) ||
+                                   (resolved.tag == 9 && std.str_eq(host_symbol, "tiny_host_write_repr_c_probe") == 0) {
                                     return "Native FFI borrowed aggregate host import is not approved";
                                 }
                                 mut return_type := ctx[statement.FunctionDecl.return_type];
-                                if len(parameters) != 1 || return_type.tag != 0 ||
+                                if len(parameters) != 1 ||
+                                   (resolved.tag == 11 && return_type.tag != 0) ||
+                                   (resolved.tag == 9 && return_type.tag != 3) ||
                                    std.str_eq(signature.ffi_return_policy, "value") == 0 {
                                     return "Native FFI test host signature does not match its approved contract";
                                 }

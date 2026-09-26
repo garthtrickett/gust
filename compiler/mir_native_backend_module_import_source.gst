@@ -1521,6 +1521,11 @@ func mir_native_module_import_borrowed_aggregate_extern(statement: ast.Statement
                 mut inner := ctx[parameter.param_type.Reference.inner];
                 if inner.tag == 8 { borrowed_aggregate = 1; }
             }
+            if parameter.param_type.tag == 9 &&
+               std.str_eq(parameter.ffi_policy, "borrow_write_call") == 1 {
+                mut inner := ctx[parameter.param_type.RawPointer.inner];
+                if inner.tag == 8 { borrowed_aggregate = 1; }
+            }
             index = index + 1;
         }
         return borrowed_aggregate;
