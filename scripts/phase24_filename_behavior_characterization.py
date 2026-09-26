@@ -182,19 +182,38 @@ def validate_static(value: dict) -> None:
                 "filename-selected site manifest drifted")
     else:
         previous_sites = value.get("site_manifest")
+        d1_sites = ffi_sites.get("current_sites")
         require(ffi_sites.get("contract_version") ==
                 "phase26_1d1_filename_site_successor_v1" and
                 ffi_sites.get("previous_sites") == previous_sites and
-                ffi_sites.get("current_sites") == live_sites and
                 ffi_sites.get("line_delta") == 137 and
                 ffi_sites.get("partial_extra_or_substituted_site") ==
-                "rejected" and len(previous_sites) == len(live_sites) == 3 and
+                "rejected" and len(previous_sites) == len(d1_sites) == 3 and
                 all(now["line"] == before["line"] + 137 and
                     {key: val for key, val in now.items() if key != "line"} ==
                     {key: val for key, val in before.items() if key != "line"}
-                    for before, now in zip(previous_sites, live_sites)),
+                    for before, now in zip(previous_sites, d1_sites)),
                 "Phase 26.1D1 filename sites changed beyond the registered "
                 "line shift")
+        d4_sites = registry.get("phase26_activation_audit", {}).get(
+            "ffi_raw_return_increment", {}).get("filename_site_successor")
+        if d4_sites is None:
+            require(d1_sites == live_sites,
+                    "Phase 26.1D1 filename-selected sites drifted")
+        else:
+            require(d4_sites.get("contract_version") ==
+                    "phase26_1d4_filename_site_successor_v1" and
+                    d4_sites.get("previous_sites") == d1_sites and
+                    d4_sites.get("current_sites") == live_sites and
+                    d4_sites.get("line_delta") == 24 and
+                    d4_sites.get("partial_extra_or_substituted_site") ==
+                    "rejected" and len(d1_sites) == len(live_sites) == 3 and
+                    all(now["line"] == before["line"] + 24 and
+                        {key: val for key, val in now.items() if key != "line"} ==
+                        {key: val for key, val in before.items() if key != "line"}
+                        for before, now in zip(d1_sites, live_sites)),
+                    "Phase 26.1D4 filename sites changed beyond the registered "
+                    "line shift")
     require([row["selector"] for row in value["site_manifest"]] ==
             ["test_tcs_", "test_index_", "test_tcs_"],
             "selector order or completeness drifted")

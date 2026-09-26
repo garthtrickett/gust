@@ -77,9 +77,27 @@ def main() -> None:
     require(set(record) == set(expected) | {
         "phase22_invocation_successor", "production_audit_successor",
         "phase23_text_surface_successor", "spelling_inventory_successor",
+        "filename_site_successor",
     }, "registry acquired unreviewed D4 fields")
     for path in FIXTURES:
         require((ROOT / path).is_file(), f"registered fixture missing: {path}")
+
+    from phase24_filename_behavior_characterization import source_sites
+    d1_sites = activation["ffi_position_policy_increment"]["filename_site_successor"]["current_sites"]
+    filename = record["filename_site_successor"]
+    live_sites = source_sites()
+    require(filename.get("contract_version") ==
+            "phase26_1d4_filename_site_successor_v1" and
+            filename.get("previous_sites") == d1_sites and
+            filename.get("current_sites") == live_sites and
+            filename.get("line_delta") == 24 and
+            filename.get("partial_extra_or_substituted_site") == "rejected" and
+            len(d1_sites) == len(live_sites) == 3 and
+            all(now["line"] == before["line"] + 24 and
+                {key: val for key, val in now.items() if key != "line"} ==
+                {key: val for key, val in before.items() if key != "line"}
+                for before, now in zip(d1_sites, live_sites)),
+            "D4 filename-selected sites changed beyond the exact line shift")
 
     from phase22_opening import scan_invocations
     invocation = record["phase22_invocation_successor"]

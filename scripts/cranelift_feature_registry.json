@@ -48103,6 +48103,69 @@
       ],
       "owning_level2_guard": "guard-cranelift-phase26-ffi-raw-return",
       "pr_fast_job": "phase26-ffi-position",
+      "filename_site_successor": {
+        "contract_version": "phase26_1d4_filename_site_successor_v1",
+        "previous_sites": [
+          {
+            "id": "var_declaration_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 13935,
+            "selector": "test_tcs_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_var_declaration",
+            "window_digest": "6c0f176e1543d9a2ba125569875a69081a81b28bfc4c80eef31c57ec7ccfa05c"
+          },
+          {
+            "id": "assignment_hazard_and_view_invalidation",
+            "path": "compiler/typechecker.gst",
+            "line": 14242,
+            "selector": "test_index_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_assignment",
+            "window_digest": "eea5c7abf9fb4c50d51f644267c5ee59133db8d998a0fe7c25dd0ec1503029c3"
+          },
+          {
+            "id": "guard_payload_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 15223,
+            "selector": "test_tcs_",
+            "selector_occurrence": 2,
+            "statement_context": "statement_guard_payload_binding",
+            "window_digest": "4bf05983015fd1ecc3c3cc4c1399491868107155a5435fed90f8beeeb8f16a6f"
+          }
+        ],
+        "current_sites": [
+          {
+            "id": "var_declaration_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 13959,
+            "selector": "test_tcs_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_var_declaration",
+            "window_digest": "6c0f176e1543d9a2ba125569875a69081a81b28bfc4c80eef31c57ec7ccfa05c"
+          },
+          {
+            "id": "assignment_hazard_and_view_invalidation",
+            "path": "compiler/typechecker.gst",
+            "line": 14266,
+            "selector": "test_index_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_assignment",
+            "window_digest": "eea5c7abf9fb4c50d51f644267c5ee59133db8d998a0fe7c25dd0ec1503029c3"
+          },
+          {
+            "id": "guard_payload_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 15247,
+            "selector": "test_tcs_",
+            "selector_occurrence": 2,
+            "statement_context": "statement_guard_payload_binding",
+            "window_digest": "4bf05983015fd1ecc3c3cc4c1399491868107155a5435fed90f8beeeb8f16a6f"
+          }
+        ],
+        "line_delta": 24,
+        "partial_extra_or_substituted_site": "rejected"
+      },
       "phase22_invocation_successor": {
         "contract_version": "phase26_1d4_phase22_invocation_successor_v1",
         "previous_total": 160,
@@ -48330,7 +48393,7 @@
         "added_rows": [
           {
             "path": "scripts/phase26_ffi_raw_return_registration.py",
-            "digest": "3a3b3ef2894e512f7eeb670bde0807158d8738340bf071762dc68de7cbcfb5f1",
+            "digest": "d5fc3ba6b95c8e88a602a85cc9ccd4d622b24230ff80e548cbc1063a96ec627d",
             "match_counts": {
               "explicit_backend_spelling": 1,
               "mir_to_c_name": 1,
