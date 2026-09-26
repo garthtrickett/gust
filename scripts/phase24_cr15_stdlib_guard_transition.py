@@ -1076,8 +1076,44 @@ def effective_phase22_summary(registry: dict, value: dict) -> dict:
             removal.get("retired_companion_default_count"),
             "a companion default arm was retired inside a relay-excluded row, "
             "which the two censuses cannot both be measuring")
-    return _phase26_reference_receiver_invocation_successor(
-        registry, _issue398_summary_successor(registry, current))
+    return _phase26_ffi_position_invocation_successor(registry,
+        _phase26_reference_receiver_invocation_successor(
+            registry, _issue398_summary_successor(registry, current)))
+
+
+def _phase26_ffi_position_invocation_successor(
+        registry: dict, previous: dict) -> dict:
+    """Advance the unfiltered census by the four exact D1 native probes."""
+    successor = registry.get("phase26_activation_audit", {}).get(
+        "ffi_position_policy_increment", {}).get("phase22_invocation_successor")
+    if successor is None:
+        return previous
+    rows = successor.get("added_rows")
+    require(successor.get("contract_version") ==
+            "phase26_1d1_phase22_invocation_successor_v1" and
+            successor.get("previous_total") == previous["total"] == 151 and
+            successor.get("current_total") == 155 and
+            successor.get("partial_extra_or_substituted_invocation") ==
+            "rejected" and isinstance(rows, list) and len(rows) == 4 and
+            all(row.get("path") ==
+                "scripts/phase26_ffi_position_policy.sh" and
+                row.get("selection") == "explicit_cranelift" and
+                row.get("consumer_class") ==
+                "already_explicit_or_parser_probe" and
+                row.get("owner") == "cranelift" for row in rows),
+            "Phase 26.1D1 invocation successor drifted")
+    current = copy.deepcopy(previous)
+    current["total"] += len(rows)
+    for row in rows:
+        for key, label in (("selection_counts", "selection"),
+                           ("consumer_class_counts", "consumer_class"),
+                           ("owner_counts", "owner")):
+            group = str(row[label])
+            current[key][group] = current[key].get(group, 0) + 1
+    require(current["total"] == successor["current_total"] and
+            current["unclassified_count"] == 0,
+            "Phase 26.1D1 invocation census did not balance")
+    return current
 
 
 def _phase26_reference_receiver_invocation_successor(
@@ -2342,6 +2378,44 @@ def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    ffi = registry.get("phase26_activation_audit", {}).get(
+        "ffi_position_policy_increment", {}).get("phase23_text_surface_successor")
+    if ffi is not None:
+        changed = ffi.get("changed_rows")
+        added = ffi.get("added_rows")
+        changed_paths = {
+            ".github/workflows/pr-fast.yml",
+            "compiler/typechecker.gst",
+            "justfile",
+            "scripts/cranelift_ci_family.py",
+            "scripts/cranelift_test_levels.json",
+            "scripts/cranelift_test_levels.py",
+            "scripts/phase22_opening.py",
+            "scripts/phase13_parameter_argument.sh",
+            "scripts/phase26_reference_receiver_registration.py",
+        }
+        require(ffi.get("contract_version") ==
+                "phase26_1d1_phase23_text_surface_successor_v1" and
+                ffi.get("partial_extra_or_substituted_surface") ==
+                "rejected" and isinstance(changed, list) and
+                isinstance(added, list) and len(changed) ==
+                len(changed_paths) and
+                {entry.get("path") for entry in changed} == changed_paths and
+                [entry.get("path") for entry in added] == [
+                    "scripts/phase26_ffi_position_registration.py"],
+                "Phase 26.1D1 text surface successor drifted")
+        live = {row["path"]: row for row in rows}
+        require(all(live.get(entry["path"]) == entry["current_row"]
+                    for entry in changed) and
+                all(live.get(entry["path"]) == entry for entry in added),
+                "Phase 26.1D1 text surfaces are missing, extra, or "
+                "substituted")
+        previous = {entry["path"]: entry["previous_row"]
+                    for entry in changed}
+        added_paths = {entry["path"] for entry in added}
+        rows = [previous.get(row["path"], row) for row in rows
+                if row["path"] not in added_paths]
+
     str_direct = registry.get("phase26_activation_audit", {}).get(
         "str_direct_call_prerequisite", {}).get("text_surface_successor", {})
     str_rows = str_direct.get("changed_rows", [])
@@ -2436,7 +2510,6 @@ def normalize_phase23_text_surfaces(
             "extra, or substituted")
     rows = [dict(row, digest=branded["previous_digest"])
             if row["path"] == branded["path"] else row for row in rows]
-
     # The S1 Clone destination guard changes its measured pre-driver reason
     # after native Str direct calls are qualified. Keep the closed Phase 25
     # identity while accepting exactly the Stdlib-owned guard correction.
@@ -4259,6 +4332,14 @@ def validate() -> tuple[dict, str]:
                 [added],
                 "Phase 26 reference receiver native invocation is missing, "
                 "extra, or substituted")
+    ffi = registry.get("phase26_activation_audit", {}).get(
+        "ffi_position_policy_increment", {}).get("phase22_invocation_successor")
+    if ffi is not None:
+        added_rows = ffi["added_rows"]
+        require([row for row in rows if row.get("path") ==
+                 "scripts/phase26_ffi_position_policy.sh"] == added_rows,
+                "Phase 26.1D1 native invocations are missing, extra, or "
+                "substituted")
     require(opening.scan_summary(rows) ==
             effective_phase22_summary(registry, value),
             "effective Phase 22 aggregate drifted")

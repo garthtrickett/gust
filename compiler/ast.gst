@@ -9,6 +9,7 @@ type FieldDef[ctx] struct {
 type Parameter[ctx] struct {
     name: str,
     param_type: Type[ctx],
+    ffi_policy: str,
     span: token.Span
 }
 

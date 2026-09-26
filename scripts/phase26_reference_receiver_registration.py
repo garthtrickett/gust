@@ -227,7 +227,10 @@ def main() -> None:
         "phase22_path": "scripts/phase22_opening.py",
         "previous_phase22_digest":
             "0d3a7f856253c711be186d2fc0aad9a49983ef64c194ee3b2da88233d39e160e",
-        "current_phase22_digest": digest("scripts/phase22_opening.py"),
+        # This prerequisite is a closed predecessor. Phase 26.1D1 records
+        # the later Phase 22 edit in its own exact text-surface successor.
+        "current_phase22_digest":
+            "e5c3b58773d189acbf5a7523ec9674881d7375c7dc0cc6601f04cc36b77d9405",
         "phase13_path": "scripts/phase13_parameter_argument.sh",
         "previous_phase13_digest":
             "e14cbe70afac5d4691c9af5eba1b2a61fc48de8d2162fe8f3df60a8810692cd0",
@@ -407,6 +410,13 @@ def main() -> None:
             "Str direct-call text surface paths drifted")
     str_by_path = {row["path"]: row for row in str_rows}
     runtime_by_path = {row["path"]: row for row in runtime_rows}
+    ffi_surface_successor = activation.get(
+        "ffi_position_policy_increment", {}).get(
+            "phase23_text_surface_successor", {})
+    ffi_by_path = {
+        row["path"]: row
+        for row in ffi_surface_successor.get("changed_rows", [])
+    }
     for row in runtime_rows:
         require(set(row) == {"path", "previous_digest", "current_digest",
                              "previous_match_counts", "current_match_counts"} and
@@ -421,14 +431,22 @@ def main() -> None:
                 f"runtime formal signature text surface drifted: {row['path']}")
     for row in str_rows:
         predecessor = runtime_by_path[row["path"]]
+        ffi_row = ffi_by_path.get(row["path"])
+        current_digest = (ffi_row["previous_row"]["digest"]
+                          if ffi_row is not None else digest(row["path"]))
         require(set(row) == {"path", "previous_digest", "current_digest",
                              "previous_match_counts", "current_match_counts"} and
                 row["previous_digest"] == predecessor["current_digest"] and
                 row["previous_match_counts"] ==
                 predecessor["current_match_counts"] and
-                row["current_digest"] == digest(row["path"]) and
+                row["current_digest"] == current_digest and
                 row["current_match_counts"] ==
-                row["previous_match_counts"],
+                row["previous_match_counts"] and
+                (ffi_row is None or
+                 ffi_row["previous_row"]["match_counts"] ==
+                 row["current_match_counts"]) and
+                (ffi_row is None or
+                 ffi_row["current_row"]["digest"] == digest(row["path"])),
                 f"Str direct-call text surface drifted: {row['path']}")
     for path in (str_base["positive_fixture"],
                  str_base["extern_deferred_fixture"],

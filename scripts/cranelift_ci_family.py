@@ -489,7 +489,7 @@ def check_pr_workflow(path):
     text = path.read_text(encoding="utf-8")
 
     required = (
-        "needs: [guard, level1, phase20-nested-brand-annotation]",
+        "needs: [guard, level1, phase20-nested-brand-annotation, phase26-ffi-position]",
     )
     for token in required:
         require_token(text, token, path.relative_to(ROOT))
