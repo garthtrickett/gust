@@ -24231,3 +24231,11 @@ guard-cranelift-phase26-ffi-repr-c-write:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-ffi-repr-c-write | grep -F $'guard-cranelift-phase26-ffi-repr-c-write\t2\t' >/dev/null
     python3 scripts/phase26_ffi_repr_c_write_registration.py
     bash scripts/phase26_ffi_repr_c_write.sh
+
+# Phase 26.1D4: explicit unowned raw-pointer returns retain raw provenance.
+guard-cranelift-phase26-ffi-raw-return:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-ffi-raw-return | grep -F $'guard-cranelift-phase26-ffi-raw-return\t2\t' >/dev/null
+    python3 scripts/phase26_ffi_raw_return_registration.py
+    bash scripts/phase26_ffi_raw_return.sh

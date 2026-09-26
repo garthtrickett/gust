@@ -115,6 +115,7 @@ type Statement[ctx] enum {
         is_private: int,
         params: Index[std.Vector[Parameter[ctx], ctx], ctx],
         return_type: Index[Type[ctx], ctx],
+        ffi_return_policy: str,
         body: Index[BlockStatement[ctx], ctx],
         span: token.Span
     },

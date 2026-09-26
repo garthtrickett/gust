@@ -4309,6 +4309,24 @@ pub fn selected_repr_c_write_host(contents: &str) -> Result<bool, Box<dyn Error>
     )
 }
 
+pub fn selected_raw_untrusted_host(contents: &str) -> Result<bool, Box<dyn Error>> {
+    let program = parse(contents)?;
+    let selected: Vec<_> = program.functions.iter().filter(|function| {
+        function.is_extern && function.extern_symbol == "tiny_host_raw_untrusted_int"
+    }).collect();
+    if selected.is_empty() {
+        return Ok(false);
+    }
+    if program.target_triple != "x86_64-unknown-linux-gnu"
+        || program.object_format != "Elf"
+        || selected.len() != 1
+        || !selected[0].parameters.is_empty()
+        || selected[0].result_type != "RawPointer(Int)" {
+        return Err(invalid("selected raw-untrusted test host has an unapproved canonical signature or target"));
+    }
+    Ok(true)
+}
+
 pub fn lower_contents(contents: &str, object_path: &Path) -> Result<String, Box<dyn Error>> {
     let program = parse(contents)?;
     FullProgramCompiler::new(&program)?.finish(object_path)

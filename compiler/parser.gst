@@ -1710,6 +1710,66 @@ func parse_function_decl_with_private(p: *Parser[ctx], is_private_decl: int, sta
             r_type = parsed_r_type;
         }
 
+        mut ffi_return_policy_parse := "";
+        if cur_token_is(p, 49) { // Hash = 49
+            next_token(p);
+            if cur_token_is(p, 15) == false { // LBracket = 15
+                mut err_return_bracket: errors.CompilerError[Any];
+                err_return_bracket.kind.tag = 1;
+                err_return_bracket.message = "Expected '[' after '#' in return FFI attribute";
+                err_return_bracket.span = (*p).cur_token.span;
+                (*p).errors.Push(err_return_bracket);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
+            next_token(p);
+            if cur_token_is(p, 2) == false || std.str_eq((*p).cur_token.literal, "ffi") == 0 {
+                mut err_return_name: errors.CompilerError[Any];
+                err_return_name.kind.tag = 1;
+                err_return_name.message = "Expected ffi return attribute";
+                err_return_name.span = (*p).cur_token.span;
+                (*p).errors.Push(err_return_name);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
+            next_token(p);
+            if cur_token_is(p, 11) == false { // LParen = 11
+                mut err_return_open: errors.CompilerError[Any];
+                err_return_open.kind.tag = 1;
+                err_return_open.message = "Expected '(' after ffi return attribute";
+                err_return_open.span = (*p).cur_token.span;
+                (*p).errors.Push(err_return_open);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
+            next_token(p);
+            if cur_token_is(p, 2) == false {
+                mut err_return_policy: errors.CompilerError[Any];
+                err_return_policy.kind.tag = 1;
+                err_return_policy.message = "Expected FFI return ownership policy";
+                err_return_policy.span = (*p).cur_token.span;
+                (*p).errors.Push(err_return_policy);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
+            ffi_return_policy_parse = std.Clone(*ctx, (*p).cur_token.literal);
+            next_token(p);
+            if cur_token_is(p, 12) == false { // RParen = 12
+                mut err_return_close: errors.CompilerError[Any];
+                err_return_close.kind.tag = 1;
+                err_return_close.message = "Expected ')' after FFI return ownership policy";
+                err_return_close.span = (*p).cur_token.span;
+                (*p).errors.Push(err_return_close);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
+            next_token(p);
+            if cur_token_is(p, 16) == false { // RBracket = 16
+                mut err_return_end: errors.CompilerError[Any];
+                err_return_end.kind.tag = 1;
+                err_return_end.message = "Expected ']' after FFI return attribute";
+                err_return_end.span = (*p).cur_token.span;
+                (*p).errors.Push(err_return_end);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
+            next_token(p);
+        }
+
         mut body: Index[ast.BlockStatement[ctx], ctx] := empty[Index[ast.BlockStatement[ctx], ctx]];
         mut end_span := (*p).cur_token.span;
         if cur_token_is(p, 13) { // LBrace = 13
@@ -1754,6 +1814,7 @@ func parse_function_decl_with_private(p: *Parser[ctx], is_private_decl: int, sta
         ctx.Set(function_params_idx_parse, params_vec);
 
         stmt_function_parse.FunctionDecl.return_type = r_type;
+        stmt_function_parse.FunctionDecl.ffi_return_policy = ffi_return_policy_parse;
         stmt_function_parse.FunctionDecl.body = body;
         stmt_function_parse.FunctionDecl.span = merge_spans(start_span, end_span);
 

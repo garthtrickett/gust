@@ -96,19 +96,30 @@ def main() -> None:
             "Phase23 text surface successor drifted")
     d2_rows = {row["path"]: row for row in registry[
         "phase26_activation_audit"]["ffi_repr_c_layout_increment"][
-            "phase23_text_surface_successor"]["changed_rows"]}
+        "phase23_text_surface_successor"]["changed_rows"]}
+    d4_rows = {row["path"]: row for row in registry[
+        "phase26_activation_audit"].get("ffi_raw_return_increment", {}).get(
+            "phase23_text_surface_successor", {}).get("changed_rows", [])}
     for row in surfaces["changed_rows"]:
         predecessor = d2_rows.get(row["path"])
+        successor = d4_rows.get(row["path"])
         require(len(row["previous_digest"]) == 64 and
                 (predecessor is None or
                  row["previous_digest"] == predecessor["current_digest"]),
                 f"text surface predecessor drifted: {row['path']}")
         require(hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest()
-                == row["current_digest"],
+                == (successor["current_digest"] if successor else
+                    row["current_digest"]) and
+                (successor is None or
+                 successor["previous_digest"] == row["current_digest"]),
                 f"text surface digest drifted: {row['path']}")
     for row in surfaces["added_rows"]:
+        successor = d4_rows.get(row["path"])
         require(hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest()
-                == row["digest"],
+                == (successor["current_digest"] if successor else
+                    row["digest"]) and
+                (successor is None or
+                 successor["previous_digest"] == row["digest"]),
                 f"added text surface digest drifted: {row['path']}")
 
     workflow = (ROOT / ".github/workflows/pr-fast.yml").read_text()

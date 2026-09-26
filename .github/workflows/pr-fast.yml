@@ -810,6 +810,9 @@ jobs:
       - name: Phase 26 borrowed repr C raw pointer write
         run: just guard-cranelift-phase26-ffi-repr-c-write
 
+      - name: Phase 26 unowned raw pointer return
+        run: just guard-cranelift-phase26-ffi-raw-return
+
   final:
     name: final diff check
     runs-on: ubuntu-latest
