@@ -2468,6 +2468,41 @@ def normalize_phase23_text_surfaces(
     rows = [dict(row, digest=clone["previous_digest"])
             if row["path"] == clone["path"] else row for row in rows]
 
+    # The S1 Composition guard keeps its frozen C runtime result while its
+    # native pre-driver reason tracks the qualified reference/Str route.
+    # Accept only the measured Stdlib-owned correction before projecting to
+    # the closed Phase 25 text-surface identity.
+    composition = registry.get("phase26_activation_audit", {}).get(
+        "stdlib_s1_composition_guard_successor")
+    require(composition == {
+        "contract_version": "phase26_s1_composition_guard_successor_v1",
+        "path": "scripts/stdlib_s1_composition_parity.sh",
+        "previous_digest":
+            "ee7e47345762aee97da1bf0f6953543f4366c0f7e75e46022e0099a9cf425911",
+        "current_digest":
+            "2c8cf28422bd906135b007511823a8269302947d33f4c2914c09694851086c61",
+        "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 4,
+        },
+        "owner": "cranelift",
+        "stdlib_branch": "codex/stdlib-composition-deferral",
+        "partial_extra_or_substituted_surface": "rejected",
+    }, "Phase 26 Stdlib S1 Composition guard successor drifted")
+    composition_rows = [row for row in rows
+                        if row["path"] == composition["path"]]
+    require(len(composition_rows) == 1 and
+            composition_rows[0]["digest"] in (
+                composition["previous_digest"],
+                composition["current_digest"]) and
+            composition_rows[0]["match_counts"] ==
+                composition["match_counts"],
+            "Phase 26 Stdlib S1 Composition guard is missing, extra, "
+            "or substituted")
+    rows = [dict(row, digest=composition["previous_digest"])
+            if row["path"] == composition["path"] else row for row in rows]
+
     prerequisite = registry.get("phase26_activation_audit", {}).get(
         "reference_receiver_prerequisite", {})
     successor = prerequisite.get("phase23_text_surface_successor")
