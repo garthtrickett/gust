@@ -188,6 +188,17 @@ def validate() -> dict:
             ("mir_native_backend_generic_source.gst", "typechecker.gst"),
             ("mir_native_backend_source_route.gst", "typechecker.gst"),
         }
+    d2 = registry.get("phase26_activation_audit", {}).get(
+        "ffi_repr_c_layout_increment", {}).get("phase21_import_edge_successor")
+    if d2 is not None:
+        edge = ("mir_native_backend_module_import_source.gst", "typechecker.gst")
+        require(d2 == {
+            "contract_version": "phase26_1d2_phase21_import_edge_successor_v1",
+            "added_edge": list(edge),
+            "frozen_import_edge_count": 116,
+        } and edge[1] in edges.get(edge[0], []),
+            "Phase 26.1D2 compiler import-edge successor drifted")
+        full_compiler_edges.add(edge)
     historical_reachable = reachable - successor_modules
     historical_edge_count = sum(
         1 for module, imports in edges.items()

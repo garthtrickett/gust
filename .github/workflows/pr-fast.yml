@@ -804,6 +804,9 @@ jobs:
       - name: Phase 26 FFI position policy
         run: just guard-cranelift-phase26-ffi-position-policy
 
+      - name: Phase 26 borrowed repr C layout
+        run: just guard-cranelift-phase26-ffi-repr-c-layout
+
   final:
     name: final diff check
     runs-on: ubuntu-latest

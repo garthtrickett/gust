@@ -1,6 +1,7 @@
 import "ast.gst" as ast;
 import "mir.gst" as mir;
 import "mir_native_backend_metadata_source.gst" as metadata_source;
+import "typechecker.gst" as typechecker;
 
 // Compiler-owned module, import, and runtime-boundary lowering.
 //
@@ -1501,7 +1502,32 @@ func mir_native_module_import_evaluate(functions: std.Vector[MirNativeModuleImpo
     return evaluation;
 }
 
-func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], ctx: &Arena) MirNativeModuleImportModel[ctx] {
+func mir_native_module_import_borrowed_aggregate_extern(statement: ast.Statement[ctx], module_prefix: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        if statement.tag != 3 || statement.FunctionDecl.is_extern == 0 ||
+           std.str_eq(statement.FunctionDecl.extern_abi, "C") == 0 {
+            return 0;
+        }
+        mut name := mir_native_module_import_qualified(module_prefix, statement.FunctionDecl.name, ctx);
+        guard signature := (*env).function_registry.Get(name) else { return 0; };
+        if signature.ffi_contract_verified == 0 { return 0; }
+        mut parameters: std.Vector[ast.Parameter[ctx], ctx] := ctx[statement.FunctionDecl.params];
+        mut index := 0;
+        mut borrowed_aggregate := 0;
+        while index < len(parameters) {
+            mut parameter := parameters[index];
+            if parameter.param_type.tag == 11 &&
+               std.str_eq(parameter.ffi_policy, "borrow_read_call") == 1 {
+                mut inner := ctx[parameter.param_type.Reference.inner];
+                if inner.tag == 8 { borrowed_aggregate = 1; }
+            }
+            index = index + 1;
+        }
+        return borrowed_aggregate;
+    }
+}
+
+func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) MirNativeModuleImportModel[ctx] {
     mut model := mir_native_module_import_empty_model(ctx);
     if len(programs) == 0 ||
        len(programs) != len(module_paths) ||
@@ -1575,6 +1601,7 @@ func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx
     // declines to represent it.
     mut preflight_hosts: std.Vector[MirNativeModuleImportHost[ctx], ctx] :=
         std.VectorNew(ctx);
+    mut delegate_borrowed_aggregate := 0;
     mut preflight_module_index := 0;
     while preflight_module_index < len(programs) {
         mut preflight_program := programs[preflight_module_index];
@@ -1594,6 +1621,13 @@ func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx
                         ctx
                     );
                     if len(preflight_host.name) == 0 {
+                        if mir_native_module_import_borrowed_aggregate_extern(
+                            preflight_statement, module_prefixes[preflight_module_index], env, ctx
+                        ) == 1 {
+                            delegate_borrowed_aggregate = 1;
+                            preflight_statement_index = preflight_statement_index + 1;
+                            continue;
+                        }
                         model.represented = 1;
                         return mir_native_module_import_invalid(
                             model,
@@ -1616,6 +1650,9 @@ func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx
             return model;
         }
         model = mir_native_module_import_empty_model(ctx);
+    }
+    if delegate_borrowed_aggregate == 1 {
+        return mir_native_module_import_empty_model(ctx);
     }
 
     mut functions: std.Vector[MirNativeModuleImportFunction[ctx], ctx] :=
@@ -3478,12 +3515,13 @@ func mir_native_module_import_emit_bundle(model: MirNativeModuleImportModel[ctx]
     return bundle;
 }
 
-func mir_native_module_import_source_lower(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], ctx: &Arena) MirNativeModuleImportSourceResult[ctx] {
+func mir_native_module_import_source_lower(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) MirNativeModuleImportSourceResult[ctx] {
     mut result := mir_native_module_import_empty_result(ctx);
     mut model := mir_native_module_import_analyze(
         programs,
         module_paths,
         module_prefixes,
+        env,
         ctx
     );
     if model.represented == 0 {

@@ -74,6 +74,7 @@ const EXTERN_ADD_I32_SYMBOL: &str = "tiny_cranelift_extern_add_i32";
 const HOST_ADD_I32_SYMBOL: &str = "tiny_host_add_i32";
 const EXTERN_PREDICATE_BRANCH_I32_SYMBOL: &str = "tiny_cranelift_extern_predicate_branch_i32";
 const HOST_IS_POSITIVE_I32_SYMBOL: &str = "tiny_host_is_positive_i32";
+const HOST_REPR_C_PROBE_SYMBOL: &str = "tiny_host_read_repr_c_probe";
 const MIR_RETURN_INT_SYMBOL: &str = "tiny_cranelift_mir_return_int";
 const COMPILER_MIR_INGESTED_RETURN_INT_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_return_int";
@@ -15638,6 +15639,8 @@ fn phase13_approved_scalar_host_requires_object(
 
 fn emit_phase13_approved_scalar_host_object(
     output_path: &Path,
+    include_scalar_hosts: bool,
+    include_repr_c_probe: bool,
 ) -> Result<(), Box<dyn Error>> {
     if let Some(parent) = output_path.parent() {
         fs::create_dir_all(parent)?;
@@ -15653,6 +15656,7 @@ fn emit_phase13_approved_scalar_host_object(
     )?;
     let mut module = ObjectModule::new(object_builder);
 
+    if include_scalar_hosts {
     let mut add_one_signature = module.make_signature();
     add_one_signature.params.push(AbiParam::new(types::I32));
     add_one_signature.returns.push(AbiParam::new(types::I32));
@@ -15716,6 +15720,34 @@ fn emit_phase13_approved_scalar_host_object(
     predicate_builder.finalize();
     module.define_function(predicate_id, &mut predicate_context)?;
     module.clear_context(&mut predicate_context);
+    }
+
+    if include_repr_c_probe {
+        let mut signature = module.make_signature();
+        signature.params.push(AbiParam::new(module.target_config().pointer_type()));
+        signature.returns.push(AbiParam::new(types::I32));
+        let id = module.declare_function(HOST_REPR_C_PROBE_SYMBOL, Linkage::Export, &signature)?;
+        let mut context = module.make_context();
+        context.func.signature = signature;
+        let mut builder_context = FunctionBuilderContext::new();
+        let mut builder = FunctionBuilder::new(&mut context.func, &mut builder_context);
+        let entry = builder.create_block();
+        builder.append_block_params_for_function_params(entry);
+        builder.switch_to_block(entry);
+        let pointer = builder.block_params(entry)[0];
+        let first_byte = builder.ins().load(types::I8, MemFlags::new(), pointer, 0);
+        let middle_int = builder.ins().load(types::I32, MemFlags::new(), pointer, 4);
+        let last_byte = builder.ins().load(types::I8, MemFlags::new(), pointer, 8);
+        let first = builder.ins().uextend(types::I32, first_byte);
+        let last = builder.ins().uextend(types::I32, last_byte);
+        let sum = builder.ins().iadd(first, middle_int);
+        let sum = builder.ins().iadd(sum, last);
+        builder.ins().return_(&[sum]);
+        builder.seal_all_blocks();
+        builder.finalize();
+        module.define_function(id, &mut context)?;
+        module.clear_context(&mut context);
+    }
 
     let object_product = module.finish();
     fs::write(output_path, object_product.emit()?)?;
@@ -16288,6 +16320,7 @@ fn compile_phase10_scalar_metadata_request_path(
     let mut preserved_native_boundary_metadata_count = 0usize;
     let mut preserved_metadata_summaries = Vec::new();
     let mut requires_phase13_approved_scalar_host_object = false;
+    let mut requires_phase26_repr_c_host_object = false;
 
     for (module_index, module_record) in bundle.modules.iter().enumerate() {
         preserved_metadata_count += module_record.metadata.len();
@@ -16365,6 +16398,9 @@ fn compile_phase10_scalar_metadata_request_path(
                     Phase10BackendRequestFailureKind::InvalidBundle,
                     "full-program canonical MIR requires exactly one bundle module",
                 ));
+            }
+            if full_program::selected_repr_c_probe_host(&module_record.canonical_mir)? {
+                requires_phase26_repr_c_host_object = true;
             }
             full_program::lower_contents(
                 &module_record.canonical_mir,
@@ -16518,12 +16554,16 @@ fn compile_phase10_scalar_metadata_request_path(
         reported_object_name = &module_record.object_name;
     }
 
-    let approved_host_object = if requires_phase13_approved_scalar_host_object {
+    let approved_host_object = if requires_phase13_approved_scalar_host_object || requires_phase26_repr_c_host_object {
         let path = compiler_mir_link_sibling_path(
             &request.output_path,
             ".phase13-approved-scalar-host.o",
         )?;
-        emit_phase13_approved_scalar_host_object(&path)?;
+        emit_phase13_approved_scalar_host_object(
+            &path,
+            requires_phase13_approved_scalar_host_object,
+            requires_phase26_repr_c_host_object,
+        )?;
         Some(path)
     } else {
         None
