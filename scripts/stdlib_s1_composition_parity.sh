@@ -94,7 +94,7 @@ if GUST_NATIVE_BACKEND_DRIVER="$build_dir/deliberately-absent-driver" \
 fi
 for token in \
   'decision=deferred capability=phase13_generic_source_to_mir' \
-  'reason_code=deferred_p13_parameter_argument_target_dependent_abi' \
+  'reason_code=deferred_p13_parameter_argument_aggregate_return' \
   'expected_failure_stage=before_driver_discovery' \
   'class=unsupported_native_capability' \
   'source-level route is not connected yet'
