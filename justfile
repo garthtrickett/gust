@@ -24215,3 +24215,11 @@ guard-cranelift-phase26-ffi-position-policy:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-ffi-position-policy | grep -F $'guard-cranelift-phase26-ffi-position-policy\t2\t' >/dev/null
     python3 scripts/phase26_ffi_position_registration.py
     bash scripts/phase26_ffi_position_policy.sh
+
+# Phase 26.1D2: native borrowed repr(C) aggregate layout compatibility.
+guard-cranelift-phase26-ffi-repr-c-layout:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-ffi-repr-c-layout | grep -F $'guard-cranelift-phase26-ffi-repr-c-layout\t2\t' >/dev/null
+    python3 scripts/phase26_ffi_repr_c_registration.py
+    bash scripts/phase26_ffi_repr_c_layout.sh

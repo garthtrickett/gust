@@ -1,6 +1,7 @@
 import "ast.gst" as ast;
 import "codegen.gst" as codegen;
 import "mir.gst" as mir;
+import "mir_primitive_layout.gst" as primitive_layout;
 import "typechecker.gst" as typechecker;
 
 // Patch 21.14 full-program typed-input to canonical-MIR lowering.
@@ -176,6 +177,137 @@ func mir_native_full_program_type_is_initial_scalar(value_type: ast.Type[ctx], e
         }
     }
     return 0;
+}
+
+// A borrowed C aggregate is admissible only when the existing native physical
+// layout is provably the same flat natural C layout on the selected target.
+// This is a source-side pre-driver check; the worker independently verifies the
+// canonical layout record before emitting the selected test host object.
+func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Program[ctx], ctx], module_prefixes: std.Vector[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
+    mut target := primitive_layout.mir_primitive_layout_target(os.NativeTargetTriple(ctx), ctx);
+    mut module_index := 0;
+    while module_index < len(programs) {
+        unsafe { (*env).current_prefix = module_prefixes[module_index]; }
+        mut statements: std.Vector[ast.Statement[ctx], ctx] := ctx[programs[module_index].statements];
+        mut statement_index := 0;
+        while statement_index < len(statements) {
+            mut statement := statements[statement_index];
+            unsafe {
+                if statement.tag == 3 && statement.FunctionDecl.is_extern == 1 {
+                    mut parameters: std.Vector[ast.Parameter[ctx], ctx] := ctx[statement.FunctionDecl.params];
+                    mut parameter_index := 0;
+                    while parameter_index < len(parameters) {
+                        mut parameter := parameters[parameter_index];
+                        mut resolved := typechecker.env_resolve_type(env, parameter.param_type, ctx);
+                        if resolved.tag == 11 {
+                            mut inner := ctx[resolved.Reference.inner];
+                            if inner.tag == 8 {
+                                if resolved.Reference.brand != empty[Index[str, ctx]] ||
+                                   inner.Struct.brand != empty[Index[str, ctx]] {
+                                    return "Native FFI test host requires an unbranded reference and struct";
+                                }
+                                if target.found == 0 ||
+                                   std.str_eq(target.target.target_triple, "x86_64-unknown-linux-gnu") == 0 ||
+                                   target.target.pointer_size != 8 ||
+                                   target.target.i32_alignment != 4 {
+                                    return "Native FFI borrowed aggregate target layout is unsupported";
+                                }
+                                mut name := inner.Struct.struct_name;
+                                mut key := mir_native_full_program_qualified_name(module_prefixes[module_index], statement.FunctionDecl.name, ctx);
+                                guard signature := (*env).function_registry.Get(key) else {
+                                    return "Native FFI borrowed aggregate lacks a verified declaration";
+                                };
+                                if signature.ffi_contract_verified == 0 ||
+                                   std.str_eq(parameter.ffi_policy, "borrow_read_call") == 0 {
+                                    return "Native FFI borrowed aggregate ownership contract is unverified";
+                                }
+                                guard layout := (*env).struct_registry.Get(name) else {
+                                    return "Native FFI borrowed aggregate has no canonical layout";
+                                };
+                                guard repr := (*env).struct_layout_repr_c.Get(name) else {
+                                    return "Native FFI borrowed aggregate requires unpacked repr(C)";
+                                };
+                                guard packed := (*env).struct_layout_packed.Get(name) else {
+                                    return "Native FFI borrowed aggregate requires unpacked repr(C)";
+                                };
+                                guard abi := (*env).struct_layout_abi.Get(name) else {
+                                    return "Native FFI borrowed aggregate requires unpacked repr(C)";
+                                };
+                                if repr != 1 || packed != 0 || std.str_eq(abi, "C") == 0 {
+                                    return "Native FFI borrowed aggregate requires unpacked repr(C)";
+                                }
+                                mut fields := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
+                                if len(fields) == 0 {
+                                    return "Native FFI borrowed aggregate requires nonempty flat fields";
+                                }
+                                mut offset := 0;
+                                mut alignment := 1;
+                                mut field_index := 0;
+                                while field_index < len(fields) {
+                                    mut field_key := std.Concat(name, ".");
+                                    field_key = std.Concat(field_key, fields[field_index]);
+                                    guard order := (*env).struct_field_declaration_orders.Get(field_key) else {
+                                        return "Native FFI repr(C) declaration order differs from emitted canonical order";
+                                    };
+                                    if order != field_index {
+                                        return "Native FFI repr(C) declaration order differs from emitted canonical order";
+                                    }
+                                    guard field_type := layout.fields.Get(fields[field_index]) else {
+                                        return "Native FFI borrowed aggregate field is missing";
+                                    };
+                                    mut resolved_field := typechecker.env_resolve_type(env, field_type, ctx);
+                                    mut field_size := 1;
+                                    mut field_alignment := 1;
+                                    if resolved_field.tag == 0 {
+                                        field_size = 4;
+                                        field_alignment = target.target.i32_alignment;
+                                    } else if resolved_field.tag != 1 && resolved_field.tag != 2 {
+                                        return "Native FFI borrowed aggregate nested or non-scalar field is unsupported";
+                                    }
+                                    if (field_index == 1 && resolved_field.tag != 0) ||
+                                       (field_index != 1 && resolved_field.tag != 1) {
+                                        return "Native FFI test host field types do not match its approved contract";
+                                    }
+                                    mut remainder := offset - (offset / field_alignment) * field_alignment;
+                                    if remainder != 0 { offset = offset + field_alignment - remainder; }
+                                    offset = offset + field_size;
+                                    if field_alignment > alignment { alignment = field_alignment; }
+                                    field_index = field_index + 1;
+                                }
+                                mut tail := offset - (offset / alignment) * alignment;
+                                if tail != 0 { offset = offset + alignment - tail; }
+                                if offset <= 0 || alignment > target.target.max_aggregate_alignment {
+                                    return "Native FFI borrowed aggregate target size or alignment is unsupported";
+                                }
+                                mut host_symbol := statement.FunctionDecl.extern_symbol_name;
+                                if len(host_symbol) == 0 { host_symbol = statement.FunctionDecl.name; }
+                                if std.str_eq(host_symbol, "tiny_host_read_repr_c_probe") == 0 {
+                                    return "Native FFI borrowed aggregate host import is not approved";
+                                }
+                                mut return_type := ctx[statement.FunctionDecl.return_type];
+                                if len(parameters) != 1 || return_type.tag != 0 ||
+                                   std.str_eq(signature.ffi_return_policy, "value") == 0 {
+                                    return "Native FFI test host signature does not match its approved contract";
+                                }
+                                if std.str_eq(name, "FfiProbe") == 0 || len(fields) != 3 ||
+                                   std.str_eq(fields[0], "a") == 0 ||
+                                   std.str_eq(fields[1], "b") == 0 ||
+                                   std.str_eq(fields[2], "c") == 0 ||
+                                   offset != 12 || alignment != 4 {
+                                    return "Native FFI test host signature or layout does not match its approved contract";
+                                }
+                            }
+                        }
+                        parameter_index = parameter_index + 1;
+                    }
+                }
+            }
+            statement_index = statement_index + 1;
+        }
+        module_index = module_index + 1;
+    }
+    unsafe { (*env).current_prefix = ""; }
+    return "";
 }
 
 func mir_native_full_program_qualified_name(prefix: str, name: str, ctx: &Arena) str {
@@ -2857,6 +2989,17 @@ func mir_native_full_program_source_lower(programs: std.Vector[ast.Program[ctx],
         return result;
     }
     if model.represented == 0 {
+        return result;
+    }
+
+    mut ffi_layout := mir_native_full_program_ffi_layout_diagnostic(
+        programs, module_prefixes, env, ctx
+    );
+    if len(ffi_layout) > 0 {
+        result.represented = 0;
+        result.deferred = 1;
+        result.reason_code = std.Clone(ctx, "deferred_p26_ffi_borrowed_c_layout");
+        result.diagnostic = ffi_layout;
         return result;
     }
 

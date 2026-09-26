@@ -3281,6 +3281,7 @@ func mir_native_generic_source_lower(programs: std.Vector[ast.Program[ctx], ctx]
                         programs,
                         module_paths,
                         module_prefixes,
+                        env,
                         ctx
                     );
                 if module_import_result.invalid == 1 {

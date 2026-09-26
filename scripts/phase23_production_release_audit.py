@@ -81,6 +81,7 @@ def surface(path: str, role: str, markers: tuple[str, ...]) -> dict[str, object]
 
 def project_reference_receiver_production_audit(registry: dict, live: dict) -> dict:
     """Project one registered native guard invocation off the closed audit."""
+    live = project_phase26_ffi_repr_c_production_audit(registry, live)
     live = project_phase26_ffi_position_production_audit(registry, live)
     prerequisite = registry.get("phase26_activation_audit", {}).get(
         "reference_receiver_prerequisite", {})
@@ -104,6 +105,32 @@ def project_reference_receiver_production_audit(registry: dict, live: dict) -> d
             "Phase 26 reference receiver production audit successor drifted")
     previous = dict(live)
     previous["repository_invocation_count"] = 150
+    return previous
+
+
+def project_phase26_ffi_repr_c_production_audit(
+        registry: dict, live: dict) -> dict:
+    increment = registry.get("phase26_activation_audit", {}).get(
+        "ffi_repr_c_layout_increment", {})
+    successor = increment.get("production_audit_successor")
+    if successor is None:
+        return live
+    rows = increment.get("phase22_invocation_successor", {}).get(
+        "added_rows", [])
+    require(successor == {
+        "contract_version": "phase26_1d2_production_audit_successor_v1",
+        "previous_repository_invocation_count": 155,
+        "current_repository_invocation_count": 158,
+        "added_invocation_path": "scripts/phase26_ffi_repr_c_layout.sh",
+        "unchanged_other_fields": True,
+        "partial_extra_or_substituted_audit": "rejected",
+    } and len(rows) == 3 and
+            all(row.get("path") == successor["added_invocation_path"] and
+                row.get("selection") == "explicit_cranelift" for row in rows) and
+            live["repository_invocation_count"] == 158,
+            "Phase 26.1D2 production audit successor drifted")
+    previous = dict(live)
+    previous["repository_invocation_count"] = 155
     return previous
 
 

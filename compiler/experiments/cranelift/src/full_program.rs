@@ -4247,6 +4247,45 @@ pub fn lower_path(canonical_path: &Path, object_path: &Path) -> Result<String, B
     lower_contents(&contents, object_path)
 }
 
+// The source planner has already checked the target C layout. Independently
+// pin the selected test host's canonical signature and physical placements
+// before the worker links its generated host object.
+pub fn selected_repr_c_probe_host(contents: &str) -> Result<bool, Box<dyn Error>> {
+    let program = parse(contents)?;
+    let selected: Vec<_> = program.functions.iter().filter(|function| {
+        function.is_extern && function.extern_symbol == "tiny_host_read_repr_c_probe"
+    }).collect();
+    if selected.is_empty() {
+        return Ok(false);
+    }
+    // The full-program object builder admits this native x86_64 target only.
+    // Pin it here as well before using its eight-byte pointer layout engine.
+    if program.target_triple != "x86_64-unknown-linux-gnu" || program.object_format != "Elf" {
+        return Err(invalid("selected repr(C) test host target is unsupported"));
+    }
+    if selected.len() != 1 || selected[0].result_type != "Int"
+        || selected[0].parameters.len() != 1
+        || selected[0].parameters[0].1 != "Reference(Struct(\"FfiProbe\", None), None)" {
+        return Err(invalid("selected repr(C) test host has an unapproved canonical signature"));
+    }
+    let layout = program.layouts.iter().find(|layout| layout.erased_name == "FfiProbe")
+        .ok_or_else(|| invalid("selected repr(C) test host layout is absent"))?;
+    if !layout.repr_c || layout.packed || layout.abi != "C"
+        || layout.fields.iter().map(|field| (field.name.as_str(), field.ty.as_str()))
+            .collect::<Vec<_>>() != vec![("a", "Byte"), ("b", "Int"), ("c", "Byte")] {
+        return Err(invalid("selected repr(C) test host layout contract disagrees"));
+    }
+    let mut engine = LayoutEngine::new(&program, 8);
+    let physical = engine.layout("Struct(\"FfiProbe\", None)")?;
+    if physical.size != 12 || physical.align != 4
+        || physical.fields.get("a").map(|field| field.offset) != Some(0)
+        || physical.fields.get("b").map(|field| field.offset) != Some(4)
+        || physical.fields.get("c").map(|field| field.offset) != Some(8) {
+        return Err(invalid("selected repr(C) test host physical layout disagrees"));
+    }
+    Ok(true)
+}
+
 pub fn lower_contents(contents: &str, object_path: &Path) -> Result<String, Box<dyn Error>> {
     let program = parse(contents)?;
     FullProgramCompiler::new(&program)?.finish(object_path)
