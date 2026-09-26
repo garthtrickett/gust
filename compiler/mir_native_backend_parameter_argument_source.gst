@@ -231,7 +231,9 @@ func mir_native_parameter_argument_scan_deferred(
                         );
                     }
                     if parameter_class == 2 &&
-                       parameters[parameter_index].param_type.tag != 11 { // Reference
+                       parameters[parameter_index].param_type.tag != 11 && // Reference
+                       (parameters[parameter_index].param_type.tag != 5 ||
+                        statement.FunctionDecl.is_extern == 1) { // Local Str
                         model.source_path =
                             std.Clone(ctx, module_paths[0]);
                         return mir_native_parameter_argument_deferred_model(
@@ -255,7 +257,8 @@ func mir_native_parameter_argument_scan_deferred(
                         ctx
                     );
                 }
-                if return_class == 2 && return_type.tag != 3 {
+                if return_class == 2 && return_type.tag != 3 &&
+                   (return_type.tag != 5 || statement.FunctionDecl.is_extern == 1) {
                     model.source_path = std.Clone(ctx, module_paths[0]);
                     return mir_native_parameter_argument_deferred_model(
                         model,

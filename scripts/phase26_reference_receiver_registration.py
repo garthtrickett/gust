@@ -344,16 +344,110 @@ def main() -> None:
             required_runtime_paths and
             len(runtime_rows) == len(required_runtime_paths),
             "runtime formal signature text surface paths drifted")
+    str_direct = activation.get("str_direct_call_prerequisite", {})
+    str_base = {
+        "contract_version": "phase26_str_direct_call_prerequisite_v1",
+        "status": "canonical_local_str_parameter_and_return_qualified",
+        "owner": "cranelift",
+        "separate_from_phase26_1d1": True,
+        "physical_abi_changed": False,
+        "canonical_layout": "existing_str_view",
+        "qualified_positions": ["direct_parameter", "direct_return"],
+        "positive_fixture": "compiler/phase26_str_direct_call_source.gst",
+        "extern_deferred_fixture":
+            "compiler/phase26_str_extern_deferred_source.gst",
+        "extern_deferred_reason":
+            "deferred_p13_parameter_argument_target_dependent_abi",
+        "exact_native_output": "11\ndirect return\ncloned return\n",
+        "unchanged_stdlib_guard": "guard-stdlib-s1-str-surface",
+        "owning_level2_guard": "guard-cranelift-phase13-parameter-argument-parity",
+        "new_compiler_invocation_sites": 0,
+    }
+    require({key: str_direct.get(key) for key in str_base} == str_base and
+            set(str_direct) == set(str_base) | {
+                "phase21_complete_suite_successor",
+                "spelling_inventory_successor", "text_surface_successor"},
+            "Str direct-call prerequisite base drifted")
+    require(str_direct["phase21_complete_suite_successor"] == {
+        "contract_version": "phase26_str_direct_phase21_successor_v1",
+        "status": "exact_runtime_slice_return_deferral_overlay",
+        "admitted_runner_fixtures": [
+            "tests/test_return_parameter_view_accepted.gst",
+            "tests/test_return_static_literal_view_accepted.gst",
+            "tests/test_brand_erasure_utility_functions.gst",
+            "tests/e2e_codegen_assertions.gst",
+        ],
+        "runner_fixture": "tests/e2e_fallible_guard_bootstrap.gst",
+        "previous_reason":
+            "deferred_p13_parameter_argument_target_dependent_abi",
+        "current_reason": "deferred_p14_full_program_runtime_slice_return",
+        "required_native_case_delta": 4,
+        "classified_deferral_delta": -4,
+        "reason_count_deltas": {
+            "deferred_p13_parameter_argument_target_dependent_abi": -5,
+            "deferred_p14_full_program_runtime_slice_return": 1,
+        },
+        "frozen_phase21_record": "unchanged",
+        "partial_extra_or_substituted_transition": "rejected",
+    }, "Str direct-call Phase21 successor drifted")
+    str_surfaces = str_direct["text_surface_successor"]
+    str_rows = str_surfaces.get("changed_rows", [])
+    required_str_paths = {
+        "compiler/mir_native_backend_full_program_source.gst",
+        "scripts/phase13_parameter_argument.sh",
+        "scripts/phase21_complete_guard_suite.py",
+        "scripts/phase26_reference_receiver_registration.py",
+    }
+    require(str_surfaces.get("contract_version") ==
+            "phase26_str_direct_call_text_surface_successor_v1" and
+            str_surfaces.get("partial_extra_or_substituted_surface") ==
+            "rejected" and
+            {row.get("path") for row in str_rows} == required_str_paths and
+            len(str_rows) == len(required_str_paths),
+            "Str direct-call text surface paths drifted")
+    str_by_path = {row["path"]: row for row in str_rows}
+    runtime_by_path = {row["path"]: row for row in runtime_rows}
     for row in runtime_rows:
         require(set(row) == {"path", "previous_digest", "current_digest",
                              "previous_match_counts", "current_match_counts"} and
-                row["current_digest"] == digest(row["path"]) and
+                row["current_digest"] == (
+                    str_by_path[row["path"]]["previous_digest"]
+                    if row["path"] in str_by_path else digest(row["path"])) and
                 len(row["previous_digest"]) == 64 and
                 set(row["previous_match_counts"]) ==
                 {"explicit_backend_spelling", "mir_to_c_name", "generated_c_contract"} and
                 set(row["current_match_counts"]) ==
                 set(row["previous_match_counts"]),
                 f"runtime formal signature text surface drifted: {row['path']}")
+    for row in str_rows:
+        predecessor = runtime_by_path[row["path"]]
+        require(set(row) == {"path", "previous_digest", "current_digest",
+                             "previous_match_counts", "current_match_counts"} and
+                row["previous_digest"] == predecessor["current_digest"] and
+                row["previous_match_counts"] ==
+                predecessor["current_match_counts"] and
+                row["current_digest"] == digest(row["path"]) and
+                row["current_match_counts"] ==
+                row["previous_match_counts"],
+                f"Str direct-call text surface drifted: {row['path']}")
+    for path in (str_base["positive_fixture"],
+                 str_base["extern_deferred_fixture"],
+                 "compiler/phase26_runtime_slice_return_deferred_source.gst"):
+        require((ROOT / path).is_file(), f"missing Str direct-call fixture: {path}")
+    phase16_guard = (ROOT / "scripts/phase16_reference_receiver_parity.sh").read_text(
+        encoding="utf-8")
+    phase13_guard = (ROOT / "scripts/phase13_parameter_argument.sh").read_text(
+        encoding="utf-8")
+    require("compiler/phase26_str_direct_call_source.gst str-direct-call" in
+            phase16_guard and
+            "compiler/phase26_str_extern_deferred_source.gst str-extern-abi" in
+            phase13_guard and
+            "compiler/phase26_runtime_slice_return_deferred_source.gst" in
+            phase13_guard and
+            "deferred_p14_full_program_runtime_slice_return deferred" in
+            phase13_guard and
+            "just guard-stdlib-s1-str-surface" in phase13_guard,
+            "Str direct-call native or no-fallback guard is not executed")
     for path in (*EXPECTED["positive_fixtures"],
                  EXPECTED["preserved_deferred_fixture"],
                  EXPECTED["preserved_reference_return_fixture"],
