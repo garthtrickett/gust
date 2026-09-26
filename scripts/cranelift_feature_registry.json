@@ -48240,6 +48240,21 @@
             }
           },
           {
+            "path": "scripts/phase26_reference_receiver_registration.py",
+            "previous_digest": "da72dc11a667a0fd8da1345eea08936e5597cfa0a31fd2c367afc1e10deb6dad",
+            "current_digest": "012e76147c72e1452168fda1a9a99a96b92f02edb5afee88468a2b85b4b87806",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 5,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 5,
+              "generated_c_contract": 1
+            }
+          },
+          {
             "path": "justfile",
             "previous_digest": "cbdc36d3e6f8222cfbd8b5f3a27dd50cb0596adb24cf3f4b30085b4ba737ed27",
             "current_digest": "cde34209f1cbf226c412d2fc3e1bd702799c2e8f3f71c342507021beb7c2eed9",
@@ -48273,7 +48288,7 @@
         "partial_extra_or_substituted_surface": "rejected",
         "added_row": {
           "path": "scripts/phase26_ffi_repr_c_registration.py",
-          "digest": "3a9e88b803e6e7697248e1e9eef3c74640d6a65473fd32cbead3d5f1705e759a",
+          "digest": "71d0f340adeb9a08f7c51c34fd170bef305aee3e5287fc308ed0ce4ef3f6a295",
           "match_counts": {
             "explicit_backend_spelling": 1,
             "mir_to_c_name": 1,

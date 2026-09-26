@@ -26,6 +26,7 @@ SURFACES = {
     "scripts/cranelift_test_levels.json",
     "scripts/phase21_compiler_support_native_qualification.py",
     "scripts/phase22_opening.py",
+    "scripts/phase26_reference_receiver_registration.py",
 }
 
 

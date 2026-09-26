@@ -2425,6 +2425,7 @@ def normalize_phase23_text_surfaces(
             "justfile", "scripts/cranelift_test_levels.json",
             "scripts/phase21_compiler_support_native_qualification.py",
             "scripts/phase22_opening.py",
+            "scripts/phase26_reference_receiver_registration.py",
         }
         require(d2.get("contract_version") ==
                 "phase26_1d2_phase23_text_surface_successor_v1" and

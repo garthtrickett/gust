@@ -417,12 +417,36 @@ def main() -> None:
         row["path"]: row
         for row in ffi_surface_successor.get("changed_rows", [])
     }
+    d2_surfaces = activation.get(
+        "ffi_repr_c_layout_increment", {}).get(
+            "phase23_text_surface_successor", {})
+    d2_by_path = {
+        row["path"]: row for row in d2_surfaces.get("changed_rows", [])
+    }
+    for path, predecessor in {
+        "compiler/experiments/cranelift/src/full_program.rs":
+            runtime_by_path["compiler/experiments/cranelift/src/full_program.rs"],
+        "compiler/mir_native_backend_full_program_source.gst":
+            str_by_path["compiler/mir_native_backend_full_program_source.gst"],
+    }.items():
+        row = d2_by_path.get(path, {})
+        require(row.get("previous_digest") == predecessor["current_digest"] and
+                row.get("current_digest") == digest(path),
+                f"Phase 26.1D2 text surface bridge drifted: {path}")
+    registration_path = "scripts/phase26_reference_receiver_registration.py"
+    registration_d2 = d2_by_path.get(registration_path, {})
+    require(registration_d2.get("previous_digest") ==
+            ffi_by_path[registration_path]["current_row"]["digest"] and
+            registration_d2.get("current_digest") == digest(registration_path),
+            "Phase 26.1D2 reference registration text surface bridge drifted")
     for row in runtime_rows:
         require(set(row) == {"path", "previous_digest", "current_digest",
                              "previous_match_counts", "current_match_counts"} and
                 row["current_digest"] == (
                     str_by_path[row["path"]]["previous_digest"]
-                    if row["path"] in str_by_path else digest(row["path"])) and
+                    if row["path"] in str_by_path else
+                    d2_by_path[row["path"]]["previous_digest"]
+                    if row["path"] in d2_by_path else digest(row["path"])) and
                 len(row["previous_digest"]) == 64 and
                 set(row["previous_match_counts"]) ==
                 {"explicit_backend_spelling", "mir_to_c_name", "generated_c_contract"} and
@@ -433,7 +457,9 @@ def main() -> None:
         predecessor = runtime_by_path[row["path"]]
         ffi_row = ffi_by_path.get(row["path"])
         current_digest = (ffi_row["previous_row"]["digest"]
-                          if ffi_row is not None else digest(row["path"]))
+                          if ffi_row is not None else
+                          d2_by_path[row["path"]]["previous_digest"]
+                          if row["path"] in d2_by_path else digest(row["path"]))
         require(set(row) == {"path", "previous_digest", "current_digest",
                              "previous_match_counts", "current_match_counts"} and
                 row["previous_digest"] == predecessor["current_digest"] and
@@ -446,7 +472,9 @@ def main() -> None:
                  ffi_row["previous_row"]["match_counts"] ==
                  row["current_match_counts"]) and
                 (ffi_row is None or
-                 ffi_row["current_row"]["digest"] == digest(row["path"])),
+                 ffi_row["current_row"]["digest"] ==
+                 (d2_by_path[row["path"]]["previous_digest"]
+                  if row["path"] in d2_by_path else digest(row["path"]))),
                 f"Str direct-call text surface drifted: {row['path']}")
     for path in (str_base["positive_fixture"],
                  str_base["extern_deferred_fixture"],
