@@ -6,6 +6,9 @@ rm -rf "$build_root"
 mkdir -p "$build_root"
 make build/gust-runtime-package.a
 test -x ./gust
+# Actions artifacts preserve the driver bytes but strip executable mode.
+test -f build/gust-native-backend
+chmod +x build/gust-native-backend
 test -x build/gust-native-backend
 runtime_driver="$PWD/build/gust-native-backend"
 
