@@ -423,6 +423,12 @@ def main() -> None:
     d2_by_path = {
         row["path"]: row for row in d2_surfaces.get("changed_rows", [])
     }
+    d3_by_path = {
+        row["path"]: row for row in activation.get(
+            "ffi_repr_c_write_increment", {}).get(
+                "phase23_text_surface_successor", {}).get(
+                    "changed_rows", [])
+    }
     for path, predecessor in {
         "compiler/experiments/cranelift/src/full_program.rs":
             runtime_by_path["compiler/experiments/cranelift/src/full_program.rs"],
@@ -430,14 +436,23 @@ def main() -> None:
             str_by_path["compiler/mir_native_backend_full_program_source.gst"],
     }.items():
         row = d2_by_path.get(path, {})
+        next_row = d3_by_path.get(path)
         require(row.get("previous_digest") == predecessor["current_digest"] and
-                row.get("current_digest") == digest(path),
+                (next_row is None or
+                 next_row.get("previous_digest") == row.get("current_digest")) and
+                (next_row.get("current_digest") if next_row else
+                 row.get("current_digest")) == digest(path),
                 f"Phase 26.1D2 text surface bridge drifted: {path}")
     registration_path = "scripts/phase26_reference_receiver_registration.py"
     registration_d2 = d2_by_path.get(registration_path, {})
+    registration_d3 = d3_by_path.get(registration_path)
     require(registration_d2.get("previous_digest") ==
             ffi_by_path[registration_path]["current_row"]["digest"] and
-            registration_d2.get("current_digest") == digest(registration_path),
+            (registration_d3 is None or
+             registration_d3.get("previous_digest") ==
+             registration_d2.get("current_digest")) and
+            (registration_d3.get("current_digest") if registration_d3 else
+             registration_d2.get("current_digest")) == digest(registration_path),
             "Phase 26.1D2 reference registration text surface bridge drifted")
     for row in runtime_rows:
         require(set(row) == {"path", "previous_digest", "current_digest",
