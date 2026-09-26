@@ -48145,6 +48145,30 @@
         "compiler/phase26_ffi_unsafe_call_invalid.gst"
       ],
       "current_borrow_native_disposition": "deferred_p13_parameter_argument_target_dependent_abi",
+      "phase13_extern_diagnostic_successor": {
+        "contract_version": "phase26_1d1_phase13_extern_diagnostic_successor_v1",
+        "changed_cases": [
+          {
+            "source_fixture": "compiler/phase13_parameter_argument_aggregate_parameter_source.gst",
+            "previous_reason": "deferred_p13_parameter_argument_aggregate_parameter",
+            "current_diagnostic": "[FFIByValueAggregateUnsupported]"
+          },
+          {
+            "source_fixture": "compiler/phase13_parameter_argument_aggregate_return_source.gst",
+            "previous_reason": "deferred_p13_parameter_argument_aggregate_return",
+            "current_diagnostic": "[FFIByValueAggregateUnsupported]"
+          },
+          {
+            "source_fixture": "compiler/phase26_str_extern_deferred_source.gst",
+            "previous_reason": "deferred_p13_parameter_argument_target_dependent_abi",
+            "current_diagnostic": "[FFIBorrowPolicyRequired]"
+          }
+        ],
+        "failure_stage": "canonical_typechecking_before_driver",
+        "poison_driver_invoked": false,
+        "native_artifact_emitted": false,
+        "partial_extra_or_substituted_case": "rejected"
+      },
       "filename_site_successor": {
         "contract_version": "phase26_1d1_filename_site_successor_v1",
         "previous_sites": [
@@ -48549,6 +48573,39 @@
             }
           },
           {
+            "path": "scripts/phase13_parameter_argument.sh",
+            "previous_row": {
+              "path": "scripts/phase13_parameter_argument.sh",
+              "digest": "8422a48b57cee14caf1c0d437816d42543301c9939a9eee1492c720b5949e1d8",
+              "match_counts": {
+                "explicit_backend_spelling": 0,
+                "mir_to_c_name": 8,
+                "generated_c_contract": 0
+              },
+              "classification": "archive_candidate",
+              "owner": "cranelift",
+              "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+              "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+              "removal_phase": "24",
+              "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+            },
+            "current_row": {
+              "path": "scripts/phase13_parameter_argument.sh",
+              "digest": "eec8adc8fbdb2619bea83ed32d041c17e9071a1badcb37d96c63c7076cd9ad03",
+              "match_counts": {
+                "explicit_backend_spelling": 0,
+                "mir_to_c_name": 8,
+                "generated_c_contract": 0
+              },
+              "classification": "archive_candidate",
+              "owner": "cranelift",
+              "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+              "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+              "removal_phase": "24",
+              "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+            }
+          },
+          {
             "path": "scripts/phase22_opening.py",
             "previous_row": {
               "path": "scripts/phase22_opening.py",
@@ -48585,10 +48642,10 @@
             "path": "scripts/phase26_reference_receiver_registration.py",
             "previous_row": {
               "path": "scripts/phase26_reference_receiver_registration.py",
-              "digest": "b7fe3829188e9b9db736aeaee22d88649ebab1ba958fbc3ddfbaa434fec0f0c2",
+              "digest": "17b9062000e22a390ec1108c8c5ec0ec7bd03d410cc432610fac9883bc977ec7",
               "match_counts": {
                 "explicit_backend_spelling": 1,
-                "mir_to_c_name": 4,
+                "mir_to_c_name": 5,
                 "generated_c_contract": 1
               },
               "classification": "archive_candidate",
@@ -48600,10 +48657,10 @@
             },
             "current_row": {
               "path": "scripts/phase26_reference_receiver_registration.py",
-              "digest": "ed9fff4f44c4a4003ace86e3eaead0f129a6ac7c3f3202890c62878bb9ab6130",
+              "digest": "da72dc11a667a0fd8da1345eea08936e5597cfa0a31fd2c367afc1e10deb6dad",
               "match_counts": {
                 "explicit_backend_spelling": 1,
-                "mir_to_c_name": 4,
+                "mir_to_c_name": 5,
                 "generated_c_contract": 1
               },
               "classification": "archive_candidate",
@@ -48618,7 +48675,7 @@
         "added_rows": [
           {
             "path": "scripts/phase26_ffi_position_registration.py",
-            "digest": "08009fcac3c380a8262c2305a3ce93852701db269a96c1aba033cfee0ec011fa",
+            "digest": "d78b2a5a84226e8e632a195d934e177b40d65e969e964c509d5a0ac0747a8dc8",
             "match_counts": {
               "explicit_backend_spelling": 1,
               "mir_to_c_name": 1,

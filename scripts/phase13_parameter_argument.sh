@@ -304,10 +304,10 @@ assert_preserved_pre_driver_failure \
   "$wrong_type_source" wrong-type-source TypeError source_or_type_failure
 assert_preserved_pre_driver_failure \
   "$aggregate_parameter_source" aggregate-parameter \
-  deferred_p13_parameter_argument_aggregate_parameter deferred
+  '[FFIByValueAggregateUnsupported]' source_or_type_failure
 assert_preserved_pre_driver_failure \
   "$aggregate_return_source" aggregate-return \
-  deferred_p13_parameter_argument_aggregate_return deferred
+  '[FFIByValueAggregateUnsupported]' source_or_type_failure
 assert_preserved_pre_driver_failure \
   "$target_abi_source" target-dependent-abi \
   deferred_p13_parameter_argument_target_dependent_abi deferred
@@ -324,7 +324,7 @@ assert_preserved_pre_driver_failure \
   source_or_type_failure
 assert_preserved_pre_driver_failure \
   compiler/phase26_str_extern_deferred_source.gst str-extern-abi \
-  deferred_p13_parameter_argument_target_dependent_abi deferred
+  '[FFIBorrowPolicyRequired]' source_or_type_failure
 assert_preserved_pre_driver_failure \
   compiler/phase26_runtime_slice_return_deferred_source.gst \
   runtime-slice-return \
@@ -343,4 +343,4 @@ bash "$reference_receiver_guard" "$build_root/reference-receiver"
 # admission must satisfy that unchanged guard in the Cranelift Level 2 lane.
 just guard-stdlib-s1-str-surface
 
-echo "✅ Phase 13.6 parameter/argument evidence passed: ordered three-parameter identities, direct and imported multi-argument calls, repeated/expression/CFG/loop composition, six malformed MIR contracts, source type failures, precise ABI deferrals, native runtime formals, and direct Str calls."
+echo "✅ Phase 13.6 parameter/argument evidence passed: ordered three-parameter identities, direct and imported multi-argument calls, repeated/expression/CFG/loop composition, six malformed MIR contracts, FFI declaration errors, precise ABI deferrals, native runtime formals, and direct Str calls."

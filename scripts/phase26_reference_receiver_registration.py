@@ -410,6 +410,13 @@ def main() -> None:
             "Str direct-call text surface paths drifted")
     str_by_path = {row["path"]: row for row in str_rows}
     runtime_by_path = {row["path"]: row for row in runtime_rows}
+    ffi_surface_successor = activation.get(
+        "ffi_position_policy_increment", {}).get(
+            "phase23_text_surface_successor", {})
+    ffi_by_path = {
+        row["path"]: row
+        for row in ffi_surface_successor.get("changed_rows", [])
+    }
     for row in runtime_rows:
         require(set(row) == {"path", "previous_digest", "current_digest",
                              "previous_match_counts", "current_match_counts"} and
@@ -424,14 +431,22 @@ def main() -> None:
                 f"runtime formal signature text surface drifted: {row['path']}")
     for row in str_rows:
         predecessor = runtime_by_path[row["path"]]
+        ffi_row = ffi_by_path.get(row["path"])
+        current_digest = (ffi_row["previous_row"]["digest"]
+                          if ffi_row is not None else digest(row["path"]))
         require(set(row) == {"path", "previous_digest", "current_digest",
                              "previous_match_counts", "current_match_counts"} and
                 row["previous_digest"] == predecessor["current_digest"] and
                 row["previous_match_counts"] ==
                 predecessor["current_match_counts"] and
-                row["current_digest"] == digest(row["path"]) and
+                row["current_digest"] == current_digest and
                 row["current_match_counts"] ==
-                row["previous_match_counts"],
+                row["previous_match_counts"] and
+                (ffi_row is None or
+                 ffi_row["previous_row"]["match_counts"] ==
+                 row["current_match_counts"]) and
+                (ffi_row is None or
+                 ffi_row["current_row"]["digest"] == digest(row["path"])),
                 f"Str direct-call text surface drifted: {row['path']}")
     for path in (str_base["positive_fixture"],
                  str_base["extern_deferred_fixture"],

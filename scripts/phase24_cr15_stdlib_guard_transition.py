@@ -2378,6 +2378,44 @@ def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    ffi = registry.get("phase26_activation_audit", {}).get(
+        "ffi_position_policy_increment", {}).get("phase23_text_surface_successor")
+    if ffi is not None:
+        changed = ffi.get("changed_rows")
+        added = ffi.get("added_rows")
+        changed_paths = {
+            ".github/workflows/pr-fast.yml",
+            "compiler/typechecker.gst",
+            "justfile",
+            "scripts/cranelift_ci_family.py",
+            "scripts/cranelift_test_levels.json",
+            "scripts/cranelift_test_levels.py",
+            "scripts/phase22_opening.py",
+            "scripts/phase13_parameter_argument.sh",
+            "scripts/phase26_reference_receiver_registration.py",
+        }
+        require(ffi.get("contract_version") ==
+                "phase26_1d1_phase23_text_surface_successor_v1" and
+                ffi.get("partial_extra_or_substituted_surface") ==
+                "rejected" and isinstance(changed, list) and
+                isinstance(added, list) and len(changed) ==
+                len(changed_paths) and
+                {entry.get("path") for entry in changed} == changed_paths and
+                [entry.get("path") for entry in added] == [
+                    "scripts/phase26_ffi_position_registration.py"],
+                "Phase 26.1D1 text surface successor drifted")
+        live = {row["path"]: row for row in rows}
+        require(all(live.get(entry["path"]) == entry["current_row"]
+                    for entry in changed) and
+                all(live.get(entry["path"]) == entry for entry in added),
+                "Phase 26.1D1 text surfaces are missing, extra, or "
+                "substituted")
+        previous = {entry["path"]: entry["previous_row"]
+                    for entry in changed}
+        added_paths = {entry["path"] for entry in added}
+        rows = [previous.get(row["path"], row) for row in rows
+                if row["path"] not in added_paths]
+
     str_direct = registry.get("phase26_activation_audit", {}).get(
         "str_direct_call_prerequisite", {}).get("text_surface_successor", {})
     str_rows = str_direct.get("changed_rows", [])
@@ -2472,43 +2510,6 @@ def normalize_phase23_text_surfaces(
             "extra, or substituted")
     rows = [dict(row, digest=branded["previous_digest"])
             if row["path"] == branded["path"] else row for row in rows]
-    ffi = registry.get("phase26_activation_audit", {}).get(
-        "ffi_position_policy_increment", {}).get("phase23_text_surface_successor")
-    if ffi is not None:
-        changed = ffi.get("changed_rows")
-        added = ffi.get("added_rows")
-        changed_paths = {
-            ".github/workflows/pr-fast.yml",
-            "compiler/typechecker.gst",
-            "justfile",
-            "scripts/cranelift_ci_family.py",
-            "scripts/cranelift_test_levels.json",
-            "scripts/cranelift_test_levels.py",
-            "scripts/phase22_opening.py",
-            "scripts/phase26_reference_receiver_registration.py",
-        }
-        require(ffi.get("contract_version") ==
-                "phase26_1d1_phase23_text_surface_successor_v1" and
-                ffi.get("partial_extra_or_substituted_surface") ==
-                "rejected" and isinstance(changed, list) and
-                isinstance(added, list) and len(changed) ==
-                len(changed_paths) and
-                {entry.get("path") for entry in changed} == changed_paths and
-                [entry.get("path") for entry in added] == [
-                    "scripts/phase26_ffi_position_registration.py"],
-                "Phase 26.1D1 text surface successor drifted")
-        live = {row["path"]: row for row in rows}
-        require(all(live.get(entry["path"]) == entry["current_row"]
-                    for entry in changed) and
-                all(live.get(entry["path"]) == entry for entry in added),
-                "Phase 26.1D1 text surfaces are missing, extra, or "
-                "substituted")
-        previous = {entry["path"]: entry["previous_row"]
-                    for entry in changed}
-        added_paths = {entry["path"] for entry in added}
-        rows = [previous.get(row["path"], row) for row in rows
-                if row["path"] not in added_paths]
-
     # The S1 Clone destination guard changes its measured pre-driver reason
     # after native Str direct calls are qualified. Keep the closed Phase 25
     # identity while accepting exactly the Stdlib-owned guard correction.

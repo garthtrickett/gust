@@ -55,6 +55,34 @@ EXPECTED = {
     "current_borrow_native_disposition":
         "deferred_p13_parameter_argument_target_dependent_abi",
 }
+PHASE13_DIAGNOSTIC_SUCCESSOR = {
+    "contract_version": "phase26_1d1_phase13_extern_diagnostic_successor_v1",
+    "changed_cases": [
+        {
+            "source_fixture":
+                "compiler/phase13_parameter_argument_aggregate_parameter_source.gst",
+            "previous_reason":
+                "deferred_p13_parameter_argument_aggregate_parameter",
+            "current_diagnostic": "[FFIByValueAggregateUnsupported]",
+        },
+        {
+            "source_fixture":
+                "compiler/phase13_parameter_argument_aggregate_return_source.gst",
+            "previous_reason": "deferred_p13_parameter_argument_aggregate_return",
+            "current_diagnostic": "[FFIByValueAggregateUnsupported]",
+        },
+        {
+            "source_fixture": "compiler/phase26_str_extern_deferred_source.gst",
+            "previous_reason":
+                "deferred_p13_parameter_argument_target_dependent_abi",
+            "current_diagnostic": "[FFIBorrowPolicyRequired]",
+        },
+    ],
+    "failure_stage": "canonical_typechecking_before_driver",
+    "poison_driver_invoked": False,
+    "native_artifact_emitted": False,
+    "partial_extra_or_substituted_case": "rejected",
+}
 
 
 def require(condition: bool, message: str) -> None:
@@ -71,10 +99,13 @@ def main() -> None:
     for key, expected in EXPECTED.items():
         require(record.get(key) == expected,
                 f"FFI position registration drifted: {key}")
+    require(record.get("phase13_extern_diagnostic_successor") ==
+            PHASE13_DIAGNOSTIC_SUCCESSOR,
+            "Phase 13 extern diagnostic successor drifted")
     require(set(record) == set(EXPECTED) | {
         "phase22_invocation_successor", "phase23_text_surface_successor",
         "production_audit_successor", "filename_site_successor",
-        "spelling_inventory_successor",
+        "spelling_inventory_successor", "phase13_extern_diagnostic_successor",
     }, "FFI position registration fields drifted")
     for path in FIXTURES:
         require((ROOT / path).is_file(), f"registered fixture is missing: {path}")
@@ -110,6 +141,22 @@ def main() -> None:
             "_invalid.gst")
         require(f"'{name}|" in guard,
                 f"guard does not execute negative fixture: {path}")
+    phase13_guard = (ROOT / "scripts/phase13_parameter_argument.sh").read_text(
+        encoding="utf-8")
+    require(phase13_guard.count(
+                "'[FFIByValueAggregateUnsupported]' source_or_type_failure") ==
+            2 and
+            "'[FFIBorrowPolicyRequired]' source_or_type_failure" in
+            phase13_guard and
+            '"$aggregate_parameter_source" aggregate-parameter' in
+            phase13_guard and
+            '"$aggregate_return_source" aggregate-return' in
+            phase13_guard and
+            'compiler/phase26_str_extern_deferred_source.gst str-extern-abi' in
+            phase13_guard and
+            'if [ -e "$poison_marker" ]; then' in phase13_guard and
+            'cmp -s "$output.expected" "$output"' in phase13_guard,
+            "Phase 13 extern diagnostic no-fallback guard drifted")
     print(f"{GUARD}: registration ok")
 
 
