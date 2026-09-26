@@ -2437,6 +2437,37 @@ def normalize_phase23_text_surfaces(
     rows = [dict(row, digest=branded["previous_digest"])
             if row["path"] == branded["path"] else row for row in rows]
 
+    # The S1 Clone destination guard changes its measured pre-driver reason
+    # after native Str direct calls are qualified. Keep the closed Phase 25
+    # identity while accepting exactly the Stdlib-owned guard correction.
+    clone = registry.get("phase26_activation_audit", {}).get(
+        "stdlib_s1_clone_destination_guard_successor")
+    require(clone == {
+        "contract_version": "phase26_s1_clone_destination_guard_successor_v1",
+        "path": "scripts/stdlib_s1_clone_destination_parity.sh",
+        "previous_digest":
+            "4292d7b3dc06b4b976925ed8c1e32529f895f8c9061a09938f8fa636d177fbc5",
+        "current_digest":
+            "57ab9e004b976b41d626e0279e39b73e6e3e17693108a3a8ae1ac8b71fa2c548",
+        "match_counts": {
+            "explicit_backend_spelling": 0,
+            "generated_c_contract": 0,
+            "mir_to_c_name": 2,
+        },
+        "owner": "cranelift",
+        "stdlib_branch": "codex/stdlib-clone-destination-deferral",
+        "partial_extra_or_substituted_surface": "rejected",
+    }, "Phase 26 Stdlib S1 Clone destination guard successor drifted")
+    clone_rows = [row for row in rows if row["path"] == clone["path"]]
+    require(len(clone_rows) == 1 and
+            clone_rows[0]["digest"] in (
+                clone["previous_digest"], clone["current_digest"]) and
+            clone_rows[0]["match_counts"] == clone["match_counts"],
+            "Phase 26 Stdlib S1 Clone destination guard is missing, "
+            "extra, or substituted")
+    rows = [dict(row, digest=clone["previous_digest"])
+            if row["path"] == clone["path"] else row for row in rows]
+
     prerequisite = registry.get("phase26_activation_audit", {}).get(
         "reference_receiver_prerequisite", {})
     successor = prerequisite.get("phase23_text_surface_successor")
