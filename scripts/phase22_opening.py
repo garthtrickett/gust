@@ -284,6 +284,20 @@ def scan_summary(rows: list[dict[str, object]]) -> dict[str, object]:
 def phase22_relay_inventory_rows(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep Phase 22's closed relay identity while validating exact successors."""
+    e2 = registry.get("phase26_activation_audit", {}).get(
+        "reference_return_escape_increment", {}).get("phase22_invocation_successor")
+    if e2 is not None:
+        added = e2.get("added_rows")
+        path = "scripts/phase26_reference_return_escape.sh"
+        require(e2.get("contract_version") ==
+                "phase26_1e2_phase22_invocation_successor_v1" and
+                e2.get("previous_total") == 171 and
+                e2.get("current_total") == 174 and
+                e2.get("partial_extra_or_substituted_invocation") ==
+                "rejected" and isinstance(added, list) and len(added) == 3 and
+                [row for row in rows if row.get("path") == path] == added,
+                "Phase 26.1E2 return-escape invocation rows drifted")
+        rows = [row for row in rows if row.get("path") != path]
     d6 = registry.get("phase26_activation_audit", {}).get(
         "ffi_isolated_write_increment", {}).get("phase22_invocation_successor")
     if d6 is not None:

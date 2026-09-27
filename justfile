@@ -24263,3 +24263,11 @@ guard-cranelift-phase26-ffi-isolated-write:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-ffi-isolated-write | grep -F $'guard-cranelift-phase26-ffi-isolated-write\t2\t' >/dev/null
     python3 scripts/phase26_ffi_isolated_write_registration.py
     bash scripts/phase26_ffi_isolated_write.sh
+
+# Phase 26.1E2: raw and isolated Reference origins cannot escape through a return.
+guard-cranelift-phase26-reference-return-escape:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-reference-return-escape | grep -F $'guard-cranelift-phase26-reference-return-escape\t2\t' >/dev/null
+    python3 scripts/phase26_reference_return_escape_registration.py
+    bash scripts/phase26_reference_return_escape.sh
