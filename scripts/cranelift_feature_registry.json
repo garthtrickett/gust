@@ -48056,6 +48056,427 @@
     "why_this_exists": "The Status section of docs/PHASE25_ROADMAP.md is the record the phase-completion loop checks, and it was wrong in both directions. 25.10a (#468) and 25.10 (#470) were unticked though both merged. 25.12 was ticked though its Exit Gate was not met, and 25.12b (#472), which corrected it, had no row at all. The Patch 25.0 heading still read IN PROGRESS. The section's own rule is 'ticked when merged to main', and this repo's convention is that a later patch ticks merged ones -- Patch 25.7 is what ticked 25.12 and 25.11a -- so 25.12b could not tick itself."
   },
   "phase26_activation_audit": {
+    "ffi_isolated_write_increment": {
+      "contract_version": "phase26_1d6_ffi_isolated_write_v1",
+      "status": "selected_flat_repr_c_raw_write_isolated_copyback_per_call",
+      "owner": "cranelift",
+      "increment": "26.1D6",
+      "declared_parameter_policy": "borrow_write_isolated_call",
+      "canonical_call_policy": "explicit_optional_call_marker_2",
+      "ordinary_call_policy": "unchanged_marker_0",
+      "storage": "temporary_arena_copy_in_host_write_copyback_then_free",
+      "physical_pointer_abi": "unchanged",
+      "selected_host_import": "tiny_host_write_repr_c_probe",
+      "selected_host_object": "generated_test_only_existing_host_object_slot",
+      "positive_fixture": "compiler/phase26_ffi_isolated_write_source.gst",
+      "negative_fixtures": [
+        "compiler/phase26_ffi_isolated_write_missing_source.gst",
+        "compiler/phase26_ffi_isolated_write_order_source.gst",
+        "compiler/phase26_ffi_isolated_write_packed_source.gst",
+        "compiler/phase26_ffi_isolated_write_nested_source.gst",
+        "compiler/phase26_ffi_isolated_write_enum_source.gst",
+        "compiler/phase26_ffi_isolated_write_unknown_host_source.gst",
+        "compiler/phase26_ffi_isolated_write_nonraw_source.gst",
+        "compiler/phase26_ffi_isolated_write_nonaggregate_source.gst"
+      ],
+      "failure_stage": "before_driver_discovery",
+      "deferral_reason": "deferred_p26_ffi_borrowed_c_layout",
+      "native_fallback": false,
+      "physical_abi_changed": false,
+      "runtime_symbol_surface_changed": false,
+      "unsupported_shapes": [
+        "reference_writes",
+        "transfer",
+        "retain",
+        "returned_pointer",
+        "callback",
+        "native_error",
+        "by_value_aggregate",
+        "nested",
+        "packed",
+        "enum",
+        "unapproved_host",
+        "nonlocal_exit_cleanup"
+      ],
+      "owning_level2_guard": "guard-cranelift-phase26-ffi-isolated-write",
+      "pr_fast_job": "phase26-ffi-position",
+      "filename_site_successor": {
+        "contract_version": "phase26_1d6_filename_site_successor_v1",
+        "previous_sites": [
+          {
+            "id": "var_declaration_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 13985,
+            "selector": "test_tcs_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_var_declaration",
+            "window_digest": "6c0f176e1543d9a2ba125569875a69081a81b28bfc4c80eef31c57ec7ccfa05c"
+          },
+          {
+            "id": "assignment_hazard_and_view_invalidation",
+            "path": "compiler/typechecker.gst",
+            "line": 14292,
+            "selector": "test_index_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_assignment",
+            "window_digest": "eea5c7abf9fb4c50d51f644267c5ee59133db8d998a0fe7c25dd0ec1503029c3"
+          },
+          {
+            "id": "guard_payload_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 15273,
+            "selector": "test_tcs_",
+            "selector_occurrence": 2,
+            "statement_context": "statement_guard_payload_binding",
+            "window_digest": "4bf05983015fd1ecc3c3cc4c1399491868107155a5435fed90f8beeeb8f16a6f"
+          }
+        ],
+        "current_sites": [
+          {
+            "id": "var_declaration_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 13997,
+            "selector": "test_tcs_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_var_declaration",
+            "window_digest": "6c0f176e1543d9a2ba125569875a69081a81b28bfc4c80eef31c57ec7ccfa05c"
+          },
+          {
+            "id": "assignment_hazard_and_view_invalidation",
+            "path": "compiler/typechecker.gst",
+            "line": 14304,
+            "selector": "test_index_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_assignment",
+            "window_digest": "eea5c7abf9fb4c50d51f644267c5ee59133db8d998a0fe7c25dd0ec1503029c3"
+          },
+          {
+            "id": "guard_payload_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 15285,
+            "selector": "test_tcs_",
+            "selector_occurrence": 2,
+            "statement_context": "statement_guard_payload_binding",
+            "window_digest": "4bf05983015fd1ecc3c3cc4c1399491868107155a5435fed90f8beeeb8f16a6f"
+          }
+        ],
+        "line_delta": 12,
+        "partial_extra_or_substituted_site": "rejected"
+      },
+      "phase22_invocation_successor": {
+        "contract_version": "phase26_1d6_phase22_invocation_successor_v1",
+        "previous_total": 168,
+        "current_total": 171,
+        "added_rows": [
+          {
+            "path": "scripts/phase26_ffi_isolated_write.sh",
+            "line": 15,
+            "recipe": "none",
+            "compiler_token": "./gust",
+            "selection": "explicit_cranelift",
+            "consumer_class": "already_explicit_or_parser_probe",
+            "owner": "cranelift",
+            "expected_artifact": "selected_backend_contract",
+            "expected_transition": "preserve_explicit_selection",
+            "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+            "command": "GUST_TEST_MIR_TO_C_UNAVAILABLE=1 GUST_NATIVE_BACKEND_DRIVER=\"$driver\" ./gust --backend cranelift -o \"$build_root/native\" compiler/phase26_ffi_isolated_write_source.gst >\"$build_root/positive.compile.stdout\" 2>\"$build_root/positive.compile.stderr\""
+          },
+          {
+            "path": "scripts/phase26_ffi_isolated_write.sh",
+            "line": 77,
+            "recipe": "none",
+            "compiler_token": "./gust",
+            "selection": "explicit_cranelift",
+            "consumer_class": "already_explicit_or_parser_probe",
+            "owner": "cranelift",
+            "expected_artifact": "selected_backend_contract",
+            "expected_transition": "preserve_explicit_selection",
+            "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+            "command": "GUST_TEST_MIR_TO_C_UNAVAILABLE=1 GUST_PHASE26_D6_POISON_MARKER=\"$PWD/$marker\" GUST_NATIVE_BACKEND_DRIVER=\"$PWD/$poison\" ./gust --backend cranelift -o \"$output\" \"compiler/phase26_ffi_isolated_write_${case_name}_source.gst\" >\"$output.stdout\" 2>\"$output.stderr\""
+          },
+          {
+            "path": "scripts/phase26_ffi_isolated_write.sh",
+            "line": 103,
+            "recipe": "none",
+            "compiler_token": "./gust",
+            "selection": "explicit_cranelift",
+            "consumer_class": "already_explicit_or_parser_probe",
+            "owner": "cranelift",
+            "expected_artifact": "selected_backend_contract",
+            "expected_transition": "preserve_explicit_selection",
+            "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+            "command": "GUST_TEST_MIR_TO_C_UNAVAILABLE=1 GUST_PHASE26_D6_POISON_MARKER=\"$PWD/$marker\" GUST_NATIVE_BACKEND_DRIVER=\"$PWD/$poison\" ./gust --backend cranelift -o \"$output\" \"compiler/phase26_ffi_isolated_write_${case_name}_source.gst\" >\"$output.stdout\" 2>\"$output.stderr\""
+          }
+        ],
+        "partial_extra_or_substituted_invocation": "rejected"
+      },
+      "production_audit_successor": {
+        "contract_version": "phase26_1d6_production_audit_successor_v1",
+        "previous_repository_invocation_count": 168,
+        "current_repository_invocation_count": 171,
+        "added_invocation_path": "scripts/phase26_ffi_isolated_write.sh",
+        "unchanged_other_fields": true,
+        "partial_extra_or_substituted_audit": "rejected"
+      },
+      "phase23_text_surface_successor": {
+        "contract_version": "phase26_1d6_phase23_text_surface_successor_v1",
+        "changed_rows": [
+          {
+            "path": ".github/workflows/pr-fast.yml",
+            "previous_digest": "dd03f94ef539047beef3b4e0537614489e418863b52bc0b6190a306466669f6e",
+            "current_digest": "1ecf2f6670fd2858f812341021b613f19f0038dfc080fec8bec05baeef44967f",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 8,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 8,
+              "generated_c_contract": 1
+            }
+          },
+          {
+            "path": "compiler/experiments/cranelift/src/full_program.rs",
+            "previous_digest": "2eaf3d909014619874568d3c03f4942bfcf5b7836bb886b47f941938a300ebac",
+            "current_digest": "723fbbdadc84d57e5f31d3dc858225b4d0837bffb25da838458736fcf24bd6ce",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            }
+          },
+          {
+            "path": "compiler/mir_native_backend_full_program_source.gst",
+            "previous_digest": "4b6745185d85667abf5a3deb703fd232f084aa4dbecfb905464b32889af47dc8",
+            "current_digest": "68a976382034fb8f7389a9746da4f77cbcc830f029b457d8f779ef7182a82dce",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            }
+          },
+          {
+            "path": "compiler/typechecker.gst",
+            "previous_digest": "23d3086171f3281c459f3a3169b369576ceed695f278fc93df0595a719c3b31a",
+            "current_digest": "9d2f56d221b706b7e0de4c789320090b655609324a2b658c7d206fc9d13fbeb9",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            }
+          },
+          {
+            "path": "justfile",
+            "previous_digest": "f36a8707dcdd14e5ce903384556a31322c85c303cb93ddd90a97f67644995c1e",
+            "current_digest": "19ef3f0cd10dbb197385d91c7f47eff8402c1b1c95867d725c8d1c2ce8c4c22f",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 729,
+              "generated_c_contract": 9
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 729,
+              "generated_c_contract": 9
+            }
+          },
+          {
+            "path": "scripts/cranelift_test_levels.json",
+            "previous_digest": "f2f69e4f4a1e1fbee7ff269e4667f1ead04ad75fcf36bc33e951647bcd1e4857",
+            "current_digest": "0ff7b59e72681405766cc217c007c1e6eb26f4bd5a28bf43efbfad0bc91e043d",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 30,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 30,
+              "generated_c_contract": 0
+            }
+          },
+          {
+            "path": "scripts/phase22_opening.py",
+            "previous_digest": "73246da9b6ed5fc50740770397d7a1cec907106376de44ce08a169ece19fa5b7",
+            "current_digest": "655f752e06ac39cabaaafc240cfb8c93236d6622ce7976108ffa3cb8b142ca11",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 5,
+              "mir_to_c_name": 23,
+              "generated_c_contract": 12
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 5,
+              "mir_to_c_name": 23,
+              "generated_c_contract": 12
+            }
+          },
+          {
+            "path": "scripts/phase26_ffi_raw_return_registration.py",
+            "previous_digest": "371475163d7be015fe09613df163bff412d225a287130408a7938ea509874ba0",
+            "current_digest": "18fece6c4607ef85c3ba4a39a776511ec7290d683f3da93837b9155a8b78d429",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            }
+          },
+          {
+            "path": "scripts/phase26_ffi_repr_c_registration.py",
+            "previous_digest": "dd3547e20693c5d5776c2547e929c7c90670fa5713875b991e8390a96f33572a",
+            "current_digest": "c4f2542c3e84008f8248cd153f9302b023e79225c00f1b9382b4fa1b7d1c125b",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            }
+          },
+          {
+            "path": "scripts/phase26_ffi_repr_c_write_registration.py",
+            "previous_digest": "68787b81fc5b475194dc7c1ac7e5c717aad72390ee11b84e45a1756188ccd553",
+            "current_digest": "834567cf3484d43afe6bdbe53d43054d3313aef8ac4b0742d92a5d01a2b4444e",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            }
+          },
+          {
+            "path": "scripts/phase26_raw_cast_provenance_registration.py",
+            "previous_digest": "0e079cfc5d30b16ed533022fae51696faf187bb8ddf6602a355a58c8904d60e5",
+            "current_digest": "fcc8f6b14726b00f42f9868e37fbd5a4a898c21de5aca4177df4e7868078bfe2",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            }
+          },
+          {
+            "path": "scripts/phase26_reference_receiver_registration.py",
+            "previous_digest": "ea92afa68a17ab6ea7426fe85000faeac91bca921dd7efb320e28af0b59d0dee",
+            "current_digest": "29c931b29acd3c9ce6d82d7dbff71b8860d9317eb694f5326bceabc9ba3dc35e",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 5,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 5,
+              "generated_c_contract": 1
+            }
+          }
+        ],
+        "added_rows": [],
+        "partial_extra_or_substituted_surface": "rejected"
+      },
+      "spelling_inventory_successor": {
+        "contract_version": "phase26_1d6_spelling_inventory_successor_v1",
+        "previous_inventory_summary": {
+          "source_file_count": 1140,
+          "site_count": 1395,
+          "semantic_site_count": 686,
+          "semantic_manifest_digest": "aa81af6e4c1e83354bda455f5236d2f9fa36efed10d34bf9e696de6ae635f21c",
+          "classification_counts": {
+            "semantic_or_intrinsic_recognition": 686,
+            "diagnostic": 10,
+            "serialization": 1,
+            "mangling_or_generated_name": 9,
+            "comment": 2,
+            "fixture_or_evidence": 679,
+            "non_decision_comparison": 8
+          },
+          "partition_manifest_digests": {
+            "diagnostic": "6aaf2dc91c3f60f66b8bfa73be034f353245503b8442e673ab7d4067e54551d1",
+            "serialization": "a889ed384ae506f10b80c84fc00b91863328192597070abee5ec4324e92aef70",
+            "mangling_or_generated_name": "75aaa9f2f95728dc1d997d8fecffc47b0ed4b3f7a1e80c59093f9bdd9bde018d",
+            "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+            "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+            "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
+          },
+          "complete_manifest_digest": "ffca0a3b12cb4afbeb90a17335f47f2e7094c23820db6ed3a1d9f1972a3cd1ab",
+          "unknown_site_count": 0
+        },
+        "current_inventory_summary": {
+          "source_file_count": 1149,
+          "site_count": 1398,
+          "semantic_site_count": 689,
+          "semantic_manifest_digest": "a51d81db96910d5923390aca4faab5318011c68f8c4a148510d1b97401e6845c",
+          "classification_counts": {
+            "semantic_or_intrinsic_recognition": 689,
+            "diagnostic": 10,
+            "serialization": 1,
+            "mangling_or_generated_name": 9,
+            "comment": 2,
+            "fixture_or_evidence": 679,
+            "non_decision_comparison": 8
+          },
+          "partition_manifest_digests": {
+            "diagnostic": "4cab8a51ddf01885f647243d98438280975e476f3323d4fdb93d28432cd7a7c1",
+            "serialization": "a889ed384ae506f10b80c84fc00b91863328192597070abee5ec4324e92aef70",
+            "mangling_or_generated_name": "bc0737cfe414a40d524f438179843d5767322c9f8933979125387418712ecc57",
+            "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+            "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+            "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
+          },
+          "complete_manifest_digest": "7273f736d6c1b6e09726019f78e942139bf5ad2d82777cc47cde190f1b17acc8",
+          "unknown_site_count": 0
+        },
+        "changed_source_paths": [
+          "compiler/experiments/cranelift/src/full_program.rs",
+          "compiler/mir_native_backend_full_program_source.gst",
+          "compiler/mir_native_backend_module_import_source.gst",
+          "compiler/mir_native_backend_parameter_argument_source.gst",
+          "compiler/parser.gst",
+          "compiler/phase26_ffi_isolated_write_enum_source.gst",
+          "compiler/phase26_ffi_isolated_write_missing_source.gst",
+          "compiler/phase26_ffi_isolated_write_nested_source.gst",
+          "compiler/phase26_ffi_isolated_write_nonaggregate_source.gst",
+          "compiler/phase26_ffi_isolated_write_nonraw_source.gst",
+          "compiler/phase26_ffi_isolated_write_order_source.gst",
+          "compiler/phase26_ffi_isolated_write_packed_source.gst",
+          "compiler/phase26_ffi_isolated_write_source.gst",
+          "compiler/phase26_ffi_isolated_write_unknown_host_source.gst",
+          "compiler/typechecker.gst"
+        ],
+        "partial_extra_or_substituted_inventory": "rejected"
+      }
+    },
     "ffi_isolated_read_increment": {
       "contract_version": "phase26_1d5_ffi_isolated_read_v1",
       "status": "selected_flat_repr_c_borrowed_read_isolated_per_call",

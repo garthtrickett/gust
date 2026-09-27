@@ -819,6 +819,9 @@ jobs:
       - name: Phase 26 isolated repr C read
         run: just guard-cranelift-phase26-ffi-isolated-read
 
+      - name: Phase 26 isolated repr C raw pointer write
+        run: just guard-cranelift-phase26-ffi-isolated-write
+
   final:
     name: final diff check
     runs-on: ubuntu-latest

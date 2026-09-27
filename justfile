@@ -24255,3 +24255,11 @@ guard-cranelift-phase26-ffi-isolated-read:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-ffi-isolated-read | grep -F $'guard-cranelift-phase26-ffi-isolated-read\t2\t' >/dev/null
     python3 scripts/phase26_ffi_isolated_read_registration.py
     bash scripts/phase26_ffi_isolated_read.sh
+
+# Phase 26.1D6: an unsafe raw-pointer write uses isolated copy-back storage.
+guard-cranelift-phase26-ffi-isolated-write:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-ffi-isolated-write | grep -F $'guard-cranelift-phase26-ffi-isolated-write\t2\t' >/dev/null
+    python3 scripts/phase26_ffi_isolated_write_registration.py
+    bash scripts/phase26_ffi_isolated_write.sh

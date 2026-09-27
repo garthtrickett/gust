@@ -313,6 +313,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     d5_successor = registry.get("phase26_activation_audit", {}).get(
         "ffi_isolated_read_increment", {}).get(
             "spelling_inventory_successor")
+    d6_successor = registry.get("phase26_activation_audit", {}).get(
+        "ffi_isolated_write_increment", {}).get(
+            "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -604,7 +607,9 @@ def validate() -> tuple[dict, list[dict], dict]:
         require(d5_successor.get("contract_version") ==
                 "phase26_1d5_spelling_inventory_successor_v1" and
                 d5_successor.get("previous_inventory_summary") == previous and
-                d5_successor.get("current_inventory_summary") == summary and
+                d5_successor.get("current_inventory_summary") ==
+                (summary if d6_successor is None else
+                 d6_successor.get("previous_inventory_summary")) and
                 d5_successor.get("changed_source_paths") == sorted([
                     "compiler/parser.gst", "compiler/typechecker.gst",
                     "compiler/mir_native_backend_module_import_source.gst",
@@ -618,6 +623,28 @@ def validate() -> tuple[dict, list[dict], dict]:
                 d5_successor.get("partial_extra_or_substituted_inventory") ==
                 "rejected" and summary["unknown_site_count"] == 0,
                 "Phase 26.1D5 spelling inventory drifted")
+    if d6_successor is not None:
+        require(d5_successor is not None and
+                d6_successor.get("contract_version") ==
+                "phase26_1d6_spelling_inventory_successor_v1" and
+                d6_successor.get("previous_inventory_summary") ==
+                d5_successor["current_inventory_summary"] and
+                d6_successor.get("current_inventory_summary") == summary and
+                d6_successor.get("changed_source_paths") == sorted([
+                    "compiler/parser.gst", "compiler/typechecker.gst",
+                    "compiler/mir_native_backend_parameter_argument_source.gst",
+                    "compiler/mir_native_backend_module_import_source.gst",
+                    "compiler/mir_native_backend_full_program_source.gst",
+                    "compiler/experiments/cranelift/src/full_program.rs",
+                    *[f"compiler/phase26_ffi_isolated_write_{name}_source.gst"
+                      for name in ("missing", "order", "packed", "nested",
+                                   "enum", "unknown_host", "nonraw",
+                                   "nonaggregate")],
+                    "compiler/phase26_ffi_isolated_write_source.gst",
+                ]) and
+                d6_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and summary["unknown_site_count"] == 0,
+                "Phase 26.1D6 spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),

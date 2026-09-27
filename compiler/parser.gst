@@ -1648,7 +1648,8 @@ func parse_function_decl_with_private(p: *Parser[ctx], is_private_decl: int, sta
                     return empty[Index[ast.Statement[ctx], ctx]];
                 }
                 param_ffi_policy = std.Clone(*ctx, (*p).cur_token.literal);
-                if std.str_eq(param_ffi_policy, "borrow_read_isolated_call") == 1 {
+                if std.str_eq(param_ffi_policy, "borrow_read_isolated_call") == 1 ||
+                   std.str_eq(param_ffi_policy, "borrow_write_isolated_call") == 1 {
                     requires_sandbox_arena_decl = 1;
                 }
                 next_token(p);

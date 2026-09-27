@@ -944,7 +944,7 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             return Err(invalid("full-program node source range is inverted"));
         }
         let second_integer = parse_i32(values[6], "node second integer")?;
-        if kind == "Call" && !matches!(second_integer, 0 | 1) {
+        if kind == "Call" && !matches!(second_integer, 0 | 1 | 2) {
             return Err(invalid("full-program Call has an unknown optional policy"));
         }
         nodes.push(Node {
@@ -2569,6 +2569,9 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         if node.second_integer == 1 {
             return self.lower_isolated_read_call(builder, node, &callable, &arguments);
         }
+        if node.second_integer == 2 {
+            return self.lower_isolated_write_call(builder, node, &callable, &arguments);
+        }
         self.emit_call(builder, &callable, &arguments)
     }
 
@@ -2615,6 +2618,51 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         let free_ref = self.module.declare_func_in_func(free.id, builder.func);
         builder.ins().call(free_ref, &[arena]);
         Ok(Evaluated::Scalar(native_result))
+    }
+
+    fn lower_isolated_write_call(
+        &mut self,
+        builder: &mut FunctionBuilder<'_>,
+        node: &Node,
+        callable: &Callable,
+        arguments: &[(usize, String)],
+    ) -> Result<Evaluated, Box<dyn Error>> {
+        // The explicit raw-pointer policy permits a call-bounded write. Native
+        // code sees only the arena copy; copy-back is complete before Free.
+        if node.second_text != "tiny_host_write_repr_c_probe"
+            || callable.parameters.as_slice()
+                != ["RawPointer(Struct(\"FfiProbe\", None))"]
+            || callable.result != "Void"
+            || arguments.len() != 1
+            || arguments[0].1 != callable.parameters[0]
+            || self.layouts.layout("Struct(\"FfiProbe\", None)")?.size != 12
+        {
+            return Err(invalid("isolated FFI write has an unapproved host or layout"));
+        }
+
+        let source_eval = self.lower_expression(builder, arguments[0].0, Some(&arguments[0].1))?;
+        let source = self.scalar(builder, source_eval, &arguments[0].1)?;
+        let arena_eval = self.lower_arena_new(builder)?;
+        let arena = self.arena_address(builder, arena_eval, "Arena")?;
+        let size = builder.ins().iconst(types::I64, 12);
+        let allocate = self.runtime.get("os_ArenaAlloc")
+            .ok_or_else(|| invalid("isolated FFI arena allocator missing"))?;
+        let allocate_ref = self.module.declare_func_in_func(allocate.id, builder.func);
+        let offset_call = builder.ins().call(allocate_ref, &[arena, size]);
+        let offset = builder.inst_results(offset_call)[0];
+        let base = builder.ins().load(self.pointer_type(), MemFlags::trusted(), arena, 0);
+        let offset = builder.ins().uextend(self.pointer_type(), offset);
+        let copy_address = builder.ins().iadd(base, offset);
+        self.copy_place(builder, Place { address: copy_address }, Place { address: source }, 12)?;
+
+        let native_ref = self.module.declare_func_in_func(callable.id, builder.func);
+        builder.ins().call(native_ref, &[copy_address]);
+        self.copy_place(builder, Place { address: source }, Place { address: copy_address }, 12)?;
+        let free = self.runtime.get("os_Arena_Free")
+            .ok_or_else(|| invalid("isolated FFI arena destructor missing"))?;
+        let free_ref = self.module.declare_func_in_func(free.id, builder.func);
+        builder.ins().call(free_ref, &[arena]);
+        Ok(Evaluated::Void)
     }
 
     fn emit_call(
