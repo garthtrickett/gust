@@ -100,26 +100,33 @@ def main() -> None:
     d4_rows = {row["path"]: row for row in registry[
         "phase26_activation_audit"].get("ffi_raw_return_increment", {}).get(
             "phase23_text_surface_successor", {}).get("changed_rows", [])}
+    e1_rows = {row["path"]: row for row in registry[
+        "phase26_activation_audit"].get("raw_cast_provenance_increment", {}).get(
+            "phase23_text_surface_successor", {}).get("changed_rows", [])}
     for row in surfaces["changed_rows"]:
         predecessor = d2_rows.get(row["path"])
         successor = d4_rows.get(row["path"])
+        latest = e1_rows.get(row["path"])
+        d4_digest = successor["current_digest"] if successor else row["current_digest"]
         require(len(row["previous_digest"]) == 64 and
                 (predecessor is None or
                  row["previous_digest"] == predecessor["current_digest"]),
                 f"text surface predecessor drifted: {row['path']}")
         require(hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest()
-                == (successor["current_digest"] if successor else
-                    row["current_digest"]) and
+                == (latest["current_digest"] if latest else d4_digest) and
                 (successor is None or
-                 successor["previous_digest"] == row["current_digest"]),
+                 successor["previous_digest"] == row["current_digest"]) and
+                (latest is None or latest["previous_digest"] == d4_digest),
                 f"text surface digest drifted: {row['path']}")
     for row in surfaces["added_rows"]:
         successor = d4_rows.get(row["path"])
+        latest = e1_rows.get(row["path"])
+        d4_digest = successor["current_digest"] if successor else row["digest"]
         require(hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest()
-                == (successor["current_digest"] if successor else
-                    row["digest"]) and
+                == (latest["current_digest"] if latest else d4_digest) and
                 (successor is None or
-                 successor["previous_digest"] == row["digest"]),
+                 successor["previous_digest"] == row["digest"]) and
+                (latest is None or latest["previous_digest"] == d4_digest),
                 f"added text surface digest drifted: {row['path']}")
 
     workflow = (ROOT / ".github/workflows/pr-fast.yml").read_text()

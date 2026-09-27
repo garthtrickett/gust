@@ -1912,7 +1912,7 @@ func mir_native_full_program_utf8_hex(value: str, ctx: &Arena) str {
         }
         (*header_ptr).data = (buffer + 0) as *byte;
         (*header_ptr).len = output_size;
-        return *(((header_ptr as *str) + 0) as *str);
+        return std.Clone(ctx, *(((header_ptr as *str) + 0) as *str));
     }
 }
 
@@ -2487,7 +2487,7 @@ func mir_native_full_program_serialize_model(model: MirNativeFullProgramModel[ct
         }
         (*header_ptr).data = (buffer + 0) as *byte;
         (*header_ptr).len = total_size;
-        return *(((header_ptr as *str) + 0) as *str);
+        return std.Clone(ctx, *(((header_ptr as *str) + 0) as *str));
     }
 }
 
