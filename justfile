@@ -24271,3 +24271,11 @@ guard-cranelift-phase26-reference-return-escape:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-reference-return-escape | grep -F $'guard-cranelift-phase26-reference-return-escape\t2\t' >/dev/null
     python3 scripts/phase26_reference_return_escape_registration.py
     bash scripts/phase26_reference_return_escape.sh
+
+# Phase 26.1E3: known raw and isolated Reference origins do not cross safe calls.
+guard-cranelift-phase26-safe-reference-call:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-safe-reference-call | grep -F $'guard-cranelift-phase26-safe-reference-call\t2\t' >/dev/null
+    python3 scripts/phase26_safe_reference_call_registration.py
+    bash scripts/phase26_safe_reference_call.sh

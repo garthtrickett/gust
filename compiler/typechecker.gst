@@ -1695,6 +1695,19 @@ func env_report_phase26_unbranded_reference_return_escape(env: *TypeEnvironment[
     }
 }
 
+func phase26_safe_call_unbranded_reference_arg_escapes(sig: FunctionSignature[ctx], target_t: ast.Type[ctx], prov: ExpressionProvenance[ctx], ctx: &Arena) int {
+    if sig.is_unsafe == 1 || sig.requires_unsafe_call == 1 || sig.is_extern == 1 {
+        return 0;
+    }
+    return phase26_unbranded_reference_return_escapes(target_t, prov, ctx);
+}
+
+func env_report_phase26_safe_call_reference_escape(env: *TypeEnvironment[ctx], sig: FunctionSignature[ctx], target_t: ast.Type[ctx], prov: ExpressionProvenance[ctx], span: token.Span, ctx: &Arena) {
+    if phase26_safe_call_unbranded_reference_arg_escapes(sig, target_t, prov, ctx) == 1 {
+        report_error(2, "Semantic Error: [UnsafeReferenceEscape] Raw-derived or isolated-origin Reference cannot cross a safe function call", span, env, ctx);
+    }
+}
+
 func step51g_non_laundering_enforced_safe_brand_target_violation(target_t: ast.Type[ctx], prov: ExpressionProvenance[ctx], ctx: &Arena) int {
     if step51g_non_laundering_type_is_safe_brand_target(target_t, ctx) == 0 {
         return 0;
@@ -5212,6 +5225,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             ast.serialize_type(expected_type, ctx),
                             ast.serialize_type(resolved_arg, ctx));
                         report_error(2, msg, arg_span_call_nlaunder, env, ctx);
+                    } else if has_custom_sig == 0 {
+                        mut resolved_expected_call_ref_e3 := env_resolve_type(env, expected_type, ctx);
+                        env_report_phase26_safe_call_reference_escape(env, sig, resolved_expected_call_ref_e3, arg_prov_check_call_nlaunder, arg_span_call_nlaunder, ctx);
                     }
                     k = k + 1;
                 }

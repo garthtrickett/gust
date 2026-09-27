@@ -825,6 +825,9 @@ jobs:
       - name: Phase 26 Reference return escape
         run: just guard-cranelift-phase26-reference-return-escape
 
+      - name: Phase 26 safe-call Reference provenance
+        run: just guard-cranelift-phase26-safe-reference-call
+
   final:
     name: final diff check
     runs-on: ubuntu-latest

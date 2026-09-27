@@ -112,6 +112,9 @@ def main() -> None:
     e2_rows = {row["path"]: row for row in registry[
         "phase26_activation_audit"].get("reference_return_escape_increment", {}).get(
             "phase23_text_surface_successor", {}).get("changed_rows", [])}
+    e3_rows = {row["path"]: row for row in registry[
+        "phase26_activation_audit"].get("safe_reference_call_increment", {}).get(
+            "phase23_text_surface_successor", {}).get("changed_rows", [])}
     for row in surfaces["changed_rows"]:
         predecessor = d2_rows.get(row["path"])
         successor = d4_rows.get(row["path"])
@@ -119,6 +122,7 @@ def main() -> None:
         d5 = d5_rows.get(row["path"])
         d6 = d6_rows.get(row["path"])
         e2 = e2_rows.get(row["path"])
+        e3 = e3_rows.get(row["path"])
         d4_digest = successor["current_digest"] if successor else row["current_digest"]
         e1_digest = latest["current_digest"] if latest else d4_digest
         before_e2 = (d6["current_digest"] if d6 else
@@ -128,7 +132,10 @@ def main() -> None:
                  row["previous_digest"] == predecessor["current_digest"]),
                 f"text surface predecessor drifted: {row['path']}")
         require(hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest()
-                == (e2["current_digest"] if e2 else before_e2) and
+                == (e3["current_digest"] if e3 else
+                    e2["current_digest"] if e2 else before_e2) and
+                (e3 is None or e3["previous_digest"] ==
+                 (e2["current_digest"] if e2 else before_e2)) and
                 (e2 is None or e2["previous_digest"] == before_e2) and
                 (successor is None or
                  successor["previous_digest"] == row["current_digest"]) and
@@ -143,12 +150,16 @@ def main() -> None:
         d5 = d5_rows.get(row["path"])
         d6 = d6_rows.get(row["path"])
         e2 = e2_rows.get(row["path"])
+        e3 = e3_rows.get(row["path"])
         d4_digest = successor["current_digest"] if successor else row["digest"]
         e1_digest = latest["current_digest"] if latest else d4_digest
         before_e2 = (d6["current_digest"] if d6 else
                      d5["current_digest"] if d5 else e1_digest)
         require(hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest()
-                == (e2["current_digest"] if e2 else before_e2) and
+                == (e3["current_digest"] if e3 else
+                    e2["current_digest"] if e2 else before_e2) and
+                (e3 is None or e3["previous_digest"] ==
+                 (e2["current_digest"] if e2 else before_e2)) and
                 (e2 is None or e2["previous_digest"] == before_e2) and
                 (successor is None or
                  successor["previous_digest"] == row["digest"]) and

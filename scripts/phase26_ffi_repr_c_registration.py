@@ -111,6 +111,9 @@ def main() -> None:
     e2_changed = {row["path"]: row for row in registry.get(
         "phase26_activation_audit", {}).get("reference_return_escape_increment", {}).get(
             "phase23_text_surface_successor", {}).get("changed_rows", [])}
+    e3_changed = {row["path"]: row for row in registry.get(
+        "phase26_activation_audit", {}).get("safe_reference_call_increment", {}).get(
+            "phase23_text_surface_successor", {}).get("changed_rows", [])}
     changed = surfaces.get("changed_rows", [])
     added = surfaces.get("added_row")
     require(surfaces.get("contract_version") ==
@@ -130,6 +133,7 @@ def main() -> None:
         d5 = d5_changed.get(row["path"])
         d6 = d6_changed.get(row["path"])
         e2 = e2_changed.get(row["path"])
+        e3 = e3_changed.get(row["path"])
         d4_digest = (latest["current_digest"] if latest else
                      successor["current_digest"] if successor else
                      row["current_digest"])
@@ -146,7 +150,10 @@ def main() -> None:
                 (d6 is None or d6["previous_digest"] ==
                  (d5["current_digest"] if d5 else e1_digest)) and
                 (e2 is None or e2["previous_digest"] == before_e2) and
-                live_digest == (e2["current_digest"] if e2 else before_e2) and
+                (e3 is None or e3["previous_digest"] ==
+                 (e2["current_digest"] if e2 else before_e2)) and
+                live_digest == (e3["current_digest"] if e3 else
+                                e2["current_digest"] if e2 else before_e2) and
                 len(row["previous_digest"]) == 64,
                 f"text surface digest drifted: {row['path']}")
     added_successor = d3_changed.get(added["path"])
@@ -155,6 +162,7 @@ def main() -> None:
     added_d5 = d5_changed.get(added["path"])
     added_d6 = d6_changed.get(added["path"])
     added_e2 = e2_changed.get(added["path"])
+    added_e3 = e3_changed.get(added["path"])
     d4_added_digest = (added_latest["current_digest"] if added_latest else
                        added_successor["current_digest"] if added_successor else
                        added["digest"])
@@ -165,7 +173,10 @@ def main() -> None:
                        e1_added_digest)
     require(hashlib.sha256(
                 (ROOT / added["path"]).read_bytes()).hexdigest() ==
-            (added_e2["current_digest"] if added_e2 else added_before_e2) and
+            (added_e3["current_digest"] if added_e3 else
+             added_e2["current_digest"] if added_e2 else added_before_e2) and
+            (added_e3 is None or added_e3["previous_digest"] ==
+             (added_e2["current_digest"] if added_e2 else added_before_e2)) and
             (added_e2 is None or
              added_e2["previous_digest"] == added_before_e2) and
             (added_d5 is None or

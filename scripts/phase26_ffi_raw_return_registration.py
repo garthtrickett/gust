@@ -56,6 +56,9 @@ def main() -> None:
     e2_rows = {row["path"]: row for row in activation.get(
         "reference_return_escape_increment", {}).get(
             "phase23_text_surface_successor", {}).get("changed_rows", [])}
+    e3_rows = {row["path"]: row for row in activation.get(
+        "safe_reference_call_increment", {}).get(
+            "phase23_text_surface_successor", {}).get("changed_rows", [])}
     expected = {
         "contract_version": "phase26_1d4_ffi_raw_return_v1",
         "status": "selected_unowned_raw_pointer_return_qualified",
@@ -158,6 +161,7 @@ def main() -> None:
         d5_successor = d5_rows.get(row["path"])
         d6_successor = d6_rows.get(row["path"])
         e2_successor = e2_rows.get(row["path"])
+        e3_successor = e3_rows.get(row["path"])
         e1_digest = (e1_successor["current_digest"] if e1_successor else
                      row["current_digest"])
         latest_before_e2 = (d6_successor["current_digest"] if d6_successor else
@@ -175,7 +179,12 @@ def main() -> None:
                  (d5_successor["current_digest"] if d5_successor else e1_digest)) and
                 (e2_successor is None or
                  e2_successor["previous_digest"] == latest_before_e2) and
-                digest(row["path"]) == (e2_successor["current_digest"] if
+                (e3_successor is None or e3_successor["previous_digest"] ==
+                 (e2_successor["current_digest"] if e2_successor else
+                  latest_before_e2)) and
+                digest(row["path"]) == (e3_successor["current_digest"] if
+                                        e3_successor else
+                                        e2_successor["current_digest"] if
                                         e2_successor else latest_before_e2) and
                 (e1_successor is None or
                  e1_successor["previous_digest"] == row["current_digest"]),
@@ -187,13 +196,17 @@ def main() -> None:
     d5_added = d5_rows.get(added[0]["path"])
     d6_added = d6_rows.get(added[0]["path"])
     e2_added = e2_rows.get(added[0]["path"])
+    e3_added = e3_rows.get(added[0]["path"])
     e1_added_digest = (added_successor["current_digest"] if added_successor
                        else added[0]["digest"])
     added_before_e2 = (d6_added["current_digest"] if d6_added else
                        d5_added["current_digest"] if d5_added else
                        e1_added_digest)
     require(digest(added[0]["path"]) ==
-            (e2_added["current_digest"] if e2_added else added_before_e2) and
+            (e3_added["current_digest"] if e3_added else
+             e2_added["current_digest"] if e2_added else added_before_e2) and
+            (e3_added is None or e3_added["previous_digest"] ==
+             (e2_added["current_digest"] if e2_added else added_before_e2)) and
             (e2_added is None or
              e2_added["previous_digest"] == added_before_e2) and
             (d5_added is None or
