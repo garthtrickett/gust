@@ -1678,6 +1678,23 @@ func step51g_non_laundering_type_is_safe_brand_target(t: ast.Type[ctx], ctx: &Ar
     return env_type_is_safe_branded_return_target(t, ctx);
 }
 
+// A Reference without a brand is not a safe-branded target. It still cannot
+// carry a known raw or isolated address out of the function that made it.
+func phase26_unbranded_reference_return_escapes(target_t: ast.Type[ctx], prov: ExpressionProvenance[ctx], ctx: &Arena) int {
+    unsafe {
+        if target_t.tag != 11 || target_t.Reference.brand != empty[Index[str, ctx]] {
+            return 0;
+        }
+    }
+    return step51g_expression_provenance_is_raw_or_sandbox_derived(prov);
+}
+
+func env_report_phase26_unbranded_reference_return_escape(env: *TypeEnvironment[ctx], target_t: ast.Type[ctx], prov: ExpressionProvenance[ctx], span: token.Span, ctx: &Arena) {
+    if phase26_unbranded_reference_return_escapes(target_t, prov, ctx) == 1 {
+        report_error(2, "Semantic Error: [UnsafeReferenceEscape] Raw-derived or isolated-origin Reference cannot escape through a function return", span, env, ctx);
+    }
+}
+
 func step51g_non_laundering_enforced_safe_brand_target_violation(target_t: ast.Type[ctx], prov: ExpressionProvenance[ctx], ctx: &Arena) int {
     if step51g_non_laundering_type_is_safe_brand_target(target_t, ctx) == 0 {
         return 0;
@@ -15129,6 +15146,10 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     mut return_nlaunder_span: token.Span;
                     return_nlaunder_span = get_expression_span(expr_idx, ctx);
                     env_report_non_laundering_safe_brand_target(env, expected_t, return_prov_for_enforcement, return_nlaunder_span, "Returning raw-derived or sandbox-derived value", ctx);
+                    if env_types_match_at_brand_boundary(env, expected_t, actual_return, ctx) == 1 {
+                        mut resolved_return_target_e2 := env_resolve_type(env, expected_t, ctx);
+                        env_report_phase26_unbranded_reference_return_escape(env, resolved_return_target_e2, return_prov_for_enforcement, return_nlaunder_span, ctx);
+                    }
                     env_report_resource_root_escape(
                         env, return_prov_for_enforcement, return_nlaunder_span,
                         "returning protected access", ctx

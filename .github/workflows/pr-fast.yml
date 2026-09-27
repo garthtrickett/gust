@@ -822,6 +822,9 @@ jobs:
       - name: Phase 26 isolated repr C raw pointer write
         run: just guard-cranelift-phase26-ffi-isolated-write
 
+      - name: Phase 26 Reference return escape
+        run: just guard-cranelift-phase26-reference-return-escape
+
   final:
     name: final diff check
     runs-on: ubuntu-latest
