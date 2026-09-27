@@ -319,6 +319,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     e2_successor = registry.get("phase26_activation_audit", {}).get(
         "reference_return_escape_increment", {}).get(
             "spelling_inventory_successor")
+    e3_successor = registry.get("phase26_activation_audit", {}).get(
+        "safe_reference_call_increment", {}).get(
+            "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -658,7 +661,9 @@ def validate() -> tuple[dict, list[dict], dict]:
                 "phase26_1e2_spelling_inventory_successor_v1" and
                 e2_successor.get("previous_inventory_summary") ==
                 d6_successor["current_inventory_summary"] and
-                e2_successor.get("current_inventory_summary") == summary and
+                e2_successor.get("current_inventory_summary") ==
+                (summary if e3_successor is None else
+                 e3_successor.get("previous_inventory_summary")) and
                 e2_successor.get("changed_source_paths") == sorted([
                     "compiler/typechecker.gst",
                     "compiler/phase26_reference_return_escape_test_entry.gst",
@@ -675,8 +680,31 @@ def validate() -> tuple[dict, list[dict], dict]:
                  if previous_e2["partition_manifest_digests"][key] !=
                  now_e2["partition_manifest_digests"][key]} ==
                 {"diagnostic", "mangling_or_generated_name"} and
-                summary["unknown_site_count"] == 0,
+                now_e2["unknown_site_count"] == 0,
                 "Phase 26.1E2 spelling inventory drifted")
+    if e3_successor is not None:
+        previous_e3 = e2_successor["current_inventory_summary"]
+        now_e3 = e3_successor.get("current_inventory_summary", {})
+        require(e2_successor is not None and
+                e3_successor.get("contract_version") ==
+                "phase26_1e3_spelling_inventory_successor_v1" and
+                e3_successor.get("previous_inventory_summary") == previous_e3 and
+                now_e3 == summary and
+                e3_successor.get("changed_source_paths") == sorted([
+                    "compiler/typechecker.gst",
+                    "compiler/phase26_safe_reference_call_source.gst",
+                    "compiler/phase26_safe_reference_call_escape_source.gst",
+                    "compiler/phase26_safe_reference_call_mismatch_source.gst",
+                    "compiler/phase26_safe_reference_call_test_entry.gst",
+                ]) and
+                e3_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and
+                now_e3["source_file_count"] == previous_e3["source_file_count"] + 4 and
+                now_e3["site_count"] == previous_e3["site_count"] and
+                now_e3["semantic_site_count"] == previous_e3["semantic_site_count"] and
+                now_e3["classification_counts"] == previous_e3["classification_counts"] and
+                now_e3["unknown_site_count"] == 0,
+                "Phase 26.1E3 spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),
