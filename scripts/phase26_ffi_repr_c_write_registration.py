@@ -106,11 +106,15 @@ def main() -> None:
     d5_rows = {row["path"]: row for row in registry[
         "phase26_activation_audit"].get("ffi_isolated_read_increment", {}).get(
             "phase23_text_surface_successor", {}).get("changed_rows", [])}
+    d6_rows = {row["path"]: row for row in registry[
+        "phase26_activation_audit"].get("ffi_isolated_write_increment", {}).get(
+            "phase23_text_surface_successor", {}).get("changed_rows", [])}
     for row in surfaces["changed_rows"]:
         predecessor = d2_rows.get(row["path"])
         successor = d4_rows.get(row["path"])
         latest = e1_rows.get(row["path"])
         d5 = d5_rows.get(row["path"])
+        d6 = d6_rows.get(row["path"])
         d4_digest = successor["current_digest"] if successor else row["current_digest"]
         e1_digest = latest["current_digest"] if latest else d4_digest
         require(len(row["previous_digest"]) == 64 and
@@ -118,24 +122,31 @@ def main() -> None:
                  row["previous_digest"] == predecessor["current_digest"]),
                 f"text surface predecessor drifted: {row['path']}")
         require(hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest()
-                == (d5["current_digest"] if d5 else e1_digest) and
+                == (d6["current_digest"] if d6 else
+                    d5["current_digest"] if d5 else e1_digest) and
                 (successor is None or
                  successor["previous_digest"] == row["current_digest"]) and
                 (latest is None or latest["previous_digest"] == d4_digest) and
-                (d5 is None or d5["previous_digest"] == e1_digest),
+                (d5 is None or d5["previous_digest"] == e1_digest) and
+                (d6 is None or d6["previous_digest"] ==
+                 (d5["current_digest"] if d5 else e1_digest)),
                 f"text surface digest drifted: {row['path']}")
     for row in surfaces["added_rows"]:
         successor = d4_rows.get(row["path"])
         latest = e1_rows.get(row["path"])
         d5 = d5_rows.get(row["path"])
+        d6 = d6_rows.get(row["path"])
         d4_digest = successor["current_digest"] if successor else row["digest"]
         e1_digest = latest["current_digest"] if latest else d4_digest
         require(hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest()
-                == (d5["current_digest"] if d5 else e1_digest) and
+                == (d6["current_digest"] if d6 else
+                    d5["current_digest"] if d5 else e1_digest) and
                 (successor is None or
                  successor["previous_digest"] == row["digest"]) and
                 (latest is None or latest["previous_digest"] == d4_digest) and
-                (d5 is None or d5["previous_digest"] == e1_digest),
+                (d5 is None or d5["previous_digest"] == e1_digest) and
+                (d6 is None or d6["previous_digest"] ==
+                 (d5["current_digest"] if d5 else e1_digest)),
                 f"added text surface digest drifted: {row['path']}")
 
     workflow = (ROOT / ".github/workflows/pr-fast.yml").read_text()

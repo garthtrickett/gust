@@ -226,7 +226,9 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                                    (resolved.tag == 11 &&
                                     std.str_eq(parameter.ffi_policy, "borrow_read_call") == 0 &&
                                     std.str_eq(parameter.ffi_policy, "borrow_read_isolated_call") == 0) ||
-                                   (resolved.tag == 9 && std.str_eq(parameter.ffi_policy, "borrow_write_call") == 0) {
+                                   (resolved.tag == 9 &&
+                                    std.str_eq(parameter.ffi_policy, "borrow_write_call") == 0 &&
+                                    std.str_eq(parameter.ffi_policy, "borrow_write_isolated_call") == 0) {
                                     return "Native FFI borrowed aggregate ownership contract is unverified";
                                 }
                                 guard layout := (*env).struct_registry.Get(name) else {
@@ -304,6 +306,11 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                                    (resolved.tag != 11 || signature.requires_sandbox_arena != 1 ||
                                     std.str_eq(host_symbol, "tiny_host_read_repr_c_probe") == 0) {
                                     return "Native FFI isolated read contract is not approved";
+                                }
+                                if std.str_eq(parameter.ffi_policy, "borrow_write_isolated_call") == 1 &&
+                                   (resolved.tag != 9 || signature.requires_sandbox_arena != 1 ||
+                                    std.str_eq(host_symbol, "tiny_host_write_repr_c_probe") == 0) {
+                                    return "Native FFI isolated write contract is not approved";
                                 }
                                 if std.str_eq(name, "FfiProbe") == 0 || len(fields) != 3 ||
                                    std.str_eq(fields[0], "a") == 0 ||
@@ -608,7 +615,15 @@ func mir_native_full_program_flatten_expression(expression_index: Index[ast.Expr
                 if selected_isolated_signature.is_extern == 1 &&
                    selected_isolated_signature.ffi_contract_verified == 1 &&
                    selected_isolated_signature.requires_sandbox_arena == 1 {
-                    node.second_integer_operand = 1;
+                    mut isolated_policies: std.Vector[str, ctx] :=
+                        ctx[selected_isolated_signature.ffi_param_policies];
+                    if len(isolated_policies) == 1 {
+                        if std.str_eq(isolated_policies[0], "borrow_read_isolated_call") == 1 {
+                            node.second_integer_operand = 1;
+                        } else if std.str_eq(isolated_policies[0], "borrow_write_isolated_call") == 1 {
+                            node.second_integer_operand = 2;
+                        }
+                    }
                 }
             }
             if len(constructor_helper) > 0 {

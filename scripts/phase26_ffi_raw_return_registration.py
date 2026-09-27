@@ -50,6 +50,9 @@ def main() -> None:
     d5_rows = {row["path"]: row for row in activation.get(
         "ffi_isolated_read_increment", {}).get(
             "phase23_text_surface_successor", {}).get("changed_rows", [])}
+    d6_rows = {row["path"]: row for row in activation.get(
+        "ffi_isolated_write_increment", {}).get(
+            "phase23_text_surface_successor", {}).get("changed_rows", [])}
     expected = {
         "contract_version": "phase26_1d4_ffi_raw_return_v1",
         "status": "selected_unowned_raw_pointer_return_qualified",
@@ -150,6 +153,7 @@ def main() -> None:
             "raw_cast_provenance_increment", {}).get(
                 "phase23_text_surface_successor", {}).get("changed_rows", [])}.get(row["path"])
         d5_successor = d5_rows.get(row["path"])
+        d6_successor = d6_rows.get(row["path"])
         e1_digest = (e1_successor["current_digest"] if e1_successor else
                      row["current_digest"])
         require(len(row["previous_digest"]) == 64 and
@@ -159,7 +163,11 @@ def main() -> None:
                  row["previous_digest"] == added_predecessor["digest"]) and
                 (d5_successor is None or
                  d5_successor["previous_digest"] == e1_digest) and
-                digest(row["path"]) == (d5_successor["current_digest"] if
+                (d6_successor is None or
+                 d6_successor["previous_digest"] ==
+                 (d5_successor["current_digest"] if d5_successor else e1_digest)) and
+                digest(row["path"]) == (d6_successor["current_digest"] if
+                                        d6_successor else d5_successor["current_digest"] if
                                         d5_successor else e1_digest) and
                 (e1_successor is None or
                  e1_successor["previous_digest"] == row["current_digest"]),
@@ -169,12 +177,17 @@ def main() -> None:
             "phase23_text_surface_successor", {}).get("changed_rows", [])}.get(
                 added[0]["path"])
     d5_added = d5_rows.get(added[0]["path"])
+    d6_added = d6_rows.get(added[0]["path"])
     e1_added_digest = (added_successor["current_digest"] if added_successor
                        else added[0]["digest"])
     require(digest(added[0]["path"]) ==
-            (d5_added["current_digest"] if d5_added else e1_added_digest) and
+            (d6_added["current_digest"] if d6_added else
+             d5_added["current_digest"] if d5_added else e1_added_digest) and
             (d5_added is None or
              d5_added["previous_digest"] == e1_added_digest) and
+            (d6_added is None or
+             d6_added["previous_digest"] ==
+             (d5_added["current_digest"] if d5_added else e1_added_digest)) and
             (added_successor is None or
              added_successor["previous_digest"] == added[0]["digest"]),
             "added registration text surface drifted")

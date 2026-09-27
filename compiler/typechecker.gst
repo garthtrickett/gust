@@ -789,11 +789,13 @@ func env_validate_extern_ffi_positions(env: *TypeEnvironment[ctx], stmt: ast.Sta
                 }
                 if std.str_eq(policy, "borrow_read_call") == 0 &&
                    std.str_eq(policy, "borrow_write_call") == 0 &&
-                   std.str_eq(policy, "borrow_read_isolated_call") == 0 {
+                   std.str_eq(policy, "borrow_read_isolated_call") == 0 &&
+                   std.str_eq(policy, "borrow_write_isolated_call") == 0 {
                     report_error(2, "Semantic Error: [FFIUnsupportedOwnershipPolicy] External parameter policy is not qualified", declared.span, env, ctx);
                     return 0;
                 }
-                if std.str_eq(policy, "borrow_write_call") == 1 && t.tag != 9 {
+                if (std.str_eq(policy, "borrow_write_call") == 1 ||
+                    std.str_eq(policy, "borrow_write_isolated_call") == 1) && t.tag != 9 {
                     report_error(2, "Semantic Error: [FFIWriteRequiresRawPointer] Native writes require an explicitly unsafe raw-pointer position", declared.span, env, ctx);
                     return 0;
                 }
@@ -805,6 +807,14 @@ func env_validate_extern_ffi_positions(env: *TypeEnvironment[ctx], stmt: ast.Sta
                     mut isolated_inner := ctx[t.Reference.inner];
                     if isolated_inner.tag != 8 {
                         report_error(2, "Semantic Error: [FFIIsolatedBorrowRequiresAggregate] Isolated native reads require a struct reference", declared.span, env, ctx);
+                        return 0;
+                    }
+                    (*sig).requires_sandbox_arena = 1;
+                }
+                if std.str_eq(policy, "borrow_write_isolated_call") == 1 {
+                    mut isolated_write_inner := ctx[t.RawPointer.inner];
+                    if isolated_write_inner.tag != 8 {
+                        report_error(2, "Semantic Error: [FFIIsolatedWriteRequiresAggregate] Isolated native writes require a struct raw pointer", declared.span, env, ctx);
                         return 0;
                     }
                     (*sig).requires_sandbox_arena = 1;
@@ -5084,13 +5094,15 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             }
                         } else if std.str_eq(ffi_policy, "borrow_read_call") == 1 ||
                                   std.str_eq(ffi_policy, "borrow_read_isolated_call") == 1 ||
-                                  std.str_eq(ffi_policy, "borrow_write_call") == 1 {
+                                  std.str_eq(ffi_policy, "borrow_write_call") == 1 ||
+                                  std.str_eq(ffi_policy, "borrow_write_isolated_call") == 1 {
                             if ffi_formal.tag != 5 && ffi_formal.tag != 6 && ffi_formal.tag != 9 && ffi_formal.tag != 11 {
                                 report_error(2, "Semantic Error: [FFIContractMismatch] External borrowed position has a non-pointer formal type", expr.Call.span, env, ctx);
                                 mut bad_borrow: ast.Type[ctx]; bad_borrow.tag = 3;
                                 return bad_borrow;
                             }
-                            if std.str_eq(ffi_policy, "borrow_write_call") == 1 &&
+                            if (std.str_eq(ffi_policy, "borrow_write_call") == 1 ||
+                                std.str_eq(ffi_policy, "borrow_write_isolated_call") == 1) &&
                                (ffi_formal.tag != 9 || ffi_actual.tag != 9) {
                                 report_error(2, "Semantic Error: [FFIWriteRequiresRawPointer] Native writes require an explicitly unsafe raw-pointer argument", expr.Call.span, env, ctx);
                                 mut bad_write: ast.Type[ctx]; bad_write.tag = 3;

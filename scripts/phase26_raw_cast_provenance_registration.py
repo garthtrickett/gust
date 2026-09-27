@@ -46,6 +46,9 @@ def main() -> None:
     d5 = activation.get("ffi_isolated_read_increment", {})
     d5_rows = {row["path"]: row for row in d5.get(
         "phase23_text_surface_successor", {}).get("changed_rows", [])}
+    d6_rows = {row["path"]: row for row in activation.get(
+        "ffi_isolated_write_increment", {}).get(
+            "phase23_text_surface_successor", {}).get("changed_rows", [])}
     expected = {
         "contract_version": "phase26_1e1_raw_cast_provenance_v1",
         "status": "raw_pointer_cast_safe_brand_laundering_rejected",
@@ -131,6 +134,7 @@ def main() -> None:
         predecessor = d4.get(row["path"])
         added_predecessor = d4_added.get(row["path"])
         next_row = d5_rows.get(row["path"])
+        d6_row = d6_rows.get(row["path"])
         require(len(row["previous_digest"]) == 64 and
                 (predecessor is None or
                  row["previous_digest"] == predecessor["current_digest"]) and
@@ -138,16 +142,21 @@ def main() -> None:
                  row["previous_digest"] == added_predecessor["digest"]) and
                 (next_row is None or
                  next_row["previous_digest"] == row["current_digest"]) and
+                (d6_row is None or d6_row["previous_digest"] ==
+                 (next_row["current_digest"] if next_row else row["current_digest"])) and
                 digest(row["path"]) ==
-                (next_row["current_digest"] if next_row else
-                 row["current_digest"]),
+                (d6_row["current_digest"] if d6_row else
+                 next_row["current_digest"] if next_row else row["current_digest"]),
                 f"text surface predecessor/current digest drifted: {row['path']}")
     added_next = d5_rows.get(added[0]["path"])
+    added_d6 = d6_rows.get(added[0]["path"])
     require((added_next is None or
              added_next["previous_digest"] == added[0]["digest"]) and
+            (added_d6 is None or added_d6["previous_digest"] ==
+             (added_next["current_digest"] if added_next else added[0]["digest"])) and
             digest(added[0]["path"]) ==
-            (added_next["current_digest"] if added_next else
-             added[0]["digest"]),
+            (added_d6["current_digest"] if added_d6 else
+             added_next["current_digest"] if added_next else added[0]["digest"]),
             "added registration text surface drifted")
 
     spelling = record["spelling_inventory_successor"]

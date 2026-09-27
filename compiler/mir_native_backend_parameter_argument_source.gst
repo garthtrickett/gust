@@ -237,7 +237,8 @@ func mir_native_parameter_argument_scan_deferred(
                     mut borrowed_write_struct := 0;
                     if statement.FunctionDecl.is_extern == 1 &&
                        parameter.param_type.tag == 9 &&
-                       std.str_eq(parameter.ffi_policy, "borrow_write_call") == 1 {
+                       (std.str_eq(parameter.ffi_policy, "borrow_write_call") == 1 ||
+                        std.str_eq(parameter.ffi_policy, "borrow_write_isolated_call") == 1) {
                         mut inner := ctx[parameter.param_type.RawPointer.inner];
                         if inner.tag == 8 { borrowed_write_struct = 1; }
                     }
