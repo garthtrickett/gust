@@ -86,17 +86,20 @@ def main() -> None:
     d1_sites = activation["ffi_position_policy_increment"]["filename_site_successor"]["current_sites"]
     filename = record["filename_site_successor"]
     live_sites = source_sites()
+    e1_filename = activation.get("raw_cast_provenance_increment", {}).get(
+        "filename_site_successor")
+    d4_current = (e1_filename["previous_sites"] if e1_filename else live_sites)
     require(filename.get("contract_version") ==
             "phase26_1d4_filename_site_successor_v1" and
             filename.get("previous_sites") == d1_sites and
-            filename.get("current_sites") == live_sites and
+            filename.get("current_sites") == d4_current and
             filename.get("line_delta") == 24 and
             filename.get("partial_extra_or_substituted_site") == "rejected" and
-            len(d1_sites) == len(live_sites) == 3 and
+            len(d1_sites) == len(d4_current) == 3 and
             all(now["line"] == before["line"] + 24 and
                 {key: val for key, val in now.items() if key != "line"} ==
                 {key: val for key, val in before.items() if key != "line"}
-                for before, now in zip(d1_sites, live_sites)),
+                for before, now in zip(d1_sites, d4_current)),
             "D4 filename-selected sites changed beyond the exact line shift")
 
     from phase22_opening import scan_invocations
@@ -140,14 +143,28 @@ def main() -> None:
     for row in changed:
         predecessor = d3.get(row["path"])
         added_predecessor = d3_added.get(row["path"])
+        e1_successor = {entry["path"]: entry for entry in activation.get(
+            "raw_cast_provenance_increment", {}).get(
+                "phase23_text_surface_successor", {}).get("changed_rows", [])}.get(row["path"])
         require(len(row["previous_digest"]) == 64 and
                 (predecessor is None or
                  row["previous_digest"] == predecessor["current_digest"]) and
                 (added_predecessor is None or
                  row["previous_digest"] == added_predecessor["digest"]) and
-                digest(row["path"]) == row["current_digest"],
+                digest(row["path"]) == (e1_successor["current_digest"] if
+                                        e1_successor else row["current_digest"]) and
+                (e1_successor is None or
+                 e1_successor["previous_digest"] == row["current_digest"]),
                 f"text surface predecessor/current digest drifted: {row['path']}")
-    require(digest(added[0]["path"]) == added[0]["digest"],
+    added_successor = {entry["path"]: entry for entry in activation.get(
+        "raw_cast_provenance_increment", {}).get(
+            "phase23_text_surface_successor", {}).get("changed_rows", [])}.get(
+                added[0]["path"])
+    require(digest(added[0]["path"]) ==
+            (added_successor["current_digest"] if added_successor else
+             added[0]["digest"]) and
+            (added_successor is None or
+             added_successor["previous_digest"] == added[0]["digest"]),
             "added registration text surface drifted")
 
     justfile = (ROOT / "justfile").read_text()

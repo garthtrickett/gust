@@ -307,6 +307,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     d4_successor = registry.get("phase26_activation_audit", {}).get(
         "ffi_raw_return_increment", {}).get(
             "spelling_inventory_successor")
+    e1_successor = registry.get("phase26_activation_audit", {}).get(
+        "raw_cast_provenance_increment", {}).get(
+            "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -526,6 +529,7 @@ def validate() -> tuple[dict, list[dict], dict]:
                 "registered source and identity successor")
     if d4_successor is not None:
         previous = d3_successor["current_inventory_summary"]
+        d4_now = d4_successor["current_inventory_summary"]
         changed_source_paths = sorted([
             "compiler/ast.gst",
             "compiler/experiments/cranelift/src/full_program.rs",
@@ -547,11 +551,39 @@ def validate() -> tuple[dict, list[dict], dict]:
         require(d4_successor.get("contract_version") ==
                 "phase26_1d4_spelling_inventory_successor_v1" and
                 d4_successor.get("previous_inventory_summary") == previous and
-                d4_successor.get("current_inventory_summary") == summary and
+                d4_successor.get("current_inventory_summary") ==
+                (summary if e1_successor is None else
+                 e1_successor.get("previous_inventory_summary")) and
                 d4_successor.get("changed_source_paths") == changed_source_paths and
                 d4_successor.get("partial_extra_or_substituted_inventory") ==
                 "rejected" and
-                summary["source_file_count"] == previous["source_file_count"] + 13 and
+                d4_now["source_file_count"] == previous["source_file_count"] + 13 and
+                d4_now["site_count"] == previous["site_count"] and
+                d4_now["semantic_site_count"] == previous["semantic_site_count"] and
+                d4_now["classification_counts"] == previous["classification_counts"] and
+                d4_now["unknown_site_count"] == 0 and
+                {key for key in previous["partition_manifest_digests"]
+                 if previous["partition_manifest_digests"][key] !=
+                 d4_now["partition_manifest_digests"][key]} ==
+                {"diagnostic", "mangling_or_generated_name", "serialization"},
+                "Phase 26.1D4 spelling inventory changed beyond its "
+                "registered source and identity successor")
+    if e1_successor is not None:
+        previous = d4_successor["current_inventory_summary"]
+        require(e1_successor.get("contract_version") ==
+                "phase26_1e1_spelling_inventory_successor_v1" and
+                e1_successor.get("previous_inventory_summary") == previous and
+                e1_successor.get("current_inventory_summary") == summary and
+                e1_successor.get("changed_source_paths") == sorted([
+                    "compiler/typechecker.gst",
+                    "compiler/mir_native_backend_full_program_source.gst",
+                    "compiler/phase26_raw_cast_provenance_test_entry.gst",
+                    "compiler/phase26_raw_cast_safe_brand_rejected_source.gst",
+                    "compiler/phase26_raw_cast_unsafe_source.gst",
+                ]) and
+                e1_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and
+                summary["source_file_count"] == previous["source_file_count"] + 3 and
                 summary["site_count"] == previous["site_count"] and
                 summary["semantic_site_count"] == previous["semantic_site_count"] and
                 summary["classification_counts"] == previous["classification_counts"] and
@@ -559,9 +591,8 @@ def validate() -> tuple[dict, list[dict], dict]:
                 {key for key in previous["partition_manifest_digests"]
                  if previous["partition_manifest_digests"][key] !=
                  summary["partition_manifest_digests"][key]} ==
-                {"diagnostic", "mangling_or_generated_name", "serialization"},
-                "Phase 26.1D4 spelling inventory changed beyond its "
-                "registered source and identity successor")
+                {"mangling_or_generated_name"},
+                "Phase 26.1E1 spelling inventory changed beyond registered sources")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),

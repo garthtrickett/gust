@@ -435,6 +435,12 @@ def main() -> None:
                 "phase23_text_surface_successor", {}).get(
                     "changed_rows", [])
     }
+    e1_by_path = {
+        row["path"]: row for row in activation.get(
+            "raw_cast_provenance_increment", {}).get(
+                "phase23_text_surface_successor", {}).get(
+                    "changed_rows", [])
+    }
     for path, predecessor in {
         "compiler/experiments/cranelift/src/full_program.rs":
             runtime_by_path["compiler/experiments/cranelift/src/full_program.rs"],
@@ -444,20 +450,27 @@ def main() -> None:
         row = d2_by_path.get(path, {})
         next_row = d3_by_path.get(path)
         latest = d4_by_path.get(path)
+        e1 = e1_by_path.get(path)
+        d4_digest = (latest.get("current_digest") if latest else
+                     next_row.get("current_digest") if next_row else
+                     row.get("current_digest"))
         require(row.get("previous_digest") == predecessor["current_digest"] and
                 (next_row is None or
                  next_row.get("previous_digest") == row.get("current_digest")) and
                 (latest is None or latest.get("previous_digest") ==
                  (next_row.get("current_digest") if next_row else
                   row.get("current_digest"))) and
-                (latest.get("current_digest") if latest else
-                 next_row.get("current_digest") if next_row else
-                 row.get("current_digest")) == digest(path),
+                (e1 is None or e1.get("previous_digest") == d4_digest) and
+                (e1.get("current_digest") if e1 else d4_digest) == digest(path),
                 f"Phase 26.1D2 text surface bridge drifted: {path}")
     registration_path = "scripts/phase26_reference_receiver_registration.py"
     registration_d2 = d2_by_path.get(registration_path, {})
     registration_d3 = d3_by_path.get(registration_path)
     registration_d4 = d4_by_path.get(registration_path)
+    registration_e1 = e1_by_path.get(registration_path)
+    registration_d4_digest = (registration_d4.get("current_digest") if registration_d4 else
+                              registration_d3.get("current_digest") if registration_d3 else
+                              registration_d2.get("current_digest"))
     require(registration_d2.get("previous_digest") ==
             ffi_by_path[registration_path]["current_row"]["digest"] and
             (registration_d3 is None or
@@ -467,9 +480,10 @@ def main() -> None:
              registration_d4.get("previous_digest") ==
              (registration_d3.get("current_digest") if registration_d3 else
               registration_d2.get("current_digest"))) and
-            (registration_d4.get("current_digest") if registration_d4 else
-             registration_d3.get("current_digest") if registration_d3 else
-             registration_d2.get("current_digest")) == digest(registration_path),
+            (registration_e1 is None or
+             registration_e1.get("previous_digest") == registration_d4_digest) and
+            (registration_e1.get("current_digest") if registration_e1 else
+             registration_d4_digest) == digest(registration_path),
             "Phase 26.1D2 reference registration text surface bridge drifted")
     for row in runtime_rows:
         require(set(row) == {"path", "previous_digest", "current_digest",

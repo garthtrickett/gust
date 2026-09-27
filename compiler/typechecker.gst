@@ -5472,6 +5472,17 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
 
             if expr.tag == 9 { // AsCast
                 mut cast_left_prov := check_expression_with_provenance(expr.AsCast.left, env, scope, ctx);
+                if t.tag == 9 { // RawPointer
+                    if step51g_expression_provenance_is_raw_or_sandbox_derived(cast_left_prov) == 1 {
+                        return step51g_expression_provenance_retarget_preserving_raw_sandbox(cast_left_prov, t, legacy_origins, "as_cast", ctx);
+                    }
+                    mut cast_raw_prov := expression_provenance_raw_derived(t, ctx);
+                    cast_raw_prov = expression_provenance_inherit_resource_root(cast_left_prov, cast_raw_prov, ctx);
+                    cast_raw_prov.legacy_origins = typechecker_clone_origin_set(cast_left_prov.legacy_origins, ctx);
+                    set_union(cast_raw_prov.legacy_origins, legacy_origins, ctx);
+                    set_add(cast_raw_prov.legacy_origins, "as_cast", ctx);
+                    return cast_raw_prov;
+                }
                 if expression_provenance_allows_safe_branding(cast_left_prov) == 1 {
                     mut cast_safe_prov := expression_provenance_safe_arena(t, ctx);
                     cast_safe_prov = expression_provenance_inherit_resource_root(
