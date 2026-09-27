@@ -22,6 +22,7 @@ func main() {
         decl.tag = 3;
         decl.FunctionDecl.is_extern = 1;
         decl.FunctionDecl.params = params_idx;
+        decl.FunctionDecl.ffi_return_policy = "";
     }
     mut sig: typechecker.FunctionSignature[ctx];
     typechecker.init_function_signature_ffi_defaults(&sig);

@@ -802,11 +802,28 @@ func env_validate_extern_ffi_positions(env: *TypeEnvironment[ctx], stmt: ast.Sta
             }
             i = i + 1;
         }
-        if stmt.FunctionDecl.is_extern == 0 { return 1; }
+        if stmt.FunctionDecl.is_extern == 0 {
+            if std.str_eq(stmt.FunctionDecl.ffi_return_policy, "") == 0 {
+                report_error(2, "Semantic Error: [FFIAttributeNonExtern] FFI return ownership policy requires an extern declaration", stmt.FunctionDecl.span, env, ctx);
+                return 0;
+            }
+            return 1;
+        }
         mut ret := (*sig).return_type;
         if ret.tag == 0 || ret.tag == 1 || ret.tag == 2 || ret.tag == 3 {
+            if std.str_eq(stmt.FunctionDecl.ffi_return_policy, "") == 0 &&
+               std.str_eq(stmt.FunctionDecl.ffi_return_policy, "value") == 0 {
+                report_error(2, "Semantic Error: [FFIValuePolicy] Scalar and void external returns have value ownership", stmt.FunctionDecl.span, env, ctx);
+                return 0;
+            }
             (*sig).ffi_return_policy = "value";
-        } else if ret.tag == 5 || ret.tag == 6 || ret.tag == 9 || ret.tag == 11 {
+        } else if ret.tag == 9 {
+            if std.str_eq(stmt.FunctionDecl.ffi_return_policy, "raw_untrusted") == 0 {
+                report_error(2, "Semantic Error: [FFIReturnedPointerUnsupported] External raw-pointer returns require an explicit raw_untrusted policy", stmt.FunctionDecl.span, env, ctx);
+                return 0;
+            }
+            (*sig).ffi_return_policy = "raw_untrusted";
+        } else if ret.tag == 5 || ret.tag == 6 || ret.tag == 11 {
             report_error(2, "Semantic Error: [FFIReturnedPointerUnsupported] External returned pointers, strings, slices, and references are not qualified", stmt.FunctionDecl.span, env, ctx);
             return 0;
         } else {
@@ -1490,6 +1507,11 @@ func env_record_function_return_provenance(env: *TypeEnvironment[ctx], name: str
 }
 
 func expression_provenance_for_function_signature_return(sig: FunctionSignature[ctx], ctx: &Arena) ExpressionProvenance[ctx] {
+    if sig.is_extern == 1 && sig.ffi_contract_verified == 1 &&
+       sig.return_type.tag == 9 &&
+       std.str_eq(sig.ffi_return_policy, "raw_untrusted") == 1 {
+        return expression_provenance_raw_derived(sig.return_type, ctx);
+    }
     if sig.is_extern == 0 {
         if env_type_is_safe_parameter_origin(sig.return_type, ctx) == 1 {
             return expression_provenance_safe_arena(sig.return_type, ctx);
@@ -5022,7 +5044,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 if sig.is_extern == 1 {
                     if sig.ffi_contract_verified == 0 ||
                        sig.ffi_param_policies == empty[Index[std.Vector[str, ctx], ctx]] ||
-                       std.str_eq(sig.ffi_return_policy, "value") == 0 {
+                       (std.str_eq(sig.ffi_return_policy, "value") == 0 &&
+                        (sig.return_type.tag != 9 ||
+                         std.str_eq(sig.ffi_return_policy, "raw_untrusted") == 0)) {
                         report_error(2, "Semantic Error: [FFIContractMissing] External call has no validated per-position ownership contract", expr.Call.span, env, ctx);
                         mut missing_contract: ast.Type[ctx]; missing_contract.tag = 3;
                         return missing_contract;

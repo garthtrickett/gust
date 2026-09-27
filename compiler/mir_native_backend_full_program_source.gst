@@ -319,6 +319,53 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
     return "";
 }
 
+// The raw pointer remains unowned and raw-derived. Only one test-only native
+// host has an approved implementation; every other signature is deferred
+// before driver discovery under the same generic return-policy rule.
+func mir_native_full_program_ffi_raw_return_diagnostic(programs: std.Vector[ast.Program[ctx], ctx], module_prefixes: std.Vector[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
+    mut target := primitive_layout.mir_primitive_layout_target(os.NativeTargetTriple(ctx), ctx);
+    mut module_index := 0;
+    while module_index < len(programs) {
+        unsafe { (*env).current_prefix = module_prefixes[module_index]; }
+        mut statements: std.Vector[ast.Statement[ctx], ctx] := ctx[programs[module_index].statements];
+        mut statement_index := 0;
+        while statement_index < len(statements) {
+            mut statement := statements[statement_index];
+            unsafe {
+                if statement.tag == 3 && statement.FunctionDecl.is_extern == 1 &&
+                   std.str_eq(statement.FunctionDecl.ffi_return_policy, "raw_untrusted") == 1 {
+                    mut name := mir_native_full_program_qualified_name(module_prefixes[module_index], statement.FunctionDecl.name, ctx);
+                    guard signature := (*env).function_registry.Get(name) else {
+                        return "Native FFI raw return lacks a verified declaration";
+                    };
+                    if signature.ffi_contract_verified == 0 ||
+                       signature.return_type.tag != 9 ||
+                       std.str_eq(signature.ffi_return_policy, "raw_untrusted") == 0 {
+                        return "Native FFI raw return ownership contract is unverified";
+                    }
+                    if target.found == 0 ||
+                       std.str_eq(target.target.target_triple, "x86_64-unknown-linux-gnu") == 0 ||
+                       target.target.pointer_size != 8 {
+                        return "Native FFI raw return test host target is unsupported";
+                    }
+                    mut parameters: std.Vector[ast.Parameter[ctx], ctx] := ctx[statement.FunctionDecl.params];
+                    mut result_type := ctx[statement.FunctionDecl.return_type];
+                    mut inner := ctx[result_type.RawPointer.inner];
+                    mut host_symbol := statement.FunctionDecl.extern_symbol_name;
+                    if len(host_symbol) == 0 { host_symbol = statement.FunctionDecl.name; }
+                    if len(parameters) != 0 || inner.tag != 0 ||
+                       std.str_eq(host_symbol, "tiny_host_raw_untrusted_int") == 0 {
+                        return "Native FFI raw return test host signature is not approved";
+                    }
+                }
+            }
+            statement_index = statement_index + 1;
+        }
+        module_index = module_index + 1;
+    }
+    return "";
+}
+
 func mir_native_full_program_qualified_name(prefix: str, name: str, ctx: &Arena) str {
     return std.Clone(ctx, std.Concat(prefix, name));
 }
@@ -3009,6 +3056,17 @@ func mir_native_full_program_source_lower(programs: std.Vector[ast.Program[ctx],
         result.deferred = 1;
         result.reason_code = std.Clone(ctx, "deferred_p26_ffi_borrowed_c_layout");
         result.diagnostic = ffi_layout;
+        return result;
+    }
+
+    mut ffi_raw_return := mir_native_full_program_ffi_raw_return_diagnostic(
+        programs, module_prefixes, env, ctx
+    );
+    if len(ffi_raw_return) > 0 {
+        result.represented = 0;
+        result.deferred = 1;
+        result.reason_code = std.Clone(ctx, "deferred_p26_ffi_raw_return_host_contract");
+        result.diagnostic = ffi_raw_return;
         return result;
     }
 

@@ -96,6 +96,9 @@ def main() -> None:
         "ffi_repr_c_write_increment", {}).get("phase23_text_surface_successor", {})
     d3_changed = {row["path"]: row for row in
                   d3_surfaces.get("changed_rows", [])}
+    d4_changed = {row["path"]: row for row in registry.get(
+        "phase26_activation_audit", {}).get("ffi_raw_return_increment", {}).get(
+            "phase23_text_surface_successor", {}).get("changed_rows", [])}
     changed = surfaces.get("changed_rows", [])
     added = surfaces.get("added_row")
     require(surfaces.get("contract_version") ==
@@ -110,19 +113,29 @@ def main() -> None:
     for row in changed:
         live_digest = hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest()
         successor = d3_changed.get(row["path"])
+        latest = d4_changed.get(row["path"])
         require((successor is None or
                  successor["previous_digest"] == row["current_digest"]) and
-                live_digest == (successor["current_digest"] if successor
-                                else row["current_digest"]) and
+                (latest is None or latest["previous_digest"] ==
+                 (successor["current_digest"] if successor else
+                  row["current_digest"])) and
+                live_digest == (latest["current_digest"] if latest else
+                                successor["current_digest"] if successor else
+                                row["current_digest"]) and
                 len(row["previous_digest"]) == 64,
                 f"text surface digest drifted: {row['path']}")
     added_successor = d3_changed.get(added["path"])
+    added_latest = d4_changed.get(added["path"])
     require(hashlib.sha256(
                 (ROOT / added["path"]).read_bytes()).hexdigest() ==
-            (added_successor["current_digest"] if added_successor else
+            (added_latest["current_digest"] if added_latest else
+             added_successor["current_digest"] if added_successor else
              added["digest"]) and
             (added_successor is None or
-             added_successor["previous_digest"] == added["digest"]),
+             added_successor["previous_digest"] == added["digest"]) and
+            (added_latest is None or added_latest["previous_digest"] ==
+             (added_successor["current_digest"] if added_successor else
+              added["digest"])),
             "added registration text surface drifted")
 
     workflow = (ROOT / ".github/workflows/pr-fast.yml").read_text()

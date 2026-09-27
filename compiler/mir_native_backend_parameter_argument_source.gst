@@ -269,7 +269,14 @@ func mir_native_parameter_argument_scan_deferred(
                         ctx
                     );
                 }
+                mut qualified_raw_return := 0;
+                if statement.FunctionDecl.is_extern == 1 &&
+                   return_type.tag == 9 &&
+                   std.str_eq(statement.FunctionDecl.ffi_return_policy, "raw_untrusted") == 1 {
+                    qualified_raw_return = 1;
+                }
                 if return_class == 2 && return_type.tag != 3 &&
+                   qualified_raw_return == 0 &&
                    (return_type.tag != 5 || statement.FunctionDecl.is_extern == 1) {
                     model.source_path = std.Clone(ctx, module_paths[0]);
                     return mir_native_parameter_argument_deferred_model(

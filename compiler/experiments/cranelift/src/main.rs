@@ -76,6 +76,7 @@ const EXTERN_PREDICATE_BRANCH_I32_SYMBOL: &str = "tiny_cranelift_extern_predicat
 const HOST_IS_POSITIVE_I32_SYMBOL: &str = "tiny_host_is_positive_i32";
 const HOST_REPR_C_PROBE_SYMBOL: &str = "tiny_host_read_repr_c_probe";
 const HOST_REPR_C_WRITE_SYMBOL: &str = "tiny_host_write_repr_c_probe";
+const HOST_RAW_UNTRUSTED_INT_SYMBOL: &str = "tiny_host_raw_untrusted_int";
 const MIR_RETURN_INT_SYMBOL: &str = "tiny_cranelift_mir_return_int";
 const COMPILER_MIR_INGESTED_RETURN_INT_SYMBOL: &str =
     "tiny_native_backend_compiler_mir_ingested_return_int";
@@ -15643,6 +15644,7 @@ fn emit_phase13_approved_scalar_host_object(
     include_scalar_hosts: bool,
     include_repr_c_probe: bool,
     include_repr_c_write: bool,
+    include_raw_untrusted_int: bool,
 ) -> Result<(), Box<dyn Error>> {
     if let Some(parent) = output_path.parent() {
         fs::create_dir_all(parent)?;
@@ -15768,6 +15770,29 @@ fn emit_phase13_approved_scalar_host_object(
         builder.ins().store(MemFlags::new(), middle, pointer, 4);
         builder.ins().store(MemFlags::new(), last, pointer, 8);
         builder.ins().return_(&[]);
+        builder.seal_all_blocks();
+        builder.finalize();
+        module.define_function(id, &mut context)?;
+        module.clear_context(&mut context);
+    }
+
+    if include_raw_untrusted_int {
+        let data_id = module.declare_data("gust_phase26_raw_untrusted_int", Linkage::Local, false, false)?;
+        let mut data = DataDescription::new();
+        data.define(37i32.to_le_bytes().to_vec().into_boxed_slice());
+        module.define_data(data_id, &data)?;
+        let mut signature = module.make_signature();
+        signature.returns.push(AbiParam::new(module.target_config().pointer_type()));
+        let id = module.declare_function(HOST_RAW_UNTRUSTED_INT_SYMBOL, Linkage::Export, &signature)?;
+        let mut context = module.make_context();
+        context.func.signature = signature;
+        let mut builder_context = FunctionBuilderContext::new();
+        let mut builder = FunctionBuilder::new(&mut context.func, &mut builder_context);
+        let entry = builder.create_block();
+        builder.switch_to_block(entry);
+        let data_ref = module.declare_data_in_func(data_id, builder.func);
+        let pointer = builder.ins().global_value(module.target_config().pointer_type(), data_ref);
+        builder.ins().return_(&[pointer]);
         builder.seal_all_blocks();
         builder.finalize();
         module.define_function(id, &mut context)?;
@@ -16347,6 +16372,7 @@ fn compile_phase10_scalar_metadata_request_path(
     let mut requires_phase13_approved_scalar_host_object = false;
     let mut requires_phase26_repr_c_host_object = false;
     let mut requires_phase26_repr_c_write_host_object = false;
+    let mut requires_phase26_raw_untrusted_host_object = false;
 
     for (module_index, module_record) in bundle.modules.iter().enumerate() {
         preserved_metadata_count += module_record.metadata.len();
@@ -16430,6 +16456,9 @@ fn compile_phase10_scalar_metadata_request_path(
             }
             if full_program::selected_repr_c_write_host(&module_record.canonical_mir)? {
                 requires_phase26_repr_c_write_host_object = true;
+            }
+            if full_program::selected_raw_untrusted_host(&module_record.canonical_mir)? {
+                requires_phase26_raw_untrusted_host_object = true;
             }
             full_program::lower_contents(
                 &module_record.canonical_mir,
@@ -16583,7 +16612,7 @@ fn compile_phase10_scalar_metadata_request_path(
         reported_object_name = &module_record.object_name;
     }
 
-    let approved_host_object = if requires_phase13_approved_scalar_host_object || requires_phase26_repr_c_host_object || requires_phase26_repr_c_write_host_object {
+    let approved_host_object = if requires_phase13_approved_scalar_host_object || requires_phase26_repr_c_host_object || requires_phase26_repr_c_write_host_object || requires_phase26_raw_untrusted_host_object {
         let path = compiler_mir_link_sibling_path(
             &request.output_path,
             ".phase13-approved-scalar-host.o",
@@ -16593,6 +16622,7 @@ fn compile_phase10_scalar_metadata_request_path(
             requires_phase13_approved_scalar_host_object,
             requires_phase26_repr_c_host_object,
             requires_phase26_repr_c_write_host_object,
+            requires_phase26_raw_untrusted_host_object,
         )?;
         Some(path)
     } else {

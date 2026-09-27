@@ -1532,6 +1532,28 @@ func mir_native_module_import_borrowed_aggregate_extern(statement: ast.Statement
     }
 }
 
+// A return-only raw-pointer contract is checked by the full-program planner
+// against its separately approved test host before driver discovery.
+func mir_native_module_import_untrusted_raw_return_extern(statement: ast.Statement[ctx], module_prefix: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        if statement.tag != 3 || statement.FunctionDecl.is_extern == 0 ||
+           std.str_eq(statement.FunctionDecl.extern_abi, "C") == 0 ||
+           std.str_eq(statement.FunctionDecl.ffi_return_policy, "raw_untrusted") == 0 {
+            return 0;
+        }
+        mut result_type := ctx[statement.FunctionDecl.return_type];
+        if result_type.tag != 9 { return 0; }
+        mut name := mir_native_module_import_qualified(module_prefix, statement.FunctionDecl.name, ctx);
+        guard signature := (*env).function_registry.Get(name) else { return 0; };
+        if signature.ffi_contract_verified == 1 &&
+           signature.return_type.tag == 9 &&
+           std.str_eq(signature.ffi_return_policy, "raw_untrusted") == 1 {
+            return 1;
+        }
+        return 0;
+    }
+}
+
 func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) MirNativeModuleImportModel[ctx] {
     mut model := mir_native_module_import_empty_model(ctx);
     if len(programs) == 0 ||
@@ -1627,6 +1649,9 @@ func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx
                     );
                     if len(preflight_host.name) == 0 {
                         if mir_native_module_import_borrowed_aggregate_extern(
+                            preflight_statement, module_prefixes[preflight_module_index], env, ctx
+                        ) == 1 ||
+                           mir_native_module_import_untrusted_raw_return_extern(
                             preflight_statement, module_prefixes[preflight_module_index], env, ctx
                         ) == 1 {
                             delegate_borrowed_aggregate = 1;
