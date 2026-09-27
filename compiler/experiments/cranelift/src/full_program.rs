@@ -943,13 +943,17 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
         if source_end < source_start {
             return Err(invalid("full-program node source range is inverted"));
         }
+        let second_integer = parse_i32(values[6], "node second integer")?;
+        if kind == "Call" && !matches!(second_integer, 0 | 1) {
+            return Err(invalid("full-program Call has an unknown optional policy"));
+        }
         nodes.push(Node {
             kind,
             ty,
             text: decode_hex(values[3], "node text")?,
             second_text: decode_hex(values[4], "node second text")?,
             integer: parse_i32(values[5], "node integer")?,
-            second_integer: parse_i32(values[6], "node second integer")?,
+            second_integer,
             source_line,
             source_column,
             source_start,
@@ -2562,7 +2566,55 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
             .iter()
             .map(|child| (*child, self.program.nodes[*child].ty.clone()))
             .collect();
+        if node.second_integer == 1 {
+            return self.lower_isolated_read_call(builder, node, &callable, &arguments);
+        }
         self.emit_call(builder, &callable, &arguments)
+    }
+
+    fn lower_isolated_read_call(
+        &mut self,
+        builder: &mut FunctionBuilder<'_>,
+        node: &Node,
+        callable: &Callable,
+        arguments: &[(usize, String)],
+    ) -> Result<Evaluated, Box<dyn Error>> {
+        // Only the approved flat repr(C) read host can receive an isolated
+        // copy. The ordinary call path never enters this wrapper.
+        if node.second_text != "tiny_host_read_repr_c_probe"
+            || callable.parameters.as_slice()
+                != ["Reference(Struct(\"FfiProbe\", None), None)"]
+            || callable.result != "Int"
+            || arguments.len() != 1
+            || arguments[0].1 != callable.parameters[0]
+            || self.layouts.layout("Struct(\"FfiProbe\", None)")?.size != 12
+        {
+            return Err(invalid("isolated FFI call has an unapproved host or layout"));
+        }
+
+        let source_eval = self.lower_expression(builder, arguments[0].0, Some(&arguments[0].1))?;
+        let source = self.scalar(builder, source_eval, &arguments[0].1)?;
+        let arena_eval = self.lower_arena_new(builder)?;
+        let arena = self.arena_address(builder, arena_eval, "Arena")?;
+        let size = builder.ins().iconst(types::I64, 12);
+        let allocate = self.runtime.get("os_ArenaAlloc")
+            .ok_or_else(|| invalid("isolated FFI arena allocator missing"))?;
+        let allocate_ref = self.module.declare_func_in_func(allocate.id, builder.func);
+        let offset_call = builder.ins().call(allocate_ref, &[arena, size]);
+        let offset = builder.inst_results(offset_call)[0];
+        let base = builder.ins().load(self.pointer_type(), MemFlags::trusted(), arena, 0);
+        let offset = builder.ins().uextend(self.pointer_type(), offset);
+        let copy_address = builder.ins().iadd(base, offset);
+        self.copy_place(builder, Place { address: copy_address }, Place { address: source }, 12)?;
+
+        let native_ref = self.module.declare_func_in_func(callable.id, builder.func);
+        let native_call = builder.ins().call(native_ref, &[copy_address]);
+        let native_result = builder.inst_results(native_call)[0];
+        let free = self.runtime.get("os_Arena_Free")
+            .ok_or_else(|| invalid("isolated FFI arena destructor missing"))?;
+        let free_ref = self.module.declare_func_in_func(free.id, builder.func);
+        builder.ins().call(free_ref, &[arena]);
+        Ok(Evaluated::Scalar(native_result))
     }
 
     fn emit_call(

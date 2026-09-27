@@ -43,6 +43,9 @@ def main() -> None:
                           .read_text(encoding="utf-8"))
     activation = registry.get("phase26_activation_audit", {})
     record = activation.get("raw_cast_provenance_increment", {})
+    d5 = activation.get("ffi_isolated_read_increment", {})
+    d5_rows = {row["path"]: row for row in d5.get(
+        "phase23_text_surface_successor", {}).get("changed_rows", [])}
     expected = {
         "contract_version": "phase26_1e1_raw_cast_provenance_v1",
         "status": "raw_pointer_cast_safe_brand_laundering_rejected",
@@ -92,7 +95,8 @@ def main() -> None:
     from phase24_filename_behavior_characterization import source_sites
     previous = activation["ffi_raw_return_increment"]["filename_site_successor"]["current_sites"]
     filename = record["filename_site_successor"]
-    current = source_sites()
+    current = (d5.get("filename_site_successor", {}).get("previous_sites")
+               if d5 else source_sites())
     require(filename.get("contract_version") ==
             "phase26_1e1_filename_site_successor_v1" and
             filename.get("previous_sites") == previous and
@@ -126,19 +130,31 @@ def main() -> None:
     for row in changed:
         predecessor = d4.get(row["path"])
         added_predecessor = d4_added.get(row["path"])
+        next_row = d5_rows.get(row["path"])
         require(len(row["previous_digest"]) == 64 and
                 (predecessor is None or
                  row["previous_digest"] == predecessor["current_digest"]) and
                 (added_predecessor is None or
                  row["previous_digest"] == added_predecessor["digest"]) and
-                digest(row["path"]) == row["current_digest"],
+                (next_row is None or
+                 next_row["previous_digest"] == row["current_digest"]) and
+                digest(row["path"]) ==
+                (next_row["current_digest"] if next_row else
+                 row["current_digest"]),
                 f"text surface predecessor/current digest drifted: {row['path']}")
-    require(digest(added[0]["path"]) == added[0]["digest"],
+    added_next = d5_rows.get(added[0]["path"])
+    require((added_next is None or
+             added_next["previous_digest"] == added[0]["digest"]) and
+            digest(added[0]["path"]) ==
+            (added_next["current_digest"] if added_next else
+             added[0]["digest"]),
             "added registration text surface drifted")
 
     spelling = record["spelling_inventory_successor"]
     from phase24_semantic_spelling_inventory import source_sites as spelling_sites, manifest_summary
-    current_summary = manifest_summary(spelling_sites())
+    current_summary = (d5.get("spelling_inventory_successor", {}).get(
+        "previous_inventory_summary") if d5 else
+        manifest_summary(spelling_sites()))
     require(spelling.get("contract_version") ==
             "phase26_1e1_spelling_inventory_successor_v1" and
             spelling.get("previous_inventory_summary") == activation[

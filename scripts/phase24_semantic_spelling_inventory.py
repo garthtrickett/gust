@@ -310,6 +310,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     e1_successor = registry.get("phase26_activation_audit", {}).get(
         "raw_cast_provenance_increment", {}).get(
             "spelling_inventory_successor")
+    d5_successor = registry.get("phase26_activation_audit", {}).get(
+        "ffi_isolated_read_increment", {}).get(
+            "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -570,10 +573,13 @@ def validate() -> tuple[dict, list[dict], dict]:
                 "registered source and identity successor")
     if e1_successor is not None:
         previous = d4_successor["current_inventory_summary"]
+        e1_now = e1_successor["current_inventory_summary"]
         require(e1_successor.get("contract_version") ==
                 "phase26_1e1_spelling_inventory_successor_v1" and
                 e1_successor.get("previous_inventory_summary") == previous and
-                e1_successor.get("current_inventory_summary") == summary and
+                e1_successor.get("current_inventory_summary") ==
+                (summary if d5_successor is None else
+                 d5_successor.get("previous_inventory_summary")) and
                 e1_successor.get("changed_source_paths") == sorted([
                     "compiler/typechecker.gst",
                     "compiler/mir_native_backend_full_program_source.gst",
@@ -583,16 +589,35 @@ def validate() -> tuple[dict, list[dict], dict]:
                 ]) and
                 e1_successor.get("partial_extra_or_substituted_inventory") ==
                 "rejected" and
-                summary["source_file_count"] == previous["source_file_count"] + 3 and
-                summary["site_count"] == previous["site_count"] and
-                summary["semantic_site_count"] == previous["semantic_site_count"] and
-                summary["classification_counts"] == previous["classification_counts"] and
-                summary["unknown_site_count"] == 0 and
+                e1_now["source_file_count"] == previous["source_file_count"] + 3 and
+                e1_now["site_count"] == previous["site_count"] and
+                e1_now["semantic_site_count"] == previous["semantic_site_count"] and
+                e1_now["classification_counts"] == previous["classification_counts"] and
+                e1_now["unknown_site_count"] == 0 and
                 {key for key in previous["partition_manifest_digests"]
                  if previous["partition_manifest_digests"][key] !=
-                 summary["partition_manifest_digests"][key]} ==
+                 e1_now["partition_manifest_digests"][key]} ==
                 {"mangling_or_generated_name"},
                 "Phase 26.1E1 spelling inventory changed beyond registered sources")
+    if d5_successor is not None:
+        previous = e1_successor["current_inventory_summary"]
+        require(d5_successor.get("contract_version") ==
+                "phase26_1d5_spelling_inventory_successor_v1" and
+                d5_successor.get("previous_inventory_summary") == previous and
+                d5_successor.get("current_inventory_summary") == summary and
+                d5_successor.get("changed_source_paths") == sorted([
+                    "compiler/parser.gst", "compiler/typechecker.gst",
+                    "compiler/mir_native_backend_module_import_source.gst",
+                    "compiler/mir_native_backend_full_program_source.gst",
+                    "compiler/experiments/cranelift/src/full_program.rs",
+                    *[f"compiler/phase26_ffi_isolated_{name}_source.gst"
+                      for name in ("read", "missing_repr", "order", "packed",
+                                   "nested", "enum", "unknown_host", "write_host",
+                                   "nonreference", "nonaggregate")],
+                ]) and
+                d5_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and summary["unknown_site_count"] == 0,
+                "Phase 26.1D5 spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),

@@ -1517,7 +1517,8 @@ func mir_native_module_import_borrowed_aggregate_extern(statement: ast.Statement
         while index < len(parameters) {
             mut parameter := parameters[index];
             if parameter.param_type.tag == 11 &&
-               std.str_eq(parameter.ffi_policy, "borrow_read_call") == 1 {
+               (std.str_eq(parameter.ffi_policy, "borrow_read_call") == 1 ||
+                std.str_eq(parameter.ffi_policy, "borrow_read_isolated_call") == 1) {
                 mut inner := ctx[parameter.param_type.Reference.inner];
                 if inner.tag == 8 { borrowed_aggregate = 1; }
             }
