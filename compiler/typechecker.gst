@@ -787,13 +787,27 @@ func env_validate_extern_ffi_positions(env: *TypeEnvironment[ctx], stmt: ast.Sta
                     report_error(2, "Semantic Error: [FFIBorrowPolicyRequired] External pointer, string, slice, and reference parameters require an explicit call-bounded borrow policy", declared.span, env, ctx);
                     return 0;
                 }
-                if std.str_eq(policy, "borrow_read_call") == 0 && std.str_eq(policy, "borrow_write_call") == 0 {
+                if std.str_eq(policy, "borrow_read_call") == 0 &&
+                   std.str_eq(policy, "borrow_write_call") == 0 &&
+                   std.str_eq(policy, "borrow_read_isolated_call") == 0 {
                     report_error(2, "Semantic Error: [FFIUnsupportedOwnershipPolicy] External parameter policy is not qualified", declared.span, env, ctx);
                     return 0;
                 }
                 if std.str_eq(policy, "borrow_write_call") == 1 && t.tag != 9 {
                     report_error(2, "Semantic Error: [FFIWriteRequiresRawPointer] Native writes require an explicitly unsafe raw-pointer position", declared.span, env, ctx);
                     return 0;
+                }
+                if std.str_eq(policy, "borrow_read_isolated_call") == 1 {
+                    if t.tag != 11 {
+                        report_error(2, "Semantic Error: [FFIIsolatedBorrowRequiresReference] Isolated native reads require a reference parameter", declared.span, env, ctx);
+                        return 0;
+                    }
+                    mut isolated_inner := ctx[t.Reference.inner];
+                    if isolated_inner.tag != 8 {
+                        report_error(2, "Semantic Error: [FFIIsolatedBorrowRequiresAggregate] Isolated native reads require a struct reference", declared.span, env, ctx);
+                        return 0;
+                    }
+                    (*sig).requires_sandbox_arena = 1;
                 }
                 policies.Push(std.Clone(ctx, policy));
             } else {
@@ -5069,6 +5083,7 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                                 return bad_value;
                             }
                         } else if std.str_eq(ffi_policy, "borrow_read_call") == 1 ||
+                                  std.str_eq(ffi_policy, "borrow_read_isolated_call") == 1 ||
                                   std.str_eq(ffi_policy, "borrow_write_call") == 1 {
                             if ffi_formal.tag != 5 && ffi_formal.tag != 6 && ffi_formal.tag != 9 && ffi_formal.tag != 11 {
                                 report_error(2, "Semantic Error: [FFIContractMismatch] External borrowed position has a non-pointer formal type", expr.Call.span, env, ctx);

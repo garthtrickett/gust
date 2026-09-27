@@ -223,7 +223,9 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                                     return "Native FFI borrowed aggregate lacks a verified declaration";
                                 };
                                 if signature.ffi_contract_verified == 0 ||
-                                   (resolved.tag == 11 && std.str_eq(parameter.ffi_policy, "borrow_read_call") == 0) ||
+                                   (resolved.tag == 11 &&
+                                    std.str_eq(parameter.ffi_policy, "borrow_read_call") == 0 &&
+                                    std.str_eq(parameter.ffi_policy, "borrow_read_isolated_call") == 0) ||
                                    (resolved.tag == 9 && std.str_eq(parameter.ffi_policy, "borrow_write_call") == 0) {
                                     return "Native FFI borrowed aggregate ownership contract is unverified";
                                 }
@@ -297,6 +299,11 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                                    (resolved.tag == 9 && return_type.tag != 3) ||
                                    std.str_eq(signature.ffi_return_policy, "value") == 0 {
                                     return "Native FFI test host signature does not match its approved contract";
+                                }
+                                if std.str_eq(parameter.ffi_policy, "borrow_read_isolated_call") == 1 &&
+                                   (resolved.tag != 11 || signature.requires_sandbox_arena != 1 ||
+                                    std.str_eq(host_symbol, "tiny_host_read_repr_c_probe") == 0) {
+                                    return "Native FFI isolated read contract is not approved";
                                 }
                                 if std.str_eq(name, "FfiProbe") == 0 || len(fields) != 3 ||
                                    std.str_eq(fields[0], "a") == 0 ||
@@ -593,6 +600,17 @@ func mir_native_full_program_flatten_expression(expression_index: Index[ast.Expr
                     env, raw_callee, ctx
                 )
             );
+            // An isolated borrow is an explicit optional Call policy. Ordinary
+            // calls retain their existing zero operand and lowering behavior.
+            mut isolated_signature := (*env).function_registry.Get(node.second_text_operand);
+            if isolated_signature.Ok {
+                mut selected_isolated_signature := isolated_signature.Val;
+                if selected_isolated_signature.is_extern == 1 &&
+                   selected_isolated_signature.ffi_contract_verified == 1 &&
+                   selected_isolated_signature.requires_sandbox_arena == 1 {
+                    node.second_integer_operand = 1;
+                }
+            }
             if len(constructor_helper) > 0 {
                 node.second_text_operand = std.Clone(ctx, constructor_helper);
             }

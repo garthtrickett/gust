@@ -1558,6 +1558,7 @@ func parse_function_decl_with_private(p: *Parser[ctx], is_private_decl: int, sta
         mut name := std.Clone(*ctx, (*p).cur_token.literal);
         mut extern_symbol_name_decl := "";
         mut requires_unsafe_call_decl := 0;
+        mut requires_sandbox_arena_decl := 0;
         if is_extern_decl == 1 {
             extern_symbol_name_decl = name;
             requires_unsafe_call_decl = 1;
@@ -1647,6 +1648,9 @@ func parse_function_decl_with_private(p: *Parser[ctx], is_private_decl: int, sta
                     return empty[Index[ast.Statement[ctx], ctx]];
                 }
                 param_ffi_policy = std.Clone(*ctx, (*p).cur_token.literal);
+                if std.str_eq(param_ffi_policy, "borrow_read_isolated_call") == 1 {
+                    requires_sandbox_arena_decl = 1;
+                }
                 next_token(p);
                 if cur_token_is(p, 12) == false { // RParen = 12
                     mut err_ffi_close: errors.CompilerError[Any];
@@ -1807,7 +1811,7 @@ func parse_function_decl_with_private(p: *Parser[ctx], is_private_decl: int, sta
         stmt_function_parse.FunctionDecl.extern_abi = "C";
         stmt_function_parse.FunctionDecl.requires_unsafe_call = requires_unsafe_call_decl;
         stmt_function_parse.FunctionDecl.requires_layout_metadata = 0;
-        stmt_function_parse.FunctionDecl.requires_sandbox_arena = 0;
+        stmt_function_parse.FunctionDecl.requires_sandbox_arena = requires_sandbox_arena_decl;
         stmt_function_parse.FunctionDecl.is_private = is_private_decl;
 
         stmt_function_parse.FunctionDecl.params = function_params_idx_parse;

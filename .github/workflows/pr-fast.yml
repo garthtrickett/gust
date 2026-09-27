@@ -816,6 +816,9 @@ jobs:
       - name: Phase 26 raw cast provenance
         run: just guard-cranelift-phase26-raw-cast-provenance
 
+      - name: Phase 26 isolated repr C read
+        run: just guard-cranelift-phase26-ffi-isolated-read
+
   final:
     name: final diff check
     runs-on: ubuntu-latest

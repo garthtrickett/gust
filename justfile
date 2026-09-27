@@ -24247,3 +24247,11 @@ guard-cranelift-phase26-raw-cast-provenance:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-raw-cast-provenance | grep -F $'guard-cranelift-phase26-raw-cast-provenance\t2\t' >/dev/null
     python3 scripts/phase26_raw_cast_provenance_registration.py
     bash scripts/phase26_raw_cast_provenance.sh
+
+# Phase 26.1D5: one read-only repr(C) borrow uses isolated call storage.
+guard-cranelift-phase26-ffi-isolated-read:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-ffi-isolated-read | grep -F $'guard-cranelift-phase26-ffi-isolated-read\t2\t' >/dev/null
+    python3 scripts/phase26_ffi_isolated_read_registration.py
+    bash scripts/phase26_ffi_isolated_read.sh

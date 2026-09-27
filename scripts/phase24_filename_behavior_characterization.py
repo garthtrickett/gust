@@ -220,18 +220,37 @@ def validate_static(value: dict) -> None:
                     "line shift")
             if e1_sites is not None:
                 previous = d4_sites["current_sites"]
+                d5_sites = registry.get("phase26_activation_audit", {}).get(
+                    "ffi_isolated_read_increment", {}).get(
+                        "filename_site_successor")
+                e1_current = (live_sites if d5_sites is None else
+                              d5_sites.get("previous_sites"))
                 require(e1_sites.get("contract_version") ==
                         "phase26_1e1_filename_site_successor_v1" and
                         e1_sites.get("previous_sites") == previous and
-                        e1_sites.get("current_sites") == live_sites and
+                        e1_sites.get("current_sites") == e1_current and
                         e1_sites.get("line_delta") == 11 and
                         e1_sites.get("partial_extra_or_substituted_site") ==
                         "rejected" and len(previous) == len(live_sites) == 3 and
                         all(now["line"] == before["line"] + 11 and
                             {key: val for key, val in now.items() if key != "line"} ==
                             {key: val for key, val in before.items() if key != "line"}
-                            for before, now in zip(previous, live_sites)),
+                            for before, now in zip(previous, e1_current)),
                         "Phase 26.1E1 filename sites changed beyond the cast line shift")
+                if d5_sites is not None:
+                    delta = d5_sites.get("line_delta")
+                    require(d5_sites.get("contract_version") ==
+                            "phase26_1d5_filename_site_successor_v1" and
+                            d5_sites.get("previous_sites") == e1_current and
+                            d5_sites.get("current_sites") == live_sites and
+                            isinstance(delta, int) and delta > 0 and
+                            d5_sites.get("partial_extra_or_substituted_site") ==
+                            "rejected" and
+                            all(now["line"] == before["line"] + delta and
+                                {key: val for key, val in now.items() if key != "line"} ==
+                                {key: val for key, val in before.items() if key != "line"}
+                                for before, now in zip(e1_current, live_sites)),
+                            "Phase 26.1D5 filename sites changed beyond the exact shift")
     require([row["selector"] for row in value["site_manifest"]] ==
             ["test_tcs_", "test_index_", "test_tcs_"],
             "selector order or completeness drifted")

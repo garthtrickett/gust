@@ -48056,6 +48056,427 @@
     "why_this_exists": "The Status section of docs/PHASE25_ROADMAP.md is the record the phase-completion loop checks, and it was wrong in both directions. 25.10a (#468) and 25.10 (#470) were unticked though both merged. 25.12 was ticked though its Exit Gate was not met, and 25.12b (#472), which corrected it, had no row at all. The Patch 25.0 heading still read IN PROGRESS. The section's own rule is 'ticked when merged to main', and this repo's convention is that a later patch ticks merged ones -- Patch 25.7 is what ticked 25.12 and 25.11a -- so 25.12b could not tick itself."
   },
   "phase26_activation_audit": {
+    "ffi_isolated_read_increment": {
+      "contract_version": "phase26_1d5_ffi_isolated_read_v1",
+      "status": "selected_flat_repr_c_borrowed_read_isolated_per_call",
+      "owner": "cranelift",
+      "increment": "26.1D5",
+      "declared_parameter_policy": "borrow_read_isolated_call",
+      "canonical_call_policy": "explicit_optional_call_marker_1",
+      "ordinary_call_policy": "unchanged_marker_0",
+      "storage": "temporary_arena_copy_freed_after_native_return",
+      "physical_pointer_abi": "unchanged",
+      "selected_host_import": "tiny_host_read_repr_c_probe",
+      "selected_host_object": "generated_test_only_existing_host_object_slot",
+      "positive_fixture": "compiler/phase26_ffi_isolated_read_source.gst",
+      "negative_fixtures": [
+        "compiler/phase26_ffi_isolated_missing_repr_source.gst",
+        "compiler/phase26_ffi_isolated_order_source.gst",
+        "compiler/phase26_ffi_isolated_packed_source.gst",
+        "compiler/phase26_ffi_isolated_nested_source.gst",
+        "compiler/phase26_ffi_isolated_enum_source.gst",
+        "compiler/phase26_ffi_isolated_unknown_host_source.gst",
+        "compiler/phase26_ffi_isolated_write_host_source.gst",
+        "compiler/phase26_ffi_isolated_nonreference_source.gst",
+        "compiler/phase26_ffi_isolated_nonaggregate_source.gst"
+      ],
+      "failure_stage": "before_driver_discovery",
+      "deferral_reason": "deferred_p26_ffi_borrowed_c_layout",
+      "native_fallback": false,
+      "physical_abi_changed": false,
+      "runtime_symbol_surface_changed": false,
+      "unsupported_shapes": [
+        "writes",
+        "transfer",
+        "retain",
+        "returned_pointer",
+        "callback",
+        "native_error",
+        "by_value_aggregate",
+        "nested",
+        "packed",
+        "enum",
+        "unapproved_host"
+      ],
+      "owning_level2_guard": "guard-cranelift-phase26-ffi-isolated-read",
+      "pr_fast_job": "phase26-ffi-position",
+      "filename_site_successor": {
+        "contract_version": "phase26_1d5_filename_site_successor_v1",
+        "previous_sites": [
+          {
+            "id": "var_declaration_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 13970,
+            "selector": "test_tcs_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_var_declaration",
+            "window_digest": "6c0f176e1543d9a2ba125569875a69081a81b28bfc4c80eef31c57ec7ccfa05c"
+          },
+          {
+            "id": "assignment_hazard_and_view_invalidation",
+            "path": "compiler/typechecker.gst",
+            "line": 14277,
+            "selector": "test_index_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_assignment",
+            "window_digest": "eea5c7abf9fb4c50d51f644267c5ee59133db8d998a0fe7c25dd0ec1503029c3"
+          },
+          {
+            "id": "guard_payload_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 15258,
+            "selector": "test_tcs_",
+            "selector_occurrence": 2,
+            "statement_context": "statement_guard_payload_binding",
+            "window_digest": "4bf05983015fd1ecc3c3cc4c1399491868107155a5435fed90f8beeeb8f16a6f"
+          }
+        ],
+        "current_sites": [
+          {
+            "id": "var_declaration_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 13985,
+            "selector": "test_tcs_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_var_declaration",
+            "window_digest": "6c0f176e1543d9a2ba125569875a69081a81b28bfc4c80eef31c57ec7ccfa05c"
+          },
+          {
+            "id": "assignment_hazard_and_view_invalidation",
+            "path": "compiler/typechecker.gst",
+            "line": 14292,
+            "selector": "test_index_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_assignment",
+            "window_digest": "eea5c7abf9fb4c50d51f644267c5ee59133db8d998a0fe7c25dd0ec1503029c3"
+          },
+          {
+            "id": "guard_payload_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 15273,
+            "selector": "test_tcs_",
+            "selector_occurrence": 2,
+            "statement_context": "statement_guard_payload_binding",
+            "window_digest": "4bf05983015fd1ecc3c3cc4c1399491868107155a5435fed90f8beeeb8f16a6f"
+          }
+        ],
+        "line_delta": 15,
+        "partial_extra_or_substituted_site": "rejected"
+      },
+      "phase22_invocation_successor": {
+        "contract_version": "phase26_1d5_phase22_invocation_successor_v1",
+        "previous_total": 165,
+        "current_total": 168,
+        "added_rows": [
+          {
+            "path": "scripts/phase26_ffi_isolated_read.sh",
+            "line": 15,
+            "recipe": "none",
+            "compiler_token": "./gust",
+            "selection": "explicit_cranelift",
+            "consumer_class": "already_explicit_or_parser_probe",
+            "owner": "cranelift",
+            "expected_artifact": "selected_backend_contract",
+            "expected_transition": "preserve_explicit_selection",
+            "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+            "command": "GUST_TEST_MIR_TO_C_UNAVAILABLE=1 GUST_NATIVE_BACKEND_DRIVER=\"$driver\" ./gust --backend cranelift -o \"$build_root/native\" compiler/phase26_ffi_isolated_read_source.gst >\"$build_root/positive.compile.stdout\" 2>\"$build_root/positive.compile.stderr\""
+          },
+          {
+            "path": "scripts/phase26_ffi_isolated_read.sh",
+            "line": 72,
+            "recipe": "none",
+            "compiler_token": "./gust",
+            "selection": "explicit_cranelift",
+            "consumer_class": "already_explicit_or_parser_probe",
+            "owner": "cranelift",
+            "expected_artifact": "selected_backend_contract",
+            "expected_transition": "preserve_explicit_selection",
+            "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+            "command": "GUST_TEST_MIR_TO_C_UNAVAILABLE=1 GUST_PHASE26_D5_POISON_MARKER=\"$PWD/$marker\" GUST_NATIVE_BACKEND_DRIVER=\"$PWD/$poison\" ./gust --backend cranelift -o \"$output\" \"compiler/phase26_ffi_isolated_${case_name}_source.gst\" >\"$output.stdout\" 2>\"$output.stderr\""
+          },
+          {
+            "path": "scripts/phase26_ffi_isolated_read.sh",
+            "line": 98,
+            "recipe": "none",
+            "compiler_token": "./gust",
+            "selection": "explicit_cranelift",
+            "consumer_class": "already_explicit_or_parser_probe",
+            "owner": "cranelift",
+            "expected_artifact": "selected_backend_contract",
+            "expected_transition": "preserve_explicit_selection",
+            "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+            "command": "GUST_TEST_MIR_TO_C_UNAVAILABLE=1 GUST_PHASE26_D5_POISON_MARKER=\"$PWD/$marker\" GUST_NATIVE_BACKEND_DRIVER=\"$PWD/$poison\" ./gust --backend cranelift -o \"$output\" \"compiler/phase26_ffi_isolated_${case_name}_source.gst\" >\"$output.stdout\" 2>\"$output.stderr\""
+          }
+        ],
+        "partial_extra_or_substituted_invocation": "rejected"
+      },
+      "production_audit_successor": {
+        "contract_version": "phase26_1d5_production_audit_successor_v1",
+        "previous_repository_invocation_count": 165,
+        "current_repository_invocation_count": 168,
+        "added_invocation_path": "scripts/phase26_ffi_isolated_read.sh",
+        "unchanged_other_fields": true,
+        "partial_extra_or_substituted_audit": "rejected"
+      },
+      "phase23_text_surface_successor": {
+        "contract_version": "phase26_1d5_phase23_text_surface_successor_v1",
+        "changed_rows": [
+          {
+            "path": ".github/workflows/pr-fast.yml",
+            "previous_digest": "2d73bf0bdb265fb3eaeadeddd62a9759ca956fbd73db83aa0eb9fc19ae2f4f25",
+            "current_digest": "dd03f94ef539047beef3b4e0537614489e418863b52bc0b6190a306466669f6e",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 8,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 8,
+              "generated_c_contract": 1
+            }
+          },
+          {
+            "path": "compiler/experiments/cranelift/src/full_program.rs",
+            "previous_digest": "aa9d7529ba99ad126f5c8e3d6518a333fe7742ea8de47ee5ea749bcb85dcab51",
+            "current_digest": "2eaf3d909014619874568d3c03f4942bfcf5b7836bb886b47f941938a300ebac",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            }
+          },
+          {
+            "path": "compiler/mir_native_backend_full_program_source.gst",
+            "previous_digest": "78c58a0955367ce5e608bcb58b94329e3324832aba003e5c8eee5360dbaad3ae",
+            "current_digest": "4b6745185d85667abf5a3deb703fd232f084aa4dbecfb905464b32889af47dc8",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            }
+          },
+          {
+            "path": "compiler/typechecker.gst",
+            "previous_digest": "4d5e20c00652f874937d99843da548245c1a317e57dcb58599af31a19f552245",
+            "current_digest": "23d3086171f3281c459f3a3169b369576ceed695f278fc93df0595a719c3b31a",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            }
+          },
+          {
+            "path": "justfile",
+            "previous_digest": "faed9ee709ecb4eda46a20382f4c6852a11fd4c3156a6f434a499896db141312",
+            "current_digest": "f36a8707dcdd14e5ce903384556a31322c85c303cb93ddd90a97f67644995c1e",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 729,
+              "generated_c_contract": 9
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 729,
+              "generated_c_contract": 9
+            }
+          },
+          {
+            "path": "scripts/cranelift_test_levels.json",
+            "previous_digest": "cbdd3777caa31caa8113769d7db7de75cbf283a69c8bfd76fede79cffad42d0c",
+            "current_digest": "f2f69e4f4a1e1fbee7ff269e4667f1ead04ad75fcf36bc33e951647bcd1e4857",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 30,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 30,
+              "generated_c_contract": 0
+            }
+          },
+          {
+            "path": "scripts/phase22_opening.py",
+            "previous_digest": "af73c29c230c1cac0ca356eff84714df0b3a92ce8884f036b16f417bf222d9f8",
+            "current_digest": "73246da9b6ed5fc50740770397d7a1cec907106376de44ce08a169ece19fa5b7",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 5,
+              "mir_to_c_name": 23,
+              "generated_c_contract": 12
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 5,
+              "mir_to_c_name": 23,
+              "generated_c_contract": 12
+            }
+          },
+          {
+            "path": "scripts/phase26_ffi_raw_return_registration.py",
+            "previous_digest": "093e093d8ba7cd4792064697db49ee4215da52f4df5ba7313c9df361d96f16ab",
+            "current_digest": "371475163d7be015fe09613df163bff412d225a287130408a7938ea509874ba0",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            }
+          },
+          {
+            "path": "scripts/phase26_ffi_repr_c_registration.py",
+            "previous_digest": "171f565735f68e4f7175a42b4f7af0b266b673042c005cc14eb24586fee6306d",
+            "current_digest": "dd3547e20693c5d5776c2547e929c7c90670fa5713875b991e8390a96f33572a",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            }
+          },
+          {
+            "path": "scripts/phase26_ffi_repr_c_write_registration.py",
+            "previous_digest": "11e30449617e8d01492481ab6e55739439ec9ea82a7fb21acb9ec52c5aa6c4e7",
+            "current_digest": "68787b81fc5b475194dc7c1ac7e5c717aad72390ee11b84e45a1756188ccd553",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            }
+          },
+          {
+            "path": "scripts/phase26_raw_cast_provenance_registration.py",
+            "previous_digest": "5464fc5bab3567606c0ad1dfe68a8f4c8846475776dfd728408a7b7667853b78",
+            "current_digest": "0e079cfc5d30b16ed533022fae51696faf187bb8ddf6602a355a58c8904d60e5",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            }
+          },
+          {
+            "path": "scripts/phase26_reference_receiver_registration.py",
+            "previous_digest": "3b4c42d84e6e3e534809b645713b476bd1f3a6c93356e41db74fc3b4d3ce1b15",
+            "current_digest": "ea92afa68a17ab6ea7426fe85000faeac91bca921dd7efb320e28af0b59d0dee",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 5,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 5,
+              "generated_c_contract": 1
+            }
+          }
+        ],
+        "added_rows": [],
+        "partial_extra_or_substituted_surface": "rejected"
+      },
+      "spelling_inventory_successor": {
+        "contract_version": "phase26_1d5_spelling_inventory_successor_v1",
+        "previous_inventory_summary": {
+          "source_file_count": 1130,
+          "site_count": 1392,
+          "semantic_site_count": 683,
+          "semantic_manifest_digest": "f172ec97370a5f2455eb825fdf1e1ec1671c292572514911d8482b2565bc33fb",
+          "classification_counts": {
+            "semantic_or_intrinsic_recognition": 683,
+            "diagnostic": 10,
+            "serialization": 1,
+            "mangling_or_generated_name": 9,
+            "comment": 2,
+            "fixture_or_evidence": 679,
+            "non_decision_comparison": 8
+          },
+          "partition_manifest_digests": {
+            "diagnostic": "4f8b9d216839981e048dc1d951b2503ff4acfd025e717720c5b74213b12fed6d",
+            "serialization": "a889ed384ae506f10b80c84fc00b91863328192597070abee5ec4324e92aef70",
+            "mangling_or_generated_name": "b1457e2d9a08b6753ddbadf0ceb43faa17851ef8e966d7842e448cabd8dd55e8",
+            "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+            "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+            "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
+          },
+          "complete_manifest_digest": "271ceb68f4e8528055e8de43ccd10ab5025956278603d0e04e6d46f95aefa683",
+          "unknown_site_count": 0
+        },
+        "current_inventory_summary": {
+          "source_file_count": 1140,
+          "site_count": 1395,
+          "semantic_site_count": 686,
+          "semantic_manifest_digest": "aa81af6e4c1e83354bda455f5236d2f9fa36efed10d34bf9e696de6ae635f21c",
+          "classification_counts": {
+            "semantic_or_intrinsic_recognition": 686,
+            "diagnostic": 10,
+            "serialization": 1,
+            "mangling_or_generated_name": 9,
+            "comment": 2,
+            "fixture_or_evidence": 679,
+            "non_decision_comparison": 8
+          },
+          "partition_manifest_digests": {
+            "diagnostic": "6aaf2dc91c3f60f66b8bfa73be034f353245503b8442e673ab7d4067e54551d1",
+            "serialization": "a889ed384ae506f10b80c84fc00b91863328192597070abee5ec4324e92aef70",
+            "mangling_or_generated_name": "75aaa9f2f95728dc1d997d8fecffc47b0ed4b3f7a1e80c59093f9bdd9bde018d",
+            "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+            "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+            "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
+          },
+          "complete_manifest_digest": "ffca0a3b12cb4afbeb90a17335f47f2e7094c23820db6ed3a1d9f1972a3cd1ab",
+          "unknown_site_count": 0
+        },
+        "changed_source_paths": [
+          "compiler/experiments/cranelift/src/full_program.rs",
+          "compiler/mir_native_backend_full_program_source.gst",
+          "compiler/mir_native_backend_module_import_source.gst",
+          "compiler/parser.gst",
+          "compiler/phase26_ffi_isolated_enum_source.gst",
+          "compiler/phase26_ffi_isolated_missing_repr_source.gst",
+          "compiler/phase26_ffi_isolated_nested_source.gst",
+          "compiler/phase26_ffi_isolated_nonaggregate_source.gst",
+          "compiler/phase26_ffi_isolated_nonreference_source.gst",
+          "compiler/phase26_ffi_isolated_order_source.gst",
+          "compiler/phase26_ffi_isolated_packed_source.gst",
+          "compiler/phase26_ffi_isolated_read_source.gst",
+          "compiler/phase26_ffi_isolated_unknown_host_source.gst",
+          "compiler/phase26_ffi_isolated_write_host_source.gst",
+          "compiler/typechecker.gst"
+        ],
+        "partial_extra_or_substituted_inventory": "rejected"
+      }
+    },
     "raw_cast_provenance_increment": {
       "contract_version": "phase26_1e1_raw_cast_provenance_v1",
       "status": "raw_pointer_cast_safe_brand_laundering_rejected",
