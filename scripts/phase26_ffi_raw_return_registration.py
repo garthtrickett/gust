@@ -7,6 +7,8 @@ import hashlib
 import json
 from pathlib import Path
 
+from phase26_raw_null_safe_boundary_registration import project_live_digest_to_pre_e4
+
 
 ROOT = Path(__file__).resolve().parent.parent
 GUARD = "guard-cranelift-phase26-ffi-raw-return"
@@ -182,7 +184,7 @@ def main() -> None:
                 (e3_successor is None or e3_successor["previous_digest"] ==
                  (e2_successor["current_digest"] if e2_successor else
                   latest_before_e2)) and
-                digest(row["path"]) == (e3_successor["current_digest"] if
+                project_live_digest_to_pre_e4(registry, row["path"], digest(row["path"])) == (e3_successor["current_digest"] if
                                         e3_successor else
                                         e2_successor["current_digest"] if
                                         e2_successor else latest_before_e2) and
@@ -202,7 +204,7 @@ def main() -> None:
     added_before_e2 = (d6_added["current_digest"] if d6_added else
                        d5_added["current_digest"] if d5_added else
                        e1_added_digest)
-    require(digest(added[0]["path"]) ==
+    require(project_live_digest_to_pre_e4(registry, added[0]["path"], digest(added[0]["path"])) ==
             (e3_added["current_digest"] if e3_added else
              e2_added["current_digest"] if e2_added else added_before_e2) and
             (e3_added is None or e3_added["previous_digest"] ==

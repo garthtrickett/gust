@@ -7,6 +7,8 @@ import hashlib
 import json
 from pathlib import Path
 
+from phase26_raw_null_safe_boundary_registration import project_live_digest_to_pre_e4
+
 
 ROOT = Path(__file__).resolve().parent.parent
 GUARD = "guard-cranelift-phase26-ffi-repr-c-layout"
@@ -126,7 +128,8 @@ def main() -> None:
             "scripts/phase26_ffi_repr_c_registration.py",
             "Phase23 text surface successor drifted")
     for row in changed:
-        live_digest = hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest()
+        live_digest = project_live_digest_to_pre_e4(
+            registry, row["path"], hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest())
         successor = d3_changed.get(row["path"])
         latest = d4_changed.get(row["path"])
         e1 = e1_changed.get(row["path"])
@@ -171,8 +174,8 @@ def main() -> None:
     added_before_e2 = (added_d6["current_digest"] if added_d6 else
                        added_d5["current_digest"] if added_d5 else
                        e1_added_digest)
-    require(hashlib.sha256(
-                (ROOT / added["path"]).read_bytes()).hexdigest() ==
+    require(project_live_digest_to_pre_e4(registry, added["path"], hashlib.sha256(
+                (ROOT / added["path"]).read_bytes()).hexdigest()) ==
             (added_e3["current_digest"] if added_e3 else
              added_e2["current_digest"] if added_e2 else added_before_e2) and
             (added_e3 is None or added_e3["previous_digest"] ==

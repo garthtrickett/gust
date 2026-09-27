@@ -828,6 +828,9 @@ jobs:
       - name: Phase 26 safe-call Reference provenance
         run: just guard-cranelift-phase26-safe-reference-call
 
+      - name: Phase 26 raw null safe boundary
+        run: just guard-cranelift-phase26-raw-null-safe-boundary
+
   final:
     name: final diff check
     runs-on: ubuntu-latest

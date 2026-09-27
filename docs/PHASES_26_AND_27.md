@@ -217,6 +217,15 @@ be, not about how absence is spelled — so it travels with 26.1's staging rathe
 than with Phase 26.4. It was previously written as the third clause of 27.2,
 which conflated the two.
 
+**26.1E4 bounded increment.** A direct zero-to-raw-pointer cast carries a
+conservative may-null origin through canonical typechecking. Declared-safe,
+non-extern raw-pointer returns and arguments reject that origin before native
+driver discovery, even when the cast occurs in a lexical `unsafe` block. This
+increment preserves nonzero and unknown raw pointers, explicitly unsafe callees,
+and the bare `null` Index sentinel. It does not establish general raw-pointer
+nullability; unknown pointer values and computed zero addresses require a
+separate nullability model before the full raw-null obligation can close.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

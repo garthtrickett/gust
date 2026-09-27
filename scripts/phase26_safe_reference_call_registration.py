@@ -91,19 +91,23 @@ def main() -> None:
     filename = record["filename_site_successor"]
     previous = activation["reference_return_escape_increment"]["filename_site_successor"]["current_sites"]
     current = source_sites()
+    e4 = activation.get("raw_null_safe_boundary_increment", {})
+    e4_filename = e4.get("filename_site_successor")
+    e3_current = (current if e4_filename is None else
+                  e4_filename.get("previous_sites"))
     deltas = filename.get("line_deltas")
     require(filename.get("contract_version") ==
             "phase26_1e3_filename_site_successor_v1" and
             filename.get("previous_sites") == previous and
-            filename.get("current_sites") == current and
+            filename.get("current_sites") == e3_current and
             isinstance(deltas, list) and len(deltas) == 3 and
             all(isinstance(delta, int) and delta > 0 for delta in deltas) and
             filename.get("partial_extra_or_substituted_site") == "rejected" and
-            len(previous) == len(current) == 3 and
+            len(previous) == len(e3_current) == 3 and
             all(now["line"] == before["line"] + delta and
                 {k: v for k, v in now.items() if k != "line"} ==
                 {k: v for k, v in before.items() if k != "line"}
-                for before, now, delta in zip(previous, current, deltas)),
+                for before, now, delta in zip(previous, e3_current, deltas)),
             "filename-selected sites changed beyond E3 line shift")
 
     from phase24_semantic_spelling_inventory import source_sites as spelling_sites, manifest_summary
@@ -114,7 +118,8 @@ def main() -> None:
                 "reference_return_escape_increment"]["spelling_inventory_successor"][
                     "current_inventory_summary"] and
             spelling.get("current_inventory_summary") ==
-            manifest_summary(spelling_sites()) and
+            (manifest_summary(spelling_sites()) if not e4 else
+             e4["spelling_inventory_successor"]["previous_inventory_summary"]) and
             spelling.get("partial_extra_or_substituted_inventory") ==
             "rejected", "spelling inventory successor drifted")
 
