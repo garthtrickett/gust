@@ -984,6 +984,7 @@ type TypeEnvironment[ctx] struct {
     expected_return_type: Index[ast.Type[ctx], ctx],
     current_function_return_origins: Index[OriginSet[ctx], ctx],
     current_function_return_provenance: ExpressionProvenance[ctx],
+    current_function_is_unsafe: int,
     current_function_inout_params: Index[std.Vector[str, ctx], ctx],
     current_function_local_vars: Index[OriginSet[ctx], ctx],
     checked_results: std.HashMap[str, int, ctx],
@@ -1705,6 +1706,22 @@ func phase26_safe_call_unbranded_reference_arg_escapes(sig: FunctionSignature[ct
 func env_report_phase26_safe_call_reference_escape(env: *TypeEnvironment[ctx], sig: FunctionSignature[ctx], target_t: ast.Type[ctx], prov: ExpressionProvenance[ctx], span: token.Span, ctx: &Arena) {
     if phase26_safe_call_unbranded_reference_arg_escapes(sig, target_t, prov, ctx) == 1 {
         report_error(2, "Semantic Error: [UnsafeReferenceEscape] Raw-derived or isolated-origin Reference cannot cross a safe function call", span, env, ctx);
+    }
+}
+
+// A direct zero-to-raw cast is a known source of a nullable raw address.
+// Legacy origins preserve this conservative may-null fact through bindings,
+// joins, and return/call provenance without changing pointer representation.
+func phase26_raw_null_reaches_safe_boundary(target_t: ast.Type[ctx], prov: ExpressionProvenance[ctx], ctx: &Arena) int {
+    if target_t.tag != 9 { return 0; } // RawPointer
+    if prov.legacy_origins == empty[Index[OriginSet[ctx], ctx]] { return 0; }
+    return set_contains(prov.legacy_origins, "phase26.raw_null_zero_cast", ctx);
+}
+
+func env_report_phase26_raw_null_safe_boundary(env: *TypeEnvironment[ctx], target_t: ast.Type[ctx], prov: ExpressionProvenance[ctx], span: token.Span, boundary: str, ctx: &Arena) {
+    if phase26_raw_null_reaches_safe_boundary(target_t, prov, ctx) == 1 {
+        mut msg := std.Concat("Semantic Error: [RawNullSafeBoundary] Known zero-derived raw pointer cannot cross a declared-safe ", boundary);
+        report_error(2, msg, span, env, ctx);
     }
 }
 
@@ -5228,6 +5245,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     } else if has_custom_sig == 0 {
                         mut resolved_expected_call_ref_e3 := env_resolve_type(env, expected_type, ctx);
                         env_report_phase26_safe_call_reference_escape(env, sig, resolved_expected_call_ref_e3, arg_prov_check_call_nlaunder, arg_span_call_nlaunder, ctx);
+                        if sig.is_unsafe == 0 && sig.requires_unsafe_call == 0 && sig.is_extern == 0 {
+                            env_report_phase26_raw_null_safe_boundary(env, resolved_expected_call_ref_e3, arg_prov_check_call_nlaunder, arg_span_call_nlaunder, "function argument", ctx);
+                        }
                     }
                     k = k + 1;
                 }
@@ -5541,6 +5561,10 @@ func check_expression_with_provenance(expr_idx: Index[ast.Expression[ctx], ctx],
                     cast_raw_prov.legacy_origins = typechecker_clone_origin_set(cast_left_prov.legacy_origins, ctx);
                     set_union(cast_raw_prov.legacy_origins, legacy_origins, ctx);
                     set_add(cast_raw_prov.legacy_origins, "as_cast", ctx);
+                    mut raw_cast_source := ctx[expr.AsCast.left];
+                    if raw_cast_source.tag == 1 && raw_cast_source.Integer.val == 0 {
+                        set_add(cast_raw_prov.legacy_origins, "phase26.raw_null_zero_cast", ctx);
+                    }
                     return cast_raw_prov;
                 }
                 if expression_provenance_allows_safe_branding(cast_left_prov) == 1 {
@@ -8370,6 +8394,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.expected_return_type = empty[Index[ast.Type[ctx], ctx]];
         env_ref_new.current_function_return_origins = empty[Index[OriginSet[ctx], ctx]];
         env_ref_new.current_function_return_provenance = expression_provenance_void_unknown(ctx);
+        env_ref_new.current_function_is_unsafe = 0;
         env_ref_new.current_function_inout_params = empty[Index[std.Vector[str, ctx], ctx]];
         env_ref_new.current_function_local_vars = empty[Index[OriginSet[ctx], ctx]];
         env_ref_new.checked_results = std.HashMapNew(ctx);
@@ -13773,6 +13798,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut old_expected := (*env).expected_return_type;
             mut old_return_origins := (*env).current_function_return_origins;
             mut old_return_provenance := (*env).current_function_return_provenance;
+            mut old_function_is_unsafe := (*env).current_function_is_unsafe;
             mut old_inout_params := (*env).current_function_inout_params;
             mut old_local_vars := (*env).current_function_local_vars;
             mut old_in_unsafe_func_body := (*env).in_unsafe_block;
@@ -13785,6 +13811,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).expected_return_type = resolved_ret_idx;
             (*env).current_function_return_origins = set_init(ctx);
             (*env).current_function_return_provenance = expression_provenance_unknown(ctx[resolved_ret_idx], ctx);
+            (*env).current_function_is_unsafe = stmt.FunctionDecl.is_unsafe;
             
             mut inout_params_idx: Index[std.Vector[str, ctx], ctx] := os.ArenaAlloc(ctx);
             ctx.Set(inout_params_idx, inout_params);
@@ -13874,6 +13901,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).expected_return_type = old_expected;
             (*env).current_function_return_origins = old_return_origins;
             (*env).current_function_return_provenance = old_return_provenance;
+            (*env).current_function_is_unsafe = old_function_is_unsafe;
             (*env).current_function_inout_params = old_inout_params;
             (*env).current_function_local_vars = old_local_vars;
             (*env).in_unsafe_block = old_in_unsafe_func_body;
@@ -15165,6 +15193,9 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     if env_types_match_at_brand_boundary(env, expected_t, actual_return, ctx) == 1 {
                         mut resolved_return_target_e2 := env_resolve_type(env, expected_t, ctx);
                         env_report_phase26_unbranded_reference_return_escape(env, resolved_return_target_e2, return_prov_for_enforcement, return_nlaunder_span, ctx);
+                        if (*env).current_function_is_unsafe == 0 {
+                            env_report_phase26_raw_null_safe_boundary(env, resolved_return_target_e2, return_prov_for_enforcement, return_nlaunder_span, "function return", ctx);
+                        }
                     }
                     env_report_resource_root_escape(
                         env, return_prov_for_enforcement, return_nlaunder_span,

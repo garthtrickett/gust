@@ -81,6 +81,7 @@ def surface(path: str, role: str, markers: tuple[str, ...]) -> dict[str, object]
 
 def project_reference_receiver_production_audit(registry: dict, live: dict) -> dict:
     """Project one registered native guard invocation off the closed audit."""
+    live = project_phase26_raw_null_production_audit(registry, live)
     live = project_phase26_safe_reference_call_production_audit(registry, live)
     live = project_phase26_reference_return_escape_production_audit(registry, live)
     live = project_phase26_isolated_write_production_audit(registry, live)
@@ -112,6 +113,32 @@ def project_reference_receiver_production_audit(registry: dict, live: dict) -> d
             "Phase 26 reference receiver production audit successor drifted")
     previous = dict(live)
     previous["repository_invocation_count"] = 150
+    return previous
+
+
+def project_phase26_raw_null_production_audit(
+        registry: dict, live: dict) -> dict:
+    increment = registry.get("phase26_activation_audit", {}).get(
+        "raw_null_safe_boundary_increment", {})
+    successor = increment.get("production_audit_successor")
+    if successor is None:
+        return live
+    rows = increment.get("phase22_invocation_successor", {}).get(
+        "added_rows", [])
+    require(successor == {
+        "contract_version": "phase26_1e4_production_audit_successor_v1",
+        "previous_repository_invocation_count": 177,
+        "current_repository_invocation_count": 179,
+        "added_invocation_path": "scripts/phase26_raw_null_safe_boundary.sh",
+        "unchanged_other_fields": True,
+        "partial_extra_or_substituted_audit": "rejected",
+    } and len(rows) == 2 and
+            all(row.get("path") == successor["added_invocation_path"] and
+                row.get("selection") == "explicit_cranelift" for row in rows) and
+            live["repository_invocation_count"] == 179,
+            "Phase 26.1E4 production audit successor drifted")
+    previous = dict(live)
+    previous["repository_invocation_count"] = 177
     return previous
 
 

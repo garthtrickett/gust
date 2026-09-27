@@ -7,6 +7,8 @@ import hashlib
 import json
 from pathlib import Path
 
+from phase26_raw_null_safe_boundary_registration import project_live_digest_to_pre_e4
+
 ROOT = Path(__file__).resolve().parent.parent
 GUARD = "guard-cranelift-phase26-raw-cast-provenance"
 SCRIPT = "scripts/phase26_raw_cast_provenance.sh"
@@ -158,7 +160,7 @@ def main() -> None:
                 (e2_row is None or e2_row["previous_digest"] == latest_before_e2) and
                 (e3_row is None or e3_row["previous_digest"] ==
                  (e2_row["current_digest"] if e2_row else latest_before_e2)) and
-                digest(row["path"]) ==
+                project_live_digest_to_pre_e4(registry, row["path"], digest(row["path"])) ==
                 (e3_row["current_digest"] if e3_row else
                  e2_row["current_digest"] if e2_row else latest_before_e2),
                 f"text surface predecessor/current digest drifted: {row['path']}")
@@ -177,7 +179,7 @@ def main() -> None:
              added_e2["previous_digest"] == added_before_e2) and
             (added_e3 is None or added_e3["previous_digest"] ==
              (added_e2["current_digest"] if added_e2 else added_before_e2)) and
-            digest(added[0]["path"]) ==
+            project_live_digest_to_pre_e4(registry, added[0]["path"], digest(added[0]["path"])) ==
             (added_e3["current_digest"] if added_e3 else
              added_e2["current_digest"] if added_e2 else added_before_e2),
             "added registration text surface drifted")

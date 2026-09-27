@@ -1086,7 +1086,41 @@ def effective_phase22_summary(registry: dict, value: dict) -> dict:
             _phase26_ffi_position_invocation_successor(registry,
                 _phase26_reference_receiver_invocation_successor(
                     registry, _issue398_summary_successor(registry, current))))))))))
-    return _phase26_safe_reference_call_invocation_successor(registry, previous)
+    return _phase26_raw_null_invocation_successor(registry,
+        _phase26_safe_reference_call_invocation_successor(registry, previous))
+
+
+def _phase26_raw_null_invocation_successor(registry: dict,
+        previous: dict) -> dict:
+    successor = registry.get("phase26_activation_audit", {}).get(
+        "raw_null_safe_boundary_increment", {}).get("phase22_invocation_successor")
+    if successor is None:
+        return previous
+    rows = successor.get("added_rows")
+    require(successor.get("contract_version") ==
+            "phase26_1e4_phase22_invocation_successor_v1" and
+            successor.get("previous_total") == previous["total"] == 177 and
+            successor.get("current_total") == 179 and
+            successor.get("partial_extra_or_substituted_invocation") ==
+            "rejected" and isinstance(rows, list) and len(rows) == 2 and
+            all(row.get("path") == "scripts/phase26_raw_null_safe_boundary.sh" and
+                row.get("selection") == "explicit_cranelift" and
+                row.get("consumer_class") ==
+                "already_explicit_or_parser_probe" and
+                row.get("owner") == "cranelift" for row in rows),
+            "Phase 26.1E4 invocation successor drifted")
+    current = copy.deepcopy(previous)
+    current["total"] += len(rows)
+    for row in rows:
+        for key, label in (("selection_counts", "selection"),
+                           ("consumer_class_counts", "consumer_class"),
+                           ("owner_counts", "owner")):
+            group = str(row[label])
+            current[key][group] = current[key].get(group, 0) + 1
+    require(current["total"] == successor["current_total"] and
+            current["unclassified_count"] == 0,
+            "Phase 26.1E4 invocation census did not balance")
+    return current
 
 
 def _phase26_safe_reference_call_invocation_successor(registry: dict,
@@ -2650,6 +2684,37 @@ def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    e4 = registry.get("phase26_activation_audit", {}).get(
+        "raw_null_safe_boundary_increment", {}).get("phase23_text_surface_successor")
+    if e4 is not None:
+        changed = e4.get("changed_rows")
+        added = e4.get("added_rows")
+        require(e4.get("contract_version") ==
+                "phase26_1e4_phase23_text_surface_successor_v1" and
+                e4.get("partial_extra_or_substituted_surface") ==
+                "rejected" and isinstance(changed, list) and
+                isinstance(added, list) and
+                len({entry.get("path") for entry in changed}) == len(changed) and
+                len({entry.get("path") for entry in added}) == len(added),
+                "Phase 26.1E4 text surface successor shape drifted")
+        live = {row["path"]: row for row in rows}
+        for entry in changed:
+            row = live.get(entry["path"])
+            require(row is not None and
+                    row["digest"] == entry["current_digest"] and
+                    row["match_counts"] == entry["current_match_counts"] and
+                    len(entry["previous_digest"]) == 64,
+                    f"Phase 26.1E4 text surface drifted: {entry['path']}")
+        for entry in added:
+            require(live.get(entry["path"]) == entry,
+                    f"Phase 26.1E4 added text surface drifted: {entry['path']}")
+        rows = [dict(row,
+                     digest=next((entry["previous_digest"] for entry in changed
+                                  if entry["path"] == row["path"]), row["digest"]),
+                     match_counts=next((entry["previous_match_counts"] for entry in changed
+                                        if entry["path"] == row["path"]), row["match_counts"]))
+                for row in rows if row["path"] not in
+                {entry["path"] for entry in added}]
     e3 = registry.get("phase26_activation_audit", {}).get(
         "safe_reference_call_increment", {}).get("phase23_text_surface_successor")
     if e3 is not None:

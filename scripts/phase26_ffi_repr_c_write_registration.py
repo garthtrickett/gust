@@ -7,6 +7,8 @@ import hashlib
 import json
 from pathlib import Path
 
+from phase26_raw_null_safe_boundary_registration import project_live_digest_to_pre_e4
+
 
 ROOT = Path(__file__).resolve().parent.parent
 GUARD = "guard-cranelift-phase26-ffi-repr-c-write"
@@ -131,7 +133,7 @@ def main() -> None:
                 (predecessor is None or
                  row["previous_digest"] == predecessor["current_digest"]),
                 f"text surface predecessor drifted: {row['path']}")
-        require(hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest()
+        require(project_live_digest_to_pre_e4(registry, row["path"], hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest())
                 == (e3["current_digest"] if e3 else
                     e2["current_digest"] if e2 else before_e2) and
                 (e3 is None or e3["previous_digest"] ==
@@ -155,7 +157,7 @@ def main() -> None:
         e1_digest = latest["current_digest"] if latest else d4_digest
         before_e2 = (d6["current_digest"] if d6 else
                      d5["current_digest"] if d5 else e1_digest)
-        require(hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest()
+        require(project_live_digest_to_pre_e4(registry, row["path"], hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest())
                 == (e3["current_digest"] if e3 else
                     e2["current_digest"] if e2 else before_e2) and
                 (e3 is None or e3["previous_digest"] ==

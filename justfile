@@ -24279,3 +24279,11 @@ guard-cranelift-phase26-safe-reference-call:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-safe-reference-call | grep -F $'guard-cranelift-phase26-safe-reference-call\t2\t' >/dev/null
     python3 scripts/phase26_safe_reference_call_registration.py
     bash scripts/phase26_safe_reference_call.sh
+
+# Phase 26.1E4: known zero-derived raw pointers cannot cross declared-safe boundaries.
+guard-cranelift-phase26-raw-null-safe-boundary:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-raw-null-safe-boundary | grep -F $'guard-cranelift-phase26-raw-null-safe-boundary\t2\t' >/dev/null
+    python3 scripts/phase26_raw_null_safe_boundary_registration.py
+    bash scripts/phase26_raw_null_safe_boundary.sh
