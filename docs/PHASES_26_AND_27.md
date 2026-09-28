@@ -306,6 +306,18 @@ for nested selectors remains deferred; a native-executed typechecker harness
 provides the positive evidence. This does not close general nullability or
 Phase 26.1.
 
+**26.1E arithmetic zero subset (ownership authorized 2026-09-28).** The
+existing four-state value evidence now follows only already-typechecked
+integer/byte subtraction and multiplication. Explicit transfer tables carry
+provable zero through `0 - 0` and any zero multiplication factor, and retain
+MayZero where an input has a known zero path. Unknown and unproven values keep
+their existing behavior; no general constant evaluator or operator change is
+introduced. A Zero or MayZero raw pointer rejects at a declared-safe
+non-extern argument or return boundary before native planning, including
+when the cast is inside `unsafe`. Nonzero values and explicitly unsafe callees
+retain their prior acceptance. Physical ABI, MIR, runtime, and layout are
+unchanged. General nullability and Phase 26.1 remain open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

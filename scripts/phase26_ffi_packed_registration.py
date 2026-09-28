@@ -24,6 +24,18 @@ def require(value: bool, message: str) -> None:
 
 def project_live_digest_to_pre_packed(registry: dict, path: str,
                                       live_digest: str) -> str:
+    arithmetic_rows = registry.get("phase26_activation_audit", {}).get(
+        "arithmetic_zero_evidence_increment", {}).get(
+            "phase23_text_surface_successor", {}).get("changed_rows", [])
+    arithmetic_selected = [row for row in arithmetic_rows if row.get("path") == path]
+    require(len(arithmetic_selected) <= 1,
+            f"duplicate arithmetic zero text surface: {path}")
+    if arithmetic_selected:
+        row = arithmetic_selected[0]
+        require(row["current_digest"] == live_digest and
+                len(row["previous_digest"]) == 64,
+                f"arithmetic zero text surface drifted: {path}")
+        live_digest = row["previous_digest"]
     nested_rows = registry.get("phase26_activation_audit", {}).get(
         "nested_field_zero_evidence_increment", {}).get(
             "phase23_text_surface_successor", {}).get("changed_rows", [])

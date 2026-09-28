@@ -247,6 +247,9 @@ def validate_static(value: dict) -> None:
                 nested_zero_sites = registry.get("phase26_activation_audit", {}).get(
                     "nested_field_zero_evidence_increment", {}).get(
                         "filename_site_successor")
+                arithmetic_zero_sites = registry.get("phase26_activation_audit", {}).get(
+                    "arithmetic_zero_evidence_increment", {}).get(
+                        "filename_site_successor")
                 e1_current = (live_sites if d5_sites is None else
                               d5_sites.get("previous_sites"))
                 require(e1_sites.get("contract_version") ==
@@ -434,7 +437,9 @@ def validate_static(value: dict) -> None:
                             nested_zero_sites.get("contract_version") ==
                             "phase26_1e_nested_field_zero_filename_site_successor_v1" and
                             nested_zero_sites.get("previous_sites") == previous_nested and
-                            nested_zero_sites.get("current_sites") == live_sites and
+                            nested_zero_sites.get("current_sites") ==
+                            (live_sites if arithmetic_zero_sites is None else
+                             arithmetic_zero_sites.get("previous_sites")) and
                             isinstance(deltas_nested, list) and
                             len(deltas_nested) == len(live_sites) == 3 and
                             all(isinstance(delta, int) and delta >= 0
@@ -445,8 +450,29 @@ def validate_static(value: dict) -> None:
                                 {key: val for key, val in now.items() if key != "line"} ==
                                 {key: val for key, val in before.items() if key != "line"}
                                 for before, now, delta in zip(previous_nested,
-                                    live_sites, deltas_nested)),
+                                    nested_zero_sites.get("current_sites"), deltas_nested)),
                             "Phase 26 nested field-zero filename sites changed beyond nested-field evidence shift")
+                if arithmetic_zero_sites is not None:
+                    previous_arithmetic = nested_zero_sites["current_sites"]
+                    deltas_arithmetic = arithmetic_zero_sites.get("line_deltas")
+                    require(nested_zero_sites is not None and
+                            arithmetic_zero_sites.get("contract_version") ==
+                            "phase26_1e_arithmetic_zero_filename_site_successor_v1" and
+                            arithmetic_zero_sites.get("previous_sites") ==
+                            previous_arithmetic and
+                            arithmetic_zero_sites.get("current_sites") == live_sites and
+                            isinstance(deltas_arithmetic, list) and
+                            len(deltas_arithmetic) == len(live_sites) == 3 and
+                            all(isinstance(delta, int) and delta >= 0
+                                for delta in deltas_arithmetic) and
+                            arithmetic_zero_sites.get("partial_extra_or_substituted_site") ==
+                            "rejected" and
+                            all(now["line"] == before["line"] + delta and
+                                {key: val for key, val in now.items() if key != "line"} ==
+                                {key: val for key, val in before.items() if key != "line"}
+                                for before, now, delta in zip(previous_arithmetic,
+                                    live_sites, deltas_arithmetic)),
+                            "Phase 26 arithmetic zero filename sites changed beyond arithmetic evidence shift")
     require([row["selector"] for row in value["site_manifest"]] ==
             ["test_tcs_", "test_index_", "test_tcs_"],
             "selector order or completeness drifted")

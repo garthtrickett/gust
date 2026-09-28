@@ -35,6 +35,19 @@ def main() -> None:
     nested_changed = {row["path"]: row for row in activation.get(
         "nested_field_zero_evidence_increment", {}).get(
             "phase23_text_surface_successor", {}).get("changed_rows", [])}
+    arithmetic_changed = {row["path"]: row for row in activation.get(
+        "arithmetic_zero_evidence_increment", {}).get(
+            "phase23_text_surface_successor", {}).get("changed_rows", [])}
+
+    def latest_digest(path: str, starting_digest: str) -> bool:
+        expected_digest = starting_digest
+        for successor in (nested_changed, arithmetic_changed):
+            later = successor.get(path)
+            if later is not None:
+                if later["previous_digest"] != expected_digest:
+                    return False
+                expected_digest = later["current_digest"]
+        return expected_digest == digest(path)
     expected = {
         "contract_version": "phase26_1e_local_field_zero_v1",
         "status": "bounded_local_field_zero_safe_boundary_rejection_qualified",
@@ -114,14 +127,11 @@ def main() -> None:
             len({row["path"] for row in surface.get("added_rows", [])}) ==
             len(surface.get("added_rows", [])), "text surface successor shape drifted")
     for row in surface["changed_rows"]:
-        later = nested_changed.get(row["path"])
-        require((row["current_digest"] == digest(row["path"]) if later is None else
-                 later["previous_digest"] == row["current_digest"] and
-                 later["current_digest"] == digest(row["path"])) and
+        require(latest_digest(row["path"], row["current_digest"]) and
                 len(row["previous_digest"]) == 64,
                 f"changed text surface drifted: {row['path']}")
     for row in surface["added_rows"]:
-        require(row["digest"] == digest(row["path"]),
+        require(latest_digest(row["path"], row["digest"]),
                 f"added text surface drifted: {row['path']}")
 
     justfile = (ROOT / "justfile").read_text(encoding="utf-8")

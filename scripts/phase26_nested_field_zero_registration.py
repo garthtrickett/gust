@@ -81,11 +81,14 @@ def main() -> None:
     }, "production audit successor drifted")
 
     from phase24_semantic_spelling_inventory import source_sites, manifest_summary
+    arithmetic = activation.get("arithmetic_zero_evidence_increment")
+    expected_spelling = (arithmetic["spelling_inventory_successor"]["previous_inventory_summary"]
+                         if arithmetic else manifest_summary(source_sites()))
     require(record["spelling_inventory_successor"] == {
         "contract_version": "phase26_1e_nested_field_zero_spelling_inventory_successor_v1",
         "previous_inventory_summary": activation["field_zero_evidence_increment"][
             "spelling_inventory_successor"]["current_inventory_summary"],
-        "current_inventory_summary": manifest_summary(source_sites()),
+        "current_inventory_summary": expected_spelling,
         "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
                                         *NEGATIVES, DEFERRED]),
         "partial_extra_or_substituted_inventory": "rejected",
@@ -93,7 +96,8 @@ def main() -> None:
 
     from phase24_filename_behavior_characterization import source_sites as filename_sites
     previous = activation["field_zero_evidence_increment"]["filename_site_successor"]["current_sites"]
-    current = filename_sites()
+    current = (arithmetic["filename_site_successor"]["previous_sites"]
+               if arithmetic else filename_sites())
     require(record["filename_site_successor"] == {
         "contract_version": "phase26_1e_nested_field_zero_filename_site_successor_v1",
         "previous_sites": previous, "current_sites": current,
@@ -103,6 +107,8 @@ def main() -> None:
             "filename site successor drifted")
 
     surface = record["phase23_text_surface_successor"]
+    successor_changes = {row["path"]: row for row in arithmetic[
+        "phase23_text_surface_successor"]["changed_rows"]} if arithmetic else {}
     require(surface.get("contract_version") ==
             "phase26_1e_nested_field_zero_phase23_text_surface_successor_v1" and
             surface.get("partial_extra_or_substituted_surface") == "rejected" and
@@ -111,11 +117,13 @@ def main() -> None:
             len({row["path"] for row in surface.get("added_rows", [])}) ==
             len(surface.get("added_rows", [])), "text surface successor shape drifted")
     for row in surface["changed_rows"]:
-        require(row["current_digest"] == digest(row["path"]) and
+        require(row["current_digest"] == successor_changes.get(
+                    row["path"], {}).get("previous_digest", digest(row["path"])) and
                 len(row["previous_digest"]) == 64,
                 f"changed text surface drifted: {row['path']}")
     for row in surface["added_rows"]:
-        require(row["digest"] == digest(row["path"]),
+        require(row["digest"] == successor_changes.get(
+                    row["path"], {}).get("previous_digest", digest(row["path"])),
                 f"added text surface drifted: {row['path']}")
 
     justfile = (ROOT / "justfile").read_text(encoding="utf-8")

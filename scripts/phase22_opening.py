@@ -284,6 +284,21 @@ def scan_summary(rows: list[dict[str, object]]) -> dict[str, object]:
 def phase22_relay_inventory_rows(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep Phase 22's closed relay identity while validating exact successors."""
+    arithmetic_zero = registry.get("phase26_activation_audit", {}).get(
+        "arithmetic_zero_evidence_increment", {}).get("phase22_invocation_successor")
+    if arithmetic_zero is not None:
+        path = "scripts/phase26_arithmetic_zero_evidence.sh"
+        added = arithmetic_zero.get("added_rows")
+        require(isinstance(added, list) and len(added) == 2 and
+                arithmetic_zero.get("contract_version") ==
+                "phase26_1e_arithmetic_zero_phase22_invocation_successor_v1" and
+                arithmetic_zero.get("previous_total") == 195 and
+                arithmetic_zero.get("current_total") == 197 and
+                arithmetic_zero.get("partial_extra_or_substituted_invocation") ==
+                "rejected" and
+                [row for row in rows if row.get("path") == path] == added,
+                "Phase 26 arithmetic zero invocation rows drifted")
+        rows = [row for row in rows if row.get("path") != path]
     nested_zero = registry.get("phase26_activation_audit", {}).get(
         "nested_field_zero_evidence_increment", {}).get("phase22_invocation_successor")
     if nested_zero is not None:
