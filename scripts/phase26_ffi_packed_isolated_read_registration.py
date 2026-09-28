@@ -90,7 +90,10 @@ def main() -> None:
         "contract_version": "phase26_1d_packed_isolated_read_spelling_inventory_successor_v1",
         "previous_inventory_summary": activation["ffi_packed_write_increment"][
             "spelling_inventory_successor"]["current_inventory_summary"],
-        "current_inventory_summary": manifest_summary(source_sites()),
+        "current_inventory_summary": activation.get(
+            "ffi_packed_isolated_write_increment", {}).get(
+                "spelling_inventory_successor", {}).get(
+                    "previous_inventory_summary", manifest_summary(source_sites())),
         "changed_source_paths": sorted(FIXTURES),
         "partial_extra_or_substituted_inventory": "rejected",
     }, "spelling inventory successor drifted")
@@ -105,7 +108,12 @@ def main() -> None:
             len(surface.get("added_rows", [])),
             "text surface successor shape drifted")
     for row in surface["changed_rows"]:
-        require(row["current_digest"] == digest(row["path"]) and
+        later = {entry["path"]: entry for entry in activation.get(
+            "ffi_packed_isolated_write_increment", {}).get(
+                "phase23_text_surface_successor", {}).get("changed_rows", [])}.get(row["path"])
+        require((later is None or later["previous_digest"] == row["current_digest"]) and
+                (later["current_digest"] if later else row["current_digest"]) ==
+                digest(row["path"]) and
                 len(row["previous_digest"]) == 64,
                 f"changed text surface drifted: {row['path']}")
     for row in surface["added_rows"]:

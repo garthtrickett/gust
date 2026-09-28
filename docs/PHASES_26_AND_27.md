@@ -216,6 +216,17 @@ discovery. Packed isolated writes, by-value and enum positions, retained or
 returned pointers, callbacks, native errors, nonlocal-exit cleanup, and general
 packed layout remain outside this increment; Phase 26.1 remains open.
 
+**26.1D packed isolated-write successor (operator authorized, 2026-09-28).**
+An explicitly unsafe `borrow_write_isolated_call` may copy the same proven
+flat packed `FfiProbe` into a transient arena, call the approved test-only
+packed write host, copy exactly six bytes back, then free the arena on normal
+return. Native host stores and Gust field reads use bytewise unaligned access.
+The existing pointer ABI, host-object slot, and packaged runtime symbols are
+unchanged. Wrong host or policy, missing C representation, and nested fields
+fail before driver discovery. Nonlocal exits, by-value and enum positions,
+retained or returned pointers, callbacks, native errors, and general packed
+layout remain open; Phase 26.1 remains open.
+
 Use a transient isolated arena for memory handed to native code and destroy it
 on return. *Isolated* is deliberately narrower than *sandboxed*: this bounds
 memory lifetime and spread but cannot prevent native code from accessing process

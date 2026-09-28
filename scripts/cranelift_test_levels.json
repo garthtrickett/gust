@@ -22,6 +22,7 @@
     "guard-cranelift-phase26-ffi-packed-layout": 2,
     "guard-cranelift-phase26-ffi-packed-write": 2,
     "guard-cranelift-phase26-ffi-packed-isolated-read": 2,
+    "guard-cranelift-phase26-ffi-packed-isolated-write": 2,
     "guard-cranelift-phase26-ffi-repr-c-layout": 2,
     "guard-cranelift-phase26-ffi-repr-c-write": 2,
     "guard-cranelift-phase26-ffi-raw-return": 2,

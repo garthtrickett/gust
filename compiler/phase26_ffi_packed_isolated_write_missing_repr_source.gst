@@ -1,12 +1,11 @@
-#[repr(C)]
 #[packed]
 type FfiProbe struct { a: byte, b: int, c: byte }
-extern func tiny_host_read_packed_probe(value: *FfiProbe #[ffi(borrow_write_isolated_call)]);
+extern func tiny_host_write_packed_probe(value: *FfiProbe #[ffi(borrow_write_isolated_call)]);
 func main() int {
     mut value: FfiProbe;
     unsafe {
         mut pointer: *FfiProbe := &value as *FfiProbe;
-        tiny_host_read_packed_probe(pointer);
+        tiny_host_write_packed_probe(pointer);
     }
     return 0;
 }
