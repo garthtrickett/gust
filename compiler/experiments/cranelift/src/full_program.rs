@@ -4473,6 +4473,16 @@ pub fn selected_packed_probe_host(contents: &str) -> Result<bool, Box<dyn Error>
     )
 }
 
+pub fn selected_packed_write_host(contents: &str) -> Result<bool, Box<dyn Error>> {
+    selected_repr_c_probe_host_with_signature(
+        contents,
+        "tiny_host_write_packed_probe",
+        "RawPointer(Struct(\"FfiProbe\", None))",
+        "Void",
+        true,
+    )
+}
+
 pub fn selected_raw_untrusted_host(contents: &str) -> Result<bool, Box<dyn Error>> {
     let program = parse(contents)?;
     let selected: Vec<_> = program.functions.iter().filter(|function| {

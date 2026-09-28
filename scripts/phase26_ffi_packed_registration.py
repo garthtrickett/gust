@@ -24,6 +24,17 @@ def require(value: bool, message: str) -> None:
 
 def project_live_digest_to_pre_packed(registry: dict, path: str,
                                       live_digest: str) -> str:
+    write_rows = registry.get("phase26_activation_audit", {}).get(
+        "ffi_packed_write_increment", {}).get(
+            "phase23_text_surface_successor", {}).get("changed_rows", [])
+    write_selected = [row for row in write_rows if row.get("path") == path]
+    require(len(write_selected) <= 1, f"duplicate packed write text surface: {path}")
+    if write_selected:
+        row = write_selected[0]
+        require(row["current_digest"] == live_digest and
+                len(row["previous_digest"]) == 64,
+                f"packed write text surface drifted: {path}")
+        live_digest = row["previous_digest"]
     rows = registry.get("phase26_activation_audit", {}).get(
         "ffi_packed_layout_increment", {}).get(
             "phase23_text_surface_successor", {}).get("changed_rows", [])
@@ -97,12 +108,16 @@ def main() -> None:
 
     from phase24_semantic_spelling_inventory import source_sites, manifest_summary
     spelling = record["spelling_inventory_successor"]
+    write_spelling = activation.get("ffi_packed_write_increment", {}).get(
+        "spelling_inventory_successor")
     require(spelling.get("contract_version") ==
             "phase26_1d_packed_spelling_inventory_successor_v1" and
             spelling.get("previous_inventory_summary") ==
             activation["raw_null_safe_boundary_increment"][
                 "spelling_inventory_successor"]["current_inventory_summary"] and
-            spelling.get("current_inventory_summary") == manifest_summary(source_sites()) and
+            spelling.get("current_inventory_summary") ==
+            (manifest_summary(source_sites()) if write_spelling is None else
+             write_spelling.get("previous_inventory_summary")) and
             spelling.get("changed_source_paths") == sorted([
                 "compiler/typechecker.gst", *FIXTURES]) and
             spelling.get("partial_extra_or_substituted_inventory") == "rejected",

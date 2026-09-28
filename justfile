@@ -24295,3 +24295,11 @@ guard-cranelift-phase26-ffi-packed-layout:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-ffi-packed-layout | grep -F $'guard-cranelift-phase26-ffi-packed-layout\t2\t' >/dev/null
     python3 scripts/phase26_ffi_packed_registration.py
     bash scripts/phase26_ffi_packed_layout.sh
+
+# Phase 26.1D packed write successor: exact host writes an unaligned Int bytewise.
+guard-cranelift-phase26-ffi-packed-write:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-ffi-packed-write | grep -F $'guard-cranelift-phase26-ffi-packed-write\t2\t' >/dev/null
+    python3 scripts/phase26_ffi_packed_write_registration.py
+    bash scripts/phase26_ffi_packed_write.sh
