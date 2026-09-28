@@ -294,9 +294,12 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                                 mut host_symbol := statement.FunctionDecl.extern_symbol_name;
                                 if len(host_symbol) == 0 { host_symbol = statement.FunctionDecl.name; }
                                 if (packed == 1 &&
-                                    (resolved.tag != 11 ||
-                                     std.str_eq(host_symbol, "tiny_host_read_packed_probe") == 0 ||
-                                     std.str_eq(parameter.ffi_policy, "borrow_read_call") == 0)) ||
+                                    ((resolved.tag == 11 &&
+                                      (std.str_eq(host_symbol, "tiny_host_read_packed_probe") == 0 ||
+                                       std.str_eq(parameter.ffi_policy, "borrow_read_call") == 0)) ||
+                                     (resolved.tag == 9 &&
+                                      (std.str_eq(host_symbol, "tiny_host_write_packed_probe") == 0 ||
+                                       std.str_eq(parameter.ffi_policy, "borrow_write_call") == 0)))) ||
                                    (packed == 0 && resolved.tag == 11 && std.str_eq(host_symbol, "tiny_host_read_repr_c_probe") == 0) ||
                                    (packed == 0 && resolved.tag == 9 && std.str_eq(host_symbol, "tiny_host_write_repr_c_probe") == 0) {
                                     return "Native FFI borrowed aggregate host import is not approved";

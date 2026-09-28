@@ -195,6 +195,16 @@ representation, wrong order, nested fields, enum fields, by-value positions,
 unapproved hosts, and unsupported packed policies fail closed. General packed
 layout, enum representation, and the full 26.1 layout gate remain open.
 
+**26.1D packed write successor (operator authorized, 2026-09-28).** The same
+proven flat packed `FfiProbe` layout now admits an explicitly unsafe
+`borrow_write_call` raw pointer to one exact test-only host. The host stores
+the unaligned `Int` bytewise; Gust observes the changed fields through its
+existing unsafe bytewise field access. The pointer ABI and packaged runtime
+symbol surface do not change. Unknown hosts and policies fail before driver
+discovery. This does not qualify nested, by-value, enum, isolated, retained,
+transferred, or returned pointer positions, callbacks, native errors, or
+general packed layout.
+
 Use a transient isolated arena for memory handed to native code and destroy it
 on return. *Isolated* is deliberately narrower than *sandboxed*: this bounds
 memory lifetime and spread but cannot prevent native code from accessing process

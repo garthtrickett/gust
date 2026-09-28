@@ -284,6 +284,20 @@ def scan_summary(rows: list[dict[str, object]]) -> dict[str, object]:
 def phase22_relay_inventory_rows(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep Phase 22's closed relay identity while validating exact successors."""
+    packed_write = registry.get("phase26_activation_audit", {}).get(
+        "ffi_packed_write_increment", {}).get("phase22_invocation_successor")
+    if packed_write is not None:
+        path = "scripts/phase26_ffi_packed_write.sh"
+        added = packed_write.get("added_rows")
+        require(packed_write.get("contract_version") ==
+                "phase26_1d_packed_write_phase22_invocation_successor_v1" and
+                packed_write.get("previous_total") == 182 and
+                packed_write.get("current_total") == 182 + len(added) and
+                packed_write.get("partial_extra_or_substituted_invocation") ==
+                "rejected" and isinstance(added, list) and
+                [row for row in rows if row.get("path") == path] == added,
+                "Phase 26 packed write invocation rows drifted")
+        rows = [row for row in rows if row.get("path") != path]
     packed = registry.get("phase26_activation_audit", {}).get(
         "ffi_packed_layout_increment", {}).get("phase22_invocation_successor")
     if packed is not None:

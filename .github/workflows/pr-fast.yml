@@ -834,6 +834,9 @@ jobs:
       - name: Phase 26 packed borrowed repr C layout
         run: just guard-cranelift-phase26-ffi-packed-layout
 
+      - name: Phase 26 packed raw pointer write
+        run: just guard-cranelift-phase26-ffi-packed-write
+
   final:
     name: final diff check
     runs-on: ubuntu-latest
