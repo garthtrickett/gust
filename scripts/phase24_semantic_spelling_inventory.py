@@ -337,6 +337,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     packed_isolated_write_successor = registry.get("phase26_activation_audit", {}).get(
         "ffi_packed_isolated_write_increment", {}).get(
             "spelling_inventory_successor")
+    computed_zero_successor = registry.get("phase26_activation_audit", {}).get(
+        "computed_zero_raw_null_increment", {}).get(
+            "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -822,7 +825,8 @@ def validate() -> tuple[dict, list[dict], dict]:
                 "phase26_1d_packed_isolated_write_spelling_inventory_successor_v1" and
                 packed_isolated_write_successor.get("previous_inventory_summary") ==
                 previous_write_isolated and
-                now_write_isolated == summary and
+                now_write_isolated == (summary if computed_zero_successor is None else
+                                       computed_zero_successor.get("previous_inventory_summary")) and
                 packed_isolated_write_successor.get("changed_source_paths") == fixture_paths and
                 packed_isolated_write_successor.get("partial_extra_or_substituted_inventory") ==
                 "rejected" and
@@ -830,6 +834,29 @@ def validate() -> tuple[dict, list[dict], dict]:
                 previous_write_isolated["source_file_count"] + 5 and
                 now_write_isolated["unknown_site_count"] == 0,
                 "Phase 26 packed isolated write spelling inventory drifted")
+    if computed_zero_successor is not None:
+        previous_computed = packed_isolated_write_successor["current_inventory_summary"]
+        now_computed = computed_zero_successor.get("current_inventory_summary", {})
+        fixture_paths = sorted([
+            "compiler/typechecker.gst",
+            "compiler/phase26_computed_zero_test_entry.gst",
+            *[f"compiler/phase26_computed_zero_safe_{name}_source.gst" for name in
+              ("sum_return", "sum_call", "local_call", "branch_call")],
+        ])
+        require(packed_isolated_write_successor is not None and
+                computed_zero_successor.get("contract_version") ==
+                "phase26_1e_computed_zero_spelling_inventory_successor_v1" and
+                computed_zero_successor.get("previous_inventory_summary") ==
+                previous_computed and
+                now_computed == summary and
+                computed_zero_successor.get("changed_source_paths") == fixture_paths and
+                computed_zero_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and
+                now_computed["source_file_count"] ==
+                previous_computed["source_file_count"] + 5 and
+                now_computed["site_count"] == previous_computed["site_count"] and
+                now_computed["unknown_site_count"] == 0,
+                "Phase 26 computed-zero spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),

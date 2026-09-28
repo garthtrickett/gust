@@ -24,6 +24,18 @@ def require(value: bool, message: str) -> None:
 
 def project_live_digest_to_pre_packed(registry: dict, path: str,
                                       live_digest: str) -> str:
+    computed_rows = registry.get("phase26_activation_audit", {}).get(
+        "computed_zero_raw_null_increment", {}).get(
+            "phase23_text_surface_successor", {}).get("changed_rows", [])
+    computed_selected = [row for row in computed_rows if row.get("path") == path]
+    require(len(computed_selected) <= 1,
+            f"duplicate computed-zero text surface: {path}")
+    if computed_selected:
+        row = computed_selected[0]
+        require(row["current_digest"] == live_digest and
+                len(row["previous_digest"]) == 64,
+                f"computed-zero text surface drifted: {path}")
+        live_digest = row["previous_digest"]
     isolated_write_rows = registry.get("phase26_activation_audit", {}).get(
         "ffi_packed_isolated_write_increment", {}).get(
             "phase23_text_surface_successor", {}).get("changed_rows", [])
@@ -152,16 +164,20 @@ def main() -> None:
     previous = activation["raw_null_safe_boundary_increment"][
         "filename_site_successor"]["current_sites"]
     current = filename_sites()
+    computed_filename = activation.get("computed_zero_raw_null_increment", {}).get(
+        "filename_site_successor")
+    packed_current = (current if computed_filename is None else
+                      computed_filename.get("previous_sites"))
     deltas = filename.get("line_deltas")
     require(filename.get("contract_version") ==
             "phase26_1d_packed_filename_site_successor_v1" and
             filename.get("previous_sites") == previous and
-            filename.get("current_sites") == current and
-            isinstance(deltas, list) and len(deltas) == len(current) and
+            filename.get("current_sites") == packed_current and
+            isinstance(deltas, list) and len(deltas) == len(packed_current) and
             all(now["line"] == before["line"] + delta and
                 {key: value for key, value in now.items() if key != "line"} ==
                 {key: value for key, value in before.items() if key != "line"}
-                for before, now, delta in zip(previous, current, deltas)) and
+                for before, now, delta in zip(previous, packed_current, deltas)) and
             filename.get("partial_extra_or_substituted_site") == "rejected",
             "filename site successor drifted")
 

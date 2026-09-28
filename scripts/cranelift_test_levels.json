@@ -32,6 +32,7 @@
     "guard-cranelift-phase26-reference-return-escape": 2,
     "guard-cranelift-phase26-safe-reference-call": 2,
     "guard-cranelift-phase26-raw-null-safe-boundary": 2,
+    "guard-cranelift-phase26-computed-zero-raw-null": 2,
     "guard-cranelift-phase25-native-fixed-point": 3,
     "guard-cranelift-phase25-runtime-rs-abi-smoke": 1,
     "guard-cranelift-phase25-strings-rust-parity": 2,
