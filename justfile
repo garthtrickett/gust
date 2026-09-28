@@ -24303,3 +24303,11 @@ guard-cranelift-phase26-ffi-packed-write:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-ffi-packed-write | grep -F $'guard-cranelift-phase26-ffi-packed-write\t2\t' >/dev/null
     python3 scripts/phase26_ffi_packed_write_registration.py
     bash scripts/phase26_ffi_packed_write.sh
+
+# Phase 26.1D packed isolated read: copy six bytes, call approved host, then Free.
+guard-cranelift-phase26-ffi-packed-isolated-read:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-ffi-packed-isolated-read | grep -F $'guard-cranelift-phase26-ffi-packed-isolated-read\t2\t' >/dev/null
+    python3 scripts/phase26_ffi_packed_isolated_read_registration.py
+    bash scripts/phase26_ffi_packed_isolated_read.sh

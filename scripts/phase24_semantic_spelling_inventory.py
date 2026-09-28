@@ -331,6 +331,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     packed_write_successor = registry.get("phase26_activation_audit", {}).get(
         "ffi_packed_write_increment", {}).get(
             "spelling_inventory_successor")
+    packed_isolated_successor = registry.get("phase26_activation_audit", {}).get(
+        "ffi_packed_isolated_read_increment", {}).get(
+            "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -766,7 +769,8 @@ def validate() -> tuple[dict, list[dict], dict]:
                 packed_write_successor.get("contract_version") ==
                 "phase26_1d_packed_write_spelling_inventory_successor_v1" and
                 packed_write_successor.get("previous_inventory_summary") == previous_write and
-                now_write == summary and
+                now_write == (summary if packed_isolated_successor is None else
+                              packed_isolated_successor.get("previous_inventory_summary")) and
                 packed_write_successor.get("changed_source_paths") == sorted([
                     "compiler/phase26_ffi_packed_write_source.gst",
                     "compiler/phase26_ffi_packed_write_unknown_host_source.gst",
@@ -778,6 +782,27 @@ def validate() -> tuple[dict, list[dict], dict]:
                 previous_write["source_file_count"] + 3 and
                 now_write["unknown_site_count"] == 0,
                 "Phase 26 packed write spelling inventory drifted")
+    if packed_isolated_successor is not None:
+        previous_isolated = packed_write_successor["current_inventory_summary"]
+        now_isolated = packed_isolated_successor.get("current_inventory_summary", {})
+        fixture_paths = sorted([
+            "compiler/phase26_ffi_packed_isolated_read_source.gst",
+            *[f"compiler/phase26_ffi_packed_isolated_{name}_source.gst" for name in
+              ("wrong_host", "wrong_policy", "missing_repr", "nested")],
+        ])
+        require(packed_write_successor is not None and
+                packed_isolated_successor.get("contract_version") ==
+                "phase26_1d_packed_isolated_read_spelling_inventory_successor_v1" and
+                packed_isolated_successor.get("previous_inventory_summary") ==
+                previous_isolated and
+                now_isolated == summary and
+                packed_isolated_successor.get("changed_source_paths") == fixture_paths and
+                packed_isolated_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and
+                now_isolated["source_file_count"] ==
+                previous_isolated["source_file_count"] + len(fixture_paths) and
+                now_isolated["unknown_site_count"] == 0,
+                "Phase 26 packed isolated read spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),

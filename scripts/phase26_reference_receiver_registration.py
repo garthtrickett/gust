@@ -465,6 +465,12 @@ def main() -> None:
                 "phase23_text_surface_successor", {}).get(
                     "changed_rows", [])
     }
+    packed_isolated_by_path = {
+        row["path"]: row for row in activation.get(
+            "ffi_packed_isolated_read_increment", {}).get(
+                "phase23_text_surface_successor", {}).get(
+                    "changed_rows", [])
+    }
     for path, predecessor in {
         "compiler/experiments/cranelift/src/full_program.rs":
             runtime_by_path["compiler/experiments/cranelift/src/full_program.rs"],
@@ -479,6 +485,7 @@ def main() -> None:
         d6 = d6_by_path.get(path)
         packed = packed_by_path.get(path)
         packed_write = packed_write_by_path.get(path)
+        packed_isolated = packed_isolated_by_path.get(path)
         d4_digest = (latest.get("current_digest") if latest else
                      next_row.get("current_digest") if next_row else
                      row.get("current_digest"))
@@ -500,7 +507,14 @@ def main() -> None:
                  (packed.get("current_digest") if packed else
                   d6.get("current_digest") if d6 else
                   d5.get("current_digest") if d5 else e1_digest)) and
-                (packed_write.get("current_digest") if packed_write else
+                (packed_isolated is None or
+                 packed_isolated.get("previous_digest") ==
+                 (packed_write.get("current_digest") if packed_write else
+                  packed.get("current_digest") if packed else
+                  d6.get("current_digest") if d6 else
+                  d5.get("current_digest") if d5 else e1_digest)) and
+                (packed_isolated.get("current_digest") if packed_isolated else
+                 packed_write.get("current_digest") if packed_write else
                  packed.get("current_digest") if packed else
                  d6.get("current_digest") if d6 else
                  d5.get("current_digest") if d5 else e1_digest) == digest(path),
@@ -514,6 +528,7 @@ def main() -> None:
     registration_d6 = d6_by_path.get(registration_path)
     registration_packed = packed_by_path.get(registration_path)
     registration_packed_write = packed_write_by_path.get(registration_path)
+    registration_packed_isolated = packed_isolated_by_path.get(registration_path)
     registration_d4_digest = (registration_d4.get("current_digest") if registration_d4 else
                               registration_d3.get("current_digest") if registration_d3 else
                               registration_d2.get("current_digest"))
@@ -547,7 +562,15 @@ def main() -> None:
               registration_d6.get("current_digest") if registration_d6 else
               registration_d5.get("current_digest") if registration_d5 else
               registration_e1_digest)) and
-            (registration_packed_write.get("current_digest") if registration_packed_write else
+            (registration_packed_isolated is None or
+             registration_packed_isolated.get("previous_digest") ==
+             (registration_packed_write.get("current_digest") if registration_packed_write else
+              registration_packed.get("current_digest") if registration_packed else
+              registration_d6.get("current_digest") if registration_d6 else
+              registration_d5.get("current_digest") if registration_d5 else
+              registration_e1_digest)) and
+            (registration_packed_isolated.get("current_digest") if registration_packed_isolated else
+             registration_packed_write.get("current_digest") if registration_packed_write else
              registration_packed.get("current_digest") if registration_packed else
              registration_d6.get("current_digest") if registration_d6 else
              registration_d5.get("current_digest") if registration_d5 else

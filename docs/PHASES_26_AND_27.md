@@ -205,6 +205,17 @@ discovery. This does not qualify nested, by-value, enum, isolated, retained,
 transferred, or returned pointer positions, callbacks, native errors, or
 general packed layout.
 
+**26.1D packed isolated-read successor (operator authorized, 2026-09-28).**
+An explicitly unsafe `borrow_read_isolated_call` may copy the same proven flat
+packed `FfiProbe` into a transient arena, call the already approved test-only
+packed read host, then free the arena on normal return. The copy is exactly six
+bytes; the host reads its unaligned `Int` bytewise. The existing pointer ABI,
+host-object slot, and packaged runtime symbols are unchanged. Wrong host or
+policy, missing C representation, and nested fields fail before driver
+discovery. Packed isolated writes, by-value and enum positions, retained or
+returned pointers, callbacks, native errors, nonlocal-exit cleanup, and general
+packed layout remain outside this increment; Phase 26.1 remains open.
+
 Use a transient isolated arena for memory handed to native code and destroy it
 on return. *Isolated* is deliberately narrower than *sandboxed*: this bounds
 memory lifetime and spread but cannot prevent native code from accessing process
