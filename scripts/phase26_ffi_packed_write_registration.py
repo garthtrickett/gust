@@ -112,20 +112,27 @@ def main() -> None:
     computed_rows = {row["path"]: row for row in activation.get(
         "computed_zero_raw_null_increment", {}).get(
             "phase23_text_surface_successor", {}).get("changed_rows", [])}
+    field_rows = {row["path"]: row for row in activation.get(
+        "field_zero_evidence_increment", {}).get(
+            "phase23_text_surface_successor", {}).get("changed_rows", [])}
     for row in surface["changed_rows"]:
         later = isolated_rows.get(row["path"])
         newest = isolated_write_rows.get(row["path"])
         computed = computed_rows.get(row["path"])
+        field_zero = field_rows.get(row["path"])
+        predecessor_digest = (computed["current_digest"] if computed else
+                              newest["current_digest"] if newest else
+                              later["current_digest"] if later else row["current_digest"])
         require((later is None or later["previous_digest"] == row["current_digest"]) and
                 (newest is None or newest["previous_digest"] ==
                  (later["current_digest"] if later else row["current_digest"])) and
                 (computed is None or computed["previous_digest"] ==
                  (newest["current_digest"] if newest else
                   later["current_digest"] if later else row["current_digest"])) and
-                (computed["current_digest"] if computed else
-                 newest["current_digest"] if newest else
-                 later["current_digest"] if later else row["current_digest"]) ==
-                digest(row["path"]) and
+                (field_zero is None or field_zero["previous_digest"] ==
+                 predecessor_digest) and
+                (field_zero["current_digest"] if field_zero else
+                 predecessor_digest) == digest(row["path"]) and
                 len(row["previous_digest"]) == 64,
                 f"changed text surface drifted: {row['path']}")
     for row in surface["added_rows"]:
