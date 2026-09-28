@@ -343,6 +343,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     field_zero_successor = registry.get("phase26_activation_audit", {}).get(
         "field_zero_evidence_increment", {}).get(
             "spelling_inventory_successor")
+    nested_zero_successor = registry.get("phase26_activation_audit", {}).get(
+        "nested_field_zero_evidence_increment", {}).get(
+            "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -875,7 +878,8 @@ def validate() -> tuple[dict, list[dict], dict]:
                 "phase26_1e_field_zero_spelling_inventory_successor_v1" and
                 field_zero_successor.get("previous_inventory_summary") ==
                 previous_field_zero and
-                now_field_zero == summary and
+                now_field_zero == (summary if nested_zero_successor is None else
+                                   nested_zero_successor.get("previous_inventory_summary")) and
                 field_zero_successor.get("changed_source_paths") == fixture_paths and
                 field_zero_successor.get("partial_extra_or_substituted_inventory") ==
                 "rejected" and
@@ -884,6 +888,29 @@ def validate() -> tuple[dict, list[dict], dict]:
                 now_field_zero["site_count"] == previous_field_zero["site_count"] and
                 now_field_zero["unknown_site_count"] == 0,
                 "Phase 26 field-zero spelling inventory drifted")
+    if nested_zero_successor is not None:
+        previous_nested = field_zero_successor["current_inventory_summary"]
+        now_nested = nested_zero_successor.get("current_inventory_summary", {})
+        fixture_paths = sorted([
+            "compiler/typechecker.gst",
+            "compiler/phase26_nested_field_zero_test_entry.gst",
+            *[f"compiler/phase26_nested_field_zero_{name}_source.gst" for name in
+              ("safe_call", "if_join", "while_join", "subobject", "safe_return", "nonzero")],
+        ])
+        require(field_zero_successor is not None and
+                nested_zero_successor.get("contract_version") ==
+                "phase26_1e_nested_field_zero_spelling_inventory_successor_v1" and
+                nested_zero_successor.get("previous_inventory_summary") ==
+                previous_nested and
+                now_nested == summary and
+                nested_zero_successor.get("changed_source_paths") == fixture_paths and
+                nested_zero_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and
+                now_nested["source_file_count"] ==
+                previous_nested["source_file_count"] + 7 and
+                now_nested["site_count"] == previous_nested["site_count"] and
+                now_nested["unknown_site_count"] == 0,
+                "Phase 26 nested field-zero spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),

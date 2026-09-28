@@ -81,6 +81,7 @@ def surface(path: str, role: str, markers: tuple[str, ...]) -> dict[str, object]
 
 def project_reference_receiver_production_audit(registry: dict, live: dict) -> dict:
     """Project one registered native guard invocation off the closed audit."""
+    live = project_phase26_nested_field_zero_production_audit(registry, live)
     live = project_phase26_field_zero_production_audit(registry, live)
     live = project_phase26_computed_zero_production_audit(registry, live)
     live = project_phase26_packed_isolated_write_production_audit(registry, live)
@@ -119,6 +120,32 @@ def project_reference_receiver_production_audit(registry: dict, live: dict) -> d
             "Phase 26 reference receiver production audit successor drifted")
     previous = dict(live)
     previous["repository_invocation_count"] = 150
+    return previous
+
+
+def project_phase26_nested_field_zero_production_audit(
+        registry: dict, live: dict) -> dict:
+    increment = registry.get("phase26_activation_audit", {}).get(
+        "nested_field_zero_evidence_increment", {})
+    successor = increment.get("production_audit_successor")
+    if successor is None:
+        return live
+    rows = increment.get("phase22_invocation_successor", {}).get("added_rows", [])
+    path = "scripts/phase26_nested_field_zero_evidence.sh"
+    require(successor == {
+        "contract_version": "phase26_1e_nested_field_zero_production_audit_successor_v1",
+        "previous_repository_invocation_count": 192,
+        "current_repository_invocation_count": 195,
+        "added_invocation_path": path,
+        "unchanged_other_fields": True,
+        "partial_extra_or_substituted_audit": "rejected",
+    } and len(rows) == 3 and
+            all(row.get("path") == path and
+                row.get("selection") == "explicit_cranelift" for row in rows) and
+            live["repository_invocation_count"] == 195,
+            "Phase 26 nested field-zero production audit successor drifted")
+    previous = dict(live)
+    previous["repository_invocation_count"] = 192
     return previous
 
 

@@ -293,6 +293,19 @@ Other aggregate aliases, heap/container fields, and cross-function flows remain
 outside this bounded evidence model. This is not general nullability or Phase
 26.1 closure.
 
+**26.1E nested local field subset (ownership authorized 2026-09-28).** A
+selector chain rooted in a scoped, by-value Struct may carry the existing
+Zero/MayZero evidence through by-value Struct fields to a final RawPointer
+field. Known zero then rejects at declared-safe non-extern raw-pointer
+argument and return boundaries before the native capability planner. The
+existing joins and conservative subobject invalidation retain possible zero;
+nonzero and unproven values keep their existing typechecking behavior.
+Pointer, Reference, index, and call bases, heap or container aliases, and
+cross-function transport remain outside this subset. Native source lowering
+for nested selectors remains deferred; a native-executed typechecker harness
+provides the positive evidence. This does not close general nullability or
+Phase 26.1.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

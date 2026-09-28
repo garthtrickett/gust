@@ -24304,6 +24304,14 @@ guard-cranelift-phase26-field-zero-evidence:
     python3 scripts/phase26_field_zero_registration.py
     bash scripts/phase26_field_zero_evidence.sh
 
+# Phase 26.1E nested local by-value struct field evidence across safe boundaries.
+guard-cranelift-phase26-nested-field-zero-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-nested-field-zero-evidence | grep -F $'guard-cranelift-phase26-nested-field-zero-evidence\t2\t' >/dev/null
+    python3 scripts/phase26_nested_field_zero_registration.py
+    bash scripts/phase26_nested_field_zero_evidence.sh
+
 # Phase 26.1D layout subset: flat packed repr(C) borrow with bytewise field access.
 guard-cranelift-phase26-ffi-packed-layout:
     #!/usr/bin/env bash
