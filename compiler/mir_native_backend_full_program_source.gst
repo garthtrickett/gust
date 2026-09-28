@@ -180,7 +180,8 @@ func mir_native_full_program_type_is_initial_scalar(value_type: ast.Type[ctx], e
 }
 
 // A borrowed C aggregate is admissible only when the existing native physical
-// layout is provably the same flat natural C layout on the selected target.
+// layout is provably the same flat C layout on the selected target. Packed
+// fields use byte alignment and a separately approved unaligned host path.
 // This is a source-side pre-driver check; the worker independently verifies the
 // canonical layout record before emitting the selected test host object.
 func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Program[ctx], ctx], module_prefixes: std.Vector[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
@@ -235,16 +236,16 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                                     return "Native FFI borrowed aggregate has no canonical layout";
                                 };
                                 guard repr := (*env).struct_layout_repr_c.Get(name) else {
-                                    return "Native FFI borrowed aggregate requires unpacked repr(C)";
+                                    return "Native FFI borrowed aggregate requires repr(C)";
                                 };
                                 guard packed := (*env).struct_layout_packed.Get(name) else {
-                                    return "Native FFI borrowed aggregate requires unpacked repr(C)";
+                                    return "Native FFI borrowed aggregate requires repr(C)";
                                 };
                                 guard abi := (*env).struct_layout_abi.Get(name) else {
-                                    return "Native FFI borrowed aggregate requires unpacked repr(C)";
+                                    return "Native FFI borrowed aggregate requires repr(C)";
                                 };
-                                if repr != 1 || packed != 0 || std.str_eq(abi, "C") == 0 {
-                                    return "Native FFI borrowed aggregate requires unpacked repr(C)";
+                                if repr != 1 || (packed != 0 && packed != 1) || std.str_eq(abi, "C") == 0 {
+                                    return "Native FFI borrowed aggregate requires repr(C)";
                                 }
                                 mut fields := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
                                 if len(fields) == 0 {
@@ -278,6 +279,7 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                                        (field_index != 1 && resolved_field.tag != 1) {
                                         return "Native FFI test host field types do not match its approved contract";
                                     }
+                                    if packed == 1 { field_alignment = 1; }
                                     mut remainder := offset - (offset / field_alignment) * field_alignment;
                                     if remainder != 0 { offset = offset + field_alignment - remainder; }
                                     offset = offset + field_size;
@@ -291,8 +293,12 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                                 }
                                 mut host_symbol := statement.FunctionDecl.extern_symbol_name;
                                 if len(host_symbol) == 0 { host_symbol = statement.FunctionDecl.name; }
-                                if (resolved.tag == 11 && std.str_eq(host_symbol, "tiny_host_read_repr_c_probe") == 0) ||
-                                   (resolved.tag == 9 && std.str_eq(host_symbol, "tiny_host_write_repr_c_probe") == 0) {
+                                if (packed == 1 &&
+                                    (resolved.tag != 11 ||
+                                     std.str_eq(host_symbol, "tiny_host_read_packed_probe") == 0 ||
+                                     std.str_eq(parameter.ffi_policy, "borrow_read_call") == 0)) ||
+                                   (packed == 0 && resolved.tag == 11 && std.str_eq(host_symbol, "tiny_host_read_repr_c_probe") == 0) ||
+                                   (packed == 0 && resolved.tag == 9 && std.str_eq(host_symbol, "tiny_host_write_repr_c_probe") == 0) {
                                     return "Native FFI borrowed aggregate host import is not approved";
                                 }
                                 mut return_type := ctx[statement.FunctionDecl.return_type];
@@ -301,6 +307,11 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                                    (resolved.tag == 9 && return_type.tag != 3) ||
                                    std.str_eq(signature.ffi_return_policy, "value") == 0 {
                                     return "Native FFI test host signature does not match its approved contract";
+                                }
+                                if packed == 1 &&
+                                   (std.str_eq(parameter.ffi_policy, "borrow_read_isolated_call") == 1 ||
+                                    std.str_eq(parameter.ffi_policy, "borrow_write_isolated_call") == 1) {
+                                    return "Native FFI packed aggregate isolated policy is not approved";
                                 }
                                 if std.str_eq(parameter.ffi_policy, "borrow_read_isolated_call") == 1 &&
                                    (resolved.tag != 11 || signature.requires_sandbox_arena != 1 ||
@@ -316,7 +327,8 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                                    std.str_eq(fields[0], "a") == 0 ||
                                    std.str_eq(fields[1], "b") == 0 ||
                                    std.str_eq(fields[2], "c") == 0 ||
-                                   offset != 12 || alignment != 4 {
+                                   ((packed == 0 && (offset != 12 || alignment != 4)) ||
+                                    (packed == 1 && (offset != 6 || alignment != 1))) {
                                     return "Native FFI test host signature or layout does not match its approved contract";
                                 }
                             }

@@ -184,6 +184,17 @@ are not assumed C-compatible. Packed field access requires explicit handling or
 `unsafe`, never a silent aligned load. `#[packed]` remains specialized for
 external formats, hardware interfaces, and legacy native APIs.
 
+**26.1D packed layout subset (operator authorized, 2026-09-27).** The native
+path admits one exact test-only read host borrowing a flat scalar
+`#[repr(C)] #[packed]` aggregate. Canonical FFI preflight proves its target
+layout, field order, and exact host identity before driver discovery. On the
+selected x86_64 target, the host and Gust lowering access the unaligned `Int`
+field bytewise; Gust source access requires `unsafe`, and taking a Reference to
+that field is rejected. The existing pointer ABI is unchanged. Missing C
+representation, wrong order, nested fields, enum fields, by-value positions,
+unapproved hosts, and unsupported packed policies fail closed. General packed
+layout, enum representation, and the full 26.1 layout gate remain open.
+
 Use a transient isolated arena for memory handed to native code and destroy it
 on return. *Isolated* is deliberately narrower than *sandboxed*: this bounds
 memory lifetime and spread but cannot prevent native code from accessing process

@@ -24,6 +24,8 @@ def require(value: bool, message: str) -> None:
 def project_live_digest_to_pre_e4(registry: dict, path: str,
                                   live_digest: str) -> str:
     """Validate this increment's exact successor for a closed predecessor."""
+    from phase26_ffi_packed_registration import project_live_digest_to_pre_packed
+    live_digest = project_live_digest_to_pre_packed(registry, path, live_digest)
     rows = registry.get("phase26_activation_audit", {}).get(
         "raw_null_safe_boundary_increment", {}).get(
             "phase23_text_surface_successor", {}).get("changed_rows", [])
@@ -95,7 +97,9 @@ def main() -> None:
     from phase24_filename_behavior_characterization import source_sites
     filename = record["filename_site_successor"]
     previous = activation["safe_reference_call_increment"]["filename_site_successor"]["current_sites"]
-    current = source_sites()
+    packed = activation.get("ffi_packed_layout_increment", {}).get(
+        "filename_site_successor")
+    current = source_sites() if packed is None else packed["previous_sites"]
     deltas = filename.get("line_deltas")
     require(filename.get("contract_version") ==
             "phase26_1e4_filename_site_successor_v1" and
@@ -112,13 +116,16 @@ def main() -> None:
 
     from phase24_semantic_spelling_inventory import source_sites as spelling_sites, manifest_summary
     spelling = record["spelling_inventory_successor"]
+    packed_spelling = activation.get("ffi_packed_layout_increment", {}).get(
+        "spelling_inventory_successor")
     require(spelling.get("contract_version") ==
             "phase26_1e4_spelling_inventory_successor_v1" and
             spelling.get("previous_inventory_summary") == activation[
                 "safe_reference_call_increment"]["spelling_inventory_successor"][
                     "current_inventory_summary"] and
             spelling.get("current_inventory_summary") ==
-            manifest_summary(spelling_sites()) and
+            (manifest_summary(spelling_sites()) if packed_spelling is None else
+             packed_spelling.get("previous_inventory_summary")) and
             spelling.get("changed_source_paths") == sorted(
                 ["compiler/typechecker.gst", *FIXTURES]) and
             spelling.get("partial_extra_or_substituted_inventory") ==

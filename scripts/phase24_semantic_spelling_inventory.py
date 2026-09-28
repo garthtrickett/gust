@@ -325,6 +325,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     e4_successor = registry.get("phase26_activation_audit", {}).get(
         "raw_null_safe_boundary_increment", {}).get(
             "spelling_inventory_successor")
+    packed_successor = registry.get("phase26_activation_audit", {}).get(
+        "ffi_packed_layout_increment", {}).get(
+            "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -716,7 +719,8 @@ def validate() -> tuple[dict, list[dict], dict]:
                 e4_successor.get("contract_version") ==
                 "phase26_1e4_spelling_inventory_successor_v1" and
                 e4_successor.get("previous_inventory_summary") == previous_e4 and
-                now_e4 == summary and
+                now_e4 == (summary if packed_successor is None else
+                           packed_successor.get("previous_inventory_summary")) and
                 e4_successor.get("changed_source_paths") == sorted([
                     "compiler/typechecker.gst",
                     "compiler/phase26_raw_null_safe_boundary_test_entry.gst",
@@ -731,6 +735,26 @@ def validate() -> tuple[dict, list[dict], dict]:
                 now_e4["classification_counts"] == previous_e4["classification_counts"] and
                 now_e4["unknown_site_count"] == 0,
                 "Phase 26.1E4 spelling inventory drifted")
+    if packed_successor is not None:
+        previous_packed = e4_successor["current_inventory_summary"]
+        now_packed = packed_successor.get("current_inventory_summary", {})
+        require(e4_successor is not None and
+                packed_successor.get("contract_version") ==
+                "phase26_1d_packed_spelling_inventory_successor_v1" and
+                packed_successor.get("previous_inventory_summary") == previous_packed and
+                now_packed == summary and
+                packed_successor.get("changed_source_paths") == sorted([
+                    "compiler/typechecker.gst",
+                    *[f"compiler/phase26_ffi_packed_{name}_source.gst" for name in (
+                        "probe", "missing", "order", "nested", "enum",
+                        "unknown_host", "by_value", "safe_field", "field_reference")],
+                ]) and
+                packed_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and
+                now_packed["source_file_count"] ==
+                previous_packed["source_file_count"] + 9 and
+                now_packed["unknown_site_count"] == 0,
+                "Phase 26 packed spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),

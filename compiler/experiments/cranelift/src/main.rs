@@ -75,6 +75,7 @@ const HOST_ADD_I32_SYMBOL: &str = "tiny_host_add_i32";
 const EXTERN_PREDICATE_BRANCH_I32_SYMBOL: &str = "tiny_cranelift_extern_predicate_branch_i32";
 const HOST_IS_POSITIVE_I32_SYMBOL: &str = "tiny_host_is_positive_i32";
 const HOST_REPR_C_PROBE_SYMBOL: &str = "tiny_host_read_repr_c_probe";
+const HOST_PACKED_PROBE_SYMBOL: &str = "tiny_host_read_packed_probe";
 const HOST_REPR_C_WRITE_SYMBOL: &str = "tiny_host_write_repr_c_probe";
 const HOST_RAW_UNTRUSTED_INT_SYMBOL: &str = "tiny_host_raw_untrusted_int";
 const MIR_RETURN_INT_SYMBOL: &str = "tiny_cranelift_mir_return_int";
@@ -15643,6 +15644,7 @@ fn emit_phase13_approved_scalar_host_object(
     output_path: &Path,
     include_scalar_hosts: bool,
     include_repr_c_probe: bool,
+    include_packed_probe: bool,
     include_repr_c_write: bool,
     include_raw_untrusted_int: bool,
 ) -> Result<(), Box<dyn Error>> {
@@ -15745,6 +15747,41 @@ fn emit_phase13_approved_scalar_host_object(
         let first = builder.ins().uextend(types::I32, first_byte);
         let last = builder.ins().uextend(types::I32, last_byte);
         let sum = builder.ins().iadd(first, middle_int);
+        let sum = builder.ins().iadd(sum, last);
+        builder.ins().return_(&[sum]);
+        builder.seal_all_blocks();
+        builder.finalize();
+        module.define_function(id, &mut context)?;
+        module.clear_context(&mut context);
+    }
+
+    if include_packed_probe {
+        let mut signature = module.make_signature();
+        signature.params.push(AbiParam::new(module.target_config().pointer_type()));
+        signature.returns.push(AbiParam::new(types::I32));
+        let id = module.declare_function(HOST_PACKED_PROBE_SYMBOL, Linkage::Export, &signature)?;
+        let mut context = module.make_context();
+        context.func.signature = signature;
+        let mut builder_context = FunctionBuilderContext::new();
+        let mut builder = FunctionBuilder::new(&mut context.func, &mut builder_context);
+        let entry = builder.create_block();
+        builder.append_block_params_for_function_params(entry);
+        builder.switch_to_block(entry);
+        let pointer = builder.block_params(entry)[0];
+        // The C packed int begins at byte offset 1. Assemble it from bytes so
+        // no native aligned I32 load is inferred from this borrowed pointer.
+        let mut middle = builder.ins().iconst(types::I32, 0);
+        for offset in 1i32..=4i32 {
+            let byte = builder.ins().load(types::I8, MemFlags::new(), pointer, offset);
+            let part = builder.ins().uextend(types::I32, byte);
+            let part = builder.ins().ishl_imm(part, i64::from((offset - 1) * 8));
+            middle = builder.ins().bor(middle, part);
+        }
+        let first_byte = builder.ins().load(types::I8, MemFlags::new(), pointer, 0);
+        let last_byte = builder.ins().load(types::I8, MemFlags::new(), pointer, 5);
+        let first = builder.ins().uextend(types::I32, first_byte);
+        let last = builder.ins().uextend(types::I32, last_byte);
+        let sum = builder.ins().iadd(first, middle);
         let sum = builder.ins().iadd(sum, last);
         builder.ins().return_(&[sum]);
         builder.seal_all_blocks();
@@ -16371,6 +16408,7 @@ fn compile_phase10_scalar_metadata_request_path(
     let mut preserved_metadata_summaries = Vec::new();
     let mut requires_phase13_approved_scalar_host_object = false;
     let mut requires_phase26_repr_c_host_object = false;
+    let mut requires_phase26_packed_host_object = false;
     let mut requires_phase26_repr_c_write_host_object = false;
     let mut requires_phase26_raw_untrusted_host_object = false;
 
@@ -16453,6 +16491,9 @@ fn compile_phase10_scalar_metadata_request_path(
             }
             if full_program::selected_repr_c_probe_host(&module_record.canonical_mir)? {
                 requires_phase26_repr_c_host_object = true;
+            }
+            if full_program::selected_packed_probe_host(&module_record.canonical_mir)? {
+                requires_phase26_packed_host_object = true;
             }
             if full_program::selected_repr_c_write_host(&module_record.canonical_mir)? {
                 requires_phase26_repr_c_write_host_object = true;
@@ -16612,7 +16653,7 @@ fn compile_phase10_scalar_metadata_request_path(
         reported_object_name = &module_record.object_name;
     }
 
-    let approved_host_object = if requires_phase13_approved_scalar_host_object || requires_phase26_repr_c_host_object || requires_phase26_repr_c_write_host_object || requires_phase26_raw_untrusted_host_object {
+    let approved_host_object = if requires_phase13_approved_scalar_host_object || requires_phase26_repr_c_host_object || requires_phase26_packed_host_object || requires_phase26_repr_c_write_host_object || requires_phase26_raw_untrusted_host_object {
         let path = compiler_mir_link_sibling_path(
             &request.output_path,
             ".phase13-approved-scalar-host.o",
@@ -16621,6 +16662,7 @@ fn compile_phase10_scalar_metadata_request_path(
             &path,
             requires_phase13_approved_scalar_host_object,
             requires_phase26_repr_c_host_object,
+            requires_phase26_packed_host_object,
             requires_phase26_repr_c_write_host_object,
             requires_phase26_raw_untrusted_host_object,
         )?;
