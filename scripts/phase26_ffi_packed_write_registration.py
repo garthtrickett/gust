@@ -121,6 +121,9 @@ def main() -> None:
     arithmetic_rows = {row["path"]: row for row in activation.get(
         "arithmetic_zero_evidence_increment", {}).get(
             "phase23_text_surface_successor", {}).get("changed_rows", [])}
+    division_rows = {row["path"]: row for row in activation.get(
+        "division_zero_evidence_increment", {}).get(
+            "phase23_text_surface_successor", {}).get("changed_rows", [])}
     for row in surface["changed_rows"]:
         later = isolated_rows.get(row["path"])
         newest = isolated_write_rows.get(row["path"])
@@ -128,6 +131,7 @@ def main() -> None:
         field_zero = field_rows.get(row["path"])
         nested_zero = nested_rows.get(row["path"])
         arithmetic_zero = arithmetic_rows.get(row["path"])
+        division_zero = division_rows.get(row["path"])
         predecessor_digest = (computed["current_digest"] if computed else
                               newest["current_digest"] if newest else
                               later["current_digest"] if later else row["current_digest"])
@@ -146,7 +150,13 @@ def main() -> None:
                  (nested_zero["current_digest"] if nested_zero else
                   field_zero["current_digest"] if field_zero else
                   predecessor_digest)) and
-                (arithmetic_zero["current_digest"] if arithmetic_zero else
+                (division_zero is None or division_zero["previous_digest"] ==
+                 (arithmetic_zero["current_digest"] if arithmetic_zero else
+                  nested_zero["current_digest"] if nested_zero else
+                  field_zero["current_digest"] if field_zero else
+                  predecessor_digest)) and
+                (division_zero["current_digest"] if division_zero else
+                 arithmetic_zero["current_digest"] if arithmetic_zero else
                  nested_zero["current_digest"] if nested_zero else
                  field_zero["current_digest"] if field_zero else
                  predecessor_digest) == digest(row["path"]) and
