@@ -48056,6 +48056,373 @@
     "why_this_exists": "The Status section of docs/PHASE25_ROADMAP.md is the record the phase-completion loop checks, and it was wrong in both directions. 25.10a (#468) and 25.10 (#470) were unticked though both merged. 25.12 was ticked though its Exit Gate was not met, and 25.12b (#472), which corrected it, had no row at all. The Patch 25.0 heading still read IN PROGRESS. The section's own rule is 'ticked when merged to main', and this repo's convention is that a later patch ticks merged ones -- Patch 25.7 is what ticked 25.12 and 25.11a -- so 25.12b could not tick itself."
   },
   "phase26_activation_audit": {
+    "ffi_packed_layout_increment": {
+      "contract_version": "phase26_1d_packed_flat_ffi_layout_v1",
+      "status": "selected_flat_packed_repr_c_borrow_qualified",
+      "owner": "cranelift",
+      "increment": "26.1D_packed_layout_subset",
+      "operator_ownership_decision": "2026-09-27_bounded_physical_layout",
+      "supported_position": "unsafe_borrow_read_call_reference_to_flat_packed_repr_c_struct",
+      "selected_host_import": "tiny_host_read_packed_probe",
+      "selected_host_object": "generated_test_only_existing_host_object_slot",
+      "physical_abi_changed": false,
+      "target_layout": "x86_64_linux_elf_byte_int_byte_offsets_0_1_5_size_6_align_1",
+      "unaligned_int_access": "unsafe_source_and_bytewise_native_load_store",
+      "field_reference": "rejected",
+      "positive_fixture": "compiler/phase26_ffi_packed_probe_source.gst",
+      "negative_fixtures": [
+        "compiler/phase26_ffi_packed_missing_source.gst",
+        "compiler/phase26_ffi_packed_order_source.gst",
+        "compiler/phase26_ffi_packed_nested_source.gst",
+        "compiler/phase26_ffi_packed_enum_source.gst",
+        "compiler/phase26_ffi_packed_unknown_host_source.gst",
+        "compiler/phase26_ffi_packed_by_value_source.gst",
+        "compiler/phase26_ffi_packed_safe_field_source.gst",
+        "compiler/phase26_ffi_packed_field_reference_source.gst"
+      ],
+      "failure_stage": "before_driver_discovery",
+      "deferral_reason": "deferred_p26_ffi_borrowed_c_layout",
+      "native_fallback": false,
+      "runtime_symbol_surface_changed": false,
+      "remaining_layout_obligations": [
+        "general_packed_layout",
+        "enum_representation",
+        "by_value_aggregate",
+        "nested_aggregate"
+      ],
+      "owning_level2_guard": "guard-cranelift-phase26-ffi-packed-layout",
+      "pr_fast_job": "phase26-ffi-position",
+      "phase22_invocation_successor": {
+        "contract_version": "phase26_1d_packed_phase22_invocation_successor_v1",
+        "previous_total": 179,
+        "current_total": 182,
+        "added_rows": [
+          {
+            "path": "scripts/phase26_ffi_packed_layout.sh",
+            "line": 12,
+            "recipe": "none",
+            "compiler_token": "./gust",
+            "selection": "explicit_cranelift",
+            "consumer_class": "already_explicit_or_parser_probe",
+            "owner": "cranelift",
+            "expected_artifact": "selected_backend_contract",
+            "expected_transition": "preserve_explicit_selection",
+            "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+            "command": "GUST_TEST_MIR_TO_C_UNAVAILABLE=1 GUST_NATIVE_BACKEND_DRIVER=\"$driver\" ./gust --backend cranelift -o \"$build_root/native\" compiler/phase26_ffi_packed_probe_source.gst >\"$build_root/positive.compile.stdout\" 2>\"$build_root/positive.compile.stderr\""
+          },
+          {
+            "path": "scripts/phase26_ffi_packed_layout.sh",
+            "line": 36,
+            "recipe": "none",
+            "compiler_token": "./gust",
+            "selection": "explicit_cranelift",
+            "consumer_class": "already_explicit_or_parser_probe",
+            "owner": "cranelift",
+            "expected_artifact": "selected_backend_contract",
+            "expected_transition": "preserve_explicit_selection",
+            "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+            "command": "GUST_TEST_MIR_TO_C_UNAVAILABLE=1 GUST_PHASE26_PACKED_POISON_MARKER=\"$PWD/$marker\" GUST_NATIVE_BACKEND_DRIVER=\"$PWD/$poison\" ./gust --backend cranelift -o \"$output\" \"compiler/phase26_ffi_packed_${case_name}_source.gst\" >\"$output.stdout\" 2>\"$output.stderr\""
+          },
+          {
+            "path": "scripts/phase26_ffi_packed_layout.sh",
+            "line": 58,
+            "recipe": "none",
+            "compiler_token": "./gust",
+            "selection": "explicit_cranelift",
+            "consumer_class": "already_explicit_or_parser_probe",
+            "owner": "cranelift",
+            "expected_artifact": "selected_backend_contract",
+            "expected_transition": "preserve_explicit_selection",
+            "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+            "command": "GUST_TEST_MIR_TO_C_UNAVAILABLE=1 GUST_PHASE26_PACKED_POISON_MARKER=\"$PWD/$marker\" GUST_NATIVE_BACKEND_DRIVER=\"$PWD/$poison\" ./gust --backend cranelift -o \"$output\" \"compiler/phase26_ffi_packed_${case_name}_source.gst\" >\"$output.stdout\" 2>\"$output.stderr\""
+          }
+        ],
+        "partial_extra_or_substituted_invocation": "rejected"
+      },
+      "production_audit_successor": {
+        "contract_version": "phase26_1d_packed_production_audit_successor_v1",
+        "previous_repository_invocation_count": 179,
+        "current_repository_invocation_count": 182,
+        "added_invocation_path": "scripts/phase26_ffi_packed_layout.sh",
+        "unchanged_other_fields": true,
+        "partial_extra_or_substituted_audit": "rejected"
+      },
+      "phase23_text_surface_successor": {
+        "contract_version": "phase26_1d_packed_phase23_text_surface_successor_v1",
+        "changed_rows": [
+          {
+            "path": ".github/workflows/pr-fast.yml",
+            "previous_digest": "9ff3720a0ca2e1aff9c8481685efc656459948068f27a3f531caa4ed6978e04a",
+            "current_digest": "b3e9cdc86fdfcdc314bc89b1ab31e145e9beb58957e1c1a414c08d0b7a33f74a",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 8,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 8,
+              "generated_c_contract": 1
+            }
+          },
+          {
+            "path": "compiler/experiments/cranelift/src/full_program.rs",
+            "previous_digest": "723fbbdadc84d57e5f31d3dc858225b4d0837bffb25da838458736fcf24bd6ce",
+            "current_digest": "02786df61fc68e7572ae343031e3b2429dd715b9fcb725ccca00d731c3af9042",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            }
+          },
+          {
+            "path": "compiler/experiments/cranelift/src/main.rs",
+            "previous_digest": "73c9d3fb187a2d69a0c3775d19575603c195757de7ddee87e3ca21f3a560a986",
+            "current_digest": "d855aa48c33689d7f4036f502b9dbcbd128c4d1c0393141d3b73c0a3ad34972b",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 97,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 97,
+              "generated_c_contract": 0
+            }
+          },
+          {
+            "path": "compiler/mir_native_backend_full_program_source.gst",
+            "previous_digest": "68a976382034fb8f7389a9746da4f77cbcc830f029b457d8f779ef7182a82dce",
+            "current_digest": "f5d022d3c2c98bd574765b3277867f1f256cf8318c370a1e0a8b3a230a17346e",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            }
+          },
+          {
+            "path": "compiler/typechecker.gst",
+            "previous_digest": "e0bc78ca9fce07ab8d44b19227ba41ce62c2a9e71c4a068b1c0183590ecf20c2",
+            "current_digest": "55f5bec744783edd6ceb4af9dfb0689217830c75971bbb184f92e1446e0e57b1",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            }
+          },
+          {
+            "path": "justfile",
+            "previous_digest": "9279ee9408b753e20e73382a5d235218b6ee43d3883d5a2f761c1196c54a3ac4",
+            "current_digest": "39ef38983bb177d310bced3de27c9e9de35c8aca241cf7a4eca43842116cc4ba",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 729,
+              "generated_c_contract": 9
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 729,
+              "generated_c_contract": 9
+            }
+          },
+          {
+            "path": "scripts/cranelift_test_levels.json",
+            "previous_digest": "f792f0bd3f0eea8ea474256aa554972ee736bf2601aa1c760e263087967a3174",
+            "current_digest": "6eeb7780e633151259a5902e1cee5525efdd8ea44bd774ede913a95cb9aebeff",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 30,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 30,
+              "generated_c_contract": 0
+            }
+          },
+          {
+            "path": "scripts/phase22_opening.py",
+            "previous_digest": "cb6a78a0f8c9a78616f45f560a475f7ea17f70b16f3b3cb08ea493d2745117f8",
+            "current_digest": "035a14c55a1a046588c289e0143bb0f6b0d02cdf3d362a4dc8eda08c9181bcc1",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 5,
+              "mir_to_c_name": 23,
+              "generated_c_contract": 12
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 5,
+              "mir_to_c_name": 23,
+              "generated_c_contract": 12
+            }
+          },
+          {
+            "path": "scripts/phase26_reference_receiver_registration.py",
+            "previous_digest": "29c931b29acd3c9ce6d82d7dbff71b8860d9317eb694f5326bceabc9ba3dc35e",
+            "current_digest": "9428aaa2e638c8e779b2d273c18ab6d0f8a2da89187e76cdd1828b97c22f7900",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 5,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 5,
+              "generated_c_contract": 1
+            }
+          }
+        ],
+        "added_rows": [],
+        "partial_extra_or_substituted_surface": "rejected"
+      },
+      "spelling_inventory_successor": {
+        "contract_version": "phase26_1d_packed_spelling_inventory_successor_v1",
+        "previous_inventory_summary": {
+          "source_file_count": 1159,
+          "site_count": 1398,
+          "semantic_site_count": 689,
+          "semantic_manifest_digest": "4566ac319b00f8f5d4cf7e1c7c3052ea11f036082f300f26c4f17a8571f29e03",
+          "classification_counts": {
+            "semantic_or_intrinsic_recognition": 689,
+            "diagnostic": 10,
+            "serialization": 1,
+            "mangling_or_generated_name": 9,
+            "comment": 2,
+            "fixture_or_evidence": 679,
+            "non_decision_comparison": 8
+          },
+          "partition_manifest_digests": {
+            "diagnostic": "ba9326a0b12c0ac3d34445b7d1ea657183231e274308e1cb8ad9e26c61ac155d",
+            "serialization": "a889ed384ae506f10b80c84fc00b91863328192597070abee5ec4324e92aef70",
+            "mangling_or_generated_name": "66c12a2caa8badfe1404fafc488caca523a50402104e882e4ebd0b6327592c85",
+            "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+            "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+            "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
+          },
+          "complete_manifest_digest": "e0ca8dc44a6151a59f71069e1596fa5541bf61214571451a9b5fb514877037de",
+          "unknown_site_count": 0
+        },
+        "current_inventory_summary": {
+          "source_file_count": 1168,
+          "site_count": 1398,
+          "semantic_site_count": 689,
+          "semantic_manifest_digest": "06b14e07742df7efe925661d6b3dca24907706e1b8f6964d131e8d30c2dfb005",
+          "classification_counts": {
+            "semantic_or_intrinsic_recognition": 689,
+            "diagnostic": 10,
+            "serialization": 1,
+            "mangling_or_generated_name": 9,
+            "comment": 2,
+            "fixture_or_evidence": 679,
+            "non_decision_comparison": 8
+          },
+          "partition_manifest_digests": {
+            "diagnostic": "da2f1341b9b42d523de47607c67b1ee5ebfe2110796ed081931b0a273229e028",
+            "serialization": "a889ed384ae506f10b80c84fc00b91863328192597070abee5ec4324e92aef70",
+            "mangling_or_generated_name": "3fdcf4a61a76b4284e78f52b80fdb37638cbc0a92a055c1e675c946af054f206",
+            "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+            "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+            "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
+          },
+          "complete_manifest_digest": "22b3eace78944eec453af8d8e961554e03cf141658535bfb3259e499a635cad6",
+          "unknown_site_count": 0
+        },
+        "changed_source_paths": [
+          "compiler/phase26_ffi_packed_by_value_source.gst",
+          "compiler/phase26_ffi_packed_enum_source.gst",
+          "compiler/phase26_ffi_packed_field_reference_source.gst",
+          "compiler/phase26_ffi_packed_missing_source.gst",
+          "compiler/phase26_ffi_packed_nested_source.gst",
+          "compiler/phase26_ffi_packed_order_source.gst",
+          "compiler/phase26_ffi_packed_probe_source.gst",
+          "compiler/phase26_ffi_packed_safe_field_source.gst",
+          "compiler/phase26_ffi_packed_unknown_host_source.gst",
+          "compiler/typechecker.gst"
+        ],
+        "partial_extra_or_substituted_inventory": "rejected"
+      },
+      "filename_site_successor": {
+        "contract_version": "phase26_1d_packed_filename_site_successor_v1",
+        "previous_sites": [
+          {
+            "id": "var_declaration_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 14058,
+            "selector": "test_tcs_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_var_declaration",
+            "window_digest": "6c0f176e1543d9a2ba125569875a69081a81b28bfc4c80eef31c57ec7ccfa05c"
+          },
+          {
+            "id": "assignment_hazard_and_view_invalidation",
+            "path": "compiler/typechecker.gst",
+            "line": 14365,
+            "selector": "test_index_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_assignment",
+            "window_digest": "eea5c7abf9fb4c50d51f644267c5ee59133db8d998a0fe7c25dd0ec1503029c3"
+          },
+          {
+            "id": "guard_payload_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 15353,
+            "selector": "test_tcs_",
+            "selector_occurrence": 2,
+            "statement_context": "statement_guard_payload_binding",
+            "window_digest": "4bf05983015fd1ecc3c3cc4c1399491868107155a5435fed90f8beeeb8f16a6f"
+          }
+        ],
+        "current_sites": [
+          {
+            "id": "var_declaration_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 14073,
+            "selector": "test_tcs_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_var_declaration",
+            "window_digest": "6c0f176e1543d9a2ba125569875a69081a81b28bfc4c80eef31c57ec7ccfa05c"
+          },
+          {
+            "id": "assignment_hazard_and_view_invalidation",
+            "path": "compiler/typechecker.gst",
+            "line": 14380,
+            "selector": "test_index_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_assignment",
+            "window_digest": "eea5c7abf9fb4c50d51f644267c5ee59133db8d998a0fe7c25dd0ec1503029c3"
+          },
+          {
+            "id": "guard_payload_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 15368,
+            "selector": "test_tcs_",
+            "selector_occurrence": 2,
+            "statement_context": "statement_guard_payload_binding",
+            "window_digest": "4bf05983015fd1ecc3c3cc4c1399491868107155a5435fed90f8beeeb8f16a6f"
+          }
+        ],
+        "line_deltas": [
+          15,
+          15,
+          15
+        ],
+        "partial_extra_or_substituted_site": "rejected"
+      }
+    },
     "ffi_isolated_write_increment": {
       "contract_version": "phase26_1d6_ffi_isolated_write_v1",
       "status": "selected_flat_repr_c_raw_write_isolated_copyback_per_call",

@@ -24287,3 +24287,11 @@ guard-cranelift-phase26-raw-null-safe-boundary:
     python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-raw-null-safe-boundary | grep -F $'guard-cranelift-phase26-raw-null-safe-boundary\t2\t' >/dev/null
     python3 scripts/phase26_raw_null_safe_boundary_registration.py
     bash scripts/phase26_raw_null_safe_boundary.sh
+
+# Phase 26.1D layout subset: flat packed repr(C) borrow with bytewise field access.
+guard-cranelift-phase26-ffi-packed-layout:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-ffi-packed-layout | grep -F $'guard-cranelift-phase26-ffi-packed-layout\t2\t' >/dev/null
+    python3 scripts/phase26_ffi_packed_registration.py
+    bash scripts/phase26_ffi_packed_layout.sh

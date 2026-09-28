@@ -3164,6 +3164,17 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
         }
         if expr.tag == 6 { // AddressOf
             mut inner := check_expression(expr.AddressOf.expr, env, scope, ctx);
+            mut addressed := ctx[expr.AddressOf.expr];
+            if addressed.tag == 11 && inner.tag == 0 { // Selector of Int
+                mut base_type := check_expression(addressed.Selector.left, env, scope, ctx);
+                base_type = env_resolve_type(env, base_type, ctx);
+                if base_type.tag == 11 { base_type = ctx[base_type.Reference.inner]; }
+                if base_type.tag == 9 { base_type = ctx[base_type.RawPointer.inner]; }
+                if base_type.tag == 8 &&
+                   env_struct_is_packed(env, base_type.Struct.struct_name, ctx) == 1 {
+                    report_error(2, "Semantic Error: [PackedFieldReference] An unaligned packed Int field cannot form a Reference", expr.AddressOf.span, env, ctx);
+                }
+            }
             
             mut brand_str := get_type_brand(inner, env, ctx);
             if std.str_eq(brand_str, "") == 1 {
@@ -3446,6 +3457,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         mut field_type := field_lookup.Val;
                         mut substituted := typechecker_substitute_field_brand(field_type, left_t.Struct.brand, left_str, lookup_struct.Val, ctx);
                         mut resolved := env_resolve_type(env, substituted, ctx);
+                        if env_struct_is_packed(env, struct_name, ctx) == 1 &&
+                           resolved.tag == 0 && (*env).in_unsafe_block == 0 {
+                            report_error(2, "Semantic Error: [PackedFieldUnsafe] An unaligned packed Int field requires unsafe access", expr.Selector.span, env, ctx);
+                        }
 
                         if std.str_eq(expr.Selector.right, "Val") {
                             if (len(clean_name) >= 11 && std.str_eq(std.str_slice(clean_name, 0, 11), "CastResult_")) ||

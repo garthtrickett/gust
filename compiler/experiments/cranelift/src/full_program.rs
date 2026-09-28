@@ -513,6 +513,28 @@ fn load_scalar(
     ))
 }
 
+// A packed Int may begin at byte offset 1. Keep its native access bytewise;
+// the selected x86_64 target is little-endian and no aligned I32 access is
+// inferred from the address of the packed field.
+fn load_packed_int(builder: &mut FunctionBuilder<'_>, address: Value) -> Value {
+    let mut value = builder.ins().iconst(types::I32, 0);
+    for offset in 0i32..4i32 {
+        let byte = builder.ins().load(types::I8, MemFlags::trusted(), address, offset);
+        let part = builder.ins().uextend(types::I32, byte);
+        let part = builder.ins().ishl_imm(part, i64::from(offset * 8));
+        value = builder.ins().bor(value, part);
+    }
+    value
+}
+
+fn store_packed_int(builder: &mut FunctionBuilder<'_>, address: Value, value: Value) {
+    for offset in 0i32..4i32 {
+        let part = builder.ins().ushr_imm(value, i64::from(offset * 8));
+        let byte = builder.ins().ireduce(types::I8, part);
+        builder.ins().store(MemFlags::trusted(), byte, address, offset);
+    }
+}
+
 fn store_scalar(builder: &mut FunctionBuilder<'_>, address: Value, value: Value) {
     builder.ins().store(MemFlags::trusted(), value, address, 0);
 }
@@ -2019,6 +2041,27 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         ))
     }
 
+    fn is_packed_int_field(&self, node_index: usize) -> Result<bool, Box<dyn Error>> {
+        let node = &self.program.nodes[node_index];
+        if node.kind != "FieldOrMethodSelect" || node.ty != "Int" {
+            return Ok(false);
+        }
+        let receiver = node.children.first().ok_or_else(|| invalid(
+            "packed field selection has no receiver",
+        ))?;
+        let receiver_type = &self.program.nodes[*receiver].ty;
+        let aggregate_type = pointer_inner_type(receiver_type).unwrap_or(receiver_type);
+        let Some(name) = struct_type_name(aggregate_type) else {
+            return Ok(false);
+        };
+        let layout = self.layouts.layouts.get(name.as_str()).ok_or_else(|| invalid(
+            format!("packed field receiver {name} has no canonical layout"),
+        ))?;
+        Ok(layout.packed && layout.fields.iter().any(|field| {
+            field.name == node.text && field.ty == "Int"
+        }))
+    }
+
     fn lower_place(
         &mut self,
         builder: &mut FunctionBuilder<'_>,
@@ -2220,12 +2263,12 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
                 if borrows_value {
                     Ok(Evaluated::Scalar(place.address))
                 } else if is_scalar_type(&node.ty) {
-                    Ok(Evaluated::Scalar(load_scalar(
-                        builder,
-                        place.address,
-                        &node.ty,
-                        self.pointer_type(),
-                    )?))
+                    let value = if self.is_packed_int_field(node_index)? {
+                        load_packed_int(builder, place.address)
+                    } else {
+                        load_scalar(builder, place.address, &node.ty, self.pointer_type())?
+                    };
+                    Ok(Evaluated::Scalar(value))
                 } else {
                     Ok(Evaluated::Aggregate(place))
                 }
@@ -3960,10 +4003,16 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
             }
             "Assign" => {
                 let destination_type = self.program.nodes[node.children[0]].ty.clone();
+                let packed_int = self.is_packed_int_field(node.children[0])?;
                 let destination = self.lower_place(builder, node.children[0])?;
                 let value =
                     self.lower_expression(builder, node.children[1], Some(&destination_type))?;
-                self.store_evaluated(builder, destination, value, &destination_type)?;
+                if packed_int {
+                    let scalar = self.scalar(builder, value, &destination_type)?;
+                    store_packed_int(builder, destination.address, scalar);
+                } else {
+                    self.store_evaluated(builder, destination, value, &destination_type)?;
+                }
                 Ok(false)
             }
             "Evaluate" => {
@@ -4355,6 +4404,7 @@ fn selected_repr_c_probe_host_with_signature(
     symbol: &str,
     parameter_type: &str,
     result_type: &str,
+    packed: bool,
 ) -> Result<bool, Box<dyn Error>> {
     let program = parse(contents)?;
     let selected: Vec<_> = program.functions.iter().filter(|function| {
@@ -4375,17 +4425,19 @@ fn selected_repr_c_probe_host_with_signature(
     }
     let layout = program.layouts.iter().find(|layout| layout.erased_name == "FfiProbe")
         .ok_or_else(|| invalid("selected repr(C) test host layout is absent"))?;
-    if !layout.repr_c || layout.packed || layout.abi != "C"
+    if !layout.repr_c || layout.packed != packed || layout.abi != "C"
         || layout.fields.iter().map(|field| (field.name.as_str(), field.ty.as_str()))
             .collect::<Vec<_>>() != vec![("a", "Byte"), ("b", "Int"), ("c", "Byte")] {
         return Err(invalid("selected repr(C) test host layout contract disagrees"));
     }
     let mut engine = LayoutEngine::new(&program, 8);
     let physical = engine.layout("Struct(\"FfiProbe\", None)")?;
-    if physical.size != 12 || physical.align != 4
+    let (expected_size, expected_align, middle_offset, last_offset) =
+        if packed { (6, 1, 1, 5) } else { (12, 4, 4, 8) };
+    if physical.size != expected_size || physical.align != expected_align
         || physical.fields.get("a").map(|field| field.offset) != Some(0)
-        || physical.fields.get("b").map(|field| field.offset) != Some(4)
-        || physical.fields.get("c").map(|field| field.offset) != Some(8) {
+        || physical.fields.get("b").map(|field| field.offset) != Some(middle_offset)
+        || physical.fields.get("c").map(|field| field.offset) != Some(last_offset) {
         return Err(invalid("selected repr(C) test host physical layout disagrees"));
     }
     Ok(true)
@@ -4397,6 +4449,7 @@ pub fn selected_repr_c_probe_host(contents: &str) -> Result<bool, Box<dyn Error>
         "tiny_host_read_repr_c_probe",
         "Reference(Struct(\"FfiProbe\", None), None)",
         "Int",
+        false,
     )
 }
 
@@ -4406,6 +4459,17 @@ pub fn selected_repr_c_write_host(contents: &str) -> Result<bool, Box<dyn Error>
         "tiny_host_write_repr_c_probe",
         "RawPointer(Struct(\"FfiProbe\", None))",
         "Void",
+        false,
+    )
+}
+
+pub fn selected_packed_probe_host(contents: &str) -> Result<bool, Box<dyn Error>> {
+    selected_repr_c_probe_host_with_signature(
+        contents,
+        "tiny_host_read_packed_probe",
+        "Reference(Struct(\"FfiProbe\", None), None)",
+        "Int",
+        true,
     )
 }
 
