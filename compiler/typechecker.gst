@@ -1768,6 +1768,15 @@ func phase26_zero_mul(left: int, right: int) int {
     return phase26_zero_unknown();
 }
 
+// Only a proved nonzero divisor licenses division evidence. Other divisor
+// states retain Unknown, including the existing division-by-zero behavior.
+func phase26_zero_div(left: int, right: int) int {
+    if right != phase26_zero_no() { return phase26_zero_unknown(); }
+    if left == phase26_zero_yes() { return phase26_zero_yes(); }
+    if left == phase26_zero_may() { return phase26_zero_may(); }
+    return phase26_zero_unknown();
+}
+
 func phase26_zero_join_maps(left: std.HashMap[str, int, ctx], right: std.HashMap[str, int, ctx], ctx: &Arena) std.HashMap[str, int, ctx] {
     mut joined: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
     mut left_keys := left.Keys(ctx);
@@ -1967,12 +1976,14 @@ func phase26_zero_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *Ty
         }
         if expr.tag == 10 && (std.str_eq(expr.Binary.op, "+") == 1 ||
                               std.str_eq(expr.Binary.op, "-") == 1 ||
-                              std.str_eq(expr.Binary.op, "*") == 1) {
+                              std.str_eq(expr.Binary.op, "*") == 1 ||
+                              std.str_eq(expr.Binary.op, "/") == 1) {
             mut left := phase26_zero_expression(expr.Binary.left, env, ctx);
             mut right := phase26_zero_expression(expr.Binary.right, env, ctx);
             if std.str_eq(expr.Binary.op, "+") == 1 { return phase26_zero_add(left, right); }
             if std.str_eq(expr.Binary.op, "-") == 1 { return phase26_zero_sub(left, right); }
-            return phase26_zero_mul(left, right);
+            if std.str_eq(expr.Binary.op, "*") == 1 { return phase26_zero_mul(left, right); }
+            return phase26_zero_div(left, right);
         }
     }
     return phase26_zero_unknown();

@@ -318,6 +318,18 @@ when the cast is inside `unsafe`. Nonzero values and explicitly unsafe callees
 retain their prior acceptance. Physical ABI, MIR, runtime, and layout are
 unchanged. General nullability and Phase 26.1 remain open.
 
+**26.1E division zero subset (ownership authorized 2026-09-28).** For an
+already-typechecked `Int` or `Byte` division, a Zero numerator divided by a
+proved Nonzero denominator remains Zero, and a MayZero numerator divided by a
+proved Nonzero denominator remains MayZero. Every other state pair stays
+Unknown, including a zero, MayZero, or unknown denominator. The existing
+declared-safe non-extern raw-pointer argument and return gates reject these
+proved zero paths before native planning; explicitly unsafe callees retain
+their prior behavior. This is a value-evidence rule, not a division-by-zero
+policy or a general constant evaluator. Operator semantics, MIR, physical
+ABI, layout, and runtime remain unchanged. General nullability and Phase
+26.1 remain open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

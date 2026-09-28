@@ -349,6 +349,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     arithmetic_zero_successor = registry.get("phase26_activation_audit", {}).get(
         "arithmetic_zero_evidence_increment", {}).get(
             "spelling_inventory_successor")
+    division_zero_successor = registry.get("phase26_activation_audit", {}).get(
+        "division_zero_evidence_increment", {}).get(
+            "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -929,7 +932,8 @@ def validate() -> tuple[dict, list[dict], dict]:
                 "phase26_1e_arithmetic_zero_spelling_inventory_successor_v1" and
                 arithmetic_zero_successor.get("previous_inventory_summary") ==
                 previous_arithmetic and
-                now_arithmetic == summary and
+                now_arithmetic == (summary if division_zero_successor is None else
+                                   division_zero_successor.get("previous_inventory_summary")) and
                 arithmetic_zero_successor.get("changed_source_paths") == fixture_paths and
                 arithmetic_zero_successor.get("partial_extra_or_substituted_inventory") ==
                 "rejected" and
@@ -938,6 +942,29 @@ def validate() -> tuple[dict, list[dict], dict]:
                 now_arithmetic["site_count"] == previous_arithmetic["site_count"] and
                 now_arithmetic["unknown_site_count"] == 0,
                 "Phase 26 arithmetic zero spelling inventory drifted")
+    if division_zero_successor is not None:
+        previous_division = arithmetic_zero_successor["current_inventory_summary"]
+        now_division = division_zero_successor.get("current_inventory_summary", {})
+        fixture_paths = sorted([
+            "compiler/typechecker.gst",
+            "compiler/phase26_division_zero_test_entry.gst",
+            "compiler/phase26_division_zero_safe_call_source.gst",
+            "compiler/phase26_division_zero_safe_return_source.gst",
+        ])
+        require(arithmetic_zero_successor is not None and
+                division_zero_successor.get("contract_version") ==
+                "phase26_1e_division_zero_spelling_inventory_successor_v1" and
+                division_zero_successor.get("previous_inventory_summary") ==
+                previous_division and
+                now_division == summary and
+                division_zero_successor.get("changed_source_paths") == fixture_paths and
+                division_zero_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and
+                now_division["source_file_count"] ==
+                previous_division["source_file_count"] + 3 and
+                now_division["site_count"] == previous_division["site_count"] and
+                now_division["unknown_site_count"] == 0,
+                "Phase 26 division zero spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),
