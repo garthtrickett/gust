@@ -1739,6 +1739,35 @@ func phase26_zero_add(left: int, right: int) int {
     return phase26_zero_unknown();
 }
 
+// These tables carry only proved zero paths through already typechecked
+// integer/byte arithmetic. Other values remain Unknown; this is not a
+// general constant evaluator or a claim that multiplication cannot overflow.
+func phase26_zero_sub(left: int, right: int) int {
+    if left == phase26_zero_yes() {
+        if right == phase26_zero_yes() { return phase26_zero_yes(); }
+        if right == phase26_zero_no() { return phase26_zero_no(); }
+        if right == phase26_zero_may() { return phase26_zero_may(); }
+    }
+    if right == phase26_zero_yes() {
+        if left == phase26_zero_no() { return phase26_zero_no(); }
+        if left == phase26_zero_may() { return phase26_zero_may(); }
+    }
+    if left == phase26_zero_may() && right == phase26_zero_may() {
+        return phase26_zero_may();
+    }
+    return phase26_zero_unknown();
+}
+
+func phase26_zero_mul(left: int, right: int) int {
+    if left == phase26_zero_yes() || right == phase26_zero_yes() {
+        return phase26_zero_yes();
+    }
+    if left == phase26_zero_may() || right == phase26_zero_may() {
+        return phase26_zero_may();
+    }
+    return phase26_zero_unknown();
+}
+
 func phase26_zero_join_maps(left: std.HashMap[str, int, ctx], right: std.HashMap[str, int, ctx], ctx: &Arena) std.HashMap[str, int, ctx] {
     mut joined: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
     mut left_keys := left.Keys(ctx);
@@ -1936,10 +1965,14 @@ func phase26_zero_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *Ty
         if expr.tag == 9 { // AsCast
             return phase26_zero_expression(expr.AsCast.left, env, ctx);
         }
-        if expr.tag == 10 && std.str_eq(expr.Binary.op, "+") == 1 {
+        if expr.tag == 10 && (std.str_eq(expr.Binary.op, "+") == 1 ||
+                              std.str_eq(expr.Binary.op, "-") == 1 ||
+                              std.str_eq(expr.Binary.op, "*") == 1) {
             mut left := phase26_zero_expression(expr.Binary.left, env, ctx);
             mut right := phase26_zero_expression(expr.Binary.right, env, ctx);
-            return phase26_zero_add(left, right);
+            if std.str_eq(expr.Binary.op, "+") == 1 { return phase26_zero_add(left, right); }
+            if std.str_eq(expr.Binary.op, "-") == 1 { return phase26_zero_sub(left, right); }
+            return phase26_zero_mul(left, right);
         }
     }
     return phase26_zero_unknown();

@@ -346,6 +346,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     nested_zero_successor = registry.get("phase26_activation_audit", {}).get(
         "nested_field_zero_evidence_increment", {}).get(
             "spelling_inventory_successor")
+    arithmetic_zero_successor = registry.get("phase26_activation_audit", {}).get(
+        "arithmetic_zero_evidence_increment", {}).get(
+            "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -902,7 +905,8 @@ def validate() -> tuple[dict, list[dict], dict]:
                 "phase26_1e_nested_field_zero_spelling_inventory_successor_v1" and
                 nested_zero_successor.get("previous_inventory_summary") ==
                 previous_nested and
-                now_nested == summary and
+                now_nested == (summary if arithmetic_zero_successor is None else
+                               arithmetic_zero_successor.get("previous_inventory_summary")) and
                 nested_zero_successor.get("changed_source_paths") == fixture_paths and
                 nested_zero_successor.get("partial_extra_or_substituted_inventory") ==
                 "rejected" and
@@ -911,6 +915,29 @@ def validate() -> tuple[dict, list[dict], dict]:
                 now_nested["site_count"] == previous_nested["site_count"] and
                 now_nested["unknown_site_count"] == 0,
                 "Phase 26 nested field-zero spelling inventory drifted")
+    if arithmetic_zero_successor is not None:
+        previous_arithmetic = nested_zero_successor["current_inventory_summary"]
+        now_arithmetic = arithmetic_zero_successor.get("current_inventory_summary", {})
+        fixture_paths = sorted([
+            "compiler/typechecker.gst",
+            "compiler/phase26_arithmetic_zero_test_entry.gst",
+            *[f"compiler/phase26_arithmetic_zero_safe_{name}_source.gst" for name in
+              ("sub_call", "mul_call", "sub_return", "mul_return")],
+        ])
+        require(nested_zero_successor is not None and
+                arithmetic_zero_successor.get("contract_version") ==
+                "phase26_1e_arithmetic_zero_spelling_inventory_successor_v1" and
+                arithmetic_zero_successor.get("previous_inventory_summary") ==
+                previous_arithmetic and
+                now_arithmetic == summary and
+                arithmetic_zero_successor.get("changed_source_paths") == fixture_paths and
+                arithmetic_zero_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and
+                now_arithmetic["source_file_count"] ==
+                previous_arithmetic["source_file_count"] + 5 and
+                now_arithmetic["site_count"] == previous_arithmetic["site_count"] and
+                now_arithmetic["unknown_site_count"] == 0,
+                "Phase 26 arithmetic zero spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),

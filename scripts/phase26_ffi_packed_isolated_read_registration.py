@@ -120,6 +120,9 @@ def main() -> None:
         nested_zero = {entry["path"]: entry for entry in activation.get(
             "nested_field_zero_evidence_increment", {}).get(
                 "phase23_text_surface_successor", {}).get("changed_rows", [])}.get(row["path"])
+        arithmetic_zero = {entry["path"]: entry for entry in activation.get(
+            "arithmetic_zero_evidence_increment", {}).get(
+                "phase23_text_surface_successor", {}).get("changed_rows", [])}.get(row["path"])
         predecessor_digest = (computed["current_digest"] if computed else
                               later["current_digest"] if later else row["current_digest"])
         require((later is None or later["previous_digest"] == row["current_digest"]) and
@@ -130,7 +133,12 @@ def main() -> None:
                 (nested_zero is None or nested_zero["previous_digest"] ==
                  (field_zero["current_digest"] if field_zero else
                   predecessor_digest)) and
-                (nested_zero["current_digest"] if nested_zero else
+                (arithmetic_zero is None or arithmetic_zero["previous_digest"] ==
+                 (nested_zero["current_digest"] if nested_zero else
+                  field_zero["current_digest"] if field_zero else
+                  predecessor_digest)) and
+                (arithmetic_zero["current_digest"] if arithmetic_zero else
+                 nested_zero["current_digest"] if nested_zero else
                  field_zero["current_digest"] if field_zero else
                  predecessor_digest) == digest(row["path"]) and
                 len(row["previous_digest"]) == 64,
