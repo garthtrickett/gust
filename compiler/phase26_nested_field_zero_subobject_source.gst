@@ -1,0 +1,8 @@
+type Inner struct { ptr: *int }
+type Outer struct { inner: Inner }
+func accept_raw(ptr: *int) {}
+func main() int {
+    mut outer: Outer;
+    unsafe { outer.inner.ptr = (0 + 0) as *int; outer.inner = outer.inner; accept_raw(outer.inner.ptr); }
+    return 0;
+}

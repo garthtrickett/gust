@@ -117,6 +117,9 @@ def main() -> None:
         field_zero = {entry["path"]: entry for entry in activation.get(
             "field_zero_evidence_increment", {}).get(
                 "phase23_text_surface_successor", {}).get("changed_rows", [])}.get(row["path"])
+        nested_zero = {entry["path"]: entry for entry in activation.get(
+            "nested_field_zero_evidence_increment", {}).get(
+                "phase23_text_surface_successor", {}).get("changed_rows", [])}.get(row["path"])
         predecessor_digest = (computed["current_digest"] if computed else
                               later["current_digest"] if later else row["current_digest"])
         require((later is None or later["previous_digest"] == row["current_digest"]) and
@@ -124,7 +127,11 @@ def main() -> None:
                  (later["current_digest"] if later else row["current_digest"])) and
                 (field_zero is None or field_zero["previous_digest"] ==
                  predecessor_digest) and
-                (field_zero["current_digest"] if field_zero else
+                (nested_zero is None or nested_zero["previous_digest"] ==
+                 (field_zero["current_digest"] if field_zero else
+                  predecessor_digest)) and
+                (nested_zero["current_digest"] if nested_zero else
+                 field_zero["current_digest"] if field_zero else
                  predecessor_digest) == digest(row["path"]) and
                 len(row["previous_digest"]) == 64,
                 f"changed text surface drifted: {row['path']}")

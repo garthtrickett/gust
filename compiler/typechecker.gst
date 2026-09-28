@@ -1805,6 +1805,36 @@ func phase26_zero_clear_local_fields(env: *TypeEnvironment[ctx], name: str, ctx:
     }
 }
 
+// Only by-value Struct selectors rooted in a lexical binding can carry local
+// field evidence. Pointer, Reference, index, and call bases have independent
+// aliasing and must not acquire a local-field proof through this path.
+func phase26_zero_local_struct_path_type(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) ast.Type[ctx] {
+    mut unavailable: ast.Type[ctx];
+    unsafe {
+        unavailable.tag = 3; // Void
+        if expr_idx == empty[Index[ast.Expression[ctx], ctx]] { return unavailable; }
+        mut expr := ctx[expr_idx];
+        if expr.tag == 0 { // Identifier
+            if scope_contains(scope, expr.Identifier.name, ctx) == 0 { return unavailable; }
+            mut root_type := env_resolve_type(env, scope_lookup(scope, expr.Identifier.name, ctx), ctx);
+            if root_type.tag == 8 { return root_type; } // Struct by value
+            return unavailable;
+        }
+        if expr.tag != 11 { return unavailable; } // Selector
+        mut base_type := phase26_zero_local_struct_path_type(expr.Selector.left, env, scope, ctx);
+        if base_type.tag != 8 { return unavailable; }
+        mut layout := (*env).struct_registry.Get(base_type.Struct.struct_name);
+        if layout.Ok {
+            mut field := layout.Val.fields.Get(expr.Selector.right);
+            if field.Ok {
+                mut field_type := env_resolve_type(env, field.Val, ctx);
+                if field_type.tag == 8 { return field_type; } // Struct by value
+            }
+        }
+    }
+    return unavailable;
+}
+
 func phase26_zero_store_local_field(env: *TypeEnvironment[ctx], key: str, state: int, ctx: &Arena) {
     unsafe {
     if state == phase26_zero_yes() || state == phase26_zero_may() {
@@ -14541,12 +14571,31 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 field_assign_prov.resolved_type = left_type;
                 env_record_field_provenance(env, field_key_assignment_prov, field_assign_prov, ctx);
                 mut field_base_zero := ctx[left.Selector.left];
-                if field_base_zero.tag == 0 && left_type.tag == 9 &&
-                   scope_contains(scope, field_base_zero.Identifier.name, ctx) == 1 &&
+                mut direct_local_field_zero := field_base_zero.tag == 0 &&
+                   scope_contains(scope, field_base_zero.Identifier.name, ctx) == 1;
+                mut nested_local_field_zero := 0;
+                if field_base_zero.tag == 11 {
+                    mut nested_base_type_zero := phase26_zero_local_struct_path_type(
+                        left.Selector.left, env, scope, ctx
+                    );
+                    if nested_base_type_zero.tag == 8 { nested_local_field_zero = 1; }
+                }
+                if (direct_local_field_zero || nested_local_field_zero) && left_type.tag == 9 &&
                    env_types_match_at_brand_boundary(env, left_type, val_type, ctx) == 1 {
                     phase26_zero_store_local_field(
                         env, field_key_assignment_prov, assignment_zero_state, ctx
                     );
+                }
+                if left_type.tag == 8 &&
+                   env_types_match_at_brand_boundary(env, left_type, val_type, ctx) == 1 {
+                    mut assigned_struct_path_zero := phase26_zero_local_struct_path_type(
+                        left_idx, env, scope, ctx
+                    );
+                    if assigned_struct_path_zero.tag == 8 {
+                        phase26_zero_invalidate_local_fields(
+                            env, field_key_assignment_prov, ctx
+                        );
+                    }
                 }
 
                 mut field_alias_left_expr_refassign := ctx[left.Selector.left];
