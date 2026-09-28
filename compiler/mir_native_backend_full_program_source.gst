@@ -300,7 +300,8 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                                         std.str_eq(parameter.ffi_policy, "borrow_read_isolated_call") == 0))) ||
                                      (resolved.tag == 9 &&
                                       (std.str_eq(host_symbol, "tiny_host_write_packed_probe") == 0 ||
-                                       std.str_eq(parameter.ffi_policy, "borrow_write_call") == 0)))) ||
+                                       (std.str_eq(parameter.ffi_policy, "borrow_write_call") == 0 &&
+                                        std.str_eq(parameter.ffi_policy, "borrow_write_isolated_call") == 0))))) ||
                                    (packed == 0 && resolved.tag == 11 && std.str_eq(host_symbol, "tiny_host_read_repr_c_probe") == 0) ||
                                    (packed == 0 && resolved.tag == 9 && std.str_eq(host_symbol, "tiny_host_write_repr_c_probe") == 0) {
                                     return "Native FFI borrowed aggregate host import is not approved";
@@ -312,10 +313,6 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                                    std.str_eq(signature.ffi_return_policy, "value") == 0 {
                                     return "Native FFI test host signature does not match its approved contract";
                                 }
-                                if packed == 1 &&
-                                   std.str_eq(parameter.ffi_policy, "borrow_write_isolated_call") == 1 {
-                                    return "Native FFI packed aggregate isolated policy is not approved";
-                                }
                                 if std.str_eq(parameter.ffi_policy, "borrow_read_isolated_call") == 1 &&
                                    (resolved.tag != 11 || signature.requires_sandbox_arena != 1 ||
                                     ((packed == 0 && std.str_eq(host_symbol, "tiny_host_read_repr_c_probe") == 0) ||
@@ -324,7 +321,8 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                                 }
                                 if std.str_eq(parameter.ffi_policy, "borrow_write_isolated_call") == 1 &&
                                    (resolved.tag != 9 || signature.requires_sandbox_arena != 1 ||
-                                    std.str_eq(host_symbol, "tiny_host_write_repr_c_probe") == 0) {
+                                    ((packed == 0 && std.str_eq(host_symbol, "tiny_host_write_repr_c_probe") == 0) ||
+                                     (packed == 1 && std.str_eq(host_symbol, "tiny_host_write_packed_probe") == 0))) {
                                     return "Native FFI isolated write contract is not approved";
                                 }
                                 if std.str_eq(name, "FfiProbe") == 0 || len(fields) != 3 ||

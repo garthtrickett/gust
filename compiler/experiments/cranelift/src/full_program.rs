@@ -2677,13 +2677,17 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
     ) -> Result<Evaluated, Box<dyn Error>> {
         // The explicit raw-pointer policy permits a call-bounded write. Native
         // code sees only the arena copy; copy-back is complete before Free.
-        if node.second_text != "tiny_host_write_repr_c_probe"
+        let packed = node.second_text == "tiny_host_write_packed_probe";
+        let copy_size = if packed { 6 } else { 12 };
+        let layout = self.layouts.layout("Struct(\"FfiProbe\", None)")?;
+        if (node.second_text != "tiny_host_write_repr_c_probe" && !packed)
             || callable.parameters.as_slice()
                 != ["RawPointer(Struct(\"FfiProbe\", None))"]
             || callable.result != "Void"
             || arguments.len() != 1
             || arguments[0].1 != callable.parameters[0]
-            || self.layouts.layout("Struct(\"FfiProbe\", None)")?.size != 12
+            || layout.size != copy_size
+            || layout.align != if packed { 1 } else { 4 }
         {
             return Err(invalid("isolated FFI write has an unapproved host or layout"));
         }
@@ -2692,7 +2696,7 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         let source = self.scalar(builder, source_eval, &arguments[0].1)?;
         let arena_eval = self.lower_arena_new(builder)?;
         let arena = self.arena_address(builder, arena_eval, "Arena")?;
-        let size = builder.ins().iconst(types::I64, 12);
+        let size = builder.ins().iconst(types::I64, i64::from(copy_size));
         let allocate = self.runtime.get("os_ArenaAlloc")
             .ok_or_else(|| invalid("isolated FFI arena allocator missing"))?;
         let allocate_ref = self.module.declare_func_in_func(allocate.id, builder.func);
@@ -2701,11 +2705,11 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         let base = builder.ins().load(self.pointer_type(), MemFlags::trusted(), arena, 0);
         let offset = builder.ins().uextend(self.pointer_type(), offset);
         let copy_address = builder.ins().iadd(base, offset);
-        self.copy_place(builder, Place { address: copy_address }, Place { address: source }, 12)?;
+        self.copy_place(builder, Place { address: copy_address }, Place { address: source }, copy_size)?;
 
         let native_ref = self.module.declare_func_in_func(callable.id, builder.func);
         builder.ins().call(native_ref, &[copy_address]);
-        self.copy_place(builder, Place { address: source }, Place { address: copy_address }, 12)?;
+        self.copy_place(builder, Place { address: source }, Place { address: copy_address }, copy_size)?;
         let free = self.runtime.get("os_Arena_Free")
             .ok_or_else(|| invalid("isolated FFI arena destructor missing"))?;
         let free_ref = self.module.declare_func_in_func(free.id, builder.func);

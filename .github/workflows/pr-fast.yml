@@ -839,6 +839,8 @@ jobs:
 
       - name: Phase 26 packed isolated read
         run: just guard-cranelift-phase26-ffi-packed-isolated-read
+      - name: Phase 26 packed isolated write
+        run: just guard-cranelift-phase26-ffi-packed-isolated-write
 
   final:
     name: final diff check
