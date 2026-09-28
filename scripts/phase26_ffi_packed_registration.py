@@ -24,6 +24,18 @@ def require(value: bool, message: str) -> None:
 
 def project_live_digest_to_pre_packed(registry: dict, path: str,
                                       live_digest: str) -> str:
+    isolated_rows = registry.get("phase26_activation_audit", {}).get(
+        "ffi_packed_isolated_read_increment", {}).get(
+            "phase23_text_surface_successor", {}).get("changed_rows", [])
+    isolated_selected = [row for row in isolated_rows if row.get("path") == path]
+    require(len(isolated_selected) <= 1,
+            f"duplicate packed isolated read text surface: {path}")
+    if isolated_selected:
+        row = isolated_selected[0]
+        require(row["current_digest"] == live_digest and
+                len(row["previous_digest"]) == 64,
+                f"packed isolated read text surface drifted: {path}")
+        live_digest = row["previous_digest"]
     write_rows = registry.get("phase26_activation_audit", {}).get(
         "ffi_packed_write_increment", {}).get(
             "phase23_text_surface_successor", {}).get("changed_rows", [])

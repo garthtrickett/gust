@@ -296,7 +296,8 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                                 if (packed == 1 &&
                                     ((resolved.tag == 11 &&
                                       (std.str_eq(host_symbol, "tiny_host_read_packed_probe") == 0 ||
-                                       std.str_eq(parameter.ffi_policy, "borrow_read_call") == 0)) ||
+                                       (std.str_eq(parameter.ffi_policy, "borrow_read_call") == 0 &&
+                                        std.str_eq(parameter.ffi_policy, "borrow_read_isolated_call") == 0))) ||
                                      (resolved.tag == 9 &&
                                       (std.str_eq(host_symbol, "tiny_host_write_packed_probe") == 0 ||
                                        std.str_eq(parameter.ffi_policy, "borrow_write_call") == 0)))) ||
@@ -312,13 +313,13 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                                     return "Native FFI test host signature does not match its approved contract";
                                 }
                                 if packed == 1 &&
-                                   (std.str_eq(parameter.ffi_policy, "borrow_read_isolated_call") == 1 ||
-                                    std.str_eq(parameter.ffi_policy, "borrow_write_isolated_call") == 1) {
+                                   std.str_eq(parameter.ffi_policy, "borrow_write_isolated_call") == 1 {
                                     return "Native FFI packed aggregate isolated policy is not approved";
                                 }
                                 if std.str_eq(parameter.ffi_policy, "borrow_read_isolated_call") == 1 &&
                                    (resolved.tag != 11 || signature.requires_sandbox_arena != 1 ||
-                                    std.str_eq(host_symbol, "tiny_host_read_repr_c_probe") == 0) {
+                                    ((packed == 0 && std.str_eq(host_symbol, "tiny_host_read_repr_c_probe") == 0) ||
+                                     (packed == 1 && std.str_eq(host_symbol, "tiny_host_read_packed_probe") == 0))) {
                                     return "Native FFI isolated read contract is not approved";
                                 }
                                 if std.str_eq(parameter.ffi_policy, "borrow_write_isolated_call") == 1 &&

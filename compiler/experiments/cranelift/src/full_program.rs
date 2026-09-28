@@ -2625,15 +2625,20 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         callable: &Callable,
         arguments: &[(usize, String)],
     ) -> Result<Evaluated, Box<dyn Error>> {
-        // Only the approved flat repr(C) read host can receive an isolated
-        // copy. The ordinary call path never enters this wrapper.
-        if node.second_text != "tiny_host_read_repr_c_probe"
+        // Only an approved flat repr(C) read host can receive an isolated
+        // copy. The packed host uses its proven six-byte unaligned layout.
+        // The ordinary call path never enters this wrapper.
+        let packed = node.second_text == "tiny_host_read_packed_probe";
+        let copy_size = if packed { 6 } else { 12 };
+        let layout = self.layouts.layout("Struct(\"FfiProbe\", None)")?;
+        if (node.second_text != "tiny_host_read_repr_c_probe" && !packed)
             || callable.parameters.as_slice()
                 != ["Reference(Struct(\"FfiProbe\", None), None)"]
             || callable.result != "Int"
             || arguments.len() != 1
             || arguments[0].1 != callable.parameters[0]
-            || self.layouts.layout("Struct(\"FfiProbe\", None)")?.size != 12
+            || layout.size != copy_size
+            || layout.align != if packed { 1 } else { 4 }
         {
             return Err(invalid("isolated FFI call has an unapproved host or layout"));
         }
@@ -2642,7 +2647,7 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         let source = self.scalar(builder, source_eval, &arguments[0].1)?;
         let arena_eval = self.lower_arena_new(builder)?;
         let arena = self.arena_address(builder, arena_eval, "Arena")?;
-        let size = builder.ins().iconst(types::I64, 12);
+        let size = builder.ins().iconst(types::I64, i64::from(copy_size));
         let allocate = self.runtime.get("os_ArenaAlloc")
             .ok_or_else(|| invalid("isolated FFI arena allocator missing"))?;
         let allocate_ref = self.module.declare_func_in_func(allocate.id, builder.func);
@@ -2651,7 +2656,7 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         let base = builder.ins().load(self.pointer_type(), MemFlags::trusted(), arena, 0);
         let offset = builder.ins().uextend(self.pointer_type(), offset);
         let copy_address = builder.ins().iadd(base, offset);
-        self.copy_place(builder, Place { address: copy_address }, Place { address: source }, 12)?;
+        self.copy_place(builder, Place { address: copy_address }, Place { address: source }, copy_size)?;
 
         let native_ref = self.module.declare_func_in_func(callable.id, builder.func);
         let native_call = builder.ins().call(native_ref, &[copy_address]);

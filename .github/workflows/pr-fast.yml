@@ -837,6 +837,9 @@ jobs:
       - name: Phase 26 packed raw pointer write
         run: just guard-cranelift-phase26-ffi-packed-write
 
+      - name: Phase 26 packed isolated read
+        run: just guard-cranelift-phase26-ffi-packed-isolated-read
+
   final:
     name: final diff check
     runs-on: ubuntu-latest
