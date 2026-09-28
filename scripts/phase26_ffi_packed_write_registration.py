@@ -109,13 +109,21 @@ def main() -> None:
     isolated_write_rows = {row["path"]: row for row in activation.get(
         "ffi_packed_isolated_write_increment", {}).get(
             "phase23_text_surface_successor", {}).get("changed_rows", [])}
+    computed_rows = {row["path"]: row for row in activation.get(
+        "computed_zero_raw_null_increment", {}).get(
+            "phase23_text_surface_successor", {}).get("changed_rows", [])}
     for row in surface["changed_rows"]:
         later = isolated_rows.get(row["path"])
         newest = isolated_write_rows.get(row["path"])
+        computed = computed_rows.get(row["path"])
         require((later is None or later["previous_digest"] == row["current_digest"]) and
                 (newest is None or newest["previous_digest"] ==
                  (later["current_digest"] if later else row["current_digest"])) and
-                (newest["current_digest"] if newest else
+                (computed is None or computed["previous_digest"] ==
+                 (newest["current_digest"] if newest else
+                  later["current_digest"] if later else row["current_digest"])) and
+                (computed["current_digest"] if computed else
+                 newest["current_digest"] if newest else
                  later["current_digest"] if later else row["current_digest"]) ==
                 digest(row["path"]) and
                 len(row["previous_digest"]) == 64,

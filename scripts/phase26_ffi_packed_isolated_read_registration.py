@@ -111,8 +111,14 @@ def main() -> None:
         later = {entry["path"]: entry for entry in activation.get(
             "ffi_packed_isolated_write_increment", {}).get(
                 "phase23_text_surface_successor", {}).get("changed_rows", [])}.get(row["path"])
+        computed = {entry["path"]: entry for entry in activation.get(
+            "computed_zero_raw_null_increment", {}).get(
+                "phase23_text_surface_successor", {}).get("changed_rows", [])}.get(row["path"])
         require((later is None or later["previous_digest"] == row["current_digest"]) and
-                (later["current_digest"] if later else row["current_digest"]) ==
+                (computed is None or computed["previous_digest"] ==
+                 (later["current_digest"] if later else row["current_digest"])) and
+                (computed["current_digest"] if computed else
+                 later["current_digest"] if later else row["current_digest"]) ==
                 digest(row["path"]) and
                 len(row["previous_digest"]) == 64,
                 f"changed text surface drifted: {row['path']}")
