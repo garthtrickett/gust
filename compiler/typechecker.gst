@@ -967,6 +967,7 @@ type TypeEnvironment[ctx] struct {
     variable_origins: std.HashMap[str, Index[OriginSet[ctx], ctx], ctx],
     variable_provenance: std.HashMap[str, ExpressionProvenance[ctx], ctx],
     variable_zero_states: std.HashMap[str, int, ctx],
+    field_zero_states: std.HashMap[str, int, ctx],
     field_provenance: std.HashMap[str, ExpressionProvenance[ctx], ctx],
     container_provenance: std.HashMap[str, ExpressionProvenance[ctx], ctx],
     moved_vars: std.HashMap[str, int, ctx],
@@ -1771,6 +1772,114 @@ func phase26_zero_join_maps(left: std.HashMap[str, int, ctx], right: std.HashMap
     return joined;
 }
 
+// A direct local field uses the same expression key as field provenance.
+// Unsupported whole-object flows lose any precise evidence already recorded;
+// MayZero retains the known possibility of zero without claiming an alias model.
+func phase26_zero_invalidate_local_fields(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) {
+    unsafe {
+    mut prefix := std.Concat(name, ".");
+    mut keys := (*env).field_zero_states.Keys(ctx);
+    mut i := 0;
+    while i < len(keys) {
+        mut key := keys[i];
+        if len(key) >= len(prefix) && std.str_eq(std.str_slice(key, 0, len(prefix)), prefix) == 1 {
+            (*env).field_zero_states.Insert(std.Clone(ctx, key), phase26_zero_may());
+        }
+        i = i + 1;
+    }
+    }
+}
+
+func phase26_zero_clear_local_fields(env: *TypeEnvironment[ctx], name: str, ctx: &Arena) {
+    unsafe {
+    mut prefix := std.Concat(name, ".");
+    mut keys := (*env).field_zero_states.Keys(ctx);
+    mut i := 0;
+    while i < len(keys) {
+        mut key := keys[i];
+        if len(key) >= len(prefix) && std.str_eq(std.str_slice(key, 0, len(prefix)), prefix) == 1 {
+            (*env).field_zero_states.Remove(key);
+        }
+        i = i + 1;
+    }
+    }
+}
+
+func phase26_zero_store_local_field(env: *TypeEnvironment[ctx], key: str, state: int, ctx: &Arena) {
+    unsafe {
+    if state == phase26_zero_yes() || state == phase26_zero_may() {
+        (*env).field_zero_states.Insert(std.Clone(ctx, key), state);
+        return;
+    }
+    if state == phase26_zero_no() {
+        (*env).field_zero_states.Remove(key);
+        return;
+    }
+    mut previous := (*env).field_zero_states.Get(key);
+    if previous.Ok {
+        (*env).field_zero_states.Insert(std.Clone(ctx, key), phase26_zero_may());
+    }
+    }
+}
+
+func phase26_zero_note_local_alias(env: *TypeEnvironment[ctx], target: str, source: str, ctx: &Arena) {
+    unsafe {
+    if std.str_eq(target, source) == 1 { return; }
+    mut prefix := std.Concat(source, ".");
+    mut keys := (*env).field_zero_states.Keys(ctx);
+    mut i := 0;
+    while i < len(keys) {
+        mut key := keys[i];
+        if len(key) >= len(prefix) && std.str_eq(std.str_slice(key, 0, len(prefix)), prefix) == 1 {
+            mut target_key := std.Concat(target, std.str_slice(key, len(source), len(key)));
+            (*env).field_zero_states.Insert(std.Clone(ctx, target_key), phase26_zero_may());
+            (*env).field_zero_states.Insert(std.Clone(ctx, key), phase26_zero_may());
+        }
+        i = i + 1;
+    }
+    }
+}
+
+func phase26_zero_local_alias_source(expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena) str {
+    unsafe {
+        mut current := expr_idx;
+        while current != empty[Index[ast.Expression[ctx], ctx]] {
+            mut expr := ctx[current];
+            if expr.tag == 0 { return std.Clone(ctx, expr.Identifier.name); }
+            if expr.tag != 4 { return ""; }
+            current = expr.Move.expr;
+        }
+    }
+    return "";
+}
+
+func phase26_zero_restore_shadowed_fields(env: *TypeEnvironment[ctx], name: str, prior: std.HashMap[str, int, ctx], ctx: &Arena) {
+    unsafe {
+    mut prefix := std.Concat(name, ".");
+    mut keys := (*env).field_zero_states.Keys(ctx);
+    mut i := 0;
+    while i < len(keys) {
+        mut key := keys[i];
+        if len(key) >= len(prefix) && std.str_eq(std.str_slice(key, 0, len(prefix)), prefix) == 1 {
+            (*env).field_zero_states.Remove(key);
+        }
+        i = i + 1;
+    }
+    mut prior_keys := prior.Keys(ctx);
+    mut j := 0;
+    while j < len(prior_keys) {
+        mut key := prior_keys[j];
+        if len(key) >= len(prefix) && std.str_eq(std.str_slice(key, 0, len(prefix)), prefix) == 1 {
+            mut prior_value := prior.Get(key);
+            if prior_value.Ok {
+                (*env).field_zero_states.Insert(std.Clone(ctx, key), prior_value.Val);
+            }
+        }
+        j = j + 1;
+    }
+    }
+}
+
 func phase26_zero_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
     if expr_idx == empty[Index[ast.Expression[ctx], ctx]] { return phase26_zero_unknown(); }
     unsafe {
@@ -1782,6 +1891,12 @@ func phase26_zero_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *Ty
         if expr.tag == 0 { // Identifier
             if std.str_eq(expr.Identifier.name, "null") == 1 { return phase26_zero_unknown(); }
             mut value := (*env).variable_zero_states.Get(expr.Identifier.name);
+            if value.Ok { return value.Val; }
+            return phase26_zero_unknown();
+        }
+        if expr.tag == 11 { // Selector
+            mut key := expression_to_string(expr_idx, ctx);
+            mut value := (*env).field_zero_states.Get(key);
             if value.Ok { return value.Val; }
             return phase26_zero_unknown();
         }
@@ -8483,6 +8598,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.variable_origins = std.HashMapNew(ctx);
         env_ref_new.variable_provenance = std.HashMapNew(ctx);
         env_ref_new.variable_zero_states = std.HashMapNew(ctx);
+        env_ref_new.field_zero_states = std.HashMapNew(ctx);
         env_ref_new.field_provenance = std.HashMapNew(ctx);
         env_ref_new.container_provenance = std.HashMapNew(ctx);
         env_ref_new.moved_vars = std.HashMapNew(ctx);
@@ -13737,6 +13853,7 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
         }
         mut parent_depth := (*env).current_resource_scope_depth;
         mut entering_zero_states := typechecker_clone_int_map((*env).variable_zero_states, ctx);
+        mut entering_field_zero_states := typechecker_clone_int_map((*env).field_zero_states, ctx);
         if establish_nested_scope == 1 {
             (*env).current_resource_scope_depth = parent_depth + 1;
         }
@@ -13786,6 +13903,7 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
             } else {
                 (*env).variable_zero_states.Remove(local_name);
             }
+            phase26_zero_restore_shadowed_fields(env, local_name, entering_field_zero_states, ctx);
             local_zero_index = local_zero_index + 1;
         }
         (*env).current_resource_scope_depth = parent_depth;
@@ -13836,6 +13954,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut parent_resource_declaration_order := (*env).current_resource_declaration_order;
             mut parent_origins := typechecker_clone_origins((*env).variable_origins, ctx);
             mut parent_zero_states := typechecker_clone_int_map((*env).variable_zero_states, ctx);
+            mut parent_field_zero_states := typechecker_clone_int_map((*env).field_zero_states, ctx);
             mut parent_arena_lifecycle_bindings := typechecker_clone_string_map((*env).arena_lifecycle_bindings, ctx);
             mut parent_arena_lifecycle_deferred_frees := typechecker_clone_int_map((*env).arena_lifecycle_deferred_frees, ctx);
             mut parent_function_identity_scope := std.Clone(ctx, (*env).current_function_identity_scope);
@@ -13853,6 +13972,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).current_resource_declaration_order = 0;
             (*env).variable_origins = std.HashMapNew(ctx);
             (*env).variable_zero_states = std.HashMapNew(ctx);
+            (*env).field_zero_states = std.HashMapNew(ctx);
             (*env).arena_lifecycle_bindings = std.HashMapNew(ctx);
             (*env).arena_lifecycle_deferred_frees = std.HashMapNew(ctx);
             (*env).current_function_identity_scope = std.Clone(ctx, function_name_return_prov);
@@ -14020,6 +14140,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).current_resource_declaration_order = parent_resource_declaration_order;
             (*env).variable_origins = parent_origins;
             (*env).variable_zero_states = parent_zero_states;
+            (*env).field_zero_states = parent_field_zero_states;
             (*env).arena_lifecycle_bindings = parent_arena_lifecycle_bindings;
             (*env).arena_lifecycle_deferred_frees = parent_arena_lifecycle_deferred_frees;
             (*env).current_function_identity_scope = parent_function_identity_scope;
@@ -14102,6 +14223,15 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     msg = std.Concat(msg, "' must have an explicit type annotation");
                     report_error(2, msg, stmt.VarDecl.span, env, ctx);
                 }
+            }
+
+            mut field_alias_source_decl := phase26_zero_local_alias_source(val_idx, ctx);
+            if std.str_eq(field_alias_source_decl, name) == 0 {
+                phase26_zero_clear_local_fields(env, name, ctx);
+            }
+            if len(field_alias_source_decl) > 0 &&
+               scope_contains(scope, field_alias_source_decl, ctx) == 1 {
+                phase26_zero_note_local_alias(env, name, field_alias_source_decl, ctx);
             }
 
             if val_idx != empty[Index[ast.Expression[ctx], ctx]] {
@@ -14410,6 +14540,14 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 mut field_assign_prov := val_prov_assignment;
                 field_assign_prov.resolved_type = left_type;
                 env_record_field_provenance(env, field_key_assignment_prov, field_assign_prov, ctx);
+                mut field_base_zero := ctx[left.Selector.left];
+                if field_base_zero.tag == 0 && left_type.tag == 9 &&
+                   scope_contains(scope, field_base_zero.Identifier.name, ctx) == 1 &&
+                   env_types_match_at_brand_boundary(env, left_type, val_type, ctx) == 1 {
+                    phase26_zero_store_local_field(
+                        env, field_key_assignment_prov, assignment_zero_state, ctx
+                    );
+                }
 
                 mut field_alias_left_expr_refassign := ctx[left.Selector.left];
                 if field_alias_left_expr_refassign.tag == 12 { // Call
@@ -14605,6 +14743,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                             origs = typechecker_clone_origin_set(val_prov_assignment.legacy_origins, ctx);
                         }
                         if left.tag == 0 { // Identifier
+                            phase26_zero_invalidate_local_fields(env, root_name, ctx);
                             if ctx[origs].map.len == 0 {
                                 set_add(origs, root_name, ctx);
                             }
@@ -14614,6 +14753,11 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                             assign_prov.legacy_origins = origs;
                             env_record_variable_provenance(env, root_name, assign_prov, ctx);
                             (*env).variable_zero_states.Insert(std.Clone(ctx, root_name), assignment_zero_state);
+                            mut field_alias_source := phase26_zero_local_alias_source(val_idx, ctx);
+                            if len(field_alias_source) > 0 &&
+                               scope_contains(scope, field_alias_source, ctx) == 1 {
+                                phase26_zero_note_local_alias(env, root_name, field_alias_source, ctx);
+                            }
                         } else { 
                             if ctx[origs].map.len > 0 {
                                 mut existing_lookup := (*env).variable_origins.Get(root_name);
@@ -14677,6 +14821,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                             origs = typechecker_clone_origin_set(val_prov_assignment.legacy_origins, ctx);
                         }
                         if left.tag == 0 { // Identifier
+                            phase26_zero_invalidate_local_fields(env, root_name, ctx);
                             if ctx[origs].map.len == 0 {
                                 set_add(origs, root_name, ctx);
                             }
@@ -14686,6 +14831,11 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                             assign_prov.legacy_origins = origs;
                             env_record_variable_provenance(env, root_name, assign_prov, ctx);
                             (*env).variable_zero_states.Insert(std.Clone(ctx, root_name), assignment_zero_state);
+                            mut field_alias_source := phase26_zero_local_alias_source(val_idx, ctx);
+                            if len(field_alias_source) > 0 &&
+                               scope_contains(scope, field_alias_source, ctx) == 1 {
+                                phase26_zero_note_local_alias(env, root_name, field_alias_source, ctx);
+                            }
                         } else { 
                             if ctx[origs].map.len > 0 {
                                 mut existing_lookup := (*env).variable_origins.Get(root_name);
@@ -14748,6 +14898,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut parent_moved := typechecker_clone_int_map((*env).moved_vars, ctx);
             mut parent_origins := typechecker_clone_origins((*env).variable_origins, ctx);
             mut parent_zero_states_while := typechecker_clone_int_map((*env).variable_zero_states, ctx);
+            mut parent_field_zero_states_while := typechecker_clone_int_map((*env).field_zero_states, ctx);
             mut parent_resource_obligations_while := typechecker_clone_resource_acquisition_obligation_map(
                 (*env).resource_acquisition_obligations, ctx
             );
@@ -14760,6 +14911,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 body_idx, env, while_scope, 1, ctx
             );
             mut body_zero_states_while := typechecker_clone_int_map((*env).variable_zero_states, ctx);
+            mut body_field_zero_states_while := typechecker_clone_int_map((*env).field_zero_states, ctx);
 
             mut body_resource_obligations_while := typechecker_clone_resource_acquisition_obligation_map(
                 (*env).resource_acquisition_obligations, ctx
@@ -14783,6 +14935,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).moved_vars = parent_moved;
             (*env).variable_origins = parent_origins;
             (*env).variable_zero_states = phase26_zero_join_maps(parent_zero_states_while, body_zero_states_while, ctx);
+            (*env).field_zero_states = phase26_zero_join_maps(parent_field_zero_states_while, body_field_zero_states_while, ctx);
 
             return res;
         }
@@ -14800,6 +14953,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             mut pre_origins := typechecker_clone_origins((*env).variable_origins, ctx);
             mut pre_zero_states_if := typechecker_clone_int_map((*env).variable_zero_states, ctx);
+            mut pre_field_zero_states_if := typechecker_clone_int_map((*env).field_zero_states, ctx);
             mut pre_moved := typechecker_clone_int_map((*env).moved_vars, ctx);
             mut pre_checked := typechecker_clone_int_map((*env).checked_results, ctx);
             mut pre_resource_obligations_if := typechecker_clone_resource_acquisition_obligation_map(
@@ -14823,6 +14977,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             mut consequence_origins := (*env).variable_origins;
             mut consequence_zero_states_if := typechecker_clone_int_map((*env).variable_zero_states, ctx);
+            mut consequence_field_zero_states_if := typechecker_clone_int_map((*env).field_zero_states, ctx);
             mut consequence_moved := (*env).moved_vars;
             mut consequence_resource_obligations_if := typechecker_clone_resource_acquisition_obligation_map(
                 (*env).resource_acquisition_obligations, ctx
@@ -14849,6 +15004,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 // Reset to pre-if state for alternative branch evaluation
                 (*env).variable_origins = pre_origins;
                 (*env).variable_zero_states = typechecker_clone_int_map(pre_zero_states_if, ctx);
+                (*env).field_zero_states = typechecker_clone_int_map(pre_field_zero_states_if, ctx);
                 (*env).moved_vars = pre_moved;
                 (*env).checked_results = pre_checked;
                 (*env).resource_acquisition_obligations =
@@ -14866,6 +15022,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
                 mut alternative_origins := (*env).variable_origins;
                 mut alternative_zero_states_if := typechecker_clone_int_map((*env).variable_zero_states, ctx);
+                mut alternative_field_zero_states_if := typechecker_clone_int_map((*env).field_zero_states, ctx);
                 mut alternative_moved := (*env).moved_vars;
                 alternative_resource_obligations_if =
                     typechecker_clone_resource_acquisition_obligation_map(
@@ -14947,6 +15104,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
                 (*env).variable_origins = merged_origins;
                 (*env).variable_zero_states = phase26_zero_join_maps(consequence_zero_states_if, alternative_zero_states_if, ctx);
+                (*env).field_zero_states = phase26_zero_join_maps(consequence_field_zero_states_if, alternative_field_zero_states_if, ctx);
                 (*env).moved_vars = merged_moved;
             } else {
                 // Merge consequence with pre-if
@@ -14981,6 +15139,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
                 (*env).variable_origins = merged_origins;
                 (*env).variable_zero_states = phase26_zero_join_maps(pre_zero_states_if, consequence_zero_states_if, ctx);
+                (*env).field_zero_states = phase26_zero_join_maps(pre_field_zero_states_if, consequence_field_zero_states_if, ctx);
                 (*env).moved_vars = merged_moved;
             }
 
@@ -15007,6 +15166,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut cases_vec_match_stmt: std.Vector[ast.MatchCase[ctx], ctx] := ctx[stmt.Match.cases];
 
             mut expr_type := check_expression(expr_idx, env, scope, ctx);
+            mut pre_field_zero_states_match := typechecker_clone_int_map((*env).field_zero_states, ctx);
+            mut merged_field_zero_states_match := typechecker_clone_int_map(pre_field_zero_states_match, ctx);
             mut pre_resource_obligations_match := typechecker_clone_resource_acquisition_obligation_map(
                 (*env).resource_acquisition_obligations, ctx
             );
@@ -15033,6 +15194,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
                 mut i := 0;
                 while i < len(cases_vec_match_stmt) {
+                    (*env).field_zero_states = typechecker_clone_int_map(pre_field_zero_states_match, ctx);
                     (*env).resource_acquisition_obligations =
                         typechecker_clone_resource_acquisition_obligation_map(
                             pre_resource_obligations_match, ctx
@@ -15109,6 +15271,9 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     typechecker_check_resource_scoped_block(
                         body_idx, env, child_scope, 1, ctx
                     );
+                    merged_field_zero_states_match = phase26_zero_join_maps(
+                        merged_field_zero_states_match, (*env).field_zero_states, ctx
+                    );
 
                     // Clean up variable types after leaving child scope
                     mut f_cleanup := 0;
@@ -15173,6 +15338,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).resource_acquisition_obligations =
                 merged_resource_obligations_match;
             (*env).resource_value_identities = merged_resource_values_match;
+            (*env).field_zero_states = merged_field_zero_states_match;
 
             return res;
         }
@@ -15421,6 +15587,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut parent_resource_value_identities_guard_else := typechecker_clone_string_map((*env).resource_value_identities, ctx);
             mut parent_origins := typechecker_clone_origins((*env).variable_origins, ctx);
             mut parent_zero_states_guard := typechecker_clone_int_map((*env).variable_zero_states, ctx);
+            mut parent_field_zero_states_guard := typechecker_clone_int_map((*env).field_zero_states, ctx);
 
             // A fallible guard's else branch is the acquisition-failure path.
             // Check that branch without a live ownership obligation, then
@@ -15448,6 +15615,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             (*env).variable_origins = parent_origins;
             (*env).variable_zero_states = parent_zero_states_guard;
+            (*env).field_zero_states = parent_field_zero_states_guard;
             (*env).moved_vars = parent_moved;
             (*env).open_directories = parent_open_dirs;
             (*env).open_linear_resources = parent_open_linear_resources_guard_else;

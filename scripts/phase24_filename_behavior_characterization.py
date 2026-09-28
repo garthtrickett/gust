@@ -241,6 +241,9 @@ def validate_static(value: dict) -> None:
                 computed_sites = registry.get("phase26_activation_audit", {}).get(
                     "computed_zero_raw_null_increment", {}).get(
                         "filename_site_successor")
+                field_zero_sites = registry.get("phase26_activation_audit", {}).get(
+                    "field_zero_evidence_increment", {}).get(
+                        "filename_site_successor")
                 e1_current = (live_sites if d5_sites is None else
                               d5_sites.get("previous_sites"))
                 require(e1_sites.get("contract_version") ==
@@ -384,7 +387,9 @@ def validate_static(value: dict) -> None:
                             computed_sites.get("contract_version") ==
                             "phase26_1e_computed_zero_filename_site_successor_v1" and
                             computed_sites.get("previous_sites") == previous_computed and
-                            computed_sites.get("current_sites") == live_sites and
+                            computed_sites.get("current_sites") ==
+                            (live_sites if field_zero_sites is None else
+                             field_zero_sites.get("previous_sites")) and
                             isinstance(deltas_computed, list) and
                             len(deltas_computed) == len(live_sites) == 3 and
                             all(isinstance(delta, int) and delta >= 0
@@ -395,8 +400,28 @@ def validate_static(value: dict) -> None:
                                 {key: val for key, val in now.items() if key != "line"} ==
                                 {key: val for key, val in before.items() if key != "line"}
                                 for before, now, delta in zip(previous_computed,
-                                    live_sites, deltas_computed)),
+                                    computed_sites.get("current_sites"), deltas_computed)),
                             "Phase 26 computed-zero filename sites changed beyond value-state shift")
+                if field_zero_sites is not None:
+                    previous_field_zero = computed_sites["current_sites"]
+                    deltas_field_zero = field_zero_sites.get("line_deltas")
+                    require(computed_sites is not None and
+                            field_zero_sites.get("contract_version") ==
+                            "phase26_1e_field_zero_filename_site_successor_v1" and
+                            field_zero_sites.get("previous_sites") == previous_field_zero and
+                            field_zero_sites.get("current_sites") == live_sites and
+                            isinstance(deltas_field_zero, list) and
+                            len(deltas_field_zero) == len(live_sites) == 3 and
+                            all(isinstance(delta, int) and delta >= 0
+                                for delta in deltas_field_zero) and
+                            field_zero_sites.get("partial_extra_or_substituted_site") ==
+                            "rejected" and
+                            all(now["line"] == before["line"] + delta and
+                                {key: val for key, val in now.items() if key != "line"} ==
+                                {key: val for key, val in before.items() if key != "line"}
+                                for before, now, delta in zip(previous_field_zero,
+                                    live_sites, deltas_field_zero)),
+                            "Phase 26 field-zero filename sites changed beyond local-field evidence shift")
     require([row["selector"] for row in value["site_manifest"]] ==
             ["test_tcs_", "test_index_", "test_tcs_"],
             "selector order or completeness drifted")

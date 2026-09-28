@@ -834,6 +834,9 @@ jobs:
       - name: Phase 26 computed-zero raw null boundary
         run: just guard-cranelift-phase26-computed-zero-raw-null
 
+      - name: Phase 26 local field zero evidence
+        run: just guard-cranelift-phase26-field-zero-evidence
+
       - name: Phase 26 packed borrowed repr C layout
         run: just guard-cranelift-phase26-ffi-packed-layout
 

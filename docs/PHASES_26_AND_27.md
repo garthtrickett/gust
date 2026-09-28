@@ -282,6 +282,17 @@ feasible executions are nonzero. Unsupported arithmetic, unknown values, and
 cross-function or aggregate flows remain admitted unless another rule rejects
 them. This subset does not establish general nullability or close Phase 26.1.
 
+**26.1E local field subset (ownership authorized 2026-09-28).** Direct writes to
+raw-pointer fields of local structs now preserve Zero/MayZero value evidence
+through selector readback and explicit `if`/`while` joins. A known zero path
+rejects at declared-safe non-extern raw-pointer argument and return boundaries
+before native driver discovery. Definite nonzero overwrites and unproven field
+values retain their previous acceptance; whole-object reassignment and local
+copy aliases conservatively retain MayZero where a known zero path existed.
+Other aggregate aliases, heap/container fields, and cross-function flows remain
+outside this bounded evidence model. This is not general nullability or Phase
+26.1 closure.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
