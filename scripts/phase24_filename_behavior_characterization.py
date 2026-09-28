@@ -238,6 +238,9 @@ def validate_static(value: dict) -> None:
                 packed_sites = registry.get("phase26_activation_audit", {}).get(
                     "ffi_packed_layout_increment", {}).get(
                         "filename_site_successor")
+                computed_sites = registry.get("phase26_activation_audit", {}).get(
+                    "computed_zero_raw_null_increment", {}).get(
+                        "filename_site_successor")
                 e1_current = (live_sites if d5_sites is None else
                               d5_sites.get("previous_sites"))
                 require(e1_sites.get("contract_version") ==
@@ -358,19 +361,42 @@ def validate_static(value: dict) -> None:
                             packed_sites.get("contract_version") ==
                             "phase26_1d_packed_filename_site_successor_v1" and
                             packed_sites.get("previous_sites") == previous_packed and
-                            packed_sites.get("current_sites") == live_sites and
+                            packed_sites.get("current_sites") ==
+                            (live_sites if computed_sites is None else
+                             computed_sites.get("previous_sites")) and
                             isinstance(deltas_packed, list) and
                             len(deltas_packed) == len(live_sites) and
                             all(isinstance(delta, int) and delta >= 0
-                                for delta in deltas_packed) and
+                            for delta in deltas_packed) and
                             packed_sites.get("partial_extra_or_substituted_site") ==
                             "rejected" and
                             all(now["line"] == before["line"] + delta and
                                 {key: val for key, val in now.items() if key != "line"} ==
                                 {key: val for key, val in before.items() if key != "line"}
                                 for before, now, delta in zip(previous_packed,
-                                    live_sites, deltas_packed)),
+                                    (live_sites if computed_sites is None else
+                                     computed_sites.get("previous_sites")), deltas_packed)),
                             "Phase 26 packed filename sites changed beyond field gate shift")
+                if computed_sites is not None:
+                    previous_computed = packed_sites["current_sites"]
+                    deltas_computed = computed_sites.get("line_deltas")
+                    require(packed_sites is not None and
+                            computed_sites.get("contract_version") ==
+                            "phase26_1e_computed_zero_filename_site_successor_v1" and
+                            computed_sites.get("previous_sites") == previous_computed and
+                            computed_sites.get("current_sites") == live_sites and
+                            isinstance(deltas_computed, list) and
+                            len(deltas_computed) == len(live_sites) == 3 and
+                            all(isinstance(delta, int) and delta >= 0
+                                for delta in deltas_computed) and
+                            computed_sites.get("partial_extra_or_substituted_site") ==
+                            "rejected" and
+                            all(now["line"] == before["line"] + delta and
+                                {key: val for key, val in now.items() if key != "line"} ==
+                                {key: val for key, val in before.items() if key != "line"}
+                                for before, now, delta in zip(previous_computed,
+                                    live_sites, deltas_computed)),
+                            "Phase 26 computed-zero filename sites changed beyond value-state shift")
     require([row["selector"] for row in value["site_manifest"]] ==
             ["test_tcs_", "test_index_", "test_tcs_"],
             "selector order or completeness drifted")

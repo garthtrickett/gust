@@ -269,6 +269,19 @@ and the bare `null` Index sentinel. It does not establish general raw-pointer
 nullability; unknown pointer values and computed zero addresses require a
 separate nullability model before the full raw-null obligation can close.
 
+**26.1E computed-zero subset (ownership authorized 2026-09-28).** A separate
+value-evidence state distinguishes Unknown, Zero, Nonzero, and MayZero from
+address origin. Integer literals, narrowly qualified zero-preserving `+`,
+local bindings and assignments, casts and aliases, and `if`/`while` joins carry
+that state to declared-safe non-extern raw-pointer return and argument gates.
+Zero and MayZero reject after type matching and before native driver discovery;
+unknown inputs, nonzero values, explicitly unsafe callees, and bare `null`
+retain their prior behavior. MayZero is abstract evidence: joining infeasible
+paths or combining MayZero values may conservatively reject a value whose
+feasible executions are nonzero. Unsupported arithmetic, unknown values, and
+cross-function or aggregate flows remain admitted unless another rule rejects
+them. This subset does not establish general nullability or close Phase 26.1.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

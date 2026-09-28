@@ -86,11 +86,14 @@ def main() -> None:
 
     from phase24_semantic_spelling_inventory import source_sites, manifest_summary
     spelling = record["spelling_inventory_successor"]
+    computed = activation.get("computed_zero_raw_null_increment", {}).get(
+        "spelling_inventory_successor")
     require(spelling == {
         "contract_version": "phase26_1d_packed_isolated_write_spelling_inventory_successor_v1",
         "previous_inventory_summary": activation["ffi_packed_isolated_read_increment"][
             "spelling_inventory_successor"]["current_inventory_summary"],
-        "current_inventory_summary": manifest_summary(source_sites()),
+        "current_inventory_summary": (manifest_summary(source_sites()) if computed is None else
+                                      computed.get("previous_inventory_summary")),
         "changed_source_paths": sorted([*FIXTURES,
             "compiler/phase26_ffi_packed_isolated_wrong_policy_source.gst",
             "compiler/phase26_ffi_packed_write_wrong_policy_source.gst"]),
@@ -98,6 +101,9 @@ def main() -> None:
     }, "spelling inventory successor drifted")
 
     surface = record["phase23_text_surface_successor"]
+    computed_surface = activation.get("computed_zero_raw_null_increment", {}).get(
+        "phase23_text_surface_successor", {})
+    computed_changed = {row["path"]: row for row in computed_surface.get("changed_rows", [])}
     require(surface.get("contract_version") ==
             "phase26_1d_packed_isolated_write_phase23_text_surface_successor_v1" and
             surface.get("partial_extra_or_substituted_surface") == "rejected" and
@@ -107,7 +113,9 @@ def main() -> None:
             len(surface.get("added_rows", [])),
             "text surface successor shape drifted")
     for row in surface["changed_rows"]:
-        require(row["current_digest"] == digest(row["path"]) and
+        live_digest = (computed_changed[row["path"]]["previous_digest"]
+                       if row["path"] in computed_changed else digest(row["path"]))
+        require(row["current_digest"] == live_digest and
                 len(row["previous_digest"]) == 64,
                 f"changed text surface drifted: {row['path']}")
     for row in surface["added_rows"]:

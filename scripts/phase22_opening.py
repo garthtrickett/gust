@@ -284,6 +284,21 @@ def scan_summary(rows: list[dict[str, object]]) -> dict[str, object]:
 def phase22_relay_inventory_rows(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep Phase 22's closed relay identity while validating exact successors."""
+    computed_zero = registry.get("phase26_activation_audit", {}).get(
+        "computed_zero_raw_null_increment", {}).get("phase22_invocation_successor")
+    if computed_zero is not None:
+        path = "scripts/phase26_computed_zero_raw_null.sh"
+        added = computed_zero.get("added_rows")
+        require(isinstance(added, list) and len(added) == 2 and
+                computed_zero.get("contract_version") ==
+                "phase26_1e_computed_zero_phase22_invocation_successor_v1" and
+                computed_zero.get("previous_total") == 188 and
+                computed_zero.get("current_total") == 190 and
+                computed_zero.get("partial_extra_or_substituted_invocation") ==
+                "rejected" and
+                [row for row in rows if row.get("path") == path] == added,
+                "Phase 26 computed-zero invocation rows drifted")
+        rows = [row for row in rows if row.get("path") != path]
     packed_isolated = registry.get("phase26_activation_audit", {}).get(
         "ffi_packed_isolated_write_increment", {}).get("phase22_invocation_successor")
     if packed_isolated is not None:

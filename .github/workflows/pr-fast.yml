@@ -831,6 +831,9 @@ jobs:
       - name: Phase 26 raw null safe boundary
         run: just guard-cranelift-phase26-raw-null-safe-boundary
 
+      - name: Phase 26 computed-zero raw null boundary
+        run: just guard-cranelift-phase26-computed-zero-raw-null
+
       - name: Phase 26 packed borrowed repr C layout
         run: just guard-cranelift-phase26-ffi-packed-layout
 
