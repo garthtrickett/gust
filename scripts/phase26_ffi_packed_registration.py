@@ -24,6 +24,9 @@ def require(value: bool, message: str) -> None:
 
 def project_live_digest_to_pre_packed(registry: dict, path: str,
                                       live_digest: str) -> str:
+    from phase26_cast_narrowing_zero_registration import before_cast_digest
+    live_digest = before_cast_digest(registry.get("phase26_activation_audit", {}),
+                                     path, live_digest)
     take_struct_rows = registry.get("phase26_activation_audit", {}).get(
         "take_struct_alias_evidence_increment", {}).get(
             "phase23_text_surface_successor", {}).get("changed_rows", [])

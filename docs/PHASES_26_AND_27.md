@@ -360,6 +360,19 @@ unsafe callees, and the existing plain-alias path retain their behavior.
 This does not alter Take ownership or provenance, generalize to pointer or
 heap aliases, admit unsupported native source routes, or close Phase 26.1.
 
+**26.1E Int narrowing cast subset (ownership authorized 2026-09-29).**
+Already-typechecked casts from `Int` to `Byte` or `Bool` use their recorded
+source type and the existing four-state value evidence. A narrowing cast turns
+Nonzero into conservative MayZero because an integer such as 256 can become
+zero at the smaller width; a direct in-range positive integer literal from 1
+through 255 retains Nonzero. Zero, MayZero, Unknown, equal-width casts, and
+widening casts retain their prior evidence. The existing declared-safe,
+non-extern raw-pointer argument and return gates reject the proven may-zero
+path before native driver discovery. This does not change cast operator
+meaning, MIR, ABI, layout, runtime, or the native capability of accepted
+source routes. Other narrowing cast families and general nullability remain
+open; Phase 26.1 is not closed.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

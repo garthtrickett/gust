@@ -130,7 +130,8 @@ def main() -> None:
                 if later["previous_digest"] != current:
                     return False
                 current = later["current_digest"]
-        return current == digest(path)
+        from phase26_cast_narrowing_zero_registration import before_cast_digest
+        return current == before_cast_digest(activation, path, digest(path))
     require(surface.get("contract_version") ==
             "phase26_1e_arithmetic_zero_phase23_text_surface_successor_v1" and
             surface.get("partial_extra_or_substituted_surface") == "rejected" and

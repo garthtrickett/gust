@@ -112,11 +112,13 @@ def main() -> None:
         "phase23_text_surface_successor"]["changed_rows"]} if take_struct else {}
 
     def latest_digest(path: str, starting_digest: str) -> bool:
+        from phase26_cast_narrowing_zero_registration import before_cast_digest
+        projected_digest = before_cast_digest(activation, path, digest(path))
         later = take_struct_changes.get(path)
         if later is None:
-            return starting_digest == digest(path)
+            return starting_digest == projected_digest
         return later["previous_digest"] == starting_digest and \
-            later["current_digest"] == digest(path)
+            later["current_digest"] == projected_digest
     require(surface.get("contract_version") ==
             "phase26_1e_take_zero_phase23_text_surface_successor_v1" and
             surface.get("partial_extra_or_substituted_surface") == "rejected" and

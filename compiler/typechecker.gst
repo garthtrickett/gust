@@ -1949,6 +1949,34 @@ func phase26_zero_restore_shadowed_fields(env: *TypeEnvironment[ctx], name: str,
     }
 }
 
+// check_expression records the already-decided type of each subexpression.
+// Reuse that record for cast evidence; rechecking here would repeat semantic
+// side effects while a safe argument or return is being validated.
+func phase26_zero_resolved_expression_tag(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        mut span := get_expression_span(expr_idx, ctx);
+        mut prefix := typechecker_resolution_scope_key(env, ctx);
+        mut found := 0 - 1;
+        mut i := 0;
+        while i < len((*env).resolved_types_nested) {
+            mut entry := (*env).resolved_types_nested[i];
+            if std.str_eq(entry.prefix, prefix) == 1 {
+                mut j := 0;
+                while j < len(entry.types) {
+                    mut type_entry := entry.types[j];
+                    if type_entry.start_offset == span.start.offset &&
+                       type_entry.end_offset == span.end.offset {
+                        found = type_entry.val_type.tag;
+                    }
+                    j = j + 1;
+                }
+            }
+            i = i + 1;
+        }
+        return found;
+    }
+}
+
 func phase26_zero_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
     if expr_idx == empty[Index[ast.Expression[ctx], ctx]] { return phase26_zero_unknown(); }
     unsafe {
@@ -1976,7 +2004,19 @@ func phase26_zero_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *Ty
             return phase26_zero_expression(expr.Take.expr, env, ctx);
         }
         if expr.tag == 9 { // AsCast
-            return phase26_zero_expression(expr.AsCast.left, env, ctx);
+            mut source_state := phase26_zero_expression(expr.AsCast.left, env, ctx);
+            if source_state != phase26_zero_no() { return source_state; }
+            mut target := env_resolve_type(env, ctx[expr.AsCast.target_type], ctx);
+            if target.tag != 1 && target.tag != 2 { return source_state; } // Byte/Bool
+            if phase26_zero_resolved_expression_tag(expr.AsCast.left, env, ctx) != 0 {
+                return source_state; // this increment covers Int narrowing only
+            }
+            mut source_expr := ctx[expr.AsCast.left];
+            if source_expr.tag == 1 && source_expr.Integer.val > 0 &&
+               source_expr.Integer.val < 256 {
+                return source_state; // an in-range literal cannot narrow to zero
+            }
+            return phase26_zero_may();
         }
         if expr.tag == 10 && (std.str_eq(expr.Binary.op, "+") == 1 ||
                               std.str_eq(expr.Binary.op, "-") == 1 ||

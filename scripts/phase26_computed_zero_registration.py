@@ -138,7 +138,8 @@ def main() -> None:
                 if later["previous_digest"] != expected_digest:
                     return False
                 expected_digest = later["current_digest"]
-        return expected_digest == digest(path)
+        from phase26_cast_narrowing_zero_registration import before_cast_digest
+        return expected_digest == before_cast_digest(activation, path, digest(path))
     require(surface.get("contract_version") ==
             "phase26_1e_computed_zero_phase23_text_surface_successor_v1" and
             surface.get("partial_extra_or_substituted_surface") == "rejected" and

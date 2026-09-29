@@ -6,6 +6,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+from phase26_cast_narrowing_zero_registration import before_cast_digest
 
 ROOT = Path(__file__).resolve().parent.parent
 GUARD = "guard-cranelift-phase26-ffi-packed-isolated-read"
@@ -182,11 +183,13 @@ def main() -> None:
                  arithmetic_zero["current_digest"] if arithmetic_zero else
                  nested_zero["current_digest"] if nested_zero else
                  field_zero["current_digest"] if field_zero else
-                 predecessor_digest) == digest(row["path"]) and
+                 predecessor_digest) == before_cast_digest(
+                     activation, row["path"], digest(row["path"])) and
                 len(row["previous_digest"]) == 64,
                 f"changed text surface drifted: {row['path']}")
     for row in surface["added_rows"]:
-        require(row["digest"] == digest(row["path"]),
+        require(row["digest"] == before_cast_digest(
+                    activation, row["path"], digest(row["path"])),
                 f"added text surface drifted: {row['path']}")
 
     justfile = (ROOT / "justfile").read_text(encoding="utf-8")
