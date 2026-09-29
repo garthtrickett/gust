@@ -123,15 +123,16 @@ def main() -> None:
             "phase23_text_surface_successor", {}).get("changed_rows", [])}
     for row in surface["changed_rows"]:
         cast = cast_rows.get(row["path"])
+        from phase26_bool_literal_zero_registration import before_bool_digest
         require((cast["current_digest"] if cast else row["current_digest"]) ==
-                digest(row["path"]) and
+                before_bool_digest(activation, row["path"], digest(row["path"])) and
                 (cast is None or cast["previous_digest"] == row["current_digest"]) and
                 len(row["previous_digest"]) == 64,
                 f"changed text surface drifted: {row['path']}")
     for row in surface["added_rows"]:
         cast = cast_rows.get(row["path"])
         require((cast["current_digest"] if cast else row["digest"]) ==
-                digest(row["path"]) and
+                before_bool_digest(activation, row["path"], digest(row["path"])) and
                 (cast is None or cast["previous_digest"] == row["digest"]),
                 f"added text surface drifted: {row['path']}")
 

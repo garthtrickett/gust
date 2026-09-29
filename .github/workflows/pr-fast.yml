@@ -858,6 +858,9 @@ jobs:
       - name: Phase 26 cast narrowing zero evidence
         run: just guard-cranelift-phase26-cast-narrowing-zero-evidence
 
+      - name: Phase 26 Bool literal zero evidence
+        run: just guard-cranelift-phase26-bool-literal-zero-evidence
+
       - name: Phase 26 packed borrowed repr C layout
         run: just guard-cranelift-phase26-ffi-packed-layout
 

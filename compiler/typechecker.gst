@@ -1985,6 +1985,11 @@ func phase26_zero_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *Ty
             if expr.Integer.val == 0 { return phase26_zero_yes(); }
             return phase26_zero_no();
         }
+        if expr.tag == 3 { // Bool literals are canonically 0 or 1.
+            if expr.Bool.val == 0 { return phase26_zero_yes(); }
+            if expr.Bool.val == 1 { return phase26_zero_no(); }
+            return phase26_zero_unknown();
+        }
         if expr.tag == 0 { // Identifier
             if std.str_eq(expr.Identifier.name, "null") == 1 { return phase26_zero_unknown(); }
             mut value := (*env).variable_zero_states.Get(expr.Identifier.name);

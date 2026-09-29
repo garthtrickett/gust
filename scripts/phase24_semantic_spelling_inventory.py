@@ -364,6 +364,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     cast_zero_successor = registry.get("phase26_activation_audit", {}).get(
         "cast_narrowing_zero_evidence_increment", {}).get(
             "spelling_inventory_successor")
+    bool_zero_successor = registry.get("phase26_activation_audit", {}).get(
+        "bool_literal_zero_evidence_increment", {}).get(
+            "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -1058,7 +1061,9 @@ def validate() -> tuple[dict, list[dict], dict]:
                 cast_zero_successor.get("contract_version") ==
                 "phase26_1e_cast_narrowing_zero_spelling_inventory_successor_v1" and
                 cast_zero_successor.get("previous_inventory_summary") ==
-                previous_cast and now_cast == summary and
+                previous_cast and now_cast ==
+                (summary if bool_zero_successor is None else
+                 bool_zero_successor.get("previous_inventory_summary")) and
                 cast_zero_successor.get("changed_source_paths") == sorted([
                     "compiler/typechecker.gst",
                     "compiler/phase26_cast_narrowing_zero_test_entry.gst",
@@ -1073,6 +1078,28 @@ def validate() -> tuple[dict, list[dict], dict]:
                 now_cast["site_count"] == previous_cast["site_count"] and
                 now_cast["unknown_site_count"] == 0,
                 "Phase 26 cast narrowing spelling inventory drifted")
+    if bool_zero_successor is not None:
+        previous_bool = cast_zero_successor["current_inventory_summary"]
+        now_bool = bool_zero_successor.get("current_inventory_summary", {})
+        require(cast_zero_successor is not None and
+                bool_zero_successor.get("contract_version") ==
+                "phase26_1e_bool_literal_zero_spelling_inventory_successor_v1" and
+                bool_zero_successor.get("previous_inventory_summary") ==
+                previous_bool and now_bool == summary and
+                bool_zero_successor.get("changed_source_paths") == sorted([
+                    "compiler/typechecker.gst",
+                    "compiler/phase26_bool_literal_zero_test_entry.gst",
+                    *[f"compiler/phase26_bool_literal_{name}_source.gst"
+                      for name in ("safe_call", "safe_return", "nonzero",
+                                   "unknown", "unsafe")],
+                ]) and
+                bool_zero_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and
+                now_bool["source_file_count"] ==
+                previous_bool["source_file_count"] + 6 and
+                now_bool["site_count"] == previous_bool["site_count"] and
+                now_bool["unknown_site_count"] == 0,
+                "Phase 26 Bool literal spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),

@@ -373,6 +373,16 @@ meaning, MIR, ABI, layout, runtime, or the native capability of accepted
 source routes. Other narrowing cast families and general nullability remain
 open; Phase 26.1 is not closed.
 
+**26.1E Bool literal subset (ownership authorized 2026-09-29).** The parser's
+canonical `false` and `true` values (0 and 1) seed the existing four-state
+value evidence as Zero and Nonzero. Casts and local bindings carry that state
+to the existing declared-safe non-extern raw-pointer argument and return
+checks. A false-derived raw pointer rejects before native driver discovery;
+true, unknown inputs, and explicitly unsafe callees retain their previous
+behavior. Noncanonical Bool payloads remain Unknown. This does not change
+Bool or cast semantics, MIR, physical ABI, layout, runtime, or native route
+admission. General nullability and Phase 26.1 remain open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
