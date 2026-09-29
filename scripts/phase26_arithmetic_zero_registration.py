@@ -33,6 +33,7 @@ def main() -> None:
     record = activation.get("arithmetic_zero_evidence_increment", {})
     division = activation.get("division_zero_evidence_increment")
     match = activation.get("match_zero_evidence_increment")
+    take = activation.get("take_zero_evidence_increment")
     expected = {
         "contract_version": "phase26_1e_arithmetic_zero_v1",
         "status": "bounded_arithmetic_zero_safe_boundary_rejection_qualified",
@@ -114,10 +115,12 @@ def main() -> None:
         "phase23_text_surface_successor"]["changed_rows"]} if division else {}
     match_changes = {row["path"]: row for row in match[
         "phase23_text_surface_successor"]["changed_rows"]} if match else {}
+    take_changes = {row["path"]: row for row in take[
+        "phase23_text_surface_successor"]["changed_rows"]} if take else {}
 
     def latest_digest(path: str, starting_digest: str) -> bool:
         current = starting_digest
-        for changes in (division_changes, match_changes):
+        for changes in (division_changes, match_changes, take_changes):
             later = changes.get(path)
             if later is not None:
                 if later["previous_digest"] != current:

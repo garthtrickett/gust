@@ -341,6 +341,15 @@ evidence. Unknown and nonzero paths and explicitly unsafe callees retain their
 prior behavior. This does not summarize function returns, model aliases, alter
 enum or resource semantics, or close general nullability or Phase 26.1.
 
+**26.1E take zero subset (ownership authorized 2026-09-29).** The existing
+`Take` expression carries its operand's Unknown/Zero/Nonzero/MayZero evidence
+through direct calls and local assignment readback, matching the established
+`Move` transfer. Computed-zero addresses then reject at declared-safe
+non-extern raw-pointer calls before native capability planning; nonzero and
+unknown values and explicitly unsafe callees retain their prior behavior.
+This does not change take/move ownership, provenance, MIR, ABI, layout, or
+runtime, and does not close general nullability or Phase 26.1.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

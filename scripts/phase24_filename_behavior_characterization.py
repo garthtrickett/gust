@@ -256,6 +256,9 @@ def validate_static(value: dict) -> None:
                 match_zero_sites = registry.get("phase26_activation_audit", {}).get(
                     "match_zero_evidence_increment", {}).get(
                         "filename_site_successor")
+                take_zero_sites = registry.get("phase26_activation_audit", {}).get(
+                    "take_zero_evidence_increment", {}).get(
+                        "filename_site_successor")
                 e1_current = (live_sites if d5_sites is None else
                               d5_sites.get("previous_sites"))
                 require(e1_sites.get("contract_version") ==
@@ -513,7 +516,9 @@ def validate_static(value: dict) -> None:
                             match_zero_sites.get("contract_version") ==
                             "phase26_1e_match_zero_filename_site_successor_v1" and
                             match_zero_sites.get("previous_sites") == previous_match and
-                            match_zero_sites.get("current_sites") == live_sites and
+                            match_zero_sites.get("current_sites") ==
+                            (live_sites if take_zero_sites is None else
+                             take_zero_sites.get("previous_sites")) and
                             isinstance(deltas_match, list) and
                             len(deltas_match) == len(live_sites) == 3 and
                             all(isinstance(delta, int) and delta >= 0
@@ -524,8 +529,28 @@ def validate_static(value: dict) -> None:
                                 {key: val for key, val in now.items() if key != "line"} ==
                                 {key: val for key, val in before.items() if key != "line"}
                                 for before, now, delta in zip(previous_match,
-                                    live_sites, deltas_match)),
+                                    match_zero_sites.get("current_sites"), deltas_match)),
                             "Phase 26 match zero filename sites changed beyond match evidence shift")
+                if take_zero_sites is not None:
+                    previous_take = match_zero_sites["current_sites"]
+                    deltas_take = take_zero_sites.get("line_deltas")
+                    require(match_zero_sites is not None and
+                            take_zero_sites.get("contract_version") ==
+                            "phase26_1e_take_zero_filename_site_successor_v1" and
+                            take_zero_sites.get("previous_sites") == previous_take and
+                            take_zero_sites.get("current_sites") == live_sites and
+                            isinstance(deltas_take, list) and
+                            len(deltas_take) == len(live_sites) == 3 and
+                            all(isinstance(delta, int) and delta >= 0
+                                for delta in deltas_take) and
+                            take_zero_sites.get("partial_extra_or_substituted_site") ==
+                            "rejected" and
+                            all(now["line"] == before["line"] + delta and
+                                {key: val for key, val in now.items() if key != "line"} ==
+                                {key: val for key, val in before.items() if key != "line"}
+                                for before, now, delta in zip(previous_take,
+                                    live_sites, deltas_take)),
+                            "Phase 26 take zero filename sites changed beyond take evidence shift")
     require([row["selector"] for row in value["site_manifest"]] ==
             ["test_tcs_", "test_index_", "test_tcs_"],
             "selector order or completeness drifted")

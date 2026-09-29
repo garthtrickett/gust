@@ -1971,6 +1971,9 @@ func phase26_zero_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *Ty
         if expr.tag == 4 { // Move
             return phase26_zero_expression(expr.Move.expr, env, ctx);
         }
+        if expr.tag == 5 { // Take
+            return phase26_zero_expression(expr.Take.expr, env, ctx);
+        }
         if expr.tag == 9 { // AsCast
             return phase26_zero_expression(expr.AsCast.left, env, ctx);
         }
