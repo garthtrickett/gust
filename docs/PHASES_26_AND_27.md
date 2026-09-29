@@ -383,6 +383,18 @@ behavior. Noncanonical Bool payloads remain Unknown. This does not change
 Bool or cast semantics, MIR, physical ABI, layout, runtime, or native route
 admission. General nullability and Phase 26.1 remain open.
 
+**26.1E logical-result subset (ownership authorized 2026-09-29).** Already
+typechecked logical `&&` and `||` expressions with Int or Bool operands carry
+the existing four-state value evidence through their canonical Bool result.
+For `&&`, a proved Zero operand decides Zero; for `||`, a proved Nonzero operand
+decides Nonzero. Other table cells preserve only proved zero paths or definite
+nonzero results, leaving unsupported combinations Unknown. A zero-derived raw
+pointer from a logical result rejects at declared-safe non-extern argument or
+return boundaries before native driver discovery. Nonzero and unknown inputs
+and explicitly unsafe callees retain their prior behavior. This changes no
+operator meaning, MIR, physical ABI, layout, runtime, or native route admission.
+General nullability and Phase 26.1 remain open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

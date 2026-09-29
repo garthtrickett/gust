@@ -367,6 +367,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     bool_zero_successor = registry.get("phase26_activation_audit", {}).get(
         "bool_literal_zero_evidence_increment", {}).get(
             "spelling_inventory_successor")
+    logical_zero_successor = registry.get("phase26_activation_audit", {}).get(
+        "logical_zero_evidence_increment", {}).get(
+            "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -1085,7 +1088,8 @@ def validate() -> tuple[dict, list[dict], dict]:
                 bool_zero_successor.get("contract_version") ==
                 "phase26_1e_bool_literal_zero_spelling_inventory_successor_v1" and
                 bool_zero_successor.get("previous_inventory_summary") ==
-                previous_bool and now_bool == summary and
+                previous_bool and now_bool == (summary if logical_zero_successor is None
+                                             else logical_zero_successor.get("previous_inventory_summary")) and
                 bool_zero_successor.get("changed_source_paths") == sorted([
                     "compiler/typechecker.gst",
                     "compiler/phase26_bool_literal_zero_test_entry.gst",
@@ -1100,6 +1104,28 @@ def validate() -> tuple[dict, list[dict], dict]:
                 now_bool["site_count"] == previous_bool["site_count"] and
                 now_bool["unknown_site_count"] == 0,
                 "Phase 26 Bool literal spelling inventory drifted")
+    if logical_zero_successor is not None:
+        previous_logical = bool_zero_successor["current_inventory_summary"]
+        now_logical = logical_zero_successor.get("current_inventory_summary", {})
+        require(bool_zero_successor is not None and
+                logical_zero_successor.get("contract_version") ==
+                "phase26_1e_logical_zero_spelling_inventory_successor_v1" and
+                logical_zero_successor.get("previous_inventory_summary") ==
+                previous_logical and now_logical == summary and
+                logical_zero_successor.get("changed_source_paths") == sorted([
+                    "compiler/typechecker.gst",
+                    "compiler/phase26_logical_zero_test_entry.gst",
+                    *[f"compiler/phase26_logical_zero_{name}_source.gst"
+                      for name in ("safe_call", "safe_return", "nonzero",
+                                   "unknown", "unsafe")],
+                ]) and
+                logical_zero_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and
+                now_logical["source_file_count"] ==
+                previous_logical["source_file_count"] + 6 and
+                now_logical["site_count"] == previous_logical["site_count"] and
+                now_logical["unknown_site_count"] == 0,
+                "Phase 26 logical spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),
