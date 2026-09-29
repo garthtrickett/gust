@@ -13262,6 +13262,32 @@ func typechecker_extract_ok_checked_variables(expr_idx: Index[ast.Expression[ctx
     }
 }
 
+// This is the explicit-only half of get_type_brand. types_match has no
+// TypeEnvironment, so it must not encode its absence as a null raw pointer.
+func get_explicit_type_brand(t: ast.Type[ctx], ctx: &Arena) str {
+    unsafe {
+        if t.tag == 7 { // Index
+            if t.Index.brand != empty[Index[str, ctx]] { return ctx[t.Index.brand]; }
+            return "";
+        }
+        if t.tag == 8 { // Struct
+            if t.Struct.brand != empty[Index[str, ctx]] { return ctx[t.Struct.brand]; }
+            return "";
+        }
+        if t.tag == 9 { // RawPointer
+            return get_explicit_type_brand(ctx[t.RawPointer.inner], ctx);
+        }
+        if t.tag == 6 { // Slice
+            return get_explicit_type_brand(ctx[t.Slice.inner], ctx);
+        }
+        if t.tag == 11 { // Reference
+            if t.Reference.brand != empty[Index[str, ctx]] { return ctx[t.Reference.brand]; }
+            return get_explicit_type_brand(ctx[t.Reference.inner], ctx);
+        }
+        return "";
+    }
+}
+
 // get_type_brand retrieves explicit or registered brand metadata.
 func get_type_brand(t: ast.Type[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) str { 
     unsafe {
@@ -13889,8 +13915,8 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
             mut name2 := actual.Index.struct_name;
             name1 = typechecker_strip_module_prefix(name1, ctx);
             name2 = typechecker_strip_module_prefix(name2, ctx);
-            mut expected_brand := get_type_brand(expected, empty[*TypeEnvironment[ctx]], ctx);
-            mut actual_brand := get_type_brand(actual, empty[*TypeEnvironment[ctx]], ctx);
+            mut expected_brand := get_explicit_type_brand(expected, ctx);
+            mut actual_brand := get_explicit_type_brand(actual, ctx);
             name1 = typechecker_canonicalize_concrete_name(name1, expected_brand, ctx);
             name1 = typechecker_canonicalize_concrete_name(name1, actual_brand, ctx);
             name2 = typechecker_canonicalize_concrete_name(name2, expected_brand, ctx);
@@ -13921,8 +13947,8 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
 
             name1 = typechecker_strip_module_prefix(name1, ctx);
             name2 = typechecker_strip_module_prefix(name2, ctx);
-            mut expected_brand := get_type_brand(expected, empty[*TypeEnvironment[ctx]], ctx);
-            mut actual_brand := get_type_brand(actual, empty[*TypeEnvironment[ctx]], ctx);
+            mut expected_brand := get_explicit_type_brand(expected, ctx);
+            mut actual_brand := get_explicit_type_brand(actual, ctx);
             name1 = typechecker_canonicalize_concrete_name(name1, expected_brand, ctx);
             name1 = typechecker_canonicalize_concrete_name(name1, actual_brand, ctx);
             name2 = typechecker_canonicalize_concrete_name(name2, expected_brand, ctx);
@@ -13974,8 +14000,8 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
 
                 if is_prefix1 == 1 && is_prefix2 == 1 {
                     if std.str_eq(name1, base_name) || std.str_eq(name2, base_name) {
-                        mut brand1 := get_type_brand(expected, empty[*TypeEnvironment[ctx]], ctx);
-                        mut brand2 := get_type_brand(actual, empty[*TypeEnvironment[ctx]], ctx);
+                        mut brand1 := get_explicit_type_brand(expected, ctx);
+                        mut brand2 := get_explicit_type_brand(actual, ctx);
                         mut clean_b1 := strip_brand_prefix(brand1, ctx);
                         mut clean_b2 := strip_brand_prefix(brand2, ctx);
                         if std.str_eq(clean_b1, clean_b2) || std.str_eq(clean_b1, "Any") || std.str_eq(clean_b2, "Any") || std.str_eq(clean_b1, "") || std.str_eq(clean_b2, "") {
@@ -13988,8 +14014,8 @@ func types_match(expected: ast.Type[ctx], actual: ast.Type[ctx], ctx: &Arena) in
             return 0;
         }
         if expected.tag == 11 { // Reference
-            mut brand1 := get_type_brand(expected, empty[*TypeEnvironment[ctx]], ctx);
-            mut brand2 := get_type_brand(actual, empty[*TypeEnvironment[ctx]], ctx);
+            mut brand1 := get_explicit_type_brand(expected, ctx);
+            mut brand2 := get_explicit_type_brand(actual, ctx);
             mut clean_b1 := strip_brand_prefix(brand1, ctx);
             mut clean_b2 := strip_brand_prefix(brand2, ctx);
             if std.str_eq(clean_b1, clean_b2) || std.str_eq(clean_b1, "Any") || std.str_eq(clean_b2, "Any") || std.str_eq(clean_b1, "") || std.str_eq(clean_b2, "") {

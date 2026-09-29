@@ -24392,6 +24392,14 @@ guard-cranelift-phase26-relational-zero-evidence:
     python3 scripts/phase26_relational_zero_registration.py
     bash scripts/phase26_relational_zero_evidence.sh
 
+# Phase 26.1E explicit-brand nil-environment prerequisite.
+guard-cranelift-phase26-explicit-brand:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-explicit-brand | grep -F $'guard-cranelift-phase26-explicit-brand\t2\t' >/dev/null
+    python3 scripts/phase26_explicit_brand_registration.py
+    bash scripts/phase26_explicit_brand.sh
+
 # Phase 26.1D layout subset: flat packed repr(C) borrow with bytewise field access.
 guard-cranelift-phase26-ffi-packed-layout:
     #!/usr/bin/env bash

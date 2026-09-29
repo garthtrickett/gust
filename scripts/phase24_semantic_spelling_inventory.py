@@ -376,6 +376,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     relational_zero_successor = registry.get("phase26_activation_audit", {}).get(
         "relational_zero_evidence_increment", {}).get(
             "spelling_inventory_successor")
+    explicit_brand_successor = registry.get("phase26_activation_audit", {}).get(
+        "explicit_brand_prerequisite", {}).get(
+            "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -1163,7 +1166,8 @@ def validate() -> tuple[dict, list[dict], dict]:
                 relational_zero_successor.get("contract_version") ==
                 "phase26_1e_relational_zero_spelling_inventory_successor_v1" and
                 relational_zero_successor.get("previous_inventory_summary") ==
-                previous_relational and now_relational == summary and
+                previous_relational and now_relational == (summary if explicit_brand_successor is None
+                                else explicit_brand_successor.get("previous_inventory_summary")) and
                 relational_zero_successor.get("changed_source_paths") == sorted([
                     "compiler/typechecker.gst",
                     "compiler/phase26_relational_zero_test_entry.gst",
@@ -1178,6 +1182,24 @@ def validate() -> tuple[dict, list[dict], dict]:
                 now_relational["site_count"] == previous_relational["site_count"] and
                 now_relational["unknown_site_count"] == 0,
                 "Phase 26 relational spelling inventory drifted")
+    if explicit_brand_successor is not None:
+        previous_explicit = relational_zero_successor["current_inventory_summary"]
+        now_explicit = explicit_brand_successor.get("current_inventory_summary", {})
+        require(relational_zero_successor is not None and
+                explicit_brand_successor.get("contract_version") ==
+                "phase26_1e_explicit_brand_spelling_inventory_successor_v1" and
+                explicit_brand_successor.get("previous_inventory_summary") ==
+                previous_explicit and now_explicit == summary and
+                explicit_brand_successor.get("changed_source_paths") == sorted([
+                    "compiler/typechecker.gst",
+                    "compiler/phase26_explicit_brand_test_entry.gst",
+                ]) and
+                explicit_brand_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and
+                now_explicit["source_file_count"] ==
+                previous_explicit["source_file_count"] + 1 and
+                now_explicit["unknown_site_count"] == 0,
+                "Phase 26 explicit-brand spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),

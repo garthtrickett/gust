@@ -277,6 +277,9 @@ def validate_static(value: dict) -> None:
                 relational_zero_sites = registry.get("phase26_activation_audit", {}).get(
                     "relational_zero_evidence_increment", {}).get(
                     "filename_site_successor")
+                explicit_brand_sites = registry.get("phase26_activation_audit", {}).get(
+                    "explicit_brand_prerequisite", {}).get(
+                    "filename_site_successor")
                 e1_current = (live_sites if d5_sites is None else
                               d5_sites.get("previous_sites"))
                 require(e1_sites.get("contract_version") ==
@@ -682,7 +685,9 @@ def validate_static(value: dict) -> None:
                             relational_zero_sites.get("contract_version") ==
                             "phase26_1e_relational_zero_filename_site_successor_v1" and
                             relational_zero_sites.get("previous_sites") == previous_relational and
-                            relational_zero_sites.get("current_sites") == live_sites and
+                            relational_zero_sites.get("current_sites") ==
+                            (live_sites if explicit_brand_sites is None else
+                             explicit_brand_sites.get("previous_sites")) and
                             isinstance(deltas_relational, list) and
                             len(deltas_relational) == len(live_sites) == 3 and
                             all(isinstance(delta, int) and delta >= 0
@@ -693,8 +698,28 @@ def validate_static(value: dict) -> None:
                                 {key: val for key, val in now.items() if key != "line"} ==
                                 {key: val for key, val in before.items() if key != "line"}
                                 for before, now, delta in zip(previous_relational,
-                                    live_sites, deltas_relational)),
+                                    relational_zero_sites.get("current_sites"), deltas_relational)),
                             "Phase 26 relational filename sites drifted")
+                if explicit_brand_sites is not None:
+                    previous_explicit = relational_zero_sites["current_sites"]
+                    deltas_explicit = explicit_brand_sites.get("line_deltas")
+                    require(relational_zero_sites is not None and
+                            explicit_brand_sites.get("contract_version") ==
+                            "phase26_1e_explicit_brand_filename_site_successor_v1" and
+                            explicit_brand_sites.get("previous_sites") == previous_explicit and
+                            explicit_brand_sites.get("current_sites") == live_sites and
+                            isinstance(deltas_explicit, list) and
+                            len(deltas_explicit) == len(live_sites) == 3 and
+                            all(isinstance(delta, int) and delta >= 0
+                                for delta in deltas_explicit) and
+                            explicit_brand_sites.get("partial_extra_or_substituted_site") ==
+                            "rejected" and
+                            all(now["line"] == before["line"] + delta and
+                                {key: val for key, val in now.items() if key != "line"} ==
+                                {key: val for key, val in before.items() if key != "line"}
+                                for before, now, delta in zip(previous_explicit,
+                                    live_sites, deltas_explicit)),
+                            "Phase 26 explicit-brand filename sites drifted")
     require([row["selector"] for row in value["site_manifest"]] ==
             ["test_tcs_", "test_index_", "test_tcs_"],
             "selector order or completeness drifted")
