@@ -60,7 +60,8 @@ def main() -> None:
                 if later["previous_digest"] != expected_digest:
                     return False
                 expected_digest = later["current_digest"]
-        return expected_digest == digest(path)
+        from phase26_cast_narrowing_zero_registration import before_cast_digest
+        return expected_digest == before_cast_digest(activation, path, digest(path))
     expected = {
         "contract_version": "phase26_1e_local_field_zero_v1",
         "status": "bounded_local_field_zero_safe_boundary_rejection_qualified",

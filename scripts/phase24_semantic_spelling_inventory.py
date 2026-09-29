@@ -361,6 +361,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     take_struct_successor = registry.get("phase26_activation_audit", {}).get(
         "take_struct_alias_evidence_increment", {}).get(
             "spelling_inventory_successor")
+    cast_zero_successor = registry.get("phase26_activation_audit", {}).get(
+        "cast_narrowing_zero_evidence_increment", {}).get(
+            "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -1038,7 +1041,8 @@ def validate() -> tuple[dict, list[dict], dict]:
                 "phase26_1e_take_struct_alias_spelling_inventory_successor_v1" and
                 take_struct_successor.get("previous_inventory_summary") ==
                 previous_struct and
-                now_struct == summary and
+                now_struct == (summary if cast_zero_successor is None else
+                               cast_zero_successor.get("previous_inventory_summary")) and
                 take_struct_successor.get("changed_source_paths") == fixture_paths and
                 take_struct_successor.get("partial_extra_or_substituted_inventory") ==
                 "rejected" and
@@ -1047,6 +1051,28 @@ def validate() -> tuple[dict, list[dict], dict]:
                 now_struct["site_count"] == previous_struct["site_count"] and
                 now_struct["unknown_site_count"] == 0,
                 "Phase 26 local Struct Take-alias spelling inventory drifted")
+    if cast_zero_successor is not None:
+        previous_cast = take_struct_successor["current_inventory_summary"]
+        now_cast = cast_zero_successor.get("current_inventory_summary", {})
+        require(take_struct_successor is not None and
+                cast_zero_successor.get("contract_version") ==
+                "phase26_1e_cast_narrowing_zero_spelling_inventory_successor_v1" and
+                cast_zero_successor.get("previous_inventory_summary") ==
+                previous_cast and now_cast == summary and
+                cast_zero_successor.get("changed_source_paths") == sorted([
+                    "compiler/typechecker.gst",
+                    "compiler/phase26_cast_narrowing_zero_test_entry.gst",
+                    *[f"compiler/phase26_cast_narrowing_{name}_source.gst"
+                      for name in ("safe_call", "safe_return", "nonzero",
+                                   "unknown", "unsafe")],
+                ]) and
+                cast_zero_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and
+                now_cast["source_file_count"] ==
+                previous_cast["source_file_count"] + 6 and
+                now_cast["site_count"] == previous_cast["site_count"] and
+                now_cast["unknown_site_count"] == 0,
+                "Phase 26 cast narrowing spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),
