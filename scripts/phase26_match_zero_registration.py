@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pin the bounded Phase 26.1 division zero-evidence successor."""
+"""Pin the bounded Phase 26.1 match arm zero-evidence successor."""
 
 from __future__ import annotations
 
@@ -8,11 +8,11 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-GUARD = "guard-cranelift-phase26-division-zero-evidence"
-SCRIPT = "scripts/phase26_division_zero_evidence.sh"
-POSITIVE = "compiler/phase26_division_zero_test_entry.gst"
+GUARD = "guard-cranelift-phase26-match-zero-evidence"
+SCRIPT = "scripts/phase26_match_zero_evidence.sh"
+POSITIVE = "compiler/phase26_match_zero_test_entry.gst"
 NEGATIVES = [
-    f"compiler/phase26_division_zero_safe_{name}_source.gst"
+    f"compiler/phase26_match_zero_safe_{name}_source.gst"
     for name in ("call", "return")
 ]
 
@@ -30,17 +30,16 @@ def main() -> None:
     registry = json.loads((ROOT / "scripts/cranelift_feature_registry.json")
                           .read_text(encoding="utf-8"))
     activation = registry["phase26_activation_audit"]
-    record = activation.get("division_zero_evidence_increment", {})
-    match = activation.get("match_zero_evidence_increment")
+    record = activation.get("match_zero_evidence_increment", {})
     expected = {
-        "contract_version": "phase26_1e_division_zero_v1",
-        "status": "bounded_division_zero_safe_boundary_rejection_qualified",
-        "owner": "cranelift", "increment": "26.1E_division_zero_subset",
-        "operator_ownership_decision": "2026-09-28_bounded_division_zero_evidence",
+        "contract_version": "phase26_1e_match_zero_v1",
+        "status": "bounded_match_arm_zero_safe_boundary_rejection_qualified",
+        "owner": "cranelift", "increment": "26.1E_match_arm_zero_subset",
+        "operator_ownership_decision": "2026-09-28_bounded_match_arm_zero_join",
         "value_states": ["Unknown", "Zero", "Nonzero", "MayZero"],
-        "transfer_ops": ["typechecked_integer_byte_division_nonzero_denominator"],
+        "transfer_ops": ["exhaustive_enum_match_arm_zero_join"],
         "positive_fixture": POSITIVE, "negative_fixtures": NEGATIVES,
-        "positive_output": "SUCCESS: division zero evidence table, safe boundaries, and controls verified\n",
+        "positive_output": "SUCCESS: match arm zero evidence is order independent and controls are preserved\n",
         "safe_boundaries": ["declared_nonextern_raw_pointer_return",
                             "declared_nonextern_raw_pointer_argument"],
         "negative_states": ["Zero", "MayZero"],
@@ -51,7 +50,8 @@ def main() -> None:
         "native_fallback": False, "physical_abi_changed": False,
         "mir_changed": False, "runtime_symbol_surface_changed": False,
         "operator_semantics_changed": False,
-        "general_constant_propagation": False,
+        "general_control_flow_or_alias_model": False,
+        "interprocedural_return_summary": False,
         "general_nullability": "open_separate_obligation",
         "phase26_1_closed": False,
         "owning_level2_guard": GUARD, "pr_fast_job": "phase26-ffi-position",
@@ -62,45 +62,42 @@ def main() -> None:
         "phase22_invocation_successor", "production_audit_successor",
         "phase23_text_surface_successor", "spelling_inventory_successor",
         "filename_site_successor",
-    }, "registry acquired unreviewed division zero fields")
+    }, "registry acquired unreviewed match arm zero fields")
     for path in [POSITIVE, *NEGATIVES]:
         require((ROOT / path).is_file(), f"registered fixture missing: {path}")
 
     from phase22_opening import scan_invocations
     rows = [row for row in scan_invocations() if row["path"] == SCRIPT]
     require(record["phase22_invocation_successor"] == {
-        "contract_version": "phase26_1e_division_zero_phase22_invocation_successor_v1",
-        "previous_total": 197, "current_total": 199, "added_rows": rows,
+        "contract_version": "phase26_1e_match_zero_phase22_invocation_successor_v1",
+        "previous_total": 199, "current_total": 201, "added_rows": rows,
         "partial_extra_or_substituted_invocation": "rejected",
     } and len(rows) == 2, "native invocation successor drifted")
     require(record["production_audit_successor"] == {
-        "contract_version": "phase26_1e_division_zero_production_audit_successor_v1",
-        "previous_repository_invocation_count": 197,
-        "current_repository_invocation_count": 199,
+        "contract_version": "phase26_1e_match_zero_production_audit_successor_v1",
+        "previous_repository_invocation_count": 199,
+        "current_repository_invocation_count": 201,
         "added_invocation_path": SCRIPT, "unchanged_other_fields": True,
         "partial_extra_or_substituted_audit": "rejected",
     }, "production audit successor drifted")
 
     from phase24_semantic_spelling_inventory import source_sites, manifest_summary
     require(record["spelling_inventory_successor"] == {
-        "contract_version": "phase26_1e_division_zero_spelling_inventory_successor_v1",
-        "previous_inventory_summary": activation["arithmetic_zero_evidence_increment"][
+        "contract_version": "phase26_1e_match_zero_spelling_inventory_successor_v1",
+        "previous_inventory_summary": activation["division_zero_evidence_increment"][
             "spelling_inventory_successor"]["current_inventory_summary"],
-        "current_inventory_summary": (manifest_summary(source_sites()) if
-                                      match is None else match[
-                                          "spelling_inventory_successor"]["previous_inventory_summary"]),
+        "current_inventory_summary": manifest_summary(source_sites()),
         "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
                                         *NEGATIVES]),
         "partial_extra_or_substituted_inventory": "rejected",
     }, "spelling inventory successor drifted")
 
     from phase24_filename_behavior_characterization import source_sites as filename_sites
-    previous = activation["arithmetic_zero_evidence_increment"][
+    previous = activation["division_zero_evidence_increment"][
         "filename_site_successor"]["current_sites"]
-    current = (filename_sites() if match is None else match[
-        "filename_site_successor"]["previous_sites"])
+    current = filename_sites()
     require(record["filename_site_successor"] == {
-        "contract_version": "phase26_1e_division_zero_filename_site_successor_v1",
+        "contract_version": "phase26_1e_match_zero_filename_site_successor_v1",
         "previous_sites": previous, "current_sites": current,
         "line_deltas": [now["line"] - before["line"] for before, now in zip(previous, current)],
         "partial_extra_or_substituted_site": "rejected",
@@ -108,28 +105,19 @@ def main() -> None:
             "filename site successor drifted")
 
     surface = record["phase23_text_surface_successor"]
-    match_changes = {row["path"]: row for row in match[
-        "phase23_text_surface_successor"]["changed_rows"]} if match else {}
-
-    def latest_digest(path: str, starting_digest: str) -> bool:
-        later = match_changes.get(path)
-        if later is None:
-            return starting_digest == digest(path)
-        return later["previous_digest"] == starting_digest and \
-            later["current_digest"] == digest(path)
     require(surface.get("contract_version") ==
-            "phase26_1e_division_zero_phase23_text_surface_successor_v1" and
+            "phase26_1e_match_zero_phase23_text_surface_successor_v1" and
             surface.get("partial_extra_or_substituted_surface") == "rejected" and
             len({row["path"] for row in surface.get("changed_rows", [])}) ==
             len(surface.get("changed_rows", [])) and
             len({row["path"] for row in surface.get("added_rows", [])}) ==
             len(surface.get("added_rows", [])), "text surface successor shape drifted")
     for row in surface["changed_rows"]:
-        require(latest_digest(row["path"], row["current_digest"]) and
+        require(row["current_digest"] == digest(row["path"]) and
                 len(row["previous_digest"]) == 64,
                 f"changed text surface drifted: {row['path']}")
     for row in surface["added_rows"]:
-        require(latest_digest(row["path"], row["digest"]),
+        require(row["digest"] == digest(row["path"]),
                 f"added text surface drifted: {row['path']}")
 
     justfile = (ROOT / "justfile").read_text(encoding="utf-8")
@@ -139,14 +127,14 @@ def main() -> None:
                         .read_text(encoding="utf-8"))
     require(levels["guards"].get(GUARD) == 2 and
             justfile.count(f"{GUARD}:") == 1 and
-            "python3 scripts/phase26_division_zero_registration.py" in justfile and
+            "python3 scripts/phase26_match_zero_registration.py" in justfile and
             workflow.count(f"just {GUARD}") == 1 and
             "poison-driver.invoked" in guard and
             "GUST_TEST_MIR_TO_C_UNAVAILABLE=1" in guard and
             "[RawNullSafeBoundary]" in guard and
             "call return" in guard and
-            "phase26_arithmetic_zero_evidence.sh" in guard,
-            "division zero native evidence weakened")
+            "phase26_division_zero_evidence.sh" in guard,
+            "match arm zero native evidence weakened")
     print(f"{GUARD}: registration ok")
 
 

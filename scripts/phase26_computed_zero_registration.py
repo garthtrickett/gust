@@ -41,6 +41,9 @@ def main() -> None:
     division_changed = {row["path"]: row for row in activation.get(
         "division_zero_evidence_increment", {}).get(
             "phase23_text_surface_successor", {}).get("changed_rows", [])}
+    match_changed = {row["path"]: row for row in activation.get(
+        "match_zero_evidence_increment", {}).get(
+            "phase23_text_surface_successor", {}).get("changed_rows", [])}
     expected = {
         "contract_version": "phase26_1e_computed_zero_raw_null_v1",
         "status": "bounded_computed_zero_safe_boundary_rejection_qualified",
@@ -122,7 +125,7 @@ def main() -> None:
     def latest_digest(path: str, starting_digest: str) -> bool:
         expected_digest = starting_digest
         for successor in (field_changed, nested_changed, arithmetic_changed,
-                          division_changed):
+                          division_changed, match_changed):
             later = successor.get(path)
             if later is not None:
                 if later["previous_digest"] != expected_digest:

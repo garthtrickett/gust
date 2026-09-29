@@ -15259,6 +15259,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut cases_vec_match_stmt: std.Vector[ast.MatchCase[ctx], ctx] := ctx[stmt.Match.cases];
 
             mut expr_type := check_expression(expr_idx, env, scope, ctx);
+            mut pre_variable_zero_states_match := typechecker_clone_int_map((*env).variable_zero_states, ctx);
+            mut merged_variable_zero_states_match := typechecker_clone_int_map(pre_variable_zero_states_match, ctx);
             mut pre_field_zero_states_match := typechecker_clone_int_map((*env).field_zero_states, ctx);
             mut merged_field_zero_states_match := typechecker_clone_int_map(pre_field_zero_states_match, ctx);
             mut pre_resource_obligations_match := typechecker_clone_resource_acquisition_obligation_map(
@@ -15287,6 +15289,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
                 mut i := 0;
                 while i < len(cases_vec_match_stmt) {
+                    (*env).variable_zero_states = typechecker_clone_int_map(pre_variable_zero_states_match, ctx);
                     (*env).field_zero_states = typechecker_clone_int_map(pre_field_zero_states_match, ctx);
                     (*env).resource_acquisition_obligations =
                         typechecker_clone_resource_acquisition_obligation_map(
@@ -15364,6 +15367,9 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                     typechecker_check_resource_scoped_block(
                         body_idx, env, child_scope, 1, ctx
                     );
+                    merged_variable_zero_states_match = phase26_zero_join_maps(
+                        merged_variable_zero_states_match, (*env).variable_zero_states, ctx
+                    );
                     merged_field_zero_states_match = phase26_zero_join_maps(
                         merged_field_zero_states_match, (*env).field_zero_states, ctx
                     );
@@ -15431,6 +15437,7 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).resource_acquisition_obligations =
                 merged_resource_obligations_match;
             (*env).resource_value_identities = merged_resource_values_match;
+            (*env).variable_zero_states = merged_variable_zero_states_match;
             (*env).field_zero_states = merged_field_zero_states_match;
 
             return res;

@@ -330,6 +330,17 @@ policy or a general constant evaluator. Operator semantics, MIR, physical
 ABI, layout, and runtime remain unchanged. General nullability and Phase
 26.1 remain open.
 
+**26.1E match-arm zero subset (ownership authorized 2026-09-28).** An
+exhaustive enum `match` snapshots local raw-pointer value evidence before its
+arms, checks each arm from that state, and joins the outcomes with the existing
+Unknown/Zero/Nonzero/MayZero operation. A computed-zero path therefore cannot
+disappear because a later arm writes an unknown value; arm order does not
+change the declared-safe non-extern argument or return diagnostic. The join
+conservatively includes the pre-match state, matching existing local-field
+evidence. Unknown and nonzero paths and explicitly unsafe callees retain their
+prior behavior. This does not summarize function returns, model aliases, alter
+enum or resource semantics, or close general nullability or Phase 26.1.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
