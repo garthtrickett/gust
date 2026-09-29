@@ -379,6 +379,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     explicit_brand_successor = registry.get("phase26_activation_audit", {}).get(
         "explicit_brand_prerequisite", {}).get(
             "spelling_inventory_successor")
+    empty_raw_zero_successor = registry.get("phase26_activation_audit", {}).get(
+        "empty_raw_zero_evidence_increment", {}).get(
+            "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -1189,7 +1192,9 @@ def validate() -> tuple[dict, list[dict], dict]:
                 explicit_brand_successor.get("contract_version") ==
                 "phase26_1e_explicit_brand_spelling_inventory_successor_v1" and
                 explicit_brand_successor.get("previous_inventory_summary") ==
-                previous_explicit and now_explicit == summary and
+                previous_explicit and now_explicit ==
+                (summary if empty_raw_zero_successor is None else
+                 empty_raw_zero_successor.get("previous_inventory_summary")) and
                 explicit_brand_successor.get("changed_source_paths") == sorted([
                     "compiler/typechecker.gst",
                     "compiler/phase26_explicit_brand_test_entry.gst",
@@ -1200,6 +1205,27 @@ def validate() -> tuple[dict, list[dict], dict]:
                 previous_explicit["source_file_count"] + 1 and
                 now_explicit["unknown_site_count"] == 0,
                 "Phase 26 explicit-brand spelling inventory drifted")
+    if empty_raw_zero_successor is not None:
+        previous_empty = explicit_brand_successor["current_inventory_summary"]
+        now_empty = empty_raw_zero_successor.get("current_inventory_summary", {})
+        require(explicit_brand_successor is not None and
+                empty_raw_zero_successor.get("contract_version") ==
+                "phase26_1e_empty_raw_zero_spelling_inventory_successor_v1" and
+                empty_raw_zero_successor.get("previous_inventory_summary") ==
+                previous_empty and now_empty == summary and
+                empty_raw_zero_successor.get("changed_source_paths") == sorted([
+                    "compiler/typechecker.gst",
+                    "compiler/phase26_empty_raw_zero_test_entry.gst",
+                    *[f"compiler/phase26_empty_raw_zero_{name}_source.gst"
+                      for name in ("safe_call", "safe_return", "nonzero",
+                                   "unknown", "unsafe")],
+                ]) and
+                empty_raw_zero_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and
+                now_empty["source_file_count"] ==
+                previous_empty["source_file_count"] + 6 and
+                now_empty["unknown_site_count"] == 0,
+                "Phase 26 Empty raw-pointer spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),
