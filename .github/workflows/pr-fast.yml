@@ -867,6 +867,9 @@ jobs:
       - name: Phase 26 equality result zero evidence
         run: just guard-cranelift-phase26-equality-zero-evidence
 
+      - name: Phase 26 relational result zero evidence
+        run: just guard-cranelift-phase26-relational-zero-evidence
+
       - name: Phase 26 packed borrowed repr C layout
         run: just guard-cranelift-phase26-ffi-packed-layout
 

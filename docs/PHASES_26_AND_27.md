@@ -405,6 +405,17 @@ explicitly unsafe callees preserve their prior behavior. This does not admit
 the general source-level comparison route, change operator meaning, MIR,
 physical ABI, layout, or runtime, or close general nullability or Phase 26.1.
 
+**26.1E relational-result subset (ownership authorized 2026-09-29).** Already
+typechecked `<`, `<=`, `>`, and `>=` with matching Int operands return Int.
+Only proved Zero compared with proved Zero carries result evidence: strict
+comparisons are Zero and inclusive comparisons are Nonzero. Every other
+operand-evidence pair remains Unknown because Nonzero has no sign evidence.
+Zero-derived raw pointers reject at declared-safe non-extern argument or return
+boundaries before native driver discovery. Nonzero and unknown results and
+explicitly unsafe callees preserve their prior behavior. Operator meaning,
+MIR, physical ABI, layout, runtime, and native route admission do not change.
+General nullability and Phase 26.1 remain open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

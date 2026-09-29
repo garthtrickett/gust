@@ -1813,6 +1813,21 @@ func phase26_zero_not_equal(left: int, right: int) int {
     return phase26_zero_unknown();
 }
 
+// Zero compared with Zero decides only the four signed relational results.
+// Nonzero has no sign evidence, so every other operand pair remains Unknown.
+func phase26_zero_relational(op: str, left: int, right: int) int {
+    if left != phase26_zero_yes() || right != phase26_zero_yes() {
+        return phase26_zero_unknown();
+    }
+    if std.str_eq(op, "<") == 1 || std.str_eq(op, ">") == 1 {
+        return phase26_zero_yes();
+    }
+    if std.str_eq(op, "<=") == 1 || std.str_eq(op, ">=") == 1 {
+        return phase26_zero_no();
+    }
+    return phase26_zero_unknown();
+}
+
 func phase26_zero_join_maps(left: std.HashMap[str, int, ctx], right: std.HashMap[str, int, ctx], ctx: &Arena) std.HashMap[str, int, ctx] {
     mut joined: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
     mut left_keys := left.Keys(ctx);
@@ -2098,6 +2113,21 @@ func phase26_zero_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *Ty
                 return phase26_zero_equal(left, right);
             }
             return phase26_zero_not_equal(left, right);
+        }
+        if expr.tag == 10 && (std.str_eq(expr.Binary.op, "<") == 1 ||
+                              std.str_eq(expr.Binary.op, "<=") == 1 ||
+                              std.str_eq(expr.Binary.op, ">") == 1 ||
+                              std.str_eq(expr.Binary.op, ">=") == 1) {
+            // The bounded transfer applies only after canonical typechecking
+            // recorded matching Int operands and the Int comparison result.
+            if phase26_zero_resolved_expression_tag(expr_idx, env, ctx) != 0 ||
+               phase26_zero_resolved_expression_tag(expr.Binary.left, env, ctx) != 0 ||
+               phase26_zero_resolved_expression_tag(expr.Binary.right, env, ctx) != 0 {
+                return phase26_zero_unknown();
+            }
+            mut left := phase26_zero_expression(expr.Binary.left, env, ctx);
+            mut right := phase26_zero_expression(expr.Binary.right, env, ctx);
+            return phase26_zero_relational(expr.Binary.op, left, right);
         }
         if expr.tag == 10 && (std.str_eq(expr.Binary.op, "+") == 1 ||
                               std.str_eq(expr.Binary.op, "-") == 1 ||
