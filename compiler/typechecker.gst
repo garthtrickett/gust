@@ -1796,6 +1796,23 @@ func phase26_zero_logical_or(left: int, right: int) int {
     return phase26_zero_unknown();
 }
 
+// Equality produces an Int 0 or 1. Only a proved zero against a proved
+// nonzero (or two proved zeroes) decides the result; other pairs remain
+// Unknown rather than inferring a general value/range relationship.
+func phase26_zero_equal(left: int, right: int) int {
+    if left == phase26_zero_yes() && right == phase26_zero_yes() { return phase26_zero_no(); }
+    if (left == phase26_zero_yes() && right == phase26_zero_no()) ||
+       (left == phase26_zero_no() && right == phase26_zero_yes()) { return phase26_zero_yes(); }
+    return phase26_zero_unknown();
+}
+
+func phase26_zero_not_equal(left: int, right: int) int {
+    if left == phase26_zero_yes() && right == phase26_zero_yes() { return phase26_zero_yes(); }
+    if (left == phase26_zero_yes() && right == phase26_zero_no()) ||
+       (left == phase26_zero_no() && right == phase26_zero_yes()) { return phase26_zero_no(); }
+    return phase26_zero_unknown();
+}
+
 func phase26_zero_join_maps(left: std.HashMap[str, int, ctx], right: std.HashMap[str, int, ctx], ctx: &Arena) std.HashMap[str, int, ctx] {
     mut joined: std.HashMap[str, int, ctx] := std.HashMapNew(ctx);
     mut left_keys := left.Keys(ctx);
@@ -2061,6 +2078,26 @@ func phase26_zero_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *Ty
                 return phase26_zero_logical_and(left, right);
             }
             return phase26_zero_logical_or(left, right);
+        }
+        if expr.tag == 10 && (std.str_eq(expr.Binary.op, "==") == 1 ||
+                              std.str_eq(expr.Binary.op, "!=") == 1) {
+            // Canonical equality returns Int. Require already-resolved matching
+            // Int/Bool operands so string, pointer, and invalid comparisons do
+            // not acquire evidence from this bounded transfer.
+            if phase26_zero_resolved_expression_tag(expr_idx, env, ctx) != 0 {
+                return phase26_zero_unknown();
+            }
+            mut left_tag := phase26_zero_resolved_expression_tag(expr.Binary.left, env, ctx);
+            mut right_tag := phase26_zero_resolved_expression_tag(expr.Binary.right, env, ctx);
+            if left_tag != right_tag || (left_tag != 0 && left_tag != 2) {
+                return phase26_zero_unknown();
+            }
+            mut left := phase26_zero_expression(expr.Binary.left, env, ctx);
+            mut right := phase26_zero_expression(expr.Binary.right, env, ctx);
+            if std.str_eq(expr.Binary.op, "==") == 1 {
+                return phase26_zero_equal(left, right);
+            }
+            return phase26_zero_not_equal(left, right);
         }
         if expr.tag == 10 && (std.str_eq(expr.Binary.op, "+") == 1 ||
                               std.str_eq(expr.Binary.op, "-") == 1 ||

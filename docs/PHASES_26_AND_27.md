@@ -395,6 +395,16 @@ and explicitly unsafe callees retain their prior behavior. This changes no
 operator meaning, MIR, physical ABI, layout, runtime, or native route admission.
 General nullability and Phase 26.1 remain open.
 
+**26.1E equality-result subset (ownership authorized 2026-09-29).** Already
+typechecked `==` and `!=` with matching Int or Bool operands return Int and
+carry bounded zero evidence only when a proved Zero is compared with a proved
+Zero or Nonzero. Every other pair remains Unknown. A proved false result cast
+to a raw pointer rejects at a declared-safe non-extern argument or return
+boundary before native driver discovery. Nonzero and unknown results and
+explicitly unsafe callees preserve their prior behavior. This does not admit
+the general source-level comparison route, change operator meaning, MIR,
+physical ABI, layout, or runtime, or close general nullability or Phase 26.1.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
