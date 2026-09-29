@@ -81,6 +81,7 @@ def surface(path: str, role: str, markers: tuple[str, ...]) -> dict[str, object]
 
 def project_reference_receiver_production_audit(registry: dict, live: dict) -> dict:
     """Project one registered native guard invocation off the closed audit."""
+    live = project_phase26_explicit_brand_production_audit(registry, live)
     live = project_phase26_relational_zero_production_audit(registry, live)
     live = project_phase26_equality_zero_production_audit(registry, live)
     live = project_phase26_logical_zero_production_audit(registry, live)
@@ -130,6 +131,32 @@ def project_reference_receiver_production_audit(registry: dict, live: dict) -> d
             "Phase 26 reference receiver production audit successor drifted")
     previous = dict(live)
     previous["repository_invocation_count"] = 150
+    return previous
+
+
+def project_phase26_explicit_brand_production_audit(
+        registry: dict, live: dict) -> dict:
+    increment = registry.get("phase26_activation_audit", {}).get(
+        "explicit_brand_prerequisite", {})
+    successor = increment.get("production_audit_successor")
+    if successor is None:
+        return live
+    rows = increment.get("phase22_invocation_successor", {}).get("added_rows", [])
+    path = "scripts/phase26_explicit_brand.sh"
+    require(successor == {
+        "contract_version": "phase26_1e_explicit_brand_production_audit_successor_v1",
+        "previous_repository_invocation_count": 215,
+        "current_repository_invocation_count": 216,
+        "added_invocation_path": path,
+        "unchanged_other_fields": True,
+        "partial_extra_or_substituted_audit": "rejected",
+    } and len(rows) == 1 and
+            all(row.get("path") == path and
+                row.get("selection") == "explicit_cranelift" for row in rows) and
+            live["repository_invocation_count"] == 216,
+            "Phase 26 explicit-brand production audit successor drifted")
+    previous = dict(live)
+    previous["repository_invocation_count"] = 215
     return previous
 
 

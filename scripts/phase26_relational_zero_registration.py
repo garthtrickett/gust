@@ -32,6 +32,8 @@ def digest(path: str) -> str:
 
 def before_relational_digest(activation: dict, path: str, live_digest: str) -> str:
     """Reverse only this registered successor for older exact-surface owners."""
+    from phase26_explicit_brand_registration import before_explicit_brand_digest
+    live_digest = before_explicit_brand_digest(activation, path, live_digest)
     rows = activation.get("relational_zero_evidence_increment", {}).get(
         "phase23_text_surface_successor", {}).get("changed_rows", [])
     selected = [row for row in rows if row.get("path") == path]
@@ -46,6 +48,7 @@ def before_relational_digest(activation: dict, path: str, live_digest: str) -> s
 
 
 def main() -> None:
+    from phase26_explicit_brand_registration import before_explicit_brand_digest
     registry = json.loads((ROOT / "scripts/cranelift_feature_registry.json")
                           .read_text(encoding="utf-8"))
     activation = registry["phase26_activation_audit"]
@@ -111,7 +114,10 @@ def main() -> None:
         "contract_version": "phase26_1e_relational_zero_spelling_inventory_successor_v1",
         "previous_inventory_summary": activation["equality_zero_evidence_increment"][
             "spelling_inventory_successor"]["current_inventory_summary"],
-        "current_inventory_summary": manifest_summary(source_sites()),
+        "current_inventory_summary": activation.get(
+            "explicit_brand_prerequisite", {}).get(
+                "spelling_inventory_successor", {}).get(
+                    "previous_inventory_summary", manifest_summary(source_sites())),
         "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
                                         *NEGATIVES, *CONTROLS]),
         "partial_extra_or_substituted_inventory": "rejected",
@@ -120,7 +126,8 @@ def main() -> None:
     from phase24_filename_behavior_characterization import source_sites as filename_sites
     previous = activation["equality_zero_evidence_increment"][
         "filename_site_successor"]["current_sites"]
-    current = filename_sites()
+    current = activation.get("explicit_brand_prerequisite", {}).get(
+        "filename_site_successor", {}).get("previous_sites", filename_sites())
     require(record["filename_site_successor"] == {
         "contract_version": "phase26_1e_relational_zero_filename_site_successor_v1",
         "previous_sites": previous, "current_sites": current,
@@ -139,11 +146,13 @@ def main() -> None:
             len({row["path"] for row in surface.get("added_rows", [])}) ==
             len(surface.get("added_rows", [])), "text surface successor shape drifted")
     for row in surface["changed_rows"]:
-        require(row["current_digest"] == digest(row["path"]) and
+        require(row["current_digest"] == before_explicit_brand_digest(
+                    activation, row["path"], digest(row["path"])) and
                 len(row["previous_digest"]) == 64,
                 f"changed text surface drifted: {row['path']}")
     for row in surface["added_rows"]:
-        require(row["digest"] == digest(row["path"]),
+        require(row["digest"] == before_explicit_brand_digest(
+                    activation, row["path"], digest(row["path"])),
                 f"added text surface drifted: {row['path']}")
 
     justfile = (ROOT / "justfile").read_text(encoding="utf-8")

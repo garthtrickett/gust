@@ -416,6 +416,16 @@ explicitly unsafe callees preserve their prior behavior. Operator meaning,
 MIR, physical ABI, layout, runtime, and native route admission do not change.
 General nullability and Phase 26.1 remain open.
 
+**26.1E explicit-brand prerequisite (ownership authorized 2026-09-29).**
+The self-hosted `types_match` implementation previously passed a null raw
+`TypeEnvironment` pointer to `get_type_brand` at eight sites to request only
+the type's explicit brand. An explicit-brand helper with no environment
+parameter now serves those sites; the environment-aware helper and its callers
+retain registered-brand lookup. This is a bootstrap-safe preparation for a
+separate zero-initialized raw-pointer boundary patch. It does not change the
+current raw-null gate, type matching outcomes, MIR, ABI, layout, or runtime,
+and does not close Phase 26.1.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

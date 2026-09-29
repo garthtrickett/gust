@@ -870,6 +870,9 @@ jobs:
       - name: Phase 26 relational result zero evidence
         run: just guard-cranelift-phase26-relational-zero-evidence
 
+      - name: Phase 26 explicit brand prerequisite
+        run: just guard-cranelift-phase26-explicit-brand
+
       - name: Phase 26 packed borrowed repr C layout
         run: just guard-cranelift-phase26-ffi-packed-layout
 
