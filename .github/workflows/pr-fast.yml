@@ -846,6 +846,9 @@ jobs:
       - name: Phase 26 division zero evidence
         run: just guard-cranelift-phase26-division-zero-evidence
 
+      - name: Phase 26 match arm zero evidence
+        run: just guard-cranelift-phase26-match-zero-evidence
+
       - name: Phase 26 packed borrowed repr C layout
         run: just guard-cranelift-phase26-ffi-packed-layout
 

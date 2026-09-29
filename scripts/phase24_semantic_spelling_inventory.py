@@ -352,6 +352,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     division_zero_successor = registry.get("phase26_activation_audit", {}).get(
         "division_zero_evidence_increment", {}).get(
             "spelling_inventory_successor")
+    match_zero_successor = registry.get("phase26_activation_audit", {}).get(
+        "match_zero_evidence_increment", {}).get(
+            "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -956,7 +959,8 @@ def validate() -> tuple[dict, list[dict], dict]:
                 "phase26_1e_division_zero_spelling_inventory_successor_v1" and
                 division_zero_successor.get("previous_inventory_summary") ==
                 previous_division and
-                now_division == summary and
+                now_division == (summary if match_zero_successor is None else
+                                 match_zero_successor.get("previous_inventory_summary")) and
                 division_zero_successor.get("changed_source_paths") == fixture_paths and
                 division_zero_successor.get("partial_extra_or_substituted_inventory") ==
                 "rejected" and
@@ -965,6 +969,29 @@ def validate() -> tuple[dict, list[dict], dict]:
                 now_division["site_count"] == previous_division["site_count"] and
                 now_division["unknown_site_count"] == 0,
                 "Phase 26 division zero spelling inventory drifted")
+    if match_zero_successor is not None:
+        previous_match = division_zero_successor["current_inventory_summary"]
+        now_match = match_zero_successor.get("current_inventory_summary", {})
+        fixture_paths = sorted([
+            "compiler/typechecker.gst",
+            "compiler/phase26_match_zero_test_entry.gst",
+            "compiler/phase26_match_zero_safe_call_source.gst",
+            "compiler/phase26_match_zero_safe_return_source.gst",
+        ])
+        require(division_zero_successor is not None and
+                match_zero_successor.get("contract_version") ==
+                "phase26_1e_match_zero_spelling_inventory_successor_v1" and
+                match_zero_successor.get("previous_inventory_summary") ==
+                previous_match and
+                now_match == summary and
+                match_zero_successor.get("changed_source_paths") == fixture_paths and
+                match_zero_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and
+                now_match["source_file_count"] ==
+                previous_match["source_file_count"] + 3 and
+                now_match["site_count"] == previous_match["site_count"] and
+                now_match["unknown_site_count"] == 0,
+                "Phase 26 match zero spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),

@@ -24,6 +24,18 @@ def require(value: bool, message: str) -> None:
 
 def project_live_digest_to_pre_packed(registry: dict, path: str,
                                       live_digest: str) -> str:
+    match_rows = registry.get("phase26_activation_audit", {}).get(
+        "match_zero_evidence_increment", {}).get(
+            "phase23_text_surface_successor", {}).get("changed_rows", [])
+    match_selected = [row for row in match_rows if row.get("path") == path]
+    require(len(match_selected) <= 1,
+            f"duplicate match zero text surface: {path}")
+    if match_selected:
+        row = match_selected[0]
+        require(row["current_digest"] == live_digest and
+                len(row["previous_digest"]) == 64,
+                f"match zero text surface drifted: {path}")
+        live_digest = row["previous_digest"]
     division_rows = registry.get("phase26_activation_audit", {}).get(
         "division_zero_evidence_increment", {}).get(
             "phase23_text_surface_successor", {}).get("changed_rows", [])

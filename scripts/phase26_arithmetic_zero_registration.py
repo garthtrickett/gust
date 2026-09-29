@@ -32,6 +32,7 @@ def main() -> None:
     activation = registry["phase26_activation_audit"]
     record = activation.get("arithmetic_zero_evidence_increment", {})
     division = activation.get("division_zero_evidence_increment")
+    match = activation.get("match_zero_evidence_increment")
     expected = {
         "contract_version": "phase26_1e_arithmetic_zero_v1",
         "status": "bounded_arithmetic_zero_safe_boundary_rejection_qualified",
@@ -111,13 +112,18 @@ def main() -> None:
     surface = record["phase23_text_surface_successor"]
     division_changes = {row["path"]: row for row in division[
         "phase23_text_surface_successor"]["changed_rows"]} if division else {}
+    match_changes = {row["path"]: row for row in match[
+        "phase23_text_surface_successor"]["changed_rows"]} if match else {}
 
     def latest_digest(path: str, starting_digest: str) -> bool:
-        later = division_changes.get(path)
-        if later is None:
-            return starting_digest == digest(path)
-        return later["previous_digest"] == starting_digest and \
-            later["current_digest"] == digest(path)
+        current = starting_digest
+        for changes in (division_changes, match_changes):
+            later = changes.get(path)
+            if later is not None:
+                if later["previous_digest"] != current:
+                    return False
+                current = later["current_digest"]
+        return current == digest(path)
     require(surface.get("contract_version") ==
             "phase26_1e_arithmetic_zero_phase23_text_surface_successor_v1" and
             surface.get("partial_extra_or_substituted_surface") == "rejected" and
