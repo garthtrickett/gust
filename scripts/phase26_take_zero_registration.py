@@ -31,6 +31,7 @@ def main() -> None:
                           .read_text(encoding="utf-8"))
     activation = registry["phase26_activation_audit"]
     record = activation.get("take_zero_evidence_increment", {})
+    take_struct = activation.get("take_struct_alias_evidence_increment")
     expected = {
         "contract_version": "phase26_1e_take_zero_v1",
         "status": "bounded_take_zero_safe_boundary_rejection_qualified",
@@ -85,7 +86,9 @@ def main() -> None:
         "contract_version": "phase26_1e_take_zero_spelling_inventory_successor_v1",
         "previous_inventory_summary": activation["match_zero_evidence_increment"][
             "spelling_inventory_successor"]["current_inventory_summary"],
-        "current_inventory_summary": manifest_summary(source_sites()),
+        "current_inventory_summary": (manifest_summary(source_sites()) if
+                                      take_struct is None else take_struct[
+                                          "spelling_inventory_successor"]["previous_inventory_summary"]),
         "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
                                         *NEGATIVES]),
         "partial_extra_or_substituted_inventory": "rejected",
@@ -94,7 +97,8 @@ def main() -> None:
     from phase24_filename_behavior_characterization import source_sites as filename_sites
     previous = activation["match_zero_evidence_increment"][
         "filename_site_successor"]["current_sites"]
-    current = filename_sites()
+    current = (filename_sites() if take_struct is None else take_struct[
+        "filename_site_successor"]["previous_sites"])
     require(record["filename_site_successor"] == {
         "contract_version": "phase26_1e_take_zero_filename_site_successor_v1",
         "previous_sites": previous, "current_sites": current,
@@ -104,6 +108,15 @@ def main() -> None:
             "filename site successor drifted")
 
     surface = record["phase23_text_surface_successor"]
+    take_struct_changes = {row["path"]: row for row in take_struct[
+        "phase23_text_surface_successor"]["changed_rows"]} if take_struct else {}
+
+    def latest_digest(path: str, starting_digest: str) -> bool:
+        later = take_struct_changes.get(path)
+        if later is None:
+            return starting_digest == digest(path)
+        return later["previous_digest"] == starting_digest and \
+            later["current_digest"] == digest(path)
     require(surface.get("contract_version") ==
             "phase26_1e_take_zero_phase23_text_surface_successor_v1" and
             surface.get("partial_extra_or_substituted_surface") == "rejected" and
@@ -112,11 +125,11 @@ def main() -> None:
             len({row["path"] for row in surface.get("added_rows", [])}) ==
             len(surface.get("added_rows", [])), "text surface successor shape drifted")
     for row in surface["changed_rows"]:
-        require(row["current_digest"] == digest(row["path"]) and
+        require(latest_digest(row["path"], row["current_digest"]) and
                 len(row["previous_digest"]) == 64,
                 f"changed text surface drifted: {row['path']}")
     for row in surface["added_rows"]:
-        require(row["digest"] == digest(row["path"]),
+        require(latest_digest(row["path"], row["digest"]),
                 f"added text surface drifted: {row['path']}")
 
     justfile = (ROOT / "justfile").read_text(encoding="utf-8")

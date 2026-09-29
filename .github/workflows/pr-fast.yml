@@ -852,6 +852,9 @@ jobs:
       - name: Phase 26 take zero evidence
         run: just guard-cranelift-phase26-take-zero-evidence
 
+      - name: Phase 26 local Struct Take-alias evidence
+        run: just guard-cranelift-phase26-take-struct-alias-evidence
+
       - name: Phase 26 packed borrowed repr C layout
         run: just guard-cranelift-phase26-ffi-packed-layout
 
