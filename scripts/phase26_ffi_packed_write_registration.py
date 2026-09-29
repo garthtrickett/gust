@@ -127,6 +127,9 @@ def main() -> None:
     match_rows = {row["path"]: row for row in activation.get(
         "match_zero_evidence_increment", {}).get(
             "phase23_text_surface_successor", {}).get("changed_rows", [])}
+    take_rows = {row["path"]: row for row in activation.get(
+        "take_zero_evidence_increment", {}).get(
+            "phase23_text_surface_successor", {}).get("changed_rows", [])}
     for row in surface["changed_rows"]:
         later = isolated_rows.get(row["path"])
         newest = isolated_write_rows.get(row["path"])
@@ -136,6 +139,7 @@ def main() -> None:
         arithmetic_zero = arithmetic_rows.get(row["path"])
         division_zero = division_rows.get(row["path"])
         match_zero = match_rows.get(row["path"])
+        take_zero = take_rows.get(row["path"])
         predecessor_digest = (computed["current_digest"] if computed else
                               newest["current_digest"] if newest else
                               later["current_digest"] if later else row["current_digest"])
@@ -165,7 +169,15 @@ def main() -> None:
                   nested_zero["current_digest"] if nested_zero else
                   field_zero["current_digest"] if field_zero else
                   predecessor_digest)) and
-                (match_zero["current_digest"] if match_zero else
+                (take_zero is None or take_zero["previous_digest"] ==
+                 (match_zero["current_digest"] if match_zero else
+                  division_zero["current_digest"] if division_zero else
+                  arithmetic_zero["current_digest"] if arithmetic_zero else
+                  nested_zero["current_digest"] if nested_zero else
+                  field_zero["current_digest"] if field_zero else
+                  predecessor_digest)) and
+                (take_zero["current_digest"] if take_zero else
+                 match_zero["current_digest"] if match_zero else
                  division_zero["current_digest"] if division_zero else
                  arithmetic_zero["current_digest"] if arithmetic_zero else
                  nested_zero["current_digest"] if nested_zero else
