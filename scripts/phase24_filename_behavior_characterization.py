@@ -271,6 +271,9 @@ def validate_static(value: dict) -> None:
                 logical_zero_sites = registry.get("phase26_activation_audit", {}).get(
                     "logical_zero_evidence_increment", {}).get(
                         "filename_site_successor")
+                equality_zero_sites = registry.get("phase26_activation_audit", {}).get(
+                    "equality_zero_evidence_increment", {}).get(
+                        "filename_site_successor")
                 e1_current = (live_sites if d5_sites is None else
                               d5_sites.get("previous_sites"))
                 require(e1_sites.get("contract_version") ==
@@ -632,7 +635,9 @@ def validate_static(value: dict) -> None:
                             logical_zero_sites.get("contract_version") ==
                             "phase26_1e_logical_zero_filename_site_successor_v1" and
                             logical_zero_sites.get("previous_sites") == previous_logical and
-                            logical_zero_sites.get("current_sites") == live_sites and
+                            logical_zero_sites.get("current_sites") ==
+                            (live_sites if equality_zero_sites is None else
+                             equality_zero_sites.get("previous_sites")) and
                             isinstance(deltas_logical, list) and
                             len(deltas_logical) == len(live_sites) == 3 and
                             all(isinstance(delta, int) and delta >= 0
@@ -643,8 +648,28 @@ def validate_static(value: dict) -> None:
                                 {key: val for key, val in now.items() if key != "line"} ==
                                 {key: val for key, val in before.items() if key != "line"}
                                 for before, now, delta in zip(previous_logical,
-                                    live_sites, deltas_logical)),
+                                    logical_zero_sites.get("current_sites"), deltas_logical)),
                             "Phase 26 logical filename sites drifted")
+                if equality_zero_sites is not None:
+                    previous_equality = logical_zero_sites["current_sites"]
+                    deltas_equality = equality_zero_sites.get("line_deltas")
+                    require(logical_zero_sites is not None and
+                            equality_zero_sites.get("contract_version") ==
+                            "phase26_1e_equality_zero_filename_site_successor_v1" and
+                            equality_zero_sites.get("previous_sites") == previous_equality and
+                            equality_zero_sites.get("current_sites") == live_sites and
+                            isinstance(deltas_equality, list) and
+                            len(deltas_equality) == len(live_sites) == 3 and
+                            all(isinstance(delta, int) and delta >= 0
+                                for delta in deltas_equality) and
+                            equality_zero_sites.get("partial_extra_or_substituted_site") ==
+                            "rejected" and
+                            all(now["line"] == before["line"] + delta and
+                                {key: val for key, val in now.items() if key != "line"} ==
+                                {key: val for key, val in before.items() if key != "line"}
+                                for before, now, delta in zip(previous_equality,
+                                    live_sites, deltas_equality)),
+                            "Phase 26 equality filename sites drifted")
     require([row["selector"] for row in value["site_manifest"]] ==
             ["test_tcs_", "test_index_", "test_tcs_"],
             "selector order or completeness drifted")
