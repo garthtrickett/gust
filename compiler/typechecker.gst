@@ -1914,8 +1914,9 @@ func phase26_zero_local_alias_source(expr_idx: Index[ast.Expression[ctx], ctx], 
         while current != empty[Index[ast.Expression[ctx], ctx]] {
             mut expr := ctx[current];
             if expr.tag == 0 { return std.Clone(ctx, expr.Identifier.name); }
-            if expr.tag != 4 { return ""; }
-            current = expr.Move.expr;
+            if expr.tag == 4 { current = expr.Move.expr; } // Move
+            else if expr.tag == 5 { current = expr.Take.expr; } // Take
+            else { return ""; }
         }
     }
     return "";

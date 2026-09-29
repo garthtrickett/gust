@@ -350,6 +350,16 @@ unknown values and explicitly unsafe callees retain their prior behavior.
 This does not change take/move ownership, provenance, MIR, ABI, layout, or
 runtime, and does not close general nullability or Phase 26.1.
 
+**26.1E local Struct Take-alias subset (ownership authorized 2026-09-29).**
+When a local by-value Struct is taken into a local declaration or assignment,
+the existing conservative field-state alias rule now recognizes `Take` as its
+source expression. A known-zero raw-pointer field therefore carries MayZero
+evidence to the destination and rejects at a declared-safe non-extern call
+before native capability planning. Nonzero and unknown fields, explicitly
+unsafe callees, and the existing plain-alias path retain their behavior.
+This does not alter Take ownership or provenance, generalize to pointer or
+heap aliases, admit unsupported native source routes, or close Phase 26.1.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
