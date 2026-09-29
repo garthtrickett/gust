@@ -42,6 +42,7 @@
     "guard-cranelift-phase26-take-struct-alias-evidence": 2,
     "guard-cranelift-phase26-cast-narrowing-zero-evidence": 2,
     "guard-cranelift-phase26-bool-literal-zero-evidence": 2,
+    "guard-cranelift-phase26-logical-zero-evidence": 2,
     "guard-cranelift-phase25-native-fixed-point": 3,
     "guard-cranelift-phase25-runtime-rs-abi-smoke": 1,
     "guard-cranelift-phase25-strings-rust-parity": 2,
