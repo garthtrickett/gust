@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pin the bounded Phase 26.1 Int narrowing cast zero-evidence successor."""
+"""Pin the bounded Phase 26.1 canonical Bool literal zero-evidence successor."""
 
 from __future__ import annotations
 
@@ -8,15 +8,15 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-GUARD = "guard-cranelift-phase26-cast-narrowing-zero-evidence"
-SCRIPT = "scripts/phase26_cast_narrowing_zero_evidence.sh"
-POSITIVE = "compiler/phase26_cast_narrowing_zero_test_entry.gst"
+GUARD = "guard-cranelift-phase26-bool-literal-zero-evidence"
+SCRIPT = "scripts/phase26_bool_literal_zero_evidence.sh"
+POSITIVE = "compiler/phase26_bool_literal_zero_test_entry.gst"
 NEGATIVES = [
-    f"compiler/phase26_cast_narrowing_{name}_source.gst"
+    f"compiler/phase26_bool_literal_{name}_source.gst"
     for name in ("safe_call", "safe_return")
 ]
 CONTROLS = [
-    f"compiler/phase26_cast_narrowing_{name}_source.gst"
+    f"compiler/phase26_bool_literal_{name}_source.gst"
     for name in ("nonzero", "unknown", "unsafe")
 ]
 
@@ -30,20 +30,18 @@ def digest(path: str) -> str:
     return hashlib.sha256((ROOT / path).read_bytes()).hexdigest()
 
 
-def before_cast_digest(activation: dict, path: str, live_digest: str) -> str:
+def before_bool_digest(activation: dict, path: str, live_digest: str) -> str:
     """Reverse only this registered successor for older exact-surface owners."""
-    from phase26_bool_literal_zero_registration import before_bool_digest
-    live_digest = before_bool_digest(activation, path, live_digest)
-    rows = activation.get("cast_narrowing_zero_evidence_increment", {}).get(
+    rows = activation.get("bool_literal_zero_evidence_increment", {}).get(
         "phase23_text_surface_successor", {}).get("changed_rows", [])
     selected = [row for row in rows if row.get("path") == path]
-    require(len(selected) <= 1, f"duplicate cast text surface: {path}")
+    require(len(selected) <= 1, f"duplicate bool text surface: {path}")
     if not selected:
         return live_digest
     row = selected[0]
     require(row["current_digest"] == live_digest and
             len(row["previous_digest"]) == 64,
-            f"cast text surface drifted: {path}")
+            f"bool text surface drifted: {path}")
     return row["previous_digest"]
 
 
@@ -51,23 +49,23 @@ def main() -> None:
     registry = json.loads((ROOT / "scripts/cranelift_feature_registry.json")
                           .read_text(encoding="utf-8"))
     activation = registry["phase26_activation_audit"]
-    record = activation.get("cast_narrowing_zero_evidence_increment", {})
+    record = activation.get("bool_literal_zero_evidence_increment", {})
     expected = {
-        "contract_version": "phase26_1e_cast_narrowing_zero_v1",
-        "status": "bounded_int_narrowing_cast_zero_safe_boundary_rejection_qualified",
-        "owner": "cranelift", "increment": "26.1E_int_narrowing_cast_subset",
-        "operator_ownership_decision": "2026-09-29_bounded_int_narrowing_cast_zero",
+        "contract_version": "phase26_1e_bool_literal_zero_v1",
+        "status": "bounded_bool_literal_zero_safe_boundary_rejection_qualified",
+        "owner": "cranelift", "increment": "26.1E_bool_literal_subset",
+        "operator_ownership_decision": "2026-09-29_bounded_bool_literal_zero",
         "value_states": ["Unknown", "Zero", "Nonzero", "MayZero"],
-        "transfer_ops": ["resolved_int_to_byte_or_bool_cast"],
-        "narrowing_nonzero_result": "MayZero_except_in_range_integer_literals",
-        "preserved_casts": ["zero", "may_zero", "unknown", "equal_width",
-                            "widening", "in_range_integer_literal"],
+        "transfer_ops": ["canonical_bool_literal_zero_or_nonzero"],
+        "canonical_payloads": {"false": 0, "true": 1},
+        "noncanonical_payload": "Unknown",
+        "preserved_transfers": ["cast", "local_binding", "unknown", "unsafe_callee"],
         "positive_fixture": POSITIVE, "negative_fixtures": NEGATIVES,
         "control_fixtures": CONTROLS,
-        "positive_output": "SUCCESS: narrowing Int cast preserves bounded zero evidence and controls\n",
+        "positive_output": "SUCCESS: canonical Bool literal zero evidence and safe-boundary controls verified\n",
         "safe_boundaries": ["declared_nonextern_raw_pointer_argument",
                             "declared_nonextern_raw_pointer_return"],
-        "negative_states": ["Zero", "MayZero"],
+        "negative_states": ["Zero"],
         "unknown_and_nonzero": "preserved_without_general_nullability_claim",
         "unsafe_callees": "preserved",
         "diagnostic": "[RawNullSafeBoundary]",
@@ -85,69 +83,62 @@ def main() -> None:
         "phase22_invocation_successor", "production_audit_successor",
         "phase23_text_surface_successor", "spelling_inventory_successor",
         "filename_site_successor",
-    }, "registry acquired unreviewed cast fields")
+    }, "registry acquired unreviewed bool fields")
     for path in [POSITIVE, *NEGATIVES, *CONTROLS]:
         require((ROOT / path).is_file(), f"registered fixture missing: {path}")
 
     from phase22_opening import scan_invocations
     rows = [row for row in scan_invocations() if row["path"] == SCRIPT]
     require(record["phase22_invocation_successor"] == {
-        "contract_version": "phase26_1e_cast_narrowing_zero_phase22_invocation_successor_v1",
-        "previous_total": 205, "current_total": 207, "added_rows": rows,
+        "contract_version": "phase26_1e_bool_literal_zero_phase22_invocation_successor_v1",
+        "previous_total": 207, "current_total": 209, "added_rows": rows,
         "partial_extra_or_substituted_invocation": "rejected",
     } and len(rows) == 2, "native invocation successor drifted")
     require(record["production_audit_successor"] == {
-        "contract_version": "phase26_1e_cast_narrowing_zero_production_audit_successor_v1",
-        "previous_repository_invocation_count": 205,
-        "current_repository_invocation_count": 207,
+        "contract_version": "phase26_1e_bool_literal_zero_production_audit_successor_v1",
+        "previous_repository_invocation_count": 207,
+        "current_repository_invocation_count": 209,
         "added_invocation_path": SCRIPT, "unchanged_other_fields": True,
         "partial_extra_or_substituted_audit": "rejected",
     }, "production audit successor drifted")
 
     from phase24_semantic_spelling_inventory import source_sites, manifest_summary
     require(record["spelling_inventory_successor"] == {
-        "contract_version": "phase26_1e_cast_narrowing_zero_spelling_inventory_successor_v1",
-        "previous_inventory_summary": activation["take_struct_alias_evidence_increment"][
+        "contract_version": "phase26_1e_bool_literal_zero_spelling_inventory_successor_v1",
+        "previous_inventory_summary": activation["cast_narrowing_zero_evidence_increment"][
             "spelling_inventory_successor"]["current_inventory_summary"],
-        "current_inventory_summary": activation.get(
-            "bool_literal_zero_evidence_increment", {}).get(
-                "spelling_inventory_successor", {}).get(
-                    "previous_inventory_summary", manifest_summary(source_sites())),
+        "current_inventory_summary": manifest_summary(source_sites()),
         "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
                                         *NEGATIVES, *CONTROLS]),
         "partial_extra_or_substituted_inventory": "rejected",
     }, "spelling inventory successor drifted")
 
     from phase24_filename_behavior_characterization import source_sites as filename_sites
-    previous = activation["take_struct_alias_evidence_increment"][
+    previous = activation["cast_narrowing_zero_evidence_increment"][
         "filename_site_successor"]["current_sites"]
-    current = activation.get("bool_literal_zero_evidence_increment", {}).get(
-        "filename_site_successor", {}).get("previous_sites", filename_sites())
+    current = filename_sites()
     require(record["filename_site_successor"] == {
-        "contract_version": "phase26_1e_cast_narrowing_zero_filename_site_successor_v1",
+        "contract_version": "phase26_1e_bool_literal_zero_filename_site_successor_v1",
         "previous_sites": previous, "current_sites": current,
-        "line_deltas": [40, 40, 40],
+        "line_deltas": [5, 5, 5],
         "partial_extra_or_substituted_site": "rejected",
     } and len(current) == len(previous) == 3,
             "filename site successor drifted")
 
     surface = record["phase23_text_surface_successor"]
     require(surface.get("contract_version") ==
-            "phase26_1e_cast_narrowing_zero_phase23_text_surface_successor_v1" and
+            "phase26_1e_bool_literal_zero_phase23_text_surface_successor_v1" and
             surface.get("partial_extra_or_substituted_surface") == "rejected" and
             len({row["path"] for row in surface.get("changed_rows", [])}) ==
             len(surface.get("changed_rows", [])) and
             len({row["path"] for row in surface.get("added_rows", [])}) ==
             len(surface.get("added_rows", [])), "text surface successor shape drifted")
     for row in surface["changed_rows"]:
-        from phase26_bool_literal_zero_registration import before_bool_digest
-        require(row["current_digest"] == before_bool_digest(
-                    activation, row["path"], digest(row["path"])) and
+        require(row["current_digest"] == digest(row["path"]) and
                 len(row["previous_digest"]) == 64,
                 f"changed text surface drifted: {row['path']}")
     for row in surface["added_rows"]:
-        require(row["digest"] == before_bool_digest(
-                    activation, row["path"], digest(row["path"])),
+        require(row["digest"] == digest(row["path"]),
                 f"added text surface drifted: {row['path']}")
 
     justfile = (ROOT / "justfile").read_text(encoding="utf-8")
@@ -157,14 +148,14 @@ def main() -> None:
                         .read_text(encoding="utf-8"))
     require(levels["guards"].get(GUARD) == 2 and
             justfile.count(f"{GUARD}:") == 1 and
-            "python3 scripts/phase26_cast_narrowing_zero_registration.py" in justfile and
+            "python3 scripts/phase26_bool_literal_zero_registration.py" in justfile and
             workflow.count(f"just {GUARD}") == 1 and
             "poison-driver.invoked" in guard and
             "GUST_TEST_MIR_TO_C_UNAVAILABLE=1" in guard and
             "[RawNullSafeBoundary]" in guard and
             "safe_call safe_return nonzero unknown unsafe" in guard and
-            "phase26_take_struct_alias_evidence.sh" in guard,
-            "cast narrowing native evidence weakened")
+            "phase26_cast_narrowing_zero_evidence.sh" in guard,
+            "Bool literal native evidence weakened")
     print(f"{GUARD}: registration ok")
 
 
