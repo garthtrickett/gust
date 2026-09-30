@@ -16,7 +16,7 @@ test ! -s "$build_root/typechecker.compile.stdout"
 test ! -s "$build_root/typechecker.compile.stderr"
 "$build_root/typechecker" >"$build_root/typechecker.stdout" 2>"$build_root/typechecker.stderr"
 test ! -s "$build_root/typechecker.stderr"
-printf 'SUCCESS: checked direct-return zero summaries and excluded parameters verified\n' >"$build_root/typechecker.expected"
+printf 'SUCCESS: checked direct-return zero summaries and excluded parameters and wrapped callees verified\n' >"$build_root/typechecker.expected"
 cmp -s "$build_root/typechecker.expected" "$build_root/typechecker.stdout"
 
 poison="$build_root/poison-driver"

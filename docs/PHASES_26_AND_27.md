@@ -440,13 +440,13 @@ Phase 26.1 closure.
 **26.1E direct-call return subset (ownership authorized 2026-09-30).** A
 concrete, non-generic raw-pointer function with no parameters and one
 unconditional direct return records the existing four-state value evidence
-after its body is checked. A type-matched direct call result crossing a
+after its body is checked. A type-matched direct Identifier call result crossing a
 declared-safe non-extern raw-pointer argument or return is checked after all
 function bodies, independent of declaration order, before native planning.
 Known Zero or MayZero rejects with `[RawNullSafeBoundary]`; Nonzero and Unknown,
 explicitly unsafe target callees, and prior type-error precedence remain as
 before. Calls stored in locals, parameter-dependent returns, multiple-return
-bodies, indirect or recursive calls, and call chains remain outside this
+bodies, qualified selectors, cast/move/take wrapped callees, indirect or recursive calls, and call chains remain outside this
 increment. It changes no MIR, physical ABI, layout, or runtime behavior and
 does not establish general nullability or close Phase 26.1.
 

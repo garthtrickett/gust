@@ -58540,7 +58540,7 @@
         "Nonzero",
         "MayZero"
       ],
-      "summary_shape": "concrete_nongeneric_nullary_raw_pointer_function_one_unconditional_direct_return",
+      "summary_shape": "concrete_nongeneric_nullary_raw_pointer_function_one_unconditional_direct_return_identifier_call",
       "summary_order": "after_all_function_bodies_before_native_planner",
       "unsupported_summaries": "Unknown_no_recursion_chains_indirect_calls_or_parameters",
       "positive_fixture": "compiler/phase26_call_return_zero_test_entry.gst",
@@ -58556,7 +58556,7 @@
         "compiler/phase26_call_return_zero_unsafe_target_source.gst",
         "compiler/phase26_call_return_zero_prior_error_source.gst"
       ],
-      "positive_output": "SUCCESS: checked direct-return zero summaries and excluded parameters verified\n",
+      "positive_output": "SUCCESS: checked direct-return zero summaries and excluded parameters and wrapped callees verified\n",
       "safe_boundaries": [
         "declared_nonextern_raw_pointer_argument",
         "declared_nonextern_raw_pointer_return"
@@ -58652,7 +58652,7 @@
           "source_file_count": 1264,
           "site_count": 1398,
           "semantic_site_count": 689,
-          "semantic_manifest_digest": "a877be05fe32abba8a26eb851298d6b42cfedb34d47871ee55ecd0ad03cd3ea0",
+          "semantic_manifest_digest": "e53c7aad34bc698592472bf9eba3d3f0aa1d9887f929ee0103b3f000489b31b4",
           "classification_counts": {
             "semantic_or_intrinsic_recognition": 689,
             "diagnostic": 10,
@@ -58663,14 +58663,14 @@
             "non_decision_comparison": 8
           },
           "partition_manifest_digests": {
-            "diagnostic": "86fc9a2fe53650d2eb19eca848a44b7ae5c402130a618525585a6550ce544f3f",
+            "diagnostic": "9d3dd162ddfdc72d0acf3ca5658ba854ed3ffb5cd33607e32ff1233a516d656e",
             "serialization": "a889ed384ae506f10b80c84fc00b91863328192597070abee5ec4324e92aef70",
-            "mangling_or_generated_name": "6def512fa40462c316cef83623540e3a9605939d4e1d21342685fed3a0a5dd72",
+            "mangling_or_generated_name": "a8f988644b9b7f979718ad83cbdbf98fad27bbc2524b2bc279e10e6b6c085457",
             "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
             "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
             "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
           },
-          "complete_manifest_digest": "02d2d4f0511f9202c6d26601570f4f5cd3fc787d0d2e655336d65c8351d231cb",
+          "complete_manifest_digest": "7c64718d10267039bde3905ef8bf87b4d0edd008bb3bb0f085104451af8a0a33",
           "unknown_site_count": 0
         },
         "changed_source_paths": [
@@ -58723,7 +58723,7 @@
           {
             "id": "var_declaration_stack_classification",
             "path": "compiler/typechecker.gst",
-            "line": 14680,
+            "line": 14682,
             "selector": "test_tcs_",
             "selector_occurrence": 1,
             "statement_context": "statement_var_declaration",
@@ -58732,7 +58732,7 @@
           {
             "id": "assignment_hazard_and_view_invalidation",
             "path": "compiler/typechecker.gst",
-            "line": 15015,
+            "line": 15017,
             "selector": "test_index_",
             "selector_occurrence": 1,
             "statement_context": "statement_assignment",
@@ -58741,7 +58741,7 @@
           {
             "id": "guard_payload_stack_classification",
             "path": "compiler/typechecker.gst",
-            "line": 16058,
+            "line": 16060,
             "selector": "test_tcs_",
             "selector_occurrence": 2,
             "statement_context": "statement_guard_payload_binding",
@@ -58749,9 +58749,9 @@
           }
         ],
         "line_deltas": [
-          101,
-          101,
-          105
+          103,
+          103,
+          107
         ],
         "partial_extra_or_substituted_site": "rejected"
       },
@@ -58791,7 +58791,7 @@
           {
             "path": "compiler/typechecker.gst",
             "previous_digest": "d14e413b53062279f85f5eb6adfd9c5799f8a76dbd8d4618ef27a706fe07543f",
-            "current_digest": "c1c8cee35241c3c905fdfe611aebfabfda5b9ad95489dbe0e07427a2ba15b242",
+            "current_digest": "4b5ce898dee4c4c8a3d2cdceeaccc80874aaea281c30f513fe3ba20a958a7ddc",
             "previous_match_counts": {
               "explicit_backend_spelling": 0,
               "mir_to_c_name": 0,
@@ -58852,7 +58852,7 @@
         "added_rows": [
           {
             "path": "scripts/phase26_call_return_zero_registration.py",
-            "digest": "19c6a1817bf9232207e968e3c9086ee745798df380da1322aa190505ca8a699a",
+            "digest": "e858b528736349174d1d1b369409e52502a28fa555613b199551af3e89e80155",
             "match_counts": {
               "explicit_backend_spelling": 0,
               "mir_to_c_name": 1,

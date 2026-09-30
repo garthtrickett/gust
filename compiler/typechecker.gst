@@ -2189,10 +2189,12 @@ func phase26_zero_note_direct_call_boundary(env: *TypeEnvironment[ctx], target_t
     unsafe {
         mut expr := ctx[expr_idx];
         if expr.tag != 12 { return; } // Call
+        mut callee_expr := ctx[expr.Call.function];
+        if callee_expr.tag != 0 { return; } // direct Identifier only
         mut args: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
         if len(args) != 0 { return; }
         mut callee := env_resolve_namespaced_ident(
-            env, expression_to_string(expr.Call.function, ctx), ctx
+            env, callee_expr.Identifier.name, ctx
         );
         guard sig := (*env).function_registry.Get(callee) else { return; };
         if sig.is_extern == 1 || len(sig.params) != 0 || sig.return_type.tag != 9 { return; }
