@@ -2041,6 +2041,15 @@ func phase26_zero_expression(expr_idx: Index[ast.Expression[ctx], ctx], env: *Ty
             if expr.Bool.val == 1 { return phase26_zero_no(); }
             return phase26_zero_unknown();
         }
+        if expr.tag == 13 { // Empty
+            // Canonical ZeroInitialize produces a null raw pointer. The
+            // Index sentinel and every other zero-initialized type retain
+            // their existing, separate absence semantics.
+            if phase26_zero_resolved_expression_tag(expr_idx, env, ctx) == 9 {
+                return phase26_zero_yes();
+            }
+            return phase26_zero_unknown();
+        }
         if expr.tag == 0 { // Identifier
             if std.str_eq(expr.Identifier.name, "null") == 1 { return phase26_zero_unknown(); }
             mut value := (*env).variable_zero_states.Get(expr.Identifier.name);

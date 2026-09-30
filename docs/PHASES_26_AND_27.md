@@ -426,6 +426,17 @@ separate zero-initialized raw-pointer boundary patch. It does not change the
 current raw-null gate, type matching outcomes, MIR, ABI, layout, or runtime,
 and does not close Phase 26.1.
 
+**26.1E Empty raw-pointer subset (ownership authorized 2026-09-29).**
+Canonical `empty[*T]` uses `ZeroInitialize`, which yields a zero raw pointer.
+After typechecking resolves an `Empty` expression to `RawPointer`, the existing
+four-state value evidence records Zero. A declared-safe, non-extern raw-pointer
+argument or return rejects it before native driver discovery. Other `empty[T]`
+expressions, including the separate `Index` absence sentinel, retain Unknown
+evidence, and explicitly unsafe callees retain their existing behavior. This
+increment adds no MIR operation or physical ABI/layout/runtime change. It does
+not resolve computed values returned through calls, general nullability, or
+Phase 26.1 closure.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
