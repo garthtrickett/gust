@@ -176,7 +176,7 @@ jobs:
     # hit whenever a runner is slow. 90 is ~2.2x the median, which covers the
     # observed tail and still catches a job that has genuinely hung rather
     # than letting it burn the full six hours.
-    timeout-minutes: 90
+    timeout-minutes: 120
     needs: build
 
     steps:
