@@ -283,6 +283,9 @@ def validate_static(value: dict) -> None:
                 empty_raw_zero_sites = registry.get("phase26_activation_audit", {}).get(
                     "empty_raw_zero_evidence_increment", {}).get(
                     "filename_site_successor")
+                call_return_zero_sites = registry.get("phase26_activation_audit", {}).get(
+                    "call_return_zero_evidence_increment", {}).get(
+                    "filename_site_successor")
                 e1_current = (live_sites if d5_sites is None else
                               d5_sites.get("previous_sites"))
                 require(e1_sites.get("contract_version") ==
@@ -732,7 +735,9 @@ def validate_static(value: dict) -> None:
                             empty_raw_zero_sites.get("contract_version") ==
                             "phase26_1e_empty_raw_zero_filename_site_successor_v1" and
                             empty_raw_zero_sites.get("previous_sites") == previous_empty and
-                            empty_raw_zero_sites.get("current_sites") == live_sites and
+                            empty_raw_zero_sites.get("current_sites") ==
+                            (live_sites if call_return_zero_sites is None else
+                             call_return_zero_sites.get("previous_sites")) and
                             isinstance(deltas_empty, list) and
                             len(deltas_empty) == len(live_sites) == 3 and
                             all(isinstance(delta, int) and delta >= 0
@@ -743,8 +748,28 @@ def validate_static(value: dict) -> None:
                                 {key: val for key, val in now.items() if key != "line"} ==
                                 {key: val for key, val in before.items() if key != "line"}
                                 for before, now, delta in zip(previous_empty,
-                                    live_sites, deltas_empty)),
+                                    empty_raw_zero_sites.get("current_sites"), deltas_empty)),
                             "Phase 26 Empty raw-pointer filename sites drifted")
+                if call_return_zero_sites is not None:
+                    previous_call = empty_raw_zero_sites["current_sites"]
+                    deltas_call = call_return_zero_sites.get("line_deltas")
+                    require(empty_raw_zero_sites is not None and
+                            call_return_zero_sites.get("contract_version") ==
+                            "phase26_1e_call_return_zero_filename_site_successor_v1" and
+                            call_return_zero_sites.get("previous_sites") == previous_call and
+                            call_return_zero_sites.get("current_sites") == live_sites and
+                            isinstance(deltas_call, list) and
+                            len(deltas_call) == len(live_sites) == 3 and
+                            all(isinstance(delta, int) and delta >= 0
+                                for delta in deltas_call) and
+                            call_return_zero_sites.get("partial_extra_or_substituted_site") ==
+                            "rejected" and
+                            all(now["line"] == before["line"] + delta and
+                                {key: val for key, val in now.items() if key != "line"} ==
+                                {key: val for key, val in before.items() if key != "line"}
+                                for before, now, delta in zip(previous_call,
+                                    live_sites, deltas_call)),
+                            "Phase 26 direct-call return filename sites drifted")
     require([row["selector"] for row in value["site_manifest"]] ==
             ["test_tcs_", "test_index_", "test_tcs_"],
             "selector order or completeness drifted")

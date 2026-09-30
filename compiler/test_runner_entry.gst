@@ -427,6 +427,10 @@ func main() {
         &programs, module_prefixes, &env, scope, ctx
     );
 
+    // Resolve direct-call raw-pointer value evidence only after every body has
+    // been checked, before either backend can publish an artifact.
+    typechecker.typechecker_finish_phase26_zero_direct_calls(&env, ctx);
+
     if len(env.errors) > 0 {
         mut k := 0;
         while k < len(env.errors) {

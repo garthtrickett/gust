@@ -30,8 +30,25 @@ def digest(path: str) -> str:
     return hashlib.sha256((ROOT / path).read_bytes()).hexdigest()
 
 
+def before_call_return_zero_digest(activation: dict, path: str,
+                                   live_digest: str) -> str:
+    """Project the later exact text-surface successor to this closed patch."""
+    rows = activation.get("call_return_zero_evidence_increment", {}).get(
+        "phase23_text_surface_successor", {}).get("changed_rows", [])
+    selected = [row for row in rows if row.get("path") == path]
+    require(len(selected) <= 1, f"duplicate direct-call return text surface: {path}")
+    if not selected:
+        return live_digest
+    row = selected[0]
+    require(row["current_digest"] == live_digest and
+            len(row["previous_digest"]) == 64,
+            f"direct-call return text surface drifted: {path}")
+    return row["previous_digest"]
+
+
 def before_empty_raw_zero_digest(activation: dict, path: str, live_digest: str) -> str:
     """Reverse only this registered successor for older exact-surface owners."""
+    live_digest = before_call_return_zero_digest(activation, path, live_digest)
     rows = activation.get("empty_raw_zero_evidence_increment", {}).get(
         "phase23_text_surface_successor", {}).get("changed_rows", [])
     selected = [row for row in rows if row.get("path") == path]
@@ -102,11 +119,14 @@ def main() -> None:
     }, "production audit successor drifted")
 
     from phase24_semantic_spelling_inventory import source_sites, manifest_summary
+    call_return_zero = activation.get("call_return_zero_evidence_increment", {})
     require(record["spelling_inventory_successor"] == {
         "contract_version": "phase26_1e_empty_raw_zero_spelling_inventory_successor_v1",
         "previous_inventory_summary": activation["explicit_brand_prerequisite"][
             "spelling_inventory_successor"]["current_inventory_summary"],
-        "current_inventory_summary": manifest_summary(source_sites()),
+        "current_inventory_summary": (manifest_summary(source_sites())
+            if not call_return_zero else call_return_zero[
+                "spelling_inventory_successor"]["previous_inventory_summary"]),
         "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
                                         *NEGATIVES, *CONTROLS]),
         "partial_extra_or_substituted_inventory": "rejected",
@@ -115,7 +135,8 @@ def main() -> None:
     from phase24_filename_behavior_characterization import source_sites as filename_sites
     previous = activation["explicit_brand_prerequisite"][
         "filename_site_successor"]["current_sites"]
-    current = filename_sites()
+    current = (filename_sites() if not call_return_zero else
+               call_return_zero["filename_site_successor"]["previous_sites"])
     require(record["filename_site_successor"] == {
         "contract_version": "phase26_1e_empty_raw_zero_filename_site_successor_v1",
         "previous_sites": previous, "current_sites": current,
@@ -134,7 +155,8 @@ def main() -> None:
             len({row["path"] for row in surface.get("added_rows", [])}) ==
             len(surface.get("added_rows", [])), "text surface successor shape drifted")
     for row in surface["changed_rows"]:
-        require(row["current_digest"] == digest(row["path"]) and
+        require(row["current_digest"] == before_call_return_zero_digest(
+                    activation, row["path"], digest(row["path"])) and
                 len(row["previous_digest"]) == 64,
                 f"changed text surface drifted: {row['path']}")
     for row in surface["added_rows"]:
