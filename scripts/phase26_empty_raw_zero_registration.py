@@ -33,6 +33,16 @@ def digest(path: str) -> str:
 def before_call_return_zero_digest(activation: dict, path: str,
                                    live_digest: str) -> str:
     """Project the later exact text-surface successor to this closed patch."""
+    local_rows = activation.get("call_local_zero_evidence_increment", {}).get(
+        "phase23_text_surface_successor", {}).get("changed_rows", [])
+    local_selected = [row for row in local_rows if row.get("path") == path]
+    require(len(local_selected) <= 1, f"duplicate one-local text surface: {path}")
+    if local_selected:
+        local_row = local_selected[0]
+        require(local_row["current_digest"] == live_digest and
+                len(local_row["previous_digest"]) == 64,
+                f"one-local text surface drifted: {path}")
+        live_digest = local_row["previous_digest"]
     rows = activation.get("call_return_zero_evidence_increment", {}).get(
         "phase23_text_surface_successor", {}).get("changed_rows", [])
     selected = [row for row in rows if row.get("path") == path]

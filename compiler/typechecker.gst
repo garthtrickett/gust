@@ -972,6 +972,8 @@ type TypeEnvironment[ctx] struct {
     function_return_provenance: std.HashMap[str, ExpressionProvenance[ctx], ctx],
     function_return_zero_states: std.HashMap[str, int, ctx],
     pending_zero_direct_calls: std.Vector[Phase26ZeroDirectCallObligation[ctx], ctx],
+    zero_local_call_name: str,
+    zero_local_call_callee: str,
     variable_types: std.HashMap[str, ast.Type[ctx], ctx],
     resolved_types_nested: std.Vector[PrefixMapEntry[ctx], ctx],
     enum_registry: std.HashMap[str, std.Vector[str, ctx], ctx],
@@ -2184,23 +2186,32 @@ func env_report_phase26_raw_null_safe_boundary(env: *TypeEnvironment[ctx], targe
 // Only a type-matched direct call to a declared, concrete, nullary function
 // enters this bounded interprocedural check. Its return evidence is resolved
 // after all bodies, so declaration order cannot change the result.
-func phase26_zero_note_direct_call_boundary(env: *TypeEnvironment[ctx], target_t: ast.Type[ctx], expr_idx: Index[ast.Expression[ctx], ctx], span: token.Span, boundary: str, ctx: &Arena) {
-    if target_t.tag != 9 || expr_idx == empty[Index[ast.Expression[ctx], ctx]] { return; }
+func phase26_zero_direct_nullary_callee(env: *TypeEnvironment[ctx], expr_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena) Index[str, ctx] {
+    if expr_idx == empty[Index[ast.Expression[ctx], ctx]] { return empty[Index[str, ctx]]; }
     unsafe {
         mut expr := ctx[expr_idx];
-        if expr.tag != 12 { return; } // Call
+        if expr.tag != 12 { return empty[Index[str, ctx]]; } // Call
         mut callee_expr := ctx[expr.Call.function];
-        if callee_expr.tag != 0 { return; } // direct Identifier only
+        if callee_expr.tag != 0 { return empty[Index[str, ctx]]; } // direct Identifier only
         mut args: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
-        if len(args) != 0 { return; }
+        if len(args) != 0 { return empty[Index[str, ctx]]; }
         mut callee := env_resolve_namespaced_ident(
             env, callee_expr.Identifier.name, ctx
         );
-        guard sig := (*env).function_registry.Get(callee) else { return; };
-        if sig.is_extern == 1 || len(sig.params) != 0 || sig.return_type.tag != 9 { return; }
-        if (*env).protected_resource_functions.Get(callee).Ok { return; }
+        guard sig := (*env).function_registry.Get(callee) else { return empty[Index[str, ctx]]; };
+        if sig.is_extern == 1 || len(sig.params) != 0 || sig.return_type.tag != 9 { return empty[Index[str, ctx]]; }
+        if (*env).protected_resource_functions.Get(callee).Ok { return empty[Index[str, ctx]]; }
         mut return_inner := ctx[sig.return_type.RawPointer.inner];
-        if return_inner.tag == 10 { return; } // unresolved Generic
+        if return_inner.tag == 10 { return empty[Index[str, ctx]]; } // unresolved Generic
+        mut result: Index[str, ctx] := os.ArenaAlloc(ctx);
+        ctx.Set(result, std.Clone(ctx, callee));
+        return result;
+    }
+}
+
+func phase26_zero_queue_direct_call_boundary(env: *TypeEnvironment[ctx], target_t: ast.Type[ctx], callee: str, span: token.Span, boundary: str, ctx: &Arena) {
+    if target_t.tag != 9 || std.str_eq(callee, "") == 1 { return; }
+    unsafe {
 
         mut obligation: Phase26ZeroDirectCallObligation[ctx];
         obligation.callee = std.Clone(ctx, callee);
@@ -2209,6 +2220,33 @@ func phase26_zero_note_direct_call_boundary(env: *TypeEnvironment[ctx], target_t
         obligation.file = std.Clone(ctx, (*env).current_file);
         obligation.boundary = std.Clone(ctx, boundary);
         (*env).pending_zero_direct_calls.Push(obligation);
+    }
+}
+
+func phase26_zero_note_direct_call_boundary(env: *TypeEnvironment[ctx], target_t: ast.Type[ctx], expr_idx: Index[ast.Expression[ctx], ctx], span: token.Span, boundary: str, ctx: &Arena) {
+    if target_t.tag != 9 { return; }
+    mut callee_idx := phase26_zero_direct_nullary_callee(env, expr_idx, ctx);
+    if callee_idx != empty[Index[str, ctx]] {
+        unsafe { phase26_zero_queue_direct_call_boundary(env, target_t, ctx[callee_idx], span, boundary, ctx); }
+    }
+}
+
+// The candidate is only usable by the next direct, one-argument expression
+// statement in its lexical block. Every other statement invalidates it before
+// checking, so assignment, aliasing, and control flow cannot preserve a stale
+// summary through this deliberately bounded local path.
+func phase26_zero_local_call_statement_consumes_candidate(stmt: ast.Statement[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        if std.str_eq((*env).zero_local_call_name, "") == 1 || stmt.tag != 13 { return 0; }
+        mut expr_idx := stmt.Expression.expr;
+        if expr_idx == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+        mut expr := ctx[expr_idx];
+        if expr.tag != 12 { return 0; }
+        mut callee_expr := ctx[expr.Call.function];
+        if callee_expr.tag != 0 { return 0; }
+        mut args: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+        if len(args) != 1 || args[0].tag != 0 { return 0; }
+        return std.str_eq(args[0].Identifier.name, (*env).zero_local_call_name);
     }
 }
 
@@ -5778,6 +5816,18 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                                 env, resolved_expected_call_ref_e3, arg_idx_check_call_nlaunder,
                                 arg_span_call_nlaunder, "function argument", ctx
                             );
+                            if resolved_expected_call_ref_e3.tag == 9 &&
+                               std.str_eq((*env).zero_local_call_name, "") == 0 {
+                                mut local_arg_expr := ctx[arg_idx_check_call_nlaunder];
+                                if local_arg_expr.tag == 0 &&
+                                   std.str_eq(local_arg_expr.Identifier.name, (*env).zero_local_call_name) == 1 {
+                                    phase26_zero_queue_direct_call_boundary(
+                                        env, resolved_expected_call_ref_e3,
+                                        (*env).zero_local_call_callee,
+                                        arg_span_call_nlaunder, "function argument", ctx
+                                    );
+                                }
+                            }
                         }
                     }
                     k = k + 1;
@@ -8900,6 +8950,8 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.function_return_provenance = std.HashMapNew(ctx);
         env_ref_new.function_return_zero_states = std.HashMapNew(ctx);
         env_ref_new.pending_zero_direct_calls = std.VectorNew(ctx);
+        env_ref_new.zero_local_call_name = "";
+        env_ref_new.zero_local_call_callee = "";
         env_ref_new.variable_types = std.HashMapNew(ctx);
         env_ref_new.resolved_types_nested = std.VectorNew(ctx);
         env_ref_new.enum_registry = std.HashMapNew(ctx);
@@ -14190,6 +14242,10 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
             return;
         }
         mut parent_depth := (*env).current_resource_scope_depth;
+        mut parent_zero_local_name := (*env).zero_local_call_name;
+        mut parent_zero_local_callee := (*env).zero_local_call_callee;
+        (*env).zero_local_call_name = "";
+        (*env).zero_local_call_callee = "";
         mut entering_zero_states := typechecker_clone_int_map((*env).variable_zero_states, ctx);
         mut entering_field_zero_states := typechecker_clone_int_map((*env).field_zero_states, ctx);
         if establish_nested_scope == 1 {
@@ -14201,7 +14257,15 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
         while i < len(statements) {
             mut statement_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
             ctx.Set(statement_idx, statements[i]);
+            if phase26_zero_local_call_statement_consumes_candidate(statements[i], env, ctx) == 0 {
+                (*env).zero_local_call_name = "";
+                (*env).zero_local_call_callee = "";
+            }
             check_statement(statement_idx, env, scope, ctx);
+            if statements[i].tag != 4 {
+                (*env).zero_local_call_name = "";
+                (*env).zero_local_call_callee = "";
+            }
             i = i + 1;
         }
         if is_diverging_block(block_idx, env, ctx) == 1 {
@@ -14245,6 +14309,8 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
             local_zero_index = local_zero_index + 1;
         }
         (*env).current_resource_scope_depth = parent_depth;
+        (*env).zero_local_call_name = parent_zero_local_name;
+        (*env).zero_local_call_callee = parent_zero_local_callee;
     }
 }
 
@@ -14571,6 +14637,13 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 val_prov_decl_for_nlaunder = val_prov_decl;
                 env_record_variable_provenance(env, name, val_prov_decl, ctx);
                 (*env).variable_zero_states.Insert(std.Clone(ctx, name), phase26_zero_expression(val_idx, env, ctx));
+                if val_type.tag == 9 {
+                    mut local_call_callee := phase26_zero_direct_nullary_callee(env, val_idx, ctx);
+                    if local_call_callee != empty[Index[str, ctx]] {
+                        (*env).zero_local_call_name = std.Clone(ctx, name);
+                        (*env).zero_local_call_callee = std.Clone(ctx, ctx[local_call_callee]);
+                    }
+                }
             } else {
                 if var_type_idx != empty[Index[ast.Type[ctx], ctx]] { 
                     env_report_opaque_construction(

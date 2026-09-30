@@ -70,11 +70,14 @@ def main() -> None:
 
     from phase22_opening import scan_invocations
     rows = [row for row in scan_invocations() if row["path"] == SCRIPT]
+    local_record = activation.get("call_local_zero_evidence_increment", {})
     require(record["phase22_invocation_successor"] == {
         "contract_version": "phase26_1e_call_return_zero_phase22_invocation_successor_v1",
-        "previous_total": 218, "current_total": 220, "added_rows": rows,
+        "previous_total": 218, "current_total": 220, "added_rows": rows[:2],
         "partial_extra_or_substituted_invocation": "rejected",
-    } and len(rows) == 2, "native invocation successor drifted")
+    } and len(rows) == 3 and
+            local_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[2:],
+            "native invocation successor drifted")
     require(record["production_audit_successor"] == {
         "contract_version": "phase26_1e_call_return_zero_production_audit_successor_v1",
         "previous_repository_invocation_count": 218,
@@ -88,7 +91,8 @@ def main() -> None:
         "contract_version": "phase26_1e_call_return_zero_spelling_inventory_successor_v1",
         "previous_inventory_summary": activation["empty_raw_zero_evidence_increment"][
             "spelling_inventory_successor"]["current_inventory_summary"],
-        "current_inventory_summary": manifest_summary(source_sites()),
+        "current_inventory_summary": local_record.get(
+            "spelling_inventory_successor", {}).get("previous_inventory_summary"),
         "changed_source_paths": sorted(["compiler/typechecker.gst",
             "compiler/test_runner_entry.gst", POSITIVE, *NEGATIVES, *CONTROLS]),
         "partial_extra_or_substituted_inventory": "rejected",
@@ -97,7 +101,7 @@ def main() -> None:
     from phase24_filename_behavior_characterization import source_sites as filename_sites
     previous = activation["empty_raw_zero_evidence_increment"][
         "filename_site_successor"]["current_sites"]
-    current = filename_sites()
+    current = local_record.get("filename_site_successor", {}).get("previous_sites")
     require(record["filename_site_successor"] == {
         "contract_version": "phase26_1e_call_return_zero_filename_site_successor_v1",
         "previous_sites": previous, "current_sites": current,
@@ -116,16 +120,27 @@ def main() -> None:
             len({row["path"] for row in surface.get("added_rows", [])}) ==
             len(surface.get("added_rows", [])), "text surface successor shape drifted")
     from phase23_mir_to_c_deprecation_opening import SURFACE_PATTERNS
+    local_changed = {row["path"]: row for row in local_record.get(
+        "phase23_text_surface_successor", {}).get("changed_rows", [])}
     for row in surface["changed_rows"]:
         text = (ROOT / row["path"]).read_text(encoding="utf-8")
-        require(row["current_digest"] == digest(row["path"]) and
-                row["current_match_counts"] == {
-                    name: len(pattern.findall(text))
-                    for name, pattern in SURFACE_PATTERNS.items()} and
+        live_digest = digest(row["path"])
+        live_counts = {name: len(pattern.findall(text))
+                       for name, pattern in SURFACE_PATTERNS.items()}
+        successor = local_changed.get(row["path"])
+        require(row["current_digest"] ==
+                (successor["previous_digest"] if successor else live_digest) and
+                row["current_match_counts"] ==
+                (successor["previous_match_counts"] if successor else live_counts) and
+                (successor is None or
+                 (successor["current_digest"] == live_digest and
+                  successor["current_match_counts"] == live_counts)) and
                 len(row["previous_digest"]) == 64,
                 f"changed text surface drifted: {row['path']}")
     for row in surface["added_rows"]:
-        require(row["digest"] == digest(row["path"]),
+        successor = local_changed.get(row["path"])
+        require(row["digest"] ==
+                (successor["previous_digest"] if successor else digest(row["path"])),
                 f"added text surface drifted: {row['path']}")
 
     justfile = (ROOT / "justfile").read_text(encoding="utf-8")
@@ -143,6 +158,107 @@ def main() -> None:
             "caller_first callee_first safe_return mayzero nonzero unknown unsafe_target prior_error" in guard and
             "phase26_empty_raw_zero_evidence.sh" in guard,
             "direct-call return native evidence weakened")
+
+    local_names = ("caller_first", "callee_first", "mayzero", "overwrite",
+                   "nonzero", "unknown", "unsafe_target", "alias", "branch",
+                   "loop", "prior_error")
+    local_fixtures = [f"compiler/phase26_call_local_zero_{name}_source.gst"
+                      for name in local_names]
+    local_static = {
+        "contract_version": "phase26_1e_call_local_zero_v1",
+        "status": "bounded_one_local_direct_call_zero_safe_argument_rejection_qualified",
+        "owner": "cranelift", "increment": "26.1E_one_local_direct_call_return_subset",
+        "operator_ownership_decision": "2026-09-30_bounded_one_local_call_result_zero",
+        "value_states": ["Unknown", "Zero", "Nonzero", "MayZero"],
+        "candidate_shape": "concrete_nongeneric_nullary_raw_pointer_direct_call_one_local_next_direct_one_argument_expression_statement",
+        "summary_order": "after_all_function_bodies_before_native_planner",
+        "invalidation": "any_intervening_statement_or_nested_control_flow_or_alias_or_overwrite",
+        "positive_fixture": POSITIVE,
+        "negative_fixtures": local_fixtures[:3],
+        "control_fixtures": local_fixtures[3:],
+        "safe_boundary": "declared_nonextern_raw_pointer_argument",
+        "negative_states": ["Zero", "MayZero"],
+        "prior_error_precedence": "preserved",
+        "unknown_and_nonzero": "preserved_without_general_nullability_claim",
+        "unsafe_callees": "preserved", "diagnostic": "[RawNullSafeBoundary]",
+        "failure_stage": "before_driver_discovery", "native_fallback": False,
+        "physical_abi_changed": False, "mir_changed": False,
+        "runtime_symbol_surface_changed": False,
+        "operator_semantics_changed": False,
+        "general_nullability": "open_separate_obligation", "phase26_1_closed": False,
+        "owning_level2_guard": GUARD, "pr_fast_job": "phase26-ffi-position",
+    }
+    for key, value in local_static.items():
+        require(local_record.get(key) == value,
+                f"one-local successor field drifted: {key}")
+    require(set(local_record) == set(local_static) | {
+        "phase22_invocation_successor", "production_audit_successor",
+        "spelling_inventory_successor", "filename_site_successor",
+        "phase23_text_surface_successor",
+    } and all((ROOT / path).is_file() for path in local_fixtures),
+            "one-local successor acquired fields or lost a fixture")
+    require(local_record["phase22_invocation_successor"] == {
+        "contract_version": "phase26_1e_call_local_zero_phase22_invocation_successor_v1",
+        "previous_total": 220, "current_total": 221,
+        "added_rows": rows[2:],
+        "partial_extra_or_substituted_invocation": "rejected",
+    }, "one-local invocation successor drifted")
+    require(local_record["production_audit_successor"] == {
+        "contract_version": "phase26_1e_call_local_zero_production_audit_successor_v1",
+        "previous_repository_invocation_count": 220,
+        "current_repository_invocation_count": 221,
+        "added_invocation_path": SCRIPT, "unchanged_other_fields": True,
+        "partial_extra_or_substituted_audit": "rejected",
+    }, "one-local production audit successor drifted")
+    require(local_record["spelling_inventory_successor"] == {
+        "contract_version": "phase26_1e_call_local_zero_spelling_inventory_successor_v1",
+        "previous_inventory_summary": record["spelling_inventory_successor"]["current_inventory_summary"],
+        "current_inventory_summary": manifest_summary(source_sites()),
+        "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
+                                        *local_fixtures]),
+        "partial_extra_or_substituted_inventory": "rejected",
+    }, "one-local spelling inventory successor drifted")
+    local_sites = filename_sites()
+    require(local_record["filename_site_successor"] == {
+        "contract_version": "phase26_1e_call_local_zero_filename_site_successor_v1",
+        "previous_sites": record["filename_site_successor"]["current_sites"],
+        "current_sites": local_sites,
+        "line_deltas": [now["line"] - before["line"]
+                        for before, now in zip(
+                            record["filename_site_successor"]["current_sites"], local_sites)],
+        "partial_extra_or_substituted_site": "rejected",
+    } and len(local_sites) == 3, "one-local filename successor drifted")
+    local_surface = local_record["phase23_text_surface_successor"]
+    old_surface_rows = {
+        row["path"]: (row["current_digest"], row["current_match_counts"])
+        for row in surface["changed_rows"]
+    }
+    old_surface_rows.update({row["path"]: (row["digest"], row["match_counts"])
+                             for row in surface["added_rows"]})
+    require(local_surface.get("contract_version") ==
+            "phase26_1e_call_local_zero_phase23_text_surface_successor_v1" and
+            local_surface.get("partial_extra_or_substituted_surface") == "rejected" and
+            local_surface.get("added_rows") == [] and
+            sorted(row["path"] for row in local_surface.get("changed_rows", [])) ==
+            sorted(["compiler/typechecker.gst", "scripts/phase22_opening.py",
+                    "scripts/phase26_call_return_zero_registration.py"]),
+            "one-local text surface set drifted")
+    for row in local_surface["changed_rows"]:
+        text = (ROOT / row["path"]).read_text(encoding="utf-8")
+        require((row["previous_digest"], row["previous_match_counts"]) ==
+                old_surface_rows[row["path"]] and
+                row["current_digest"] == digest(row["path"]) and
+                row["current_match_counts"] == {
+                    name: len(pattern.findall(text))
+                    for name, pattern in SURFACE_PATTERNS.items()},
+                f"one-local text surface drifted: {row['path']}")
+    require("for case_name in caller_first callee_first mayzero overwrite nonzero unknown unsafe_target alias branch loop prior_error" in guard and
+            "phase26_call_local_zero_${case_name}_source.gst" in guard and
+            "check_one_local_direct_call_shape(ctx);" in (ROOT / POSITIVE).read_text(encoding="utf-8") and
+            "[RawNullSafeBoundary]" in guard and
+            "reason_code=deferred_p13_parameter_argument_target_dependent_abi" in guard and
+            "test ! -e \"$marker\"" in guard,
+            "one-local native evidence weakened")
     print(f"{GUARD}: registration ok")
 
 
