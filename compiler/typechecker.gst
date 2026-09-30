@@ -974,6 +974,7 @@ type TypeEnvironment[ctx] struct {
     pending_zero_direct_calls: std.Vector[Phase26ZeroDirectCallObligation[ctx], ctx],
     zero_local_call_name: str,
     zero_local_call_callee: str,
+    zero_local_call_alias_hops: int,
     variable_types: std.HashMap[str, ast.Type[ctx], ctx],
     resolved_types_nested: std.Vector[PrefixMapEntry[ctx], ctx],
     enum_registry: std.HashMap[str, std.Vector[str, ctx], ctx],
@@ -2247,6 +2248,27 @@ func phase26_zero_local_call_statement_consumes_candidate(stmt: ast.Statement[ct
         mut args: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
         if len(args) != 1 || args[0].tag != 0 { return 0; }
         return std.str_eq(args[0].Identifier.name, (*env).zero_local_call_name);
+    }
+}
+
+// The one-hop successor accepts only a direct, by-value local alias in the
+// immediately following declaration. A second alias or any other statement
+// invalidates the pending call-return summary.
+func phase26_zero_local_call_alias_name(stmt: ast.Statement[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) str {
+    unsafe {
+        if std.str_eq((*env).zero_local_call_name, "") == 1 ||
+           (*env).zero_local_call_alias_hops != 0 || stmt.tag != 4 {
+            return "";
+        }
+        mut value_idx := stmt.VarDecl.value;
+        if value_idx == empty[Index[ast.Expression[ctx], ctx]] { return ""; }
+        mut value := ctx[value_idx];
+        if value.tag != 0 ||
+           std.str_eq(value.Identifier.name, (*env).zero_local_call_name) == 0 ||
+           std.str_eq(stmt.VarDecl.name, (*env).zero_local_call_name) == 1 {
+            return "";
+        }
+        return std.Clone(ctx, stmt.VarDecl.name);
     }
 }
 
@@ -8952,6 +8974,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.pending_zero_direct_calls = std.VectorNew(ctx);
         env_ref_new.zero_local_call_name = "";
         env_ref_new.zero_local_call_callee = "";
+        env_ref_new.zero_local_call_alias_hops = 0;
         env_ref_new.variable_types = std.HashMapNew(ctx);
         env_ref_new.resolved_types_nested = std.VectorNew(ctx);
         env_ref_new.enum_registry = std.HashMapNew(ctx);
@@ -14244,8 +14267,10 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
         mut parent_depth := (*env).current_resource_scope_depth;
         mut parent_zero_local_name := (*env).zero_local_call_name;
         mut parent_zero_local_callee := (*env).zero_local_call_callee;
+        mut parent_zero_local_alias_hops := (*env).zero_local_call_alias_hops;
         (*env).zero_local_call_name = "";
         (*env).zero_local_call_callee = "";
+        (*env).zero_local_call_alias_hops = 0;
         mut entering_zero_states := typechecker_clone_int_map((*env).variable_zero_states, ctx);
         mut entering_field_zero_states := typechecker_clone_int_map((*env).field_zero_states, ctx);
         if establish_nested_scope == 1 {
@@ -14257,14 +14282,42 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
         while i < len(statements) {
             mut statement_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
             ctx.Set(statement_idx, statements[i]);
-            if phase26_zero_local_call_statement_consumes_candidate(statements[i], env, ctx) == 0 {
+            mut alias_name := phase26_zero_local_call_alias_name(statements[i], env, ctx);
+            if phase26_zero_local_call_statement_consumes_candidate(statements[i], env, ctx) == 0 &&
+               std.str_eq(alias_name, "") == 1 {
                 (*env).zero_local_call_name = "";
                 (*env).zero_local_call_callee = "";
+                (*env).zero_local_call_alias_hops = 0;
             }
+            mut prior_error_count := len((*env).errors);
             check_statement(statement_idx, env, scope, ctx);
+            if std.str_eq(alias_name, "") == 0 {
+                mut source_type := (*env).variable_types.Get((*env).zero_local_call_name);
+                mut alias_type := (*env).variable_types.Get(alias_name);
+                mut alias_qualifies := 0;
+                if len((*env).errors) == prior_error_count {
+                    if source_type.Ok {
+                        if alias_type.Ok {
+                            if source_type.Val.tag == 9 && alias_type.Val.tag == 9 &&
+                               env_types_match_at_brand_boundary(env, source_type.Val, alias_type.Val, ctx) == 1 {
+                                alias_qualifies = 1;
+                            }
+                        }
+                    }
+                }
+                if alias_qualifies == 1 {
+                    (*env).zero_local_call_name = std.Clone(ctx, alias_name);
+                    (*env).zero_local_call_alias_hops = 1;
+                } else {
+                    (*env).zero_local_call_name = "";
+                    (*env).zero_local_call_callee = "";
+                    (*env).zero_local_call_alias_hops = 0;
+                }
+            }
             if statements[i].tag != 4 {
                 (*env).zero_local_call_name = "";
                 (*env).zero_local_call_callee = "";
+                (*env).zero_local_call_alias_hops = 0;
             }
             i = i + 1;
         }
@@ -14311,6 +14364,7 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
         (*env).current_resource_scope_depth = parent_depth;
         (*env).zero_local_call_name = parent_zero_local_name;
         (*env).zero_local_call_callee = parent_zero_local_callee;
+        (*env).zero_local_call_alias_hops = parent_zero_local_alias_hops;
     }
 }
 

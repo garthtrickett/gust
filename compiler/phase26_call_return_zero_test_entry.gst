@@ -95,6 +95,18 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias], &env, ctx) != 0 {
         os.LogStr("Error: alias declaration retained one-local candidate"); os.Exit(1);
     }
+    if std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[alias], &env, ctx), "alias") == 0 {
+        os.LogStr("Error: direct one-hop alias was not selected"); os.Exit(1);
+    }
+    env.zero_local_call_alias_hops = 1;
+    if std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[alias], &env, ctx), "") == 0 {
+        os.LogStr("Error: alias chain acquired a second hop"); os.Exit(1);
+    }
+    env.zero_local_call_alias_hops = 0;
+    mut intervening := parse_statement("mut other := 1;", ctx);
+    if std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[intervening], &env, ctx), "") == 0 {
+        os.LogStr("Error: unrelated declaration retained one-hop candidate"); os.Exit(1);
+    }
     mut wrapped := parse_statement("accept_raw(take ptr);", ctx);
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[wrapped], &env, ctx) != 0 {
         os.LogStr("Error: wrapped argument acquired one-local summary"); os.Exit(1);

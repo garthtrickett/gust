@@ -464,6 +464,18 @@ errors retain their existing behavior. This is a bounded source-level check,
 not general interprocedural nullability or Phase 26.1 closure. MIR, physical
 ABI, layout, and runtime symbols are unchanged.
 
+**26.1E one-hop local alias subset (ownership authorized 2026-09-30).** An
+eligible concrete direct nullary `*T` call may be bound to one local, copied by
+value into exactly one immediately following same-block local, then passed by
+that alias in the immediately following direct one-argument call. A declared-
+safe, type-matched, non-extern callee rejects proven Zero or MayZero before
+native planning, regardless of callee declaration order. An assignment,
+intervening statement, second alias, nested scope, indirect call, or type error
+does not acquire this deferred summary. Nonzero, Unknown, and explicitly unsafe
+callees retain their existing behavior. The existing pointer ABI, MIR, layout,
+and runtime surface are unchanged. This subset does not establish general alias
+provenance, interprocedural nullability, or Phase 26.1 closure.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
