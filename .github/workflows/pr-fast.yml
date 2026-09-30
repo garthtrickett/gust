@@ -876,6 +876,9 @@ jobs:
       - name: Phase 26 Empty raw-pointer zero evidence
         run: just guard-cranelift-phase26-empty-raw-zero-evidence
 
+      - name: Phase 26 direct-call return zero evidence
+        run: just guard-cranelift-phase26-call-return-zero-evidence
+
       - name: Phase 26 packed borrowed repr C layout
         run: just guard-cranelift-phase26-ffi-packed-layout
 

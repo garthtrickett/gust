@@ -680,6 +680,17 @@ type FunctionSignature[ctx] struct {
     ffi_contract_verified: int
 }
 
+// A checked direct call can be revisited after every function body has been
+// checked. This keeps raw-pointer value evidence independent of declaration
+// order without rechecking expressions or changing ordinary call typing.
+type Phase26ZeroDirectCallObligation[ctx] struct {
+    callee: str,
+    target_type: ast.Type[ctx],
+    span: token.Span,
+    file: str,
+    boundary: str
+}
+
 type ProtectedResourceFunction[ctx] struct {
     statement: ast.Statement[ctx],
     signature: FunctionSignature[ctx],
@@ -959,6 +970,8 @@ type TypeEnvironment[ctx] struct {
     brand_match_shadow_disagreements: int,
     canonical_type_names: std.HashMap[str, str, ctx],
     function_return_provenance: std.HashMap[str, ExpressionProvenance[ctx], ctx],
+    function_return_zero_states: std.HashMap[str, int, ctx],
+    pending_zero_direct_calls: std.Vector[Phase26ZeroDirectCallObligation[ctx], ctx],
     variable_types: std.HashMap[str, ast.Type[ctx], ctx],
     resolved_types_nested: std.Vector[PrefixMapEntry[ctx], ctx],
     enum_registry: std.HashMap[str, std.Vector[str, ctx], ctx],
@@ -2165,6 +2178,59 @@ func env_report_phase26_raw_null_safe_boundary(env: *TypeEnvironment[ctx], targe
     if phase26_raw_null_reaches_safe_boundary(target_t, prov, zero_state, ctx) == 1 {
         mut msg := std.Concat("Semantic Error: [RawNullSafeBoundary] Known zero-derived raw pointer cannot cross a declared-safe ", boundary);
         report_error(2, msg, span, env, ctx);
+    }
+}
+
+// Only a type-matched direct call to a declared, concrete, nullary function
+// enters this bounded interprocedural check. Its return evidence is resolved
+// after all bodies, so declaration order cannot change the result.
+func phase26_zero_note_direct_call_boundary(env: *TypeEnvironment[ctx], target_t: ast.Type[ctx], expr_idx: Index[ast.Expression[ctx], ctx], span: token.Span, boundary: str, ctx: &Arena) {
+    if target_t.tag != 9 || expr_idx == empty[Index[ast.Expression[ctx], ctx]] { return; }
+    unsafe {
+        mut expr := ctx[expr_idx];
+        if expr.tag != 12 { return; } // Call
+        mut args: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
+        if len(args) != 0 { return; }
+        mut callee := env_resolve_namespaced_ident(
+            env, expression_to_string(expr.Call.function, ctx), ctx
+        );
+        guard sig := (*env).function_registry.Get(callee) else { return; };
+        if sig.is_extern == 1 || len(sig.params) != 0 || sig.return_type.tag != 9 { return; }
+        if (*env).protected_resource_functions.Get(callee).Ok { return; }
+        mut return_inner := ctx[sig.return_type.RawPointer.inner];
+        if return_inner.tag == 10 { return; } // unresolved Generic
+
+        mut obligation: Phase26ZeroDirectCallObligation[ctx];
+        obligation.callee = std.Clone(ctx, callee);
+        obligation.target_type = target_t;
+        obligation.span = span;
+        obligation.file = std.Clone(ctx, (*env).current_file);
+        obligation.boundary = std.Clone(ctx, boundary);
+        (*env).pending_zero_direct_calls.Push(obligation);
+    }
+}
+
+// Called by the canonical compiler after body checking, before native route
+// selection. Existing type errors retain precedence over these new reports.
+func typechecker_finish_phase26_zero_direct_calls(env: *TypeEnvironment[ctx], ctx: &Arena) {
+    unsafe {
+        if len((*env).errors) != 0 { return; }
+        mut prior_file := std.Clone(ctx, (*env).current_file);
+        mut i := 0;
+        while i < len((*env).pending_zero_direct_calls) {
+            mut obligation := (*env).pending_zero_direct_calls[i];
+            mut state_lookup := (*env).function_return_zero_states.Get(obligation.callee);
+            if state_lookup.Ok {
+                (*env).current_file = std.Clone(ctx, obligation.file);
+                mut unknown_prov := expression_provenance_unknown(obligation.target_type, ctx);
+                env_report_phase26_raw_null_safe_boundary(
+                    env, obligation.target_type, unknown_prov, state_lookup.Val,
+                    obligation.span, obligation.boundary, ctx
+                );
+            }
+            i = i + 1;
+        }
+        (*env).current_file = prior_file;
     }
 }
 
@@ -5706,6 +5772,10 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         if sig.is_unsafe == 0 && sig.requires_unsafe_call == 0 && sig.is_extern == 0 {
                             mut arg_zero_state := phase26_zero_expression(arg_idx_check_call_nlaunder, env, ctx);
                             env_report_phase26_raw_null_safe_boundary(env, resolved_expected_call_ref_e3, arg_prov_check_call_nlaunder, arg_zero_state, arg_span_call_nlaunder, "function argument", ctx);
+                            phase26_zero_note_direct_call_boundary(
+                                env, resolved_expected_call_ref_e3, arg_idx_check_call_nlaunder,
+                                arg_span_call_nlaunder, "function argument", ctx
+                            );
                         }
                     }
                     k = k + 1;
@@ -8826,6 +8896,8 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.brand_match_shadow_disagreements = 0;
         env_ref_new.canonical_type_names = std.HashMapNew(ctx);
         env_ref_new.function_return_provenance = std.HashMapNew(ctx);
+        env_ref_new.function_return_zero_states = std.HashMapNew(ctx);
+        env_ref_new.pending_zero_direct_calls = std.VectorNew(ctx);
         env_ref_new.variable_types = std.HashMapNew(ctx);
         env_ref_new.resolved_types_nested = std.VectorNew(ctx);
         env_ref_new.enum_registry = std.HashMapNew(ctx);
@@ -14328,9 +14400,38 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
 
             // Evaluate the function's root lexical scope and record its normal
             // cleanup plan. Nested blocks establish their own scope depth.
+            mut errors_before_zero_summary_body := len((*env).errors);
             typechecker_check_resource_scoped_block(
                 body_idx, env, child_scope, 0, ctx
             );
+
+            // A single unconditional direct return has no path or argument
+            // dependency. Reuse the already-checked expression's four-state
+            // evidence, leaving other bodies without a summary.
+            if len((*env).errors) == errors_before_zero_summary_body &&
+               body_idx != empty[Index[ast.BlockStatement[ctx], ctx]] {
+                mut zero_sig_lookup := (*env).function_registry.Get(function_name_return_prov);
+                if zero_sig_lookup.Ok {
+                    mut zero_sig := zero_sig_lookup.Val;
+                    if zero_sig.is_extern == 0 && zero_sig.return_type.tag == 9 &&
+                       len(zero_sig.params) == 0 {
+                        mut zero_inner := ctx[zero_sig.return_type.RawPointer.inner];
+                        if zero_inner.tag != 10 {
+                            mut zero_body := ctx[body_idx];
+                            mut zero_statements: std.Vector[ast.Statement[ctx], ctx] := ctx[zero_body.statements];
+                            if len(zero_statements) == 1 && zero_statements[0].tag == 12 {
+                                mut zero_return := zero_statements[0];
+                                if zero_return.Return.expr != empty[Index[ast.Expression[ctx], ctx]] {
+                                    (*env).function_return_zero_states.Insert(
+                                        std.Clone(ctx, function_name_return_prov),
+                                        phase26_zero_expression(zero_return.Return.expr, env, ctx)
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             // Check inout params are not moved
             mut current_inouts_function_exit: std.Vector[str, ctx] := ctx[(*env).current_function_inout_params];
@@ -15791,6 +15892,10 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                         if (*env).current_function_is_unsafe == 0 {
                             mut return_zero_state := phase26_zero_expression(expr_idx, env, ctx);
                             env_report_phase26_raw_null_safe_boundary(env, resolved_return_target_e2, return_prov_for_enforcement, return_zero_state, return_nlaunder_span, "function return", ctx);
+                            phase26_zero_note_direct_call_boundary(
+                                env, resolved_return_target_e2, expr_idx,
+                                return_nlaunder_span, "function return", ctx
+                            );
                         }
                     }
                     env_report_resource_root_escape(

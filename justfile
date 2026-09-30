@@ -24408,6 +24408,14 @@ guard-cranelift-phase26-empty-raw-zero-evidence:
     python3 scripts/phase26_empty_raw_zero_registration.py
     bash scripts/phase26_empty_raw_zero_evidence.sh
 
+# Phase 26.1E bounded order-independent direct-call return value evidence.
+guard-cranelift-phase26-call-return-zero-evidence:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-call-return-zero-evidence | grep -F $'guard-cranelift-phase26-call-return-zero-evidence\t2\t' >/dev/null
+    python3 scripts/phase26_call_return_zero_registration.py
+    bash scripts/phase26_call_return_zero_evidence.sh
+
 # Phase 26.1D layout subset: flat packed repr(C) borrow with bytewise field access.
 guard-cranelift-phase26-ffi-packed-layout:
     #!/usr/bin/env bash
