@@ -181,5 +181,48 @@ for case_name in caller_first callee_first mayzero_caller_first mayzero_callee_f
   test ! -e "$marker"
 done
 
+for case_name in caller_first callee_first mayzero_caller_first mayzero_callee_first nonzero unknown unsafe_target overwrite intervening nested chained_after_take prior_error direct_take_argument safe_return literal_take; do
+  fixture="compiler/phase26_call_take_alias_zero_${case_name}_source.gst"
+  output="$build_root/take_alias_${case_name}"
+  rm -f "$output" "$marker"
+  set +e
+  GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
+  GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER="$PWD/$marker" \
+  GUST_NATIVE_BACKEND_DRIVER="$PWD/$poison" \
+    ./gust --backend cranelift -o "$output" "$fixture" \
+      >"$output.stdout" 2>"$output.stderr"
+  status=$?
+  set -e
+  test "$status" -ne 0
+  case "$case_name" in
+    caller_first|callee_first|mayzero_caller_first|mayzero_callee_first|literal_take)
+      case "$case_name" in caller_first|mayzero_caller_first|literal_take) line=3 ;; *) line=4 ;; esac
+      rg -F "TypeError in $fixture at line $line:" "$output.stdout" >/dev/null
+      rg -F '[RawNullSafeBoundary] Known zero-derived raw pointer cannot cross a declared-safe function argument' "$output.stdout" >/dev/null
+      if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+    prior_error)
+      rg -F "TypeError in $fixture at line 5:" "$output.stdout" >/dev/null
+      rg -F '[TypeMismatch] Return type mismatch. Expected Int but got Str' "$output.stdout" >/dev/null
+      if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
+      if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+    safe_return)
+      rg -F "TypeError in $fixture at line 3:" "$output.stdout" >/dev/null
+      rg -F 'Returning ephemeral view' "$output.stdout" >/dev/null
+      if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
+      if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+    *)
+      rg -F 'decision=deferred capability=phase13_generic_source_to_mir' "$output.stdout" >/dev/null
+      rg -F 'reason_code=deferred_p13_parameter_argument_target_dependent_abi' "$output.stdout" >/dev/null
+      if rg -F 'TypeError' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+  esac
+  test ! -s "$output.stderr"
+  test ! -e "$output"
+  test ! -e "$marker"
+done
+
 bash scripts/phase26_empty_raw_zero_evidence.sh
-echo 'Phase26.1E direct-call return and consecutive alias zero evidence and no-fallback passed.'
+echo 'Phase26.1E direct-call return, consecutive alias, and Take alias zero evidence and no-fallback passed.'

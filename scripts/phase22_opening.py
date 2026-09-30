@@ -284,6 +284,22 @@ def scan_summary(rows: list[dict[str, object]]) -> dict[str, object]:
 def phase22_relay_inventory_rows(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep Phase 22's closed relay identity while validating exact successors."""
+    take_alias_zero = registry.get("phase26_activation_audit", {}).get(
+        "call_take_alias_zero_evidence_increment", {}).get("phase22_invocation_successor")
+    if take_alias_zero is not None:
+        path = "scripts/phase26_call_return_zero_evidence.sh"
+        previous = registry["phase26_activation_audit"][
+            "call_chain_zero_evidence_increment"]["phase22_invocation_successor"]["added_rows"]
+        added = take_alias_zero.get("added_rows")
+        require(take_alias_zero.get("contract_version") ==
+                "phase26_1e_call_take_alias_zero_phase22_invocation_successor_v1" and
+                take_alias_zero.get("previous_total") == 223 and
+                take_alias_zero.get("current_total") == 224 and
+                take_alias_zero.get("partial_extra_or_substituted_invocation") ==
+                "rejected" and isinstance(added, list) and len(added) == 1 and
+                [row for row in rows if row.get("path") == path][4:] == previous + added,
+                "Phase 26 Take-alias invocation row drifted")
+        rows = [row for row in rows if row not in added]
     chain_zero = registry.get("phase26_activation_audit", {}).get(
         "call_chain_zero_evidence_increment", {}).get("phase22_invocation_successor")
     if chain_zero is not None:

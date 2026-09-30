@@ -394,6 +394,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     call_chain_zero_successor = registry.get("phase26_activation_audit", {}).get(
         "call_chain_zero_evidence_increment", {}).get(
         "spelling_inventory_successor")
+    call_take_alias_zero_successor = registry.get("phase26_activation_audit", {}).get(
+        "call_take_alias_zero_evidence_increment", {}).get(
+        "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -1315,7 +1318,9 @@ def validate() -> tuple[dict, list[dict], dict]:
                 "phase26_1e_call_chain_zero_spelling_inventory_successor_v1" and
                 call_chain_zero_successor.get("previous_inventory_summary") ==
                 call_alias_zero_successor["current_inventory_summary"] and
-                call_chain_zero_successor.get("current_inventory_summary") == summary and
+                call_chain_zero_successor.get("current_inventory_summary") ==
+                (summary if call_take_alias_zero_successor is None else
+                 call_take_alias_zero_successor.get("previous_inventory_summary")) and
                 call_chain_zero_successor.get("changed_source_paths") == sorted([
                     "compiler/typechecker.gst",
                     "compiler/phase26_call_return_zero_test_entry.gst",
@@ -1324,6 +1329,27 @@ def validate() -> tuple[dict, list[dict], dict]:
                 call_chain_zero_successor.get("partial_extra_or_substituted_inventory") ==
                 "rejected" and summary["unknown_site_count"] == 0,
                 "Phase 26 consecutive-alias spelling inventory drifted")
+    if call_take_alias_zero_successor is not None:
+        take_names = ("caller_first", "callee_first", "mayzero_caller_first",
+                      "mayzero_callee_first", "nonzero", "unknown", "unsafe_target",
+                      "overwrite", "intervening", "nested", "chained_after_take",
+                      "prior_error", "direct_take_argument", "safe_return",
+                      "literal_take")
+        require(call_chain_zero_successor is not None and
+                call_take_alias_zero_successor.get("contract_version") ==
+                "phase26_1e_call_take_alias_zero_spelling_inventory_successor_v1" and
+                call_take_alias_zero_successor.get("previous_inventory_summary") ==
+                call_chain_zero_successor["current_inventory_summary"] and
+                call_take_alias_zero_successor.get("current_inventory_summary") == summary and
+                call_take_alias_zero_successor.get("changed_source_paths") == sorted([
+                    "compiler/typechecker.gst",
+                    "compiler/phase26_call_return_zero_test_entry.gst",
+                    *[f"compiler/phase26_call_take_alias_zero_{name}_source.gst"
+                      for name in take_names],
+                ]) and
+                call_take_alias_zero_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and summary["unknown_site_count"] == 0,
+                "Phase 26 Take-alias spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),
