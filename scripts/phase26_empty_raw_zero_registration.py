@@ -48,6 +48,7 @@ def before_call_return_zero_digest(activation: dict, path: str,
 
 def before_empty_raw_zero_digest(activation: dict, path: str, live_digest: str) -> str:
     """Reverse only this registered successor for older exact-surface owners."""
+    live_digest = before_call_return_zero_digest(activation, path, live_digest)
     rows = activation.get("empty_raw_zero_evidence_increment", {}).get(
         "phase23_text_surface_successor", {}).get("changed_rows", [])
     selected = [row for row in rows if row.get("path") == path]
