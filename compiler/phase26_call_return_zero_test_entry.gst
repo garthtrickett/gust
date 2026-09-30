@@ -154,9 +154,24 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
     if std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[intervening], &env, ctx), "") == 0 {
         os.LogStr("Error: unrelated declaration retained alias-chain candidate"); os.Exit(1);
     }
-    mut wrapped := parse_statement("accept_raw(take ptr);", ctx);
-    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[wrapped], &env, ctx) != 0 {
-        os.LogStr("Error: wrapped argument acquired one-local summary"); os.Exit(1);
+    env.zero_local_call_name = "ptr";
+    env.zero_local_call_take_alias_terminal = 0;
+    mut direct_take := parse_statement("accept_raw(take ptr);", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_take], &env, ctx) != 1 {
+        os.LogStr("Error: direct terminal Take argument lost its candidate"); os.Exit(1);
+    }
+    env.zero_local_call_take_alias_terminal = 1;
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_take], &env, ctx) != 0 {
+        os.LogStr("Error: Take alias acquired a second Take hop"); os.Exit(1);
+    }
+    env.zero_local_call_take_alias_terminal = 0;
+    mut nested_take := parse_statement("accept_raw(take take ptr);", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[nested_take], &env, ctx) != 0 {
+        os.LogStr("Error: nested Take argument acquired a summary"); os.Exit(1);
+    }
+    mut other_take := parse_statement("accept_raw(take other);", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[other_take], &env, ctx) != 0 {
+        os.LogStr("Error: unrelated Take argument acquired a summary"); os.Exit(1);
     }
     }
 }
