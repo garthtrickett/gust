@@ -98,6 +98,26 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
     if std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[alias], &env, ctx), "alias") == 0 {
         os.LogStr("Error: direct one-hop alias was not selected"); os.Exit(1);
     }
+    mut take_alias := parse_statement("mut taken := take ptr;", ctx);
+    if std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[take_alias], &env, ctx), "taken") == 0 {
+        os.LogStr("Error: one Take alias was not selected"); os.Exit(1);
+    }
+    env.zero_local_call_name = "taken";
+    env.zero_local_call_take_alias_terminal = 1;
+    mut after_take := parse_statement("mut after_take := taken;", ctx);
+    if std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[after_take], &env, ctx), "") == 0 {
+        os.LogStr("Error: Take alias extended into another alias"); os.Exit(1);
+    }
+    env.zero_local_call_name = "ptr";
+    env.zero_local_call_take_alias_terminal = 0;
+    mut take_nested := parse_statement("mut taken_nested := take take ptr;", ctx);
+    if std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[take_nested], &env, ctx), "") == 0 {
+        os.LogStr("Error: nested Take alias acquired a summary"); os.Exit(1);
+    }
+    mut move_alias := parse_statement("mut moved := move ptr;", ctx);
+    if std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[move_alias], &env, ctx), "") == 0 {
+        os.LogStr("Error: Move alias acquired a Take summary"); os.Exit(1);
+    }
     env.zero_local_call_name = "alias";
     env.zero_local_call_alias_hops = 1;
     mut next := parse_statement("mut next := alias;", ctx);

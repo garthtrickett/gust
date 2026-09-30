@@ -488,6 +488,20 @@ unsafe callees retain their existing behavior. The existing pointer ABI, MIR,
 layout, and runtime surface are unchanged. This subset does not establish
 general alias provenance, interprocedural nullability, or Phase 26.1 closure.
 
+**26.1E Take-alias subset (ownership authorized 2026-09-30).** One immediate
+same-block by-value `*T` local initialized with `take` of an eligible concrete
+direct-nullary-call candidate (including an existing consecutive plain alias)
+may carry the existing Zero or MayZero return evidence
+to the immediately following type-matched declared-safe non-extern one-arg
+direct call. The Take alias is terminal: another alias, assignment, intervening
+statement, or nested scope invalidates the candidate. Typechecking and current
+Take/move behavior run unchanged before the alias is promoted. The direct
+`accept_raw(take ptr)` argument shape remains outside this increment. Known
+Zero and MayZero reject before native planning; Nonzero, Unknown, explicitly
+unsafe callees, prior type errors, and existing safe-return escape diagnostics
+retain their behavior. MIR, ABI, layout, runtime and general nullability are
+unchanged; Phase 26.1 remains open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
