@@ -33,6 +33,17 @@ def digest(path: str) -> str:
 def before_call_return_zero_digest(activation: dict, path: str,
                                    live_digest: str) -> str:
     """Project the later exact text-surface successor to this closed patch."""
+    chain_rows = activation.get("call_chain_zero_evidence_increment", {}).get(
+        "phase23_text_surface_successor", {}).get("changed_rows", [])
+    chain_selected = [row for row in chain_rows if row.get("path") == path]
+    require(len(chain_selected) <= 1,
+            f"duplicate consecutive-alias text surface: {path}")
+    if chain_selected:
+        chain_row = chain_selected[0]
+        require(chain_row["current_digest"] == live_digest and
+                len(chain_row["previous_digest"]) == 64,
+                f"consecutive-alias text surface drifted: {path}")
+        live_digest = chain_row["previous_digest"]
     alias_rows = activation.get("call_alias_zero_evidence_increment", {}).get(
         "phase23_text_surface_successor", {}).get("changed_rows", [])
     alias_selected = [row for row in alias_rows if row.get("path") == path]
