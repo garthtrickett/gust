@@ -2251,13 +2251,13 @@ func phase26_zero_local_call_statement_consumes_candidate(stmt: ast.Statement[ct
     }
 }
 
-// The one-hop successor accepts only a direct, by-value local alias in the
-// immediately following declaration. A second alias or any other statement
-// invalidates the pending call-return summary.
+// A direct, by-value local alias may extend the pending call-return summary
+// only when its declaration immediately follows the preceding candidate.
+// Any other statement invalidates the chain before a later safe call.
 func phase26_zero_local_call_alias_name(stmt: ast.Statement[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) str {
     unsafe {
         if std.str_eq((*env).zero_local_call_name, "") == 1 ||
-           (*env).zero_local_call_alias_hops != 0 || stmt.tag != 4 {
+           stmt.tag != 4 {
             return "";
         }
         mut value_idx := stmt.VarDecl.value;
@@ -14307,7 +14307,8 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
                 }
                 if alias_qualifies == 1 {
                     (*env).zero_local_call_name = std.Clone(ctx, alias_name);
-                    (*env).zero_local_call_alias_hops = 1;
+                    (*env).zero_local_call_alias_hops =
+                        (*env).zero_local_call_alias_hops + 1;
                 } else {
                     (*env).zero_local_call_name = "";
                     (*env).zero_local_call_callee = "";

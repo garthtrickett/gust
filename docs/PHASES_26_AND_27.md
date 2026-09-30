@@ -476,6 +476,18 @@ callees retain their existing behavior. The existing pointer ABI, MIR, layout,
 and runtime surface are unchanged. This subset does not establish general alias
 provenance, interprocedural nullability, or Phase 26.1 closure.
 
+**26.1E consecutive local alias subset (ownership authorized 2026-09-30).**
+An eligible concrete direct nullary `*T` call may be bound to one local, then
+copied by value through consecutive, type-matched, same-block `*T` local
+declarations that each name the immediate predecessor. A direct, declared-safe,
+non-extern one-argument call immediately following that chain rejects proven
+Zero or MayZero before native planning, regardless of declaration order.
+Assignment, an intervening statement, nested scope, indirect call, or earlier
+type error prevents this deferred summary. Nonzero, Unknown, and explicitly
+unsafe callees retain their existing behavior. The existing pointer ABI, MIR,
+layout, and runtime surface are unchanged. This subset does not establish
+general alias provenance, interprocedural nullability, or Phase 26.1 closure.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
