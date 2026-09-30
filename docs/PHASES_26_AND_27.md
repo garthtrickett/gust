@@ -450,6 +450,20 @@ bodies, qualified selectors, cast/move/take wrapped callees, indirect or recursi
 increment. It changes no MIR, physical ABI, layout, or runtime behavior and
 does not establish general nullability or close Phase 26.1.
 
+**26.1E one-local call result subset (ownership authorized 2026-09-30).**
+The same concrete direct nullary raw-pointer call may be bound to one local
+and passed as the sole direct argument of the next expression statement in
+that lexical block. The typechecker retains the callee's deferred four-state
+return evidence through that binding, then applies the declared-safe
+non-extern argument check after all function bodies. An intervening statement,
+overwrite, alias binding, nested block, branch, loop, or wrapped/indirect call
+invalidates or excludes the candidate. A native-executed typechecker test pins
+the direct-call and one-argument shape. Known Zero and MayZero reject before
+native planning; Nonzero, Unknown, explicitly unsafe callees, and prior type
+errors retain their existing behavior. This is a bounded source-level check,
+not general interprocedural nullability or Phase 26.1 closure. MIR, physical
+ABI, layout, and runtime symbols are unchanged.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

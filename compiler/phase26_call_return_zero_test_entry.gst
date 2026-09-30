@@ -72,6 +72,36 @@ func check_wrapped_callees_excluded(ctx: &Arena) {
     }
 }
 
+func check_one_local_direct_call_shape(ctx: &Arena) {
+    unsafe {
+    mut env := typechecker.env_new(ctx);
+    mut declaration := parse_statement("unsafe func make_zero() *int { return empty[*int]; }", ctx);
+    typechecker.env_pre_register_statement(&env, ctx[declaration], ctx);
+    mut direct := parse_expression("make_zero()", ctx);
+    mut callee := typechecker.phase26_zero_direct_nullary_callee(&env, direct, ctx);
+    if callee == empty[Index[str, ctx]] || std.str_eq(ctx[callee], "make_zero") == 0 {
+        os.LogStr("Error: concrete nullary direct call was not selected for one local"); os.Exit(1);
+    }
+    env.zero_local_call_name = "ptr";
+    mut consume := parse_statement("accept_raw(ptr);", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[consume], &env, ctx) != 1 {
+        os.LogStr("Error: one-local direct argument was not selected"); os.Exit(1);
+    }
+    mut overwrite := parse_statement("ptr = 1 as *int;", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[overwrite], &env, ctx) != 0 {
+        os.LogStr("Error: intervening assignment retained one-local candidate"); os.Exit(1);
+    }
+    mut alias := parse_statement("mut alias := ptr;", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias], &env, ctx) != 0 {
+        os.LogStr("Error: alias declaration retained one-local candidate"); os.Exit(1);
+    }
+    mut wrapped := parse_statement("accept_raw(take ptr);", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[wrapped], &env, ctx) != 0 {
+        os.LogStr("Error: wrapped argument acquired one-local summary"); os.Exit(1);
+    }
+    }
+}
+
 func check_summary(src: str, name: str, expected: int, present: int, ctx: &Arena) {
     mut env := typechecker.env_new(ctx);
     mut scope := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
@@ -115,5 +145,6 @@ func main() {
     check_summary("unsafe func pass_raw(ptr: *int) *int { return ptr; }",
                   "pass_raw", typechecker.phase26_zero_unknown(), 0, ctx);
     check_wrapped_callees_excluded(ctx);
+    check_one_local_direct_call_shape(ctx);
     os.LogStr("SUCCESS: checked direct-return zero summaries and excluded parameters and wrapped callees verified");
 }
