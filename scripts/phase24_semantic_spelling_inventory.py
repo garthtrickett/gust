@@ -388,6 +388,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     call_local_zero_successor = registry.get("phase26_activation_audit", {}).get(
         "call_local_zero_evidence_increment", {}).get(
         "spelling_inventory_successor")
+    call_alias_zero_successor = registry.get("phase26_activation_audit", {}).get(
+        "call_alias_zero_evidence_increment", {}).get(
+        "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -1262,7 +1265,8 @@ def validate() -> tuple[dict, list[dict], dict]:
                 call_local_zero_successor.get("previous_inventory_summary") ==
                 call_return_zero_successor["current_inventory_summary"] and
                 call_local_zero_successor.get("current_inventory_summary") ==
-                summary and
+                (summary if call_alias_zero_successor is None else
+                 call_alias_zero_successor.get("previous_inventory_summary")) and
                 call_local_zero_successor.get("changed_source_paths") == sorted([
                     "compiler/typechecker.gst",
                     "compiler/phase26_call_return_zero_test_entry.gst",
@@ -1275,6 +1279,26 @@ def validate() -> tuple[dict, list[dict], dict]:
                 call_local_zero_successor.get("partial_extra_or_substituted_inventory") ==
                 "rejected" and summary["unknown_site_count"] == 0,
                 "Phase 26 local-call spelling inventory drifted")
+    if call_alias_zero_successor is not None:
+        require(call_local_zero_successor is not None and
+                call_alias_zero_successor.get("contract_version") ==
+                "phase26_1e_call_alias_zero_spelling_inventory_successor_v1" and
+                call_alias_zero_successor.get("previous_inventory_summary") ==
+                call_local_zero_successor["current_inventory_summary"] and
+                call_alias_zero_successor.get("current_inventory_summary") ==
+                summary and
+                call_alias_zero_successor.get("changed_source_paths") == sorted([
+                    "compiler/typechecker.gst",
+                    "compiler/phase26_call_return_zero_test_entry.gst",
+                    *[f"compiler/phase26_call_alias_zero_{name}_source.gst"
+                      for name in ("caller_first", "mayzero", "nonzero",
+                                   "unknown", "unsafe_target", "overwrite",
+                                   "intervening", "chain", "nested",
+                                   "prior_error")],
+                ]) and
+                call_alias_zero_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and summary["unknown_site_count"] == 0,
+                "Phase 26 one-hop alias spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),

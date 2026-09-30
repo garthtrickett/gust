@@ -289,6 +289,9 @@ def validate_static(value: dict) -> None:
                 call_local_zero_sites = registry.get("phase26_activation_audit", {}).get(
                     "call_local_zero_evidence_increment", {}).get(
                     "filename_site_successor")
+                call_alias_zero_sites = registry.get("phase26_activation_audit", {}).get(
+                    "call_alias_zero_evidence_increment", {}).get(
+                    "filename_site_successor")
                 e1_current = (live_sites if d5_sites is None else
                               d5_sites.get("previous_sites"))
                 require(e1_sites.get("contract_version") ==
@@ -782,7 +785,9 @@ def validate_static(value: dict) -> None:
                             call_local_zero_sites.get("contract_version") ==
                             "phase26_1e_call_local_zero_filename_site_successor_v1" and
                             call_local_zero_sites.get("previous_sites") == previous_local and
-                            call_local_zero_sites.get("current_sites") == live_sites and
+                            call_local_zero_sites.get("current_sites") ==
+                            (live_sites if call_alias_zero_sites is None else
+                             call_alias_zero_sites.get("previous_sites")) and
                             isinstance(deltas_local, list) and
                             len(deltas_local) == len(live_sites) == 3 and
                             all(isinstance(delta, int) and delta >= 0
@@ -793,8 +798,28 @@ def validate_static(value: dict) -> None:
                                 {key: val for key, val in now.items() if key != "line"} ==
                                 {key: val for key, val in before.items() if key != "line"}
                                 for before, now, delta in zip(previous_local,
-                                    live_sites, deltas_local)),
+                                    call_local_zero_sites.get("current_sites"), deltas_local)),
                             "Phase 26 local-call filename sites drifted")
+                if call_alias_zero_sites is not None:
+                    previous_alias = call_local_zero_sites["current_sites"]
+                    deltas_alias = call_alias_zero_sites.get("line_deltas")
+                    require(call_local_zero_sites is not None and
+                            call_alias_zero_sites.get("contract_version") ==
+                            "phase26_1e_call_alias_zero_filename_site_successor_v1" and
+                            call_alias_zero_sites.get("previous_sites") == previous_alias and
+                            call_alias_zero_sites.get("current_sites") == live_sites and
+                            isinstance(deltas_alias, list) and
+                            len(deltas_alias) == len(live_sites) == 3 and
+                            all(isinstance(delta, int) and delta >= 0
+                                for delta in deltas_alias) and
+                            call_alias_zero_sites.get("partial_extra_or_substituted_site") ==
+                            "rejected" and
+                            all(now["line"] == before["line"] + delta and
+                                {key: val for key, val in now.items() if key != "line"} ==
+                                {key: val for key, val in before.items() if key != "line"}
+                                for before, now, delta in zip(previous_alias,
+                                    live_sites, deltas_alias)),
+                            "Phase 26 one-hop alias filename sites drifted")
     require([row["selector"] for row in value["site_manifest"]] ==
             ["test_tcs_", "test_index_", "test_tcs_"],
             "selector order or completeness drifted")

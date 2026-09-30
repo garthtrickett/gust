@@ -71,12 +71,14 @@ def main() -> None:
     from phase22_opening import scan_invocations
     rows = [row for row in scan_invocations() if row["path"] == SCRIPT]
     local_record = activation.get("call_local_zero_evidence_increment", {})
+    alias_record = activation.get("call_alias_zero_evidence_increment", {})
     require(record["phase22_invocation_successor"] == {
         "contract_version": "phase26_1e_call_return_zero_phase22_invocation_successor_v1",
         "previous_total": 218, "current_total": 220, "added_rows": rows[:2],
         "partial_extra_or_substituted_invocation": "rejected",
-    } and len(rows) == 3 and
-            local_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[2:],
+    } and len(rows) == 4 and
+            local_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[2:3] and
+            alias_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[3:],
             "native invocation successor drifted")
     require(record["production_audit_successor"] == {
         "contract_version": "phase26_1e_call_return_zero_production_audit_successor_v1",
@@ -122,9 +124,16 @@ def main() -> None:
     from phase23_mir_to_c_deprecation_opening import SURFACE_PATTERNS
     local_changed = {row["path"]: row for row in local_record.get(
         "phase23_text_surface_successor", {}).get("changed_rows", [])}
+    alias_changed = {row["path"]: row for row in alias_record.get(
+        "phase23_text_surface_successor", {}).get("changed_rows", [])}
     for row in surface["changed_rows"]:
         text = (ROOT / row["path"]).read_text(encoding="utf-8")
         live_digest = digest(row["path"])
+        alias_successor = alias_changed.get(row["path"])
+        if alias_successor:
+            require(alias_successor["current_digest"] == live_digest,
+                    f"one-hop alias text surface drifted: {row['path']}")
+            live_digest = alias_successor["previous_digest"]
         live_counts = {name: len(pattern.findall(text))
                        for name, pattern in SURFACE_PATTERNS.items()}
         successor = local_changed.get(row["path"])
@@ -139,8 +148,14 @@ def main() -> None:
                 f"changed text surface drifted: {row['path']}")
     for row in surface["added_rows"]:
         successor = local_changed.get(row["path"])
+        alias_successor = alias_changed.get(row["path"])
+        live_digest = digest(row["path"])
+        if alias_successor:
+            require(alias_successor["current_digest"] == live_digest,
+                    f"one-hop alias text surface drifted: {row['path']}")
+            live_digest = alias_successor["previous_digest"]
         require(row["digest"] ==
-                (successor["previous_digest"] if successor else digest(row["path"])),
+                (successor["previous_digest"] if successor else live_digest),
                 f"added text surface drifted: {row['path']}")
 
     justfile = (ROOT / "justfile").read_text(encoding="utf-8")
@@ -200,7 +215,7 @@ def main() -> None:
     require(local_record["phase22_invocation_successor"] == {
         "contract_version": "phase26_1e_call_local_zero_phase22_invocation_successor_v1",
         "previous_total": 220, "current_total": 221,
-        "added_rows": rows[2:],
+        "added_rows": rows[2:3],
         "partial_extra_or_substituted_invocation": "rejected",
     }, "one-local invocation successor drifted")
     require(local_record["production_audit_successor"] == {
@@ -213,12 +228,13 @@ def main() -> None:
     require(local_record["spelling_inventory_successor"] == {
         "contract_version": "phase26_1e_call_local_zero_spelling_inventory_successor_v1",
         "previous_inventory_summary": record["spelling_inventory_successor"]["current_inventory_summary"],
-        "current_inventory_summary": manifest_summary(source_sites()),
+        "current_inventory_summary": alias_record.get(
+            "spelling_inventory_successor", {}).get("previous_inventory_summary"),
         "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
                                         *local_fixtures]),
         "partial_extra_or_substituted_inventory": "rejected",
     }, "one-local spelling inventory successor drifted")
-    local_sites = filename_sites()
+    local_sites = alias_record.get("filename_site_successor", {}).get("previous_sites")
     require(local_record["filename_site_successor"] == {
         "contract_version": "phase26_1e_call_local_zero_filename_site_successor_v1",
         "previous_sites": record["filename_site_successor"]["current_sites"],
@@ -229,6 +245,7 @@ def main() -> None:
         "partial_extra_or_substituted_site": "rejected",
     } and len(local_sites) == 3, "one-local filename successor drifted")
     local_surface = local_record["phase23_text_surface_successor"]
+    alias_surface = alias_record.get("phase23_text_surface_successor", {})
     old_surface_rows = {
         row["path"]: (row["current_digest"], row["current_match_counts"])
         for row in surface["changed_rows"]
@@ -245,9 +262,11 @@ def main() -> None:
             "one-local text surface set drifted")
     for row in local_surface["changed_rows"]:
         text = (ROOT / row["path"]).read_text(encoding="utf-8")
+        successor = alias_changed.get(row["path"])
         require((row["previous_digest"], row["previous_match_counts"]) ==
                 old_surface_rows[row["path"]] and
-                row["current_digest"] == digest(row["path"]) and
+                row["current_digest"] ==
+                (successor["previous_digest"] if successor else digest(row["path"])) and
                 row["current_match_counts"] == {
                     name: len(pattern.findall(text))
                     for name, pattern in SURFACE_PATTERNS.items()},
@@ -259,6 +278,116 @@ def main() -> None:
             "reason_code=deferred_p13_parameter_argument_target_dependent_abi" in guard and
             "test ! -e \"$marker\"" in guard,
             "one-local native evidence weakened")
+
+    alias_names = ("caller_first", "mayzero", "nonzero", "unknown",
+                   "unsafe_target", "overwrite", "intervening", "chain",
+                   "nested", "prior_error")
+    alias_fixtures = [f"compiler/phase26_call_alias_zero_{name}_source.gst"
+                      for name in alias_names]
+    alias_static = {
+        "contract_version": "phase26_1e_call_alias_zero_v1",
+        "status": "bounded_one_hop_direct_call_zero_safe_argument_rejection_qualified",
+        "owner": "cranelift", "increment": "26.1E_one_hop_call_alias_subset",
+        "operator_ownership_decision": "2026-09-30_bounded_one_hop_call_alias_zero",
+        "value_states": ["Unknown", "Zero", "Nonzero", "MayZero"],
+        "candidate_shape": "concrete_nongeneric_nullary_raw_pointer_direct_call_local_immediate_one_by_value_raw_pointer_alias_immediate_direct_one_argument_expression_statement",
+        "summary_order": "after_all_function_bodies_before_native_planner",
+        "invalidation": "assignment_intervening_statement_nested_scope_second_alias_or_type_error",
+        "positive_fixture": POSITIVE,
+        "negative_fixtures": [local_fixtures[7], *alias_fixtures[:2]],
+        "control_fixtures": alias_fixtures[2:],
+        "reclassified_fixture": {
+            "path": local_fixtures[7],
+            "previous": "accepted_then_native_deferral",
+            "current": "RawNullSafeBoundary_before_driver",
+        },
+        "safe_boundary": "declared_nonextern_raw_pointer_argument",
+        "negative_states": ["Zero", "MayZero"],
+        "prior_error_precedence": "preserved",
+        "unknown_and_nonzero": "preserved_without_general_nullability_claim",
+        "unsafe_callees": "preserved", "diagnostic": "[RawNullSafeBoundary]",
+        "failure_stage": "before_driver_discovery", "native_fallback": False,
+        "physical_abi_changed": False, "mir_changed": False,
+        "runtime_symbol_surface_changed": False,
+        "operator_semantics_changed": False,
+        "general_nullability": "open_separate_obligation", "phase26_1_closed": False,
+        "owning_level2_guard": GUARD, "pr_fast_job": "phase26-ffi-position",
+    }
+    for key, value in alias_static.items():
+        require(alias_record.get(key) == value,
+                f"one-hop alias successor field drifted: {key}")
+    require(set(alias_record) == set(alias_static) | {
+        "phase22_invocation_successor", "production_audit_successor",
+        "spelling_inventory_successor", "filename_site_successor",
+        "phase23_text_surface_successor",
+    } and all((ROOT / path).is_file() for path in alias_fixtures) and
+            local_fixtures[7] in local_record["control_fixtures"],
+            "one-hop alias successor changed predecessor or lost a fixture")
+    require(alias_record["phase22_invocation_successor"] == {
+        "contract_version": "phase26_1e_call_alias_zero_phase22_invocation_successor_v1",
+        "previous_total": 221, "current_total": 222,
+        "added_rows": rows[3:],
+        "partial_extra_or_substituted_invocation": "rejected",
+    }, "one-hop alias invocation successor drifted")
+    require(alias_record["production_audit_successor"] == {
+        "contract_version": "phase26_1e_call_alias_zero_production_audit_successor_v1",
+        "previous_repository_invocation_count": 221,
+        "current_repository_invocation_count": 222,
+        "added_invocation_path": SCRIPT, "unchanged_other_fields": True,
+        "partial_extra_or_substituted_audit": "rejected",
+    }, "one-hop alias production audit successor drifted")
+    require(alias_record["spelling_inventory_successor"] == {
+        "contract_version": "phase26_1e_call_alias_zero_spelling_inventory_successor_v1",
+        "previous_inventory_summary": local_record["spelling_inventory_successor"][
+            "current_inventory_summary"],
+        "current_inventory_summary": manifest_summary(source_sites()),
+        "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
+                                        *alias_fixtures]),
+        "partial_extra_or_substituted_inventory": "rejected",
+    }, "one-hop alias spelling inventory successor drifted")
+    live_sites = filename_sites()
+    previous_sites = local_record["filename_site_successor"]["current_sites"]
+    require(alias_record["filename_site_successor"] == {
+        "contract_version": "phase26_1e_call_alias_zero_filename_site_successor_v1",
+        "previous_sites": previous_sites, "current_sites": live_sites,
+        "line_deltas": [now["line"] - before["line"]
+                        for before, now in zip(previous_sites, live_sites)],
+        "partial_extra_or_substituted_site": "rejected",
+    } and len(previous_sites) == len(live_sites) == 3 and
+            all(now["line"] >= before["line"] and
+                {key: value for key, value in now.items() if key != "line"} ==
+                {key: value for key, value in before.items() if key != "line"}
+                for before, now in zip(previous_sites, live_sites)),
+            "one-hop alias filename successor drifted")
+    require(alias_surface.get("contract_version") ==
+            "phase26_1e_call_alias_zero_phase23_text_surface_successor_v1" and
+            alias_surface.get("partial_extra_or_substituted_surface") == "rejected" and
+            alias_surface.get("added_rows") == [] and
+            sorted(alias_changed) == sorted([
+                "compiler/typechecker.gst", "scripts/phase22_opening.py",
+                "scripts/phase26_call_return_zero_registration.py",
+            ]), "one-hop alias text surface set drifted")
+    predecessor_digests = {
+        row["path"]: row["current_digest"]
+        for row in local_surface["changed_rows"]
+    }
+    for row in alias_surface["changed_rows"]:
+        text = (ROOT / row["path"]).read_text(encoding="utf-8")
+        require(row["previous_digest"] == predecessor_digests[row["path"]] and
+                row["current_digest"] == digest(row["path"]) and
+                row["current_match_counts"] == {
+                    name: len(pattern.findall(text))
+                    for name, pattern in SURFACE_PATTERNS.items()} and
+                row["previous_match_counts"] == row["current_match_counts"],
+                f"one-hop alias text surface drifted: {row['path']}")
+    require("for case_name in caller_first mayzero nonzero unknown unsafe_target overwrite intervening chain nested prior_error" in guard and
+            "phase26_call_alias_zero_${case_name}_source.gst" in guard and
+            "caller_first|callee_first|mayzero|alias" in guard and
+            "phase26_zero_local_call_alias_name" in (ROOT / POSITIVE).read_text(encoding="utf-8") and
+            "[RawNullSafeBoundary]" in guard and
+            "reason_code=deferred_p13_parameter_argument_target_dependent_abi" in guard and
+            "test ! -e \"$marker\"" in guard,
+            "one-hop alias native evidence weakened")
     print(f"{GUARD}: registration ok")
 
 
