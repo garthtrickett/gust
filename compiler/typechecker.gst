@@ -2233,6 +2233,23 @@ func phase26_zero_note_direct_call_boundary(env: *TypeEnvironment[ctx], target_t
     }
 }
 
+// A direct argument may take the current candidate exactly once. A candidate
+// already produced by a Take alias cannot be taken again through this path.
+func phase26_zero_local_call_argument_matches_candidate(arg: ast.Expression[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        if std.str_eq((*env).zero_local_call_name, "") == 1 { return 0; }
+        if arg.tag == 0 { // Identifier
+            return std.str_eq(arg.Identifier.name, (*env).zero_local_call_name);
+        }
+        if arg.tag != 5 || (*env).zero_local_call_take_alias_terminal == 1 { return 0; } // Take
+        mut inner_idx := arg.Take.expr;
+        if inner_idx == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+        mut inner := ctx[inner_idx];
+        if inner.tag != 0 { return 0; }
+        return std.str_eq(inner.Identifier.name, (*env).zero_local_call_name);
+    }
+}
+
 // The candidate is only usable by the next direct, one-argument expression
 // statement in its lexical block. Every other statement invalidates it before
 // checking, so assignment, aliasing, and control flow cannot preserve a stale
@@ -2247,8 +2264,8 @@ func phase26_zero_local_call_statement_consumes_candidate(stmt: ast.Statement[ct
         mut callee_expr := ctx[expr.Call.function];
         if callee_expr.tag != 0 { return 0; }
         mut args: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
-        if len(args) != 1 || args[0].tag != 0 { return 0; }
-        return std.str_eq(args[0].Identifier.name, (*env).zero_local_call_name);
+        if len(args) != 1 { return 0; }
+        return phase26_zero_local_call_argument_matches_candidate(args[0], env, ctx);
     }
 }
 
@@ -5850,8 +5867,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                             if resolved_expected_call_ref_e3.tag == 9 &&
                                std.str_eq((*env).zero_local_call_name, "") == 0 {
                                 mut local_arg_expr := ctx[arg_idx_check_call_nlaunder];
-                                if local_arg_expr.tag == 0 &&
-                                   std.str_eq(local_arg_expr.Identifier.name, (*env).zero_local_call_name) == 1 {
+                                if phase26_zero_local_call_argument_matches_candidate(
+                                    local_arg_expr, env, ctx
+                                ) == 1 {
                                     phase26_zero_queue_direct_call_boundary(
                                         env, resolved_expected_call_ref_e3,
                                         (*env).zero_local_call_callee,

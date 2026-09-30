@@ -298,6 +298,9 @@ def validate_static(value: dict) -> None:
                 call_take_alias_zero_sites = registry.get("phase26_activation_audit", {}).get(
                     "call_take_alias_zero_evidence_increment", {}).get(
                     "filename_site_successor")
+                call_direct_take_zero_sites = registry.get("phase26_activation_audit", {}).get(
+                    "call_direct_take_zero_evidence_increment", {}).get(
+                    "filename_site_successor")
                 e1_current = (live_sites if d5_sites is None else
                               d5_sites.get("previous_sites"))
                 require(e1_sites.get("contract_version") ==
@@ -857,7 +860,9 @@ def validate_static(value: dict) -> None:
                             call_take_alias_zero_sites.get("contract_version") ==
                             "phase26_1e_call_take_alias_zero_filename_site_successor_v1" and
                             call_take_alias_zero_sites.get("previous_sites") == previous_take and
-                            call_take_alias_zero_sites.get("current_sites") == live_sites and
+                            call_take_alias_zero_sites.get("current_sites") ==
+                            (live_sites if call_direct_take_zero_sites is None else
+                             call_direct_take_zero_sites.get("previous_sites")) and
                             isinstance(deltas_take, list) and
                             len(deltas_take) == len(live_sites) == 3 and
                             all(isinstance(delta, int) and delta >= 0
@@ -868,8 +873,29 @@ def validate_static(value: dict) -> None:
                                 {key: val for key, val in now.items() if key != "line"} ==
                                 {key: val for key, val in before.items() if key != "line"}
                                 for before, now, delta in zip(previous_take,
-                                    live_sites, deltas_take)),
+                                    call_take_alias_zero_sites.get("current_sites"), deltas_take)),
                             "Phase 26 Take-alias filename sites drifted")
+                if call_direct_take_zero_sites is not None:
+                    previous_direct_take = call_take_alias_zero_sites["current_sites"]
+                    deltas_direct_take = call_direct_take_zero_sites.get("line_deltas")
+                    require(call_take_alias_zero_sites is not None and
+                            call_direct_take_zero_sites.get("contract_version") ==
+                            "phase26_1e_call_direct_take_zero_filename_site_successor_v1" and
+                            call_direct_take_zero_sites.get("previous_sites") ==
+                            previous_direct_take and
+                            call_direct_take_zero_sites.get("current_sites") == live_sites and
+                            isinstance(deltas_direct_take, list) and
+                            len(deltas_direct_take) == len(live_sites) == 3 and
+                            all(isinstance(delta, int) and delta >= 0
+                                for delta in deltas_direct_take) and
+                            call_direct_take_zero_sites.get("partial_extra_or_substituted_site") ==
+                            "rejected" and
+                            all(now["line"] == before["line"] + delta and
+                                {key: val for key, val in now.items() if key != "line"} ==
+                                {key: val for key, val in before.items() if key != "line"}
+                                for before, now, delta in zip(previous_direct_take,
+                                    live_sites, deltas_direct_take)),
+                            "Phase 26 direct-Take filename sites drifted")
     require([row["selector"] for row in value["site_manifest"]] ==
             ["test_tcs_", "test_index_", "test_tcs_"],
             "selector order or completeness drifted")

@@ -502,6 +502,21 @@ unsafe callees, prior type errors, and existing safe-return escape diagnostics
 retain their behavior. MIR, ABI, layout, runtime and general nullability are
 unchanged; Phase 26.1 remains open.
 
+**26.1E direct terminal Take argument subset (ownership authorized
+2026-09-30).** A concrete direct-nullary `*T` call result held in the current
+same-block local candidate, including consecutive plain aliases, may cross
+exactly one terminal `take` in the immediately following direct one-argument
+call. After ordinary typechecking, a type-matched declared-safe non-extern
+callee rejects proven Zero or MayZero before native planning, independent of
+declaration order. A prior Take alias, nested or second Take, intervening
+statement, assignment, nested scope, indirect call, or mismatched argument
+cannot acquire this deferred summary. Direct literal Take retains its existing
+zero diagnostic; Nonzero, Unknown, explicitly unsafe callees, and prior type
+errors retain their behavior. The accepted source routes may still defer in
+the native planner. Take/move semantics, MIR, ABI, layout, runtime and operator
+meaning are unchanged. This bounded evidence does not establish general
+nullability or close Phase 26.1.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
