@@ -98,14 +98,41 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
     if std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[alias], &env, ctx), "alias") == 0 {
         os.LogStr("Error: direct one-hop alias was not selected"); os.Exit(1);
     }
+    env.zero_local_call_name = "alias";
     env.zero_local_call_alias_hops = 1;
-    if std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[alias], &env, ctx), "") == 0 {
-        os.LogStr("Error: alias chain acquired a second hop"); os.Exit(1);
+    mut next := parse_statement("mut next := alias;", ctx);
+    if std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[next], &env, ctx), "next") == 0 {
+        os.LogStr("Error: consecutive alias chain lost its second hop"); os.Exit(1);
     }
-    env.zero_local_call_alias_hops = 0;
+    env.zero_local_call_name = "next";
+    env.zero_local_call_alias_hops = 2;
+    mut third := parse_statement("mut third := next;", ctx);
+    if std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[third], &env, ctx), "third") == 0 {
+        os.LogStr("Error: consecutive alias chain lost its third hop"); os.Exit(1);
+    }
+    env.zero_local_call_name = "third";
+    env.zero_local_call_alias_hops = 3;
+    mut direct_call := parse_statement("accept_raw(third);", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_call], &env, ctx) != 1 {
+        os.LogStr("Error: direct call did not consume the final alias"); os.Exit(1);
+    }
+    mut direct_call_expr := ctx[direct_call].Expression.expr;
+    mut call := ctx[direct_call_expr];
+    mut direct_callee := call.Call.function;
+    mut indirect_callee: ast.Expression[ctx];
+    indirect_callee.tag = 9; // AsCast, which is not a direct Identifier callee.
+    indirect_callee.AsCast.left = direct_callee;
+    indirect_callee.AsCast.span = call.Call.span;
+    mut indirect_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(indirect_idx, indirect_callee);
+    call.Call.function = indirect_idx;
+    ctx.Set(direct_call_expr, call);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_call], &env, ctx) != 0 {
+        os.LogStr("Error: wrapped callee consumed an alias-chain candidate"); os.Exit(1);
+    }
     mut intervening := parse_statement("mut other := 1;", ctx);
     if std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[intervening], &env, ctx), "") == 0 {
-        os.LogStr("Error: unrelated declaration retained one-hop candidate"); os.Exit(1);
+        os.LogStr("Error: unrelated declaration retained alias-chain candidate"); os.Exit(1);
     }
     mut wrapped := parse_statement("accept_raw(take ptr);", ctx);
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[wrapped], &env, ctx) != 0 {
