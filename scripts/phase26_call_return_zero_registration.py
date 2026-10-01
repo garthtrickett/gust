@@ -82,11 +82,12 @@ def main() -> None:
     wrapper_chain_record = activation.get("call_wrapper_chain_zero_evidence_increment", {})
     as_cast_record = activation.get("call_as_cast_zero_evidence_increment", {})
     as_cast_chain_record = activation.get("call_as_cast_chain_zero_evidence_increment", {})
+    mixed_record = activation.get("call_mixed_cast_zero_evidence_increment", {})
     require(record["phase22_invocation_successor"] == {
         "contract_version": "phase26_1e_call_return_zero_phase22_invocation_successor_v1",
         "previous_total": 218, "current_total": 220, "added_rows": rows[:2],
         "partial_extra_or_substituted_invocation": "rejected",
-    } and len(rows) == 13 and
+    } and len(rows) == 15 and
             local_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[2:3] and
             alias_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[3:4] and
             chain_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[4:5] and
@@ -165,9 +166,16 @@ def main() -> None:
         "phase23_text_surface_successor", {}).get("changed_rows", [])}
     as_cast_chain_changed = {row["path"]: row for row in as_cast_chain_record.get(
         "phase23_text_surface_successor", {}).get("changed_rows", [])}
+    mixed_changed = {row["path"]: row for row in mixed_record.get(
+        "phase23_text_surface_successor", {}).get("changed_rows", [])}
     for row in surface["changed_rows"]:
         text = (ROOT / row["path"]).read_text(encoding="utf-8")
         live_digest = digest(row["path"])
+        mixed_successor = mixed_changed.get(row["path"])
+        if mixed_successor:
+            require(mixed_successor["current_digest"] == live_digest,
+                    f"mixed cast text surface drifted: {row['path']}")
+            live_digest = mixed_successor["previous_digest"]
         cast_chain_successor = as_cast_chain_changed.get(row["path"])
         if cast_chain_successor:
             require(cast_chain_successor["current_digest"] == live_digest,
@@ -239,6 +247,11 @@ def main() -> None:
         successor = local_changed.get(row["path"])
         alias_successor = alias_changed.get(row["path"])
         live_digest = digest(row["path"])
+        mixed_successor = mixed_changed.get(row["path"])
+        if mixed_successor:
+            require(mixed_successor["current_digest"] == live_digest,
+                    f"mixed cast text surface drifted: {row['path']}")
+            live_digest = mixed_successor["previous_digest"]
         cast_chain_successor = as_cast_chain_changed.get(row["path"])
         if cast_chain_successor:
             require(cast_chain_successor["current_digest"] == live_digest,
@@ -1543,7 +1556,7 @@ def main() -> None:
         "previous_total": 230, "current_total": 231,
         "added_rows": rows[12:13],
         "partial_extra_or_substituted_invocation": "rejected",
-    } and len(rows) == 13,
+    } and len(rows) == 15,
             "one RawPointer AsCast invocation successor drifted")
     require(as_cast_record["production_audit_successor"] == {
         "contract_version": "phase26_1e_call_as_cast_zero_production_audit_successor_v1",
@@ -1593,11 +1606,15 @@ def main() -> None:
         require(row["previous_digest"] == old_rows[row["path"]]["current_digest"] and
                 row["current_digest"] ==
                 (as_cast_chain_changed[row["path"]]["previous_digest"]
-                 if row["path"] in as_cast_chain_changed else digest(row["path"])) and
+                 if row["path"] in as_cast_chain_changed else
+                 mixed_changed[row["path"]]["previous_digest"]
+                 if row["path"] in mixed_changed else digest(row["path"])) and
                 row["previous_match_counts"] == old_rows[row["path"]]["current_match_counts"] and
                 row["current_match_counts"] ==
                 (as_cast_chain_changed[row["path"]]["previous_match_counts"]
-                 if row["path"] in as_cast_chain_changed else {
+                 if row["path"] in as_cast_chain_changed else
+                 mixed_changed[row["path"]]["previous_match_counts"]
+                 if row["path"] in mixed_changed else {
                     name: len(pattern.findall(text))
                     for name, pattern in SURFACE_PATTERNS.items()}),
                 f"one RawPointer AsCast text surface drifted: {row['path']}")
@@ -1675,7 +1692,9 @@ def main() -> None:
         "contract_version": "phase26_1e_call_as_cast_chain_zero_spelling_inventory_successor_v1",
         "previous_inventory_summary": as_cast_record[
             "spelling_inventory_successor"]["current_inventory_summary"],
-        "current_inventory_summary": manifest_summary(source_sites()),
+        "current_inventory_summary": mixed_record.get(
+            "spelling_inventory_successor", {}).get("previous_inventory_summary",
+                                                    manifest_summary(source_sites())),
         "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
                                         *cast_chain_negatives, *cast_chain_controls]),
         "partial_extra_or_substituted_inventory": "rejected",
@@ -1683,14 +1702,17 @@ def main() -> None:
     prior_sites = as_cast_record["filename_site_successor"]["current_sites"]
     require(as_cast_chain_record["filename_site_successor"] == {
         "contract_version": "phase26_1e_call_as_cast_chain_zero_filename_site_successor_v1",
-        "previous_sites": prior_sites, "current_sites": live_sites,
+        "previous_sites": prior_sites, "current_sites": mixed_record.get(
+            "filename_site_successor", {}).get("previous_sites", live_sites),
         "line_deltas": [now["line"] - before["line"]
-                        for before, now in zip(prior_sites, live_sites)],
+                        for before, now in zip(prior_sites, as_cast_chain_record[
+                            "filename_site_successor"]["current_sites"])],
         "partial_extra_or_substituted_site": "rejected",
     } and len(prior_sites) == len(live_sites) == 3 and
             all({key: value for key, value in now.items() if key != "line"} ==
                 {key: value for key, value in before.items() if key != "line"}
-                for before, now in zip(prior_sites, live_sites)),
+                for before, now in zip(prior_sites, as_cast_chain_record[
+                    "filename_site_successor"]["current_sites"])),
             "RawPointer AsCast-chain filename successor drifted")
     cast_chain_surface = as_cast_chain_record["phase23_text_surface_successor"]
     require(cast_chain_surface.get("contract_version") ==
@@ -1704,10 +1726,13 @@ def main() -> None:
     for row in cast_chain_surface["changed_rows"]:
         path = row["path"]
         text = (ROOT / path).read_text(encoding="utf-8")
-        require(row["current_digest"] == digest(path) and
-                row["current_match_counts"] == {
+        successor = mixed_changed.get(path)
+        require(row["current_digest"] ==
+                (successor["previous_digest"] if successor else digest(path)) and
+                row["current_match_counts"] ==
+                (successor["previous_match_counts"] if successor else {
                     name: len(pattern.findall(text))
-                    for name, pattern in SURFACE_PATTERNS.items()} and
+                    for name, pattern in SURFACE_PATTERNS.items()}) and
                 len(row["previous_digest"]) == 64,
                 f"RawPointer AsCast-chain text surface drifted: {path}")
     require("phase26_call_cast_chain_zero_${case_name#chain_}_source.gst" in guard and
@@ -1718,6 +1743,126 @@ def main() -> None:
             "check_pointer_cast_chain_boundary(\"((make_zero() as *int) as *byte) as *int\"" in positive and
             "while cast_expr_idx != empty[Index[ast.Expression[ctx], ctx]]" in compiler,
             "RawPointer AsCast-chain native evidence weakened")
+
+    mixed_negatives = [
+        f"compiler/phase26_call_mixed_cast_zero_{shape}_{state}_{boundary}_{order}_source.gst"
+        for shape in ("move_cast", "cast_move", "take_cast", "cast_take")
+        for state in ("zero", "mayzero")
+        for boundary in ("argument", "return")
+        for order in ("caller_first", "callee_first")
+    ]
+    mixed_controls = [f"compiler/phase26_call_mixed_cast_zero_{name}_source.gst"
+                      for name in ("nonzero", "unknown", "unsafe_target", "type_mismatch",
+                                   "two_casts", "two_wrappers", "scalar_cast", "indirect")]
+    mixed_static = {
+        "contract_version": "phase26_1e_call_mixed_cast_zero_v1",
+        "status": "one_checked_RawPointer_AsCast_plus_one_Move_or_Take_safe_boundary_rejection_qualified",
+        "owner": "cranelift", "increment": "26.1E_mixed_cast_wrapper_boundary_subset",
+        "operator_ownership_decision": "2026-10-01_bounded_mixed_cast_Move_Take_boundary",
+        "value_states": ["Unknown", "Zero", "Nonzero", "MayZero"],
+        "candidate_shape": "exactly_one_checked_RawPointer_AsCast_and_one_syntactic_Move_or_Take_in_either_order_around_concrete_direct_nullary_Call_at_type_matched_safe_argument_or_return",
+        "summary_order": "after_all_function_bodies_before_native_planner",
+        "metadata_proof": "cast_resolved_RawPointer_operand_and_target_or_no_summary",
+        "excluded_shapes": ["two_mixed_casts_or_wrappers", "scalar_to_pointer_cast",
+                            "indirect_or_generic_call", "local_alias_or_branch",
+                            "local_candidate_seeding"],
+        "positive_fixture": POSITIVE,
+        "positive_output": "SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, bounded mixed Move/Take casts, and exclusions verified\n",
+        "negative_fixtures": mixed_negatives,
+        "control_fixtures": mixed_controls,
+        "reclassified_fixtures": [f"compiler/phase26_call_cast_zero_{name}_source.gst"
+                                  for name in ("move_cast", "cast_move", "take_cast", "cast_take")],
+        "safe_boundaries": ["declared_nonextern_raw_pointer_argument",
+                            "declared_nonextern_raw_pointer_return"],
+        "negative_states": ["Zero", "MayZero"],
+        "prior_error_precedence": "preserved", "unknown_and_nonzero": "preserved",
+        "unsafe_callees": "preserved", "take_move_semantics_changed": False,
+        "diagnostic": "[RawNullSafeBoundary]", "failure_stage": "before_driver_discovery",
+        "native_fallback": False, "physical_abi_changed": False,
+        "mir_changed": False, "runtime_symbol_surface_changed": False,
+        "operator_semantics_changed": False,
+        "general_nullability": "open_separate_obligation", "phase26_1_closed": False,
+        "owning_level2_guard": GUARD, "pr_fast_job": "phase26-ffi-position",
+    }
+    for key, value in mixed_static.items():
+        require(mixed_record.get(key) == value,
+                f"mixed cast successor field drifted: {key}")
+    require(set(mixed_record) == set(mixed_static) | {
+        "phase22_invocation_successor", "production_audit_successor",
+        "spelling_inventory_successor", "filename_site_successor",
+        "phase23_text_surface_successor",
+    } and all((ROOT / path).is_file() for path in
+              [*mixed_negatives, *mixed_controls]) and
+            all(path in as_cast_record["control_fixtures"]
+                for path in mixed_static["reclassified_fixtures"]),
+            "mixed cast successor fields or fixtures drifted")
+    mixed_invocations = [row for row in scan_invocations() if row["path"] == SCRIPT]
+    require(mixed_record["phase22_invocation_successor"] == {
+        "contract_version": "phase26_1e_call_mixed_cast_zero_phase22_invocation_successor_v1",
+        "previous_total": 231, "current_total": 233,
+        "added_rows": mixed_invocations[13:15],
+        "partial_extra_or_substituted_invocation": "rejected",
+    } and len(mixed_invocations) == 15,
+            "mixed cast invocation successor drifted")
+    require(mixed_record["production_audit_successor"] == {
+        "contract_version": "phase26_1e_call_mixed_cast_zero_production_audit_successor_v1",
+        "previous_repository_invocation_count": 231,
+        "current_repository_invocation_count": 233,
+        "added_invocation_path": SCRIPT, "unchanged_other_fields": True,
+        "partial_extra_or_substituted_audit": "rejected",
+    }, "mixed cast production audit successor drifted")
+    require(mixed_record["spelling_inventory_successor"] == {
+        "contract_version": "phase26_1e_call_mixed_cast_zero_spelling_inventory_successor_v1",
+        "previous_inventory_summary": as_cast_chain_record[
+            "spelling_inventory_successor"]["current_inventory_summary"],
+        "current_inventory_summary": manifest_summary(source_sites()),
+        "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
+                                        *mixed_negatives, *mixed_controls]),
+        "partial_extra_or_substituted_inventory": "rejected",
+    }, "mixed cast spelling inventory successor drifted")
+    prior_sites = as_cast_chain_record["filename_site_successor"]["current_sites"]
+    require(mixed_record["filename_site_successor"] == {
+        "contract_version": "phase26_1e_call_mixed_cast_zero_filename_site_successor_v1",
+        "previous_sites": prior_sites, "current_sites": live_sites,
+        "line_deltas": [now["line"] - before["line"]
+                        for before, now in zip(prior_sites, live_sites)],
+        "partial_extra_or_substituted_site": "rejected",
+    } and len(prior_sites) == len(live_sites) == 3 and
+            all({key: value for key, value in now.items() if key != "line"} ==
+                {key: value for key, value in before.items() if key != "line"}
+                for before, now in zip(prior_sites, live_sites)),
+            "mixed cast filename successor drifted")
+    mixed_surface = mixed_record["phase23_text_surface_successor"]
+    require(mixed_surface.get("contract_version") ==
+            "phase26_1e_call_mixed_cast_zero_phase23_text_surface_successor_v1" and
+            mixed_surface.get("partial_extra_or_substituted_surface") == "rejected" and
+            mixed_surface.get("added_rows") == [] and
+            sorted(mixed_changed) == sorted([
+                "compiler/typechecker.gst",
+                "scripts/phase22_opening.py",
+                "scripts/phase26_call_return_zero_registration.py",
+            ]), "mixed cast text surface set drifted")
+    for row in mixed_surface["changed_rows"]:
+        path = row["path"]
+        text = (ROOT / path).read_text(encoding="utf-8")
+        require((row["previous_digest"] == as_cast_chain_changed[path]["current_digest"]
+                 if path in as_cast_chain_changed else len(row["previous_digest"]) == 64) and
+                row["current_digest"] == digest(path) and
+                row["current_match_counts"] == {
+                    name: len(pattern.findall(text))
+                    for name, pattern in SURFACE_PATTERNS.items()} and
+                len(row["previous_digest"]) == 64,
+                f"mixed cast text surface drifted: {path}")
+    require("for shape in move_cast cast_move take_cast cast_take; do" in guard and
+            "for state in zero mayzero; do" in guard and
+            "for boundary_kind in argument return; do" in guard and
+            "for order in caller_first callee_first; do" in guard and
+            "phase26_call_mixed_cast_zero_${case_name}_source.gst" in guard and
+            "test ! -e \"$marker\"" in guard and
+            "check_pointer_cast_chain_boundary(\"move (make_zero() as *int)\"" in positive and
+            "check_pointer_cast_chain_boundary(\"(take make_zero()) as *int\"" in positive and
+            "phase26_zero_resolved_expression_tag(mixed_cast.AsCast.left" in compiler,
+            "mixed cast native or poison evidence weakened")
     print(f"{GUARD}: registration ok")
 
 

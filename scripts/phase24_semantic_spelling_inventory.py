@@ -421,6 +421,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     call_as_cast_chain_zero_successor = registry.get("phase26_activation_audit", {}).get(
         "call_as_cast_chain_zero_evidence_increment", {}).get(
         "spelling_inventory_successor")
+    call_mixed_cast_zero_successor = registry.get("phase26_activation_audit", {}).get(
+        "call_mixed_cast_zero_evidence_increment", {}).get(
+        "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -1579,18 +1582,49 @@ def validate() -> tuple[dict, list[dict], dict]:
         require(call_as_cast_chain_zero_successor.get("contract_version") ==
                 "phase26_1e_call_as_cast_chain_zero_spelling_inventory_successor_v1" and
                 call_as_cast_chain_zero_successor.get("previous_inventory_summary") == previous and
-                call_as_cast_chain_zero_successor.get("current_inventory_summary") == summary and
+                call_as_cast_chain_zero_successor.get("current_inventory_summary") ==
+                (summary if call_mixed_cast_zero_successor is None else
+                 call_mixed_cast_zero_successor.get("previous_inventory_summary")) and
                 call_as_cast_chain_zero_successor.get("changed_source_paths") == sorted([
                     "compiler/typechecker.gst",
                     "compiler/phase26_call_return_zero_test_entry.gst", *paths,
                 ]) and
                 call_as_cast_chain_zero_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and call_as_cast_chain_zero_successor[
+                    "current_inventory_summary"]["source_file_count"] ==
+                previous["source_file_count"] + len(paths) and
+                call_as_cast_chain_zero_successor[
+                    "current_inventory_summary"]["site_count"] == previous["site_count"] and
+                call_as_cast_chain_zero_successor[
+                    "current_inventory_summary"]["semantic_site_count"] == previous["semantic_site_count"] and
+                call_as_cast_chain_zero_successor[
+                    "current_inventory_summary"]["unknown_site_count"] == 0,
+                "Phase 26 RawPointer AsCast-chain spelling inventory drifted")
+    if call_mixed_cast_zero_successor is not None:
+        paths = [f"compiler/phase26_call_mixed_cast_zero_{shape}_{state}_{boundary}_{order}_source.gst"
+                 for shape in ("move_cast", "cast_move", "take_cast", "cast_take")
+                 for state in ("zero", "mayzero")
+                 for boundary in ("argument", "return")
+                 for order in ("caller_first", "callee_first")]
+        paths += [f"compiler/phase26_call_mixed_cast_zero_{name}_source.gst"
+                  for name in ("nonzero", "unknown", "unsafe_target", "type_mismatch",
+                               "two_casts", "two_wrappers", "scalar_cast", "indirect")]
+        previous = call_as_cast_chain_zero_successor["current_inventory_summary"]
+        require(call_mixed_cast_zero_successor.get("contract_version") ==
+                "phase26_1e_call_mixed_cast_zero_spelling_inventory_successor_v1" and
+                call_mixed_cast_zero_successor.get("previous_inventory_summary") == previous and
+                call_mixed_cast_zero_successor.get("current_inventory_summary") == summary and
+                call_mixed_cast_zero_successor.get("changed_source_paths") == sorted([
+                    "compiler/typechecker.gst",
+                    "compiler/phase26_call_return_zero_test_entry.gst", *paths,
+                ]) and
+                call_mixed_cast_zero_successor.get("partial_extra_or_substituted_inventory") ==
                 "rejected" and summary["source_file_count"] ==
                 previous["source_file_count"] + len(paths) and
                 summary["site_count"] == previous["site_count"] and
                 summary["semantic_site_count"] == previous["semantic_site_count"] and
                 summary["unknown_site_count"] == 0,
-                "Phase 26 RawPointer AsCast-chain spelling inventory drifted")
+                "Phase 26 mixed cast spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),

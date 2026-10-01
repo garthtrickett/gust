@@ -607,6 +607,20 @@ earlier type errors retain precedence. This is a source diagnostic only: no
 cast, MIR, ABI, layout, or runtime meaning changes, and general nullability
 and Phase 26.1 remain open.
 
+**26.1E one-cast/one-Move-or-Take safe-boundary subset (ownership authorized
+2026-10-01).** At an already type-matched declared-safe non-extern raw-pointer
+argument or return, the post-typecheck check may recognize exactly one checked
+RawPointer-to-RawPointer `as` cast and one syntactic `move` or `take` in either
+order around an eligible concrete direct nullary call. The existing four-state
+callee summary rejects Zero/MayZero before native planning, independent of
+declaration order. Every cast operand and target needs resolved RawPointer
+metadata; missing metadata gives no summary. Two mixed casts or wrappers,
+scalar-to-pointer casts, indirect/generic calls, aliases, and branches remain
+outside this subset. Earlier type errors retain precedence; nonzero/Unknown
+and unsafe controls keep their prior behavior. Move/Take bookkeeping, cast
+meaning, MIR, ABI, layout, and runtime are unchanged. General nullability and
+Phase 26.1 remain open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
