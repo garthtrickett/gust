@@ -517,6 +517,22 @@ the native planner. Take/move semantics, MIR, ABI, layout, runtime and operator
 meaning are unchanged. This bounded evidence does not establish general
 nullability or close Phase 26.1.
 
+**26.1E direct terminal Move argument subset (ownership authorized
+2026-10-01).** The same eligible concrete direct-nullary `*T` call result in
+the current same-block local candidate, including consecutive plain aliases,
+may cross exactly one terminal `move` in the immediately following direct,
+type-matched, declared-safe non-extern one-argument call. The compiler checks
+the ordinary Move and call semantics first, then applies the existing
+four-state return summary after all function bodies and before native planning.
+A prior terminal Take alias, nested or second Move, Move alias declaration,
+intervening statement, overwrite, nested scope, indirect call, or mismatched
+argument cannot acquire this summary. Literal zero through Move retains its
+existing diagnostic; Nonzero, Unknown, explicitly unsafe callees, and prior
+type errors retain their behavior. The accepted native source route may still
+defer. This increment changes no Move or resource bookkeeping, MIR, ABI,
+layout, runtime, or operator meaning; general nullability and Phase 26.1
+remain open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

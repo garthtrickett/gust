@@ -173,6 +173,30 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[other_take], &env, ctx) != 0 {
         os.LogStr("Error: unrelated Take argument acquired a summary"); os.Exit(1);
     }
+    mut direct_move := parse_statement("accept_raw(move ptr);", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_move], &env, ctx) != 1 {
+        os.LogStr("Error: direct terminal Move argument lost its candidate"); os.Exit(1);
+    }
+    env.zero_local_call_take_alias_terminal = 1;
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_move], &env, ctx) != 0 {
+        os.LogStr("Error: terminal Take alias acquired a Move hop"); os.Exit(1);
+    }
+    env.zero_local_call_take_alias_terminal = 0;
+    mut move_call_expr := ctx[direct_move].Expression.expr;
+    mut move_call := ctx[move_call_expr];
+    move_call.Call.function = indirect_idx;
+    ctx.Set(move_call_expr, move_call);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_move], &env, ctx) != 0 {
+        os.LogStr("Error: wrapped callee consumed a Move candidate"); os.Exit(1);
+    }
+    mut nested_move := parse_statement("accept_raw(move move ptr);", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[nested_move], &env, ctx) != 0 {
+        os.LogStr("Error: nested Move argument acquired a summary"); os.Exit(1);
+    }
+    mut other_move := parse_statement("accept_raw(move other);", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[other_move], &env, ctx) != 0 {
+        os.LogStr("Error: unrelated Move argument acquired a summary"); os.Exit(1);
+    }
     }
 }
 
