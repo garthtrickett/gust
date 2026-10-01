@@ -106,6 +106,16 @@ func check_one_move_call_boundary(ctx: &Arena) {
     typechecker.phase26_zero_note_direct_call_boundary(
         &env, target, nested, moved_expr.Move.span, "function argument", ctx
     );
+    if len(env.pending_zero_direct_calls) != 2 {
+        os.LogStr("Error: two Move wrappers lost their direct summary"); os.Exit(1);
+    }
+    if typechecker.phase26_zero_direct_nullary_callee(&env, nested, ctx) != empty[Index[str, ctx]] {
+        os.LogStr("Error: two Move wrappers changed direct local-candidate selection"); os.Exit(1);
+    }
+    mut three_wrappers := parse_expression("move move move make_zero()", ctx);
+    typechecker.phase26_zero_note_direct_call_boundary(
+        &env, target, three_wrappers, moved_expr.Move.span, "function argument", ctx
+    );
     mut generic_lookup := env.function_registry.Get("make_zero");
     if generic_lookup.Ok {
         mut generic_sig := generic_lookup.Val;
@@ -121,8 +131,8 @@ func check_one_move_call_boundary(ctx: &Arena) {
     typechecker.phase26_zero_note_direct_call_boundary(
         &env, target, generic_call, moved_expr.Move.span, "function argument", ctx
     );
-    if len(env.pending_zero_direct_calls) != 1 {
-        os.LogStr("Error: wrapped callee, nested Move, or generic Call acquired a direct summary"); os.Exit(1);
+    if len(env.pending_zero_direct_calls) != 2 {
+        os.LogStr("Error: wrapped callee, third Move, or generic Call acquired a direct summary"); os.Exit(1);
     }
     }
 }
@@ -152,6 +162,24 @@ func check_one_take_call_boundary(ctx: &Arena) {
     typechecker.phase26_zero_note_direct_call_boundary(
         &env, target, moved_taken, taken_expr.Take.span, "function argument", ctx
     );
+    mut taken_moved := parse_expression("take move make_zero()", ctx);
+    typechecker.phase26_zero_note_direct_call_boundary(
+        &env, target, taken_moved, taken_expr.Take.span, "function argument", ctx
+    );
+    mut moved_moved := parse_expression("move move make_zero()", ctx);
+    typechecker.phase26_zero_note_direct_call_boundary(
+        &env, target, moved_moved, taken_expr.Take.span, "function argument", ctx
+    );
+    if len(env.pending_zero_direct_calls) != 5 {
+        os.LogStr("Error: depth-two Move/Take boundary lost a direct summary"); os.Exit(1);
+    }
+    if typechecker.phase26_zero_direct_nullary_callee(&env, nested, ctx) != empty[Index[str, ctx]] {
+        os.LogStr("Error: depth-two Take changed direct local-candidate selection"); os.Exit(1);
+    }
+    mut three_wrappers := parse_expression("take move take make_zero()", ctx);
+    typechecker.phase26_zero_note_direct_call_boundary(
+        &env, target, three_wrappers, taken_expr.Take.span, "function argument", ctx
+    );
     mut generic_lookup := env.function_registry.Get("make_zero");
     if generic_lookup.Ok {
         mut generic_sig := generic_lookup.Val;
@@ -180,8 +208,8 @@ func check_one_take_call_boundary(ctx: &Arena) {
     typechecker.phase26_zero_note_direct_call_boundary(
         &env, target, taken, taken_expr.Take.span, "function argument", ctx
     );
-    if len(env.pending_zero_direct_calls) != 1 {
-        os.LogStr("Error: nested Take, Move(Take), generic, or indirect Call acquired a direct summary"); os.Exit(1);
+    if len(env.pending_zero_direct_calls) != 5 {
+        os.LogStr("Error: third wrapper, generic, or indirect Call acquired a direct summary"); os.Exit(1);
     }
     }
 }

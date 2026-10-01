@@ -557,6 +557,17 @@ errors retain their behavior. Take and resource bookkeeping, MIR, ABI, layout,
 runtime, and operator meaning are unchanged. General nullability and Phase
 26.1 remain open.
 
+**26.1E depth-two Move/Take call boundary subset (ownership authorized
+2026-10-01).** After ordinary typechecking and unsafe-call gates, exactly two
+syntactic Move/Take wrappers in any of the four pairs carry an eligible concrete
+direct-nullary `*T` call's Zero or MayZero evidence to a declared-safe
+non-extern raw-pointer argument or return boundary. Both declaration orders
+reject before native planning. Depth three, indirect or generic calls, and
+local-candidate seeding remain outside this subset. Nonzero, Unknown, unsafe
+calls, and prior type errors retain their behavior. Move/Take bookkeeping,
+MIR, ABI, layout, runtime, and operator meaning are unchanged. General
+nullability and Phase 26.1 remain open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
