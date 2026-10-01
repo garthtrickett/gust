@@ -1152,9 +1152,6 @@ def main() -> None:
             take_call_surface.get("added_rows") == [] and
             sorted(take_call_changed) == sorted([
                 "compiler/typechecker.gst", "scripts/phase22_opening.py",
-                "scripts/phase23_production_release_audit.py",
-                "scripts/phase24_cr15_stdlib_guard_transition.py",
-                "scripts/phase24_filename_behavior_characterization.py",
                 "scripts/phase26_call_return_zero_registration.py",
             ]), "Take(Call) text surface set drifted")
     old_move_call_rows = {row["path"]: row for row in move_call_surface["changed_rows"]}

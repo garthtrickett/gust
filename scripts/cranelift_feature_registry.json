@@ -61096,54 +61096,9 @@
             }
           },
           {
-            "path": "scripts/phase23_production_release_audit.py",
-            "previous_digest": "bdd67000e4a09d7d1dce2f27747162e6c0b5c4ef9a564e8c940ceda6b9a9be70",
-            "current_digest": "3b7091f174c66bbd1680365ddc9b05e09f1a785fbe51dad594ca7a2f440fa459",
-            "previous_match_counts": {
-              "explicit_backend_spelling": 1,
-              "mir_to_c_name": 14,
-              "generated_c_contract": 2
-            },
-            "current_match_counts": {
-              "explicit_backend_spelling": 1,
-              "mir_to_c_name": 14,
-              "generated_c_contract": 2
-            }
-          },
-          {
-            "path": "scripts/phase24_cr15_stdlib_guard_transition.py",
-            "previous_digest": "76ed49b266161e7dd5cd3967bc80ca52c47bcc04dce23b9500792e378fa7afe7",
-            "current_digest": "ace272e0031c92ac781d6f523167f9bd25eafbc0230afd87ef28cdf29c781c98",
-            "previous_match_counts": {
-              "explicit_backend_spelling": 2,
-              "mir_to_c_name": 15,
-              "generated_c_contract": 6
-            },
-            "current_match_counts": {
-              "explicit_backend_spelling": 2,
-              "mir_to_c_name": 15,
-              "generated_c_contract": 6
-            }
-          },
-          {
-            "path": "scripts/phase24_filename_behavior_characterization.py",
-            "previous_digest": "39856e6b46f61994bc4047573c45ec9dc0832cc51c1ed05a99dd558400fa6b0e",
-            "current_digest": "0c229248c3613a7524802df95f0ebdd02cd6772359924024b8cd90d1ac67548a",
-            "previous_match_counts": {
-              "explicit_backend_spelling": 1,
-              "mir_to_c_name": 2,
-              "generated_c_contract": 1
-            },
-            "current_match_counts": {
-              "explicit_backend_spelling": 1,
-              "mir_to_c_name": 2,
-              "generated_c_contract": 1
-            }
-          },
-          {
             "path": "scripts/phase26_call_return_zero_registration.py",
             "previous_digest": "c14aea135e385c77232610853c79046350ca96aeec90e88e8e55f5cbc5a3ef53",
-            "current_digest": "a1f6f2fe18e4170521aba232ff544bbccaf04b761877b368796ce23048f10f97",
+            "current_digest": "fe7361a6b89cb6aed12cec442adb9cd1069c3a1c67cfff8ad435152ada4f7f2a",
             "previous_match_counts": {
               "explicit_backend_spelling": 0,
               "mir_to_c_name": 1,
