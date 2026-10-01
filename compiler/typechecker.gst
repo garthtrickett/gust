@@ -2228,26 +2228,15 @@ func phase26_zero_queue_direct_call_boundary(env: *TypeEnvironment[ctx], target_
 func phase26_zero_note_direct_call_boundary(env: *TypeEnvironment[ctx], target_t: ast.Type[ctx], expr_idx: Index[ast.Expression[ctx], ctx], span: token.Span, boundary: str, ctx: &Arena) {
     if target_t.tag != 9 { return; }
     mut direct_expr_idx := expr_idx;
-    mut wrapper_depth := 0;
-    if expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
+    while direct_expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
         unsafe {
-            mut boundary_expr := ctx[expr_idx];
-            if boundary_expr.tag == 4 { // One Move wrapper after ordinary typechecking.
+            mut boundary_expr := ctx[direct_expr_idx];
+            if boundary_expr.tag == 4 { // Peel checked Move/Take syntax only at this safe boundary.
                 direct_expr_idx = boundary_expr.Move.expr;
-                wrapper_depth = 1;
-            } else if boundary_expr.tag == 5 { // One Take wrapper after ordinary typechecking.
+            } else if boundary_expr.tag == 5 {
                 direct_expr_idx = boundary_expr.Take.expr;
-                wrapper_depth = 1;
-            }
-        }
-    }
-    if wrapper_depth == 1 && direct_expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
-        unsafe {
-            mut second_wrapper := ctx[direct_expr_idx];
-            if second_wrapper.tag == 4 { // Exactly two checked Move/Take wrappers.
-                direct_expr_idx = second_wrapper.Move.expr;
-            } else if second_wrapper.tag == 5 {
-                direct_expr_idx = second_wrapper.Take.expr;
+            } else {
+                break;
             }
         }
     }

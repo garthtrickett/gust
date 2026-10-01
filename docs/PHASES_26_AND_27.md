@@ -568,6 +568,19 @@ calls, and prior type errors retain their behavior. Move/Take bookkeeping,
 MIR, ABI, layout, runtime, and operator meaning are unchanged. General
 nullability and Phase 26.1 remain open.
 
+**26.1E checked Move/Take wrapper-chain safe boundary subset (ownership
+authorized 2026-10-01).** After ordinary typechecking and unsafe-call gates,
+the post-typecheck safe-boundary helper follows a syntactic chain of Move and
+Take expressions to the existing concrete direct-nullary `*T` call summary.
+Zero and MayZero evidence rejects at type-matched declared-safe non-extern
+argument and return boundaries before native planning, independent of callee
+declaration order. The source proof covers all eight three-wrapper combinations
+and a four-wrapper chain, while retaining one/two-wrapper regressions. Move/Take
+resource bookkeeping, local candidate seeding, indirect and generic callees,
+nonzero and unknown values, prior type errors, unsafe calls, MIR, ABI, layout,
+runtime, and operator meaning stay unchanged. This does not establish general
+nullability or close Phase 26.1.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
