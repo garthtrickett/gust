@@ -403,6 +403,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     call_direct_move_zero_successor = registry.get("phase26_activation_audit", {}).get(
         "call_direct_move_zero_evidence_increment", {}).get(
         "spelling_inventory_successor")
+    call_move_wrapper_zero_successor = registry.get("phase26_activation_audit", {}).get(
+        "call_move_wrapper_zero_evidence_increment", {}).get(
+        "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -1393,7 +1396,9 @@ def validate() -> tuple[dict, list[dict], dict]:
                 "phase26_1e_call_direct_move_zero_spelling_inventory_successor_v1" and
                 call_direct_move_zero_successor.get("previous_inventory_summary") ==
                 call_direct_take_zero_successor["current_inventory_summary"] and
-                call_direct_move_zero_successor.get("current_inventory_summary") == summary and
+                call_direct_move_zero_successor.get("current_inventory_summary") ==
+                (summary if call_move_wrapper_zero_successor is None else
+                 call_move_wrapper_zero_successor.get("previous_inventory_summary")) and
                 call_direct_move_zero_successor.get("changed_source_paths") == sorted([
                     "compiler/typechecker.gst",
                     "compiler/phase26_call_return_zero_test_entry.gst",
@@ -1403,6 +1408,28 @@ def validate() -> tuple[dict, list[dict], dict]:
                 call_direct_move_zero_successor.get("partial_extra_or_substituted_inventory") ==
                 "rejected" and summary["unknown_site_count"] == 0,
                 "Phase 26 direct-Move spelling inventory drifted")
+    if call_move_wrapper_zero_successor is not None:
+        move_call_names = ("argument_caller_first", "argument_callee_first",
+                           "argument_mayzero_caller_first", "argument_mayzero_callee_first",
+                           "return_caller_first", "return_callee_first",
+                           "return_mayzero_caller_first", "return_mayzero_callee_first",
+                           "nonzero", "unknown", "unsafe_target", "prior_error",
+                           "nested_move", "take", "type_mismatch")
+        require(call_direct_move_zero_successor is not None and
+                call_move_wrapper_zero_successor.get("contract_version") ==
+                "phase26_1e_call_move_wrapper_zero_spelling_inventory_successor_v1" and
+                call_move_wrapper_zero_successor.get("previous_inventory_summary") ==
+                call_direct_move_zero_successor["current_inventory_summary"] and
+                call_move_wrapper_zero_successor.get("current_inventory_summary") == summary and
+                call_move_wrapper_zero_successor.get("changed_source_paths") == sorted([
+                    "compiler/typechecker.gst",
+                    "compiler/phase26_call_return_zero_test_entry.gst",
+                    *[f"compiler/phase26_call_move_wrapper_zero_{name}_source.gst"
+                      for name in move_call_names],
+                ]) and
+                call_move_wrapper_zero_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and summary["unknown_site_count"] == 0,
+                "Phase 26 Move(Call) spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),

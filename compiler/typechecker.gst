@@ -2227,7 +2227,16 @@ func phase26_zero_queue_direct_call_boundary(env: *TypeEnvironment[ctx], target_
 
 func phase26_zero_note_direct_call_boundary(env: *TypeEnvironment[ctx], target_t: ast.Type[ctx], expr_idx: Index[ast.Expression[ctx], ctx], span: token.Span, boundary: str, ctx: &Arena) {
     if target_t.tag != 9 { return; }
-    mut callee_idx := phase26_zero_direct_nullary_callee(env, expr_idx, ctx);
+    mut direct_expr_idx := expr_idx;
+    if expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
+        unsafe {
+            mut boundary_expr := ctx[expr_idx];
+            if boundary_expr.tag == 4 { // One Move wrapper after ordinary typechecking.
+                direct_expr_idx = boundary_expr.Move.expr;
+            }
+        }
+    }
+    mut callee_idx := phase26_zero_direct_nullary_callee(env, direct_expr_idx, ctx);
     if callee_idx != empty[Index[str, ctx]] {
         unsafe { phase26_zero_queue_direct_call_boundary(env, target_t, ctx[callee_idx], span, boundary, ctx); }
     }

@@ -72,6 +72,65 @@ func check_wrapped_callees_excluded(ctx: &Arena) {
     }
 }
 
+func check_one_move_call_boundary(ctx: &Arena) {
+    unsafe {
+    mut env := typechecker.env_new(ctx);
+    mut stmt := parse_statement("unsafe func make_zero() *int { return empty[*int]; }", ctx);
+    typechecker.env_pre_register_statement(&env, ctx[stmt], ctx);
+    mut target := typechecker.make_type_pointer(typechecker.make_type_int(), ctx);
+    mut moved := parse_expression("move make_zero()", ctx);
+    mut moved_expr := ctx[moved];
+    typechecker.phase26_zero_note_direct_call_boundary(
+        &env, target, moved, moved_expr.Move.span, "function argument", ctx
+    );
+    if len(env.pending_zero_direct_calls) != 1 {
+        os.LogStr("Error: one Move(Call) boundary lost its direct summary"); os.Exit(1);
+    }
+    if typechecker.phase26_zero_direct_nullary_callee(&env, moved, ctx) != empty[Index[str, ctx]] {
+        os.LogStr("Error: Move(Call) changed direct local-candidate selection"); os.Exit(1);
+    }
+    mut inner_call_idx := moved_expr.Move.expr;
+    mut inner_call := ctx[inner_call_idx];
+    mut wrapped_callee: ast.Expression[ctx];
+    wrapped_callee.tag = 9; // AsCast is not a direct Identifier callee.
+    wrapped_callee.AsCast.left = inner_call.Call.function;
+    wrapped_callee.AsCast.span = inner_call.Call.span;
+    mut wrapped_callee_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+    ctx.Set(wrapped_callee_idx, wrapped_callee);
+    inner_call.Call.function = wrapped_callee_idx;
+    ctx.Set(inner_call_idx, inner_call);
+    typechecker.phase26_zero_note_direct_call_boundary(
+        &env, target, moved, moved_expr.Move.span, "function argument", ctx
+    );
+    mut nested := parse_expression("move move make_zero()", ctx);
+    typechecker.phase26_zero_note_direct_call_boundary(
+        &env, target, nested, moved_expr.Move.span, "function argument", ctx
+    );
+    mut taken := parse_expression("take make_zero()", ctx);
+    typechecker.phase26_zero_note_direct_call_boundary(
+        &env, target, taken, moved_expr.Move.span, "function argument", ctx
+    );
+    mut generic_lookup := env.function_registry.Get("make_zero");
+    if generic_lookup.Ok {
+        mut generic_sig := generic_lookup.Val;
+        mut generic_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
+        generic_sig.return_type = typechecker.make_type_pointer(
+            typechecker.make_type_generic("T", generic_args, ctx), ctx
+        );
+        env.function_registry.Insert("make_generic", generic_sig);
+    } else {
+        os.LogStr("Error: direct test signature missing"); os.Exit(1);
+    }
+    mut generic_call := parse_expression("move make_generic()", ctx);
+    typechecker.phase26_zero_note_direct_call_boundary(
+        &env, target, generic_call, moved_expr.Move.span, "function argument", ctx
+    );
+    if len(env.pending_zero_direct_calls) != 1 {
+        os.LogStr("Error: wrapped callee, nested Move, Take, or generic Call acquired a direct summary"); os.Exit(1);
+    }
+    }
+}
+
 func check_one_local_direct_call_shape(ctx: &Arena) {
     unsafe {
     mut env := typechecker.env_new(ctx);
@@ -243,6 +302,7 @@ func main() {
     check_summary("unsafe func pass_raw(ptr: *int) *int { return ptr; }",
                   "pass_raw", typechecker.phase26_zero_unknown(), 0, ctx);
     check_wrapped_callees_excluded(ctx);
+    check_one_move_call_boundary(ctx);
     check_one_local_direct_call_shape(ctx);
     os.LogStr("SUCCESS: checked direct-return zero summaries and excluded parameters and wrapped callees verified");
 }
