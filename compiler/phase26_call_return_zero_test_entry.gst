@@ -408,6 +408,34 @@ func check_summary(src: str, name: str, expected: int, present: int, ctx: &Arena
     }
 }
 
+func check_one_pointer_cast_boundary(src: str, target: ast.Type[ctx], checked: int, expected: int, ctx: &Arena) {
+    mut env := typechecker.env_new(ctx);
+    mut scope := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
+    mut stmt := parse_statement("unsafe func make_zero() *int { return empty[*int]; }", ctx);
+    typechecker.env_pre_register_statement(&env, ctx[stmt], ctx);
+    env.in_unsafe_block = 1;
+    mut expr_idx := parse_expression(src, ctx);
+    if checked == 1 {
+        typechecker.check_expression(expr_idx, &env, scope, ctx);
+        if len(env.errors) != 0 {
+            os.LogStr("Error: pointer cast boundary control did not typecheck");
+            os.LogStr(src);
+            os.LogStr(env.errors[0].message);
+            os.Exit(1);
+        }
+    }
+    mut span := typechecker.get_expression_span(expr_idx, ctx);
+    typechecker.phase26_zero_note_direct_call_boundary(
+        &env, target, expr_idx, span, "function argument", ctx
+    );
+    if len(env.pending_zero_direct_calls) != expected {
+        os.LogStr("Error: one checked RawPointer AsCast boundary selection drifted");
+        os.LogStr(src);
+        os.LogInt(len(env.pending_zero_direct_calls));
+        os.Exit(1);
+    }
+}
+
 func main() {
     mut ctx := os.Arena.New();
     defer ctx.Free();
@@ -428,5 +456,14 @@ func main() {
     check_one_take_call_boundary(ctx);
     check_wrapper_chain_boundary(ctx);
     check_one_local_direct_call_shape(ctx);
-    os.LogStr("SUCCESS: checked direct-return zero summaries and excluded parameters and wrapped callees verified");
+    mut int_pointer := typechecker.make_type_pointer(typechecker.make_type_int(), ctx);
+    mut byte_pointer := typechecker.make_type_pointer(typechecker.make_type_byte(), ctx);
+    check_one_pointer_cast_boundary("make_zero() as *int", int_pointer, 1, 1, ctx);
+    check_one_pointer_cast_boundary("make_zero() as *byte", byte_pointer, 1, 1, ctx);
+    check_one_pointer_cast_boundary("make_zero() as *int", int_pointer, 0, 0, ctx);
+    check_one_pointer_cast_boundary("(make_zero() as *int) as *int", int_pointer, 1, 0, ctx);
+    check_one_pointer_cast_boundary("move (make_zero() as *int)", int_pointer, 1, 0, ctx);
+    check_one_pointer_cast_boundary("(move make_zero()) as *int", int_pointer, 1, 0, ctx);
+    check_one_pointer_cast_boundary("0 as *int", int_pointer, 1, 0, ctx);
+    os.LogStr("SUCCESS: checked direct-return zero summaries, one RawPointer AsCast, and excluded wrappers verified");
 }

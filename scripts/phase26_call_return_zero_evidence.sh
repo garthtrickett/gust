@@ -16,7 +16,7 @@ test ! -s "$build_root/typechecker.compile.stdout"
 test ! -s "$build_root/typechecker.compile.stderr"
 "$build_root/typechecker" >"$build_root/typechecker.stdout" 2>"$build_root/typechecker.stderr"
 test ! -s "$build_root/typechecker.stderr"
-printf 'SUCCESS: checked direct-return zero summaries and excluded parameters and wrapped callees verified\n' >"$build_root/typechecker.expected"
+printf 'SUCCESS: checked direct-return zero summaries, one RawPointer AsCast, and excluded wrappers verified\n' >"$build_root/typechecker.expected"
 cmp -s "$build_root/typechecker.expected" "$build_root/typechecker.stdout"
 
 poison="$build_root/poison-driver"
@@ -527,5 +527,49 @@ for case_name in "${wrapper_chain_cases[@]}"; do
   test ! -e "$marker"
 done
 
+for case_name in argument_caller_first argument_callee_first other_pointer \
+                 return_caller_first return_callee_first mayzero_argument mayzero_return \
+                 nonzero unknown unsafe_target type_mismatch nested \
+                 move_cast cast_move take_cast cast_take; do
+  fixture="compiler/phase26_call_cast_zero_${case_name}_source.gst"
+  output="$build_root/cast_${case_name}"
+  boundary=
+  rm -f "$output" "$marker"
+  set +e
+  GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
+  GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER="$PWD/$marker" \
+  GUST_NATIVE_BACKEND_DRIVER="$PWD/$poison" \
+    ./gust --backend cranelift -o "$output" "$fixture" \
+      >"$output.stdout" 2>"$output.stderr"
+  status=$?
+  set -e
+  test "$status" -ne 0
+  case "$case_name" in
+    argument_caller_first) line=1; boundary=argument ;;
+    argument_callee_first|other_pointer|mayzero_argument) line=3; boundary=argument ;;
+    return_caller_first) line=1; boundary=return ;;
+    return_callee_first|mayzero_return) line=2; boundary=return ;;
+    type_mismatch)
+      rg -F "TypeError in $fixture at line 3:" "$output.stdout" >/dev/null
+      rg -F "Argument type mismatch for function 'accept_int'. Expected Int but got RawPointer(Int)" "$output.stdout" >/dev/null
+      if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
+      if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+    *)
+      rg -F 'decision=deferred capability=phase13_generic_source_to_mir' "$output.stdout" >/dev/null
+      rg -F 'reason_code=deferred_p13_parameter_argument_target_dependent_abi' "$output.stdout" >/dev/null
+      if rg -F 'TypeError' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+  esac
+  if [[ -n "$boundary" ]]; then
+    rg -F "TypeError in $fixture at line $line:" "$output.stdout" >/dev/null
+    rg -F "[RawNullSafeBoundary] Known zero-derived raw pointer cannot cross a declared-safe function $boundary" "$output.stdout" >/dev/null
+    if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
+  fi
+  test ! -s "$output.stderr"
+  test ! -e "$output"
+  test ! -e "$marker"
+done
+
 bash scripts/phase26_empty_raw_zero_evidence.sh
-echo 'Phase26.1E direct-call return, aliases, terminal Take/Move arguments, and checked wrapper-chain zero evidence and no-fallback passed.'
+echo 'Phase26.1E direct-call return, aliases, checked wrappers, and one RawPointer AsCast zero evidence and no-fallback passed.'
