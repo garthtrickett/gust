@@ -284,6 +284,22 @@ def scan_summary(rows: list[dict[str, object]]) -> dict[str, object]:
 def phase22_relay_inventory_rows(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep Phase 22's closed relay identity while validating exact successors."""
+    wrapper_chain = registry.get("phase26_activation_audit", {}).get(
+        "call_wrapper_chain_zero_evidence_increment", {}).get("phase22_invocation_successor")
+    if wrapper_chain is not None:
+        path = "scripts/phase26_call_return_zero_evidence.sh"
+        previous = registry["phase26_activation_audit"][
+            "call_two_wrapper_zero_evidence_increment"]["phase22_invocation_successor"]["added_rows"]
+        added = wrapper_chain.get("added_rows")
+        require(wrapper_chain.get("contract_version") ==
+                "phase26_1e_call_wrapper_chain_zero_phase22_invocation_successor_v1" and
+                wrapper_chain.get("previous_total") == 229 and
+                wrapper_chain.get("current_total") == 230 and
+                wrapper_chain.get("partial_extra_or_substituted_invocation") == "rejected" and
+                isinstance(added, list) and len(added) == 1 and
+                [row for row in rows if row.get("path") == path][10:] == previous + added,
+                "Phase 26 wrapper-chain invocation row drifted")
+        rows = [row for row in rows if row not in added]
     two_wrapper_zero = registry.get("phase26_activation_audit", {}).get(
         "call_two_wrapper_zero_evidence_increment", {}).get("phase22_invocation_successor")
     if two_wrapper_zero is not None:
