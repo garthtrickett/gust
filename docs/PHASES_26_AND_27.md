@@ -545,6 +545,18 @@ their behavior. Move and resource bookkeeping, MIR, ABI, layout, runtime,
 and operator meaning are unchanged. General nullability and Phase 26.1
 remain open.
 
+**26.1E one-wrapper Take(Call) boundary subset (ownership authorized
+2026-10-01).** After ordinary argument or return typechecking and unsafe-call
+gates, one syntactic `take` around an eligible concrete direct-nullary `*T`
+call carries its existing four-state return evidence to a declared-safe
+non-extern raw-pointer boundary. Proven Zero or MayZero rejects before native
+planning in either declaration order. Nested or second Take,
+Move(Take(Call)), indirect or generic calls, and local-candidate seeding remain
+outside this subset. Nonzero, Unknown, explicitly unsafe calls, and prior type
+errors retain their behavior. Take and resource bookkeeping, MIR, ABI, layout,
+runtime, and operator meaning are unchanged. General nullability and Phase
+26.1 remain open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

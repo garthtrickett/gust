@@ -2233,6 +2233,8 @@ func phase26_zero_note_direct_call_boundary(env: *TypeEnvironment[ctx], target_t
             mut boundary_expr := ctx[expr_idx];
             if boundary_expr.tag == 4 { // One Move wrapper after ordinary typechecking.
                 direct_expr_idx = boundary_expr.Move.expr;
+            } else if boundary_expr.tag == 5 { // One Take wrapper after ordinary typechecking.
+                direct_expr_idx = boundary_expr.Take.expr;
             }
         }
     }

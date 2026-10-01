@@ -33,6 +33,17 @@ def digest(path: str) -> str:
 def before_call_return_zero_digest(activation: dict, path: str,
                                    live_digest: str) -> str:
     """Project the later exact text-surface successor to this closed patch."""
+    take_call_rows = activation.get("call_take_wrapper_zero_evidence_increment", {}).get(
+        "phase23_text_surface_successor", {}).get("changed_rows", [])
+    take_call_selected = [row for row in take_call_rows if row.get("path") == path]
+    require(len(take_call_selected) <= 1,
+            f"duplicate Take(Call) text surface: {path}")
+    if take_call_selected:
+        take_call_row = take_call_selected[0]
+        require(take_call_row["current_digest"] == live_digest and
+                len(take_call_row["previous_digest"]) == 64,
+                f"Take(Call) text surface drifted: {path}")
+        live_digest = take_call_row["previous_digest"]
     move_call_rows = activation.get("call_move_wrapper_zero_evidence_increment", {}).get(
         "phase23_text_surface_successor", {}).get("changed_rows", [])
     move_call_selected = [row for row in move_call_rows if row.get("path") == path]

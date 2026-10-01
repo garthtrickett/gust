@@ -60828,6 +60828,339 @@
         "added_rows": [],
         "partial_extra_or_substituted_surface": "rejected"
       }
+    },
+    "call_take_wrapper_zero_evidence_increment": {
+      "contract_version": "phase26_1e_call_take_wrapper_zero_v1",
+      "status": "bounded_one_Take_Call_raw_pointer_safe_boundary_rejection_qualified",
+      "owner": "cranelift",
+      "increment": "26.1E_one_Take_Call_boundary_subset",
+      "operator_ownership_decision": "2026-10-01_bounded_one_Take_Call_boundary",
+      "value_states": [
+        "Unknown",
+        "Zero",
+        "Nonzero",
+        "MayZero"
+      ],
+      "candidate_shape": "one_syntactic_Take_around_concrete_direct_nullary_raw_pointer_Call_at_type_matched_safe_argument_or_return_boundary",
+      "summary_order": "after_all_function_bodies_before_native_planner",
+      "excluded_shapes": [
+        "nested_Take",
+        "Move_Take_Call",
+        "wrapped_or_indirect_callee",
+        "generic_call",
+        "local_candidate_seeding"
+      ],
+      "positive_fixture": "compiler/phase26_call_return_zero_test_entry.gst",
+      "negative_fixtures": [
+        "compiler/phase26_call_take_wrapper_zero_argument_caller_first_source.gst",
+        "compiler/phase26_call_take_wrapper_zero_argument_callee_first_source.gst",
+        "compiler/phase26_call_take_wrapper_zero_argument_mayzero_caller_first_source.gst",
+        "compiler/phase26_call_take_wrapper_zero_argument_mayzero_callee_first_source.gst",
+        "compiler/phase26_call_take_wrapper_zero_return_caller_first_source.gst",
+        "compiler/phase26_call_take_wrapper_zero_return_callee_first_source.gst",
+        "compiler/phase26_call_take_wrapper_zero_return_mayzero_caller_first_source.gst",
+        "compiler/phase26_call_take_wrapper_zero_return_mayzero_callee_first_source.gst"
+      ],
+      "control_fixtures": [
+        "compiler/phase26_call_take_wrapper_zero_nonzero_source.gst",
+        "compiler/phase26_call_take_wrapper_zero_unknown_source.gst",
+        "compiler/phase26_call_take_wrapper_zero_unsafe_target_source.gst",
+        "compiler/phase26_call_take_wrapper_zero_prior_error_source.gst",
+        "compiler/phase26_call_take_wrapper_zero_nested_take_source.gst",
+        "compiler/phase26_call_take_wrapper_zero_move_take_source.gst",
+        "compiler/phase26_call_take_wrapper_zero_type_mismatch_source.gst"
+      ],
+      "safe_boundaries": [
+        "declared_nonextern_raw_pointer_argument",
+        "declared_nonextern_raw_pointer_return"
+      ],
+      "negative_states": [
+        "Zero",
+        "MayZero"
+      ],
+      "prior_error_precedence": "preserved",
+      "unknown_and_nonzero": "preserved_without_general_nullability_claim",
+      "unsafe_callees": "preserved",
+      "take_move_semantics_changed": false,
+      "diagnostic": "[RawNullSafeBoundary]",
+      "failure_stage": "before_driver_discovery",
+      "native_fallback": false,
+      "physical_abi_changed": false,
+      "mir_changed": false,
+      "runtime_symbol_surface_changed": false,
+      "operator_semantics_changed": false,
+      "general_nullability": "open_separate_obligation",
+      "phase26_1_closed": false,
+      "owning_level2_guard": "guard-cranelift-phase26-call-return-zero-evidence",
+      "pr_fast_job": "phase26-ffi-position",
+      "phase22_invocation_successor": {
+        "contract_version": "phase26_1e_call_take_wrapper_zero_phase22_invocation_successor_v1",
+        "previous_total": 227,
+        "current_total": 228,
+        "added_rows": [
+          {
+            "path": "scripts/phase26_call_return_zero_evidence.sh",
+            "line": 370,
+            "recipe": "none",
+            "compiler_token": "./gust",
+            "selection": "explicit_cranelift",
+            "consumer_class": "already_explicit_or_parser_probe",
+            "owner": "cranelift",
+            "expected_artifact": "selected_backend_contract",
+            "expected_transition": "preserve_explicit_selection",
+            "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+            "command": "GUST_TEST_MIR_TO_C_UNAVAILABLE=1 GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER=\"$PWD/$marker\" GUST_NATIVE_BACKEND_DRIVER=\"$PWD/$poison\" ./gust --backend cranelift -o \"$output\" \"$fixture\" >\"$output.stdout\" 2>\"$output.stderr\""
+          }
+        ],
+        "partial_extra_or_substituted_invocation": "rejected"
+      },
+      "production_audit_successor": {
+        "contract_version": "phase26_1e_call_take_wrapper_zero_production_audit_successor_v1",
+        "previous_repository_invocation_count": 227,
+        "current_repository_invocation_count": 228,
+        "added_invocation_path": "scripts/phase26_call_return_zero_evidence.sh",
+        "unchanged_other_fields": true,
+        "partial_extra_or_substituted_audit": "rejected"
+      },
+      "spelling_inventory_successor": {
+        "contract_version": "phase26_1e_call_take_wrapper_zero_spelling_inventory_successor_v1",
+        "previous_inventory_summary": {
+          "source_file_count": 1358,
+          "site_count": 1398,
+          "semantic_site_count": 689,
+          "semantic_manifest_digest": "e0fa2f2b5203bf8fdc93b80e929cd532bc7ee02709da0ce1fee8c93a0d53b2c7",
+          "classification_counts": {
+            "semantic_or_intrinsic_recognition": 689,
+            "diagnostic": 10,
+            "serialization": 1,
+            "mangling_or_generated_name": 9,
+            "comment": 2,
+            "fixture_or_evidence": 679,
+            "non_decision_comparison": 8
+          },
+          "partition_manifest_digests": {
+            "diagnostic": "462da0c80f372632e1dc93c00e1097813afca32f9b862b173d3e0f8c5bbe822d",
+            "serialization": "a889ed384ae506f10b80c84fc00b91863328192597070abee5ec4324e92aef70",
+            "mangling_or_generated_name": "45e9af8bcd2c3f74f41409b7b4e4f1f143a8fe56a638e55bb355cb1b2e47beb8",
+            "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+            "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+            "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
+          },
+          "complete_manifest_digest": "26e03bd883d92542e6e751d9634d00932ace981fb9ffce7ae8efcd2c37e10c86",
+          "unknown_site_count": 0
+        },
+        "current_inventory_summary": {
+          "source_file_count": 1373,
+          "site_count": 1398,
+          "semantic_site_count": 689,
+          "semantic_manifest_digest": "7ec498dfeda2a7d5660f235c65159414da68520ab178e413b0d9f68616b67aea",
+          "classification_counts": {
+            "semantic_or_intrinsic_recognition": 689,
+            "diagnostic": 10,
+            "serialization": 1,
+            "mangling_or_generated_name": 9,
+            "comment": 2,
+            "fixture_or_evidence": 679,
+            "non_decision_comparison": 8
+          },
+          "partition_manifest_digests": {
+            "diagnostic": "c96d29dcb7dbc10caa9764ad94f495b33dd1345d3b82ccf41bf06a557ea23f36",
+            "serialization": "a889ed384ae506f10b80c84fc00b91863328192597070abee5ec4324e92aef70",
+            "mangling_or_generated_name": "9364025366b16b0736ca0eaeab47b62b4e98de9efc1f52bee87f3377ea252e97",
+            "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+            "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+            "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
+          },
+          "complete_manifest_digest": "16d97f9184a35f1cbb1e71dd04b993675473957dd773f6d50464c93d5273223a",
+          "unknown_site_count": 0
+        },
+        "changed_source_paths": [
+          "compiler/phase26_call_return_zero_test_entry.gst",
+          "compiler/phase26_call_take_wrapper_zero_argument_callee_first_source.gst",
+          "compiler/phase26_call_take_wrapper_zero_argument_caller_first_source.gst",
+          "compiler/phase26_call_take_wrapper_zero_argument_mayzero_callee_first_source.gst",
+          "compiler/phase26_call_take_wrapper_zero_argument_mayzero_caller_first_source.gst",
+          "compiler/phase26_call_take_wrapper_zero_move_take_source.gst",
+          "compiler/phase26_call_take_wrapper_zero_nested_take_source.gst",
+          "compiler/phase26_call_take_wrapper_zero_nonzero_source.gst",
+          "compiler/phase26_call_take_wrapper_zero_prior_error_source.gst",
+          "compiler/phase26_call_take_wrapper_zero_return_callee_first_source.gst",
+          "compiler/phase26_call_take_wrapper_zero_return_caller_first_source.gst",
+          "compiler/phase26_call_take_wrapper_zero_return_mayzero_callee_first_source.gst",
+          "compiler/phase26_call_take_wrapper_zero_return_mayzero_caller_first_source.gst",
+          "compiler/phase26_call_take_wrapper_zero_type_mismatch_source.gst",
+          "compiler/phase26_call_take_wrapper_zero_unknown_source.gst",
+          "compiler/phase26_call_take_wrapper_zero_unsafe_target_source.gst",
+          "compiler/typechecker.gst"
+        ],
+        "partial_extra_or_substituted_inventory": "rejected"
+      },
+      "filename_site_successor": {
+        "contract_version": "phase26_1e_call_take_wrapper_zero_filename_site_successor_v1",
+        "previous_sites": [
+          {
+            "id": "var_declaration_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 14862,
+            "selector": "test_tcs_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_var_declaration",
+            "window_digest": "6c0f176e1543d9a2ba125569875a69081a81b28bfc4c80eef31c57ec7ccfa05c"
+          },
+          {
+            "id": "assignment_hazard_and_view_invalidation",
+            "path": "compiler/typechecker.gst",
+            "line": 15197,
+            "selector": "test_index_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_assignment",
+            "window_digest": "eea5c7abf9fb4c50d51f644267c5ee59133db8d998a0fe7c25dd0ec1503029c3"
+          },
+          {
+            "id": "guard_payload_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 16240,
+            "selector": "test_tcs_",
+            "selector_occurrence": 2,
+            "statement_context": "statement_guard_payload_binding",
+            "window_digest": "4bf05983015fd1ecc3c3cc4c1399491868107155a5435fed90f8beeeb8f16a6f"
+          }
+        ],
+        "current_sites": [
+          {
+            "id": "var_declaration_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 14864,
+            "selector": "test_tcs_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_var_declaration",
+            "window_digest": "6c0f176e1543d9a2ba125569875a69081a81b28bfc4c80eef31c57ec7ccfa05c"
+          },
+          {
+            "id": "assignment_hazard_and_view_invalidation",
+            "path": "compiler/typechecker.gst",
+            "line": 15199,
+            "selector": "test_index_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_assignment",
+            "window_digest": "eea5c7abf9fb4c50d51f644267c5ee59133db8d998a0fe7c25dd0ec1503029c3"
+          },
+          {
+            "id": "guard_payload_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 16242,
+            "selector": "test_tcs_",
+            "selector_occurrence": 2,
+            "statement_context": "statement_guard_payload_binding",
+            "window_digest": "4bf05983015fd1ecc3c3cc4c1399491868107155a5435fed90f8beeeb8f16a6f"
+          }
+        ],
+        "line_deltas": [
+          2,
+          2,
+          2
+        ],
+        "partial_extra_or_substituted_site": "rejected"
+      },
+      "phase23_text_surface_successor": {
+        "contract_version": "phase26_1e_call_take_wrapper_zero_phase23_text_surface_successor_v1",
+        "changed_rows": [
+          {
+            "path": "compiler/typechecker.gst",
+            "previous_digest": "4eb51942ffc6bcde505e2ac9f72bea0890f0a7cbc2dfcd59b3eec5000948a1a1",
+            "current_digest": "951c144b3c651ad97a4bafd66a6fd3e5499460003edda586d8ba147169189350",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            }
+          },
+          {
+            "path": "scripts/phase22_opening.py",
+            "previous_digest": "870245e20c0ee1755360d1d853b5292da57f09bda76be25a7a310e3f455a8280",
+            "current_digest": "2d0513bdf7252fbe75e04b5ea7d4874bf77b44359bac5e0ff9a6844b85d8d084",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 5,
+              "mir_to_c_name": 23,
+              "generated_c_contract": 12
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 5,
+              "mir_to_c_name": 23,
+              "generated_c_contract": 12
+            }
+          },
+          {
+            "path": "scripts/phase23_production_release_audit.py",
+            "previous_digest": "bdd67000e4a09d7d1dce2f27747162e6c0b5c4ef9a564e8c940ceda6b9a9be70",
+            "current_digest": "3b7091f174c66bbd1680365ddc9b05e09f1a785fbe51dad594ca7a2f440fa459",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 14,
+              "generated_c_contract": 2
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 14,
+              "generated_c_contract": 2
+            }
+          },
+          {
+            "path": "scripts/phase24_cr15_stdlib_guard_transition.py",
+            "previous_digest": "76ed49b266161e7dd5cd3967bc80ca52c47bcc04dce23b9500792e378fa7afe7",
+            "current_digest": "ace272e0031c92ac781d6f523167f9bd25eafbc0230afd87ef28cdf29c781c98",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 2,
+              "mir_to_c_name": 15,
+              "generated_c_contract": 6
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 2,
+              "mir_to_c_name": 15,
+              "generated_c_contract": 6
+            }
+          },
+          {
+            "path": "scripts/phase24_filename_behavior_characterization.py",
+            "previous_digest": "39856e6b46f61994bc4047573c45ec9dc0832cc51c1ed05a99dd558400fa6b0e",
+            "current_digest": "0c229248c3613a7524802df95f0ebdd02cd6772359924024b8cd90d1ac67548a",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 2,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 2,
+              "generated_c_contract": 1
+            }
+          },
+          {
+            "path": "scripts/phase26_call_return_zero_registration.py",
+            "previous_digest": "c14aea135e385c77232610853c79046350ca96aeec90e88e8e55f5cbc5a3ef53",
+            "current_digest": "a1f6f2fe18e4170521aba232ff544bbccaf04b761877b368796ce23048f10f97",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            }
+          }
+        ],
+        "added_rows": [],
+        "partial_extra_or_substituted_surface": "rejected"
+      },
+      "promoted_predecessor_control": "compiler/phase26_call_move_wrapper_zero_take_source.gst",
+      "take_wrapper_hops": 1
     }
   },
   "phase25_historical9g_guard_repair": {
