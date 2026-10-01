@@ -408,7 +408,7 @@ func check_summary(src: str, name: str, expected: int, present: int, ctx: &Arena
     }
 }
 
-func check_one_pointer_cast_boundary(src: str, target: ast.Type[ctx], checked: int, expected: int, ctx: &Arena) {
+func check_pointer_cast_chain_boundary(src: str, target: ast.Type[ctx], checked: int, expected: int, ctx: &Arena) {
     mut env := typechecker.env_new(ctx);
     mut scope := typechecker.scope_new(empty[Index[typechecker.Scope[ctx], ctx]], ctx);
     mut stmt := parse_statement("unsafe func make_zero() *int { return empty[*int]; }", ctx);
@@ -429,7 +429,7 @@ func check_one_pointer_cast_boundary(src: str, target: ast.Type[ctx], checked: i
         &env, target, expr_idx, span, "function argument", ctx
     );
     if len(env.pending_zero_direct_calls) != expected {
-        os.LogStr("Error: one checked RawPointer AsCast boundary selection drifted");
+        os.LogStr("Error: checked RawPointer AsCast chain boundary selection drifted");
         os.LogStr(src);
         os.LogInt(len(env.pending_zero_direct_calls));
         os.Exit(1);
@@ -458,12 +458,16 @@ func main() {
     check_one_local_direct_call_shape(ctx);
     mut int_pointer := typechecker.make_type_pointer(typechecker.make_type_int(), ctx);
     mut byte_pointer := typechecker.make_type_pointer(typechecker.make_type_byte(), ctx);
-    check_one_pointer_cast_boundary("make_zero() as *int", int_pointer, 1, 1, ctx);
-    check_one_pointer_cast_boundary("make_zero() as *byte", byte_pointer, 1, 1, ctx);
-    check_one_pointer_cast_boundary("make_zero() as *int", int_pointer, 0, 0, ctx);
-    check_one_pointer_cast_boundary("(make_zero() as *int) as *int", int_pointer, 1, 0, ctx);
-    check_one_pointer_cast_boundary("move (make_zero() as *int)", int_pointer, 1, 0, ctx);
-    check_one_pointer_cast_boundary("(move make_zero()) as *int", int_pointer, 1, 0, ctx);
-    check_one_pointer_cast_boundary("0 as *int", int_pointer, 1, 0, ctx);
-    os.LogStr("SUCCESS: checked direct-return zero summaries, one RawPointer AsCast, and excluded wrappers verified");
+    check_pointer_cast_chain_boundary("make_zero() as *int", int_pointer, 1, 1, ctx);
+    check_pointer_cast_chain_boundary("make_zero() as *byte", byte_pointer, 1, 1, ctx);
+    check_pointer_cast_chain_boundary("make_zero() as *int", int_pointer, 0, 0, ctx);
+    check_pointer_cast_chain_boundary("(make_zero() as *int) as *int", int_pointer, 1, 1, ctx);
+    check_pointer_cast_chain_boundary("((make_zero() as *int) as *byte) as *int", int_pointer, 1, 1, ctx);
+    check_pointer_cast_chain_boundary("((make_zero() as *int) as *byte) as *int", int_pointer, 0, 0, ctx);
+    check_pointer_cast_chain_boundary("move (make_zero() as *int)", int_pointer, 1, 0, ctx);
+    check_pointer_cast_chain_boundary("(move make_zero()) as *int", int_pointer, 1, 0, ctx);
+    check_pointer_cast_chain_boundary("take (make_zero() as *int)", int_pointer, 1, 0, ctx);
+    check_pointer_cast_chain_boundary("(take make_zero()) as *int", int_pointer, 1, 0, ctx);
+    check_pointer_cast_chain_boundary("0 as *int", int_pointer, 1, 0, ctx);
+    os.LogStr("SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, and excluded wrappers verified");
 }

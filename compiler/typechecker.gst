@@ -2230,17 +2230,23 @@ func phase26_zero_note_direct_call_boundary(env: *TypeEnvironment[ctx], target_t
     if expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
         unsafe {
             mut outer := ctx[expr_idx];
-            if outer.tag == 9 { // One checked raw-pointer-to-raw-pointer AsCast.
-                mut cast_target := env_resolve_type(env, ctx[outer.AsCast.target_type], ctx);
-                if cast_target.tag != 9 ||
-                   phase26_zero_resolved_expression_tag(outer.AsCast.left, env, ctx) != 9 {
-                    return; // Missing or non-pointer source metadata is not evidence.
+            if outer.tag == 9 { // Every cast in this syntactic chain needs pointer proof.
+                mut cast_expr_idx := expr_idx;
+                while cast_expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
+                    mut cast_expr := ctx[cast_expr_idx];
+                    if cast_expr.tag != 9 { break; }
+                    mut cast_target := env_resolve_type(env, ctx[cast_expr.AsCast.target_type], ctx);
+                    if cast_target.tag != 9 ||
+                       phase26_zero_resolved_expression_tag(cast_expr.AsCast.left, env, ctx) != 9 {
+                        return; // Missing or non-pointer metadata is not evidence.
+                    }
+                    cast_expr_idx = cast_expr.AsCast.left;
                 }
-                mut cast_callee := phase26_zero_direct_nullary_callee(env, outer.AsCast.left, ctx);
+                mut cast_callee := phase26_zero_direct_nullary_callee(env, cast_expr_idx, ctx);
                 if cast_callee != empty[Index[str, ctx]] {
                     phase26_zero_queue_direct_call_boundary(env, target_t, ctx[cast_callee], span, boundary, ctx);
                 }
-                return; // Nested casts and Move/Take combinations remain excluded.
+                return; // Move/Take combinations and non-direct bases stay excluded.
             }
         }
     }

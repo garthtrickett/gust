@@ -594,6 +594,19 @@ Unknown values, unsafe targets, and earlier type errors retain their current
 behavior. This adds no cast semantics, MIR, ABI, layout, or runtime change and
 does not establish general nullability or close Phase 26.1.
 
+**26.1E checked RawPointer AsCast-chain safe-boundary subset (ownership
+authorized 2026-10-01).** The existing post-typecheck boundary check may peel a
+syntactic sequence of `as *T` expressions around one eligible concrete direct
+nullary call only when every cast's operand and target have resolved
+RawPointer types. Its existing Zero/MayZero summary then rejects a type-matched
+declared-safe non-extern raw-pointer argument or return before native planning,
+independent of declaration order. Missing metadata, Move/Take mixed with casts,
+scalar-to-pointer casts, indirect/generic calls, aliases, and branches do not
+gain a summary. Nonzero/Unknown and unsafe controls preserve their behavior;
+earlier type errors retain precedence. This is a source diagnostic only: no
+cast, MIR, ABI, layout, or runtime meaning changes, and general nullability
+and Phase 26.1 remain open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
