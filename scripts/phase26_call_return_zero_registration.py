@@ -77,18 +77,20 @@ def main() -> None:
     direct_take_record = activation.get("call_direct_take_zero_evidence_increment", {})
     direct_move_record = activation.get("call_direct_move_zero_evidence_increment", {})
     move_call_record = activation.get("call_move_wrapper_zero_evidence_increment", {})
+    take_call_record = activation.get("call_take_wrapper_zero_evidence_increment", {})
     require(record["phase22_invocation_successor"] == {
         "contract_version": "phase26_1e_call_return_zero_phase22_invocation_successor_v1",
         "previous_total": 218, "current_total": 220, "added_rows": rows[:2],
         "partial_extra_or_substituted_invocation": "rejected",
-    } and len(rows) == 9 and
+    } and len(rows) == 10 and
             local_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[2:3] and
             alias_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[3:4] and
             chain_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[4:5] and
             take_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[5:6] and
             direct_take_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[6:7] and
             direct_move_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[7:8] and
-            move_call_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[8:9],
+            move_call_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[8:9] and
+            take_call_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[9:10],
             "native invocation successor drifted")
     require(record["production_audit_successor"] == {
         "contract_version": "phase26_1e_call_return_zero_production_audit_successor_v1",
@@ -146,9 +148,16 @@ def main() -> None:
         "phase23_text_surface_successor", {}).get("changed_rows", [])}
     move_call_changed = {row["path"]: row for row in move_call_record.get(
         "phase23_text_surface_successor", {}).get("changed_rows", [])}
+    take_call_changed = {row["path"]: row for row in take_call_record.get(
+        "phase23_text_surface_successor", {}).get("changed_rows", [])}
     for row in surface["changed_rows"]:
         text = (ROOT / row["path"]).read_text(encoding="utf-8")
         live_digest = digest(row["path"])
+        take_call_successor = take_call_changed.get(row["path"])
+        if take_call_successor:
+            require(take_call_successor["current_digest"] == live_digest,
+                    f"Take(Call) text surface drifted: {row['path']}")
+            live_digest = take_call_successor["previous_digest"]
         move_call_successor = move_call_changed.get(row["path"])
         if move_call_successor:
             require(move_call_successor["current_digest"] == live_digest,
@@ -195,6 +204,11 @@ def main() -> None:
         successor = local_changed.get(row["path"])
         alias_successor = alias_changed.get(row["path"])
         live_digest = digest(row["path"])
+        take_call_successor = take_call_changed.get(row["path"])
+        if take_call_successor:
+            require(take_call_successor["current_digest"] == live_digest,
+                    f"Take(Call) text surface drifted: {row['path']}")
+            live_digest = take_call_successor["previous_digest"]
         move_call_successor = move_call_changed.get(row["path"])
         if move_call_successor:
             require(move_call_successor["current_digest"] == live_digest,
@@ -992,13 +1006,15 @@ def main() -> None:
         "contract_version": "phase26_1e_call_move_wrapper_zero_spelling_inventory_successor_v1",
         "previous_inventory_summary": direct_move_record[
             "spelling_inventory_successor"]["current_inventory_summary"],
-        "current_inventory_summary": manifest_summary(source_sites()),
+        "current_inventory_summary": take_call_record.get(
+            "spelling_inventory_successor", {}).get("previous_inventory_summary"),
         "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
                                         *move_call_fixtures]),
         "partial_extra_or_substituted_inventory": "rejected",
     }, "Move(Call) spelling inventory successor drifted")
     previous_move_call_sites = direct_move_record["filename_site_successor"]["current_sites"]
-    current_move_call_sites = filename_sites()
+    current_move_call_sites = take_call_record.get(
+        "filename_site_successor", {}).get("previous_sites")
     require(move_call_record["filename_site_successor"] == {
         "contract_version": "phase26_1e_call_move_wrapper_zero_filename_site_successor_v1",
         "previous_sites": previous_move_call_sites,
@@ -1026,10 +1042,14 @@ def main() -> None:
     for row in move_call_surface["changed_rows"]:
         text = (ROOT / row["path"]).read_text(encoding="utf-8")
         require(row["previous_digest"] == old_move_rows[row["path"]]["current_digest"] and
-                row["current_digest"] == digest(row["path"]) and
-                row["current_match_counts"] == {
-                    name: len(pattern.findall(text))
-                    for name, pattern in SURFACE_PATTERNS.items()} and
+                row["current_digest"] ==
+                (take_call_changed[row["path"]]["previous_digest"]
+                 if row["path"] in take_call_changed else digest(row["path"])) and
+                row["current_match_counts"] ==
+                (take_call_changed[row["path"]]["previous_match_counts"]
+                 if row["path"] in take_call_changed else {
+                     name: len(pattern.findall(text))
+                     for name, pattern in SURFACE_PATTERNS.items()}) and
                 row["previous_match_counts"] == row["current_match_counts"],
                 f"Move(Call) text surface drifted: {row['path']}")
     require("phase26_call_move_wrapper_zero_${case_name}_source.gst" in guard and
@@ -1039,6 +1059,122 @@ def main() -> None:
             "[RawNullSafeBoundary]" in guard and
             "test ! -e \"$marker\"" in guard,
             "Move(Call) native evidence weakened")
+
+    take_call_names = ("argument_caller_first", "argument_callee_first",
+                       "argument_mayzero_caller_first", "argument_mayzero_callee_first",
+                       "return_caller_first", "return_callee_first",
+                       "return_mayzero_caller_first", "return_mayzero_callee_first",
+                       "nonzero", "unknown", "unsafe_target", "prior_error",
+                       "nested_take", "move_take", "type_mismatch")
+    take_call_fixtures = [f"compiler/phase26_call_take_wrapper_zero_{name}_source.gst"
+                          for name in take_call_names]
+    take_call_static = {
+        "contract_version": "phase26_1e_call_take_wrapper_zero_v1",
+        "status": "bounded_one_Take_Call_raw_pointer_safe_boundary_rejection_qualified",
+        "owner": "cranelift", "increment": "26.1E_one_Take_Call_boundary_subset",
+        "operator_ownership_decision": "2026-10-01_bounded_one_Take_Call_boundary",
+        "value_states": ["Unknown", "Zero", "Nonzero", "MayZero"],
+        "candidate_shape": "one_syntactic_Take_around_concrete_direct_nullary_raw_pointer_Call_at_type_matched_safe_argument_or_return_boundary",
+        "summary_order": "after_all_function_bodies_before_native_planner",
+        "take_wrapper_hops": 1,
+        "excluded_shapes": ["nested_Take", "Move_Take_Call", "wrapped_or_indirect_callee",
+                            "generic_call", "local_candidate_seeding"],
+        "promoted_predecessor_control":
+            "compiler/phase26_call_move_wrapper_zero_take_source.gst",
+        "positive_fixture": POSITIVE,
+        "negative_fixtures": take_call_fixtures[:8],
+        "control_fixtures": take_call_fixtures[8:],
+        "safe_boundaries": ["declared_nonextern_raw_pointer_argument",
+                            "declared_nonextern_raw_pointer_return"],
+        "negative_states": ["Zero", "MayZero"],
+        "prior_error_precedence": "preserved",
+        "unknown_and_nonzero": "preserved_without_general_nullability_claim",
+        "unsafe_callees": "preserved", "take_move_semantics_changed": False,
+        "diagnostic": "[RawNullSafeBoundary]",
+        "failure_stage": "before_driver_discovery", "native_fallback": False,
+        "physical_abi_changed": False, "mir_changed": False,
+        "runtime_symbol_surface_changed": False,
+        "operator_semantics_changed": False,
+        "general_nullability": "open_separate_obligation", "phase26_1_closed": False,
+        "owning_level2_guard": GUARD, "pr_fast_job": "phase26-ffi-position",
+    }
+    for key, value in take_call_static.items():
+        require(take_call_record.get(key) == value,
+                f"Take(Call) successor field drifted: {key}")
+    require(set(take_call_record) == set(take_call_static) | {
+        "phase22_invocation_successor", "production_audit_successor",
+        "spelling_inventory_successor", "filename_site_successor",
+        "phase23_text_surface_successor",
+    } and all((ROOT / path).is_file() for path in take_call_fixtures),
+            "Take(Call) successor fields or fixtures drifted")
+    require(take_call_record["phase22_invocation_successor"] == {
+        "contract_version": "phase26_1e_call_take_wrapper_zero_phase22_invocation_successor_v1",
+        "previous_total": 227, "current_total": 228,
+        "added_rows": rows[9:10],
+        "partial_extra_or_substituted_invocation": "rejected",
+    } and len(rows[9:10]) == 1, "Take(Call) invocation successor drifted")
+    require(take_call_record["production_audit_successor"] == {
+        "contract_version": "phase26_1e_call_take_wrapper_zero_production_audit_successor_v1",
+        "previous_repository_invocation_count": 227,
+        "current_repository_invocation_count": 228,
+        "added_invocation_path": SCRIPT, "unchanged_other_fields": True,
+        "partial_extra_or_substituted_audit": "rejected",
+    }, "Take(Call) production audit successor drifted")
+    require(take_call_record["spelling_inventory_successor"] == {
+        "contract_version": "phase26_1e_call_take_wrapper_zero_spelling_inventory_successor_v1",
+        "previous_inventory_summary": move_call_record[
+            "spelling_inventory_successor"]["current_inventory_summary"],
+        "current_inventory_summary": manifest_summary(source_sites()),
+        "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
+                                        *take_call_fixtures]),
+        "partial_extra_or_substituted_inventory": "rejected",
+    }, "Take(Call) spelling inventory successor drifted")
+    previous_take_call_sites = move_call_record["filename_site_successor"]["current_sites"]
+    current_take_call_sites = filename_sites()
+    require(take_call_record["filename_site_successor"] == {
+        "contract_version": "phase26_1e_call_take_wrapper_zero_filename_site_successor_v1",
+        "previous_sites": previous_take_call_sites,
+        "current_sites": current_take_call_sites,
+        "line_deltas": [now["line"] - before["line"]
+                        for before, now in zip(previous_take_call_sites,
+                                               current_take_call_sites)],
+        "partial_extra_or_substituted_site": "rejected",
+    } and len(previous_take_call_sites) == len(current_take_call_sites) == 3 and
+            all(now["line"] >= before["line"] and
+                {key: value for key, value in now.items() if key != "line"} ==
+                {key: value for key, value in before.items() if key != "line"}
+                for before, now in zip(previous_take_call_sites, current_take_call_sites)),
+            "Take(Call) filename successor drifted")
+    take_call_surface = take_call_record["phase23_text_surface_successor"]
+    require(take_call_surface.get("contract_version") ==
+            "phase26_1e_call_take_wrapper_zero_phase23_text_surface_successor_v1" and
+            take_call_surface.get("partial_extra_or_substituted_surface") == "rejected" and
+            take_call_surface.get("added_rows") == [] and
+            sorted(take_call_changed) == sorted([
+                "compiler/typechecker.gst", "scripts/phase22_opening.py",
+                "scripts/phase26_call_return_zero_registration.py",
+            ]), "Take(Call) text surface set drifted")
+    old_move_call_rows = {row["path"]: row for row in move_call_surface["changed_rows"]}
+    for row in take_call_surface["changed_rows"]:
+        text = (ROOT / row["path"]).read_text(encoding="utf-8")
+        predecessor = old_move_call_rows.get(row["path"])
+        require(len(row["previous_digest"]) == 64 and
+                (predecessor is None or
+                 row["previous_digest"] == predecessor["current_digest"]) and
+                row["current_digest"] == digest(row["path"]) and
+                row["current_match_counts"] == {
+                    name: len(pattern.findall(text))
+                    for name, pattern in SURFACE_PATTERNS.items()},
+                f"Take(Call) text surface drifted: {row['path']}")
+    require("phase26_call_take_wrapper_zero_${case_name}_source.gst" in guard and
+            "return_mayzero_callee_first" in guard and
+            "nested_take" in guard and "move_take" in guard and
+            "take) line=4; boundary=argument" in guard and
+            "check_one_take_call_boundary(ctx);" in
+            (ROOT / POSITIVE).read_text(encoding="utf-8") and
+            "[RawNullSafeBoundary]" in guard and
+            "test ! -e \"$marker\"" in guard,
+            "Take(Call) native evidence weakened")
     print(f"{GUARD}: registration ok")
 
 

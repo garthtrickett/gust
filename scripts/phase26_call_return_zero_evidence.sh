@@ -334,6 +334,52 @@ for case_name in argument_caller_first argument_callee_first argument_mayzero_ca
     argument_callee_first|argument_mayzero_callee_first) line=4; boundary=argument ;;
     return_caller_first|return_mayzero_caller_first) line=2; boundary=return ;;
     return_callee_first|return_mayzero_callee_first) line=3; boundary=return ;;
+    take) line=4; boundary=argument ;;
+    prior_error)
+      rg -F "TypeError in $fixture at line 3:" "$output.stdout" >/dev/null
+      rg -F '[TypeMismatch] Return type mismatch. Expected Int but got Str' "$output.stdout" >/dev/null
+      if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+    type_mismatch)
+      rg -F "TypeError in $fixture at line 4:" "$output.stdout" >/dev/null
+      rg -F "Argument type mismatch for function 'accept_raw'. Expected Int but got RawPointer(Int)" "$output.stdout" >/dev/null
+      if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+    *)
+      rg -F 'decision=deferred capability=phase13_generic_source_to_mir' "$output.stdout" >/dev/null
+      rg -F 'reason_code=deferred_p13_parameter_argument_target_dependent_abi' "$output.stdout" >/dev/null
+      if rg -F 'TypeError' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+  esac
+  if [[ -n "${boundary:-}" ]]; then
+    rg -F "TypeError in $fixture at line $line:" "$output.stdout" >/dev/null
+    rg -F "[RawNullSafeBoundary] Known zero-derived raw pointer cannot cross a declared-safe function $boundary" "$output.stdout" >/dev/null
+    if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
+    boundary=
+  fi
+  test ! -s "$output.stderr"
+  test ! -e "$output"
+  test ! -e "$marker"
+done
+
+for case_name in argument_caller_first argument_callee_first argument_mayzero_caller_first argument_mayzero_callee_first return_caller_first return_callee_first return_mayzero_caller_first return_mayzero_callee_first nonzero unknown unsafe_target prior_error nested_take move_take type_mismatch; do
+  fixture="compiler/phase26_call_take_wrapper_zero_${case_name}_source.gst"
+  output="$build_root/take_call_${case_name}"
+  rm -f "$output" "$marker"
+  set +e
+  GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
+  GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER="$PWD/$marker" \
+  GUST_NATIVE_BACKEND_DRIVER="$PWD/$poison" \
+    ./gust --backend cranelift -o "$output" "$fixture" \
+      >"$output.stdout" 2>"$output.stderr"
+  status=$?
+  set -e
+  test "$status" -ne 0
+  case "$case_name" in
+    argument_caller_first|argument_mayzero_caller_first) line=3; boundary=argument ;;
+    argument_callee_first|argument_mayzero_callee_first) line=4; boundary=argument ;;
+    return_caller_first|return_mayzero_caller_first) line=2; boundary=return ;;
+    return_callee_first|return_mayzero_callee_first) line=3; boundary=return ;;
     prior_error)
       rg -F "TypeError in $fixture at line 3:" "$output.stdout" >/dev/null
       rg -F '[TypeMismatch] Return type mismatch. Expected Int but got Str' "$output.stdout" >/dev/null
@@ -362,4 +408,4 @@ for case_name in argument_caller_first argument_callee_first argument_mayzero_ca
 done
 
 bash scripts/phase26_empty_raw_zero_evidence.sh
-echo 'Phase26.1E direct-call return, aliases, and terminal Take/Move argument zero evidence and no-fallback passed.'
+echo 'Phase26.1E direct-call return, aliases, terminal Take/Move arguments, and one-call wrappers zero evidence and no-fallback passed.'
