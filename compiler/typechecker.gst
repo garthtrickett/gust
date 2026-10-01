@@ -2230,6 +2230,39 @@ func phase26_zero_note_direct_call_boundary(env: *TypeEnvironment[ctx], target_t
     if expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
         unsafe {
             mut outer := ctx[expr_idx];
+            // Admit exactly one checked raw-pointer cast and one Move/Take in
+            // either order. The existing pure chains below remain independent.
+            mut mixed_cast_idx := empty[Index[ast.Expression[ctx], ctx]];
+            mut mixed_call_idx := empty[Index[ast.Expression[ctx], ctx]];
+            if outer.tag == 9 {
+                mut inner_idx := outer.AsCast.left;
+                if inner_idx != empty[Index[ast.Expression[ctx], ctx]] {
+                    mut inner := ctx[inner_idx];
+                    if inner.tag == 4 { mixed_cast_idx = expr_idx; mixed_call_idx = inner.Move.expr; }
+                    if inner.tag == 5 { mixed_cast_idx = expr_idx; mixed_call_idx = inner.Take.expr; }
+                }
+            } else if outer.tag == 4 || outer.tag == 5 {
+                mut inner_idx := empty[Index[ast.Expression[ctx], ctx]];
+                if outer.tag == 4 { inner_idx = outer.Move.expr; }
+                if outer.tag == 5 { inner_idx = outer.Take.expr; }
+                if inner_idx != empty[Index[ast.Expression[ctx], ctx]] {
+                    mut inner := ctx[inner_idx];
+                    if inner.tag == 9 { mixed_cast_idx = inner_idx; mixed_call_idx = inner.AsCast.left; }
+                }
+            }
+            if mixed_cast_idx != empty[Index[ast.Expression[ctx], ctx]] {
+                mut mixed_cast := ctx[mixed_cast_idx];
+                mut cast_target := env_resolve_type(env, ctx[mixed_cast.AsCast.target_type], ctx);
+                if cast_target.tag != 9 ||
+                   phase26_zero_resolved_expression_tag(mixed_cast.AsCast.left, env, ctx) != 9 {
+                    return;
+                }
+                mut mixed_callee := phase26_zero_direct_nullary_callee(env, mixed_call_idx, ctx);
+                if mixed_callee != empty[Index[str, ctx]] {
+                    phase26_zero_queue_direct_call_boundary(env, target_t, ctx[mixed_callee], span, boundary, ctx);
+                }
+                return;
+            }
             if outer.tag == 9 { // Every cast in this syntactic chain needs pointer proof.
                 mut cast_expr_idx := expr_idx;
                 while cast_expr_idx != empty[Index[ast.Expression[ctx], ctx]] {

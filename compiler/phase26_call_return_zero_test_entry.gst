@@ -429,7 +429,7 @@ func check_pointer_cast_chain_boundary(src: str, target: ast.Type[ctx], checked:
         &env, target, expr_idx, span, "function argument", ctx
     );
     if len(env.pending_zero_direct_calls) != expected {
-        os.LogStr("Error: checked RawPointer AsCast chain boundary selection drifted");
+        os.LogStr("Error: checked RawPointer AsCast or mixed Move/Take boundary selection drifted");
         os.LogStr(src);
         os.LogInt(len(env.pending_zero_direct_calls));
         os.Exit(1);
@@ -464,10 +464,16 @@ func main() {
     check_pointer_cast_chain_boundary("(make_zero() as *int) as *int", int_pointer, 1, 1, ctx);
     check_pointer_cast_chain_boundary("((make_zero() as *int) as *byte) as *int", int_pointer, 1, 1, ctx);
     check_pointer_cast_chain_boundary("((make_zero() as *int) as *byte) as *int", int_pointer, 0, 0, ctx);
-    check_pointer_cast_chain_boundary("move (make_zero() as *int)", int_pointer, 1, 0, ctx);
-    check_pointer_cast_chain_boundary("(move make_zero()) as *int", int_pointer, 1, 0, ctx);
-    check_pointer_cast_chain_boundary("take (make_zero() as *int)", int_pointer, 1, 0, ctx);
-    check_pointer_cast_chain_boundary("(take make_zero()) as *int", int_pointer, 1, 0, ctx);
+    check_pointer_cast_chain_boundary("move (make_zero() as *int)", int_pointer, 1, 1, ctx);
+    check_pointer_cast_chain_boundary("(move make_zero()) as *int", int_pointer, 1, 1, ctx);
+    check_pointer_cast_chain_boundary("take (make_zero() as *int)", int_pointer, 1, 1, ctx);
+    check_pointer_cast_chain_boundary("(take make_zero()) as *int", int_pointer, 1, 1, ctx);
+    check_pointer_cast_chain_boundary("move (make_zero() as *int)", int_pointer, 0, 0, ctx);
+    check_pointer_cast_chain_boundary("(take make_zero()) as *int", int_pointer, 0, 0, ctx);
+    check_pointer_cast_chain_boundary("move ((make_zero() as *int) as *int)", int_pointer, 1, 0, ctx);
+    check_pointer_cast_chain_boundary("((move make_zero()) as *int) as *int", int_pointer, 1, 0, ctx);
+    check_pointer_cast_chain_boundary("move take (make_zero() as *int)", int_pointer, 1, 0, ctx);
+    check_pointer_cast_chain_boundary("(move take make_zero()) as *int", int_pointer, 1, 0, ctx);
     check_pointer_cast_chain_boundary("0 as *int", int_pointer, 1, 0, ctx);
-    os.LogStr("SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, and excluded wrappers verified");
+    os.LogStr("SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, bounded mixed Move/Take casts, and exclusions verified");
 }
