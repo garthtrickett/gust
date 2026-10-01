@@ -621,6 +621,21 @@ and unsafe controls keep their prior behavior. Move/Take bookkeeping, cast
 meaning, MIR, ABI, layout, and runtime are unchanged. General nullability and
 Phase 26.1 remain open.
 
+**26.1E checked mixed cast/Move-Take chain subset (ownership authorized
+2026-10-01).** After the prior full compiler suite reached and passed the
+Phase 21 native corpus, stopping only at the locally absent `tree-sitter` CLI,
+the two exact-main deferred mixed controls were reproduced with a poison
+driver. The post-typecheck safe argument/return check may walk a finite
+syntactic chain containing at least one Move/Take and one `as` cast around the
+same concrete direct nullary raw-pointer call. Every cast must have resolved
+RawPointer operand and target metadata; missing or non-pointer metadata gives
+no summary. The unchanged four-state callee summary rejects Zero/MayZero before
+native planning in either declaration order. Pure wrapper and pure cast chains,
+prior type errors, nonzero/Unknown and unsafe controls retain their behavior.
+This subset changes no Move/Take bookkeeping, MIR, ABI, layout, runtime, or
+stdlib semantics. Aliases, branches, indirect/generic calls, general
+nullability, and Phase 26.1 closure remain separate obligations.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

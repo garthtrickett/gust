@@ -470,10 +470,16 @@ func main() {
     check_pointer_cast_chain_boundary("(take make_zero()) as *int", int_pointer, 1, 1, ctx);
     check_pointer_cast_chain_boundary("move (make_zero() as *int)", int_pointer, 0, 0, ctx);
     check_pointer_cast_chain_boundary("(take make_zero()) as *int", int_pointer, 0, 0, ctx);
-    check_pointer_cast_chain_boundary("move ((make_zero() as *int) as *int)", int_pointer, 1, 0, ctx);
-    check_pointer_cast_chain_boundary("((move make_zero()) as *int) as *int", int_pointer, 1, 0, ctx);
-    check_pointer_cast_chain_boundary("move take (make_zero() as *int)", int_pointer, 1, 0, ctx);
-    check_pointer_cast_chain_boundary("(move take make_zero()) as *int", int_pointer, 1, 0, ctx);
+    check_pointer_cast_chain_boundary("move ((make_zero() as *int) as *int)", int_pointer, 1, 1, ctx);
+    check_pointer_cast_chain_boundary("((move make_zero()) as *int) as *int", int_pointer, 1, 1, ctx);
+    check_pointer_cast_chain_boundary("move take (make_zero() as *int)", int_pointer, 1, 1, ctx);
+    check_pointer_cast_chain_boundary("(move take make_zero()) as *int", int_pointer, 1, 1, ctx);
+    check_pointer_cast_chain_boundary("move ((take make_zero() as *int) as *int)", int_pointer, 1, 1, ctx);
+    check_pointer_cast_chain_boundary("(take (move (make_zero() as *int))) as *int", int_pointer, 1, 1, ctx);
+    check_pointer_cast_chain_boundary("take (move (take (make_zero() as *int))) as *int", int_pointer, 1, 1, ctx);
+    check_pointer_cast_chain_boundary("move ((take make_zero() as *int) as *byte)", byte_pointer, 1, 1, ctx);
+    check_pointer_cast_chain_boundary("move ((take make_zero() as *int) as *int)", int_pointer, 0, 0, ctx);
+    check_pointer_cast_chain_boundary("move ((make_zero() as int) as *int)", int_pointer, 1, 0, ctx);
     check_pointer_cast_chain_boundary("0 as *int", int_pointer, 1, 0, ctx);
-    os.LogStr("SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, bounded mixed Move/Take casts, and exclusions verified");
+    os.LogStr("SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, mixed Move/Take cast chains, and exclusions verified");
 }

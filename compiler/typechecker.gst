@@ -2230,34 +2230,34 @@ func phase26_zero_note_direct_call_boundary(env: *TypeEnvironment[ctx], target_t
     if expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
         unsafe {
             mut outer := ctx[expr_idx];
-            // Admit exactly one checked raw-pointer cast and one Move/Take in
-            // either order. The existing pure chains below remain independent.
-            mut mixed_cast_idx := empty[Index[ast.Expression[ctx], ctx]];
-            mut mixed_call_idx := empty[Index[ast.Expression[ctx], ctx]];
-            if outer.tag == 9 {
-                mut inner_idx := outer.AsCast.left;
-                if inner_idx != empty[Index[ast.Expression[ctx], ctx]] {
-                    mut inner := ctx[inner_idx];
-                    if inner.tag == 4 { mixed_cast_idx = expr_idx; mixed_call_idx = inner.Move.expr; }
-                    if inner.tag == 5 { mixed_cast_idx = expr_idx; mixed_call_idx = inner.Take.expr; }
-                }
-            } else if outer.tag == 4 || outer.tag == 5 {
-                mut inner_idx := empty[Index[ast.Expression[ctx], ctx]];
-                if outer.tag == 4 { inner_idx = outer.Move.expr; }
-                if outer.tag == 5 { inner_idx = outer.Take.expr; }
-                if inner_idx != empty[Index[ast.Expression[ctx], ctx]] {
-                    mut inner := ctx[inner_idx];
-                    if inner.tag == 9 { mixed_cast_idx = inner_idx; mixed_call_idx = inner.AsCast.left; }
+            // Inspect the already-typechecked syntax only. A mixed chain must
+            // prove every cast is raw-pointer to raw-pointer; Move/Take keep
+            // their existing typecheck and resource bookkeeping.
+            mut mixed_expr_idx := expr_idx;
+            mut saw_cast := 0;
+            mut saw_wrapper := 0;
+            while mixed_expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
+                mut mixed_expr := ctx[mixed_expr_idx];
+                if mixed_expr.tag == 9 { // AsCast
+                    mut cast_target := env_resolve_type(env, ctx[mixed_expr.AsCast.target_type], ctx);
+                    if cast_target.tag != 9 ||
+                       phase26_zero_resolved_expression_tag(mixed_expr.AsCast.left, env, ctx) != 9 {
+                        return; // Missing or non-pointer metadata is not evidence.
+                    }
+                    saw_cast = 1;
+                    mixed_expr_idx = mixed_expr.AsCast.left;
+                } else if mixed_expr.tag == 4 { // Move
+                    saw_wrapper = 1;
+                    mixed_expr_idx = mixed_expr.Move.expr;
+                } else if mixed_expr.tag == 5 { // Take
+                    saw_wrapper = 1;
+                    mixed_expr_idx = mixed_expr.Take.expr;
+                } else {
+                    break;
                 }
             }
-            if mixed_cast_idx != empty[Index[ast.Expression[ctx], ctx]] {
-                mut mixed_cast := ctx[mixed_cast_idx];
-                mut cast_target := env_resolve_type(env, ctx[mixed_cast.AsCast.target_type], ctx);
-                if cast_target.tag != 9 ||
-                   phase26_zero_resolved_expression_tag(mixed_cast.AsCast.left, env, ctx) != 9 {
-                    return;
-                }
-                mut mixed_callee := phase26_zero_direct_nullary_callee(env, mixed_call_idx, ctx);
+            if saw_cast == 1 && saw_wrapper == 1 {
+                mut mixed_callee := phase26_zero_direct_nullary_callee(env, mixed_expr_idx, ctx);
                 if mixed_callee != empty[Index[str, ctx]] {
                     phase26_zero_queue_direct_call_boundary(env, target_t, ctx[mixed_callee], span, boundary, ctx);
                 }

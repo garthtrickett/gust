@@ -33,6 +33,17 @@ def digest(path: str) -> str:
 def before_call_return_zero_digest(activation: dict, path: str,
                                    live_digest: str) -> str:
     """Project the later exact text-surface successor to this closed patch."""
+    mixed_chain_rows = activation.get("call_mixed_chain_zero_evidence_increment", {}).get(
+        "phase23_text_surface_successor", {}).get("changed_rows", [])
+    mixed_chain_selected = [row for row in mixed_chain_rows if row.get("path") == path]
+    require(len(mixed_chain_selected) <= 1,
+            f"duplicate mixed-chain text surface: {path}")
+    if mixed_chain_selected:
+        chain_row = mixed_chain_selected[0]
+        require(chain_row["current_digest"] == live_digest and
+                len(chain_row["previous_digest"]) == 64,
+                f"mixed-chain text surface drifted: {path}")
+        live_digest = chain_row["previous_digest"]
     mixed_rows = activation.get("call_mixed_cast_zero_evidence_increment", {}).get(
         "phase23_text_surface_successor", {}).get("changed_rows", [])
     mixed_selected = [row for row in mixed_rows if row.get("path") == path]

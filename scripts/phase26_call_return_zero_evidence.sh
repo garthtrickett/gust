@@ -16,7 +16,7 @@ test ! -s "$build_root/typechecker.compile.stdout"
 test ! -s "$build_root/typechecker.compile.stderr"
 "$build_root/typechecker" >"$build_root/typechecker.stdout" 2>"$build_root/typechecker.stderr"
 test ! -s "$build_root/typechecker.stderr"
-printf 'SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, bounded mixed Move/Take casts, and exclusions verified\n' >"$build_root/typechecker.expected"
+printf 'SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, mixed Move/Take cast chains, and exclusions verified\n' >"$build_root/typechecker.expected"
 cmp -s "$build_root/typechecker.expected" "$build_root/typechecker.stdout"
 
 poison="$build_root/poison-driver"
@@ -549,7 +549,7 @@ for case_name in argument_caller_first argument_callee_first other_pointer retur
     argument_callee_first|other_pointer|mayzero_argument|nested|chain_argument_callee_first|chain_mayzero_argument|chain_depth3_argument) line=3; boundary=argument ;;
     return_caller_first|chain_return_caller_first) line=1; boundary=return ;;
     return_callee_first|mayzero_return|chain_return_callee_first|chain_depth3_mayzero_return) line=2; boundary=return ;;
-    move_cast|cast_move|take_cast|cast_take) line=3; boundary=argument ;;
+    move_cast|cast_move|take_cast|cast_take|chain_move_cast|chain_cast_move|chain_take_cast|chain_cast_take) line=3; boundary=argument ;;
     type_mismatch|chain_type_mismatch)
       rg -F "TypeError in $fixture at line 3:" "$output.stdout" >/dev/null
       rg -F "Argument type mismatch for function 'accept_int'. Expected Int but got RawPointer(Int)" "$output.stdout" >/dev/null
@@ -602,7 +602,7 @@ for shape in move_cast cast_move take_cast cast_take; do
   done
 done
 
-for case_name in nonzero unknown unsafe_target type_mismatch two_casts two_wrappers scalar_cast indirect; do
+for case_name in nonzero unknown unsafe_target type_mismatch scalar_cast indirect; do
   fixture="compiler/phase26_call_mixed_cast_zero_${case_name}_source.gst"
   output="$build_root/mixed_${case_name}"
   rm -f "$output" "$marker"
@@ -635,6 +635,84 @@ for case_name in nonzero unknown unsafe_target type_mismatch two_casts two_wrapp
   test ! -e "$marker"
 done
 
+for case_name in two_casts two_wrappers; do
+  fixture="compiler/phase26_call_mixed_cast_zero_${case_name}_source.gst"
+  output="$build_root/mixed_$case_name"
+  rm -f "$output" "$marker"
+  set +e
+  GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
+  GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER="$PWD/$marker" \
+  GUST_NATIVE_BACKEND_DRIVER="$PWD/$poison" \
+    ./gust --backend cranelift -o "$output" "$fixture" \
+      >"$output.stdout" 2>"$output.stderr"
+  status=$?
+  set -e
+  test "$status" -ne 0
+  rg -F "TypeError in $fixture at line 3:" "$output.stdout" >/dev/null
+  rg -F '[RawNullSafeBoundary] Known zero-derived raw pointer cannot cross a declared-safe function argument' "$output.stdout" >/dev/null
+  if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
+  test ! -s "$output.stderr"
+  test ! -e "$output"
+  test ! -e "$marker"
+done
+
+for state in zero mayzero; do
+  for boundary_kind in argument return; do
+    for order in caller_first callee_first; do
+      case_name="${state}_${boundary_kind}_${order}"
+      fixture="compiler/phase26_call_mixed_chain_${case_name}_source.gst"
+      output="$build_root/mixed_chain_$case_name"
+      rm -f "$output" "$marker"
+      set +e
+      GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
+      GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER="$PWD/$marker" \
+      GUST_NATIVE_BACKEND_DRIVER="$PWD/$poison" \
+        ./gust --backend cranelift -o "$output" "$fixture" \
+          >"$output.stdout" 2>"$output.stderr"
+      status=$?
+      set -e
+      test "$status" -ne 0
+      line=1
+      if [[ "$order" == callee_first && "$boundary_kind" == argument ]]; then line=3; fi
+      if [[ "$order" == callee_first && "$boundary_kind" == return ]]; then line=2; fi
+      rg -F "TypeError in $fixture at line $line:" "$output.stdout" >/dev/null
+      rg -F "[RawNullSafeBoundary] Known zero-derived raw pointer cannot cross a declared-safe function $boundary_kind" "$output.stdout" >/dev/null
+      if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
+      test ! -s "$output.stderr"
+      test ! -e "$output"
+      test ! -e "$marker"
+    done
+  done
+done
+
+for case_name in nonzero unknown unsafe_target type_mismatch scalar_cast; do
+  fixture="compiler/phase26_call_mixed_chain_${case_name}_source.gst"
+  output="$build_root/mixed_chain_$case_name"
+  rm -f "$output" "$marker"
+  set +e
+  GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
+  GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER="$PWD/$marker" \
+  GUST_NATIVE_BACKEND_DRIVER="$PWD/$poison" \
+    ./gust --backend cranelift -o "$output" "$fixture" \
+      >"$output.stdout" 2>"$output.stderr"
+  status=$?
+  set -e
+  test "$status" -ne 0
+  if [[ "$case_name" == type_mismatch ]]; then
+    rg -F "TypeError in $fixture at line 3:" "$output.stdout" >/dev/null
+    rg -F "Argument type mismatch for function 'accept_int'. Expected Int but got RawPointer(Int)" "$output.stdout" >/dev/null
+    if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
+    if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
+  else
+    rg -F 'decision=deferred capability=phase13_generic_source_to_mir' "$output.stdout" >/dev/null
+    rg -F 'reason_code=deferred_p13_parameter_argument_target_dependent_abi' "$output.stdout" >/dev/null
+    if rg -F 'TypeError' "$output.stdout" >/dev/null; then exit 1; fi
+  fi
+  test ! -s "$output.stderr"
+  test ! -e "$output"
+  test ! -e "$marker"
+done
+
 
 bash scripts/phase26_empty_raw_zero_evidence.sh
-echo 'Phase26.1E direct-call return, aliases, checked wrappers, and bounded mixed RawPointer AsCast zero evidence and no-fallback passed.'
+echo 'Phase26.1E direct-call return, aliases, checked wrappers, and mixed RawPointer AsCast chains zero evidence and no-fallback passed.'
