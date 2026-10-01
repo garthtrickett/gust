@@ -75,16 +75,18 @@ def main() -> None:
     chain_record = activation.get("call_chain_zero_evidence_increment", {})
     take_record = activation.get("call_take_alias_zero_evidence_increment", {})
     direct_take_record = activation.get("call_direct_take_zero_evidence_increment", {})
+    direct_move_record = activation.get("call_direct_move_zero_evidence_increment", {})
     require(record["phase22_invocation_successor"] == {
         "contract_version": "phase26_1e_call_return_zero_phase22_invocation_successor_v1",
         "previous_total": 218, "current_total": 220, "added_rows": rows[:2],
         "partial_extra_or_substituted_invocation": "rejected",
-    } and len(rows) == 7 and
+    } and len(rows) == 8 and
             local_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[2:3] and
             alias_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[3:4] and
             chain_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[4:5] and
             take_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[5:6] and
-            direct_take_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[6:],
+            direct_take_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[6:7] and
+            direct_move_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[7:8],
             "native invocation successor drifted")
     require(record["production_audit_successor"] == {
         "contract_version": "phase26_1e_call_return_zero_production_audit_successor_v1",
@@ -138,9 +140,16 @@ def main() -> None:
         "phase23_text_surface_successor", {}).get("changed_rows", [])}
     direct_take_changed = {row["path"]: row for row in direct_take_record.get(
         "phase23_text_surface_successor", {}).get("changed_rows", [])}
+    direct_move_changed = {row["path"]: row for row in direct_move_record.get(
+        "phase23_text_surface_successor", {}).get("changed_rows", [])}
     for row in surface["changed_rows"]:
         text = (ROOT / row["path"]).read_text(encoding="utf-8")
         live_digest = digest(row["path"])
+        direct_move_successor = direct_move_changed.get(row["path"])
+        if direct_move_successor:
+            require(direct_move_successor["current_digest"] == live_digest,
+                    f"direct-Move text surface drifted: {row['path']}")
+            live_digest = direct_move_successor["previous_digest"]
         direct_take_successor = direct_take_changed.get(row["path"])
         if direct_take_successor:
             require(direct_take_successor["current_digest"] == live_digest,
@@ -177,6 +186,11 @@ def main() -> None:
         successor = local_changed.get(row["path"])
         alias_successor = alias_changed.get(row["path"])
         live_digest = digest(row["path"])
+        direct_move_successor = direct_move_changed.get(row["path"])
+        if direct_move_successor:
+            require(direct_move_successor["current_digest"] == live_digest,
+                    f"direct-Move text surface drifted: {row['path']}")
+            live_digest = direct_move_successor["previous_digest"]
         direct_take_successor = direct_take_changed.get(row["path"])
         if direct_take_successor:
             require(direct_take_successor["current_digest"] == live_digest,
@@ -719,9 +733,9 @@ def main() -> None:
     require(direct_take_record["phase22_invocation_successor"] == {
         "contract_version": "phase26_1e_call_direct_take_zero_phase22_invocation_successor_v1",
         "previous_total": 224, "current_total": 225,
-        "added_rows": rows[6:],
+        "added_rows": rows[6:7],
         "partial_extra_or_substituted_invocation": "rejected",
-    } and len(rows[6:]) == 1, "direct-Take invocation successor drifted")
+    } and len(rows[6:7]) == 1, "direct-Take invocation successor drifted")
     require(direct_take_record["production_audit_successor"] == {
         "contract_version": "phase26_1e_call_direct_take_zero_production_audit_successor_v1",
         "previous_repository_invocation_count": 224,
@@ -733,13 +747,15 @@ def main() -> None:
         "contract_version": "phase26_1e_call_direct_take_zero_spelling_inventory_successor_v1",
         "previous_inventory_summary": take_record["spelling_inventory_successor"][
             "current_inventory_summary"],
-        "current_inventory_summary": manifest_summary(source_sites()),
+        "current_inventory_summary": direct_move_record.get(
+            "spelling_inventory_successor", {}).get("previous_inventory_summary"),
         "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
                                         *direct_fixtures]),
         "partial_extra_or_substituted_inventory": "rejected",
     }, "direct-Take spelling inventory successor drifted")
     previous_direct_sites = take_record["filename_site_successor"]["current_sites"]
-    current_direct_sites = filename_sites()
+    current_direct_sites = direct_move_record.get(
+        "filename_site_successor", {}).get("previous_sites")
     require(direct_take_record["filename_site_successor"] == {
         "contract_version": "phase26_1e_call_direct_take_zero_filename_site_successor_v1",
         "previous_sites": previous_direct_sites,
@@ -769,7 +785,9 @@ def main() -> None:
                 (predecessor["current_digest"] if predecessor else
                  row["previous_digest"]) and
                 len(row["previous_digest"]) == 64 and
-                row["current_digest"] == digest(row["path"]) and
+                row["current_digest"] ==
+                (direct_move_changed[row["path"]]["previous_digest"]
+                 if row["path"] in direct_move_changed else digest(row["path"])) and
                 row["current_match_counts"] == {
                     name: len(pattern.findall(text))
                     for name, pattern in SURFACE_PATTERNS.items()} and
@@ -784,6 +802,115 @@ def main() -> None:
             "[RawNullSafeBoundary]" in guard and
             "test ! -e \"$marker\"" in guard,
             "direct-Take native evidence weakened")
+    move_names = ("caller_first", "mayzero_caller_first", "mayzero_callee_first",
+                  "plain_chain", "literal_move", "nonzero", "unknown",
+                  "unsafe_target", "overwrite", "intervening", "nested",
+                  "nested_move", "second_move", "prior_take_alias",
+                  "move_alias", "prior_error", "type_mismatch")
+    move_fixtures = [f"compiler/phase26_call_direct_move_zero_{name}_source.gst"
+                     for name in move_names]
+    move_static = {
+        "contract_version": "phase26_1e_call_direct_move_zero_v1",
+        "status": "bounded_direct_terminal_move_argument_zero_safe_boundary_rejection_qualified",
+        "owner": "cranelift", "increment": "26.1E_direct_terminal_move_argument_subset",
+        "operator_ownership_decision": "2026-10-01_bounded_direct_terminal_move_argument_zero",
+        "value_states": ["Unknown", "Zero", "Nonzero", "MayZero"],
+        "candidate_shape": "existing_concrete_direct_nullary_call_local_candidate_optional_consecutive_plain_alias_then_immediate_direct_Move_Identifier_one_argument_safe_call",
+        "summary_order": "after_all_function_bodies_before_native_planner",
+        "terminal_move_hops": 1,
+        "excluded_shapes": ["prior_terminal_Take_alias", "nested_or_second_Move",
+                            "Move_alias_declaration", "intervening_statement",
+                            "indirect_call", "mismatched_argument_type", "nested_scope"],
+        "positive_fixture": POSITIVE,
+        "negative_fixtures": move_fixtures[:5],
+        "control_fixtures": move_fixtures[5:],
+        "safe_boundary": "declared_nonextern_raw_pointer_argument",
+        "negative_states": ["Zero", "MayZero"],
+        "prior_error_precedence": "preserved",
+        "unknown_and_nonzero": "preserved_without_general_nullability_claim",
+        "unsafe_callees": "preserved",
+        "take_move_semantics_changed": False,
+        "diagnostic": "[RawNullSafeBoundary]",
+        "failure_stage": "before_driver_discovery", "native_fallback": False,
+        "physical_abi_changed": False, "mir_changed": False,
+        "runtime_symbol_surface_changed": False,
+        "operator_semantics_changed": False,
+        "general_nullability": "open_separate_obligation", "phase26_1_closed": False,
+        "owning_level2_guard": GUARD, "pr_fast_job": "phase26-ffi-position",
+    }
+    for key, value in move_static.items():
+        require(direct_move_record.get(key) == value,
+                f"direct-Move successor field drifted: {key}")
+    require(set(direct_move_record) == set(move_static) | {
+        "phase22_invocation_successor", "production_audit_successor",
+        "spelling_inventory_successor", "filename_site_successor",
+        "phase23_text_surface_successor",
+    } and all((ROOT / path).is_file() for path in move_fixtures),
+            "direct-Move successor fields or fixtures drifted")
+    require(direct_move_record["phase22_invocation_successor"] == {
+        "contract_version": "phase26_1e_call_direct_move_zero_phase22_invocation_successor_v1",
+        "previous_total": 225, "current_total": 226,
+        "added_rows": rows[7:8],
+        "partial_extra_or_substituted_invocation": "rejected",
+    } and len(rows[7:8]) == 1, "direct-Move invocation successor drifted")
+    require(direct_move_record["production_audit_successor"] == {
+        "contract_version": "phase26_1e_call_direct_move_zero_production_audit_successor_v1",
+        "previous_repository_invocation_count": 225,
+        "current_repository_invocation_count": 226,
+        "added_invocation_path": SCRIPT, "unchanged_other_fields": True,
+        "partial_extra_or_substituted_audit": "rejected",
+    }, "direct-Move production audit successor drifted")
+    require(direct_move_record["spelling_inventory_successor"] == {
+        "contract_version": "phase26_1e_call_direct_move_zero_spelling_inventory_successor_v1",
+        "previous_inventory_summary": direct_take_record["spelling_inventory_successor"][
+            "current_inventory_summary"],
+        "current_inventory_summary": manifest_summary(source_sites()),
+        "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
+                                        *move_fixtures]),
+        "partial_extra_or_substituted_inventory": "rejected",
+    }, "direct-Move spelling inventory successor drifted")
+    previous_move_sites = direct_take_record["filename_site_successor"]["current_sites"]
+    current_move_sites = filename_sites()
+    require(direct_move_record["filename_site_successor"] == {
+        "contract_version": "phase26_1e_call_direct_move_zero_filename_site_successor_v1",
+        "previous_sites": previous_move_sites,
+        "current_sites": current_move_sites,
+        "line_deltas": [now["line"] - before["line"]
+                        for before, now in zip(previous_move_sites, current_move_sites)],
+        "partial_extra_or_substituted_site": "rejected",
+    } and len(previous_move_sites) == len(current_move_sites) == 3 and
+            all(now["line"] >= before["line"] and
+                {key: value for key, value in now.items() if key != "line"} ==
+                {key: value for key, value in before.items() if key != "line"}
+                for before, now in zip(previous_move_sites, current_move_sites)),
+            "direct-Move filename successor drifted")
+    move_surface = direct_move_record["phase23_text_surface_successor"]
+    require(move_surface.get("contract_version") ==
+            "phase26_1e_call_direct_move_zero_phase23_text_surface_successor_v1" and
+            move_surface.get("partial_extra_or_substituted_surface") == "rejected" and
+            move_surface.get("added_rows") == [] and
+            sorted(direct_move_changed) == sorted([
+                "compiler/typechecker.gst", "scripts/phase22_opening.py",
+                "scripts/phase26_call_return_zero_registration.py",
+            ]), "direct-Move text surface set drifted")
+    for row in move_surface["changed_rows"]:
+        text = (ROOT / row["path"]).read_text(encoding="utf-8")
+        predecessor = direct_take_changed.get(row["path"])
+        require(row["previous_digest"] == predecessor["current_digest"] and
+                len(row["previous_digest"]) == 64 and
+                row["current_digest"] == digest(row["path"]) and
+                row["current_match_counts"] == {
+                    name: len(pattern.findall(text))
+                    for name, pattern in SURFACE_PATTERNS.items()} and
+                row["previous_match_counts"] == row["current_match_counts"],
+                f"direct-Move text surface drifted: {row['path']}")
+    require("phase26_call_direct_move_zero_${case_name}_source.gst" in guard and
+            "literal_move" in guard and "plain_chain" in guard and
+            "nested_move" in guard and "second_move" in guard and
+            "move_alias" in guard and "prior_take_alias" in guard and
+            "type_mismatch" in guard and "[RawNullSafeBoundary]" in guard and
+            "test ! -e \"$marker\"" in guard,
+            "direct-Move native evidence weakened")
     print(f"{GUARD}: registration ok")
 
 
