@@ -581,6 +581,19 @@ nonzero and unknown values, prior type errors, unsafe calls, MIR, ABI, layout,
 runtime, and operator meaning stay unchanged. This does not establish general
 nullability or close Phase 26.1.
 
+**26.1E one checked RawPointer AsCast call-boundary subset (ownership
+authorized 2026-10-01).** After ordinary typechecking and unsafe-call gates,
+one outer `as *T` expression whose operand and target resolve to RawPointer
+may carry the existing concrete direct-nullary call's Zero or MayZero return
+summary to a type-matched declared-safe non-extern raw-pointer argument or
+return. The existing `[RawNullSafeBoundary]` diagnostic rejects before native
+planning regardless of declaration order. Missing source type evidence,
+nested casts, Move/Take combinations, scalar-to-pointer casts, indirect or
+generic calls, and local aliases do not acquire this summary. Nonzero and
+Unknown values, unsafe targets, and earlier type errors retain their current
+behavior. This adds no cast semantics, MIR, ABI, layout, or runtime change and
+does not establish general nullability or close Phase 26.1.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

@@ -2227,6 +2227,23 @@ func phase26_zero_queue_direct_call_boundary(env: *TypeEnvironment[ctx], target_
 
 func phase26_zero_note_direct_call_boundary(env: *TypeEnvironment[ctx], target_t: ast.Type[ctx], expr_idx: Index[ast.Expression[ctx], ctx], span: token.Span, boundary: str, ctx: &Arena) {
     if target_t.tag != 9 { return; }
+    if expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
+        unsafe {
+            mut outer := ctx[expr_idx];
+            if outer.tag == 9 { // One checked raw-pointer-to-raw-pointer AsCast.
+                mut cast_target := env_resolve_type(env, ctx[outer.AsCast.target_type], ctx);
+                if cast_target.tag != 9 ||
+                   phase26_zero_resolved_expression_tag(outer.AsCast.left, env, ctx) != 9 {
+                    return; // Missing or non-pointer source metadata is not evidence.
+                }
+                mut cast_callee := phase26_zero_direct_nullary_callee(env, outer.AsCast.left, ctx);
+                if cast_callee != empty[Index[str, ctx]] {
+                    phase26_zero_queue_direct_call_boundary(env, target_t, ctx[cast_callee], span, boundary, ctx);
+                }
+                return; // Nested casts and Move/Take combinations remain excluded.
+            }
+        }
+    }
     mut direct_expr_idx := expr_idx;
     while direct_expr_idx != empty[Index[ast.Expression[ctx], ctx]] {
         unsafe {
