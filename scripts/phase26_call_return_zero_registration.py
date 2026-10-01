@@ -78,11 +78,12 @@ def main() -> None:
     direct_move_record = activation.get("call_direct_move_zero_evidence_increment", {})
     move_call_record = activation.get("call_move_wrapper_zero_evidence_increment", {})
     take_call_record = activation.get("call_take_wrapper_zero_evidence_increment", {})
+    two_wrapper_record = activation.get("call_two_wrapper_zero_evidence_increment", {})
     require(record["phase22_invocation_successor"] == {
         "contract_version": "phase26_1e_call_return_zero_phase22_invocation_successor_v1",
         "previous_total": 218, "current_total": 220, "added_rows": rows[:2],
         "partial_extra_or_substituted_invocation": "rejected",
-    } and len(rows) == 10 and
+    } and len(rows) == 11 and
             local_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[2:3] and
             alias_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[3:4] and
             chain_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[4:5] and
@@ -90,7 +91,8 @@ def main() -> None:
             direct_take_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[6:7] and
             direct_move_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[7:8] and
             move_call_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[8:9] and
-            take_call_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[9:10],
+            take_call_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[9:10] and
+            two_wrapper_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[10:11],
             "native invocation successor drifted")
     require(record["production_audit_successor"] == {
         "contract_version": "phase26_1e_call_return_zero_production_audit_successor_v1",
@@ -150,9 +152,16 @@ def main() -> None:
         "phase23_text_surface_successor", {}).get("changed_rows", [])}
     take_call_changed = {row["path"]: row for row in take_call_record.get(
         "phase23_text_surface_successor", {}).get("changed_rows", [])}
+    two_wrapper_changed = {row["path"]: row for row in two_wrapper_record.get(
+        "phase23_text_surface_successor", {}).get("changed_rows", [])}
     for row in surface["changed_rows"]:
         text = (ROOT / row["path"]).read_text(encoding="utf-8")
         live_digest = digest(row["path"])
+        two_wrapper_successor = two_wrapper_changed.get(row["path"])
+        if two_wrapper_successor:
+            require(two_wrapper_successor["current_digest"] == live_digest,
+                    f"depth-two wrapper text surface drifted: {row['path']}")
+            live_digest = two_wrapper_successor["previous_digest"]
         take_call_successor = take_call_changed.get(row["path"])
         if take_call_successor:
             require(take_call_successor["current_digest"] == live_digest,
@@ -204,6 +213,11 @@ def main() -> None:
         successor = local_changed.get(row["path"])
         alias_successor = alias_changed.get(row["path"])
         live_digest = digest(row["path"])
+        two_wrapper_successor = two_wrapper_changed.get(row["path"])
+        if two_wrapper_successor:
+            require(two_wrapper_successor["current_digest"] == live_digest,
+                    f"depth-two wrapper text surface drifted: {row['path']}")
+            live_digest = two_wrapper_successor["previous_digest"]
         take_call_successor = take_call_changed.get(row["path"])
         if take_call_successor:
             require(take_call_successor["current_digest"] == live_digest,
@@ -1124,13 +1138,15 @@ def main() -> None:
         "contract_version": "phase26_1e_call_take_wrapper_zero_spelling_inventory_successor_v1",
         "previous_inventory_summary": move_call_record[
             "spelling_inventory_successor"]["current_inventory_summary"],
-        "current_inventory_summary": manifest_summary(source_sites()),
+        "current_inventory_summary": two_wrapper_record.get(
+            "spelling_inventory_successor", {}).get("previous_inventory_summary"),
         "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
                                         *take_call_fixtures]),
         "partial_extra_or_substituted_inventory": "rejected",
     }, "Take(Call) spelling inventory successor drifted")
     previous_take_call_sites = move_call_record["filename_site_successor"]["current_sites"]
-    current_take_call_sites = filename_sites()
+    current_take_call_sites = two_wrapper_record.get(
+        "filename_site_successor", {}).get("previous_sites")
     require(take_call_record["filename_site_successor"] == {
         "contract_version": "phase26_1e_call_take_wrapper_zero_filename_site_successor_v1",
         "previous_sites": previous_take_call_sites,
@@ -1161,20 +1177,143 @@ def main() -> None:
         require(len(row["previous_digest"]) == 64 and
                 (predecessor is None or
                  row["previous_digest"] == predecessor["current_digest"]) and
-                row["current_digest"] == digest(row["path"]) and
-                row["current_match_counts"] == {
-                    name: len(pattern.findall(text))
-                    for name, pattern in SURFACE_PATTERNS.items()},
+                row["current_digest"] ==
+                (two_wrapper_changed[row["path"]]["previous_digest"]
+                 if row["path"] in two_wrapper_changed else digest(row["path"])) and
+                row["current_match_counts"] ==
+                (two_wrapper_changed[row["path"]]["previous_match_counts"]
+                 if row["path"] in two_wrapper_changed else {
+                     name: len(pattern.findall(text))
+                     for name, pattern in SURFACE_PATTERNS.items()}),
                 f"Take(Call) text surface drifted: {row['path']}")
     require("phase26_call_take_wrapper_zero_${case_name}_source.gst" in guard and
             "return_mayzero_callee_first" in guard and
             "nested_take" in guard and "move_take" in guard and
-            "take) line=4; boundary=argument" in guard and
+            ("take) line=4; boundary=argument" in guard or
+             "take|nested_move) line=4; boundary=argument" in guard) and
             "check_one_take_call_boundary(ctx);" in
             (ROOT / POSITIVE).read_text(encoding="utf-8") and
             "[RawNullSafeBoundary]" in guard and
             "test ! -e \"$marker\"" in guard,
             "Take(Call) native evidence weakened")
+
+    pairs = ("move_take", "take_move", "move_move", "take_take")
+    two_wrapper_negatives = [
+        f"compiler/phase26_call_two_wrapper_zero_{pair}_{boundary}_{order}_source.gst"
+        for pair in pairs for boundary in ("argument", "return")
+        for order in ("caller_first", "callee_first")
+    ] + ["compiler/phase26_call_two_wrapper_zero_mayzero_source.gst"]
+    two_wrapper_controls = [
+        f"compiler/phase26_call_two_wrapper_zero_{name}_source.gst"
+        for name in ("nonzero", "unsafe_target", "prior_error",
+                     "type_mismatch", "depth3")
+    ]
+    two_wrapper_static = {
+        "contract_version": "phase26_1e_call_two_wrapper_zero_v1",
+        "status": "bounded_two_Move_Take_wrappers_raw_pointer_safe_boundary_rejection_qualified",
+        "owner": "cranelift", "increment": "26.1E_two_Move_Take_wrapper_boundary_subset",
+        "operator_ownership_decision": "2026-10-01_bounded_two_Move_Take_wrappers_boundary",
+        "value_states": ["Unknown", "Zero", "Nonzero", "MayZero"],
+        "candidate_shape": "exactly_two_syntactic_Move_Take_wrappers_around_concrete_direct_nullary_raw_pointer_Call_at_type_matched_safe_argument_or_return_boundary",
+        "summary_order": "after_all_function_bodies_before_native_planner",
+        "wrapper_pairs": ["Move_Take", "Take_Move", "Move_Move", "Take_Take"],
+        "wrapper_depth": 2,
+        "excluded_shapes": ["depth_three", "wrapped_or_indirect_callee",
+                            "generic_call", "local_candidate_seeding"],
+        "promoted_predecessor_controls": [
+            "compiler/phase26_call_move_wrapper_zero_nested_move_source.gst",
+            "compiler/phase26_call_take_wrapper_zero_move_take_source.gst",
+            "compiler/phase26_call_take_wrapper_zero_nested_take_source.gst",
+        ],
+        "positive_fixture": POSITIVE,
+        "negative_fixtures": two_wrapper_negatives,
+        "control_fixtures": two_wrapper_controls,
+        "safe_boundaries": ["declared_nonextern_raw_pointer_argument",
+                            "declared_nonextern_raw_pointer_return"],
+        "negative_states": ["Zero", "MayZero"],
+        "prior_error_precedence": "preserved",
+        "unknown_and_nonzero": "preserved_without_general_nullability_claim",
+        "unsafe_callees": "preserved", "take_move_semantics_changed": False,
+        "diagnostic": "[RawNullSafeBoundary]",
+        "failure_stage": "before_driver_discovery", "native_fallback": False,
+        "physical_abi_changed": False, "mir_changed": False,
+        "runtime_symbol_surface_changed": False,
+        "operator_semantics_changed": False,
+        "general_nullability": "open_separate_obligation", "phase26_1_closed": False,
+        "owning_level2_guard": GUARD, "pr_fast_job": "phase26-ffi-position",
+    }
+    for key, value in two_wrapper_static.items():
+        require(two_wrapper_record.get(key) == value,
+                f"depth-two wrapper successor field drifted: {key}")
+    require(set(two_wrapper_record) == set(two_wrapper_static) | {
+        "phase22_invocation_successor", "production_audit_successor",
+        "spelling_inventory_successor", "filename_site_successor",
+        "phase23_text_surface_successor",
+    } and all((ROOT / path).is_file() for path in
+              [*two_wrapper_negatives, *two_wrapper_controls]),
+            "depth-two wrapper successor fields or fixtures drifted")
+    require(two_wrapper_record["phase22_invocation_successor"] == {
+        "contract_version": "phase26_1e_call_two_wrapper_zero_phase22_invocation_successor_v1",
+        "previous_total": 228, "current_total": 229,
+        "added_rows": rows[10:11],
+        "partial_extra_or_substituted_invocation": "rejected",
+    } and len(rows[10:11]) == 1, "depth-two invocation successor drifted")
+    require(two_wrapper_record["production_audit_successor"] == {
+        "contract_version": "phase26_1e_call_two_wrapper_zero_production_audit_successor_v1",
+        "previous_repository_invocation_count": 228,
+        "current_repository_invocation_count": 229,
+        "added_invocation_path": SCRIPT, "unchanged_other_fields": True,
+        "partial_extra_or_substituted_audit": "rejected",
+    }, "depth-two production audit successor drifted")
+    require(two_wrapper_record["spelling_inventory_successor"] == {
+        "contract_version": "phase26_1e_call_two_wrapper_zero_spelling_inventory_successor_v1",
+        "previous_inventory_summary": take_call_record[
+            "spelling_inventory_successor"]["current_inventory_summary"],
+        "current_inventory_summary": manifest_summary(source_sites()),
+        "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
+                                        *two_wrapper_negatives,
+                                        *two_wrapper_controls]),
+        "partial_extra_or_substituted_inventory": "rejected",
+    }, "depth-two spelling inventory successor drifted")
+    prior_sites = take_call_record["filename_site_successor"]["current_sites"]
+    live_sites = filename_sites()
+    require(two_wrapper_record["filename_site_successor"] == {
+        "contract_version": "phase26_1e_call_two_wrapper_zero_filename_site_successor_v1",
+        "previous_sites": prior_sites,
+        "current_sites": live_sites,
+        "line_deltas": [now["line"] - before["line"]
+                        for before, now in zip(prior_sites, live_sites)],
+        "partial_extra_or_substituted_site": "rejected",
+    } and len(prior_sites) == len(live_sites) == 3 and
+            all({key: value for key, value in now.items() if key != "line"} ==
+                {key: value for key, value in before.items() if key != "line"}
+                for before, now in zip(prior_sites, live_sites)),
+            "depth-two filename successor drifted")
+    surface = two_wrapper_record["phase23_text_surface_successor"]
+    require(surface.get("contract_version") ==
+            "phase26_1e_call_two_wrapper_zero_phase23_text_surface_successor_v1" and
+            surface.get("partial_extra_or_substituted_surface") == "rejected" and
+            surface.get("added_rows") == [] and
+            sorted(two_wrapper_changed) == sorted([
+                "compiler/typechecker.gst", "scripts/phase22_opening.py",
+                "scripts/phase26_call_return_zero_registration.py",
+            ]), "depth-two text surface set drifted")
+    old_rows = {row["path"]: row for row in take_call_surface["changed_rows"]}
+    for row in surface["changed_rows"]:
+        text = (ROOT / row["path"]).read_text(encoding="utf-8")
+        require(row["previous_digest"] == old_rows[row["path"]]["current_digest"] and
+                row["current_digest"] == digest(row["path"]) and
+                row["previous_match_counts"] == old_rows[row["path"]]["current_match_counts"] and
+                row["current_match_counts"] == {
+                    name: len(pattern.findall(text))
+                    for name, pattern in SURFACE_PATTERNS.items()},
+                f"depth-two text surface drifted: {row['path']}")
+    require("phase26_call_two_wrapper_zero_${case_name}_source.gst" in guard and
+            "move_take take_move move_move take_take" in guard and
+            "mayzero nonzero unsafe_target prior_error type_mismatch depth3" in guard and
+            "[RawNullSafeBoundary]" in guard and
+            "test ! -e \"$marker\"" in guard,
+            "depth-two native evidence weakened")
     print(f"{GUARD}: registration ok")
 
 

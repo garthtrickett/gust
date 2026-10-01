@@ -409,6 +409,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     call_take_wrapper_zero_successor = registry.get("phase26_activation_audit", {}).get(
         "call_take_wrapper_zero_evidence_increment", {}).get(
         "spelling_inventory_successor")
+    call_two_wrapper_zero_successor = registry.get("phase26_activation_audit", {}).get(
+        "call_two_wrapper_zero_evidence_increment", {}).get(
+        "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -1447,7 +1450,9 @@ def validate() -> tuple[dict, list[dict], dict]:
                 "phase26_1e_call_take_wrapper_zero_spelling_inventory_successor_v1" and
                 call_take_wrapper_zero_successor.get("previous_inventory_summary") ==
                 call_move_wrapper_zero_successor["current_inventory_summary"] and
-                call_take_wrapper_zero_successor.get("current_inventory_summary") == summary and
+                call_take_wrapper_zero_successor.get("current_inventory_summary") ==
+                (summary if call_two_wrapper_zero_successor is None else
+                 call_two_wrapper_zero_successor.get("previous_inventory_summary")) and
                 call_take_wrapper_zero_successor.get("changed_source_paths") == sorted([
                     "compiler/typechecker.gst",
                     "compiler/phase26_call_return_zero_test_entry.gst",
@@ -1457,6 +1462,32 @@ def validate() -> tuple[dict, list[dict], dict]:
                 call_take_wrapper_zero_successor.get("partial_extra_or_substituted_inventory") ==
                 "rejected" and summary["unknown_site_count"] == 0,
                 "Phase 26 Take(Call) spelling inventory drifted")
+    if call_two_wrapper_zero_successor is not None:
+        pair_names = ("move_take", "take_move", "move_move", "take_take")
+        matrix_paths = [f"compiler/phase26_call_two_wrapper_zero_{pair}_{boundary}_{order}_source.gst"
+                        for pair in pair_names for boundary in ("argument", "return")
+                        for order in ("caller_first", "callee_first")]
+        control_paths = [f"compiler/phase26_call_two_wrapper_zero_{name}_source.gst"
+                         for name in ("mayzero", "nonzero", "unsafe_target", "prior_error",
+                                      "type_mismatch", "depth3")]
+        previous = call_take_wrapper_zero_successor["current_inventory_summary"]
+        require(call_take_wrapper_zero_successor is not None and
+                call_two_wrapper_zero_successor.get("contract_version") ==
+                "phase26_1e_call_two_wrapper_zero_spelling_inventory_successor_v1" and
+                call_two_wrapper_zero_successor.get("previous_inventory_summary") == previous and
+                call_two_wrapper_zero_successor.get("current_inventory_summary") == summary and
+                call_two_wrapper_zero_successor.get("changed_source_paths") == sorted([
+                    "compiler/typechecker.gst",
+                    "compiler/phase26_call_return_zero_test_entry.gst",
+                    *matrix_paths, *control_paths,
+                ]) and
+                call_two_wrapper_zero_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and summary["source_file_count"] ==
+                previous["source_file_count"] + 22 and
+                summary["site_count"] == previous["site_count"] and
+                summary["semantic_site_count"] == previous["semantic_site_count"] and
+                summary["unknown_site_count"] == 0,
+                "Phase 26 depth-two wrapper spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),
