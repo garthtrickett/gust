@@ -3697,6 +3697,31 @@ def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    cast_chain = registry.get("phase26_activation_audit", {}).get(
+        "call_as_cast_chain_zero_evidence_increment", {}).get("phase23_text_surface_successor")
+    if cast_chain is not None:
+        changed = cast_chain.get("changed_rows")
+        added = cast_chain.get("added_rows")
+        require(cast_chain.get("contract_version") ==
+                "phase26_1e_call_as_cast_chain_zero_phase23_text_surface_successor_v1" and
+                cast_chain.get("partial_extra_or_substituted_surface") == "rejected" and
+                isinstance(changed, list) and added == [] and
+                len({entry.get("path") for entry in changed}) == len(changed),
+                "Phase 26 RawPointer AsCast-chain text surface successor shape drifted")
+        live = {row["path"]: row for row in rows}
+        for entry in changed:
+            row = live.get(entry["path"])
+            require(row is not None and
+                    row["digest"] == entry["current_digest"] and
+                    row["match_counts"] == entry["current_match_counts"] and
+                    len(entry["previous_digest"]) == 64,
+                    f"Phase 26 RawPointer AsCast-chain text surface drifted: {entry['path']}")
+        rows = [dict(row,
+                     digest=next((entry["previous_digest"] for entry in changed
+                                  if entry["path"] == row["path"]), row["digest"]),
+                     match_counts=next((entry["previous_match_counts"] for entry in changed
+                                        if entry["path"] == row["path"]), row["match_counts"]))
+                for row in rows]
     as_cast = registry.get("phase26_activation_audit", {}).get(
         "call_as_cast_zero_evidence_increment", {}).get("phase23_text_surface_successor")
     if as_cast is not None:
