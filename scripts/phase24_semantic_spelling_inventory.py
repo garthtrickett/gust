@@ -439,6 +439,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     call_local_take_cast_chain_zero_successor = registry.get("phase26_activation_audit", {}).get(
         "call_local_take_cast_chain_zero_evidence_increment", {}).get(
         "spelling_inventory_successor")
+    call_local_move_cast_chain_zero_successor = registry.get("phase26_activation_audit", {}).get(
+        "call_local_move_cast_chain_zero_evidence_increment", {}).get(
+        "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -1772,18 +1775,49 @@ def validate() -> tuple[dict, list[dict], dict]:
         require(call_local_take_cast_chain_zero_successor.get("contract_version") ==
                 "phase26_1e_call_local_take_cast_chain_zero_spelling_inventory_successor_v1" and
                 call_local_take_cast_chain_zero_successor.get("previous_inventory_summary") == previous and
-                call_local_take_cast_chain_zero_successor.get("current_inventory_summary") == summary and
+                call_local_take_cast_chain_zero_successor.get("current_inventory_summary") ==
+                (summary if call_local_move_cast_chain_zero_successor is None else
+                 call_local_move_cast_chain_zero_successor.get("previous_inventory_summary")) and
                 call_local_take_cast_chain_zero_successor.get("changed_source_paths") == sorted([
                     "compiler/typechecker.gst",
                     "compiler/phase26_call_return_zero_test_entry.gst", *paths,
                 ]) and
                 call_local_take_cast_chain_zero_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and call_local_take_cast_chain_zero_successor[
+                    "current_inventory_summary"]["source_file_count"] ==
+                previous["source_file_count"] + len(paths) and
+                call_local_take_cast_chain_zero_successor[
+                    "current_inventory_summary"]["site_count"] == previous["site_count"] and
+                call_local_take_cast_chain_zero_successor[
+                    "current_inventory_summary"]["semantic_site_count"] == previous["semantic_site_count"] and
+                call_local_take_cast_chain_zero_successor[
+                    "current_inventory_summary"]["unknown_site_count"] == 0,
+                "Phase 26 local-Take-cast-chain spelling inventory drifted")
+    if call_local_move_cast_chain_zero_successor is not None:
+        names = (
+            "move_cast_chain_zero_caller_first", "move_cast_chain_zero_callee_first",
+            "move_cast_chain_mayzero", "move_cast_chain_nonzero",
+            "move_cast_chain_unknown", "move_cast_chain_unsafe_target",
+            "move_cast_chain_type_mismatch", "move_cast_chain_second_move",
+            "move_cast_chain_take_combo", "move_cast_chain_alias",
+            "move_cast_chain_intervening", "move_cast_chain_scalar_inner")
+        paths = [f"compiler/phase26_call_local_{name}_source.gst" for name in names]
+        previous = call_local_take_cast_chain_zero_successor["current_inventory_summary"]
+        require(call_local_move_cast_chain_zero_successor.get("contract_version") ==
+                "phase26_1e_call_local_move_cast_chain_zero_spelling_inventory_successor_v1" and
+                call_local_move_cast_chain_zero_successor.get("previous_inventory_summary") == previous and
+                call_local_move_cast_chain_zero_successor.get("current_inventory_summary") == summary and
+                call_local_move_cast_chain_zero_successor.get("changed_source_paths") == sorted([
+                    "compiler/typechecker.gst",
+                    "compiler/phase26_call_return_zero_test_entry.gst", *paths,
+                ]) and
+                call_local_move_cast_chain_zero_successor.get("partial_extra_or_substituted_inventory") ==
                 "rejected" and summary["source_file_count"] ==
                 previous["source_file_count"] + len(paths) and
                 summary["site_count"] == previous["site_count"] and
                 summary["semantic_site_count"] == previous["semantic_site_count"] and
                 summary["unknown_site_count"] == 0,
-                "Phase 26 local-Take-cast-chain spelling inventory drifted")
+                "Phase 26 local-Move-cast-chain spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),
