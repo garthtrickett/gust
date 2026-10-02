@@ -64208,6 +64208,237 @@
         "added_rows": [],
         "partial_extra_or_substituted_surface": "rejected"
       }
+    },
+    "call_local_alias_cast_zero_evidence_increment": {
+      "contract_version": "phase26_1e_call_local_alias_cast_zero_v1",
+      "status": "checked_one_plain_alias_one_RawPointer_cast_local_safe_argument_rejection_qualified",
+      "owner": "cranelift",
+      "increment": "26.1E_one_plain_alias_one_checked_cast_direct_local_argument_subset",
+      "operator_ownership_decision": "2026-10-02_bounded_one_plain_alias_one_checked_local_cast_argument",
+      "value_states": [
+        "Unknown",
+        "Zero",
+        "Nonzero",
+        "MayZero"
+      ],
+      "candidate_shape": "one_immediate_same_block_concrete_nullary_call_result_one_type_matched_plain_alias_one_checked_RawPointer_AsCast_argument",
+      "metadata_proof": "post_typecheck_cast_resolved_RawPointer_operand_and_target_or_no_summary",
+      "summary_order": "after_all_function_bodies_before_native_planner",
+      "positive_fixture": "compiler/phase26_call_return_zero_test_entry.gst",
+      "positive_output": "SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, mixed Move/Take cast chains, and exclusions verified\n",
+      "negative_fixtures": [
+        "compiler/phase26_call_local_cast_zero_alias_source.gst",
+        "compiler/phase26_call_local_alias_cast_zero_callee_first_source.gst",
+        "compiler/phase26_call_local_alias_cast_mayzero_source.gst"
+      ],
+      "control_fixtures": [
+        "compiler/phase26_call_local_alias_cast_nonzero_source.gst",
+        "compiler/phase26_call_local_alias_cast_unknown_source.gst",
+        "compiler/phase26_call_local_alias_cast_unsafe_target_source.gst",
+        "compiler/phase26_call_local_alias_cast_overwrite_source.gst",
+        "compiler/phase26_call_local_alias_cast_intervening_source.gst",
+        "compiler/phase26_call_local_alias_cast_second_alias_source.gst",
+        "compiler/phase26_call_local_alias_cast_type_mismatch_source.gst",
+        "compiler/phase26_call_local_cast_chain_zero_alias_source.gst",
+        "compiler/phase26_call_local_take_cast_alias_source.gst",
+        "compiler/phase26_call_local_move_cast_chain_alias_source.gst"
+      ],
+      "reclassified_fixtures": [
+        "compiler/phase26_call_local_cast_zero_alias_source.gst"
+      ],
+      "safe_boundaries": [
+        "declared_nonextern_raw_pointer_argument"
+      ],
+      "negative_states": [
+        "Zero",
+        "MayZero"
+      ],
+      "prior_error_precedence": "preserved",
+      "unknown_and_nonzero": "preserved",
+      "unsafe_callees": "preserved",
+      "take_move_semantics_changed": false,
+      "diagnostic": "[RawNullSafeBoundary]",
+      "failure_stage": "before_driver_discovery",
+      "native_fallback": false,
+      "physical_abi_changed": false,
+      "mir_changed": false,
+      "runtime_symbol_surface_changed": false,
+      "operator_semantics_changed": false,
+      "general_nullability": "open_separate_obligation",
+      "phase26_1_closed": false,
+      "owning_level2_guard": "guard-cranelift-phase26-call-return-zero-evidence",
+      "pr_fast_job": "phase26-ffi-position",
+      "spelling_inventory_successor": {
+        "contract_version": "phase26_1e_call_local_alias_cast_zero_spelling_inventory_successor_v1",
+        "previous_inventory_summary": {
+          "source_file_count": 1581,
+          "site_count": 1398,
+          "semantic_site_count": 689,
+          "semantic_manifest_digest": "ec37a3c95eabdddf59e9f5a755f301817f452ef1e2eaae42ccc91f3b4e4fbcd0",
+          "classification_counts": {
+            "semantic_or_intrinsic_recognition": 689,
+            "diagnostic": 10,
+            "serialization": 1,
+            "mangling_or_generated_name": 9,
+            "comment": 2,
+            "fixture_or_evidence": 679,
+            "non_decision_comparison": 8
+          },
+          "partition_manifest_digests": {
+            "diagnostic": "b43b8b14f177cc9ef0b438b18f81d60965627a000ff82dd1414f41ab7bbdf74b",
+            "serialization": "a889ed384ae506f10b80c84fc00b91863328192597070abee5ec4324e92aef70",
+            "mangling_or_generated_name": "59b6b19498dc33c62f62f079052cff861d5f8e50971c4569e60c17aecf210370",
+            "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+            "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+            "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
+          },
+          "complete_manifest_digest": "fa0c745f92b5924385efb0df4a0e1aba30d32cda5b0b6b632e96b6d3813731a9",
+          "unknown_site_count": 0
+        },
+        "current_inventory_summary": {
+          "source_file_count": 1590,
+          "site_count": 1398,
+          "semantic_site_count": 689,
+          "semantic_manifest_digest": "eecd907522325ba421159b9ad0badf5a9435e227d6c34a67fb4f2132230f0efc",
+          "classification_counts": {
+            "semantic_or_intrinsic_recognition": 689,
+            "diagnostic": 10,
+            "serialization": 1,
+            "mangling_or_generated_name": 9,
+            "comment": 2,
+            "fixture_or_evidence": 679,
+            "non_decision_comparison": 8
+          },
+          "partition_manifest_digests": {
+            "diagnostic": "0c1c30bfbf9505ba9f2a1b06b10e188d9015c72db8f42e48a6d4ba4d9d5c0e0a",
+            "serialization": "a889ed384ae506f10b80c84fc00b91863328192597070abee5ec4324e92aef70",
+            "mangling_or_generated_name": "be4545b292c835f9b80be78411c7556c9c82d923fb3a2d411f29cdd17bf6ae71",
+            "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+            "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+            "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
+          },
+          "complete_manifest_digest": "28bf11103fc5fa48f3034085069685f7f927f6bf2e990fdc5a4c5f6e3a962057",
+          "unknown_site_count": 0
+        },
+        "changed_source_paths": [
+          "compiler/phase26_call_local_alias_cast_intervening_source.gst",
+          "compiler/phase26_call_local_alias_cast_mayzero_source.gst",
+          "compiler/phase26_call_local_alias_cast_nonzero_source.gst",
+          "compiler/phase26_call_local_alias_cast_overwrite_source.gst",
+          "compiler/phase26_call_local_alias_cast_second_alias_source.gst",
+          "compiler/phase26_call_local_alias_cast_type_mismatch_source.gst",
+          "compiler/phase26_call_local_alias_cast_unknown_source.gst",
+          "compiler/phase26_call_local_alias_cast_unsafe_target_source.gst",
+          "compiler/phase26_call_local_alias_cast_zero_callee_first_source.gst",
+          "compiler/phase26_call_return_zero_test_entry.gst",
+          "compiler/typechecker.gst"
+        ],
+        "partial_extra_or_substituted_inventory": "rejected"
+      },
+      "filename_site_successor": {
+        "contract_version": "phase26_1e_call_local_alias_cast_zero_filename_site_successor_v1",
+        "previous_sites": [
+          {
+            "id": "var_declaration_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 14982,
+            "selector": "test_tcs_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_var_declaration",
+            "window_digest": "6c0f176e1543d9a2ba125569875a69081a81b28bfc4c80eef31c57ec7ccfa05c"
+          },
+          {
+            "id": "assignment_hazard_and_view_invalidation",
+            "path": "compiler/typechecker.gst",
+            "line": 15317,
+            "selector": "test_index_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_assignment",
+            "window_digest": "eea5c7abf9fb4c50d51f644267c5ee59133db8d998a0fe7c25dd0ec1503029c3"
+          },
+          {
+            "id": "guard_payload_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 16360,
+            "selector": "test_tcs_",
+            "selector_occurrence": 2,
+            "statement_context": "statement_guard_payload_binding",
+            "window_digest": "4bf05983015fd1ecc3c3cc4c1399491868107155a5435fed90f8beeeb8f16a6f"
+          }
+        ],
+        "current_sites": [
+          {
+            "id": "var_declaration_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 14989,
+            "selector": "test_tcs_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_var_declaration",
+            "window_digest": "6c0f176e1543d9a2ba125569875a69081a81b28bfc4c80eef31c57ec7ccfa05c"
+          },
+          {
+            "id": "assignment_hazard_and_view_invalidation",
+            "path": "compiler/typechecker.gst",
+            "line": 15324,
+            "selector": "test_index_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_assignment",
+            "window_digest": "eea5c7abf9fb4c50d51f644267c5ee59133db8d998a0fe7c25dd0ec1503029c3"
+          },
+          {
+            "id": "guard_payload_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 16367,
+            "selector": "test_tcs_",
+            "selector_occurrence": 2,
+            "statement_context": "statement_guard_payload_binding",
+            "window_digest": "4bf05983015fd1ecc3c3cc4c1399491868107155a5435fed90f8beeeb8f16a6f"
+          }
+        ],
+        "line_deltas": [
+          7,
+          7,
+          7
+        ],
+        "partial_extra_or_substituted_site": "rejected"
+      },
+      "phase23_text_surface_successor": {
+        "contract_version": "phase26_1e_call_local_alias_cast_zero_phase23_text_surface_successor_v1",
+        "changed_rows": [
+          {
+            "path": "compiler/typechecker.gst",
+            "previous_digest": "f793c0f72621922e22c00e8c72776e0949cfa3fd5ed94f213fb824c69b6fbdf2",
+            "current_digest": "1c4a8e30a3e2b5674f37369d75e1e03e5c96fa8ee26fb4ee3c96da8e7fddbde9",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            }
+          },
+          {
+            "path": "scripts/phase26_call_return_zero_registration.py",
+            "previous_digest": "3f61f6d37e50169ee545a15c5422fdfe8148230ae628c7cdff3a05d9f55863d8",
+            "current_digest": "a162b9747a73f01d4d9c99dc0606bc8d5318a6e2c904938b35c50b5a4928bcaf",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            }
+          }
+        ],
+        "added_rows": [],
+        "partial_extra_or_substituted_surface": "rejected"
+      }
     }
   },
   "phase25_historical9g_guard_repair": {

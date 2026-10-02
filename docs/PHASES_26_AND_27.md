@@ -699,6 +699,19 @@ this increment. Wrong-type and moved-variable errors retain precedence;
 Move bookkeeping, MIR, ABI, layout, runtime, stdlib, general nullability, and
 Phase 26.1 closure remain unchanged.
 
+**26.1E one checked cast of an immediate plain alias (ownership authorized
+2026-10-02).** A concrete nullary raw-pointer call result may be copied once
+to a type-matched by-value local in the same block, then passed to a declared
+safe non-extern one-argument function through exactly one checked
+RawPointer-to-RawPointer `as` cast in the next statement. After unchanged
+typechecking, the existing Zero/MayZero summary rejects that safe argument
+before native planning. A second alias, cast chain, Take/Move wrapper,
+intervening statement, branch, indirect or generic call, and safe return stay
+outside this increment. Nonzero/Unknown and unsafe calls retain their paths;
+type mismatches keep precedence. Candidate invalidation, pointer semantics,
+MIR, ABI, layout, runtime, stdlib, general nullability, and Phase 26.1 closure
+remain unchanged.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
