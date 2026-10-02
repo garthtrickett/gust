@@ -713,6 +713,49 @@ for case_name in nonzero unknown unsafe_target type_mismatch scalar_cast; do
   test ! -e "$marker"
 done
 
+for case_name in cast_zero_caller_first cast_zero_callee_first cast_mayzero cast_nonzero cast_unknown cast_zero_unsafe_target cast_zero_intervening cast_zero_alias cast_zero_nested cast_zero_move cast_zero_scalar_mismatch; do
+  fixture="compiler/phase26_call_local_${case_name}_source.gst"
+  output="$build_root/local_$case_name"
+  rm -f "$output" "$marker"
+  set +e
+  GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
+  GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER="$PWD/$marker" \
+  GUST_NATIVE_BACKEND_DRIVER="$PWD/$poison" \
+    ./gust --backend cranelift -o "$output" "$fixture" \
+      >"$output.stdout" 2>"$output.stderr"
+  status=$?
+  set -e
+  test "$status" -ne 0
+  case "$case_name" in
+    cast_zero_caller_first|cast_zero_callee_first|cast_mayzero)
+      if [[ "$case_name" == cast_zero_caller_first ]]; then line=3; else line=4; fi
+      rg -F "TypeError in $fixture at line $line:" "$output.stdout" >/dev/null
+      rg -F '[RawNullSafeBoundary] Known zero-derived raw pointer cannot cross a declared-safe function argument' "$output.stdout" >/dev/null
+      if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+    cast_zero_move)
+      rg -F 'Use of moved variable ptr' "$output.stdout" >/dev/null
+      rg -F "Variable 'ptr' has already been moved" "$output.stdout" >/dev/null
+      if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
+      if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+    cast_zero_scalar_mismatch)
+      rg -F "TypeError in $fixture at line 3:" "$output.stdout" >/dev/null
+      rg -F "Argument type mismatch for function 'accept_raw'. Expected RawPointer(Int) but got Int" "$output.stdout" >/dev/null
+      if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
+      if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+    *)
+      rg -F 'decision=deferred capability=phase13_generic_source_to_mir' "$output.stdout" >/dev/null
+      rg -F 'reason_code=deferred_p13_parameter_argument_target_dependent_abi' "$output.stdout" >/dev/null
+      if rg -F 'TypeError' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+  esac
+  test ! -s "$output.stderr"
+  test ! -e "$output"
+  test ! -e "$marker"
+done
+
 
 bash scripts/phase26_empty_raw_zero_evidence.sh
-echo 'Phase26.1E direct-call return, aliases, checked wrappers, and mixed RawPointer AsCast chains zero evidence and no-fallback passed.'
+echo 'Phase26.1E direct-call return, aliases, checked wrappers, mixed chains, and one casted local argument zero evidence and no-fallback passed.'

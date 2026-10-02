@@ -636,6 +636,20 @@ This subset changes no Move/Take bookkeeping, MIR, ABI, layout, runtime, or
 stdlib semantics. Aliases, branches, indirect/generic calls, general
 nullability, and Phase 26.1 closure remain separate obligations.
 
+**26.1E one checked cast of an immediate local call result (ownership
+authorized 2026-10-02).** A direct, same-block local holding the result of an
+eligible concrete nullary raw-pointer call may pass through exactly one
+checked RawPointer-to-RawPointer `as` cast as the immediate argument to a
+type-matched declared-safe non-extern function. The statement-window check
+retains only that syntax; after ordinary typechecking, resolved pointer types
+for the operand and target are required before the existing Zero/MayZero
+summary can reject the call ahead of native planning. Nonzero/Unknown and
+unsafe controls keep their current route, and prior type and Move errors keep
+precedence. Alias hops, extra statements, nested or Move/Take-wrapped casts,
+scalar casts, indirect/generic calls, and safe returns remain outside this
+increment. MIR, ABI, layout, runtime, general nullability, and Phase 26.1
+closure remain unchanged.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
