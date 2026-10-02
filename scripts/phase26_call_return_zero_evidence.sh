@@ -713,7 +713,7 @@ for case_name in nonzero unknown unsafe_target type_mismatch scalar_cast; do
   test ! -e "$marker"
 done
 
-for case_name in cast_zero_caller_first cast_zero_callee_first cast_mayzero cast_nonzero cast_unknown cast_zero_unsafe_target cast_zero_intervening cast_zero_alias cast_zero_nested cast_zero_move cast_zero_scalar_mismatch; do
+for case_name in cast_zero_caller_first cast_zero_callee_first cast_mayzero cast_nonzero cast_unknown cast_zero_unsafe_target cast_zero_intervening cast_zero_alias cast_zero_nested cast_zero_move cast_zero_scalar_mismatch cast_chain_zero_callee_first cast_chain_mayzero cast_chain_zero_depth3 cast_chain_nonzero cast_chain_unknown cast_chain_zero_unsafe_target cast_chain_zero_alias; do
   fixture="compiler/phase26_call_local_${case_name}_source.gst"
   output="$build_root/local_$case_name"
   rm -f "$output" "$marker"
@@ -727,8 +727,8 @@ for case_name in cast_zero_caller_first cast_zero_callee_first cast_mayzero cast
   set -e
   test "$status" -ne 0
   case "$case_name" in
-    cast_zero_caller_first|cast_zero_callee_first|cast_mayzero)
-      if [[ "$case_name" == cast_zero_caller_first ]]; then line=3; else line=4; fi
+    cast_zero_caller_first|cast_zero_callee_first|cast_mayzero|cast_zero_nested|cast_chain_zero_callee_first|cast_chain_mayzero|cast_chain_zero_depth3)
+      if [[ "$case_name" == cast_zero_caller_first || "$case_name" == cast_zero_nested || "$case_name" == cast_chain_zero_depth3 ]]; then line=3; else line=4; fi
       rg -F "TypeError in $fixture at line $line:" "$output.stdout" >/dev/null
       rg -F '[RawNullSafeBoundary] Known zero-derived raw pointer cannot cross a declared-safe function argument' "$output.stdout" >/dev/null
       if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
@@ -756,6 +756,5 @@ for case_name in cast_zero_caller_first cast_zero_callee_first cast_mayzero cast
   test ! -e "$marker"
 done
 
-
 bash scripts/phase26_empty_raw_zero_evidence.sh
-echo 'Phase26.1E direct-call return, aliases, checked wrappers, mixed chains, and one casted local argument zero evidence and no-fallback passed.'
+echo 'Phase26.1E direct-call return, aliases, checked wrappers, mixed chains, and checked casted local argument chains zero evidence and no-fallback passed.'

@@ -2310,13 +2310,20 @@ func phase26_zero_local_call_argument_matches_candidate(arg: ast.Expression[ctx]
         if arg.tag == 0 { // Identifier
             return std.str_eq(arg.Identifier.name, (*env).zero_local_call_name);
         }
-        if arg.tag == 9 { // One cast of the direct local candidate only.
+        if arg.tag == 9 { // Checked pointer casts of the direct local candidate only.
             if (*env).zero_local_call_alias_hops != 0 ||
                (*env).zero_local_call_take_alias_terminal == 1 ||
                arg.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
-            mut cast_source := ctx[arg.AsCast.left];
-            if cast_source.tag != 0 { return 0; }
-            return std.str_eq(cast_source.Identifier.name, (*env).zero_local_call_name);
+            mut source_idx := arg.AsCast.left;
+            while source_idx != empty[Index[ast.Expression[ctx], ctx]] {
+                mut source := ctx[source_idx];
+                if source.tag == 0 {
+                    return std.str_eq(source.Identifier.name, (*env).zero_local_call_name);
+                }
+                if source.tag != 9 { return 0; }
+                source_idx = source.AsCast.left;
+            }
+            return 0;
         }
         if (arg.tag != 5 && arg.tag != 4) ||
            (*env).zero_local_call_take_alias_terminal == 1 { return 0; } // Take, Move
@@ -2331,16 +2338,20 @@ func phase26_zero_local_call_argument_matches_candidate(arg: ast.Expression[ctx]
 }
 
 // The statement-window probe above runs before typechecking and retains only
-// the exact syntactic candidate. A cast earns a deferred summary only after
+// the exact syntactic candidate. Every cast earns a deferred summary only after
 // check_expression recorded RawPointer types for its operand and target.
 func phase26_zero_local_call_argument_cast_is_raw(arg: ast.Expression[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
     if arg.tag != 9 { return 1; }
     unsafe {
-        if arg.AsCast.target_type == empty[Index[ast.Type[ctx], ctx]] ||
-           arg.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
-        mut target := env_resolve_type(env, ctx[arg.AsCast.target_type], ctx);
-        if target.tag != 9 ||
-           phase26_zero_resolved_expression_tag(arg.AsCast.left, env, ctx) != 9 { return 0; }
+        mut cast_expr := arg;
+        while cast_expr.tag == 9 {
+            if cast_expr.AsCast.target_type == empty[Index[ast.Type[ctx], ctx]] ||
+               cast_expr.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+            mut target := env_resolve_type(env, ctx[cast_expr.AsCast.target_type], ctx);
+            if target.tag != 9 ||
+               phase26_zero_resolved_expression_tag(cast_expr.AsCast.left, env, ctx) != 9 { return 0; }
+            cast_expr = ctx[cast_expr.AsCast.left];
+        }
         return 1;
     }
 }

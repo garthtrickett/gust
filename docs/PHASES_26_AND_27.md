@@ -650,6 +650,18 @@ scalar casts, indirect/generic calls, and safe returns remain outside this
 increment. MIR, ABI, layout, runtime, general nullability, and Phase 26.1
 closure remain unchanged.
 
+**26.1E checked cast chain of an immediate local call result (ownership
+authorized 2026-10-02).** The same-block concrete nullary-call local from the
+preceding increment may be the immediate argument through a finite syntactic
+chain of `as` casts. Each cast must have resolved RawPointer operand and target
+types after unchanged typechecking; missing metadata supplies no summary.
+The existing four-state summary rejects Zero/MayZero at a declared-safe
+non-extern raw-pointer argument before native planning. Nonzero/Unknown,
+unsafe calls, prior type and Move errors, alias hops, extra statements,
+Move/Take-wrapped casts, scalar casts, indirect/generic calls, and safe returns
+retain their existing paths. This does not change MIR, ABI, layout, runtime,
+stdlib, general nullability, or Phase 26.1 closure.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
