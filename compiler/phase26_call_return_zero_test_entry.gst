@@ -273,8 +273,18 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
         os.LogStr("Error: one checked cast lost the direct local candidate window"); os.Exit(1);
     }
     mut nested_cast_call := parse_statement("accept_raw((ptr as *int) as *int);", ctx);
-    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[nested_cast_call], &env, ctx) != 0 {
-        os.LogStr("Error: nested local cast acquired a candidate window"); os.Exit(1);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[nested_cast_call], &env, ctx) != 1 {
+        os.LogStr("Error: checked nested local cast lost the candidate window"); os.Exit(1);
+    }
+    mut nested_stmt := ctx[nested_cast_call];
+    mut nested_call := ctx[nested_stmt.Expression.expr];
+    mut nested_args: std.Vector[ast.Expression[ctx], ctx] := ctx[nested_call.Call.arguments];
+    if typechecker.phase26_zero_local_call_argument_cast_is_raw(nested_args[0], &env, ctx) != 0 {
+        os.LogStr("Error: unchecked nested cast acquired a raw-pointer summary"); os.Exit(1);
+    }
+    mut triple_cast_call := parse_statement("accept_raw(((ptr as *int) as *int) as *int);", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[triple_cast_call], &env, ctx) != 1 {
+        os.LogStr("Error: checked triple local cast lost the candidate window"); os.Exit(1);
     }
     mut moved_cast_call := parse_statement("accept_raw((move ptr) as *int);", ctx);
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_cast_call], &env, ctx) != 0 {
@@ -283,6 +293,9 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
     env.zero_local_call_alias_hops = 1;
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_call], &env, ctx) != 0 {
         os.LogStr("Error: alias-cast widened the direct local candidate window"); os.Exit(1);
+    }
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[nested_cast_call], &env, ctx) != 0 {
+        os.LogStr("Error: alias nested-cast widened the direct local candidate window"); os.Exit(1);
     }
     env.zero_local_call_alias_hops = 0;
     mut overwrite := parse_statement("ptr = 1 as *int;", ctx);
