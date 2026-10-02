@@ -33,6 +33,17 @@ def digest(path: str) -> str:
 def before_call_return_zero_digest(activation: dict, path: str,
                                    live_digest: str) -> str:
     """Project the later exact text-surface successor to this closed patch."""
+    local_take_cast_chain_rows = activation.get("call_local_take_cast_chain_zero_evidence_increment", {}).get(
+        "phase23_text_surface_successor", {}).get("changed_rows", [])
+    local_take_cast_chain_selected = [row for row in local_take_cast_chain_rows if row.get("path") == path]
+    require(len(local_take_cast_chain_selected) <= 1,
+            f"duplicate local-Take-cast-chain text surface: {path}")
+    if local_take_cast_chain_selected:
+        chain_row = local_take_cast_chain_selected[0]
+        require(chain_row["current_digest"] == live_digest and
+                len(chain_row["previous_digest"]) == 64,
+                f"local-Take-cast-chain text surface drifted: {path}")
+        live_digest = chain_row["previous_digest"]
     local_take_cast_rows = activation.get("call_local_take_cast_zero_evidence_increment", {}).get(
         "phase23_text_surface_successor", {}).get("changed_rows", [])
     local_take_cast_selected = [row for row in local_take_cast_rows if row.get("path") == path]
