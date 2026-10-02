@@ -305,12 +305,20 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
         os.LogStr("Error: unchecked Take-wrapped cast acquired raw-pointer proof"); os.Exit(1);
     }
     mut nested_take_cast := parse_statement("accept_raw(take ((ptr as *int) as *int));", ctx);
-    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[nested_take_cast], &env, ctx) != 0 {
-        os.LogStr("Error: two casts inside Take widened the local candidate window"); os.Exit(1);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[nested_take_cast], &env, ctx) != 1 {
+        os.LogStr("Error: checked cast chain inside Take lost the local candidate window"); os.Exit(1);
     }
     mut cast_nested_take := parse_statement("accept_raw(((take ptr) as *int) as *int);", ctx);
-    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_nested_take], &env, ctx) != 0 {
-        os.LogStr("Error: two casts outside Take widened the local candidate window"); os.Exit(1);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_nested_take], &env, ctx) != 1 {
+        os.LogStr("Error: checked cast chain outside Take lost the local candidate window"); os.Exit(1);
+    }
+    mut triple_take_cast := parse_statement("accept_raw(take (((ptr as *int) as *int) as *int));", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[triple_take_cast], &env, ctx) != 1 {
+        os.LogStr("Error: three checked casts inside Take lost the local candidate window"); os.Exit(1);
+    }
+    mut cast_triple_take := parse_statement("accept_raw((((take ptr) as *int) as *int) as *int);", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_triple_take], &env, ctx) != 1 {
+        os.LogStr("Error: three checked casts outside Take lost the local candidate window"); os.Exit(1);
     }
     mut double_take_cast := parse_statement("accept_raw(take take (ptr as *int));", ctx);
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[double_take_cast], &env, ctx) != 0 {
@@ -322,7 +330,9 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
     }
     env.zero_local_call_alias_hops = 1;
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_take_call], &env, ctx) != 0 ||
-       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[take_cast_call], &env, ctx) != 0 {
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[take_cast_call], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[nested_take_cast], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_nested_take], &env, ctx) != 0 {
         os.LogStr("Error: alias hop widened the Take/cast local candidate window"); os.Exit(1);
     }
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_call], &env, ctx) != 0 {
