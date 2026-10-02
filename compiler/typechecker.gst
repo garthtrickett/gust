@@ -2321,7 +2321,8 @@ func phase26_zero_local_call_argument_matches_candidate(arg: ast.Expression[ctx]
                 if source.tag == 0 {
                     return std.str_eq(source.Identifier.name, (*env).zero_local_call_name);
                 }
-                if source.tag == 5 { // Take may be inside the checked cast chain.
+                if source.tag == 5 { // Take may be inside a cast chain, but not below Move.
+                    if arg.tag == 4 { return 0; }
                     if source.Take.expr == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
                     mut taken := ctx[source.Take.expr];
                     if taken.tag != 0 { return 0; }
@@ -2339,7 +2340,7 @@ func phase26_zero_local_call_argument_matches_candidate(arg: ast.Expression[ctx]
         if arg.tag == 4 { inner_idx = arg.Move.expr; }
         if inner_idx == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
         mut inner := ctx[inner_idx];
-        if arg.tag == 5 && inner.tag == 9 { // Take of a checked cast chain.
+        if (arg.tag == 5 || arg.tag == 4) && inner.tag == 9 { // One terminal wrapper of checked pointer casts.
             if (*env).zero_local_call_alias_hops != 0 ||
                inner.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
             while inner.tag == 9 {
@@ -2359,9 +2360,12 @@ func phase26_zero_local_call_argument_matches_candidate(arg: ast.Expression[ctx]
 func phase26_zero_local_call_argument_cast_is_raw(arg: ast.Expression[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         mut cast_expr := arg;
-        if arg.tag == 5 { // Take may wrap one cast after unchanged typechecking.
-            if arg.Take.expr == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
-            cast_expr = ctx[arg.Take.expr];
+        if arg.tag == 5 || arg.tag == 4 { // One Take or Move may wrap checked casts after typechecking.
+            mut wrapped_idx := empty[Index[ast.Expression[ctx], ctx]];
+            if arg.tag == 5 { wrapped_idx = arg.Take.expr; }
+            if arg.tag == 4 { wrapped_idx = arg.Move.expr; }
+            if wrapped_idx == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+            cast_expr = ctx[wrapped_idx];
         }
         if cast_expr.tag != 9 { return 1; }
         while cast_expr.tag == 9 {

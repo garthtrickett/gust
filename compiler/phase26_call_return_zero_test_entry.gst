@@ -325,8 +325,26 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
         os.LogStr("Error: second Take widened the local candidate window"); os.Exit(1);
     }
     mut moved_cast_argument := parse_statement("accept_raw(move (ptr as *int));", ctx);
-    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_cast_argument], &env, ctx) != 0 {
-        os.LogStr("Error: Move-wrapped cast widened the local candidate window"); os.Exit(1);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_cast_argument], &env, ctx) != 1 {
+        os.LogStr("Error: Move-wrapped checked cast lost the local candidate window"); os.Exit(1);
+    }
+    mut moved_cast_chain := parse_statement("accept_raw(move (((ptr as *int) as *int) as *int));", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_cast_chain], &env, ctx) != 1 {
+        os.LogStr("Error: Move-wrapped checked cast chain lost the local candidate window"); os.Exit(1);
+    }
+    mut moved_chain_stmt := ctx[moved_cast_chain];
+    mut moved_chain_call := ctx[moved_chain_stmt.Expression.expr];
+    mut moved_chain_args: std.Vector[ast.Expression[ctx], ctx] := ctx[moved_chain_call.Call.arguments];
+    if typechecker.phase26_zero_local_call_argument_cast_is_raw(moved_chain_args[0], &env, ctx) != 0 {
+        os.LogStr("Error: unchecked Move-wrapped cast acquired raw-pointer proof"); os.Exit(1);
+    }
+    mut second_move_cast := parse_statement("accept_raw(move move (ptr as *int));", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[second_move_cast], &env, ctx) != 0 {
+        os.LogStr("Error: second Move widened the local candidate window"); os.Exit(1);
+    }
+    mut move_take_cast := parse_statement("accept_raw(move take (ptr as *int));", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[move_take_cast], &env, ctx) != 0 {
+        os.LogStr("Error: Move/Take combination widened the local candidate window"); os.Exit(1);
     }
     env.zero_local_call_alias_hops = 1;
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_take_call], &env, ctx) != 0 ||
@@ -340,6 +358,9 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
     }
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[nested_cast_call], &env, ctx) != 0 {
         os.LogStr("Error: alias nested-cast widened the direct local candidate window"); os.Exit(1);
+    }
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_cast_chain], &env, ctx) != 0 {
+        os.LogStr("Error: alias widened the Move/cast local candidate window"); os.Exit(1);
     }
     env.zero_local_call_alias_hops = 0;
     mut overwrite := parse_statement("ptr = 1 as *int;", ctx);

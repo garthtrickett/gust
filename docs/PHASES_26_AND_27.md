@@ -687,6 +687,18 @@ and safe returns are outside this increment. Take bookkeeping, MIR, ABI,
 layout, runtime, stdlib, general nullability, and Phase 26.1 closure remain
 unchanged.
 
+**26.1E one outer Move around a checked local cast chain (ownership authorized
+2026-10-02).** An immediate same-block local holding an eligible concrete
+nullary raw-pointer call result may cross a declared-safe argument boundary
+through exactly one outer `move` around a finite `as *T` chain. After unchanged
+typechecking, every cast operand and target must resolve to RawPointer before
+the existing Zero/MayZero summary rejects the call before driver discovery.
+Inner or second Move, Take combinations, aliases, intervening statements,
+branches, scalar casts, indirect/generic calls, and safe returns remain outside
+this increment. Wrong-type and moved-variable errors retain precedence;
+Move bookkeeping, MIR, ABI, layout, runtime, stdlib, general nullability, and
+Phase 26.1 closure remain unchanged.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

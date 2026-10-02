@@ -713,7 +713,7 @@ for case_name in nonzero unknown unsafe_target type_mismatch scalar_cast; do
   test ! -e "$marker"
 done
 
-for case_name in cast_zero_caller_first cast_zero_callee_first cast_mayzero cast_nonzero cast_unknown cast_zero_unsafe_target cast_zero_intervening cast_zero_alias cast_zero_nested cast_zero_move cast_zero_scalar_mismatch cast_chain_zero_callee_first cast_chain_mayzero cast_chain_zero_depth3 cast_chain_nonzero cast_chain_unknown cast_chain_zero_unsafe_target cast_chain_zero_alias cast_take_zero_caller_first cast_take_zero_callee_first take_cast_zero_caller_first take_cast_zero_callee_first cast_take_mayzero take_cast_mayzero cast_take_nonzero take_cast_nonzero take_cast_unknown take_cast_unsafe_target take_cast_alias take_cast_intervening take_cast_nested cast_take_nested take_cast_second_take take_cast_move take_cast_type_mismatch cast_take_chain_zero_callee_first take_cast_chain_zero_callee_first cast_take_chain_mayzero take_cast_chain_mayzero cast_take_chain_depth3 take_cast_chain_depth3 cast_take_chain_nonzero take_cast_chain_unknown take_cast_chain_unsafe_target cast_take_chain_type_mismatch take_cast_chain_second_take take_cast_chain_scalar_inner cast_take_chain_alias take_cast_chain_intervening; do
+for case_name in cast_zero_caller_first cast_zero_callee_first cast_mayzero cast_nonzero cast_unknown cast_zero_unsafe_target cast_zero_intervening cast_zero_alias cast_zero_nested cast_zero_move cast_zero_scalar_mismatch cast_chain_zero_callee_first cast_chain_mayzero cast_chain_zero_depth3 cast_chain_nonzero cast_chain_unknown cast_chain_zero_unsafe_target cast_chain_zero_alias cast_take_zero_caller_first cast_take_zero_callee_first take_cast_zero_caller_first take_cast_zero_callee_first cast_take_mayzero take_cast_mayzero cast_take_nonzero take_cast_nonzero take_cast_unknown take_cast_unsafe_target take_cast_alias take_cast_intervening take_cast_nested cast_take_nested take_cast_second_take take_cast_move take_cast_type_mismatch cast_take_chain_zero_callee_first take_cast_chain_zero_callee_first cast_take_chain_mayzero take_cast_chain_mayzero cast_take_chain_depth3 take_cast_chain_depth3 cast_take_chain_nonzero take_cast_chain_unknown take_cast_chain_unsafe_target cast_take_chain_type_mismatch take_cast_chain_second_take take_cast_chain_scalar_inner cast_take_chain_alias take_cast_chain_intervening move_cast_chain_zero_caller_first move_cast_chain_zero_callee_first move_cast_chain_mayzero move_cast_chain_nonzero move_cast_chain_unknown move_cast_chain_unsafe_target move_cast_chain_type_mismatch move_cast_chain_second_move move_cast_chain_take_combo move_cast_chain_alias move_cast_chain_intervening move_cast_chain_scalar_inner; do
   fixture="compiler/phase26_call_local_${case_name}_source.gst"
   output="$build_root/local_$case_name"
   rm -f "$output" "$marker"
@@ -733,7 +733,7 @@ for case_name in cast_zero_caller_first cast_zero_callee_first cast_mayzero cast
       rg -F '[RawNullSafeBoundary] Known zero-derived raw pointer cannot cross a declared-safe function argument' "$output.stdout" >/dev/null
       if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
       ;;
-    cast_take_zero_caller_first|cast_take_zero_callee_first|take_cast_zero_caller_first|take_cast_zero_callee_first|cast_take_mayzero|take_cast_mayzero|cast_take_nested|take_cast_nested|cast_take_chain_zero_callee_first|take_cast_chain_zero_callee_first|cast_take_chain_mayzero|take_cast_chain_mayzero|cast_take_chain_depth3|take_cast_chain_depth3)
+    cast_take_zero_caller_first|cast_take_zero_callee_first|take_cast_zero_caller_first|take_cast_zero_callee_first|cast_take_mayzero|take_cast_mayzero|cast_take_nested|take_cast_nested|cast_take_chain_zero_callee_first|take_cast_chain_zero_callee_first|cast_take_chain_mayzero|take_cast_chain_mayzero|cast_take_chain_depth3|take_cast_chain_depth3|take_cast_move|move_cast_chain_zero_caller_first|move_cast_chain_zero_callee_first|move_cast_chain_mayzero)
       line=4
       if [[ "$case_name" == *_callee_first ]]; then line=3; fi
       rg -F "TypeError in $fixture at line $line:" "$output.stdout" >/dev/null
@@ -752,7 +752,7 @@ for case_name in cast_zero_caller_first cast_zero_callee_first cast_mayzero cast
       if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
       if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
       ;;
-    take_cast_type_mismatch|cast_take_chain_type_mismatch)
+    take_cast_type_mismatch|cast_take_chain_type_mismatch|move_cast_chain_type_mismatch)
       rg -F "TypeError in $fixture at line 4:" "$output.stdout" >/dev/null
       rg -F "Argument type mismatch for function 'accept_int'. Expected Int but got RawPointer(Int)" "$output.stdout" >/dev/null
       if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
