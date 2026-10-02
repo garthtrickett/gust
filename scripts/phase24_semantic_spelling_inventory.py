@@ -1680,7 +1680,7 @@ def validate() -> tuple[dict, list[dict], dict]:
                 ]) and
                 call_local_cast_zero_successor.get("partial_extra_or_substituted_inventory") ==
                 "rejected" and summary["source_file_count"] ==
-                previous["source_file_count"] and
+                previous["source_file_count"] + len(paths) and
                 summary["site_count"] == previous["site_count"] and
                 summary["semantic_site_count"] == previous["semantic_site_count"] and
                 summary["unknown_site_count"] == 0,
