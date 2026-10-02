@@ -2315,8 +2315,15 @@ func phase26_zero_local_call_argument_matches_candidate(arg: ast.Expression[ctx]
                (*env).zero_local_call_take_alias_terminal == 1 ||
                arg.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
             mut source_idx := arg.AsCast.left;
+            mut source := ctx[source_idx];
+            if source.tag == 5 { // Exactly one cast around Take(Identifier).
+                if source.Take.expr == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+                mut taken := ctx[source.Take.expr];
+                if taken.tag != 0 { return 0; }
+                return std.str_eq(taken.Identifier.name, (*env).zero_local_call_name);
+            }
             while source_idx != empty[Index[ast.Expression[ctx], ctx]] {
-                mut source := ctx[source_idx];
+                source = ctx[source_idx];
                 if source.tag == 0 {
                     return std.str_eq(source.Identifier.name, (*env).zero_local_call_name);
                 }
@@ -2332,6 +2339,13 @@ func phase26_zero_local_call_argument_matches_candidate(arg: ast.Expression[ctx]
         if arg.tag == 4 { inner_idx = arg.Move.expr; }
         if inner_idx == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
         mut inner := ctx[inner_idx];
+        if arg.tag == 5 && inner.tag == 9 { // Take of exactly one checked cast.
+            if (*env).zero_local_call_alias_hops != 0 ||
+               inner.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+            mut cast_source := ctx[inner.AsCast.left];
+            if cast_source.tag != 0 { return 0; }
+            return std.str_eq(cast_source.Identifier.name, (*env).zero_local_call_name);
+        }
         if inner.tag != 0 { return 0; }
         return std.str_eq(inner.Identifier.name, (*env).zero_local_call_name);
     }
@@ -2341,9 +2355,13 @@ func phase26_zero_local_call_argument_matches_candidate(arg: ast.Expression[ctx]
 // the exact syntactic candidate. Every cast earns a deferred summary only after
 // check_expression recorded RawPointer types for its operand and target.
 func phase26_zero_local_call_argument_cast_is_raw(arg: ast.Expression[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
-    if arg.tag != 9 { return 1; }
     unsafe {
         mut cast_expr := arg;
+        if arg.tag == 5 { // Take may wrap one cast after unchanged typechecking.
+            if arg.Take.expr == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+            cast_expr = ctx[arg.Take.expr];
+        }
+        if cast_expr.tag != 9 { return 1; }
         while cast_expr.tag == 9 {
             if cast_expr.AsCast.target_type == empty[Index[ast.Type[ctx], ctx]] ||
                cast_expr.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }

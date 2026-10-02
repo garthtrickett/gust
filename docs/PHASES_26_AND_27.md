@@ -662,6 +662,19 @@ Move/Take-wrapped casts, scalar casts, indirect/generic calls, and safe returns
 retain their existing paths. This does not change MIR, ABI, layout, runtime,
 stdlib, general nullability, or Phase 26.1 closure.
 
+**26.1E one Take and one checked cast of an immediate local call result
+(ownership authorized 2026-10-02).** A same-block local holding an eligible
+concrete nullary raw-pointer call result may be the immediate argument through
+either `Take(ptr) as *T` or `Take(ptr as *T)`. The statement-window check admits
+only one Take and one cast; after unchanged typechecking, resolved RawPointer
+operand and target types are required before the existing four-state summary
+rejects Zero/MayZero at a declared-safe non-extern argument boundary. The
+prior moved-variable diagnostic for `(move ptr) as *T` remains authoritative;
+`move (ptr as *T)` and nonzero/Unknown, unsafe, alias, extra-statement, nested,
+second-Take, scalar-cast, indirect/generic, and safe-return controls retain
+their prior routes. Move/Take bookkeeping, MIR, ABI, layout, runtime, stdlib,
+general nullability, and Phase 26.1 closure remain unchanged.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

@@ -290,7 +290,41 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_cast_call], &env, ctx) != 0 {
         os.LogStr("Error: moved local cast acquired a candidate window"); os.Exit(1);
     }
+    mut cast_take_call := parse_statement("accept_raw((take ptr) as *int);", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_take_call], &env, ctx) != 1 {
+        os.LogStr("Error: checked cast around Take lost the local candidate window"); os.Exit(1);
+    }
+    mut take_cast_call := parse_statement("accept_raw(take (ptr as *int));", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[take_cast_call], &env, ctx) != 1 {
+        os.LogStr("Error: Take around checked cast lost the local candidate window"); os.Exit(1);
+    }
+    mut take_cast_stmt := ctx[take_cast_call];
+    mut take_cast_expr := ctx[take_cast_stmt.Expression.expr];
+    mut take_cast_args: std.Vector[ast.Expression[ctx], ctx] := ctx[take_cast_expr.Call.arguments];
+    if typechecker.phase26_zero_local_call_argument_cast_is_raw(take_cast_args[0], &env, ctx) != 0 {
+        os.LogStr("Error: unchecked Take-wrapped cast acquired raw-pointer proof"); os.Exit(1);
+    }
+    mut nested_take_cast := parse_statement("accept_raw(take ((ptr as *int) as *int));", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[nested_take_cast], &env, ctx) != 0 {
+        os.LogStr("Error: two casts inside Take widened the local candidate window"); os.Exit(1);
+    }
+    mut cast_nested_take := parse_statement("accept_raw(((take ptr) as *int) as *int);", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_nested_take], &env, ctx) != 0 {
+        os.LogStr("Error: two casts outside Take widened the local candidate window"); os.Exit(1);
+    }
+    mut double_take_cast := parse_statement("accept_raw(take take (ptr as *int));", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[double_take_cast], &env, ctx) != 0 {
+        os.LogStr("Error: second Take widened the local candidate window"); os.Exit(1);
+    }
+    mut moved_cast_argument := parse_statement("accept_raw(move (ptr as *int));", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_cast_argument], &env, ctx) != 0 {
+        os.LogStr("Error: Move-wrapped cast widened the local candidate window"); os.Exit(1);
+    }
     env.zero_local_call_alias_hops = 1;
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_take_call], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[take_cast_call], &env, ctx) != 0 {
+        os.LogStr("Error: alias hop widened the Take/cast local candidate window"); os.Exit(1);
+    }
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_call], &env, ctx) != 0 {
         os.LogStr("Error: alias-cast widened the direct local candidate window"); os.Exit(1);
     }
@@ -372,6 +406,10 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
         os.LogStr("Error: direct terminal Take argument lost its candidate"); os.Exit(1);
     }
     env.zero_local_call_take_alias_terminal = 1;
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_take_call], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[take_cast_call], &env, ctx) != 0 {
+        os.LogStr("Error: terminal Take alias acquired a second Take/cast hop"); os.Exit(1);
+    }
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_take], &env, ctx) != 0 {
         os.LogStr("Error: Take alias acquired a second Take hop"); os.Exit(1);
     }
