@@ -8,7 +8,7 @@ No intrinsic ID, dispatch, compiler structure, or accepted meaning changes here.
 
 - Contract: `phase24_semantic_spelling_inventory_v1`
 - Authority base: `f36d43e33cb2c0f5b66c801b82d5e27ebcfc0ddc`
-- Tracked compiler source files: `1507`
+- Tracked compiler source files: `1520`
 - Classified sites: `1398`
 - Semantic/intrinsic recognition sites: `689`
 - Unknown sites: `0`
