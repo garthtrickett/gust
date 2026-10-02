@@ -347,14 +347,25 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
         os.LogStr("Error: Move/Take combination widened the local candidate window"); os.Exit(1);
     }
     env.zero_local_call_alias_hops = 1;
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_call], &env, ctx) != 1 {
+        os.LogStr("Error: one plain alias lost its single checked cast candidate window"); os.Exit(1);
+    }
+    env.zero_local_call_name = "alias";
+    mut alias_cast_call := parse_statement("accept_raw(alias as *int);", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_cast_call], &env, ctx) != 1 {
+        os.LogStr("Error: named plain alias lost its single checked cast candidate window"); os.Exit(1);
+    }
+    env.zero_local_call_alias_hops = 2;
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_cast_call], &env, ctx) != 0 {
+        os.LogStr("Error: second alias gained a checked cast candidate window"); os.Exit(1);
+    }
+    env.zero_local_call_name = "ptr";
+    env.zero_local_call_alias_hops = 1;
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_take_call], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[take_cast_call], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[nested_take_cast], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_nested_take], &env, ctx) != 0 {
         os.LogStr("Error: alias hop widened the Take/cast local candidate window"); os.Exit(1);
-    }
-    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_call], &env, ctx) != 0 {
-        os.LogStr("Error: alias-cast widened the direct local candidate window"); os.Exit(1);
     }
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[nested_cast_call], &env, ctx) != 0 {
         os.LogStr("Error: alias nested-cast widened the direct local candidate window"); os.Exit(1);
