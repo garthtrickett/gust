@@ -268,6 +268,23 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[consume], &env, ctx) != 1 {
         os.LogStr("Error: one-local direct argument was not selected"); os.Exit(1);
     }
+    mut cast_call := parse_statement("accept_raw(ptr as *int);", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_call], &env, ctx) != 1 {
+        os.LogStr("Error: one checked cast lost the direct local candidate window"); os.Exit(1);
+    }
+    mut nested_cast_call := parse_statement("accept_raw((ptr as *int) as *int);", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[nested_cast_call], &env, ctx) != 0 {
+        os.LogStr("Error: nested local cast acquired a candidate window"); os.Exit(1);
+    }
+    mut moved_cast_call := parse_statement("accept_raw((move ptr) as *int);", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_cast_call], &env, ctx) != 0 {
+        os.LogStr("Error: moved local cast acquired a candidate window"); os.Exit(1);
+    }
+    env.zero_local_call_alias_hops = 1;
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_call], &env, ctx) != 0 {
+        os.LogStr("Error: alias-cast widened the direct local candidate window"); os.Exit(1);
+    }
+    env.zero_local_call_alias_hops = 0;
     mut overwrite := parse_statement("ptr = 1 as *int;", ctx);
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[overwrite], &env, ctx) != 0 {
         os.LogStr("Error: intervening assignment retained one-local candidate"); os.Exit(1);
