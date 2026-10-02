@@ -2316,16 +2316,16 @@ func phase26_zero_local_call_argument_matches_candidate(arg: ast.Expression[ctx]
                arg.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
             mut source_idx := arg.AsCast.left;
             mut source := ctx[source_idx];
-            if source.tag == 5 { // Exactly one cast around Take(Identifier).
-                if source.Take.expr == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
-                mut taken := ctx[source.Take.expr];
-                if taken.tag != 0 { return 0; }
-                return std.str_eq(taken.Identifier.name, (*env).zero_local_call_name);
-            }
             while source_idx != empty[Index[ast.Expression[ctx], ctx]] {
                 source = ctx[source_idx];
                 if source.tag == 0 {
                     return std.str_eq(source.Identifier.name, (*env).zero_local_call_name);
+                }
+                if source.tag == 5 { // Take may be inside the checked cast chain.
+                    if source.Take.expr == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+                    mut taken := ctx[source.Take.expr];
+                    if taken.tag != 0 { return 0; }
+                    return std.str_eq(taken.Identifier.name, (*env).zero_local_call_name);
                 }
                 if source.tag != 9 { return 0; }
                 source_idx = source.AsCast.left;
@@ -2339,12 +2339,14 @@ func phase26_zero_local_call_argument_matches_candidate(arg: ast.Expression[ctx]
         if arg.tag == 4 { inner_idx = arg.Move.expr; }
         if inner_idx == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
         mut inner := ctx[inner_idx];
-        if arg.tag == 5 && inner.tag == 9 { // Take of exactly one checked cast.
+        if arg.tag == 5 && inner.tag == 9 { // Take of a checked cast chain.
             if (*env).zero_local_call_alias_hops != 0 ||
                inner.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
-            mut cast_source := ctx[inner.AsCast.left];
-            if cast_source.tag != 0 { return 0; }
-            return std.str_eq(cast_source.Identifier.name, (*env).zero_local_call_name);
+            while inner.tag == 9 {
+                inner_idx = inner.AsCast.left;
+                if inner_idx == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+                inner = ctx[inner_idx];
+            }
         }
         if inner.tag != 0 { return 0; }
         return std.str_eq(inner.Identifier.name, (*env).zero_local_call_name);

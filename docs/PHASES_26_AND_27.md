@@ -675,6 +675,18 @@ second-Take, scalar-cast, indirect/generic, and safe-return controls retain
 their prior routes. Move/Take bookkeeping, MIR, ABI, layout, runtime, stdlib,
 general nullability, and Phase 26.1 closure remain unchanged.
 
+**26.1E one Take at a checked local cast-chain edge (ownership authorized
+2026-10-02).** An immediate same-block local holding an eligible concrete
+nullary raw-pointer call result may cross a declared-safe argument boundary
+through one `take` at either edge of a finite `as *T` chain. After unchanged
+typechecking, every cast operand and target must resolve to RawPointer before
+the existing Zero/MayZero summary rejects the call before driver discovery.
+Nonzero/Unknown and unsafe callees retain their prior routes. Move, a second
+Take, aliases, intervening statements, scalar casts, indirect/generic calls,
+and safe returns are outside this increment. Take bookkeeping, MIR, ABI,
+layout, runtime, stdlib, general nullability, and Phase 26.1 closure remain
+unchanged.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
