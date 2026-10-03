@@ -428,8 +428,8 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
         os.LogStr("Error: plain suffix after Take lost its candidate"); os.Exit(1);
     }
     mut second_take := parse_statement("mut second_take := take taken;", ctx);
-    if std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[second_take], &env, ctx), "") == 0 {
-        os.LogStr("Error: second Take alias acquired a candidate"); os.Exit(1);
+    if std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[second_take], &env, ctx), "second_take") == 0 {
+        os.LogStr("Error: second Take alias lost the checked local candidate"); os.Exit(1);
     }
     env.zero_local_call_name = "ptr";
     env.zero_local_call_take_alias_terminal = 0;

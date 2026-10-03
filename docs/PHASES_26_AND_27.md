@@ -795,6 +795,21 @@ scalar or unproven casts, wrong types, Nonzero/Unknown evidence, and unsafe
 targets retain their prior classification. This subset changes no MIR, ABI,
 layout, runtime, stdlib, or general nullability rule. Phase 26.1 remains open.
 
+**26.1E repeated Take aliases (ownership authorized 2026-10-03).** After
+unchanged typechecking, a proven Zero/MayZero local RawPointer candidate may
+pass through finite consecutive same-block, type-matched by-value
+`Take(Identifier)` aliases after the first Take. Qualified plain aliases may
+occur between them. The immediate declared-safe non-extern argument call
+rejects the candidate directly or through a finite checked
+RawPointer-to-RawPointer cast chain before driver discovery. Existing
+Take/move/drop bookkeeping, statement invalidation, cast proof, and the
+four-state summary remain authoritative. Direct Take at the call, Move,
+statement gaps, nested or indirect calls, generic calls, scalar casts,
+wrong types, Nonzero/Unknown evidence, and unsafe callees retain their prior
+classification. The earlier second-Take deferral is superseded only in this
+bounded local chain. No MIR, ABI, layout, runtime, stdlib, or general
+nullability change is claimed. Phase 26.1 remains open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

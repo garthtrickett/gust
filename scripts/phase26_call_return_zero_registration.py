@@ -102,6 +102,8 @@ def main() -> None:
         "call_consecutive_plain_take_alias_cast_zero_evidence_increment", {})
     post_take_plain_record = activation.get(
         "call_post_take_plain_alias_zero_evidence_increment", {})
+    repeated_take_record = activation.get(
+        "call_repeated_take_alias_zero_evidence_increment", {})
     require(record["phase22_invocation_successor"] == {
         "contract_version": "phase26_1e_call_return_zero_phase22_invocation_successor_v1",
         "previous_total": 218, "current_total": 220, "added_rows": rows[:2],
@@ -213,9 +215,16 @@ def main() -> None:
         consecutive_plain_take_cast_record.get("phase23_text_surface_successor", {}).get("changed_rows", [])}
     post_take_plain_changed = {row["path"]: row for row in
         post_take_plain_record.get("phase23_text_surface_successor", {}).get("changed_rows", [])}
+    repeated_take_changed = {row["path"]: row for row in
+        repeated_take_record.get("phase23_text_surface_successor", {}).get("changed_rows", [])}
     for row in surface["changed_rows"]:
         text = (ROOT / row["path"]).read_text(encoding="utf-8")
         live_digest = digest(row["path"])
+        repeated_take_successor = repeated_take_changed.get(row["path"])
+        if repeated_take_successor:
+            require(repeated_take_successor["current_digest"] == live_digest,
+                    f"repeated-Take text surface drifted: {row['path']}")
+            live_digest = repeated_take_successor["previous_digest"]
         post_take_plain_successor = post_take_plain_changed.get(row["path"])
         if post_take_plain_successor:
             require(post_take_plain_successor["current_digest"] == live_digest,
@@ -357,6 +366,11 @@ def main() -> None:
         successor = local_changed.get(row["path"])
         alias_successor = alias_changed.get(row["path"])
         live_digest = digest(row["path"])
+        repeated_take_successor = repeated_take_changed.get(row["path"])
+        if repeated_take_successor:
+            require(repeated_take_successor["current_digest"] == live_digest,
+                    f"repeated-Take text surface drifted: {row['path']}")
+            live_digest = repeated_take_successor["previous_digest"]
         post_take_plain_successor = post_take_plain_changed.get(row["path"])
         if post_take_plain_successor:
             require(post_take_plain_successor["current_digest"] == live_digest,
@@ -3509,7 +3523,7 @@ def main() -> None:
         "path": POSITIVE,
         "previous_digest": consecutive_plain_take_cast_record[
             "positive_fixture_successor"]["current_digest"],
-        "current_digest": digest(POSITIVE),
+        "current_digest": repeated_take_record["positive_fixture_successor"]["previous_digest"],
     }, "post-Take plain-alias positive evidence drifted")
     previous_inventory = consecutive_plain_take_cast_record[
         "spelling_inventory_successor"]["current_inventory_summary"]
@@ -3517,26 +3531,26 @@ def main() -> None:
     require(post_take_plain_record["spelling_inventory_successor"] == {
         "contract_version": "phase26_1e_call_post_take_plain_alias_zero_spelling_inventory_successor_v1",
         "previous_inventory_summary": previous_inventory,
-        "current_inventory_summary": live_inventory,
+        "current_inventory_summary": repeated_take_record["spelling_inventory_successor"]["previous_inventory_summary"],
         "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
                                         *new_fixture_paths]),
         "partial_extra_or_substituted_inventory": "rejected",
-    } and live_inventory["source_file_count"] ==
+    } and post_take_plain_record["spelling_inventory_successor"]["current_inventory_summary"]["source_file_count"] ==
             previous_inventory["source_file_count"] + len(new_fixture_paths) and
-            live_inventory["site_count"] == previous_inventory["site_count"] and
-            live_inventory["semantic_site_count"] == previous_inventory["semantic_site_count"] and
-            live_inventory["unknown_site_count"] == 0,
+            post_take_plain_record["spelling_inventory_successor"]["current_inventory_summary"]["site_count"] == previous_inventory["site_count"] and
+            post_take_plain_record["spelling_inventory_successor"]["current_inventory_summary"]["semantic_site_count"] == previous_inventory["semantic_site_count"] and
+            post_take_plain_record["spelling_inventory_successor"]["current_inventory_summary"]["unknown_site_count"] == 0,
             "post-Take plain-alias spelling inventory drifted")
     previous_sites = consecutive_plain_take_cast_record[
         "filename_site_successor"]["current_sites"]
     require(post_take_plain_record["filename_site_successor"] == {
         "contract_version": "phase26_1e_call_post_take_plain_alias_zero_filename_site_successor_v1",
         "previous_sites": previous_sites,
-        "current_sites": live_sites,
+        "current_sites": repeated_take_record["filename_site_successor"]["previous_sites"],
         "line_deltas": [now["line"] - before["line"] for before, now in
-                        zip(previous_sites, live_sites)],
+                        zip(previous_sites, repeated_take_record["filename_site_successor"]["previous_sites"])],
         "partial_extra_or_substituted_site": "rejected",
-    } and len(previous_sites) == len(live_sites) == 3,
+    } and len(previous_sites) == len(post_take_plain_record["filename_site_successor"]["current_sites"]) == 3,
             "post-Take plain-alias filename sites drifted")
     post_surface = post_take_plain_record["phase23_text_surface_successor"]
     require(post_surface.get("contract_version") ==
@@ -3553,8 +3567,10 @@ def main() -> None:
         predecessor = previous_rows[path]
         require(row["previous_digest"] == predecessor["current_digest"] and
                 row["previous_match_counts"] == predecessor["current_match_counts"] and
-                row["current_digest"] == digest(path) and
-                row["current_match_counts"] == {
+                row["current_digest"] == repeated_take_changed[path]["previous_digest"] and
+                row["current_match_counts"] == repeated_take_changed[path]["previous_match_counts"] and
+                repeated_take_changed[path]["current_digest"] == digest(path) and
+                repeated_take_changed[path]["current_match_counts"] == {
                     name: len(pattern.findall(content)) for name, pattern in SURFACE_PATTERNS.items()},
                 f"post-Take plain-alias text surface drifted: {path}")
     require("chained_after_take after_take_mayzero after_take_two_suffixes" in guard and
@@ -3564,9 +3580,122 @@ def main() -> None:
             "after_take_second_take" in guard and
             "test ! -e \"$marker\"" in guard and
             "plain suffix after Take lost its candidate" in positive and
-            "second Take alias acquired a candidate" in positive and
-            "zero_local_call_take_alias_terminal == 1 { return \"\"; }" in compiler,
+            repeated_take_record.get("reclassified_fixtures", [{}])[0].get("path") ==
+            "compiler/phase26_call_take_alias_zero_after_take_second_take_source.gst" and
+            "second Take alias lost the checked local candidate" in positive,
             "post-Take plain-alias native or poison evidence weakened")
+    repeated_negative = [
+        "compiler/phase26_call_take_alias_zero_after_take_second_take_source.gst",
+        *[f"compiler/phase26_call_take_alias_zero_repeated_take_{name}_source.gst"
+          for name in ("zero_callee_first", "mayzero", "cast_zero", "cast_mayzero", "interleaved_zero")],
+    ]
+    repeated_controls = [
+        f"compiler/phase26_call_take_alias_zero_repeated_take_{name}_source.gst"
+        for name in ("nonzero", "unknown", "unsafe_target", "wrong_type", "gap")
+    ]
+    repeated_static = {
+        "contract_version": "phase26_1e_call_repeated_take_alias_zero_v1",
+        "status": "repeated_Take_aliases_direct_or_checked_cast_safe_argument_rejection_qualified",
+        "owner": "cranelift",
+        "increment": "26.1E_repeated_Take_alias_subset",
+        "operator_ownership_decision": "2026-10-03_bounded_repeated_Take_aliases",
+        "value_states": ["Unknown", "Zero", "Nonzero", "MayZero"],
+        "candidate_shape": "immediate_same_block_concrete_nullary_call_finite_typed_plain_and_Take_aliases_after_first_Take_direct_or_checked_RawPointer_AsCast_argument",
+        "metadata_proof": "post_typecheck_each_alias_type_match_and_each_cast_resolved_RawPointer_operand_and_target_or_no_summary",
+        "summary_order": "after_all_function_bodies_before_native_planner",
+        "positive_fixture": POSITIVE,
+        "positive_output": "SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, mixed Move/Take cast chains, and exclusions verified\n",
+        "negative_fixtures": repeated_negative,
+        "control_fixtures": repeated_controls,
+        "reclassified_fixtures": [{
+            "path": repeated_negative[0],
+            "previous": "accepted_then_native_deferral",
+            "current": "RawNullSafeBoundary_before_driver",
+        }],
+        "safe_boundaries": ["declared_nonextern_raw_pointer_argument"],
+        "negative_states": ["Zero", "MayZero"],
+        "prior_error_precedence": "preserved",
+        "unknown_and_nonzero": "preserved",
+        "unsafe_callees": "preserved",
+        "take_move_semantics_changed": False,
+        "diagnostic": "[RawNullSafeBoundary]",
+        "failure_stage": "before_driver_discovery",
+        "native_fallback": False,
+        "physical_abi_changed": False,
+        "mir_changed": False,
+        "runtime_symbol_surface_changed": False,
+        "operator_semantics_changed": False,
+        "general_nullability": "open_separate_obligation",
+        "phase26_1_closed": False,
+        "owning_level2_guard": GUARD,
+        "pr_fast_job": "phase26-ffi-position",
+    }
+    for key, value in repeated_static.items():
+        require(repeated_take_record.get(key) == value,
+                f"repeated-Take alias successor field drifted: {key}")
+    require(set(repeated_take_record) == set(repeated_static) | {
+        "spelling_inventory_successor", "filename_site_successor",
+        "phase23_text_surface_successor", "positive_fixture_successor",
+    } and all((ROOT / path).is_file() for path in
+              [*repeated_negative, *repeated_controls]),
+            "repeated-Take alias successor fields or fixtures drifted")
+    require(repeated_take_record["positive_fixture_successor"] == {
+        "path": POSITIVE,
+        "previous_digest": post_take_plain_record["positive_fixture_successor"]["current_digest"],
+        "current_digest": digest(POSITIVE),
+    }, "repeated-Take alias positive evidence drifted")
+    previous_inventory = post_take_plain_record[
+        "spelling_inventory_successor"]["current_inventory_summary"]
+    new_fixture_paths = repeated_negative[1:] + repeated_controls
+    require(repeated_take_record["spelling_inventory_successor"] == {
+        "contract_version": "phase26_1e_call_repeated_take_alias_zero_spelling_inventory_successor_v1",
+        "previous_inventory_summary": previous_inventory,
+        "current_inventory_summary": live_inventory,
+        "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
+                                        *new_fixture_paths]),
+        "partial_extra_or_substituted_inventory": "rejected",
+    } and live_inventory["source_file_count"] ==
+            previous_inventory["source_file_count"] + len(new_fixture_paths) and
+            live_inventory["site_count"] == previous_inventory["site_count"] and
+            live_inventory["semantic_site_count"] == previous_inventory["semantic_site_count"] and
+            live_inventory["unknown_site_count"] == 0,
+            "repeated-Take alias spelling inventory drifted")
+    previous_sites = post_take_plain_record["filename_site_successor"]["current_sites"]
+    require(repeated_take_record["filename_site_successor"] == {
+        "contract_version": "phase26_1e_call_repeated_take_alias_zero_filename_site_successor_v1",
+        "previous_sites": previous_sites,
+        "current_sites": live_sites,
+        "line_deltas": [now["line"] - before["line"] for before, now in
+                        zip(previous_sites, live_sites)],
+        "partial_extra_or_substituted_site": "rejected",
+    } and len(previous_sites) == len(live_sites) == 3,
+            "repeated-Take alias filename sites drifted")
+    repeated_surface = repeated_take_record["phase23_text_surface_successor"]
+    require(repeated_surface.get("contract_version") ==
+            "phase26_1e_call_repeated_take_alias_zero_phase23_text_surface_successor_v1" and
+            repeated_surface.get("partial_extra_or_substituted_surface") == "rejected" and
+            repeated_surface.get("added_rows") == [] and
+            sorted(row["path"] for row in repeated_surface["changed_rows"]) ==
+            ["compiler/typechecker.gst", "scripts/phase26_call_return_zero_registration.py"],
+            "repeated-Take alias text surface set drifted")
+    previous_rows = {row["path"]: row for row in post_surface["changed_rows"]}
+    for row in repeated_surface["changed_rows"]:
+        path = row["path"]
+        content = (ROOT / path).read_text(encoding="utf-8")
+        predecessor = previous_rows[path]
+        require(row["previous_digest"] == predecessor["current_digest"] and
+                row["previous_match_counts"] == predecessor["current_match_counts"] and
+                row["current_digest"] == digest(path) and
+                row["current_match_counts"] == {
+                    name: len(pattern.findall(content)) for name, pattern in SURFACE_PATTERNS.items()},
+                f"repeated-Take alias text surface drifted: {path}")
+    require("after_take_second_take repeated_take_zero_callee_first" in guard and
+            "repeated_take_interleaved_zero" in guard and
+            "repeated_take_wrong_type" in guard and
+            "test ! -e \"$marker\"" in guard and
+            "second Take alias lost the checked local candidate" in positive and
+            "zero_local_call_take_alias_terminal == 1 { return \"\"; }" not in compiler,
+            "repeated-Take alias native or poison evidence weakened")
     print(f"{GUARD}: registration ok")
 
 

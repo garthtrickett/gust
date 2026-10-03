@@ -463,6 +463,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     call_post_take_plain_zero_successor = registry.get("phase26_activation_audit", {}).get(
         "call_post_take_plain_alias_zero_evidence_increment", {}).get(
         "spelling_inventory_successor")
+    call_repeated_take_zero_successor = registry.get("phase26_activation_audit", {}).get(
+        "call_repeated_take_alias_zero_evidence_increment", {}).get(
+        "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -2037,17 +2040,39 @@ def validate() -> tuple[dict, list[dict], dict]:
         require(call_post_take_plain_zero_successor.get("contract_version") ==
                 "phase26_1e_call_post_take_plain_alias_zero_spelling_inventory_successor_v1" and
                 call_post_take_plain_zero_successor.get("previous_inventory_summary") == previous and
-                call_post_take_plain_zero_successor.get("current_inventory_summary") == summary and
+                call_post_take_plain_zero_successor.get("current_inventory_summary") ==
+                (summary if call_repeated_take_zero_successor is None else
+                 call_repeated_take_zero_successor.get("previous_inventory_summary")) and
                 call_post_take_plain_zero_successor.get("changed_source_paths") == sorted([
                     "compiler/typechecker.gst", "compiler/phase26_call_return_zero_test_entry.gst",
                     *paths]) and
                 call_post_take_plain_zero_successor.get(
                     "partial_extra_or_substituted_inventory") == "rejected" and
+                call_post_take_plain_zero_successor["current_inventory_summary"]["source_file_count"] == previous["source_file_count"] + len(paths) and
+                call_post_take_plain_zero_successor["current_inventory_summary"]["site_count"] == previous["site_count"] and
+                call_post_take_plain_zero_successor["current_inventory_summary"]["semantic_site_count"] == previous["semantic_site_count"] and
+                call_post_take_plain_zero_successor["current_inventory_summary"]["unknown_site_count"] == 0,
+                "Phase 26 post-Take plain-alias spelling inventory drifted")
+    if call_repeated_take_zero_successor is not None:
+        paths = [f"compiler/phase26_call_take_alias_zero_repeated_take_{name}_source.gst"
+                 for name in ("zero_callee_first", "mayzero", "cast_zero", "cast_mayzero",
+                              "interleaved_zero", "nonzero", "unknown", "unsafe_target",
+                              "wrong_type", "gap")]
+        previous = call_post_take_plain_zero_successor["current_inventory_summary"]
+        require(call_repeated_take_zero_successor.get("contract_version") ==
+                "phase26_1e_call_repeated_take_alias_zero_spelling_inventory_successor_v1" and
+                call_repeated_take_zero_successor.get("previous_inventory_summary") == previous and
+                call_repeated_take_zero_successor.get("current_inventory_summary") == summary and
+                call_repeated_take_zero_successor.get("changed_source_paths") == sorted([
+                    "compiler/typechecker.gst", "compiler/phase26_call_return_zero_test_entry.gst",
+                    *paths]) and
+                call_repeated_take_zero_successor.get(
+                    "partial_extra_or_substituted_inventory") == "rejected" and
                 summary["source_file_count"] == previous["source_file_count"] + len(paths) and
                 summary["site_count"] == previous["site_count"] and
                 summary["semantic_site_count"] == previous["semantic_site_count"] and
                 summary["unknown_site_count"] == 0,
-                "Phase 26 post-Take plain-alias spelling inventory drifted")
+                "Phase 26 repeated-Take alias spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),
