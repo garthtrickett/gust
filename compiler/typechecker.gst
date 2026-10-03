@@ -2302,8 +2302,8 @@ func phase26_zero_note_direct_call_boundary(env: *TypeEnvironment[ctx], target_t
     }
 }
 
-// A direct argument may take or move the current candidate exactly once. A
-// candidate already produced by a Take alias cannot be wrapped again here.
+// A direct argument may take or move the current candidate exactly once. After
+// a Take alias, only a direct Take of that named candidate may consume it here.
 func phase26_zero_local_call_argument_matches_candidate(arg: ast.Expression[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         if std.str_eq((*env).zero_local_call_name, "") == 1 { return 0; }
@@ -2346,8 +2346,14 @@ func phase26_zero_local_call_argument_matches_candidate(arg: ast.Expression[ctx]
             }
             return 0;
         }
-        if (arg.tag != 5 && arg.tag != 4) ||
-           (*env).zero_local_call_take_alias_terminal == 1 { return 0; } // Take, Move
+        if (*env).zero_local_call_take_alias_terminal == 1 {
+            if arg.tag != 5 || (*env).zero_local_call_alias_hops == 0 ||
+               arg.Take.expr == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+            mut terminal_inner := ctx[arg.Take.expr];
+            if terminal_inner.tag != 0 { return 0; }
+            return std.str_eq(terminal_inner.Identifier.name, (*env).zero_local_call_name);
+        }
+        if arg.tag != 5 && arg.tag != 4 { return 0; } // Take, Move
         mut inner_idx := empty[Index[ast.Expression[ctx], ctx]];
         if arg.tag == 5 { inner_idx = arg.Take.expr; }
         if arg.tag == 4 { inner_idx = arg.Move.expr; }
