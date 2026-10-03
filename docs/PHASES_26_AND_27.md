@@ -741,6 +741,20 @@ call, Nonzero or Unknown evidence, and unsafe target retain their existing
 paths and diagnostic precedence. No general alias or nullability model, MIR,
 ABI, layout, runtime, stdlib, or Phase 26.1 closure is claimed.
 
+**26.1E one terminal Take alias with checked casts (ownership authorized
+2026-10-03).** An eligible concrete nullary raw-pointer call result may move
+once into an immediate, by-value, type-matched local `mut alias := take ptr`.
+When the next statement passes that alias through a finite syntactic chain
+of checked RawPointer-to-RawPointer casts to a direct declared-safe
+non-extern one-argument call, the existing Zero/MayZero summary rejects it
+before native planning. Each cast retains the post-typecheck resolved pointer
+proof. A prior plain alias before Take, another alias or Take afterward,
+Move combinations, intervening or nested statements, indirect or generic
+calls, scalar casts, Nonzero or Unknown evidence, and unsafe targets retain
+their existing routes and diagnostic precedence. Take bookkeeping, MIR, ABI,
+layout, runtime, stdlib, general nullability, and Phase 26.1 closure remain
+unchanged.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
