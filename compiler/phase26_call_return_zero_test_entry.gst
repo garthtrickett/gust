@@ -360,12 +360,21 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
         os.LogStr("Error: named plain alias lost its checked cast-chain candidate window"); os.Exit(1);
     }
     env.zero_local_call_alias_hops = 2;
-    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_cast_call], &env, ctx) != 0 {
-        os.LogStr("Error: second alias gained a checked cast candidate window"); os.Exit(1);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_cast_call], &env, ctx) != 1 {
+        os.LogStr("Error: second plain alias lost its checked cast candidate window"); os.Exit(1);
     }
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_cast_chain_call], &env, ctx) != 1 {
+        os.LogStr("Error: second plain alias lost its checked cast-chain candidate window"); os.Exit(1);
+    }
+    env.zero_local_call_alias_hops = 3;
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_cast_chain_call], &env, ctx) != 1 {
+        os.LogStr("Error: third plain alias lost its checked cast-chain candidate window"); os.Exit(1);
+    }
+    env.zero_local_call_take_alias_terminal = 1;
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_cast_chain_call], &env, ctx) != 0 {
-        os.LogStr("Error: second alias gained a checked cast-chain candidate window"); os.Exit(1);
+        os.LogStr("Error: Take-terminal alias gained a checked cast-chain candidate window"); os.Exit(1);
     }
+    env.zero_local_call_take_alias_terminal = 0;
     env.zero_local_call_name = "ptr";
     env.zero_local_call_alias_hops = 1;
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_take_call], &env, ctx) != 0 ||

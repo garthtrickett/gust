@@ -727,6 +727,20 @@ Candidate seeding and invalidation, four-state evidence, pointer semantics,
 MIR, ABI, layout, runtime, stdlib, general nullability, and Phase 26.1 closure
 remain unchanged.
 
+**26.1E consecutive plain aliases with checked casts (ownership authorized
+2026-10-03).** The existing same-block candidate may pass through a finite
+sequence of immediately consecutive, type-matched, by-value `*T` plain aliases
+before a direct declared-safe non-extern one-argument call. When that argument
+is a finite chain of checked RawPointer-to-RawPointer casts of the final alias,
+the existing Zero/MayZero summary rejects it before native planning. Each cast
+still requires resolved RawPointer operand and target metadata after unchanged
+typechecking. The formerly deferred second-alias cases are now source errors;
+one-alias behavior remains covered. A Take or Move terminal, assignment or
+other intervening statement, nested scope, scalar cast, indirect or generic
+call, Nonzero or Unknown evidence, and unsafe target retain their existing
+paths and diagnostic precedence. No general alias or nullability model, MIR,
+ABI, layout, runtime, stdlib, or Phase 26.1 closure is claimed.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
