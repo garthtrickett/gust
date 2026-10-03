@@ -181,7 +181,7 @@ for case_name in caller_first callee_first mayzero_caller_first mayzero_callee_f
   test ! -e "$marker"
 done
 
-for case_name in caller_first callee_first mayzero_caller_first mayzero_callee_first nonzero unknown unsafe_target overwrite intervening nested chained_after_take after_take_mayzero after_take_two_suffixes after_take_nonzero after_take_unknown after_take_unsafe after_take_second_take repeated_take_zero_callee_first repeated_take_mayzero repeated_take_cast_zero repeated_take_cast_mayzero repeated_take_interleaved_zero repeated_take_nonzero repeated_take_unknown repeated_take_unsafe_target repeated_take_wrong_type repeated_take_gap prior_error direct_take_argument safe_return literal_take; do
+for case_name in caller_first callee_first mayzero_caller_first mayzero_callee_first nonzero unknown unsafe_target overwrite intervening nested chained_after_take after_take_mayzero after_take_two_suffixes after_take_nonzero after_take_unknown after_take_unsafe after_take_second_take repeated_take_zero_callee_first repeated_take_mayzero repeated_take_cast_zero repeated_take_cast_mayzero repeated_take_interleaved_zero repeated_take_nonzero repeated_take_unknown repeated_take_unsafe_target repeated_take_wrong_type repeated_take_gap terminal_zero_second_take_call terminal_mayzero_second_take_call terminal_zero_caller_first_take_call terminal_mayzero_caller_first_take_call terminal_zero_plain_take_call terminal_nonzero_second_take_call terminal_unknown_second_take_call terminal_unsafe_second_take_call terminal_gap_second_take_call terminal_move_second_take_call terminal_nested_take_call terminal_zero_second_take_cast_call terminal_wrong_type_second_take_call prior_error direct_take_argument safe_return literal_take; do
   fixture="compiler/phase26_call_take_alias_zero_${case_name}_source.gst"
   output="$build_root/take_alias_${case_name}"
   rm -f "$output" "$marker"
@@ -195,14 +195,14 @@ for case_name in caller_first callee_first mayzero_caller_first mayzero_callee_f
   set -e
   test "$status" -ne 0
   case "$case_name" in
-    caller_first|callee_first|mayzero_caller_first|mayzero_callee_first|chained_after_take|after_take_mayzero|after_take_two_suffixes|after_take_second_take|repeated_take_zero_callee_first|repeated_take_mayzero|repeated_take_cast_zero|repeated_take_cast_mayzero|repeated_take_interleaved_zero|literal_take|direct_take_argument)
-      case "$case_name" in caller_first|mayzero_caller_first|literal_take) line=3 ;; *) line=4 ;; esac
+    caller_first|callee_first|mayzero_caller_first|mayzero_callee_first|chained_after_take|after_take_mayzero|after_take_two_suffixes|after_take_second_take|repeated_take_zero_callee_first|repeated_take_mayzero|repeated_take_cast_zero|repeated_take_cast_mayzero|repeated_take_interleaved_zero|terminal_zero_second_take_call|terminal_mayzero_second_take_call|terminal_zero_caller_first_take_call|terminal_mayzero_caller_first_take_call|terminal_zero_plain_take_call|literal_take|direct_take_argument)
+      case "$case_name" in terminal_zero_caller_first_take_call|terminal_mayzero_caller_first_take_call) line=2 ;; caller_first|mayzero_caller_first|literal_take) line=3 ;; *) line=4 ;; esac
       rg -F "TypeError in $fixture at line $line:" "$output.stdout" >/dev/null
       rg -F '[RawNullSafeBoundary] Known zero-derived raw pointer cannot cross a declared-safe function argument' "$output.stdout" >/dev/null
       if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
       ;;
-    prior_error|repeated_take_wrong_type)
-      if [[ "$case_name" == prior_error ]]; then line=5; message='[TypeMismatch] Return type mismatch. Expected Int but got Str'; else line=4; message="Argument type mismatch for function 'accept_raw'. Expected RawPointer(Int) but got Int"; fi
+    prior_error|repeated_take_wrong_type|terminal_wrong_type_second_take_call)
+      if [[ "$case_name" == prior_error ]]; then line=5; message='[TypeMismatch] Return type mismatch. Expected Int but got Str'; elif [[ "$case_name" == terminal_wrong_type_second_take_call ]]; then line=4; message="Argument type mismatch for function 'accept_int'. Expected Int but got RawPointer(Int)"; else line=4; message="Argument type mismatch for function 'accept_raw'. Expected RawPointer(Int) but got Int"; fi
       rg -F "TypeError in $fixture at line $line:" "$output.stdout" >/dev/null
       rg -F "$message" "$output.stdout" >/dev/null
       if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null || rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
@@ -238,8 +238,8 @@ for case_name in caller_first mayzero_caller_first mayzero_callee_first plain_ch
   set -e
   test "$status" -ne 0
   case "$case_name" in
-    caller_first|mayzero_caller_first|mayzero_callee_first|plain_chain|literal_take)
-      case "$case_name" in mayzero_callee_first) line=4 ;; *) line=3 ;; esac
+    caller_first|mayzero_caller_first|mayzero_callee_first|plain_chain|literal_take|second_take)
+      case "$case_name" in mayzero_callee_first|second_take) line=4 ;; *) line=3 ;; esac
       rg -F "TypeError in $fixture at line $line:" "$output.stdout" >/dev/null
       rg -F '[RawNullSafeBoundary] Known zero-derived raw pointer cannot cross a declared-safe function argument' "$output.stdout" >/dev/null
       if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi

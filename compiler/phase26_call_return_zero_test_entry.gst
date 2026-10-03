@@ -372,6 +372,20 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
     }
     env.zero_local_call_take_alias_terminal = 1;
     env.zero_local_call_alias_hops = 1;
+    mut terminal_take_call := parse_statement("accept_raw(take alias);", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[terminal_take_call], &env, ctx) != 1 {
+        os.LogStr("Error: terminal Take of named alias lost its candidate"); os.Exit(1);
+    }
+    mut terminal_move_call := parse_statement("accept_raw(move alias);", ctx);
+    mut terminal_nested_take_call := parse_statement("accept_raw(take take alias);", ctx);
+    mut terminal_take_cast_call := parse_statement("accept_raw((take alias) as *int);", ctx);
+    mut terminal_wrong_name_call := parse_statement("accept_raw(take ptr);", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[terminal_move_call], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[terminal_nested_take_call], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[terminal_take_cast_call], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[terminal_wrong_name_call], &env, ctx) != 0 {
+        os.LogStr("Error: excluded terminal wrapper acquired an alias candidate"); os.Exit(1);
+    }
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_cast_call], &env, ctx) != 1 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_cast_chain_call], &env, ctx) != 1 {
         os.LogStr("Error: one Take-terminal alias lost its checked cast candidate window"); os.Exit(1);
@@ -484,6 +498,7 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
         os.LogStr("Error: direct terminal Take argument lost its candidate"); os.Exit(1);
     }
     env.zero_local_call_take_alias_terminal = 1;
+    env.zero_local_call_alias_hops = 0; // A terminal marker alone cannot authorize a second Take.
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_take_call], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[take_cast_call], &env, ctx) != 0 {
         os.LogStr("Error: terminal Take alias acquired a second Take/cast hop"); os.Exit(1);

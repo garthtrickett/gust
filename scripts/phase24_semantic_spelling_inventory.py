@@ -466,6 +466,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     call_repeated_take_zero_successor = registry.get("phase26_activation_audit", {}).get(
         "call_repeated_take_alias_zero_evidence_increment", {}).get(
         "spelling_inventory_successor")
+    call_terminal_take_zero_successor = registry.get("phase26_activation_audit", {}).get(
+        "call_terminal_take_argument_zero_evidence_increment", {}).get(
+        "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -2062,17 +2065,43 @@ def validate() -> tuple[dict, list[dict], dict]:
         require(call_repeated_take_zero_successor.get("contract_version") ==
                 "phase26_1e_call_repeated_take_alias_zero_spelling_inventory_successor_v1" and
                 call_repeated_take_zero_successor.get("previous_inventory_summary") == previous and
-                call_repeated_take_zero_successor.get("current_inventory_summary") == summary and
+                call_repeated_take_zero_successor.get("current_inventory_summary") ==
+                (summary if call_terminal_take_zero_successor is None else
+                 call_terminal_take_zero_successor.get("previous_inventory_summary")) and
                 call_repeated_take_zero_successor.get("changed_source_paths") == sorted([
                     "compiler/typechecker.gst", "compiler/phase26_call_return_zero_test_entry.gst",
                     *paths]) and
                 call_repeated_take_zero_successor.get(
                     "partial_extra_or_substituted_inventory") == "rejected" and
+                call_repeated_take_zero_successor["current_inventory_summary"]["source_file_count"] == previous["source_file_count"] + len(paths) and
+                call_repeated_take_zero_successor["current_inventory_summary"]["site_count"] == previous["site_count"] and
+                call_repeated_take_zero_successor["current_inventory_summary"]["semantic_site_count"] == previous["semantic_site_count"] and
+                call_repeated_take_zero_successor["current_inventory_summary"]["unknown_site_count"] == 0,
+                "Phase 26 repeated-Take alias spelling inventory drifted")
+    if call_terminal_take_zero_successor is not None:
+        paths = [f"compiler/phase26_call_take_alias_zero_terminal_{name}_source.gst"
+                 for name in ("zero_second_take_call", "mayzero_second_take_call",
+                              "zero_caller_first_take_call", "mayzero_caller_first_take_call",
+                              "zero_plain_take_call", "nonzero_second_take_call",
+                              "unknown_second_take_call", "unsafe_second_take_call",
+                              "gap_second_take_call", "move_second_take_call",
+                              "nested_take_call", "zero_second_take_cast_call",
+                              "wrong_type_second_take_call")]
+        previous = call_repeated_take_zero_successor["current_inventory_summary"]
+        require(call_terminal_take_zero_successor.get("contract_version") ==
+                "phase26_1e_call_terminal_take_argument_zero_spelling_inventory_successor_v1" and
+                call_terminal_take_zero_successor.get("previous_inventory_summary") == previous and
+                call_terminal_take_zero_successor.get("current_inventory_summary") == summary and
+                call_terminal_take_zero_successor.get("changed_source_paths") == sorted([
+                    "compiler/typechecker.gst", "compiler/phase26_call_return_zero_test_entry.gst",
+                    *paths]) and
+                call_terminal_take_zero_successor.get(
+                    "partial_extra_or_substituted_inventory") == "rejected" and
                 summary["source_file_count"] == previous["source_file_count"] + len(paths) and
                 summary["site_count"] == previous["site_count"] and
                 summary["semantic_site_count"] == previous["semantic_site_count"] and
                 summary["unknown_site_count"] == 0,
-                "Phase 26 repeated-Take alias spelling inventory drifted")
+                "Phase 26 terminal-Take argument spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),

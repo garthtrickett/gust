@@ -810,6 +810,18 @@ classification. The earlier second-Take deferral is superseded only in this
 bounded local chain. No MIR, ABI, layout, runtime, stdlib, or general
 nullability change is claimed. Phase 26.1 remains open.
 
+**26.1E terminal Take argument after an alias (ownership authorized 2026-10-03).**
+After unchanged statement and call typechecking, an immediately following
+declared-safe non-extern call rejects proven Zero/MayZero when its single
+RawPointer argument is exactly `Take(Identifier)` naming the current candidate
+after at least one qualified same-block alias and a terminal Take alias. This
+promotes the earlier second-Take-at-call deferral while retaining TypeMismatch
+precedence, immediate-window invalidation, the four-state finalizer, and
+existing Take/move/resource bookkeeping. Move, nested Take, Take with casts,
+statement gaps, Nonzero/Unknown evidence, and unsafe calls retain their prior
+classification. The patch changes no MIR, ABI, layout, runtime, or stdlib rule.
+Phase 26.1 and general nullability remain open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

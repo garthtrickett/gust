@@ -33,6 +33,17 @@ def digest(path: str) -> str:
 def before_call_return_zero_digest(activation: dict, path: str,
                                    live_digest: str) -> str:
     """Project the later exact text-surface successor to this closed patch."""
+    terminal_take_rows = activation.get(
+        "call_terminal_take_argument_zero_evidence_increment", {}).get(
+        "phase23_text_surface_successor", {}).get("changed_rows", [])
+    selected = [row for row in terminal_take_rows if row.get("path") == path]
+    require(len(selected) <= 1, f"duplicate terminal-Take text surface: {path}")
+    if selected:
+        row = selected[0]
+        require(row["current_digest"] == live_digest and
+                len(row["previous_digest"]) == 64,
+                f"terminal-Take text surface drifted: {path}")
+        live_digest = row["previous_digest"]
     repeated_take_rows = activation.get(
         "call_repeated_take_alias_zero_evidence_increment", {}).get(
         "phase23_text_surface_successor", {}).get("changed_rows", [])
