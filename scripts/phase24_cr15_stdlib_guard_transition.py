@@ -3792,6 +3792,31 @@ def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    take_alias_cast = registry.get("phase26_activation_audit", {}).get(
+        "call_take_alias_cast_zero_evidence_increment", {}).get(
+        "phase23_text_surface_successor")
+    if take_alias_cast is not None:
+        changed = take_alias_cast.get("changed_rows")
+        require(take_alias_cast.get("contract_version") ==
+                "phase26_1e_call_take_alias_cast_zero_phase23_text_surface_successor_v1" and
+                take_alias_cast.get("partial_extra_or_substituted_surface") == "rejected" and
+                isinstance(changed, list) and take_alias_cast.get("added_rows") == [] and
+                len({entry.get("path") for entry in changed}) == len(changed),
+                "Phase 26 Take-alias-cast text surface successor shape drifted")
+        live = {row["path"]: row for row in rows}
+        for entry in changed:
+            row = live.get(entry["path"])
+            require(row is not None and
+                    row["digest"] == entry["current_digest"] and
+                    row["match_counts"] == entry["current_match_counts"] and
+                    len(entry["previous_digest"]) == 64,
+                    f"Phase 26 Take-alias-cast text surface drifted: {entry['path']}")
+        rows = [dict(row,
+                     digest=next((entry["previous_digest"] for entry in changed
+                                  if entry["path"] == row["path"]), row["digest"]),
+                     match_counts=next((entry["previous_match_counts"] for entry in changed
+                                        if entry["path"] == row["path"]), row["match_counts"]))
+                for row in rows]
     local_alias_cast_consecutive = registry.get("phase26_activation_audit", {}).get(
         "call_local_alias_cast_consecutive_zero_evidence_increment", {}).get(
         "phase23_text_surface_successor")
