@@ -2420,7 +2420,6 @@ func phase26_zero_local_call_statement_consumes_candidate(stmt: ast.Statement[ct
 func phase26_zero_local_call_alias_name(stmt: ast.Statement[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) str {
     unsafe {
         if std.str_eq((*env).zero_local_call_name, "") == 1 ||
-           (*env).zero_local_call_take_alias_terminal == 1 ||
            stmt.tag != 4 {
             return "";
         }
@@ -2428,6 +2427,7 @@ func phase26_zero_local_call_alias_name(stmt: ast.Statement[ctx], env: *TypeEnvi
         if value_idx == empty[Index[ast.Expression[ctx], ctx]] { return ""; }
         mut value := ctx[value_idx];
         if value.tag == 5 { // Take
+            if (*env).zero_local_call_take_alias_terminal == 1 { return ""; }
             value_idx = value.Take.expr;
             if value_idx == empty[Index[ast.Expression[ctx], ctx]] { return ""; }
             value = ctx[value_idx];
@@ -14486,7 +14486,6 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
                     (*env).zero_local_call_alias_hops =
                         (*env).zero_local_call_alias_hops + 1;
                     mut alias_value_idx := statements[i].VarDecl.value;
-                    (*env).zero_local_call_take_alias_terminal = 0;
                     if alias_value_idx != empty[Index[ast.Expression[ctx], ctx]] &&
                        ctx[alias_value_idx].tag == 5 { // Take
                         (*env).zero_local_call_take_alias_terminal = 1;
