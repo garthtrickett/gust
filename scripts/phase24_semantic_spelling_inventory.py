@@ -457,6 +457,9 @@ def validate() -> tuple[dict, list[dict], dict]:
     call_plain_take_cast_zero_successor = registry.get("phase26_activation_audit", {}).get(
         "call_plain_take_alias_cast_zero_evidence_increment", {}).get(
         "spelling_inventory_successor")
+    call_consecutive_plain_take_cast_zero_successor = registry.get("phase26_activation_audit", {}).get(
+        "call_consecutive_plain_take_alias_cast_zero_evidence_increment", {}).get(
+        "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -1972,21 +1975,44 @@ def validate() -> tuple[dict, list[dict], dict]:
         paths = [f"compiler/phase26_call_take_alias_cast_{name}_source.gst"
                  for name in names]
         previous = call_take_alias_cast_zero_successor["current_inventory_summary"]
+        plain_take_current = call_plain_take_cast_zero_successor["current_inventory_summary"]
         require(call_plain_take_cast_zero_successor.get("contract_version") ==
                 "phase26_1e_call_plain_take_alias_cast_zero_spelling_inventory_successor_v1" and
                 call_plain_take_cast_zero_successor.get("previous_inventory_summary") == previous and
-                call_plain_take_cast_zero_successor.get("current_inventory_summary") == summary and
+                call_plain_take_cast_zero_successor.get("current_inventory_summary") ==
+                (summary if call_consecutive_plain_take_cast_zero_successor is None else
+                 call_consecutive_plain_take_cast_zero_successor.get("previous_inventory_summary")) and
                 call_plain_take_cast_zero_successor.get("changed_source_paths") == sorted([
                     "compiler/typechecker.gst",
                     "compiler/phase26_call_return_zero_test_entry.gst", *paths,
                 ]) and
                 call_plain_take_cast_zero_successor.get(
                     "partial_extra_or_substituted_inventory") == "rejected" and
+                plain_take_current["source_file_count"] == previous["source_file_count"] + len(paths) and
+                plain_take_current["site_count"] == previous["site_count"] and
+                plain_take_current["semantic_site_count"] == previous["semantic_site_count"] and
+                plain_take_current["unknown_site_count"] == 0,
+                "Phase 26 plain-before-Take-cast spelling inventory drifted")
+    if call_consecutive_plain_take_cast_zero_successor is not None:
+        names = ("two_plains_mayzero", "three_plains_zero", "two_plains_callee_first",
+                 "two_plains_nonzero", "two_plains_unknown")
+        paths = [f"compiler/phase26_call_take_alias_cast_{name}_source.gst"
+                 for name in names]
+        previous = call_plain_take_cast_zero_successor["current_inventory_summary"]
+        require(call_consecutive_plain_take_cast_zero_successor.get("contract_version") ==
+                "phase26_1e_call_consecutive_plain_take_alias_cast_zero_spelling_inventory_successor_v1" and
+                call_consecutive_plain_take_cast_zero_successor.get("previous_inventory_summary") == previous and
+                call_consecutive_plain_take_cast_zero_successor.get("current_inventory_summary") == summary and
+                call_consecutive_plain_take_cast_zero_successor.get("changed_source_paths") == sorted([
+                    "compiler/typechecker.gst", "compiler/phase26_call_return_zero_test_entry.gst",
+                    *paths]) and
+                call_consecutive_plain_take_cast_zero_successor.get(
+                    "partial_extra_or_substituted_inventory") == "rejected" and
                 summary["source_file_count"] == previous["source_file_count"] + len(paths) and
                 summary["site_count"] == previous["site_count"] and
                 summary["semantic_site_count"] == previous["semantic_site_count"] and
                 summary["unknown_site_count"] == 0,
-                "Phase 26 plain-before-Take-cast spelling inventory drifted")
+                "Phase 26 consecutive plain-before-Take-cast spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),

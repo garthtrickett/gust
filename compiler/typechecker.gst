@@ -2310,12 +2310,9 @@ func phase26_zero_local_call_argument_matches_candidate(arg: ast.Expression[ctx]
         if arg.tag == 0 { // Identifier
             return std.str_eq(arg.Identifier.name, (*env).zero_local_call_name);
         }
-        if arg.tag == 9 { // Plain aliases and one terminal Take may carry checked pointer casts.
+        if arg.tag == 9 { // A finite plain alias prefix and one terminal Take may carry checked pointer casts.
             if (*env).zero_local_call_alias_hops > 0 {
-                if ((*env).zero_local_call_take_alias_terminal == 1 &&
-                    (*env).zero_local_call_alias_hops != 1 &&
-                    (*env).zero_local_call_alias_hops != 2) ||
-                   arg.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+                if arg.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
                 mut alias_source_idx := arg.AsCast.left;
                 while alias_source_idx != empty[Index[ast.Expression[ctx], ctx]] {
                     mut alias_source := ctx[alias_source_idx];
