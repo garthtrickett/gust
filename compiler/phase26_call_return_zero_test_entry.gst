@@ -379,6 +379,15 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_cast_chain_call], &env, ctx) != 1 {
         os.LogStr("Error: one Take-terminal alias lost its checked cast candidate window"); os.Exit(1);
     }
+    env.zero_local_call_alias_hops = 2;
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_cast_call], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_cast_chain_call], &env, ctx) != 1 {
+        os.LogStr("Error: one plain alias before Take lost its checked cast candidate window"); os.Exit(1);
+    }
+    env.zero_local_call_alias_hops = 3;
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_cast_chain_call], &env, ctx) != 0 {
+        os.LogStr("Error: multiple plain aliases before Take widened the checked cast candidate window"); os.Exit(1);
+    }
     env.zero_local_call_take_alias_terminal = 0;
     env.zero_local_call_name = "ptr";
     env.zero_local_call_alias_hops = 1;

@@ -96,6 +96,8 @@ def main() -> None:
         "call_local_alias_cast_consecutive_zero_evidence_increment", {})
     take_alias_cast_record = activation.get(
         "call_take_alias_cast_zero_evidence_increment", {})
+    plain_take_cast_record = activation.get(
+        "call_plain_take_alias_cast_zero_evidence_increment", {})
     require(record["phase22_invocation_successor"] == {
         "contract_version": "phase26_1e_call_return_zero_phase22_invocation_successor_v1",
         "previous_total": 218, "current_total": 220, "added_rows": rows[:2],
@@ -201,9 +203,16 @@ def main() -> None:
         local_alias_cast_consecutive_record.get("phase23_text_surface_successor", {}).get("changed_rows", [])}
     take_alias_cast_changed = {row["path"]: row for row in
         take_alias_cast_record.get("phase23_text_surface_successor", {}).get("changed_rows", [])}
+    plain_take_cast_changed = {row["path"]: row for row in
+        plain_take_cast_record.get("phase23_text_surface_successor", {}).get("changed_rows", [])}
     for row in surface["changed_rows"]:
         text = (ROOT / row["path"]).read_text(encoding="utf-8")
         live_digest = digest(row["path"])
+        plain_take_cast_successor = plain_take_cast_changed.get(row["path"])
+        if plain_take_cast_successor:
+            require(plain_take_cast_successor["current_digest"] == live_digest,
+                    f"plain-before-Take-cast text surface drifted: {row['path']}")
+            live_digest = plain_take_cast_successor["previous_digest"]
         take_alias_cast_successor = take_alias_cast_changed.get(row["path"])
         if take_alias_cast_successor:
             require(take_alias_cast_successor["current_digest"] == live_digest,
@@ -330,6 +339,11 @@ def main() -> None:
         successor = local_changed.get(row["path"])
         alias_successor = alias_changed.get(row["path"])
         live_digest = digest(row["path"])
+        plain_take_cast_successor = plain_take_cast_changed.get(row["path"])
+        if plain_take_cast_successor:
+            require(plain_take_cast_successor["current_digest"] == live_digest,
+                    f"plain-before-Take-cast text surface drifted: {row['path']}")
+            live_digest = plain_take_cast_successor["previous_digest"]
         take_alias_cast_successor = take_alias_cast_changed.get(row["path"])
         if take_alias_cast_successor:
             require(take_alias_cast_successor["current_digest"] == live_digest,
@@ -3107,7 +3121,9 @@ def main() -> None:
         "phase23_text_surface_successor",
     } and all((ROOT / path).is_file() for path in take_alias_cast_fixtures),
             "Take-alias-cast successor fields or fixtures drifted")
-    live_take_alias_cast_inventory = manifest_summary(source_sites())
+    live_take_alias_cast_inventory = plain_take_cast_record.get(
+        "spelling_inventory_successor", {}).get(
+        "previous_inventory_summary", manifest_summary(source_sites()))
     require(take_alias_cast_record["spelling_inventory_successor"] == {
         "contract_version": "phase26_1e_call_take_alias_cast_zero_spelling_inventory_successor_v1",
         "previous_inventory_summary": live_consecutive_inventory,
@@ -3123,7 +3139,8 @@ def main() -> None:
             live_consecutive_inventory["semantic_site_count"] and
             live_take_alias_cast_inventory["unknown_site_count"] == 0,
             "Take-alias-cast spelling inventory drifted")
-    current_take_alias_cast_sites = filename_sites()
+    current_take_alias_cast_sites = plain_take_cast_record.get(
+        "filename_site_successor", {}).get("previous_sites", filename_sites())
     require(take_alias_cast_record["filename_site_successor"] == {
         "contract_version": "phase26_1e_call_take_alias_cast_zero_filename_site_successor_v1",
         "previous_sites": live_consecutive_sites,
@@ -3152,7 +3169,9 @@ def main() -> None:
         predecessor = prior_rows[path]
         require(row["previous_digest"] == predecessor["current_digest"] and
                 row["previous_match_counts"] == predecessor["current_match_counts"] and
-                row["current_digest"] == digest(path) and
+                row["current_digest"] ==
+                (plain_take_cast_changed[path]["previous_digest"]
+                 if path in plain_take_cast_changed else digest(path)) and
                 row["current_match_counts"] == {
                     name: len(pattern.findall(text)) for name, pattern in SURFACE_PATTERNS.items()},
                 f"Take-alias-cast text surface drifted: {path}")
@@ -3166,6 +3185,115 @@ def main() -> None:
             "zero_local_call_alias_hops != 1" in compiler and
             "one Take-terminal alias lost its checked cast" in positive,
             "Take-alias-cast native or poison evidence weakened")
+
+    plain_take_names = (
+        "plain_prefix_callee_first", "plain_prefix_mayzero", "plain_prefix_direct",
+        "plain_prefix_two_plains", "plain_prefix_nonzero", "plain_prefix_unknown",
+        "plain_prefix_unsafe_target", "plain_prefix_wrong_type",
+        "plain_prefix_intervening")
+    plain_take_fixtures = [
+        f"compiler/phase26_call_take_alias_cast_{name}_source.gst"
+        for name in plain_take_names]
+    promoted = "compiler/phase26_call_take_alias_cast_plain_prefix_source.gst"
+    plain_take_static = {
+        "contract_version": "phase26_1e_call_plain_take_alias_cast_zero_v1",
+        "status": "one_plain_alias_before_terminal_Take_checked_cast_safe_argument_rejection_qualified",
+        "owner": "cranelift",
+        "increment": "26.1E_one_plain_alias_before_terminal_Take_checked_cast_subset",
+        "operator_ownership_decision": "2026-10-03_bounded_one_plain_alias_before_terminal_Take_checked_cast",
+        "value_states": ["Unknown", "Zero", "Nonzero", "MayZero"],
+        "candidate_shape": "immediate_same_block_concrete_nullary_call_one_plain_alias_one_terminal_Take_alias_finite_checked_RawPointer_AsCast_chain_argument",
+        "metadata_proof": "post_typecheck_each_cast_resolved_RawPointer_operand_and_target_or_no_summary",
+        "summary_order": "after_all_function_bodies_before_native_planner",
+        "positive_fixture": POSITIVE,
+        "positive_output": "SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, mixed Move/Take cast chains, and exclusions verified\n",
+        "negative_fixtures": [promoted, *plain_take_fixtures[:3]],
+        "control_fixtures": plain_take_fixtures[3:] + [
+            "compiler/phase26_call_take_alias_cast_second_alias_source.gst",
+            "compiler/phase26_call_take_alias_cast_zero_caller_first_source.gst",
+        ],
+        "reclassified_fixtures": [{
+            "path": promoted, "previous": "accepted_then_native_deferral",
+            "current": "RawNullSafeBoundary_before_driver",
+        }],
+        "safe_boundaries": ["declared_nonextern_raw_pointer_argument"],
+        "negative_states": ["Zero", "MayZero"],
+        "prior_error_precedence": "preserved",
+        "unknown_and_nonzero": "preserved",
+        "unsafe_callees": "preserved",
+        "take_move_semantics_changed": False,
+        "diagnostic": "[RawNullSafeBoundary]",
+        "failure_stage": "before_driver_discovery",
+        "native_fallback": False,
+        "physical_abi_changed": False,
+        "mir_changed": False,
+        "runtime_symbol_surface_changed": False,
+        "operator_semantics_changed": False,
+        "general_nullability": "open_separate_obligation",
+        "phase26_1_closed": False,
+        "owning_level2_guard": GUARD,
+        "pr_fast_job": "phase26-ffi-position",
+    }
+    for key, value in plain_take_static.items():
+        require(plain_take_cast_record.get(key) == value,
+                f"plain-before-Take-cast successor field drifted: {key}")
+    require(set(plain_take_cast_record) == set(plain_take_static) | {
+        "spelling_inventory_successor", "filename_site_successor",
+        "phase23_text_surface_successor",
+    } and all((ROOT / path).is_file() for path in plain_take_fixtures),
+            "plain-before-Take-cast successor fields or fixtures drifted")
+    current_inventory = manifest_summary(source_sites())
+    require(plain_take_cast_record["spelling_inventory_successor"] == {
+        "contract_version": "phase26_1e_call_plain_take_alias_cast_zero_spelling_inventory_successor_v1",
+        "previous_inventory_summary": live_take_alias_cast_inventory,
+        "current_inventory_summary": current_inventory,
+        "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
+                                        *plain_take_fixtures]),
+        "partial_extra_or_substituted_inventory": "rejected",
+    } and current_inventory["source_file_count"] ==
+            live_take_alias_cast_inventory["source_file_count"] + len(plain_take_fixtures) and
+            current_inventory["site_count"] == live_take_alias_cast_inventory["site_count"] and
+            current_inventory["semantic_site_count"] ==
+            live_take_alias_cast_inventory["semantic_site_count"] and
+            current_inventory["unknown_site_count"] == 0,
+            "plain-before-Take-cast spelling inventory drifted")
+    current_sites = filename_sites()
+    require(plain_take_cast_record["filename_site_successor"] == {
+        "contract_version": "phase26_1e_call_plain_take_alias_cast_zero_filename_site_successor_v1",
+        "previous_sites": current_take_alias_cast_sites,
+        "current_sites": current_sites,
+        "line_deltas": [now["line"] - before["line"] for before, now in
+                        zip(current_take_alias_cast_sites, current_sites)],
+        "partial_extra_or_substituted_site": "rejected",
+    } and len(current_take_alias_cast_sites) == len(current_sites) == 3,
+            "plain-before-Take-cast filename sites drifted")
+    plain_take_surface = plain_take_cast_record["phase23_text_surface_successor"]
+    require(plain_take_surface.get("contract_version") ==
+            "phase26_1e_call_plain_take_alias_cast_zero_phase23_text_surface_successor_v1" and
+            plain_take_surface.get("partial_extra_or_substituted_surface") == "rejected" and
+            plain_take_surface.get("added_rows") == [] and
+            sorted(row["path"] for row in plain_take_surface["changed_rows"]) ==
+            ["compiler/typechecker.gst", "scripts/phase26_call_return_zero_registration.py"],
+            "plain-before-Take-cast text surface set drifted")
+    prior_rows = {row["path"]: row for row in take_alias_cast_surface["changed_rows"]}
+    for row in plain_take_surface["changed_rows"]:
+        path = row["path"]
+        text = (ROOT / path).read_text(encoding="utf-8")
+        predecessor = prior_rows[path]
+        require(row["previous_digest"] == predecessor["current_digest"] and
+                row["previous_match_counts"] == predecessor["current_match_counts"] and
+                row["current_digest"] == digest(path) and
+                row["current_match_counts"] == {
+                    name: len(pattern.findall(text)) for name, pattern in SURFACE_PATTERNS.items()},
+                f"plain-before-Take-cast text surface drifted: {path}")
+    require("take_alias_cast_plain_prefix_callee_first" in guard and
+            "take_alias_cast_plain_prefix_mayzero" in guard and
+            "take_alias_cast_plain_prefix_two_plains" in guard and
+            "take_alias_cast_plain_prefix_wrong_type" in guard and
+            "test ! -e \"$marker\"" in guard and
+            "zero_local_call_alias_hops != 2" in compiler and
+            "one plain alias before Take lost its checked cast" in positive,
+            "plain-before-Take-cast native or poison evidence weakened")
     print(f"{GUARD}: registration ok")
 
 
