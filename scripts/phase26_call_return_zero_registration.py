@@ -90,6 +90,8 @@ def main() -> None:
     local_take_cast_chain_record = activation.get("call_local_take_cast_chain_zero_evidence_increment", {})
     local_move_cast_chain_record = activation.get("call_local_move_cast_chain_zero_evidence_increment", {})
     local_alias_cast_record = activation.get("call_local_alias_cast_zero_evidence_increment", {})
+    local_alias_cast_chain_record = activation.get(
+        "call_local_alias_cast_chain_zero_evidence_increment", {})
     require(record["phase22_invocation_successor"] == {
         "contract_version": "phase26_1e_call_return_zero_phase22_invocation_successor_v1",
         "previous_total": 218, "current_total": 220, "added_rows": rows[:2],
@@ -189,9 +191,16 @@ def main() -> None:
         "phase23_text_surface_successor", {}).get("changed_rows", [])}
     local_alias_cast_changed = {row["path"]: row for row in local_alias_cast_record.get(
         "phase23_text_surface_successor", {}).get("changed_rows", [])}
+    local_alias_cast_chain_changed = {row["path"]: row for row in
+        local_alias_cast_chain_record.get("phase23_text_surface_successor", {}).get("changed_rows", [])}
     for row in surface["changed_rows"]:
         text = (ROOT / row["path"]).read_text(encoding="utf-8")
         live_digest = digest(row["path"])
+        alias_cast_chain_successor = local_alias_cast_chain_changed.get(row["path"])
+        if alias_cast_chain_successor:
+            require(alias_cast_chain_successor["current_digest"] == live_digest,
+                    f"local-alias-cast-chain text surface drifted: {row['path']}")
+            live_digest = alias_cast_chain_successor["previous_digest"]
         alias_cast_successor = local_alias_cast_changed.get(row["path"])
         if alias_cast_successor:
             require(alias_cast_successor["current_digest"] == live_digest,
@@ -303,6 +312,11 @@ def main() -> None:
         successor = local_changed.get(row["path"])
         alias_successor = alias_changed.get(row["path"])
         live_digest = digest(row["path"])
+        alias_cast_chain_successor = local_alias_cast_chain_changed.get(row["path"])
+        if alias_cast_chain_successor:
+            require(alias_cast_chain_successor["current_digest"] == live_digest,
+                    f"local-alias-cast-chain text surface drifted: {row['path']}")
+            live_digest = alias_cast_chain_successor["previous_digest"]
         alias_cast_successor = local_alias_cast_changed.get(row["path"])
         if alias_cast_successor:
             require(alias_cast_successor["current_digest"] == live_digest,
@@ -2699,7 +2713,8 @@ def main() -> None:
             "local-alias-cast successor fields or fixtures drifted")
     previous_alias_cast_inventory = local_move_cast_chain_record[
         "spelling_inventory_successor"]["current_inventory_summary"]
-    current_alias_cast_inventory = manifest_summary(source_sites())
+    current_alias_cast_inventory = local_alias_cast_chain_record[
+        "spelling_inventory_successor"]["previous_inventory_summary"]
     require(local_alias_cast_record["spelling_inventory_successor"] == {
         "contract_version": "phase26_1e_call_local_alias_cast_zero_spelling_inventory_successor_v1",
         "previous_inventory_summary": previous_alias_cast_inventory,
@@ -2717,17 +2732,19 @@ def main() -> None:
             "local-alias-cast spelling inventory successor drifted")
     previous_alias_cast_sites = local_move_cast_chain_record[
         "filename_site_successor"]["current_sites"]
+    current_alias_cast_sites = local_alias_cast_chain_record[
+        "filename_site_successor"]["previous_sites"]
     require(local_alias_cast_record["filename_site_successor"] == {
         "contract_version": "phase26_1e_call_local_alias_cast_zero_filename_site_successor_v1",
         "previous_sites": previous_alias_cast_sites,
-        "current_sites": live_sites,
+        "current_sites": current_alias_cast_sites,
         "line_deltas": [now["line"] - before["line"]
-                        for before, now in zip(previous_alias_cast_sites, live_sites)],
+                        for before, now in zip(previous_alias_cast_sites, current_alias_cast_sites)],
         "partial_extra_or_substituted_site": "rejected",
-    } and len(previous_alias_cast_sites) == len(live_sites) == 3 and
+    } and len(previous_alias_cast_sites) == len(current_alias_cast_sites) == 3 and
             all({key: value for key, value in now.items() if key != "line"} ==
                 {key: value for key, value in before.items() if key != "line"}
-                for before, now in zip(previous_alias_cast_sites, live_sites)),
+                for before, now in zip(previous_alias_cast_sites, current_alias_cast_sites)),
             "local-alias-cast filename sites drifted")
     alias_cast_surface = local_alias_cast_record["phase23_text_surface_successor"]
     require(alias_cast_surface.get("contract_version") ==
@@ -2742,9 +2759,11 @@ def main() -> None:
         path = row["path"]
         text = (ROOT / path).read_text(encoding="utf-8")
         predecessor = previous_alias_cast_rows[path]
+        next_row = local_alias_cast_chain_changed.get(path)
         require(row["previous_digest"] == predecessor["current_digest"] and
                 row["previous_match_counts"] == predecessor["current_match_counts"] and
-                row["current_digest"] == digest(path) and
+                row["current_digest"] ==
+                (next_row["previous_digest"] if next_row else digest(path)) and
                 row["current_match_counts"] == {
                     name: len(pattern.findall(text))
                     for name, pattern in SURFACE_PATTERNS.items()},
@@ -2755,8 +2774,123 @@ def main() -> None:
             "test ! -e \"$marker\"" in guard and
             "zero_local_call_alias_hops == 1" in compiler and
             "phase26_zero_local_call_argument_cast_is_raw" in compiler and
-            "alias nested-cast widened" in positive,
+            "alias nested-cast lost" in positive,
             "local-alias-cast native or poison evidence weakened")
+
+    alias_cast_chain_names = (
+        "alias_cast_chain_zero_callee_first", "alias_cast_chain_mayzero",
+        "alias_cast_chain_nonzero", "alias_cast_chain_unknown",
+        "alias_cast_chain_unsafe_target", "alias_cast_chain_second_alias",
+        "alias_cast_chain_scalar_inner", "alias_cast_chain_type_mismatch")
+    alias_cast_chain_fixtures = [
+        f"compiler/phase26_call_local_{name}_source.gst"
+        for name in alias_cast_chain_names]
+    alias_cast_chain_static = {
+        "contract_version": "phase26_1e_call_local_alias_cast_chain_zero_v1",
+        "status": "checked_one_plain_alias_RawPointer_cast_chain_local_safe_argument_rejection_qualified",
+        "owner": "cranelift",
+        "increment": "26.1E_one_plain_alias_checked_cast_chain_direct_local_argument_subset",
+        "operator_ownership_decision": "2026-10-02_bounded_one_plain_alias_checked_local_cast_chain_argument",
+        "value_states": ["Unknown", "Zero", "Nonzero", "MayZero"],
+        "candidate_shape": "one_immediate_same_block_concrete_nullary_call_result_one_type_matched_plain_alias_finite_checked_RawPointer_AsCast_chain_argument",
+        "metadata_proof": "post_typecheck_each_cast_resolved_RawPointer_operand_and_target_or_no_summary",
+        "summary_order": "after_all_function_bodies_before_native_planner",
+        "positive_fixture": POSITIVE,
+        "positive_output": "SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, mixed Move/Take cast chains, and exclusions verified\n",
+        "negative_fixtures": [
+            "compiler/phase26_call_local_cast_chain_zero_alias_source.gst",
+            *alias_cast_chain_fixtures[:2]],
+        "control_fixtures": [
+            *alias_cast_chain_fixtures[2:],
+            "compiler/phase26_call_local_take_cast_alias_source.gst",
+            "compiler/phase26_call_local_move_cast_chain_alias_source.gst"],
+        "reclassified_fixtures": [{
+            "path": "compiler/phase26_call_local_cast_chain_zero_alias_source.gst",
+            "previous": "accepted_then_native_deferral",
+            "current": "RawNullSafeBoundary_before_driver",
+        }],
+        "safe_boundaries": ["declared_nonextern_raw_pointer_argument"],
+        "negative_states": ["Zero", "MayZero"],
+        "prior_error_precedence": "preserved",
+        "unknown_and_nonzero": "preserved", "unsafe_callees": "preserved",
+        "take_move_semantics_changed": False,
+        "diagnostic": "[RawNullSafeBoundary]", "failure_stage": "before_driver_discovery",
+        "native_fallback": False, "physical_abi_changed": False,
+        "mir_changed": False, "runtime_symbol_surface_changed": False,
+        "operator_semantics_changed": False,
+        "general_nullability": "open_separate_obligation", "phase26_1_closed": False,
+        "owning_level2_guard": GUARD, "pr_fast_job": "phase26-ffi-position",
+    }
+    for key, value in alias_cast_chain_static.items():
+        require(local_alias_cast_chain_record.get(key) == value,
+                f"local-alias-cast-chain successor field drifted: {key}")
+    require(set(local_alias_cast_chain_record) == set(alias_cast_chain_static) | {
+        "spelling_inventory_successor", "filename_site_successor",
+        "phase23_text_surface_successor",
+    } and all((ROOT / path).is_file() for path in alias_cast_chain_fixtures),
+            "local-alias-cast-chain successor fields or fixtures drifted")
+    live_alias_cast_chain_inventory = manifest_summary(source_sites())
+    require(local_alias_cast_chain_record["spelling_inventory_successor"] == {
+        "contract_version": "phase26_1e_call_local_alias_cast_chain_zero_spelling_inventory_successor_v1",
+        "previous_inventory_summary": local_alias_cast_record[
+            "spelling_inventory_successor"]["current_inventory_summary"],
+        "current_inventory_summary": live_alias_cast_chain_inventory,
+        "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
+                                        *alias_cast_chain_fixtures]),
+        "partial_extra_or_substituted_inventory": "rejected",
+    } and live_alias_cast_chain_inventory["source_file_count"] ==
+            current_alias_cast_inventory["source_file_count"] + len(alias_cast_chain_fixtures) and
+            live_alias_cast_chain_inventory["site_count"] == current_alias_cast_inventory["site_count"] and
+            live_alias_cast_chain_inventory["semantic_site_count"] ==
+            current_alias_cast_inventory["semantic_site_count"] and
+            live_alias_cast_chain_inventory["unknown_site_count"] == 0,
+            "local-alias-cast-chain spelling inventory drifted")
+    require(local_alias_cast_chain_record["filename_site_successor"] == {
+        "contract_version": "phase26_1e_call_local_alias_cast_chain_zero_filename_site_successor_v1",
+        "previous_sites": current_alias_cast_sites,
+        "current_sites": live_sites,
+        "line_deltas": [now["line"] - before["line"]
+                        for before, now in zip(current_alias_cast_sites, live_sites)],
+        "partial_extra_or_substituted_site": "rejected",
+    } and len(current_alias_cast_sites) == len(live_sites) == 3 and
+            all({key: value for key, value in now.items() if key != "line"} ==
+                {key: value for key, value in before.items() if key != "line"}
+                for before, now in zip(current_alias_cast_sites, live_sites)),
+            "local-alias-cast-chain filename sites drifted")
+    alias_cast_chain_surface = local_alias_cast_chain_record["phase23_text_surface_successor"]
+    previous_digests = {
+        "compiler/typechecker.gst": "1c4a8e30a3e2b5674f37369d75e1e03e5c96fa8ee26fb4ee3c96da8e7fddbde9",
+        "scripts/phase26_call_return_zero_registration.py": "a162b9747a73f01d4d9c99dc0606bc8d5318a6e2c904938b35c50b5a4928bcaf",
+    }
+    previous_counts = {path: dict(zip(SURFACE_PATTERNS, counts)) for path, counts in {
+        "compiler/typechecker.gst": (0, 0, 1),
+        "scripts/phase26_call_return_zero_registration.py": (0, 1, 0),
+    }.items()}
+    require(alias_cast_chain_surface.get("contract_version") ==
+            "phase26_1e_call_local_alias_cast_chain_zero_phase23_text_surface_successor_v1" and
+            alias_cast_chain_surface.get("partial_extra_or_substituted_surface") == "rejected" and
+            alias_cast_chain_surface.get("added_rows") == [] and
+            sorted(row["path"] for row in alias_cast_chain_surface["changed_rows"]) ==
+            sorted(previous_digests), "local-alias-cast-chain text surface set drifted")
+    for row in alias_cast_chain_surface["changed_rows"]:
+        path = row["path"]
+        text = (ROOT / path).read_text(encoding="utf-8")
+        require(row["previous_digest"] == previous_digests[path] and
+                row["previous_match_counts"] == previous_counts[path] and
+                row["current_digest"] == digest(path) and
+                row["current_match_counts"] == {
+                    name: len(pattern.findall(text))
+                    for name, pattern in SURFACE_PATTERNS.items()},
+                f"local-alias-cast-chain text surface drifted: {path}")
+    require("cast_chain_zero_alias|alias_cast_zero_callee_first" in guard and
+            "alias_cast_chain_zero_callee_first alias_cast_chain_mayzero" in guard and
+            "alias_cast_chain_second_alias alias_cast_chain_scalar_inner" in guard and
+            "alias_cast_chain_type_mismatch" in guard and
+            "test ! -e \"$marker\"" in guard and
+            "alias_source_idx = alias_source.AsCast.left" in compiler and
+            "phase26_zero_local_call_argument_cast_is_raw" in compiler and
+            "named plain alias lost its checked cast-chain" in positive,
+            "local-alias-cast-chain native or poison evidence weakened")
     print(f"{GUARD}: registration ok")
 
 

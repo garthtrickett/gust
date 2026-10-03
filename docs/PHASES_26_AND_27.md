@@ -712,6 +712,21 @@ type mismatches keep precedence. Candidate invalidation, pointer semantics,
 MIR, ABI, layout, runtime, stdlib, general nullability, and Phase 26.1 closure
 remain unchanged.
 
+**26.1E checked cast chain of an immediate plain alias (ownership authorized
+2026-10-02).** The same concrete nullary raw-pointer result and one immediate
+same-block, type-matched, by-value plain alias may cross a finite syntactic
+chain of RawPointer-to-RawPointer `as` casts in the next direct, declared-safe,
+non-extern one-argument call. The unchanged typechecker must first prove every
+cast operand and target has resolved RawPointer type. Its existing Zero or
+MayZero summary then rejects the safe argument before native driver discovery;
+Nonzero, Unknown, and unsafe calls retain their existing native deferrals.
+This deliberately promotes the formerly deferred two-cast alias fixture while
+keeping a second alias, Take or Move wrapper, scalar cast, intervening statement,
+branch, indirect or generic call, and prior type error on their previous paths.
+Candidate seeding and invalidation, four-state evidence, pointer semantics,
+MIR, ABI, layout, runtime, stdlib, general nullability, and Phase 26.1 closure
+remain unchanged.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
