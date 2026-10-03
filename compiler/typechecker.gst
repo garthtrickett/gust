@@ -2427,7 +2427,6 @@ func phase26_zero_local_call_alias_name(stmt: ast.Statement[ctx], env: *TypeEnvi
         if value_idx == empty[Index[ast.Expression[ctx], ctx]] { return ""; }
         mut value := ctx[value_idx];
         if value.tag == 5 { // Take
-            if (*env).zero_local_call_take_alias_terminal == 1 { return ""; }
             value_idx = value.Take.expr;
             if value_idx == empty[Index[ast.Expression[ctx], ctx]] { return ""; }
             value = ctx[value_idx];
