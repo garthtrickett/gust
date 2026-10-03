@@ -767,6 +767,20 @@ casts, Nonzero or Unknown evidence, and unsafe targets retain their prior
 routes and type-error precedence. This does not change MIR, ABI, layout,
 runtime, stdlib, general nullability, or Phase 26.1 closure.
 
+**26.1E consecutive plain aliases before terminal Take with checked casts
+(ownership authorized 2026-10-03).** A finite consecutive same-block prefix
+of type-matched plain by-value RawPointer aliases may precede exactly one
+terminal `Take` alias. The immediately following declared-safe non-extern
+argument call rejects proven Zero/MayZero through a finite chain of checked
+RawPointer-to-RawPointer casts before native planning. Existing alias
+transfer, statement invalidation, cast proof, four-state summary, and Take
+bookkeeping are reused. Any alias after Take, second Take or Move,
+intervening or nested statement, indirect or generic call, scalar or
+unproven cast, Nonzero or Unknown evidence, unsafe target, and wrong-type
+diagnostic keeps its prior route. No MIR, ABI, layout, runtime, stdlib, or
+general nullability change is authorized by this subset. Phase 26.1 remains
+open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
