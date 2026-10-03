@@ -2303,14 +2303,14 @@ func phase26_zero_note_direct_call_boundary(env: *TypeEnvironment[ctx], target_t
 }
 
 // A direct argument may take or move the current candidate exactly once. After
-// a Take alias, only a direct Take of that named candidate may consume it here.
+// a Take alias, a direct Take of that name may carry checked outer pointer casts.
 func phase26_zero_local_call_argument_matches_candidate(arg: ast.Expression[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         if std.str_eq((*env).zero_local_call_name, "") == 1 { return 0; }
         if arg.tag == 0 { // Identifier
             return std.str_eq(arg.Identifier.name, (*env).zero_local_call_name);
         }
-        if arg.tag == 9 { // A finite plain alias prefix and one terminal Take may carry checked pointer casts.
+        if arg.tag == 9 { // Checked pointer casts may wrap a terminal Take alias exactly once.
             if (*env).zero_local_call_alias_hops > 0 {
                 if arg.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
                 mut alias_source_idx := arg.AsCast.left;
@@ -2318,6 +2318,13 @@ func phase26_zero_local_call_argument_matches_candidate(arg: ast.Expression[ctx]
                     mut alias_source := ctx[alias_source_idx];
                     if alias_source.tag == 0 {
                         return std.str_eq(alias_source.Identifier.name, (*env).zero_local_call_name);
+                    }
+                    if alias_source.tag == 5 &&
+                       (*env).zero_local_call_take_alias_terminal == 1 {
+                        if alias_source.Take.expr == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+                        mut taken := ctx[alias_source.Take.expr];
+                        if taken.tag != 0 { return 0; }
+                        return std.str_eq(taken.Identifier.name, (*env).zero_local_call_name);
                     }
                     if alias_source.tag != 9 { return 0; }
                     alias_source_idx = alias_source.AsCast.left;

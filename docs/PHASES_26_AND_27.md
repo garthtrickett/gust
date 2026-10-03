@@ -822,6 +822,19 @@ statement gaps, Nonzero/Unknown evidence, and unsafe calls retain their prior
 classification. The patch changes no MIR, ABI, layout, runtime, or stdlib rule.
 Phase 26.1 and general nullability remain open.
 
+**26.1E checked outer casts over a terminal Take argument (ownership authorized
+2026-10-03).** After unchanged typechecking, the same immediate safe-call
+boundary rejects Zero/MayZero when a finite chain of checked
+RawPointer-to-RawPointer casts wraps exactly one `Take(Identifier)` of the
+current candidate after a terminal Take alias. Every cast operand and target
+must have resolved RawPointer metadata. The existing summary, statement-window
+invalidation, diagnostic precedence, and Take/move/resource bookkeeping stay
+authoritative. `Take(Cast)`, a second or nested Take, Move, scalar casts,
+wrong types, statement gaps, indirect/generic calls, Nonzero/Unknown evidence,
+and unsafe callees retain their prior classifications. No MIR, ABI, layout,
+runtime, stdlib, or general nullability change is claimed. Phase 26.1 remains
+open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

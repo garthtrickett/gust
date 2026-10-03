@@ -382,9 +382,11 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
     mut terminal_wrong_name_call := parse_statement("accept_raw(take ptr);", ctx);
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[terminal_move_call], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[terminal_nested_take_call], &env, ctx) != 0 ||
-       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[terminal_take_cast_call], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[terminal_wrong_name_call], &env, ctx) != 0 {
         os.LogStr("Error: excluded terminal wrapper acquired an alias candidate"); os.Exit(1);
+    }
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[terminal_take_cast_call], &env, ctx) != 1 {
+        os.LogStr("Error: checked outer cast lost terminal Take alias candidate"); os.Exit(1);
     }
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_cast_call], &env, ctx) != 1 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_cast_chain_call], &env, ctx) != 1 {
@@ -505,6 +507,17 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
     }
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_take], &env, ctx) != 0 {
         os.LogStr("Error: Take alias acquired a second Take hop"); os.Exit(1);
+    }
+    env.zero_local_call_alias_hops = 2;
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_take_call], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_nested_take], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_triple_take], &env, ctx) != 1 {
+        os.LogStr("Error: terminal Take alias lost checked outer cast chain"); os.Exit(1);
+    }
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[take_cast_call], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[double_take_cast], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_cast_call], &env, ctx) != 0 {
+        os.LogStr("Error: terminal Take alias admitted an inner cast, second Take, or Move"); os.Exit(1);
     }
     env.zero_local_call_take_alias_terminal = 0;
     mut nested_take := parse_statement("accept_raw(take take ptr);", ctx);

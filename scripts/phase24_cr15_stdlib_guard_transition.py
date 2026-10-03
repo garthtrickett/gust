@@ -3792,6 +3792,31 @@ def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    terminal_cast = registry.get("phase26_activation_audit", {}).get(
+        "call_terminal_take_cast_chain_zero_evidence_increment", {}).get(
+        "phase23_text_surface_successor")
+    if terminal_cast is not None:
+        changed = terminal_cast.get("changed_rows")
+        require(terminal_cast.get("contract_version") ==
+                "phase26_1e_call_terminal_take_cast_chain_zero_phase23_text_surface_successor_v1" and
+                terminal_cast.get("partial_extra_or_substituted_surface") == "rejected" and
+                isinstance(changed, list) and terminal_cast.get("added_rows") == [] and
+                len({entry.get("path") for entry in changed}) == len(changed),
+                "Phase 26 terminal-Take cast-chain text surface successor shape drifted")
+        live = {row["path"]: row for row in rows}
+        for entry in changed:
+            row = live.get(entry["path"])
+            require(row is not None and
+                    row["digest"] == entry["current_digest"] and
+                    row["match_counts"] == entry["current_match_counts"] and
+                    len(entry["previous_digest"]) == 64,
+                    f"Phase 26 terminal-Take cast-chain text surface drifted: {entry['path']}")
+        rows = [dict(row,
+                     digest=next((entry["previous_digest"] for entry in changed
+                                  if entry["path"] == row["path"]), row["digest"]),
+                     match_counts=next((entry["previous_match_counts"] for entry in changed
+                                        if entry["path"] == row["path"]), row["match_counts"]))
+                for row in rows]
     terminal_take = registry.get("phase26_activation_audit", {}).get(
         "call_terminal_take_argument_zero_evidence_increment", {}).get(
         "phase23_text_surface_successor")
