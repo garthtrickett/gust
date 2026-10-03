@@ -779,7 +779,21 @@ intervening or nested statement, indirect or generic call, scalar or
 unproven cast, Nonzero or Unknown evidence, unsafe target, and wrong-type
 diagnostic keeps its prior route. No MIR, ABI, layout, runtime, stdlib, or
 general nullability change is authorized by this subset. Phase 26.1 remains
-open.
+open. Its after-Take alias classification is superseded by the bounded
+successor below.
+
+**26.1E plain aliases after one Take (ownership authorized 2026-10-03).**
+After unchanged typechecking, a proven Zero/MayZero candidate may pass through
+finite consecutive same-block type-matched plain by-value RawPointer aliases
+following exactly one accepted Take. A validated plain prefix before Take is
+also allowed. The immediate declared-safe non-extern argument call rejects the
+candidate directly or through a finite checked RawPointer-to-RawPointer cast
+chain before native planning. The existing candidate invalidation, four-state
+summary, per-cast proof, and Take/move bookkeeping remain authoritative.
+Second Take or Move, statement gaps, nested or indirect calls, generic calls,
+scalar or unproven casts, wrong types, Nonzero/Unknown evidence, and unsafe
+targets retain their prior classification. This subset changes no MIR, ABI,
+layout, runtime, stdlib, or general nullability rule. Phase 26.1 remains open.
 
 ## Phase 26.2 — generalized linear-resource enforcement
 
