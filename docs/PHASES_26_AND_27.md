@@ -755,6 +755,18 @@ their existing routes and diagnostic precedence. Take bookkeeping, MIR, ABI,
 layout, runtime, stdlib, general nullability, and Phase 26.1 closure remain
 unchanged.
 
+**26.1E one plain alias before terminal Take with checked casts (ownership
+authorized 2026-10-03).** One immediate type-matched plain by-value
+RawPointer alias may precede the terminal `Take` alias above. The next
+declared-safe non-extern call rejects a proven Zero/MayZero result through a
+finite chain of post-typecheck proven RawPointer-to-RawPointer casts. The
+existing candidate invalidation and Take/move bookkeeping remain unchanged.
+More than one plain alias before Take, aliases after Take, intervening or
+nested statements, indirect or generic calls, Move combinations, scalar
+casts, Nonzero or Unknown evidence, and unsafe targets retain their prior
+routes and type-error precedence. This does not change MIR, ABI, layout,
+runtime, stdlib, general nullability, or Phase 26.1 closure.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
