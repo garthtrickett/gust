@@ -1,0 +1,5 @@
+unsafe func make_mayzero() *int { return (256 as byte) as *int; }
+func relay_wrong_type() int {
+    unsafe { mut ptr := make_mayzero(); mut alias := take ptr; return (alias as *int) as *byte; }
+}
+func main() int { return 0; }
