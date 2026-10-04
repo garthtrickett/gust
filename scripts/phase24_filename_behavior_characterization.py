@@ -397,6 +397,10 @@ def validate_static(value: dict) -> None:
                     "phase26_activation_audit", {}).get(
                     "call_plain_alias_return_cast_chain_zero_evidence_increment", {}).get(
                     "filename_site_successor")
+                call_take_alias_return_sites = registry.get(
+                    "phase26_activation_audit", {}).get(
+                    "call_take_alias_return_zero_evidence_increment", {}).get(
+                    "filename_site_successor")
                 e1_current = (live_sites if d5_sites is None else
                               d5_sites.get("previous_sites"))
                 require(e1_sites.get("contract_version") ==
@@ -1582,15 +1586,32 @@ def validate_static(value: dict) -> None:
                     require(call_plain_alias_return_cast_sites.get("contract_version") ==
                             "phase26_1e_call_plain_alias_return_cast_chain_filename_site_successor_v1" and
                             call_plain_alias_return_cast_sites.get("previous_sites") == previous_cast_return and
-                            call_plain_alias_return_cast_sites.get("current_sites") == live_sites and
+                            call_plain_alias_return_cast_sites.get("current_sites") ==
+                            (live_sites if call_take_alias_return_sites is None else
+                             call_take_alias_return_sites.get("previous_sites")) and
                             isinstance(deltas_cast_return, list) and len(deltas_cast_return) == len(live_sites) == 3 and
                             call_plain_alias_return_cast_sites.get("partial_extra_or_substituted_site") == "rejected" and
                             all(now["line"] == before["line"] + delta and
                                 {key: val for key, val in now.items() if key != "line"} ==
                                 {key: val for key, val in before.items() if key != "line"}
                                 for before, now, delta in zip(previous_cast_return,
-                                    live_sites, deltas_cast_return)),
+                                    call_plain_alias_return_cast_sites["current_sites"], deltas_cast_return)),
                             "Phase 26 checked-cast plain-alias return filename sites drifted")
+                if call_take_alias_return_sites is not None:
+                    previous_take_return = call_plain_alias_return_cast_sites["current_sites"]
+                    deltas_take_return = call_take_alias_return_sites.get("line_deltas")
+                    require(call_take_alias_return_sites.get("contract_version") ==
+                            "phase26_1e_call_take_alias_return_filename_site_successor_v1" and
+                            call_take_alias_return_sites.get("previous_sites") == previous_take_return and
+                            call_take_alias_return_sites.get("current_sites") == live_sites and
+                            isinstance(deltas_take_return, list) and len(deltas_take_return) == len(live_sites) == 3 and
+                            call_take_alias_return_sites.get("partial_extra_or_substituted_site") == "rejected" and
+                            all(now["line"] == before["line"] + delta and
+                                {key: val for key, val in now.items() if key != "line"} ==
+                                {key: val for key, val in before.items() if key != "line"}
+                                for before, now, delta in zip(previous_take_return,
+                                    live_sites, deltas_take_return)),
+                            "Phase 26 Take-alias safe-return filename sites drifted")
     require([row["selector"] for row in value["site_manifest"]] ==
             ["test_tcs_", "test_index_", "test_tcs_"],
             "selector order or completeness drifted")

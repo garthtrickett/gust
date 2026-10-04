@@ -16,7 +16,7 @@ test ! -s "$build_root/typechecker.compile.stdout"
 test ! -s "$build_root/typechecker.compile.stderr"
 "$build_root/typechecker" >"$build_root/typechecker.stdout" 2>"$build_root/typechecker.stderr"
 test ! -s "$build_root/typechecker.stderr"
-printf 'SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, mixed Move/Take cast chains, consecutive outer Take chains, interleaved Take/cast chains, local safe returns and plain-alias safe returns, and exclusions verified\n' >"$build_root/typechecker.expected"
+printf 'SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, mixed Move/Take cast chains, consecutive outer Take chains, interleaved Take/cast chains, local safe returns and plain-alias safe returns and Take-alias safe returns, and exclusions verified\n' >"$build_root/typechecker.expected"
 cmp -s "$build_root/typechecker.expected" "$build_root/typechecker.stdout"
 
 poison="$build_root/poison-driver"
@@ -738,7 +738,7 @@ for case_name in cast_zero_caller_first cast_zero_callee_first cast_mayzero cast
       if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
       if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
       ;;
-    plain_alias_return_zero_two|plain_alias_return_mayzero_two|plain_alias_return_cast|plain_alias_return_cast_chain_mayzero_two|plain_alias_return_cast_chain_zero_two)
+    plain_alias_return_zero_two|plain_alias_return_mayzero_two|plain_alias_return_cast|plain_alias_return_cast_chain_mayzero_two|plain_alias_return_cast_chain_zero_two|plain_alias_return_take|plain_alias_return_cast_chain_take)
       rg -F "TypeError in $fixture at line 3:" "$output.stdout" >/dev/null
       rg -F '[RawNullSafeBoundary] Known zero-derived raw pointer cannot cross a declared-safe function return' "$output.stdout" >/dev/null
       if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
@@ -806,5 +806,47 @@ for case_name in cast_zero_caller_first cast_zero_callee_first cast_mayzero cast
   test ! -e "$marker"
 done
 
+for case_name in mayzero_direct mayzero_cast_depth2 mayzero_plain_prefix mayzero_repeated_take mayzero_plain_suffix_cast zero_direct nonzero unknown unsafe gap overwrite wrong_type prior_escape return_take move_alias scalar_inner; do
+  fixture="compiler/phase26_call_local_return_take_alias_${case_name}_source.gst"
+  output="$build_root/take_return_${case_name}"
+  rm -f "$output" "$marker"
+  set +e
+  GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
+  GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER="$PWD/$marker" \
+  GUST_NATIVE_BACKEND_DRIVER="$PWD/$poison" \
+    ./gust --backend cranelift -o "$output" "$fixture" \
+      >"$output.stdout" 2>"$output.stderr"
+  status=$?
+  set -e
+  test "$status" -ne 0
+  case "$case_name" in
+    mayzero_direct|mayzero_cast_depth2|mayzero_plain_prefix|mayzero_repeated_take|mayzero_plain_suffix_cast|zero_direct)
+      rg -F "TypeError in $fixture at line 3:" "$output.stdout" >/dev/null
+      rg -F '[RawNullSafeBoundary] Known zero-derived raw pointer cannot cross a declared-safe function return' "$output.stdout" >/dev/null
+      if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+    wrong_type)
+      rg -F "TypeError in $fixture at line 3:" "$output.stdout" >/dev/null
+      rg -F '[TypeMismatch] Return type mismatch. Expected Int but got RawPointer(Byte)' "$output.stdout" >/dev/null
+      if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
+      if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+    prior_escape)
+      rg -F "TypeError in $fixture at line 2:" "$output.stdout" >/dev/null
+      rg -F 'Escape analysis violation. Returning ephemeral view' "$output.stdout" >/dev/null
+      if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
+      if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+    *)
+      rg -F 'decision=deferred capability=phase13_generic_source_to_mir' "$output.stdout" >/dev/null
+      rg -F 'reason_code=deferred_p13_parameter_argument_target_dependent_abi' "$output.stdout" >/dev/null
+      if rg -F 'TypeError' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+  esac
+  test ! -s "$output.stderr"
+  test ! -e "$output"
+  test ! -e "$marker"
+done
+
 bash scripts/phase26_empty_raw_zero_evidence.sh
-echo 'Phase26.1E direct-call return, aliases, checked wrappers, mixed chains, plain-alias safe returns, and no-fallback passed.'
+echo 'Phase26.1E direct-call return, aliases, checked wrappers, mixed chains, plain-alias safe returns and Take-alias safe returns, and no-fallback passed.'

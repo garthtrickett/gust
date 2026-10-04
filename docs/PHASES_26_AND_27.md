@@ -909,6 +909,20 @@ ephemeral-escape diagnostics retain precedence. This changes no provenance
 model, Take/move/resource semantics, MIR, ABI, layout, runtime, or stdlib.
 D/E/F and Phase 26.1 remain open.
 
+**26.1E Take-alias safe-return summary (ownership authorized 2026-10-04).**
+After unchanged typechecking, an immediate safe return may carry the existing
+concrete nullary-call `*T` Zero/MayZero candidate through a finite consecutive
+same-block, type-matched by-value alias chain containing `Take`. The return
+uses the current Identifier or a finite chain of resolved RawPointer-to-
+RawPointer casts. Existing candidate invalidation, per-hop raw-pointer proof,
+four-state summary, and finalizer reject the escape before native planning.
+Take/move/resource bookkeeping and prior type or ephemeral-escape diagnostics
+retain their meaning. `Return Take(expr)`, Move, scalar-inner casts, gaps,
+overwrites, branches, indirect/generic calls, unsafe functions, nonzero and
+Unknown results retain their prior classifications. This changes no MIR, ABI,
+layout, runtime, stdlib, or fallback behavior. D/E/F and Phase 26.1 remain
+open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

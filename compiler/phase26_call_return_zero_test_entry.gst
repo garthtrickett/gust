@@ -289,11 +289,20 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
         os.LogStr("Error: consecutive plain alias return lost its candidate window"); os.Exit(1);
     }
     env.zero_local_call_take_alias_terminal = 1;
-    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_return], &env, ctx) != 0 {
-        os.LogStr("Error: Take alias widened the plain-return candidate window"); os.Exit(1);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_return], &env, ctx) != 1 {
+        os.LogStr("Error: validated Take alias lost the plain-return candidate window"); os.Exit(1);
     }
-    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_return], &env, ctx) != 0 {
-        os.LogStr("Error: Take alias widened the cast-return candidate window"); os.Exit(1);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_return], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_chain_return], &env, ctx) != 1 {
+        os.LogStr("Error: validated Take alias lost the checked cast-return candidate window"); os.Exit(1);
+    }
+    mut direct_take_return := parse_statement("return take ptr;", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_take_return], &env, ctx) != 0 {
+        os.LogStr("Error: Return Take(expr) widened the alias-return candidate window"); os.Exit(1);
+    }
+    mut moved_return := parse_statement("return move ptr;", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_return], &env, ctx) != 0 {
+        os.LogStr("Error: Move widened the alias-return candidate window"); os.Exit(1);
     }
     env.zero_local_call_take_alias_terminal = 0;
     env.zero_local_call_alias_hops = 0;
@@ -714,5 +723,5 @@ func main() {
     check_pointer_cast_chain_boundary("move ((take make_zero() as *int) as *int)", int_pointer, 0, 0, ctx);
     check_pointer_cast_chain_boundary("move ((make_zero() as int) as *int)", int_pointer, 1, 0, ctx);
     check_pointer_cast_chain_boundary("0 as *int", int_pointer, 1, 0, ctx);
-    os.LogStr("SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, mixed Move/Take cast chains, consecutive outer Take chains, interleaved Take/cast chains, local safe returns and plain-alias safe returns, and exclusions verified");
+    os.LogStr("SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, mixed Move/Take cast chains, consecutive outer Take chains, interleaved Take/cast chains, local safe returns and plain-alias safe returns and Take-alias safe returns, and exclusions verified");
 }

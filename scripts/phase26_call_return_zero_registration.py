@@ -120,11 +120,13 @@ def main() -> None:
         "call_plain_alias_return_zero_evidence_increment", {})
     plain_alias_return_cast_record = activation.get(
         "call_plain_alias_return_cast_chain_zero_evidence_increment", {})
+    take_alias_return_record = activation.get(
+        "call_take_alias_return_zero_evidence_increment", {})
     require(record["phase22_invocation_successor"] == {
         "contract_version": "phase26_1e_call_return_zero_phase22_invocation_successor_v1",
         "previous_total": 218, "current_total": 220, "added_rows": rows[:2],
         "partial_extra_or_substituted_invocation": "rejected",
-    } and len(rows) == 19 and
+    } and len(rows) == 20 and
             local_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[2:3] and
             alias_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[3:4] and
             chain_record.get("phase22_invocation_successor", {}).get("added_rows") == rows[4:5] and
@@ -249,9 +251,16 @@ def main() -> None:
         plain_alias_return_record.get("phase23_text_surface_successor", {}).get("changed_rows", [])}
     plain_alias_return_cast_changed = {row["path"]: row for row in
         plain_alias_return_cast_record.get("phase23_text_surface_successor", {}).get("changed_rows", [])}
+    take_alias_return_changed = {row["path"]: row for row in
+        take_alias_return_record.get("phase23_text_surface_successor", {}).get("changed_rows", [])}
     for row in surface["changed_rows"]:
         text = (ROOT / row["path"]).read_text(encoding="utf-8")
         live_digest = digest(row["path"])
+        take_return_successor = take_alias_return_changed.get(row["path"])
+        if take_return_successor:
+            require(take_return_successor["current_digest"] == live_digest,
+                    f"Take-alias return text surface drifted: {row['path']}")
+            live_digest = take_return_successor["previous_digest"]
         cast_return_successor = plain_alias_return_cast_changed.get(row["path"])
         if cast_return_successor:
             require(cast_return_successor["current_digest"] == live_digest,
@@ -438,6 +447,11 @@ def main() -> None:
         successor = local_changed.get(row["path"])
         alias_successor = alias_changed.get(row["path"])
         live_digest = digest(row["path"])
+        take_return_successor = take_alias_return_changed.get(row["path"])
+        if take_return_successor:
+            require(take_return_successor["current_digest"] == live_digest,
+                    f"Take-alias return text surface drifted: {row['path']}")
+            live_digest = take_return_successor["previous_digest"]
         cast_return_successor = plain_alias_return_cast_changed.get(row["path"])
         if cast_return_successor:
             require(cast_return_successor["current_digest"] == live_digest,
@@ -1639,7 +1653,8 @@ def main() -> None:
         "previous_sites": prior_sites,
         "current_sites": live_sites,
         "line_deltas": [now["line"] - before["line"]
-                        for before, now in zip(prior_sites, live_sites)],
+                        for before, now in zip(prior_sites,
+                                               live_sites)],
         "partial_extra_or_substituted_site": "rejected",
     } and len(prior_sites) == len(live_sites) == 3 and
             all({key: value for key, value in now.items() if key != "line"} ==
@@ -1857,7 +1872,7 @@ def main() -> None:
         "previous_total": 230, "current_total": 231,
         "added_rows": rows[12:13],
         "partial_extra_or_substituted_invocation": "rejected",
-    } and len(rows) == 19,
+    } and len(rows) == 20,
             "one RawPointer AsCast invocation successor drifted")
     require(as_cast_record["production_audit_successor"] == {
         "contract_version": "phase26_1e_call_as_cast_zero_production_audit_successor_v1",
@@ -2103,7 +2118,7 @@ def main() -> None:
         "previous_total": 231, "current_total": 233,
         "added_rows": mixed_invocations[13:15],
         "partial_extra_or_substituted_invocation": "rejected",
-    } and len(mixed_invocations) == 19,
+    } and len(mixed_invocations) == 20,
             "mixed cast invocation successor drifted")
     require(mixed_record["production_audit_successor"] == {
         "contract_version": "phase26_1e_call_mixed_cast_zero_production_audit_successor_v1",
@@ -2393,18 +2408,23 @@ def main() -> None:
                 "scripts/phase26_call_return_zero_registration.py"]),
             "local-cast text surface set drifted")
     predecessor_surfaces = {row["path"]: row for row in chain_surface["changed_rows"]}
+    take_return_surfaces = {row["path"]: row for row in
+        take_alias_return_record.get("phase23_text_surface_successor", {}).get("changed_rows", [])}
     for row in local_cast_surface["changed_rows"]:
         path = row["path"]
         text = (ROOT / path).read_text(encoding="utf-8")
         successor = local_cast_chain_changed.get(path)
+        take_return_successor = take_return_surfaces.get(path)
+        current_digest = (successor["previous_digest"] if successor else
+                          take_return_successor["previous_digest"] if take_return_successor else digest(path))
+        current_counts = (successor["previous_match_counts"] if successor else
+                          take_return_successor["previous_match_counts"] if take_return_successor else {
+                              name: len(pattern.findall(text))
+                              for name, pattern in SURFACE_PATTERNS.items()})
         require(row["previous_digest"] == predecessor_surfaces[path]["current_digest"] and
-                row["current_digest"] ==
-                (successor["previous_digest"] if successor else digest(path)) and
+                row["current_digest"] == current_digest and
                 row["previous_match_counts"] == predecessor_surfaces[path]["current_match_counts"] and
-                row["current_match_counts"] ==
-                (successor["previous_match_counts"] if successor else {
-                    name: len(pattern.findall(text))
-                    for name, pattern in SURFACE_PATTERNS.items()}),
+                row["current_match_counts"] == current_counts,
                 f"local-cast text surface drifted: {path}")
     require("phase26_call_local_${case_name}_source.gst" in guard and
             "cast_zero_caller_first cast_zero_callee_first cast_mayzero" in guard and
@@ -4607,17 +4627,17 @@ def main() -> None:
     require(plain_alias_return_cast_record["positive_fixture_successor"] == {
         "path": POSITIVE,
         "previous_digest": plain_alias_return_record["positive_fixture_successor"]["current_digest"],
-        "current_digest": digest(POSITIVE),
+        "current_digest": take_alias_return_record["positive_fixture_successor"]["previous_digest"],
     }, "checked-cast plain-alias return positive evidence drifted")
     prior_inventory = plain_alias_return_record["spelling_inventory_successor"]["current_inventory_summary"]
     require(plain_alias_return_cast_record["spelling_inventory_successor"] == {
         "contract_version": "phase26_1e_call_plain_alias_return_cast_chain_spelling_inventory_successor_v1",
         "previous_inventory_summary": prior_inventory,
-        "current_inventory_summary": live_inventory,
+        "current_inventory_summary": take_alias_return_record["spelling_inventory_successor"]["previous_inventory_summary"],
         "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
                                         *cast_return_fixtures]),
         "partial_extra_or_substituted_inventory": "rejected",
-    } and live_inventory["source_file_count"] == prior_inventory["source_file_count"] + len(cast_return_fixtures) and
+    } and take_alias_return_record["spelling_inventory_successor"]["previous_inventory_summary"]["source_file_count"] == prior_inventory["source_file_count"] + len(cast_return_fixtures) and
             live_inventory["site_count"] == prior_inventory["site_count"] and
             live_inventory["semantic_site_count"] == prior_inventory["semantic_site_count"] and
             live_inventory["unknown_site_count"] == 0,
@@ -4626,11 +4646,12 @@ def main() -> None:
     require(plain_alias_return_cast_record["filename_site_successor"] == {
         "contract_version": "phase26_1e_call_plain_alias_return_cast_chain_filename_site_successor_v1",
         "previous_sites": prior_sites,
-        "current_sites": live_sites,
+        "current_sites": take_alias_return_record["filename_site_successor"]["previous_sites"],
         "line_deltas": [now["line"] - before["line"]
-                        for before, now in zip(prior_sites, live_sites)],
+                        for before, now in zip(prior_sites,
+                                               take_alias_return_record["filename_site_successor"]["previous_sites"])],
         "partial_extra_or_substituted_site": "rejected",
-    } and len(prior_sites) == len(live_sites) == 3,
+    } and len(prior_sites) == len(take_alias_return_record["filename_site_successor"]["previous_sites"]) == 3,
             "checked-cast plain-alias return filename sites drifted")
     cast_return_surface = plain_alias_return_cast_record["phase23_text_surface_successor"]
     require(cast_return_surface.get("contract_version") ==
@@ -4645,11 +4666,12 @@ def main() -> None:
     for row in cast_return_surface["changed_rows"]:
         path = row["path"]
         content = (ROOT / path).read_text(encoding="utf-8")
+        next_surface = {entry["path"]: entry for entry in
+                        take_alias_return_record["phase23_text_surface_successor"]["changed_rows"]}[path]
         require(row["previous_digest"] == prior_surface[path]["current_digest"] and
                 row["previous_match_counts"] == prior_surface[path]["current_match_counts"] and
-                row["current_digest"] == digest(path) and
-                row["current_match_counts"] == {
-                    name: len(pattern.findall(content)) for name, pattern in SURFACE_PATTERNS.items()},
+                row["current_digest"] == next_surface["previous_digest"] and
+                row["current_match_counts"] == next_surface["previous_match_counts"],
                 f"checked-cast plain-alias return text surface drifted: {path}")
     require("plain_alias_return_cast_chain_mayzero_two" in guard and
             "plain_alias_return_cast_chain_zero_two" in guard and
@@ -4657,6 +4679,132 @@ def main() -> None:
             "plain_alias_return_cast_chain_prior_escape" in guard and
             "test ! -e \"$marker\"" in guard,
             "checked-cast plain-alias return native or poison evidence weakened")
+    take_names = ("mayzero_direct", "mayzero_cast_depth2", "mayzero_plain_prefix",
+                  "mayzero_repeated_take", "mayzero_plain_suffix_cast", "zero_direct",
+                  "nonzero", "unknown", "unsafe", "gap", "overwrite",
+                  "wrong_type", "prior_escape", "return_take", "move_alias",
+                  "scalar_inner")
+    take_fixtures = [f"compiler/phase26_call_local_return_take_alias_{name}_source.gst"
+                     for name in take_names]
+    promoted_take = plain_alias_fixtures[7]
+    promoted_cast_take = cast_return_fixtures[7]
+    take_static = {
+        "contract_version": "phase26_1e_call_take_alias_return_zero_v1",
+        "status": "bounded_take_alias_safe_return_rejection_qualified",
+        "owner": "cranelift",
+        "increment": "26.1E_validated_take_alias_safe_return_subset",
+        "operator_ownership_decision": "2026-10-04_bounded_take_alias_safe_return",
+        "value_states": ["Unknown", "Zero", "Nonzero", "MayZero"],
+        "candidate_shape": "concrete_direct_nullary_raw_pointer_call_finite_immediate_type_matched_aliases_containing_Take_identifier_or_checked_raw_cast_return",
+        "summary_order": "after_all_function_bodies_before_native_planner",
+        "positive_fixture": POSITIVE,
+        "positive_output": "SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, mixed Move/Take cast chains, consecutive outer Take chains, interleaved Take/cast chains, local safe returns and plain-alias safe returns and Take-alias safe returns, and exclusions verified\n",
+        "negative_fixtures": [promoted_take, promoted_cast_take, *take_fixtures[:6]],
+        "control_fixtures": [local_return_fixtures[7], *take_fixtures[6:]],
+        "reclassified_fixtures": [
+            {"path": promoted_take, "previous": "accepted_then_native_deferral",
+             "current": "RawNullSafeBoundary_before_driver"},
+            {"path": promoted_cast_take, "previous": "accepted_then_native_deferral",
+             "current": "RawNullSafeBoundary_before_driver"},
+        ],
+        "safe_boundary": "declared_nonextern_raw_pointer_return",
+        "negative_states": ["Zero", "MayZero"],
+        "prior_error_precedence": "preserved",
+        "unknown_and_nonzero": "preserved",
+        "unsafe_functions": "preserved",
+        "Move_ReturnTake_scalar_gap_overwrite_branch_and_indirect": "excluded",
+        "take_move_resource_semantics_changed": False,
+        "diagnostic": "[RawNullSafeBoundary]",
+        "failure_stage": "before_driver_discovery",
+        "native_fallback": False, "physical_abi_changed": False,
+        "mir_changed": False, "runtime_symbol_surface_changed": False,
+        "operator_semantics_changed": False,
+        "general_nullability": "open_separate_obligation", "phase26_1_closed": False,
+        "owning_level2_guard": GUARD, "pr_fast_job": "phase26-ffi-position",
+    }
+    for key, value in take_static.items():
+        require(take_alias_return_record.get(key) == value,
+                f"Take-alias safe-return successor field drifted: {key}")
+    require(set(take_alias_return_record) == set(take_static) | {
+        "positive_fixture_successor", "spelling_inventory_successor",
+        "filename_site_successor", "phase23_text_surface_successor",
+        "phase22_invocation_successor", "production_audit_successor",
+    } and all((ROOT / path).is_file() for path in take_fixtures),
+            "Take-alias safe-return successor fields or fixtures drifted")
+    require(take_alias_return_record["phase22_invocation_successor"] == {
+        "contract_version": "phase26_1e_call_take_alias_return_phase22_invocation_successor_v1",
+        "previous_total": 237, "current_total": 238,
+        "added_rows": rows[19:20],
+        "partial_extra_or_substituted_invocation": "rejected",
+    } and len(rows) == 20,
+            "Take-alias safe-return invocation successor drifted")
+    require(take_alias_return_record["production_audit_successor"] == {
+        "contract_version": "phase26_1e_call_take_alias_return_production_audit_successor_v1",
+        "previous_repository_invocation_count": 237,
+        "current_repository_invocation_count": 238,
+        "added_invocation_path": SCRIPT,
+        "unchanged_other_fields": True,
+        "partial_extra_or_substituted_audit": "rejected",
+    }, "Take-alias safe-return production audit successor drifted")
+    require(take_alias_return_record["positive_fixture_successor"] == {
+        "path": POSITIVE,
+        "previous_digest": plain_alias_return_cast_record["positive_fixture_successor"]["current_digest"],
+        "current_digest": digest(POSITIVE),
+    }, "Take-alias safe-return positive evidence drifted")
+    previous_inventory_take = plain_alias_return_cast_record["spelling_inventory_successor"]["current_inventory_summary"]
+    require(take_alias_return_record["spelling_inventory_successor"] == {
+        "contract_version": "phase26_1e_call_take_alias_return_spelling_inventory_successor_v1",
+        "previous_inventory_summary": previous_inventory_take,
+        "current_inventory_summary": live_inventory,
+        "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
+                                        *take_fixtures]),
+        "partial_extra_or_substituted_inventory": "rejected",
+    } and live_inventory["source_file_count"] ==
+            previous_inventory_take["source_file_count"] + len(take_fixtures) and
+            live_inventory["site_count"] == previous_inventory_take["site_count"] and
+            live_inventory["semantic_site_count"] == previous_inventory_take["semantic_site_count"] and
+            live_inventory["unknown_site_count"] == 0,
+            "Take-alias safe-return spelling inventory drifted")
+    previous_sites_take = plain_alias_return_cast_record["filename_site_successor"]["current_sites"]
+    require(take_alias_return_record["filename_site_successor"] == {
+        "contract_version": "phase26_1e_call_take_alias_return_filename_site_successor_v1",
+        "previous_sites": previous_sites_take,
+        "current_sites": live_sites,
+        "line_deltas": [now["line"] - before["line"]
+                        for before, now in zip(previous_sites_take, live_sites)],
+        "partial_extra_or_substituted_site": "rejected",
+    } and len(previous_sites_take) == len(live_sites) == 3,
+            "Take-alias safe-return filename sites drifted")
+    take_surface = take_alias_return_record["phase23_text_surface_successor"]
+    require(take_surface.get("contract_version") ==
+            "phase26_1e_call_take_alias_return_phase23_text_surface_successor_v1" and
+            take_surface.get("partial_extra_or_substituted_surface") == "rejected" and
+            take_surface.get("added_rows") == [] and
+            sorted(row["path"] for row in take_surface["changed_rows"]) == sorted([
+                "compiler/typechecker.gst", "scripts/phase22_opening.py",
+                "scripts/phase26_call_return_zero_registration.py",
+            ]), "Take-alias safe-return text surface set drifted")
+    prior_take_surface = {row["path"]: row for row in cast_return_surface["changed_rows"]}
+    prior_take_surface["scripts/phase22_opening.py"] = {
+        "current_digest": local_cast_surface["changed_rows"][1]["current_digest"],
+        "current_match_counts": local_cast_surface["changed_rows"][1]["current_match_counts"],
+    }
+    for row in take_surface["changed_rows"]:
+        path = row["path"]
+        content = (ROOT / path).read_text(encoding="utf-8")
+        require(row["previous_digest"] == prior_take_surface[path]["current_digest"] and
+                row["previous_match_counts"] == prior_take_surface[path]["current_match_counts"] and
+                row["current_digest"] == digest(path) and
+                row["current_match_counts"] == {
+                    name: len(pattern.findall(content)) for name, pattern in SURFACE_PATTERNS.items()},
+                f"Take-alias safe-return text surface drifted: {path}")
+    require("plain_alias_return_take|plain_alias_return_cast_chain_take" in guard and
+            "phase26_call_local_return_take_alias_${case_name}_source.gst" in guard and
+            "mayzero_repeated_take" in guard and
+            "plain-alias safe returns and Take-alias safe returns" in positive and
+            "test ! -e \"$marker\"" in guard,
+            "Take-alias safe-return native or poison evidence weakened")
+
     print(f"{GUARD}: registration ok")
 
 

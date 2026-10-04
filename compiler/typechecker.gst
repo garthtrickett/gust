@@ -2447,16 +2447,15 @@ func phase26_zero_local_call_argument_cast_is_raw(arg: ast.Expression[ctx], env:
 }
 
 // The candidate is usable by the next direct one-argument expression statement
-// or an immediately following Return of the current plain-alias local through
-// a syntactic cast chain in its lexical block. Casts need raw-pointer proof
+// or an immediately following Return of the current validated alias local
+// through a syntactic cast chain in its lexical block. Casts need raw-pointer proof
 // after typechecking. Every other statement invalidates it before checking, so
 // assignment and control flow cannot preserve a stale summary through this
 // bounded path.
 func phase26_zero_local_call_statement_consumes_candidate(stmt: ast.Statement[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         if std.str_eq((*env).zero_local_call_name, "") == 1 { return 0; }
-        if stmt.tag == 12 &&
-           (*env).zero_local_call_take_alias_terminal == 0 {
+        if stmt.tag == 12 {
             if stmt.Return.expr == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
             mut returned := ctx[stmt.Return.expr];
             if returned.tag == 9 && (*env).zero_local_call_alias_hops == 0 { return 0; }
@@ -16277,13 +16276,12 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                                 env, resolved_return_target_e2, expr_idx,
                                 return_nlaunder_span, "function return", ctx
                             );
-                            // An immediately returned local or consecutive plain
-                            // alias may retain an already typechecked concrete
-                            // direct-call summary through checked raw-pointer
-                            // casts. Earlier return and escape errors still take
+                            // An immediately returned local or validated
+                            // consecutive alias, including a Take alias, may
+                            // retain a concrete direct-call summary through
+                            // checked raw-pointer casts. Earlier errors retain
                             // precedence in the common finalizer.
                             if resolved_return_target_e2.tag == 9 &&
-                               (*env).zero_local_call_take_alias_terminal == 0 &&
                                std.str_eq((*env).zero_local_call_name, "") == 0 {
                                 mut local_return := ctx[expr_idx];
                                 mut return_has_cast := 0;
