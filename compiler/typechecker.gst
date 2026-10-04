@@ -2446,13 +2446,21 @@ func phase26_zero_local_call_argument_cast_is_raw(arg: ast.Expression[ctx], env:
     }
 }
 
-// The candidate is only usable by the next direct, one-argument expression
-// statement in its lexical block. Every other statement invalidates it before
-// checking, so assignment, aliasing, and control flow cannot preserve a stale
-// summary through this deliberately bounded local path.
+// The candidate is usable by the next direct one-argument expression statement
+// or an immediately following Return of the original local in its lexical
+// block. Every other statement invalidates it before checking, so assignment
+// and control flow cannot preserve a stale summary through this bounded path.
 func phase26_zero_local_call_statement_consumes_candidate(stmt: ast.Statement[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
-        if std.str_eq((*env).zero_local_call_name, "") == 1 || stmt.tag != 13 { return 0; }
+        if std.str_eq((*env).zero_local_call_name, "") == 1 { return 0; }
+        if stmt.tag == 12 && (*env).zero_local_call_alias_hops == 0 &&
+           (*env).zero_local_call_take_alias_terminal == 0 {
+            if stmt.Return.expr == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+            mut returned := ctx[stmt.Return.expr];
+            if returned.tag != 0 { return 0; }
+            return std.str_eq(returned.Identifier.name, (*env).zero_local_call_name);
+        }
+        if stmt.tag != 13 { return 0; }
         mut expr_idx := stmt.Expression.expr;
         if expr_idx == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
         mut expr := ctx[expr_idx];
@@ -16262,6 +16270,24 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                                 env, resolved_return_target_e2, expr_idx,
                                 return_nlaunder_span, "function return", ctx
                             );
+                            // One immediately returned local may retain an already
+                            // typechecked concrete direct-call summary. Earlier
+                            // return and escape errors still take precedence in
+                            // the common finalizer.
+                            if resolved_return_target_e2.tag == 9 &&
+                               (*env).zero_local_call_alias_hops == 0 &&
+                               (*env).zero_local_call_take_alias_terminal == 0 &&
+                               std.str_eq((*env).zero_local_call_name, "") == 0 {
+                                mut local_return := ctx[expr_idx];
+                                if local_return.tag == 0 &&
+                                   std.str_eq(local_return.Identifier.name, (*env).zero_local_call_name) == 1 {
+                                    phase26_zero_queue_direct_call_boundary(
+                                        env, resolved_return_target_e2,
+                                        (*env).zero_local_call_callee,
+                                        return_nlaunder_span, "function return", ctx
+                                    );
+                                }
+                            }
                         }
                     }
                     env_report_resource_root_escape(
