@@ -885,6 +885,17 @@ calls, and broader interprocedural flow keep their prior classifications.
 This changes no Take/move/resource meaning, MIR, ABI, layout, runtime, or
 stdlib semantics. D/E/F and Phase 26.1 remain open.
 
+**26.1E consecutive plain-alias safe-return summary (ownership authorized
+2026-10-04).** A concrete direct nullary `*T` result may pass through finite
+consecutive immediate same-block, by-value, type-matched plain local aliases
+and then return the current Identifier from a declared-safe function. The
+existing four-state summary rejects Zero/MayZero before native planning.
+Earlier return type and ephemeral-escape errors retain precedence; nonzero,
+Unknown, unsafe, gaps, overwrites, Take, casts, branches, and indirect or
+generic calls retain their prior classifications. This changes no provenance
+model, Take/move/resource semantics, MIR, ABI, layout, runtime, or stdlib.
+D/E/F and Phase 26.1 remain open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

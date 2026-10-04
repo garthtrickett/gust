@@ -16,7 +16,7 @@ test ! -s "$build_root/typechecker.compile.stdout"
 test ! -s "$build_root/typechecker.compile.stderr"
 "$build_root/typechecker" >"$build_root/typechecker.stdout" 2>"$build_root/typechecker.stderr"
 test ! -s "$build_root/typechecker.stderr"
-printf 'SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, mixed Move/Take cast chains, consecutive outer Take chains, interleaved Take/cast chains, local safe returns, and exclusions verified\n' >"$build_root/typechecker.expected"
+printf 'SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, mixed Move/Take cast chains, consecutive outer Take chains, interleaved Take/cast chains, local safe returns and plain-alias safe returns, and exclusions verified\n' >"$build_root/typechecker.expected"
 cmp -s "$build_root/typechecker.expected" "$build_root/typechecker.stdout"
 
 poison="$build_root/poison-driver"
@@ -713,8 +713,8 @@ for case_name in nonzero unknown unsafe_target type_mismatch scalar_cast; do
   test ! -e "$marker"
 done
 
-for case_name in cast_zero_caller_first cast_zero_callee_first cast_mayzero cast_nonzero cast_unknown cast_zero_unsafe_target cast_zero_intervening cast_zero_alias cast_zero_nested cast_zero_move cast_zero_scalar_mismatch cast_chain_zero_callee_first cast_chain_mayzero cast_chain_zero_depth3 cast_chain_nonzero cast_chain_unknown cast_chain_zero_unsafe_target cast_chain_zero_alias cast_take_zero_caller_first cast_take_zero_callee_first take_cast_zero_caller_first take_cast_zero_callee_first cast_take_mayzero take_cast_mayzero cast_take_nonzero take_cast_nonzero take_cast_unknown take_cast_unsafe_target take_cast_alias take_cast_intervening take_cast_nested cast_take_nested take_cast_second_take take_cast_move take_cast_type_mismatch cast_take_chain_zero_callee_first take_cast_chain_zero_callee_first cast_take_chain_mayzero take_cast_chain_mayzero cast_take_chain_depth3 take_cast_chain_depth3 cast_take_chain_nonzero take_cast_chain_unknown take_cast_chain_unsafe_target cast_take_chain_type_mismatch take_cast_chain_second_take take_cast_chain_scalar_inner cast_take_chain_alias take_cast_chain_intervening move_cast_chain_zero_caller_first move_cast_chain_zero_callee_first move_cast_chain_mayzero move_cast_chain_nonzero move_cast_chain_unknown move_cast_chain_unsafe_target move_cast_chain_type_mismatch move_cast_chain_second_move move_cast_chain_take_combo move_cast_chain_alias move_cast_chain_intervening move_cast_chain_scalar_inner alias_cast_zero_callee_first alias_cast_mayzero alias_cast_nonzero alias_cast_unknown alias_cast_unsafe_target alias_cast_overwrite alias_cast_intervening alias_cast_second_alias alias_cast_type_mismatch alias_cast_chain_zero_callee_first alias_cast_chain_mayzero alias_cast_chain_nonzero alias_cast_chain_unknown alias_cast_chain_unsafe_target alias_cast_chain_second_alias alias_cast_chain_second_alias_caller_first alias_cast_chain_second_alias_mayzero alias_cast_chain_third_alias_zero alias_cast_chain_second_alias_nonzero alias_cast_chain_second_alias_unknown alias_cast_chain_second_alias_unsafe_target alias_cast_chain_scalar_inner alias_cast_chain_type_mismatch take_alias_cast_zero_caller_first take_alias_cast_zero_callee_first take_alias_cast_mayzero take_alias_cast_nonzero take_alias_cast_unknown take_alias_cast_unsafe_target take_alias_cast_wrong_type take_alias_cast_intervening take_alias_cast_second_alias take_alias_cast_plain_prefix take_alias_cast_after_take_mayzero take_alias_cast_after_take_two_suffixes take_alias_cast_after_take_wrong_type take_alias_cast_plain_prefix_callee_first take_alias_cast_plain_prefix_mayzero take_alias_cast_plain_prefix_direct take_alias_cast_plain_prefix_two_plains take_alias_cast_two_plains_mayzero take_alias_cast_three_plains_zero take_alias_cast_two_plains_callee_first take_alias_cast_two_plains_nonzero take_alias_cast_two_plains_unknown take_alias_cast_plain_prefix_nonzero take_alias_cast_plain_prefix_unknown take_alias_cast_plain_prefix_unsafe_target take_alias_cast_plain_prefix_wrong_type take_alias_cast_plain_prefix_intervening local_return_zero local_return_mayzero local_return_nonzero local_return_unknown local_return_unsafe local_return_gap local_return_alias local_return_cast local_return_wrong_type; do
-  fixture="compiler/phase26_call_local_${case_name}_source.gst"; if [[ "$case_name" == take_alias_cast_* || "$case_name" == local_return_* ]]; then fixture="compiler/phase26_call_${case_name}_source.gst"; fi
+for case_name in cast_zero_caller_first cast_zero_callee_first cast_mayzero cast_nonzero cast_unknown cast_zero_unsafe_target cast_zero_intervening cast_zero_alias cast_zero_nested cast_zero_move cast_zero_scalar_mismatch cast_chain_zero_callee_first cast_chain_mayzero cast_chain_zero_depth3 cast_chain_nonzero cast_chain_unknown cast_chain_zero_unsafe_target cast_chain_zero_alias cast_take_zero_caller_first cast_take_zero_callee_first take_cast_zero_caller_first take_cast_zero_callee_first cast_take_mayzero take_cast_mayzero cast_take_nonzero take_cast_nonzero take_cast_unknown take_cast_unsafe_target take_cast_alias take_cast_intervening take_cast_nested cast_take_nested take_cast_second_take take_cast_move take_cast_type_mismatch cast_take_chain_zero_callee_first take_cast_chain_zero_callee_first cast_take_chain_mayzero take_cast_chain_mayzero cast_take_chain_depth3 take_cast_chain_depth3 cast_take_chain_nonzero take_cast_chain_unknown take_cast_chain_unsafe_target cast_take_chain_type_mismatch take_cast_chain_second_take take_cast_chain_scalar_inner cast_take_chain_alias take_cast_chain_intervening move_cast_chain_zero_caller_first move_cast_chain_zero_callee_first move_cast_chain_mayzero move_cast_chain_nonzero move_cast_chain_unknown move_cast_chain_unsafe_target move_cast_chain_type_mismatch move_cast_chain_second_move move_cast_chain_take_combo move_cast_chain_alias move_cast_chain_intervening move_cast_chain_scalar_inner alias_cast_zero_callee_first alias_cast_mayzero alias_cast_nonzero alias_cast_unknown alias_cast_unsafe_target alias_cast_overwrite alias_cast_intervening alias_cast_second_alias alias_cast_type_mismatch alias_cast_chain_zero_callee_first alias_cast_chain_mayzero alias_cast_chain_nonzero alias_cast_chain_unknown alias_cast_chain_unsafe_target alias_cast_chain_second_alias alias_cast_chain_second_alias_caller_first alias_cast_chain_second_alias_mayzero alias_cast_chain_third_alias_zero alias_cast_chain_second_alias_nonzero alias_cast_chain_second_alias_unknown alias_cast_chain_second_alias_unsafe_target alias_cast_chain_scalar_inner alias_cast_chain_type_mismatch take_alias_cast_zero_caller_first take_alias_cast_zero_callee_first take_alias_cast_mayzero take_alias_cast_nonzero take_alias_cast_unknown take_alias_cast_unsafe_target take_alias_cast_wrong_type take_alias_cast_intervening take_alias_cast_second_alias take_alias_cast_plain_prefix take_alias_cast_after_take_mayzero take_alias_cast_after_take_two_suffixes take_alias_cast_after_take_wrong_type take_alias_cast_plain_prefix_callee_first take_alias_cast_plain_prefix_mayzero take_alias_cast_plain_prefix_direct take_alias_cast_plain_prefix_two_plains take_alias_cast_two_plains_mayzero take_alias_cast_three_plains_zero take_alias_cast_two_plains_callee_first take_alias_cast_two_plains_nonzero take_alias_cast_two_plains_unknown take_alias_cast_plain_prefix_nonzero take_alias_cast_plain_prefix_unknown take_alias_cast_plain_prefix_unsafe_target take_alias_cast_plain_prefix_wrong_type take_alias_cast_plain_prefix_intervening local_return_zero local_return_mayzero local_return_nonzero local_return_unknown local_return_unsafe local_return_gap local_return_alias local_return_cast local_return_wrong_type plain_alias_return_zero_two plain_alias_return_mayzero_two plain_alias_return_nonzero plain_alias_return_unknown plain_alias_return_unsafe plain_alias_return_gap plain_alias_return_overwrite plain_alias_return_take plain_alias_return_cast plain_alias_return_wrong_type plain_alias_return_prior_escape; do
+  fixture="compiler/phase26_call_local_${case_name}_source.gst"; if [[ "$case_name" == take_alias_cast_* || "$case_name" == local_return_* ]]; then fixture="compiler/phase26_call_${case_name}_source.gst"; fi; if [[ "$case_name" == plain_alias_return_* ]]; then fixture="compiler/phase26_call_local_return_plain_alias_${case_name#plain_alias_return_}_source.gst"; fi
   output="$build_root/local_$case_name"
   rm -f "$output" "$marker"
   set +e
@@ -727,7 +727,7 @@ for case_name in cast_zero_caller_first cast_zero_callee_first cast_mayzero cast
   set -e
   test "$status" -ne 0
   case "$case_name" in
-    local_return_zero|local_return_mayzero)
+    local_return_zero|local_return_mayzero|local_return_alias)
       rg -F "TypeError in $fixture at line 3:" "$output.stdout" >/dev/null
       rg -F '[RawNullSafeBoundary] Known zero-derived raw pointer cannot cross a declared-safe function return' "$output.stdout" >/dev/null
       if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
@@ -735,6 +735,23 @@ for case_name in cast_zero_caller_first cast_zero_callee_first cast_mayzero cast
     local_return_wrong_type)
       rg -F "TypeError in $fixture at line 3:" "$output.stdout" >/dev/null
       rg -F '[TypeMismatch] Return type mismatch. Expected Int but got RawPointer(Int)' "$output.stdout" >/dev/null
+      if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
+      if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+    plain_alias_return_zero_two|plain_alias_return_mayzero_two)
+      rg -F "TypeError in $fixture at line 3:" "$output.stdout" >/dev/null
+      rg -F '[RawNullSafeBoundary] Known zero-derived raw pointer cannot cross a declared-safe function return' "$output.stdout" >/dev/null
+      if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+    plain_alias_return_wrong_type)
+      rg -F "TypeError in $fixture at line 3:" "$output.stdout" >/dev/null
+      rg -F '[TypeMismatch] Return type mismatch. Expected Int but got RawPointer(Int)' "$output.stdout" >/dev/null
+      if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
+      if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+    plain_alias_return_prior_escape)
+      rg -F "TypeError in $fixture at line 2:" "$output.stdout" >/dev/null
+      rg -F "Escape analysis violation. Returning ephemeral view of type RawPointer(Int) whose origin traces back to local stack variable 'ptr'" "$output.stdout" >/dev/null
       if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
       if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
       ;;
@@ -784,4 +801,4 @@ for case_name in cast_zero_caller_first cast_zero_callee_first cast_mayzero cast
 done
 
 bash scripts/phase26_empty_raw_zero_evidence.sh
-echo 'Phase26.1E direct-call return, aliases, checked wrappers, mixed chains, and finite outer Take argument zero evidence and no-fallback passed.'
+echo 'Phase26.1E direct-call return, aliases, checked wrappers, mixed chains, plain-alias safe returns, and no-fallback passed.'
