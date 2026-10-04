@@ -270,11 +270,19 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
     }
     mut cast_return := parse_statement("return ptr as *int;", ctx);
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_return], &env, ctx) != 0 {
-        os.LogStr("Error: cast local return widened the candidate window"); os.Exit(1);
+        os.LogStr("Error: direct-local cast return widened the plain-alias candidate window"); os.Exit(1);
+    }
+    mut cast_chain_return := parse_statement("return (ptr as *int) as *int;", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_chain_return], &env, ctx) != 0 {
+        os.LogStr("Error: direct-local cast-chain return widened the plain-alias candidate window"); os.Exit(1);
     }
     env.zero_local_call_alias_hops = 1;
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_return], &env, ctx) != 1 {
         os.LogStr("Error: plain alias local return lost its candidate window"); os.Exit(1);
+    }
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_return], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_chain_return], &env, ctx) != 1 {
+        os.LogStr("Error: plain-alias checked cast return lost its candidate window"); os.Exit(1);
     }
     env.zero_local_call_alias_hops = 3;
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_return], &env, ctx) != 1 {
@@ -283,6 +291,9 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
     env.zero_local_call_take_alias_terminal = 1;
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_return], &env, ctx) != 0 {
         os.LogStr("Error: Take alias widened the plain-return candidate window"); os.Exit(1);
+    }
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_return], &env, ctx) != 0 {
+        os.LogStr("Error: Take alias widened the cast-return candidate window"); os.Exit(1);
     }
     env.zero_local_call_take_alias_terminal = 0;
     env.zero_local_call_alias_hops = 0;
