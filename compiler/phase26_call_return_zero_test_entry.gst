@@ -328,6 +328,9 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
     mut double_outer_take_plain := parse_statement("accept_raw(take take ptr);", ctx);
     mut triple_outer_take_plain := parse_statement("accept_raw(take take take ptr);", ctx);
     mut interleaved_take_cast := parse_statement("accept_raw(take ((take (ptr as *int)) as *int));", ctx);
+    mut deep_interleaved_take_cast := parse_statement("accept_raw(take ((take ((take (ptr as *int)) as *int)) as *int));", ctx);
+    mut cast_outer_interleaved_take := parse_statement("accept_raw((take ((take (ptr as *int)) as *int)) as *int);", ctx);
+    mut cast_outer_consecutive_take := parse_statement("accept_raw((take take ptr) as *int);", ctx);
     mut moved_cast_argument := parse_statement("accept_raw(move (ptr as *int));", ctx);
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_cast_argument], &env, ctx) != 1 {
         os.LogStr("Error: Move-wrapped checked cast lost the local candidate window"); os.Exit(1);
@@ -531,9 +534,16 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[triple_outer_take_plain], &env, ctx) != 1 {
         os.LogStr("Error: terminal Take alias lost consecutive outer Take chain"); os.Exit(1);
     }
-    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[interleaved_take_cast], &env, ctx) != 0 ||
-       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_cast_call], &env, ctx) != 0 {
-        os.LogStr("Error: terminal Take alias admitted an interleaved Take or Move"); os.Exit(1);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[interleaved_take_cast], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[deep_interleaved_take_cast], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_outer_interleaved_take], &env, ctx) != 1 {
+        os.LogStr("Error: terminal Take alias lost an interleaved checked cast chain"); os.Exit(1);
+    }
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_cast_call], &env, ctx) != 0 {
+        os.LogStr("Error: terminal Take alias admitted outer Move"); os.Exit(1);
+    }
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_outer_consecutive_take], &env, ctx) != 0 {
+        os.LogStr("Error: terminal Take alias admitted cast over repeated Take without interleaving"); os.Exit(1);
     }
     env.zero_local_call_take_alias_terminal = 0;
     mut nested_take := parse_statement("accept_raw(take take ptr);", ctx);
@@ -671,5 +681,5 @@ func main() {
     check_pointer_cast_chain_boundary("move ((take make_zero() as *int) as *int)", int_pointer, 0, 0, ctx);
     check_pointer_cast_chain_boundary("move ((make_zero() as int) as *int)", int_pointer, 1, 0, ctx);
     check_pointer_cast_chain_boundary("0 as *int", int_pointer, 1, 0, ctx);
-    os.LogStr("SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, mixed Move/Take cast chains, consecutive outer Take chains, and exclusions verified");
+    os.LogStr("SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, mixed Move/Take cast chains, consecutive outer Take chains, interleaved Take/cast chains, and exclusions verified");
 }
