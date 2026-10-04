@@ -114,6 +114,8 @@ def main() -> None:
         "call_outer_take_chain_zero_evidence_increment", {})
     interleaved_record = activation.get(
         "call_interleaved_take_cast_zero_evidence_increment", {})
+    local_return_record = activation.get(
+        "call_local_return_zero_evidence_increment", {})
     require(record["phase22_invocation_successor"] == {
         "contract_version": "phase26_1e_call_return_zero_phase22_invocation_successor_v1",
         "previous_total": 218, "current_total": 220, "added_rows": rows[:2],
@@ -237,9 +239,16 @@ def main() -> None:
         outer_take_record.get("phase23_text_surface_successor", {}).get("changed_rows", [])}
     interleaved_changed = {row["path"]: row for row in
         interleaved_record.get("phase23_text_surface_successor", {}).get("changed_rows", [])}
+    local_return_changed = {row["path"]: row for row in
+        local_return_record.get("phase23_text_surface_successor", {}).get("changed_rows", [])}
     for row in surface["changed_rows"]:
         text = (ROOT / row["path"]).read_text(encoding="utf-8")
         live_digest = digest(row["path"])
+        local_return_successor = local_return_changed.get(row["path"])
+        if local_return_successor:
+            require(local_return_successor["current_digest"] == live_digest,
+                    f"local-return text surface drifted: {row['path']}")
+            live_digest = local_return_successor["previous_digest"]
         interleaved_successor = interleaved_changed.get(row["path"])
         if interleaved_successor:
             require(interleaved_successor["current_digest"] == live_digest,
@@ -411,6 +420,11 @@ def main() -> None:
         successor = local_changed.get(row["path"])
         alias_successor = alias_changed.get(row["path"])
         live_digest = digest(row["path"])
+        local_return_successor = local_return_changed.get(row["path"])
+        if local_return_successor:
+            require(local_return_successor["current_digest"] == live_digest,
+                    f"local-return text surface drifted: {row['path']}")
+            live_digest = local_return_successor["previous_digest"]
         interleaved_successor = interleaved_changed.get(row["path"])
         if interleaved_successor:
             require(interleaved_successor["current_digest"] == live_digest,
@@ -4248,28 +4262,30 @@ def main() -> None:
     require(interleaved_record["positive_fixture_successor"] == {
         "path": POSITIVE,
         "previous_digest": outer_take_record["positive_fixture_successor"]["current_digest"],
-        "current_digest": digest(POSITIVE),
+        "current_digest": local_return_record["positive_fixture_successor"]["previous_digest"],
     }, "interleaved Take/cast positive evidence drifted")
     previous_inventory = outer_take_record["spelling_inventory_successor"]["current_inventory_summary"]
+    interleaved_inventory = local_return_record["spelling_inventory_successor"]["previous_inventory_summary"]
     require(interleaved_record["spelling_inventory_successor"] == {
         "contract_version": "phase26_1e_call_interleaved_take_cast_zero_spelling_inventory_successor_v1",
         "previous_inventory_summary": previous_inventory,
-        "current_inventory_summary": live_inventory,
+        "current_inventory_summary": interleaved_inventory,
         "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
                                         *interleaved_negative, *interleaved_controls]),
         "partial_extra_or_substituted_inventory": "rejected",
-    } and live_inventory["source_file_count"] == previous_inventory["source_file_count"] + len(interleaved_negative) + len(interleaved_controls) and
-            live_inventory["site_count"] == previous_inventory["site_count"] and
-            live_inventory["semantic_site_count"] == previous_inventory["semantic_site_count"] and
-            live_inventory["unknown_site_count"] == 0,
+    } and interleaved_inventory["source_file_count"] == previous_inventory["source_file_count"] + len(interleaved_negative) + len(interleaved_controls) and
+            interleaved_inventory["site_count"] == previous_inventory["site_count"] and
+            interleaved_inventory["semantic_site_count"] == previous_inventory["semantic_site_count"] and
+            interleaved_inventory["unknown_site_count"] == 0,
             "interleaved Take/cast spelling inventory drifted")
     previous_sites = outer_take_record["filename_site_successor"]["current_sites"]
+    interleaved_sites = local_return_record["filename_site_successor"]["previous_sites"]
     require(interleaved_record["filename_site_successor"] == {
         "contract_version": "phase26_1e_call_interleaved_take_cast_zero_filename_site_successor_v1",
-        "previous_sites": previous_sites, "current_sites": live_sites,
-        "line_deltas": [now["line"] - before["line"] for before, now in zip(previous_sites, live_sites)],
+        "previous_sites": previous_sites, "current_sites": interleaved_sites,
+        "line_deltas": [now["line"] - before["line"] for before, now in zip(previous_sites, interleaved_sites)],
         "partial_extra_or_substituted_site": "rejected",
-    } and len(previous_sites) == len(live_sites) == 3,
+    } and len(previous_sites) == len(interleaved_sites) == 3,
             "interleaved Take/cast filename sites drifted")
     interleaved_surface = interleaved_record["phase23_text_surface_successor"]
     require(interleaved_surface.get("contract_version") ==
@@ -4286,9 +4302,8 @@ def main() -> None:
         predecessor = previous_rows[path]
         require(row["previous_digest"] == predecessor["current_digest"] and
                 row["previous_match_counts"] == predecessor["current_match_counts"] and
-                row["current_digest"] == digest(path) and
-                row["current_match_counts"] == {
-                    name: len(pattern.findall(content)) for name, pattern in SURFACE_PATTERNS.items()},
+                row["current_digest"] == local_return_changed[path]["previous_digest"] and
+                row["current_match_counts"] == local_return_changed[path]["previous_match_counts"],
                 f"interleaved Take/cast text surface drifted: {path}")
     require("interleaved_{zero,mayzero}_{callee_first,caller_first}_depth{2,3}" in guard and
             "interleaved_control_{nonzero,unknown,unsafe,wrong_type,move_outer,gap,scalar_inner}" in guard and
@@ -4296,6 +4311,103 @@ def main() -> None:
             "terminal Take alias lost an interleaved checked cast chain" in positive and
             "test ! -e \"$marker\"" in guard,
             "interleaved Take/cast native or poison evidence weakened")
+
+    local_return_fixtures = [
+        f"compiler/phase26_call_local_return_{name}_source.gst"
+        for name in ("zero", "mayzero", "nonzero", "unknown", "unsafe",
+                     "gap", "alias", "cast", "wrong_type")
+    ]
+    local_return_static = {
+        "contract_version": "phase26_1e_call_local_return_zero_v1",
+        "status": "bounded_direct_nullary_call_local_safe_return_rejection_qualified",
+        "owner": "cranelift", "increment": "26.1E_immediate_local_safe_return_subset",
+        "operator_ownership_decision": "2026-10-04_bounded_immediate_local_safe_return",
+        "value_states": ["Unknown", "Zero", "Nonzero", "MayZero"],
+        "candidate_shape": "concrete_nongeneric_direct_nullary_raw_pointer_call_one_local_immediately_returned_by_Identifier_same_block",
+        "summary_order": "after_all_function_bodies_before_native_planner",
+        "positive_fixture": POSITIVE,
+        "positive_output": (
+            "SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, "
+            "mixed Move/Take cast chains, consecutive outer Take chains, "
+            "interleaved Take/cast chains, local safe returns, and exclusions verified\n"),
+        "negative_fixtures": local_return_fixtures[:2],
+        "control_fixtures": local_return_fixtures[2:],
+        "reclassified_fixture": {
+            "path": local_return_fixtures[1],
+            "previous": "accepted_then_native_deferral",
+            "current": "RawNullSafeBoundary_before_driver",
+        },
+        "safe_boundary": "declared_nonextern_raw_pointer_return",
+        "negative_states": ["Zero", "MayZero"],
+        "prior_error_precedence": "preserved", "unknown_and_nonzero": "preserved",
+        "unsafe_functions": "preserved", "alias_cast_wrapper_gap_and_branch": "excluded",
+        "diagnostic": "[RawNullSafeBoundary]", "failure_stage": "before_driver_discovery",
+        "native_fallback": False, "physical_abi_changed": False, "mir_changed": False,
+        "runtime_symbol_surface_changed": False, "operator_semantics_changed": False,
+        "take_move_resource_semantics_changed": False,
+        "general_nullability": "open_separate_obligation", "phase26_1_closed": False,
+        "owning_level2_guard": GUARD, "pr_fast_job": "phase26-ffi-position",
+    }
+    for key, value in local_return_static.items():
+        require(local_return_record.get(key) == value,
+                f"local safe-return successor field drifted: {key}")
+    require(set(local_return_record) == set(local_return_static) | {
+        "positive_fixture_successor", "spelling_inventory_successor",
+        "filename_site_successor", "phase23_text_surface_successor",
+    } and all((ROOT / path).is_file() for path in local_return_fixtures),
+            "local safe-return successor fields or fixtures drifted")
+    require(local_return_record["positive_fixture_successor"] == {
+        "path": POSITIVE,
+        "previous_digest": interleaved_record["positive_fixture_successor"]["current_digest"],
+        "current_digest": digest(POSITIVE),
+    }, "local safe-return positive evidence drifted")
+    require(local_return_record["spelling_inventory_successor"] == {
+        "contract_version": "phase26_1e_call_local_return_zero_spelling_inventory_successor_v1",
+        "previous_inventory_summary": interleaved_record["spelling_inventory_successor"]["current_inventory_summary"],
+        "current_inventory_summary": live_inventory,
+        "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
+                                        *local_return_fixtures]),
+        "partial_extra_or_substituted_inventory": "rejected",
+    } and live_inventory["source_file_count"] == interleaved_inventory["source_file_count"] + len(local_return_fixtures) and
+            live_inventory["site_count"] == interleaved_inventory["site_count"] and
+            live_inventory["semantic_site_count"] == interleaved_inventory["semantic_site_count"] and
+            live_inventory["unknown_site_count"] == 0,
+            "local safe-return spelling inventory drifted")
+    require(local_return_record["filename_site_successor"] == {
+        "contract_version": "phase26_1e_call_local_return_zero_filename_site_successor_v1",
+        "previous_sites": interleaved_sites, "current_sites": live_sites,
+        "line_deltas": [now["line"] - before["line"] for before, now in zip(interleaved_sites, live_sites)],
+        "partial_extra_or_substituted_site": "rejected",
+    } and len(interleaved_sites) == len(live_sites) == 3,
+            "local safe-return filename sites drifted")
+    local_surface = local_return_record["phase23_text_surface_successor"]
+    require(local_surface.get("contract_version") ==
+            "phase26_1e_call_local_return_zero_phase23_text_surface_successor_v1" and
+            local_surface.get("partial_extra_or_substituted_surface") == "rejected" and
+            local_surface.get("added_rows") == [] and
+            sorted(row["path"] for row in local_surface["changed_rows"]) == [
+                "compiler/typechecker.gst",
+                "scripts/phase26_call_return_zero_registration.py",
+            ], "local safe-return text surface set drifted")
+    for row in local_surface["changed_rows"]:
+        path = row["path"]
+        content = (ROOT / path).read_text(encoding="utf-8")
+        predecessor = interleaved_surface["changed_rows"]
+        prior = next((entry for entry in predecessor if entry["path"] == path), None)
+        if prior is not None:
+            require(row["previous_digest"] == prior["current_digest"] and
+                    row["previous_match_counts"] == prior["current_match_counts"],
+                    f"local safe-return predecessor text surface drifted: {path}")
+        require(row["current_digest"] == digest(path) and
+                row["current_match_counts"] == {
+                    name: len(pattern.findall(content)) for name, pattern in SURFACE_PATTERNS.items()},
+                f"local safe-return text surface drifted: {path}")
+    require("local_return_zero local_return_mayzero" in guard and
+            "phase26_call_local_${case_name}_source.gst" in guard and
+            "local safe returns" in positive and
+            "function return" in guard and
+            "test ! -e \"$marker\"" in guard,
+            "local safe-return native or poison evidence weakened")
     print(f"{GUARD}: registration ok")
 
 

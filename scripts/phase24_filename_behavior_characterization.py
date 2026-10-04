@@ -385,6 +385,10 @@ def validate_static(value: dict) -> None:
                     "phase26_activation_audit", {}).get(
                     "call_interleaved_take_cast_zero_evidence_increment", {}).get(
                     "filename_site_successor")
+                call_local_return_zero_sites = registry.get(
+                    "phase26_activation_audit", {}).get(
+                    "call_local_return_zero_evidence_increment", {}).get(
+                    "filename_site_successor")
                 e1_current = (live_sites if d5_sites is None else
                               d5_sites.get("previous_sites"))
                 require(e1_sites.get("contract_version") ==
@@ -1518,14 +1522,31 @@ def validate_static(value: dict) -> None:
                     require(call_interleaved_take_cast_zero_sites.get("contract_version") ==
                             "phase26_1e_call_interleaved_take_cast_zero_filename_site_successor_v1" and
                             call_interleaved_take_cast_zero_sites.get("previous_sites") == previous_interleaved and
-                            call_interleaved_take_cast_zero_sites.get("current_sites") == live_sites and
+                            call_interleaved_take_cast_zero_sites.get("current_sites") ==
+                            (live_sites if call_local_return_zero_sites is None else
+                             call_local_return_zero_sites.get("previous_sites")) and
                             isinstance(deltas_interleaved, list) and len(deltas_interleaved) == len(live_sites) == 3 and
                             call_interleaved_take_cast_zero_sites.get("partial_extra_or_substituted_site") == "rejected" and
                             all(now["line"] == before["line"] + delta and
                                 {key: val for key, val in now.items() if key != "line"} ==
                                 {key: val for key, val in before.items() if key != "line"}
-                                for before, now, delta in zip(previous_interleaved, live_sites, deltas_interleaved)),
+                                for before, now, delta in zip(previous_interleaved,
+                                    call_interleaved_take_cast_zero_sites["current_sites"], deltas_interleaved)),
                             "Phase 26 interleaved Take/cast filename sites drifted")
+                if call_local_return_zero_sites is not None:
+                    previous_local_return = call_interleaved_take_cast_zero_sites["current_sites"]
+                    deltas_local_return = call_local_return_zero_sites.get("line_deltas")
+                    require(call_local_return_zero_sites.get("contract_version") ==
+                            "phase26_1e_call_local_return_zero_filename_site_successor_v1" and
+                            call_local_return_zero_sites.get("previous_sites") == previous_local_return and
+                            call_local_return_zero_sites.get("current_sites") == live_sites and
+                            isinstance(deltas_local_return, list) and len(deltas_local_return) == len(live_sites) == 3 and
+                            call_local_return_zero_sites.get("partial_extra_or_substituted_site") == "rejected" and
+                            all(now["line"] == before["line"] + delta and
+                                {key: val for key, val in now.items() if key != "line"} ==
+                                {key: val for key, val in before.items() if key != "line"}
+                                for before, now, delta in zip(previous_local_return, live_sites, deltas_local_return)),
+                            "Phase 26 local-return filename sites drifted")
     require([row["selector"] for row in value["site_manifest"]] ==
             ["test_tcs_", "test_index_", "test_tcs_"],
             "selector order or completeness drifted")

@@ -874,6 +874,17 @@ scalar casts, and intervening statements retain their prior classifications.
 This remains a bounded source diagnostic; native execution, general
 nullability, the other 26.1 D/E/F obligations, and 26.2–26.6 remain open.
 
+**26.1E immediate local safe-return summary (ownership authorized
+2026-10-04).** After unchanged typechecking, a concrete non-generic direct
+nullary call returning `*T` may bind one local and be returned immediately by
+Identifier from a declared-safe function. The existing four-state return
+summary rejects Zero/MayZero before native planning. Prior return type and
+ephemeral-escape errors retain precedence. Nonzero/Unknown, unsafe functions,
+aliases, casts, wrappers, intervening statements, nested/indirect/generic
+calls, and broader interprocedural flow keep their prior classifications.
+This changes no Take/move/resource meaning, MIR, ABI, layout, runtime, or
+stdlib semantics. D/E/F and Phase 26.1 remain open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
