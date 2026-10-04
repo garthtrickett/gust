@@ -848,6 +848,19 @@ classification. This closes one source-level address-escape gap under E; it
 does not complete D's FFI/layout contract, E's broader escape enforcement,
 F's provenance/non-laundering contract, or Phase 26.1.
 
+**26.1E finite outer Take chain after a terminal Take alias (ownership
+authorized 2026-10-04).** After unchanged typechecking, an immediate
+declared-safe non-extern argument call rejects a proven Zero/MayZero raw
+pointer carried through consecutive outer `Take` expressions over the current
+same-block Identifier or a finite checked RawPointer-to-RawPointer cast chain.
+Every cast operand and target must have resolved raw-pointer metadata. The
+existing four-state summary, candidate invalidation, diagnostic precedence,
+and Take/move/resource bookkeeping remain authoritative. Nonzero/Unknown,
+unsafe calls, wrong types, an outer Move, and interleaved Take/cast syntax
+retain their prior classifications. This is a bounded E source diagnostic,
+not admission of the deferred native route or completion of D, E, F, or
+Phase 26.1.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

@@ -377,6 +377,10 @@ def validate_static(value: dict) -> None:
                     "phase26_activation_audit", {}).get(
                     "call_terminal_take_inner_cast_chain_zero_evidence_increment", {}).get(
                     "filename_site_successor")
+                call_outer_take_chain_zero_sites = registry.get(
+                    "phase26_activation_audit", {}).get(
+                    "call_outer_take_chain_zero_evidence_increment", {}).get(
+                    "filename_site_successor")
                 e1_current = (live_sites if d5_sites is None else
                               d5_sites.get("previous_sites"))
                 require(e1_sites.get("contract_version") ==
@@ -1474,7 +1478,9 @@ def validate_static(value: dict) -> None:
                     require(call_terminal_take_inner_cast_zero_sites.get("contract_version") ==
                             "phase26_1e_call_terminal_take_inner_cast_chain_zero_filename_site_successor_v1" and
                             call_terminal_take_inner_cast_zero_sites.get("previous_sites") == previous_inner and
-                            call_terminal_take_inner_cast_zero_sites.get("current_sites") == live_sites and
+                            call_terminal_take_inner_cast_zero_sites.get("current_sites") ==
+                            (live_sites if call_outer_take_chain_zero_sites is None else
+                             call_outer_take_chain_zero_sites.get("previous_sites")) and
                             isinstance(deltas_inner, list) and
                             len(deltas_inner) == len(live_sites) == 3 and
                             call_terminal_take_inner_cast_zero_sites.get(
@@ -1482,8 +1488,23 @@ def validate_static(value: dict) -> None:
                             all(now["line"] == before["line"] + delta and
                                 {key: val for key, val in now.items() if key != "line"} ==
                                 {key: val for key, val in before.items() if key != "line"}
-                                for before, now, delta in zip(previous_inner, live_sites, deltas_inner)),
+                                for before, now, delta in zip(previous_inner,
+                                    call_terminal_take_inner_cast_zero_sites["current_sites"], deltas_inner)),
                             "Phase 26 terminal-Take inner-cast filename sites drifted")
+                if call_outer_take_chain_zero_sites is not None:
+                    previous_outer = call_terminal_take_inner_cast_zero_sites["current_sites"]
+                    deltas_outer = call_outer_take_chain_zero_sites.get("line_deltas")
+                    require(call_outer_take_chain_zero_sites.get("contract_version") ==
+                            "phase26_1e_call_outer_take_chain_zero_filename_site_successor_v1" and
+                            call_outer_take_chain_zero_sites.get("previous_sites") == previous_outer and
+                            call_outer_take_chain_zero_sites.get("current_sites") == live_sites and
+                            isinstance(deltas_outer, list) and len(deltas_outer) == len(live_sites) == 3 and
+                            call_outer_take_chain_zero_sites.get("partial_extra_or_substituted_site") == "rejected" and
+                            all(now["line"] == before["line"] + delta and
+                                {key: val for key, val in now.items() if key != "line"} ==
+                                {key: val for key, val in before.items() if key != "line"}
+                                for before, now, delta in zip(previous_outer, live_sites, deltas_outer)),
+                            "Phase 26 outer-Take chain filename sites drifted")
     require([row["selector"] for row in value["site_manifest"]] ==
             ["test_tcs_", "test_index_", "test_tcs_"],
             "selector order or completeness drifted")

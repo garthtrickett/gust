@@ -2303,8 +2303,8 @@ func phase26_zero_note_direct_call_boundary(env: *TypeEnvironment[ctx], target_t
 }
 
 // A direct argument may take or move the current candidate exactly once. After
-// a Take alias, a direct Take of that name may carry checked pointer casts on
-// either side of Take.
+// a Take alias, consecutive outer Takes of that name may carry checked pointer
+// casts inside the Take chain.
 func phase26_zero_local_call_argument_matches_candidate(arg: ast.Expression[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         if std.str_eq((*env).zero_local_call_name, "") == 1 { return 0; }
@@ -2360,6 +2360,11 @@ func phase26_zero_local_call_argument_matches_candidate(arg: ast.Expression[ctx]
             mut terminal_inner_idx := arg.Take.expr;
             while terminal_inner_idx != empty[Index[ast.Expression[ctx], ctx]] {
                 mut terminal_inner := ctx[terminal_inner_idx];
+                if terminal_inner.tag != 5 { break; }
+                terminal_inner_idx = terminal_inner.Take.expr;
+            }
+            while terminal_inner_idx != empty[Index[ast.Expression[ctx], ctx]] {
+                mut terminal_inner := ctx[terminal_inner_idx];
                 if terminal_inner.tag == 0 {
                     return std.str_eq(terminal_inner.Identifier.name, (*env).zero_local_call_name);
                 }
@@ -2394,7 +2399,12 @@ func phase26_zero_local_call_argument_matches_candidate(arg: ast.Expression[ctx]
 func phase26_zero_local_call_argument_cast_is_raw(arg: ast.Expression[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         mut cast_expr := arg;
-        if arg.tag == 5 || arg.tag == 4 { // One Take or Move may wrap checked casts after typechecking.
+        if arg.tag == 5 && (*env).zero_local_call_take_alias_terminal == 1 {
+            while cast_expr.tag == 5 { // Match the qualified consecutive Take prefix.
+                if cast_expr.Take.expr == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+                cast_expr = ctx[cast_expr.Take.expr];
+            }
+        } else if arg.tag == 5 || arg.tag == 4 { // One Take or Move may wrap checked casts after typechecking.
             mut wrapped_idx := empty[Index[ast.Expression[ctx], ctx]];
             if arg.tag == 5 { wrapped_idx = arg.Take.expr; }
             if arg.tag == 4 { wrapped_idx = arg.Move.expr; }
