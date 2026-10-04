@@ -492,6 +492,10 @@ def validate() -> tuple[dict, list[dict], dict]:
         "phase26_activation_audit", {}).get(
         "call_plain_alias_return_zero_evidence_increment", {}).get(
         "spelling_inventory_successor")
+    call_plain_alias_return_cast_successor = registry.get(
+        "phase26_activation_audit", {}).get(
+        "call_plain_alias_return_cast_chain_zero_evidence_increment", {}).get(
+        "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -2258,16 +2262,38 @@ def validate() -> tuple[dict, list[dict], dict]:
         require(call_plain_alias_return_zero_successor.get("contract_version") ==
                 "phase26_1e_call_plain_alias_return_zero_spelling_inventory_successor_v1" and
                 call_plain_alias_return_zero_successor.get("previous_inventory_summary") == previous and
-                call_plain_alias_return_zero_successor.get("current_inventory_summary") == summary and
+                call_plain_alias_return_zero_successor.get("current_inventory_summary") ==
+                (summary if call_plain_alias_return_cast_successor is None else
+                 call_plain_alias_return_cast_successor.get("previous_inventory_summary")) and
                 call_plain_alias_return_zero_successor.get("changed_source_paths") == sorted([
                     "compiler/typechecker.gst", "compiler/phase26_call_return_zero_test_entry.gst",
                     *paths]) and
                 call_plain_alias_return_zero_successor.get("partial_extra_or_substituted_inventory") == "rejected" and
+                call_plain_alias_return_zero_successor["current_inventory_summary"]["source_file_count"] ==
+                    previous["source_file_count"] + len(paths) and
+                call_plain_alias_return_zero_successor["current_inventory_summary"]["site_count"] == previous["site_count"] and
+                call_plain_alias_return_zero_successor["current_inventory_summary"]["semantic_site_count"] == previous["semantic_site_count"] and
+                call_plain_alias_return_zero_successor["current_inventory_summary"]["unknown_site_count"] == 0,
+                "Phase 26 plain-alias safe-return spelling inventory drifted")
+    if call_plain_alias_return_cast_successor is not None:
+        paths = [f"compiler/phase26_call_local_return_plain_alias_cast_chain_{name}_source.gst"
+                 for name in ("mayzero_two", "zero_two", "nonzero", "unknown", "unsafe",
+                              "gap", "overwrite", "take", "wrong_type", "scalar_inner",
+                              "prior_escape")]
+        previous = call_plain_alias_return_zero_successor["current_inventory_summary"]
+        require(call_plain_alias_return_cast_successor.get("contract_version") ==
+                "phase26_1e_call_plain_alias_return_cast_chain_spelling_inventory_successor_v1" and
+                call_plain_alias_return_cast_successor.get("previous_inventory_summary") == previous and
+                call_plain_alias_return_cast_successor.get("current_inventory_summary") == summary and
+                call_plain_alias_return_cast_successor.get("changed_source_paths") == sorted([
+                    "compiler/typechecker.gst", "compiler/phase26_call_return_zero_test_entry.gst",
+                    *paths]) and
+                call_plain_alias_return_cast_successor.get("partial_extra_or_substituted_inventory") == "rejected" and
                 summary["source_file_count"] == previous["source_file_count"] + len(paths) and
                 summary["site_count"] == previous["site_count"] and
                 summary["semantic_site_count"] == previous["semantic_site_count"] and
                 summary["unknown_site_count"] == 0,
-                "Phase 26 plain-alias safe-return spelling inventory drifted")
+                "Phase 26 checked-cast plain-alias return spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),

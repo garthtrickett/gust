@@ -896,6 +896,19 @@ generic calls retain their prior classifications. This changes no provenance
 model, Take/move/resource semantics, MIR, ABI, layout, runtime, or stdlib.
 D/E/F and Phase 26.1 remain open.
 
+**26.1E checked cast-chain plain-alias safe-return summary (ownership authorized
+2026-10-04).** After unchanged typechecking, a finite chain of resolved
+RawPointer-to-RawPointer casts may wrap the current Identifier of an immediate
+same-block, by-value, type-matched plain alias of a concrete nullary `*T`
+result. The existing four-state summary rejects MayZero before native planning;
+direct Zero evidence already rejects through expression typing. Each cast must
+prove a raw-pointer operand and target. Direct-local casts without a plain
+alias, Take/Move, scalar-inner casts, gaps, overwrites, branches, indirect or
+generic calls retain their prior classifications. Earlier return type and
+ephemeral-escape diagnostics retain precedence. This changes no provenance
+model, Take/move/resource semantics, MIR, ABI, layout, runtime, or stdlib.
+D/E/F and Phase 26.1 remain open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
