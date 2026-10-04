@@ -379,6 +379,7 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
     mut terminal_move_call := parse_statement("accept_raw(move alias);", ctx);
     mut terminal_nested_take_call := parse_statement("accept_raw(take take alias);", ctx);
     mut terminal_take_cast_call := parse_statement("accept_raw((take alias) as *int);", ctx);
+    mut terminal_cast_chain_take_call := parse_statement("accept_raw(take ((ptr as *int) as *int));", ctx);
     mut terminal_wrong_name_call := parse_statement("accept_raw(take ptr);", ctx);
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[terminal_move_call], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[terminal_nested_take_call], &env, ctx) != 0 ||
@@ -514,10 +515,13 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_triple_take], &env, ctx) != 1 {
         os.LogStr("Error: terminal Take alias lost checked outer cast chain"); os.Exit(1);
     }
-    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[take_cast_call], &env, ctx) != 0 ||
-       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[double_take_cast], &env, ctx) != 0 ||
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[take_cast_call], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[terminal_cast_chain_take_call], &env, ctx) != 1 {
+        os.LogStr("Error: terminal Take alias lost checked inner cast chain"); os.Exit(1);
+    }
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[double_take_cast], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_cast_call], &env, ctx) != 0 {
-        os.LogStr("Error: terminal Take alias admitted an inner cast, second Take, or Move"); os.Exit(1);
+        os.LogStr("Error: terminal Take alias admitted a second Take or Move"); os.Exit(1);
     }
     env.zero_local_call_take_alias_terminal = 0;
     mut nested_take := parse_statement("accept_raw(take take ptr);", ctx);

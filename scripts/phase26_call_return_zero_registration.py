@@ -108,6 +108,8 @@ def main() -> None:
         "call_terminal_take_argument_zero_evidence_increment", {})
     terminal_cast_record = activation.get(
         "call_terminal_take_cast_chain_zero_evidence_increment", {})
+    inner_cast_record = activation.get(
+        "call_terminal_take_inner_cast_chain_zero_evidence_increment", {})
     require(record["phase22_invocation_successor"] == {
         "contract_version": "phase26_1e_call_return_zero_phase22_invocation_successor_v1",
         "previous_total": 218, "current_total": 220, "added_rows": rows[:2],
@@ -225,9 +227,16 @@ def main() -> None:
         terminal_take_record.get("phase23_text_surface_successor", {}).get("changed_rows", [])}
     terminal_cast_changed = {row["path"]: row for row in
         terminal_cast_record.get("phase23_text_surface_successor", {}).get("changed_rows", [])}
+    inner_cast_changed = {row["path"]: row for row in
+        inner_cast_record.get("phase23_text_surface_successor", {}).get("changed_rows", [])}
     for row in surface["changed_rows"]:
         text = (ROOT / row["path"]).read_text(encoding="utf-8")
         live_digest = digest(row["path"])
+        inner_cast_successor = inner_cast_changed.get(row["path"])
+        if inner_cast_successor:
+            require(inner_cast_successor["current_digest"] == live_digest,
+                    f"terminal-Take inner-cast text surface drifted: {row['path']}")
+            live_digest = inner_cast_successor["previous_digest"]
         terminal_cast_successor = terminal_cast_changed.get(row["path"])
         if terminal_cast_successor:
             require(terminal_cast_successor["current_digest"] == live_digest,
@@ -384,6 +393,11 @@ def main() -> None:
         successor = local_changed.get(row["path"])
         alias_successor = alias_changed.get(row["path"])
         live_digest = digest(row["path"])
+        inner_cast_successor = inner_cast_changed.get(row["path"])
+        if inner_cast_successor:
+            require(inner_cast_successor["current_digest"] == live_digest,
+                    f"terminal-Take inner-cast text surface drifted: {row['path']}")
+            live_digest = inner_cast_successor["previous_digest"]
         terminal_cast_successor = terminal_cast_changed.get(row["path"])
         if terminal_cast_successor:
             require(terminal_cast_successor["current_digest"] == live_digest,
@@ -3873,28 +3887,30 @@ def main() -> None:
     require(terminal_cast_record["positive_fixture_successor"] == {
         "path": POSITIVE,
         "previous_digest": terminal_take_record["positive_fixture_successor"]["current_digest"],
-        "current_digest": digest(POSITIVE),
+        "current_digest": inner_cast_record["positive_fixture_successor"]["previous_digest"],
     }, "terminal-Take cast-chain positive evidence drifted")
     previous_inventory = terminal_take_record["spelling_inventory_successor"]["current_inventory_summary"]
     require(terminal_cast_record["spelling_inventory_successor"] == {
         "contract_version": "phase26_1e_call_terminal_take_cast_chain_zero_spelling_inventory_successor_v1",
         "previous_inventory_summary": previous_inventory,
-        "current_inventory_summary": live_inventory,
+        "current_inventory_summary": inner_cast_record["spelling_inventory_successor"]["previous_inventory_summary"],
         "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
                                         *cast_negative, *cast_controls]),
         "partial_extra_or_substituted_inventory": "rejected",
-    } and live_inventory["source_file_count"] == previous_inventory["source_file_count"] + len(cast_negative) + len(cast_controls) and
-            live_inventory["site_count"] == previous_inventory["site_count"] and
-            live_inventory["semantic_site_count"] == previous_inventory["semantic_site_count"] and
-            live_inventory["unknown_site_count"] == 0,
+    } and terminal_cast_record["spelling_inventory_successor"]["current_inventory_summary"]["source_file_count"] == previous_inventory["source_file_count"] + len(cast_negative) + len(cast_controls) and
+            terminal_cast_record["spelling_inventory_successor"]["current_inventory_summary"]["site_count"] == previous_inventory["site_count"] and
+            terminal_cast_record["spelling_inventory_successor"]["current_inventory_summary"]["semantic_site_count"] == previous_inventory["semantic_site_count"] and
+            terminal_cast_record["spelling_inventory_successor"]["current_inventory_summary"]["unknown_site_count"] == 0,
             "terminal-Take cast-chain spelling inventory drifted")
     previous_sites = terminal_take_record["filename_site_successor"]["current_sites"]
     require(terminal_cast_record["filename_site_successor"] == {
         "contract_version": "phase26_1e_call_terminal_take_cast_chain_zero_filename_site_successor_v1",
-        "previous_sites": previous_sites, "current_sites": live_sites,
-        "line_deltas": [now["line"] - before["line"] for before, now in zip(previous_sites, live_sites)],
+        "previous_sites": previous_sites,
+        "current_sites": inner_cast_record["filename_site_successor"]["previous_sites"],
+        "line_deltas": [now["line"] - before["line"] for before, now in zip(
+            previous_sites, inner_cast_record["filename_site_successor"]["previous_sites"])],
         "partial_extra_or_substituted_site": "rejected",
-    } and len(previous_sites) == len(live_sites) == 3,
+    } and len(previous_sites) == len(inner_cast_record["filename_site_successor"]["previous_sites"]) == 3,
             "terminal-Take cast-chain filename sites drifted")
     cast_surface = terminal_cast_record["phase23_text_surface_successor"]
     require(cast_surface.get("contract_version") ==
@@ -3911,9 +3927,12 @@ def main() -> None:
         predecessor = previous_rows[path]
         require(row["previous_digest"] == predecessor["current_digest"] and
                 row["previous_match_counts"] == predecessor["current_match_counts"] and
-                row["current_digest"] == digest(path) and
+                row["current_digest"] == {
+                    r["path"]: r for r in inner_cast_record["phase23_text_surface_successor"]["changed_rows"]
+                }[path]["previous_digest"] and
                 row["current_match_counts"] == {
-                    name: len(pattern.findall(content)) for name, pattern in SURFACE_PATTERNS.items()},
+                    r["path"]: r for r in inner_cast_record["phase23_text_surface_successor"]["changed_rows"]
+                }[path]["previous_match_counts"],
                 f"terminal-Take cast-chain text surface drifted: {path}")
     require("terminal_cast_zero_callee_first_depth1" in guard and
             "terminal_cast_mayzero_caller_first_depth3" in guard and
@@ -3924,6 +3943,111 @@ def main() -> None:
             "terminal Take alias lost checked outer cast chain" in positive and
             "test ! -e \"$marker\"" in guard,
             "terminal-Take cast-chain native or poison evidence weakened")
+    inner_negative = [
+        f"compiler/phase26_call_take_alias_zero_inner_cast_{state}_{order}_depth{depth}_source.gst"
+        for state in ("zero", "mayzero")
+        for order in ("callee_first", "caller_first")
+        for depth in (1, 2, 3)
+    ]
+    inner_controls = [
+        f"compiler/phase26_call_take_alias_zero_inner_cast_control_{name}_source.gst"
+        for name in ("nonzero", "unknown", "unsafe", "gap", "nested_take",
+                     "move_outer", "scalar_inner", "wrong_type")
+    ]
+    inner_promotion = (
+        "compiler/phase26_call_take_alias_zero_terminal_cast_control_take_inner_cast_source.gst")
+    inner_static = {
+        "contract_version": "phase26_1e_call_terminal_take_inner_cast_chain_zero_v1",
+        "status": "bounded_checked_inner_cast_chain_under_terminal_Take_safe_argument_rejection_qualified",
+        "owner": "cranelift", "increment": "26.1E_terminal_Take_inner_cast_chain_subset",
+        "operator_ownership_decision": "2026-10-03_bounded_terminal_Take_inner_cast_chain",
+        "value_states": ["Unknown", "Zero", "Nonzero", "MayZero"],
+        "candidate_shape": "immediate_same_block_concrete_nullary_call_typed_aliases_one_outer_Take_finite_inner_raw_casts_Identifier",
+        "metadata_proof": "post_typecheck_each_cast_resolved_operand_and_target_RawPointer",
+        "summary_order": "after_all_function_bodies_before_native_planner",
+        "positive_fixture": POSITIVE,
+        "positive_output": (
+            "SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, "
+            "mixed Move/Take cast chains, and exclusions verified\n"),
+        "negative_fixtures": inner_negative,
+        "control_fixtures": inner_controls,
+        "reclassified_fixtures": [{"path": inner_promotion,
+                                   "previous": "accepted_then_native_deferral",
+                                   "current": "RawNullSafeBoundary_before_driver"}],
+        "cast_depths_proved": [1, 2, 3],
+        "safe_boundaries": ["declared_nonextern_raw_pointer_argument"],
+        "negative_states": ["Zero", "MayZero"],
+        "prior_error_precedence": "preserved", "unknown_and_nonzero": "preserved",
+        "unsafe_callees": "preserved", "take_move_semantics_changed": False,
+        "diagnostic": "[RawNullSafeBoundary]", "failure_stage": "before_driver_discovery",
+        "native_fallback": False, "physical_abi_changed": False,
+        "mir_changed": False, "runtime_symbol_surface_changed": False,
+        "operator_semantics_changed": False, "general_nullability": "open_separate_obligation",
+        "phase26_1_closed": False, "owning_level2_guard": GUARD,
+        "pr_fast_job": "phase26-ffi-position",
+    }
+    for key, value in inner_static.items():
+        require(inner_cast_record.get(key) == value,
+                f"terminal-Take inner-cast successor field drifted: {key}")
+    require(set(inner_cast_record) == set(inner_static) | {
+        "spelling_inventory_successor", "filename_site_successor",
+        "phase23_text_surface_successor", "positive_fixture_successor",
+    } and all((ROOT / path).is_file() for path in
+              [*inner_negative, *inner_controls, inner_promotion]),
+            "terminal-Take inner-cast successor fields or fixtures drifted")
+    require(inner_cast_record["positive_fixture_successor"] == {
+        "path": POSITIVE,
+        "previous_digest": terminal_cast_record["positive_fixture_successor"]["current_digest"],
+        "current_digest": digest(POSITIVE),
+    }, "terminal-Take inner-cast positive evidence drifted")
+    previous_inventory = terminal_cast_record["spelling_inventory_successor"]["current_inventory_summary"]
+    require(inner_cast_record["spelling_inventory_successor"] == {
+        "contract_version": "phase26_1e_call_terminal_take_inner_cast_chain_zero_spelling_inventory_successor_v1",
+        "previous_inventory_summary": previous_inventory,
+        "current_inventory_summary": live_inventory,
+        "changed_source_paths": sorted(["compiler/typechecker.gst", POSITIVE,
+                                        *inner_negative, *inner_controls]),
+        "partial_extra_or_substituted_inventory": "rejected",
+    } and live_inventory["source_file_count"] == previous_inventory["source_file_count"] + len(inner_negative) + len(inner_controls) and
+            live_inventory["site_count"] == previous_inventory["site_count"] and
+            live_inventory["semantic_site_count"] == previous_inventory["semantic_site_count"] and
+            live_inventory["unknown_site_count"] == 0,
+            "terminal-Take inner-cast spelling inventory drifted")
+    previous_sites = terminal_cast_record["filename_site_successor"]["current_sites"]
+    require(inner_cast_record["filename_site_successor"] == {
+        "contract_version": "phase26_1e_call_terminal_take_inner_cast_chain_zero_filename_site_successor_v1",
+        "previous_sites": previous_sites, "current_sites": live_sites,
+        "line_deltas": [now["line"] - before["line"] for before, now in zip(previous_sites, live_sites)],
+        "partial_extra_or_substituted_site": "rejected",
+    } and len(previous_sites) == len(live_sites) == 3,
+            "terminal-Take inner-cast filename sites drifted")
+    inner_surface = inner_cast_record["phase23_text_surface_successor"]
+    require(inner_surface.get("contract_version") ==
+            "phase26_1e_call_terminal_take_inner_cast_chain_zero_phase23_text_surface_successor_v1" and
+            inner_surface.get("partial_extra_or_substituted_surface") == "rejected" and
+            inner_surface.get("added_rows") == [] and
+            sorted(row["path"] for row in inner_surface["changed_rows"]) ==
+            ["compiler/typechecker.gst", "scripts/phase26_call_return_zero_registration.py"],
+            "terminal-Take inner-cast text surface set drifted")
+    previous_rows = {row["path"]: row for row in cast_surface["changed_rows"]}
+    for row in inner_surface["changed_rows"]:
+        path = row["path"]
+        content = (ROOT / path).read_text(encoding="utf-8")
+        predecessor = previous_rows[path]
+        require(row["previous_digest"] == predecessor["current_digest"] and
+                row["previous_match_counts"] == predecessor["current_match_counts"] and
+                row["current_digest"] == digest(path) and
+                row["current_match_counts"] == {
+                    name: len(pattern.findall(content)) for name, pattern in SURFACE_PATTERNS.items()},
+                f"terminal-Take inner-cast text surface drifted: {path}")
+    require("inner_cast_zero_callee_first_depth1" in guard and
+            "inner_cast_mayzero_caller_first_depth3" in guard and
+            "terminal_cast_control_take_inner_cast" in guard and
+            "control_scalar_inner" in guard and
+            "control_nested_take" in guard and
+            "terminal Take alias lost checked inner cast chain" in positive and
+            "test ! -e \"$marker\"" in guard,
+            "terminal-Take inner-cast native or poison evidence weakened")
     print(f"{GUARD}: registration ok")
 
 

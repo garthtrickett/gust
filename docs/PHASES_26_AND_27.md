@@ -835,6 +835,19 @@ and unsafe callees retain their prior classifications. No MIR, ABI, layout,
 runtime, stdlib, or general nullability change is claimed. Phase 26.1 remains
 open.
 
+**26.1E checked inner casts under a terminal Take argument (ownership
+authorized 2026-10-03).** After unchanged typechecking, the same immediate
+safe-call boundary rejects Zero/MayZero when exactly one outer `Take` wraps a
+finite chain of checked RawPointer-to-RawPointer casts ending at the current
+Identifier after a terminal Take alias. Each cast operand and target must have
+resolved RawPointer metadata. The existing four-state summary, candidate
+invalidation, TypeMismatch precedence, and Take/move/resource bookkeeping
+remain authoritative. Nonzero/Unknown, unsafe calls, gaps, nested Take, Move,
+scalar casts, wrong types, and other call shapes retain their prior
+classification. This closes one source-level address-escape gap under E; it
+does not complete D's FFI/layout contract, E's broader escape enforcement,
+F's provenance/non-laundering contract, or Phase 26.1.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
