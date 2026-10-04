@@ -273,9 +273,18 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
         os.LogStr("Error: cast local return widened the candidate window"); os.Exit(1);
     }
     env.zero_local_call_alias_hops = 1;
-    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_return], &env, ctx) != 0 {
-        os.LogStr("Error: alias local return widened the candidate window"); os.Exit(1);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_return], &env, ctx) != 1 {
+        os.LogStr("Error: plain alias local return lost its candidate window"); os.Exit(1);
     }
+    env.zero_local_call_alias_hops = 3;
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_return], &env, ctx) != 1 {
+        os.LogStr("Error: consecutive plain alias return lost its candidate window"); os.Exit(1);
+    }
+    env.zero_local_call_take_alias_terminal = 1;
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_return], &env, ctx) != 0 {
+        os.LogStr("Error: Take alias widened the plain-return candidate window"); os.Exit(1);
+    }
+    env.zero_local_call_take_alias_terminal = 0;
     env.zero_local_call_alias_hops = 0;
     mut consume := parse_statement("accept_raw(ptr);", ctx);
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[consume], &env, ctx) != 1 {
@@ -694,5 +703,5 @@ func main() {
     check_pointer_cast_chain_boundary("move ((take make_zero() as *int) as *int)", int_pointer, 0, 0, ctx);
     check_pointer_cast_chain_boundary("move ((make_zero() as int) as *int)", int_pointer, 1, 0, ctx);
     check_pointer_cast_chain_boundary("0 as *int", int_pointer, 1, 0, ctx);
-    os.LogStr("SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, mixed Move/Take cast chains, consecutive outer Take chains, interleaved Take/cast chains, local safe returns, and exclusions verified");
+    os.LogStr("SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, mixed Move/Take cast chains, consecutive outer Take chains, interleaved Take/cast chains, local safe returns and plain-alias safe returns, and exclusions verified");
 }

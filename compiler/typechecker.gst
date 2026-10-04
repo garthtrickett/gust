@@ -2447,13 +2447,14 @@ func phase26_zero_local_call_argument_cast_is_raw(arg: ast.Expression[ctx], env:
 }
 
 // The candidate is usable by the next direct one-argument expression statement
-// or an immediately following Return of the original local in its lexical
-// block. Every other statement invalidates it before checking, so assignment
-// and control flow cannot preserve a stale summary through this bounded path.
+// or an immediately following Return of the current plain-alias local in its
+// lexical block. Every other statement invalidates it before checking, so
+// assignment and control flow cannot preserve a stale summary through this
+// bounded path.
 func phase26_zero_local_call_statement_consumes_candidate(stmt: ast.Statement[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         if std.str_eq((*env).zero_local_call_name, "") == 1 { return 0; }
-        if stmt.tag == 12 && (*env).zero_local_call_alias_hops == 0 &&
+        if stmt.tag == 12 &&
            (*env).zero_local_call_take_alias_terminal == 0 {
             if stmt.Return.expr == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
             mut returned := ctx[stmt.Return.expr];
@@ -16270,12 +16271,11 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                                 env, resolved_return_target_e2, expr_idx,
                                 return_nlaunder_span, "function return", ctx
                             );
-                            // One immediately returned local may retain an already
-                            // typechecked concrete direct-call summary. Earlier
-                            // return and escape errors still take precedence in
-                            // the common finalizer.
+                            // An immediately returned local or consecutive plain
+                            // alias may retain an already typechecked concrete
+                            // direct-call summary. Earlier return and escape errors
+                            // still take precedence in the common finalizer.
                             if resolved_return_target_e2.tag == 9 &&
-                               (*env).zero_local_call_alias_hops == 0 &&
                                (*env).zero_local_call_take_alias_terminal == 0 &&
                                std.str_eq((*env).zero_local_call_name, "") == 0 {
                                 mut local_return := ctx[expr_idx];
