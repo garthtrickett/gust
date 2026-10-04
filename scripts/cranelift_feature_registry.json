@@ -68427,6 +68427,255 @@
         "added_rows": [],
         "partial_extra_or_substituted_surface": "rejected"
       }
+    },
+    "call_take_return_wrapper_zero_evidence_increment": {
+      "contract_version": "phase26_1e_call_take_return_wrapper_zero_v1",
+      "status": "bounded_one_take_safe_return_rejection_qualified",
+      "owner": "cranelift",
+      "increment": "26.1E_one_Take_safe_return_subset",
+      "operator_ownership_decision": "2026-10-04_bounded_one_Take_safe_return",
+      "value_states": [
+        "Unknown",
+        "Zero",
+        "Nonzero",
+        "MayZero"
+      ],
+      "candidate_shape": "immediate_concrete_nullary_call_local_or_validated_alias_one_Take_optional_checked_raw_casts_safe_return",
+      "summary_order": "after_all_function_bodies_before_native_planner",
+      "positive_fixture": "compiler/phase26_call_return_zero_test_entry.gst",
+      "positive_output": "SUCCESS: checked direct-return zero summaries, RawPointer AsCast chains, mixed Move/Take cast chains, consecutive outer Take chains, interleaved Take/cast chains, local safe returns and plain-alias safe returns and Take-alias safe returns, and exclusions verified\n",
+      "negative_fixtures": [
+        "compiler/phase26_call_local_return_take_alias_return_take_source.gst",
+        "compiler/phase26_call_local_return_take_wrapper_mayzero_direct_take_source.gst",
+        "compiler/phase26_call_local_return_take_wrapper_mayzero_plain_alias_take_source.gst",
+        "compiler/phase26_call_local_return_take_wrapper_mayzero_take_alias_take_source.gst",
+        "compiler/phase26_call_local_return_take_wrapper_mayzero_take_cast_depth2_source.gst",
+        "compiler/phase26_call_local_return_take_wrapper_mayzero_cast_take_depth2_source.gst",
+        "compiler/phase26_call_local_return_take_wrapper_mayzero_interleaved_depth2_source.gst",
+        "compiler/phase26_call_local_return_take_wrapper_zero_direct_take_source.gst"
+      ],
+      "control_fixtures": [
+        "compiler/phase26_call_local_return_take_wrapper_mayzero_direct_take_callee_first_source.gst",
+        "compiler/phase26_call_local_return_take_wrapper_nonzero_take_source.gst",
+        "compiler/phase26_call_local_return_take_wrapper_unknown_take_source.gst",
+        "compiler/phase26_call_local_return_take_wrapper_unsafe_take_source.gst",
+        "compiler/phase26_call_local_return_take_wrapper_gap_take_source.gst",
+        "compiler/phase26_call_local_return_take_wrapper_overwrite_take_source.gst",
+        "compiler/phase26_call_local_return_take_wrapper_nested_take_source.gst",
+        "compiler/phase26_call_local_return_take_wrapper_move_take_source.gst",
+        "compiler/phase26_call_local_return_take_wrapper_wrong_type_take_source.gst",
+        "compiler/phase26_call_local_return_take_wrapper_scalar_inner_take_source.gst"
+      ],
+      "safe_boundary": "declared_nonextern_raw_pointer_return",
+      "negative_states": [
+        "Zero",
+        "MayZero"
+      ],
+      "prior_error_precedence": "preserved",
+      "unknown_and_nonzero": "preserved",
+      "unsafe_functions": "preserved",
+      "take_move_resource_semantics_changed": false,
+      "diagnostic": "[RawNullSafeBoundary]",
+      "failure_stage": "before_driver_discovery",
+      "native_fallback": false,
+      "physical_abi_changed": false,
+      "mir_changed": false,
+      "runtime_symbol_surface_changed": false,
+      "operator_semantics_changed": false,
+      "general_nullability": "open_separate_obligation",
+      "phase26_1_closed": false,
+      "owning_level2_guard": "guard-cranelift-phase26-call-return-zero-evidence",
+      "pr_fast_job": "phase26-ffi-position",
+      "positive_fixture_successor": {
+        "path": "compiler/phase26_call_return_zero_test_entry.gst",
+        "previous_digest": "d5e829c2cee8c719760ddbd1026ca4f7cff7590dcb257ead0b8b9fe920076c73",
+        "current_digest": "6b92d337f7017c9afec72819a77e3ba8e5e8381e38d8ad1379e6fff6e2a3194a"
+      },
+      "spelling_inventory_successor": {
+        "contract_version": "phase26_1e_call_take_return_wrapper_spelling_inventory_successor_v1",
+        "previous_inventory_summary": {
+          "source_file_count": 1786,
+          "site_count": 1398,
+          "semantic_site_count": 689,
+          "semantic_manifest_digest": "891357da63e5c112e4d90ea8e44ba9e3a5e787a86b1b26c2b2ec03957df9ab83",
+          "classification_counts": {
+            "semantic_or_intrinsic_recognition": 689,
+            "diagnostic": 10,
+            "serialization": 1,
+            "mangling_or_generated_name": 9,
+            "comment": 2,
+            "fixture_or_evidence": 679,
+            "non_decision_comparison": 8
+          },
+          "partition_manifest_digests": {
+            "diagnostic": "9046376fa26f1e9d1f7b0217056cecfd7ce8bd2542ed4441138e2ffec30b73c9",
+            "serialization": "a889ed384ae506f10b80c84fc00b91863328192597070abee5ec4324e92aef70",
+            "mangling_or_generated_name": "9538fac2548ba11946a00070a29c10873e602024a06a42ed29d15cf8081715df",
+            "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+            "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+            "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
+          },
+          "complete_manifest_digest": "77e6ce3ddb871226362ab0e871d6839c6ad5228b8535949dfad98ef511330d9f",
+          "unknown_site_count": 0
+        },
+        "current_inventory_summary": {
+          "source_file_count": 1803,
+          "site_count": 1398,
+          "semantic_site_count": 689,
+          "semantic_manifest_digest": "1a34348122d8f5ea9309c3a6cf5e06b4b022d3b6d8534873a9ba9bcda0f5892b",
+          "classification_counts": {
+            "semantic_or_intrinsic_recognition": 689,
+            "diagnostic": 10,
+            "serialization": 1,
+            "mangling_or_generated_name": 9,
+            "comment": 2,
+            "fixture_or_evidence": 679,
+            "non_decision_comparison": 8
+          },
+          "partition_manifest_digests": {
+            "diagnostic": "a94477e1cdf4b1e341823ea4118ec88c7f359798581f8cddfdae4ff62df08af3",
+            "serialization": "a889ed384ae506f10b80c84fc00b91863328192597070abee5ec4324e92aef70",
+            "mangling_or_generated_name": "9680142bbdfac79382509d0d0e6d9debdc03af7fe3cb758800fd358064fe954c",
+            "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+            "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+            "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
+          },
+          "complete_manifest_digest": "b35ca8b7c25ed5ccbb9266bd85f04ebc0f1d1ea43d3be5b6672b592c30dcc096",
+          "unknown_site_count": 0
+        },
+        "changed_source_paths": [
+          "compiler/phase26_call_local_return_take_wrapper_gap_take_source.gst",
+          "compiler/phase26_call_local_return_take_wrapper_mayzero_cast_take_depth2_source.gst",
+          "compiler/phase26_call_local_return_take_wrapper_mayzero_direct_take_callee_first_source.gst",
+          "compiler/phase26_call_local_return_take_wrapper_mayzero_direct_take_source.gst",
+          "compiler/phase26_call_local_return_take_wrapper_mayzero_interleaved_depth2_source.gst",
+          "compiler/phase26_call_local_return_take_wrapper_mayzero_plain_alias_take_source.gst",
+          "compiler/phase26_call_local_return_take_wrapper_mayzero_take_alias_take_source.gst",
+          "compiler/phase26_call_local_return_take_wrapper_mayzero_take_cast_depth2_source.gst",
+          "compiler/phase26_call_local_return_take_wrapper_move_take_source.gst",
+          "compiler/phase26_call_local_return_take_wrapper_nested_take_source.gst",
+          "compiler/phase26_call_local_return_take_wrapper_nonzero_take_source.gst",
+          "compiler/phase26_call_local_return_take_wrapper_overwrite_take_source.gst",
+          "compiler/phase26_call_local_return_take_wrapper_scalar_inner_take_source.gst",
+          "compiler/phase26_call_local_return_take_wrapper_unknown_take_source.gst",
+          "compiler/phase26_call_local_return_take_wrapper_unsafe_take_source.gst",
+          "compiler/phase26_call_local_return_take_wrapper_wrong_type_take_source.gst",
+          "compiler/phase26_call_local_return_take_wrapper_zero_direct_take_source.gst",
+          "compiler/phase26_call_return_zero_test_entry.gst",
+          "compiler/typechecker.gst"
+        ],
+        "partial_extra_or_substituted_inventory": "rejected"
+      },
+      "filename_site_successor": {
+        "contract_version": "phase26_1e_call_take_return_wrapper_filename_site_successor_v1",
+        "previous_sites": [
+          {
+            "id": "var_declaration_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 15060,
+            "selector": "test_tcs_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_var_declaration",
+            "window_digest": "6c0f176e1543d9a2ba125569875a69081a81b28bfc4c80eef31c57ec7ccfa05c"
+          },
+          {
+            "id": "assignment_hazard_and_view_invalidation",
+            "path": "compiler/typechecker.gst",
+            "line": 15395,
+            "selector": "test_index_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_assignment",
+            "window_digest": "eea5c7abf9fb4c50d51f644267c5ee59133db8d998a0fe7c25dd0ec1503029c3"
+          },
+          {
+            "id": "guard_payload_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 16463,
+            "selector": "test_tcs_",
+            "selector_occurrence": 2,
+            "statement_context": "statement_guard_payload_binding",
+            "window_digest": "4bf05983015fd1ecc3c3cc4c1399491868107155a5435fed90f8beeeb8f16a6f"
+          }
+        ],
+        "current_sites": [
+          {
+            "id": "var_declaration_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 15102,
+            "selector": "test_tcs_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_var_declaration",
+            "window_digest": "6c0f176e1543d9a2ba125569875a69081a81b28bfc4c80eef31c57ec7ccfa05c"
+          },
+          {
+            "id": "assignment_hazard_and_view_invalidation",
+            "path": "compiler/typechecker.gst",
+            "line": 15437,
+            "selector": "test_index_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_assignment",
+            "window_digest": "eea5c7abf9fb4c50d51f644267c5ee59133db8d998a0fe7c25dd0ec1503029c3"
+          },
+          {
+            "id": "guard_payload_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 16496,
+            "selector": "test_tcs_",
+            "selector_occurrence": 2,
+            "statement_context": "statement_guard_payload_binding",
+            "window_digest": "4bf05983015fd1ecc3c3cc4c1399491868107155a5435fed90f8beeeb8f16a6f"
+          }
+        ],
+        "line_deltas": [
+          42,
+          42,
+          33
+        ],
+        "partial_extra_or_substituted_site": "rejected"
+      },
+      "phase23_text_surface_successor": {
+        "contract_version": "phase26_1e_call_take_return_wrapper_phase23_text_surface_successor_v1",
+        "changed_rows": [
+          {
+            "path": "compiler/typechecker.gst",
+            "previous_digest": "8ae02e5f56792c0016fd19a356e7cef6ad12d2c5251839784507fecb8081d626",
+            "current_digest": "887c60f8d7293183a2f46530054f4ab2203b438198338fff23d980ce080acf3a",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            }
+          },
+          {
+            "path": "scripts/phase26_call_return_zero_registration.py",
+            "previous_digest": "b5c841bd50a1be302f57fdd3dcac9fa60e9b59ba1adfd23941f072aca60fedc8",
+            "current_digest": "5445e2acb7671a5812dda79c3cb625da337361e3b17a6a911092ec1a04b570f9",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            }
+          }
+        ],
+        "added_rows": [],
+        "partial_extra_or_substituted_surface": "rejected"
+      },
+      "nested_Take_Move_gap_overwrite_and_wrong_type": "excluded",
+      "reclassified_fixture": {
+        "path": "compiler/phase26_call_local_return_take_alias_return_take_source.gst",
+        "previous": "accepted_then_native_deferral",
+        "current": "RawNullSafeBoundary_before_driver"
+      }
     }
   },
   "phase25_historical9g_guard_repair": {

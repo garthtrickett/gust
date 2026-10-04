@@ -2446,6 +2446,55 @@ func phase26_zero_local_call_argument_cast_is_raw(arg: ast.Expression[ctx], env:
     }
 }
 
+// A safe Return may use the current candidate directly or through exactly one
+// Take and checked raw-pointer casts. Casts still require a validated alias.
+// This syntax probe runs before typechecking; the companion proof below runs
+// only after the ordinary return type and safety checks.
+func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        if std.str_eq((*env).zero_local_call_name, "") == 1 { return 0; }
+        mut current := expr;
+        mut take_count := 0;
+        mut has_cast := 0;
+        while current.tag == 5 || current.tag == 9 {
+            mut next_idx := empty[Index[ast.Expression[ctx], ctx]];
+            if current.tag == 5 {
+                take_count = take_count + 1;
+                if take_count > 1 { return 0; }
+                next_idx = current.Take.expr;
+            } else {
+                has_cast = 1;
+                next_idx = current.AsCast.left;
+            }
+            if next_idx == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+            current = ctx[next_idx];
+        }
+        if current.tag != 0 || (has_cast == 1 && (*env).zero_local_call_alias_hops == 0) { return 0; }
+        return std.str_eq(current.Identifier.name, (*env).zero_local_call_name);
+    }
+}
+
+func phase26_zero_local_return_cast_is_raw(expr: ast.Expression[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        mut current := expr;
+        while current.tag == 5 || current.tag == 9 {
+            mut next_idx := empty[Index[ast.Expression[ctx], ctx]];
+            if current.tag == 5 { next_idx = current.Take.expr; }
+            if current.tag == 9 {
+                next_idx = current.AsCast.left;
+                if current.AsCast.target_type == empty[Index[ast.Type[ctx], ctx]] ||
+                   next_idx == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+                mut target := env_resolve_type(env, ctx[current.AsCast.target_type], ctx);
+                if target.tag != 9 ||
+                   phase26_zero_resolved_expression_tag(next_idx, env, ctx) != 9 { return 0; }
+            }
+            if next_idx == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+            current = ctx[next_idx];
+        }
+        return current.tag == 0;
+    }
+}
+
 // The candidate is usable by the next direct one-argument expression statement
 // or an immediately following Return of the current validated alias local
 // through a syntactic cast chain in its lexical block. Casts need raw-pointer proof
@@ -2457,14 +2506,7 @@ func phase26_zero_local_call_statement_consumes_candidate(stmt: ast.Statement[ct
         if std.str_eq((*env).zero_local_call_name, "") == 1 { return 0; }
         if stmt.tag == 12 {
             if stmt.Return.expr == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
-            mut returned := ctx[stmt.Return.expr];
-            if returned.tag == 9 && (*env).zero_local_call_alias_hops == 0 { return 0; }
-            while returned.tag == 9 { // AsCast
-                if returned.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
-                returned = ctx[returned.AsCast.left];
-            }
-            if returned.tag != 0 { return 0; }
-            return std.str_eq(returned.Identifier.name, (*env).zero_local_call_name);
+            return phase26_zero_local_return_matches_candidate(ctx[stmt.Return.expr], env, ctx);
         }
         if stmt.tag != 13 { return 0; }
         mut expr_idx := stmt.Expression.expr;
@@ -16283,17 +16325,8 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                             // precedence in the common finalizer.
                             if resolved_return_target_e2.tag == 9 &&
                                std.str_eq((*env).zero_local_call_name, "") == 0 {
-                                mut local_return := ctx[expr_idx];
-                                mut return_has_cast := 0;
-                                if local_return.tag == 9 { return_has_cast = 1; }
-                                while local_return.tag == 9 { // AsCast
-                                    if local_return.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { break; }
-                                    local_return = ctx[local_return.AsCast.left];
-                                }
-                                if local_return.tag == 0 &&
-                                   std.str_eq(local_return.Identifier.name, (*env).zero_local_call_name) == 1 &&
-                                   (return_has_cast == 0 || (*env).zero_local_call_alias_hops > 0) &&
-                                   phase26_zero_local_call_argument_cast_is_raw(ctx[expr_idx], env, ctx) == 1 {
+                                if phase26_zero_local_return_matches_candidate(ctx[expr_idx], env, ctx) == 1 &&
+                                   phase26_zero_local_return_cast_is_raw(ctx[expr_idx], env, ctx) == 1 {
                                     phase26_zero_queue_direct_call_boundary(
                                         env, resolved_return_target_e2,
                                         (*env).zero_local_call_callee,
