@@ -2303,15 +2303,43 @@ func phase26_zero_note_direct_call_boundary(env: *TypeEnvironment[ctx], target_t
 }
 
 // A direct argument may take or move the current candidate exactly once. After
-// a Take alias, consecutive outer Takes of that name may carry checked pointer
-// casts inside the Take chain.
+// a Take alias, a finite Take and checked pointer-cast chain may carry the
+// candidate without changing Take or move bookkeeping.
 func phase26_zero_local_call_argument_matches_candidate(arg: ast.Expression[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         if std.str_eq((*env).zero_local_call_name, "") == 1 { return 0; }
         if arg.tag == 0 { // Identifier
             return std.str_eq(arg.Identifier.name, (*env).zero_local_call_name);
         }
-        if arg.tag == 9 { // Checked pointer casts may wrap a terminal Take alias exactly once.
+        if (*env).zero_local_call_take_alias_terminal == 1 &&
+           (*env).zero_local_call_alias_hops == 0 { return 0; }
+        if (*env).zero_local_call_take_alias_terminal == 1 &&
+           (*env).zero_local_call_alias_hops > 0 {
+            mut terminal_expr := arg;
+            mut previous_tag := 0;
+            mut segments := 0;
+            mut take_count := 0;
+            while terminal_expr.tag == 5 || terminal_expr.tag == 9 {
+                if terminal_expr.tag != previous_tag {
+                    segments = segments + 1;
+                    previous_tag = terminal_expr.tag;
+                }
+                mut next_idx := empty[Index[ast.Expression[ctx], ctx]];
+                if terminal_expr.tag == 5 {
+                    take_count = take_count + 1;
+                    next_idx = terminal_expr.Take.expr;
+                }
+                if terminal_expr.tag == 9 { next_idx = terminal_expr.AsCast.left; }
+                if next_idx == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+                terminal_expr = ctx[next_idx];
+            }
+            if terminal_expr.tag != 0 { return 0; }
+            // Preserve the old Take-prefix/cast-suffix and cast-prefix/single-Take
+            // shapes. Newly admitted chains must genuinely alternate twice.
+            if arg.tag == 9 && segments == 2 && take_count > 1 { return 0; }
+            return std.str_eq(terminal_expr.Identifier.name, (*env).zero_local_call_name);
+        }
+        if arg.tag == 9 { // Checked pointer casts may wrap a nonterminal local candidate.
             if (*env).zero_local_call_alias_hops > 0 {
                 if arg.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
                 mut alias_source_idx := arg.AsCast.left;
@@ -2354,25 +2382,6 @@ func phase26_zero_local_call_argument_matches_candidate(arg: ast.Expression[ctx]
             }
             return 0;
         }
-        if (*env).zero_local_call_take_alias_terminal == 1 {
-            if arg.tag != 5 || (*env).zero_local_call_alias_hops == 0 ||
-               arg.Take.expr == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
-            mut terminal_inner_idx := arg.Take.expr;
-            while terminal_inner_idx != empty[Index[ast.Expression[ctx], ctx]] {
-                mut terminal_inner := ctx[terminal_inner_idx];
-                if terminal_inner.tag != 5 { break; }
-                terminal_inner_idx = terminal_inner.Take.expr;
-            }
-            while terminal_inner_idx != empty[Index[ast.Expression[ctx], ctx]] {
-                mut terminal_inner := ctx[terminal_inner_idx];
-                if terminal_inner.tag == 0 {
-                    return std.str_eq(terminal_inner.Identifier.name, (*env).zero_local_call_name);
-                }
-                if terminal_inner.tag != 9 { return 0; }
-                terminal_inner_idx = terminal_inner.AsCast.left;
-            }
-            return 0;
-        }
         if arg.tag != 5 && arg.tag != 4 { return 0; } // Take, Move
         mut inner_idx := empty[Index[ast.Expression[ctx], ctx]];
         if arg.tag == 5 { inner_idx = arg.Take.expr; }
@@ -2399,12 +2408,25 @@ func phase26_zero_local_call_argument_matches_candidate(arg: ast.Expression[ctx]
 func phase26_zero_local_call_argument_cast_is_raw(arg: ast.Expression[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         mut cast_expr := arg;
-        if arg.tag == 5 && (*env).zero_local_call_take_alias_terminal == 1 {
-            while cast_expr.tag == 5 { // Match the qualified consecutive Take prefix.
-                if cast_expr.Take.expr == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
-                cast_expr = ctx[cast_expr.Take.expr];
+        if (*env).zero_local_call_take_alias_terminal == 1 &&
+           (*env).zero_local_call_alias_hops > 0 {
+            while cast_expr.tag == 5 || cast_expr.tag == 9 {
+                mut next_idx := empty[Index[ast.Expression[ctx], ctx]];
+                if cast_expr.tag == 5 { next_idx = cast_expr.Take.expr; }
+                if cast_expr.tag == 9 {
+                    next_idx = cast_expr.AsCast.left;
+                    if cast_expr.AsCast.target_type == empty[Index[ast.Type[ctx], ctx]] ||
+                       next_idx == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+                    mut target := env_resolve_type(env, ctx[cast_expr.AsCast.target_type], ctx);
+                    if target.tag != 9 ||
+                       phase26_zero_resolved_expression_tag(next_idx, env, ctx) != 9 { return 0; }
+                }
+                if next_idx == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+                cast_expr = ctx[next_idx];
             }
-        } else if arg.tag == 5 || arg.tag == 4 { // One Take or Move may wrap checked casts after typechecking.
+            return cast_expr.tag == 0;
+        }
+        if arg.tag == 5 || arg.tag == 4 { // One Take or Move may wrap checked casts after typechecking.
             mut wrapped_idx := empty[Index[ast.Expression[ctx], ctx]];
             if arg.tag == 5 { wrapped_idx = arg.Take.expr; }
             if arg.tag == 4 { wrapped_idx = arg.Move.expr; }

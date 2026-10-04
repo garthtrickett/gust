@@ -856,10 +856,23 @@ same-block Identifier or a finite checked RawPointer-to-RawPointer cast chain.
 Every cast operand and target must have resolved raw-pointer metadata. The
 existing four-state summary, candidate invalidation, diagnostic precedence,
 and Take/move/resource bookkeeping remain authoritative. Nonzero/Unknown,
-unsafe calls, wrong types, an outer Move, and interleaved Take/cast syntax
-retain their prior classifications. This is a bounded E source diagnostic,
+unsafe calls, wrong types, and an outer Move retain their prior classifications.
+Interleaved Take/cast syntax remained deferred at this increment. This is a
+bounded E source diagnostic,
 not admission of the deferred native route or completion of D, E, F, or
 Phase 26.1.
+
+**26.1E interleaved Take and checked raw casts after a terminal Take alias
+(ownership authorized 2026-10-04).** At an already type-matched declared-safe
+non-extern argument boundary, a finite syntactic chain of `Take` and checked
+RawPointer-to-RawPointer casts can carry the current same-block Zero/MayZero
+candidate to the existing four-state finalizer. Every cast operand and target
+must have resolved raw-pointer metadata after unchanged typechecking. The
+candidate window, prior error order, and Take/move/resource meaning are
+unchanged. Nonzero/Unknown values, unsafe calls, wrong types, outer Move,
+scalar casts, and intervening statements retain their prior classifications.
+This remains a bounded source diagnostic; native execution, general
+nullability, the other 26.1 D/E/F obligations, and 26.2–26.6 remain open.
 
 ## Phase 26.2 — generalized linear-resource enforcement
 
