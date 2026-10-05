@@ -500,6 +500,10 @@ def validate() -> tuple[dict, list[dict], dict]:
         "phase26_activation_audit", {}).get(
         "call_take_alias_return_zero_evidence_increment", {}).get(
         "spelling_inventory_successor")
+    call_take_return_wrapper_successor = registry.get(
+        "phase26_activation_audit", {}).get(
+        "call_take_return_wrapper_zero_evidence_increment", {}).get(
+        "spelling_inventory_successor")
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -2312,16 +2316,42 @@ def validate() -> tuple[dict, list[dict], dict]:
         require(call_take_alias_return_successor.get("contract_version") ==
                 "phase26_1e_call_take_alias_return_spelling_inventory_successor_v1" and
                 call_take_alias_return_successor.get("previous_inventory_summary") == previous and
-                call_take_alias_return_successor.get("current_inventory_summary") == summary and
+                call_take_alias_return_successor.get("current_inventory_summary") ==
+                (summary if call_take_return_wrapper_successor is None else
+                 call_take_return_wrapper_successor.get("previous_inventory_summary")) and
                 call_take_alias_return_successor.get("changed_source_paths") == sorted([
                     "compiler/typechecker.gst", "compiler/phase26_call_return_zero_test_entry.gst",
                     *paths]) and
                 call_take_alias_return_successor.get("partial_extra_or_substituted_inventory") == "rejected" and
-                summary["source_file_count"] == previous["source_file_count"] + len(paths) and
+                call_take_alias_return_successor["current_inventory_summary"]["source_file_count"] ==
+                    previous["source_file_count"] + len(paths) and
                 summary["site_count"] == previous["site_count"] and
                 summary["semantic_site_count"] == previous["semantic_site_count"] and
                 summary["unknown_site_count"] == 0,
                 "Phase 26 Take-alias safe-return spelling inventory drifted")
+    if call_take_return_wrapper_successor is not None:
+        paths = [f"compiler/phase26_call_local_return_take_wrapper_{name}_source.gst"
+                 for name in ("mayzero_direct_take", "mayzero_direct_take_callee_first",
+                              "mayzero_plain_alias_take", "mayzero_take_alias_take",
+                              "mayzero_take_cast_depth2", "mayzero_cast_take_depth2",
+                              "mayzero_interleaved_depth2", "nonzero_take", "unknown_take",
+                              "unsafe_take", "gap_take", "overwrite_take", "nested_take",
+                              "move_take", "wrong_type_take", "zero_direct_take",
+                              "scalar_inner_take")]
+        previous = call_take_alias_return_successor["current_inventory_summary"]
+        require(call_take_return_wrapper_successor.get("contract_version") ==
+                "phase26_1e_call_take_return_wrapper_spelling_inventory_successor_v1" and
+                call_take_return_wrapper_successor.get("previous_inventory_summary") == previous and
+                call_take_return_wrapper_successor.get("current_inventory_summary") == summary and
+                call_take_return_wrapper_successor.get("changed_source_paths") == sorted([
+                    "compiler/typechecker.gst", "compiler/phase26_call_return_zero_test_entry.gst",
+                    *paths]) and
+                call_take_return_wrapper_successor.get("partial_extra_or_substituted_inventory") == "rejected" and
+                summary["source_file_count"] == previous["source_file_count"] + len(paths) and
+                summary["site_count"] == previous["site_count"] and
+                summary["semantic_site_count"] == previous["semantic_site_count"] and
+                summary["unknown_site_count"] == 0,
+                "Phase 26 one-Take safe-return spelling inventory drifted")
     require(value.get("classification_policy") == {
         "semantic": SEMANTIC,
         "non_semantic_partitions": list(PARTITIONS),

@@ -923,6 +923,20 @@ Unknown results retain their prior classifications. This changes no MIR, ABI,
 layout, runtime, stdlib, or fallback behavior. D/E/F and Phase 26.1 remain
 open.
 
+**26.1E one-Take safe-return wrapper (ownership authorized 2026-10-04).**
+After unchanged return typechecking and safety checks, the immediate same-block
+concrete nullary-call `*T` candidate may be returned through exactly one
+syntactic `Take` around its current Identifier, with finite checked
+RawPointer-to-RawPointer casts in either position. Casted local returns still
+require an already validated alias. The existing Zero/MayZero summary and
+finalizer reject the safe escape before native planning; every cast proves its
+resolved raw-pointer operand and target. Take/move/resource bookkeeping, prior
+type and ephemeral-escape diagnostics, candidate invalidation, and accepted
+nonzero/Unknown/unsafe controls retain their meaning. Nested Take, Move,
+gaps, overwrites, branches, indirect/generic calls, and broader provenance
+flow remain excluded. This changes no MIR, ABI, layout, runtime, stdlib, or
+fallback behavior. D/E/F and Phase 26.1 remain open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

@@ -3823,6 +3823,32 @@ def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    wrapper_return = registry.get("phase26_activation_audit", {}).get(
+        "call_take_return_wrapper_zero_evidence_increment", {}).get(
+        "phase23_text_surface_successor")
+    if wrapper_return is not None:
+        changed = wrapper_return.get("changed_rows")
+        require(wrapper_return.get("contract_version") ==
+                "phase26_1e_call_take_return_wrapper_phase23_text_surface_successor_v1" and
+                wrapper_return.get("partial_extra_or_substituted_surface") == "rejected" and
+                isinstance(changed, list) and wrapper_return.get("added_rows") == [] and
+                sorted(entry.get("path") for entry in changed) == [
+                    "compiler/typechecker.gst", "scripts/phase26_call_return_zero_registration.py",
+                ], "Phase 26 one-Take safe-return text surface successor shape drifted")
+        live = {row["path"]: row for row in rows}
+        for entry in changed:
+            row = live.get(entry["path"])
+            require(row is not None and
+                    row["digest"] == entry["current_digest"] and
+                    row["match_counts"] == entry["current_match_counts"] and
+                    len(entry["previous_digest"]) == 64,
+                    f"Phase 26 one-Take safe-return text surface drifted: {entry['path']}")
+        rows = [dict(row,
+                     digest=next((entry["previous_digest"] for entry in changed
+                                  if entry["path"] == row["path"]), row["digest"]),
+                     match_counts=next((entry["previous_match_counts"] for entry in changed
+                                        if entry["path"] == row["path"]), row["match_counts"]))
+                for row in rows]
     take_alias_return = registry.get("phase26_activation_audit", {}).get(
         "call_take_alias_return_zero_evidence_increment", {}).get(
         "phase23_text_surface_successor")

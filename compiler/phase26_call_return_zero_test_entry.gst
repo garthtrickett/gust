@@ -297,12 +297,27 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
         os.LogStr("Error: validated Take alias lost the checked cast-return candidate window"); os.Exit(1);
     }
     mut direct_take_return := parse_statement("return take ptr;", ctx);
-    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_take_return], &env, ctx) != 0 {
-        os.LogStr("Error: Return Take(expr) widened the alias-return candidate window"); os.Exit(1);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_take_return], &env, ctx) != 1 {
+        os.LogStr("Error: one Take lost the alias-return candidate window"); os.Exit(1);
+    }
+    mut take_cast_return := parse_statement("return take ((ptr as *int) as *int);", ctx);
+    mut cast_take_return := parse_statement("return ((take ptr) as *int) as *int;", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[take_cast_return], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_take_return], &env, ctx) != 1 {
+        os.LogStr("Error: one Take with checked cast chain lost the alias-return candidate window"); os.Exit(1);
+    }
+    mut nested_take_return := parse_statement("return take (take ptr);", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[nested_take_return], &env, ctx) != 0 {
+        os.LogStr("Error: nested Take widened the alias-return candidate window"); os.Exit(1);
     }
     mut moved_return := parse_statement("return move ptr;", ctx);
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_return], &env, ctx) != 0 {
         os.LogStr("Error: Move widened the alias-return candidate window"); os.Exit(1);
+    }
+    env.zero_local_call_alias_hops = 0;
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_take_return], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[take_cast_return], &env, ctx) != 0 {
+        os.LogStr("Error: direct Take or casted direct Take lost its bounded window"); os.Exit(1);
     }
     env.zero_local_call_take_alias_terminal = 0;
     env.zero_local_call_alias_hops = 0;
