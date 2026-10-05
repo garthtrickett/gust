@@ -1556,6 +1556,28 @@ func mir_native_module_import_untrusted_raw_return_extern(statement: ast.Stateme
     }
 }
 
+// A verified owned acquisition or terminal release is delegated to the full
+// program planner, which has the canonical layout and destructor body needed
+// to prove the pair before the driver sees a request.
+func mir_native_module_import_owned_ffi_extern(statement: ast.Statement[ctx], module_prefix: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        if statement.tag != 3 || statement.FunctionDecl.is_extern == 0 ||
+           std.str_eq(statement.FunctionDecl.extern_abi, "C") == 0 { return 0; }
+        mut qualified := mir_native_module_import_qualified(
+            module_prefix, statement.FunctionDecl.name, ctx
+        );
+        guard sig := (*env).function_registry.Get(qualified) else { return 0; };
+        if sig.ffi_contract_verified == 0 { return 0; }
+        if std.str_eq(sig.ffi_return_policy, "owned_return") == 1 &&
+           sig.return_type.tag == 8 { return 1; }
+        mut policies: std.Vector[str, ctx] := ctx[sig.ffi_param_policies];
+        if len(policies) == 1 &&
+           std.str_eq(policies[0], "release_owned") == 1 &&
+           sig.return_type.tag == 3 { return 1; }
+        return 0;
+    }
+}
+
 // The full-program planner owns the opt-in enum's physical ABI and selected
 // host proof. Let that planner inspect verified value positions before the
 // older scalar-only module-import profile rejects the declaration.
@@ -1687,6 +1709,9 @@ func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx
                             preflight_statement, module_prefixes[preflight_module_index], env, ctx
                         ) == 1 ||
                            mir_native_module_import_untrusted_raw_return_extern(
+                            preflight_statement, module_prefixes[preflight_module_index], env, ctx
+                        ) == 1 ||
+                           mir_native_module_import_owned_ffi_extern(
                             preflight_statement, module_prefixes[preflight_module_index], env, ctx
                         ) == 1 ||
                            mir_native_module_import_repr_int_extern(

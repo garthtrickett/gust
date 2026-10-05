@@ -107,6 +107,9 @@ def main() -> None:
     repr_int_changed = {row["path"]: row for row in activation.get(
         "ffi_repr_int_increment", {}).get("phase23_text_surface_successor", {}).get(
             "changed_rows", [])}
+    owned_changed = {row["path"]: row for row in activation.get(
+        "ffi_owned_return_increment", {}).get("phase23_text_surface_successor", {}).get(
+            "changed_rows", [])}
     require(surface.get("contract_version") ==
             "phase26_1d_packed_isolated_write_phase23_text_surface_successor_v1" and
             surface.get("partial_extra_or_substituted_surface") == "rejected" and
@@ -117,6 +120,11 @@ def main() -> None:
             "text surface successor shape drifted")
     for row in surface["changed_rows"]:
         live_digest = digest(row["path"])
+        owned_successor = owned_changed.get(row["path"])
+        if owned_successor:
+            require(owned_successor["current_digest"] == live_digest,
+                    f"owned-return text surface drifted: {row['path']}")
+            live_digest = owned_successor["previous_digest"]
         repr_int_successor = repr_int_changed.get(row["path"])
         if repr_int_successor:
             require(repr_int_successor["current_digest"] == live_digest,
@@ -129,7 +137,13 @@ def main() -> None:
                 len(row["previous_digest"]) == 64,
                 f"changed text surface drifted: {row['path']}")
     for row in surface["added_rows"]:
-        require(row["digest"] == digest(row["path"]),
+        live_digest = digest(row["path"])
+        owned_successor = owned_changed.get(row["path"])
+        if owned_successor:
+            require(owned_successor["current_digest"] == live_digest,
+                    f"owned-return text surface drifted: {row['path']}")
+            live_digest = owned_successor["previous_digest"]
+        require(row["digest"] == live_digest,
                 f"added text surface drifted: {row['path']}")
 
     justfile = (ROOT / "justfile").read_text(encoding="utf-8")

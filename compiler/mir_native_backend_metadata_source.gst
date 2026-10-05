@@ -304,6 +304,42 @@ func mir_native_metadata_source_lower(
     if linear_struct_count == 0 {
         return result;
     }
+    // A verified native-owned one-pointer C resource is represented by the
+    // full-program ownership/ABI route. Keep this older metadata-only profile
+    // from claiming its ordinary resource-runtime deferral for that shape.
+    mut owned_linear_count := 0;
+    statement_index = 0;
+    while statement_index < len(statements) {
+        mut owner := statements[statement_index];
+        unsafe {
+            if owner.tag == 1 && owner.StructDecl.is_linear_resource == 1 &&
+               owner.StructDecl.is_repr_c == 1 &&
+               owner.StructDecl.is_packed == 0 &&
+               owner.StructDecl.is_opaque == 1 &&
+               len(owner.StructDecl.declared_destructor_name) > 0 {
+                mut fields: std.Vector[ast.FieldDef[ctx], ctx] := ctx[owner.StructDecl.fields];
+                if len(fields) == 1 && fields[0].field_type.tag == 9 {
+                    mut acquisition_found := 0;
+                    mut candidate_index := 0;
+                    while candidate_index < len(statements) {
+                        mut candidate := statements[candidate_index];
+                        if candidate.tag == 3 && candidate.FunctionDecl.is_extern == 1 &&
+                           std.str_eq(candidate.FunctionDecl.ffi_return_policy, "owned_return") == 1 {
+                            mut returned := ctx[candidate.FunctionDecl.return_type];
+                            if returned.tag == 8 &&
+                               std.str_eq(returned.Struct.struct_name, owner.StructDecl.name) == 1 {
+                                acquisition_found = 1;
+                            }
+                        }
+                        candidate_index = candidate_index + 1;
+                    }
+                    if acquisition_found == 1 { owned_linear_count = owned_linear_count + 1; }
+                }
+            }
+        }
+        statement_index = statement_index + 1;
+    }
+    if owned_linear_count == linear_struct_count { return result; }
     mut inert_cleanup_declaration_count := 0;
     statement_index = 0;
     while statement_index < len(statements) {

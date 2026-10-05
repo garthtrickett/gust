@@ -53,6 +53,14 @@ pub struct Function {
     pub result_type: String,
     pub body_node: Option<usize>,
     pub parameters: Vec<(String, String)>,
+    pub ffi_contract: Option<FfiContract>,
+}
+
+#[derive(Debug, Clone)]
+pub struct FfiContract {
+    pub result_policy: String,
+    pub parameter_policies: Vec<String>,
+    pub destructor: String,
 }
 
 #[derive(Debug, Clone)]
@@ -116,6 +124,145 @@ fn quoted_type_name(value: &str, prefix: &str) -> Option<String> {
 
 fn struct_type_name(value: &str) -> Option<String> {
     quoted_type_name(value, "Struct(\"")
+}
+
+fn validate_ffi_policies(
+    functions: &[Function],
+    nodes: &[Node],
+    layouts: &HashMap<&str, &Layout>,
+    enumerations: &[Enumeration],
+    target: &str,
+    object_format: &str,
+) -> Result<(), Box<dyn Error>> {
+    let repr_int: HashSet<_> = enumerations.iter()
+        .filter(|enumeration| enumeration.repr_int)
+        .map(|enumeration| enumeration.erased_name.as_str())
+        .collect();
+    let mut paired_releases = HashSet::new();
+    for function in functions {
+        if !function.is_extern {
+            if function.ffi_contract.is_some() {
+                return Err(invalid("internal function carries external FFI policy"));
+            }
+            continue;
+        }
+        let Some(contract) = &function.ffi_contract else {
+            // The checked-in bootstrap emits this original row. Legacy rows
+            // cannot establish the new owned aggregate return authority.
+            if struct_type_name(&function.result_type).is_some_and(|name|
+                layouts.get(name.as_str()).is_some_and(|layout|
+                    layout.repr_c && layout.abi == "C" && !layout.packed &&
+                    layout.fields.len() == 1 &&
+                    layout.fields[0].ty.starts_with("RawPointer("))) {
+                return Err(invalid("legacy FFI row cannot admit an owned C-pointer aggregate return"));
+            }
+            continue;
+        };
+        if contract.parameter_policies.len() != function.parameters.len() {
+            return Err(invalid("FFI policy position count disagrees"));
+        }
+        for ((_, ty), policy) in function.parameters.iter()
+            .zip(&contract.parameter_policies) {
+            let raw = ty.starts_with("RawPointer(");
+            let reference = ty.starts_with("Reference(");
+            let view = ty == "Str" || ty.starts_with("Slice(");
+            let scalar = matches!(ty.as_str(), "Int" | "Byte" | "Bool") ||
+                struct_type_name(ty).is_some_and(|name| repr_int.contains(name.as_str()));
+            let valid = match policy.as_str() {
+                "value" => scalar,
+                "borrow_read_call" => raw || reference || view,
+                "borrow_write_call" => raw,
+                "borrow_read_isolated_call" => reference,
+                "borrow_write_isolated_call" => raw,
+                "release_owned" => raw && function.parameters.len() == 1 &&
+                    function.result_type == "Void" && contract.result_policy == "value",
+                _ => false,
+            };
+            if !valid {
+                return Err(invalid("FFI parameter policy and canonical type disagree"));
+            }
+        }
+        let result_valid = match contract.result_policy.as_str() {
+            "value" => matches!(function.result_type.as_str(), "Int" | "Byte" | "Bool" | "Void") ||
+                struct_type_name(&function.result_type)
+                    .is_some_and(|name| repr_int.contains(name.as_str())),
+            "raw_untrusted" => function.result_type.starts_with("RawPointer("),
+            "owned_return" => struct_type_name(&function.result_type).is_some(),
+            _ => false,
+        };
+        if !result_valid ||
+            (contract.result_policy != "owned_return" && !contract.destructor.is_empty()) {
+            return Err(invalid("FFI result policy and canonical type disagree"));
+        }
+        if contract.result_policy != "owned_return" { continue; }
+        if target != "x86_64-unknown-linux-gnu" || object_format != "Elf" ||
+            contract.destructor.is_empty() {
+            return Err(invalid("owned FFI result target, position, or destructor is unsupported"));
+        }
+        let owner = struct_type_name(&function.result_type)
+            .ok_or_else(|| invalid("owned FFI result has no struct identity"))?;
+        let layout = layouts.get(owner.as_str())
+            .ok_or_else(|| invalid("owned FFI result has no canonical layout"))?;
+        if !layout.repr_c || layout.packed || layout.abi != "C" ||
+            !layout.brand.is_empty() ||
+            layout.fields.len() != 1 ||
+            !layout.fields[0].ty.starts_with("RawPointer(") {
+            return Err(invalid("owned FFI result has no one-pointer C layout"));
+        }
+        let destructor = functions.iter().find(|candidate|
+            candidate.qualified_name == contract.destructor &&
+            !candidate.is_extern &&
+            candidate.module_index == function.module_index &&
+            candidate.result_type == "Void" &&
+            candidate.parameters.len() == 1 &&
+            candidate.parameters[0].1 == function.result_type)
+            .ok_or_else(|| invalid("owned FFI result lacks a matching destructor"))?;
+        let body = destructor.body_node.and_then(|index| nodes.get(index))
+            .ok_or_else(|| invalid("owned FFI destructor body is missing"))?;
+        let unsafe_scope = (body.kind == "Block" && body.children.len() == 1)
+            .then(|| nodes.get(body.children[0])).flatten()
+            .ok_or_else(|| invalid("owned FFI destructor is not a single unsafe scope"))?;
+        let inner_block = (unsafe_scope.kind == "UnsafeScope" && unsafe_scope.children.len() == 1)
+            .then(|| nodes.get(unsafe_scope.children[0])).flatten()
+            .ok_or_else(|| invalid("owned FFI destructor unsafe scope is malformed"))?;
+        let evaluate = (inner_block.kind == "Block" && inner_block.children.len() == 1)
+            .then(|| nodes.get(inner_block.children[0])).flatten()
+            .ok_or_else(|| invalid("owned FFI destructor must release exactly once"))?;
+        let call = (evaluate.kind == "Evaluate" && evaluate.children.len() == 1)
+            .then(|| nodes.get(evaluate.children[0])).flatten()
+            .ok_or_else(|| invalid("owned FFI destructor terminal operation is missing"))?;
+        if call.kind != "Call" || call.children.len() != 2 {
+            return Err(invalid("owned FFI destructor terminal call is malformed"));
+        }
+        let field = nodes.get(call.children[1])
+            .ok_or_else(|| invalid("owned FFI release field is missing"))?;
+        let receiver = (field.kind == "FieldOrMethodSelect" &&
+            field.text == layout.fields[0].name && field.children.len() == 1)
+            .then(|| nodes.get(field.children[0])).flatten()
+            .ok_or_else(|| invalid("owned FFI release does not use the owner's raw field"))?;
+        if receiver.kind != "LocalRead" || receiver.text != destructor.parameters[0].0 {
+            return Err(invalid("owned FFI release field has the wrong owner"));
+        }
+        let release = functions.iter().find(|candidate|
+            candidate.qualified_name == call.second_text &&
+            candidate.is_extern && candidate.module_index == function.module_index &&
+            candidate.parameters.len() == 1 &&
+            candidate.parameters[0].1 == layout.fields[0].ty &&
+            candidate.result_type == "Void" &&
+            candidate.ffi_contract.as_ref().is_some_and(|policy|
+                policy.result_policy == "value" && policy.destructor.is_empty() &&
+                policy.parameter_policies.as_slice() == ["release_owned"]))
+            .ok_or_else(|| invalid("owned FFI destructor lacks its qualified native release"))?;
+        paired_releases.insert(release.qualified_name.as_str());
+    }
+    for function in functions {
+        if function.ffi_contract.as_ref().is_some_and(|contract|
+            contract.parameter_policies.iter().any(|policy| policy == "release_owned")) &&
+            !paired_releases.contains(function.qualified_name.as_str()) {
+            return Err(invalid("native release policy has no owned-result pair"));
+        }
+    }
+    Ok(())
 }
 
 fn index_element_type_name(value: &str) -> Option<String> {
@@ -866,7 +1013,10 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             return Err(invalid("full-program function rows are not contiguous"));
         }
         let parameter_count = parse_usize(values[8], "function parameter count")?;
-        if values.len() != 9 + parameter_count * 2 {
+        let base_fields = parameter_count.checked_mul(2)
+            .and_then(|count| count.checked_add(9))
+            .ok_or_else(|| invalid("full-program function parameter count overflows row"))?;
+        if values.len() < base_fields {
             return Err(invalid(
                 "full-program function parameter count disagrees with row",
             ));
@@ -886,6 +1036,30 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             return Err(invalid("duplicate or empty full-program function identity"));
         }
         let is_extern = parse_bool(values[4], "function is_extern")?;
+        let ffi_contract = if values.len() == base_fields {
+            None // Checked-in bootstrap emits the exact legacy row.
+        } else {
+            if !is_extern || values.get(base_fields) != Some(&"ffi_policy.v1") {
+                return Err(invalid("full-program function has an unknown FFI policy extension"));
+            }
+            let result_policy = decode_hex(values.get(base_fields + 1)
+                .ok_or_else(|| invalid("full-program FFI result policy is missing"))?,
+                "FFI result policy")?;
+            let policy_count = parse_usize(values.get(base_fields + 2)
+                .ok_or_else(|| invalid("full-program FFI policy count is missing"))?,
+                "FFI policy count")?;
+            let expected_fields = base_fields.checked_add(4)
+                .and_then(|count| count.checked_add(policy_count))
+                .ok_or_else(|| invalid("full-program FFI policy count overflows row"))?;
+            if policy_count != parameter_count || values.len() != expected_fields {
+                return Err(invalid("full-program FFI policy positions disagree with row"));
+            }
+            let parameter_policies = values[base_fields + 3..base_fields + 3 + policy_count].iter()
+                .map(|value| decode_hex(value, "FFI parameter policy"))
+                .collect::<Result<Vec<_>, _>>()?;
+            let destructor = decode_hex(values[expected_fields - 1], "FFI destructor identity")?;
+            Some(FfiContract { result_policy, parameter_policies, destructor })
+        };
         let extern_symbol = decode_hex(values[5], "function extern symbol")?;
         if is_extern && extern_symbol.is_empty() {
             return Err(invalid("full-program extern function has no link symbol"));
@@ -918,6 +1092,7 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             result_type,
             body_node: (body_raw >= 0).then_some(body_raw as usize),
             parameters,
+            ffi_contract,
         });
     }
 
@@ -1122,6 +1297,11 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             }
         }
     }
+
+    validate_ffi_policies(
+        &functions, &nodes, &erased_layouts, &enumerations,
+        &target_triple, &object_format,
+    )?;
     let repr_int_by_name: HashMap<_, _> = enumerations.iter()
         .filter(|enumeration| enumeration.repr_int)
         .map(|enumeration| (enumeration.erased_name.as_str(), enumeration))
@@ -1375,6 +1555,7 @@ impl<'a> FullProgramCompiler<'a> {
                     .enumerate()
                     .map(|(index, ty)| (format!("p{index}"), ty.clone()))
                     .collect(),
+                ffi_contract: None,
             };
             let (signature, abi) = function_signature(&self.module, &synthetic, &mut self.layouts)?;
             let id = self
@@ -1433,6 +1614,7 @@ impl<'a> FullProgramCompiler<'a> {
             result_type: "Arena".to_string(),
             body_node: None,
             parameters: Vec::new(),
+            ffi_contract: None,
         };
         let (signature, abi) = function_signature(&self.module, &arena_new, &mut self.layouts)?;
         let id = self
@@ -4755,5 +4937,69 @@ mod enum_representation_tests {
         let huge_count = fixture("|repr_int.v1|4|4|4", false)
             .replace("|2|5a65726f|4f6e65", "|18446744073709551615|5a65726f|4f6e65");
         assert!(parse(&huge_count).is_err());
+    }
+}
+
+#[cfg(test)]
+mod owned_ffi_policy_tests {
+    use super::parse;
+
+    fn hex(value: &str) -> String {
+        value.bytes().map(|byte| format!("{byte:02x}")).collect()
+    }
+
+    fn fixture() -> String {
+        include_str!("../../../fixtures/native_backend_phase26_owned_return_minimal.mir").to_owned()
+    }
+
+    fn change_row(source: &str, row: &str, change: impl FnOnce(&mut Vec<String>)) -> String {
+        let mut lines: Vec<String> = source.lines().map(str::to_owned).collect();
+        let line = lines.iter_mut().find(|line| line.starts_with(row)).unwrap();
+        let mut fields: Vec<String> = line["function: ".len()..]
+            .split('|').map(str::to_owned).collect();
+        change(&mut fields);
+        *line = format!("function: {}", fields.join("|"));
+        format!("{}\n", lines.join("\n"))
+    }
+
+    fn change_owned(source: &str, change: impl FnOnce(&mut Vec<String>, usize)) -> String {
+        change_row(source, "function: 0|", |fields| {
+            let tag = fields.iter().position(|field| field == "ffi_policy.v1").unwrap();
+            change(fields, tag);
+        })
+    }
+
+    #[test]
+    fn owned_result_requires_complete_typed_position_and_release_authority() {
+        let source = fixture();
+        assert!(parse(&source).is_ok());
+        let mutations = [
+            change_owned(&source, |fields, tag| fields.truncate(tag)),
+            change_owned(&source, |fields, tag| fields.truncate(tag + 1)),
+            change_owned(&source, |fields, tag| fields.truncate(tag + 3)),
+            change_owned(&source, |fields, tag| fields[tag] = "ffi_policy.v2".into()),
+            change_owned(&source, |fields, tag| fields[tag + 1] = hex("value")),
+            change_owned(&source, |fields, tag| fields[tag + 2] = "2".into()),
+            change_owned(&source, |fields, tag| fields[tag + 2] = usize::MAX.to_string()),
+            change_owned(&source, |fields, tag| fields[tag + 3] = hex("borrow_read_call")),
+            change_owned(&source, |fields, tag| fields[tag + 4] = hex("wrong_release")),
+            change_row(&source, "function: 1|", |fields| {
+                let tag = fields.iter().position(|field| field == "ffi_policy.v1").unwrap();
+                fields[tag + 3] = hex("borrow_write_call");
+            }),
+            change_row(&source, "function: 1|", |fields| {
+                let tag = fields.iter().position(|field| field == "ffi_policy.v1").unwrap();
+                fields.truncate(tag);
+            }),
+            source.replacen(&hex("x86_64-unknown-linux-gnu"),
+                &hex("aarch64-unknown-linux-gnu"), 1),
+            source.replacen("|1|0|43|1|726177|526177506f696e74657228496e7429",
+                "|1|0|43|1|726177|496e74", 1),
+            source.replacen("node: 2|4669656c644f724d6574686f6453656c656374",
+                "node: 2|4c6f63616c52656164", 1),
+        ];
+        for (index, mutant) in mutations.iter().enumerate() {
+            assert!(parse(mutant).is_err(), "accepted owned-policy mutation {index}");
+        }
     }
 }

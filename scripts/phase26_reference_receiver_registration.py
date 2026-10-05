@@ -483,6 +483,12 @@ def main() -> None:
             "phase23_text_surface_successor", {}).get(
             "changed_rows", [])
     }
+    owned_by_path = {
+        row["path"]: row for row in activation.get(
+            "ffi_owned_return_increment", {}).get(
+            "phase23_text_surface_successor", {}).get(
+            "changed_rows", [])
+    }
     for path, predecessor in {
         "compiler/experiments/cranelift/src/full_program.rs":
             runtime_by_path["compiler/experiments/cranelift/src/full_program.rs"],
@@ -500,6 +506,12 @@ def main() -> None:
         packed_isolated = packed_isolated_by_path.get(path)
         packed_isolated_write = packed_isolated_write_by_path.get(path)
         repr_int = repr_int_by_path.get(path)
+        owned = owned_by_path.get(path)
+        current_digest = digest(path)
+        if owned:
+            require(owned["current_digest"] == current_digest,
+                    f"Phase 26.1D owned-return text surface drifted: {path}")
+            current_digest = owned["previous_digest"]
         d4_digest = (latest.get("current_digest") if latest else
                      next_row.get("current_digest") if next_row else
                      row.get("current_digest"))
@@ -540,8 +552,8 @@ def main() -> None:
                  packed.get("current_digest") if packed else
                  d6.get("current_digest") if d6 else
                  d5.get("current_digest") if d5 else e1_digest) ==
-                (repr_int.get("previous_digest") if repr_int else digest(path)) and
-                (repr_int is None or repr_int.get("current_digest") == digest(path)),
+                (repr_int.get("previous_digest") if repr_int else current_digest) and
+                (repr_int is None or repr_int.get("current_digest") == current_digest),
                 f"Phase 26.1D2 text surface bridge drifted: {path}")
     registration_path = "scripts/phase26_reference_receiver_registration.py"
     registration_d2 = d2_by_path.get(registration_path, {})
@@ -555,6 +567,12 @@ def main() -> None:
     registration_packed_isolated = packed_isolated_by_path.get(registration_path)
     registration_packed_isolated_write = packed_isolated_write_by_path.get(registration_path)
     registration_repr_int = repr_int_by_path.get(registration_path)
+    registration_owned = owned_by_path.get(registration_path)
+    registration_current_digest = digest(registration_path)
+    if registration_owned:
+        require(registration_owned["current_digest"] == registration_current_digest,
+                "Phase 26.1D owned-return reference registration drifted")
+        registration_current_digest = registration_owned["previous_digest"]
     registration_d4_digest = (registration_d4.get("current_digest") if registration_d4 else
                               registration_d3.get("current_digest") if registration_d3 else
                               registration_d2.get("current_digest"))
@@ -611,9 +629,9 @@ def main() -> None:
              registration_d5.get("current_digest") if registration_d5 else
              registration_e1_digest) ==
             (registration_repr_int.get("previous_digest")
-             if registration_repr_int else digest(registration_path)) and
+             if registration_repr_int else registration_current_digest) and
             (registration_repr_int is None or
-             registration_repr_int.get("current_digest") == digest(registration_path)),
+             registration_repr_int.get("current_digest") == registration_current_digest),
             "Phase 26.1D2 reference registration text surface bridge drifted")
     for row in runtime_rows:
         require(set(row) == {"path", "previous_digest", "current_digest",

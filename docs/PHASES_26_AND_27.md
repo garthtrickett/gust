@@ -227,6 +227,32 @@ fail before driver discovery. Nonlocal exits, by-value and enum positions,
 retained or returned pointers, callbacks, native errors, and general packed
 layout remain open; Phase 26.1 remains open.
 
+**26.1D owned native return and release authority (operator authorized,
+2026-10-05).** An external result may transfer one native-owned pointer into
+an existing linear, C-represented owner struct whose validated same-module
+destructor is the release authority. The result remains raw-derived; ownership
+does not make its address a safe branded reference or arena index. A paired
+terminal release call consumes that owner exactly once. Canonical function
+metadata records and validates the policy of every external parameter and
+return position before native lowering; the native boundary must reject
+missing, forged, mismatched, or unsupported ownership metadata. Existing
+call-bounded borrows and unowned raw returns keep their meanings. General
+transfer, retention, callbacks, and native-error contracts remain fail-closed.
+
+**Exit gate:** A target-qualified native fixture proves one allocation is
+released exactly once on ordinary scope exit, explicit early return,
+guard/defer cleanup, and ownership transfer through a Gust return. Source and
+canonical negative cases reject an unbound or discarded acquisition, overwrite
+of a live owner, duplicate alias or release, use after release, wrong release
+signature or identity, unsafe-origin branding, unsupported host or ABI, and
+truncated or forged per-position policy before driver discovery. The semantic
+owner and release rule must be type-derived rather than keyed to the fixture's
+type or host name. Native unwinding and process termination are not claimed as
+cleanup exits. Focused guards, the compiler build, fixed-point bootstrap,
+relevant native/resource regressions, exact-head PR workflows, and review-thread
+resolution are required before this increment merges. This increment does not
+close the remaining D, E, F, or Phase 26.1 gates.
+
 Use a transient isolated arena for memory handed to native code and destroy it
 on return. *Isolated* is deliberately narrower than *sandboxed*: this bounds
 memory lifetime and spread but cannot prevent native code from accessing process
