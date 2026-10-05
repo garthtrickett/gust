@@ -48118,6 +48118,12 @@
           "current_digest": "a3a9d85fc5a728e59c0d5870ebfc17b2935ca549732b68a2909408061f699264",
           "previous_match_counts": {"explicit_backend_spelling": 5, "mir_to_c_name": 23, "generated_c_contract": 12},
           "current_match_counts": {"explicit_backend_spelling": 5, "mir_to_c_name": 23, "generated_c_contract": 12}
+        }, {
+          "path": "scripts/phase26_reference_receiver_registration.py",
+          "previous_digest": "4aaddfc21ebf64b7a8d52ba327fb0acddee2b158b36bc6f8f69ae81b693c3fcd",
+          "current_digest": "35d44d0621e305fbd6e9e998153fa14a4a588e05aadc8f87c2c03b80cab8cbfc",
+          "previous_match_counts": {"explicit_backend_spelling": 1, "mir_to_c_name": 5, "generated_c_contract": 1},
+          "current_match_counts": {"explicit_backend_spelling": 1, "mir_to_c_name": 5, "generated_c_contract": 1}
         }],
         "added_rows": [],
         "partial_extra_or_substituted_surface": "rejected"
