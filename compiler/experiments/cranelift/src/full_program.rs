@@ -36,6 +36,10 @@ pub struct Layout {
 pub struct Enumeration {
     pub name: String,
     pub erased_name: String,
+    pub repr_int: bool,
+    pub tag_width: u32,
+    pub size: u32,
+    pub align: u32,
     pub variants: Vec<String>,
 }
 
@@ -191,6 +195,12 @@ struct LayoutEngine<'a> {
 }
 
 impl<'a> LayoutEngine<'a> {
+    fn is_repr_int_enum(&self, ty: &str) -> bool {
+        struct_type_name(ty)
+            .and_then(|name| self.enums.get(name.as_str()).copied())
+            .is_some_and(|enumeration| enumeration.repr_int)
+    }
+
     fn new(program: &'a Program, pointer_size: u32) -> Self {
         Self {
             layouts: program
@@ -303,6 +313,21 @@ impl<'a> LayoutEngine<'a> {
         layout: &Layout,
         enumeration: &Enumeration,
     ) -> Result<TypeLayout, Box<dyn Error>> {
+        if enumeration.repr_int {
+            if enumeration.tag_width != 4 || enumeration.size != 4 || enumeration.align != 4 {
+                return Err(invalid("repr(int) enum canonical physical layout disagrees"));
+            }
+            for variant in &enumeration.variants {
+                let field = layout.fields.iter().find(|field| field.name == *variant)
+                    .ok_or_else(|| invalid("repr(int) enum variant lacks layout field"))?;
+                if !self.layout(&field.ty)?.fields.is_empty() {
+                    return Err(invalid("repr(int) enum variant has payload fields"));
+                }
+            }
+            let mut fields = HashMap::new();
+            fields.insert("tag".to_string(), FieldPlacement { offset: 0, ty: "Int".to_string() });
+            return Ok(TypeLayout { size: 4, align: 4, fields });
+        }
         let mut payload_size = 0u32;
         let mut payload_align = 1u32;
         let mut variant_types = HashMap::new();
@@ -374,6 +399,9 @@ fn abi_shape(
     }
     if is_scalar_type(ty) {
         return Ok(AbiShape::Scalar(scalar_ir_type(ty, pointer_type)?));
+    }
+    if layouts.is_repr_int_enum(ty) {
+        return Ok(AbiShape::Scalar(types::I32));
     }
     let layout = layouts.layout(ty)?;
     if layout.size <= 8 {
@@ -582,6 +610,12 @@ fn parse_usize(value: &str, field: &str) -> Result<usize, Box<dyn Error>> {
         .map_err(|_| invalid(format!("{field} is not a canonical non-negative integer")))
 }
 
+fn parse_u32(value: &str, field: &str) -> Result<u32, Box<dyn Error>> {
+    value
+        .parse::<u32>()
+        .map_err(|_| invalid(format!("{field} is not a canonical u32")))
+}
+
 fn parse_i32(value: &str, field: &str) -> Result<i32, Box<dyn Error>> {
     value
         .parse::<i32>()
@@ -748,15 +782,37 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
         let values: Vec<_> = field(next_line(&mut lines, "enum row")?, "enum: ")?
             .split('|')
             .collect();
-        if values.len() < 4 || parse_usize(values[0], "enum index")? != expected_index {
+        if values.len() < 5 || parse_usize(values[0], "enum index")? != expected_index {
             return Err(invalid("full-program enum rows are not contiguous"));
         }
         let variant_count = parse_usize(values[3], "enum variant count")?;
-        if variant_count == 0 || values.len() != 4 + variant_count {
+        let plain_len = variant_count.checked_add(4).ok_or_else(||
+            invalid("full-program enum variant count overflows row length"))?;
+        let tagged_len = variant_count.checked_add(8).ok_or_else(||
+            invalid("full-program enum variant count overflows tagged row length"))?;
+        if variant_count == 0 ||
+            (values.len() != plain_len && values.len() != tagged_len) {
             return Err(invalid(
                 "full-program enum variant count disagrees with row",
             ));
         }
+        // The checked-in bootstrap emits the original v1 row. The tagged
+        // suffix extends that row only for the opt-in integer representation.
+        let repr_int = values.len() == tagged_len;
+        let (tag_width, size, align) = if repr_int {
+            if values[4 + variant_count] != "repr_int.v1" {
+                return Err(invalid("full-program enum representation tag is unknown"));
+            }
+            let width = parse_u32(values[5 + variant_count], "enum tag width")?;
+            let size = parse_u32(values[6 + variant_count], "enum size")?;
+            let align = parse_u32(values[7 + variant_count], "enum alignment")?;
+            if width != 4 || size != 4 || align != 4 {
+                return Err(invalid("full-program enum representation metadata disagrees"));
+            }
+            (width, size, align)
+        } else {
+            (0, 0, 0)
+        };
         let name = decode_hex(values[1], "enum name")?;
         if !layout_names.contains(&name) || !enum_names.insert(name.clone()) {
             return Err(invalid(format!(
@@ -765,7 +821,7 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
         }
         let mut variants = Vec::with_capacity(variant_count);
         let mut seen = HashSet::new();
-        for value in &values[4..] {
+        for value in &values[4..4 + variant_count] {
             let variant = decode_hex(value, "enum variant")?;
             if variant.is_empty() || !seen.insert(variant.clone()) {
                 return Err(invalid("duplicate or empty full-program enum variant"));
@@ -785,6 +841,10 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
         enumerations.push(Enumeration {
             name,
             erased_name,
+            repr_int,
+            tag_width,
+            size,
+            align,
             variants,
         });
     }
@@ -1039,6 +1099,16 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
     }
     for enumeration in &enumerations {
         let enum_layout = layout_by_name[enumeration.name.as_str()];
+        if enumeration.repr_int {
+            if enum_layout.repr_c || enum_layout.packed || !enum_layout.abi.is_empty() ||
+                enum_layout.fields.len() != enumeration.variants.len() + 1 ||
+                !enum_layout.fields.iter().any(|field| field.name == "tag" && field.ty == "Int") {
+                return Err(invalid("repr(int) enum canonical layout fields disagree"));
+            }
+            if enumeration.variants.len() > i32::MAX as usize {
+                return Err(invalid("repr(int) enum discriminants exceed Int"));
+            }
+        }
         for variant in &enumeration.variants {
             if !enum_layout
                 .fields
@@ -1049,6 +1119,39 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
                     "enum {} variant {variant} lacks a layout field",
                     enumeration.name
                 )));
+            }
+        }
+    }
+    let repr_int_by_name: HashMap<_, _> = enumerations.iter()
+        .filter(|enumeration| enumeration.repr_int)
+        .map(|enumeration| (enumeration.erased_name.as_str(), enumeration))
+        .collect();
+    let enum_names: HashSet<_> = enumerations.iter()
+        .map(|enumeration| enumeration.erased_name.as_str())
+        .collect();
+    for function in &functions {
+        if !function.is_extern { continue; }
+        let plain_enum_position = function.parameters.iter().any(|(_, ty)| {
+            struct_type_name(ty).is_some_and(|name| {
+                enum_names.contains(name.as_str()) && !repr_int_by_name.contains_key(name.as_str())
+            })
+        }) || struct_type_name(&function.result_type).is_some_and(|name| {
+            enum_names.contains(name.as_str()) && !repr_int_by_name.contains_key(name.as_str())
+        });
+        if plain_enum_position {
+            return Err(invalid("plain enum has no external value ABI"));
+        }
+        let enum_name = |ty: &str| struct_type_name(ty)
+            .filter(|name| repr_int_by_name.contains_key(name.as_str()));
+        let repr_param = function.parameters.iter()
+            .find_map(|(_, ty)| enum_name(ty));
+        let repr_return = enum_name(&function.result_type);
+        if repr_param.is_some() || repr_return.is_some() ||
+            function.extern_symbol == "tiny_host_echo_repr_int" {
+            if target_triple != "x86_64-unknown-linux-gnu" || object_format != "Elf" ||
+                function.extern_symbol != "tiny_host_echo_repr_int" ||
+                function.parameters.len() != 1 || repr_param != repr_return {
+                return Err(invalid("repr(int) enum external ABI position or host is unsupported"));
             }
         }
     }
@@ -1980,9 +2083,10 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
     ) -> Result<Value, Box<dyn Error>> {
         match value {
             Evaluated::Scalar(value) => Ok(value),
-            Evaluated::Aggregate(place) if is_scalar_type(ty) => {
-                load_scalar(builder, place.address, ty, self.pointer_type())
-            }
+            Evaluated::Aggregate(place) if self.layouts.is_repr_int_enum(ty) =>
+                Ok(builder.ins().load(types::I32, MemFlags::trusted(), place.address, 0)),
+            Evaluated::Aggregate(place) if is_scalar_type(ty) =>
+                load_scalar(builder, place.address, ty, self.pointer_type()),
             _ => Err(invalid(format!("full-program {ty} value is not scalar"))),
         }
     }
@@ -4144,7 +4248,7 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
             None
         };
         let aggregate_result = if let Some(value) = result {
-            if is_scalar_type(&self.function.result_type) {
+            if matches!(self.abi.result, AbiShape::Scalar(_)) {
                 None
             } else {
                 Some(self.evaluated_place(builder, value, &self.function.result_type.clone())?)
@@ -4153,7 +4257,7 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
             None
         };
         let scalar_result = if let Some(value) = result {
-            if is_scalar_type(&self.function.result_type) {
+            if matches!(self.abi.result, AbiShape::Scalar(_)) {
                 Some(self.scalar(builder, value, &self.function.result_type.clone())?)
             } else {
                 None
@@ -4335,8 +4439,6 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
             }
             builder.switch_to_block(arm_block);
             self.scopes.push(HashMap::new());
-            let (payload, payload_type) =
-                self.field_place(builder, subject, &subject_node.ty, &arm.text)?;
             let binding_count = arm.children.len() - 1;
             if binding_count > 1 {
                 return Err(invalid(
@@ -4344,6 +4446,8 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
                 ));
             }
             if binding_count == 1 {
+                let (payload, payload_type) =
+                    self.field_place(builder, subject, &subject_node.ty, &arm.text)?;
                 let binding = &self.program.nodes[arm.children[0]];
                 let payload_layout = self.layouts.layout(&payload_type)?;
                 let first = payload_layout
@@ -4510,6 +4614,34 @@ pub fn selected_raw_untrusted_host(contents: &str) -> Result<bool, Box<dyn Error
     Ok(true)
 }
 
+pub fn selected_repr_int_echo_host(contents: &str) -> Result<bool, Box<dyn Error>> {
+    let program = parse(contents)?;
+    let selected: Vec<_> = program.functions.iter().filter(|function| {
+        function.is_extern && function.extern_symbol == "tiny_host_echo_repr_int"
+    }).collect();
+    if selected.is_empty() { return Ok(false); }
+    if selected.len() != 1 || selected[0].parameters.len() != 1 ||
+        selected[0].parameters[0].1 != selected[0].result_type {
+        return Err(invalid("selected repr(int) host signature disagrees"));
+    }
+    let ty = &selected[0].result_type;
+    let name = struct_type_name(ty)
+        .ok_or_else(|| invalid("selected repr(int) host type is not an enum"))?;
+    let enumeration = program.enumerations.iter()
+        .find(|enumeration| enumeration.erased_name == name && enumeration.repr_int)
+        .ok_or_else(|| invalid("selected repr(int) host type lacks canonical representation"))?;
+    if enumeration.size != 4 || enumeration.align != 4 || enumeration.tag_width != 4 {
+        return Err(invalid("selected repr(int) host physical ABI disagrees"));
+    }
+    let mut engine = LayoutEngine::new(&program, 8);
+    let physical = engine.layout(ty)?;
+    if physical.size != 4 || physical.align != 4 ||
+        physical.fields.get("tag").map(|field| field.offset) != Some(0) {
+        return Err(invalid("selected repr(int) host physical layout disagrees"));
+    }
+    Ok(true)
+}
+
 pub fn lower_contents(contents: &str, object_path: &Path) -> Result<String, Box<dyn Error>> {
     let program = parse(contents)?;
     FullProgramCompiler::new(&program)?.finish(object_path)
@@ -4547,4 +4679,81 @@ pub fn validate_contents(contents: &str) -> Result<String, Box<dyn Error>> {
         program.nodes.len(),
         program.functions[program.entry_function].qualified_name,
     ))
+}
+
+#[cfg(test)]
+mod enum_representation_tests {
+    use super::{abi_shape, parse, selected_repr_int_echo_host, validate_contents,
+        AbiShape, LayoutEngine, types};
+
+    fn hex(value: &str) -> String {
+        value.bytes().map(|byte| format!("{byte:02x}")).collect()
+    }
+
+    fn fixture(enum_suffix: &str, with_host: bool) -> String {
+        let base = include_str!("../../../fixtures/native_backend_phase21_full_program_minimal.mir");
+        let ty = "Struct(\"Status\", None)";
+        let enum_row = format!(
+            "enum: 0|{name}|{name}|2|{zero}|{one}{enum_suffix}\n",
+            name = hex("Status"), zero = hex("Zero"), one = hex("One"),
+        );
+        let layouts = format!(
+            "layout_count: 3\nlayout: 0|{name}|{name}||0|0||3|{tag}|{int}|{zero}|{zero_ty}|{one}|{one_ty}\n\
+             layout: 1|{zero_name}|{zero_name}||0|0||0\n\
+             layout: 2|{one_name}|{one_name}||0|0||0\n\
+             enum_count: 1\n{enum_row}",
+            name = hex("Status"), tag = hex("tag"), int = hex("Int"),
+            zero = hex("Zero"), one = hex("One"),
+            zero_ty = hex("Struct(\"Status_Zero\", None)"),
+            one_ty = hex("Struct(\"Status_One\", None)"),
+            zero_name = hex("Status_Zero"), one_name = hex("Status_One"),
+        );
+        let mut source = base.replace("layout_count: 0\nenum_count: 0\n", &layouts);
+        if with_host {
+            let name = hex("tiny_host_echo_repr_int");
+            let row = format!(
+                "function: 1|0|{name}|{name}|1|{name}|{ty}|-1|1|{value}|{ty}\n",
+                ty = hex(ty), value = hex("value"),
+            );
+            source = source.replace("function_count: 1\n", "function_count: 2\n");
+            source = source.replace("node_count: 3\n", &format!("{row}node_count: 3\n"));
+        }
+        source
+    }
+
+    #[test]
+    fn tagged_enum_metadata_and_legacy_plain_rows_are_distinct() {
+        let plain = fixture("", false);
+        assert!(validate_contents(&plain).is_ok());
+        let plain_program = parse(&plain).unwrap();
+        assert!(!plain_program.enumerations[0].repr_int);
+        let mut plain_layouts = LayoutEngine::new(&plain_program, 8);
+        assert_eq!(plain_layouts.layout("Struct(\"Status\", None)").unwrap().size, 8);
+        assert!(matches!(abi_shape("Struct(\"Status\", None)", true, types::I64, &mut plain_layouts).unwrap(), AbiShape::AggregateOne));
+        let tagged = fixture("|repr_int.v1|4|4|4", true);
+        assert!(validate_contents(&tagged).is_ok());
+        assert!(selected_repr_int_echo_host(&tagged).unwrap());
+        let tagged_program = parse(&tagged).unwrap();
+        let mut tagged_layouts = LayoutEngine::new(&tagged_program, 8);
+        let layout = tagged_layouts.layout("Struct(\"Status\", None)").unwrap();
+        assert_eq!((layout.size, layout.align), (4, 4));
+        assert!(matches!(abi_shape("Struct(\"Status\", None)", true, types::I64, &mut tagged_layouts).unwrap(), AbiShape::Scalar(ty) if ty == types::I32));
+        // Removing representation authority cannot retain the external ABI.
+        assert!(parse(&fixture("", true)).is_err());
+    }
+
+    #[test]
+    fn malformed_enum_representation_fails_closed() {
+        for suffix in [
+            "|repr_int.v1", "|repr_int.v1|4", "|repr_int.v1|4|4",
+            "|repr_int.v2|4|4|4", "|repr_int.v1|8|4|4",
+            "|repr_int.v1|4|8|4", "|repr_int.v1|4|4|8",
+            "|repr_int.v1|4|4|4|extra",
+        ] {
+            assert!(parse(&fixture(suffix, true)).is_err(), "accepted suffix {suffix}");
+        }
+        let huge_count = fixture("|repr_int.v1|4|4|4", false)
+            .replace("|2|5a65726f|4f6e65", "|18446744073709551615|5a65726f|4f6e65");
+        assert!(parse(&huge_count).is_err());
+    }
 }

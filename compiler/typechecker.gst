@@ -787,7 +787,14 @@ func env_validate_extern_ffi_positions(env: *TypeEnvironment[ctx], stmt: ast.Sta
                 report_error(2, "Semantic Error: [FFICallbackNativeErrorUnsupported] External callbacks and native error contracts are not qualified", declared.span, env, ctx);
                 return 0;
             }
-            if t.tag == 0 || t.tag == 1 || t.tag == 2 { // Int, Byte, Bool
+            mut repr_int_enum_param := 0;
+            if t.tag == 8 {
+                mut repr_int_lookup := (*env).enum_repr_int.Get(t.Struct.struct_name);
+                if repr_int_lookup.Ok {
+                    if repr_int_lookup.Val == 1 { repr_int_enum_param = 1; }
+                }
+            }
+            if t.tag == 0 || t.tag == 1 || t.tag == 2 || repr_int_enum_param == 1 { // Int, Byte, Bool, repr(int) enum
                 if std.str_eq(policy, "") == 0 && std.str_eq(policy, "value") == 0 {
                     report_error(2, "Semantic Error: [FFIValuePolicy] Scalar external parameters have value ownership", declared.span, env, ctx);
                     return 0;
@@ -845,7 +852,14 @@ func env_validate_extern_ffi_positions(env: *TypeEnvironment[ctx], stmt: ast.Sta
             return 1;
         }
         mut ret := (*sig).return_type;
-        if ret.tag == 0 || ret.tag == 1 || ret.tag == 2 || ret.tag == 3 {
+        mut repr_int_enum_return := 0;
+        if ret.tag == 8 {
+            mut repr_int_return_lookup := (*env).enum_repr_int.Get(ret.Struct.struct_name);
+            if repr_int_return_lookup.Ok {
+                if repr_int_return_lookup.Val == 1 { repr_int_enum_return = 1; }
+            }
+        }
+        if ret.tag == 0 || ret.tag == 1 || ret.tag == 2 || ret.tag == 3 || repr_int_enum_return == 1 {
             if std.str_eq(stmt.FunctionDecl.ffi_return_policy, "") == 0 &&
                std.str_eq(stmt.FunctionDecl.ffi_return_policy, "value") == 0 {
                 report_error(2, "Semantic Error: [FFIValuePolicy] Scalar and void external returns have value ownership", stmt.FunctionDecl.span, env, ctx);
@@ -979,6 +993,7 @@ type TypeEnvironment[ctx] struct {
     variable_types: std.HashMap[str, ast.Type[ctx], ctx],
     resolved_types_nested: std.Vector[PrefixMapEntry[ctx], ctx],
     enum_registry: std.HashMap[str, std.Vector[str, ctx], ctx],
+    enum_repr_int: std.HashMap[str, int, ctx],
     current_prefix: str,
     imports: std.HashMap[str, str, ctx],
     variable_origins: std.HashMap[str, Index[OriginSet[ctx], ctx], ctx],
@@ -5997,7 +6012,15 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         mut ffi_formal := sig.params[ffi_arg_index];
                         mut ffi_actual := evaluated_args[ffi_arg_index];
                         if std.str_eq(ffi_policy, "value") == 1 {
-                            if ffi_formal.tag != 0 && ffi_formal.tag != 1 && ffi_formal.tag != 2 {
+                            mut ffi_formal_is_repr_int_enum := 0;
+                            if ffi_formal.tag == 8 {
+                                mut ffi_repr_lookup := (*env).enum_repr_int.Get(ffi_formal.Struct.struct_name);
+                                if ffi_repr_lookup.Ok {
+                                    if ffi_repr_lookup.Val == 1 { ffi_formal_is_repr_int_enum = 1; }
+                                }
+                            }
+                            if ffi_formal.tag != 0 && ffi_formal.tag != 1 && ffi_formal.tag != 2 &&
+                               ffi_formal_is_repr_int_enum == 0 {
                                 report_error(2, "Semantic Error: [FFIContractMismatch] External value policy has a non-scalar formal position", expr.Call.span, env, ctx);
                                 mut bad_value: ast.Type[ctx]; bad_value.tag = 3;
                                 return bad_value;
@@ -9259,6 +9282,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.variable_types = std.HashMapNew(ctx);
         env_ref_new.resolved_types_nested = std.VectorNew(ctx);
         env_ref_new.enum_registry = std.HashMapNew(ctx);
+        env_ref_new.enum_repr_int = std.HashMapNew(ctx);
         env_ref_new.current_prefix = "";
         env_ref_new.imports = std.HashMapNew(ctx);
         env_ref_new.imports.Insert(std.Clone(ctx, "std"), std.Clone(ctx, "std_"));
@@ -11615,6 +11639,10 @@ func env_type_requires_explicit_c_ffi_layout(env: *TypeEnvironment[ctx], t: ast.
 func env_type_satisfies_c_ffi_layout(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena) int {
     unsafe {
         if t.tag == 8 { // Struct
+            mut repr_int_lookup := (*env).enum_repr_int.Get(t.Struct.struct_name);
+            if repr_int_lookup.Ok {
+                if repr_int_lookup.Val == 1 { return 1; }
+            }
             return env_struct_satisfies_c_ffi_layout(env, t.Struct.struct_name, ctx);
         }
     }
@@ -12958,6 +12986,7 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
         if stmt.tag == 2 { // EnumDecl
             mut name := stmt.EnumDecl.name;
             mut namespaced_name := env_resolve_namespaced_ident(env, name, ctx);
+            (*env).enum_repr_int.Insert(std.Clone(ctx, namespaced_name), stmt.EnumDecl.is_repr_int);
 
             mut is_generic := 0;
             if stmt.EnumDecl.generics != empty[Index[std.Vector[str, ctx], ctx]] {

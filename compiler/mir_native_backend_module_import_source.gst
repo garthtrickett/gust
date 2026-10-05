@@ -1556,6 +1556,39 @@ func mir_native_module_import_untrusted_raw_return_extern(statement: ast.Stateme
     }
 }
 
+// The full-program planner owns the opt-in enum's physical ABI and selected
+// host proof. Let that planner inspect verified value positions before the
+// older scalar-only module-import profile rejects the declaration.
+func mir_native_module_import_repr_int_extern(statement: ast.Statement[ctx], module_prefix: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        if statement.tag != 3 || statement.FunctionDecl.is_extern == 0 ||
+           std.str_eq(statement.FunctionDecl.extern_abi, "C") == 0 { return 0; }
+        mut name := mir_native_module_import_qualified(module_prefix, statement.FunctionDecl.name, ctx);
+        guard signature := (*env).function_registry.Get(name) else { return 0; };
+        if signature.ffi_contract_verified == 0 { return 0; }
+        mut parameters: std.Vector[ast.Parameter[ctx], ctx] := ctx[statement.FunctionDecl.params];
+        mut index := 0;
+        while index < len(parameters) {
+            mut parameter := parameters[index];
+            if parameter.param_type.tag == 8 {
+                mut lookup := (*env).enum_repr_int.Get(parameter.param_type.Struct.struct_name);
+                if lookup.Ok {
+                    if lookup.Val == 1 { return 1; }
+                }
+            }
+            index = index + 1;
+        }
+        mut result_type := ctx[statement.FunctionDecl.return_type];
+        if result_type.tag == 8 {
+            mut lookup := (*env).enum_repr_int.Get(result_type.Struct.struct_name);
+            if lookup.Ok {
+                if lookup.Val == 1 { return 1; }
+            }
+        }
+    }
+    return 0;
+}
+
 func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) MirNativeModuleImportModel[ctx] {
     mut model := mir_native_module_import_empty_model(ctx);
     if len(programs) == 0 ||
@@ -1654,6 +1687,9 @@ func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx
                             preflight_statement, module_prefixes[preflight_module_index], env, ctx
                         ) == 1 ||
                            mir_native_module_import_untrusted_raw_return_extern(
+                            preflight_statement, module_prefixes[preflight_module_index], env, ctx
+                        ) == 1 ||
+                           mir_native_module_import_repr_int_extern(
                             preflight_statement, module_prefixes[preflight_module_index], env, ctx
                         ) == 1 {
                             delegate_borrowed_aggregate = 1;

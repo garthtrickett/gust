@@ -60,6 +60,10 @@ type MirNativeFullProgramLayout[ctx] struct {
 type MirNativeFullProgramEnum[ctx] struct {
     name: str,
     erased_name: str,
+    is_repr_int: int,
+    tag_width: int,
+    size: int,
+    alignment: int,
     variants: Index[std.Vector[str, ctx], ctx]
 }
 
@@ -196,10 +200,19 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
             unsafe {
                 if statement.tag == 3 && statement.FunctionDecl.is_extern == 1 {
                     mut parameters: std.Vector[ast.Parameter[ctx], ctx] := ctx[statement.FunctionDecl.params];
+                    mut repr_int_parameter_name := "";
                     mut parameter_index := 0;
                     while parameter_index < len(parameters) {
                         mut parameter := parameters[parameter_index];
                         mut resolved := typechecker.env_resolve_type(env, parameter.param_type, ctx);
+                        if resolved.tag == 8 {
+                            mut repr_int_lookup := (*env).enum_repr_int.Get(resolved.Struct.struct_name);
+                            if repr_int_lookup.Ok {
+                                if repr_int_lookup.Val == 1 {
+                                    repr_int_parameter_name = std.Clone(ctx, resolved.Struct.struct_name);
+                                }
+                            }
+                        }
                         if resolved.tag == 11 || resolved.tag == 9 {
                             mut inner := resolved;
                             if resolved.tag == 11 {
@@ -336,6 +349,63 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                             }
                         }
                         parameter_index = parameter_index + 1;
+                    }
+                    mut return_type := typechecker.env_resolve_type(env, ctx[statement.FunctionDecl.return_type], ctx);
+                    mut repr_int_return_name := "";
+                    if return_type.tag == 8 {
+                        mut repr_int_return_lookup := (*env).enum_repr_int.Get(return_type.Struct.struct_name);
+                        if repr_int_return_lookup.Ok {
+                            if repr_int_return_lookup.Val == 1 {
+                                repr_int_return_name = std.Clone(ctx, return_type.Struct.struct_name);
+                            }
+                        }
+                    }
+                    if len(repr_int_parameter_name) > 0 || len(repr_int_return_name) > 0 {
+                        if target.found == 0 ||
+                           std.str_eq(target.target.target_triple, "x86_64-unknown-linux-gnu") == 0 ||
+                           target.target.pointer_size != 8 || target.target.i32_alignment != 4 {
+                            return "Native FFI repr(int) enum target ABI is unsupported";
+                        }
+                        mut host_symbol := statement.FunctionDecl.extern_symbol_name;
+                        if len(host_symbol) == 0 { host_symbol = statement.FunctionDecl.name; }
+                        mut key := mir_native_full_program_qualified_name(module_prefixes[module_index], statement.FunctionDecl.name, ctx);
+                        guard signature := (*env).function_registry.Get(key) else {
+                            return "Native FFI repr(int) enum lacks a verified declaration";
+                        };
+                        if std.str_eq(host_symbol, "tiny_host_echo_repr_int") == 0 ||
+                           len(parameters) != 1 || signature.ffi_contract_verified != 1 ||
+                           std.str_eq(repr_int_parameter_name, repr_int_return_name) == 0 ||
+                           (std.str_eq(parameters[0].ffi_policy, "") == 0 &&
+                            std.str_eq(parameters[0].ffi_policy, "value") == 0) ||
+                           std.str_eq(signature.ffi_return_policy, "value") == 0 ||
+                           signature.requires_sandbox_arena == 1 {
+                            return "Native FFI repr(int) enum position or host is unsupported";
+                        }
+                        guard enum_layout := (*env).struct_registry.Get(repr_int_parameter_name) else {
+                            return "Native FFI repr(int) enum has no canonical layout";
+                        };
+                        guard enum_variants := (*env).enum_registry.Get(repr_int_parameter_name) else {
+                            return "Native FFI repr(int) enum has no variants";
+                        };
+                        if enum_layout.fields.len != len(enum_variants) + 1 || len(enum_variants) == 0 {
+                            return "Native FFI repr(int) enum layout fields disagree";
+                        }
+                        guard tag_type := enum_layout.fields.Get("tag") else {
+                            return "Native FFI repr(int) enum lacks Int tag";
+                        };
+                        if tag_type.tag != 0 { return "Native FFI repr(int) enum lacks Int tag"; }
+                        mut variant_index := 0;
+                        while variant_index < len(enum_variants) {
+                            mut variant_name := std.Concat(repr_int_parameter_name, "_");
+                            variant_name = std.Concat(variant_name, enum_variants[variant_index]);
+                            guard variant_layout := (*env).struct_registry.Get(variant_name) else {
+                                return "Native FFI repr(int) enum variant layout is absent";
+                            };
+                            if variant_layout.fields.len != 0 {
+                                return "Native FFI repr(int) enum payload is unsupported";
+                            }
+                            variant_index = variant_index + 1;
+                        }
                     }
                 }
             }
@@ -1567,6 +1637,21 @@ func mir_native_full_program_collect_layout_authority(model: MirNativeFullProgra
             enumeration.erased_name = codegen.codegen_get_erased_struct_name(
                 enumeration.name, env, ctx
             );
+            enumeration.is_repr_int = 0;
+            mut repr_lookup := (*env).enum_repr_int.Get(enumeration.name);
+            if repr_lookup.Ok { enumeration.is_repr_int = repr_lookup.Val; }
+            enumeration.tag_width = 0;
+            enumeration.size = 0;
+            enumeration.alignment = 0;
+            if enumeration.is_repr_int == 1 {
+                mut target := primitive_layout.mir_primitive_layout_target(os.NativeTargetTriple(ctx), ctx);
+                if target.found == 0 || target.target.i32_alignment != 4 {
+                    return mir_native_full_program_invalid(updated, "Native repr(int) enum target layout is unsupported", ctx);
+                }
+                enumeration.tag_width = 4;
+                enumeration.size = 4;
+                enumeration.alignment = 4;
+            }
             enumeration.variants = mir_native_full_program_empty_string_vector(ctx);
             mut variants: std.Vector[str, ctx] := std.VectorNew(ctx);
             mut variant_index := 0;
@@ -2225,6 +2310,12 @@ func mir_native_full_program_serialize_model(model: MirNativeFullProgramModel[ct
             total_size = total_size + 1 + len(variants[variant_index]) * 2;
             variant_index = variant_index + 1;
         }
+        if enumeration.is_repr_int == 1 {
+            total_size = total_size + len("|repr_int.v1|") +
+                mir_native_full_program_integer_width(enumeration.tag_width) + 1 +
+                mir_native_full_program_integer_width(enumeration.size) + 1 +
+                mir_native_full_program_integer_width(enumeration.alignment);
+        }
         enum_index = enum_index + 1;
     }
     total_size = total_size + len("function_count: ") +
@@ -2390,6 +2481,14 @@ func mir_native_full_program_serialize_model(model: MirNativeFullProgramModel[ct
                 cursor = mir_native_full_program_write_text(destination, cursor, "|");
                 cursor = mir_native_full_program_write_utf8_hex(destination, cursor, variants[variant_index]);
                 variant_index = variant_index + 1;
+            }
+            if enumeration.is_repr_int == 1 {
+                cursor = mir_native_full_program_write_text(destination, cursor, "|repr_int.v1|");
+                cursor = mir_native_full_program_write_integer(destination, cursor, enumeration.tag_width);
+                cursor = mir_native_full_program_write_text(destination, cursor, "|");
+                cursor = mir_native_full_program_write_integer(destination, cursor, enumeration.size);
+                cursor = mir_native_full_program_write_text(destination, cursor, "|");
+                cursor = mir_native_full_program_write_integer(destination, cursor, enumeration.alignment);
             }
             cursor = mir_native_full_program_write_text(destination, cursor, "\n");
             enum_index = enum_index + 1;

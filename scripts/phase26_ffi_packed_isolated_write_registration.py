@@ -104,6 +104,9 @@ def main() -> None:
     computed_surface = activation.get("computed_zero_raw_null_increment", {}).get(
         "phase23_text_surface_successor", {})
     computed_changed = {row["path"]: row for row in computed_surface.get("changed_rows", [])}
+    repr_int_changed = {row["path"]: row for row in activation.get(
+        "ffi_repr_int_increment", {}).get("phase23_text_surface_successor", {}).get(
+            "changed_rows", [])}
     require(surface.get("contract_version") ==
             "phase26_1d_packed_isolated_write_phase23_text_surface_successor_v1" and
             surface.get("partial_extra_or_substituted_surface") == "rejected" and
@@ -113,8 +116,15 @@ def main() -> None:
             len(surface.get("added_rows", [])),
             "text surface successor shape drifted")
     for row in surface["changed_rows"]:
-        live_digest = (computed_changed[row["path"]]["previous_digest"]
-                       if row["path"] in computed_changed else digest(row["path"]))
+        live_digest = digest(row["path"])
+        repr_int_successor = repr_int_changed.get(row["path"])
+        if repr_int_successor:
+            require(repr_int_successor["current_digest"] == live_digest,
+                    f"integer enum text surface drifted: {row['path']}")
+            live_digest = repr_int_successor["previous_digest"]
+        computed_successor = computed_changed.get(row["path"])
+        if computed_successor:
+            live_digest = computed_successor["previous_digest"]
         require(row["current_digest"] == live_digest and
                 len(row["previous_digest"]) == 64,
                 f"changed text surface drifted: {row['path']}")

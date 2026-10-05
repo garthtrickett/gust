@@ -188,6 +188,25 @@ func mir_native_parameter_argument_type_class(
     return 2;
 }
 
+func mir_native_parameter_argument_is_repr_int_enum(
+    value_type: ast.Type[ctx],
+    statements: std.Vector[ast.Statement[ctx], ctx]
+) int {
+    unsafe {
+        if value_type.tag != 8 { return 0; }
+        mut index := 0;
+        while index < len(statements) {
+            mut declaration := statements[index];
+            if declaration.tag == 2 && declaration.EnumDecl.is_repr_int == 1 &&
+               std.str_eq(declaration.EnumDecl.name, value_type.Struct.struct_name) == 1 {
+                return 1;
+            }
+            index = index + 1;
+        }
+    }
+    return 0;
+}
+
 func mir_native_parameter_argument_scan_deferred(
     programs: std.Vector[ast.Program[ctx], ctx],
     module_paths: std.Vector[str, ctx],
@@ -221,6 +240,10 @@ func mir_native_parameter_argument_scan_deferred(
                             parameter.param_type,
                             ctx
                         );
+                    if parameter_class == 1 &&
+                       mir_native_parameter_argument_is_repr_int_enum(parameter.param_type, statements) == 1 {
+                        parameter_class = 0;
+                    }
                     if parameter_class == 1 {
                         model.source_path =
                             std.Clone(ctx, module_paths[0]);
@@ -261,6 +284,10 @@ func mir_native_parameter_argument_scan_deferred(
                 mut return_type := ctx[statement.FunctionDecl.return_type];
                 mut return_class :=
                     mir_native_parameter_argument_type_class(return_type, ctx);
+                if return_class == 1 &&
+                   mir_native_parameter_argument_is_repr_int_enum(return_type, statements) == 1 {
+                    return_class = 0;
+                }
                 if return_class == 1 {
                     model.source_path = std.Clone(ctx, module_paths[0]);
                     return mir_native_parameter_argument_deferred_model(

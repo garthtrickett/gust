@@ -1018,6 +1018,7 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
     unsafe {
         mut start_span := (*p).cur_token.span;
         mut is_repr_c_decl := 0;
+        mut is_repr_int_decl := 0;
         mut is_packed_decl := 0;
         mut layout_abi_decl := "";
         mut is_linear_resource_decl := 0;
@@ -1060,17 +1061,23 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
                     return empty[Index[ast.Statement[ctx], ctx]];
                 }
                 next_token(p); // consume '('
-                if cur_token_is(p, 2) == false || std.str_eq((*p).cur_token.literal, "C") == 0 { // Ident = 2
+                if cur_token_is(p, 2) == false ||
+                   (std.str_eq((*p).cur_token.literal, "C") == 0 &&
+                    std.str_eq((*p).cur_token.literal, "int") == 0) { // Ident = 2
                     mut err_layout_repr_c: errors.CompilerError[Any];
                     err_layout_repr_c.kind.tag = 1; // ParserError
-                    err_layout_repr_c.message = "Expected C in repr(C) layout attribute";
+                    err_layout_repr_c.message = "Expected C or int in repr layout attribute";
                     err_layout_repr_c.span = (*p).cur_token.span;
                     (*p).errors.Push(err_layout_repr_c);
                     return empty[Index[ast.Statement[ctx], ctx]];
                 }
-                is_repr_c_decl = 1;
-                layout_abi_decl = "C";
-                next_token(p); // consume 'C'
+                if std.str_eq((*p).cur_token.literal, "C") == 1 {
+                    is_repr_c_decl = 1;
+                    layout_abi_decl = "C";
+                } else {
+                    is_repr_int_decl = is_repr_int_decl + 1;
+                }
+                next_token(p); // consume representation
                 if cur_token_is(p, 12) == false { // RParen = 12
                     mut err_layout_repr_rparen: errors.CompilerError[Any];
                     err_layout_repr_rparen.kind.tag = 1; // ParserError
@@ -1276,6 +1283,14 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
         }
 
         if cur_token_is(p, 40) { // Struct = 40
+            if is_repr_int_decl > 0 {
+                mut err_int_struct_target: errors.CompilerError[Any];
+                err_int_struct_target.kind.tag = 1;
+                err_int_struct_target.message = "repr(int) requires a fieldless enum type";
+                err_int_struct_target.span = (*p).cur_token.span;
+                (*p).errors.Push(err_int_struct_target);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
             next_token(p); // consume 'struct'
             if cur_token_is(p, 13) == false { // LBrace = 13
                 mut err: errors.CompilerError[Any];
@@ -1389,6 +1404,15 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
                 (*p).errors.Push(err_layout_enum_target);
                 return empty[Index[ast.Statement[ctx], ctx]];
             }
+            if is_repr_int_decl > 1 ||
+               (is_repr_int_decl == 1 && len(generics_vec) > 0) {
+                mut err_int_enum_shape: errors.CompilerError[Any];
+                err_int_enum_shape.kind.tag = 1;
+                err_int_enum_shape.message = "repr(int) requires one attribute on a non-generic fieldless enum";
+                err_int_enum_shape.span = (*p).cur_token.span;
+                (*p).errors.Push(err_int_enum_shape);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
             next_token(p); // consume 'enum'
 
             if cur_token_is(p, 13) == false { // LBrace = 13
@@ -1410,6 +1434,14 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
 
                     mut fields_vec: std.Vector[ast.FieldDef[ctx], ctx] := std.VectorNew(ctx);
                     if cur_token_is(p, 13) { // LBrace = 13
+                        if is_repr_int_decl == 1 {
+                            mut err_int_enum_payload: errors.CompilerError[Any];
+                            err_int_enum_payload.kind.tag = 1;
+                            err_int_enum_payload.message = "repr(int) enum variants cannot have payload fields";
+                            err_int_enum_payload.span = (*p).cur_token.span;
+                            (*p).errors.Push(err_int_enum_payload);
+                            return empty[Index[ast.Statement[ctx], ctx]];
+                        }
                         next_token(p); // consume '{'
                         while cur_token_is(p, 14) == false && cur_token_is(p, 0) == false { // RBrace = 14, Eof = 0
                             if cur_token_is(p, 2) { // Ident = 2
@@ -1496,6 +1528,14 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
                 (*p).errors.Push(err);
                 return empty[Index[ast.Statement[ctx], ctx]];
             }
+            if is_repr_int_decl == 1 && len(variants_vec) == 0 {
+                mut err_int_enum_empty: errors.CompilerError[Any];
+                err_int_enum_empty.kind.tag = 1;
+                err_int_enum_empty.message = "repr(int) requires at least one fieldless enum variant";
+                err_int_enum_empty.span = (*p).cur_token.span;
+                (*p).errors.Push(err_int_enum_empty);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
             mut end_span := (*p).cur_token.span;
             next_token(p); // consume '}'
 
@@ -1512,6 +1552,7 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
 
             stmt_enum_parse.EnumDecl.variants = enum_variants_idx_parse;
             ctx.Set(enum_variants_idx_parse, variants_vec);
+            stmt_enum_parse.EnumDecl.is_repr_int = is_repr_int_decl;
 
             stmt_enum_parse.EnumDecl.span = merge_spans(start_span, end_span);
             ctx.Set(stmt_idx, stmt_enum_parse);

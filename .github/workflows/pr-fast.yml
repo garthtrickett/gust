@@ -813,6 +813,9 @@ jobs:
       - name: Phase 26 unowned raw pointer return
         run: just guard-cranelift-phase26-ffi-raw-return
 
+      - name: Phase 26 integer represented enum ABI
+        run: just guard-cranelift-phase26-ffi-repr-int
+
       - name: Phase 26 raw cast provenance
         run: just guard-cranelift-phase26-raw-cast-provenance
 
