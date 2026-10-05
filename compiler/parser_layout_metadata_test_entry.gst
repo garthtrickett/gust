@@ -3,6 +3,21 @@ import "lexer.gst" as lexer;
 import "parser.gst" as parser;
 import "ast.gst" as ast;
 
+func expect_enum_layout_rejection(source: str, ctx: &Arena) {
+    mut layout_lexer: lexer.Lexer[ctx];
+    lexer.init_lexer(&layout_lexer, source);
+    mut layout_parser: parser.Parser[ctx];
+    parser.init_parser(&layout_parser, &layout_lexer, ctx);
+    mut layout_stmt := parser.parse_statement(&layout_parser, ctx);
+    if layout_stmt != empty[Index[ast.Statement[ctx], ctx]] ||
+       len(layout_parser.errors) != 1 ||
+       std.str_eq(layout_parser.errors[0].message, "repr(C) and packed layout attributes require a struct type") == 0
+    {
+        os.LogStr("Error: enum layout attribute was not rejected at its declaration");
+        os.Exit(1);
+    }
+}
+
 func main() {
     mut ctx := os.Arena.New();
     defer ctx.Free();
@@ -106,6 +121,28 @@ func main() {
             os.Exit(1);
         }
     }
+
+    mut l_plain_enum: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_plain_enum, "type PlainEnum enum { First, Second }");
+    mut p_plain_enum: parser.Parser[ctx];
+    parser.init_parser(&p_plain_enum, &l_plain_enum, ctx);
+    mut stmt_plain_enum := parser.parse_statement(&p_plain_enum, ctx);
+    if len(p_plain_enum.errors) != 0 ||
+       stmt_plain_enum == empty[Index[ast.Statement[ctx], ctx]] {
+        os.LogStr("Error: plain enum declaration no longer parses");
+        os.Exit(1);
+    }
+    unsafe {
+        if ctx[stmt_plain_enum].tag != 2 { // EnumDecl = 2
+            os.LogStr("Error: plain enum declaration changed AST variant");
+            os.Exit(1);
+        }
+    }
+
+    expect_enum_layout_rejection("#[repr(C)] type CEnum enum { First }", ctx);
+    expect_enum_layout_rejection("#[packed] type PackedEnum enum { First }", ctx);
+    expect_enum_layout_rejection("#[repr(C)] #[packed] type BothEnum enum { First }", ctx);
+    expect_enum_layout_rejection("#[packed] #[repr(C)] type ReversedEnum enum { First }", ctx);
 
     os.LogStr("SUCCESS: struct layout metadata defaults and attributes verified!");
 }

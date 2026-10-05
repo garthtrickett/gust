@@ -1381,6 +1381,14 @@ func parse_struct_decl(p: *Parser[ctx], ctx: &Arena) Index[ast.Statement[ctx], c
                 (*p).errors.Push(err_resource_enum_target);
                 return empty[Index[ast.Statement[ctx], ctx]];
             }
+            if is_repr_c_decl == 1 || is_packed_decl == 1 {
+                mut err_layout_enum_target: errors.CompilerError[Any];
+                err_layout_enum_target.kind.tag = 1; // ParserError
+                err_layout_enum_target.message = "repr(C) and packed layout attributes require a struct type";
+                err_layout_enum_target.span = (*p).cur_token.span;
+                (*p).errors.Push(err_layout_enum_target);
+                return empty[Index[ast.Statement[ctx], ctx]];
+            }
             next_token(p); // consume 'enum'
 
             if cur_token_is(p, 13) == false { // LBrace = 13
