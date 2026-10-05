@@ -48068,6 +48068,60 @@
       "runtime_symbol_surface_changed": false,
       "positive_fixture": "compiler/phase26_ffi_repr_int_source.gst",
       "owning_level2_guard": "guard-cranelift-phase26-ffi-repr-int",
+      "phase23_text_surface_successor": {
+        "contract_version": "phase26_1d_repr_int_phase23_text_surface_successor_v1",
+        "changed_rows": [{
+          "path": ".github/workflows/pr-fast.yml",
+          "previous_digest": "2ccec78f06ac48cd57fe4a8353daeffd6e2ecbdb3a6be63388a1edc6f5db0d93",
+          "current_digest": "1c4d2297be88d1d789fc607d8a6ed18f4509abc0fb8b9c79737df8b4aad26ee7",
+          "previous_match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 8, "generated_c_contract": 1},
+          "current_match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 8, "generated_c_contract": 1}
+        }, {
+          "path": "compiler/experiments/cranelift/src/full_program.rs",
+          "previous_digest": "f71bcd4cfae91e1179aa035092e9c80a1bf0e7754a0972702cbce7bcf1dc7781",
+          "current_digest": "793547bf125c8c95ce0a57ab00fe995f21d28f9daede77c8378150b9f1adfb3a",
+          "previous_match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 1, "generated_c_contract": 0},
+          "current_match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 1, "generated_c_contract": 0}
+        }, {
+          "path": "compiler/experiments/cranelift/src/main.rs",
+          "previous_digest": "7e0ea8b9a7404ac478f389b8c52022e3ca7c890dd4092e273004607b54756086",
+          "current_digest": "e6d93d4ffa7179c5ce5176064e5406cfab271a74002306a41f749e56b94f21d7",
+          "previous_match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 97, "generated_c_contract": 0},
+          "current_match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 97, "generated_c_contract": 0}
+        }, {
+          "path": "compiler/mir_native_backend_full_program_source.gst",
+          "previous_digest": "a7d60f3a11b288fd10cd3739a9e76ffc36bb140d8bda2c8094b0dcd903d6b6b1",
+          "current_digest": "2c625fd0464a1acb93dd48f3ceab0757100c2d462ec0c9e1fe3109fdbf790937",
+          "previous_match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 0, "generated_c_contract": 1},
+          "current_match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 0, "generated_c_contract": 1}
+        }, {
+          "path": "compiler/typechecker.gst",
+          "previous_digest": "887c60f8d7293183a2f46530054f4ab2203b438198338fff23d980ce080acf3a",
+          "current_digest": "5269bf6bc7a5f983b68f779502450a7878f1f1daaaae0f993cec8c7c07c7c7c2",
+          "previous_match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 0, "generated_c_contract": 1},
+          "current_match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 0, "generated_c_contract": 1}
+        }, {
+          "path": "justfile",
+          "previous_digest": "72651d0acf123467b7ed635d8fa54f626b31a26f7de43dd68e888a2561817fc9",
+          "current_digest": "7a2c86340018a05183a2541f7cbc3e6b5db02a202e14efd72d11c9b0cc9416af",
+          "previous_match_counts": {"explicit_backend_spelling": 1, "mir_to_c_name": 729, "generated_c_contract": 9},
+          "current_match_counts": {"explicit_backend_spelling": 1, "mir_to_c_name": 729, "generated_c_contract": 9}
+        }, {
+          "path": "scripts/cranelift_test_levels.json",
+          "previous_digest": "4d6eb36aadfede93c1688d2a6237d7db963322b87dbc0e1b29c717b8dea03f0c",
+          "current_digest": "e79fb5483065be7cbc72d412caef9190c7d69e09bab6bc1e684cd8302f62dcb4",
+          "previous_match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 30, "generated_c_contract": 0},
+          "current_match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 30, "generated_c_contract": 0}
+        }, {
+          "path": "scripts/phase22_opening.py",
+          "previous_digest": "ec38f210cb28f8bf1e191bcbe4f72ffc777d2bd2dc713592e5f8d978f0ca4b15",
+          "current_digest": "a3a9d85fc5a728e59c0d5870ebfc17b2935ca549732b68a2909408061f699264",
+          "previous_match_counts": {"explicit_backend_spelling": 5, "mir_to_c_name": 23, "generated_c_contract": 12},
+          "current_match_counts": {"explicit_backend_spelling": 5, "mir_to_c_name": 23, "generated_c_contract": 12}
+        }],
+        "added_rows": [],
+        "partial_extra_or_substituted_surface": "rejected"
+      },
       "filename_site_successor": {
         "contract_version": "phase26_1d_repr_int_filename_site_successor_v1",
         "previous_sites": [

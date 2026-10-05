@@ -38,7 +38,8 @@ def main() -> None:
             "ABI ownership record drifted")
     require(set(record) == set(expected) | {
         "phase22_invocation_successor", "production_audit_successor",
-        "filename_site_successor", "spelling_inventory_successor"},
+        "filename_site_successor", "spelling_inventory_successor",
+        "phase23_text_surface_successor"},
         "ABI ownership record gained unreviewed fields")
     rows = [row for row in scan_invocations() if row["path"] == SCRIPT]
     require(rows == record["phase22_invocation_successor"]["added_rows"] and
