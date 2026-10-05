@@ -405,6 +405,8 @@ def validate_static(value: dict) -> None:
                     "phase26_activation_audit", {}).get(
                     "call_take_return_wrapper_zero_evidence_increment", {}).get(
                     "filename_site_successor")
+                repr_int_sites = registry.get("phase26_activation_audit", {}).get(
+                    "ffi_repr_int_increment", {}).get("filename_site_successor")
                 e1_current = (live_sites if d5_sites is None else
                               d5_sites.get("previous_sites"))
                 require(e1_sites.get("contract_version") ==
@@ -1624,15 +1626,31 @@ def validate_static(value: dict) -> None:
                     require(call_take_return_wrapper_sites.get("contract_version") ==
                             "phase26_1e_call_take_return_wrapper_filename_site_successor_v1" and
                             call_take_return_wrapper_sites.get("previous_sites") == previous_wrapper and
-                            call_take_return_wrapper_sites.get("current_sites") == live_sites and
-                            isinstance(deltas_wrapper, list) and len(deltas_wrapper) == len(live_sites) == 3 and
+                            call_take_return_wrapper_sites.get("current_sites") ==
+                            (live_sites if repr_int_sites is None else
+                             repr_int_sites.get("previous_sites")) and
+                            isinstance(deltas_wrapper, list) and len(deltas_wrapper) == len(previous_wrapper) == 3 and
                             call_take_return_wrapper_sites.get("partial_extra_or_substituted_site") == "rejected" and
                             all(now["line"] == before["line"] + delta and
                                 {key: val for key, val in now.items() if key != "line"} ==
                                 {key: val for key, val in before.items() if key != "line"}
                                 for before, now, delta in zip(previous_wrapper,
-                                    live_sites, deltas_wrapper)),
+                                    call_take_return_wrapper_sites["current_sites"], deltas_wrapper)),
                             "Phase 26 one-Take safe-return filename sites drifted")
+                if repr_int_sites is not None:
+                    previous_enum_sites = call_take_return_wrapper_sites["current_sites"]
+                    require(repr_int_sites.get("contract_version") ==
+                            "phase26_1d_repr_int_filename_site_successor_v1" and
+                            repr_int_sites.get("previous_sites") == previous_enum_sites and
+                            repr_int_sites.get("current_sites") == live_sites and
+                            repr_int_sites.get("line_delta") == 29 and
+                            repr_int_sites.get("partial_extra_or_substituted_site") == "rejected" and
+                            len(previous_enum_sites) == len(live_sites) == 3 and
+                            all(now["line"] == before["line"] + 29 and
+                                {key: val for key, val in now.items() if key != "line"} ==
+                                {key: val for key, val in before.items() if key != "line"}
+                                for before, now in zip(previous_enum_sites, live_sites)),
+                            "Phase 26 repr(int) filename sites drifted")
     require([row["selector"] for row in value["site_manifest"]] ==
             ["test_tcs_", "test_index_", "test_tcs_"],
             "selector order or completeness drifted")
