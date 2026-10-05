@@ -18,6 +18,21 @@ func expect_enum_layout_rejection(source: str, ctx: &Arena) {
     }
 }
 
+func expect_int_enum_rejection(source: str, message: str, ctx: &Arena) {
+    mut layout_lexer: lexer.Lexer[ctx];
+    lexer.init_lexer(&layout_lexer, source);
+    mut layout_parser: parser.Parser[ctx];
+    parser.init_parser(&layout_parser, &layout_lexer, ctx);
+    mut layout_stmt := parser.parse_statement(&layout_parser, ctx);
+    if layout_stmt != empty[Index[ast.Statement[ctx], ctx]] ||
+       len(layout_parser.errors) != 1 ||
+       std.str_eq(layout_parser.errors[0].message, message) == 0
+    {
+        os.LogStr("Error: invalid repr(int) enum was not rejected");
+        os.Exit(1);
+    }
+}
+
 func main() {
     mut ctx := os.Arena.New();
     defer ctx.Free();
@@ -137,7 +152,33 @@ func main() {
             os.LogStr("Error: plain enum declaration changed AST variant");
             os.Exit(1);
         }
+        if ctx[stmt_plain_enum].EnumDecl.is_repr_int != 0 {
+            os.LogStr("Error: plain enum gained integer representation");
+            os.Exit(1);
+        }
     }
+
+    mut l_int_enum: lexer.Lexer[ctx];
+    lexer.init_lexer(&l_int_enum, "#[repr(int)] type IntEnum enum { First, Second }");
+    mut p_int_enum: parser.Parser[ctx];
+    parser.init_parser(&p_int_enum, &l_int_enum, ctx);
+    mut stmt_int_enum := parser.parse_statement(&p_int_enum, ctx);
+    if len(p_int_enum.errors) != 0 ||
+       stmt_int_enum == empty[Index[ast.Statement[ctx], ctx]] {
+        os.LogStr("Error: repr(int) fieldless enum did not parse");
+        os.Exit(1);
+    }
+    unsafe {
+        if ctx[stmt_int_enum].tag != 2 || ctx[stmt_int_enum].EnumDecl.is_repr_int != 1 {
+            os.LogStr("Error: repr(int) enum lost representation metadata");
+            os.Exit(1);
+        }
+    }
+    expect_int_enum_rejection("#[repr(int)] type NotEnum struct { x: int }", "repr(int) requires a fieldless enum type", ctx);
+    expect_int_enum_rejection("#[repr(int)] type Payload enum { First { x: int } }", "repr(int) enum variants cannot have payload fields", ctx);
+    expect_int_enum_rejection("#[repr(int)] type Generic[T] enum { First }", "repr(int) requires one attribute on a non-generic fieldless enum", ctx);
+    expect_int_enum_rejection("#[repr(int)] #[repr(int)] type Duplicate enum { First }", "repr(int) requires one attribute on a non-generic fieldless enum", ctx);
+    expect_int_enum_rejection("#[repr(int)] type EmptyEnum enum {}", "repr(int) requires at least one fieldless enum variant", ctx);
 
     expect_enum_layout_rejection("#[repr(C)] type CEnum enum { First }", ctx);
     expect_enum_layout_rejection("#[packed] type PackedEnum enum { First }", ctx);

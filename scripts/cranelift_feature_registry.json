@@ -48056,6 +48056,61 @@
     "why_this_exists": "The Status section of docs/PHASE25_ROADMAP.md is the record the phase-completion loop checks, and it was wrong in both directions. 25.10a (#468) and 25.10 (#470) were unticked though both merged. 25.12 was ticked though its Exit Gate was not met, and 25.12b (#472), which corrected it, had no row at all. The Patch 25.0 heading still read IN PROGRESS. The section's own rule is 'ticked when merged to main', and this repo's convention is that a later patch ticks merged ones -- Patch 25.7 is what ticked 25.12 and 25.11a -- so 25.12b could not tick itself."
   },
   "phase26_activation_audit": {
+    "ffi_repr_int_increment": {
+      "contract_version": "phase26_1d_repr_int_v1",
+      "status": "opt_in_fieldless_enum_integer_abi_qualified",
+      "owner": "cranelift",
+      "increment": "26.1D_enum_representation",
+      "plain_enum_layout": "unchanged_8_byte_aggregate",
+      "repr_int_layout": "four_byte_i32_scalar",
+      "selected_ffi_host": "tiny_host_echo_repr_int",
+      "native_fallback": false,
+      "runtime_symbol_surface_changed": false,
+      "positive_fixture": "compiler/phase26_ffi_repr_int_source.gst",
+      "owning_level2_guard": "guard-cranelift-phase26-ffi-repr-int",
+      "phase22_invocation_successor": {
+        "contract_version": "phase26_1d_repr_int_phase22_invocation_successor_v1",
+        "previous_total": 238,
+        "current_total": 240,
+        "added_rows": [
+          {
+            "path": "scripts/phase26_ffi_repr_int.sh",
+            "line": 11,
+            "recipe": "none",
+            "compiler_token": "./gust",
+            "selection": "explicit_cranelift",
+            "consumer_class": "already_explicit_or_parser_probe",
+            "owner": "cranelift",
+            "expected_artifact": "selected_backend_contract",
+            "expected_transition": "preserve_explicit_selection",
+            "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+            "command": "GUST_TEST_MIR_TO_C_UNAVAILABLE=1 GUST_NATIVE_BACKEND_DRIVER=\"$driver\" ./gust --backend cranelift -o \"$build_root/native\" compiler/phase26_ffi_repr_int_source.gst >\"$build_root/positive.stdout\" 2>\"$build_root/positive.stderr\""
+          },
+          {
+            "path": "scripts/phase26_ffi_repr_int.sh",
+            "line": 45,
+            "recipe": "none",
+            "compiler_token": "./gust",
+            "selection": "explicit_cranelift",
+            "consumer_class": "already_explicit_or_parser_probe",
+            "owner": "cranelift",
+            "expected_artifact": "selected_backend_contract",
+            "expected_transition": "preserve_explicit_selection",
+            "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+            "command": "GUST_TEST_MIR_TO_C_UNAVAILABLE=1 GUST_PHASE26_REPR_INT_POISON_MARKER=\"$PWD/$marker\" GUST_NATIVE_BACKEND_DRIVER=\"$PWD/$poison\" ./gust --backend cranelift -o \"$build_root/$case_name\" \"$build_root/$case_name.gst\" >\"$build_root/$case_name.stdout\" 2>\"$build_root/$case_name.stderr\""
+          }
+        ],
+        "partial_extra_or_substituted_invocation": "rejected"
+      },
+      "production_audit_successor": {
+        "contract_version": "phase26_1d_repr_int_production_audit_successor_v1",
+        "previous_repository_invocation_count": 238,
+        "current_repository_invocation_count": 240,
+        "added_invocation_path": "scripts/phase26_ffi_repr_int.sh",
+        "unchanged_other_fields": true,
+        "partial_extra_or_substituted_audit": "rejected"
+      }
+    },
     "relational_zero_evidence_increment": {
       "contract_version": "phase26_1e_relational_zero_v1",
       "status": "bounded_relational_zero_safe_boundary_rejection_qualified",

@@ -24240,6 +24240,15 @@ guard-cranelift-phase26-ffi-raw-return:
     python3 scripts/phase26_ffi_raw_return_registration.py
     bash scripts/phase26_ffi_raw_return.sh
 
+# Phase 26.1D: opt-in integer representation has a four-byte native and C ABI.
+guard-cranelift-phase26-ffi-repr-int:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-ffi-repr-int | grep -F $'guard-cranelift-phase26-ffi-repr-int\t2\t' >/dev/null
+    python3 scripts/phase26_ffi_repr_int_registration.py
+    cargo test --manifest-path compiler/experiments/cranelift/Cargo.toml enum_representation_tests --no-fail-fast
+    bash scripts/phase26_ffi_repr_int.sh
+
 # Phase 26.1E1: raw pointer casts cannot acquire safe arena provenance.
 guard-cranelift-phase26-raw-cast-provenance:
     #!/usr/bin/env bash

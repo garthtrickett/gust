@@ -101,6 +101,7 @@ type Statement[ctx] enum {
         name: str,
         generics: Index[std.Vector[str, ctx], ctx],
         variants: Index[std.Vector[VariantDef[ctx], ctx], ctx],
+        is_repr_int: int,
         span: token.Span
     },
     FunctionDecl {
