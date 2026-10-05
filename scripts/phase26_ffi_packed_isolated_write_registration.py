@@ -129,13 +129,7 @@ def main() -> None:
                 len(row["previous_digest"]) == 64,
                 f"changed text surface drifted: {row['path']}")
     for row in surface["added_rows"]:
-        live_digest = digest(row["path"])
-        repr_int_successor = repr_int_changed.get(row["path"])
-        if repr_int_successor:
-            require(repr_int_successor["current_digest"] == live_digest,
-                    f"integer enum text surface drifted: {row['path']}")
-            live_digest = repr_int_successor["previous_digest"]
-        require(row["digest"] == live_digest,
+        require(row["digest"] == digest(row["path"]),
                 f"added text surface drifted: {row['path']}")
 
     justfile = (ROOT / "justfile").read_text(encoding="utf-8")
