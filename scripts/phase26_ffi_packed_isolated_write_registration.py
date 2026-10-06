@@ -110,6 +110,9 @@ def main() -> None:
     owned_changed = {row["path"]: row for row in activation.get(
         "ffi_owned_return_increment", {}).get("phase23_text_surface_successor", {}).get(
             "changed_rows", [])}
+    transfer_changed = {row["path"]: row for row in activation.get(
+        "ffi_transfer_owned_increment", {}).get("phase23_text_surface_successor", {}).get(
+            "changed_rows", [])}
     require(surface.get("contract_version") ==
             "phase26_1d_packed_isolated_write_phase23_text_surface_successor_v1" and
             surface.get("partial_extra_or_substituted_surface") == "rejected" and
@@ -120,6 +123,12 @@ def main() -> None:
             "text surface successor shape drifted")
     for row in surface["changed_rows"]:
         live_digest = digest(row["path"])
+        transfer_successor = transfer_changed.get(row["path"])
+        if transfer_successor:
+            require(transfer_successor["current_digest"] == live_digest and
+                    len(transfer_successor["previous_digest"]) == 64,
+                    f"owned-transfer text surface drifted: {row['path']}")
+            live_digest = transfer_successor["previous_digest"]
         owned_successor = owned_changed.get(row["path"])
         if owned_successor:
             require(owned_successor["current_digest"] == live_digest,
@@ -138,6 +147,12 @@ def main() -> None:
                 f"changed text surface drifted: {row['path']}")
     for row in surface["added_rows"]:
         live_digest = digest(row["path"])
+        transfer_successor = transfer_changed.get(row["path"])
+        if transfer_successor:
+            require(transfer_successor["current_digest"] == live_digest and
+                    len(transfer_successor["previous_digest"]) == 64,
+                    f"owned-transfer text surface drifted: {row['path']}")
+            live_digest = transfer_successor["previous_digest"]
         owned_successor = owned_changed.get(row["path"])
         if owned_successor:
             require(owned_successor["current_digest"] == live_digest,

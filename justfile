@@ -24258,6 +24258,15 @@ guard-cranelift-phase26-ffi-owned-return:
     cargo test --manifest-path compiler/experiments/cranelift/Cargo.toml owned_ffi_policy_tests --no-fail-fast
     bash scripts/phase26_ffi_owned_return.sh
 
+# Phase 26.1D: native transfer consumes a qualified linear owner by value.
+guard-cranelift-phase26-ffi-transfer-owned:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-ffi-transfer-owned | grep -F $'guard-cranelift-phase26-ffi-transfer-owned\t2\t' >/dev/null
+    python3 scripts/phase26_ffi_transfer_owned_registration.py
+    cargo test --manifest-path compiler/experiments/cranelift/Cargo.toml owned_ffi_policy_tests --no-fail-fast
+    bash scripts/phase26_ffi_transfer_owned.sh
+
 # Phase 26.1E1: raw pointer casts cannot acquire safe arena provenance.
 guard-cranelift-phase26-raw-cast-provenance:
     #!/usr/bin/env bash

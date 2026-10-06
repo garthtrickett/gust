@@ -489,6 +489,12 @@ def main() -> None:
             "phase23_text_surface_successor", {}).get(
             "changed_rows", [])
     }
+    transfer_by_path = {
+        row["path"]: row for row in activation.get(
+            "ffi_transfer_owned_increment", {}).get(
+            "phase23_text_surface_successor", {}).get(
+            "changed_rows", [])
+    }
     for path, predecessor in {
         "compiler/experiments/cranelift/src/full_program.rs":
             runtime_by_path["compiler/experiments/cranelift/src/full_program.rs"],
@@ -507,7 +513,12 @@ def main() -> None:
         packed_isolated_write = packed_isolated_write_by_path.get(path)
         repr_int = repr_int_by_path.get(path)
         owned = owned_by_path.get(path)
+        transfer = transfer_by_path.get(path)
         current_digest = digest(path)
+        if transfer:
+            require(transfer["current_digest"] == current_digest,
+                    f"Phase 26.1D owned-transfer text surface drifted: {path}")
+            current_digest = transfer["previous_digest"]
         if owned:
             require(owned["current_digest"] == current_digest,
                     f"Phase 26.1D owned-return text surface drifted: {path}")
@@ -568,7 +579,13 @@ def main() -> None:
     registration_packed_isolated_write = packed_isolated_write_by_path.get(registration_path)
     registration_repr_int = repr_int_by_path.get(registration_path)
     registration_owned = owned_by_path.get(registration_path)
+    registration_transfer = transfer_by_path.get(registration_path)
     registration_current_digest = digest(registration_path)
+    if registration_transfer:
+        require(registration_transfer["current_digest"] ==
+                registration_current_digest,
+                "Phase 26.1D owned-transfer reference registration drifted")
+        registration_current_digest = registration_transfer["previous_digest"]
     if registration_owned:
         require(registration_owned["current_digest"] == registration_current_digest,
                 "Phase 26.1D owned-return reference registration drifted")

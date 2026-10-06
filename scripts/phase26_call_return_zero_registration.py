@@ -40,6 +40,18 @@ def repr_int_changed_rows() -> dict[str, dict]:
 
 
 @lru_cache(maxsize=1)
+def transfer_owned_changed_rows() -> dict[str, dict]:
+    registry = json.loads((ROOT / "scripts/cranelift_feature_registry.json")
+                          .read_text(encoding="utf-8"))
+    rows = registry["phase26_activation_audit"].get(
+        "ffi_transfer_owned_increment", {}).get(
+            "phase23_text_surface_successor", {}).get("changed_rows", [])
+    require(len({row["path"] for row in rows}) == len(rows),
+            "owned-transfer text surface has duplicate paths")
+    return {row["path"]: row for row in rows}
+
+
+@lru_cache(maxsize=1)
 def owned_return_changed_rows() -> dict[str, dict]:
     registry = json.loads((ROOT / "scripts/cranelift_feature_registry.json")
                           .read_text(encoding="utf-8"))
@@ -54,6 +66,12 @@ def owned_return_changed_rows() -> dict[str, dict]:
 def digest(path: str) -> str:
     """Project a later enum text successor to the direct-return snapshot."""
     live = raw_digest(path)
+    transfer = transfer_owned_changed_rows().get(path)
+    if transfer:
+        require(transfer["current_digest"] == live and
+                len(transfer["previous_digest"]) == 64,
+                f"owned-transfer text surface drifted: {path}")
+        live = transfer["previous_digest"]
     owned = owned_return_changed_rows().get(path)
     if owned:
         require(owned["current_digest"] == live,
@@ -229,6 +247,7 @@ def main() -> None:
     repr_int_changed = {row["path"]: row for row in activation.get(
         "ffi_repr_int_increment", {}).get("phase23_text_surface_successor", {}).get(
             "changed_rows", [])}
+    transfer_changed = transfer_owned_changed_rows()
     owned_changed = owned_return_changed_rows()
     alias_changed = {row["path"]: row for row in alias_record.get(
         "phase23_text_surface_successor", {}).get("changed_rows", [])}
@@ -307,6 +326,13 @@ def main() -> None:
         live_digest = raw_digest(row["path"])
         live_counts = {name: len(pattern.findall(text))
                        for name, pattern in SURFACE_PATTERNS.items()}
+        transfer_successor = transfer_changed.get(row["path"])
+        if transfer_successor:
+            require(transfer_successor["current_digest"] == live_digest and
+                    transfer_successor["current_match_counts"] == live_counts,
+                    f"owned-transfer text surface drifted: {row['path']}")
+            live_digest = transfer_successor["previous_digest"]
+            live_counts = transfer_successor["previous_match_counts"]
         owned_successor = owned_changed.get(row["path"])
         if owned_successor:
             require(owned_successor["current_digest"] == live_digest and
@@ -515,6 +541,12 @@ def main() -> None:
         successor = local_changed.get(row["path"])
         alias_successor = alias_changed.get(row["path"])
         live_digest = raw_digest(row["path"])
+        transfer_successor = transfer_changed.get(row["path"])
+        if transfer_successor:
+            require(transfer_successor["current_digest"] == live_digest and
+                    len(transfer_successor["previous_digest"]) == 64,
+                    f"owned-transfer text surface drifted: {row['path']}")
+            live_digest = transfer_successor["previous_digest"]
         owned_successor = owned_changed.get(row["path"])
         if owned_successor:
             require(owned_successor["current_digest"] == live_digest,
@@ -1853,8 +1885,14 @@ def main() -> None:
     live_sites = filename_sites()
     repr_int_sites = activation.get("ffi_repr_int_increment", {}).get(
         "filename_site_successor")
+    transfer_sites = activation.get("ffi_transfer_owned_increment", {}).get(
+        "filename_site_successor")
     owned_sites = activation.get("ffi_owned_return_increment", {}).get(
         "filename_site_successor")
+    if transfer_sites:
+        require(transfer_sites["current_sites"] == live_sites,
+                "owned-transfer filename sites drifted")
+        live_sites = transfer_sites["previous_sites"]
     if owned_sites:
         require(owned_sites["current_sites"] == live_sites,
                 "owned-return filename sites drifted")
@@ -3644,8 +3682,14 @@ def main() -> None:
     live_inventory = manifest_summary(source_sites())
     repr_int_inventory = activation.get("ffi_repr_int_increment", {}).get(
         "spelling_inventory_successor")
+    transfer_inventory = activation.get("ffi_transfer_owned_increment", {}).get(
+        "spelling_inventory_successor")
     owned_inventory = activation.get("ffi_owned_return_increment", {}).get(
         "spelling_inventory_successor")
+    if transfer_inventory:
+        require(transfer_inventory["current_inventory_summary"] == live_inventory,
+                "owned-transfer spelling inventory drifted")
+        live_inventory = transfer_inventory["previous_inventory_summary"]
     if owned_inventory:
         require(owned_inventory["current_inventory_summary"] == live_inventory,
                 "owned-return spelling inventory drifted")
@@ -3672,6 +3716,10 @@ def main() -> None:
             post_take_plain_record["spelling_inventory_successor"]["previous_inventory_summary"]["unknown_site_count"] == 0,
             "consecutive plain-before-Take-cast spelling inventory drifted")
     live_sites = filename_sites()
+    if transfer_sites:
+        require(transfer_sites["current_sites"] == live_sites,
+                "owned-transfer filename sites drifted")
+        live_sites = transfer_sites["previous_sites"]
     if owned_sites:
         require(owned_sites["current_sites"] == live_sites,
                 "owned-return filename sites drifted")

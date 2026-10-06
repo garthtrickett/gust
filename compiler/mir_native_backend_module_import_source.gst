@@ -1574,6 +1574,16 @@ func mir_native_module_import_owned_ffi_extern(statement: ast.Statement[ctx], mo
         if len(policies) == 1 &&
            std.str_eq(policies[0], "release_owned") == 1 &&
            sig.return_type.tag == 3 { return 1; }
+        mut parameter_index := 0;
+        while parameter_index < len(policies) {
+            if std.str_eq(policies[parameter_index], "transfer_owned") == 1 &&
+               sig.params[parameter_index].tag == 8 &&
+               typechecker.env_ffi_owned_result_shape(
+                   env as *typechecker.TypeEnvironment[ctx],
+                   sig.params[parameter_index], ctx
+               ) == 1 { return 1; }
+            parameter_index = parameter_index + 1;
+        }
         return 0;
     }
 }

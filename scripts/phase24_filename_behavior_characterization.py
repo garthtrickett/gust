@@ -409,6 +409,8 @@ def validate_static(value: dict) -> None:
                     "ffi_repr_int_increment", {}).get("filename_site_successor")
                 owned_return_sites = registry.get("phase26_activation_audit", {}).get(
                     "ffi_owned_return_increment", {}).get("filename_site_successor")
+                transfer_owned_sites = registry.get("phase26_activation_audit", {}).get(
+                    "ffi_transfer_owned_increment", {}).get("filename_site_successor")
                 e1_current = (live_sites if d5_sites is None else
                               d5_sites.get("previous_sites"))
                 require(e1_sites.get("contract_version") ==
@@ -1658,17 +1660,33 @@ def validate_static(value: dict) -> None:
                 if owned_return_sites is not None:
                     previous_owner_sites = repr_int_sites["current_sites"]
                     deltas = owned_return_sites.get("line_deltas")
+                    current_owner_sites = (live_sites if transfer_owned_sites is None else
+                                           transfer_owned_sites.get("previous_sites"))
                     require(owned_return_sites.get("contract_version") ==
                             "phase26_1d_owned_return_filename_site_successor_v1" and
                             owned_return_sites.get("previous_sites") == previous_owner_sites and
-                            owned_return_sites.get("current_sites") == live_sites and
+                            owned_return_sites.get("current_sites") == current_owner_sites and
                             owned_return_sites.get("partial_extra_or_substituted_site") == "rejected" and
+                            isinstance(deltas, list) and len(deltas) == len(current_owner_sites) == 3 and
+                            all(now["line"] == before["line"] + delta and
+                                {key: val for key, val in now.items() if key != "line"} ==
+                                {key: val for key, val in before.items() if key != "line"}
+                                for before, now, delta in zip(previous_owner_sites, current_owner_sites, deltas)),
+                            "Phase 26 owned-return filename sites drifted")
+                if transfer_owned_sites is not None:
+                    previous_transfer_sites = owned_return_sites["current_sites"]
+                    deltas = transfer_owned_sites.get("line_deltas")
+                    require(transfer_owned_sites.get("contract_version") ==
+                            "phase26_1d_transfer_owned_filename_site_successor_v1" and
+                            transfer_owned_sites.get("previous_sites") == previous_transfer_sites and
+                            transfer_owned_sites.get("current_sites") == live_sites and
+                            transfer_owned_sites.get("partial_extra_or_substituted_site") == "rejected" and
                             isinstance(deltas, list) and len(deltas) == len(live_sites) == 3 and
                             all(now["line"] == before["line"] + delta and
                                 {key: val for key, val in now.items() if key != "line"} ==
                                 {key: val for key, val in before.items() if key != "line"}
-                                for before, now, delta in zip(previous_owner_sites, live_sites, deltas)),
-                            "Phase 26 owned-return filename sites drifted")
+                                for before, now, delta in zip(previous_transfer_sites, live_sites, deltas)),
+                            "Phase 26 owned-transfer filename sites drifted")
     require([row["selector"] for row in value["site_manifest"]] ==
             ["test_tcs_", "test_index_", "test_tcs_"],
             "selector order or completeness drifted")
