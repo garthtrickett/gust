@@ -48304,6 +48304,21 @@
             }
           },
           {
+            "path": "scripts/phase26_call_return_zero_registration.py",
+            "previous_digest": "a875a25205c102f2de2e6150d1be7a9245b4df1a8c2da01da73cc26dfef30f33",
+            "current_digest": "99481b44e3bdbd18bb20c07959de68b37710d7903e93439f689da2b4f21112e9",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            }
+          },
+          {
             "path": "scripts/phase26_reference_receiver_registration.py",
             "previous_digest": "391d1c7db00fcf430af28bd9b587bd15cc942715cf99245f52bdf003d8fad51e",
             "current_digest": "681ecd9285c600c4aead06aba994cc51ecdb88fa79ada0de234333658be16f92",

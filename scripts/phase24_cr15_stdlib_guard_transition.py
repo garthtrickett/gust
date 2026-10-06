@@ -3935,6 +3935,7 @@ def normalize_phase23_text_surfaces(
                     "compiler/typechecker.gst", "justfile",
                     "scripts/cranelift_test_levels.json",
                     "scripts/phase22_opening.py",
+                    "scripts/phase26_call_return_zero_registration.py",
                     "scripts/phase26_reference_receiver_registration.py"],
                 "Phase 26 owned-transfer text surface successor shape drifted")
         live = {row["path"]: row for row in rows}
