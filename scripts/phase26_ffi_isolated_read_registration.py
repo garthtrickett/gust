@@ -69,13 +69,22 @@ def main() -> None:
 
     from phase22_opening import scan_invocations
     invocation = record["phase22_invocation_successor"]
+    live_rows = [row for row in scan_invocations() if row["path"] == SCRIPT]
+    shift = activation["ffi_generic_isolated_call_increment"][
+        "legacy_unknown_host_successor"]["phase22_shifted_rows"][0]
+    require(shift == {"path": SCRIPT, "previous_line": 98,
+                      "current_line": 107} and len(live_rows) == 3,
+            "generic isolated read invocation successor drifted")
+    projected_rows = [dict(row, line=shift["previous_line"])
+                      if row["line"] == shift["current_line"] else row
+                      for row in live_rows]
     require(invocation.get("contract_version") ==
             "phase26_1d5_phase22_invocation_successor_v1" and
             invocation.get("previous_total") == 165 and
             invocation.get("current_total") == 168 and
             invocation.get("partial_extra_or_substituted_invocation") ==
             "rejected" and
-            [row for row in scan_invocations() if row["path"] == SCRIPT] ==
+            projected_rows ==
             invocation.get("added_rows"), "native invocation rows drifted")
     require(record["production_audit_successor"] == {
         "contract_version": "phase26_1d5_production_audit_successor_v1",
@@ -141,7 +150,9 @@ def main() -> None:
             "printf '24\\n'" in guard and
             "--disassemble=gust_phase21_program_main" in guard and
             "os_Arena_Free" in guard and
-            "missing_repr order packed nested enum unknown_host write_host" in guard,
+            "missing_repr order packed nested enum unknown_host write_host" in guard and
+            "decision=supported capability=phase13_generic_source_to_mir" in guard and
+            "if test \"$case_name\" = unknown_host" in guard,
             "required native behavior or no-fallback guard weakened")
     print(f"{GUARD}: registration ok")
 

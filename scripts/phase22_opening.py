@@ -284,6 +284,37 @@ def scan_summary(rows: list[dict[str, object]]) -> dict[str, object]:
 def phase22_relay_inventory_rows(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep Phase 22's closed relay identity while validating exact successors."""
+    activation = registry.get("phase26_activation_audit", {})
+    host_successor = activation.get("ffi_generic_isolated_call_increment", {}).get(
+        "legacy_unknown_host_successor", {})
+    for shift in host_successor.get("phase22_shifted_rows", []):
+        path = shift["path"]
+        prior_increment = ("ffi_isolated_read_increment" if path.endswith("read.sh")
+                           else "ffi_isolated_write_increment")
+        prior = activation[prior_increment]["phase22_invocation_successor"]["added_rows"]
+        old = [row for row in prior if row["line"] == shift["previous_line"]]
+        current = [row for row in rows if row["path"] == path and
+                   row["line"] == shift["current_line"]]
+        require(len(old) == len(current) == 1 and
+                {key: value for key, value in old[0].items() if key != "line"} ==
+                {key: value for key, value in current[0].items() if key != "line"},
+                "Phase 26 generic isolated legacy host invocation shift drifted")
+        rows = [old[0] if row == current[0] else row for row in rows]
+    generic = registry.get("phase26_activation_audit", {}).get(
+        "ffi_generic_isolated_call_increment", {}).get("phase22_invocation_successor")
+    if generic is not None:
+        added = generic.get("added_rows")
+        path = "scripts/phase26_ffi_generic_isolated.sh"
+        require(generic.get("contract_version") ==
+                "phase26_1d_generic_isolated_phase22_invocation_successor_v1" and
+                generic.get("previous_total") == 244 and
+                generic.get("current_total") == 246 and
+                generic.get("partial_extra_or_substituted_invocation") == "rejected" and
+                len(rows) == 246 and isinstance(added, list) and len(added) == 2 and
+                [row for row in rows if row.get("path") == path] == added and
+                all(row.get("selection") == "explicit_cranelift" for row in added),
+                "Phase 26 generic-isolated invocation rows drifted")
+        rows = [row for row in rows if row not in added]
     transfer = registry.get("phase26_activation_audit", {}).get(
         "ffi_transfer_owned_increment", {}).get("phase22_invocation_successor")
     if transfer is not None:

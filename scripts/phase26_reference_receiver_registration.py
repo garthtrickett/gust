@@ -4,6 +4,7 @@
 import json
 import hashlib
 from pathlib import Path
+from phase26_ffi_generic_isolated_registration import before_generic_isolated_digest
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -514,7 +515,7 @@ def main() -> None:
         repr_int = repr_int_by_path.get(path)
         owned = owned_by_path.get(path)
         transfer = transfer_by_path.get(path)
-        current_digest = digest(path)
+        current_digest = before_generic_isolated_digest(activation, path, digest(path))
         if transfer:
             require(transfer["current_digest"] == current_digest,
                     f"Phase 26.1D owned-transfer text surface drifted: {path}")
@@ -580,7 +581,8 @@ def main() -> None:
     registration_repr_int = repr_int_by_path.get(registration_path)
     registration_owned = owned_by_path.get(registration_path)
     registration_transfer = transfer_by_path.get(registration_path)
-    registration_current_digest = digest(registration_path)
+    registration_current_digest = before_generic_isolated_digest(
+        activation, registration_path, digest(registration_path))
     if registration_transfer:
         require(registration_transfer["current_digest"] ==
                 registration_current_digest,
