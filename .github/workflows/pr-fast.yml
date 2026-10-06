@@ -822,6 +822,9 @@ jobs:
       - name: Phase 26 owned native argument transfer
         run: just guard-cranelift-phase26-ffi-transfer-owned
 
+      - name: Phase 26 generic isolated C pointer call
+        run: just guard-cranelift-phase26-ffi-generic-isolated
+
       - name: Phase 26 raw cast provenance
         run: just guard-cranelift-phase26-raw-cast-provenance
 

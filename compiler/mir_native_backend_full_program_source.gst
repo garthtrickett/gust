@@ -42,6 +42,7 @@ type MirNativeFullProgramNode[ctx] struct {
     second_text_operand: str,
     integer_operand: int,
     second_integer_operand: int,
+    isolated_call_plan: str,
     source_line: int,
     source_column: int,
     source_start_offset: int,
@@ -186,6 +187,130 @@ func mir_native_full_program_type_is_initial_scalar(value_type: ast.Type[ctx], e
     return 0;
 }
 
+// The source of truth for an isolated Call's flat C copy is the verified
+// signature, the registered struct declaration order, and the selected target.
+// This returns the entire tagged canonical-row suffix. An empty result is a
+// fail-closed source decision, never a request for the worker to guess layout.
+func mir_native_full_program_generic_isolated_plan(sig: typechecker.FunctionSignature[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
+    mut target := primitive_layout.mir_primitive_layout_target(os.NativeTargetTriple(ctx), ctx);
+    if target.found == 0 ||
+       std.str_eq(target.target.target_triple, "x86_64-unknown-linux-gnu") == 0 ||
+       std.str_eq(os.NativeObjectFormat(ctx), "Elf") == 0 ||
+       target.target.pointer_size != 8 || target.target.i32_alignment != 4 ||
+       sig.ffi_contract_verified != 1 || sig.is_extern != 1 ||
+       sig.requires_sandbox_arena != 1 ||
+       std.str_eq(sig.ffi_return_policy, "value") == 0 ||
+       sig.ffi_param_policies == empty[Index[std.Vector[str, ctx], ctx]] {
+        return "";
+    }
+    if sig.return_type.tag != 0 && sig.return_type.tag != 1 &&
+       sig.return_type.tag != 2 && sig.return_type.tag != 3 { return ""; }
+    mut policies: std.Vector[str, ctx] := ctx[sig.ffi_param_policies];
+    if len(policies) != len(sig.params) { return ""; }
+    mut plan := "|isolated_call.v1|";
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex(target.target.target_triple, ctx));
+    plan = std.Concat(plan, "|");
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex("single_call_arena", ctx));
+    mut position_rows := "";
+    mut count := 0;
+    mut index := 0;
+    while index < len(policies) {
+        mut direction := "";
+        if std.str_eq(policies[index], "borrow_read_isolated_call") == 1 {
+            direction = "read";
+        } else if std.str_eq(policies[index], "borrow_write_isolated_call") == 1 {
+            direction = "write";
+        }
+        if len(direction) > 0 {
+            mut pointer := typechecker.env_resolve_type(env, sig.params[index], ctx);
+            unsafe {
+                if (std.str_eq(direction, "read") == 1 && pointer.tag != 11) ||
+                   (std.str_eq(direction, "write") == 1 && pointer.tag != 9) {
+                    return "";
+                }
+                mut inner := pointer;
+                if pointer.tag == 11 {
+                    if pointer.Reference.brand != empty[Index[str, ctx]] { return ""; }
+                    inner = typechecker.env_resolve_type(env, ctx[pointer.Reference.inner], ctx);
+                } else {
+                    inner = typechecker.env_resolve_type(env, ctx[pointer.RawPointer.inner], ctx);
+                }
+                if inner.tag != 8 || inner.Struct.brand != empty[Index[str, ctx]] { return ""; }
+                mut name := inner.Struct.struct_name;
+                guard layout := (*env).struct_registry.Get(name) else { return ""; };
+                guard repr := (*env).struct_layout_repr_c.Get(name) else { return ""; };
+                guard packed := (*env).struct_layout_packed.Get(name) else { return ""; };
+                guard abi := (*env).struct_layout_abi.Get(name) else { return ""; };
+                if repr != 1 || (packed != 0 && packed != 1) ||
+                   std.str_eq(abi, "C") == 0 { return ""; }
+                mut fields := typechecker.typechecker_get_sorted_keys_type(&layout.fields, ctx);
+                if len(fields) == 0 || len(fields) > 32 { return ""; }
+                mut size := 0;
+                mut alignment := 1;
+                mut field_index := 0;
+                while field_index < len(fields) {
+                    mut key := std.Concat(name, ".");
+                    key = std.Concat(key, fields[field_index]);
+                    guard order := (*env).struct_field_declaration_orders.Get(key) else { return ""; };
+                    if order != field_index { return ""; }
+                    guard field_type := layout.fields.Get(fields[field_index]) else { return ""; };
+                    mut resolved := typechecker.env_resolve_type(env, field_type, ctx);
+                    mut field_size := 1;
+                    mut field_alignment := 1;
+                    if resolved.tag == 0 {
+                        field_size = 4;
+                        field_alignment = target.target.i32_alignment;
+                    } else if resolved.tag != 1 && resolved.tag != 2 {
+                        return "";
+                    }
+                    if packed == 1 { field_alignment = 1; }
+                    mut remainder := size - (size / field_alignment) * field_alignment;
+                    if remainder != 0 { size = size + field_alignment - remainder; }
+                    size = size + field_size;
+                    if field_alignment > alignment { alignment = field_alignment; }
+                    field_index = field_index + 1;
+                }
+                mut tail := size - (size / alignment) * alignment;
+                if tail != 0 { size = size + alignment - tail; }
+                if size <= 0 || size > 4096 ||
+                   alignment > target.target.max_aggregate_alignment { return ""; }
+                position_rows = std.Concat(position_rows, "|");
+                position_rows = std.Concat(position_rows, std.FormatInt(index));
+                position_rows = std.Concat(position_rows, "|");
+                position_rows = std.Concat(position_rows, mir_native_full_program_utf8_hex(direction, ctx));
+                position_rows = std.Concat(position_rows, "|");
+                position_rows = std.Concat(position_rows, mir_native_full_program_utf8_hex(
+                    mir_native_full_program_type_identity(inner, env, ctx), ctx
+                ));
+                position_rows = std.Concat(position_rows, "|");
+                position_rows = std.Concat(position_rows, std.FormatInt(size));
+                position_rows = std.Concat(position_rows, "|");
+                position_rows = std.Concat(position_rows, std.FormatInt(alignment));
+                position_rows = std.Concat(position_rows, "|");
+                if std.str_eq(direction, "read") == 1 {
+                    position_rows = std.Concat(position_rows, mir_native_full_program_utf8_hex("direct_local_address", ctx));
+                } else {
+                    position_rows = std.Concat(position_rows, mir_native_full_program_utf8_hex("untrusted_raw_copyback", ctx));
+                }
+                count = count + 1;
+            }
+        } else {
+            mut ordinary := typechecker.env_resolve_type(env, sig.params[index], ctx);
+            unsafe {
+                if std.str_eq(policies[index], "value") == 0 { return ""; }
+                if ordinary.tag != 0 && ordinary.tag != 1 && ordinary.tag != 2 {
+                    return "";
+                }
+            }
+        }
+        index = index + 1;
+    }
+    if count == 0 { return ""; }
+    plan = std.Concat(plan, "|");
+    plan = std.Concat(plan, std.FormatInt(count));
+    return std.Clone(ctx, std.Concat(plan, position_rows));
+}
+
 // A borrowed C aggregate is admissible only when the existing native physical
 // layout is provably the same flat C layout on the selected target. Packed
 // fields use byte alignment and a separately approved unaligned host path.
@@ -203,11 +328,48 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
             unsafe {
                 if statement.tag == 3 && statement.FunctionDecl.is_extern == 1 {
                     mut parameters: std.Vector[ast.Parameter[ctx], ctx] := ctx[statement.FunctionDecl.params];
+                    mut isolated_count := 0;
+                    mut isolated_index := 0;
+                    while isolated_index < len(parameters) {
+                        if std.str_eq(parameters[isolated_index].ffi_policy, "borrow_read_isolated_call") == 1 ||
+                           std.str_eq(parameters[isolated_index].ffi_policy, "borrow_write_isolated_call") == 1 {
+                            isolated_count = isolated_count + 1;
+                        }
+                        isolated_index = isolated_index + 1;
+                    }
+                    mut generic_isolated := 0;
+                    if isolated_count > 0 {
+                        mut host_symbol := statement.FunctionDecl.extern_symbol_name;
+                        if len(host_symbol) == 0 { host_symbol = statement.FunctionDecl.name; }
+                        mut legacy_isolated := len(parameters) == 1 &&
+                            (std.str_eq(host_symbol, "tiny_host_read_repr_c_probe") == 1 ||
+                             std.str_eq(host_symbol, "tiny_host_read_packed_probe") == 1 ||
+                             std.str_eq(host_symbol, "tiny_host_write_repr_c_probe") == 1 ||
+                             std.str_eq(host_symbol, "tiny_host_write_packed_probe") == 1);
+                        if legacy_isolated == false {
+                            mut key := mir_native_full_program_qualified_name(
+                                module_prefixes[module_index], statement.FunctionDecl.name, ctx
+                            );
+                            guard signature := (*env).function_registry.Get(key) else {
+                                return "Native FFI isolated declaration lacks a verified signature";
+                            };
+                            if len(mir_native_full_program_generic_isolated_plan(signature, env, ctx)) == 0 {
+                                return "Native FFI isolated declaration lacks a supported target C layout";
+                            }
+                            generic_isolated = 1;
+                        }
+                    }
                     mut repr_int_parameter_name := "";
                     mut parameter_index := 0;
                     while parameter_index < len(parameters) {
                         mut parameter := parameters[parameter_index];
                         mut resolved := typechecker.env_resolve_type(env, parameter.param_type, ctx);
+                        if generic_isolated == 1 &&
+                           (std.str_eq(parameter.ffi_policy, "borrow_read_isolated_call") == 1 ||
+                            std.str_eq(parameter.ffi_policy, "borrow_write_isolated_call") == 1) {
+                            parameter_index = parameter_index + 1;
+                            continue;
+                        }
                         if resolved.tag == 8 {
                             mut repr_int_lookup := (*env).enum_repr_int.Get(resolved.Struct.struct_name);
                             if repr_int_lookup.Ok {
@@ -598,6 +760,7 @@ func mir_native_full_program_make_node(kind: str, type_identity: str, text_opera
     node.second_text_operand = std.Clone(ctx, second_text_operand);
     node.integer_operand = integer_operand;
     node.second_integer_operand = second_integer_operand;
+    node.isolated_call_plan = "";
     node.source_line = source_line;
     node.source_column = source_column;
     node.source_start_offset = source_start_offset;
@@ -823,12 +986,30 @@ func mir_native_full_program_flatten_expression(expression_index: Index[ast.Expr
                    selected_isolated_signature.requires_sandbox_arena == 1 {
                     mut isolated_policies: std.Vector[str, ctx] :=
                         ctx[selected_isolated_signature.ffi_param_policies];
-                    if len(isolated_policies) == 1 {
-                        if std.str_eq(isolated_policies[0], "borrow_read_isolated_call") == 1 {
-                            node.second_integer_operand = 1;
-                        } else if std.str_eq(isolated_policies[0], "borrow_write_isolated_call") == 1 {
-                            node.second_integer_operand = 2;
-                        }
+                    mut isolated_symbol := selected_isolated_signature.extern_symbol_name;
+                    if len(isolated_symbol) == 0 { isolated_symbol = raw_callee; }
+                    mut legacy_read := len(isolated_policies) == 1 &&
+                        std.str_eq(isolated_policies[0], "borrow_read_isolated_call") == 1 &&
+                        (std.str_eq(isolated_symbol,
+                            "tiny_host_read_repr_c_probe") == 1 ||
+                         std.str_eq(isolated_symbol,
+                            "tiny_host_read_packed_probe") == 1);
+                    mut legacy_write := len(isolated_policies) == 1 &&
+                        std.str_eq(isolated_policies[0], "borrow_write_isolated_call") == 1 &&
+                        (std.str_eq(isolated_symbol,
+                            "tiny_host_write_repr_c_probe") == 1 ||
+                         std.str_eq(isolated_symbol,
+                            "tiny_host_write_packed_probe") == 1);
+                    if legacy_read {
+                        node.second_integer_operand = 1;
+                    } else if legacy_write {
+                        node.second_integer_operand = 2;
+                    } else {
+                        node.second_integer_operand = 3;
+                        node.isolated_call_plan = mir_native_full_program_generic_isolated_plan(
+                            selected_isolated_signature, env, ctx
+                        );
+                        if len(node.isolated_call_plan) == 0 { return 0 - 1; }
                     }
                 }
             }
@@ -915,6 +1096,23 @@ func mir_native_full_program_flatten_expression(expression_index: Index[ast.Expr
             node = mir_native_full_program_node_with_child(node, callee, ctx);
             mut arguments: std.Vector[ast.Expression[ctx], ctx] :=
                 ctx[expression.Call.arguments];
+            if node.second_integer_operand == 3 {
+                guard selected_signature := (*env).function_registry.Get(node.second_text_operand) else {
+                    return 0 - 1;
+                };
+                mut selected_policies: std.Vector[str, ctx] :=
+                    ctx[selected_signature.ffi_param_policies];
+                if len(arguments) != len(selected_policies) { return 0 - 1; }
+                mut read_index := 0;
+                while read_index < len(arguments) {
+                    if std.str_eq(selected_policies[read_index], "borrow_read_isolated_call") == 1 {
+                        if arguments[read_index].tag != 6 { return 0 - 1; }
+                        mut borrowed := ctx[arguments[read_index].AddressOf.expr];
+                        if borrowed.tag != 0 { return 0 - 1; }
+                    }
+                    read_index = read_index + 1;
+                }
+            }
             mut argument_index := 0;
             while argument_index < len(arguments) {
                 mut argument_arena_index: Index[ast.Expression[ctx], ctx] :=
@@ -2412,6 +2610,7 @@ func mir_native_full_program_serialize_node_row(node_index: int, node: MirNative
         );
         child_index = child_index + 1;
     }
+    row = std.Concat(row, node.isolated_call_plan);
     row = std.Concat(row, "\n");
     return std.Clone(ctx, row);
 }
@@ -2559,6 +2758,7 @@ func mir_native_full_program_serialize_model(model: MirNativeFullProgramModel[ct
                 mir_native_full_program_integer_width(children[child_index]);
             child_index = child_index + 1;
         }
+        total_size = total_size + len(node.isolated_call_plan);
         node_index = node_index + 1;
     }
     total_size = total_size + len("entry_function_index: ") +
@@ -2824,6 +3024,7 @@ func mir_native_full_program_serialize_model(model: MirNativeFullProgramModel[ct
                 );
                 child_index = child_index + 1;
             }
+            cursor = mir_native_full_program_write_text(destination, cursor, node.isolated_call_plan);
             cursor = mir_native_full_program_write_text(destination, cursor, "\n");
             node_index = node_index + 1;
         }

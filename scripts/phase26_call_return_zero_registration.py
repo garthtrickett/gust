@@ -7,6 +7,7 @@ import hashlib
 import json
 from functools import lru_cache
 from pathlib import Path
+from phase26_ffi_generic_isolated_registration import before_generic_isolated_digest
 
 ROOT = Path(__file__).resolve().parent.parent
 GUARD = "guard-cranelift-phase26-call-return-zero-evidence"
@@ -66,6 +67,10 @@ def owned_return_changed_rows() -> dict[str, dict]:
 def digest(path: str) -> str:
     """Project a later enum text successor to the direct-return snapshot."""
     live = raw_digest(path)
+    registry = json.loads((ROOT / "scripts/cranelift_feature_registry.json")
+                          .read_text(encoding="utf-8"))
+    live = before_generic_isolated_digest(registry["phase26_activation_audit"],
+                                          path, live)
     transfer = transfer_owned_changed_rows().get(path)
     if transfer:
         require(transfer["current_digest"] == live and
@@ -326,6 +331,14 @@ def main() -> None:
         live_digest = raw_digest(row["path"])
         live_counts = {name: len(pattern.findall(text))
                        for name, pattern in SURFACE_PATTERNS.items()}
+        generic_successor = {entry["path"]: entry for entry in activation.get(
+            "ffi_generic_isolated_call_increment", {}).get(
+                "phase23_text_surface_successor", {}).get("changed_rows", [])}.get(row["path"])
+        live_digest = before_generic_isolated_digest(activation, row["path"], live_digest)
+        if generic_successor:
+            require(generic_successor["current_match_counts"] == live_counts,
+                    f"generic isolation text counts drifted: {row['path']}")
+            live_counts = generic_successor["previous_match_counts"]
         transfer_successor = transfer_changed.get(row["path"])
         if transfer_successor:
             require(transfer_successor["current_digest"] == live_digest and
@@ -541,6 +554,7 @@ def main() -> None:
         successor = local_changed.get(row["path"])
         alias_successor = alias_changed.get(row["path"])
         live_digest = raw_digest(row["path"])
+        live_digest = before_generic_isolated_digest(activation, row["path"], live_digest)
         transfer_successor = transfer_changed.get(row["path"])
         if transfer_successor:
             require(transfer_successor["current_digest"] == live_digest and
@@ -3680,12 +3694,18 @@ def main() -> None:
         "current_digest": post_take_plain_record["positive_fixture_successor"]["previous_digest"],
     }, "consecutive plain-before-Take-cast positive evidence drifted")
     live_inventory = manifest_summary(source_sites())
+    generic_inventory = activation.get("ffi_generic_isolated_call_increment", {}).get(
+        "spelling_inventory_successor")
     repr_int_inventory = activation.get("ffi_repr_int_increment", {}).get(
         "spelling_inventory_successor")
     transfer_inventory = activation.get("ffi_transfer_owned_increment", {}).get(
         "spelling_inventory_successor")
     owned_inventory = activation.get("ffi_owned_return_increment", {}).get(
         "spelling_inventory_successor")
+    if generic_inventory:
+        require(generic_inventory["current_inventory_summary"] == live_inventory,
+                "generic isolation spelling inventory drifted")
+        live_inventory = generic_inventory["previous_inventory_summary"]
     if transfer_inventory:
         require(transfer_inventory["current_inventory_summary"] == live_inventory,
                 "owned-transfer spelling inventory drifted")

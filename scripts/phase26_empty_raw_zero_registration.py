@@ -33,6 +33,8 @@ def digest(path: str) -> str:
 def before_call_return_zero_digest(activation: dict, path: str,
                                    live_digest: str) -> str:
     """Project the later exact text-surface successor to this closed patch."""
+    from phase26_ffi_generic_isolated_registration import before_generic_isolated_digest
+    live_digest = before_generic_isolated_digest(activation, path, live_digest)
     transfer_rows = activation.get("ffi_transfer_owned_increment", {}).get(
         "phase23_text_surface_successor", {}).get("changed_rows", [])
     selected = [row for row in transfer_rows if row.get("path") == path]

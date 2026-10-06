@@ -279,6 +279,41 @@ the compiler build, native fixed-point bootstrap, registry projections,
 exact-head PR workflows, and resolved review threads are required before this
 increment merges; D, E, F, and Phase 26.1 remain open.
 
+**26.1D generic isolated-call plan (ownership authorized, 2026-10-06).**
+For an explicitly unsafe external call, canonical lowering may select several
+`borrow_read_isolated_call` and `borrow_write_isolated_call` positions in one
+versioned Call plan. Each selected position names its parameter index, direction,
+canonical aggregate type, target triple, byte size, and alignment. The compiler
+derives these from the verified external signature and target layout authority;
+the plan also names direct local-address provenance for reads, untrusted raw
+copy-back provenance for writes, and single-call-arena cleanup. The native
+worker checks these against the argument nodes, canonical signature, and layout
+rows before object emission. A single transient arena holds copies of all
+selected values for the duration of one native call. Read positions are copied
+in only; write positions are copied in and back before the arena is freed. The
+accepted native parameter ABI remains a pointer to the C-represented aggregate.
+The previous Call policy codes `0`, `1`, and `2` and their canonical row bytes
+retain their meanings; the new tagged plan has its own version and code. It
+does not permit retention, ordinary transfer, callback escape, or a trusted
+branded provenance for a native address.
+The first generic route supports an unbranded read borrowed directly from a
+local flat aggregate, an unsafe raw write pointer, and scalar value positions
+and result; other origins and positions remain explicit unsupported cases.
+
+**Exit gate:** Two independently named native hosts and distinct target-proven
+flat C aggregate layouts exercise multiple read and write positions, read
+immutability, write copy-back, real C pointer ABI, and exactly one arena free
+before Gust continuation on normal, return, guard, and defer paths. Source and
+canonical negatives reject an unsupported target or aggregate shape, bad
+direction/count/index/type/size/alignment/provenance, missing or forged policy,
+truncated or unknown plan version, and an attempted native-retention route
+before driver discovery. Legacy Call codes `0`/`1`/`2` retain their existing
+positive and negative evidence. The stable-tree focused and adjacent guards,
+compiler build, native fixed-point bootstrap, registry projections, exact-head
+PR workflows, and resolved review threads must pass before merge. Native
+unwinding, longjmp, and process termination are outside the cleanup claim;
+D, E, F, and Phase 26.1 remain open.
+
 Use a transient isolated arena for memory handed to native code and destroy it
 on return. *Isolated* is deliberately narrower than *sandboxed*: this bounds
 memory lifetime and spread but cannot prevent native code from accessing process

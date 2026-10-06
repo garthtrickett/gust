@@ -510,6 +510,27 @@ def validate() -> tuple[dict, list[dict], dict]:
         "ffi_owned_return_increment", {}).get("spelling_inventory_successor")
     transfer_owned_successor = registry.get("phase26_activation_audit", {}).get(
         "ffi_transfer_owned_increment", {}).get("spelling_inventory_successor")
+    generic_isolated_successor = registry.get("phase26_activation_audit", {}).get(
+        "ffi_generic_isolated_call_increment", {}).get("spelling_inventory_successor")
+    live_summary = summary
+    if generic_isolated_successor is not None:
+        previous = transfer_owned_successor["current_inventory_summary"]
+        require(generic_isolated_successor.get("contract_version") ==
+                "phase26_1d_generic_isolated_spelling_inventory_successor_v1" and
+                generic_isolated_successor.get("previous_inventory_summary") == previous and
+                generic_isolated_successor.get("current_inventory_summary") == live_summary and
+                generic_isolated_successor.get("changed_source_paths") == [
+                    "compiler/experiments/cranelift/src/full_program.rs",
+                    "compiler/mir_native_backend_full_program_source.gst",
+                    "compiler/phase26_ffi_generic_isolated_source.gst"] and
+                generic_isolated_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and
+                live_summary["source_file_count"] == previous["source_file_count"] + 1 and
+                live_summary["semantic_site_count"] == previous["semantic_site_count"] + 3 and
+                live_summary["site_count"] == previous["site_count"] + 3 and
+                live_summary["unknown_site_count"] == 0,
+                "Phase 26 generic-isolated spelling inventory drifted")
+        summary = previous
     expected_summary = (summary if spelling_successor is None
                         else spelling_successor["previous_inventory_summary"])
     require(value.get("inventory_summary") == expected_summary,
@@ -2450,7 +2471,7 @@ def validate() -> tuple[dict, list[dict], dict]:
         "edits_stdlib": False,
         "begins_patch24_3": False,
     }, "report-only boundary drifted")
-    return value, rows, summary
+    return value, rows, live_summary
 
 def run_falsifiers(rows: list[dict], summary: dict) -> None:
     require(len(rows) > 1, "falsifiers require multiple rows")

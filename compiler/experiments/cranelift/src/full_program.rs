@@ -71,11 +71,29 @@ pub struct Node {
     pub second_text: String,
     pub integer: i32,
     pub second_integer: i32,
+    pub isolated_call_plan: Option<IsolatedCallPlan>,
     pub source_line: usize,
     pub source_column: usize,
     pub source_start: usize,
     pub source_end: usize,
     pub children: Vec<usize>,
+}
+
+#[derive(Debug, Clone)]
+pub struct IsolatedPosition {
+    pub index: usize,
+    pub direction: String,
+    pub aggregate_type: String,
+    pub size: u32,
+    pub align: u32,
+    pub provenance: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct IsolatedCallPlan {
+    pub target_triple: String,
+    pub cleanup: String,
+    pub positions: Vec<IsolatedPosition>,
 }
 
 #[derive(Debug)]
@@ -544,6 +562,148 @@ impl<'a> LayoutEngine<'a> {
             fields,
         })
     }
+}
+
+fn isolated_position_layout(
+    program: &Program,
+    layouts: &mut LayoutEngine<'_>,
+    parameter_type: &str,
+    policy: &str,
+) -> Result<(String, TypeLayout), Box<dyn Error>> {
+    let read = policy == "borrow_read_isolated_call";
+    let write = policy == "borrow_write_isolated_call";
+    if !(read && parameter_type.starts_with("Reference(") && parameter_type.ends_with(", None)"))
+        && !(write && parameter_type.starts_with("RawPointer(")) {
+        return Err(invalid("isolated FFI position has the wrong pointer kind or brand"));
+    }
+    let aggregate_type = pointer_inner_type(parameter_type)
+        .ok_or_else(|| invalid("isolated FFI position has no aggregate pointee"))?;
+    if !aggregate_type.ends_with(", None)") {
+        return Err(invalid("isolated FFI position has a branded aggregate"));
+    }
+    let name = struct_type_name(aggregate_type)
+        .ok_or_else(|| invalid("isolated FFI position has no struct identity"))?;
+    let declaration = program.layouts.iter().find(|layout|
+        layout.erased_name == name && layout.brand.is_empty())
+        .ok_or_else(|| invalid("isolated FFI aggregate lacks an unbranded layout"))?;
+    if !declaration.repr_c || declaration.abi != "C" ||
+        declaration.fields.is_empty() || declaration.fields.len() > 32 ||
+        declaration.fields.iter().any(|field|
+            !matches!(field.ty.as_str(), "Int" | "Byte" | "Bool")) {
+        return Err(invalid("isolated FFI aggregate lacks a flat C scalar layout"));
+    }
+    let layout = layouts.layout(aggregate_type)?;
+    if layout.size == 0 || layout.size > 4096 || layout.align > 16 {
+        return Err(invalid("isolated FFI aggregate size or alignment is unsupported"));
+    }
+    Ok((aggregate_type.to_string(), layout))
+}
+
+fn validate_isolated_call_plans(program: &Program) -> Result<(), Box<dyn Error>> {
+    let mut layouts = LayoutEngine::new(program, 8);
+    let functions: HashMap<_, _> = program.functions.iter()
+        .map(|function| (function.qualified_name.as_str(), function))
+        .collect();
+    for function in &program.functions {
+        let Some(contract) = &function.ffi_contract else { continue; };
+        let has_isolated = contract.parameter_policies.iter().any(|policy|
+            policy == "borrow_read_isolated_call" || policy == "borrow_write_isolated_call");
+        let legacy_isolated = function.parameters.len() == 1 && matches!(
+            function.extern_symbol.as_str(),
+            "tiny_host_read_repr_c_probe" | "tiny_host_read_packed_probe" |
+            "tiny_host_write_repr_c_probe" | "tiny_host_write_packed_probe");
+        if has_isolated && !legacy_isolated {
+            if !function.is_extern || contract.result_policy != "value" ||
+                !matches!(function.result_type.as_str(), "Void" | "Int" | "Byte" | "Bool") ||
+                function.parameters.len() != contract.parameter_policies.len() {
+                return Err(invalid("isolated FFI extern has an unsupported result or contract"));
+            }
+            for (index, policy) in contract.parameter_policies.iter().enumerate() {
+                if policy != "borrow_read_isolated_call" &&
+                    policy != "borrow_write_isolated_call" &&
+                    (policy != "value" || !matches!(function.parameters[index].1.as_str(),
+                        "Int" | "Byte" | "Bool")) {
+                    return Err(invalid("isolated FFI nonselected position is unsupported"));
+                }
+            }
+        }
+        for (index, policy) in contract.parameter_policies.iter().enumerate() {
+            if policy == "borrow_read_isolated_call" || policy == "borrow_write_isolated_call" {
+                if program.target_triple != "x86_64-unknown-linux-gnu" ||
+                    program.object_format != "Elf" {
+                    return Err(invalid("isolated FFI target ABI is unsupported"));
+                }
+                isolated_position_layout(program, &mut layouts,
+                    &function.parameters[index].1, policy)?;
+            }
+        }
+    }
+    for node in &program.nodes {
+        if node.kind != "Call" { continue; }
+        let function = functions.get(node.second_text.as_str()).copied();
+        let isolated: Vec<_> = function.and_then(|function| function.ffi_contract.as_ref())
+            .map(|contract| contract.parameter_policies.iter().enumerate()
+                .filter(|(_, policy)| *policy == "borrow_read_isolated_call" ||
+                    *policy == "borrow_write_isolated_call")
+                .collect())
+            .unwrap_or_default();
+        if node.second_integer != 3 {
+            if !isolated.is_empty() && node.second_integer == 0 {
+                return Err(invalid("isolated FFI Call is missing its canonical plan"));
+            }
+            if !isolated.is_empty() && matches!(node.second_integer, 1 | 2) {
+                let function = function.ok_or_else(|| invalid("isolated FFI Call has no extern"))?;
+                let permitted = match node.second_integer {
+                    1 => ["tiny_host_read_repr_c_probe", "tiny_host_read_packed_probe"],
+                    _ => ["tiny_host_write_repr_c_probe", "tiny_host_write_packed_probe"],
+                };
+                if isolated.len() != 1 || isolated[0].0 != 0 ||
+                    !permitted.contains(&function.extern_symbol.as_str()) {
+                    return Err(invalid("legacy isolated FFI Call has a mismatched contract"));
+                }
+            }
+            continue;
+        }
+        let function = function.ok_or_else(|| invalid("isolated FFI Call has no extern"))?;
+        if !function.is_extern || function.parameters.len() + 1 != node.children.len() ||
+            isolated.is_empty() {
+            return Err(invalid("isolated FFI Call has no matching external positions"));
+        }
+        let plan = node.isolated_call_plan.as_ref()
+            .ok_or_else(|| invalid("isolated FFI Call has no versioned plan"))?;
+        if plan.target_triple != program.target_triple ||
+            plan.cleanup != "single_call_arena" ||
+            plan.positions.len() != isolated.len() {
+            return Err(invalid("isolated FFI Call target, cleanup, or position count disagrees"));
+        }
+        for (position, (index, policy)) in plan.positions.iter().zip(isolated) {
+            let expected_direction = if policy == "borrow_read_isolated_call" {
+                "read"
+            } else { "write" };
+            if position.index != index || position.direction != expected_direction ||
+                program.nodes[node.children[index + 1]].ty != function.parameters[index].1 {
+                return Err(invalid("isolated FFI Call position, direction, or argument type disagrees"));
+            }
+            let (aggregate_type, layout) = isolated_position_layout(
+                program, &mut layouts, &function.parameters[index].1, policy)?;
+            if position.aggregate_type != aggregate_type || position.size != layout.size ||
+                position.align != layout.align {
+                return Err(invalid("isolated FFI Call canonical target layout disagrees"));
+            }
+            let argument = &program.nodes[node.children[index + 1]];
+            if expected_direction == "read" {
+                if position.provenance != "direct_local_address" ||
+                    argument.kind != "AddressOf" || argument.children.len() != 1 ||
+                    program.nodes[argument.children[0]].kind != "LocalRead" ||
+                    program.nodes[argument.children[0]].ty != aggregate_type {
+                    return Err(invalid("isolated FFI read lacks direct local address provenance"));
+                }
+            } else if position.provenance != "untrusted_raw_copyback" {
+                return Err(invalid("isolated FFI write lacks untrusted raw provenance"));
+            }
+        }
+    }
+    Ok(())
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -1168,7 +1328,9 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             return Err(invalid("full-program node rows are not contiguous"));
         }
         let child_count = parse_usize(values[11], "node child count")?;
-        if values.len() != 12 + child_count {
+        let child_end = 12usize.checked_add(child_count)
+            .ok_or_else(|| invalid("full-program node child count overflows row"))?;
+        if values.len() < child_end {
             return Err(invalid("full-program node child count disagrees with row"));
         }
         let kind = decode_hex(values[1], "node kind")?;
@@ -1179,7 +1341,7 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
         if kind != "EnumPayloadBinding" {
             validate_type(&ty, "node type")?;
         }
-        let children: Vec<_> = values[12..]
+        let children: Vec<_> = values[12..child_end]
             .iter()
             .map(|value| parse_usize(value, "node child"))
             .collect::<Result<_, _>>()?;
@@ -1225,9 +1387,38 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             return Err(invalid("full-program node source range is inverted"));
         }
         let second_integer = parse_i32(values[6], "node second integer")?;
-        if kind == "Call" && !matches!(second_integer, 0 | 1 | 2) {
-            return Err(invalid("full-program Call has an unknown optional policy"));
-        }
+        let isolated_call_plan = if kind == "Call" && second_integer == 3 {
+            if values.get(child_end) != Some(&"isolated_call.v1") ||
+                values.len() < child_end + 4 {
+                return Err(invalid("full-program Call isolation plan version is missing or unknown"));
+            }
+            let target_triple = decode_hex(values[child_end + 1], "Call isolation target")?;
+            let cleanup = decode_hex(values[child_end + 2], "Call isolation cleanup")?;
+            let count = parse_usize(values[child_end + 3], "Call isolation position count")?;
+            if count == 0 || count > child_count.saturating_sub(1) ||
+                count > (values.len() - child_end - 4) / 6 ||
+                values.len() != child_end + 4 + count * 6 {
+                return Err(invalid("full-program Call isolation position count disagrees with row"));
+            }
+            let mut positions = Vec::with_capacity(count);
+            for position in 0..count {
+                let base = child_end + 4 + position * 6;
+                positions.push(IsolatedPosition {
+                    index: parse_usize(values[base], "Call isolation parameter index")?,
+                    direction: decode_hex(values[base + 1], "Call isolation direction")?,
+                    aggregate_type: decode_hex(values[base + 2], "Call isolation aggregate type")?,
+                    size: parse_u32(values[base + 3], "Call isolation byte size")?,
+                    align: parse_u32(values[base + 4], "Call isolation alignment")?,
+                    provenance: decode_hex(values[base + 5], "Call isolation provenance")?,
+                });
+            }
+            Some(IsolatedCallPlan { target_triple, cleanup, positions })
+        } else {
+            if values.len() != child_end || kind == "Call" && !matches!(second_integer, 0 | 1 | 2) {
+                return Err(invalid("full-program Call has an unknown optional policy or node extension"));
+            }
+            None
+        };
         nodes.push(Node {
             kind,
             ty,
@@ -1235,6 +1426,7 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             second_text: decode_hex(values[4], "node second text")?,
             integer: parse_i32(values[5], "node integer")?,
             second_integer,
+            isolated_call_plan,
             source_line,
             source_column,
             source_start,
@@ -1360,7 +1552,7 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
         }
     }
 
-    Ok(Program {
+    let program = Program {
         target_triple,
         object_format,
         modules,
@@ -1369,7 +1561,9 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
         functions,
         nodes,
         entry_function,
-    })
+    };
+    validate_isolated_call_plans(&program)?;
+    Ok(program)
 }
 
 #[derive(Clone)]
@@ -2925,7 +3119,81 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         if node.second_integer == 2 {
             return self.lower_isolated_write_call(builder, node, &callable, &arguments);
         }
+        if node.second_integer == 3 {
+            return self.lower_generic_isolated_call(builder, node, &callable, &arguments);
+        }
         self.emit_call(builder, &callable, &arguments)
+    }
+
+    fn lower_generic_isolated_call(
+        &mut self,
+        builder: &mut FunctionBuilder<'_>,
+        node: &Node,
+        callable: &Callable,
+        arguments: &[(usize, String)],
+    ) -> Result<Evaluated, Box<dyn Error>> {
+        let plan = node.isolated_call_plan.as_ref()
+            .ok_or_else(|| invalid("isolated FFI Call lost its validated canonical plan"))?;
+        if arguments.len() != callable.parameters.len() ||
+            !matches!(callable.abi.result, AbiShape::Void | AbiShape::Scalar(_)) ||
+            callable.abi.parameters.iter().any(|shape| !matches!(shape, AbiShape::Scalar(_))) {
+            return Err(invalid("isolated FFI Call has an unsupported native ABI"));
+        }
+
+        // Evaluate every source argument before acquiring transient native
+        // storage. A Gust guard/return during argument evaluation therefore
+        // never owns an arena that needs cleanup.
+        let mut values = Vec::with_capacity(arguments.len());
+        for (index, (child, argument_type)) in arguments.iter().enumerate() {
+            let evaluated = self.lower_expression(builder, *child, Some(argument_type))?;
+            let value = self.scalar(builder, evaluated, argument_type)?;
+            let AbiShape::Scalar(expected) = callable.abi.parameters[index] else {
+                return Err(invalid("isolated FFI position is not a scalar pointer ABI"));
+            };
+            let actual = builder.func.dfg.value_type(value);
+            values.push(if actual == expected { value }
+                else if actual.bits() < expected.bits() { builder.ins().uextend(expected, value) }
+                else { builder.ins().ireduce(expected, value) });
+        }
+
+        let arena_eval = self.lower_arena_new(builder)?;
+        let arena = self.arena_address(builder, arena_eval, "Arena")?;
+        let allocate = self.runtime.get("os_ArenaAlloc")
+            .ok_or_else(|| invalid("isolated FFI arena allocator missing"))?;
+        let allocate_ref = self.module.declare_func_in_func(allocate.id, builder.func);
+        let mut copy_backs = Vec::new();
+        for position in &plan.positions {
+            let source = values[position.index];
+            let size = builder.ins().iconst(types::I64, i64::from(position.size));
+            let offset_call = builder.ins().call(allocate_ref, &[arena, size]);
+            let offset = builder.inst_results(offset_call)[0];
+            let base = builder.ins().load(self.pointer_type(), MemFlags::trusted(), arena, 0);
+            let offset = builder.ins().uextend(self.pointer_type(), offset);
+            let copy = builder.ins().iadd(base, offset);
+            self.copy_place(builder, Place { address: copy }, Place { address: source },
+                position.size)?;
+            values[position.index] = copy;
+            if position.direction == "write" {
+                copy_backs.push((source, copy, position.size));
+            }
+        }
+        let native_ref = self.module.declare_func_in_func(callable.id, builder.func);
+        let native_call = builder.ins().call(native_ref, &values);
+        let native_result = builder.inst_results(native_call).first().copied();
+        for (destination, copy, size) in copy_backs {
+            self.copy_place(builder, Place { address: destination },
+                Place { address: copy }, size)?;
+        }
+        let free = self.runtime.get("os_Arena_Free")
+            .ok_or_else(|| invalid("isolated FFI arena destructor missing"))?;
+        let free_ref = self.module.declare_func_in_func(free.id, builder.func);
+        builder.ins().call(free_ref, &[arena]);
+        match callable.abi.result {
+            AbiShape::Void => Ok(Evaluated::Void),
+            AbiShape::Scalar(_) => Ok(Evaluated::Scalar(native_result
+                .ok_or_else(|| invalid("isolated FFI scalar native result is missing"))?)),
+            _ => Err(invalid("isolated FFI native result ABI is unsupported")),
+        }
     }
 
     fn lower_isolated_read_call(

@@ -6,6 +6,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+from phase26_ffi_generic_isolated_registration import before_generic_isolated_digest
 
 ROOT = Path(__file__).resolve().parent.parent
 GUARD = "guard-cranelift-phase26-ffi-packed-isolated-write"
@@ -123,6 +124,7 @@ def main() -> None:
             "text surface successor shape drifted")
     for row in surface["changed_rows"]:
         live_digest = digest(row["path"])
+        live_digest = before_generic_isolated_digest(activation, row["path"], live_digest)
         transfer_successor = transfer_changed.get(row["path"])
         if transfer_successor:
             require(transfer_successor["current_digest"] == live_digest and
@@ -147,6 +149,7 @@ def main() -> None:
                 f"changed text surface drifted: {row['path']}")
     for row in surface["added_rows"]:
         live_digest = digest(row["path"])
+        live_digest = before_generic_isolated_digest(activation, row["path"], live_digest)
         transfer_successor = transfer_changed.get(row["path"])
         if transfer_successor:
             require(transfer_successor["current_digest"] == live_digest and
