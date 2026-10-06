@@ -48165,7 +48165,7 @@
           {
             "path": "compiler/mir_native_backend_full_program_source.gst",
             "previous_digest": "5304b802afb9c9cc2705263b31b2cbeb807cac3230c587448755df72e423666a",
-            "current_digest": "2381e7a3427a180ce3e7ba6fe8f6fd5c6786bf999196018ec6499e0e7e3a3064",
+            "current_digest": "b48c93b143ff1f835526d652fc31187d3c532c78e11658e40f97b96febda241e",
             "previous_match_counts": {
               "explicit_backend_spelling": 0,
               "mir_to_c_name": 0,
@@ -48287,7 +48287,7 @@
           "source_file_count": 1808,
           "site_count": 1401,
           "semantic_site_count": 692,
-          "semantic_manifest_digest": "ed81faad25497cd99575927c51a2381ad65f63b831aab75228c6bdbe469b0a18",
+          "semantic_manifest_digest": "99316767ac60c2f048d1ac5808315fde4dc27980eada3ac91f278d485e5ccabc",
           "classification_counts": {
             "semantic_or_intrinsic_recognition": 692,
             "diagnostic": 10,
@@ -48300,12 +48300,12 @@
           "partition_manifest_digests": {
             "diagnostic": "bb57bde55c16219ac19fb613dd39fafe8fa86b9b7b25822726114f24d6d69c48",
             "serialization": "47cf827b52d783e60a08a2856040e7bebdb94590a27b7903d5301eb16fe1d508",
-            "mangling_or_generated_name": "1390a1687886eb4b1c7c609a2c6e04bf0779b44765597cc0c2737e6b2ee071a5",
+            "mangling_or_generated_name": "d7e7812c71bb3cb0568df83c0cec57ef5d28a5ba6e2142be658f0ccee9d6a086",
             "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
             "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
             "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
           },
-          "complete_manifest_digest": "76401c036ca28d1f58dd205bca6c49008aecd26f9ac6dddb252725d9da4ef34c",
+          "complete_manifest_digest": "9d0373bf835e3ecbb8b755a5c1fcf4499ac79a7c9784e4472416d07723608a9b",
           "unknown_site_count": 0
         },
         "changed_source_paths": [

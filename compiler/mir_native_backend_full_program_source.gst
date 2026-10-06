@@ -3087,12 +3087,15 @@ func mir_native_full_program_emit_bundle(model: MirNativeFullProgramModel[ctx], 
         "",
         "phase21_full_compiler.o",
         "gust.compiler_executable_mir.v1",
-        canonical,
+        "",
         0,
         0,
         0,
         ctx
     );
+    // The serializer already cloned canonical into ctx; retain that same arena
+    // value in the module instead of cloning the full payload a second time.
+    module.canonical_mir = canonical;
     // The strict full-program payload already owns every definition, import,
     // signature, and linkage. Repeating its 1,800+ symbol index in the outer
     // legacy bundle is redundant and makes the self-hosted concatenating
