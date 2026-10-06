@@ -48195,6 +48195,118 @@
         ],
         "partial_extra_or_substituted_site": "rejected"
       },
+      "phase23_text_surface_successor": {
+        "contract_version": "phase26_1d_transfer_owned_phase23_text_surface_successor_v1",
+        "changed_rows": [
+          {
+            "path": ".github/workflows/pr-fast.yml",
+            "previous_digest": "aac5db6cc222e27cb281bf9f4666b7a56f316441ab2d0fbd37c1347e747b3782",
+            "current_digest": "60a6dbfcfc7a052df4c5ab7f8092ce8724657f664df9cfaca824a4dce87f875d",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 8,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 8,
+              "generated_c_contract": 1
+            }
+          },
+          {
+            "path": "compiler/experiments/cranelift/src/full_program.rs",
+            "previous_digest": "237b1b8ec2c9e0d99cad14516bd3339fe5d574c630a984086704ecb34cafd1f5",
+            "current_digest": "0caa789c77060a3e9e278d8725c27d7e337abceba2f1b25786128b58d2e7a90e",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            }
+          },
+          {
+            "path": "compiler/mir_native_backend_full_program_source.gst",
+            "previous_digest": "a2be3411070ab3ae0679d60bc05bb0714cc037a0c854685fe1a3ebc5da919f3b",
+            "current_digest": "5304b802afb9c9cc2705263b31b2cbeb807cac3230c587448755df72e423666a",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            }
+          },
+          {
+            "path": "compiler/typechecker.gst",
+            "previous_digest": "5373724405166c760656292c9f123a67e65d890c528e7a25dc2b0fc0be505d18",
+            "current_digest": "848c70465cf96d929707ecd36c19780adb09fbdc97b0bcc61255332a369ddd02",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            }
+          },
+          {
+            "path": "justfile",
+            "previous_digest": "28444c7861eea2d8be70a25e98973e7bc3150af033bc69f9073be709b2a544d8",
+            "current_digest": "134bd84a06af5f58eca10242b211024ce39b64c16dfd28e2e146e9e0c0ca5910",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 729,
+              "generated_c_contract": 9
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 729,
+              "generated_c_contract": 9
+            }
+          },
+          {
+            "path": "scripts/cranelift_test_levels.json",
+            "previous_digest": "c4472fff8205b243436020d0b9fa0284eb43df7847d138a662e43d3550d5dca2",
+            "current_digest": "8afa13e38900728fd0f9e0f023691d74ddfce3935b6a0c354ad44b8493b01f83",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 30,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 30,
+              "generated_c_contract": 0
+            }
+          },
+          {
+            "path": "scripts/phase22_opening.py",
+            "previous_digest": "6fd2bce777ea526b56bd38ac572c8fcf748015912cae8bc520aa0bf27c0ce4bf",
+            "current_digest": "62d901dbfd915895764280b4b3bf47403eb5297c7f67b174391ea8f20c422573",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 5,
+              "mir_to_c_name": 23,
+              "generated_c_contract": 12
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 5,
+              "mir_to_c_name": 23,
+              "generated_c_contract": 12
+            }
+          }
+        ],
+        "added_rows": [],
+        "partial_extra_or_substituted_surface": "rejected"
+      },
       "spelling_inventory_successor": {
         "contract_version": "phase26_1d_transfer_owned_spelling_inventory_successor_v1",
         "previous_inventory_summary": {

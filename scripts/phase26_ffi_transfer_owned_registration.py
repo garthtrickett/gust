@@ -40,6 +40,7 @@ def main() -> None:
     successors = {
         "phase22_invocation_successor", "production_audit_successor",
         "filename_site_successor", "spelling_inventory_successor",
+        "phase23_text_surface_successor",
     }
     require({key: record.get(key) for key in expected} == expected and
             set(record) == set(expected) | successors,

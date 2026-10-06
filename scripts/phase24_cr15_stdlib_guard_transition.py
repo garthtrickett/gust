@@ -3919,6 +3919,35 @@ def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    transfer_owned = registry.get("phase26_activation_audit", {}).get(
+        "ffi_transfer_owned_increment", {}).get("phase23_text_surface_successor")
+    if transfer_owned is not None:
+        changed = transfer_owned.get("changed_rows")
+        require(transfer_owned.get("contract_version") ==
+                "phase26_1d_transfer_owned_phase23_text_surface_successor_v1" and
+                transfer_owned.get("partial_extra_or_substituted_surface") == "rejected" and
+                transfer_owned.get("added_rows") == [] and
+                isinstance(changed, list) and
+                [entry.get("path") for entry in changed] == [
+                    ".github/workflows/pr-fast.yml",
+                    "compiler/experiments/cranelift/src/full_program.rs",
+                    "compiler/mir_native_backend_full_program_source.gst",
+                    "compiler/typechecker.gst", "justfile",
+                    "scripts/cranelift_test_levels.json",
+                    "scripts/phase22_opening.py"],
+                "Phase 26 owned-transfer text surface successor shape drifted")
+        live = {row["path"]: row for row in rows}
+        for entry in changed:
+            row = live.get(entry["path"])
+            require(row is not None and
+                    row["digest"] == entry["current_digest"] and
+                    row["match_counts"] == entry["current_match_counts"] and
+                    len(entry["previous_digest"]) == 64,
+                    f"Phase 26 owned-transfer text surface drifted: {entry['path']}")
+        by_path = {entry["path"]: entry for entry in changed}
+        rows = [dict(row, digest=by_path[row["path"]]["previous_digest"],
+                     match_counts=by_path[row["path"]]["previous_match_counts"])
+                if row["path"] in by_path else row for row in rows]
     owned_return = registry.get("phase26_activation_audit", {}).get(
         "ffi_owned_return_increment", {}).get("phase23_text_surface_successor")
     if owned_return is not None:
