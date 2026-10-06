@@ -819,6 +819,9 @@ jobs:
       - name: Phase 26 owned native pointer return and release
         run: just guard-cranelift-phase26-ffi-owned-return
 
+      - name: Phase 26 owned native argument transfer
+        run: just guard-cranelift-phase26-ffi-transfer-owned
+
       - name: Phase 26 raw cast provenance
         run: just guard-cranelift-phase26-raw-cast-provenance
 

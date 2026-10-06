@@ -820,6 +820,18 @@ func env_ffi_owned_storage_is_live(env: *TypeEnvironment[ctx], storage_name: str
     }
 }
 
+// A direct acquisition expression has no storage owner yet. Native handoff
+// consumes a named, live linear obligation so the existing move tracker can
+// retire exactly that obligation after the call.
+func env_ffi_transfer_owned_identity_is_bound(env: *TypeEnvironment[ctx], identity: str, ctx: &Arena) int {
+    unsafe {
+        guard obligation := (*env).resource_acquisition_obligations.Get(identity) else { return 0; };
+        if obligation.state != 0 || len(obligation.storage_name) == 0 { return 0; }
+        guard bound := (*env).resource_value_identities.Get(obligation.storage_name) else { return 0; };
+        return std.str_eq(bound, identity);
+    }
+}
+
 func env_ffi_owned_storage_is_terminal(env: *TypeEnvironment[ctx], storage_name: str, ctx: &Arena) int {
     unsafe {
         guard identity := (*env).resource_value_identities.Get(storage_name) else { return 0; };
@@ -981,6 +993,13 @@ func env_validate_extern_ffi_positions(env: *TypeEnvironment[ctx], stmt: ast.Sta
                     (*sig).requires_sandbox_arena = 1;
                 }
                 policies.Push(std.Clone(ctx, policy));
+            } else if std.str_eq(policy, "transfer_owned") == 1 &&
+                      env_ffi_owned_result_shape(env, t, ctx) == 1 &&
+                      std.str_eq(
+                          env_struct_declaration_module_name(env, t.Struct.struct_name, ctx),
+                          (*env).current_prefix
+                      ) == 1 {
+                policies.Push("transfer_owned");
             } else {
                 report_error(2, "Semantic Error: [FFIByValueAggregateUnsupported] External by-value aggregate or unsupported parameter is not qualified", declared.span, env, ctx);
                 return 0;
@@ -6198,6 +6217,38 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                                 mut bad_write: ast.Type[ctx]; bad_write.tag = 3;
                                 return bad_write;
                             }
+                        } else if std.str_eq(ffi_policy, "transfer_owned") == 1 {
+                            mut transfer_argument_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                            ctx.Set(transfer_argument_idx, args_vec_valid_call[ffi_arg_index]);
+                            mut transfer_identity := env_resource_identity_for_expression(
+                                env, transfer_argument_idx, ctx
+                            );
+                            mut transfer_formal_identity := ast.serialize_type(
+                                env_resolve_type(env, ffi_formal, ctx), ctx
+                            );
+                            mut transfer_actual_identity := ast.serialize_type(
+                                env_resolve_type(env, ffi_actual, ctx), ctx
+                            );
+                            if ffi_formal.tag != 8 ||
+                               std.str_eq(transfer_formal_identity, transfer_actual_identity) == 0 ||
+                               env_ffi_owned_result_shape(env, ffi_formal, ctx) == 0 ||
+                               env_ffi_owner_has_native_acquisition(
+                                   env, ffi_formal.Struct.struct_name, ctx
+                               ) == 0 ||
+                               len(transfer_identity) == 0 ||
+                               env_ffi_transfer_owned_identity_is_bound(
+                                   env, transfer_identity, ctx
+                               ) == 0 {
+                                report_error(2, "Semantic Error: [FFITransferOwnedAuthority] Native owner transfer requires a live, bound owned-return resource of the exact linear C type", expr.Call.span, env, ctx);
+                                mut bad_transfer: ast.Type[ctx]; bad_transfer.tag = 3;
+                                return bad_transfer;
+                            }
+                            // Consume each position as it is validated. A later
+                            // position in this same call cannot hand the same
+                            // linear owner to native code a second time.
+                            env_resource_obligation_set_state(
+                                env, transfer_identity, 2, ctx
+                            );
                         } else if std.str_eq(ffi_policy, "release_owned") == 1 {
                             if ffi_formal.tag != 9 || ffi_actual.tag != 9 ||
                                env_ffi_release_owned_call_allowed(

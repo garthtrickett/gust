@@ -139,6 +139,7 @@ fn validate_ffi_policies(
         .map(|enumeration| enumeration.erased_name.as_str())
         .collect();
     let mut paired_releases = HashSet::new();
+    let mut owned_authorities = HashSet::new();
     for function in functions {
         if !function.is_extern {
             if function.ffi_contract.is_some() {
@@ -148,13 +149,19 @@ fn validate_ffi_policies(
         }
         let Some(contract) = &function.ffi_contract else {
             // The checked-in bootstrap emits this original row. Legacy rows
-            // cannot establish the new owned aggregate return authority.
+            // cannot establish owned aggregate return or transfer authority.
             if struct_type_name(&function.result_type).is_some_and(|name|
                 layouts.get(name.as_str()).is_some_and(|layout|
                     layout.repr_c && layout.abi == "C" && !layout.packed &&
                     layout.fields.len() == 1 &&
-                    layout.fields[0].ty.starts_with("RawPointer("))) {
-                return Err(invalid("legacy FFI row cannot admit an owned C-pointer aggregate return"));
+                    layout.fields[0].ty.starts_with("RawPointer("))) ||
+                function.parameters.iter().any(|(_, ty)|
+                    struct_type_name(ty).is_some_and(|name|
+                        layouts.get(name.as_str()).is_some_and(|layout|
+                            layout.repr_c && layout.abi == "C" && !layout.packed &&
+                            layout.fields.len() == 1 &&
+                            layout.fields[0].ty.starts_with("RawPointer(")))) {
+                return Err(invalid("legacy FFI row cannot admit an owned C-pointer aggregate position"));
             }
             continue;
         };
@@ -176,6 +183,12 @@ fn validate_ffi_policies(
                 "borrow_write_isolated_call" => raw,
                 "release_owned" => raw && function.parameters.len() == 1 &&
                     function.result_type == "Void" && contract.result_policy == "value",
+                "transfer_owned" => struct_type_name(ty).is_some_and(|name|
+                    layouts.get(name.as_str()).is_some_and(|layout|
+                        layout.repr_c && layout.abi == "C" && !layout.packed &&
+                        layout.brand.is_empty() && layout.fields.len() == 1 &&
+                        layout.fields[0].ty.starts_with("RawPointer("))) &&
+                    target == "x86_64-unknown-linux-gnu" && object_format == "Elf",
                 _ => false,
             };
             if !valid {
@@ -254,12 +267,23 @@ fn validate_ffi_policies(
                 policy.parameter_policies.as_slice() == ["release_owned"]))
             .ok_or_else(|| invalid("owned FFI destructor lacks its qualified native release"))?;
         paired_releases.insert(release.qualified_name.as_str());
+        owned_authorities.insert((function.module_index, owner));
     }
     for function in functions {
         if function.ffi_contract.as_ref().is_some_and(|contract|
             contract.parameter_policies.iter().any(|policy| policy == "release_owned")) &&
             !paired_releases.contains(function.qualified_name.as_str()) {
             return Err(invalid("native release policy has no owned-result pair"));
+        }
+        if let Some(contract) = &function.ffi_contract {
+            for ((_, ty), policy) in function.parameters.iter()
+                .zip(&contract.parameter_policies) {
+                if policy == "transfer_owned" &&
+                    !struct_type_name(ty).is_some_and(|owner|
+                        owned_authorities.contains(&(function.module_index, owner))) {
+                    return Err(invalid("native owner transfer has no qualified owned-result and release authority"));
+                }
+            }
         }
     }
     Ok(())
@@ -4967,6 +4991,50 @@ mod owned_ffi_policy_tests {
             let tag = fields.iter().position(|field| field == "ffi_policy.v1").unwrap();
             change(fields, tag);
         })
+    }
+
+    fn transfer_fixture() -> String {
+        include_str!("../../../fixtures/native_backend_phase26_transfer_owned_minimal.mir").to_owned()
+    }
+
+    #[test]
+    fn transfer_owned_requires_canonical_owner_and_release_pair() {
+        let source = transfer_fixture();
+        assert!(parse(&source).is_ok());
+        let mutations = [
+            change_row(&source, "function: 4|", |fields| {
+                let tag = fields.iter().position(|field| field == "ffi_policy.v1").unwrap();
+                fields.truncate(tag);
+            }),
+            change_row(&source, "function: 4|", |fields| {
+                let tag = fields.iter().position(|field| field == "ffi_policy.v1").unwrap();
+                fields[tag] = "ffi_policy.v2".into();
+            }),
+            change_row(&source, "function: 4|", |fields| {
+                let tag = fields.iter().position(|field| field == "ffi_policy.v1").unwrap();
+                fields[tag + 2] = "2".into();
+            }),
+            change_row(&source, "function: 4|", |fields| {
+                let tag = fields.iter().position(|field| field == "ffi_policy.v1").unwrap();
+                fields[tag + 3] = hex("borrow_read_call");
+            }),
+            change_row(&source, "function: 4|", |fields| {
+                let tag = fields.iter().position(|field| field == "ffi_policy.v1").unwrap();
+                fields[tag + 3] = hex("transfer_unknown");
+            }),
+            change_row(&source, "function: 4|", |fields| {
+                fields[10] = hex("RawPointer(Int)");
+            }),
+            change_row(&source, "function: 4|", |fields| {
+                fields[10] = hex("Struct(\"SessionNode\", None)");
+            }),
+            change_owned(&source, |fields, tag| fields[tag + 1] = hex("value")),
+            source.replacen(&hex("x86_64-unknown-linux-gnu"),
+                &hex("aarch64-unknown-linux-gnu"), 1),
+        ];
+        for (index, mutant) in mutations.iter().enumerate() {
+            assert!(parse(mutant).is_err(), "accepted owner-transfer mutation {index}");
+        }
     }
 
     #[test]

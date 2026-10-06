@@ -536,6 +536,47 @@ func mir_native_full_program_ffi_owned_return_diagnostic(programs: std.Vector[as
                         return "Native FFI owned result destructor does not release exactly once";
                     }
                 }
+                if statement.tag == 3 && statement.FunctionDecl.is_extern == 1 {
+                    mut transfer_parameters: std.Vector[ast.Parameter[ctx], ctx] :=
+                        ctx[statement.FunctionDecl.params];
+                    mut transfer_index := 0;
+                    while transfer_index < len(transfer_parameters) {
+                        mut transfer_parameter := transfer_parameters[transfer_index];
+                        if std.str_eq(transfer_parameter.ffi_policy, "transfer_owned") == 1 {
+                            if target.found == 0 ||
+                               std.str_eq(target.target.target_triple, "x86_64-unknown-linux-gnu") == 0 ||
+                               target.target.pointer_size != 8 {
+                                return "Native FFI owner transfer target ABI is unsupported";
+                            }
+                            mut transfer_type := typechecker.env_resolve_type(
+                                env, transfer_parameter.param_type, ctx
+                            );
+                            if typechecker.env_ffi_owned_result_shape(
+                                   env as *typechecker.TypeEnvironment[ctx], transfer_type, ctx
+                               ) == 0 ||
+                               typechecker.env_ffi_owner_has_native_acquisition(
+                                   env as *typechecker.TypeEnvironment[ctx],
+                                   transfer_type.Struct.struct_name, ctx
+                               ) == 0 {
+                                return "Native FFI owner transfer lacks a qualified owned-result authority";
+                            }
+                            mut transfer_destructor_name := typechecker.env_struct_declared_destructor_name(
+                                env as *typechecker.TypeEnvironment[ctx],
+                                transfer_type.Struct.struct_name, ctx
+                            );
+                            mut transfer_destructor := mir_native_full_program_qualified_name(
+                                module_prefixes[module_index], transfer_destructor_name, ctx
+                            );
+                            if typechecker.env_function_is_validated_resource_destructor(
+                                   env as *typechecker.TypeEnvironment[ctx],
+                                   transfer_destructor, ctx
+                               ) == 0 {
+                                return "Native FFI owner transfer lacks a validated release destructor";
+                            }
+                        }
+                        transfer_index = transfer_index + 1;
+                    }
+                }
             }
             statement_index = statement_index + 1;
         }

@@ -253,6 +253,32 @@ relevant native/resource regressions, exact-head PR workflows, and review-thread
 resolution are required before this increment merges. This increment does not
 close the remaining D, E, F, or Phase 26.1 gates.
 
+**26.1D owned native argument transfer (operator authorized, 2026-10-06).**
+An explicitly unsafe external call may consume a qualified linear,
+`#[repr(C)]` one-pointer owner by value under a typed `transfer_owned`
+parameter policy. The existing generic terminal move state ends Gust's cleanup
+obligation at the call; a native consumer receives the actual C struct value
+and assumes its release obligation. The policy is tied to the canonical owner
+layout and validated destructor/release authority, not to a fixture type or
+host name. A transferred raw-derived address never becomes a safe branded
+reference or index. Borrowed, retained, callback, and native-error positions
+keep their existing fail-closed rules.
+
+**Exit gate:** Two independently named owner/release pairs prove the target's
+real by-value C aggregate argument ABI with native allocation and release
+counters. A successful handoff invokes the native release once and suppresses
+Gust's destructor, including calls in conditional, early-return, and
+defer/scope routes. Source negatives reject unbound or discarded acquisition,
+use after move, alias reuse, double transfer, mismatched owner or release,
+and unsafe-origin branding. Canonical MIR mutations reject missing, forged,
+truncated, wrong-position, wrong-type, wrong-layout, or unsupported-target
+`transfer_owned` policy before native object emission. No new MIR operation,
+new smart-pointer family, `std_*` symbol, retained-pointer permission, or
+native-unwinding cleanup guarantee is introduced. Focused and adjacent guards,
+the compiler build, native fixed-point bootstrap, registry projections,
+exact-head PR workflows, and resolved review threads are required before this
+increment merges; D, E, F, and Phase 26.1 remain open.
+
 Use a transient isolated arena for memory handed to native code and destroy it
 on return. *Isolated* is deliberately narrower than *sandboxed*: this bounds
 memory lifetime and spread but cannot prevent native code from accessing process

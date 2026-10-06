@@ -48056,6 +48056,207 @@
     "why_this_exists": "The Status section of docs/PHASE25_ROADMAP.md is the record the phase-completion loop checks, and it was wrong in both directions. 25.10a (#468) and 25.10 (#470) were unticked though both merged. 25.12 was ticked though its Exit Gate was not met, and 25.12b (#472), which corrected it, had no row at all. The Patch 25.0 heading still read IN PROGRESS. The section's own rule is 'ticked when merged to main', and this repo's convention is that a later patch ticks merged ones -- Patch 25.7 is what ticked 25.12 and 25.11a -- so 25.12b could not tick itself."
   },
   "phase26_activation_audit": {
+    "ffi_transfer_owned_increment": {
+      "contract_version": "phase26_1d_transfer_owned_v1",
+      "status": "native_by_value_linear_owner_transfer_qualified",
+      "owner": "cranelift",
+      "increment": "26.1D_transfer_owned",
+      "supported_target": "x86_64-unknown-linux-gnu",
+      "physical_abi": "one_pointer_repr_c_struct_by_value",
+      "parameter_policy": "transfer_owned",
+      "producer_policy": "owned_return",
+      "release_policy": "release_owned",
+      "provenance": "raw_derived_unbrandable",
+      "exit_routes": [
+        "scope",
+        "early_return",
+        "conditional",
+        "defer"
+      ],
+      "unsupported_routes": [
+        "retain",
+        "callback",
+        "native_error",
+        "unwind",
+        "process_termination"
+      ],
+      "positive_fixture": "compiler/phase26_ffi_transfer_owned_source.gst",
+      "canonical_fixture": "compiler/fixtures/native_backend_phase26_transfer_owned_minimal.mir",
+      "host_object_source": "tests/cranelift/phase26_transfer_owned_hosts.c",
+      "owning_level2_guard": "guard-cranelift-phase26-ffi-transfer-owned",
+      "native_fallback": false,
+      "runtime_symbol_surface_changed": false,
+      "phase22_invocation_successor": {
+        "contract_version": "phase26_1d_transfer_owned_phase22_invocation_successor_v1",
+        "previous_total": 242,
+        "current_total": 244,
+        "added_rows": [
+          {
+            "path": "scripts/phase26_ffi_transfer_owned.sh",
+            "line": 18,
+            "recipe": "none",
+            "compiler_token": "./gust",
+            "selection": "explicit_cranelift",
+            "consumer_class": "already_explicit_or_parser_probe",
+            "owner": "cranelift",
+            "expected_artifact": "selected_backend_contract",
+            "expected_transition": "preserve_explicit_selection",
+            "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+            "command": "GUST_TEST_MIR_TO_C_UNAVAILABLE=1 GUST_NATIVE_BACKEND_DRIVER=\"$driver\" GUST_PHASE26_TRANSFER_HOST_OBJECT=\"$PWD/$build_root/hosts.o\" CC=\"$PWD/$build_root/cc-with-host\" ./gust --backend cranelift -o \"$build_root/native\" compiler/phase26_ffi_transfer_owned_source.gst >\"$build_root/positive.stdout\" 2>\"$build_root/positive.stderr\""
+          },
+          {
+            "path": "scripts/phase26_ffi_transfer_owned.sh",
+            "line": 106,
+            "recipe": "none",
+            "compiler_token": "./gust",
+            "selection": "explicit_cranelift",
+            "consumer_class": "already_explicit_or_parser_probe",
+            "owner": "cranelift",
+            "expected_artifact": "selected_backend_contract",
+            "expected_transition": "preserve_explicit_selection",
+            "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+            "command": "GUST_TEST_MIR_TO_C_UNAVAILABLE=1 GUST_PHASE26_TRANSFER_POISON_MARKER=\"$marker\" GUST_NATIVE_BACKEND_DRIVER=\"$PWD/$poison\" ./gust --backend cranelift -o \"$build_root/$case_name\" \"$build_root/negatives/$case_name.gst\" >\"$build_root/$case_name.stdout\" 2>\"$build_root/$case_name.stderr\""
+          }
+        ],
+        "partial_extra_or_substituted_invocation": "rejected"
+      },
+      "production_audit_successor": {
+        "contract_version": "phase26_1d_transfer_owned_production_audit_successor_v1",
+        "previous_repository_invocation_count": 242,
+        "current_repository_invocation_count": 244,
+        "added_invocation_path": "scripts/phase26_ffi_transfer_owned.sh",
+        "unchanged_other_fields": true,
+        "partial_extra_or_substituted_audit": "rejected"
+      },
+      "filename_site_successor": {
+        "contract_version": "phase26_1d_transfer_owned_filename_site_successor_v1",
+        "previous_sites": [
+          {
+            "id": "var_declaration_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 15317,
+            "selector": "test_tcs_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_var_declaration",
+            "window_digest": "6c0f176e1543d9a2ba125569875a69081a81b28bfc4c80eef31c57ec7ccfa05c"
+          },
+          {
+            "id": "assignment_hazard_and_view_invalidation",
+            "path": "compiler/typechecker.gst",
+            "line": 15660,
+            "selector": "test_index_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_assignment",
+            "window_digest": "eea5c7abf9fb4c50d51f644267c5ee59133db8d998a0fe7c25dd0ec1503029c3"
+          },
+          {
+            "id": "guard_payload_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 16719,
+            "selector": "test_tcs_",
+            "selector_occurrence": 2,
+            "statement_context": "statement_guard_payload_binding",
+            "window_digest": "4bf05983015fd1ecc3c3cc4c1399491868107155a5435fed90f8beeeb8f16a6f"
+          }
+        ],
+        "current_sites": [
+          {
+            "id": "var_declaration_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 15368,
+            "selector": "test_tcs_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_var_declaration",
+            "window_digest": "6c0f176e1543d9a2ba125569875a69081a81b28bfc4c80eef31c57ec7ccfa05c"
+          },
+          {
+            "id": "assignment_hazard_and_view_invalidation",
+            "path": "compiler/typechecker.gst",
+            "line": 15711,
+            "selector": "test_index_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_assignment",
+            "window_digest": "eea5c7abf9fb4c50d51f644267c5ee59133db8d998a0fe7c25dd0ec1503029c3"
+          },
+          {
+            "id": "guard_payload_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 16770,
+            "selector": "test_tcs_",
+            "selector_occurrence": 2,
+            "statement_context": "statement_guard_payload_binding",
+            "window_digest": "4bf05983015fd1ecc3c3cc4c1399491868107155a5435fed90f8beeeb8f16a6f"
+          }
+        ],
+        "line_deltas": [
+          51,
+          51,
+          51
+        ],
+        "partial_extra_or_substituted_site": "rejected"
+      },
+      "spelling_inventory_successor": {
+        "contract_version": "phase26_1d_transfer_owned_spelling_inventory_successor_v1",
+        "previous_inventory_summary": {
+          "classification_counts": {
+            "comment": 2,
+            "diagnostic": 10,
+            "fixture_or_evidence": 679,
+            "mangling_or_generated_name": 9,
+            "non_decision_comparison": 8,
+            "semantic_or_intrinsic_recognition": 689,
+            "serialization": 1
+          },
+          "complete_manifest_digest": "6684df8c91fb91f03725c24c94682c2649246ed05d45763e792ba7a9797d575e",
+          "partition_manifest_digests": {
+            "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+            "diagnostic": "fc8e3e422242405b2349c26c13b0ff8f45d346e11eb99944057c5abf804c62b0",
+            "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+            "mangling_or_generated_name": "053bfd0099c05d7ff2ec2f92e4413a143650af1b2c4b66de4ad2411dfe36f818",
+            "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7",
+            "serialization": "47cf827b52d783e60a08a2856040e7bebdb94590a27b7903d5301eb16fe1d508"
+          },
+          "semantic_manifest_digest": "3c2bf15e8a4ba4bf983d858360f77a306c4d6909d3bfe9e97594204061966328",
+          "semantic_site_count": 689,
+          "site_count": 1398,
+          "source_file_count": 1806,
+          "unknown_site_count": 0
+        },
+        "current_inventory_summary": {
+          "source_file_count": 1807,
+          "site_count": 1398,
+          "semantic_site_count": 689,
+          "semantic_manifest_digest": "67baca8f13f754ceba626bee535de773af81ff73de605d8accf904481f150635",
+          "classification_counts": {
+            "semantic_or_intrinsic_recognition": 689,
+            "diagnostic": 10,
+            "serialization": 1,
+            "mangling_or_generated_name": 9,
+            "comment": 2,
+            "fixture_or_evidence": 679,
+            "non_decision_comparison": 8
+          },
+          "partition_manifest_digests": {
+            "diagnostic": "6004a5aeccbefa8c928f5c47666a0d5cfd6955830b63ccb0a324892d12f01e6b",
+            "serialization": "47cf827b52d783e60a08a2856040e7bebdb94590a27b7903d5301eb16fe1d508",
+            "mangling_or_generated_name": "5907b1583996c591226011852a5df07b9ec6fbb8f127008e5a99971249d70b87",
+            "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+            "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+            "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
+          },
+          "complete_manifest_digest": "b545b2d7017c2601f5421f76497beae4ab894dab0bbe430f82ba5e37528201ec",
+          "unknown_site_count": 0
+        },
+        "changed_source_paths": [
+          "compiler/experiments/cranelift/src/full_program.rs",
+          "compiler/mir_native_backend_full_program_source.gst",
+          "compiler/mir_native_backend_module_import_source.gst",
+          "compiler/phase26_ffi_transfer_owned_source.gst",
+          "compiler/typechecker.gst"
+        ],
+        "partial_extra_or_substituted_inventory": "rejected"
+      }
+    },
     "ffi_owned_return_increment": {
       "contract_version": "phase26_1d_owned_return_v1",
       "status": "owned_native_return_destructor_release_qualified",

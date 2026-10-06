@@ -1126,7 +1126,39 @@ def effective_phase22_summary(registry: dict, value: dict) -> dict:
         _phase26_call_wrapper_chain_zero_invocation_successor(registry,
         _phase26_call_two_wrapper_zero_invocation_successor(registry,
                                                             through_take_wrapper))))))))
-    return _phase26_owned_return_invocation_successor(registry, through_repr_int)
+    through_owned_return = _phase26_owned_return_invocation_successor(registry, through_repr_int)
+    return _phase26_transfer_owned_invocation_successor(registry, through_owned_return)
+
+
+def _phase26_transfer_owned_invocation_successor(registry: dict,
+        previous: dict) -> dict:
+    successor = registry.get("phase26_activation_audit", {}).get(
+        "ffi_transfer_owned_increment", {}).get("phase22_invocation_successor")
+    if successor is None:
+        return previous
+    rows = successor.get("added_rows")
+    require(successor.get("contract_version") ==
+            "phase26_1d_transfer_owned_phase22_invocation_successor_v1" and
+            successor.get("previous_total") == previous["total"] == 242 and
+            successor.get("current_total") == 244 and
+            isinstance(rows, list) and len(rows) == 2 and
+            all(row.get("path") == "scripts/phase26_ffi_transfer_owned.sh" and
+                row.get("selection") == "explicit_cranelift" and
+                row.get("owner") == "cranelift" for row in rows) and
+            successor.get("partial_extra_or_substituted_invocation") == "rejected",
+            "Phase 26 owned-transfer invocation successor drifted")
+    current = copy.deepcopy(previous)
+    current["total"] += len(rows)
+    for row in rows:
+        for key, label in (("selection_counts", "selection"),
+                           ("consumer_class_counts", "consumer_class"),
+                           ("owner_counts", "owner")):
+            group = str(row[label])
+            current[key][group] = current[key].get(group, 0) + 1
+    require(current["total"] == successor["current_total"] and
+            current["unclassified_count"] == 0,
+            "Phase 26 owned-transfer invocation census did not balance")
+    return current
 
 
 def _phase26_owned_return_invocation_successor(registry: dict,
