@@ -207,6 +207,45 @@ func mir_native_parameter_argument_is_repr_int_enum(
     return 0;
 }
 
+// A one-pointer linear C owner has a target ABI decided by the full-program
+// planner. This early scalar-only profile must leave it to that authority.
+func mir_native_parameter_argument_is_owned_ffi_owner(
+    value_type: ast.Type[ctx],
+    statements: std.Vector[ast.Statement[ctx], ctx],
+    ctx: &Arena
+) int {
+    unsafe {
+        if value_type.tag != 8 { return 0; }
+        mut shape := 0;
+        mut acquisition := 0;
+        mut index := 0;
+        while index < len(statements) {
+            mut statement := statements[index];
+            if statement.tag == 1 &&
+               std.str_eq(statement.StructDecl.name, value_type.Struct.struct_name) == 1 &&
+               statement.StructDecl.is_repr_c == 1 &&
+               statement.StructDecl.is_packed == 0 &&
+               statement.StructDecl.is_linear_resource == 1 &&
+               statement.StructDecl.is_opaque == 1 &&
+               len(statement.StructDecl.declared_destructor_name) > 0 {
+                mut fields: std.Vector[ast.FieldDef[ctx], ctx] := ctx[statement.StructDecl.fields];
+                if len(fields) == 1 && fields[0].field_type.tag == 9 { shape = 1; }
+            }
+            if statement.tag == 3 && statement.FunctionDecl.is_extern == 1 &&
+               std.str_eq(statement.FunctionDecl.ffi_return_policy, "owned_return") == 1 {
+                mut result_type := ctx[statement.FunctionDecl.return_type];
+                if result_type.tag == 8 &&
+                   std.str_eq(result_type.Struct.struct_name, value_type.Struct.struct_name) == 1 {
+                    acquisition = 1;
+                }
+            }
+            index = index + 1;
+        }
+        if shape == 1 && acquisition == 1 { return 1; }
+        return 0;
+    }
+}
+
 func mir_native_parameter_argument_scan_deferred(
     programs: std.Vector[ast.Program[ctx], ctx],
     module_paths: std.Vector[str, ctx],
@@ -244,6 +283,12 @@ func mir_native_parameter_argument_scan_deferred(
                        mir_native_parameter_argument_is_repr_int_enum(parameter.param_type, statements) == 1 {
                         parameter_class = 0;
                     }
+                    if parameter_class == 1 &&
+                       mir_native_parameter_argument_is_owned_ffi_owner(
+                           parameter.param_type, statements, ctx
+                       ) == 1 {
+                        parameter_class = 0;
+                    }
                     if parameter_class == 1 {
                         model.source_path =
                             std.Clone(ctx, module_paths[0]);
@@ -258,6 +303,7 @@ func mir_native_parameter_argument_scan_deferred(
                     // full-program preflight must still prove the C layout and
                     // approve the exact host before any driver discovery.
                     mut borrowed_write_struct := 0;
+                    mut qualified_owned_release := 0;
                     if statement.FunctionDecl.is_extern == 1 &&
                        parameter.param_type.tag == 9 &&
                        (std.str_eq(parameter.ffi_policy, "borrow_write_call") == 1 ||
@@ -265,9 +311,15 @@ func mir_native_parameter_argument_scan_deferred(
                         mut inner := ctx[parameter.param_type.RawPointer.inner];
                         if inner.tag == 8 { borrowed_write_struct = 1; }
                     }
+                    if statement.FunctionDecl.is_extern == 1 &&
+                       parameter.param_type.tag == 9 &&
+                       std.str_eq(parameter.ffi_policy, "release_owned") == 1 {
+                        qualified_owned_release = 1;
+                    }
                     if parameter_class == 2 &&
                        parameter.param_type.tag != 11 && // Reference
                        borrowed_write_struct == 0 &&
+                       qualified_owned_release == 0 &&
                        (parameter.param_type.tag != 5 ||
                         statement.FunctionDecl.is_extern == 1) { // Local Str
                         model.source_path =
@@ -286,6 +338,12 @@ func mir_native_parameter_argument_scan_deferred(
                     mir_native_parameter_argument_type_class(return_type, ctx);
                 if return_class == 1 &&
                    mir_native_parameter_argument_is_repr_int_enum(return_type, statements) == 1 {
+                    return_class = 0;
+                }
+                if return_class == 1 &&
+                   mir_native_parameter_argument_is_owned_ffi_owner(
+                       return_type, statements, ctx
+                   ) == 1 {
                     return_class = 0;
                 }
                 if return_class == 1 {

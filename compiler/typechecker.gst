@@ -762,6 +762,143 @@ func function_signature_requires_sandbox_policy(sig: FunctionSignature[ctx]) int
     return 0;
 }
 
+// An owned native result is an existing linear resource with a physical C
+// representation.  Its sole field remains a raw address; the resource's
+// validated destructor, rather than the raw address, owns release authority.
+func env_ffi_owned_result_shape(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena) int {
+    unsafe {
+        if t.tag != 8 { return 0; }
+        mut name := t.Struct.struct_name;
+        if env_struct_is_linear_resource(env, name, ctx) == 0 ||
+           env_struct_satisfies_c_ffi_layout(env, name, ctx) == 0 ||
+           env_struct_is_packed(env, name, ctx) == 1 ||
+           len(env_struct_declared_destructor_name(env, name, ctx)) == 0 ||
+           env_struct_is_declared_opaque(env, name, ctx) == 0 {
+            return 0;
+        }
+        guard layout := (*env).struct_registry.Get(name) else { return 0; };
+        mut fields := layout.fields.Keys(ctx);
+        if len(fields) != 1 { return 0; }
+        guard field_type := layout.fields.Get(fields[0]) else { return 0; };
+        if field_type.tag != 9 ||
+           t.Struct.brand != empty[Index[str, ctx]] { return 0; }
+        return 1;
+    }
+}
+
+func env_ffi_owner_has_native_acquisition(env: *TypeEnvironment[ctx], owner_name: str, ctx: &Arena) int {
+    unsafe {
+        mut names := (*env).function_registry.Keys(ctx);
+        mut i := 0;
+        while i < len(names) {
+            mut lookup := (*env).function_registry.Get(names[i]);
+            if lookup.Ok {
+                mut sig := lookup.Val;
+                if sig.is_extern == 1 && sig.ffi_contract_verified == 1 &&
+                   std.str_eq(sig.ffi_return_policy, "owned_return") == 1 &&
+                   sig.return_type.tag == 8 &&
+                   std.str_eq(sig.return_type.Struct.struct_name, owner_name) == 1 {
+                    return 1;
+                }
+            }
+            i = i + 1;
+        }
+        return 0;
+    }
+}
+
+func env_ffi_owned_storage_is_live(env: *TypeEnvironment[ctx], storage_name: str, ctx: &Arena) int {
+    unsafe {
+        guard identity := (*env).resource_value_identities.Get(storage_name) else { return 0; };
+        guard obligation := (*env).resource_acquisition_obligations.Get(identity) else { return 0; };
+        if obligation.state == 0 &&
+           std.str_eq(obligation.storage_name, storage_name) == 1 &&
+           env_ffi_owner_has_native_acquisition(env, obligation.type_name, ctx) == 1 {
+            return 1;
+        }
+        return 0;
+    }
+}
+
+func env_ffi_owned_storage_is_terminal(env: *TypeEnvironment[ctx], storage_name: str, ctx: &Arena) int {
+    unsafe {
+        guard identity := (*env).resource_value_identities.Get(storage_name) else { return 0; };
+        guard obligation := (*env).resource_acquisition_obligations.Get(identity) else { return 0; };
+        if obligation.state != 0 &&
+           std.str_eq(obligation.storage_name, storage_name) == 1 &&
+           env_ffi_owner_has_native_acquisition(env, obligation.type_name, ctx) == 1 {
+            return 1;
+        }
+        return 0;
+    }
+}
+
+// A native-owned resource destructor is deliberately a single, unconditional
+// release statement. The usual resource scheduler supplies every supported
+// scope/return route; no source branch may skip or repeat the terminal call.
+func env_ffi_owned_destructor_body_valid(env: *TypeEnvironment[ctx], stmt: ast.Statement[ctx], owner_name: str, ctx: &Arena) int {
+    unsafe {
+        mut declared: std.Vector[ast.Parameter[ctx], ctx] := ctx[stmt.FunctionDecl.params];
+        if len(declared) != 1 { return 0; }
+        mut parameter_type := env_resolve_type(env, declared[0].param_type, ctx);
+        if parameter_type.tag != 8 ||
+           std.str_eq(parameter_type.Struct.struct_name, owner_name) == 0 { return 0; }
+        if stmt.FunctionDecl.body == empty[Index[ast.BlockStatement[ctx], ctx]] { return 0; }
+        mut body := ctx[stmt.FunctionDecl.body];
+        mut statements: std.Vector[ast.Statement[ctx], ctx] := ctx[body.statements];
+        if len(statements) != 1 || statements[0].tag != 10 { return 0; }
+        mut unsafe_body := ctx[statements[0].UnsafeBlock.body];
+        mut unsafe_statements: std.Vector[ast.Statement[ctx], ctx] := ctx[unsafe_body.statements];
+        if len(unsafe_statements) != 1 || unsafe_statements[0].tag != 13 { return 0; }
+        mut expression := ctx[unsafe_statements[0].Expression.expr];
+        if expression.tag != 12 { return 0; }
+        mut callee := env_resolve_namespaced_ident(env, get_call_func_name(expression.Call.function, ctx), ctx);
+        guard release_sig := (*env).function_registry.Get(callee) else { return 0; };
+        if release_sig.is_extern == 0 || release_sig.ffi_contract_verified == 0 ||
+           len(release_sig.params) != 1 || release_sig.return_type.tag != 3 ||
+           release_sig.ffi_param_policies == empty[Index[std.Vector[str, ctx], ctx]] {
+            return 0;
+        }
+        mut policies: std.Vector[str, ctx] := ctx[release_sig.ffi_param_policies];
+        if len(policies) != 1 || std.str_eq(policies[0], "release_owned") == 0 { return 0; }
+        mut args: std.Vector[ast.Expression[ctx], ctx] := ctx[expression.Call.arguments];
+        if len(args) != 1 { return 0; }
+        return env_ffi_release_owned_call_allowed(env, release_sig.params[0], args[0], ctx);
+    }
+}
+
+// A release call is terminal only when the validated destructor passes its
+// own raw field directly to a matching one-position native release function.
+// Neither another raw pointer nor a field of another resource gains authority.
+func env_ffi_release_owned_call_allowed(env: *TypeEnvironment[ctx], formal: ast.Type[ctx], actual: ast.Expression[ctx], ctx: &Arena) int {
+    unsafe {
+        mut current := (*env).current_function_identity_scope;
+        guard destructor_sig := (*env).function_registry.Get(current) else { return 0; };
+        if destructor_sig.is_extern == 1 || len(destructor_sig.params) != 1 ||
+           len(destructor_sig.param_names) != 1 || actual.tag != 11 {
+            return 0;
+        }
+        mut owner := destructor_sig.params[0];
+        if env_ffi_owned_result_shape(env, owner, ctx) == 0 { return 0; }
+        if env_ffi_owner_has_native_acquisition(env, owner.Struct.struct_name, ctx) == 0 { return 0; }
+        guard validated := (*env).struct_validated_destructor.Get(owner.Struct.struct_name) else { return 0; };
+        mut resolved_destructor := env_resolve_namespaced_ident(env, validated, ctx);
+        if std.str_eq(current, resolved_destructor) == 0 &&
+           std.str_eq(current, validated) == 0 { return 0; }
+        mut left := ctx[actual.Selector.left];
+        if left.tag != 0 ||
+           std.str_eq(left.Identifier.name, destructor_sig.param_names[0]) == 0 { return 0; }
+        guard layout := (*env).struct_registry.Get(owner.Struct.struct_name) else { return 0; };
+        mut fields := layout.fields.Keys(ctx);
+        if len(fields) != 1 ||
+           std.str_eq(actual.Selector.right, fields[0]) == 0 { return 0; }
+        guard field_type := layout.fields.Get(actual.Selector.right) else { return 0; };
+        mut formal_identity := ast.serialize_type(env_resolve_type(env, formal, ctx), ctx);
+        mut field_identity := ast.serialize_type(env_resolve_type(env, field_type, ctx), ctx);
+        return std.str_eq(formal_identity, field_identity);
+    }
+}
+
 func env_validate_extern_ffi_positions(env: *TypeEnvironment[ctx], stmt: ast.Statement[ctx], sig: *FunctionSignature[ctx], ctx: &Arena) int {
     unsafe {
         mut declared_params: std.Vector[ast.Parameter[ctx], ctx] := ctx[stmt.FunctionDecl.params];
@@ -808,13 +945,19 @@ func env_validate_extern_ffi_positions(env: *TypeEnvironment[ctx], stmt: ast.Sta
                 if std.str_eq(policy, "borrow_read_call") == 0 &&
                    std.str_eq(policy, "borrow_write_call") == 0 &&
                    std.str_eq(policy, "borrow_read_isolated_call") == 0 &&
-                   std.str_eq(policy, "borrow_write_isolated_call") == 0 {
+                   std.str_eq(policy, "borrow_write_isolated_call") == 0 &&
+                   std.str_eq(policy, "release_owned") == 0 {
                     report_error(2, "Semantic Error: [FFIUnsupportedOwnershipPolicy] External parameter policy is not qualified", declared.span, env, ctx);
                     return 0;
                 }
                 if (std.str_eq(policy, "borrow_write_call") == 1 ||
                     std.str_eq(policy, "borrow_write_isolated_call") == 1) && t.tag != 9 {
                     report_error(2, "Semantic Error: [FFIWriteRequiresRawPointer] Native writes require an explicitly unsafe raw-pointer position", declared.span, env, ctx);
+                    return 0;
+                }
+                if std.str_eq(policy, "release_owned") == 1 &&
+                   (t.tag != 9 || len((*sig).params) != 1 || (*sig).return_type.tag != 3) {
+                    report_error(2, "Semantic Error: [FFIReleaseAuthority] Terminal native release requires one raw-pointer parameter and Void result", declared.span, env, ctx);
                     return 0;
                 }
                 if std.str_eq(policy, "borrow_read_isolated_call") == 1 {
@@ -872,6 +1015,13 @@ func env_validate_extern_ffi_positions(env: *TypeEnvironment[ctx], stmt: ast.Sta
                 return 0;
             }
             (*sig).ffi_return_policy = "raw_untrusted";
+        } else if std.str_eq(stmt.FunctionDecl.ffi_return_policy, "owned_return") == 1 &&
+                  env_ffi_owned_result_shape(env, ret, ctx) == 1 &&
+                  std.str_eq(
+                      env_struct_declaration_module_name(env, ret.Struct.struct_name, ctx),
+                      (*env).current_prefix
+                  ) == 1 {
+            (*sig).ffi_return_policy = "owned_return";
         } else if ret.tag == 5 || ret.tag == 6 || ret.tag == 11 {
             report_error(2, "Semantic Error: [FFIReturnedPointerUnsupported] External returned pointers, strings, slices, and references are not qualified", stmt.FunctionDecl.span, env, ctx);
             return 0;
@@ -3864,6 +4014,11 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
             mut t := scope_lookup(scope, resolved_name, ctx);
 
             env_report_linear_resource_use_after_move(env, resolved_name, expr.Identifier.span, ctx);
+            if env_ffi_owned_storage_is_terminal(env, resolved_name, ctx) == 1 {
+                report_error(2,
+                    "Semantic Error: [FFIOwnedUseAfterRelease] Native-owned resource cannot be used after release or transfer",
+                    expr.Identifier.span, env, ctx);
+            }
 
             // Check if resolved_name is moved
             if (*env).moved_vars.Get(resolved_name).Ok {
@@ -5995,7 +6150,9 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                        sig.ffi_param_policies == empty[Index[std.Vector[str, ctx], ctx]] ||
                        (std.str_eq(sig.ffi_return_policy, "value") == 0 &&
                         (sig.return_type.tag != 9 ||
-                         std.str_eq(sig.ffi_return_policy, "raw_untrusted") == 0)) {
+                         std.str_eq(sig.ffi_return_policy, "raw_untrusted") == 0) &&
+                        (sig.return_type.tag != 8 ||
+                         std.str_eq(sig.ffi_return_policy, "owned_return") == 0)) {
                         report_error(2, "Semantic Error: [FFIContractMissing] External call has no validated per-position ownership contract", expr.Call.span, env, ctx);
                         mut missing_contract: ast.Type[ctx]; missing_contract.tag = 3;
                         return missing_contract;
@@ -6040,6 +6197,16 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                                 report_error(2, "Semantic Error: [FFIWriteRequiresRawPointer] Native writes require an explicitly unsafe raw-pointer argument", expr.Call.span, env, ctx);
                                 mut bad_write: ast.Type[ctx]; bad_write.tag = 3;
                                 return bad_write;
+                            }
+                        } else if std.str_eq(ffi_policy, "release_owned") == 1 {
+                            if ffi_formal.tag != 9 || ffi_actual.tag != 9 ||
+                               env_ffi_release_owned_call_allowed(
+                                   env, ffi_formal,
+                                   args_vec_valid_call[ffi_arg_index], ctx
+                               ) == 0 {
+                                report_error(2, "Semantic Error: [FFIReleaseAuthority] Native release requires the validated owner's raw field in its destructor", expr.Call.span, env, ctx);
+                                mut bad_release: ast.Type[ctx]; bad_release.tag = 3;
+                                return bad_release;
                             }
                         } else {
                             report_error(2, "Semantic Error: [FFIContractMismatch] External call has an unsupported ownership position", expr.Call.span, env, ctx);
@@ -14757,6 +14924,25 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             (*env).arena_lifecycle_deferred_frees = std.HashMapNew(ctx);
             (*env).current_function_identity_scope = std.Clone(ctx, function_name_return_prov);
 
+            if len(params_vec_function_decl_impl) == 1 {
+                mut owned_destructor_param := env_resolve_type(
+                    env, params_vec_function_decl_impl[0].param_type, ctx
+                );
+                if owned_destructor_param.tag == 8 &&
+                   env_ffi_owned_result_shape(env, owned_destructor_param, ctx) == 1 &&
+                   env_ffi_owner_has_native_acquisition(
+                       env, owned_destructor_param.Struct.struct_name, ctx
+                   ) == 1 &&
+                   env_function_is_validated_resource_destructor(
+                       env, function_name_return_prov, ctx
+                   ) == 1 &&
+                   env_ffi_owned_destructor_body_valid(
+                       env, stmt, owned_destructor_param.Struct.struct_name, ctx
+                   ) == 0 {
+                    report_error(2, "Semantic Error: [FFIReleaseAuthority] Native-owned resource destructor must contain one direct unconditional release of its raw field", stmt.FunctionDecl.span, env, ctx);
+                }
+            }
+
             mut child_scope := scope_new(scope, ctx);
 
             // Register parameters
@@ -15311,6 +15497,14 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             }
 
             if len(assignment_lhs_resource_name_step52g) > 0 {
+                if left.tag == 0 &&
+                   env_ffi_owned_storage_is_live(
+                       env, assignment_lhs_resource_name_step52g, ctx
+                   ) == 1 {
+                    report_error(2,
+                        "Semantic Error: [FFIOwnedOverwrite] Live native-owned resource must be released or transferred before reassignment",
+                        stmt.Assignment.span, env, ctx);
+                }
                 mut assignment_resource_move_source_allowed_step52ai := 1;
                 if len(assignment_rhs_resource_name_step52h) > 0 {
                     if std.str_eq(assignment_lhs_resource_name_step52g, assignment_rhs_resource_name_step52h) == 0 {

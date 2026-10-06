@@ -21,6 +21,9 @@ type MirNativeFullProgramFunction[ctx] struct {
     extern_symbol_name: str,
     parameter_names: Index[std.Vector[str, ctx], ctx],
     parameter_types: Index[std.Vector[str, ctx], ctx],
+    ffi_param_policies: Index[std.Vector[str, ctx], ctx],
+    ffi_return_policy: str,
+    ffi_destructor_identity: str,
     return_type: str,
     body: Index[ast.BlockStatement[ctx], ctx],
     body_node_index: int
@@ -220,7 +223,8 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                             } else {
                                 inner = ctx[resolved.RawPointer.inner];
                             }
-                            if inner.tag == 8 {
+                            if inner.tag == 8 &&
+                               std.str_eq(parameter.ffi_policy, "release_owned") == 0 {
                                 if (resolved.tag == 11 && resolved.Reference.brand != empty[Index[str, ctx]]) ||
                                    inner.Struct.brand != empty[Index[str, ctx]] {
                                     return "Native FFI test host requires an unbranded reference and struct";
@@ -461,6 +465,83 @@ func mir_native_full_program_ffi_raw_return_diagnostic(programs: std.Vector[ast.
         }
         module_index = module_index + 1;
     }
+    return "";
+}
+
+// The source-side decision admits only the canonical one-pointer C owner
+// shape. The worker independently checks the tagged position policy, physical
+// layout, and destructor-to-release call before any native object is emitted.
+func mir_native_full_program_ffi_owned_return_diagnostic(programs: std.Vector[ast.Program[ctx], ctx], module_prefixes: std.Vector[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
+    mut target := primitive_layout.mir_primitive_layout_target(os.NativeTargetTriple(ctx), ctx);
+    mut module_index := 0;
+    while module_index < len(programs) {
+        unsafe { (*env).current_prefix = module_prefixes[module_index]; }
+        mut statements: std.Vector[ast.Statement[ctx], ctx] := ctx[programs[module_index].statements];
+        mut statement_index := 0;
+        while statement_index < len(statements) {
+            mut statement := statements[statement_index];
+            unsafe {
+                if statement.tag == 3 && statement.FunctionDecl.is_extern == 1 &&
+                   std.str_eq(statement.FunctionDecl.ffi_return_policy, "owned_return") == 1 {
+                    if target.found == 0 ||
+                       std.str_eq(target.target.target_triple, "x86_64-unknown-linux-gnu") == 0 ||
+                       target.target.pointer_size != 8 {
+                        return "Native FFI owned result target ABI is unsupported";
+                    }
+                    mut qualified := mir_native_full_program_qualified_name(
+                        module_prefixes[module_index], statement.FunctionDecl.name, ctx
+                    );
+                    guard sig := (*env).function_registry.Get(qualified) else {
+                        return "Native FFI owned result lacks a verified declaration";
+                    };
+                    if sig.ffi_contract_verified == 0 ||
+                       std.str_eq(sig.ffi_return_policy, "owned_return") == 0 ||
+                       typechecker.env_ffi_owned_result_shape(
+                           env as *typechecker.TypeEnvironment[ctx], sig.return_type, ctx
+                       ) == 0 ||
+                       sig.requires_sandbox_arena == 1 {
+                        return "Native FFI owned result shape or position is unsupported";
+                    }
+                    mut destructor_name := typechecker.env_struct_declared_destructor_name(
+                        env as *typechecker.TypeEnvironment[ctx],
+                        sig.return_type.Struct.struct_name, ctx
+                    );
+                    mut destructor := mir_native_full_program_qualified_name(
+                        module_prefixes[module_index], destructor_name, ctx
+                    );
+                    if typechecker.env_function_is_validated_resource_destructor(
+                        env as *typechecker.TypeEnvironment[ctx], destructor, ctx
+                    ) == 0 {
+                        return "Native FFI owned result lacks validated release destructor";
+                    }
+                    mut destructor_body_valid := 0;
+                    mut candidate_index := 0;
+                    while candidate_index < len(statements) {
+                        mut candidate := statements[candidate_index];
+                        if candidate.tag == 3 && candidate.FunctionDecl.is_extern == 0 &&
+                           std.str_eq(candidate.FunctionDecl.name, destructor_name) == 1 {
+                            mut previous_identity := std.Clone(
+                                ctx, (*env).current_function_identity_scope
+                            );
+                            (*env).current_function_identity_scope = std.Clone(ctx, destructor);
+                            destructor_body_valid = typechecker.env_ffi_owned_destructor_body_valid(
+                                env as *typechecker.TypeEnvironment[ctx], candidate,
+                                sig.return_type.Struct.struct_name, ctx
+                            );
+                            (*env).current_function_identity_scope = previous_identity;
+                        }
+                        candidate_index = candidate_index + 1;
+                    }
+                    if destructor_body_valid == 0 {
+                        return "Native FFI owned result destructor does not release exactly once";
+                    }
+                }
+            }
+            statement_index = statement_index + 1;
+        }
+        module_index = module_index + 1;
+    }
+    unsafe { (*env).current_prefix = ""; }
     return "";
 }
 
@@ -863,6 +944,7 @@ func mir_native_full_program_storage_root(storage_name: str, ctx: &Arena) str {
 
 func mir_native_full_program_resource_storage_node(
     storage_name: str,
+    acquired_type_name: str,
     source_line: int,
     source_column: int,
     source_start_offset: int,
@@ -876,13 +958,24 @@ func mir_native_full_program_resource_storage_node(
         guard root_type_lookup := (*env).variable_types.Get(root) else {
             return 0 - 1;
         };
+        mut root_ast_type := root_type_lookup;
+        // The variable type map is reused across function bodies. The
+        // acquisition action retains the exact owner identity for a direct
+        // native-owned local, even when a later function reuses its name.
+        if std.str_eq(storage_name, root) == 1 &&
+           len(acquired_type_name) > 0 &&
+           typechecker.env_ffi_owner_has_native_acquisition(
+               env as *typechecker.TypeEnvironment[ctx], acquired_type_name, ctx
+           ) == 1 {
+            root_ast_type = typechecker.make_type_struct(acquired_type_name, "", ctx);
+        }
         mut root_type := mir_native_full_program_type_identity(
-            root_type_lookup, env, ctx
+            root_ast_type, env, ctx
         );
         if len(root_type) == 0 || std.str_eq(root_type, "Unknown") == 1 {
             return 0 - 1;
         }
-        mut storage_type := root_type_lookup;
+        mut storage_type := root_ast_type;
         mut cursor := len(root);
         while cursor < len(storage_name) {
             if std.str_eq(
@@ -946,7 +1039,7 @@ func mir_native_full_program_resource_cleanup_expression(
     ctx: &Arena
 ) int {
     mut storage := mir_native_full_program_resource_storage_node(
-        action.storage_name, source_line, source_column,
+        action.storage_name, action.type_name, source_line, source_column,
         source_start_offset, source_end_offset, nodes_index, env, ctx
     );
     if storage < 0 { return 0 - 1; }
@@ -975,7 +1068,7 @@ func mir_native_full_program_resource_cleanup_expression(
     if len(action.cleanup_condition) == 0 { return call_node; }
 
     mut condition := mir_native_full_program_resource_storage_node(
-        action.cleanup_condition, source_line, source_column,
+        action.cleanup_condition, "", source_line, source_column,
         source_start_offset, source_end_offset, nodes_index, env, ctx
     );
     if condition < 0 { return 0 - 1; }
@@ -1829,6 +1922,10 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
                         mir_native_full_program_empty_string_vector(ctx);
                     function.parameter_names =
                         mir_native_full_program_empty_string_vector(ctx);
+                    function.ffi_param_policies =
+                        mir_native_full_program_empty_string_vector(ctx);
+                    function.ffi_return_policy = "";
+                    function.ffi_destructor_identity = "";
                     function.return_type = std.Clone(ctx, "");
                     function.body = statement.FunctionDecl.body;
                     function.body_node_index = 0 - 1;
@@ -1884,6 +1981,44 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
                     }
                     ctx.Set(function.parameter_types, parameter_types);
                     ctx.Set(function.parameter_names, parameter_names);
+                    if function.is_extern == 1 {
+                        guard ffi_signature := (*env).function_registry.Get(function.qualified_name) else {
+                            return mir_native_full_program_invalid(model,
+                                "Native backend canonical MIR verification failed: external FFI signature is missing", ctx);
+                        };
+                        if ffi_signature.ffi_contract_verified == 0 ||
+                           ffi_signature.ffi_param_policies == empty[Index[std.Vector[str, ctx], ctx]] {
+                            return mir_native_full_program_invalid(model,
+                                "Native backend canonical MIR verification failed: external FFI policy is unverified", ctx);
+                        }
+                        function.ffi_param_policies = ffi_signature.ffi_param_policies;
+                        function.ffi_return_policy = std.Clone(ctx, ffi_signature.ffi_return_policy);
+                        if std.str_eq(function.ffi_return_policy, "owned_return") == 1 {
+                            mut owner_type := ffi_signature.return_type;
+                            if owner_type.tag != 8 {
+                                return mir_native_full_program_invalid(model,
+                                    "Native backend canonical MIR verification failed: owned result is not a struct", ctx);
+                            }
+                            mut destructor_name := typechecker.env_struct_declared_destructor_name(
+                                env as *typechecker.TypeEnvironment[ctx],
+                                owner_type.Struct.struct_name, ctx
+                            );
+                            if len(destructor_name) == 0 {
+                                return mir_native_full_program_invalid(model,
+                                    "Native backend canonical MIR verification failed: owned result lacks destructor identity", ctx);
+                            }
+                            function.ffi_destructor_identity =
+                                mir_native_full_program_qualified_name(
+                                    module_prefixes[module_index], destructor_name, ctx
+                                );
+                        }
+                        mut ffi_policies: std.Vector[str, ctx] := ctx[function.ffi_param_policies];
+                        if len(ffi_policies) != len(parameter_types) ||
+                           len(function.ffi_return_policy) == 0 {
+                            return mir_native_full_program_invalid(model,
+                                "Native backend canonical MIR verification failed: external FFI policy positions disagree", ctx);
+                        }
+                    }
 
                     mut return_type :=
                         ctx[statement.FunctionDecl.return_type];
@@ -2344,6 +2479,18 @@ func mir_native_full_program_serialize_model(model: MirNativeFullProgramModel[ct
                 len(parameter_types[parameter_index]) * 2;
             parameter_index = parameter_index + 1;
         }
+        if function.is_extern == 1 && len(function.ffi_return_policy) > 0 {
+            mut policies: std.Vector[str, ctx] := ctx[function.ffi_param_policies];
+            total_size = total_size + len("|ffi_policy.v1|") +
+                len(function.ffi_return_policy) * 2 + 1 +
+                mir_native_full_program_integer_width(len(policies)) + 1 +
+                len(function.ffi_destructor_identity) * 2;
+            parameter_index = 0;
+            while parameter_index < len(policies) {
+                total_size = total_size + 1 + len(policies[parameter_index]) * 2;
+                parameter_index = parameter_index + 1;
+            }
+        }
         function_index = function_index + 1;
     }
     total_size = total_size + len("node_count: ") +
@@ -2560,6 +2707,31 @@ func mir_native_full_program_serialize_model(model: MirNativeFullProgramModel[ct
                     destination, cursor, parameter_types[parameter_index]
                 );
                 parameter_index = parameter_index + 1;
+            }
+            if function.is_extern == 1 && len(function.ffi_return_policy) > 0 {
+                mut policies: std.Vector[str, ctx] := ctx[function.ffi_param_policies];
+                cursor = mir_native_full_program_write_text(
+                    destination, cursor, "|ffi_policy.v1|"
+                );
+                cursor = mir_native_full_program_write_utf8_hex(
+                    destination, cursor, function.ffi_return_policy
+                );
+                cursor = mir_native_full_program_write_text(destination, cursor, "|");
+                cursor = mir_native_full_program_write_integer(
+                    destination, cursor, len(policies)
+                );
+                parameter_index = 0;
+                while parameter_index < len(policies) {
+                    cursor = mir_native_full_program_write_text(destination, cursor, "|");
+                    cursor = mir_native_full_program_write_utf8_hex(
+                        destination, cursor, policies[parameter_index]
+                    );
+                    parameter_index = parameter_index + 1;
+                }
+                cursor = mir_native_full_program_write_text(destination, cursor, "|");
+                cursor = mir_native_full_program_write_utf8_hex(
+                    destination, cursor, function.ffi_destructor_identity
+                );
             }
             cursor = mir_native_full_program_write_text(destination, cursor, "\n");
             function_index = function_index + 1;
@@ -2911,6 +3083,9 @@ func mir_native_full_program_add_formal_runtime_signatures(
                                 function.extern_symbol_name = std.Clone(ctx, symbol);
                                 function.parameter_names = mir_native_full_program_empty_string_vector(ctx);
                                 function.parameter_types = mir_native_full_program_empty_string_vector(ctx);
+                                function.ffi_param_policies = mir_native_full_program_empty_string_vector(ctx);
+                                function.ffi_return_policy = "";
+                                function.ffi_destructor_identity = "";
                                 mut names: std.Vector[str, ctx] := std.VectorNew(ctx);
                                 position = 0;
                                 while position < actual_count {
@@ -3213,6 +3388,17 @@ func mir_native_full_program_source_lower(programs: std.Vector[ast.Program[ctx],
         result.deferred = 1;
         result.reason_code = std.Clone(ctx, "deferred_p26_ffi_raw_return_host_contract");
         result.diagnostic = ffi_raw_return;
+        return result;
+    }
+
+    mut ffi_owned_return := mir_native_full_program_ffi_owned_return_diagnostic(
+        programs, module_prefixes, env, ctx
+    );
+    if len(ffi_owned_return) > 0 {
+        result.represented = 0;
+        result.deferred = 1;
+        result.reason_code = std.Clone(ctx, "deferred_p26_ffi_owned_return_contract");
+        result.diagnostic = ffi_owned_return;
         return result;
     }
 

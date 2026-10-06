@@ -71,6 +71,13 @@ PATCH24_12B_LINEAR_FIXTURES = [
     "compiler/phase24_resource_implicit_transfer_alias_module.gst",
 ]
 
+# Phase 26.1D's native-owned result fixtures use the existing linear
+# destructor contract; they are recorded separately from Phase 20's cases.
+PHASE26_1D_OWNED_LINEAR_FIXTURES = [
+    "compiler/phase26_ffi_owned_return_probe_source.gst",
+    "compiler/phase26_ffi_owned_return_source.gst",
+]
+
 SOURCE_DESTRUCTORS = {
     SOURCE_DECLARATIONS[0]: (
         "Phase13CompositionResourceMetadata",
@@ -237,10 +244,18 @@ def validate() -> dict:
                              PROTECTED_ACCESS_LINEAR_FIXTURES +
                              PHASE21_RESOURCE_SYNC_LINEAR_FIXTURES +
                              PATCH24_2F_LINEAR_FIXTURES +
-                             PATCH24_12B_LINEAR_FIXTURES)
+                             PATCH24_12B_LINEAR_FIXTURES +
+                             PHASE26_1D_OWNED_LINEAR_FIXTURES)
     require(actual_linear == expected_linear,
             "compiler-owned #[linear] declaration inventory drifted: " +
             repr(actual_linear))
+
+    owned_return = registry.get("phase26_activation_audit", {}).get(
+        "ffi_owned_return_increment", {})
+    require(sorted([owned_return.get("minimal_source_fixture"),
+                    owned_return.get("positive_fixture")]) ==
+            sorted(PHASE26_1D_OWNED_LINEAR_FIXTURES),
+            "Phase 26 native-owned linear fixtures lack their authority")
 
     enforcement = registry.get("phase20_resource_declaration_enforcement", {})
     enforcement_files = [enforcement.get("module_fixture", "")]

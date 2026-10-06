@@ -39,9 +39,26 @@ def repr_int_changed_rows() -> dict[str, dict]:
     return {row["path"]: row for row in rows}
 
 
+@lru_cache(maxsize=1)
+def owned_return_changed_rows() -> dict[str, dict]:
+    registry = json.loads((ROOT / "scripts/cranelift_feature_registry.json")
+                          .read_text(encoding="utf-8"))
+    rows = registry["phase26_activation_audit"].get(
+        "ffi_owned_return_increment", {}).get(
+            "phase23_text_surface_successor", {}).get("changed_rows", [])
+    require(len({row["path"] for row in rows}) == len(rows),
+            "owned-return text surface has duplicate paths")
+    return {row["path"]: row for row in rows}
+
+
 def digest(path: str) -> str:
     """Project a later enum text successor to the direct-return snapshot."""
     live = raw_digest(path)
+    owned = owned_return_changed_rows().get(path)
+    if owned:
+        require(owned["current_digest"] == live,
+                f"owned-return text surface drifted: {path}")
+        live = owned["previous_digest"]
     successor = repr_int_changed_rows().get(path)
     if successor:
         require(successor["current_digest"] == live,
@@ -212,6 +229,7 @@ def main() -> None:
     repr_int_changed = {row["path"]: row for row in activation.get(
         "ffi_repr_int_increment", {}).get("phase23_text_surface_successor", {}).get(
             "changed_rows", [])}
+    owned_changed = owned_return_changed_rows()
     alias_changed = {row["path"]: row for row in alias_record.get(
         "phase23_text_surface_successor", {}).get("changed_rows", [])}
     chain_changed = {row["path"]: row for row in chain_record.get(
@@ -289,6 +307,13 @@ def main() -> None:
         live_digest = raw_digest(row["path"])
         live_counts = {name: len(pattern.findall(text))
                        for name, pattern in SURFACE_PATTERNS.items()}
+        owned_successor = owned_changed.get(row["path"])
+        if owned_successor:
+            require(owned_successor["current_digest"] == live_digest and
+                    owned_successor["current_match_counts"] == live_counts,
+                    f"owned-return text surface drifted: {row['path']}")
+            live_digest = owned_successor["previous_digest"]
+            live_counts = owned_successor["previous_match_counts"]
         repr_int_successor = repr_int_changed.get(row["path"])
         if repr_int_successor:
             require(repr_int_successor["current_digest"] == live_digest and
@@ -490,6 +515,11 @@ def main() -> None:
         successor = local_changed.get(row["path"])
         alias_successor = alias_changed.get(row["path"])
         live_digest = raw_digest(row["path"])
+        owned_successor = owned_changed.get(row["path"])
+        if owned_successor:
+            require(owned_successor["current_digest"] == live_digest,
+                    f"owned-return text surface drifted: {row['path']}")
+            live_digest = owned_successor["previous_digest"]
         repr_int_successor = repr_int_changed.get(row["path"])
         if repr_int_successor:
             require(repr_int_successor["current_digest"] == live_digest,
@@ -1823,6 +1853,12 @@ def main() -> None:
     live_sites = filename_sites()
     repr_int_sites = activation.get("ffi_repr_int_increment", {}).get(
         "filename_site_successor")
+    owned_sites = activation.get("ffi_owned_return_increment", {}).get(
+        "filename_site_successor")
+    if owned_sites:
+        require(owned_sites["current_sites"] == live_sites,
+                "owned-return filename sites drifted")
+        live_sites = owned_sites["previous_sites"]
     if repr_int_sites:
         require(repr_int_sites["current_sites"] == live_sites,
                 "integer enum filename sites drifted")
@@ -3608,6 +3644,12 @@ def main() -> None:
     live_inventory = manifest_summary(source_sites())
     repr_int_inventory = activation.get("ffi_repr_int_increment", {}).get(
         "spelling_inventory_successor")
+    owned_inventory = activation.get("ffi_owned_return_increment", {}).get(
+        "spelling_inventory_successor")
+    if owned_inventory:
+        require(owned_inventory["current_inventory_summary"] == live_inventory,
+                "owned-return spelling inventory drifted")
+        live_inventory = repr_int_inventory["current_inventory_summary"]
     if repr_int_inventory:
         require(repr_int_inventory["current_inventory_summary"] == live_inventory,
                 "integer enum spelling inventory drifted")
@@ -3630,6 +3672,10 @@ def main() -> None:
             post_take_plain_record["spelling_inventory_successor"]["previous_inventory_summary"]["unknown_site_count"] == 0,
             "consecutive plain-before-Take-cast spelling inventory drifted")
     live_sites = filename_sites()
+    if owned_sites:
+        require(owned_sites["current_sites"] == live_sites,
+                "owned-return filename sites drifted")
+        live_sites = owned_sites["previous_sites"]
     if repr_int_sites:
         require(repr_int_sites["current_sites"] == live_sites,
                 "integer enum filename sites drifted")
