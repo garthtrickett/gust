@@ -3997,7 +3997,8 @@ def normalize_phase23_text_surfaces(
                     "compiler/mir_native_backend_full_program_source.gst",
                     "justfile", "scripts/cranelift_test_levels.json",
                     "scripts/phase22_opening.py",
-                    "scripts/phase26_call_return_zero_registration.py"],
+                    "scripts/phase26_call_return_zero_registration.py",
+                    "scripts/phase26_ffi_repr_c_registration.py"],
                 "Phase 26 generic-direct text surface successor shape drifted")
         live = {row["path"]: row for row in rows}
         for entry in changed:

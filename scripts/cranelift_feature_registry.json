@@ -48100,6 +48100,20 @@
       "owning_level2_guard": "guard-cranelift-phase26-ffi-generic-direct",
       "native_fallback": false,
       "runtime_symbol_surface_changed": false,
+      "legacy_unknown_host_successor": {
+        "contract_version": "phase26_1d_generic_direct_legacy_host_successor_v1",
+        "previous_d2": "unknown_host_deferred_before_driver_discovery",
+        "current_d2": "generic_direct_call4_supported_then_poison_driver_handshake",
+        "legacy_call0_without_suffix": "rejected_before_object_emission",
+        "other_d2_negative_cases": "preserved",
+        "phase22_shifted_rows": [
+          {
+            "path": "scripts/phase26_ffi_repr_c_layout.sh",
+            "previous_line": 59,
+            "current_line": 70
+          }
+        ]
+      },
       "phase22_invocation_successor": {
         "contract_version": "phase26_1d_generic_direct_phase22_invocation_successor_v1",
         "previous_total": 246,
@@ -48223,7 +48237,7 @@
           {
             "path": "scripts/phase22_opening.py",
             "previous_digest": "b0a2d520ea41e4bce23e9626d519e3a6f9b6f2ec69dc430f56d99b0ecb525ab4",
-            "current_digest": "f4c291283158907d258955ddb4470331406b1479e73b98ec1cbcddfa6118c146",
+            "current_digest": "e23c1c13c89262f8c1a09c1d1cad75ab92edd1b0b622f10ac1d403bd6656d8e9",
             "previous_match_counts": {
               "explicit_backend_spelling": 5,
               "mir_to_c_name": 23,
@@ -48246,6 +48260,21 @@
             },
             "current_match_counts": {
               "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            }
+          },
+          {
+            "path": "scripts/phase26_ffi_repr_c_registration.py",
+            "previous_digest": "a81b188a62077f972c2e6d38db79778a1d69716f411a190b5c733c50536ee520",
+            "current_digest": "61413bf42665ef579ac2059a4e74f226e655aeda28d8732f13cf05020927821d",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 1,
               "mir_to_c_name": 1,
               "generated_c_contract": 0
             }

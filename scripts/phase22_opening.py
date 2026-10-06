@@ -300,6 +300,19 @@ def phase22_relay_inventory_rows(
                 {key: value for key, value in current[0].items() if key != "line"},
                 "Phase 26 generic isolated legacy host invocation shift drifted")
         rows = [old[0] if row == current[0] else row for row in rows]
+    direct_host = activation.get("ffi_generic_direct_call_increment", {}).get(
+        "legacy_unknown_host_successor", {})
+    for shift in direct_host.get("phase22_shifted_rows", []):
+        prior = activation["ffi_repr_c_layout_increment"]["phase22_invocation_successor"]["added_rows"]
+        old = [row for row in prior if row["path"] == shift["path"] and
+               row["line"] == shift["previous_line"]]
+        current = [row for row in rows if row["path"] == shift["path"] and
+                   row["line"] == shift["current_line"]]
+        require(len(old) == len(current) == 1 and
+                {key: value for key, value in old[0].items() if key != "line"} ==
+                {key: value for key, value in current[0].items() if key != "line"},
+                "Phase 26 generic direct legacy host invocation shift drifted")
+        rows = [old[0] if row == current[0] else row for row in rows]
     direct = registry.get("phase26_activation_audit", {}).get(
         "ffi_generic_direct_call_increment", {}).get("phase22_invocation_successor")
     if direct is not None:

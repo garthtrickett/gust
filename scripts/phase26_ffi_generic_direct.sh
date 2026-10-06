@@ -178,6 +178,15 @@ for legacy in (0, 1, 2, 3):
         del f[tag:]
     change_call(f'legacy_{legacy}_forgery', change)
 
+# A non-fixture host cannot regain the old Call 0 route by discarding the
+# Call 4 plan. Rename the declared/imported host in the suffix-free mutation.
+legacy_zero = (root / 'legacy_0_forgery.mir').read_text()
+old_host = hx('host_direct_alpha')
+new_host = hx('tiny_host_unknown_aggregate')
+assert old_host in legacy_zero
+(root / 'legacy_unknown_host_call0.mir').write_text(
+    legacy_zero.replace(old_host, new_host))
+
 # A validly tagged row with a LocalRead alias in place of its selected
 # AddressOf must fail canonical provenance validation before object emission.
 lines = base.splitlines()
@@ -218,7 +227,7 @@ lines[write_index] = 'node: ' + '|'.join(write_local)
 PY
 for case_name in wrong_version wrong_target wrong_scope wrong_count wrong_index \
   wrong_direction wrong_type wrong_size wrong_align wrong_provenance truncated \
-  missing_suffix legacy_0_forgery legacy_1_forgery legacy_2_forgery \
+  missing_suffix legacy_0_forgery legacy_unknown_host_call0 legacy_1_forgery legacy_2_forgery \
   legacy_3_forgery forged_origin aliased_positions; do
   set +e
   "$driver" phase21-full-program-object \

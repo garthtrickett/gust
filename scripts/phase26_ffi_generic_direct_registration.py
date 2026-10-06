@@ -44,7 +44,20 @@ def main() -> None:
     require(set(record) == set(expected) | {
         "phase22_invocation_successor", "production_audit_successor",
         "phase23_text_surface_successor", "spelling_inventory_successor",
+        "legacy_unknown_host_successor",
     }, "generic direct-call acquired unreviewed fields")
+    require(record["legacy_unknown_host_successor"] == {
+        "contract_version": "phase26_1d_generic_direct_legacy_host_successor_v1",
+        "previous_d2": "unknown_host_deferred_before_driver_discovery",
+        "current_d2": "generic_direct_call4_supported_then_poison_driver_handshake",
+        "legacy_call0_without_suffix": "rejected_before_object_emission",
+        "other_d2_negative_cases": "preserved",
+        "phase22_shifted_rows": [{
+            "path": "scripts/phase26_ffi_repr_c_layout.sh",
+            "previous_line": 59,
+            "current_line": 70,
+        }],
+    }, "generic direct legacy-host successor drifted")
     from phase22_opening import scan_invocations
     rows = [row for row in scan_invocations()
             if row["path"] == "scripts/phase26_ffi_generic_direct.sh"]
@@ -76,7 +89,8 @@ def main() -> None:
             "PR Fast owner missing")
     guard = (ROOT / "scripts/phase26_ffi_generic_direct.sh").read_text()
     for token in ("canonical-positive.o", "aliased_positions", "wrong_scope",
-                  "legacy_3_forgery", "phase21-full-program-object", "poison-driver"):
+                  "legacy_3_forgery", "legacy_unknown_host_call0",
+                  "phase21-full-program-object", "poison-driver"):
         require(token in guard, f"native or fail-closed assertion missing: {token}")
     print(f"{GUARD}: registration ok")
 
