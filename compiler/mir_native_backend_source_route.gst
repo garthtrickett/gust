@@ -802,8 +802,6 @@ func mir_native_scalar_source_compile_inner(programs: std.Vector[ast.Program[ctx
         std.Concat(absolute_output, ".phase10.request")
     );
 
-    mut serialized_bundle := std.Clone(ctx, serialized_generic_bundle);
-
     mut backend_request := request.mir_native_backend_make_request(
         expected_target,
         expected_object_format,
@@ -855,7 +853,7 @@ func mir_native_scalar_source_compile_inner(programs: std.Vector[ast.Program[ctx
     os.RemoveFile(bundle_path);
     os.RemoveFile(request_path);
 
-    if os.WriteFile(bundle_path, serialized_bundle) == 0 {
+    if os.WriteFile(bundle_path, serialized_generic_bundle) == 0 {
         os.RemoveFile(bundle_path);
         return mir_native_scalar_source_route_result(
             1,
