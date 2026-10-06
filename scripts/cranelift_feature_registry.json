@@ -48150,7 +48150,7 @@
           {
             "path": "compiler/experiments/cranelift/src/full_program.rs",
             "previous_digest": "0caa789c77060a3e9e278d8725c27d7e337abceba2f1b25786128b58d2e7a90e",
-            "current_digest": "0c702448c491ac1f751bd553650052641cd36054547b1ce44bed9c1dc2f6c6a2",
+            "current_digest": "58fdedbed47594367b1bf42d54988019f3744064be43a16f2bb6b74465d8c758",
             "previous_match_counts": {
               "explicit_backend_spelling": 0,
               "mir_to_c_name": 1,

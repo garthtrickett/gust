@@ -71,7 +71,7 @@ pub struct Node {
     pub second_text: String,
     pub integer: i32,
     pub second_integer: i32,
-    pub isolated_call_plan: Option<IsolatedCallPlan>,
+    pub isolated_call_plan: Option<Box<IsolatedCallPlan>>,
     pub source_line: usize,
     pub source_column: usize,
     pub source_start: usize,
@@ -1412,7 +1412,7 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
                     provenance: decode_hex(values[base + 5], "Call isolation provenance")?,
                 });
             }
-            Some(IsolatedCallPlan { target_triple, cleanup, positions })
+            Some(Box::new(IsolatedCallPlan { target_triple, cleanup, positions }))
         } else {
             if values.len() != child_end || kind == "Call" && !matches!(second_integer, 0 | 1 | 2) {
                 return Err(invalid("full-program Call has an unknown optional policy or node extension"));
