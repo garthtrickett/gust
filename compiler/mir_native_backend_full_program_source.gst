@@ -24,6 +24,7 @@ type MirNativeFullProgramFunction[ctx] struct {
     ffi_param_policies: Index[std.Vector[str, ctx], ctx],
     ffi_return_policy: str,
     ffi_destructor_identity: str,
+    isolated_call_plan: str,
     return_type: str,
     body: Index[ast.BlockStatement[ctx], ctx],
     body_node_index: int
@@ -42,7 +43,6 @@ type MirNativeFullProgramNode[ctx] struct {
     second_text_operand: str,
     integer_operand: int,
     second_integer_operand: int,
-    isolated_call_plan: str,
     source_line: int,
     source_column: int,
     source_start_offset: int,
@@ -760,7 +760,6 @@ func mir_native_full_program_make_node(kind: str, type_identity: str, text_opera
     node.second_text_operand = std.Clone(ctx, second_text_operand);
     node.integer_operand = integer_operand;
     node.second_integer_operand = second_integer_operand;
-    node.isolated_call_plan = "";
     node.source_line = source_line;
     node.source_column = source_column;
     node.source_start_offset = source_start_offset;
@@ -1006,10 +1005,9 @@ func mir_native_full_program_flatten_expression(expression_index: Index[ast.Expr
                         node.second_integer_operand = 2;
                     } else {
                         node.second_integer_operand = 3;
-                        node.isolated_call_plan = mir_native_full_program_generic_isolated_plan(
+                        if len(mir_native_full_program_generic_isolated_plan(
                             selected_isolated_signature, env, ctx
-                        );
-                        if len(node.isolated_call_plan) == 0 { return 0 - 1; }
+                        )) == 0 { return 0 - 1; }
                     }
                 }
             }
@@ -1700,6 +1698,19 @@ func mir_native_full_program_function_index(functions: std.Vector[MirNativeFullP
     return 0 - 1;
 }
 
+// Call plans belong to the resolved extern function, not to every MIR node.
+// Most full-program nodes have no isolated policy, so keep their records small.
+func mir_native_full_program_node_isolated_plan(node: MirNativeFullProgramNode[ctx], functions: std.Vector[MirNativeFullProgramFunction[ctx], ctx], ctx: &Arena) str {
+    if std.str_eq(node.kind, "Call") == 0 || node.second_integer_operand != 3 {
+        return "";
+    }
+    mut index := mir_native_full_program_function_index(
+        functions, node.second_text_operand, ctx
+    );
+    if index < 0 { return ""; }
+    return functions[index].isolated_call_plan;
+}
+
 func mir_native_full_program_append_mutex_constructor_helpers(
     model: MirNativeFullProgramModel[ctx],
     functions_index: Index[std.Vector[MirNativeFullProgramFunction[ctx], ctx], ctx],
@@ -1835,6 +1846,7 @@ func mir_native_full_program_append_mutex_constructor_helpers(
                     mir_native_full_program_empty_string_vector(ctx);
                 helper.parameter_types =
                     mir_native_full_program_empty_string_vector(ctx);
+                helper.isolated_call_plan = "";
                 mut helper_parameter_names: std.Vector[str, ctx] :=
                     std.VectorNew(ctx);
                 helper_parameter_names.Push(std.Clone(ctx, "ctx"));
@@ -2165,6 +2177,7 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
                         mir_native_full_program_empty_string_vector(ctx);
                     function.ffi_return_policy = "";
                     function.ffi_destructor_identity = "";
+                    function.isolated_call_plan = "";
                     function.return_type = std.Clone(ctx, "");
                     function.body = statement.FunctionDecl.body;
                     function.body_node_index = 0 - 1;
@@ -2232,6 +2245,11 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
                         }
                         function.ffi_param_policies = ffi_signature.ffi_param_policies;
                         function.ffi_return_policy = std.Clone(ctx, ffi_signature.ffi_return_policy);
+                        if ffi_signature.requires_sandbox_arena == 1 {
+                            function.isolated_call_plan = mir_native_full_program_generic_isolated_plan(
+                                ffi_signature, env, ctx
+                            );
+                        }
                         if std.str_eq(function.ffi_return_policy, "owned_return") == 1 {
                             mut owner_type := ffi_signature.return_type;
                             if owner_type.tag != 8 {
@@ -2564,7 +2582,7 @@ func mir_native_full_program_serialize_function_row(function_index: int, functio
     return std.Clone(ctx, row);
 }
 
-func mir_native_full_program_serialize_node_row(node_index: int, node: MirNativeFullProgramNode[ctx], ctx: &Arena) str {
+func mir_native_full_program_serialize_node_row(node_index: int, node: MirNativeFullProgramNode[ctx], functions: std.Vector[MirNativeFullProgramFunction[ctx], ctx], ctx: &Arena) str {
     mut row := "node: ";
     row = mir_native_full_program_append_int(row, node_index, ctx);
     row = std.Concat(row, "|");
@@ -2610,7 +2628,7 @@ func mir_native_full_program_serialize_node_row(node_index: int, node: MirNative
         );
         child_index = child_index + 1;
     }
-    row = std.Concat(row, node.isolated_call_plan);
+    row = std.Concat(row, mir_native_full_program_node_isolated_plan(node, functions, ctx));
     row = std.Concat(row, "\n");
     return std.Clone(ctx, row);
 }
@@ -2758,7 +2776,12 @@ func mir_native_full_program_serialize_model(model: MirNativeFullProgramModel[ct
                 mir_native_full_program_integer_width(children[child_index]);
             child_index = child_index + 1;
         }
-        total_size = total_size + len(node.isolated_call_plan);
+        mut isolated_plan := mir_native_full_program_node_isolated_plan(node, functions, ctx);
+        if std.str_eq(node.kind, "Call") == 1 &&
+           node.second_integer_operand == 3 && len(isolated_plan) == 0 {
+            return std.Clone(ctx, "");
+        }
+        total_size = total_size + len(isolated_plan);
         node_index = node_index + 1;
     }
     total_size = total_size + len("entry_function_index: ") +
@@ -3024,7 +3047,10 @@ func mir_native_full_program_serialize_model(model: MirNativeFullProgramModel[ct
                 );
                 child_index = child_index + 1;
             }
-            cursor = mir_native_full_program_write_text(destination, cursor, node.isolated_call_plan);
+            cursor = mir_native_full_program_write_text(
+                destination, cursor,
+                mir_native_full_program_node_isolated_plan(node, functions, ctx)
+            );
             cursor = mir_native_full_program_write_text(destination, cursor, "\n");
             node_index = node_index + 1;
         }
@@ -3328,6 +3354,7 @@ func mir_native_full_program_add_formal_runtime_signatures(
                                 function.ffi_param_policies = mir_native_full_program_empty_string_vector(ctx);
                                 function.ffi_return_policy = "";
                                 function.ffi_destructor_identity = "";
+                                function.isolated_call_plan = "";
                                 mut names: std.Vector[str, ctx] := std.VectorNew(ctx);
                                 position = 0;
                                 while position < actual_count {
