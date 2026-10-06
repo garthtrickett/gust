@@ -45,6 +45,7 @@ def main() -> None:
         "phase22_invocation_successor", "production_audit_successor",
         "phase23_text_surface_successor", "spelling_inventory_successor",
         "legacy_unknown_host_successor", "legacy_write_alias_successor",
+        "legacy_packed_host_successor",
     }, "generic direct-call acquired unreviewed fields")
     require(record["legacy_unknown_host_successor"] == {
         "contract_version": "phase26_1d_generic_direct_legacy_host_successor_v1",
@@ -65,6 +66,20 @@ def main() -> None:
         "current_d3": "local_raw_alias_rejected_by_canonical_mir_before_driver",
         "other_d3_negative_cases": "preserved",
     }, "generic direct legacy write-alias successor drifted")
+    require(record["legacy_packed_host_successor"] == {
+        "contract_version": "phase26_1d_generic_direct_legacy_packed_host_successor_v1",
+        "read_fixture": "compiler/phase26_ffi_packed_unknown_host_source.gst",
+        "read_result": "supported_call4_then_poison_driver_handshake",
+        "legacy_packed_call0_without_suffix": "rejected_before_object_emission",
+        "write_fixture": "compiler/phase26_ffi_packed_write_unknown_host_source.gst",
+        "write_result": "local_raw_alias_rejected_before_driver",
+        "other_packed_negative_cases": "preserved",
+        "phase22_shifted_rows": [{
+            "path": "scripts/phase26_ffi_packed_layout.sh",
+            "previous_line": 58,
+            "current_line": 68,
+        }],
+    }, "generic direct legacy packed-host successor drifted")
     from phase22_opening import scan_invocations
     rows = [row for row in scan_invocations()
             if row["path"] == "scripts/phase26_ffi_generic_direct.sh"]

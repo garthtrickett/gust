@@ -48121,6 +48121,22 @@
         "current_d3": "local_raw_alias_rejected_by_canonical_mir_before_driver",
         "other_d3_negative_cases": "preserved"
       },
+      "legacy_packed_host_successor": {
+        "contract_version": "phase26_1d_generic_direct_legacy_packed_host_successor_v1",
+        "read_fixture": "compiler/phase26_ffi_packed_unknown_host_source.gst",
+        "read_result": "supported_call4_then_poison_driver_handshake",
+        "legacy_packed_call0_without_suffix": "rejected_before_object_emission",
+        "write_fixture": "compiler/phase26_ffi_packed_write_unknown_host_source.gst",
+        "write_result": "local_raw_alias_rejected_before_driver",
+        "other_packed_negative_cases": "preserved",
+        "phase22_shifted_rows": [
+          {
+            "path": "scripts/phase26_ffi_packed_layout.sh",
+            "previous_line": 58,
+            "current_line": 68
+          }
+        ]
+      },
       "phase22_invocation_successor": {
         "contract_version": "phase26_1d_generic_direct_phase22_invocation_successor_v1",
         "previous_total": 246,
@@ -48244,7 +48260,7 @@
           {
             "path": "scripts/phase22_opening.py",
             "previous_digest": "b0a2d520ea41e4bce23e9626d519e3a6f9b6f2ec69dc430f56d99b0ecb525ab4",
-            "current_digest": "e23c1c13c89262f8c1a09c1d1cad75ab92edd1b0b622f10ac1d403bd6656d8e9",
+            "current_digest": "4099a65f50df6adb03766c942b1a889e898bf43658394e3027559dd5d5af12a2",
             "previous_match_counts": {
               "explicit_backend_spelling": 5,
               "mir_to_c_name": 23,
