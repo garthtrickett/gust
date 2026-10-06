@@ -314,6 +314,40 @@ PR workflows, and resolved review threads must pass before merge. Native
 unwinding, longjmp, and process termination are outside the cleanup claim;
 D, E, F, and Phase 26.1 remain open.
 
+**26.1D generic direct-borrow Call plan (ownership authorized, 2026-10-06).**
+An explicitly unsafe external call may borrow several verified flat C
+aggregates at their original addresses through `borrow_read_call` and
+`borrow_write_call` positions. Canonical Call code `4` appends the distinct
+`direct_call.v1` row suffix: target triple, `synchronous_call` scope, selected
+position count, then index/direction/pointee type/size/alignment/provenance for
+each selected position. The provenance is the direct address of a local.
+Source preflight rejects
+unsupported declarations and argument origins before driver discovery; the
+worker independently validates the plan against the canonical extern signature,
+argument nodes, layout rows, and target before object emission. Read borrows carry the unsafe
+extern's declared nonmutation contract; this does not add a language-wide
+immutable-reference guarantee. Write borrows use explicit unsafe raw pointers
+and their permitted native effects remain visible on the original aggregate.
+No transient copy, arena, retention permission, or trusted native provenance is
+created. Existing Call variants `0`/`1`/`2`/`3` and their canonical bytes and
+meanings remain intact. The first route accepts unbranded flat C aggregates
+and scalar value positions/results on the qualified target; unsupported alias,
+indirect origin, escape, layout, callback, and native-error forms fail closed.
+
+**Exit gate:** Two independent C hosts and distinct target-proven flat layouts
+exercise multiple read and write positions, the actual original-address
+pointer ABI, unchanged read values, and visible permitted write effects through
+normal, return, guard, and defer continuations. Source and canonical poison
+negatives reject wrong target, missing/forged/truncated/unknown plan version,
+wrong position/direction/count/type/size/alignment/provenance, unsafe alias or
+indirect origin, and retention or escape before driver discovery. Legacy Call
+variants `0`/`1`/`2`/`3` retain their positive and negative regression evidence.
+Focused and adjacent guards, stable compiler build, fixed-point bootstrap,
+exact registry and historical projections, all exact-head PR workflows, and
+resolved review threads must pass before merge. Native unwind, longjmp, and
+process termination remain outside the synchronous-call claim; D, E, F, and
+Phase 26.1 stay open.
+
 Use a transient isolated arena for memory handed to native code and destroy it
 on return. *Isolated* is deliberately narrower than *sandboxed*: this bounds
 memory lifetime and spread but cannot prevent native code from accessing process

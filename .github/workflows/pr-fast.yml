@@ -825,6 +825,9 @@ jobs:
       - name: Phase 26 generic isolated C pointer call
         run: just guard-cranelift-phase26-ffi-generic-isolated
 
+      - name: Phase 26 generic direct C pointer call
+        run: just guard-cranelift-phase26-ffi-generic-direct
+
       - name: Phase 26 raw cast provenance
         run: just guard-cranelift-phase26-raw-cast-provenance
 

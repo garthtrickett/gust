@@ -30,6 +30,7 @@
     "guard-cranelift-phase26-ffi-owned-return": 2,
     "guard-cranelift-phase26-ffi-transfer-owned": 2,
     "guard-cranelift-phase26-ffi-generic-isolated": 2,
+    "guard-cranelift-phase26-ffi-generic-direct": 2,
     "guard-cranelift-phase26-raw-cast-provenance": 2,
     "guard-cranelift-phase26-ffi-isolated-read": 2,
     "guard-cranelift-phase26-ffi-isolated-write": 2,

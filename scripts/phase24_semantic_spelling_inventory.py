@@ -512,7 +512,28 @@ def validate() -> tuple[dict, list[dict], dict]:
         "ffi_transfer_owned_increment", {}).get("spelling_inventory_successor")
     generic_isolated_successor = registry.get("phase26_activation_audit", {}).get(
         "ffi_generic_isolated_call_increment", {}).get("spelling_inventory_successor")
+    generic_direct_successor = registry.get("phase26_activation_audit", {}).get(
+        "ffi_generic_direct_call_increment", {}).get("spelling_inventory_successor")
     live_summary = summary
+    if generic_direct_successor is not None:
+        previous = generic_isolated_successor["current_inventory_summary"]
+        require(generic_direct_successor.get("contract_version") ==
+                "phase26_1d_generic_direct_spelling_inventory_successor_v1" and
+                generic_direct_successor.get("previous_inventory_summary") == previous and
+                generic_direct_successor.get("current_inventory_summary") == live_summary and
+                generic_direct_successor.get("changed_source_paths") == [
+                    "compiler/experiments/cranelift/src/full_program.rs",
+                    "compiler/mir_native_backend_full_program_source.gst",
+                    "compiler/phase26_ffi_generic_direct_source.gst"] and
+                generic_direct_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and
+                live_summary["source_file_count"] == previous["source_file_count"] + 1 and
+                live_summary["semantic_site_count"] == previous["semantic_site_count"] and
+                live_summary["site_count"] == previous["site_count"] and
+                live_summary["unknown_site_count"] == 0,
+                "Phase 26 generic-direct spelling inventory drifted")
+        summary = previous
+        live_summary = previous
     if generic_isolated_successor is not None:
         previous = transfer_owned_successor["current_inventory_summary"]
         require(generic_isolated_successor.get("contract_version") ==
