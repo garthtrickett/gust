@@ -300,6 +300,47 @@ def phase22_relay_inventory_rows(
                 {key: value for key, value in current[0].items() if key != "line"},
                 "Phase 26 generic isolated legacy host invocation shift drifted")
         rows = [old[0] if row == current[0] else row for row in rows]
+    direct_host = activation.get("ffi_generic_direct_call_increment", {}).get(
+        "legacy_unknown_host_successor", {})
+    for shift in direct_host.get("phase22_shifted_rows", []):
+        prior = activation["ffi_repr_c_layout_increment"]["phase22_invocation_successor"]["added_rows"]
+        old = [row for row in prior if row["path"] == shift["path"] and
+               row["line"] == shift["previous_line"]]
+        current = [row for row in rows if row["path"] == shift["path"] and
+                   row["line"] == shift["current_line"]]
+        require(len(old) == len(current) == 1 and
+                {key: value for key, value in old[0].items() if key != "line"} ==
+                {key: value for key, value in current[0].items() if key != "line"},
+                "Phase 26 generic direct legacy host invocation shift drifted")
+        rows = [old[0] if row == current[0] else row for row in rows]
+    packed_host = activation.get("ffi_generic_direct_call_increment", {}).get(
+        "legacy_packed_host_successor", {})
+    for shift in packed_host.get("phase22_shifted_rows", []):
+        prior = activation["ffi_packed_layout_increment"]["phase22_invocation_successor"]["added_rows"]
+        old = [row for row in prior if row["path"] == shift["path"] and
+               row["line"] == shift["previous_line"]]
+        current = [row for row in rows if row["path"] == shift["path"] and
+                   row["line"] == shift["current_line"]]
+        require(len(old) == len(current) == 1 and
+                {key: value for key, value in old[0].items() if key != "line"} ==
+                {key: value for key, value in current[0].items() if key != "line"},
+                "Phase 26 generic direct packed host invocation shift drifted")
+        rows = [old[0] if row == current[0] else row for row in rows]
+    direct = registry.get("phase26_activation_audit", {}).get(
+        "ffi_generic_direct_call_increment", {}).get("phase22_invocation_successor")
+    if direct is not None:
+        added = direct.get("added_rows")
+        path = "scripts/phase26_ffi_generic_direct.sh"
+        require(direct.get("contract_version") ==
+                "phase26_1d_generic_direct_phase22_invocation_successor_v1" and
+                direct.get("previous_total") == 246 and
+                direct.get("current_total") == 248 and
+                direct.get("partial_extra_or_substituted_invocation") == "rejected" and
+                len(rows) == 248 and isinstance(added, list) and len(added) == 2 and
+                [row for row in rows if row.get("path") == path] == added and
+                all(row.get("selection") == "explicit_cranelift" for row in added),
+                "Phase 26 generic-direct invocation rows drifted")
+        rows = [row for row in rows if row not in added]
     generic = registry.get("phase26_activation_audit", {}).get(
         "ffi_generic_isolated_call_increment", {}).get("phase22_invocation_successor")
     if generic is not None:

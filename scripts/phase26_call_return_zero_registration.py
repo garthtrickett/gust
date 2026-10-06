@@ -3694,6 +3694,8 @@ def main() -> None:
         "current_digest": post_take_plain_record["positive_fixture_successor"]["previous_digest"],
     }, "consecutive plain-before-Take-cast positive evidence drifted")
     live_inventory = manifest_summary(source_sites())
+    direct_inventory = activation.get("ffi_generic_direct_call_increment", {}).get(
+        "spelling_inventory_successor")
     generic_inventory = activation.get("ffi_generic_isolated_call_increment", {}).get(
         "spelling_inventory_successor")
     repr_int_inventory = activation.get("ffi_repr_int_increment", {}).get(
@@ -3702,6 +3704,10 @@ def main() -> None:
         "spelling_inventory_successor")
     owned_inventory = activation.get("ffi_owned_return_increment", {}).get(
         "spelling_inventory_successor")
+    if direct_inventory:
+        require(direct_inventory["current_inventory_summary"] == live_inventory,
+                "direct-borrow spelling inventory drifted")
+        live_inventory = direct_inventory["previous_inventory_summary"]
     if generic_inventory:
         require(generic_inventory["current_inventory_summary"] == live_inventory,
                 "generic isolation spelling inventory drifted")

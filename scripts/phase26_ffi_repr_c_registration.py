@@ -90,6 +90,20 @@ def main() -> None:
             "Phase22 invocation successor drifted")
     from phase22_opening import scan_invocations
     live = [row for row in scan_invocations() if row["path"] == SCRIPT]
+    direct_host = registry.get("phase26_activation_audit", {}).get(
+        "ffi_generic_direct_call_increment", {}).get(
+            "legacy_unknown_host_successor", {})
+    for shift in direct_host.get("phase22_shifted_rows", []):
+        if shift["path"] != SCRIPT:
+            continue
+        old = [row for row in invocation["added_rows"]
+               if row["line"] == shift["previous_line"]]
+        current = [row for row in live if row["line"] == shift["current_line"]]
+        require(len(old) == len(current) == 1 and
+                {key: value for key, value in old[0].items() if key != "line"} ==
+                {key: value for key, value in current[0].items() if key != "line"},
+                "generic direct legacy-host invocation shift drifted")
+        live = [old[0] if row == current[0] else row for row in live]
     require(live == invocation["added_rows"],
             "selected native invocation rows differ from scanner")
 

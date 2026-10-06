@@ -572,6 +572,8 @@ fn isolated_position_layout(
 ) -> Result<(String, TypeLayout), Box<dyn Error>> {
     let read = policy == "borrow_read_isolated_call";
     let write = policy == "borrow_write_isolated_call";
+    let read = read || policy == "borrow_read_call";
+    let write = write || policy == "borrow_write_call";
     if !(read && parameter_type.starts_with("Reference(") && parameter_type.ends_with(", None)"))
         && !(write && parameter_type.starts_with("RawPointer(")) {
         return Err(invalid("isolated FFI position has the wrong pointer kind or brand"));
@@ -700,6 +702,117 @@ fn validate_isolated_call_plans(program: &Program) -> Result<(), Box<dyn Error>>
                 }
             } else if position.provenance != "untrusted_raw_copyback" {
                 return Err(invalid("isolated FFI write lacks untrusted raw provenance"));
+            }
+        }
+    }
+    Ok(())
+}
+
+// Call 4 is a synchronous original-address borrow. The tagged row is checked
+// against the extern signature, target layout and exact local-address nodes;
+// lowering cannot infer any of these decisions from a host symbol.
+fn validate_direct_call_plans(program: &Program) -> Result<(), Box<dyn Error>> {
+    let mut layouts = LayoutEngine::new(program, 8);
+    let functions: HashMap<_, _> = program.functions.iter()
+        .map(|function| (function.qualified_name.as_str(), function))
+        .collect();
+    for function in &program.functions {
+        let Some(contract) = &function.ffi_contract else { continue; };
+        let direct: Vec<_> = contract.parameter_policies.iter().enumerate()
+            .filter(|(_, policy)| *policy == "borrow_read_call" ||
+                *policy == "borrow_write_call")
+            .collect();
+        if direct.is_empty() { continue; }
+        if program.target_triple != "x86_64-unknown-linux-gnu" ||
+            program.object_format != "Elf" {
+            return Err(invalid("direct FFI target ABI is unsupported"));
+        }
+        let legacy = function.parameters.len() == 1 && matches!(
+            function.extern_symbol.as_str(),
+            "tiny_host_read_repr_c_probe" | "tiny_host_read_packed_probe" |
+            "tiny_host_write_repr_c_probe" | "tiny_host_write_packed_probe");
+        if !legacy {
+            if !function.is_extern || contract.result_policy != "value" ||
+                !matches!(function.result_type.as_str(), "Void" | "Int" | "Byte" | "Bool") ||
+                function.parameters.len() != contract.parameter_policies.len() {
+                return Err(invalid("direct FFI extern has an unsupported result or contract"));
+            }
+            for (index, policy) in contract.parameter_policies.iter().enumerate() {
+                if policy != "borrow_read_call" && policy != "borrow_write_call" &&
+                    (policy != "value" || !matches!(function.parameters[index].1.as_str(),
+                        "Int" | "Byte" | "Bool")) {
+                    return Err(invalid("direct FFI nonselected position is unsupported"));
+                }
+            }
+        }
+        for (index, policy) in direct {
+            isolated_position_layout(program, &mut layouts,
+                &function.parameters[index].1, policy)?;
+        }
+    }
+    for node in &program.nodes {
+        if node.kind != "Call" { continue; }
+        let function = functions.get(node.second_text.as_str()).copied();
+        let direct: Vec<_> = function.and_then(|function| function.ffi_contract.as_ref())
+            .map(|contract| contract.parameter_policies.iter().enumerate()
+                .filter(|(_, policy)| *policy == "borrow_read_call" ||
+                    *policy == "borrow_write_call")
+                .collect())
+            .unwrap_or_default();
+        if node.second_integer != 4 {
+            if !direct.is_empty() && node.second_integer != 0 {
+                return Err(invalid("direct FFI Call has a mismatched legacy policy"));
+            }
+            if !direct.is_empty() && node.second_integer == 0 {
+                let function = function.ok_or_else(|| invalid("direct FFI Call has no extern"))?;
+                let legacy = function.parameters.len() == 1 && matches!(
+                    function.extern_symbol.as_str(),
+                    "tiny_host_read_repr_c_probe" | "tiny_host_read_packed_probe" |
+                    "tiny_host_write_repr_c_probe" | "tiny_host_write_packed_probe");
+                if !legacy { return Err(invalid("direct FFI Call is missing its canonical plan")); }
+            }
+            continue;
+        }
+        let function = function.ok_or_else(|| invalid("direct FFI Call has no extern"))?;
+        if !function.is_extern || function.parameters.len() + 1 != node.children.len() ||
+            direct.is_empty() {
+            return Err(invalid("direct FFI Call has no matching external positions"));
+        }
+        let plan = node.isolated_call_plan.as_ref()
+            .ok_or_else(|| invalid("direct FFI Call has no versioned plan"))?;
+        if plan.target_triple != program.target_triple ||
+            plan.cleanup != "synchronous_call" || plan.positions.len() != direct.len() {
+            return Err(invalid("direct FFI Call target, scope, or position count disagrees"));
+        }
+        let mut local_names = std::collections::HashSet::new();
+        for (position, (index, policy)) in plan.positions.iter().zip(direct) {
+            let expected_direction = if policy == "borrow_read_call" { "read" } else { "write" };
+            if position.index != index || position.direction != expected_direction ||
+                position.provenance != "direct_local_address" ||
+                program.nodes[node.children[index + 1]].ty != function.parameters[index].1 {
+                return Err(invalid("direct FFI Call position, direction, provenance, or type disagrees"));
+            }
+            let (aggregate_type, layout) = isolated_position_layout(
+                program, &mut layouts, &function.parameters[index].1, policy)?;
+            if position.aggregate_type != aggregate_type || position.size != layout.size ||
+                position.align != layout.align {
+                return Err(invalid("direct FFI Call canonical target layout disagrees"));
+            }
+            let mut argument = &program.nodes[node.children[index + 1]];
+            if expected_direction == "write" {
+                if argument.kind != "ExplicitCast" || argument.children.len() != 1 ||
+                    argument.text != function.parameters[index].1 {
+                    return Err(invalid("direct FFI write lacks exact raw cast"));
+                }
+                argument = &program.nodes[argument.children[0]];
+            }
+            if argument.kind != "AddressOf" || argument.children.len() != 1 {
+                return Err(invalid("direct FFI Call lacks original address"));
+            }
+            let local = &program.nodes[argument.children[0]];
+            if local.kind != "LocalRead" || local.ty != aggregate_type ||
+                !local_names.insert(local.text.as_str()) {
+                return Err(invalid("direct FFI Call has indirect or aliased local origin"));
             }
         }
     }
@@ -1387,8 +1500,9 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             return Err(invalid("full-program node source range is inverted"));
         }
         let second_integer = parse_i32(values[6], "node second integer")?;
-        let isolated_call_plan = if kind == "Call" && second_integer == 3 {
-            if values.get(child_end) != Some(&"isolated_call.v1") ||
+        let isolated_call_plan = if kind == "Call" && matches!(second_integer, 3 | 4) {
+            let expected_tag = if second_integer == 3 { "isolated_call.v1" } else { "direct_call.v1" };
+            if values.get(child_end) != Some(&expected_tag) ||
                 values.len() < child_end + 4 {
                 return Err(invalid("full-program Call isolation plan version is missing or unknown"));
             }
@@ -1563,6 +1677,7 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
         entry_function,
     };
     validate_isolated_call_plans(&program)?;
+    validate_direct_call_plans(&program)?;
     Ok(program)
 }
 
@@ -3121,6 +3236,15 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         }
         if node.second_integer == 3 {
             return self.lower_generic_isolated_call(builder, node, &callable, &arguments);
+        }
+        if node.second_integer == 4 {
+            if node.isolated_call_plan.is_none() ||
+                arguments.len() != callable.parameters.len() ||
+                !matches!(callable.abi.result, AbiShape::Void | AbiShape::Scalar(_)) ||
+                callable.abi.parameters.iter().any(|shape| !matches!(shape, AbiShape::Scalar(_))) {
+                return Err(invalid("direct FFI Call has an unsupported native ABI"));
+            }
+            return self.emit_call(builder, &callable, &arguments);
         }
         self.emit_call(builder, &callable, &arguments)
     }

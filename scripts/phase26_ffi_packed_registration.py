@@ -212,13 +212,26 @@ def main() -> None:
     from phase22_opening import scan_invocations
     invocation = record["phase22_invocation_successor"]
     added = invocation.get("added_rows")
+    live = [row for row in scan_invocations() if row["path"] == SCRIPT]
+    shifted = registry.get("phase26_activation_audit", {}).get(
+        "ffi_generic_direct_call_increment", {}).get(
+            "legacy_packed_host_successor", {}).get("phase22_shifted_rows", [])
+    for shift in shifted:
+        require(shift["path"] == SCRIPT, "unreviewed packed host invocation shift")
+        old = [row for row in added if row["line"] == shift["previous_line"]]
+        current = [row for row in live if row["line"] == shift["current_line"]]
+        require(len(old) == len(current) == 1 and
+                {key: value for key, value in old[0].items() if key != "line"} ==
+                {key: value for key, value in current[0].items() if key != "line"},
+                "generic direct packed host invocation shift drifted")
+        live = [old[0] if row == current[0] else row for row in live]
     require(invocation.get("contract_version") ==
             "phase26_1d_packed_phase22_invocation_successor_v1" and
             invocation.get("previous_total") == 179 and
             invocation.get("current_total") == 179 + len(added) and
             invocation.get("partial_extra_or_substituted_invocation") ==
             "rejected" and
-            [row for row in scan_invocations() if row["path"] == SCRIPT] == added,
+            live == added,
             "native invocation successor drifted")
     require(record["production_audit_successor"] == {
         "contract_version": "phase26_1d_packed_production_audit_successor_v1",

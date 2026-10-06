@@ -24275,6 +24275,14 @@ guard-cranelift-phase26-ffi-generic-isolated:
     python3 scripts/phase26_ffi_generic_isolated_registration.py
     bash scripts/phase26_ffi_generic_isolated.sh
 
+# Phase 26.1D: tagged synchronous original-address C borrows.
+guard-cranelift-phase26-ffi-generic-direct:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-ffi-generic-direct | grep -F $'guard-cranelift-phase26-ffi-generic-direct\t2\t' >/dev/null
+    python3 scripts/phase26_ffi_generic_direct_registration.py
+    bash scripts/phase26_ffi_generic_direct.sh
+
 # Phase 26.1E1: raw pointer casts cannot acquire safe arena provenance.
 guard-cranelift-phase26-raw-cast-provenance:
     #!/usr/bin/env bash

@@ -44,6 +44,17 @@ for case_name in missing order packed nested unknown_host enum; do
   status=$?
   set -e
   test "$status" -ne 0
+  if test "$case_name" = unknown_host; then
+    # Generic direct Call 4 now admits any verified flat C host. The poison
+    # driver proves this former D2 deferral reaches discovery; the Call 0
+    # downgrade remains a canonical rejection in the generic direct guard.
+    rg -F 'decision=supported capability=phase13_generic_source_to_mir' "$output.stdout" >/dev/null
+    rg -F 'class=driver_handshake_error' "$output.stdout" >/dev/null
+    test -e "$marker"
+    test ! -e "$output"
+    rm "$marker"
+    continue
+  fi
   rg -F 'decision=deferred capability=phase13_generic_source_to_mir' "$output.stdout" >/dev/null
   rg -F 'reason_code=deferred_p26_ffi_borrowed_c_layout' "$output.stdout" >/dev/null
   rg -F 'expected_failure_stage=before_driver_discovery' "$output.stdout" >/dev/null
