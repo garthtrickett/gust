@@ -44,7 +44,7 @@ def main() -> None:
     require(set(record) == set(expected) | {
         "phase22_invocation_successor", "production_audit_successor",
         "phase23_text_surface_successor", "spelling_inventory_successor",
-        "legacy_unknown_host_successor",
+        "legacy_unknown_host_successor", "legacy_write_alias_successor",
     }, "generic direct-call acquired unreviewed fields")
     require(record["legacy_unknown_host_successor"] == {
         "contract_version": "phase26_1d_generic_direct_legacy_host_successor_v1",
@@ -58,6 +58,13 @@ def main() -> None:
             "current_line": 70,
         }],
     }, "generic direct legacy-host successor drifted")
+    require(record["legacy_write_alias_successor"] == {
+        "contract_version": "phase26_1d_generic_direct_legacy_write_alias_successor_v1",
+        "fixture": "compiler/phase26_ffi_repr_c_write_unknown_host_source.gst",
+        "previous_d3": "unknown_host_deferred_before_driver_discovery",
+        "current_d3": "local_raw_alias_rejected_by_canonical_mir_before_driver",
+        "other_d3_negative_cases": "preserved",
+    }, "generic direct legacy write-alias successor drifted")
     from phase22_opening import scan_invocations
     rows = [row for row in scan_invocations()
             if row["path"] == "scripts/phase26_ffi_generic_direct.sh"]

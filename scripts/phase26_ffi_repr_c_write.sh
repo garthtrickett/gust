@@ -45,6 +45,16 @@ for case_name in missing order packed nested unknown_host enum; do
   status=$?
   set -e
   test "$status" -ne 0
+  if test "$case_name" = unknown_host; then
+    # This fixture passes a local raw-pointer alias. Generic direct Call 4
+    # rejects that origin during canonical validation, before driver use.
+    rg -F 'decision=source_or_type_failure capability=phase13_generic_source_to_mir' "$output.stdout" >/dev/null
+    rg -F 'class=canonical_mir_verification_error' "$output.stdout" >/dev/null
+    rg -F 'Native backend canonical MIR verification failed' "$output.stderr" >/dev/null
+    test ! -e "$output"
+    test ! -e "$marker"
+    continue
+  fi
   rg -F 'decision=deferred capability=phase13_generic_source_to_mir' "$output.stdout" >/dev/null
   rg -F 'reason_code=deferred_p26_ffi_borrowed_c_layout' "$output.stdout" >/dev/null
   rg -F 'expected_failure_stage=before_driver_discovery' "$output.stdout" >/dev/null
