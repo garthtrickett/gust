@@ -173,6 +173,9 @@ def main() -> None:
         "partial_extra_or_substituted_audit": "rejected",
     }, "native-error production audit successor drifted")
     surface = record["phase23_text_surface_successor"]
+    policy_surface = activation.get("ffi_policy_vector_status_increment", {}).get(
+        "phase23_text_surface_successor", {})
+    policy_rows = {row["path"]: row for row in policy_surface.get("changed_rows", [])}
     expected_paths = [
         ".github/workflows/pr-fast.yml",
         "compiler/experiments/cranelift/src/full_program.rs",
@@ -190,6 +193,12 @@ def main() -> None:
         "ffi_callback_sync_increment"]["phase23_text_surface_successor"]["changed_rows"]}
     for row in surface["changed_rows"]:
         current = hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest()
+        policy = policy_rows.get(row["path"])
+        if policy is not None:
+            require(policy["current_digest"] == current and
+                    policy["previous_match_counts"] == policy["current_match_counts"],
+                    f"policy-vector text surface drifted: {row['path']}")
+            current = policy["previous_digest"]
         current = before_prefix_memory_digest(activation, row["path"], current)
         require(row["current_digest"] == current and
                 len(row["previous_digest"]) == 64 and
@@ -201,8 +210,17 @@ def main() -> None:
     spelling = record["spelling_inventory_successor"]
     previous_summary = activation["ffi_callback_sync_increment"][
         "spelling_inventory_successor"]["current_inventory_summary"]
+    current_summary = manifest_summary(source_sites())
+    policy_spelling = activation.get("ffi_policy_vector_status_increment", {}).get(
+        "spelling_inventory_successor")
+    if policy_spelling is not None:
+        require(policy_spelling["current_inventory_summary"] == current_summary and
+                policy_spelling["previous_inventory_summary"] ==
+                activation["prefix_resolution_memory_prerequisite"]["spelling_inventory_successor"]["current_inventory_summary"],
+                "policy-vector spelling inventory drifted")
+        current_summary = policy_spelling["previous_inventory_summary"]
     current_summary = before_prefix_memory_spelling(
-        activation, manifest_summary(source_sites()))
+        activation, current_summary)
     require(spelling == {
         "contract_version": "phase26_1d_native_error_status_spelling_inventory_successor_v1",
         "previous_inventory_summary": previous_summary,
@@ -223,7 +241,15 @@ def main() -> None:
     filename = record["filename_site_successor"]
     previous_sites = activation["ffi_callback_sync_increment"][
         "filename_site_successor"]["current_sites"]
-    current_sites = before_prefix_memory_filename(activation, filename_sites())
+    current_sites = filename_sites()
+    policy_filename = activation.get("ffi_policy_vector_status_increment", {}).get(
+        "filename_site_successor")
+    if policy_filename is not None:
+        require(policy_filename["current_sites"] == current_sites and
+                policy_filename["previous_sites"] == activation["prefix_resolution_memory_prerequisite"]["filename_site_successor"]["current_sites"],
+                "policy-vector filename sites drifted")
+        current_sites = policy_filename["previous_sites"]
+    current_sites = before_prefix_memory_filename(activation, current_sites)
     require(filename == {
         "contract_version": "phase26_1d_native_error_status_filename_site_successor_v1",
         "previous_sites": previous_sites,

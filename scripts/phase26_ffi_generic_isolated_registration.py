@@ -18,6 +18,17 @@ def require(condition: bool, message: str) -> None:
 def before_generic_isolated_digest(activation: dict, path: str,
                                    live_digest: str) -> str:
     """Reverse this exact successor for earlier frozen guard identities."""
+    policy_rows = activation.get("ffi_policy_vector_status_increment", {}).get(
+        "phase23_text_surface_successor", {}).get("changed_rows", [])
+    policy = [row for row in policy_rows if row.get("path") == path]
+    require(len(policy) <= 1, f"duplicate policy-vector surface: {path}")
+    if policy:
+        row = policy[0]
+        require(row["current_digest"] == live_digest and
+                len(row["previous_digest"]) == 64 and
+                row["previous_match_counts"] == row["current_match_counts"],
+                f"policy-vector text surface drifted: {path}")
+        live_digest = row["previous_digest"]
     live_digest = before_prefix_memory_digest(activation, path, live_digest)
     native_error_rows = activation.get("ffi_native_error_status_increment", {}).get(
         "phase23_text_surface_successor", {}).get("changed_rows", [])

@@ -326,6 +326,21 @@ def phase22_relay_inventory_rows(
                 {key: value for key, value in current[0].items() if key != "line"},
                 "Phase 26 generic direct packed host invocation shift drifted")
         rows = [old[0] if row == current[0] else row for row in rows]
+    policy_vector = registry.get("phase26_activation_audit", {}).get(
+        "ffi_policy_vector_status_increment", {}).get("phase22_invocation_successor")
+    if policy_vector is not None:
+        added = policy_vector.get("added_rows")
+        path = "scripts/phase26_ffi_policy_vector_status.sh"
+        require(policy_vector.get("contract_version") ==
+                "phase26_1d_policy_vector_status_phase22_invocation_successor_v1" and
+                policy_vector.get("previous_total") == 254 and
+                policy_vector.get("current_total") == 256 and
+                policy_vector.get("partial_extra_or_substituted_invocation") == "rejected" and
+                len(rows) == 256 and isinstance(added, list) and len(added) == 2 and
+                [row for row in rows if row.get("path") == path] == added and
+                all(row.get("selection") == "explicit_cranelift" for row in added),
+                "Phase 26 policy-vector status invocation rows drifted")
+        rows = [row for row in rows if row not in added]
     native_error = registry.get("phase26_activation_audit", {}).get(
         "ffi_native_error_status_increment", {}).get("phase22_invocation_successor")
     if native_error is not None:

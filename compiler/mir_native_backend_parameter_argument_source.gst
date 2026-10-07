@@ -321,6 +321,25 @@ func mir_native_parameter_argument_scan_deferred(
                     mut borrowed_write_struct := 0;
                     mut qualified_owned_release := 0;
                     mut qualified_retained_registration := 0;
+                    mut composed_status_byte := 0;
+                    if statement.FunctionDecl.is_extern == 1 &&
+                       parameter.param_type.tag == 1 &&
+                       std.str_eq(parameter.ffi_policy, "value") == 1 &&
+                       std.str_eq(statement.FunctionDecl.ffi_return_policy, "native_error") == 1 &&
+                       std.str_eq(os.NativeTargetTriple(ctx), "x86_64-unknown-linux-gnu") == 1 &&
+                       std.str_eq(os.NativeObjectFormat(ctx), "Elf") == 1 {
+                        mut candidate_index := 0;
+                        while candidate_index < len(parameters) {
+                            mut candidate := parameters[candidate_index].ffi_policy;
+                            if std.str_eq(candidate, "borrow_read_call") == 1 ||
+                               std.str_eq(candidate, "borrow_write_call") == 1 ||
+                               std.str_eq(candidate, "borrow_read_isolated_call") == 1 ||
+                               std.str_eq(candidate, "borrow_write_isolated_call") == 1 {
+                                composed_status_byte = 1;
+                            }
+                            candidate_index = candidate_index + 1;
+                        }
+                    }
                     if statement.FunctionDecl.is_extern == 1 &&
                        parameter.param_type.tag == 9 &&
                        (std.str_eq(parameter.ffi_policy, "borrow_write_call") == 1 ||
@@ -346,6 +365,7 @@ func mir_native_parameter_argument_scan_deferred(
                        borrowed_write_struct == 0 &&
                        qualified_owned_release == 0 &&
                        qualified_retained_registration == 0 &&
+                       composed_status_byte == 0 &&
                        (parameter.param_type.tag != 5 ||
                         statement.FunctionDecl.is_extern == 1) { // Local Str
                         model.source_path =

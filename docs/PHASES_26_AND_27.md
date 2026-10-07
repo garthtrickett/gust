@@ -459,6 +459,43 @@ compiler build, fixed-point bootstrap, exact registry/historical projections,
 all applicable exact-head PR checks, and resolved review threads are required.
 This status cohort alone does not close native error handling or D/E/F.
 
+**26.1D per-position borrow and native-status composition (ownership assigned,
+2026-10-07).** An unsafe direct C extern may combine independently qualified
+`borrow_read_call`, `borrow_write_call`, `borrow_read_isolated_call`, and
+`borrow_write_isolated_call` parameters, scalar value parameters, and an
+explicit signed `Int #[ffi(native_error)]` result. The target is x86_64 Linux
+ELF with the existing proven flat C layouts, local-address and raw-provenance
+rules. Read positions do not gain immutability guarantees beyond their declared
+unsafe native contract. Direct positions use the original address; isolated
+positions use one transient arena, with every write copyback before its single
+free and before Gust continuation, including a nonzero status. The exact signed
+status value survives unchanged; it does not select or skip cleanup.
+
+The producer decides an additive `ffi_policy_vector_status.v1` Call variant 8
+with ordered per-formal policies and target-qualified layouts, an independent
+status-result row, origin and alias evidence, and an exact copy-in/copyback/free
+schedule. The worker validates this decided plan against the canonical extern,
+argument nodes, target layout authority, and unsafe owning scope before driver
+discovery or object emission. Conflicting or aliased direct and isolated
+origins fail closed. Call variants 0–7 keep their canonical bytes and meaning.
+This increment does not qualify callbacks, retention, transfer, native unwind,
+general lifetime or alias relations, or a new runtime ABI.
+
+**Exit gate:** Two independent C hosts and distinct qualified layouts execute
+mixed direct and isolated read/write and scalar positions with zero, positive,
+negative, and both extrema of the signed status width. Runtime and object
+evidence distinguishes original addresses from isolated copies, proves read
+nonmutation and visible writes, and proves all copybacks then exactly one free
+before normal, Gust return, guard, and defer continuations for both zero and
+nonzero status. Source negatives reject unsupported targets/layouts, origins,
+aliases, unsafe scope, and excluded policy mixes. Canonical mutations reject
+missing, duplicate, reordered, unknown, and truncated parameter/result or
+schedule rows, wrong version, target, layout, provenance, unsafe owner, and
+callee before driver discovery with no artifact. Same-input Call 0–7 bytes and
+adjacent behavior, stable compiler build, fixed-point bootstrap, exact
+registration/historical projections, all applicable exact-head PR checks, and
+resolved review threads are required. D/E/F and Phase 26.1 remain open.
+
 Use a transient isolated arena for memory handed to native code and destroy it
 on return. *Isolated* is deliberately narrower than *sandboxed*: this bounds
 memory lifetime and spread but cannot prevent native code from accessing process

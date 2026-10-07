@@ -47,9 +47,23 @@ def main() -> None:
     from phase24_filename_behavior_characterization import source_sites
     previous_sites = registry["phase26_activation_audit"][
         "ffi_transfer_owned_increment"]["filename_site_successor"]["current_sites"]
+    live_sites = source_sites()
+    vector_sites = registry["phase26_activation_audit"].get(
+        "ffi_policy_vector_status_increment", {}).get("filename_site_successor")
+    if vector_sites is not None:
+        native_current = registry["phase26_activation_audit"][
+            "prefix_resolution_memory_prerequisite"]["filename_site_successor"]["current_sites"]
+        require(vector_sites.get("contract_version") ==
+                "phase26_1d_policy_vector_status_filename_site_successor_v1" and
+                vector_sites.get("previous_sites") == native_current and
+                vector_sites.get("current_sites") == live_sites and
+                vector_sites.get("line_deltas") == [7, 7, 7] and
+                vector_sites.get("partial_extra_or_substituted_site") == "rejected",
+                "policy-vector filename site successor drifted")
+        live_sites = vector_sites["previous_sites"]
     from phase26_ffi_native_error_status_registration import before_prefix_memory_filename
     live_sites = before_prefix_memory_filename(
-        registry["phase26_activation_audit"], source_sites())
+        registry["phase26_activation_audit"], live_sites)
     native_error_sites = registry["phase26_activation_audit"].get(
         "ffi_native_error_status_increment", {}).get("filename_site_successor")
     if native_error_sites is not None:

@@ -1143,7 +1143,7 @@ func env_validate_extern_ffi_positions(env: *TypeEnvironment[ctx], stmt: ast.Sta
             }
         }
         if std.str_eq(stmt.FunctionDecl.ffi_return_policy, "native_error") == 1 {
-            if ret.tag != 0 || (*sig).requires_sandbox_arena == 1 ||
+            if ret.tag != 0 ||
                std.str_eq(stmt.FunctionDecl.extern_abi, "C") == 0 ||
                std.str_eq(os.NativeTargetTriple(ctx), "x86_64-unknown-linux-gnu") == 0 ||
                std.str_eq(os.NativeObjectFormat(ctx), "Elf") == 0 {
@@ -1152,11 +1152,18 @@ func env_validate_extern_ffi_positions(env: *TypeEnvironment[ctx], stmt: ast.Sta
             }
             mut status_index := 0;
             while status_index < len(policies) {
-                if std.str_eq(policies[status_index], "value") == 0 ||
-                   ((*sig).params[status_index].tag != 0 &&
-                    (*sig).params[status_index].tag != 1 &&
-                    (*sig).params[status_index].tag != 2) {
-                    report_error(2, "Semantic Error: [FFINativeErrorStatus] Native error status cannot mix callback, ownership, or borrowed positions", stmt.FunctionDecl.span, env, ctx);
+                mut status_policy := policies[status_index];
+                mut scalar_value := std.str_eq(status_policy, "value") == 1 &&
+                    ((*sig).params[status_index].tag == 0 ||
+                     (*sig).params[status_index].tag == 1 ||
+                     (*sig).params[status_index].tag == 2);
+                mut bounded_borrow :=
+                    std.str_eq(status_policy, "borrow_read_call") == 1 ||
+                    std.str_eq(status_policy, "borrow_write_call") == 1 ||
+                    std.str_eq(status_policy, "borrow_read_isolated_call") == 1 ||
+                    std.str_eq(status_policy, "borrow_write_isolated_call") == 1;
+                if scalar_value == false && bounded_borrow == false {
+                    report_error(2, "Semantic Error: [FFINativeErrorStatus] Native error status has an unsupported parameter policy", stmt.FunctionDecl.span, env, ctx);
                     return 0;
                 }
                 status_index = status_index + 1;

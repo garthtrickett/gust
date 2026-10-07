@@ -73,6 +73,13 @@ def main() -> None:
     native_rows = native_error.get("phase23_text_surface_successor", {}).get(
         "changed_rows", [])
     native_by_path = {row["path"]: row for row in native_rows}
+    vector = registry["phase26_activation_audit"].get(
+        "ffi_policy_vector_status_increment", {})
+    vector_rows = vector.get("phase23_text_surface_successor", {}).get(
+        "changed_rows", [])
+    vector_by_path = {row["path"]: row for row in vector_rows}
+    require(len(vector_by_path) == len(vector_rows),
+            "duplicate policy-vector text surface")
     require(len(native_by_path) == len(native_rows),
             "duplicate native-error text surface")
     expected_paths = [
@@ -91,6 +98,13 @@ def main() -> None:
             "callback text surface successor shape drifted")
     for row in surface["changed_rows"]:
         current = hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest()
+        vector_row = vector_by_path.get(row["path"])
+        if vector_row is not None:
+            require(vector_row["current_digest"] == current and
+                    vector_row["previous_match_counts"] ==
+                    vector_row["current_match_counts"],
+                    f"policy-vector text successor drifted: {row['path']}")
+            current = vector_row["previous_digest"]
         current = before_prefix_memory_digest(
             registry["phase26_activation_audit"], row["path"], current)
         successor = native_by_path.get(row["path"])
@@ -107,8 +121,16 @@ def main() -> None:
     spelling = record["spelling_inventory_successor"]
     previous = registry["phase26_activation_audit"]["ffi_retained_lease_increment"][
         "spelling_inventory_successor"]["current_inventory_summary"]
+    live_inventory = manifest_summary(source_sites())
+    vector_spelling = vector.get("spelling_inventory_successor")
+    if vector_spelling is not None:
+        require(vector_spelling["current_inventory_summary"] == live_inventory and
+                vector_spelling["previous_inventory_summary"] ==
+                registry["phase26_activation_audit"]["prefix_resolution_memory_prerequisite"]["spelling_inventory_successor"]["current_inventory_summary"],
+                "policy-vector spelling inventory successor drifted")
+        live_inventory = vector_spelling["previous_inventory_summary"]
     live_inventory = before_prefix_memory_spelling(
-        registry["phase26_activation_audit"], manifest_summary(source_sites()))
+        registry["phase26_activation_audit"], live_inventory)
     native_spelling = native_error.get("spelling_inventory_successor")
     if native_spelling is not None:
         require(native_spelling["current_inventory_summary"] == live_inventory and
@@ -126,8 +148,16 @@ def main() -> None:
     filename = record["filename_site_successor"]
     previous_sites = registry["phase26_activation_audit"]["ffi_retained_lease_increment"][
         "filename_site_successor"]["current_sites"]
+    current_sites = filename_source_sites()
+    vector_sites = vector.get("filename_site_successor")
+    if vector_sites is not None:
+        require(vector_sites["current_sites"] == current_sites and
+                vector_sites["previous_sites"] ==
+                registry["phase26_activation_audit"]["prefix_resolution_memory_prerequisite"]["filename_site_successor"]["current_sites"],
+                "policy-vector filename successor drifted")
+        current_sites = vector_sites["previous_sites"]
     current_sites = before_prefix_memory_filename(
-        registry["phase26_activation_audit"], filename_source_sites())
+        registry["phase26_activation_audit"], current_sites)
     native_sites = native_error.get("filename_site_successor")
     if native_sites is not None:
         require(native_sites["current_sites"] == current_sites and
