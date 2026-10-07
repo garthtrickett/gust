@@ -647,11 +647,9 @@ func mir_native_scalar_source_compile_inner(programs: std.Vector[ast.Program[ctx
         );
     }
 
-    mut serialized_generic_bundle := mir.mir_serialize_program_bundle(
-        generic_result.bundle,
-        ctx
-    );
-    if std.str_eq(serialized_generic_bundle, "format: invalid\n") == 1 {
+    mut serialized_generic_bundle := generic_result.serialized_bundle;
+    if len(serialized_generic_bundle) == 0 ||
+       std.str_eq(serialized_generic_bundle, "format: invalid\n") == 1 {
         return mir_native_scalar_source_failure_result(
             "invalid_canonical_mir",
             "Native backend internal error: generic canonical MIR bundle validation failed",

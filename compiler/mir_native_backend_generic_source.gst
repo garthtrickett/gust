@@ -69,6 +69,7 @@ type MirNativeGenericScalarExpression struct {
 type MirNativeGenericSourceResult[ctx] struct {
     eligibility: MirNativeGenericEligibility,
     bundle: mir.MirProgramBundle[ctx],
+    serialized_bundle: str,
     plan: capability.MirNativeBackendCapabilityPlan[ctx],
     diagnostic: str,
     reason_code: str
@@ -170,6 +171,7 @@ func mir_native_generic_make_result(eligibility_tag: int, bundle: mir.MirProgram
         result.eligibility.tag = eligibility_tag;
     }
     result.bundle = bundle;
+    result.serialized_bundle = "";
     result.plan = plan;
     result.diagnostic = std.Clone(ctx, diagnostic);
     result.reason_code = std.Clone(ctx, "");
@@ -3498,11 +3500,15 @@ func mir_native_generic_source_lower(programs: std.Vector[ast.Program[ctx], ctx]
         );
     }
 
-    return mir_native_generic_make_result(
+    mut result := mir_native_generic_make_result(
         0,
         bundle,
         plan,
         "",
         ctx
     );
+    // Serialization already cloned into ctx; the sole source-route caller
+    // can write these same validated bytes without assembling a second copy.
+    result.serialized_bundle = serialized;
+    return result;
 }
