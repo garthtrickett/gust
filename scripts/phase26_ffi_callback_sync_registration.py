@@ -4,6 +4,10 @@
 import json
 import hashlib
 from pathlib import Path
+from phase26_ffi_native_error_status_registration import (
+    before_prefix_memory_digest, before_prefix_memory_spelling,
+    before_prefix_memory_filename,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 GUARD = "guard-cranelift-phase26-ffi-callback-sync"
@@ -87,6 +91,8 @@ def main() -> None:
             "callback text surface successor shape drifted")
     for row in surface["changed_rows"]:
         current = hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest()
+        current = before_prefix_memory_digest(
+            registry["phase26_activation_audit"], row["path"], current)
         successor = native_by_path.get(row["path"])
         if successor is not None:
             require(successor["current_digest"] == current and
@@ -101,7 +107,8 @@ def main() -> None:
     spelling = record["spelling_inventory_successor"]
     previous = registry["phase26_activation_audit"]["ffi_retained_lease_increment"][
         "spelling_inventory_successor"]["current_inventory_summary"]
-    live_inventory = manifest_summary(source_sites())
+    live_inventory = before_prefix_memory_spelling(
+        registry["phase26_activation_audit"], manifest_summary(source_sites()))
     native_spelling = native_error.get("spelling_inventory_successor")
     if native_spelling is not None:
         require(native_spelling["current_inventory_summary"] == live_inventory and
@@ -119,7 +126,8 @@ def main() -> None:
     filename = record["filename_site_successor"]
     previous_sites = registry["phase26_activation_audit"]["ffi_retained_lease_increment"][
         "filename_site_successor"]["current_sites"]
-    current_sites = filename_source_sites()
+    current_sites = before_prefix_memory_filename(
+        registry["phase26_activation_audit"], filename_source_sites())
     native_sites = native_error.get("filename_site_successor")
     if native_sites is not None:
         require(native_sites["current_sites"] == current_sites and
