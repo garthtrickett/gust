@@ -45,7 +45,7 @@ import sys
 actual = Path(sys.argv[1]).read_text().splitlines()
 expected = ['0', '100', '200', '17', '-23', '-2147483648', '2147483647',
             '0', '300', '400', '31', '-41', '-2147483648', '2147483647', '0', '0',
-            '319', '281', '0', '100', '200', 'vector_defer_marker']
+            '319', '517', '-23', '281', '0', '100', '200', 'vector_defer_marker']
 assert actual == expected, (actual, expected)
 PY
 echo 'Phase26 Call8 two-host status and write-copyback runtime: ok'
@@ -78,27 +78,33 @@ import sys
 
 obj = sys.argv[1]
 symbols = subprocess.check_output(['readelf', '-Ws', obj], text=True)
-relocations = subprocess.check_output(['readelf', '-r', obj], text=True)
+relocations = subprocess.check_output(['readelf', '-Wr', obj], text=True)
 functions = {}
 for line in symbols.splitlines():
     match = re.match(r'\s*\d+: ([0-9a-f]+)\s+(\d+) FUNC\s+LOCAL\s+DEFAULT\s+\d+\s+(\S+)', line)
-    if match and match[3] in {'return_after_status', 'guard_after_status',
+    if match and match[3] in {'return_after_status', 'direct_only_status', 'guard_after_status',
             'defer_after_status', 'gust_phase21_program_main'}:
         functions[match[3]] = (int(match[1], 16), int(match[2]))
-assert len(functions) == 4, functions
+assert len(functions) == 5, functions
 calls = []
 for line in relocations.splitlines():
     match = re.match(r'([0-9a-f]+)\s+\S+\s+R_X86_64_GOTPCREL\s+\S+\s+(\S+)', line)
     if match:
         calls.append((int(match[1], 16), match[2]))
-expected = {'return_after_status': 1, 'guard_after_status': 1,
+expected = {'return_after_status': 1, 'direct_only_status': 1, 'guard_after_status': 1,
             'defer_after_status': 1, 'gust_phase21_program_main': 12}
 hosts = {'host_vector_alpha', 'host_vector_beta', 'host_vector_alias_pair',
-         'host_vector_scalar_mix'}
+         'host_vector_scalar_mix', 'host_vector_direct_only'}
 for function, (start, size) in functions.items():
     local = [symbol for offset, symbol in calls if start <= offset < start + size]
     selected = [index for index, symbol in enumerate(local) if symbol in hosts]
     assert len(selected) == expected[function], (function, local)
+    if function == 'direct_only_status':
+        # The visible C write reaches the original Gust object, with no call arena or copy.
+        assert local.count('host_vector_direct_only') == 1, local
+        assert all(symbol not in {'os_Arena_New', 'os_ArenaAlloc', 'os_Arena_Free',
+                                  'memcpy', 'memmove'} for symbol in local), local
+        continue
     for index in selected:
         arena_start = max(i for i, symbol in enumerate(local[:index])
                           if symbol == 'os_Arena_New')

@@ -15,6 +15,21 @@ extern func host_vector_alpha(direct_read: &VectorAlpha #[ffi(borrow_read_call)]
 extern func host_vector_beta(direct_read: &VectorBeta #[ffi(borrow_read_call)], isolated_read: &VectorAlpha #[ffi(borrow_read_isolated_call)], direct_write: *VectorBeta #[ffi(borrow_write_call)], isolated_write: *VectorAlpha #[ffi(borrow_write_isolated_call)], selector: int #[ffi(value)]) int #[ffi(native_error)];
 extern func host_vector_alias_pair(direct_read: &VectorAlpha #[ffi(borrow_read_call)], isolated_read: &VectorAlpha #[ffi(borrow_read_isolated_call)]) int #[ffi(native_error)];
 extern func host_vector_scalar_mix(direct_read: &VectorAlpha #[ffi(borrow_read_call)], isolated_read: &VectorAlpha #[ffi(borrow_read_isolated_call)], byte_value: byte #[ffi(value)], bool_value: bool #[ffi(value)]) int #[ffi(native_error)];
+extern func host_vector_direct_only(direct_read: &VectorAlpha #[ffi(borrow_read_call)], direct_write: *VectorBeta #[ffi(borrow_write_call)], selector: int #[ffi(value)]) int #[ffi(native_error)];
+
+func direct_only_status() int {
+    mut direct_alpha: VectorAlpha;
+    direct_alpha.amount = 10;
+    direct_alpha.flag = 2 as byte;
+    mut written_beta: VectorBeta;
+    unsafe {
+        written_beta.amount = 0;
+        written_beta.marker = 0 as byte;
+        mut status := host_vector_direct_only(&direct_alpha, &written_beta as *VectorBeta, 2);
+        os.LogInt(written_beta.amount);
+        return status;
+    }
+}
 
 func return_after_status() int {
     mut direct_alpha: VectorAlpha;
@@ -122,6 +137,7 @@ func main() int {
         os.LogInt(host_vector_scalar_mix(&direct_alpha, &written_alpha, 7 as byte, true));
     }
     os.LogInt(return_after_status());
+    os.LogInt(direct_only_status());
     os.LogInt(guard_after_status());
     defer_after_status();
     return 0;

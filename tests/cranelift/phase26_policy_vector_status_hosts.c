@@ -63,3 +63,13 @@ int32_t host_vector_scalar_mix(const struct vector_alpha *direct_read,
     return direct_read->amount == 10 && isolated_read->amount == 104 &&
         byte_value == 7 && bool_value ? 0 : -996;
 }
+
+int32_t host_vector_direct_only(const struct vector_alpha *direct_read,
+                                struct vector_beta *direct_write,
+                                int32_t selector) {
+    if (direct_read->amount != 10 || direct_read->flag != 2)
+        return -995;
+    direct_write->amount = 515 + selector;
+    direct_write->marker = 11;
+    return alpha_status(selector);
+}
