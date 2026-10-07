@@ -1464,17 +1464,22 @@ func mir_native_full_program_flatten_expression(expression_index: Index[ast.Expr
             mut isolated_signature := (*env).function_registry.Get(node.second_text_operand);
             if isolated_signature.Ok {
                 mut selected_isolated_signature := isolated_signature.Val;
-                mut selected_policies: std.Vector[str, ctx] := ctx[selected_isolated_signature.ffi_param_policies];
                 mut selected_borrows := 0;
-                mut selected_index := 0;
-                while selected_index < len(selected_policies) {
-                    if std.str_eq(selected_policies[selected_index], "borrow_read_call") == 1 ||
-                       std.str_eq(selected_policies[selected_index], "borrow_write_call") == 1 ||
-                       std.str_eq(selected_policies[selected_index], "borrow_read_isolated_call") == 1 ||
-                       std.str_eq(selected_policies[selected_index], "borrow_write_isolated_call") == 1 {
-                        selected_borrows = selected_borrows + 1;
+                if selected_isolated_signature.is_extern == 1 &&
+                   selected_isolated_signature.ffi_contract_verified == 1 &&
+                   std.str_eq(selected_isolated_signature.ffi_return_policy, "native_error") == 1 {
+                    mut selected_policies: std.Vector[str, ctx] :=
+                        ctx[selected_isolated_signature.ffi_param_policies];
+                    mut selected_index := 0;
+                    while selected_index < len(selected_policies) {
+                        if std.str_eq(selected_policies[selected_index], "borrow_read_call") == 1 ||
+                           std.str_eq(selected_policies[selected_index], "borrow_write_call") == 1 ||
+                           std.str_eq(selected_policies[selected_index], "borrow_read_isolated_call") == 1 ||
+                           std.str_eq(selected_policies[selected_index], "borrow_write_isolated_call") == 1 {
+                            selected_borrows = selected_borrows + 1;
+                        }
+                        selected_index = selected_index + 1;
                     }
-                    selected_index = selected_index + 1;
                 }
                 if selected_isolated_signature.is_extern == 1 &&
                    selected_isolated_signature.ffi_contract_verified == 1 &&
