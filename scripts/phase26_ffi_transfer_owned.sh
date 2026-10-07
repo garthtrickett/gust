@@ -123,7 +123,7 @@ for case_name in unbound discarded double_transfer same_call_double use_after_tr
     overwrite) expected='[FFIOwnedOverwrite]' ;;
     missing_transfer_policy|missing_acquisition) expected='[FFIByValueAggregateUnsupported]' ;;
     raw_transfer_policy) expected='[FFIUnsupportedOwnershipPolicy]' ;;
-    retained_policy) expected='[FFITransferRetainUnsupported]' ;;
+    retained_policy) expected='[FFIByValueAggregateUnsupported]' ;;
     callback_policy|native_error_policy) expected='[FFICallbackNativeErrorUnsupported]' ;;
     bad_release|bad_release_signature) expected='[FFIReleaseAuthority]' ;;
     forged_brand) expected='Non-laundering violation' ;;

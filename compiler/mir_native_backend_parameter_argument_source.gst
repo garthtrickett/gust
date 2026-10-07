@@ -304,6 +304,7 @@ func mir_native_parameter_argument_scan_deferred(
                     // approve the exact host before any driver discovery.
                     mut borrowed_write_struct := 0;
                     mut qualified_owned_release := 0;
+                    mut qualified_retained_registration := 0;
                     if statement.FunctionDecl.is_extern == 1 &&
                        parameter.param_type.tag == 9 &&
                        (std.str_eq(parameter.ffi_policy, "borrow_write_call") == 1 ||
@@ -316,10 +317,19 @@ func mir_native_parameter_argument_scan_deferred(
                        std.str_eq(parameter.ffi_policy, "release_owned") == 1 {
                         qualified_owned_release = 1;
                     }
+                    // The retained position is a scalar C pointer. Full-program
+                    // preflight and the canonical Call 5 validator establish
+                    // its owned origin, target and terminal cleanup authority.
+                    if statement.FunctionDecl.is_extern == 1 &&
+                       parameter.param_type.tag == 9 &&
+                       std.str_eq(parameter.ffi_policy, "retain") == 1 {
+                        qualified_retained_registration = 1;
+                    }
                     if parameter_class == 2 &&
                        parameter.param_type.tag != 11 && // Reference
                        borrowed_write_struct == 0 &&
                        qualified_owned_release == 0 &&
+                       qualified_retained_registration == 0 &&
                        (parameter.param_type.tag != 5 ||
                         statement.FunctionDecl.is_extern == 1) { // Local Str
                         model.source_path =

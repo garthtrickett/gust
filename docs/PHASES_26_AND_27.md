@@ -348,6 +348,47 @@ resolved review threads must pass before merge. Native unwind, longjmp, and
 process termination remain outside the synchronous-call claim; D, E, F, and
 Phase 26.1 stay open.
 
+**26.1D native-owned retained lease (ownership authorized, 2026-10-06).**
+An explicitly unsafe external registration may retain one raw pointer from a
+live `owned_return` allocation only while its exact linear owner remains
+stable. The opt-in `#[ffi(retain)]` position is bound to the owner's acquisition
+identity, one-pointer C layout, native-origin raw field, validated destructor,
+and paired release function. The first supported acquisition and registration
+are adjacent statements in the same lexical block; an intervening alias,
+move, or other statement is rejected. That release function's unsafe native contract
+unregisters the pointer before freeing it; Gust's existing terminal destructor
+call is the sole release authority. The compiler rejects any preexisting or
+derived raw alias, and after registration rejects owner access, move, Take,
+transfer, overwrite, return, and any escape until compiler-scheduled cleanup.
+Conservative branch joins reject mismatched active-lease states. This does not
+qualify retention of stack or arena storage, grant safe branded provenance,
+change ordinary resource borrows, or imply native unwind cleanup.
+
+The producer records a distinct tagged `retained_lease.v1` Call policy with the
+selected position, target, owner type and storage, acquisition identity,
+raw-field provenance, and destructor/release binding. The worker validates
+this against the canonical extern policy, owned-result/release authority,
+actual argument and acquisition nodes, and the ordered cleanup path before
+driver discovery or object emission. Call variants `0` through `4` keep their
+canonical bytes and meanings. The first route is one retained raw position,
+Void result, and x86_64 Linux ELF; callback, native-error, arbitrary lifetime,
+and other retained origins remain unsupported.
+
+**Exit gate:** Two independently named owner/host/release pairs prove actual C
+pointer ABI, retained use before unregister, and exactly one unregister before
+free and Gust continuation on normal scope, early return, guard, and defer
+routes. Source negatives reject preexisting/derived aliases, stack or arena
+origin, owner access or transfer while leased, duplicate registration,
+use-after-release, ambiguous joins, and wrong release identity. Canonical
+poison cases reject missing/unknown/truncated plan versions, wrong position,
+target, owner/acquisition/raw-field/release identity, missing/reordered/
+substituted cleanup, and forged lifetime paths before driver discovery.
+Legacy Call `0`–`4` positive and negative behavior and canonical bytes remain
+unchanged. Focused and adjacent guards, stable compiler build, fixed-point
+bootstrap, registry and historical projections, exact-head PR workflows, and
+resolved review threads are required before merge. D, E, F, and Phase 26.1
+remain open.
+
 Use a transient isolated arena for memory handed to native code and destroy it
 on return. *Isolated* is deliberately narrower than *sandboxed*: this bounds
 memory lifetime and spread but cannot prevent native code from accessing process

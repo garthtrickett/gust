@@ -828,6 +828,9 @@ jobs:
       - name: Phase 26 generic direct C pointer call
         run: just guard-cranelift-phase26-ffi-generic-direct
 
+      - name: Phase 26 native-owned retained lease
+        run: just guard-cranelift-phase26-ffi-retained-lease
+
       - name: Phase 26 raw cast provenance
         run: just guard-cranelift-phase26-raw-cast-provenance
 
