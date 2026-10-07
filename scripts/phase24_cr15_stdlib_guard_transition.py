@@ -1129,7 +1129,39 @@ def effective_phase22_summary(registry: dict, value: dict) -> dict:
     through_owned_return = _phase26_owned_return_invocation_successor(registry, through_repr_int)
     through_transfer = _phase26_transfer_owned_invocation_successor(registry, through_owned_return)
     through_isolated = _phase26_generic_isolated_invocation_successor(registry, through_transfer)
-    return _phase26_generic_direct_invocation_successor(registry, through_isolated)
+    through_direct = _phase26_generic_direct_invocation_successor(registry, through_isolated)
+    return _phase26_retained_lease_invocation_successor(registry, through_direct)
+
+
+def _phase26_retained_lease_invocation_successor(registry: dict,
+        previous: dict) -> dict:
+    successor = registry.get("phase26_activation_audit", {}).get(
+        "ffi_retained_lease_increment", {}).get("phase22_invocation_successor")
+    if successor is None:
+        return previous
+    rows = successor.get("added_rows")
+    require(successor.get("contract_version") ==
+            "phase26_1d_retained_lease_phase22_invocation_successor_v1" and
+            successor.get("previous_total") == previous["total"] == 248 and
+            successor.get("current_total") == 250 and
+            isinstance(rows, list) and len(rows) == 2 and
+            all(row.get("path") == "scripts/phase26_ffi_retained_lease.sh" and
+                row.get("selection") == "explicit_cranelift" and
+                row.get("owner") == "cranelift" for row in rows) and
+            successor.get("partial_extra_or_substituted_invocation") == "rejected",
+            "Phase 26 retained lease invocation successor drifted")
+    current = copy.deepcopy(previous)
+    current["total"] += len(rows)
+    for row in rows:
+        for key, label in (("selection_counts", "selection"),
+                           ("consumer_class_counts", "consumer_class"),
+                           ("owner_counts", "owner")):
+            group = str(row[label])
+            current[key][group] = current[key].get(group, 0) + 1
+    require(current["total"] == successor["current_total"] and
+            current["unclassified_count"] == 0,
+            "Phase 26 retained lease invocation census did not balance")
+    return current
 
 
 def _phase26_generic_direct_invocation_successor(registry: dict,
@@ -4009,6 +4041,35 @@ def normalize_phase23_text_surfaces(
                      match_counts=entry["previous_match_counts"])
                 if value["path"] == entry["path"] else value
                 for value in rows]
+    retained = registry.get("phase26_activation_audit", {}).get(
+        "ffi_retained_lease_increment", {}).get("phase23_text_surface_successor")
+    if retained is not None:
+        changed = retained.get("changed_rows")
+        require(retained.get("contract_version") ==
+                "phase26_1d_retained_lease_phase23_text_surface_successor_v1" and
+                retained.get("partial_extra_or_substituted_surface") == "rejected" and
+                retained.get("added_rows") == [] and isinstance(changed, list) and
+                [entry.get("path") for entry in changed] == [
+                    ".github/workflows/pr-fast.yml",
+                    "compiler/experiments/cranelift/src/full_program.rs",
+                    "compiler/mir_native_backend_full_program_source.gst",
+                    "compiler/typechecker.gst", "justfile",
+                    "scripts/cranelift_test_levels.json",
+                    "scripts/phase22_opening.py",
+                    "scripts/phase26_call_return_zero_registration.py"],
+                "Phase 26 retained lease text surface successor shape drifted")
+        live = {row["path"]: row for row in rows}
+        for entry in changed:
+            row = live.get(entry["path"])
+            require(row is not None and
+                    row["digest"] == entry["current_digest"] and
+                    row["match_counts"] == entry["current_match_counts"] and
+                    len(entry["previous_digest"]) == 64,
+                    f"Phase 26 retained lease text surface drifted: {entry['path']}")
+        by_path = {entry["path"]: entry for entry in changed}
+        rows = [dict(row, digest=by_path[row["path"]]["previous_digest"],
+                     match_counts=by_path[row["path"]]["previous_match_counts"])
+                if row["path"] in by_path else row for row in rows]
     direct = registry.get("phase26_activation_audit", {}).get(
         "ffi_generic_direct_call_increment", {}).get("phase23_text_surface_successor")
     if direct is not None:

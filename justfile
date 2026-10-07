@@ -24283,6 +24283,14 @@ guard-cranelift-phase26-ffi-generic-direct:
     python3 scripts/phase26_ffi_generic_direct_registration.py
     bash scripts/phase26_ffi_generic_direct.sh
 
+# Phase 26.1D: a native-owned allocation may be retained until terminal release.
+guard-cranelift-phase26-ffi-retained-lease:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-ffi-retained-lease | grep -F $'guard-cranelift-phase26-ffi-retained-lease\t2\t' >/dev/null
+    python3 scripts/phase26_ffi_retained_lease_registration.py
+    bash scripts/phase26_ffi_retained_lease.sh
+
 # Phase 26.1E1: raw pointer casts cannot acquire safe arena provenance.
 guard-cranelift-phase26-raw-cast-provenance:
     #!/usr/bin/env bash

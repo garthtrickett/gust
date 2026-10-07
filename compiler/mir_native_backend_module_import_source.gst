@@ -1582,6 +1582,12 @@ func mir_native_module_import_owned_ffi_extern(statement: ast.Statement[ctx], mo
                    env as *typechecker.TypeEnvironment[ctx],
                    sig.params[parameter_index], ctx
                ) == 1 { return 1; }
+            // Native-owned retention uses the same full-program owner and
+            // release authority. This import profile must delegate the
+            // verified raw position rather than classify it by a host name.
+            if std.str_eq(policies[parameter_index], "retain") == 1 &&
+               sig.params[parameter_index].tag == 9 &&
+               sig.return_type.tag == 3 { return 1; }
             parameter_index = parameter_index + 1;
         }
         return 0;

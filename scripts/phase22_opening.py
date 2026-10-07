@@ -326,6 +326,21 @@ def phase22_relay_inventory_rows(
                 {key: value for key, value in current[0].items() if key != "line"},
                 "Phase 26 generic direct packed host invocation shift drifted")
         rows = [old[0] if row == current[0] else row for row in rows]
+    retained = registry.get("phase26_activation_audit", {}).get(
+        "ffi_retained_lease_increment", {}).get("phase22_invocation_successor")
+    if retained is not None:
+        added = retained.get("added_rows")
+        path = "scripts/phase26_ffi_retained_lease.sh"
+        require(retained.get("contract_version") ==
+                "phase26_1d_retained_lease_phase22_invocation_successor_v1" and
+                retained.get("previous_total") == 248 and
+                retained.get("current_total") == 250 and
+                retained.get("partial_extra_or_substituted_invocation") == "rejected" and
+                len(rows) == 250 and isinstance(added, list) and len(added) == 2 and
+                [row for row in rows if row.get("path") == path] == added and
+                all(row.get("selection") == "explicit_cranelift" for row in added),
+                "Phase 26 retained-lease invocation rows drifted")
+        rows = [row for row in rows if row not in added]
     direct = registry.get("phase26_activation_audit", {}).get(
         "ffi_generic_direct_call_increment", {}).get("phase22_invocation_successor")
     if direct is not None:

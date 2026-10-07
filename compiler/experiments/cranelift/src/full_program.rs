@@ -94,6 +94,14 @@ pub struct IsolatedCallPlan {
     pub target_triple: String,
     pub cleanup: String,
     pub positions: Vec<IsolatedPosition>,
+    pub retained: Option<Box<RetainedLeaseEvidence>>,
+}
+
+#[derive(Debug, Clone)]
+pub struct RetainedLeaseEvidence {
+    pub owner_storage: String,
+    pub acquisition_identity: String,
+    pub raw_field: String,
 }
 
 #[derive(Debug)]
@@ -199,6 +207,8 @@ fn validate_ffi_policies(
                 "borrow_write_call" => raw,
                 "borrow_read_isolated_call" => reference,
                 "borrow_write_isolated_call" => raw,
+                "retain" => raw && function.result_type == "Void" &&
+                    target == "x86_64-unknown-linux-gnu" && object_format == "Elf",
                 "release_owned" => raw && function.parameters.len() == 1 &&
                     function.result_type == "Void" && contract.result_policy == "value",
                 "transfer_owned" => struct_type_name(ty).is_some_and(|name|
@@ -814,6 +824,205 @@ fn validate_direct_call_plans(program: &Program) -> Result<(), Box<dyn Error>> {
                 !local_names.insert(local.text.as_str()) {
                 return Err(invalid("direct FFI Call has indirect or aliased local origin"));
             }
+        }
+    }
+    Ok(())
+}
+
+// Retention is admitted only for a direct native-owned raw field whose
+// acquisition and terminal destruction are both explicit in the canonical
+// function tree. No host name or pointer type alone grants this authority.
+fn retained_cleanup_call(program: &Program, index: usize, owner: &str, destructor: &str) -> bool {
+    let node = &program.nodes[index];
+    node.kind == "Call" && node.second_integer == 0 &&
+        node.second_text == destructor && node.children.len() == 2 &&
+        program.nodes[node.children[0]].kind == "LocalRead" &&
+        program.nodes[node.children[0]].text == destructor &&
+        program.nodes[node.children[1]].kind == "ResourceStorage" &&
+        program.nodes[node.children[1]].text == owner
+}
+
+fn retained_owner_mentioned(program: &Program, index: usize, owner: &str) -> bool {
+    let node = &program.nodes[index];
+    ((node.kind == "LocalRead" || node.kind == "ResourceStorage") &&
+        (node.text == owner || node.text.starts_with(&format!("{owner}.")))) ||
+        node.children.iter().any(|child| retained_owner_mentioned(program, *child, owner))
+}
+
+fn retained_contains(program: &Program, root: usize, target: usize) -> bool {
+    root == target || program.nodes[root].children.iter().any(|child|
+        retained_contains(program, *child, target))
+}
+
+fn validate_retained_after(program: &Program, index: usize, owner: &str,
+    destructor: &str, terminal_scope: bool) -> Result<(), Box<dyn Error>> {
+    let node = &program.nodes[index];
+    if node.kind == "Return" || node.kind == "ScopeCleanup" {
+        let matching = node.children.iter().filter(|child|
+            retained_cleanup_call(program, **child, owner, destructor)).count();
+        if (node.kind == "Return" || terminal_scope) && matching != 1 ||
+            !terminal_scope && node.kind == "ScopeCleanup" && matching != 0 {
+            return Err(invalid("retained FFI exit lacks exactly one terminal owner cleanup"));
+        }
+        for child in &node.children {
+            if !retained_cleanup_call(program, *child, owner, destructor) &&
+                retained_owner_mentioned(program, *child, owner) {
+                return Err(invalid("retained FFI owner escapes terminal cleanup"));
+            }
+        }
+        return Ok(());
+    }
+    if matches!(node.kind.as_str(), "Block" | "UnsafeScope" | "Branch" | "Loop" |
+        "GuardUnwrap" | "EnumMatch" | "EnumMatchArm") {
+        for child in &node.children {
+            validate_retained_after(program, *child, owner, destructor, false)?;
+        }
+    } else if retained_owner_mentioned(program, index, owner) {
+        return Err(invalid("retained FFI owner is accessed after registration"));
+    }
+    Ok(())
+}
+
+fn validate_retained_lease_plans(program: &Program) -> Result<(), Box<dyn Error>> {
+    if !program.nodes.iter().any(|node| node.kind == "Call" && node.second_integer == 5) &&
+        !program.functions.iter().any(|function| function.ffi_contract.as_ref().is_some_and(
+            |contract| contract.parameter_policies.iter().any(|policy| policy == "retain"))) {
+        return Ok(());
+    }
+    if program.target_triple != "x86_64-unknown-linux-gnu" || program.object_format != "Elf" {
+        return Err(invalid("retained FFI target ABI is unsupported"));
+    }
+    let functions: HashMap<_, _> = program.functions.iter()
+        .map(|function| (function.qualified_name.as_str(), function)).collect();
+    for (call_index, call) in program.nodes.iter().enumerate() {
+        if call.kind != "Call" { continue; }
+        let function = functions.get(call.second_text.as_str()).copied();
+        let retained = function.and_then(|function| function.ffi_contract.as_ref())
+            .map(|contract| contract.parameter_policies.iter().enumerate()
+                .filter(|(_, policy)| *policy == "retain").map(|(index, _)| index)
+                .collect::<Vec<_>>()).unwrap_or_default();
+        if call.second_integer != 5 {
+            if !retained.is_empty() {
+                return Err(invalid("retained FFI Call is missing its canonical lease plan"));
+            }
+            continue;
+        }
+        let function = function.ok_or_else(|| invalid("retained FFI Call has no extern"))?;
+        let contract = function.ffi_contract.as_ref()
+            .ok_or_else(|| invalid("retained FFI Call has no contract"))?;
+        if !function.is_extern || function.result_type != "Void" ||
+            contract.result_policy != "value" || retained.len() != 1 ||
+            function.parameters.len() + 1 != call.children.len() ||
+            contract.parameter_policies.iter().enumerate().any(|(index, policy)|
+                index != retained[0] && (policy != "value" ||
+                    !matches!(function.parameters[index].1.as_str(), "Int" | "Byte" | "Bool"))) {
+            return Err(invalid("retained FFI Call has unsupported positions or result"));
+        }
+        let plan = call.isolated_call_plan.as_ref()
+            .ok_or_else(|| invalid("retained FFI Call has no versioned plan"))?;
+        let evidence = plan.retained.as_ref()
+            .ok_or_else(|| invalid("retained FFI Call has no owner evidence"))?;
+        let position = &plan.positions[0];
+        let owner_type = &position.aggregate_type;
+        let owner_name = struct_type_name(owner_type)
+            .ok_or_else(|| invalid("retained FFI owner has no struct identity"))?;
+        let layout = program.layouts.iter().find(|layout|
+            layout.erased_name == owner_name && layout.brand.is_empty())
+            .ok_or_else(|| invalid("retained FFI owner layout is missing"))?;
+        let parameter_type = &function.parameters[retained[0]].1;
+        if plan.target_triple != program.target_triple ||
+            position.index != retained[0] || position.direction != "retain" ||
+            position.provenance != "native_owned_raw_field" ||
+            position.size != 8 || position.align != 8 ||
+            !layout.repr_c || layout.packed || layout.abi != "C" ||
+            layout.fields.len() != 1 || layout.fields[0].name != evidence.raw_field ||
+            layout.fields[0].ty != *parameter_type ||
+            !parameter_type.starts_with("RawPointer(") ||
+            evidence.owner_storage.is_empty() || evidence.acquisition_identity.is_empty() {
+            return Err(invalid("retained FFI target layout, provenance, or owner disagrees"));
+        }
+        for (index, (_, ty)) in function.parameters.iter().enumerate() {
+            let argument = &program.nodes[call.children[index + 1]];
+            if argument.ty != *ty || index != retained[0] &&
+                retained_owner_mentioned(program, call.children[index + 1],
+                    &evidence.owner_storage) {
+                return Err(invalid("retained FFI argument type or owner alias disagrees"));
+            }
+        }
+        let argument = &program.nodes[call.children[retained[0] + 1]];
+        if argument.kind != "FieldOrMethodSelect" ||
+            argument.text != evidence.raw_field || argument.ty != *parameter_type ||
+            argument.children.len() != 1 ||
+            program.nodes[argument.children[0]].kind != "LocalRead" ||
+            program.nodes[argument.children[0]].text != evidence.owner_storage ||
+            program.nodes[argument.children[0]].ty != *owner_type {
+            return Err(invalid("retained FFI Call lacks exact native owner raw-field origin"));
+        }
+        let acquisitions: Vec<_> = program.functions.iter().filter(|candidate|
+            candidate.module_index == function.module_index && candidate.is_extern &&
+            candidate.result_type == *owner_type &&
+            candidate.ffi_contract.as_ref().is_some_and(|policy|
+                policy.result_policy == "owned_return" && policy.destructor == plan.cleanup))
+            .collect();
+        if acquisitions.is_empty() {
+            return Err(invalid("retained FFI owner lacks qualified acquisition and release"));
+        }
+        let mut occurrences = 0;
+        for candidate in program.functions.iter().filter(|candidate|
+            !candidate.is_extern && candidate.module_index == function.module_index) {
+            let Some(body) = candidate.body_node else { continue; };
+            for (block_index, block) in program.nodes.iter().enumerate() {
+                if block.kind != "Block" || block.children.len() < 3 { continue; }
+                if !retained_contains(program, body, block_index) { continue; }
+                let mut pairs = block.children.windows(2).filter(|pair|
+                    program.nodes[pair[0]].kind == "LocalDeclare" &&
+                    program.nodes[pair[1]].kind == "Evaluate" &&
+                    program.nodes[pair[1]].children.as_slice() == [call_index]);
+                let Some(pair) = pairs.next() else { continue; };
+                if pairs.next().is_some() {
+                    return Err(invalid("retained FFI registration has ambiguous block ownership"));
+                }
+                let pair_index = block.children.windows(2).position(|window|
+                    window == pair).ok_or_else(|| invalid("retained FFI pair was lost"))?;
+                if block.children[..pair_index].iter().any(|child|
+                    retained_owner_mentioned(program, *child, &evidence.owner_storage)) {
+                    return Err(invalid("retained FFI owner has a preexisting alias"));
+                }
+                let declaration = &program.nodes[pair[0]];
+                if declaration.text != evidence.owner_storage ||
+                    declaration.ty != *owner_type || declaration.children.len() != 1 {
+                    return Err(invalid("retained FFI acquisition storage disagrees"));
+                }
+                let acquisition = &program.nodes[declaration.children[0]];
+                let module_path = &program.modules[function.module_index].0;
+                let identity = format!("acquisition:{module_path}:{}:{}",
+                    acquisition.source_start, acquisition.source_end);
+                if acquisition.kind != "Call" || identity != evidence.acquisition_identity ||
+                    !acquisitions.iter().any(|candidate|
+                        candidate.qualified_name == acquisition.second_text) {
+                    return Err(invalid("retained FFI acquisition identity disagrees"));
+                }
+                let Some(last) = block.children.last() else { unreachable!() };
+                let terminal = &program.nodes[*last];
+                if terminal.kind == "ScopeCleanup" {
+                    if terminal.children.iter().filter(|cleanup|
+                        retained_cleanup_call(program, **cleanup,
+                            &evidence.owner_storage, &plan.cleanup)).count() != 1 {
+                        return Err(invalid("retained FFI normal exit lacks exactly one owner cleanup"));
+                    }
+                } else if terminal.kind != "Return" {
+                    return Err(invalid("retained FFI scope lacks terminal owner cleanup"));
+                }
+                for (tail_index, child) in block.children[pair_index + 2..].iter().enumerate() {
+                    let terminal_scope = pair_index + 2 + tail_index + 1 == block.children.len();
+                    validate_retained_after(program, *child, &evidence.owner_storage,
+                        &plan.cleanup, terminal_scope)?;
+                }
+                occurrences += 1;
+            }
+        }
+        if occurrences != 1 {
+            return Err(invalid("retained FFI Call lacks a unique adjacent acquisition scope"));
         }
     }
     Ok(())
@@ -1500,8 +1709,12 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             return Err(invalid("full-program node source range is inverted"));
         }
         let second_integer = parse_i32(values[6], "node second integer")?;
-        let isolated_call_plan = if kind == "Call" && matches!(second_integer, 3 | 4) {
-            let expected_tag = if second_integer == 3 { "isolated_call.v1" } else { "direct_call.v1" };
+        let isolated_call_plan = if kind == "Call" && matches!(second_integer, 3 | 4 | 5) {
+            let expected_tag = match second_integer {
+                3 => "isolated_call.v1",
+                4 => "direct_call.v1",
+                _ => "retained_lease.v1",
+            };
             if values.get(child_end) != Some(&expected_tag) ||
                 values.len() < child_end + 4 {
                 return Err(invalid("full-program Call isolation plan version is missing or unknown"));
@@ -1509,14 +1722,16 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             let target_triple = decode_hex(values[child_end + 1], "Call isolation target")?;
             let cleanup = decode_hex(values[child_end + 2], "Call isolation cleanup")?;
             let count = parse_usize(values[child_end + 3], "Call isolation position count")?;
+            let position_width = if second_integer == 5 { 9 } else { 6 };
             if count == 0 || count > child_count.saturating_sub(1) ||
-                count > (values.len() - child_end - 4) / 6 ||
-                values.len() != child_end + 4 + count * 6 {
+                (second_integer == 5 && count != 1) ||
+                count > (values.len() - child_end - 4) / position_width ||
+                values.len() != child_end + 4 + count * position_width {
                 return Err(invalid("full-program Call isolation position count disagrees with row"));
             }
             let mut positions = Vec::with_capacity(count);
             for position in 0..count {
-                let base = child_end + 4 + position * 6;
+                let base = child_end + 4 + position * position_width;
                 positions.push(IsolatedPosition {
                     index: parse_usize(values[base], "Call isolation parameter index")?,
                     direction: decode_hex(values[base + 1], "Call isolation direction")?,
@@ -1526,7 +1741,19 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
                     provenance: decode_hex(values[base + 5], "Call isolation provenance")?,
                 });
             }
-            Some(Box::new(IsolatedCallPlan { target_triple, cleanup, positions }))
+            let retained = if second_integer == 5 {
+                let base = child_end + 4;
+                let transported = format!("|{}", values[child_end..].join("|"));
+                if decode_hex(values[3], "retained Call producer plan")? != transported {
+                    return Err(invalid("retained Call producer evidence disagrees with tagged row"));
+                }
+                Some(Box::new(RetainedLeaseEvidence {
+                    owner_storage: decode_hex(values[base + 6], "retained owner storage")?,
+                    acquisition_identity: decode_hex(values[base + 7], "retained acquisition identity")?,
+                    raw_field: decode_hex(values[base + 8], "retained raw field")?,
+                }))
+            } else { None };
+            Some(Box::new(IsolatedCallPlan { target_triple, cleanup, positions, retained }))
         } else {
             if values.len() != child_end || kind == "Call" && !matches!(second_integer, 0 | 1 | 2) {
                 return Err(invalid("full-program Call has an unknown optional policy or node extension"));
@@ -1678,6 +1905,7 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
     };
     validate_isolated_call_plans(&program)?;
     validate_direct_call_plans(&program)?;
+    validate_retained_lease_plans(&program)?;
     Ok(program)
 }
 
@@ -3237,12 +3465,12 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         if node.second_integer == 3 {
             return self.lower_generic_isolated_call(builder, node, &callable, &arguments);
         }
-        if node.second_integer == 4 {
+        if matches!(node.second_integer, 4 | 5) {
             if node.isolated_call_plan.is_none() ||
                 arguments.len() != callable.parameters.len() ||
                 !matches!(callable.abi.result, AbiShape::Void | AbiShape::Scalar(_)) ||
                 callable.abi.parameters.iter().any(|shape| !matches!(shape, AbiShape::Scalar(_))) {
-                return Err(invalid("direct FFI Call has an unsupported native ABI"));
+                return Err(invalid("direct or retained FFI Call has an unsupported native ABI"));
             }
             return self.emit_call(builder, &callable, &arguments);
         }

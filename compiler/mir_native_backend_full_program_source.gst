@@ -3,6 +3,7 @@ import "codegen.gst" as codegen;
 import "mir.gst" as mir;
 import "mir_primitive_layout.gst" as primitive_layout;
 import "typechecker.gst" as typechecker;
+import "token.gst" as token;
 
 // Patch 21.14 full-program typed-input to canonical-MIR lowering.
 //
@@ -436,6 +437,63 @@ func mir_native_full_program_generic_direct_plan(sig: typechecker.FunctionSignat
     plan = std.Concat(plan, "|");
     plan = std.Concat(plan, std.FormatInt(count));
     return std.Clone(ctx, std.Concat(plan, position_rows));
+}
+
+// The Call 5 suffix carries the typechecker's exact owner acquisition and
+// terminal destructor decision. The native worker validates these against
+// executable canonical nodes; it never infers retention from the host name.
+func mir_native_full_program_retained_lease_plan(sig: typechecker.FunctionSignature[ctx], span: token.Span, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
+    mut target := primitive_layout.mir_primitive_layout_target(os.NativeTargetTriple(ctx), ctx);
+    if target.found == 0 ||
+       std.str_eq(target.target.target_triple, "x86_64-unknown-linux-gnu") == 0 ||
+       std.str_eq(os.NativeObjectFormat(ctx), "Elf") == 0 ||
+       target.target.pointer_size != 8 || target.target.pointer_alignment != 8 ||
+       sig.is_extern != 1 || sig.ffi_contract_verified != 1 ||
+       sig.requires_sandbox_arena != 0 || sig.return_type.tag != 3 ||
+       sig.ffi_param_policies == empty[Index[std.Vector[str, ctx], ctx]] { return ""; }
+    unsafe {
+        mut key := typechecker.env_ffi_retained_call_key(
+            env as *typechecker.TypeEnvironment[ctx], span, ctx
+        );
+        guard evidence := (*env).retained_lease_calls.Get(key) else { return ""; };
+        mut policies: std.Vector[str, ctx] := ctx[sig.ffi_param_policies];
+        if len(policies) != len(sig.params) ||
+           evidence.selected_position < 0 ||
+           evidence.selected_position >= len(policies) ||
+           std.str_eq(policies[evidence.selected_position], "retain") == 0 { return ""; }
+        mut count := 0;
+        mut i := 0;
+        while i < len(policies) {
+            if std.str_eq(policies[i], "retain") == 1 { count = count + 1; }
+            else if std.str_eq(policies[i], "value") == 0 { return ""; }
+            i = i + 1;
+        }
+        if count != 1 { return ""; }
+        mut plan := "|retained_lease.v1|";
+        plan = std.Concat(plan, mir_native_full_program_utf8_hex(target.target.target_triple, ctx));
+        plan = std.Concat(plan, "|");
+        plan = std.Concat(plan, mir_native_full_program_utf8_hex(
+            typechecker.env_resolve_namespaced_ident(
+                env as *typechecker.TypeEnvironment[ctx], evidence.destructor_name, ctx
+            ), ctx
+        ));
+        plan = std.Concat(plan, "|1|");
+        plan = std.Concat(plan, std.FormatInt(evidence.selected_position));
+        plan = std.Concat(plan, "|");
+        plan = std.Concat(plan, mir_native_full_program_utf8_hex("retain", ctx));
+        plan = std.Concat(plan, "|");
+        mut canonical_owner := std.Concat("Struct(\"", evidence.owner_type);
+        canonical_owner = std.Concat(canonical_owner, "\", None)");
+        plan = std.Concat(plan, mir_native_full_program_utf8_hex(canonical_owner, ctx));
+        plan = std.Concat(plan, "|8|8|");
+        plan = std.Concat(plan, mir_native_full_program_utf8_hex("native_owned_raw_field", ctx));
+        plan = std.Concat(plan, "|");
+        plan = std.Concat(plan, mir_native_full_program_utf8_hex(evidence.owner_storage, ctx));
+        plan = std.Concat(plan, "|");
+        plan = std.Concat(plan, mir_native_full_program_utf8_hex(evidence.acquisition_identity, ctx));
+        plan = std.Concat(plan, "|");
+        return std.Clone(ctx, std.Concat(plan, mir_native_full_program_utf8_hex(evidence.raw_field, ctx)));
+    }
 }
 
 // A borrowed C aggregate is admissible only when the existing native physical
@@ -1196,6 +1254,21 @@ func mir_native_full_program_flatten_expression(expression_index: Index[ast.Expr
                             selected_isolated_signature, env, ctx
                         )) == 0 { return 0 - 1; }
                     }
+                    mut retained_count := 0;
+                    mut retained_index := 0;
+                    while retained_index < len(direct_policies) {
+                        if std.str_eq(direct_policies[retained_index], "retain") == 1 {
+                            retained_count = retained_count + 1;
+                        }
+                        retained_index = retained_index + 1;
+                    }
+                    if retained_count > 0 {
+                        node.second_integer_operand = 5;
+                        node.text_operand = mir_native_full_program_retained_lease_plan(
+                            selected_isolated_signature, expression.Call.span, env, ctx
+                        );
+                        if len(node.text_operand) == 0 { return 0 - 1; }
+                    }
                 }
             }
             if len(constructor_helper) > 0 {
@@ -1920,6 +1993,9 @@ func mir_native_full_program_function_index(functions: std.Vector[MirNativeFullP
 // Call plans belong to the resolved extern function, not to every MIR node.
 // Most full-program nodes have no isolated policy, so keep their records small.
 func mir_native_full_program_node_isolated_plan(node: MirNativeFullProgramNode[ctx], functions: std.Vector[MirNativeFullProgramFunction[ctx], ctx], ctx: &Arena) str {
+    if std.str_eq(node.kind, "Call") == 1 && node.second_integer_operand == 5 {
+        return node.text_operand;
+    }
     if std.str_eq(node.kind, "Call") == 0 ||
        (node.second_integer_operand != 3 && node.second_integer_operand != 4) {
         return "";
@@ -3002,7 +3078,7 @@ func mir_native_full_program_serialize_model(model: MirNativeFullProgramModel[ct
         }
         mut isolated_plan := mir_native_full_program_node_isolated_plan(node, functions, ctx);
         if std.str_eq(node.kind, "Call") == 1 &&
-           (node.second_integer_operand == 3 || node.second_integer_operand == 4) &&
+           (node.second_integer_operand == 3 || node.second_integer_operand == 4 || node.second_integer_operand == 5) &&
            len(isolated_plan) == 0 {
             return std.Clone(ctx, "");
         }

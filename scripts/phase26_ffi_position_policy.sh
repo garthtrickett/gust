@@ -82,7 +82,7 @@ test ! -e "$poison_marker"
 negatives=(
   'unannotated_pointer|FFIBorrowPolicyRequired'
   'transfer|FFITransferRetainUnsupported'
-  'retain|FFITransferRetainUnsupported'
+  'retain|FFIRetainAuthority'
   'callback|FFICallbackNativeErrorUnsupported'
   'native_error|FFICallbackNativeErrorUnsupported'
   'returned_pointer|FFIReturnedPointerUnsupported'

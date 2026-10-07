@@ -820,6 +820,65 @@ func env_ffi_owned_storage_is_live(env: *TypeEnvironment[ctx], storage_name: str
     }
 }
 
+func env_ffi_owned_storage_has_active_lease(env: *TypeEnvironment[ctx], storage_name: str, ctx: &Arena) int {
+    unsafe {
+        guard identity := (*env).resource_value_identities.Get(storage_name) else { return 0; };
+        guard obligation := (*env).resource_acquisition_obligations.Get(identity) else { return 0; };
+        return obligation.retained_lease_state;
+    }
+}
+
+func env_ffi_retained_call_key(env: *TypeEnvironment[ctx], span: token.Span, ctx: &Arena) str {
+    unsafe {
+        mut key := std.Concat((*env).current_prefix, ":retain:");
+        key = std.Concat(key, std.FormatInt(span.start.offset));
+        key = std.Concat(key, ":");
+        return std.Clone(ctx, std.Concat(key, std.FormatInt(span.end.offset)));
+    }
+}
+
+func env_ffi_register_retained_lease(env: *TypeEnvironment[ctx], argument: ast.Expression[ctx], formal: ast.Type[ctx], position: int, span: token.Span, ctx: &Arena) int {
+    unsafe {
+        if argument.tag != 11 || formal.tag != 9 { return 0; }
+        mut base := ctx[argument.Selector.left];
+        if base.tag != 0 { return 0; }
+        mut storage := base.Identifier.name;
+        if env_ffi_owned_storage_is_live(env, storage, ctx) == 0 { return 0; }
+        guard identity := (*env).resource_value_identities.Get(storage) else { return 0; };
+        guard lookup := (*env).resource_acquisition_obligations.Get(identity) else { return 0; };
+        mut obligation := lookup;
+        if obligation.retained_lease_state != 0 ||
+           std.str_eq(obligation.storage_name, storage) == 0 ||
+           std.str_eq((*env).ffi_retain_candidate_owner, storage) == 0 ||
+           std.str_eq((*env).ffi_retain_candidate_identity, identity) == 0 { return 0; }
+        mut owner: ast.Type[ctx];
+        owner.tag = 8;
+        owner.Struct.struct_name = std.Clone(ctx, obligation.type_name);
+        owner.Struct.brand = empty[Index[str, ctx]];
+        if env_ffi_owned_result_shape(env, owner, ctx) == 0 { return 0; }
+        guard layout := (*env).struct_registry.Get(obligation.type_name) else { return 0; };
+        mut fields := layout.fields.Keys(ctx);
+        if len(fields) != 1 || std.str_eq(fields[0], argument.Selector.right) == 0 { return 0; }
+        guard field_type := layout.fields.Get(fields[0]) else { return 0; };
+        if std.str_eq(ast.serialize_type(env_resolve_type(env, formal, ctx), ctx),
+                      ast.serialize_type(env_resolve_type(env, field_type, ctx), ctx)) == 0 ||
+           len(obligation.destructor_name) == 0 { return 0; }
+        mut evidence: RetainedLeaseEvidence[ctx];
+        evidence.owner_storage = std.Clone(ctx, storage);
+        evidence.owner_type = std.Clone(ctx, obligation.type_name);
+        evidence.acquisition_identity = std.Clone(ctx, identity);
+        evidence.destructor_name = std.Clone(ctx, obligation.destructor_name);
+        evidence.raw_field = std.Clone(ctx, fields[0]);
+        evidence.selected_position = position;
+        (*env).retained_lease_calls.Insert(env_ffi_retained_call_key(env, span, ctx), evidence);
+        obligation.retained_lease_state = 1;
+        (*env).resource_acquisition_obligations.Insert(std.Clone(ctx, identity), obligation);
+        (*env).ffi_retain_candidate_owner = "";
+        (*env).ffi_retain_candidate_identity = "";
+        return 1;
+    }
+}
+
 // A direct acquisition expression has no storage owner yet. Native handoff
 // consumes a named, live linear obligation so the existing move tracker can
 // retire exactly that obligation after the call.
@@ -928,7 +987,7 @@ func env_validate_extern_ffi_positions(env: *TypeEnvironment[ctx], stmt: ast.Sta
                 i = i + 1;
                 continue;
             }
-            if std.str_eq(policy, "transfer") == 1 || std.str_eq(policy, "retain") == 1 {
+            if std.str_eq(policy, "transfer") == 1 {
                 report_error(2, "Semantic Error: [FFITransferRetainUnsupported] External pointer transfer and retention are not qualified", declared.span, env, ctx);
                 return 0;
             }
@@ -958,7 +1017,8 @@ func env_validate_extern_ffi_positions(env: *TypeEnvironment[ctx], stmt: ast.Sta
                    std.str_eq(policy, "borrow_write_call") == 0 &&
                    std.str_eq(policy, "borrow_read_isolated_call") == 0 &&
                    std.str_eq(policy, "borrow_write_isolated_call") == 0 &&
-                   std.str_eq(policy, "release_owned") == 0 {
+                   std.str_eq(policy, "release_owned") == 0 &&
+                   std.str_eq(policy, "retain") == 0 {
                     report_error(2, "Semantic Error: [FFIUnsupportedOwnershipPolicy] External parameter policy is not qualified", declared.span, env, ctx);
                     return 0;
                 }
@@ -970,6 +1030,11 @@ func env_validate_extern_ffi_positions(env: *TypeEnvironment[ctx], stmt: ast.Sta
                 if std.str_eq(policy, "release_owned") == 1 &&
                    (t.tag != 9 || len((*sig).params) != 1 || (*sig).return_type.tag != 3) {
                     report_error(2, "Semantic Error: [FFIReleaseAuthority] Terminal native release requires one raw-pointer parameter and Void result", declared.span, env, ctx);
+                    return 0;
+                }
+                if std.str_eq(policy, "retain") == 1 &&
+                   (t.tag != 9 || (*sig).return_type.tag != 3) {
+                    report_error(2, "Semantic Error: [FFIRetainAuthority] Retained native registration requires a raw-pointer position and Void result", declared.span, env, ctx);
                     return 0;
                 }
                 if std.str_eq(policy, "borrow_read_isolated_call") == 1 {
@@ -1005,6 +1070,29 @@ func env_validate_extern_ffi_positions(env: *TypeEnvironment[ctx], stmt: ast.Sta
                 return 0;
             }
             i = i + 1;
+        }
+        mut retained_count := 0;
+        mut retained_index := 0;
+        while retained_index < len(policies) {
+            if std.str_eq(policies[retained_index], "retain") == 1 {
+                retained_count = retained_count + 1;
+            }
+            retained_index = retained_index + 1;
+        }
+        if retained_count > 0 {
+            if retained_count != 1 || (*sig).return_type.tag != 3 {
+                report_error(2, "Semantic Error: [FFIRetainAuthority] Native registration requires exactly one retained raw position and Void result", stmt.FunctionDecl.span, env, ctx);
+                return 0;
+            }
+            retained_index = 0;
+            while retained_index < len(policies) {
+                if std.str_eq(policies[retained_index], "retain") == 0 &&
+                   std.str_eq(policies[retained_index], "value") == 0 {
+                    report_error(2, "Semantic Error: [FFIRetainAuthority] Other native registration positions must be scalar values", stmt.FunctionDecl.span, env, ctx);
+                    return 0;
+                }
+                retained_index = retained_index + 1;
+            }
         }
         if stmt.FunctionDecl.is_extern == 0 {
             if std.str_eq(stmt.FunctionDecl.ffi_return_policy, "") == 0 {
@@ -1104,7 +1192,17 @@ type ResourceAcquisitionObligation[ctx] struct {
     scope_depth: int,
     declaration_order: int,
     field_order: int,
-    state: int
+    state: int,
+    retained_lease_state: int
+}
+
+type RetainedLeaseEvidence[ctx] struct {
+    owner_storage: str,
+    owner_type: str,
+    acquisition_identity: str,
+    destructor_name: str,
+    raw_field: str,
+    selected_position: int
 }
 
 type ResourceCleanupAction[ctx] struct {
@@ -1175,6 +1273,9 @@ type TypeEnvironment[ctx] struct {
     open_directories: std.HashMap[str, int, ctx],
     open_linear_resources: std.HashMap[str, LinearResourceRecord[ctx], ctx],
     resource_acquisition_obligations: std.HashMap[str, ResourceAcquisitionObligation[ctx], ctx],
+    retained_lease_calls: std.HashMap[str, RetainedLeaseEvidence[ctx], ctx],
+    ffi_retain_candidate_owner: str,
+    ffi_retain_candidate_identity: str,
     resource_value_identities: std.HashMap[str, str, ctx],
     resource_cleanup_plans: std.HashMap[str, Index[std.Vector[ResourceCleanupAction[ctx], ctx], ctx], ctx],
     resource_storage_scope_depths: std.HashMap[str, int, ctx],
@@ -4038,6 +4139,11 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     "Semantic Error: [FFIOwnedUseAfterRelease] Native-owned resource cannot be used after release or transfer",
                     expr.Identifier.span, env, ctx);
             }
+            if env_ffi_owned_storage_has_active_lease(env, resolved_name, ctx) != 0 {
+                report_error(2,
+                    "Semantic Error: [FFIRetainedOwnerAccess] Retained native pointer keeps its owner inaccessible until terminal compiler cleanup",
+                    expr.Identifier.span, env, ctx);
+            }
 
             // Check if resolved_name is moved
             if (*env).moved_vars.Get(resolved_name).Ok {
@@ -6258,6 +6364,16 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                                 report_error(2, "Semantic Error: [FFIReleaseAuthority] Native release requires the validated owner's raw field in its destructor", expr.Call.span, env, ctx);
                                 mut bad_release: ast.Type[ctx]; bad_release.tag = 3;
                                 return bad_release;
+                            }
+                        } else if std.str_eq(ffi_policy, "retain") == 1 {
+                            if ffi_formal.tag != 9 || ffi_actual.tag != 9 ||
+                               env_ffi_register_retained_lease(
+                                   env, args_vec_valid_call[ffi_arg_index],
+                                   ffi_formal, ffi_arg_index, expr.Call.span, ctx
+                               ) == 0 {
+                                report_error(2, "Semantic Error: [FFIRetainAuthority] Native retention requires the sole raw field of a live, bound owned-return resource", expr.Call.span, env, ctx);
+                                mut bad_retain: ast.Type[ctx]; bad_retain.tag = 3;
+                                return bad_retain;
                             }
                         } else {
                             report_error(2, "Semantic Error: [FFIContractMismatch] External call has an unsupported ownership position", expr.Call.span, env, ctx);
@@ -9515,6 +9631,9 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.open_directories = std.HashMapNew(ctx);
         env_ref_new.open_linear_resources = std.HashMapNew(ctx);
         env_ref_new.resource_acquisition_obligations = std.HashMapNew(ctx);
+        env_ref_new.retained_lease_calls = std.HashMapNew(ctx);
+        env_ref_new.ffi_retain_candidate_owner = "";
+        env_ref_new.ffi_retain_candidate_identity = "";
         env_ref_new.resource_value_identities = std.HashMapNew(ctx);
         env_ref_new.resource_cleanup_plans = std.HashMapNew(ctx);
         env_ref_new.resource_storage_scope_depths = std.HashMapNew(ctx);
@@ -11043,6 +11162,11 @@ func env_record_resource_cleanup_plan(env: *TypeEnvironment[ctx], kind: str, spa
             mut lookup := (*env).resource_acquisition_obligations.Get(identity);
             if lookup.Ok {
                 mut obligation := lookup.Val;
+                if obligation.retained_lease_state == 2 {
+                    report_error(2, "Semantic Error: [FFIRetainedLeaseJoin] Native retained lease has path-dependent lifetime at scope exit", span, env, ctx);
+                    obligation.state = 3;
+                    (*env).resource_acquisition_obligations.Insert(std.Clone(ctx, identity), obligation);
+                }
                 mut selected := 0;
                 if obligation.state == 0 {
                     if scope_depth < 0 || obligation.scope_depth == scope_depth {
@@ -11153,6 +11277,7 @@ func env_register_resource_acquisition(env: *TypeEnvironment[ctx], expr_idx: Ind
             obligation.declaration_order = (*env).current_resource_declaration_order;
             obligation.field_order = 0 - 1;
             obligation.state = 0; // pending ownership
+            obligation.retained_lease_state = 0;
             (*env).resource_acquisition_obligations.Insert(
                 std.Clone(ctx, identity), obligation
             );
@@ -11188,6 +11313,7 @@ func env_register_resource_parameter_obligation(env: *TypeEnvironment[ctx], func
     }
     obligation.field_order = 0 - 1;
     obligation.state = 0;
+    obligation.retained_lease_state = 0;
     unsafe {
         (*env).resource_acquisition_obligations.Insert(
             std.Clone(ctx, identity), obligation
@@ -14812,6 +14938,35 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
         while i < len(statements) {
             mut statement_idx: Index[ast.Statement[ctx], ctx] := os.ArenaAlloc(ctx);
             ctx.Set(statement_idx, statements[i]);
+            // The initial retained route cannot inherit an alias or a moved
+            // owner from an intervening statement. Both statements must be
+            // direct children of this same lexical block.
+            (*env).ffi_retain_candidate_owner = "";
+            (*env).ffi_retain_candidate_identity = "";
+            if i > 0 && statements[i].tag == 13 {
+                mut current_expr := ctx[statements[i].Expression.expr];
+                mut previous := statements[i - 1];
+                if current_expr.tag == 12 && previous.tag == 4 &&
+                   previous.VarDecl.value != empty[Index[ast.Expression[ctx], ctx]] {
+                    mut acquisition := ctx[previous.VarDecl.value];
+                    if acquisition.tag == 12 {
+                        mut acquisition_name := env_resolve_namespaced_ident(
+                            env, get_call_func_name(acquisition.Call.function, ctx), ctx
+                        );
+                        mut acquisition_signature := (*env).function_registry.Get(acquisition_name);
+                        if acquisition_signature.Ok {
+                            if acquisition_signature.Val.is_extern == 1 &&
+                               acquisition_signature.Val.ffi_contract_verified == 1 &&
+                               std.str_eq(acquisition_signature.Val.ffi_return_policy, "owned_return") == 1 {
+                                (*env).ffi_retain_candidate_owner = std.Clone(ctx, previous.VarDecl.name);
+                                (*env).ffi_retain_candidate_identity = env_resource_acquisition_identity(
+                                    env, acquisition.Call.span, ctx
+                                );
+                            }
+                        }
+                    }
+                }
+            }
             mut alias_name := phase26_zero_local_call_alias_name(statements[i], env, ctx);
             if phase26_zero_local_call_statement_consumes_candidate(statements[i], env, ctx) == 0 &&
                std.str_eq(alias_name, "") == 1 {
@@ -17171,6 +17326,7 @@ func resource_acquisition_obligation_clone(record: ResourceAcquisitionObligation
     cloned.declaration_order = record.declaration_order;
     cloned.field_order = record.field_order;
     cloned.state = record.state;
+    cloned.retained_lease_state = record.retained_lease_state;
     return cloned;
 }
 
@@ -17276,6 +17432,9 @@ func typechecker_join_resource_acquisition_obligation_maps(left: std.HashMap[str
                 record.state = resource_acquisition_obligation_join_state(
                     record.state, right_lookup.Val.state
                 );
+                if record.retained_lease_state != right_lookup.Val.retained_lease_state {
+                    record.retained_lease_state = 2; // ambiguous retained lifetime
+                }
             }
             joined.Insert(std.Clone(ctx, key), record);
         }

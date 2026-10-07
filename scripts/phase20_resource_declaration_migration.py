@@ -82,6 +82,10 @@ PHASE26_1D_TRANSFER_LINEAR_FIXTURES = [
     "compiler/phase26_ffi_transfer_owned_source.gst",
 ]
 
+PHASE26_1D_RETAINED_LINEAR_FIXTURES = [
+    "compiler/phase26_ffi_retained_lease_source.gst",
+]
+
 SOURCE_DESTRUCTORS = {
     SOURCE_DECLARATIONS[0]: (
         "Phase13CompositionResourceMetadata",
@@ -250,7 +254,8 @@ def validate() -> dict:
                              PATCH24_2F_LINEAR_FIXTURES +
                              PATCH24_12B_LINEAR_FIXTURES +
                              PHASE26_1D_OWNED_LINEAR_FIXTURES +
-                             PHASE26_1D_TRANSFER_LINEAR_FIXTURES)
+                             PHASE26_1D_TRANSFER_LINEAR_FIXTURES +
+                             PHASE26_1D_RETAINED_LINEAR_FIXTURES)
     require(actual_linear == expected_linear,
             "compiler-owned #[linear] declaration inventory drifted: " +
             repr(actual_linear))
@@ -266,6 +271,11 @@ def validate() -> dict:
     require([owned_transfer.get("positive_fixture")] ==
             PHASE26_1D_TRANSFER_LINEAR_FIXTURES,
             "Phase 26 native-transfer linear fixture lacks its authority")
+    retained_lease = registry.get("phase26_activation_audit", {}).get(
+        "ffi_retained_lease_increment", {})
+    require([retained_lease.get("positive_fixture")] ==
+            PHASE26_1D_RETAINED_LINEAR_FIXTURES,
+            "Phase 26 retained-lease linear fixture lacks its authority")
 
     enforcement = registry.get("phase20_resource_declaration_enforcement", {})
     enforcement_files = [enforcement.get("module_fixture", "")]
