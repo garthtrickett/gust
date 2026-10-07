@@ -41,6 +41,7 @@ def main() -> None:
     require(set(record) == set(expected) | {
         "phase22_invocation_successor", "production_audit_successor",
         "phase23_text_surface_successor", "spelling_inventory_successor",
+        "filename_site_successor",
     }, "callback acquired unreviewed fields")
     from phase22_opening import scan_invocations
     rows = [row for row in scan_invocations()
@@ -92,6 +93,23 @@ def main() -> None:
             spelling["current_inventory_summary"] == manifest_summary(source_sites()) and
             spelling["partial_extra_or_substituted_inventory"] == "rejected",
             "callback spelling inventory successor drifted")
+    from phase24_filename_behavior_characterization import source_sites as filename_source_sites
+    filename = record["filename_site_successor"]
+    previous_sites = registry["phase26_activation_audit"]["ffi_retained_lease_increment"][
+        "filename_site_successor"]["current_sites"]
+    current_sites = filename_source_sites()
+    require(filename == {
+        "contract_version": "phase26_1d_callback_sync_filename_site_successor_v1",
+        "previous_sites": previous_sites,
+        "current_sites": current_sites,
+        "line_deltas": [95, 95, 95],
+        "partial_extra_or_substituted_site": "rejected",
+    } and len(previous_sites) == len(current_sites) == 3 and
+            all(now["line"] == before["line"] + 95 and
+                {key: val for key, val in now.items() if key != "line"} ==
+                {key: val for key, val in before.items() if key != "line"}
+                for before, now in zip(previous_sites, current_sites)),
+            "callback filename site successor drifted")
     for path in (expected["positive_fixture"], expected["host_object_source"],
                  "scripts/phase26_ffi_callback_sync.sh"):
         require((ROOT / path).is_file(), f"fixture or guard missing: {path}")
