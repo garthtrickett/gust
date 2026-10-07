@@ -217,6 +217,9 @@ fn validate_ffi_policies(
                         layout.brand.is_empty() && layout.fields.len() == 1 &&
                         layout.fields[0].ty.starts_with("RawPointer("))) &&
                     target == "x86_64-unknown-linux-gnu" && object_format == "Elf",
+                "callback" => ty == "RawPointer(Void)" &&
+                    function.result_type == "Int" && contract.result_policy == "value" &&
+                    target == "x86_64-unknown-linux-gnu" && object_format == "Elf",
                 _ => false,
             };
             if !valid {
@@ -825,6 +828,103 @@ fn validate_direct_call_plans(program: &Program) -> Result<(), Box<dyn Error>> {
                 return Err(invalid("direct FFI Call has indirect or aliased local origin"));
             }
         }
+    }
+    Ok(())
+}
+
+fn callback_call_in_unsafe(program: &Program, root: usize, target: usize, unsafe_scope: bool) -> usize {
+    let node = &program.nodes[root];
+    let nested = unsafe_scope || node.kind == "UnsafeScope";
+    usize::from(root == target && nested) + node.children.iter()
+        .map(|child| callback_call_in_unsafe(program, *child, target, nested))
+        .sum::<usize>()
+}
+
+// FunctionAddress has no general expression semantics. A single, versioned
+// Call6 must own each address and bind it to the exact declared Gust function.
+fn validate_callback_call_plans(program: &Program) -> Result<(), Box<dyn Error>> {
+    let functions: HashMap<_, _> = program.functions.iter()
+        .map(|function| (function.qualified_name.as_str(), function)).collect();
+    let mut parent_count = vec![0usize; program.nodes.len()];
+    for node in &program.nodes {
+        for child in &node.children {
+            if *child >= parent_count.len() {
+                return Err(invalid("callback node child is out of bounds"));
+            }
+            parent_count[*child] += 1;
+        }
+    }
+    let mut owned_addresses = HashSet::new();
+    for (call_index, call) in program.nodes.iter().enumerate() {
+        if call.kind != "Call" { continue; }
+        let selected = functions.get(call.second_text.as_str()).copied();
+        let callback_positions: Vec<_> = selected.and_then(|function| function.ffi_contract.as_ref())
+            .map(|contract| contract.parameter_policies.iter().enumerate()
+                .filter_map(|(index, policy)| (policy == "callback").then_some(index))
+                .collect()).unwrap_or_default();
+        if call.second_integer != 6 {
+            if !callback_positions.is_empty() {
+                return Err(invalid("callback FFI Call is missing its versioned plan"));
+            }
+            continue;
+        }
+        let extern_function = selected.ok_or_else(|| invalid("callback Call has no extern"))?;
+        let contract = extern_function.ffi_contract.as_ref()
+            .ok_or_else(|| invalid("callback Call has no external policy"))?;
+        if program.target_triple != "x86_64-unknown-linux-gnu" ||
+            program.object_format != "Elf" || !extern_function.is_extern ||
+            callback_positions.len() != 1 || extern_function.result_type != "Int" ||
+            contract.result_policy != "value" ||
+            extern_function.parameters.len() + 1 != call.children.len() ||
+            contract.parameter_policies.iter().enumerate().any(|(index, policy)|
+                index != callback_positions[0] && (policy != "value" ||
+                    !matches!(extern_function.parameters[index].1.as_str(), "Int" | "Byte" | "Bool"))) {
+            return Err(invalid("callback Call has unsupported target, positions, or result"));
+        }
+        let position_index = callback_positions[0];
+        let plan = call.isolated_call_plan.as_ref()
+            .ok_or_else(|| invalid("callback Call has no tagged plan"))?;
+        if plan.target_triple != program.target_triple || plan.cleanup != "single_sync_call" ||
+            plan.retained.is_some() || plan.positions.len() != 1 {
+            return Err(invalid("callback Call target, scope, or count disagrees"));
+        }
+        let position = &plan.positions[0];
+        if position.index != position_index || position.direction != "callback" ||
+            position.aggregate_type != "RawPointer(Void)" || position.size != 8 ||
+            position.align != 8 || position.provenance != "gust.int_to_int.v1" ||
+            extern_function.parameters[position_index].1 != "RawPointer(Void)" {
+            return Err(invalid("callback Call position, ABI, or signature disagrees"));
+        }
+        let address_index = call.children[position_index + 1];
+        let address = &program.nodes[address_index];
+        let callback = functions.get(address.text.as_str()).copied()
+            .ok_or_else(|| invalid("callback FunctionAddress has no resolved symbol"))?;
+        if address.kind != "FunctionAddress" || address.ty != "RawPointer(Void)" ||
+            address.second_text != "gust.int_to_int.v1" ||
+            address.integer != 0 || address.second_integer != 0 ||
+            !address.children.is_empty() || callback.is_extern ||
+            callback.parameters.len() != 1 || callback.parameters[0].1 != "Int" ||
+            callback.result_type != "Int" || callback.body_node.is_none() ||
+            parent_count[address_index] != 1 ||
+            program.functions.iter().any(|function| function.body_node == Some(address_index)) ||
+            !owned_addresses.insert(address_index) {
+            return Err(invalid("callback FunctionAddress symbol or signature is unqualified"));
+        }
+        if program.functions.iter().filter(|function| !function.is_extern)
+            .filter_map(|function| function.body_node)
+            .map(|body| callback_call_in_unsafe(program, body, call_index, false))
+            .sum::<usize>() != 1 {
+            return Err(invalid("callback Call is not uniquely owned by an unsafe scope"));
+        }
+        for (index, (_, ty)) in extern_function.parameters.iter().enumerate() {
+            if program.nodes[call.children[index + 1]].ty != *ty {
+                return Err(invalid("callback Call argument type disagrees with extern"));
+            }
+        }
+    }
+    if program.nodes.iter().enumerate().any(|(index, node)|
+        node.kind == "FunctionAddress" && !owned_addresses.contains(&index)) {
+        return Err(invalid("FunctionAddress escapes its validated callback Call"));
     }
     Ok(())
 }
@@ -1620,6 +1720,7 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
         "BinaryOperation",
         "FieldOrMethodSelect",
         "Call",
+        "FunctionAddress",
         "ZeroInitialize",
         "ResourceStorage",
         "ConditionalCleanup",
@@ -1671,7 +1772,7 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             return Err(invalid("full-program node violates post-order ownership"));
         }
         let expected_arity = match kind.as_str() {
-            "LocalRead" | "IntegerLiteral" | "StringLiteral" | "BooleanLiteral"
+            "LocalRead" | "FunctionAddress" | "IntegerLiteral" | "StringLiteral" | "BooleanLiteral"
             | "ZeroInitialize" | "ResourceStorage" | "EnumPayloadBinding" => Some(0),
             "MoveValue"
             | "TakeValue"
@@ -1709,11 +1810,12 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             return Err(invalid("full-program node source range is inverted"));
         }
         let second_integer = parse_i32(values[6], "node second integer")?;
-        let isolated_call_plan = if kind == "Call" && matches!(second_integer, 3 | 4 | 5) {
+        let isolated_call_plan = if kind == "Call" && matches!(second_integer, 3 | 4 | 5 | 6) {
             let expected_tag = match second_integer {
                 3 => "isolated_call.v1",
                 4 => "direct_call.v1",
-                _ => "retained_lease.v1",
+                5 => "retained_lease.v1",
+                _ => "callback_call.v1",
             };
             if values.get(child_end) != Some(&expected_tag) ||
                 values.len() < child_end + 4 {
@@ -1725,6 +1827,7 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             let position_width = if second_integer == 5 { 9 } else { 6 };
             if count == 0 || count > child_count.saturating_sub(1) ||
                 (second_integer == 5 && count != 1) ||
+                (second_integer == 6 && count != 1) ||
                 count > (values.len() - child_end - 4) / position_width ||
                 values.len() != child_end + 4 + count * position_width {
                 return Err(invalid("full-program Call isolation position count disagrees with row"));
@@ -1906,6 +2009,7 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
     validate_isolated_call_plans(&program)?;
     validate_direct_call_plans(&program)?;
     validate_retained_lease_plans(&program)?;
+    validate_callback_call_plans(&program)?;
     Ok(program)
 }
 
@@ -3127,6 +3231,14 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
                 builder.ins().iconst(types::I8, i64::from(node.integer)),
             )),
             "StringLiteral" => self.lower_string_literal(builder, node),
+            "FunctionAddress" => {
+                let callable = self.functions.get(&node.text)
+                    .ok_or_else(|| invalid("validated callback function address was lost"))?;
+                let reference = self.module.declare_func_in_func(callable.id, builder.func);
+                Ok(Evaluated::Scalar(builder.ins().func_addr(
+                    self.pointer_type(), reference
+                )))
+            }
             "MoveValue" | "TakeValue" => {
                 self.lower_expression(builder, node.children[0], expected_type)
             }
@@ -3465,7 +3577,7 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         if node.second_integer == 3 {
             return self.lower_generic_isolated_call(builder, node, &callable, &arguments);
         }
-        if matches!(node.second_integer, 4 | 5) {
+        if matches!(node.second_integer, 4 | 5 | 6) {
             if node.isolated_call_plan.is_none() ||
                 arguments.len() != callable.parameters.len() ||
                 !matches!(callable.abi.result, AbiShape::Void | AbiShape::Scalar(_)) ||

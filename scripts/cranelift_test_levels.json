@@ -32,6 +32,7 @@
     "guard-cranelift-phase26-ffi-generic-isolated": 2,
     "guard-cranelift-phase26-ffi-generic-direct": 2,
     "guard-cranelift-phase26-ffi-retained-lease": 2,
+    "guard-cranelift-phase26-ffi-callback-sync": 2,
     "guard-cranelift-phase26-raw-cast-provenance": 2,
     "guard-cranelift-phase26-ffi-isolated-read": 2,
     "guard-cranelift-phase26-ffi-isolated-write": 2,

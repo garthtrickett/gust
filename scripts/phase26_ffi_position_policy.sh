@@ -83,7 +83,7 @@ negatives=(
   'unannotated_pointer|FFIBorrowPolicyRequired'
   'transfer|FFITransferRetainUnsupported'
   'retain|FFIRetainAuthority'
-  'callback|FFICallbackNativeErrorUnsupported'
+  'callback|FFICallbackSignature'
   'native_error|FFICallbackNativeErrorUnsupported'
   'returned_pointer|FFIReturnedPointerUnsupported'
   'aggregate|FFIByValueAggregateUnsupported'

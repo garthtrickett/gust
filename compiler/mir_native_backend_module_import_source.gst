@@ -1627,6 +1627,29 @@ func mir_native_module_import_repr_int_extern(statement: ast.Statement[ctx], mod
     return 0;
 }
 
+// A verified callback formal belongs to the full-program Call plan. This
+// scalar import profile cannot establish its function identity or call scope.
+func mir_native_module_import_callback_extern(statement: ast.Statement[ctx], module_prefix: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        if statement.tag != 3 || statement.FunctionDecl.is_extern == 0 ||
+           std.str_eq(statement.FunctionDecl.extern_abi, "C") == 0 { return 0; }
+        mut name := mir_native_module_import_qualified(
+            module_prefix, statement.FunctionDecl.name, ctx
+        );
+        guard signature := (*env).function_registry.Get(name) else { return 0; };
+        if signature.ffi_contract_verified == 0 { return 0; }
+        mut policies: std.Vector[str, ctx] := ctx[signature.ffi_param_policies];
+        mut index := 0;
+        while index < len(policies) {
+            if std.str_eq(policies[index], "callback") == 1 &&
+               signature.params[index].tag == 9 &&
+               signature.return_type.tag == 0 { return 1; }
+            index = index + 1;
+        }
+        return 0;
+    }
+}
+
 func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) MirNativeModuleImportModel[ctx] {
     mut model := mir_native_module_import_empty_model(ctx);
     if len(programs) == 0 ||
@@ -1731,6 +1754,9 @@ func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx
                             preflight_statement, module_prefixes[preflight_module_index], env, ctx
                         ) == 1 ||
                            mir_native_module_import_repr_int_extern(
+                            preflight_statement, module_prefixes[preflight_module_index], env, ctx
+                        ) == 1 ||
+                           mir_native_module_import_callback_extern(
                             preflight_statement, module_prefixes[preflight_module_index], env, ctx
                         ) == 1 {
                             delegate_borrowed_aggregate = 1;

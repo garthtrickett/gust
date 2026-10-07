@@ -516,7 +516,32 @@ def validate() -> tuple[dict, list[dict], dict]:
         "ffi_generic_direct_call_increment", {}).get("spelling_inventory_successor")
     retained_successor = registry.get("phase26_activation_audit", {}).get(
         "ffi_retained_lease_increment", {}).get("spelling_inventory_successor")
+    callback_successor = registry.get("phase26_activation_audit", {}).get(
+        "ffi_callback_sync_increment", {}).get("spelling_inventory_successor")
     live_summary = summary
+    if callback_successor is not None:
+        previous = retained_successor["current_inventory_summary"]
+        require(callback_successor.get("contract_version") ==
+                "phase26_1d_callback_sync_spelling_inventory_successor_v1" and
+                callback_successor.get("previous_inventory_summary") == previous and
+                callback_successor.get("current_inventory_summary") == live_summary and
+                callback_successor.get("changed_source_paths") == [
+                    "compiler/experiments/cranelift/src/full_program.rs",
+                    "compiler/mir_native_backend_full_program_source.gst",
+                    "compiler/mir_native_backend_module_import_source.gst",
+                    "compiler/mir_native_backend_parameter_argument_source.gst",
+                    "compiler/phase26_ffi_callback_sync_source.gst",
+                    "compiler/typechecker.gst"] and
+                callback_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and
+                live_summary["source_file_count"] == previous["source_file_count"] + 1 and
+                live_summary["site_count"] == previous["site_count"] and
+                live_summary["semantic_site_count"] == previous["semantic_site_count"] and
+                live_summary["classification_counts"] == previous["classification_counts"] and
+                live_summary["unknown_site_count"] == 0,
+                "Phase 26 callback spelling inventory drifted")
+        summary = previous
+        live_summary = previous
     if retained_successor is not None:
         previous = generic_direct_successor["current_inventory_summary"]
         require(retained_successor.get("contract_version") ==

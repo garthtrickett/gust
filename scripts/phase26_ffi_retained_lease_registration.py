@@ -47,7 +47,16 @@ def main() -> None:
     from phase24_filename_behavior_characterization import source_sites
     previous_sites = registry["phase26_activation_audit"][
         "ffi_transfer_owned_increment"]["filename_site_successor"]["current_sites"]
-    current_sites = source_sites()
+    live_sites = source_sites()
+    callback_sites = registry["phase26_activation_audit"].get(
+        "ffi_callback_sync_increment", {}).get("filename_site_successor")
+    require(callback_sites is None or
+            (callback_sites.get("contract_version") ==
+             "phase26_1d_callback_sync_filename_site_successor_v1" and
+             callback_sites.get("current_sites") == live_sites),
+            "callback filename site successor drifted")
+    current_sites = (live_sites if callback_sites is None else
+                     callback_sites.get("previous_sites"))
     require(record["filename_site_successor"] == {
         "contract_version": "phase26_1d_retained_lease_filename_site_successor_v1",
         "previous_sites": previous_sites,

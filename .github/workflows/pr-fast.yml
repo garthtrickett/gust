@@ -831,6 +831,9 @@ jobs:
       - name: Phase 26 native-owned retained lease
         run: just guard-cranelift-phase26-ffi-retained-lease
 
+      - name: Phase 26 synchronous C callback
+        run: just guard-cranelift-phase26-ffi-callback-sync
+
       - name: Phase 26 raw cast provenance
         run: just guard-cranelift-phase26-raw-cast-provenance
 

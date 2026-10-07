@@ -17,6 +17,16 @@ def require(condition: bool, message: str) -> None:
 def before_generic_isolated_digest(activation: dict, path: str,
                                    live_digest: str) -> str:
     """Reverse this exact successor for earlier frozen guard identities."""
+    callback_rows = activation.get("ffi_callback_sync_increment", {}).get(
+        "phase23_text_surface_successor", {}).get("changed_rows", [])
+    callback = [row for row in callback_rows if row.get("path") == path]
+    require(len(callback) <= 1, f"duplicate callback surface: {path}")
+    if callback:
+        row = callback[0]
+        require(row["current_digest"] == live_digest and
+                len(row["previous_digest"]) == 64,
+                f"callback text surface drifted: {path}")
+        live_digest = row["previous_digest"]
     retained_rows = activation.get("ffi_retained_lease_increment", {}).get(
         "phase23_text_surface_successor", {}).get("changed_rows", [])
     retained = [row for row in retained_rows if row.get("path") == path]
