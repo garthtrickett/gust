@@ -48126,6 +48126,73 @@
       "owning_level2_guard": "guard-cranelift-phase26-ffi-retained-lease",
       "native_fallback": false,
       "runtime_symbol_surface_changed": false,
+      "filename_site_successor": {
+        "contract_version": "phase26_1d_retained_lease_filename_site_successor_v1",
+        "previous_sites": [
+          {
+            "id": "var_declaration_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 15368,
+            "selector": "test_tcs_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_var_declaration",
+            "window_digest": "6c0f176e1543d9a2ba125569875a69081a81b28bfc4c80eef31c57ec7ccfa05c"
+          },
+          {
+            "id": "assignment_hazard_and_view_invalidation",
+            "path": "compiler/typechecker.gst",
+            "line": 15711,
+            "selector": "test_index_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_assignment",
+            "window_digest": "eea5c7abf9fb4c50d51f644267c5ee59133db8d998a0fe7c25dd0ec1503029c3"
+          },
+          {
+            "id": "guard_payload_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 16770,
+            "selector": "test_tcs_",
+            "selector_occurrence": 2,
+            "statement_context": "statement_guard_payload_binding",
+            "window_digest": "4bf05983015fd1ecc3c3cc4c1399491868107155a5435fed90f8beeeb8f16a6f"
+          }
+        ],
+        "current_sites": [
+          {
+            "id": "var_declaration_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 15523,
+            "selector": "test_tcs_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_var_declaration",
+            "window_digest": "6c0f176e1543d9a2ba125569875a69081a81b28bfc4c80eef31c57ec7ccfa05c"
+          },
+          {
+            "id": "assignment_hazard_and_view_invalidation",
+            "path": "compiler/typechecker.gst",
+            "line": 15866,
+            "selector": "test_index_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_assignment",
+            "window_digest": "eea5c7abf9fb4c50d51f644267c5ee59133db8d998a0fe7c25dd0ec1503029c3"
+          },
+          {
+            "id": "guard_payload_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 16925,
+            "selector": "test_tcs_",
+            "selector_occurrence": 2,
+            "statement_context": "statement_guard_payload_binding",
+            "window_digest": "4bf05983015fd1ecc3c3cc4c1399491868107155a5435fed90f8beeeb8f16a6f"
+          }
+        ],
+        "line_deltas": [
+          155,
+          155,
+          155
+        ],
+        "partial_extra_or_substituted_site": "rejected"
+      },
       "legacy_transfer_retained_policy_successor": {
         "fixture": "scripts/phase26_ffi_transfer_owned.sh:retained_policy",
         "previous_diagnostic": "FFITransferRetainUnsupported",

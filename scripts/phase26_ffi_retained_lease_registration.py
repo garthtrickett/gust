@@ -42,8 +42,24 @@ def main() -> None:
     require(set(record) == set(expected) | {
         "phase22_invocation_successor", "production_audit_successor",
         "phase23_text_surface_successor", "spelling_inventory_successor",
-        "legacy_transfer_retained_policy_successor",
+        "legacy_transfer_retained_policy_successor", "filename_site_successor",
     }, "retained lease acquired unreviewed fields")
+    from phase24_filename_behavior_characterization import source_sites
+    previous_sites = registry["phase26_activation_audit"][
+        "ffi_transfer_owned_increment"]["filename_site_successor"]["current_sites"]
+    current_sites = source_sites()
+    require(record["filename_site_successor"] == {
+        "contract_version": "phase26_1d_retained_lease_filename_site_successor_v1",
+        "previous_sites": previous_sites,
+        "current_sites": current_sites,
+        "line_deltas": [155, 155, 155],
+        "partial_extra_or_substituted_site": "rejected",
+    } and len(previous_sites) == len(current_sites) == 3 and
+            all(now["line"] == before["line"] + 155 and
+                {key: val for key, val in now.items() if key != "line"} ==
+                {key: val for key, val in before.items() if key != "line"}
+                for before, now in zip(previous_sites, current_sites)),
+            "retained lease filename site successor drifted")
     require(record["legacy_transfer_retained_policy_successor"] == {
         "fixture": "scripts/phase26_ffi_transfer_owned.sh:retained_policy",
         "previous_diagnostic": "FFITransferRetainUnsupported",
