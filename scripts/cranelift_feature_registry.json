@@ -48056,6 +48056,33 @@
     "why_this_exists": "The Status section of docs/PHASE25_ROADMAP.md is the record the phase-completion loop checks, and it was wrong in both directions. 25.10a (#468) and 25.10 (#470) were unticked though both merged. 25.12 was ticked though its Exit Gate was not met, and 25.12b (#472), which corrected it, had no row at all. The Patch 25.0 heading still read IN PROGRESS. The section's own rule is 'ticked when merged to main', and this repo's convention is that a later patch ticks merged ones -- Patch 25.7 is what ticked 25.12 and 25.11a -- so 25.12b could not tick itself."
   },
   "phase26_activation_audit": {
+    "bundle_memory_prerequisite": {
+      "contract_version": "phase26_bundle_memory_prerequisite_v1",
+      "status": "pre_sized_canonical_bundle_assembly",
+      "owner": "cranelift",
+      "phase23_text_surface_successor": {
+        "contract_version": "phase26_bundle_memory_phase23_text_surface_successor_v1",
+        "partial_extra_or_substituted_surface": "rejected",
+        "added_rows": [],
+        "changed_rows": [
+          {
+            "path": "compiler/mir.gst",
+            "previous_digest": "1b73390ae9cc23b6a256a65abd9565c170bda7aba58165599d820c3058aa47d3",
+            "current_digest": "396197c4a1a3675dd80772269fe3577b64a6760b2822b4ddd705c21fec625fdd",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 125,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 125,
+              "generated_c_contract": 0
+            }
+          }
+        ]
+      }
+    },
     "ffi_generic_direct_call_increment": {
       "contract_version": "phase26_1d_generic_direct_call_v1",
       "status": "versioned_generic_multi_position_direct_c_call_qualified",

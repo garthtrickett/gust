@@ -2779,6 +2779,23 @@ func mir_program_bundle_append_field(output: str, key: str, value: str, ctx: &Ar
     return std.Clone(ctx, updated);
 }
 
+type MirProgramBundleStringHeader struct {
+    data: *byte,
+    len: int
+}
+
+func mir_program_bundle_write_text(destination: *byte, cursor: int, value: str) int {
+    unsafe {
+        mut index := 0;
+        while index < len(value) {
+            *(destination + cursor) = std.str_byte_at(value, index);
+            cursor = cursor + 1;
+            index = index + 1;
+        }
+    }
+    return cursor;
+}
+
 func mir_serialize_program_bundle(bundle: MirProgramBundle[ctx], ctx: &Arena) str {
     if mir_program_bundle_is_valid(bundle, ctx) == 0 {
         return "format: invalid\n";
@@ -2849,9 +2866,29 @@ func mir_serialize_program_bundle(bundle: MirProgramBundle[ctx], ctx: &Arena) st
         }
 
         output = mir_program_bundle_append_field(output, std.Concat(module_key, "_canonical_mir_length"), std.FormatInt(len(module.canonical_mir)), ctx);
-        output = std.Concat(output, std.Concat(module_key, "_canonical_mir_begin\n"));
-        output = std.Concat(output, module.canonical_mir);
-        output = std.Concat(output, std.Concat(module_key, "_canonical_mir_end\n"));
+        mut begin_marker := std.Concat(module_key, "_canonical_mir_begin\n");
+        mut end_marker := std.Concat(module_key, "_canonical_mir_end\n");
+        mut total_size := len(output) + len(begin_marker) +
+            len(module.canonical_mir) + len(end_marker);
+        unsafe {
+            // One scratch allocation replaces two full-sized Concat intermediates.
+            // Scratch stays live until the final ctx-owned Clone below.
+            mut storage := os.ScratchAlloc(total_size + 1);
+            mut destination := storage as *byte;
+            mut cursor := mir_program_bundle_write_text(destination, 0, output);
+            cursor = mir_program_bundle_write_text(destination, cursor, begin_marker);
+            cursor = mir_program_bundle_write_text(destination, cursor, module.canonical_mir);
+            cursor = mir_program_bundle_write_text(destination, cursor, end_marker);
+            if cursor != total_size { return "format: invalid\n"; }
+            *(destination + cursor) = 0;
+
+            mut header_alloc := os.ScratchAlloc(16);
+            mut header_ptr := (header_alloc + 0) as *MirProgramBundleStringHeader;
+            if 0 == 1 { header_ptr = destination as *MirProgramBundleStringHeader; }
+            (*header_ptr).data = (storage + 0) as *byte;
+            (*header_ptr).len = total_size;
+            output = *(((header_ptr as *str) + 0) as *str);
+        }
 
         module_index = module_index + 1;
     }
