@@ -70,6 +70,7 @@ def main() -> None:
         "compiler/mir_native_backend_full_program_source.gst",
         "compiler/typechecker.gst", "justfile",
         "scripts/cranelift_test_levels.json", "scripts/phase22_opening.py",
+        "scripts/phase26_call_return_zero_registration.py",
     ]
     require(surface["contract_version"] ==
             "phase26_1d_callback_sync_phase23_text_surface_successor_v1" and

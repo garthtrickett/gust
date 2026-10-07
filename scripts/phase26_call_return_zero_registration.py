@@ -24,6 +24,30 @@ def require(value: bool, message: str) -> None:
         raise SystemExit(f"{GUARD}: {message}")
 
 
+def before_callback_filename_sites(activation: dict, live_sites: list[dict]) -> list[dict]:
+    callback_sites = activation.get("ffi_callback_sync_increment", {}).get(
+        "filename_site_successor")
+    if callback_sites is None:
+        return live_sites
+    retained_sites = activation.get("ffi_retained_lease_increment", {}).get(
+        "filename_site_successor")
+    require(retained_sites is not None, "callback filename predecessor missing")
+    previous_sites = retained_sites["current_sites"]
+    require(callback_sites == {
+        "contract_version": "phase26_1d_callback_sync_filename_site_successor_v1",
+        "previous_sites": previous_sites,
+        "current_sites": live_sites,
+        "line_deltas": [95, 95, 95],
+        "partial_extra_or_substituted_site": "rejected",
+    } and len(previous_sites) == len(live_sites) == 3 and
+            all(now["line"] == before["line"] + 95 and
+                {key: value for key, value in now.items() if key != "line"} ==
+                {key: value for key, value in before.items() if key != "line"}
+                for before, now in zip(previous_sites, live_sites)),
+            "callback filename site successor drifted")
+    return previous_sites
+
+
 def raw_digest(path: str) -> str:
     return hashlib.sha256((ROOT / path).read_bytes()).hexdigest()
 
@@ -1896,7 +1920,7 @@ def main() -> None:
         "partial_extra_or_substituted_inventory": "rejected",
     }, "wrapper-chain spelling inventory successor drifted")
     prior_sites = two_wrapper_record["filename_site_successor"]["current_sites"]
-    live_sites = filename_sites()
+    live_sites = before_callback_filename_sites(activation, filename_sites())
     retained_sites = activation.get("ffi_retained_lease_increment", {}).get(
         "filename_site_successor")
     repr_int_sites = activation.get("ffi_repr_int_increment", {}).get(
@@ -3712,6 +3736,18 @@ def main() -> None:
         "spelling_inventory_successor")
     retained_inventory = activation.get("ffi_retained_lease_increment", {}).get(
         "spelling_inventory_successor")
+    callback_inventory = activation.get("ffi_callback_sync_increment", {}).get(
+        "spelling_inventory_successor")
+    if callback_inventory:
+        require(retained_inventory is not None and
+                callback_inventory.get("contract_version") ==
+                "phase26_1d_callback_sync_spelling_inventory_successor_v1" and
+                callback_inventory.get("current_inventory_summary") == live_inventory and
+                callback_inventory.get("previous_inventory_summary") ==
+                retained_inventory["current_inventory_summary"] and
+                callback_inventory.get("partial_extra_or_substituted_inventory") ==
+                "rejected", "callback spelling inventory drifted")
+        live_inventory = callback_inventory["previous_inventory_summary"]
     if retained_inventory:
         require(retained_inventory["current_inventory_summary"] == live_inventory,
                 "retained-lease spelling inventory drifted")
@@ -3753,7 +3789,7 @@ def main() -> None:
             post_take_plain_record["spelling_inventory_successor"]["previous_inventory_summary"]["semantic_site_count"] == current_inventory["semantic_site_count"] and
             post_take_plain_record["spelling_inventory_successor"]["previous_inventory_summary"]["unknown_site_count"] == 0,
             "consecutive plain-before-Take-cast spelling inventory drifted")
-    live_sites = filename_sites()
+    live_sites = before_callback_filename_sites(activation, filename_sites())
     if retained_sites:
         require(retained_sites["current_sites"] == live_sites,
                 "retained-lease filename sites drifted")
