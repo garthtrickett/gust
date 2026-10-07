@@ -64,6 +64,13 @@ def main() -> None:
         "partial_extra_or_substituted_audit": "rejected",
     }, "callback production audit successor drifted")
     surface = record["phase23_text_surface_successor"]
+    native_error = registry["phase26_activation_audit"].get(
+        "ffi_native_error_status_increment", {})
+    native_rows = native_error.get("phase23_text_surface_successor", {}).get(
+        "changed_rows", [])
+    native_by_path = {row["path"]: row for row in native_rows}
+    require(len(native_by_path) == len(native_rows),
+            "duplicate native-error text surface")
     expected_paths = [
         ".github/workflows/pr-fast.yml",
         "compiler/experiments/cranelift/src/full_program.rs",
@@ -80,6 +87,12 @@ def main() -> None:
             "callback text surface successor shape drifted")
     for row in surface["changed_rows"]:
         current = hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest()
+        successor = native_by_path.get(row["path"])
+        if successor is not None:
+            require(successor["current_digest"] == current and
+                    successor["previous_digest"] == row["current_digest"],
+                    f"native-error text successor drifted: {row['path']}")
+            current = successor["previous_digest"]
         require(current == row["current_digest"] and
                 len(row["previous_digest"]) == 64 and
                 row["previous_match_counts"] == row["current_match_counts"],
@@ -88,10 +101,18 @@ def main() -> None:
     spelling = record["spelling_inventory_successor"]
     previous = registry["phase26_activation_audit"]["ffi_retained_lease_increment"][
         "spelling_inventory_successor"]["current_inventory_summary"]
+    live_inventory = manifest_summary(source_sites())
+    native_spelling = native_error.get("spelling_inventory_successor")
+    if native_spelling is not None:
+        require(native_spelling["current_inventory_summary"] == live_inventory and
+                native_spelling["previous_inventory_summary"] ==
+                spelling["current_inventory_summary"],
+                "native-error spelling inventory successor drifted")
+        live_inventory = native_spelling["previous_inventory_summary"]
     require(spelling["contract_version"] ==
             "phase26_1d_callback_sync_spelling_inventory_successor_v1" and
             spelling["previous_inventory_summary"] == previous and
-            spelling["current_inventory_summary"] == manifest_summary(source_sites()) and
+            spelling["current_inventory_summary"] == live_inventory and
             spelling["partial_extra_or_substituted_inventory"] == "rejected",
             "callback spelling inventory successor drifted")
     from phase24_filename_behavior_characterization import source_sites as filename_source_sites
@@ -99,6 +120,12 @@ def main() -> None:
     previous_sites = registry["phase26_activation_audit"]["ffi_retained_lease_increment"][
         "filename_site_successor"]["current_sites"]
     current_sites = filename_source_sites()
+    native_sites = native_error.get("filename_site_successor")
+    if native_sites is not None:
+        require(native_sites["current_sites"] == current_sites and
+                native_sites["previous_sites"] == filename["current_sites"],
+                "native-error filename successor drifted")
+        current_sites = native_sites["previous_sites"]
     require(filename == {
         "contract_version": "phase26_1d_callback_sync_filename_site_successor_v1",
         "previous_sites": previous_sites,

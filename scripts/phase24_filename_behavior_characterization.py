@@ -415,6 +415,8 @@ def validate_static(value: dict) -> None:
                     "ffi_retained_lease_increment", {}).get("filename_site_successor")
                 callback_sync_sites = registry.get("phase26_activation_audit", {}).get(
                     "ffi_callback_sync_increment", {}).get("filename_site_successor")
+                native_error_sites = registry.get("phase26_activation_audit", {}).get(
+                    "ffi_native_error_status_increment", {}).get("filename_site_successor")
                 e1_current = (live_sites if d5_sites is None else
                               d5_sites.get("previous_sites"))
                 require(e1_sites.get("contract_version") ==
@@ -1712,17 +1714,33 @@ def validate_static(value: dict) -> None:
                 if callback_sync_sites is not None:
                     previous_callback_sites = retained_lease_sites["current_sites"]
                     deltas = callback_sync_sites.get("line_deltas")
+                    current_callback_sites = (live_sites if native_error_sites is None else
+                                              native_error_sites.get("previous_sites"))
                     require(callback_sync_sites.get("contract_version") ==
                             "phase26_1d_callback_sync_filename_site_successor_v1" and
                             callback_sync_sites.get("previous_sites") == previous_callback_sites and
-                            callback_sync_sites.get("current_sites") == live_sites and
+                            callback_sync_sites.get("current_sites") == current_callback_sites and
                             callback_sync_sites.get("partial_extra_or_substituted_site") == "rejected" and
+                            isinstance(deltas, list) and len(deltas) == len(current_callback_sites) == 3 and
+                            all(now["line"] == before["line"] + delta and
+                                {key: val for key, val in now.items() if key != "line"} ==
+                                {key: val for key, val in before.items() if key != "line"}
+                                for before, now, delta in zip(previous_callback_sites, current_callback_sites, deltas)),
+                            "Phase 26 callback filename sites drifted")
+                if native_error_sites is not None:
+                    previous_status_sites = callback_sync_sites["current_sites"]
+                    deltas = native_error_sites.get("line_deltas")
+                    require(native_error_sites.get("contract_version") ==
+                            "phase26_1d_native_error_status_filename_site_successor_v1" and
+                            native_error_sites.get("previous_sites") == previous_status_sites and
+                            native_error_sites.get("current_sites") == live_sites and
+                            native_error_sites.get("partial_extra_or_substituted_site") == "rejected" and
                             isinstance(deltas, list) and len(deltas) == len(live_sites) == 3 and
                             all(now["line"] == before["line"] + delta and
                                 {key: val for key, val in now.items() if key != "line"} ==
                                 {key: val for key, val in before.items() if key != "line"}
-                                for before, now, delta in zip(previous_callback_sites, live_sites, deltas)),
-                            "Phase 26 callback filename sites drifted")
+                                for before, now, delta in zip(previous_status_sites, live_sites, deltas)),
+                            "Phase 26 native-error filename sites drifted")
     require([row["selector"] for row in value["site_manifest"]] ==
             ["test_tcs_", "test_index_", "test_tcs_"],
             "selector order or completeness drifted")

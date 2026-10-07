@@ -1650,6 +1650,25 @@ func mir_native_module_import_callback_extern(statement: ast.Statement[ctx], mod
     }
 }
 
+// An explicit native status result is decided by the full-program Call plan.
+// The scalar-only import profile must delegate its verified return position.
+func mir_native_module_import_native_error_extern(statement: ast.Statement[ctx], module_prefix: str, env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        if statement.tag != 3 || statement.FunctionDecl.is_extern == 0 ||
+           std.str_eq(statement.FunctionDecl.extern_abi, "C") == 0 ||
+           std.str_eq(statement.FunctionDecl.ffi_return_policy, "native_error") == 0 {
+            return 0;
+        }
+        mut qualified := mir_native_module_import_qualified(
+            module_prefix, statement.FunctionDecl.name, ctx
+        );
+        guard sig := (*env).function_registry.Get(qualified) else { return 0; };
+        if sig.ffi_contract_verified == 1 && sig.return_type.tag == 0 &&
+           std.str_eq(sig.ffi_return_policy, "native_error") == 1 { return 1; }
+        return 0;
+    }
+}
+
 func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx], module_paths: std.Vector[str, ctx], module_prefixes: std.Vector[str, ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) MirNativeModuleImportModel[ctx] {
     mut model := mir_native_module_import_empty_model(ctx);
     if len(programs) == 0 ||
@@ -1738,6 +1757,13 @@ func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx
                 if preflight_statement.tag == 3 &&
                    preflight_statement.FunctionDecl.is_extern == 1
                 {
+                    if mir_native_module_import_native_error_extern(
+                        preflight_statement, module_prefixes[preflight_module_index], env, ctx
+                    ) == 1 {
+                        delegate_borrowed_aggregate = 1;
+                        preflight_statement_index = preflight_statement_index + 1;
+                        continue;
+                    }
                     mut preflight_host := mir_native_module_import_make_host(
                         preflight_statement,
                         preflight_module_index,
@@ -1757,6 +1783,9 @@ func mir_native_module_import_analyze(programs: std.Vector[ast.Program[ctx], ctx
                             preflight_statement, module_prefixes[preflight_module_index], env, ctx
                         ) == 1 ||
                            mir_native_module_import_callback_extern(
+                            preflight_statement, module_prefixes[preflight_module_index], env, ctx
+                        ) == 1 ||
+                           mir_native_module_import_native_error_extern(
                             preflight_statement, module_prefixes[preflight_module_index], env, ctx
                         ) == 1 {
                             delegate_borrowed_aggregate = 1;

@@ -516,9 +516,27 @@ def validate() -> tuple[dict, list[dict], dict]:
         "ffi_generic_direct_call_increment", {}).get("spelling_inventory_successor")
     retained_successor = registry.get("phase26_activation_audit", {}).get(
         "ffi_retained_lease_increment", {}).get("spelling_inventory_successor")
+    native_error_successor = registry.get("phase26_activation_audit", {}).get(
+        "ffi_native_error_status_increment", {}).get("spelling_inventory_successor")
     callback_successor = registry.get("phase26_activation_audit", {}).get(
         "ffi_callback_sync_increment", {}).get("spelling_inventory_successor")
     live_summary = summary
+    if native_error_successor is not None:
+        previous = callback_successor["current_inventory_summary"]
+        require(native_error_successor.get("contract_version") ==
+                "phase26_1d_native_error_status_spelling_inventory_successor_v1" and
+                native_error_successor.get("previous_inventory_summary") == previous and
+                native_error_successor.get("current_inventory_summary") == live_summary and
+                native_error_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and
+                live_summary["source_file_count"] == previous["source_file_count"] + 1 and
+                live_summary["site_count"] == previous["site_count"] and
+                live_summary["semantic_site_count"] == previous["semantic_site_count"] and
+                live_summary["classification_counts"] == previous["classification_counts"] and
+                live_summary["unknown_site_count"] == 0,
+                "Phase 26 native-error spelling inventory drifted")
+        summary = previous
+        live_summary = previous
     if callback_successor is not None:
         previous = retained_successor["current_inventory_summary"]
         require(callback_successor.get("contract_version") ==

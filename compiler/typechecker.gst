@@ -1142,7 +1142,27 @@ func env_validate_extern_ffi_positions(env: *TypeEnvironment[ctx], stmt: ast.Sta
                 if repr_int_return_lookup.Val == 1 { repr_int_enum_return = 1; }
             }
         }
-        if ret.tag == 0 || ret.tag == 1 || ret.tag == 2 || ret.tag == 3 || repr_int_enum_return == 1 {
+        if std.str_eq(stmt.FunctionDecl.ffi_return_policy, "native_error") == 1 {
+            if ret.tag != 0 || (*sig).requires_sandbox_arena == 1 ||
+               std.str_eq(stmt.FunctionDecl.extern_abi, "C") == 0 ||
+               std.str_eq(os.NativeTargetTriple(ctx), "x86_64-unknown-linux-gnu") == 0 ||
+               std.str_eq(os.NativeObjectFormat(ctx), "Elf") == 0 {
+                report_error(2, "Semantic Error: [FFINativeErrorStatus] Native error status requires a direct C Int result on x86_64 Linux ELF", stmt.FunctionDecl.span, env, ctx);
+                return 0;
+            }
+            mut status_index := 0;
+            while status_index < len(policies) {
+                if std.str_eq(policies[status_index], "value") == 0 ||
+                   ((*sig).params[status_index].tag != 0 &&
+                    (*sig).params[status_index].tag != 1 &&
+                    (*sig).params[status_index].tag != 2) {
+                    report_error(2, "Semantic Error: [FFINativeErrorStatus] Native error status cannot mix callback, ownership, or borrowed positions", stmt.FunctionDecl.span, env, ctx);
+                    return 0;
+                }
+                status_index = status_index + 1;
+            }
+            (*sig).ffi_return_policy = "native_error";
+        } else if ret.tag == 0 || ret.tag == 1 || ret.tag == 2 || ret.tag == 3 || repr_int_enum_return == 1 {
             if std.str_eq(stmt.FunctionDecl.ffi_return_policy, "") == 0 &&
                std.str_eq(stmt.FunctionDecl.ffi_return_policy, "value") == 0 {
                 report_error(2, "Semantic Error: [FFIValuePolicy] Scalar and void external returns have value ownership", stmt.FunctionDecl.span, env, ctx);
@@ -6350,6 +6370,8 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     if sig.ffi_contract_verified == 0 ||
                        sig.ffi_param_policies == empty[Index[std.Vector[str, ctx], ctx]] ||
                        (std.str_eq(sig.ffi_return_policy, "value") == 0 &&
+                        (sig.return_type.tag != 0 ||
+                         std.str_eq(sig.ffi_return_policy, "native_error") == 0) &&
                         (sig.return_type.tag != 9 ||
                          std.str_eq(sig.ffi_return_policy, "raw_untrusted") == 0) &&
                         (sig.return_type.tag != 8 ||

@@ -233,6 +233,47 @@ func mir_native_full_program_callback_plan(sig: typechecker.FunctionSignature[ct
     return std.Clone(ctx, plan);
 }
 
+// The return-position policy is decided by the verified extern signature.
+// The primitive layout table, rather than the backend host, owns Int's ABI.
+func mir_native_full_program_native_error_plan(sig: typechecker.FunctionSignature[ctx], ctx: &Arena) str {
+    mut table := primitive_layout.mir_primitive_layout_table_for_target(os.NativeTargetTriple(ctx), ctx);
+    mut query := layout.mir_layout_of(table, "type:gust:i32", table.target.target_id, ctx);
+    if query.found == 0 ||
+       std.str_eq(table.target.target_triple, "x86_64-unknown-linux-gnu") == 0 ||
+       std.str_eq(os.NativeObjectFormat(ctx), "Elf") == 0 ||
+       sig.is_extern != 1 || sig.ffi_contract_verified != 1 ||
+       sig.requires_sandbox_arena == 1 || sig.return_type.tag != 0 ||
+       std.str_eq(sig.ffi_return_policy, "native_error") == 0 ||
+       std.str_eq(query.layout.signedness, "signed") == 0 ||
+       query.layout.bit_width != 32 { return ""; }
+    mut policies: std.Vector[str, ctx] := ctx[sig.ffi_param_policies];
+    if len(policies) != len(sig.params) { return ""; }
+    mut i := 0;
+    while i < len(policies) {
+        if std.str_eq(policies[i], "value") == 0 ||
+           (sig.params[i].tag != 0 && sig.params[i].tag != 1 &&
+            sig.params[i].tag != 2) { return ""; }
+        i = i + 1;
+    }
+    mut plan := "|native_error_status.v1|";
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex(table.target.target_triple, ctx));
+    plan = std.Concat(plan, "|");
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex("preserve_signed_status", ctx));
+    plan = std.Concat(plan, "|1|");
+    plan = mir_native_full_program_append_int(plan, len(policies), ctx);
+    plan = std.Concat(plan, "|");
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex("result", ctx));
+    plan = std.Concat(plan, "|");
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex("Int", ctx));
+    plan = std.Concat(plan, "|");
+    plan = mir_native_full_program_append_int(plan, query.layout.size, ctx);
+    plan = std.Concat(plan, "|");
+    plan = mir_native_full_program_append_int(plan, query.layout.alignment, ctx);
+    plan = std.Concat(plan, "|");
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex("zero_success_nonzero_failure.signed.v1", ctx));
+    return std.Clone(ctx, plan);
+}
+
 // The source of truth for an isolated Call's flat C copy is the verified
 // signature, the registered struct declaration order, and the selected target.
 // This returns the entire tagged canonical-row suffix. An empty result is a
@@ -1331,6 +1372,13 @@ func mir_native_full_program_flatten_expression(expression_index: Index[ast.Expr
                             selected_isolated_signature, ctx
                         )) == 0 { return 0 - 1; }
                     }
+                    if std.str_eq(selected_isolated_signature.ffi_return_policy, "native_error") == 1 {
+                        if direct_count > 0 || retained_count > 0 || callback_count > 0 ||
+                           len(mir_native_full_program_native_error_plan(
+                               selected_isolated_signature, ctx
+                           )) == 0 { return 0 - 1; }
+                        node.second_integer_operand = 7;
+                    }
                 }
             }
             if len(constructor_helper) > 0 {
@@ -2098,7 +2146,7 @@ func mir_native_full_program_node_isolated_plan(node: MirNativeFullProgramNode[c
     }
     if std.str_eq(node.kind, "Call") == 0 ||
        (node.second_integer_operand != 3 && node.second_integer_operand != 4 &&
-        node.second_integer_operand != 6) {
+        node.second_integer_operand != 6 && node.second_integer_operand != 7) {
         return "";
     }
     mut index := mir_native_full_program_function_index(
@@ -2528,6 +2576,7 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
         std.VectorNew(ctx);
     mut non_scalar_signature_count := 0;
     mut callback_plan_count := 0;
+    mut native_error_plan_count := 0;
     mut module_index := 0;
     while module_index < len(programs) {
         unsafe {
@@ -2661,7 +2710,12 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
                                 }
                                 callback_i = callback_i + 1;
                             }
-                            if callback_found == 1 {
+                            if std.str_eq(ffi_signature.ffi_return_policy, "native_error") == 1 {
+                                native_error_plan_count = native_error_plan_count + 1;
+                                function.isolated_call_plan = mir_native_full_program_native_error_plan(
+                                    ffi_signature, ctx
+                                );
+                            } else if callback_found == 1 {
                                 callback_plan_count = callback_plan_count + 1;
                                 function.isolated_call_plan = mir_native_full_program_callback_plan(
                                     ffi_signature, ctx
@@ -2733,6 +2787,7 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
         module_index = module_index + 1;
     }
     if non_scalar_signature_count == 0 && callback_plan_count == 0 &&
+       native_error_plan_count == 0 &&
        mir_native_full_program_contains_guard_and_defer(programs, ctx) == 0
     {
         unsafe { (*env).current_prefix = ""; }
@@ -3200,7 +3255,8 @@ func mir_native_full_program_serialize_model(model: MirNativeFullProgramModel[ct
         }
         mut isolated_plan := mir_native_full_program_node_isolated_plan(node, functions, ctx);
         if std.str_eq(node.kind, "Call") == 1 &&
-           (node.second_integer_operand == 3 || node.second_integer_operand == 4 || node.second_integer_operand == 5) &&
+           (node.second_integer_operand == 3 || node.second_integer_operand == 4 ||
+            node.second_integer_operand == 5 || node.second_integer_operand == 7) &&
            len(isolated_plan) == 0 {
             return std.Clone(ctx, "");
         }

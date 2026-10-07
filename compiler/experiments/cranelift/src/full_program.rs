@@ -232,6 +232,11 @@ fn validate_ffi_policies(
                     .is_some_and(|name| repr_int.contains(name.as_str())),
             "raw_untrusted" => function.result_type.starts_with("RawPointer("),
             "owned_return" => struct_type_name(&function.result_type).is_some(),
+            "native_error" => function.result_type == "Int" &&
+                target == "x86_64-unknown-linux-gnu" && object_format == "Elf" &&
+                contract.parameter_policies.iter().all(|policy| policy == "value") &&
+                function.parameters.iter().all(|(_, ty)|
+                    matches!(ty.as_str(), "Int" | "Byte" | "Bool")),
             _ => false,
         };
         if !result_valid ||
@@ -925,6 +930,79 @@ fn validate_callback_call_plans(program: &Program) -> Result<(), Box<dyn Error>>
     if program.nodes.iter().enumerate().any(|(index, node)|
         node.kind == "FunctionAddress" && !owned_addresses.contains(&index)) {
         return Err(invalid("FunctionAddress escapes its validated callback Call"));
+    }
+    Ok(())
+}
+
+// Call7 is an opt-in, return-only status contract. Its payload binds the
+// canonical extern to the target Int ABI and leaves the signed value intact.
+fn validate_native_error_call_plans(program: &Program) -> Result<(), Box<dyn Error>> {
+    if !program.nodes.iter().any(|node| node.kind == "Call" && node.second_integer == 7) &&
+        !program.functions.iter().any(|function| function.ffi_contract.as_ref()
+            .is_some_and(|contract| contract.result_policy == "native_error")) {
+        return Ok(());
+    }
+    let functions: HashMap<_, _> = program.functions.iter()
+        .map(|function| (function.qualified_name.as_str(), function)).collect();
+    let mut layouts = LayoutEngine::new(program, 8);
+    let status = layouts.layout("Int")?;
+    for (call_index, call) in program.nodes.iter().enumerate() {
+        if call.kind != "Call" { continue; }
+        let selected = functions.get(call.second_text.as_str()).copied();
+        let declared_status = selected.and_then(|function| function.ffi_contract.as_ref())
+            .is_some_and(|contract| contract.result_policy == "native_error");
+        if call.second_integer != 7 {
+            if declared_status {
+                return Err(invalid("native-error extern Call lacks its tagged status plan"));
+            }
+            continue;
+        }
+        let function = selected.ok_or_else(|| invalid("native-error Call has no extern"))?;
+        let contract = function.ffi_contract.as_ref()
+            .ok_or_else(|| invalid("native-error Call has no external policy"))?;
+        if program.target_triple != "x86_64-unknown-linux-gnu" ||
+            program.object_format != "Elf" || !function.is_extern ||
+            contract.result_policy != "native_error" ||
+            function.result_type != "Int" || call.ty != "Int" ||
+            function.parameters.len() + 1 != call.children.len() ||
+            call.text != function.source_name ||
+            contract.parameter_policies.len() != function.parameters.len() ||
+            contract.parameter_policies.iter().any(|policy| policy != "value") ||
+            function.parameters.iter().any(|(_, ty)|
+                !matches!(ty.as_str(), "Int" | "Byte" | "Bool")) {
+            return Err(invalid("native-error Call extern, result, or positions disagree"));
+        }
+        let callee = &program.nodes[call.children[0]];
+        if callee.kind != "LocalRead" || callee.text != call.text {
+            return Err(invalid("native-error Call callee identity disagrees"));
+        }
+        for (index, (_, ty)) in function.parameters.iter().enumerate() {
+            if program.nodes[call.children[index + 1]].ty != *ty {
+                return Err(invalid("native-error Call argument type disagrees"));
+            }
+        }
+        let plan = call.isolated_call_plan.as_ref()
+            .ok_or_else(|| invalid("native-error Call has no tagged status plan"))?;
+        if plan.target_triple != program.target_triple ||
+            plan.cleanup != "preserve_signed_status" ||
+            plan.retained.is_some() || plan.positions.len() != 1 {
+            return Err(invalid("native-error Call target, convention, or count disagrees"));
+        }
+        let result = &plan.positions[0];
+        if result.index != function.parameters.len() ||
+            result.direction != "result" || result.aggregate_type != "Int" ||
+            result.size != status.size || result.align != status.align ||
+            result.provenance != "zero_success_nonzero_failure.signed.v1" ||
+            !matches!(abi_shape("Int", false, types::I64, &mut layouts)?,
+                AbiShape::Scalar(types::I32)) {
+            return Err(invalid("native-error Call result policy or target Int ABI disagrees"));
+        }
+        if program.functions.iter().filter(|candidate| !candidate.is_extern)
+            .filter_map(|candidate| candidate.body_node)
+            .map(|body| callback_call_in_unsafe(program, body, call_index, false))
+            .sum::<usize>() != 1 {
+            return Err(invalid("native-error Call is not uniquely owned by an unsafe scope"));
+        }
     }
     Ok(())
 }
@@ -1810,12 +1888,13 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             return Err(invalid("full-program node source range is inverted"));
         }
         let second_integer = parse_i32(values[6], "node second integer")?;
-        let isolated_call_plan = if kind == "Call" && matches!(second_integer, 3 | 4 | 5 | 6) {
+        let isolated_call_plan = if kind == "Call" && matches!(second_integer, 3 | 4 | 5 | 6 | 7) {
             let expected_tag = match second_integer {
                 3 => "isolated_call.v1",
                 4 => "direct_call.v1",
                 5 => "retained_lease.v1",
-                _ => "callback_call.v1",
+                6 => "callback_call.v1",
+                _ => "native_error_status.v1",
             };
             if values.get(child_end) != Some(&expected_tag) ||
                 values.len() < child_end + 4 {
@@ -1825,9 +1904,10 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             let cleanup = decode_hex(values[child_end + 2], "Call isolation cleanup")?;
             let count = parse_usize(values[child_end + 3], "Call isolation position count")?;
             let position_width = if second_integer == 5 { 9 } else { 6 };
-            if count == 0 || count > child_count.saturating_sub(1) ||
+            if count == 0 || (second_integer != 7 && count > child_count.saturating_sub(1)) ||
                 (second_integer == 5 && count != 1) ||
                 (second_integer == 6 && count != 1) ||
+                (second_integer == 7 && count != 1) ||
                 count > (values.len() - child_end - 4) / position_width ||
                 values.len() != child_end + 4 + count * position_width {
                 return Err(invalid("full-program Call isolation position count disagrees with row"));
@@ -2010,6 +2090,7 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
     validate_direct_call_plans(&program)?;
     validate_retained_lease_plans(&program)?;
     validate_callback_call_plans(&program)?;
+    validate_native_error_call_plans(&program)?;
     Ok(program)
 }
 
@@ -3577,7 +3658,7 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         if node.second_integer == 3 {
             return self.lower_generic_isolated_call(builder, node, &callable, &arguments);
         }
-        if matches!(node.second_integer, 4 | 5 | 6) {
+        if matches!(node.second_integer, 4 | 5 | 6 | 7) {
             if node.isolated_call_plan.is_none() ||
                 arguments.len() != callable.parameters.len() ||
                 !matches!(callable.abi.result, AbiShape::Void | AbiShape::Scalar(_)) ||

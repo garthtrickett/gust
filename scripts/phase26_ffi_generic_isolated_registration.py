@@ -17,6 +17,16 @@ def require(condition: bool, message: str) -> None:
 def before_generic_isolated_digest(activation: dict, path: str,
                                    live_digest: str) -> str:
     """Reverse this exact successor for earlier frozen guard identities."""
+    native_error_rows = activation.get("ffi_native_error_status_increment", {}).get(
+        "phase23_text_surface_successor", {}).get("changed_rows", [])
+    native_error = [row for row in native_error_rows if row.get("path") == path]
+    require(len(native_error) <= 1, f"duplicate native-error surface: {path}")
+    if native_error:
+        row = native_error[0]
+        require(row["current_digest"] == live_digest and
+                len(row["previous_digest"]) == 64,
+                f"native-error text surface drifted: {path}")
+        live_digest = row["previous_digest"]
     callback_rows = activation.get("ffi_callback_sync_increment", {}).get(
         "phase23_text_surface_successor", {}).get("changed_rows", [])
     callback = [row for row in callback_rows if row.get("path") == path]

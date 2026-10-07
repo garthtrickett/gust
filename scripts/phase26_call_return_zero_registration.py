@@ -25,6 +25,24 @@ def require(value: bool, message: str) -> None:
 
 
 def before_callback_filename_sites(activation: dict, live_sites: list[dict]) -> list[dict]:
+    native_sites = activation.get("ffi_native_error_status_increment", {}).get(
+        "filename_site_successor")
+    if native_sites is not None:
+        callback_current = activation["ffi_callback_sync_increment"][
+            "filename_site_successor"]["current_sites"]
+        require(native_sites == {
+            "contract_version": "phase26_1d_native_error_status_filename_site_successor_v1",
+            "previous_sites": callback_current,
+            "current_sites": live_sites,
+            "line_deltas": [22, 22, 22],
+            "partial_extra_or_substituted_site": "rejected",
+        } and len(callback_current) == len(live_sites) == 3 and
+                all(now["line"] == before["line"] + 22 and
+                    {key: value for key, value in now.items() if key != "line"} ==
+                    {key: value for key, value in before.items() if key != "line"}
+                    for before, now in zip(callback_current, live_sites)),
+                "native-error filename site successor drifted")
+        live_sites = native_sites["previous_sites"]
     callback_sites = activation.get("ffi_callback_sync_increment", {}).get(
         "filename_site_successor")
     if callback_sites is None:
@@ -3738,6 +3756,18 @@ def main() -> None:
         "spelling_inventory_successor")
     callback_inventory = activation.get("ffi_callback_sync_increment", {}).get(
         "spelling_inventory_successor")
+    native_inventory = activation.get("ffi_native_error_status_increment", {}).get(
+        "spelling_inventory_successor")
+    if native_inventory:
+        require(callback_inventory is not None and
+                native_inventory.get("contract_version") ==
+                "phase26_1d_native_error_status_spelling_inventory_successor_v1" and
+                native_inventory.get("current_inventory_summary") == live_inventory and
+                native_inventory.get("previous_inventory_summary") ==
+                callback_inventory["current_inventory_summary"] and
+                native_inventory.get("partial_extra_or_substituted_inventory") ==
+                "rejected", "native-error spelling inventory drifted")
+        live_inventory = native_inventory["previous_inventory_summary"]
     if callback_inventory:
         require(retained_inventory is not None and
                 callback_inventory.get("contract_version") ==
