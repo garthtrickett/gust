@@ -326,6 +326,21 @@ def phase22_relay_inventory_rows(
                 {key: value for key, value in current[0].items() if key != "line"},
                 "Phase 26 generic direct packed host invocation shift drifted")
         rows = [old[0] if row == current[0] else row for row in rows]
+    callback = registry.get("phase26_activation_audit", {}).get(
+        "ffi_callback_sync_increment", {}).get("phase22_invocation_successor")
+    if callback is not None:
+        added = callback.get("added_rows")
+        path = "scripts/phase26_ffi_callback_sync.sh"
+        require(callback.get("contract_version") ==
+                "phase26_1d_callback_sync_phase22_invocation_successor_v1" and
+                callback.get("previous_total") == 250 and
+                callback.get("current_total") == 252 and
+                callback.get("partial_extra_or_substituted_invocation") == "rejected" and
+                len(rows) == 252 and isinstance(added, list) and len(added) == 2 and
+                [row for row in rows if row.get("path") == path] == added and
+                all(row.get("selection") == "explicit_cranelift" for row in added),
+                "Phase 26 callback invocation rows drifted")
+        rows = [row for row in rows if row not in added]
     retained = registry.get("phase26_activation_audit", {}).get(
         "ffi_retained_lease_increment", {}).get("phase22_invocation_successor")
     if retained is not None:

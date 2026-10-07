@@ -389,6 +389,43 @@ bootstrap, registry and historical projections, exact-head PR workflows, and
 resolved review threads are required before merge. D, E, F, and Phase 26.1
 remain open.
 
+**26.1D synchronous native callback (ownership authorized, 2026-10-07).**
+An `unsafe` extern may declare a `Callback[int,int] #[ffi(callback)]` parameter
+and invoke a named, noncapturing Gust function with exactly one `int` parameter
+and `int` result during that native call. `Callback` is a compiler-owned formal
+signature in this annotated position only; a user or imported type of that
+name, malformed generic arguments, a function value/alias, and callbacks in
+ordinary parameters or returns do not gain authority. The first supported
+target is x86_64 Linux ELF with a checked C-compatible scalar calling
+convention. Other extern positions and the result are scalar values. The
+contract is synchronous and call-bounded: native code must not retain the
+address, capture Gust state, throw/unwind through Gust, or claim a native-error
+policy. This does not add general first-class function-pointer semantics.
+
+The producer resolves the exact function symbol and signature and emits an
+additive tagged `callback_call.v1` Call variant 6 with a FunctionAddress child
+only at its selected callback position. The worker validates the tagged
+position, selected extern policy, target and ABI, exact function identity,
+signature, source scope, and child use before driver discovery and object
+emission. It lowers that child to the validated original function address;
+ordinary Call variants 0–5 retain their canonical bytes and meanings. The
+fixture-only raw-pointer-to-void FunctionAddress route remains separately
+qualified.
+
+**Exit gate:** Two independently named C hosts and Gust callbacks execute the
+actual `int (*)(int)` ABI, including calls with the callback at different
+positions and scalar neighbors. Source negatives reject callback type
+collisions, malformed signatures, unannotated/general use, aliases, captures,
+unsafe-boundary violations, and unsupported retain/error policies. Canonical
+poison cases reject missing/truncated/unknown versions, wrong target/position,
+symbol/signature/policy/child substitution, and FunctionAddress outside its
+owning Call before driver discovery or object emission. Exact-main Call 0–5
+canonical bytes and behavior, focused/adjacent guards, stable compiler build,
+fixed-point bootstrap, registry and historical projections, all applicable
+exact-head PR checks, and resolved review threads are required. Retention of
+callback addresses, general callback signatures, native errors, and D/E/F
+completion remain open.
+
 Use a transient isolated arena for memory handed to native code and destroy it
 on return. *Isolated* is deliberately narrower than *sandboxed*: this bounds
 memory lifetime and spread but cannot prevent native code from accessing process

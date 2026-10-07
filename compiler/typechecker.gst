@@ -991,9 +991,42 @@ func env_validate_extern_ffi_positions(env: *TypeEnvironment[ctx], stmt: ast.Sta
                 report_error(2, "Semantic Error: [FFITransferRetainUnsupported] External pointer transfer and retention are not qualified", declared.span, env, ctx);
                 return 0;
             }
-            if std.str_eq(policy, "callback") == 1 || std.str_eq(policy, "native_error") == 1 {
+            if std.str_eq(policy, "native_error") == 1 {
                 report_error(2, "Semantic Error: [FFICallbackNativeErrorUnsupported] External callbacks and native error contracts are not qualified", declared.span, env, ctx);
                 return 0;
+            }
+            if std.str_eq(policy, "callback") == 1 {
+                mut callback_form := declared.param_type;
+                mut callback_shape := 0;
+                if callback_form.tag == 10 &&
+                   std.str_eq(callback_form.Generic.name, "Callback") == 1 {
+                    mut callback_types: std.Vector[ast.Type[ctx], ctx] := ctx[callback_form.Generic.args];
+                    if len(callback_types) == 2 &&
+                       callback_types[0].tag == 0 && callback_types[1].tag == 0 {
+                        callback_shape = 1;
+                    }
+                }
+                mut callback_name := env_resolve_namespaced_ident(env, "Callback", ctx);
+                if callback_shape == 0 ||
+                   (*env).struct_registry.Get(callback_name).Ok ||
+                   (*env).struct_templates.Get(callback_name).Ok ||
+                   (*env).enum_registry.Get(callback_name).Ok ||
+                   (*env).enum_templates.Get(callback_name).Ok ||
+                   len((*sig).params) < 1 {
+                    report_error(2, "Semantic Error: [FFICallbackSignature] Callback[int,int] is a compiler-owned extern formal, not a user type", declared.span, env, ctx);
+                    return 0;
+                }
+                if stmt.FunctionDecl.requires_sandbox_arena == 1 ||
+                   (*sig).return_type.tag != 0 ||
+                   t.tag != 9 || ctx[t.RawPointer.inner].tag != 3 ||
+                   std.str_eq(os.NativeTargetTriple(ctx), "x86_64-unknown-linux-gnu") == 0 ||
+                   std.str_eq(os.NativeObjectFormat(ctx), "Elf") == 0 {
+                    report_error(2, "Semantic Error: [FFICallbackSignature] Callback[int,int] requires a direct C scalar extern on x86_64 Linux ELF", declared.span, env, ctx);
+                    return 0;
+                }
+                policies.Push("callback");
+                i = i + 1;
+                continue;
             }
             mut repr_int_enum_param := 0;
             if t.tag == 8 {
@@ -6233,9 +6266,52 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 mut args_vec_valid_call: std.Vector[ast.Expression[ctx], ctx] := ctx[expr.Call.arguments];
                 mut evaluated_args: std.Vector[ast.Type[ctx], ctx] := std.VectorNew(ctx);
                 mut evaluated_arg_provenances_call_nlaunder: std.Vector[ExpressionProvenance[ctx], ctx] := std.VectorNew(ctx);
+                mut callback_policies: std.Vector[str, ctx] := std.VectorNew(ctx);
+                if sig.is_extern == 1 &&
+                   sig.ffi_param_policies != empty[Index[std.Vector[str, ctx], ctx]] {
+                    callback_policies = ctx[sig.ffi_param_policies];
+                }
                 
                 mut i := 0;
                 while i < len(args_vec_valid_call) {
+                    if i < len(callback_policies) &&
+                       std.str_eq(callback_policies[i], "callback") == 1 {
+                        mut callback_arg := args_vec_valid_call[i];
+                        mut callback_name := "";
+                        if callback_arg.tag == 0 &&
+                           scope_contains(scope, callback_arg.Identifier.name, ctx) == 0 {
+                            callback_name = env_resolve_namespaced_ident(
+                                env, callback_arg.Identifier.name, ctx
+                            );
+                        }
+                        mut callback_ok := 0;
+                        mut callback_signature := (*env).function_registry.Get(callback_name);
+                        if callback_signature.Ok {
+                            mut selected_callback := callback_signature.Val;
+                            if selected_callback.is_extern == 0 &&
+                               selected_callback.is_unsafe == 0 &&
+                               selected_callback.is_compile_time_only == 0 &&
+                               len(selected_callback.params) == 1 &&
+                               selected_callback.params[0].tag == 0 &&
+                               selected_callback.return_type.tag == 0 &&
+                               selected_callback.is_private == 0 {
+                                callback_ok = 1;
+                            }
+                        }
+                        if callback_ok == 0 {
+                            mut callback_arg_idx: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
+                            ctx.Set(callback_arg_idx, callback_arg);
+                            report_error(2, "Semantic Error: [FFICallbackSignature] Callback argument must be a visible, noncapturing Gust int-to-int function declaration", get_expression_span(callback_arg_idx, ctx), env, ctx);
+                        }
+                        mut callback_void: ast.Type[ctx]; callback_void.tag = 3;
+                        mut callback_pointer := make_type_pointer(callback_void, ctx);
+                        evaluated_args.Push(callback_pointer);
+                        evaluated_arg_provenances_call_nlaunder.Push(
+                            expression_provenance_unknown(callback_pointer, ctx)
+                        );
+                        i = i + 1;
+                        continue;
+                    }
                     mut arg_idx_eval_call_nlaunder: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
                     ctx.Set(arg_idx_eval_call_nlaunder, args_vec_valid_call[i]);
                     mut arg_prov_eval_call_nlaunder := check_expression_with_provenance(arg_idx_eval_call_nlaunder, env, scope, ctx);
@@ -6306,6 +6382,11 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                                 report_error(2, "Semantic Error: [FFIContractMismatch] External value policy has a non-scalar formal position", expr.Call.span, env, ctx);
                                 mut bad_value: ast.Type[ctx]; bad_value.tag = 3;
                                 return bad_value;
+                            }
+                        } else if std.str_eq(ffi_policy, "callback") == 1 {
+                            if ffi_formal.tag != 9 || ffi_actual.tag != 9 {
+                                report_error(2, "Semantic Error: [FFICallbackSignature] Callback position has no function-address authority", expr.Call.span, env, ctx);
+                                return dummy;
                             }
                         } else if std.str_eq(ffi_policy, "borrow_read_call") == 1 ||
                                   std.str_eq(ffi_policy, "borrow_read_isolated_call") == 1 ||
@@ -13490,7 +13571,14 @@ func env_pre_register_statement(env: *TypeEnvironment[ctx], stmt: ast.Statement[
                 i = 0;
                 while i < len(params_vec_function_decl) {
                     mut p := params_vec_function_decl[i];
-                    mut resolved_param_type := env_resolve_type(env, p.param_type, ctx);
+                    mut resolved_param_type := p.param_type;
+                    if stmt.FunctionDecl.is_extern == 1 &&
+                       std.str_eq(p.ffi_policy, "callback") == 1 {
+                        mut callback_void: ast.Type[ctx]; callback_void.tag = 3;
+                        resolved_param_type = make_type_pointer(callback_void, ctx);
+                    } else {
+                        resolved_param_type = env_resolve_type(env, p.param_type, ctx);
+                    }
                     env_require_explicit_public_brand(env, p.param_type, resolved_param_type, p.name, p.span, ctx);
                     if resolved_param_type.tag == 4 { resolved_param_type = make_type_pointer(resolved_param_type, ctx); }
                     sig.params[i] = resolved_param_type;
@@ -15156,7 +15244,14 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
             mut i := 0;
             while i < len(params_vec_function_decl_impl) {
                 mut param := params_vec_function_decl_impl[i];
-                mut resolved_param_type := env_resolve_type(env, param.param_type, ctx);
+                mut resolved_param_type := param.param_type;
+                if stmt.FunctionDecl.is_extern == 1 &&
+                   std.str_eq(param.ffi_policy, "callback") == 1 {
+                    mut callback_void: ast.Type[ctx]; callback_void.tag = 3;
+                    resolved_param_type = make_type_pointer(callback_void, ctx);
+                } else {
+                    resolved_param_type = env_resolve_type(env, param.param_type, ctx);
+                }
 
                 // Standardize direct Arena types to shared reference pointers (&Arena)
                 if resolved_param_type.tag == 4 { // Arena

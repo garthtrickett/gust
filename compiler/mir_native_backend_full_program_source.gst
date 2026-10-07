@@ -188,6 +188,51 @@ func mir_native_full_program_type_is_initial_scalar(value_type: ast.Type[ctx], e
     return 0;
 }
 
+// A callback formal has pointer ABI only through its verified extern policy.
+// The tagged Call row supplies the function signature and call-bounded use.
+func mir_native_full_program_callback_plan(sig: typechecker.FunctionSignature[ctx], ctx: &Arena) str {
+    mut target := primitive_layout.mir_primitive_layout_target(os.NativeTargetTriple(ctx), ctx);
+    if target.found == 0 ||
+       std.str_eq(target.target.target_triple, "x86_64-unknown-linux-gnu") == 0 ||
+       target.target.pointer_size != 8 || target.target.pointer_alignment != 8 ||
+       sig.is_extern != 1 || sig.ffi_contract_verified != 1 ||
+       sig.requires_sandbox_arena == 1 || sig.return_type.tag != 0 ||
+       sig.ffi_param_policies == empty[Index[std.Vector[str, ctx], ctx]] ||
+       std.str_eq(os.NativeTargetTriple(ctx), "x86_64-unknown-linux-gnu") == 0 ||
+       std.str_eq(os.NativeObjectFormat(ctx), "Elf") == 0 { return ""; }
+    mut policies: std.Vector[str, ctx] := ctx[sig.ffi_param_policies];
+    if len(policies) != len(sig.params) { return ""; }
+    mut selected := 0 - 1;
+    mut i := 0;
+    while i < len(policies) {
+        if std.str_eq(policies[i], "callback") == 1 {
+            if selected >= 0 || sig.params[i].tag != 9 { return ""; }
+            selected = i;
+        } else if std.str_eq(policies[i], "value") == 0 ||
+                  (sig.params[i].tag != 0 && sig.params[i].tag != 1 &&
+                   sig.params[i].tag != 2) { return ""; }
+        i = i + 1;
+    }
+    if selected < 0 { return ""; }
+    mut plan := "|callback_call.v1|";
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex(os.NativeTargetTriple(ctx), ctx));
+    plan = std.Concat(plan, "|");
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex("single_sync_call", ctx));
+    plan = std.Concat(plan, "|1|");
+    plan = mir_native_full_program_append_int(plan, selected, ctx);
+    plan = std.Concat(plan, "|");
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex("callback", ctx));
+    plan = std.Concat(plan, "|");
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex("RawPointer(Void)", ctx));
+    plan = std.Concat(plan, "|");
+    plan = mir_native_full_program_append_int(plan, target.target.pointer_size, ctx);
+    plan = std.Concat(plan, "|");
+    plan = mir_native_full_program_append_int(plan, target.target.pointer_alignment, ctx);
+    plan = std.Concat(plan, "|");
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex("gust.int_to_int.v1", ctx));
+    return std.Clone(ctx, plan);
+}
+
 // The source of truth for an isolated Call's flat C copy is the verified
 // signature, the registered struct declaration order, and the selected target.
 // This returns the entire tagged canonical-row suffix. An empty result is a
@@ -1269,6 +1314,23 @@ func mir_native_full_program_flatten_expression(expression_index: Index[ast.Expr
                         );
                         if len(node.text_operand) == 0 { return 0 - 1; }
                     }
+                    mut callback_count := 0;
+                    mut callback_index := 0;
+                    while callback_index < len(direct_policies) {
+                        if std.str_eq(direct_policies[callback_index], "callback") == 1 {
+                            callback_count = callback_count + 1;
+                        }
+                        callback_index = callback_index + 1;
+                    }
+                    if callback_count > 0 {
+                        if direct_count > 0 || retained_count > 0 || callback_count != 1 {
+                            return 0 - 1;
+                        }
+                        node.second_integer_operand = 6;
+                        if len(mir_native_full_program_callback_plan(
+                            selected_isolated_signature, ctx
+                        )) == 0 { return 0 - 1; }
+                    }
                 }
             }
             if len(constructor_helper) > 0 {
@@ -1405,6 +1467,44 @@ func mir_native_full_program_flatten_expression(expression_index: Index[ast.Expr
             }
             mut argument_index := 0;
             while argument_index < len(arguments) {
+                if node.second_integer_operand == 6 {
+                    guard callback_sig := (*env).function_registry.Get(node.second_text_operand) else {
+                        return 0 - 1;
+                    };
+                    mut callback_positions: std.Vector[str, ctx] :=
+                        ctx[callback_sig.ffi_param_policies];
+                    if argument_index >= len(callback_positions) { return 0 - 1; }
+                    if std.str_eq(callback_positions[argument_index], "callback") == 1 {
+                        mut callback_argument := arguments[argument_index];
+                        if callback_argument.tag != 0 { return 0 - 1; }
+                        mut callback_symbol := typechecker.env_resolve_namespaced_ident(
+                            env, callback_argument.Identifier.name, ctx
+                        );
+                        guard callback_function := (*env).function_registry.Get(callback_symbol) else {
+                            return 0 - 1;
+                        };
+                        if callback_function.is_extern == 1 ||
+                           len(callback_function.params) != 1 ||
+                           callback_function.params[0].tag != 0 ||
+                           callback_function.return_type.tag != 0 { return 0 - 1; }
+                        mut address := mir_native_full_program_make_node(
+                            "FunctionAddress", "RawPointer(Void)", callback_symbol,
+                            "gust.int_to_int.v1", 0, 0,
+                            callback_argument.Identifier.span.start.line,
+                            callback_argument.Identifier.span.start.column,
+                            callback_argument.Identifier.span.start.offset,
+                            callback_argument.Identifier.span.end.offset, ctx
+                        );
+                        mut address_index := mir_native_full_program_push_node(
+                            nodes_index, address, ctx
+                        );
+                        node = mir_native_full_program_node_with_child(
+                            node, address_index, ctx
+                        );
+                        argument_index = argument_index + 1;
+                        continue;
+                    }
+                }
                 mut argument_arena_index: Index[ast.Expression[ctx], ctx] :=
                     os.ArenaAlloc(ctx);
                 ctx.Set(argument_arena_index, arguments[argument_index]);
@@ -1997,7 +2097,8 @@ func mir_native_full_program_node_isolated_plan(node: MirNativeFullProgramNode[c
         return node.text_operand;
     }
     if std.str_eq(node.kind, "Call") == 0 ||
-       (node.second_integer_operand != 3 && node.second_integer_operand != 4) {
+       (node.second_integer_operand != 3 && node.second_integer_operand != 4 &&
+        node.second_integer_operand != 6) {
         return "";
     }
     mut index := mir_native_full_program_function_index(
@@ -2426,6 +2527,7 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
     mut functions: std.Vector[MirNativeFullProgramFunction[ctx], ctx] :=
         std.VectorNew(ctx);
     mut non_scalar_signature_count := 0;
+    mut callback_plan_count := 0;
     mut module_index := 0;
     while module_index < len(programs) {
         unsafe {
@@ -2498,12 +2600,15 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
                         ctx[statement.FunctionDecl.params];
                     mut parameter_index := 0;
                     while parameter_index < len(parameters) {
-                        mut identity :=
-                            mir_native_full_program_type_identity(
-                                parameters[parameter_index].param_type,
-                                env,
-                                ctx
+                        mut identity := "";
+                        if function.is_extern == 1 &&
+                           std.str_eq(parameters[parameter_index].ffi_policy, "callback") == 1 {
+                            identity = "RawPointer(Void)";
+                        } else {
+                            identity = mir_native_full_program_type_identity(
+                                parameters[parameter_index].param_type, env, ctx
                             );
+                        }
                         if len(identity) == 0 ||
                            std.str_eq(identity, "Unknown") == 1
                         {
@@ -2513,7 +2618,8 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
                                 ctx
                             );
                         }
-                        if mir_native_full_program_type_is_initial_scalar(
+                        if std.str_eq(identity, "RawPointer(Void)") == 0 &&
+                           mir_native_full_program_type_is_initial_scalar(
                             parameters[parameter_index].param_type,
                             env,
                             ctx
@@ -2546,9 +2652,25 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
                                 ffi_signature, env, ctx
                             );
                         } else {
-                            function.isolated_call_plan = mir_native_full_program_generic_direct_plan(
-                                ffi_signature, env, ctx
-                            );
+                            mut callback_policies: std.Vector[str, ctx] := ctx[ffi_signature.ffi_param_policies];
+                            mut callback_found := 0;
+                            mut callback_i := 0;
+                            while callback_i < len(callback_policies) {
+                                if std.str_eq(callback_policies[callback_i], "callback") == 1 {
+                                    callback_found = 1;
+                                }
+                                callback_i = callback_i + 1;
+                            }
+                            if callback_found == 1 {
+                                callback_plan_count = callback_plan_count + 1;
+                                function.isolated_call_plan = mir_native_full_program_callback_plan(
+                                    ffi_signature, ctx
+                                );
+                            } else {
+                                function.isolated_call_plan = mir_native_full_program_generic_direct_plan(
+                                    ffi_signature, env, ctx
+                                );
+                            }
                         }
                         if std.str_eq(function.ffi_return_policy, "owned_return") == 1 {
                             mut owner_type := ffi_signature.return_type;
@@ -2610,7 +2732,7 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
         }
         module_index = module_index + 1;
     }
-    if non_scalar_signature_count == 0 &&
+    if non_scalar_signature_count == 0 && callback_plan_count == 0 &&
        mir_native_full_program_contains_guard_and_defer(programs, ctx) == 0
     {
         unsafe { (*env).current_prefix = ""; }

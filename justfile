@@ -24291,6 +24291,14 @@ guard-cranelift-phase26-ffi-retained-lease:
     python3 scripts/phase26_ffi_retained_lease_registration.py
     bash scripts/phase26_ffi_retained_lease.sh
 
+# Phase 26.1D: synchronous, noncapturing Gust callback at a C call position.
+guard-cranelift-phase26-ffi-callback-sync:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-ffi-callback-sync | grep -F $'guard-cranelift-phase26-ffi-callback-sync\t2\t' >/dev/null
+    python3 scripts/phase26_ffi_callback_sync_registration.py
+    bash scripts/phase26_ffi_callback_sync.sh
+
 # Phase 26.1E1: raw pointer casts cannot acquire safe arena provenance.
 guard-cranelift-phase26-raw-cast-provenance:
     #!/usr/bin/env bash

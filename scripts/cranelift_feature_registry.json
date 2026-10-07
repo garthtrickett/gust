@@ -48056,6 +48056,254 @@
     "why_this_exists": "The Status section of docs/PHASE25_ROADMAP.md is the record the phase-completion loop checks, and it was wrong in both directions. 25.10a (#468) and 25.10 (#470) were unticked though both merged. 25.12 was ticked though its Exit Gate was not met, and 25.12b (#472), which corrected it, had no row at all. The Patch 25.0 heading still read IN PROGRESS. The section's own rule is 'ticked when merged to main', and this repo's convention is that a later patch ticks merged ones -- Patch 25.7 is what ticked 25.12 and 25.11a -- so 25.12b could not tick itself."
   },
   "phase26_activation_audit": {
+    "ffi_callback_sync_increment": {
+      "contract_version": "phase26_1d_callback_sync_v1",
+      "status": "bounded_noncapturing_synchronous_c_callback_qualified",
+      "owner": "cranelift",
+      "increment": "26.1D_callback_sync",
+      "supported_target": "x86_64-unknown-linux-gnu",
+      "canonical_call_variant": "6_callback_call_v1",
+      "legacy_call_variants": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "selected_policy": "callback",
+      "signature": "compiler_owned_Callback_int_int",
+      "function_address_provenance": "named_noncapturing_Gust_int_to_int_function",
+      "scope": "single_synchronous_unsafe_C_call",
+      "unsupported_routes": [
+        "retain",
+        "capture",
+        "general_function_pointer",
+        "native_error",
+        "unwind"
+      ],
+      "positive_fixture": "compiler/phase26_ffi_callback_sync_source.gst",
+      "host_object_source": "tests/cranelift/phase26_callback_sync_hosts.c",
+      "owning_level2_guard": "guard-cranelift-phase26-ffi-callback-sync",
+      "native_fallback": false,
+      "runtime_symbol_surface_changed": false,
+      "phase22_invocation_successor": {
+        "contract_version": "phase26_1d_callback_sync_phase22_invocation_successor_v1",
+        "previous_total": 250,
+        "current_total": 252,
+        "added_rows": [
+          {
+            "path": "scripts/phase26_ffi_callback_sync.sh",
+            "line": 29,
+            "recipe": "none",
+            "compiler_token": "./gust",
+            "selection": "explicit_cranelift",
+            "consumer_class": "already_explicit_or_parser_probe",
+            "owner": "cranelift",
+            "expected_artifact": "selected_backend_contract",
+            "expected_transition": "preserve_explicit_selection",
+            "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+            "command": "GUST_TEST_MIR_TO_C_UNAVAILABLE=1 GUST_NATIVE_BACKEND_DRIVER=\"$PWD/$build_root/capture-driver\" GUST_PHASE26_CALLBACK_REAL_DRIVER=\"$driver\" GUST_PHASE26_CALLBACK_CAPTURE_BUNDLE=\"$PWD/$build_root/canonical.bundle\" GUST_PHASE26_CALLBACK_HOST_OBJECT=\"$PWD/$build_root/hosts.o\" CC=\"$PWD/$build_root/cc-with-host\" ./gust --backend cranelift -o \"$build_root/native\" compiler/phase26_ffi_callback_sync_source.gst >\"$build_root/positive.stdout\" 2>\"$build_root/positive.stderr\""
+          },
+          {
+            "path": "scripts/phase26_ffi_callback_sync.sh",
+            "line": 121,
+            "recipe": "none",
+            "compiler_token": "./gust",
+            "selection": "explicit_cranelift",
+            "consumer_class": "already_explicit_or_parser_probe",
+            "owner": "cranelift",
+            "expected_artifact": "selected_backend_contract",
+            "expected_transition": "preserve_explicit_selection",
+            "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+            "command": "if GUST_TEST_MIR_TO_C_UNAVAILABLE=1 GUST_NATIVE_BACKEND_DRIVER=\"$PWD/$build_root/poison-driver\" GUST_PHASE26_CALLBACK_POISON_MARKER=\"$PWD/$marker\" ./gust --backend cranelift -o \"$output\" \"$source\" >\"$build_root/negatives/$name.stdout\" 2>\"$build_root/negatives/$name.stderr\"; then"
+          }
+        ],
+        "partial_extra_or_substituted_invocation": "rejected"
+      },
+      "production_audit_successor": {
+        "contract_version": "phase26_1d_callback_sync_production_audit_successor_v1",
+        "previous_repository_invocation_count": 250,
+        "current_repository_invocation_count": 252,
+        "added_invocation_path": "scripts/phase26_ffi_callback_sync.sh",
+        "unchanged_other_fields": true,
+        "partial_extra_or_substituted_audit": "rejected"
+      },
+      "phase23_text_surface_successor": {
+        "contract_version": "phase26_1d_callback_sync_phase23_text_surface_successor_v1",
+        "changed_rows": [
+          {
+            "path": ".github/workflows/pr-fast.yml",
+            "previous_digest": "a3140d129bfbf5d76f007937b2e2f2d9f6415017308ca66c143416cbae17e8b3",
+            "current_digest": "9edec3b3463ead3fe4c74a1db23a35a917c6d4acdd0ac98aed752e4d533f4f87",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 8,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 8,
+              "generated_c_contract": 1
+            }
+          },
+          {
+            "path": "compiler/experiments/cranelift/src/full_program.rs",
+            "previous_digest": "4ddbdc1b38233192ffa82fe969d4d8b7d0acfeea2b4a1c4dcc0787efe682750a",
+            "current_digest": "0140b2cb605cc78073557f2d4976b1f2e573eb2fdf52306b37921af9f1f62ead",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            }
+          },
+          {
+            "path": "compiler/mir_native_backend_full_program_source.gst",
+            "previous_digest": "1e86e23116d406d7093902f8b43851193279c4f09b10195efdcec6e0081a6319",
+            "current_digest": "f7e5d6fa9a06fd23f3229f858d325810f3e1af23446adb463afe88c715b314b9",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            }
+          },
+          {
+            "path": "compiler/typechecker.gst",
+            "previous_digest": "278ecb5e7b06050089b6af70fdea07cee8f85f83d3e99efc279b2acc5d6dc6a2",
+            "current_digest": "6dfe9f349233b46912e1e603d44d8c9351c41e6f74cfcbdb03c3a4a4e52fa177",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            }
+          },
+          {
+            "path": "justfile",
+            "previous_digest": "bd92ccbea34185680b9b532cbc68db77939ae1a5f9f5585e994a830445393b45",
+            "current_digest": "e8f65c26667ca6b520fe4ca8ac5e4de013a90f53b998fa08388b7f0aa663039b",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 729,
+              "generated_c_contract": 9
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 729,
+              "generated_c_contract": 9
+            }
+          },
+          {
+            "path": "scripts/cranelift_test_levels.json",
+            "previous_digest": "738025956784ae4322fe42b4cbb496583fdaed28505adbb533bd3982d8975b02",
+            "current_digest": "7a829f324cb70c60d69cf62f88f5991e937ad889f08f9583dcafb3205d94e5a3",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 30,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 30,
+              "generated_c_contract": 0
+            }
+          },
+          {
+            "path": "scripts/phase22_opening.py",
+            "previous_digest": "b12b3e99a6a1bbd51d7d6c96ed3a6fdf5425044099e28ed4fd50b7a3a26fa46f",
+            "current_digest": "b16c3144a1be72a070d4e84499cb3c44396024b240cf63fbaae219bb7e9da09b",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 5,
+              "mir_to_c_name": 23,
+              "generated_c_contract": 12
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 5,
+              "mir_to_c_name": 23,
+              "generated_c_contract": 12
+            }
+          }
+        ],
+        "added_rows": [],
+        "partial_extra_or_substituted_surface": "rejected"
+      },
+      "spelling_inventory_successor": {
+        "contract_version": "phase26_1d_callback_sync_spelling_inventory_successor_v1",
+        "previous_inventory_summary": {
+          "classification_counts": {
+            "comment": 2,
+            "diagnostic": 10,
+            "fixture_or_evidence": 679,
+            "mangling_or_generated_name": 9,
+            "non_decision_comparison": 8,
+            "semantic_or_intrinsic_recognition": 692,
+            "serialization": 1
+          },
+          "complete_manifest_digest": "534196ca405afd8782eeeb2d70ceef01a8cb971f2eb87ef0e381881ae2661e5b",
+          "partition_manifest_digests": {
+            "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+            "diagnostic": "f546945a2cf913c50c2e27357061ceb8dfd8cc61378649dc5dcbe4891d558599",
+            "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+            "mangling_or_generated_name": "4ce0e1570ad6813f5e08ceac69ea0eb555b092ecd26ec4dac6ed34d55f3eac66",
+            "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7",
+            "serialization": "47cf827b52d783e60a08a2856040e7bebdb94590a27b7903d5301eb16fe1d508"
+          },
+          "semantic_manifest_digest": "9165c407dd334f4b4bbb9ee435da4517594444e067d5a0e999057449d4c93b09",
+          "semantic_site_count": 692,
+          "site_count": 1401,
+          "source_file_count": 1810,
+          "unknown_site_count": 0
+        },
+        "current_inventory_summary": {
+          "source_file_count": 1811,
+          "site_count": 1401,
+          "semantic_site_count": 692,
+          "semantic_manifest_digest": "b53484ac356d53b71635de38a3e0161503f60597fc99821b8f995eee83be0e6b",
+          "classification_counts": {
+            "semantic_or_intrinsic_recognition": 692,
+            "diagnostic": 10,
+            "serialization": 1,
+            "mangling_or_generated_name": 9,
+            "comment": 2,
+            "fixture_or_evidence": 679,
+            "non_decision_comparison": 8
+          },
+          "partition_manifest_digests": {
+            "diagnostic": "f49c9fb347ea1bb5227853f3b5f5218262d885ca400bb88389bb7b7b7571e6ff",
+            "serialization": "47cf827b52d783e60a08a2856040e7bebdb94590a27b7903d5301eb16fe1d508",
+            "mangling_or_generated_name": "c7de8589ef9192f965db38de5733c6c2c86b73a02f5362c28ab9a910644db287",
+            "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+            "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+            "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
+          },
+          "complete_manifest_digest": "60c5eb2f8c127443a703b2c8cc3b4c45caa480a7a39eeaccfa81520928878075",
+          "unknown_site_count": 0
+        },
+        "changed_source_paths": [
+          "compiler/experiments/cranelift/src/full_program.rs",
+          "compiler/mir_native_backend_full_program_source.gst",
+          "compiler/mir_native_backend_module_import_source.gst",
+          "compiler/mir_native_backend_parameter_argument_source.gst",
+          "compiler/phase26_ffi_callback_sync_source.gst",
+          "compiler/typechecker.gst"
+        ],
+        "partial_extra_or_substituted_inventory": "rejected"
+      }
+    },
     "bundle_memory_prerequisite": {
       "contract_version": "phase26_bundle_memory_prerequisite_v1",
       "status": "pre_sized_canonical_bundle_assembly",

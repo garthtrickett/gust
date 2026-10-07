@@ -289,6 +289,22 @@ func mir_native_parameter_argument_scan_deferred(
                        ) == 1 {
                         parameter_class = 0;
                     }
+                    // The annotated callback formal has a pointer ABI. The
+                    // typechecker and full-program Call plan still own its
+                    // signature, target and lifetime validation.
+                    if parameter_class == 1 &&
+                       statement.FunctionDecl.is_extern == 1 &&
+                       std.str_eq(parameter.ffi_policy, "callback") == 1 &&
+                       parameter.param_type.tag == 10 &&
+                       std.str_eq(parameter.param_type.Generic.name, "Callback") == 1 {
+                        mut callback_types: std.Vector[ast.Type[ctx], ctx] :=
+                            ctx[parameter.param_type.Generic.args];
+                        if len(callback_types) == 2 &&
+                           callback_types[0].tag == 0 &&
+                           callback_types[1].tag == 0 {
+                            parameter_class = 0;
+                        }
+                    }
                     if parameter_class == 1 {
                         model.source_path =
                             std.Clone(ctx, module_paths[0]);
