@@ -112,9 +112,11 @@ def main() -> None:
             "callback filename site successor drifted")
     diagnostic = record["legacy_position_callback_diagnostic_successor"]
     position_guard = (ROOT / "scripts/phase26_ffi_position_policy.sh").read_text()
+    transfer_guard = (ROOT / "scripts/phase26_ffi_transfer_owned.sh").read_text()
     require(diagnostic == {
         "contract_version": "phase26_1d_callback_sync_legacy_position_diagnostic_successor_v1",
         "source_fixture": "compiler/phase26_ffi_callback_invalid.gst",
+        "transfer_fixture": "scripts/phase26_ffi_transfer_owned.sh:callback_policy",
         "previous_diagnostic": "FFICallbackNativeErrorUnsupported",
         "current_diagnostic": "FFICallbackSignature",
         "native_error_diagnostic": "FFICallbackNativeErrorUnsupported",
@@ -124,8 +126,12 @@ def main() -> None:
         "native_artifact_emitted": False,
     } and "'callback|FFICallbackSignature'" in position_guard and
             "'native_error|FFICallbackNativeErrorUnsupported'" in position_guard and
+            "callback_policy) expected='[FFICallbackSignature]'" in transfer_guard and
+            "native_error_policy) expected='[FFICallbackNativeErrorUnsupported]'" in transfer_guard and
             "test ! -e \"$poison_marker\"" in position_guard and
-            "test ! -e \"$build_root/$name-native\"" in position_guard,
+            "test ! -e \"$build_root/$name-native\"" in position_guard and
+            "test ! -e \"$marker\"" in transfer_guard and
+            "test ! -e \"$build_root/$case_name\"" in transfer_guard,
             "legacy callback position diagnostic successor drifted")
     for path in (expected["positive_fixture"], expected["host_object_source"],
                  "scripts/phase26_ffi_callback_sync.sh"):

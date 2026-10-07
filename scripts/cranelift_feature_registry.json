@@ -48373,6 +48373,7 @@
       "legacy_position_callback_diagnostic_successor": {
         "contract_version": "phase26_1d_callback_sync_legacy_position_diagnostic_successor_v1",
         "source_fixture": "compiler/phase26_ffi_callback_invalid.gst",
+        "transfer_fixture": "scripts/phase26_ffi_transfer_owned.sh:callback_policy",
         "previous_diagnostic": "FFICallbackNativeErrorUnsupported",
         "current_diagnostic": "FFICallbackSignature",
         "native_error_diagnostic": "FFICallbackNativeErrorUnsupported",
