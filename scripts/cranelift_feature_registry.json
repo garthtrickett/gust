@@ -48369,6 +48369,17 @@
           95
         ],
         "partial_extra_or_substituted_site": "rejected"
+      },
+      "legacy_position_callback_diagnostic_successor": {
+        "contract_version": "phase26_1d_callback_sync_legacy_position_diagnostic_successor_v1",
+        "source_fixture": "compiler/phase26_ffi_callback_invalid.gst",
+        "previous_diagnostic": "FFICallbackNativeErrorUnsupported",
+        "current_diagnostic": "FFICallbackSignature",
+        "native_error_diagnostic": "FFICallbackNativeErrorUnsupported",
+        "failure_stage": "source_typechecking_before_driver",
+        "other_position_cases_preserved": true,
+        "poison_driver_invoked": false,
+        "native_artifact_emitted": false
       }
     },
     "bundle_memory_prerequisite": {

@@ -41,7 +41,7 @@ def main() -> None:
     require(set(record) == set(expected) | {
         "phase22_invocation_successor", "production_audit_successor",
         "phase23_text_surface_successor", "spelling_inventory_successor",
-        "filename_site_successor",
+        "filename_site_successor", "legacy_position_callback_diagnostic_successor",
     }, "callback acquired unreviewed fields")
     from phase22_opening import scan_invocations
     rows = [row for row in scan_invocations()
@@ -110,6 +110,23 @@ def main() -> None:
                 {key: val for key, val in before.items() if key != "line"}
                 for before, now in zip(previous_sites, current_sites)),
             "callback filename site successor drifted")
+    diagnostic = record["legacy_position_callback_diagnostic_successor"]
+    position_guard = (ROOT / "scripts/phase26_ffi_position_policy.sh").read_text()
+    require(diagnostic == {
+        "contract_version": "phase26_1d_callback_sync_legacy_position_diagnostic_successor_v1",
+        "source_fixture": "compiler/phase26_ffi_callback_invalid.gst",
+        "previous_diagnostic": "FFICallbackNativeErrorUnsupported",
+        "current_diagnostic": "FFICallbackSignature",
+        "native_error_diagnostic": "FFICallbackNativeErrorUnsupported",
+        "failure_stage": "source_typechecking_before_driver",
+        "other_position_cases_preserved": True,
+        "poison_driver_invoked": False,
+        "native_artifact_emitted": False,
+    } and "'callback|FFICallbackSignature'" in position_guard and
+            "'native_error|FFICallbackNativeErrorUnsupported'" in position_guard and
+            "test ! -e \"$poison_marker\"" in position_guard and
+            "test ! -e \"$build_root/$name-native\"" in position_guard,
+            "legacy callback position diagnostic successor drifted")
     for path in (expected["positive_fixture"], expected["host_object_source"],
                  "scripts/phase26_ffi_callback_sync.sh"):
         require((ROOT / path).is_file(), f"fixture or guard missing: {path}")
