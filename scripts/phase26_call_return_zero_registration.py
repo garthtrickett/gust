@@ -1897,12 +1897,18 @@ def main() -> None:
     }, "wrapper-chain spelling inventory successor drifted")
     prior_sites = two_wrapper_record["filename_site_successor"]["current_sites"]
     live_sites = filename_sites()
+    retained_sites = activation.get("ffi_retained_lease_increment", {}).get(
+        "filename_site_successor")
     repr_int_sites = activation.get("ffi_repr_int_increment", {}).get(
         "filename_site_successor")
     transfer_sites = activation.get("ffi_transfer_owned_increment", {}).get(
         "filename_site_successor")
     owned_sites = activation.get("ffi_owned_return_increment", {}).get(
         "filename_site_successor")
+    if retained_sites:
+        require(retained_sites["current_sites"] == live_sites,
+                "retained-lease filename sites drifted")
+        live_sites = retained_sites["previous_sites"]
     if transfer_sites:
         require(transfer_sites["current_sites"] == live_sites,
                 "owned-transfer filename sites drifted")
@@ -3704,6 +3710,12 @@ def main() -> None:
         "spelling_inventory_successor")
     owned_inventory = activation.get("ffi_owned_return_increment", {}).get(
         "spelling_inventory_successor")
+    retained_inventory = activation.get("ffi_retained_lease_increment", {}).get(
+        "spelling_inventory_successor")
+    if retained_inventory:
+        require(retained_inventory["current_inventory_summary"] == live_inventory,
+                "retained-lease spelling inventory drifted")
+        live_inventory = retained_inventory["previous_inventory_summary"]
     if direct_inventory:
         require(direct_inventory["current_inventory_summary"] == live_inventory,
                 "direct-borrow spelling inventory drifted")
@@ -3742,6 +3754,10 @@ def main() -> None:
             post_take_plain_record["spelling_inventory_successor"]["previous_inventory_summary"]["unknown_site_count"] == 0,
             "consecutive plain-before-Take-cast spelling inventory drifted")
     live_sites = filename_sites()
+    if retained_sites:
+        require(retained_sites["current_sites"] == live_sites,
+                "retained-lease filename sites drifted")
+        live_sites = retained_sites["previous_sites"]
     if transfer_sites:
         require(transfer_sites["current_sites"] == live_sites,
                 "owned-transfer filename sites drifted")

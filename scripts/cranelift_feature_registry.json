@@ -48349,6 +48349,21 @@
               "mir_to_c_name": 23,
               "generated_c_contract": 12
             }
+          },
+          {
+            "path": "scripts/phase26_call_return_zero_registration.py",
+            "previous_digest": "a610d6d7943f3b36345d5a7853dbdbc091d5805f4bc61fc9015ab4bbd583ca17",
+            "current_digest": "d836d56b176397c27480b79f8c2b1f8062f5cea2ccda5622b899401a305ddaca",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            }
           }
         ],
         "added_rows": [],
