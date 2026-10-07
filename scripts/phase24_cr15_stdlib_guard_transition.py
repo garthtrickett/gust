@@ -3983,6 +3983,32 @@ def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    bundle_memory = registry.get("phase26_activation_audit", {}).get(
+        "bundle_memory_prerequisite", {}).get("phase23_text_surface_successor")
+    if bundle_memory is not None:
+        changed = bundle_memory.get("changed_rows")
+        require(bundle_memory.get("contract_version") ==
+                "phase26_bundle_memory_phase23_text_surface_successor_v1" and
+                bundle_memory.get("partial_extra_or_substituted_surface") ==
+                "rejected" and bundle_memory.get("added_rows") == [] and
+                isinstance(changed, list) and len(changed) == 1 and
+                changed[0].get("path") == "compiler/mir.gst",
+                "Phase 26 bundle memory text surface successor shape drifted")
+        entry = changed[0]
+        live = {row["path"]: row for row in rows}
+        row = live.get(entry["path"])
+        require(row is not None and
+                row["digest"] == entry.get("current_digest") and
+                row["match_counts"] == entry.get("current_match_counts") and
+                len(entry.get("previous_digest", "")) == 64 and
+                entry.get("previous_match_counts") ==
+                entry.get("current_match_counts"),
+                "Phase 26 bundle memory text surface drifted")
+        rows = [dict(value,
+                     digest=entry["previous_digest"],
+                     match_counts=entry["previous_match_counts"])
+                if value["path"] == entry["path"] else value
+                for value in rows]
     direct = registry.get("phase26_activation_audit", {}).get(
         "ffi_generic_direct_call_increment", {}).get("phase23_text_surface_successor")
     if direct is not None:
