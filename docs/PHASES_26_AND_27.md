@@ -426,6 +426,39 @@ exact-head PR checks, and resolved review threads are required. Retention of
 callback addresses, general callback signatures, native errors, and D/E/F
 completion remain open.
 
+**26.1D explicit native error status (ownership authorized, 2026-10-07).**
+An `unsafe` direct C extern may mark its `int` result `#[ffi(native_error)]`.
+The returned signed `Int` is preserved exactly: zero denotes success and every
+nonzero value denotes failure under the declared native contract. Gust does
+not implicitly throw, construct a `Result`, read `errno`, or run cleanup from
+this annotation. This cohort has only scalar value parameters and one scalar
+result; callbacks, borrowed or retained positions, ownership transfer,
+isolated storage, pointers as error results, and native unwinding remain
+unsupported combinations. The result annotation is opt-in, so existing
+ordinary calls keep their source meaning and canonical bytes.
+
+The producer resolves the exact extern and target-qualified `Int` layout from
+the primitive layout table and emits additive `native_error_status.v1` Call
+variant 7. Its tagged return-position row binds the selected result policy,
+target, signed scalar ABI, and explicit zero/nonzero convention. The worker
+cross-validates all of that against the canonical extern signature and target
+before driver discovery or object emission. It returns the original scalar
+value through the established call lowering. Call variants 0–6 retain their
+canonical bytes and meanings.
+
+**Exit gate:** Two independently named C hosts execute zero, positive,
+negative, and both extrema of the resolved signed `Int` width. Source
+negatives reject malformed native-error return annotations, an annotation on a
+parameter, unsupported target or result shape, mixed callback/ownership/
+borrow policies, and calls outside `unsafe`. Canonical mutations reject a
+missing result policy for a forged Call7, truncated or unknown versions,
+wrong target, position, size, alignment, policy, callee, or convention before
+driver discovery and without an output artifact. Same-input Call
+0–6 canonical bytes and adjacent runtime behavior, focused guards, stable
+compiler build, fixed-point bootstrap, exact registry/historical projections,
+all applicable exact-head PR checks, and resolved review threads are required.
+This status cohort alone does not close native error handling or D/E/F.
+
 Use a transient isolated arena for memory handed to native code and destroy it
 on return. *Isolated* is deliberately narrower than *sandboxed*: this bounds
 memory lifetime and spread but cannot prevent native code from accessing process

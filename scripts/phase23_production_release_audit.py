@@ -81,6 +81,7 @@ def surface(path: str, role: str, markers: tuple[str, ...]) -> dict[str, object]
 
 def project_reference_receiver_production_audit(registry: dict, live: dict) -> dict:
     """Project one registered native guard invocation off the closed audit."""
+    live = project_phase26_native_error_status_production_audit(registry, live)
     live = project_phase26_callback_sync_production_audit(registry, live)
     live = project_phase26_retained_lease_production_audit(registry, live)
     live = project_phase26_generic_direct_production_audit(registry, live)
@@ -155,6 +156,30 @@ def project_reference_receiver_production_audit(registry: dict, live: dict) -> d
             "Phase 26 reference receiver production audit successor drifted")
     previous = dict(live)
     previous["repository_invocation_count"] = 150
+    return previous
+
+
+def project_phase26_native_error_status_production_audit(registry: dict, live: dict) -> dict:
+    increment = registry.get("phase26_activation_audit", {}).get(
+        "ffi_native_error_status_increment", {})
+    successor = increment.get("production_audit_successor")
+    if successor is None:
+        return live
+    rows = increment.get("phase22_invocation_successor", {}).get("added_rows", [])
+    path = "scripts/phase26_ffi_native_error_status.sh"
+    require(successor == {
+        "contract_version": "phase26_1d_native_error_status_production_audit_successor_v1",
+        "previous_repository_invocation_count": 252,
+        "current_repository_invocation_count": 254,
+        "added_invocation_path": path,
+        "unchanged_other_fields": True,
+        "partial_extra_or_substituted_audit": "rejected",
+    } and len(rows) == 2 and all(row.get("path") == path and
+                             row.get("selection") == "explicit_cranelift" for row in rows) and
+            live["repository_invocation_count"] == 254,
+            "Phase 26 native-error production audit successor drifted")
+    previous = dict(live)
+    previous["repository_invocation_count"] = 252
     return previous
 
 

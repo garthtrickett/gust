@@ -834,6 +834,9 @@ jobs:
       - name: Phase 26 synchronous C callback
         run: just guard-cranelift-phase26-ffi-callback-sync
 
+      - name: Phase 26 explicit native error status
+        run: just guard-cranelift-phase26-ffi-native-error-status
+
       - name: Phase 26 raw cast provenance
         run: just guard-cranelift-phase26-raw-cast-provenance
 

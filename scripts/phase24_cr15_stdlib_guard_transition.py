@@ -1131,7 +1131,39 @@ def effective_phase22_summary(registry: dict, value: dict) -> dict:
     through_isolated = _phase26_generic_isolated_invocation_successor(registry, through_transfer)
     through_direct = _phase26_generic_direct_invocation_successor(registry, through_isolated)
     through_retained = _phase26_retained_lease_invocation_successor(registry, through_direct)
-    return _phase26_callback_sync_invocation_successor(registry, through_retained)
+    through_callback = _phase26_callback_sync_invocation_successor(registry, through_retained)
+    return _phase26_native_error_status_invocation_successor(registry, through_callback)
+
+
+def _phase26_native_error_status_invocation_successor(registry: dict,
+        previous: dict) -> dict:
+    successor = registry.get("phase26_activation_audit", {}).get(
+        "ffi_native_error_status_increment", {}).get("phase22_invocation_successor")
+    if successor is None:
+        return previous
+    rows = successor.get("added_rows")
+    require(successor.get("contract_version") ==
+            "phase26_1d_native_error_status_phase22_invocation_successor_v1" and
+            successor.get("previous_total") == previous["total"] == 252 and
+            successor.get("current_total") == 254 and
+            isinstance(rows, list) and len(rows) == 2 and
+            all(row.get("path") == "scripts/phase26_ffi_native_error_status.sh" and
+                row.get("selection") == "explicit_cranelift" and
+                row.get("owner") == "cranelift" for row in rows) and
+            successor.get("partial_extra_or_substituted_invocation") == "rejected",
+            "Phase 26 native-error invocation successor drifted")
+    current = copy.deepcopy(previous)
+    current["total"] += len(rows)
+    for row in rows:
+        for key, label in (("selection_counts", "selection"),
+                           ("consumer_class_counts", "consumer_class"),
+                           ("owner_counts", "owner")):
+            group = str(row[label])
+            current[key][group] = current[key].get(group, 0) + 1
+    require(current["total"] == successor["current_total"] and
+            current["unclassified_count"] == 0,
+            "Phase 26 native-error invocation census did not balance")
+    return current
 
 
 def _phase26_callback_sync_invocation_successor(registry: dict,
@@ -4073,6 +4105,34 @@ def normalize_phase23_text_surfaces(
                      match_counts=entry["previous_match_counts"])
                 if value["path"] == entry["path"] else value
                 for value in rows]
+    native_error = registry.get("phase26_activation_audit", {}).get(
+        "ffi_native_error_status_increment", {}).get("phase23_text_surface_successor")
+    if native_error is not None:
+        changed = native_error.get("changed_rows")
+        require(native_error.get("contract_version") ==
+                "phase26_1d_native_error_status_phase23_text_surface_successor_v1" and
+                native_error.get("partial_extra_or_substituted_surface") == "rejected" and
+                native_error.get("added_rows") == [] and isinstance(changed, list) and
+                [entry.get("path") for entry in changed] == [
+                    ".github/workflows/pr-fast.yml",
+                    "compiler/experiments/cranelift/src/full_program.rs",
+                    "compiler/mir_native_backend_full_program_source.gst",
+                    "compiler/typechecker.gst", "justfile",
+                    "scripts/cranelift_test_levels.json", "scripts/phase22_opening.py",
+                    "scripts/phase26_call_return_zero_registration.py"],
+                "Phase 26 native-error text surface successor shape drifted")
+        live = {row["path"]: row for row in rows}
+        for entry in changed:
+            row = live.get(entry["path"])
+            require(row is not None and
+                    row["digest"] == entry["current_digest"] and
+                    row["match_counts"] == entry["current_match_counts"] and
+                    len(entry["previous_digest"]) == 64,
+                    f"Phase 26 native-error text surface drifted: {entry['path']}")
+        by_path = {entry["path"]: entry for entry in changed}
+        rows = [dict(row, digest=by_path[row["path"]]["previous_digest"],
+                     match_counts=by_path[row["path"]]["previous_match_counts"])
+                if row["path"] in by_path else row for row in rows]
     callback = registry.get("phase26_activation_audit", {}).get(
         "ffi_callback_sync_increment", {}).get("phase23_text_surface_successor")
     if callback is not None:

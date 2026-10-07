@@ -24299,6 +24299,14 @@ guard-cranelift-phase26-ffi-callback-sync:
     python3 scripts/phase26_ffi_callback_sync_registration.py
     bash scripts/phase26_ffi_callback_sync.sh
 
+# Phase 26.1D: explicit signed native-error status on a direct C result.
+guard-cranelift-phase26-ffi-native-error-status:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-ffi-native-error-status | grep -F $'guard-cranelift-phase26-ffi-native-error-status\t2\t' >/dev/null
+    python3 scripts/phase26_ffi_native_error_status_registration.py
+    bash scripts/phase26_ffi_native_error_status.sh
+
 # Phase 26.1E1: raw pointer casts cannot acquire safe arena provenance.
 guard-cranelift-phase26-raw-cast-provenance:
     #!/usr/bin/env bash

@@ -48,6 +48,24 @@ def main() -> None:
     previous_sites = registry["phase26_activation_audit"][
         "ffi_transfer_owned_increment"]["filename_site_successor"]["current_sites"]
     live_sites = source_sites()
+    native_error_sites = registry["phase26_activation_audit"].get(
+        "ffi_native_error_status_increment", {}).get("filename_site_successor")
+    if native_error_sites is not None:
+        callback_current = registry["phase26_activation_audit"][
+            "ffi_callback_sync_increment"]["filename_site_successor"]["current_sites"]
+        deltas = native_error_sites.get("line_deltas")
+        require(native_error_sites.get("contract_version") ==
+                "phase26_1d_native_error_status_filename_site_successor_v1" and
+                native_error_sites.get("previous_sites") == callback_current and
+                native_error_sites.get("current_sites") == live_sites and
+                native_error_sites.get("partial_extra_or_substituted_site") == "rejected" and
+                deltas == [22, 22, 22] and
+                all(now["line"] == before["line"] + delta and
+                    {key: val for key, val in now.items() if key != "line"} ==
+                    {key: val for key, val in before.items() if key != "line"}
+                    for before, now, delta in zip(callback_current, live_sites, deltas)),
+                "native-error filename site successor drifted")
+        live_sites = native_error_sites["previous_sites"]
     callback_sites = registry["phase26_activation_audit"].get(
         "ffi_callback_sync_increment", {}).get("filename_site_successor")
     require(callback_sites is None or
