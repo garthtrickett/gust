@@ -307,8 +307,14 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
         os.LogStr("Error: one Take with checked cast chain lost the alias-return candidate window"); os.Exit(1);
     }
     mut nested_take_return := parse_statement("return take (take ptr);", ctx);
-    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[nested_take_return], &env, ctx) != 0 {
-        os.LogStr("Error: nested Take widened the alias-return candidate window"); os.Exit(1);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[nested_take_return], &env, ctx) != 1 {
+        os.LogStr("Error: two Takes lost the alias-return candidate window"); os.Exit(1);
+    }
+    mut third_take_return := parse_statement("return take (take (take ptr));", ctx);
+    mut moved_two_take_return := parse_statement("return move (take (take ptr));", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[third_take_return], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_two_take_return], &env, ctx) != 0 {
+        os.LogStr("Error: third Take or Move widened the two-Take return window"); os.Exit(1);
     }
     mut moved_return := parse_statement("return move ptr;", ctx);
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_return], &env, ctx) != 0 {

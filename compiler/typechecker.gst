@@ -2791,9 +2791,9 @@ func phase26_zero_local_call_argument_cast_is_raw(arg: ast.Expression[ctx], env:
     }
 }
 
-// A safe Return may use the current candidate directly or through exactly one
-// Take and checked raw-pointer casts. One outer Move may enclose that Take;
-// casts still require a validated alias.
+// A safe Return may use the current candidate directly or through at most two
+// Takes and checked raw-pointer casts. One outer Move may enclose exactly one
+// Take; casts still require a validated alias.
 // This syntax probe runs before typechecking; the companion proof below runs
 // only after the ordinary return type and safety checks.
 func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
@@ -2812,7 +2812,7 @@ func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env:
             mut next_idx := empty[Index[ast.Expression[ctx], ctx]];
             if current.tag == 5 {
                 take_count = take_count + 1;
-                if take_count > 1 { return 0; }
+                if take_count > 2 || (outer_move == 1 && take_count > 1) { return 0; }
                 next_idx = current.Take.expr;
             } else {
                 has_cast = 1;
