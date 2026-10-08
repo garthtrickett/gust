@@ -38,6 +38,9 @@ def record(activation: dict) -> dict:
 
 
 def before_outer_move_digest(activation: dict, path: str, live_digest: str) -> str:
+    if activation.get("call_two_take_return_zero_increment"):
+        from phase26_call_two_take_return_registration import before_two_take_digest
+        live_digest = before_two_take_digest(activation, path, live_digest)
     rows = record(activation).get("phase23_text_surface_successor", {}).get(
         "changed_rows", []
     )
@@ -53,6 +56,9 @@ def before_outer_move_digest(activation: dict, path: str, live_digest: str) -> s
 
 
 def before_outer_move_spelling(activation: dict, live: dict) -> dict:
+    if activation.get("call_two_take_return_zero_increment"):
+        from phase26_call_two_take_return_registration import before_two_take_spelling
+        live = before_two_take_spelling(activation, live)
     successor = record(activation).get("spelling_inventory_successor", {})
     previous = activation["ffi_policy_vector_status_increment"][
         "spelling_inventory_successor"]["current_inventory_summary"]
@@ -73,6 +79,9 @@ def before_outer_move_spelling(activation: dict, live: dict) -> dict:
 
 
 def before_outer_move_filename(activation: dict, live: list[dict]) -> list[dict]:
+    if activation.get("call_two_take_return_zero_increment"):
+        from phase26_call_two_take_return_registration import before_two_take_filename
+        live = before_two_take_filename(activation, live)
     successor = record(activation).get("filename_site_successor", {})
     previous = activation["ffi_policy_vector_status_increment"][
         "filename_site_successor"]["current_sites"]
@@ -91,7 +100,11 @@ def before_outer_move_filename(activation: dict, live: list[dict]) -> list[dict]
     return previous
 
 
-def before_outer_move_invocations(activation: dict, live: list[dict]) -> list[dict]:
+def before_outer_move_invocations(
+        activation: dict, live: list[dict], *, projected: bool = False) -> list[dict]:
+    if activation.get("call_two_take_return_zero_increment"):
+        from phase26_call_two_take_return_registration import before_two_take_invocations
+        live = before_two_take_invocations(activation, live, projected=projected)
     successor = record(activation).get("phase22_invocation_successor", {})
     previous = activation["call_take_alias_return_zero_evidence_increment"][
         "phase22_invocation_successor"]["added_rows"][0]
@@ -114,6 +127,11 @@ def before_outer_move_invocations(activation: dict, live: list[dict]) -> list[di
 def main() -> None:
     activation = json.loads((ROOT / "scripts/cranelift_feature_registry.json")
                             .read_text())["phase26_activation_audit"]
+    if activation.get("call_two_take_return_zero_increment"):
+        from phase26_call_two_take_return_registration import (
+            before_two_take_digest, main as two_take_registration_main,
+        )
+        two_take_registration_main()
     row = record(activation)
     expected = {
         "contract_version": "phase26_1e_outer_move_take_return_zero_v1",
@@ -158,10 +176,17 @@ def main() -> None:
                 [EXISTING_RECLASSIFIED, *NEW_FIXTURES]),
             "source fixture missing")
     guard_successor = row["guard_digest_successor"]
+    current_guard_digest = digest(GUARD_PATH)
+    if activation.get("call_two_take_return_zero_increment"):
+        successor = activation["call_two_take_return_zero_increment"][
+            "guard_digest_successor"]
+        require(successor.get("current_digest") == current_guard_digest,
+                "two-Take guard successor drifted")
+        current_guard_digest = successor["previous_digest"]
     require(guard_successor == {
         "path": GUARD_PATH,
         "previous_digest": PREVIOUS_GUARD_DIGEST,
-        "current_digest": digest(GUARD_PATH),
+        "current_digest": current_guard_digest,
         "partial_extra_or_substituted_guard": "rejected",
     },
             "focused guard digest drifted")
@@ -184,7 +209,7 @@ def main() -> None:
     before_outer_move_filename(activation, filename_sites())
     from phase22_opening import scan_invocations
     before_outer_move_invocations(activation, [entry for entry in
-        scan_invocations() if entry["path"] == GUARD_PATH])
+        scan_invocations() if entry["path"] == GUARD_PATH], projected=True)
 
     from phase23_mir_to_c_deprecation_opening import (
         SURFACE_PATTERNS, SELF_EXCLUSIONS, tracked_paths,
@@ -212,9 +237,15 @@ def main() -> None:
     added_text = (ROOT / added_path).read_text()
     added_counts = {name: len(pattern.findall(added_text))
                     for name, pattern in SURFACE_PATTERNS.items()}
+    two_take_rows = {entry["path"]: entry for entry in activation.get(
+        "call_two_take_return_zero_increment", {}).get(
+            "phase23_text_surface_successor", {}).get("changed_rows", [])}
+    if added_path in two_take_rows:
+        added_counts = two_take_rows[added_path]["previous_match_counts"]
     require(added[0] == {
         "path": added_path,
-        "digest": digest(added_path),
+        "digest": before_two_take_digest(activation, added_path,
+                                         digest(added_path)) if two_take_rows else digest(added_path),
         "match_counts": added_counts,
         "classification": "archive_candidate",
         "owner": "cranelift",
@@ -229,7 +260,12 @@ def main() -> None:
         text = (ROOT / path).read_text()
         counts = {name: len(pattern.findall(text))
                   for name, pattern in SURFACE_PATTERNS.items()}
-        require(entry["current_digest"] == digest(path) and
+        if path in two_take_rows:
+            counts = two_take_rows[path]["previous_match_counts"]
+        current_digest = digest(path)
+        if two_take_rows:
+            current_digest = before_two_take_digest(activation, path, current_digest)
+        require(entry["current_digest"] == current_digest and
                 entry["current_match_counts"] == counts and
                 entry["previous_digest"] ==
                     prior_surface[path]["current_digest"] and

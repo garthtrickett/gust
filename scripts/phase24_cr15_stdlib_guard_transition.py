@@ -4117,6 +4117,34 @@ def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    two_take = registry.get("phase26_activation_audit", {}).get(
+        "call_two_take_return_zero_increment", {}).get(
+            "phase23_text_surface_successor")
+    if two_take is not None:
+        changed = two_take.get("changed_rows", [])
+        added = two_take.get("added_rows", [])
+        added_path = "scripts/phase26_call_two_take_return_registration.py"
+        outer_path = "scripts/phase26_call_outer_move_take_return_registration.py"
+        live = {row["path"]: row for row in rows}
+        require(two_take.get("contract_version") ==
+                "phase26_1e_two_take_phase23_text_successor_v1" and
+                two_take.get("partial_extra_or_substituted_surface") == "rejected" and
+                [row.get("path") for row in changed] == [
+                    "compiler/typechecker.gst",
+                    "scripts/phase26_call_return_zero_registration.py",
+                    outer_path] and
+                isinstance(added, list) and len(added) == 1 and
+                added[0].get("path") == added_path and
+                live.get(added_path) == added[0] and
+                all(live.get(row["path"], {}).get("digest") == row["current_digest"] and
+                    live.get(row["path"], {}).get("match_counts") ==
+                    row["current_match_counts"] for row in changed),
+                "Phase 26 two-Take text surface shape drifted")
+        outer_row = changed[2]
+        rows = [dict(row, digest=outer_row["previous_digest"],
+                     match_counts=outer_row["previous_match_counts"])
+                if row["path"] == outer_path else row for row in rows
+                if row["path"] != added_path]
     outer = registry.get("phase26_activation_audit", {}).get(
         "call_outer_move_take_return_zero_increment", {}).get(
             "phase23_text_surface_successor")

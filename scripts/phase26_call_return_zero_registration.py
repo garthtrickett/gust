@@ -207,7 +207,7 @@ def main() -> None:
     from phase22_opening import scan_invocations
     rows = [row for row in scan_invocations() if row["path"] == SCRIPT]
     if activation.get("call_outer_move_take_return_zero_increment"):
-        rows = before_outer_move_invocations(activation, rows)
+        rows = before_outer_move_invocations(activation, rows, projected=True)
     local_record = activation.get("call_local_zero_evidence_increment", {})
     alias_record = activation.get("call_alias_zero_evidence_increment", {})
     chain_record = activation.get("call_chain_zero_evidence_increment", {})
@@ -5185,10 +5185,22 @@ def main() -> None:
         "filename_site_successor", "phase23_text_surface_successor",
     } and all((ROOT / path).is_file() for path in wrapper_fixtures),
             "one-Take safe-return successor fields or fixtures drifted")
+    current_positive_digest = digest(POSITIVE)
+    two_take_positive = activation.get("call_two_take_return_zero_increment", {}).get(
+        "positive_fixture_successor")
+    if two_take_positive is not None:
+        require(two_take_positive == {
+            "path": POSITIVE,
+            "previous_digest": take_return_wrapper_record[
+                "positive_fixture_successor"]["current_digest"],
+            "current_digest": current_positive_digest,
+            "partial_extra_or_substituted_fixture": "rejected",
+        }, "two-Take positive evidence successor drifted")
+        current_positive_digest = two_take_positive["previous_digest"]
     require(take_return_wrapper_record["positive_fixture_successor"] == {
         "path": POSITIVE,
         "previous_digest": take_alias_return_record["positive_fixture_successor"]["current_digest"],
-        "current_digest": digest(POSITIVE),
+        "current_digest": current_positive_digest,
     }, "one-Take safe-return positive evidence drifted")
     previous_inventory_wrapper = take_alias_return_record["spelling_inventory_successor"]["current_inventory_summary"]
     require(take_return_wrapper_record["spelling_inventory_successor"] == {
