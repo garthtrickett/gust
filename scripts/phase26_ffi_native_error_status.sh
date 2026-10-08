@@ -49,10 +49,10 @@ expected = ['0', '17', '-23', '2147483647', '-2147483648',
 assert actual == expected, (actual, expected)
 PY
 echo 'Phase26 native-error status C ABI preserved zero, signed errors, and both Int extrema.'
-
 mkdir -p "$build_root/negatives"
 python3 - "$build_root/negatives" <<'PY'
 from pathlib import Path
+import re
 import sys
 
 base = Path('compiler/phase26_ffi_native_error_status_source.gst').read_text()
@@ -67,8 +67,8 @@ variants = {
         'selector: int #[ffi(native_error)]', 1),
     'mixed_callback': base.replace(declaration,
         'host_status_alpha(selector: Callback[int, int] #[ffi(callback)]) int #[ffi(native_error)]', 1),
-    'mixed_borrow': base.replace(declaration,
-        'host_status_alpha(selector: str #[ffi(borrow_read_call)]) int #[ffi(native_error)]', 1),
+    'unsupported_borrow_shape': re.sub(r'host_status_alpha\([0-4]\)', 'host_status_alpha("x")',
+        base.replace(declaration, 'host_status_alpha(selector: str #[ffi(borrow_read_call)]) int #[ffi(native_error)]', 1)),
     'wrong_result_policy': base.replace('int #[ffi(native_error)]',
         'int #[ffi(raw_untrusted)]', 1),
     'outside_unsafe': base.replace('    unsafe {\n', '', 1).replace('    }\n    return 0;',
@@ -110,13 +110,17 @@ expected = {
     'result_pointer': '[FFINativeErrorStatus]',
     'parameter_annotation': '[FFICallbackNativeErrorUnsupported]',
     'mixed_callback': '[FFINativeErrorStatus]',
-    'mixed_borrow': '[FFINativeErrorStatus]',
+    'unsupported_borrow_shape': 'reason_code=deferred_p13_parameter_argument_target_dependent_abi',
     'wrong_result_policy': '[FFIValuePolicy]',
     'outside_unsafe': "Direct external/native function calls require an explicit 'unsafe' block",
 }
 for name, marker in expected.items():
     actual = (root / f'{name}.stdout').read_text()
-    assert 'TypeError' in actual and marker in actual, (name, actual)
+    assert marker in actual, (name, actual)
+    if name == 'unsupported_borrow_shape':
+        assert 'expected_failure_stage=before_driver_discovery' in actual, (name, actual)
+    else:
+        assert 'TypeError' in actual or 'reason_code=source_or_type_failure' in actual, (name, actual)
 PY
 echo 'Phase26 native-error source negatives rejected before driver discovery.'
 

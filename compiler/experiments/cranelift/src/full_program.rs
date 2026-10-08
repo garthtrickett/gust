@@ -234,9 +234,13 @@ fn validate_ffi_policies(
             "owned_return" => struct_type_name(&function.result_type).is_some(),
             "native_error" => function.result_type == "Int" &&
                 target == "x86_64-unknown-linux-gnu" && object_format == "Elf" &&
-                contract.parameter_policies.iter().all(|policy| policy == "value") &&
-                function.parameters.iter().all(|(_, ty)|
-                    matches!(ty.as_str(), "Int" | "Byte" | "Bool")),
+                contract.parameter_policies.iter().zip(&function.parameters)
+                    .all(|(policy, (_, ty))| match policy.as_str() {
+                        "value" => matches!(ty.as_str(), "Int" | "Byte" | "Bool"),
+                        "borrow_read_call" | "borrow_write_call" |
+                        "borrow_read_isolated_call" | "borrow_write_isolated_call" => true,
+                        _ => false,
+                    }),
             _ => false,
         };
         if !result_valid ||
@@ -633,7 +637,7 @@ fn validate_isolated_call_plans(program: &Program) -> Result<(), Box<dyn Error>>
             "tiny_host_read_repr_c_probe" | "tiny_host_read_packed_probe" |
             "tiny_host_write_repr_c_probe" | "tiny_host_write_packed_probe");
         if has_isolated && !legacy_isolated {
-            if !function.is_extern || contract.result_policy != "value" ||
+            if !function.is_extern || !matches!(contract.result_policy.as_str(), "value" | "native_error") ||
                 !matches!(function.result_type.as_str(), "Void" | "Int" | "Byte" | "Bool") ||
                 function.parameters.len() != contract.parameter_policies.len() {
                 return Err(invalid("isolated FFI extern has an unsupported result or contract"));
@@ -641,6 +645,8 @@ fn validate_isolated_call_plans(program: &Program) -> Result<(), Box<dyn Error>>
             for (index, policy) in contract.parameter_policies.iter().enumerate() {
                 if policy != "borrow_read_isolated_call" &&
                     policy != "borrow_write_isolated_call" &&
+                    !(contract.result_policy == "native_error" &&
+                        matches!(policy.as_str(), "borrow_read_call" | "borrow_write_call")) &&
                     (policy != "value" || !matches!(function.parameters[index].1.as_str(),
                         "Int" | "Byte" | "Bool")) {
                     return Err(invalid("isolated FFI nonselected position is unsupported"));
@@ -668,6 +674,7 @@ fn validate_isolated_call_plans(program: &Program) -> Result<(), Box<dyn Error>>
                 .collect())
             .unwrap_or_default();
         if node.second_integer != 3 {
+            if node.second_integer == 8 { continue; }
             if !isolated.is_empty() && node.second_integer == 0 {
                 return Err(invalid("isolated FFI Call is missing its canonical plan"));
             }
@@ -750,13 +757,16 @@ fn validate_direct_call_plans(program: &Program) -> Result<(), Box<dyn Error>> {
             "tiny_host_read_repr_c_probe" | "tiny_host_read_packed_probe" |
             "tiny_host_write_repr_c_probe" | "tiny_host_write_packed_probe");
         if !legacy {
-            if !function.is_extern || contract.result_policy != "value" ||
+            if !function.is_extern || !matches!(contract.result_policy.as_str(), "value" | "native_error") ||
                 !matches!(function.result_type.as_str(), "Void" | "Int" | "Byte" | "Bool") ||
                 function.parameters.len() != contract.parameter_policies.len() {
                 return Err(invalid("direct FFI extern has an unsupported result or contract"));
             }
             for (index, policy) in contract.parameter_policies.iter().enumerate() {
                 if policy != "borrow_read_call" && policy != "borrow_write_call" &&
+                    !(contract.result_policy == "native_error" &&
+                        matches!(policy.as_str(), "borrow_read_isolated_call" |
+                            "borrow_write_isolated_call")) &&
                     (policy != "value" || !matches!(function.parameters[index].1.as_str(),
                         "Int" | "Byte" | "Bool")) {
                     return Err(invalid("direct FFI nonselected position is unsupported"));
@@ -778,6 +788,7 @@ fn validate_direct_call_plans(program: &Program) -> Result<(), Box<dyn Error>> {
                 .collect())
             .unwrap_or_default();
         if node.second_integer != 4 {
+            if node.second_integer == 8 { continue; }
             if !direct.is_empty() && node.second_integer != 0 {
                 return Err(invalid("direct FFI Call has a mismatched legacy policy"));
             }
@@ -952,6 +963,7 @@ fn validate_native_error_call_plans(program: &Program) -> Result<(), Box<dyn Err
         let declared_status = selected.and_then(|function| function.ffi_contract.as_ref())
             .is_some_and(|contract| contract.result_policy == "native_error");
         if call.second_integer != 7 {
+            if call.second_integer == 8 { continue; }
             if declared_status {
                 return Err(invalid("native-error extern Call lacks its tagged status plan"));
             }
@@ -1002,6 +1014,140 @@ fn validate_native_error_call_plans(program: &Program) -> Result<(), Box<dyn Err
             .map(|body| callback_call_in_unsafe(program, body, call_index, false))
             .sum::<usize>() != 1 {
             return Err(invalid("native-error Call is not uniquely owned by an unsafe scope"));
+        }
+    }
+    Ok(())
+}
+
+// Call8 binds a decided policy for every formal, an independent signed status
+// result, and the complete call-bounded copy schedule. The native lowering
+// consumes this record only after source origins and target layout agree.
+fn validate_policy_vector_status_plans(program: &Program) -> Result<(), Box<dyn Error>> {
+    if !program.nodes.iter().any(|node| node.kind == "Call" && node.second_integer == 8) &&
+        !program.functions.iter().any(|function| function.ffi_contract.as_ref()
+            .is_some_and(|contract| contract.result_policy == "native_error" &&
+                contract.parameter_policies.iter().any(|policy| matches!(policy.as_str(),
+                    "borrow_read_call" | "borrow_write_call" |
+                    "borrow_read_isolated_call" | "borrow_write_isolated_call")))) {
+        return Ok(());
+    }
+    let functions: HashMap<_, _> = program.functions.iter()
+        .map(|function| (function.qualified_name.as_str(), function)).collect();
+    let mut layouts = LayoutEngine::new(program, 8);
+    let status = layouts.layout("Int")?;
+    for (call_index, call) in program.nodes.iter().enumerate() {
+        if call.kind != "Call" { continue; }
+        let selected = functions.get(call.second_text.as_str()).copied();
+        let composed = selected.and_then(|function| function.ffi_contract.as_ref())
+            .is_some_and(|contract| contract.result_policy == "native_error" &&
+                contract.parameter_policies.iter().any(|policy| matches!(policy.as_str(),
+                    "borrow_read_call" | "borrow_write_call" |
+                    "borrow_read_isolated_call" | "borrow_write_isolated_call")));
+        if call.second_integer != 8 {
+            if composed { return Err(invalid("composed native-error Call lacks Call8 plan")); }
+            continue;
+        }
+        let function = selected.ok_or_else(|| invalid("Call8 has no resolved extern"))?;
+        let contract = function.ffi_contract.as_ref()
+            .ok_or_else(|| invalid("Call8 has no verified extern contract"))?;
+        if !composed || !function.is_extern ||
+            program.target_triple != "x86_64-unknown-linux-gnu" ||
+            program.object_format != "Elf" || function.result_type != "Int" ||
+            call.ty != "Int" || call.text != function.source_name ||
+            contract.parameter_policies.len() != function.parameters.len() ||
+            call.children.len() != function.parameters.len() + 1 ||
+            !matches!(abi_shape("Int", false, types::I64, &mut layouts)?,
+                AbiShape::Scalar(types::I32)) {
+            return Err(invalid("Call8 extern, result, positions, or target ABI disagree"));
+        }
+        let callee = &program.nodes[call.children[0]];
+        if callee.kind != "LocalRead" || callee.text != call.text {
+            return Err(invalid("Call8 qualified callee identity disagrees"));
+        }
+        let plan = call.isolated_call_plan.as_ref()
+            .ok_or_else(|| invalid("Call8 has no versioned policy vector"))?;
+        if plan.target_triple != program.target_triple || plan.retained.is_some() ||
+            plan.positions.len() != function.parameters.len() + 1 {
+            return Err(invalid("Call8 target or policy vector count disagrees"));
+        }
+        let mut names = HashSet::new();
+        let mut schedule = String::new();
+        let has_isolated = contract.parameter_policies.iter().any(|policy|
+            matches!(policy.as_str(), "borrow_read_isolated_call" | "borrow_write_isolated_call"));
+        if has_isolated { schedule.push_str("arena_new"); }
+        for (index, policy) in contract.parameter_policies.iter().enumerate() {
+            let position = &plan.positions[index];
+            let ty = &function.parameters[index].1;
+            let argument = &program.nodes[call.children[index + 1]];
+            if position.index != index || position.direction != *policy || argument.ty != *ty {
+                return Err(invalid("Call8 policy order, argument type, or position disagrees"));
+            }
+            if policy == "value" {
+                if !matches!(ty.as_str(), "Int" | "Byte" | "Bool") ||
+                    position.aggregate_type != *ty || position.provenance != "scalar_value" {
+                    return Err(invalid("Call8 scalar position is unsupported"));
+                }
+                let scalar = layouts.layout(ty)?;
+                if position.size != scalar.size || position.align != scalar.align ||
+                    !matches!(abi_shape(ty, false, types::I64, &mut layouts)?, AbiShape::Scalar(_)) {
+                    return Err(invalid("Call8 scalar target layout disagrees"));
+                }
+                continue;
+            }
+            if !matches!(policy.as_str(), "borrow_read_call" | "borrow_write_call" |
+                "borrow_read_isolated_call" | "borrow_write_isolated_call") {
+                return Err(invalid("Call8 policy mix is unsupported"));
+            }
+            let (aggregate, layout) = isolated_position_layout(program, &mut layouts, ty, policy)?;
+            let isolated = policy.ends_with("_isolated_call");
+            let write = policy.starts_with("borrow_write");
+            let expected_origin = if isolated && write { "untrusted_raw_copyback" }
+                else { "direct_local_address" };
+            if position.aggregate_type != aggregate || position.size != layout.size ||
+                position.align != layout.align || position.provenance != expected_origin {
+                return Err(invalid("Call8 target layout or provenance disagrees"));
+            }
+            let mut address = argument;
+            if write {
+                if address.kind != "ExplicitCast" || address.children.len() != 1 ||
+                    address.text != *ty {
+                    return Err(invalid("Call8 write lacks exact raw cast"));
+                }
+                address = &program.nodes[address.children[0]];
+            }
+            if address.kind != "AddressOf" || address.children.len() != 1 {
+                return Err(invalid("Call8 borrow lacks original local address"));
+            }
+            let local = &program.nodes[address.children[0]];
+            if local.kind != "LocalRead" || local.ty != aggregate ||
+                !names.insert(local.text.as_str()) {
+                return Err(invalid("Call8 borrow has indirect or aliased origin"));
+            }
+            if isolated { schedule.push_str(&format!(";copyin.{index}")); }
+        }
+        schedule.push_str(";call");
+        for (index, policy) in contract.parameter_policies.iter().enumerate() {
+            if policy == "borrow_write_isolated_call" {
+                schedule.push_str(&format!(";copyback.{index}"));
+            }
+        }
+        if has_isolated { schedule.push_str(";free"); }
+        schedule.push_str(";continue");
+        if plan.cleanup != schedule {
+            return Err(invalid("Call8 copyback or arena cleanup schedule disagrees"));
+        }
+        let result = &plan.positions[function.parameters.len()];
+        if result.index != function.parameters.len() || result.direction != "native_error" ||
+            result.aggregate_type != "Int" || result.size != status.size ||
+            result.align != status.align ||
+            result.provenance != "zero_success_nonzero_failure.signed.v1" {
+            return Err(invalid("Call8 signed status result disagrees"));
+        }
+        if program.functions.iter().filter(|candidate| !candidate.is_extern)
+            .filter_map(|candidate| candidate.body_node)
+            .map(|body| callback_call_in_unsafe(program, body, call_index, false))
+            .sum::<usize>() != 1 {
+            return Err(invalid("Call8 is not uniquely owned by an unsafe scope"));
         }
     }
     Ok(())
@@ -1888,13 +2034,14 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             return Err(invalid("full-program node source range is inverted"));
         }
         let second_integer = parse_i32(values[6], "node second integer")?;
-        let isolated_call_plan = if kind == "Call" && matches!(second_integer, 3 | 4 | 5 | 6 | 7) {
+        let isolated_call_plan = if kind == "Call" && matches!(second_integer, 3 | 4 | 5 | 6 | 7 | 8) {
             let expected_tag = match second_integer {
                 3 => "isolated_call.v1",
                 4 => "direct_call.v1",
                 5 => "retained_lease.v1",
                 6 => "callback_call.v1",
-                _ => "native_error_status.v1",
+                7 => "native_error_status.v1",
+                _ => "ffi_policy_vector_status.v1",
             };
             if values.get(child_end) != Some(&expected_tag) ||
                 values.len() < child_end + 4 {
@@ -1904,10 +2051,11 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             let cleanup = decode_hex(values[child_end + 2], "Call isolation cleanup")?;
             let count = parse_usize(values[child_end + 3], "Call isolation position count")?;
             let position_width = if second_integer == 5 { 9 } else { 6 };
-            if count == 0 || (second_integer != 7 && count > child_count.saturating_sub(1)) ||
+            if count == 0 || (!matches!(second_integer, 7 | 8) && count > child_count.saturating_sub(1)) ||
                 (second_integer == 5 && count != 1) ||
                 (second_integer == 6 && count != 1) ||
                 (second_integer == 7 && count != 1) ||
+                (second_integer == 8 && count != child_count) ||
                 count > (values.len() - child_end - 4) / position_width ||
                 values.len() != child_end + 4 + count * position_width {
                 return Err(invalid("full-program Call isolation position count disagrees with row"));
@@ -2091,6 +2239,7 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
     validate_retained_lease_plans(&program)?;
     validate_callback_call_plans(&program)?;
     validate_native_error_call_plans(&program)?;
+    validate_policy_vector_status_plans(&program)?;
     Ok(program)
 }
 
@@ -3658,6 +3807,9 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         if node.second_integer == 3 {
             return self.lower_generic_isolated_call(builder, node, &callable, &arguments);
         }
+        if node.second_integer == 8 {
+            return self.lower_policy_vector_status_call(builder, node, &callable, &arguments);
+        }
         if matches!(node.second_integer, 4 | 5 | 6 | 7) {
             if node.isolated_call_plan.is_none() ||
                 arguments.len() != callable.parameters.len() ||
@@ -3739,6 +3891,75 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
                 .ok_or_else(|| invalid("isolated FFI scalar native result is missing"))?)),
             _ => Err(invalid("isolated FFI native result ABI is unsupported")),
         }
+    }
+
+    fn lower_policy_vector_status_call(
+        &mut self,
+        builder: &mut FunctionBuilder<'_>,
+        node: &Node,
+        callable: &Callable,
+        arguments: &[(usize, String)],
+    ) -> Result<Evaluated, Box<dyn Error>> {
+        let plan = node.isolated_call_plan.as_ref()
+            .ok_or_else(|| invalid("Call8 lost its validated policy vector"))?;
+        if arguments.len() != callable.parameters.len() ||
+            !matches!(callable.abi.result, AbiShape::Scalar(types::I32)) ||
+            callable.abi.parameters.iter().any(|shape| !matches!(shape, AbiShape::Scalar(_))) {
+            return Err(invalid("Call8 has unsupported native ABI"));
+        }
+        let mut values = Vec::with_capacity(arguments.len());
+        for (index, (child, argument_type)) in arguments.iter().enumerate() {
+            let evaluated = self.lower_expression(builder, *child, Some(argument_type))?;
+            let value = self.scalar(builder, evaluated, argument_type)?;
+            let AbiShape::Scalar(expected) = callable.abi.parameters[index] else {
+                return Err(invalid("Call8 argument lacks scalar native ABI"));
+            };
+            let actual = builder.func.dfg.value_type(value);
+            values.push(if actual == expected { value }
+                else if actual.bits() < expected.bits() { builder.ins().uextend(expected, value) }
+                else { builder.ins().ireduce(expected, value) });
+        }
+        let isolated: Vec<_> = plan.positions.iter().take(arguments.len())
+            .filter(|position| position.direction.ends_with("_isolated_call"))
+            .collect();
+        if isolated.is_empty() {
+            let native_ref = self.module.declare_func_in_func(callable.id, builder.func);
+            let native_call = builder.ins().call(native_ref, &values);
+            return Ok(Evaluated::Scalar(builder.inst_results(native_call)[0]));
+        }
+        let arena_eval = self.lower_arena_new(builder)?;
+        let arena = self.arena_address(builder, arena_eval, "Arena")?;
+        let allocate = self.runtime.get("os_ArenaAlloc")
+            .ok_or_else(|| invalid("Call8 arena allocator missing"))?;
+        let allocate_ref = self.module.declare_func_in_func(allocate.id, builder.func);
+        let mut copy_backs = Vec::new();
+        for position in isolated {
+            let source = values[position.index];
+            let size = builder.ins().iconst(types::I64, i64::from(position.size));
+            let offset_call = builder.ins().call(allocate_ref, &[arena, size]);
+            let offset = builder.inst_results(offset_call)[0];
+            let base = builder.ins().load(self.pointer_type(), MemFlags::trusted(), arena, 0);
+            let offset = builder.ins().uextend(self.pointer_type(), offset);
+            let copy = builder.ins().iadd(base, offset);
+            self.copy_place(builder, Place { address: copy }, Place { address: source },
+                position.size)?;
+            values[position.index] = copy;
+            if position.direction == "borrow_write_isolated_call" {
+                copy_backs.push((source, copy, position.size));
+            }
+        }
+        let native_ref = self.module.declare_func_in_func(callable.id, builder.func);
+        let native_call = builder.ins().call(native_ref, &values);
+        let result = builder.inst_results(native_call)[0];
+        for (destination, copy, size) in copy_backs {
+            self.copy_place(builder, Place { address: destination },
+                Place { address: copy }, size)?;
+        }
+        let free = self.runtime.get("os_Arena_Free")
+            .ok_or_else(|| invalid("Call8 arena destructor missing"))?;
+        let free_ref = self.module.declare_func_in_func(free.id, builder.func);
+        builder.ins().call(free_ref, &[arena]);
+        Ok(Evaluated::Scalar(result))
     }
 
     fn lower_isolated_read_call(

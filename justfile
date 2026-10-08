@@ -24307,6 +24307,14 @@ guard-cranelift-phase26-ffi-native-error-status:
     python3 scripts/phase26_ffi_native_error_status_registration.py
     bash scripts/phase26_ffi_native_error_status.sh
 
+# Phase 26.1D: ordered direct and isolated borrow policies with signed status.
+guard-cranelift-phase26-ffi-policy-vector-status:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-ffi-policy-vector-status | grep -F $'guard-cranelift-phase26-ffi-policy-vector-status\t2\t' >/dev/null
+    python3 scripts/phase26_ffi_policy_vector_status_registration.py
+    bash scripts/phase26_ffi_policy_vector_status.sh
+
 # Phase 26.1E1: raw pointer casts cannot acquire safe arena provenance.
 guard-cranelift-phase26-raw-cast-provenance:
     #!/usr/bin/env bash

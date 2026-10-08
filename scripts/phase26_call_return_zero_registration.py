@@ -28,6 +28,24 @@ def require(value: bool, message: str) -> None:
 
 
 def before_callback_filename_sites(activation: dict, live_sites: list[dict]) -> list[dict]:
+    vector_sites = activation.get("ffi_policy_vector_status_increment", {}).get(
+        "filename_site_successor")
+    if vector_sites is not None:
+        native_current = activation["prefix_resolution_memory_prerequisite"][
+            "filename_site_successor"]["current_sites"]
+        require(vector_sites.get("contract_version") ==
+                "phase26_1d_policy_vector_status_filename_site_successor_v1" and
+                vector_sites.get("previous_sites") == native_current and
+                vector_sites.get("current_sites") == live_sites and
+                vector_sites.get("partial_extra_or_substituted_site") == "rejected" and
+                vector_sites.get("line_deltas") == [7, 7, 7] and
+                len(native_current) == len(live_sites) == 3 and
+                all(now["line"] == before["line"] + 7 and
+                    {key: value for key, value in now.items() if key != "line"} ==
+                    {key: value for key, value in before.items() if key != "line"}
+                    for before, now in zip(native_current, live_sites)),
+                "policy-vector filename site successor drifted")
+        live_sites = vector_sites["previous_sites"]
     live_sites = before_prefix_memory_filename(activation, live_sites)
     native_sites = activation.get("ffi_native_error_status_increment", {}).get(
         "filename_site_successor")
@@ -3745,8 +3763,7 @@ def main() -> None:
         "previous_digest": "b6914b0be235ea1caa99ee0bb08d4d5eea256d38fcfe143cb876edb992fb48d6",
         "current_digest": post_take_plain_record["positive_fixture_successor"]["previous_digest"],
     }, "consecutive plain-before-Take-cast positive evidence drifted")
-    live_inventory = before_prefix_memory_spelling(
-        activation, manifest_summary(source_sites()))
+    live_inventory = manifest_summary(source_sites())
     direct_inventory = activation.get("ffi_generic_direct_call_increment", {}).get(
         "spelling_inventory_successor")
     generic_inventory = activation.get("ffi_generic_isolated_call_increment", {}).get(
@@ -3763,6 +3780,19 @@ def main() -> None:
         "spelling_inventory_successor")
     native_inventory = activation.get("ffi_native_error_status_increment", {}).get(
         "spelling_inventory_successor")
+    vector_inventory = activation.get("ffi_policy_vector_status_increment", {}).get(
+        "spelling_inventory_successor")
+    if vector_inventory:
+        require(native_inventory is not None and
+                vector_inventory.get("contract_version") ==
+                "phase26_1d_policy_vector_status_spelling_inventory_successor_v1" and
+                vector_inventory.get("current_inventory_summary") == live_inventory and
+                vector_inventory.get("previous_inventory_summary") ==
+                activation["prefix_resolution_memory_prerequisite"]["spelling_inventory_successor"]["current_inventory_summary"] and
+                vector_inventory.get("partial_extra_or_substituted_inventory") ==
+                "rejected", "policy-vector spelling inventory drifted")
+        live_inventory = vector_inventory["previous_inventory_summary"]
+    live_inventory = before_prefix_memory_spelling(activation, live_inventory)
     if native_inventory:
         require(callback_inventory is not None and
                 native_inventory.get("contract_version") ==

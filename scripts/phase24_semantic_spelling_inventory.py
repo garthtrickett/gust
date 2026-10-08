@@ -518,6 +518,36 @@ def validate() -> tuple[dict, list[dict], dict]:
         "ffi_retained_lease_increment", {}).get("spelling_inventory_successor")
     native_error_successor = registry.get("phase26_activation_audit", {}).get(
         "ffi_native_error_status_increment", {}).get("spelling_inventory_successor")
+    policy_vector_successor = registry.get("phase26_activation_audit", {}).get(
+        "ffi_policy_vector_status_increment", {}).get("spelling_inventory_successor")
+    callback_successor = registry.get("phase26_activation_audit", {}).get(
+        "ffi_callback_sync_increment", {}).get("spelling_inventory_successor")
+    live_summary = summary
+    if policy_vector_successor is not None:
+        previous = registry["phase26_activation_audit"]["prefix_resolution_memory_prerequisite"]["spelling_inventory_successor"]["current_inventory_summary"]
+        counts = dict(previous["classification_counts"])
+        counts["semantic_or_intrinsic_recognition"] += 3
+        require(policy_vector_successor.get("contract_version") ==
+                "phase26_1d_policy_vector_status_spelling_inventory_successor_v1" and
+                policy_vector_successor.get("previous_inventory_summary") == previous and
+                policy_vector_successor.get("current_inventory_summary") == live_summary and
+                policy_vector_successor.get("changed_source_paths") == [
+                    "compiler/experiments/cranelift/src/full_program.rs",
+                    "compiler/mir_native_backend_full_program_source.gst",
+                    "compiler/mir_native_backend_parameter_argument_source.gst",
+                    "compiler/phase26_ffi_policy_vector_status_source.gst",
+                    "compiler/typechecker.gst"] and
+                policy_vector_successor.get("partial_extra_or_substituted_inventory") ==
+                "rejected" and
+                live_summary["source_file_count"] == previous["source_file_count"] + 1 and
+                live_summary["site_count"] == previous["site_count"] + 3 and
+                live_summary["semantic_site_count"] ==
+                previous["semantic_site_count"] + 3 and
+                live_summary["classification_counts"] == counts and
+                live_summary["unknown_site_count"] == 0,
+                "Phase 26 policy-vector spelling inventory drifted")
+        summary = previous
+        live_summary = previous
     prefix_memory = registry.get("phase26_activation_audit", {})
     callback_successor = registry.get("phase26_activation_audit", {}).get(
         "ffi_callback_sync_increment", {}).get("spelling_inventory_successor")

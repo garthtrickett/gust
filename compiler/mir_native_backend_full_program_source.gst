@@ -525,6 +525,170 @@ func mir_native_full_program_generic_direct_plan(sig: typechecker.FunctionSignat
     return std.Clone(ctx, std.Concat(plan, position_rows));
 }
 
+// Call 8 carries every formal position and the independent signed status
+// result. Its schedule is decided with the source policy, before native code
+// sees either the pointer origins or the transient arena.
+func mir_native_full_program_policy_vector_status_plan(sig: typechecker.FunctionSignature[ctx], env: &typechecker.TypeEnvironment[ctx], ctx: &Arena) str {
+    mut table := primitive_layout.mir_primitive_layout_table_for_target(os.NativeTargetTriple(ctx), ctx);
+    mut int_layout := layout.mir_layout_of(table, "type:gust:i32", table.target.target_id, ctx);
+    mut byte_layout := layout.mir_layout_of(table, "type:gust:bool", table.target.target_id, ctx);
+    mut target := table.target;
+    if int_layout.found == 0 || byte_layout.found == 0 ||
+       std.str_eq(target.target_triple, "x86_64-unknown-linux-gnu") == 0 ||
+       std.str_eq(os.NativeObjectFormat(ctx), "Elf") == 0 ||
+       target.pointer_size != 8 || target.i32_alignment != 4 ||
+       sig.is_extern != 1 || sig.ffi_contract_verified != 1 ||
+       sig.return_type.tag != 0 ||
+       std.str_eq(sig.ffi_return_policy, "native_error") == 0 ||
+       sig.ffi_param_policies == empty[Index[std.Vector[str, ctx], ctx]] ||
+       std.str_eq(int_layout.layout.signedness, "signed") == 0 ||
+       int_layout.layout.bit_width != 32 { return ""; }
+    mut policies: std.Vector[str, ctx] := ctx[sig.ffi_param_policies];
+    if len(policies) != len(sig.params) { return ""; }
+    mut borrowed_count := 0;
+    mut isolated_count := 0;
+    mut schedule := "";
+    mut index := 0;
+    while index < len(policies) {
+        if std.str_eq(policies[index], "borrow_read_call") == 1 ||
+           std.str_eq(policies[index], "borrow_write_call") == 1 {
+            borrowed_count = borrowed_count + 1;
+        } else if std.str_eq(policies[index], "borrow_read_isolated_call") == 1 ||
+                  std.str_eq(policies[index], "borrow_write_isolated_call") == 1 {
+            borrowed_count = borrowed_count + 1;
+            isolated_count = isolated_count + 1;
+            schedule = std.Concat(schedule, ";copyin.");
+            schedule = std.Concat(schedule, std.FormatInt(index));
+        } else if std.str_eq(policies[index], "value") == 0 {
+            return "";
+        }
+        index = index + 1;
+    }
+    if borrowed_count == 0 { return ""; }
+    if isolated_count > 0 { schedule = std.Concat("arena_new", schedule); }
+    schedule = std.Concat(schedule, ";call");
+    index = 0;
+    while index < len(policies) {
+        if std.str_eq(policies[index], "borrow_write_isolated_call") == 1 {
+            schedule = std.Concat(schedule, ";copyback.");
+            schedule = std.Concat(schedule, std.FormatInt(index));
+        }
+        index = index + 1;
+    }
+    if isolated_count > 0 { schedule = std.Concat(schedule, ";free"); }
+    schedule = std.Concat(schedule, ";continue");
+    mut plan := "|ffi_policy_vector_status.v1|";
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex(target.target_triple, ctx));
+    plan = std.Concat(plan, "|");
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex(schedule, ctx));
+    plan = std.Concat(plan, "|");
+    plan = mir_native_full_program_append_int(plan, len(policies) + 1, ctx);
+    index = 0;
+    while index < len(policies) {
+        mut policy := policies[index];
+        mut type_identity := "";
+        mut size := 0;
+        mut alignment := 0;
+        mut provenance := "";
+        mut resolved := typechecker.env_resolve_type(env, sig.params[index], ctx);
+        unsafe {
+            if std.str_eq(policy, "value") == 1 {
+                if resolved.tag != 0 && resolved.tag != 1 && resolved.tag != 2 { return ""; }
+                type_identity = mir_native_full_program_type_identity(resolved, env, ctx);
+                size = byte_layout.layout.size;
+                alignment = byte_layout.layout.alignment;
+                if resolved.tag == 0 {
+                    size = int_layout.layout.size;
+                    alignment = int_layout.layout.alignment;
+                }
+                provenance = "scalar_value";
+            } else {
+                mut read := std.str_eq(policy, "borrow_read_call") == 1 ||
+                    std.str_eq(policy, "borrow_read_isolated_call") == 1;
+                mut write := std.str_eq(policy, "borrow_write_call") == 1 ||
+                    std.str_eq(policy, "borrow_write_isolated_call") == 1;
+                if (read == false && write == false) ||
+                   (read && resolved.tag != 11) || (write && resolved.tag != 9) { return ""; }
+                mut inner := resolved;
+                if read {
+                    if resolved.Reference.brand != empty[Index[str, ctx]] { return ""; }
+                    inner = typechecker.env_resolve_type(env, ctx[resolved.Reference.inner], ctx);
+                } else {
+                    inner = typechecker.env_resolve_type(env, ctx[resolved.RawPointer.inner], ctx);
+                }
+                if inner.tag != 8 || inner.Struct.brand != empty[Index[str, ctx]] { return ""; }
+                mut name := inner.Struct.struct_name;
+                guard struct_layout := (*env).struct_registry.Get(name) else { return ""; };
+                guard repr := (*env).struct_layout_repr_c.Get(name) else { return ""; };
+                guard packed := (*env).struct_layout_packed.Get(name) else { return ""; };
+                guard abi := (*env).struct_layout_abi.Get(name) else { return ""; };
+                if repr != 1 || (packed != 0 && packed != 1) ||
+                   std.str_eq(abi, "C") == 0 { return ""; }
+                mut fields := typechecker.typechecker_get_sorted_keys_type(&struct_layout.fields, ctx);
+                if len(fields) == 0 || len(fields) > 32 { return ""; }
+                size = 0;
+                alignment = 1;
+                mut field_index := 0;
+                while field_index < len(fields) {
+                    mut key := std.Concat(name, ".");
+                    key = std.Concat(key, fields[field_index]);
+                    guard order := (*env).struct_field_declaration_orders.Get(key) else { return ""; };
+                    if order != field_index { return ""; }
+                    guard field_type := struct_layout.fields.Get(fields[field_index]) else { return ""; };
+                    mut field := typechecker.env_resolve_type(env, field_type, ctx);
+                    mut field_size := byte_layout.layout.size;
+                    mut field_align := byte_layout.layout.alignment;
+                    if field.tag == 0 {
+                        field_size = int_layout.layout.size;
+                        field_align = int_layout.layout.alignment;
+                    } else if field.tag != 1 && field.tag != 2 { return ""; }
+                    if packed == 1 { field_align = 1; }
+                    mut remainder := size - (size / field_align) * field_align;
+                    if remainder != 0 { size = size + field_align - remainder; }
+                    size = size + field_size;
+                    if field_align > alignment { alignment = field_align; }
+                    field_index = field_index + 1;
+                }
+                mut tail := size - (size / alignment) * alignment;
+                if tail != 0 { size = size + alignment - tail; }
+                if size <= 0 || size > 4096 ||
+                   alignment > target.max_aggregate_alignment { return ""; }
+                type_identity = mir_native_full_program_type_identity(inner, env, ctx);
+                provenance = "direct_local_address";
+                if std.str_eq(policy, "borrow_write_isolated_call") == 1 {
+                    provenance = "untrusted_raw_copyback";
+                }
+            }
+        }
+        plan = std.Concat(plan, "|");
+        plan = mir_native_full_program_append_int(plan, index, ctx);
+        plan = std.Concat(plan, "|");
+        plan = std.Concat(plan, mir_native_full_program_utf8_hex(policy, ctx));
+        plan = std.Concat(plan, "|");
+        plan = std.Concat(plan, mir_native_full_program_utf8_hex(type_identity, ctx));
+        plan = std.Concat(plan, "|");
+        plan = mir_native_full_program_append_int(plan, size, ctx);
+        plan = std.Concat(plan, "|");
+        plan = mir_native_full_program_append_int(plan, alignment, ctx);
+        plan = std.Concat(plan, "|");
+        plan = std.Concat(plan, mir_native_full_program_utf8_hex(provenance, ctx));
+        index = index + 1;
+    }
+    plan = std.Concat(plan, "|");
+    plan = mir_native_full_program_append_int(plan, len(policies), ctx);
+    plan = std.Concat(plan, "|");
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex("native_error", ctx));
+    plan = std.Concat(plan, "|");
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex("Int", ctx));
+    plan = std.Concat(plan, "|");
+    plan = mir_native_full_program_append_int(plan, int_layout.layout.size, ctx);
+    plan = std.Concat(plan, "|");
+    plan = mir_native_full_program_append_int(plan, int_layout.layout.alignment, ctx);
+    plan = std.Concat(plan, "|");
+    plan = std.Concat(plan, mir_native_full_program_utf8_hex("zero_success_nonzero_failure.signed.v1", ctx));
+    return std.Clone(ctx, plan);
+}
+
 // The Call 5 suffix carries the typechecker's exact owner acquisition and
 // terminal destructor decision. The native worker validates these against
 // executable canonical nodes; it never infers retention from the host name.
@@ -615,7 +779,23 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                     }
                     mut generic_isolated := 0;
                     mut generic_direct := 0;
-                    if isolated_count > 0 {
+                    mut composed_status := 0;
+                    if (isolated_count > 0 || direct_count > 0) &&
+                       std.str_eq(statement.FunctionDecl.ffi_return_policy, "native_error") == 1 {
+                        mut key := mir_native_full_program_qualified_name(
+                            module_prefixes[module_index], statement.FunctionDecl.name, ctx
+                        );
+                        guard signature := (*env).function_registry.Get(key) else {
+                            return "Native FFI policy vector lacks a verified signature";
+                        };
+                        if len(mir_native_full_program_policy_vector_status_plan(signature, env, ctx)) == 0 {
+                            return "Native FFI policy vector lacks a supported target C layout";
+                        }
+                        composed_status = 1;
+                        generic_isolated = 1;
+                        generic_direct = 1;
+                    }
+                    if isolated_count > 0 && composed_status == 0 {
                         mut host_symbol := statement.FunctionDecl.extern_symbol_name;
                         if len(host_symbol) == 0 { host_symbol = statement.FunctionDecl.name; }
                         mut legacy_isolated := len(parameters) == 1 &&
@@ -636,7 +816,7 @@ func mir_native_full_program_ffi_layout_diagnostic(programs: std.Vector[ast.Prog
                             generic_isolated = 1;
                         }
                     }
-                    if direct_count > 0 {
+                    if direct_count > 0 && composed_status == 0 {
                         mut host_symbol := statement.FunctionDecl.extern_symbol_name;
                         if len(host_symbol) == 0 { host_symbol = statement.FunctionDecl.name; }
                         mut legacy_direct := len(parameters) == 1 &&
@@ -1284,7 +1464,32 @@ func mir_native_full_program_flatten_expression(expression_index: Index[ast.Expr
             mut isolated_signature := (*env).function_registry.Get(node.second_text_operand);
             if isolated_signature.Ok {
                 mut selected_isolated_signature := isolated_signature.Val;
+                mut selected_borrows := 0;
                 if selected_isolated_signature.is_extern == 1 &&
+                   selected_isolated_signature.ffi_contract_verified == 1 &&
+                   std.str_eq(selected_isolated_signature.ffi_return_policy, "native_error") == 1 {
+                    mut selected_policies: std.Vector[str, ctx] :=
+                        ctx[selected_isolated_signature.ffi_param_policies];
+                    mut selected_index := 0;
+                    while selected_index < len(selected_policies) {
+                        if std.str_eq(selected_policies[selected_index], "borrow_read_call") == 1 ||
+                           std.str_eq(selected_policies[selected_index], "borrow_write_call") == 1 ||
+                           std.str_eq(selected_policies[selected_index], "borrow_read_isolated_call") == 1 ||
+                           std.str_eq(selected_policies[selected_index], "borrow_write_isolated_call") == 1 {
+                            selected_borrows = selected_borrows + 1;
+                        }
+                        selected_index = selected_index + 1;
+                    }
+                }
+                if selected_isolated_signature.is_extern == 1 &&
+                   selected_isolated_signature.ffi_contract_verified == 1 &&
+                   selected_borrows > 0 &&
+                   std.str_eq(selected_isolated_signature.ffi_return_policy, "native_error") == 1 {
+                    node.second_integer_operand = 8;
+                    if len(mir_native_full_program_policy_vector_status_plan(
+                        selected_isolated_signature, env, ctx
+                    )) == 0 { return 0 - 1; }
+                } else if selected_isolated_signature.is_extern == 1 &&
                    selected_isolated_signature.ffi_contract_verified == 1 &&
                    selected_isolated_signature.requires_sandbox_arena == 1 {
                     mut isolated_policies: std.Vector[str, ctx] :=
@@ -1481,7 +1686,7 @@ func mir_native_full_program_flatten_expression(expression_index: Index[ast.Expr
                     read_index = read_index + 1;
                 }
             }
-            if node.second_integer_operand == 4 {
+            if node.second_integer_operand == 4 || node.second_integer_operand == 8 {
                 guard direct_signature := (*env).function_registry.Get(node.second_text_operand) else {
                     return 0 - 1;
                 };
@@ -1492,9 +1697,13 @@ func mir_native_full_program_flatten_expression(expression_index: Index[ast.Expr
                 while direct_index < len(arguments) {
                     mut policy := direct_policies[direct_index];
                     if std.str_eq(policy, "borrow_read_call") == 1 ||
-                       std.str_eq(policy, "borrow_write_call") == 1 {
+                       std.str_eq(policy, "borrow_write_call") == 1 ||
+                       (node.second_integer_operand == 8 &&
+                        (std.str_eq(policy, "borrow_read_isolated_call") == 1 ||
+                         std.str_eq(policy, "borrow_write_isolated_call") == 1)) {
                         mut argument := arguments[direct_index];
-                        if std.str_eq(policy, "borrow_write_call") == 1 {
+                        if std.str_eq(policy, "borrow_write_call") == 1 ||
+                           std.str_eq(policy, "borrow_write_isolated_call") == 1 {
                             if argument.tag != 9 { return 0 - 1; }
                             argument = ctx[argument.AsCast.left];
                         }
@@ -2146,7 +2355,8 @@ func mir_native_full_program_node_isolated_plan(node: MirNativeFullProgramNode[c
     }
     if std.str_eq(node.kind, "Call") == 0 ||
        (node.second_integer_operand != 3 && node.second_integer_operand != 4 &&
-        node.second_integer_operand != 6 && node.second_integer_operand != 7) {
+        node.second_integer_operand != 6 && node.second_integer_operand != 7 &&
+        node.second_integer_operand != 8) {
         return "";
     }
     mut index := mir_native_full_program_function_index(
@@ -2696,7 +2906,25 @@ func mir_native_full_program_analyze_signatures(programs: std.Vector[ast.Program
                         }
                         function.ffi_param_policies = ffi_signature.ffi_param_policies;
                         function.ffi_return_policy = std.Clone(ctx, ffi_signature.ffi_return_policy);
-                        if ffi_signature.requires_sandbox_arena == 1 {
+                        mut status_policies: std.Vector[str, ctx] := ctx[ffi_signature.ffi_param_policies];
+                        mut ffi_borrows := 0;
+                        mut ffi_index := 0;
+                        while ffi_index < len(status_policies) {
+                            if std.str_eq(status_policies[ffi_index], "borrow_read_call") == 1 ||
+                               std.str_eq(status_policies[ffi_index], "borrow_write_call") == 1 ||
+                               std.str_eq(status_policies[ffi_index], "borrow_read_isolated_call") == 1 ||
+                               std.str_eq(status_policies[ffi_index], "borrow_write_isolated_call") == 1 {
+                                ffi_borrows = ffi_borrows + 1;
+                            }
+                            ffi_index = ffi_index + 1;
+                        }
+                        if ffi_borrows > 0 &&
+                           std.str_eq(ffi_signature.ffi_return_policy, "native_error") == 1 {
+                            native_error_plan_count = native_error_plan_count + 1;
+                            function.isolated_call_plan = mir_native_full_program_policy_vector_status_plan(
+                                ffi_signature, env, ctx
+                            );
+                        } else if ffi_signature.requires_sandbox_arena == 1 {
                             function.isolated_call_plan = mir_native_full_program_generic_isolated_plan(
                                 ffi_signature, env, ctx
                             );
@@ -3256,7 +3484,8 @@ func mir_native_full_program_serialize_model(model: MirNativeFullProgramModel[ct
         mut isolated_plan := mir_native_full_program_node_isolated_plan(node, functions, ctx);
         if std.str_eq(node.kind, "Call") == 1 &&
            (node.second_integer_operand == 3 || node.second_integer_operand == 4 ||
-            node.second_integer_operand == 5 || node.second_integer_operand == 7) &&
+            node.second_integer_operand == 5 || node.second_integer_operand == 7 ||
+            node.second_integer_operand == 8) &&
            len(isolated_plan) == 0 {
             return std.Clone(ctx, "");
         }
