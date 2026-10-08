@@ -47,6 +47,9 @@ def record(activation: dict) -> dict:
 
 
 def before_new_digest(activation: dict, path: str, live_digest: str) -> str:
+    if activation.get("call_finite_take_return_zero_increment"):
+        from phase26_call_finite_take_return_registration import before_new_digest as before_finite_digest
+        live_digest = before_finite_digest(activation, path, live_digest)
     rows = record(activation).get("phase23_text_surface_successor", {}).get("changed_rows", [])
     matches = [row for row in rows if row.get("path") == path]
     require(len(matches) <= 1, f"duplicate text path: {path}")
@@ -60,6 +63,9 @@ def before_new_digest(activation: dict, path: str, live_digest: str) -> str:
 
 
 def before_new_spelling(activation: dict, live: dict) -> dict:
+    if activation.get("call_finite_take_return_zero_increment"):
+        from phase26_call_finite_take_return_registration import before_new_spelling as before_finite_spelling
+        live = before_finite_spelling(activation, live)
     successor = record(activation).get("spelling_inventory_successor", {})
     previous = activation[OLD]["spelling_inventory_successor"]["current_inventory_summary"]
     require(successor == {
@@ -78,6 +84,9 @@ def before_new_spelling(activation: dict, live: dict) -> dict:
 
 
 def before_new_filename(activation: dict, live: list[dict]) -> list[dict]:
+    if activation.get("call_finite_take_return_zero_increment"):
+        from phase26_call_finite_take_return_registration import before_new_filename as before_finite_filename
+        live = before_finite_filename(activation, live)
     successor = record(activation).get("filename_site_successor", {})
     previous = activation[OLD]["filename_site_successor"]["current_sites"]
     require(successor == {
@@ -97,6 +106,9 @@ def before_new_filename(activation: dict, live: list[dict]) -> list[dict]:
 
 def before_new_invocations(activation: dict, live: list[dict], *,
                            projected: bool = False) -> list[dict]:
+    if activation.get("call_finite_take_return_zero_increment"):
+        from phase26_call_finite_take_return_registration import before_new_invocations as before_finite_invocations
+        live = before_finite_invocations(activation, live, projected=projected)
     successor = record(activation).get("phase22_invocation_successor", {})
     previous = activation[OLD]["phase22_invocation_successor"]["current_row"]
     frozen = activation["call_outer_move_take_return_zero_increment"][
@@ -121,6 +133,9 @@ def before_new_invocations(activation: dict, live: list[dict], *,
 def main() -> None:
     activation = json.loads((ROOT / "scripts/cranelift_feature_registry.json")
                             .read_text())["phase26_activation_audit"]
+    if activation.get("call_finite_take_return_zero_increment"):
+        from phase26_call_finite_take_return_registration import main as finite_main
+        finite_main()
     row = record(activation)
     expected = {
         "contract_version": "phase26_1e_innermost_move_two_take_return_zero_v1",
@@ -158,16 +173,25 @@ def main() -> None:
             set(row) == set(expected) | successors, "contract or field set drifted")
     require(all((ROOT / p).is_file() for p in [RECLASSIFIED, *NEW_FIXTURES]),
             "source fixture missing")
+    live_guard_digest = digest(GUARD_PATH)
+    live_positive_digest = digest(POSITIVE)
+    if activation.get("call_finite_take_return_zero_increment"):
+        finite = activation["call_finite_take_return_zero_increment"]
+        require(finite["guard_digest_successor"]["current_digest"] == live_guard_digest and
+                finite["positive_fixture_successor"]["current_digest"] == live_positive_digest,
+                "finite Take-only live evidence drifted")
+        live_guard_digest = finite["guard_digest_successor"]["previous_digest"]
+        live_positive_digest = finite["positive_fixture_successor"]["previous_digest"]
     require(row["guard_digest_successor"] == {
         "path": GUARD_PATH,
         "previous_digest": activation[OLD]["guard_digest_successor"]["current_digest"],
-        "current_digest": digest(GUARD_PATH),
+        "current_digest": live_guard_digest,
         "partial_extra_or_substituted_guard": "rejected",
     }, "guard digest drifted")
     require(row["positive_fixture_successor"] == {
         "path": POSITIVE,
         "previous_digest": activation[OLD]["positive_fixture_successor"]["current_digest"],
-        "current_digest": digest(POSITIVE),
+        "current_digest": live_positive_digest,
         "partial_extra_or_substituted_fixture": "rejected",
     }, "positive matcher evidence drifted")
     guard = (ROOT / GUARD_PATH).read_text()
@@ -217,20 +241,42 @@ def main() -> None:
         path = e["path"]
         counts = {name: len(pattern.findall((ROOT / path).read_text()))
                   for name, pattern in SURFACE_PATTERNS.items()}
+        current_digest = digest(path)
+        if activation.get("call_finite_take_return_zero_increment"):
+            from phase26_call_finite_take_return_registration import before_new_digest as before_finite_digest
+            finite_rows = activation["call_finite_take_return_zero_increment"][
+                "phase23_text_surface_successor"]["changed_rows"]
+            finite = [item for item in finite_rows if item["path"] == path]
+            require(len(finite) <= 1, f"duplicate finite text path: {path}")
+            current_digest = before_finite_digest(activation, path, current_digest)
+            if finite:
+                require(counts == finite[0]["current_match_counts"],
+                        f"finite text count drifted: {path}")
+                counts = finite[0]["previous_match_counts"]
         prior = prior_rows.get(path)
         require(prior is not None or path == prior_added["path"],
                 f"unproven predecessor: {path}")
         require(e == {"path": path,
                       "previous_digest": prior["current_digest"] if prior else prior_added["digest"],
-                      "current_digest": digest(path),
+                      "current_digest": current_digest,
                       "previous_match_counts": prior["current_match_counts"] if prior else prior_added["match_counts"],
                       "current_match_counts": counts},
                 f"text surface drifted: {path}")
     path = added[0]["path"]
     counts = {name: len(pattern.findall((ROOT / path).read_text()))
               for name, pattern in SURFACE_PATTERNS.items()}
+    current_digest = digest(path)
+    if activation.get("call_finite_take_return_zero_increment"):
+        from phase26_call_finite_take_return_registration import before_new_digest as before_finite_digest
+        finite_rows = activation["call_finite_take_return_zero_increment"][
+            "phase23_text_surface_successor"]["changed_rows"]
+        finite = [item for item in finite_rows if item["path"] == path]
+        require(len(finite) == 1 and counts == finite[0]["current_match_counts"],
+                "finite added text count drifted")
+        current_digest = before_finite_digest(activation, path, current_digest)
+        counts = finite[0]["previous_match_counts"]
     require(added[0] == {
-        "path": path, "digest": digest(path), "match_counts": counts,
+        "path": path, "digest": current_digest, "match_counts": counts,
         "classification": "archive_candidate", "owner": "cranelift",
         "current_route": "tracked_MIR_to_C_or_generated_C_surface",
         "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",

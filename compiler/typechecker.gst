@@ -2791,10 +2791,10 @@ func phase26_zero_local_call_argument_cast_is_raw(arg: ast.Expression[ctx], env:
     }
 }
 
-// A safe Return may use the current candidate directly or through at most two
-// Takes and checked raw-pointer casts. One outer Move may enclose one or two
-// Takes. One inner Move is accepted between the Takes or beneath both Takes,
-// without an outer Move. Casts still require a validated alias.
+// A safe Return may use the current candidate directly or through a finite
+// Take-only chain and checked raw-pointer casts. Move-bearing forms retain at
+// most two Takes: one outer Move may enclose one or two Takes, or one inner Move
+// may sit between or beneath two Takes. Casts still require a validated alias.
 // This syntax probe runs before typechecking; the companion proof below runs
 // only after the ordinary return type and safety checks.
 func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
@@ -2814,7 +2814,7 @@ func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env:
             mut next_idx := empty[Index[ast.Expression[ctx], ctx]];
             if current.tag == 5 {
                 take_count = take_count + 1;
-                if take_count > 2 { return 0; }
+                if take_count > 2 && (outer_move == 1 || inner_move == 1) { return 0; }
                 next_idx = current.Take.expr;
             } else if current.tag == 9 {
                 has_cast = 1;
@@ -2849,6 +2849,7 @@ func phase26_zero_local_return_cast_is_raw(expr: ast.Expression[ctx], env: *Type
             mut next_idx := empty[Index[ast.Expression[ctx], ctx]];
             if current.tag == 5 {
                 take_count = take_count + 1;
+                if take_count > 2 && (outer_move == 1 || inner_move == 1) { return 0; }
                 next_idx = current.Take.expr;
             }
             if current.tag == 9 {
@@ -2867,7 +2868,8 @@ func phase26_zero_local_return_cast_is_raw(expr: ast.Expression[ctx], env: *Type
             if next_idx == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
             current = ctx[next_idx];
         }
-        if current.tag == 0 && (inner_move == 0 || take_count == 2) { return 1; }
+        if current.tag == 0 && (outer_move == 0 || (take_count >= 1 && take_count <= 2)) &&
+           (inner_move == 0 || take_count == 2) { return 1; }
         return 0;
     }
 }
