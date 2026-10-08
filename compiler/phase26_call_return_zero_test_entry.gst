@@ -311,6 +311,17 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
         os.LogStr("Error: two Takes lost the alias-return candidate window"); os.Exit(1);
     }
     mut third_take_return := parse_statement("return take (take (take ptr));", ctx);
+    mut fourth_take_return := parse_statement("return take (take (take (take ptr)));", ctx);
+    mut third_take_outer_cast := parse_statement("return (take (take (take ptr))) as *int;", ctx);
+    mut third_take_inner_cast := parse_statement("return take (take (take (ptr as *int)));", ctx);
+    mut fourth_take_interleaved_cast := parse_statement("return take ((take ((take ((take ptr) as *int)) as *int)) as *int);", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[third_take_return], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[fourth_take_return], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[third_take_outer_cast], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[third_take_inner_cast], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[fourth_take_interleaved_cast], &env, ctx) != 1 {
+        os.LogStr("Error: finite Take-only return chain lost its candidate window"); os.Exit(1);
+    }
     mut moved_two_take_return := parse_statement("return move (take (take ptr));", ctx);
     mut moved_two_take_outer_cast := parse_statement("return move (((take (take ptr)) as *int) as *int);", ctx);
     mut moved_two_take_inner_cast := parse_statement("return move (take (take ((ptr as *int) as *int)));", ctx);
@@ -332,6 +343,8 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
         os.LogStr("Error: one inner Move between two Takes lost its bounded return window"); os.Exit(1);
     }
     mut moved_third_take_return := parse_statement("return move (take (take (take ptr)));", ctx);
+    mut third_take_before_move := parse_statement("return take (take (take (move ptr)));", ctx);
+    mut third_take_before_move_cast := parse_statement("return take (take ((take (move ptr)) as *int));", ctx);
     mut inner_move_return := parse_statement("return move (take (move (take ptr)));", ctx);
     mut second_move_return := parse_statement("return move (move (take (take ptr)));", ctx);
     mut cast_outside_move_return := parse_statement("return (move (take (take ptr))) as *int;", ctx);
@@ -349,14 +362,15 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
     }
     mut inner_move_one_take := parse_statement("return take (move ptr);", ctx);
     mut inner_move_third_take := parse_statement("return take (move (take (take ptr)));", ctx);
-    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[third_take_return], &env, ctx) != 0 ||
-       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_third_take_return], &env, ctx) != 0 ||
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_third_take_return], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[third_take_before_move], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[third_take_before_move_cast], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[inner_move_return], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[second_move_return], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_outside_move_return], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[inner_move_one_take], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[inner_move_third_take], &env, ctx) != 0 {
-        os.LogStr("Error: third Take, nested Move or cast outside Move widened the return window"); os.Exit(1);
+        os.LogStr("Error: Move-bearing third Take, nested Move or cast outside Move widened the return window"); os.Exit(1);
     }
     mut moved_return := parse_statement("return move ptr;", ctx);
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_return], &env, ctx) != 0 {

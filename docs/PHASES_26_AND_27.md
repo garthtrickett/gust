@@ -1281,6 +1281,21 @@ interprocedural flow, and aggregate transport remain excluded. Take and
 resource bookkeeping, MIR, ABI, layout, runtime, oracle, and fallback behavior
 are unchanged. D/E/F and Phase 26.1 remain open.
 
+**26.1E finite Take-only safe-return chain (Cranelift ownership assigned
+2026-10-08).** The current immediate same-block concrete nullary `*T`
+candidate may cross a finite chain of three or more syntactic `Take`
+expressions at a declared-safe return. Finite individually checked
+RawPointer-to-RawPointer casts may appear around or between the Takes, with
+the existing validated-alias prerequisite. Ordinary type, safety, prior
+escape, and Take/move/resource checks retain priority; the existing four-state
+finalizer rejects proven Zero and MayZero before native driver discovery.
+Nonzero, genuine Unknown, unsafe, gaps, overwrites, scalar casts, and broader
+alias or interprocedural flow retain their classifications. Every Move-bearing
+form remains limited to at most two Takes and its previously accepted Move
+position; a third Take before or after a Move cannot promote the candidate.
+This changes no MIR, ABI, layout, native runtime, stdlib, oracle, or fallback
+meaning. Broad D/E/F and Phase 26.1 remain open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
