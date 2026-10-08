@@ -4,6 +4,7 @@
 import json
 from pathlib import Path
 from phase26_ffi_native_error_status_registration import before_prefix_memory_digest
+from phase26_call_outer_move_take_return_registration import before_outer_move_digest
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -18,6 +19,7 @@ def require(condition: bool, message: str) -> None:
 def before_generic_isolated_digest(activation: dict, path: str,
                                    live_digest: str) -> str:
     """Reverse this exact successor for earlier frozen guard identities."""
+    live_digest = before_outer_move_digest(activation, path, live_digest)
     policy_rows = activation.get("ffi_policy_vector_status_increment", {}).get(
         "phase23_text_surface_successor", {}).get("changed_rows", [])
     policy = [row for row in policy_rows if row.get("path") == path]

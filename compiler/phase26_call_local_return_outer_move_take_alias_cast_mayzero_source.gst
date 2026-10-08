@@ -1,0 +1,5 @@
+unsafe func make_mayzero() *int { return (256 as byte) as *int; }
+func safe_return() *int {
+    unsafe { mut ptr := make_mayzero(); mut alias := ptr; return move (take ((alias as *int) as *int)); }
+}
+func main() int { return 0; }

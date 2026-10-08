@@ -47,7 +47,9 @@ def main() -> None:
     from phase24_filename_behavior_characterization import source_sites
     previous_sites = registry["phase26_activation_audit"][
         "ffi_transfer_owned_increment"]["filename_site_successor"]["current_sites"]
-    live_sites = source_sites()
+    from phase26_call_outer_move_take_return_registration import before_outer_move_filename
+    live_sites = before_outer_move_filename(
+        registry["phase26_activation_audit"], source_sites())
     vector_sites = registry["phase26_activation_audit"].get(
         "ffi_policy_vector_status_increment", {}).get("filename_site_successor")
     if vector_sites is not None:

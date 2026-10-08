@@ -3858,6 +3858,11 @@ def relay_site_anchor(registry: dict) -> dict:
 def normalize_phase22_invocations(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Project the exact post relay onto the closed Phase 22 site identity."""
+    if registry.get("phase26_activation_audit", {}).get(
+            "call_outer_move_take_return_zero_increment"):
+        from phase26_call_outer_move_take_return_registration import before_outer_move_invocations
+        rows = before_outer_move_invocations(
+            registry["phase26_activation_audit"], rows)
     rows = drop_class_appended_invocations(registry, rows)
     value = authority(registry)
     state = live_state(registry)
@@ -4112,6 +4117,33 @@ def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    outer = registry.get("phase26_activation_audit", {}).get(
+        "call_outer_move_take_return_zero_increment", {}).get(
+            "phase23_text_surface_successor")
+    if outer is not None:
+        from phase26_call_outer_move_take_return_registration import before_outer_move_digest
+        changed = outer.get("changed_rows", [])
+        by_path = {entry["path"]: entry for entry in changed}
+        added = outer.get("added_rows", [])
+        added_path = "scripts/phase26_call_outer_move_take_return_registration.py"
+        live = {row["path"]: row for row in rows}
+        require(outer.get("contract_version") ==
+                "phase26_1e_outer_move_take_phase23_text_successor_v1" and
+                isinstance(added, list) and len(added) == 1 and
+                added[0].get("path") == added_path and
+                live.get(added_path) == added[0] and
+                outer.get("partial_extra_or_substituted_surface") == "rejected" and
+                len(by_path) == len(changed) and
+                sorted(by_path) == ["compiler/typechecker.gst",
+                                    "scripts/phase26_call_return_zero_registration.py"] and
+                all(any(row["path"] == path for row in rows) for path in by_path),
+                "Phase 26 outer-Move text surface shape drifted")
+        rows = [dict(row,
+                     digest=before_outer_move_digest(
+                         registry["phase26_activation_audit"], row["path"], row["digest"]),
+                     match_counts=by_path[row["path"]]["previous_match_counts"])
+                if row["path"] in by_path else row for row in rows
+                if row["path"] != added_path]
     policy_vector = registry.get("phase26_activation_audit", {}).get(
         "ffi_policy_vector_status_increment", {}).get("phase23_text_surface_successor")
     if policy_vector is not None:

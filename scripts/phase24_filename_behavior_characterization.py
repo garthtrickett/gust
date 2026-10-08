@@ -175,6 +175,11 @@ def validate_static(value: dict) -> None:
     require(value.get("review_view") == REVIEW.relative_to(ROOT).as_posix(),
             "review view drifted")
     live_sites = source_sites()
+    if registry.get("phase26_activation_audit", {}).get(
+            "call_outer_move_take_return_zero_increment"):
+        from phase26_call_outer_move_take_return_registration import before_outer_move_filename
+        live_sites = before_outer_move_filename(
+            registry["phase26_activation_audit"], live_sites)
     ffi_sites = registry.get("phase26_activation_audit", {}).get(
         "ffi_position_policy_increment", {}).get("filename_site_successor")
     if ffi_sites is None:
