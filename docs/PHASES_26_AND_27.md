@@ -1249,6 +1249,22 @@ alias or interprocedural flow, and aggregate transport remain excluded. Take
 and resource bookkeeping, MIR, ABI, layout, runtime, oracle, and fallback
 behavior are unchanged. D/E/F and Phase 26.1 remain open.
 
+**26.1E one inner Move between two Takes at a safe return (Cranelift ownership
+assigned 2026-10-08).** After ordinary return typechecking and safety checks,
+the immediate same-block concrete nullary-call `*T` candidate may cross one
+syntactic `Move` between exactly two `Take` expressions in a declared-safe
+return. Finite individually checked RawPointer-to-RawPointer casts may occur
+around or between these operators under the existing validated-alias
+prerequisite. The existing four-state Zero/MayZero finalizer rejects the safe
+escape before native driver discovery. All earlier accepted forms, candidate
+invalidation, type and ephemeral-escape diagnostic priority, and nonzero,
+Unknown, and unsafe controls retain their meaning. A third Take, an outer or
+second Move in this form, Move under both Takes, a lone Take with Move, gaps,
+overwrites, unsupported casts, broader alias or interprocedural flow, and
+aggregate transport remain excluded. Take and resource bookkeeping, MIR,
+ABI, layout, runtime, oracle, and fallback behavior are unchanged. D/E/F and
+Phase 26.1 remain open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
