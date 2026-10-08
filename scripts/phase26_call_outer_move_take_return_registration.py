@@ -37,10 +37,12 @@ def record(activation: dict) -> dict:
     return activation.get(KEY, {})
 
 
-def before_outer_move_digest(activation: dict, path: str, live_digest: str) -> str:
+def before_outer_move_digest(activation: dict, path: str, live_digest: str, *,
+                             new_projected: bool = False) -> str:
     if activation.get("call_two_take_return_zero_increment"):
         from phase26_call_two_take_return_registration import before_two_take_digest
-        live_digest = before_two_take_digest(activation, path, live_digest)
+        live_digest = before_two_take_digest(
+            activation, path, live_digest, new_projected=new_projected)
     rows = record(activation).get("phase23_text_surface_successor", {}).get(
         "changed_rows", []
     )
@@ -177,6 +179,10 @@ def main() -> None:
             "source fixture missing")
     guard_successor = row["guard_digest_successor"]
     current_guard_digest = digest(GUARD_PATH)
+    if activation.get("call_outer_move_two_take_return_zero_increment"):
+        current_guard_digest = activation[
+            "call_outer_move_two_take_return_zero_increment"][
+                "guard_digest_successor"]["previous_digest"]
     if activation.get("call_two_take_return_zero_increment"):
         successor = activation["call_two_take_return_zero_increment"][
             "guard_digest_successor"]
@@ -199,8 +205,12 @@ def main() -> None:
                 "outer_move_double_move", "outer_move_wrong_type",
                 "GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER",
                 "test ! -e \"$marker\"")) and
-            "outer_move == 1 && take_count != 1" in compiler and
-            "Matcher already proved one outer Move and one Take" in compiler,
+            ("outer_move == 1 && take_count != 1" in compiler or
+             activation.get("call_outer_move_two_take_return_zero_increment") and
+             "outer_move == 1 && take_count == 0" in compiler) and
+            ("Matcher already proved one outer Move and one Take" in compiler or
+             activation.get("call_outer_move_two_take_return_zero_increment") and
+             "Matcher proved one outer Move and one or two Takes" in compiler),
             "native or fail-closed evidence weakened")
 
     from phase24_semantic_spelling_inventory import source_sites, manifest_summary

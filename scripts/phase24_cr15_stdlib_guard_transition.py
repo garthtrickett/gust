@@ -4117,6 +4117,31 @@ def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    outer_two = registry.get("phase26_activation_audit", {}).get(
+        "call_outer_move_two_take_return_zero_increment", {}).get(
+            "phase23_text_surface_successor")
+    if outer_two is not None:
+        from phase26_call_outer_move_two_take_return_registration import TEXT_PATHS
+        changed = outer_two.get("changed_rows", [])
+        added = outer_two.get("added_rows", [])
+        added_path = "scripts/phase26_call_outer_move_two_take_return_registration.py"
+        live = {row["path"]: row for row in rows}
+        require(outer_two.get("contract_version") ==
+                "phase26_1e_outer_move_two_take_phase23_text_successor_v1" and
+                outer_two.get("partial_extra_or_substituted_surface") == "rejected" and
+                [row.get("path") for row in changed] == TEXT_PATHS and
+                isinstance(added, list) and len(added) == 1 and
+                added[0].get("path") == added_path and
+                live.get(added_path) == added[0] and
+                all(live.get(row["path"], {}).get("digest") == row["current_digest"] and
+                    live.get(row["path"], {}).get("match_counts") ==
+                    row["current_match_counts"] for row in changed),
+                "Phase 26 outer-Move/two-Take text surface shape drifted")
+        by_path = {row["path"]: row for row in changed}
+        rows = [dict(row, digest=by_path[row["path"]]["previous_digest"],
+                     match_counts=by_path[row["path"]]["previous_match_counts"])
+                if row["path"] in by_path else row for row in rows
+                if row["path"] != added_path]
     two_take = registry.get("phase26_activation_audit", {}).get(
         "call_two_take_return_zero_increment", {}).get(
             "phase23_text_surface_successor")
@@ -4168,7 +4193,8 @@ def normalize_phase23_text_surfaces(
                 "Phase 26 outer-Move text surface shape drifted")
         rows = [dict(row,
                      digest=before_outer_move_digest(
-                         registry["phase26_activation_audit"], row["path"], row["digest"]),
+                         registry["phase26_activation_audit"], row["path"], row["digest"],
+                         new_projected=outer_two is not None),
                      match_counts=by_path[row["path"]]["previous_match_counts"])
                 if row["path"] in by_path else row for row in rows
                 if row["path"] != added_path]

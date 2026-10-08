@@ -312,9 +312,25 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
     }
     mut third_take_return := parse_statement("return take (take (take ptr));", ctx);
     mut moved_two_take_return := parse_statement("return move (take (take ptr));", ctx);
+    mut moved_two_take_outer_cast := parse_statement("return move (((take (take ptr)) as *int) as *int);", ctx);
+    mut moved_two_take_inner_cast := parse_statement("return move (take (take ((ptr as *int) as *int)));", ctx);
+    mut moved_two_take_interleaved_cast := parse_statement("return move (take (((take ptr) as *int) as *int));", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_two_take_return], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_two_take_outer_cast], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_two_take_inner_cast], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_two_take_interleaved_cast], &env, ctx) != 1 {
+        os.LogStr("Error: outer Move over two Takes lost its bounded return window"); os.Exit(1);
+    }
+    mut moved_third_take_return := parse_statement("return move (take (take (take ptr)));", ctx);
+    mut inner_move_return := parse_statement("return move (take (move (take ptr)));", ctx);
+    mut second_move_return := parse_statement("return move (move (take (take ptr)));", ctx);
+    mut cast_outside_move_return := parse_statement("return (move (take (take ptr))) as *int;", ctx);
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[third_take_return], &env, ctx) != 0 ||
-       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_two_take_return], &env, ctx) != 0 {
-        os.LogStr("Error: third Take or Move widened the two-Take return window"); os.Exit(1);
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_third_take_return], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[inner_move_return], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[second_move_return], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_outside_move_return], &env, ctx) != 0 {
+        os.LogStr("Error: third Take, nested Move or cast outside Move widened the return window"); os.Exit(1);
     }
     mut moved_return := parse_statement("return move ptr;", ctx);
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_return], &env, ctx) != 0 {
@@ -322,8 +338,10 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
     }
     env.zero_local_call_alias_hops = 0;
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_take_return], &env, ctx) != 1 ||
-       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[take_cast_return], &env, ctx) != 0 {
-        os.LogStr("Error: direct Take or casted direct Take lost its bounded window"); os.Exit(1);
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_two_take_return], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[take_cast_return], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_two_take_outer_cast], &env, ctx) != 0 {
+        os.LogStr("Error: direct Take or outer Move two-Take alias prerequisite drifted"); os.Exit(1);
     }
     env.zero_local_call_take_alias_terminal = 0;
     env.zero_local_call_alias_hops = 0;

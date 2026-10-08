@@ -2792,8 +2792,8 @@ func phase26_zero_local_call_argument_cast_is_raw(arg: ast.Expression[ctx], env:
 }
 
 // A safe Return may use the current candidate directly or through at most two
-// Takes and checked raw-pointer casts. One outer Move may enclose exactly one
-// Take; casts still require a validated alias.
+// Takes and checked raw-pointer casts. One outer Move may enclose one or two
+// Takes; casts still require a validated alias.
 // This syntax probe runs before typechecking; the companion proof below runs
 // only after the ordinary return type and safety checks.
 func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
@@ -2812,7 +2812,7 @@ func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env:
             mut next_idx := empty[Index[ast.Expression[ctx], ctx]];
             if current.tag == 5 {
                 take_count = take_count + 1;
-                if take_count > 2 || (outer_move == 1 && take_count > 1) { return 0; }
+                if take_count > 2 { return 0; }
                 next_idx = current.Take.expr;
             } else {
                 has_cast = 1;
@@ -2821,7 +2821,7 @@ func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env:
             if next_idx == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
             current = ctx[next_idx];
         }
-        if current.tag != 0 || (outer_move == 1 && take_count != 1) ||
+        if current.tag != 0 || (outer_move == 1 && take_count == 0) ||
            (has_cast == 1 && (*env).zero_local_call_alias_hops == 0) { return 0; }
         return std.str_eq(current.Identifier.name, (*env).zero_local_call_name);
     }
@@ -2830,7 +2830,7 @@ func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env:
 func phase26_zero_local_return_cast_is_raw(expr: ast.Expression[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         mut current := expr;
-        if current.tag == 4 { // Matcher already proved one outer Move and one Take.
+        if current.tag == 4 { // Matcher proved one outer Move and one or two Takes.
             if current.Move.expr == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
             current = ctx[current.Move.expr];
         }
