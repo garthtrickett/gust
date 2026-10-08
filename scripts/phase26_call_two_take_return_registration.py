@@ -36,7 +36,19 @@ def record(activation: dict) -> dict:
     return activation.get(KEY, {})
 
 
-def before_two_take_digest(activation: dict, path: str, live_digest: str) -> str:
+def before_two_take_digest(activation: dict, path: str, live_digest: str, *,
+                           new_projected: bool = False) -> str:
+    if activation.get("call_outer_move_two_take_return_zero_increment"):
+        if new_projected:
+            rows = activation["call_outer_move_two_take_return_zero_increment"][
+                "phase23_text_surface_successor"]["changed_rows"]
+            selected = [row for row in rows if row["path"] == path]
+            require(len(selected) <= 1 and
+                    (not selected or live_digest == selected[0]["previous_digest"]),
+                    f"projected text digest drifted: {path}")
+        else:
+            from phase26_call_outer_move_two_take_return_registration import before_new_digest
+            live_digest = before_new_digest(activation, path, live_digest)
     rows = record(activation).get("phase23_text_surface_successor", {}).get(
         "changed_rows", [])
     matches = [row for row in rows if row.get("path") == path]
@@ -51,6 +63,9 @@ def before_two_take_digest(activation: dict, path: str, live_digest: str) -> str
 
 
 def before_two_take_spelling(activation: dict, live: dict) -> dict:
+    if activation.get("call_outer_move_two_take_return_zero_increment"):
+        from phase26_call_outer_move_two_take_return_registration import before_new_spelling
+        live = before_new_spelling(activation, live)
     successor = record(activation).get("spelling_inventory_successor", {})
     previous = activation["call_outer_move_take_return_zero_increment"][
         "spelling_inventory_successor"]["current_inventory_summary"]
@@ -72,6 +87,9 @@ def before_two_take_spelling(activation: dict, live: dict) -> dict:
 
 
 def before_two_take_filename(activation: dict, live: list[dict]) -> list[dict]:
+    if activation.get("call_outer_move_two_take_return_zero_increment"):
+        from phase26_call_outer_move_two_take_return_registration import before_new_filename
+        live = before_new_filename(activation, live)
     successor = record(activation).get("filename_site_successor", {})
     previous = activation["call_outer_move_take_return_zero_increment"][
         "filename_site_successor"]["current_sites"]
@@ -92,6 +110,9 @@ def before_two_take_filename(activation: dict, live: list[dict]) -> list[dict]:
 
 def before_two_take_invocations(
         activation: dict, live: list[dict], *, projected: bool = False) -> list[dict]:
+    if activation.get("call_outer_move_two_take_return_zero_increment"):
+        from phase26_call_outer_move_two_take_return_registration import before_new_invocations
+        live = before_new_invocations(activation, live, projected=projected)
     successor = record(activation).get("phase22_invocation_successor", {})
     outer_successor = activation["call_outer_move_take_return_zero_increment"][
         "phase22_invocation_successor"]
@@ -117,6 +138,9 @@ def before_two_take_invocations(
 def main() -> None:
     activation = json.loads((ROOT / "scripts/cranelift_feature_registry.json")
                             .read_text())["phase26_activation_audit"]
+    if activation.get("call_outer_move_two_take_return_zero_increment"):
+        from phase26_call_outer_move_two_take_return_registration import main as new_main
+        new_main()
     row = record(activation)
     expected = {
         "contract_version": "phase26_1e_two_take_return_zero_v1",
@@ -162,16 +186,23 @@ def main() -> None:
             "source fixture missing")
     previous_guard = activation["call_outer_move_take_return_zero_increment"][
         "guard_digest_successor"]["current_digest"]
+    current_guard = digest(GUARD_PATH)
+    new_successor = activation.get("call_outer_move_two_take_return_zero_increment")
+    if new_successor:
+        current_guard = new_successor["guard_digest_successor"]["previous_digest"]
     require(row["guard_digest_successor"] == {
         "path": GUARD_PATH,
         "previous_digest": previous_guard,
-        "current_digest": digest(GUARD_PATH),
+        "current_digest": current_guard,
         "partial_extra_or_substituted_guard": "rejected",
     }, "focused guard digest drifted")
+    current_positive = digest("compiler/phase26_call_return_zero_test_entry.gst")
+    if new_successor:
+        current_positive = new_successor["positive_fixture_successor"]["previous_digest"]
     require(row["positive_fixture_successor"] == {
         "path": "compiler/phase26_call_return_zero_test_entry.gst",
         "previous_digest": "6b92d337f7017c9afec72819a77e3ba8e5e8381e38d8ad1379e6fff6e2a3194a",
-        "current_digest": digest("compiler/phase26_call_return_zero_test_entry.gst"),
+        "current_digest": current_positive,
         "partial_extra_or_substituted_fixture": "rejected",
     }, "positive matcher evidence drifted")
     guard = (ROOT / GUARD_PATH).read_text()
@@ -182,7 +213,9 @@ def main() -> None:
                 "two_take_third_take", "two_take_move",
                 "GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER",
                 "test ! -e \"$marker\"")) and
-            "take_count > 2 || (outer_move == 1 && take_count > 1)" in compiler,
+            ("take_count > 2 || (outer_move == 1 && take_count > 1)" in compiler or
+             activation.get("call_outer_move_two_take_return_zero_increment") and
+             "take_count > 2" in compiler),
             "native or fail-closed evidence weakened")
     from phase24_semantic_spelling_inventory import source_sites, manifest_summary
     before_two_take_spelling(activation, manifest_summary(source_sites()))
@@ -230,6 +263,13 @@ def main() -> None:
         text = (ROOT / path).read_text()
         counts = {name: len(pattern.findall(text))
                   for name, pattern in SURFACE_PATTERNS.items()}
+        current_digest = digest(path)
+        if new_successor:
+            successor_rows = {e["path"]: e for e in new_successor[
+                "phase23_text_surface_successor"]["changed_rows"]}
+            successor = successor_rows[path]
+            current_digest = successor["previous_digest"]
+            counts = successor["previous_match_counts"]
         prior = prior_rows.get(path)
         require(prior is not None or path == prior_added["path"],
                 f"unproven text predecessor: {path}")
@@ -237,7 +277,7 @@ def main() -> None:
             "path": path,
             "previous_digest": (prior["current_digest"] if prior else
                                 prior_added["digest"]),
-            "current_digest": digest(path),
+            "current_digest": current_digest,
             "previous_match_counts": (prior["current_match_counts"] if prior else
                                       prior_added["match_counts"]),
             "current_match_counts": counts,
@@ -246,8 +286,15 @@ def main() -> None:
     text = (ROOT / added_path).read_text()
     counts = {name: len(pattern.findall(text))
               for name, pattern in SURFACE_PATTERNS.items()}
+    added_digest = digest(added_path)
+    if new_successor:
+        successor_rows = {e["path"]: e for e in new_successor[
+            "phase23_text_surface_successor"]["changed_rows"]}
+        successor = successor_rows[added_path]
+        added_digest = successor["previous_digest"]
+        counts = successor["previous_match_counts"]
     require(added[0] == {
-        "path": added_path, "digest": digest(added_path),
+        "path": added_path, "digest": added_digest,
         "match_counts": counts, "classification": "archive_candidate",
         "owner": "cranelift",
         "current_route": "tracked_MIR_to_C_or_generated_C_surface",
