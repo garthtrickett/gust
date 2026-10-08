@@ -4124,9 +4124,14 @@ def normalize_phase23_text_surfaces(
         from phase26_call_outer_move_take_return_registration import before_outer_move_digest
         changed = outer.get("changed_rows", [])
         by_path = {entry["path"]: entry for entry in changed}
+        added = outer.get("added_rows", [])
+        added_path = "scripts/phase26_call_outer_move_take_return_registration.py"
+        live = {row["path"]: row for row in rows}
         require(outer.get("contract_version") ==
                 "phase26_1e_outer_move_take_phase23_text_successor_v1" and
-                outer.get("added_rows") == [] and
+                isinstance(added, list) and len(added) == 1 and
+                added[0].get("path") == added_path and
+                live.get(added_path) == added[0] and
                 outer.get("partial_extra_or_substituted_surface") == "rejected" and
                 len(by_path) == len(changed) and
                 sorted(by_path) == ["compiler/typechecker.gst",
@@ -4137,7 +4142,8 @@ def normalize_phase23_text_surfaces(
                      digest=before_outer_move_digest(
                          registry["phase26_activation_audit"], row["path"], row["digest"]),
                      match_counts=by_path[row["path"]]["previous_match_counts"])
-                if row["path"] in by_path else row for row in rows]
+                if row["path"] in by_path else row for row in rows
+                if row["path"] != added_path]
     policy_vector = registry.get("phase26_activation_audit", {}).get(
         "ffi_policy_vector_status_increment", {}).get("phase23_text_surface_successor")
     if policy_vector is not None:

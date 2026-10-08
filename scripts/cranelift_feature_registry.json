@@ -48171,7 +48171,23 @@
             }
           }
         ],
-        "added_rows": [],
+        "added_rows": [
+          {
+            "path": "scripts/phase26_call_outer_move_take_return_registration.py",
+            "digest": "16eb020eb8ef59c18c077496d1b6744b0eed0d0f499d034f5e851e725dc659cd",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 1
+            },
+            "classification": "archive_candidate",
+            "owner": "cranelift",
+            "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+            "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+            "removal_phase": "24",
+            "falsifier": "active_evidence_surface_is_missing_or_changes_identity"
+          }
+        ],
         "partial_extra_or_substituted_surface": "rejected"
       },
       "spelling_inventory_successor": {
@@ -48202,7 +48218,7 @@
           "unknown_site_count": 0
         },
         "current_inventory_summary": {
-          "source_file_count": 1813,
+          "source_file_count": 1821,
           "site_count": 1418,
           "semantic_site_count": 709,
           "semantic_manifest_digest": "bf77d2fa6ee73c614d832ae82634149327c051fd28bceac70849baaee9d7b6fd",

@@ -62,7 +62,8 @@ def before_outer_move_spelling(activation: dict, live: dict) -> dict:
         "current_inventory_summary": live,
         "changed_source_paths": ["compiler/typechecker.gst", *NEW_FIXTURES],
         "partial_extra_or_substituted_inventory": "rejected",
-    } and live["source_file_count"] == previous["source_file_count"] and
+    } and live["source_file_count"] ==
+            previous["source_file_count"] + len(NEW_FIXTURES) and
             live["site_count"] == previous["site_count"] and
             live["semantic_site_count"] == previous["semantic_site_count"] and
             live["classification_counts"] == previous["classification_counts"] and
@@ -196,15 +197,33 @@ def main() -> None:
             "ffi_policy_vector_status_increment"][
                 "phase23_text_surface_successor"]["changed_rows"]
     }
+    added = surface.get("added_rows", [])
+    added_path = "scripts/phase26_call_outer_move_take_return_registration.py"
     require(surface.get("contract_version") ==
             "phase26_1e_outer_move_take_phase23_text_successor_v1" and
-            surface.get("added_rows") == [] and
+            isinstance(added, list) and len(added) == 1 and
+            added[0].get("path") == added_path and
             surface.get("partial_extra_or_substituted_surface") == "rejected" and
             paths == ["compiler/typechecker.gst",
                       "scripts/phase26_call_return_zero_registration.py"] and
             all(path in tracked_paths() and path not in SELF_EXCLUSIONS
                 for path in paths),
             "text surface shape drifted")
+    added_text = (ROOT / added_path).read_text()
+    added_counts = {name: len(pattern.findall(added_text))
+                    for name, pattern in SURFACE_PATTERNS.items()}
+    require(added[0] == {
+        "path": added_path,
+        "digest": digest(added_path),
+        "match_counts": added_counts,
+        "classification": "archive_candidate",
+        "owner": "cranelift",
+        "current_route": "tracked_MIR_to_C_or_generated_C_surface",
+        "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
+        "removal_phase": "24",
+        "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
+    } and any(added_counts.values()),
+            "added text surface drifted")
     for entry in changed:
         path = entry["path"]
         text = (ROOT / path).read_text()
