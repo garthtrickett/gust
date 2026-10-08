@@ -11,6 +11,11 @@ from phase26_ffi_generic_isolated_registration import before_generic_isolated_di
 from phase26_ffi_native_error_status_registration import (
     before_prefix_memory_filename, before_prefix_memory_spelling,
 )
+from phase26_call_outer_move_take_return_registration import (
+    before_outer_move_filename, before_outer_move_spelling,
+    before_outer_move_invocations,
+    main as outer_move_registration_main,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 GUARD = "guard-cranelift-phase26-call-return-zero-evidence"
@@ -28,6 +33,8 @@ def require(value: bool, message: str) -> None:
 
 
 def before_callback_filename_sites(activation: dict, live_sites: list[dict]) -> list[dict]:
+    if activation.get("call_outer_move_take_return_zero_increment"):
+        live_sites = before_outer_move_filename(activation, live_sites)
     vector_sites = activation.get("ffi_policy_vector_status_increment", {}).get(
         "filename_site_successor")
     if vector_sites is not None:
@@ -155,6 +162,7 @@ def digest(path: str) -> str:
 
 
 def main() -> None:
+    outer_move_registration_main()
     registry = json.loads((ROOT / "scripts/cranelift_feature_registry.json")
                           .read_text(encoding="utf-8"))
     activation = registry["phase26_activation_audit"]
@@ -198,6 +206,8 @@ def main() -> None:
 
     from phase22_opening import scan_invocations
     rows = [row for row in scan_invocations() if row["path"] == SCRIPT]
+    if activation.get("call_outer_move_take_return_zero_increment"):
+        rows = before_outer_move_invocations(activation, rows)
     local_record = activation.get("call_local_zero_evidence_increment", {})
     alias_record = activation.get("call_alias_zero_evidence_increment", {})
     chain_record = activation.get("call_chain_zero_evidence_increment", {})
@@ -3764,6 +3774,8 @@ def main() -> None:
         "current_digest": post_take_plain_record["positive_fixture_successor"]["previous_digest"],
     }, "consecutive plain-before-Take-cast positive evidence drifted")
     live_inventory = manifest_summary(source_sites())
+    if activation.get("call_outer_move_take_return_zero_increment"):
+        live_inventory = before_outer_move_spelling(activation, live_inventory)
     direct_inventory = activation.get("ffi_generic_direct_call_increment", {}).get(
         "spelling_inventory_successor")
     generic_inventory = activation.get("ffi_generic_isolated_call_increment", {}).get(

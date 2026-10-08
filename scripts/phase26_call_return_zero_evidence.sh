@@ -806,8 +806,9 @@ for case_name in cast_zero_caller_first cast_zero_callee_first cast_mayzero cast
   test ! -e "$marker"
 done
 
-for case_name in mayzero_direct mayzero_cast_depth2 mayzero_plain_prefix mayzero_repeated_take mayzero_plain_suffix_cast zero_direct nonzero unknown unsafe gap overwrite wrong_type prior_escape return_take move_alias scalar_inner wrapper_mayzero_direct_take wrapper_mayzero_direct_take_callee_first wrapper_mayzero_plain_alias_take wrapper_mayzero_take_alias_take wrapper_mayzero_take_cast_depth2 wrapper_mayzero_cast_take_depth2 wrapper_mayzero_interleaved_depth2 wrapper_nonzero_take wrapper_unknown_take wrapper_unsafe_take wrapper_gap_take wrapper_overwrite_take wrapper_nested_take wrapper_move_take wrapper_wrong_type_take wrapper_zero_direct_take wrapper_scalar_inner_take; do
+for case_name in mayzero_direct mayzero_cast_depth2 mayzero_plain_prefix mayzero_repeated_take mayzero_plain_suffix_cast zero_direct nonzero unknown unsafe gap overwrite wrong_type prior_escape return_take move_alias scalar_inner wrapper_mayzero_direct_take wrapper_mayzero_direct_take_callee_first wrapper_mayzero_plain_alias_take wrapper_mayzero_take_alias_take wrapper_mayzero_take_cast_depth2 wrapper_mayzero_cast_take_depth2 wrapper_mayzero_interleaved_depth2 wrapper_nonzero_take wrapper_unknown_take wrapper_unsafe_take wrapper_gap_take wrapper_overwrite_take wrapper_nested_take wrapper_move_take wrapper_wrong_type_take wrapper_zero_direct_take wrapper_scalar_inner_take outer_move_alias_cast_mayzero outer_move_cast_outside_take_mayzero outer_move_zero outer_move_nonzero outer_move_unknown outer_move_unsafe outer_move_double_move outer_move_wrong_type; do
   fixture="compiler/phase26_call_local_return_take_alias_${case_name}_source.gst"; if [[ "$case_name" == wrapper_* ]]; then fixture="compiler/phase26_call_local_return_take_${case_name}_source.gst"; fi
+  if [[ "$case_name" == outer_move_* ]]; then fixture="compiler/phase26_call_local_return_outer_move_take_${case_name#outer_move_}_source.gst"; fi
   output="$build_root/take_return_${case_name}"
   rm -f "$output" "$marker"
   set +e
@@ -820,14 +821,14 @@ for case_name in mayzero_direct mayzero_cast_depth2 mayzero_plain_prefix mayzero
   set -e
   test "$status" -ne 0
   case "$case_name" in
-    mayzero_direct|mayzero_cast_depth2|mayzero_plain_prefix|mayzero_repeated_take|mayzero_plain_suffix_cast|zero_direct|return_take|wrapper_mayzero_direct_take|wrapper_mayzero_plain_alias_take|wrapper_mayzero_take_alias_take|wrapper_mayzero_take_cast_depth2|wrapper_mayzero_cast_take_depth2|wrapper_mayzero_interleaved_depth2|wrapper_zero_direct_take)
+    mayzero_direct|mayzero_cast_depth2|mayzero_plain_prefix|mayzero_repeated_take|mayzero_plain_suffix_cast|zero_direct|return_take|wrapper_mayzero_direct_take|wrapper_mayzero_plain_alias_take|wrapper_mayzero_take_alias_take|wrapper_mayzero_take_cast_depth2|wrapper_mayzero_cast_take_depth2|wrapper_mayzero_interleaved_depth2|wrapper_zero_direct_take|wrapper_move_take|outer_move_alias_cast_mayzero|outer_move_cast_outside_take_mayzero|outer_move_zero)
       rg -F "TypeError in $fixture at line 3:" "$output.stdout" >/dev/null
       rg -F '[RawNullSafeBoundary] Known zero-derived raw pointer cannot cross a declared-safe function return' "$output.stdout" >/dev/null
       if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
       ;;
-    wrong_type|wrapper_wrong_type_take)
+    wrong_type|wrapper_wrong_type_take|outer_move_wrong_type)
       rg -F "TypeError in $fixture at line 3:" "$output.stdout" >/dev/null
-      if [[ "$case_name" == wrapper_wrong_type_take ]]; then
+      if [[ "$case_name" == wrapper_wrong_type_take || "$case_name" == outer_move_wrong_type ]]; then
         rg -F '[TypeMismatch] Return type mismatch. Expected Int but got RawPointer(Int)' "$output.stdout" >/dev/null
       else
         rg -F '[TypeMismatch] Return type mismatch. Expected Int but got RawPointer(Byte)' "$output.stdout" >/dev/null

@@ -1206,6 +1206,20 @@ gaps, overwrites, branches, indirect/generic calls, and broader provenance
 flow remain excluded. This changes no MIR, ABI, layout, runtime, stdlib, or
 fallback behavior. D/E/F and Phase 26.1 remain open.
 
+**26.1E outer Move over one Take at a safe return (ownership authorized
+2026-10-08).** After ordinary return typechecking and safety checks, the
+existing immediate same-block concrete nullary-call `*T` candidate may reach a
+declared-safe return through exactly one outer syntactic `Move` enclosing the
+already qualified one-`Take` form. Finite checked RawPointer-to-RawPointer casts
+may appear on either side of that Take, subject to the existing validated-alias
+prerequisite. The existing Zero/MayZero finalizer rejects the escape before
+native driver discovery. Move and Take keep their existing bookkeeping;
+earlier type and ephemeral-escape diagnostics, candidate invalidation, and
+nonzero, Unknown, and unsafe-function controls retain their meanings. A second
+Move or Take, an inner Move, broader alias or interprocedural flow, and
+aggregate transport remain outside this increment. No MIR, ABI, layout,
+runtime, or fallback contract changes. D/E/F and Phase 26.1 remain open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

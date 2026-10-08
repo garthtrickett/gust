@@ -522,6 +522,13 @@ def validate() -> tuple[dict, list[dict], dict]:
         "ffi_policy_vector_status_increment", {}).get("spelling_inventory_successor")
     callback_successor = registry.get("phase26_activation_audit", {}).get(
         "ffi_callback_sync_increment", {}).get("spelling_inventory_successor")
+    outer_successor = registry.get("phase26_activation_audit", {}).get(
+        "call_outer_move_take_return_zero_increment", {}).get(
+            "spelling_inventory_successor")
+    if outer_successor is not None:
+        from phase26_call_outer_move_take_return_registration import before_outer_move_spelling
+        summary = before_outer_move_spelling(
+            registry["phase26_activation_audit"], summary)
     live_summary = summary
     if policy_vector_successor is not None:
         previous = registry["phase26_activation_audit"]["prefix_resolution_memory_prerequisite"]["spelling_inventory_successor"]["current_inventory_summary"]

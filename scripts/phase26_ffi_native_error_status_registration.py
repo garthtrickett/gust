@@ -4,6 +4,10 @@
 import hashlib
 import json
 from pathlib import Path
+from phase26_call_outer_move_take_return_registration import (
+    before_outer_move_digest, before_outer_move_filename,
+    before_outer_move_spelling,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 GUARD = "guard-cranelift-phase26-ffi-native-error-status"
@@ -192,7 +196,9 @@ def main() -> None:
     callback_rows = {row["path"]: row for row in activation[
         "ffi_callback_sync_increment"]["phase23_text_surface_successor"]["changed_rows"]}
     for row in surface["changed_rows"]:
-        current = hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest()
+        current = before_outer_move_digest(
+            activation, row["path"],
+            hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest())
         policy = policy_rows.get(row["path"])
         if policy is not None:
             require(policy["current_digest"] == current and
@@ -210,7 +216,8 @@ def main() -> None:
     spelling = record["spelling_inventory_successor"]
     previous_summary = activation["ffi_callback_sync_increment"][
         "spelling_inventory_successor"]["current_inventory_summary"]
-    current_summary = manifest_summary(source_sites())
+    current_summary = before_outer_move_spelling(
+        activation, manifest_summary(source_sites()))
     policy_spelling = activation.get("ffi_policy_vector_status_increment", {}).get(
         "spelling_inventory_successor")
     if policy_spelling is not None:
@@ -241,7 +248,7 @@ def main() -> None:
     filename = record["filename_site_successor"]
     previous_sites = activation["ffi_callback_sync_increment"][
         "filename_site_successor"]["current_sites"]
-    current_sites = filename_sites()
+    current_sites = before_outer_move_filename(activation, filename_sites())
     policy_filename = activation.get("ffi_policy_vector_status_increment", {}).get(
         "filename_site_successor")
     if policy_filename is not None:

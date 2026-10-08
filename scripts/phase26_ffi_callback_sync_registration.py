@@ -4,6 +4,10 @@
 import json
 import hashlib
 from pathlib import Path
+from phase26_call_outer_move_take_return_registration import (
+    before_outer_move_digest, before_outer_move_filename,
+    before_outer_move_spelling,
+)
 from phase26_ffi_native_error_status_registration import (
     before_prefix_memory_digest, before_prefix_memory_spelling,
     before_prefix_memory_filename,
@@ -97,7 +101,9 @@ def main() -> None:
             [row["path"] for row in surface["changed_rows"]] == expected_paths,
             "callback text surface successor shape drifted")
     for row in surface["changed_rows"]:
-        current = hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest()
+        current = before_outer_move_digest(
+            registry["phase26_activation_audit"], row["path"],
+            hashlib.sha256((ROOT / row["path"]).read_bytes()).hexdigest())
         vector_row = vector_by_path.get(row["path"])
         if vector_row is not None:
             require(vector_row["current_digest"] == current and
@@ -121,7 +127,9 @@ def main() -> None:
     spelling = record["spelling_inventory_successor"]
     previous = registry["phase26_activation_audit"]["ffi_retained_lease_increment"][
         "spelling_inventory_successor"]["current_inventory_summary"]
-    live_inventory = manifest_summary(source_sites())
+    live_inventory = before_outer_move_spelling(
+        registry["phase26_activation_audit"],
+        manifest_summary(source_sites()))
     vector_spelling = vector.get("spelling_inventory_successor")
     if vector_spelling is not None:
         require(vector_spelling["current_inventory_summary"] == live_inventory and
@@ -148,7 +156,8 @@ def main() -> None:
     filename = record["filename_site_successor"]
     previous_sites = registry["phase26_activation_audit"]["ffi_retained_lease_increment"][
         "filename_site_successor"]["current_sites"]
-    current_sites = filename_source_sites()
+    current_sites = before_outer_move_filename(
+        registry["phase26_activation_audit"], filename_source_sites())
     vector_sites = vector.get("filename_site_successor")
     if vector_sites is not None:
         require(vector_sites["current_sites"] == current_sites and

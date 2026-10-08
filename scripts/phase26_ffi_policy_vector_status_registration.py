@@ -4,6 +4,10 @@
 import hashlib
 import json
 from pathlib import Path
+from phase26_call_outer_move_take_return_registration import (
+    before_outer_move_digest, before_outer_move_filename,
+    before_outer_move_spelling,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 GUARD = "guard-cranelift-phase26-ffi-policy-vector-status"
@@ -86,8 +90,9 @@ def main() -> None:
             [row["path"] for row in surface["changed_rows"]] == paths,
             "Call8 text surface successor shape drifted")
     for row in surface["changed_rows"]:
-        require(row["current_digest"] == hashlib.sha256(
-                    (ROOT / row["path"]).read_bytes()).hexdigest() and
+        require(row["current_digest"] == before_outer_move_digest(
+                    activation, row["path"], hashlib.sha256(
+                    (ROOT / row["path"]).read_bytes()).hexdigest()) and
                 len(row["previous_digest"]) == 64 and
                 row["previous_match_counts"] == row["current_match_counts"],
                 f"Call8 text surface drifted: {row['path']}")
@@ -96,7 +101,8 @@ def main() -> None:
     spelling = record["spelling_inventory_successor"]
     previous_summary = activation["prefix_resolution_memory_prerequisite"][
         "spelling_inventory_successor"]["current_inventory_summary"]
-    current_summary = manifest_summary(source_sites())
+    current_summary = before_outer_move_spelling(
+        activation, manifest_summary(source_sites()))
     require(spelling == {
         "contract_version": "phase26_1d_policy_vector_status_spelling_inventory_successor_v1",
         "previous_inventory_summary": previous_summary,
@@ -120,7 +126,7 @@ def main() -> None:
     filename = record["filename_site_successor"]
     previous_sites = activation["prefix_resolution_memory_prerequisite"][
         "filename_site_successor"]["current_sites"]
-    current_sites = filename_sites()
+    current_sites = before_outer_move_filename(activation, filename_sites())
     require(filename == {
         "contract_version": "phase26_1d_policy_vector_status_filename_site_successor_v1",
         "previous_sites": previous_sites,
