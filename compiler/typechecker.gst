@@ -9870,45 +9870,53 @@ func env_resolve_namespaced_ident(env: *TypeEnvironment[ctx], name: str, ctx: &A
         return std.Clone(ctx, std.Concat("CastResult_", resolved));
     }
 
-    // Standard collections prefix matching
-    mut prefixes: std.Vector[str, ctx] := std.VectorNew(ctx);
-    prefixes.Push("std_Vector_");
-    prefixes.Push("std_HashMap_");
-    prefixes.Push("std_Option_");
-    prefixes.Push("std_Pool_");
-    prefixes.Push("std_RcNode_");
-    prefixes.Push("std_Rc_");
-    prefixes.Push("std_GraphNode_");
-    prefixes.Push("std_Graph_");
-    prefixes.Push("std_Mutex_");
-    prefixes.Push("std_Channel_");
-    prefixes.Push("std_GenerationalArena_");
-    prefixes.Push("std_ThreadLocalContext_");
-    prefixes.Push("os_Dir_");
-    prefixes.Push("os_DirEntry_");
-
-    mut p := 0;
-    while p < len(prefixes) {
-        mut prefix := prefixes[p];
-        if len(name) >= len(prefix) {
-            if std.str_eq(std.str_slice(name, 0, len(prefix)), prefix) {
-                // parse_types_from_suffix resolves each component using the
-                // registered template role. Resolve import aliases only in the
-                // argument suffix so the outer std/os template stays intact.
-                mut suffix := std.str_slice(name, len(prefix), len(name));
-                mut resolved_suffix := env_resolve_flattened_import_aliases(env, suffix, ctx);
-                mut resolved_name := std.Concat(prefix, resolved_suffix);
-                mut triple_idx := std.str_find(resolved_name, "___");
-                while triple_idx != 0 - 1 {
-                    mut left := std.str_slice(resolved_name, 0, triple_idx);
-                    mut right := std.str_slice(resolved_name, triple_idx + 1, len(resolved_name));
-                    resolved_name = std.Concat(left, right);
-                    triple_idx = std.str_find(resolved_name, "___");
-                }
-                return std.Clone(ctx, resolved_name);
-            }
+    // These fixed prefixes do not need a new arena-backed Vector on every
+    // resolution. Keep their original first-match order and suffix handling.
+    mut prefix := "";
+    if len(name) >= len("std_Vector_") && std.str_eq(std.str_slice(name, 0, len("std_Vector_")), "std_Vector_") {
+        prefix = "std_Vector_";
+    } else if len(name) >= len("std_HashMap_") && std.str_eq(std.str_slice(name, 0, len("std_HashMap_")), "std_HashMap_") {
+        prefix = "std_HashMap_";
+    } else if len(name) >= len("std_Option_") && std.str_eq(std.str_slice(name, 0, len("std_Option_")), "std_Option_") {
+        prefix = "std_Option_";
+    } else if len(name) >= len("std_Pool_") && std.str_eq(std.str_slice(name, 0, len("std_Pool_")), "std_Pool_") {
+        prefix = "std_Pool_";
+    } else if len(name) >= len("std_RcNode_") && std.str_eq(std.str_slice(name, 0, len("std_RcNode_")), "std_RcNode_") {
+        prefix = "std_RcNode_";
+    } else if len(name) >= len("std_Rc_") && std.str_eq(std.str_slice(name, 0, len("std_Rc_")), "std_Rc_") {
+        prefix = "std_Rc_";
+    } else if len(name) >= len("std_GraphNode_") && std.str_eq(std.str_slice(name, 0, len("std_GraphNode_")), "std_GraphNode_") {
+        prefix = "std_GraphNode_";
+    } else if len(name) >= len("std_Graph_") && std.str_eq(std.str_slice(name, 0, len("std_Graph_")), "std_Graph_") {
+        prefix = "std_Graph_";
+    } else if len(name) >= len("std_Mutex_") && std.str_eq(std.str_slice(name, 0, len("std_Mutex_")), "std_Mutex_") {
+        prefix = "std_Mutex_";
+    } else if len(name) >= len("std_Channel_") && std.str_eq(std.str_slice(name, 0, len("std_Channel_")), "std_Channel_") {
+        prefix = "std_Channel_";
+    } else if len(name) >= len("std_GenerationalArena_") && std.str_eq(std.str_slice(name, 0, len("std_GenerationalArena_")), "std_GenerationalArena_") {
+        prefix = "std_GenerationalArena_";
+    } else if len(name) >= len("std_ThreadLocalContext_") && std.str_eq(std.str_slice(name, 0, len("std_ThreadLocalContext_")), "std_ThreadLocalContext_") {
+        prefix = "std_ThreadLocalContext_";
+    } else if len(name) >= len("os_Dir_") && std.str_eq(std.str_slice(name, 0, len("os_Dir_")), "os_Dir_") {
+        prefix = "os_Dir_";
+    } else if len(name) >= len("os_DirEntry_") && std.str_eq(std.str_slice(name, 0, len("os_DirEntry_")), "os_DirEntry_") {
+        prefix = "os_DirEntry_";
+    }
+    if len(prefix) > 0 {
+        // parse_types_from_suffix resolves each component using the
+        // registered template role. Resolve import aliases only in the
+        // argument suffix so the outer std/os template stays intact.
+        mut suffix := std.str_slice(name, len(prefix), len(name));
+        mut resolved_suffix := env_resolve_flattened_import_aliases(env, suffix, ctx);
+        mut resolved_name := std.Concat(prefix, resolved_suffix);
+        mut triple_idx := std.str_find(resolved_name, "___");
+        while triple_idx != 0 - 1 {
+            mut left := std.str_slice(resolved_name, 0, triple_idx);
+            mut right := std.str_slice(resolved_name, triple_idx + 1, len(resolved_name));
+            resolved_name = std.Concat(left, right);
+            triple_idx = std.str_find(resolved_name, "___");
         }
-        p = p + 1;
+        return std.Clone(ctx, resolved_name);
     }
 
     // 2. Handle dot-separated namespaced alias (e.g. lib.Helper)

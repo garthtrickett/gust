@@ -8,6 +8,9 @@ import json
 from functools import lru_cache
 from pathlib import Path
 from phase26_ffi_generic_isolated_registration import before_generic_isolated_digest
+from phase26_ffi_native_error_status_registration import (
+    before_prefix_memory_filename, before_prefix_memory_spelling,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 GUARD = "guard-cranelift-phase26-call-return-zero-evidence"
@@ -25,6 +28,7 @@ def require(value: bool, message: str) -> None:
 
 
 def before_callback_filename_sites(activation: dict, live_sites: list[dict]) -> list[dict]:
+    live_sites = before_prefix_memory_filename(activation, live_sites)
     native_sites = activation.get("ffi_native_error_status_increment", {}).get(
         "filename_site_successor")
     if native_sites is not None:
@@ -3741,7 +3745,8 @@ def main() -> None:
         "previous_digest": "b6914b0be235ea1caa99ee0bb08d4d5eea256d38fcfe143cb876edb992fb48d6",
         "current_digest": post_take_plain_record["positive_fixture_successor"]["previous_digest"],
     }, "consecutive plain-before-Take-cast positive evidence drifted")
-    live_inventory = manifest_summary(source_sites())
+    live_inventory = before_prefix_memory_spelling(
+        activation, manifest_summary(source_sites()))
     direct_inventory = activation.get("ffi_generic_direct_call_increment", {}).get(
         "spelling_inventory_successor")
     generic_inventory = activation.get("ffi_generic_isolated_call_increment", {}).get(

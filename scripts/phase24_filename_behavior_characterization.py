@@ -417,6 +417,9 @@ def validate_static(value: dict) -> None:
                     "ffi_callback_sync_increment", {}).get("filename_site_successor")
                 native_error_sites = registry.get("phase26_activation_audit", {}).get(
                     "ffi_native_error_status_increment", {}).get("filename_site_successor")
+                from phase26_ffi_native_error_status_registration import before_prefix_memory_filename
+                native_current_sites = before_prefix_memory_filename(
+                    registry.get("phase26_activation_audit", {}), live_sites)
                 e1_current = (live_sites if d5_sites is None else
                               d5_sites.get("previous_sites"))
                 require(e1_sites.get("contract_version") ==
@@ -1733,13 +1736,13 @@ def validate_static(value: dict) -> None:
                     require(native_error_sites.get("contract_version") ==
                             "phase26_1d_native_error_status_filename_site_successor_v1" and
                             native_error_sites.get("previous_sites") == previous_status_sites and
-                            native_error_sites.get("current_sites") == live_sites and
+                            native_error_sites.get("current_sites") == native_current_sites and
                             native_error_sites.get("partial_extra_or_substituted_site") == "rejected" and
-                            isinstance(deltas, list) and len(deltas) == len(live_sites) == 3 and
+                            isinstance(deltas, list) and len(deltas) == len(native_current_sites) == 3 and
                             all(now["line"] == before["line"] + delta and
                                 {key: val for key, val in now.items() if key != "line"} ==
                                 {key: val for key, val in before.items() if key != "line"}
-                                for before, now, delta in zip(previous_status_sites, live_sites, deltas)),
+                                for before, now, delta in zip(previous_status_sites, native_current_sites, deltas)),
                             "Phase 26 native-error filename sites drifted")
     require([row["selector"] for row in value["site_manifest"]] ==
             ["test_tcs_", "test_index_", "test_tcs_"],

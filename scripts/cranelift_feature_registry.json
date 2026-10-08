@@ -48728,6 +48728,188 @@
         "native_artifact_emitted": false
       }
     },
+    "prefix_resolution_memory_prerequisite": {
+      "contract_version": "phase26_prefix_resolution_memory_prerequisite_v1",
+      "status": "allocation_free_ordered_prefix_selection",
+      "owner": "cranelift",
+      "phase23_text_surface_successor": {
+        "contract_version": "phase26_prefix_resolution_memory_phase23_text_surface_successor_v1",
+        "partial_extra_or_substituted_surface": "rejected",
+        "added_rows": [],
+        "changed_rows": [
+          {
+            "path": "compiler/typechecker.gst",
+            "previous_digest": "28ccbfaf5bab161daa888fe16e95cf3e39802af0560295019f796203df12d537",
+            "current_digest": "2d5f301a71a6128103c0e7981df3cf42c18ba6bee2441eba8bbcb79585fb7ac3",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 0,
+              "generated_c_contract": 1
+            }
+          },
+          {
+            "path": "scripts/phase26_call_return_zero_registration.py",
+            "previous_digest": "9a11c948506c47ac59eca2b6360bb1e09b838cb034d419573857c59329517f58",
+            "current_digest": "3d6dc190a767fbd61ed479d24721b94534a7649d56539d4db696afc095ea0c1a",
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            },
+            "current_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 1,
+              "generated_c_contract": 0
+            }
+          }
+        ]
+      },
+      "spelling_inventory_successor": {
+        "contract_version": "phase26_prefix_resolution_memory_spelling_inventory_successor_v1",
+        "previous_inventory_summary": {
+          "source_file_count": 1812,
+          "site_count": 1401,
+          "semantic_site_count": 692,
+          "semantic_manifest_digest": "afc1c8605fd7f6e08cb52dc6e8230477a50accb89d005e1360bbbf6f4989a07c",
+          "classification_counts": {
+            "semantic_or_intrinsic_recognition": 692,
+            "diagnostic": 10,
+            "serialization": 1,
+            "mangling_or_generated_name": 9,
+            "comment": 2,
+            "fixture_or_evidence": 679,
+            "non_decision_comparison": 8
+          },
+          "partition_manifest_digests": {
+            "diagnostic": "81193a63c35ab7099e83353f45e98c602fe4d72a166a8a928ef5b468805bdb3f",
+            "serialization": "47cf827b52d783e60a08a2856040e7bebdb94590a27b7903d5301eb16fe1d508",
+            "mangling_or_generated_name": "7990b1f14d5046c2fb16f25cf76ed906b57bd60cb1c60afcc0653322f1895612",
+            "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+            "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+            "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
+          },
+          "complete_manifest_digest": "b60c10a06bdf7ccd06abaf4db347e5dd6bde1258fb3e6a80bacbadce2ab10d93",
+          "unknown_site_count": 0
+        },
+        "current_inventory_summary": {
+          "classification_counts": {
+            "comment": 2,
+            "diagnostic": 10,
+            "fixture_or_evidence": 679,
+            "mangling_or_generated_name": 9,
+            "non_decision_comparison": 8,
+            "semantic_or_intrinsic_recognition": 706,
+            "serialization": 1
+          },
+          "complete_manifest_digest": "db48179159121ab9f2df3035e0efcfaf8ad8e7a150ac51481248f0ce2aacaefb",
+          "partition_manifest_digests": {
+            "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+            "diagnostic": "81193a63c35ab7099e83353f45e98c602fe4d72a166a8a928ef5b468805bdb3f",
+            "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+            "mangling_or_generated_name": "00140da23b8cb427e44ec81d604ff34d014e0d6afec89a73f6aa12e91b49eda4",
+            "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7",
+            "serialization": "47cf827b52d783e60a08a2856040e7bebdb94590a27b7903d5301eb16fe1d508"
+          },
+          "semantic_manifest_digest": "26f80f0ef36709ebd34171a4d77c26b1113a56ef5c332f35fea09c6e2cae824c",
+          "semantic_site_count": 706,
+          "site_count": 1415,
+          "source_file_count": 1812,
+          "unknown_site_count": 0
+        },
+        "changed_source_paths": [
+          "compiler/typechecker.gst"
+        ],
+        "added_spellings": [
+          "std_Vector_",
+          "std_HashMap_",
+          "std_Option_",
+          "std_Pool_",
+          "std_RcNode_",
+          "std_Rc_",
+          "std_GraphNode_",
+          "std_Graph_",
+          "std_Mutex_",
+          "std_Channel_",
+          "std_GenerationalArena_",
+          "std_ThreadLocalContext_",
+          "os_Dir_",
+          "os_DirEntry_"
+        ],
+        "partial_extra_or_substituted_inventory": "rejected"
+      },
+      "filename_site_successor": {
+        "contract_version": "phase26_prefix_resolution_memory_filename_site_successor_v1",
+        "previous_sites": [
+          {
+            "id": "var_declaration_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 15640,
+            "selector": "test_tcs_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_var_declaration",
+            "window_digest": "6c0f176e1543d9a2ba125569875a69081a81b28bfc4c80eef31c57ec7ccfa05c"
+          },
+          {
+            "id": "assignment_hazard_and_view_invalidation",
+            "path": "compiler/typechecker.gst",
+            "line": 15983,
+            "selector": "test_index_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_assignment",
+            "window_digest": "eea5c7abf9fb4c50d51f644267c5ee59133db8d998a0fe7c25dd0ec1503029c3"
+          },
+          {
+            "id": "guard_payload_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 17042,
+            "selector": "test_tcs_",
+            "selector_occurrence": 2,
+            "statement_context": "statement_guard_payload_binding",
+            "window_digest": "4bf05983015fd1ecc3c3cc4c1399491868107155a5435fed90f8beeeb8f16a6f"
+          }
+        ],
+        "current_sites": [
+          {
+            "id": "var_declaration_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 15648,
+            "selector": "test_tcs_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_var_declaration",
+            "window_digest": "6c0f176e1543d9a2ba125569875a69081a81b28bfc4c80eef31c57ec7ccfa05c"
+          },
+          {
+            "id": "assignment_hazard_and_view_invalidation",
+            "path": "compiler/typechecker.gst",
+            "line": 15991,
+            "selector": "test_index_",
+            "selector_occurrence": 1,
+            "statement_context": "statement_assignment",
+            "window_digest": "eea5c7abf9fb4c50d51f644267c5ee59133db8d998a0fe7c25dd0ec1503029c3"
+          },
+          {
+            "id": "guard_payload_stack_classification",
+            "path": "compiler/typechecker.gst",
+            "line": 17050,
+            "selector": "test_tcs_",
+            "selector_occurrence": 2,
+            "statement_context": "statement_guard_payload_binding",
+            "window_digest": "4bf05983015fd1ecc3c3cc4c1399491868107155a5435fed90f8beeeb8f16a6f"
+          }
+        ],
+        "line_deltas": [
+          8,
+          8,
+          8
+        ],
+        "partial_extra_or_substituted_site": "rejected"
+      }
+    },
     "bundle_memory_prerequisite": {
       "contract_version": "phase26_bundle_memory_prerequisite_v1",
       "status": "pre_sized_canonical_bundle_assembly",

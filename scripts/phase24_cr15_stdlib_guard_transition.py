@@ -4079,6 +4079,25 @@ def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    activation = registry.get("phase26_activation_audit", {})
+    memory = activation.get("prefix_resolution_memory_prerequisite")
+    if memory is not None:
+        from phase26_ffi_native_error_status_registration import before_prefix_memory_digest
+        successors = memory["phase23_text_surface_successor"]["changed_rows"]
+        by_path = {successor["path"]: successor for successor in successors}
+        require(len(by_path) == len(successors) == 2 and
+                all(any(row["path"] == path for row in rows) for path in by_path),
+                "prefix memory text surface is missing")
+        require(all(row["match_counts"] ==
+                    by_path[row["path"]]["current_match_counts"]
+                    for row in rows if row["path"] in by_path),
+                "prefix memory text surface counts drifted")
+        rows = [dict(row,
+                     digest=before_prefix_memory_digest(
+                         activation, row["path"], row["digest"]),
+                     match_counts=by_path[row["path"]]["previous_match_counts"])
+                if row["path"] in by_path else row
+                for row in rows]
     bundle_memory = registry.get("phase26_activation_audit", {}).get(
         "bundle_memory_prerequisite", {}).get("phase23_text_surface_successor")
     if bundle_memory is not None:

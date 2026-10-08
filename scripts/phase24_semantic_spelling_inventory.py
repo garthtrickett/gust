@@ -518,8 +518,12 @@ def validate() -> tuple[dict, list[dict], dict]:
         "ffi_retained_lease_increment", {}).get("spelling_inventory_successor")
     native_error_successor = registry.get("phase26_activation_audit", {}).get(
         "ffi_native_error_status_increment", {}).get("spelling_inventory_successor")
+    prefix_memory = registry.get("phase26_activation_audit", {})
     callback_successor = registry.get("phase26_activation_audit", {}).get(
         "ffi_callback_sync_increment", {}).get("spelling_inventory_successor")
+    live_summary = summary
+    from phase26_ffi_native_error_status_registration import before_prefix_memory_spelling
+    summary = before_prefix_memory_spelling(prefix_memory, live_summary)
     live_summary = summary
     if native_error_successor is not None:
         previous = callback_successor["current_inventory_summary"]
