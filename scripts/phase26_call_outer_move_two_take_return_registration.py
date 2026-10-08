@@ -41,6 +41,27 @@ def digest(path: str) -> str:
     return hashlib.sha256((ROOT / path).read_bytes()).hexdigest()
 
 
+def before_finite_text(activation: dict, path: str, live_digest: str,
+                       live_counts: dict[str, int]) -> tuple[str, dict[str, int]]:
+    if activation.get("call_outer_move_finite_take_return_zero_increment"):
+        from phase26_call_outer_move_finite_take_return_registration import before_new_digest, before_new_counts
+        live_digest = before_new_digest(activation, path, live_digest)
+        live_counts = before_new_counts(activation, path, live_counts)
+    if activation.get("call_finite_take_return_zero_increment"):
+        rows = activation["call_finite_take_return_zero_increment"][
+            "phase23_text_surface_successor"]["changed_rows"]
+        matches = [row for row in rows if row["path"] == path]
+        require(len(matches) <= 1, f"duplicate finite-Take text path: {path}")
+        if matches:
+            row = matches[0]
+            require(row["current_digest"] == live_digest and
+                    row["current_match_counts"] == live_counts,
+                    f"finite-Take text drifted: {path}")
+            live_digest = row["previous_digest"]
+            live_counts = row["previous_match_counts"]
+    return live_digest, live_counts
+
+
 def record(activation: dict) -> dict:
     return activation.get(KEY, {})
 
@@ -174,6 +195,17 @@ def main() -> None:
             "source fixture missing")
     live_guard_digest = digest(GUARD_PATH)
     live_positive_digest = digest(POSITIVE)
+    if activation.get("call_outer_move_finite_take_return_zero_increment"):
+        outer_finite = activation["call_outer_move_finite_take_return_zero_increment"]
+        require(outer_finite["guard_digest_successor"]["current_digest"] == live_guard_digest and
+                outer_finite["positive_fixture_successor"]["current_digest"] == live_positive_digest and
+                outer_finite["guard_digest_successor"]["previous_digest"] ==
+                activation["call_finite_take_return_zero_increment"]["guard_digest_successor"]["current_digest"] and
+                outer_finite["positive_fixture_successor"]["previous_digest"] ==
+                activation["call_finite_take_return_zero_increment"]["positive_fixture_successor"]["current_digest"],
+                "outer-Move finite-Take live evidence drifted")
+        live_guard_digest = outer_finite["guard_digest_successor"]["previous_digest"]
+        live_positive_digest = outer_finite["positive_fixture_successor"]["previous_digest"]
     if activation.get("call_finite_take_return_zero_increment"):
         finite = activation["call_finite_take_return_zero_increment"]
         require(finite["guard_digest_successor"]["current_digest"] == live_guard_digest and
@@ -250,6 +282,7 @@ def main() -> None:
         counts = {name: len(pattern.findall((ROOT / path).read_text()))
                   for name, pattern in SURFACE_PATTERNS.items()}
         current_digest = digest(path)
+        _, counts = before_finite_text(activation, path, current_digest, counts)
         if activation.get("call_inner_move_two_take_return_zero_increment"):
             from phase26_call_inner_move_two_take_return_registration import before_new_digest as before_inner_digest
             inner_rows = activation["call_inner_move_two_take_return_zero_increment"][
@@ -274,6 +307,7 @@ def main() -> None:
     counts = {name: len(pattern.findall((ROOT / path).read_text()))
               for name, pattern in SURFACE_PATTERNS.items()}
     current_digest = digest(path)
+    _, counts = before_finite_text(activation, path, current_digest, counts)
     if activation.get("call_inner_move_two_take_return_zero_increment"):
         from phase26_call_inner_move_two_take_return_registration import before_new_digest as before_inner_digest
         inner_rows = activation["call_inner_move_two_take_return_zero_increment"][
