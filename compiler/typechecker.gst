@@ -2793,8 +2793,8 @@ func phase26_zero_local_call_argument_cast_is_raw(arg: ast.Expression[ctx], env:
 
 // A safe Return may use the current candidate directly or through at most two
 // Takes and checked raw-pointer casts. One outer Move may enclose one or two
-// Takes. One inner Move is accepted only between two Takes, without an outer
-// Move. Casts still require a validated alias.
+// Takes. One inner Move is accepted between the Takes or beneath both Takes,
+// without an outer Move. Casts still require a validated alias.
 // This syntax probe runs before typechecking; the companion proof below runs
 // only after the ordinary return type and safety checks.
 func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
@@ -2820,7 +2820,7 @@ func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env:
                 has_cast = 1;
                 next_idx = current.AsCast.left;
             } else {
-                if outer_move == 1 || inner_move == 1 || take_count != 1 { return 0; }
+                if outer_move == 1 || inner_move == 1 || (take_count != 1 && take_count != 2) { return 0; }
                 inner_move = 1;
                 next_idx = current.Move.expr;
             }
@@ -2860,7 +2860,7 @@ func phase26_zero_local_return_cast_is_raw(expr: ast.Expression[ctx], env: *Type
                    phase26_zero_resolved_expression_tag(next_idx, env, ctx) != 9 { return 0; }
             }
             if current.tag == 4 {
-                if outer_move == 1 || inner_move == 1 || take_count != 1 { return 0; }
+                if outer_move == 1 || inner_move == 1 || (take_count != 1 && take_count != 2) { return 0; }
                 inner_move = 1;
                 next_idx = current.Move.expr;
             }

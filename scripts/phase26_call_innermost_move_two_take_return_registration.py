@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pin the bounded inner-Move/two-Take successor before older MIR-to-C evidence."""
+"""Pin the bounded innermost-Move/two-Take successor before older MIR-to-C evidence."""
 
 from __future__ import annotations
 
@@ -8,33 +8,34 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-KEY = "call_inner_move_two_take_return_zero_increment"
-OLD = "call_outer_move_two_take_return_zero_increment"
+KEY = "call_innermost_move_two_take_return_zero_increment"
+OLD = "call_inner_move_two_take_return_zero_increment"
 GUARD = "guard-cranelift-phase26-call-return-zero-evidence"
 GUARD_PATH = "scripts/phase26_call_return_zero_evidence.sh"
 POSITIVE = "compiler/phase26_call_return_zero_test_entry.gst"
+RECLASSIFIED = "compiler/phase26_call_local_return_inner_move_two_take_move_under_both_takes_source.gst"
 NEW_FIXTURES = [
-    f"compiler/phase26_call_local_return_inner_move_two_take_{name}_source.gst"
+    f"compiler/phase26_call_local_return_inner_move_two_take_both_{name}_source.gst"
     for name in (
-        "zero", "mayzero", "outer_cast_mayzero",
-        "between_outer_take_move_mayzero", "between_move_inner_take_mayzero",
-        "inner_cast_mayzero", "interleaved_cast_mayzero", "nonzero",
-        "unknown", "unsafe", "gap", "overwrite", "wrong_type",
-        "callee_first", "third_take", "outer_and_inner_move",
-        "move_under_both_takes", "lone_take_inner_move",
-        "move_without_take", "scalar_cast",
+        "zero", "outer_cast_mayzero", "between_takes_cast_mayzero",
+        "before_move_cast_mayzero", "inside_move_cast_mayzero",
+        "interleaved_cast_mayzero", "nonzero", "unknown", "unsafe",
+        "gap", "overwrite", "wrong_type", "callee_first", "third_take",
+        "outer_and_inner_move", "double_inner_move", "lone_take_move",
+        "move_without_take", "scalar_cast", "bare_move_outer_cast_priority",
     )
 ]
 TEXT_PATHS = [
     "compiler/typechecker.gst",
     "scripts/phase26_call_return_zero_registration.py",
+    "scripts/phase26_call_inner_move_two_take_return_registration.py",
     "scripts/phase26_call_outer_move_two_take_return_registration.py",
 ]
 
 
 def require(ok: bool, message: str) -> None:
     if not ok:
-        raise SystemExit(f"{GUARD}: inner-Move/two-Take successor {message}")
+        raise SystemExit(f"{GUARD}: innermost-Move/two-Take successor {message}")
 
 
 def digest(path: str) -> str:
@@ -46,9 +47,6 @@ def record(activation: dict) -> dict:
 
 
 def before_new_digest(activation: dict, path: str, live_digest: str) -> str:
-    if activation.get("call_innermost_move_two_take_return_zero_increment"):
-        from phase26_call_innermost_move_two_take_return_registration import before_new_digest as before_innermost_digest
-        live_digest = before_innermost_digest(activation, path, live_digest)
     rows = record(activation).get("phase23_text_surface_successor", {}).get("changed_rows", [])
     matches = [row for row in rows if row.get("path") == path]
     require(len(matches) <= 1, f"duplicate text path: {path}")
@@ -62,13 +60,10 @@ def before_new_digest(activation: dict, path: str, live_digest: str) -> str:
 
 
 def before_new_spelling(activation: dict, live: dict) -> dict:
-    if activation.get("call_innermost_move_two_take_return_zero_increment"):
-        from phase26_call_innermost_move_two_take_return_registration import before_new_spelling as before_innermost_spelling
-        live = before_innermost_spelling(activation, live)
     successor = record(activation).get("spelling_inventory_successor", {})
     previous = activation[OLD]["spelling_inventory_successor"]["current_inventory_summary"]
     require(successor == {
-        "contract_version": "phase26_1e_inner_move_two_take_spelling_successor_v1",
+        "contract_version": "phase26_1e_innermost_move_two_take_spelling_successor_v1",
         "previous_inventory_summary": previous,
         "current_inventory_summary": live,
         "changed_source_paths": ["compiler/typechecker.gst", POSITIVE, *NEW_FIXTURES],
@@ -83,13 +78,10 @@ def before_new_spelling(activation: dict, live: dict) -> dict:
 
 
 def before_new_filename(activation: dict, live: list[dict]) -> list[dict]:
-    if activation.get("call_innermost_move_two_take_return_zero_increment"):
-        from phase26_call_innermost_move_two_take_return_registration import before_new_filename as before_innermost_filename
-        live = before_innermost_filename(activation, live)
     successor = record(activation).get("filename_site_successor", {})
     previous = activation[OLD]["filename_site_successor"]["current_sites"]
     require(successor == {
-        "contract_version": "phase26_1e_inner_move_two_take_filename_successor_v1",
+        "contract_version": "phase26_1e_innermost_move_two_take_filename_successor_v1",
         "previous_sites": previous,
         "current_sites": live,
         "line_deltas": [now["line"] - before["line"]
@@ -105,9 +97,6 @@ def before_new_filename(activation: dict, live: list[dict]) -> list[dict]:
 
 def before_new_invocations(activation: dict, live: list[dict], *,
                            projected: bool = False) -> list[dict]:
-    if activation.get("call_innermost_move_two_take_return_zero_increment"):
-        from phase26_call_innermost_move_two_take_return_registration import before_new_invocations as before_innermost_invocations
-        live = before_innermost_invocations(activation, live, projected=projected)
     successor = record(activation).get("phase22_invocation_successor", {})
     previous = activation[OLD]["phase22_invocation_successor"]["current_row"]
     frozen = activation["call_outer_move_take_return_zero_increment"][
@@ -115,7 +104,7 @@ def before_new_invocations(activation: dict, live: list[dict], *,
     current = successor.get("current_row", {})
     selected = [row for row in live if row.get("path") == GUARD_PATH]
     require(successor == {
-        "contract_version": "phase26_1e_inner_move_two_take_phase22_line_successor_v1",
+        "contract_version": "phase26_1e_innermost_move_two_take_phase22_line_successor_v1",
         "previous_row": previous,
         "current_row": current,
         "unchanged_total": 20,
@@ -132,21 +121,21 @@ def before_new_invocations(activation: dict, live: list[dict], *,
 def main() -> None:
     activation = json.loads((ROOT / "scripts/cranelift_feature_registry.json")
                             .read_text())["phase26_activation_audit"]
-    if activation.get("call_innermost_move_two_take_return_zero_increment"):
-        from phase26_call_innermost_move_two_take_return_registration import main as innermost_main
-        innermost_main()
     row = record(activation)
     expected = {
-        "contract_version": "phase26_1e_inner_move_two_take_return_zero_v1",
-        "status": "bounded_inner_move_two_take_safe_return_rejection_qualified",
+        "contract_version": "phase26_1e_innermost_move_two_take_return_zero_v1",
+        "status": "bounded_innermost_move_two_take_safe_return_rejection_qualified",
         "owner": "cranelift",
-        "increment": "26.1E_inner_Move_two_Take_safe_return",
+        "increment": "26.1E_innermost_Move_two_Take_safe_return",
         "operator_ownership_decision": "2026-10-08_coordinator_assigned_under_activated_phase26",
-        "candidate_shape": "immediate_same_block_concrete_nullary_raw_pointer_call_current_local_or_validated_alias_one_inner_Move_between_exactly_two_Takes_optional_checked_raw_casts",
+        "candidate_shape": "immediate_same_block_concrete_nullary_raw_pointer_call_current_local_or_validated_alias_one_innermost_Move_beneath_exactly_two_Takes_optional_checked_raw_casts",
         "safe_boundary": "declared_nonextern_raw_pointer_return",
         "negative_states": ["Zero", "MayZero"],
-        "negative_fixtures": NEW_FIXTURES[:7],
-        "control_fixtures": NEW_FIXTURES[7:],
+        "negative_fixtures": [RECLASSIFIED, *NEW_FIXTURES[:6]],
+        "control_fixtures": NEW_FIXTURES[6:],
+        "reclassified_fixture": {"path": RECLASSIFIED,
+                                 "previous": "accepted_then_native_deferral",
+                                 "current": "RawNullSafeBoundary_before_driver"},
         "prior_error_precedence": "preserved",
         "unknown_and_nonzero": "preserved",
         "unsafe_functions": "preserved",
@@ -167,41 +156,34 @@ def main() -> None:
                   "phase22_invocation_successor", "positive_fixture_successor"}
     require({k: row.get(k) for k in expected} == expected and
             set(row) == set(expected) | successors, "contract or field set drifted")
-    require(all((ROOT / p).is_file() for p in NEW_FIXTURES),
+    require(all((ROOT / p).is_file() for p in [RECLASSIFIED, *NEW_FIXTURES]),
             "source fixture missing")
-    live_guard_digest = digest(GUARD_PATH)
-    live_positive_digest = digest(POSITIVE)
-    if activation.get("call_innermost_move_two_take_return_zero_increment"):
-        innermost = activation["call_innermost_move_two_take_return_zero_increment"]
-        require(innermost["guard_digest_successor"]["current_digest"] == live_guard_digest and
-                innermost["positive_fixture_successor"]["current_digest"] == live_positive_digest,
-                "innermost-Move/two-Take live evidence drifted")
-        live_guard_digest = innermost["guard_digest_successor"]["previous_digest"]
-        live_positive_digest = innermost["positive_fixture_successor"]["previous_digest"]
     require(row["guard_digest_successor"] == {
         "path": GUARD_PATH,
         "previous_digest": activation[OLD]["guard_digest_successor"]["current_digest"],
-        "current_digest": live_guard_digest,
+        "current_digest": digest(GUARD_PATH),
         "partial_extra_or_substituted_guard": "rejected",
     }, "guard digest drifted")
     require(row["positive_fixture_successor"] == {
         "path": POSITIVE,
         "previous_digest": activation[OLD]["positive_fixture_successor"]["current_digest"],
-        "current_digest": live_positive_digest,
+        "current_digest": digest(POSITIVE),
         "partial_extra_or_substituted_fixture": "rejected",
     }, "positive matcher evidence drifted")
     guard = (ROOT / GUARD_PATH).read_text()
     compiler = (ROOT / "compiler/typechecker.gst").read_text()
     require(all(marker in guard for marker in (
-        "inner_move_two_take_zero|inner_move_two_take_mayzero",
+        "inner_move_two_take_move_under_both_takes", "inner_move_two_take_both_zero",
         "phase26_call_local_return_inner_move_two_take_${case_name#inner_move_two_take_}_source.gst",
-        "inner_move_two_take_between_outer_take_move_mayzero",
-        "inner_move_two_take_between_move_inner_take_mayzero",
-        "inner_move_two_take_inner_cast_mayzero",
-        "inner_move_two_take_interleaved_cast_mayzero",
-        "inner_move_two_take_third_take", "inner_move_two_take_outer_and_inner_move",
+        "inner_move_two_take_both_between_takes_cast_mayzero",
+        "inner_move_two_take_both_before_move_cast_mayzero",
+        "inner_move_two_take_both_inside_move_cast_mayzero",
+        "inner_move_two_take_both_interleaved_cast_mayzero",
+        "inner_move_two_take_both_third_take", "inner_move_two_take_both_outer_and_inner_move",
+        "inner_move_two_take_both_bare_move_outer_cast_priority",
         "GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER", "test ! -e \"$marker\"")) and
         "take_count > 2" in compiler and
+        "(take_count != 1 && take_count != 2)" in compiler and
         "inner_move == 1 && take_count != 2" in compiler,
         "native or fail-closed evidence weakened")
     from phase24_semantic_spelling_inventory import source_sites, manifest_summary
@@ -222,61 +204,40 @@ def main() -> None:
         "phase23_text_surface_successor"]["changed_rows"]}
     prior_added = activation[OLD]["phase23_text_surface_successor"]["added_rows"][0]
     require(surface.get("contract_version") ==
-            "phase26_1e_inner_move_two_take_phase23_text_successor_v1" and
+            "phase26_1e_innermost_move_two_take_phase23_text_successor_v1" and
             surface.get("partial_extra_or_substituted_surface") == "rejected" and
             [e.get("path") for e in changed] == TEXT_PATHS and
             len(added) == 1 and added[0].get("path") ==
+            "scripts/phase26_call_innermost_move_two_take_return_registration.py" and
+            prior_added["path"] ==
             "scripts/phase26_call_inner_move_two_take_return_registration.py" and
-            prior_added["path"] == "scripts/phase26_call_outer_move_two_take_return_registration.py" and
             all(p in tracked_paths() and p not in SELF_EXCLUSIONS for p in TEXT_PATHS),
             "text surface shape drifted")
     for e in changed:
         path = e["path"]
         counts = {name: len(pattern.findall((ROOT / path).read_text()))
                   for name, pattern in SURFACE_PATTERNS.items()}
-        current_digest = digest(path)
-        if activation.get("call_innermost_move_two_take_return_zero_increment"):
-            from phase26_call_innermost_move_two_take_return_registration import before_new_digest as before_innermost_digest
-            innermost_rows = activation["call_innermost_move_two_take_return_zero_increment"][
-                "phase23_text_surface_successor"]["changed_rows"]
-            innermost = [item for item in innermost_rows if item["path"] == path]
-            require(len(innermost) <= 1, f"duplicate innermost text path: {path}")
-            current_digest = before_innermost_digest(activation, path, current_digest)
-            if innermost:
-                require(counts == innermost[0]["current_match_counts"],
-                        f"innermost text count drifted: {path}")
-                counts = innermost[0]["previous_match_counts"]
         prior = prior_rows.get(path)
         require(prior is not None or path == prior_added["path"],
                 f"unproven predecessor: {path}")
         require(e == {"path": path,
                       "previous_digest": prior["current_digest"] if prior else prior_added["digest"],
-                      "current_digest": current_digest,
+                      "current_digest": digest(path),
                       "previous_match_counts": prior["current_match_counts"] if prior else prior_added["match_counts"],
                       "current_match_counts": counts},
                 f"text surface drifted: {path}")
     path = added[0]["path"]
     counts = {name: len(pattern.findall((ROOT / path).read_text()))
               for name, pattern in SURFACE_PATTERNS.items()}
-    current_digest = digest(path)
-    if activation.get("call_innermost_move_two_take_return_zero_increment"):
-        from phase26_call_innermost_move_two_take_return_registration import before_new_digest as before_innermost_digest
-        innermost_rows = activation["call_innermost_move_two_take_return_zero_increment"][
-            "phase23_text_surface_successor"]["changed_rows"]
-        innermost = [item for item in innermost_rows if item["path"] == path]
-        require(len(innermost) == 1 and counts == innermost[0]["current_match_counts"],
-                "innermost added text count drifted")
-        current_digest = before_innermost_digest(activation, path, current_digest)
-        counts = innermost[0]["previous_match_counts"]
     require(added[0] == {
-        "path": path, "digest": current_digest, "match_counts": counts,
+        "path": path, "digest": digest(path), "match_counts": counts,
         "classification": "archive_candidate", "owner": "cranelift",
         "current_route": "tracked_MIR_to_C_or_generated_C_surface",
         "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
         "removal_phase": "24",
         "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
     } and any(counts.values()), "added text surface drifted")
-    print(f"{GUARD}: inner-Move/two-Take successor registration ok")
+    print(f"{GUARD}: innermost-Move/two-Take successor registration ok")
 
 
 if __name__ == "__main__":
