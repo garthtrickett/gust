@@ -210,7 +210,9 @@ def main() -> None:
              "outer_move == 1 && take_count == 0" in compiler) and
             ("Matcher already proved one outer Move and one Take" in compiler or
              activation.get("call_outer_move_two_take_return_zero_increment") and
-             "Matcher proved one outer Move and one or two Takes" in compiler),
+             "Matcher proved one outer Move and one or two Takes" in compiler or
+             activation.get("call_outer_move_finite_take_return_zero_increment") and
+             "Matcher proved one outer Move and a finite Take chain" in compiler),
             "native or fail-closed evidence weakened")
 
     from phase24_semantic_spelling_inventory import source_sites, manifest_summary

@@ -1296,6 +1296,21 @@ position; a third Take before or after a Move cannot promote the candidate.
 This changes no MIR, ABI, layout, native runtime, stdlib, oracle, or fallback
 meaning. Broad D/E/F and Phase 26.1 remain open.
 
+**26.1E one outer Move over a finite Take chain (Cranelift ownership assigned
+2026-10-08).** The same immediate same-block concrete nullary `*T` candidate
+may cross exactly one syntactically outer `Move` enclosing three or more `Take`
+expressions at a declared-safe return. Finite individually checked
+RawPointer-to-RawPointer casts may occur inside that outer `Move` under the
+existing validated-alias prerequisite. Ordinary return type and safety checks,
+prior escape and moved-variable diagnostics, candidate invalidation, and
+Take/move/resource bookkeeping retain priority; the four-state finalizer
+rejects proven Zero and MayZero before native driver discovery. Inner or
+between-Take `Move` forms remain limited to two Takes. A second or later Move,
+cast outside the outer Move, unsupported cast, broader alias or
+interprocedural flow, and aggregate transport stay excluded. This changes no
+MIR, ABI, layout, native runtime, stdlib, oracle, or fallback meaning. Broad
+D/E/F and Phase 26.1 remain open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
