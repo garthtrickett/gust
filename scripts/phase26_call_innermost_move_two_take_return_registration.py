@@ -241,7 +241,7 @@ def main() -> None:
         "inner_move_two_take_both_third_take", "inner_move_two_take_both_outer_and_inner_move",
         "inner_move_two_take_both_bare_move_outer_cast_priority",
         "GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER", "test ! -e \"$marker\"")) and
-        (("if outer_move == 1 || inner_move == 1 || take_count == 0" in compiler)
+        ((((compiler.count("if outer_move == 1 || inner_move == 1 { return 0; }") == 2 and compiler.count("if take_count == 0 { outer_move = 1; }") == 2) if activation.get("call_outer_move_cast_prefix_return_zero_increment") else "if outer_move == 1 || inner_move == 1 || take_count == 0" in compiler))
          if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment") else
          ("take_count > 2" in compiler)) and
         (("(take_count != 1 && take_count != 2)" in compiler)
@@ -252,7 +252,7 @@ def main() -> None:
           activation["call_outer_move_finite_take_return_zero_increment"][
               "phase23_text_surface_successor"]["changed_rows"][0]["current_digest"])
          if not activation.get("call_innermost_move_finite_take_return_zero_increment") else
-         (compiler.count("if outer_move == 1 || inner_move == 1 || take_count == 0") == 2 and
+         (((compiler.count("if outer_move == 1 || inner_move == 1 { return 0; }") == 2 and compiler.count("if take_count == 0 { outer_move = 1; }") == 2) if activation.get("call_outer_move_cast_prefix_return_zero_increment") else compiler.count("if outer_move == 1 || inner_move == 1 || take_count == 0") == 2) and
           activation["call_innermost_move_finite_take_return_zero_increment"][
               "phase23_text_surface_successor"]["changed_rows"][0]["previous_digest"] ==
           activation["call_innermost_move_three_take_return_zero_increment"][

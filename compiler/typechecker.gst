@@ -2792,8 +2792,9 @@ func phase26_zero_local_call_argument_cast_is_raw(arg: ast.Expression[ctx], env:
 }
 
 // A safe Return may use the current candidate directly or through a finite
-// Take-only chain and checked raw-pointer casts. One outer Move may enclose a
-// finite Take chain; an innermost Move may sit below two or more Takes, and
+// Take-only chain and checked raw-pointer casts. One outer Move, optionally
+// preceded by checked raw-pointer casts, may enclose a finite Take chain;
+// an innermost Move may sit below two or more Takes, and
 // one Move after a finite outer Take chain may enclose a finite inner Take
 // chain. Casts still require a validated alias.
 // This syntax probe runs before typechecking; the companion proof below runs
@@ -2803,11 +2804,6 @@ func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env:
         if std.str_eq((*env).zero_local_call_name, "") == 1 { return 0; }
         mut current := expr;
         mut outer_move := 0;
-        if current.tag == 4 { // Move, only outside the existing Take/cast form.
-            if current.Move.expr == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
-            outer_move = 1;
-            current = ctx[current.Move.expr];
-        }
         mut take_count := 0;
         mut inner_move := 0;
         mut has_cast := 0;
@@ -2820,8 +2816,9 @@ func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env:
                 has_cast = 1;
                 next_idx = current.AsCast.left;
             } else {
-                if outer_move == 1 || inner_move == 1 || take_count == 0 { return 0; }
-                inner_move = 1;
+                if outer_move == 1 || inner_move == 1 { return 0; }
+                if take_count == 0 { outer_move = 1; }
+                else { inner_move = 1; }
                 next_idx = current.Move.expr;
             }
             if next_idx == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
@@ -2838,11 +2835,6 @@ func phase26_zero_local_return_cast_is_raw(expr: ast.Expression[ctx], env: *Type
     unsafe {
         mut current := expr;
         mut outer_move := 0;
-        if current.tag == 4 { // Matcher proved one outer Move and a finite Take chain.
-            if current.Move.expr == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
-            outer_move = 1;
-            current = ctx[current.Move.expr];
-        }
         mut take_count := 0;
         mut inner_move := 0;
         while current.tag == 5 || current.tag == 9 || current.tag == 4 {
@@ -2860,8 +2852,9 @@ func phase26_zero_local_return_cast_is_raw(expr: ast.Expression[ctx], env: *Type
                    phase26_zero_resolved_expression_tag(next_idx, env, ctx) != 9 { return 0; }
             }
             if current.tag == 4 {
-                if outer_move == 1 || inner_move == 1 || take_count == 0 { return 0; }
-                inner_move = 1;
+                if outer_move == 1 || inner_move == 1 { return 0; }
+                if take_count == 0 { outer_move = 1; }
+                else { inner_move = 1; }
                 next_idx = current.Move.expr;
             }
             if next_idx == empty[Index[ast.Expression[ctx], ctx]] { return 0; }

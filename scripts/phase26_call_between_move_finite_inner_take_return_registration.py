@@ -249,22 +249,24 @@ def main() -> None:
     compiler = (ROOT / "compiler/typechecker.gst").read_text()
     require(all(marker in guard for marker in (
         "inner_move_two_take_third_take",
-        "interleaved_cast_mayzero|inner_move)",
+        ("interleaved_cast_mayzero|inner_move|cast_outside_move)"
+         if activation.get("call_outer_move_cast_prefix_return_zero_increment") else
+         "interleaved_cast_mayzero|inner_move)"),
         ("interleaved_cast_mayzero|fourth_take|move_between|later_take)"
          if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment") else
          "interleaved_cast_mayzero|fourth_take|move_between)"),
         "for case_name in " + " ".join(NAMES) + "; do",
         "phase26_call_local_return_between_move_finite_inner_take_${case_name}_source.gst",
         "GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER", 'test ! -e "$marker"')) and
-        (compiler.count("if outer_move == 1 || inner_move == 1 || take_count == 0") == 2
+        (((compiler.count("if outer_move == 1 || inner_move == 1 { return 0; }") == 2 and compiler.count("if take_count == 0 { outer_move = 1; }") == 2) if activation.get("call_outer_move_cast_prefix_return_zero_increment") else compiler.count("if outer_move == 1 || inner_move == 1 || take_count == 0") == 2)
          if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment") else
          compiler.count("takes_before_move != 1 && takes_before_move != 2") == 2
          if activation.get("call_two_outer_move_finite_inner_take_return_zero_increment") else
          compiler.count("take_count > 2 && inner_move == 1 && takes_before_move != 1") == 2) and
-        (compiler.count("if outer_move == 1 || inner_move == 1 || take_count == 0") == 2
+        (((compiler.count("if outer_move == 1 || inner_move == 1 { return 0; }") == 2 and compiler.count("if take_count == 0 { outer_move = 1; }") == 2) if activation.get("call_outer_move_cast_prefix_return_zero_increment") else compiler.count("if outer_move == 1 || inner_move == 1 || take_count == 0") == 2)
          if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment") else
          compiler.count("takes_before_move = take_count") == 2) and
-        compiler.count("if outer_move == 1 || inner_move == 1 || take_count == 0") == 2 and
+        ((compiler.count("if outer_move == 1 || inner_move == 1 { return 0; }") == 2 and compiler.count("if take_count == 0 { outer_move = 1; }") == 2) if activation.get("call_outer_move_cast_prefix_return_zero_increment") else compiler.count("if outer_move == 1 || inner_move == 1 || take_count == 0") == 2) and
         "inner_move == 1 && take_count < 2" in compiler and
         "inner_move == 0 || take_count >= 2" in compiler,
         "native or fail-closed evidence weakened")
@@ -281,7 +283,8 @@ def main() -> None:
             if not is_non_invocation(command, match.start()):
                 raw.append(classify(path, line, command, recipe,
                                     match.group("token"), selection(command)))
-    expected_raw = (27 if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment") else
+    expected_raw = (28 if activation.get("call_outer_move_cast_prefix_return_zero_increment") else
+                    27 if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment") else
                     26 if activation.get("call_two_outer_move_finite_inner_take_return_zero_increment") else 25)
     require(len(raw) == expected_raw and len(before_new_invocations(activation, raw)) == 24,
             "raw Phase22 invocation identity drifted")
