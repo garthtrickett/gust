@@ -213,9 +213,11 @@ def main() -> None:
                 "two_take_third_take", "two_take_move",
                 "GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER",
                 "test ! -e \"$marker\"")) and
-            ("take_count > 2 || (outer_move == 1 && take_count > 1)" in compiler or
-             activation.get("call_outer_move_two_take_return_zero_increment") and
-             "take_count > 2" in compiler),
+            (("if outer_move == 1 || inner_move == 1 || take_count == 0" in compiler)
+             if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment") else
+             ("take_count > 2 || (outer_move == 1 && take_count > 1)" in compiler or
+              activation.get("call_outer_move_two_take_return_zero_increment") and
+              "take_count > 2" in compiler)),
             "native or fail-closed evidence weakened")
     from phase24_semantic_spelling_inventory import source_sites, manifest_summary
     before_two_take_spelling(activation, manifest_summary(source_sites()))

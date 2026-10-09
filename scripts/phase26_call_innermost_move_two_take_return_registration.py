@@ -241,7 +241,9 @@ def main() -> None:
         "inner_move_two_take_both_third_take", "inner_move_two_take_both_outer_and_inner_move",
         "inner_move_two_take_both_bare_move_outer_cast_priority",
         "GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER", "test ! -e \"$marker\"")) and
-        "take_count > 2" in compiler and
+        (("if outer_move == 1 || inner_move == 1 || take_count == 0" in compiler)
+         if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment") else
+         ("take_count > 2" in compiler)) and
         (("(take_count != 1 && take_count != 2)" in compiler)
          if not activation.get("call_innermost_move_three_take_return_zero_increment") else
          (compiler.count("(take_count != 1 && take_count != 2 && take_count != 3)") == 2 and

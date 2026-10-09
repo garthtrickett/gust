@@ -2794,9 +2794,8 @@ func phase26_zero_local_call_argument_cast_is_raw(arg: ast.Expression[ctx], env:
 // A safe Return may use the current candidate directly or through a finite
 // Take-only chain and checked raw-pointer casts. One outer Move may enclose a
 // finite Take chain; an innermost Move may sit below two or more Takes, and
-// one Move after one or two outer Takes may enclose a finite inner Take chain.
-// Other inner Move positions retain their existing limits. Casts still require a
-// validated alias.
+// one Move after a finite outer Take chain may enclose a finite inner Take
+// chain. Casts still require a validated alias.
 // This syntax probe runs before typechecking; the companion proof below runs
 // only after the ordinary return type and safety checks.
 func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
@@ -2811,14 +2810,11 @@ func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env:
         }
         mut take_count := 0;
         mut inner_move := 0;
-        mut takes_before_move := 0;
         mut has_cast := 0;
         while current.tag == 5 || current.tag == 9 || current.tag == 4 {
             mut next_idx := empty[Index[ast.Expression[ctx], ctx]];
             if current.tag == 5 {
                 take_count = take_count + 1;
-                if take_count > 2 && inner_move == 1 &&
-                   takes_before_move != 1 && takes_before_move != 2 { return 0; }
                 next_idx = current.Take.expr;
             } else if current.tag == 9 {
                 has_cast = 1;
@@ -2826,7 +2822,6 @@ func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env:
             } else {
                 if outer_move == 1 || inner_move == 1 || take_count == 0 { return 0; }
                 inner_move = 1;
-                takes_before_move = take_count;
                 next_idx = current.Move.expr;
             }
             if next_idx == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
@@ -2850,13 +2845,10 @@ func phase26_zero_local_return_cast_is_raw(expr: ast.Expression[ctx], env: *Type
         }
         mut take_count := 0;
         mut inner_move := 0;
-        mut takes_before_move := 0;
         while current.tag == 5 || current.tag == 9 || current.tag == 4 {
             mut next_idx := empty[Index[ast.Expression[ctx], ctx]];
             if current.tag == 5 {
                 take_count = take_count + 1;
-                if take_count > 2 && inner_move == 1 &&
-                   takes_before_move != 1 && takes_before_move != 2 { return 0; }
                 next_idx = current.Take.expr;
             }
             if current.tag == 9 {
@@ -2870,7 +2862,6 @@ func phase26_zero_local_return_cast_is_raw(expr: ast.Expression[ctx], env: *Type
             if current.tag == 4 {
                 if outer_move == 1 || inner_move == 1 || take_count == 0 { return 0; }
                 inner_move = 1;
-                takes_before_move = take_count;
                 next_idx = current.Move.expr;
             }
             if next_idx == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
