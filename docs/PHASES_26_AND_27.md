@@ -1328,6 +1328,24 @@ Move, unsupported casts, and broader alias or interprocedural flow remain
 excluded. No MIR, ABI, layout, runtime, oracle, or fallback meaning changes.
 Broad D/E/F and Phase 26.1 remain open.
 
+**26.1E one innermost Move beneath four or more Takes (Cranelift ownership
+assigned 2026-10-09).** The existing immediate same-block concrete nullary
+`*T` candidate may cross a finite chain of at least four syntactic `Take`
+expressions followed by exactly one innermost `Move` at a declared-safe
+return. Finite individually checked RawPointer-to-RawPointer casts may occur
+around or between those operators under the existing validated-alias
+prerequisite. Ordinary return type, safety, prior escape, and moved-variable
+diagnostics retain priority. The existing four-state finalizer rejects proven
+Zero and MayZero before native driver discovery; Nonzero, genuine Unknown,
+unsafe, invalidated candidates, and excluded wrapper shapes keep their
+classifications. No Take may occur below the new innermost Move. Earlier
+two- and three-Take innermost forms, finite Take-only and outer-Move chains,
+and the bounded between-Take Move forms remain unchanged. This adds no second
+Move, other inner Move placement above two Takes, scalar or unproved cast,
+broader alias/interprocedural/control-flow candidate, or aggregate transport.
+Take/move/resource bookkeeping, MIR, ABI, layout, native runtime, stdlib,
+oracle, fallback, and all broad D/E/F and Phase 26 status gates are unchanged.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

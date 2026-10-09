@@ -171,6 +171,13 @@ def main() -> None:
             "source fixture missing")
     live_guard_digest = digest(GUARD_PATH)
     live_positive_digest = digest(POSITIVE)
+    if activation.get("call_innermost_move_finite_take_return_zero_increment"):
+        finite_inner = activation["call_innermost_move_finite_take_return_zero_increment"]
+        require(finite_inner["guard_digest_successor"]["current_digest"] == live_guard_digest and
+                finite_inner["positive_fixture_successor"]["current_digest"] == live_positive_digest,
+                "innermost-Move finite-Take live evidence drifted")
+        live_guard_digest = finite_inner["guard_digest_successor"]["previous_digest"]
+        live_positive_digest = finite_inner["positive_fixture_successor"]["previous_digest"]
     if activation.get("call_innermost_move_three_take_return_zero_increment"):
         three = activation["call_innermost_move_three_take_return_zero_increment"]
         require(three["guard_digest_successor"]["current_digest"] == live_guard_digest and
@@ -233,7 +240,9 @@ def main() -> None:
         "inner_move_two_take_third_take", "inner_move_two_take_outer_and_inner_move",
         "GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER", "test ! -e \"$marker\"")) and
         "take_count > 2" in compiler and
-        "inner_move == 1 && take_count != 2" in compiler,
+        ("inner_move == 1 && take_count < 2" in compiler
+         if activation.get("call_innermost_move_finite_take_return_zero_increment") else
+         "inner_move == 1 && take_count != 2" in compiler),
         "native or fail-closed evidence weakened")
     from phase24_semantic_spelling_inventory import source_sites, manifest_summary
     before_new_spelling(activation, manifest_summary(source_sites()))

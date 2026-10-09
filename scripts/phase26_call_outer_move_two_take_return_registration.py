@@ -195,6 +195,13 @@ def main() -> None:
             "source fixture missing")
     live_guard_digest = digest(GUARD_PATH)
     live_positive_digest = digest(POSITIVE)
+    if activation.get("call_innermost_move_finite_take_return_zero_increment"):
+        finite_inner = activation["call_innermost_move_finite_take_return_zero_increment"]
+        require(finite_inner["guard_digest_successor"]["current_digest"] == live_guard_digest and
+                finite_inner["positive_fixture_successor"]["current_digest"] == live_positive_digest,
+                "innermost-Move finite-Take live evidence drifted")
+        live_guard_digest = finite_inner["guard_digest_successor"]["previous_digest"]
+        live_positive_digest = finite_inner["positive_fixture_successor"]["previous_digest"]
     if activation.get("call_innermost_move_three_take_return_zero_increment"):
         three = activation["call_innermost_move_three_take_return_zero_increment"]
         require(three["guard_digest_successor"]["current_digest"] == live_guard_digest and
