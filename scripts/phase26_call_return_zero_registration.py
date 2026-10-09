@@ -5186,6 +5186,18 @@ def main() -> None:
     } and all((ROOT / path).is_file() for path in wrapper_fixtures),
             "one-Take safe-return successor fields or fixtures drifted")
     current_positive_digest = digest(POSITIVE)
+    innermost_finite_positive = activation.get(
+        "call_innermost_move_finite_take_return_zero_increment", {}).get(
+            "positive_fixture_successor")
+    if innermost_finite_positive is not None:
+        require(innermost_finite_positive == {
+            "path": POSITIVE,
+            "previous_digest": activation["call_innermost_move_three_take_return_zero_increment"][
+                "positive_fixture_successor"]["current_digest"],
+            "current_digest": current_positive_digest,
+            "partial_extra_or_substituted_fixture": "rejected",
+        }, "innermost-Move finite-Take positive evidence successor drifted")
+        current_positive_digest = innermost_finite_positive["previous_digest"]
     innermost_three_positive = activation.get(
         "call_innermost_move_three_take_return_zero_increment", {}).get(
             "positive_fixture_successor")
