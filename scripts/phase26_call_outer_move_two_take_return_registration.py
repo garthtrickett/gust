@@ -272,7 +272,9 @@ def main() -> None:
         "outer_move_two_take_third_take", "outer_move_two_take_inner_move",
         "outer_move_two_take_second_move",
         "GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER", "test ! -e \"$marker\"")) and
-        "take_count > 2" in compiler and
+        (("if outer_move == 1 || inner_move == 1 || take_count == 0" in compiler)
+         if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment") else
+         ("take_count > 2" in compiler)) and
         "outer_move == 1 && take_count == 0" in compiler,
         "native or fail-closed evidence weakened")
     from phase24_semantic_spelling_inventory import source_sites, manifest_summary

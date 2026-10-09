@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pin the one-outer-Take finite-inner-Take Move successor before frozen predecessors."""
+"""Pin finite outer and inner Takes around one Move before frozen predecessors."""
 
 from __future__ import annotations
 
@@ -8,25 +8,26 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-KEY = "call_between_move_finite_inner_take_return_zero_increment"
-OLD = "call_innermost_move_finite_take_return_zero_increment"
+KEY = "call_finite_outer_move_finite_inner_take_return_zero_increment"
+OLD = "call_two_outer_move_finite_inner_take_return_zero_increment"
 GUARD = "guard-cranelift-phase26-call-return-zero-evidence"
 GUARD_PATH = "scripts/phase26_call_return_zero_evidence.sh"
 POSITIVE = "compiler/phase26_call_return_zero_test_entry.gst"
-RECLASSIFIED = "compiler/phase26_call_local_return_inner_move_two_take_third_take_source.gst"
-ADDITIONAL_RECLASSIFIED = "compiler/phase26_call_local_return_outer_move_finite_take_inner_move_source.gst"
-THIRD_RECLASSIFIED = "compiler/phase26_call_local_return_innermost_move_three_take_move_between_source.gst"
+RECLASSIFIED = "compiler/phase26_call_local_return_innermost_move_three_take_later_take_source.gst"
+ADDITIONAL_RECLASSIFIED = "compiler/phase26_call_local_return_innermost_move_finite_take_later_take_source.gst"
+THIRD_RECLASSIFIED = "compiler/phase26_call_local_return_two_outer_move_finite_inner_take_three_outer_one_inner_source.gst"
 NAMES = (
-    "zero", "mayzero_three", "mayzero_four", "outer_cast_mayzero",
-    "after_outer_take_cast_mayzero", "after_move_cast_mayzero",
+    "zero", "mayzero_four", "mayzero_five", "mayzero_seven", "mayzero_eight",
+    "outer_cast_mayzero", "between_outer_takes_cast_mayzero",
+    "before_move_cast_mayzero", "after_move_cast_mayzero",
     "between_inner_takes_cast_mayzero", "innermost_cast_mayzero",
     "interleaved_cast_mayzero", "nonzero", "unknown", "unsafe", "gap",
-    "overwrite", "wrong_type", "callee_first", "other_position_three",
-    "other_position_four", "second_move", "later_move",
-    "outer_and_inner_move", "scalar_cast", "cast_without_alias", "prior_move",
+    "overwrite", "wrong_type", "callee_first", "four_outer_one_inner",
+    "second_move", "outer_and_inner_move", "scalar_cast",
+    "cast_without_alias", "prior_move",
 )
 NEW_FIXTURES = [
-    f"compiler/phase26_call_local_return_between_move_finite_inner_take_{name}_source.gst"
+    f"compiler/phase26_call_local_return_finite_outer_move_finite_inner_take_{name}_source.gst"
     for name in NAMES
 ]
 TEXT_PATHS = [
@@ -36,16 +37,19 @@ TEXT_PATHS = [
     "scripts/phase26_call_innermost_move_three_take_return_registration.py",
     "scripts/phase26_call_outer_move_finite_take_return_registration.py",
     "scripts/phase26_call_finite_take_return_registration.py",
+    "scripts/phase26_call_between_move_finite_inner_take_return_registration.py",
+    "scripts/phase26_call_two_outer_move_finite_inner_take_return_registration.py",
     "scripts/phase26_call_innermost_move_two_take_return_registration.py",
     "scripts/phase26_call_inner_move_two_take_return_registration.py",
     "scripts/phase26_call_outer_move_two_take_return_registration.py",
+    "scripts/phase26_call_two_take_return_registration.py",
 ]
 CR15_PATH = "scripts/phase24_cr15_stdlib_guard_transition.py"
 
 
 def require(ok: bool, message: str) -> None:
     if not ok:
-        raise SystemExit(f"{GUARD}: between-Move finite-inner-Take successor {message}")
+        raise SystemExit(f"{GUARD}: finite-outer-Take finite-inner-Take successor {message}")
 
 
 def digest(path: str) -> str:
@@ -64,13 +68,17 @@ def old_text(activation: dict, path: str) -> tuple[str | None, dict | None]:
         return old_rows[path]["current_digest"], old_rows[path]["current_match_counts"]
     if path == old_added["path"]:
         return old_added["digest"], old_added["match_counts"]
+    prior_key = ("call_outer_move_two_take_return_zero_increment"
+                 if path == "scripts/phase26_call_two_take_return_registration.py" else
+                 "call_between_move_finite_inner_take_return_zero_increment")
+    prior_rows = activation[prior_key]["phase23_text_surface_successor"]["changed_rows"]
+    prior_matches = [row for row in prior_rows if row["path"] == path]
+    if len(prior_matches) == 1:
+        return prior_matches[0]["current_digest"], prior_matches[0]["current_match_counts"]
     return None, None
 
 
 def before_new_digest(activation: dict, path: str, live_digest: str) -> str:
-    if activation.get("call_two_outer_move_finite_inner_take_return_zero_increment"):
-        from phase26_call_two_outer_move_finite_inner_take_return_registration import before_new_digest as before_two_outer_digest
-        live_digest = before_two_outer_digest(activation, path, live_digest)
     for field in ("guard_digest_successor", "positive_fixture_successor",
                   "cr15_relay_digest_successor"):
         direct = record(activation).get(field, {})
@@ -92,9 +100,6 @@ def before_new_digest(activation: dict, path: str, live_digest: str) -> str:
 
 
 def before_new_counts(activation: dict, path: str, live_counts: dict[str, int]) -> dict[str, int]:
-    if activation.get("call_two_outer_move_finite_inner_take_return_zero_increment"):
-        from phase26_call_two_outer_move_finite_inner_take_return_registration import before_new_counts as before_two_outer_counts
-        live_counts = before_two_outer_counts(activation, path, live_counts)
     rows = record(activation).get("phase23_text_surface_successor", {}).get("changed_rows", [])
     matches = [row for row in rows if row.get("path") == path]
     require(len(matches) <= 1, f"duplicate text path: {path}")
@@ -108,13 +113,10 @@ def before_new_counts(activation: dict, path: str, live_counts: dict[str, int]) 
 
 
 def before_new_spelling(activation: dict, live: dict) -> dict:
-    if activation.get("call_two_outer_move_finite_inner_take_return_zero_increment"):
-        from phase26_call_two_outer_move_finite_inner_take_return_registration import before_new_spelling as before_two_outer_spelling
-        live = before_two_outer_spelling(activation, live)
     successor = record(activation).get("spelling_inventory_successor", {})
     previous = activation[OLD]["spelling_inventory_successor"]["current_inventory_summary"]
     require(successor == {
-        "contract_version": "phase26_1e_between_move_finite_inner_take_spelling_successor_v1",
+        "contract_version": "phase26_1e_finite_outer_move_finite_inner_take_spelling_successor_v1",
         "previous_inventory_summary": previous,
         "current_inventory_summary": live,
         "changed_source_paths": ["compiler/typechecker.gst", POSITIVE, *NEW_FIXTURES],
@@ -128,13 +130,10 @@ def before_new_spelling(activation: dict, live: dict) -> dict:
 
 
 def before_new_filename(activation: dict, live: list[dict]) -> list[dict]:
-    if activation.get("call_two_outer_move_finite_inner_take_return_zero_increment"):
-        from phase26_call_two_outer_move_finite_inner_take_return_registration import before_new_filename as before_two_outer_filename
-        live = before_two_outer_filename(activation, live)
     successor = record(activation).get("filename_site_successor", {})
     previous = activation[OLD]["filename_site_successor"]["current_sites"]
     require(successor == {
-        "contract_version": "phase26_1e_between_move_finite_inner_take_filename_successor_v1",
+        "contract_version": "phase26_1e_finite_outer_move_finite_inner_take_filename_successor_v1",
         "previous_sites": previous,
         "current_sites": live,
         "line_deltas": [now["line"] - before["line"] for before, now in zip(previous, live)],
@@ -148,9 +147,6 @@ def before_new_filename(activation: dict, live: list[dict]) -> list[dict]:
 
 def before_new_invocations(activation: dict, live: list[dict], *,
                            projected: bool = False) -> list[dict]:
-    if activation.get("call_two_outer_move_finite_inner_take_return_zero_increment"):
-        from phase26_call_two_outer_move_finite_inner_take_return_registration import before_new_invocations as before_two_outer_invocations
-        live = before_two_outer_invocations(activation, live, projected=projected)
     successor = record(activation).get("phase22_invocation_successor", {})
     previous = activation[OLD]["phase22_invocation_successor"]["added_row"]
     frozen = activation["call_outer_move_take_return_zero_increment"][
@@ -158,15 +154,15 @@ def before_new_invocations(activation: dict, live: list[dict], *,
     added = successor.get("added_row", {})
     selected = [row for row in live if row.get("path") == GUARD_PATH]
     require(successor == {
-        "contract_version": "phase26_1e_between_move_finite_inner_take_phase22_line_successor_v1",
-        "previous_row": previous, "unchanged_total": 24,
-        "added_row": added, "current_total": 25,
+        "contract_version": "phase26_1e_finite_outer_move_finite_inner_take_phase22_line_successor_v1",
+        "previous_row": previous, "unchanged_total": 26,
+        "added_row": added, "current_total": 27,
         "partial_extra_or_substituted_invocation": "rejected",
     } and
-            ((len(selected) in (20, 21, 22, 23, 24) and selected[-1] in
+            ((len(selected) in (20, 21, 22, 23, 24, 25, 26) and selected[-1] in
               (previous, activation[OLD]["phase22_invocation_successor"]["previous_row"], frozen))
              if projected else
-             (len(selected) == 25 and selected[-2] == previous and selected[-1] == added)) and
+             (len(selected) == 27 and selected[-2] == previous and selected[-1] == added)) and
             added.get("line", 0) > previous.get("line", 0) and
             {k: v for k, v in added.items() if k != "line"} ==
             {k: v for k, v in previous.items() if k != "line"},
@@ -177,22 +173,20 @@ def before_new_invocations(activation: dict, live: list[dict], *,
 def main() -> None:
     activation = json.loads((ROOT / "scripts/cranelift_feature_registry.json")
                             .read_text())["phase26_activation_audit"]
-    if activation.get("call_two_outer_move_finite_inner_take_return_zero_increment"):
-        from phase26_call_two_outer_move_finite_inner_take_return_registration import main as two_outer_main
-        two_outer_main()
     row = record(activation)
     expected = {
-        "contract_version": "phase26_1e_between_move_finite_inner_take_return_zero_v1",
-        "status": "bounded_between_move_finite_inner_take_safe_return_rejection_qualified",
+        "contract_version": "phase26_1e_finite_outer_move_finite_inner_take_return_zero_v1",
+        "status": "bounded_finite_outer_move_finite_inner_take_safe_return_rejection_qualified",
         "owner": "cranelift",
-        "increment": "26.1E_one_outer_Take_Move_finite_inner_Take_safe_return",
+        "increment": "26.1E_finite_three_or_more_outer_Takes_Move_finite_inner_Takes_safe_return",
         "operator_ownership_decision": "2026-10-09_coordinator_assigned_under_activated_phase26",
-        "candidate_shape": "immediate_same_block_concrete_nullary_raw_pointer_call_current_local_or_validated_alias_one_outer_Take_then_one_Move_then_finite_two_or_more_inner_Takes_optional_checked_raw_casts",
+        "candidate_shape": "immediate_same_block_concrete_nullary_raw_pointer_call_current_local_or_validated_alias_finite_three_or_more_outer_Takes_then_one_Move_then_finite_one_or_more_inner_Takes_optional_checked_raw_casts",
         "safe_boundary": "declared_nonextern_raw_pointer_return",
         "negative_states": ["Zero", "MayZero"],
         "negative_fixtures": [RECLASSIFIED, ADDITIONAL_RECLASSIFIED,
-                              THIRD_RECLASSIFIED, *NEW_FIXTURES[:9]],
-        "control_fixtures": NEW_FIXTURES[9:],
+                              THIRD_RECLASSIFIED, *NEW_FIXTURES[:12],
+                              NEW_FIXTURES[19]],
+        "control_fixtures": [*NEW_FIXTURES[12:19], *NEW_FIXTURES[20:]],
         "reclassified_fixture": {"path": RECLASSIFIED,
                                  "previous": "accepted_then_native_deferral",
                                  "current": "RawNullSafeBoundary_before_driver"},
@@ -207,7 +201,7 @@ def main() -> None:
         "prior_error_precedence": "preserved",
         "unknown_and_nonzero": "preserved",
         "unsafe_functions": "preserved",
-        "other_three_or_more_between_positions_and_second_Move": "excluded_from_new_form",
+        "second_or_later_Move": "excluded_from_new_form",
         "take_move_resource_semantics_changed": False,
         "diagnostic": "[RawNullSafeBoundary]",
         "failure_stage": "before_driver_discovery",
@@ -234,13 +228,9 @@ def main() -> None:
         ("positive_fixture_successor", POSITIVE, activation[OLD]["positive_fixture_successor"]["current_digest"]),
         ("cr15_relay_digest_successor", CR15_PATH, activation[OLD]["cr15_relay_digest_successor"]["current_digest"]),
     ):
-        current = digest(path)
-        if activation.get("call_two_outer_move_finite_inner_take_return_zero_increment"):
-            from phase26_call_two_outer_move_finite_inner_take_return_registration import before_new_digest as before_two_outer_digest
-            current = before_two_outer_digest(activation, path, current)
         require(row[field] == {
             "path": path, "previous_digest": previous,
-            "current_digest": current,
+            "current_digest": digest(path),
             "partial_extra_or_substituted_" +
             ("guard" if field.startswith("guard") else
              "fixture" if field.startswith("positive") else "relay"): "rejected",
@@ -248,22 +238,12 @@ def main() -> None:
     guard = (ROOT / GUARD_PATH).read_text()
     compiler = (ROOT / "compiler/typechecker.gst").read_text()
     require(all(marker in guard for marker in (
-        "inner_move_two_take_third_take",
-        "interleaved_cast_mayzero|inner_move)",
-        ("interleaved_cast_mayzero|fourth_take|move_between|later_take)"
-         if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment") else
-         "interleaved_cast_mayzero|fourth_take|move_between)"),
+        "interleaved_cast_mayzero|fourth_take|move_between|later_take)",
+        "interleaved_cast_mayzero|move_between|later_take)",
+        "interleaved_cast_mayzero|three_outer_one_inner)",
         "for case_name in " + " ".join(NAMES) + "; do",
-        "phase26_call_local_return_between_move_finite_inner_take_${case_name}_source.gst",
+        "phase26_call_local_return_finite_outer_move_finite_inner_take_${case_name}_source.gst",
         "GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER", 'test ! -e "$marker"')) and
-        (compiler.count("if outer_move == 1 || inner_move == 1 || take_count == 0") == 2
-         if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment") else
-         compiler.count("takes_before_move != 1 && takes_before_move != 2") == 2
-         if activation.get("call_two_outer_move_finite_inner_take_return_zero_increment") else
-         compiler.count("take_count > 2 && inner_move == 1 && takes_before_move != 1") == 2) and
-        (compiler.count("if outer_move == 1 || inner_move == 1 || take_count == 0") == 2
-         if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment") else
-         compiler.count("takes_before_move = take_count") == 2) and
         compiler.count("if outer_move == 1 || inner_move == 1 || take_count == 0") == 2 and
         "inner_move == 1 && take_count < 2" in compiler and
         "inner_move == 0 || take_count >= 2" in compiler,
@@ -281,9 +261,7 @@ def main() -> None:
             if not is_non_invocation(command, match.start()):
                 raw.append(classify(path, line, command, recipe,
                                     match.group("token"), selection(command)))
-    expected_raw = (27 if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment") else
-                    26 if activation.get("call_two_outer_move_finite_inner_take_return_zero_increment") else 25)
-    require(len(raw) == expected_raw and len(before_new_invocations(activation, raw)) == 24,
+    require(len(raw) == 27 and len(before_new_invocations(activation, raw)) == 26,
             "raw Phase22 invocation identity drifted")
     normalized = [e for e in scan_invocations() if e["path"] == GUARD_PATH]
     require(len(normalized) == 20 and normalized[-1] == activation[
@@ -294,11 +272,11 @@ def main() -> None:
     surface = row["phase23_text_surface_successor"]
     changed, added = surface.get("changed_rows", []), surface.get("added_rows", [])
     require(surface.get("contract_version") ==
-            "phase26_1e_between_move_finite_inner_take_phase23_text_successor_v1" and
+            "phase26_1e_finite_outer_move_finite_inner_take_phase23_text_successor_v1" and
             surface.get("partial_extra_or_substituted_surface") == "rejected" and
             [entry.get("path") for entry in changed] == TEXT_PATHS and
             len(added) == 1 and added[0].get("path") ==
-            "scripts/phase26_call_between_move_finite_inner_take_return_registration.py" and
+            "scripts/phase26_call_finite_outer_move_finite_inner_take_return_registration.py" and
             all(path in tracked_paths() and path not in SELF_EXCLUSIONS
                 for path in TEXT_PATHS), "text surface shape drifted")
     for entry in changed:
@@ -306,34 +284,24 @@ def main() -> None:
         previous_digest, previous_counts = old_text(activation, path)
         counts = {name: len(pattern.findall((ROOT / path).read_text()))
                   for name, pattern in SURFACE_PATTERNS.items()}
-        current_digest = digest(path)
-        if activation.get("call_two_outer_move_finite_inner_take_return_zero_increment"):
-            from phase26_call_two_outer_move_finite_inner_take_return_registration import before_new_digest as before_two_outer_digest, before_new_counts as before_two_outer_counts
-            current_digest = before_two_outer_digest(activation, path, current_digest)
-            counts = before_two_outer_counts(activation, path, counts)
         require(previous_digest is not None and previous_counts is not None and
                 entry == {"path": path, "previous_digest": previous_digest,
-                          "current_digest": current_digest,
+                          "current_digest": digest(path),
                           "previous_match_counts": previous_counts,
                           "current_match_counts": counts},
                 f"text surface drifted: {path}")
     path = added[0]["path"]
     counts = {name: len(pattern.findall((ROOT / path).read_text()))
               for name, pattern in SURFACE_PATTERNS.items()}
-    added_digest = digest(path)
-    if activation.get("call_two_outer_move_finite_inner_take_return_zero_increment"):
-        from phase26_call_two_outer_move_finite_inner_take_return_registration import before_new_digest as before_two_outer_digest, before_new_counts as before_two_outer_counts
-        added_digest = before_two_outer_digest(activation, path, added_digest)
-        counts = before_two_outer_counts(activation, path, counts)
     require(added[0] == {
-        "path": path, "digest": added_digest, "match_counts": counts,
+        "path": path, "digest": digest(path), "match_counts": counts,
         "classification": "archive_candidate", "owner": "cranelift",
         "current_route": "tracked_MIR_to_C_or_generated_C_surface",
         "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
         "removal_phase": "24",
         "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
     } and any(counts.values()), "added text surface drifted")
-    print(f"{GUARD}: between-Move finite-inner-Take successor registration ok")
+    print(f"{GUARD}: finite-outer-Take finite-inner-Take successor registration ok")
 
 
 if __name__ == "__main__":

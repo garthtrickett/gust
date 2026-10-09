@@ -966,7 +966,7 @@ for case_name in zero outer_cast_mayzero between_outer_middle_cast_mayzero betwe
   set -e
   test "$status" -ne 0
   case "$case_name" in
-    zero|outer_cast_mayzero|between_outer_middle_cast_mayzero|between_middle_inner_cast_mayzero|before_move_cast_mayzero|inside_move_cast_mayzero|interleaved_cast_mayzero|fourth_take|move_between)
+    zero|outer_cast_mayzero|between_outer_middle_cast_mayzero|between_middle_inner_cast_mayzero|before_move_cast_mayzero|inside_move_cast_mayzero|interleaved_cast_mayzero|fourth_take|move_between|later_take)
       rg -F "TypeError in $fixture at line 3:" "$output.stdout" >/dev/null
       rg -F '[RawNullSafeBoundary] Known zero-derived raw pointer cannot cross a declared-safe function return' "$output.stdout" >/dev/null
       if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
@@ -1010,7 +1010,7 @@ for case_name in zero fifth_take outer_cast_mayzero between_outer_middle_cast_ma
   set -e
   test "$status" -ne 0
   case "$case_name" in
-    zero|fifth_take|outer_cast_mayzero|between_outer_middle_cast_mayzero|between_middle_inner_cast_mayzero|before_move_cast_mayzero|inside_move_cast_mayzero|interleaved_cast_mayzero|move_between)
+    zero|fifth_take|outer_cast_mayzero|between_outer_middle_cast_mayzero|between_middle_inner_cast_mayzero|before_move_cast_mayzero|inside_move_cast_mayzero|interleaved_cast_mayzero|move_between|later_take)
       rg -F "TypeError in $fixture at line 3:" "$output.stdout" >/dev/null
       rg -F '[RawNullSafeBoundary] Known zero-derived raw pointer cannot cross a declared-safe function return' "$output.stdout" >/dev/null
       if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
@@ -1100,7 +1100,7 @@ for case_name in zero mayzero_three mayzero_four mayzero_six outer_cast_mayzero 
   set -e
   test "$status" -ne 0
   case "$case_name" in
-    zero|mayzero_three|mayzero_four|mayzero_six|outer_cast_mayzero|between_outer_takes_cast_mayzero|before_move_cast_mayzero|after_move_cast_mayzero|between_inner_takes_cast_mayzero|innermost_cast_mayzero|interleaved_cast_mayzero)
+    zero|mayzero_three|mayzero_four|mayzero_six|outer_cast_mayzero|between_outer_takes_cast_mayzero|before_move_cast_mayzero|after_move_cast_mayzero|between_inner_takes_cast_mayzero|innermost_cast_mayzero|interleaved_cast_mayzero|three_outer_one_inner)
       rg -F "TypeError in $fixture at line 3:" "$output.stdout" >/dev/null
       rg -F '[RawNullSafeBoundary] Known zero-derived raw pointer cannot cross a declared-safe function return' "$output.stdout" >/dev/null
       if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
@@ -1130,5 +1130,48 @@ for case_name in zero mayzero_three mayzero_four mayzero_six outer_cast_mayzero 
   test ! -e "$marker"
 done
 
+for case_name in zero mayzero_four mayzero_five mayzero_seven mayzero_eight outer_cast_mayzero between_outer_takes_cast_mayzero before_move_cast_mayzero after_move_cast_mayzero between_inner_takes_cast_mayzero innermost_cast_mayzero interleaved_cast_mayzero nonzero unknown unsafe gap overwrite wrong_type callee_first four_outer_one_inner second_move outer_and_inner_move scalar_cast cast_without_alias prior_move; do
+  fixture="compiler/phase26_call_local_return_finite_outer_move_finite_inner_take_${case_name}_source.gst"
+  output="$build_root/finite_outer_move_finite_inner_take_return_${case_name}"
+  rm -f "$output" "$marker"
+  set +e
+  GUST_TEST_MIR_TO_C_UNAVAILABLE=1 \
+  GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER="$PWD/$marker" \
+  GUST_NATIVE_BACKEND_DRIVER="$PWD/$poison" \
+    ./gust --backend cranelift -o "$output" "$fixture" \
+      >"$output.stdout" 2>"$output.stderr"
+  status=$?
+  set -e
+  test "$status" -ne 0
+  case "$case_name" in
+    zero|mayzero_four|mayzero_five|mayzero_seven|mayzero_eight|outer_cast_mayzero|between_outer_takes_cast_mayzero|before_move_cast_mayzero|after_move_cast_mayzero|between_inner_takes_cast_mayzero|innermost_cast_mayzero|interleaved_cast_mayzero|four_outer_one_inner)
+      rg -F "TypeError in $fixture at line 3:" "$output.stdout" >/dev/null
+      rg -F '[RawNullSafeBoundary] Known zero-derived raw pointer cannot cross a declared-safe function return' "$output.stdout" >/dev/null
+      if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+    wrong_type)
+      rg -F "TypeError in $fixture at line 3:" "$output.stdout" >/dev/null
+      rg -F '[TypeMismatch] Return type mismatch. Expected Int but got RawPointer(Int)' "$output.stdout" >/dev/null
+      if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+    callee_first)
+      rg -F "TypeError in $fixture at line 2:" "$output.stdout" >/dev/null
+      rg -F 'Escape analysis violation. Returning ephemeral view' "$output.stdout" >/dev/null
+      if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+    prior_move)
+      rg -F 'Semantic Error: Use of moved variable ptr' "$output.stdout" >/dev/null
+      if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+    *)
+      rg -F 'decision=deferred capability=phase13_generic_source_to_mir' "$output.stdout" >/dev/null
+      rg -F 'reason_code=deferred_p13_parameter_argument_target_dependent_abi' "$output.stdout" >/dev/null
+      if rg -F 'TypeError' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+  esac
+  test ! -s "$output.stderr"
+  test ! -e "$output"
+  test ! -e "$marker"
+done
 bash scripts/phase26_empty_raw_zero_evidence.sh
-echo 'Phase26.1E direct-call return, aliases, checked wrappers, mixed chains, finite Take-only, outer-Move finite-Take, innermost-Move finite-Take, and between-Move finite-inner-Take safe returns with one or two outer Takes, and no-fallback passed.'
+echo 'Phase26.1E direct-call return, aliases, checked wrappers, mixed chains, finite Take-only, outer-Move finite-Take, innermost-Move finite-Take, and between-Move finite-inner-Take safe returns with finite outer and inner Takes, and no-fallback passed.'

@@ -67,6 +67,9 @@ def old_text(activation: dict, path: str) -> tuple[str | None, dict | None]:
 
 
 def before_new_digest(activation: dict, path: str, live_digest: str) -> str:
+    if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment"):
+        from phase26_call_finite_outer_move_finite_inner_take_return_registration import before_new_digest as before_finite_outer_digest
+        live_digest = before_finite_outer_digest(activation, path, live_digest)
     for field in ("guard_digest_successor", "positive_fixture_successor",
                   "cr15_relay_digest_successor"):
         direct = record(activation).get(field, {})
@@ -88,6 +91,9 @@ def before_new_digest(activation: dict, path: str, live_digest: str) -> str:
 
 
 def before_new_counts(activation: dict, path: str, live_counts: dict[str, int]) -> dict[str, int]:
+    if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment"):
+        from phase26_call_finite_outer_move_finite_inner_take_return_registration import before_new_counts as before_finite_outer_counts
+        live_counts = before_finite_outer_counts(activation, path, live_counts)
     rows = record(activation).get("phase23_text_surface_successor", {}).get("changed_rows", [])
     matches = [row for row in rows if row.get("path") == path]
     require(len(matches) <= 1, f"duplicate text path: {path}")
@@ -101,6 +107,9 @@ def before_new_counts(activation: dict, path: str, live_counts: dict[str, int]) 
 
 
 def before_new_spelling(activation: dict, live: dict) -> dict:
+    if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment"):
+        from phase26_call_finite_outer_move_finite_inner_take_return_registration import before_new_spelling as before_finite_outer_spelling
+        live = before_finite_outer_spelling(activation, live)
     successor = record(activation).get("spelling_inventory_successor", {})
     previous = activation[OLD]["spelling_inventory_successor"]["current_inventory_summary"]
     require(successor == {
@@ -118,6 +127,9 @@ def before_new_spelling(activation: dict, live: dict) -> dict:
 
 
 def before_new_filename(activation: dict, live: list[dict]) -> list[dict]:
+    if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment"):
+        from phase26_call_finite_outer_move_finite_inner_take_return_registration import before_new_filename as before_finite_outer_filename
+        live = before_finite_outer_filename(activation, live)
     successor = record(activation).get("filename_site_successor", {})
     previous = activation[OLD]["filename_site_successor"]["current_sites"]
     require(successor == {
@@ -135,6 +147,9 @@ def before_new_filename(activation: dict, live: list[dict]) -> list[dict]:
 
 def before_new_invocations(activation: dict, live: list[dict], *,
                            projected: bool = False) -> list[dict]:
+    if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment"):
+        from phase26_call_finite_outer_move_finite_inner_take_return_registration import before_new_invocations as before_finite_outer_invocations
+        live = before_finite_outer_invocations(activation, live, projected=projected)
     successor = record(activation).get("phase22_invocation_successor", {})
     previous = activation[OLD]["phase22_invocation_successor"]["added_row"]
     frozen = activation["call_outer_move_take_return_zero_increment"][
@@ -161,6 +176,9 @@ def before_new_invocations(activation: dict, live: list[dict], *,
 def main() -> None:
     activation = json.loads((ROOT / "scripts/cranelift_feature_registry.json")
                             .read_text())["phase26_activation_audit"]
+    if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment"):
+        from phase26_call_finite_outer_move_finite_inner_take_return_registration import main as finite_outer_main
+        finite_outer_main()
     row = record(activation)
     expected = {
         "contract_version": "phase26_1e_two_outer_move_finite_inner_take_return_zero_v1",
@@ -215,9 +233,13 @@ def main() -> None:
         ("positive_fixture_successor", POSITIVE, activation[OLD]["positive_fixture_successor"]["current_digest"]),
         ("cr15_relay_digest_successor", CR15_PATH, activation[OLD]["cr15_relay_digest_successor"]["current_digest"]),
     ):
+        current = digest(path)
+        if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment"):
+            from phase26_call_finite_outer_move_finite_inner_take_return_registration import before_new_digest as before_finite_outer_digest
+            current = before_finite_outer_digest(activation, path, current)
         require(row[field] == {
             "path": path, "previous_digest": previous,
-            "current_digest": digest(path),
+            "current_digest": current,
             "partial_extra_or_substituted_" +
             ("guard" if field.startswith("guard") else
              "fixture" if field.startswith("positive") else "relay"): "rejected",
@@ -226,13 +248,17 @@ def main() -> None:
     compiler = (ROOT / "compiler/typechecker.gst").read_text()
     require(all(marker in guard for marker in (
         "other_position_three|other_position_four)",
-        "interleaved_cast_mayzero|move_between)",
+        ("interleaved_cast_mayzero|move_between|later_take)"
+         if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment") else
+         "interleaved_cast_mayzero|move_between)"),
         "interleaved_cast_mayzero|other_position_three|other_position_four)",
         "for case_name in " + " ".join(NAMES) + "; do",
         "phase26_call_local_return_two_outer_move_finite_inner_take_${case_name}_source.gst",
         "GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER", 'test ! -e "$marker"')) and
-        compiler.count("takes_before_move != 1 && takes_before_move != 2") == 2 and
-        compiler.count("takes_before_move = take_count") == 2 and
+        (compiler.count("if outer_move == 1 || inner_move == 1 || take_count == 0") == 2
+         if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment") else
+         compiler.count("takes_before_move != 1 && takes_before_move != 2") == 2 and
+         compiler.count("takes_before_move = take_count") == 2) and
         compiler.count("if outer_move == 1 || inner_move == 1 || take_count == 0") == 2 and
         "inner_move == 1 && take_count < 2" in compiler and
         "inner_move == 0 || take_count >= 2" in compiler,
@@ -250,7 +276,8 @@ def main() -> None:
             if not is_non_invocation(command, match.start()):
                 raw.append(classify(path, line, command, recipe,
                                     match.group("token"), selection(command)))
-    require(len(raw) == 26 and len(before_new_invocations(activation, raw)) == 25,
+    expected_raw = 27 if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment") else 26
+    require(len(raw) == expected_raw and len(before_new_invocations(activation, raw)) == 25,
             "raw Phase22 invocation identity drifted")
     normalized = [e for e in scan_invocations() if e["path"] == GUARD_PATH]
     require(len(normalized) == 20 and normalized[-1] == activation[
@@ -273,17 +300,27 @@ def main() -> None:
         previous_digest, previous_counts = old_text(activation, path)
         counts = {name: len(pattern.findall((ROOT / path).read_text()))
                   for name, pattern in SURFACE_PATTERNS.items()}
+        current_digest = digest(path)
+        if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment"):
+            from phase26_call_finite_outer_move_finite_inner_take_return_registration import before_new_digest as before_finite_outer_digest, before_new_counts as before_finite_outer_counts
+            current_digest = before_finite_outer_digest(activation, path, current_digest)
+            counts = before_finite_outer_counts(activation, path, counts)
         require(previous_digest is not None and previous_counts is not None and
                 entry == {"path": path, "previous_digest": previous_digest,
-                          "current_digest": digest(path),
+                          "current_digest": current_digest,
                           "previous_match_counts": previous_counts,
                           "current_match_counts": counts},
                 f"text surface drifted: {path}")
     path = added[0]["path"]
     counts = {name: len(pattern.findall((ROOT / path).read_text()))
               for name, pattern in SURFACE_PATTERNS.items()}
+    added_digest = digest(path)
+    if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment"):
+        from phase26_call_finite_outer_move_finite_inner_take_return_registration import before_new_digest as before_finite_outer_digest, before_new_counts as before_finite_outer_counts
+        added_digest = before_finite_outer_digest(activation, path, added_digest)
+        counts = before_finite_outer_counts(activation, path, counts)
     require(added[0] == {
-        "path": path, "digest": digest(path), "match_counts": counts,
+        "path": path, "digest": added_digest, "match_counts": counts,
         "classification": "archive_candidate", "owner": "cranelift",
         "current_route": "tracked_MIR_to_C_or_generated_C_surface",
         "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",

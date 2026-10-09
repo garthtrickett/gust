@@ -279,7 +279,9 @@ def main() -> None:
         "phase26_call_local_return_outer_move_finite_take_${case_name}_source.gst",
         "zero|mayzero_three|mayzero_four|outer_cast_mayzero|inner_cast_mayzero|interleaved_cast_mayzero)",
         "GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER", "test ! -e \"$marker\"")) and
-        compiler.count("take_count > 2 && inner_move == 1") == 2 and
+        (compiler.count("if outer_move == 1 || inner_move == 1 || take_count == 0") == 2
+         if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment") else
+         compiler.count("take_count > 2 && inner_move == 1") == 2) and
         (("(take_count != 1 && take_count != 2)" in compiler)
          if not activation.get("call_innermost_move_three_take_return_zero_increment") else
          (compiler.count("(take_count != 1 && take_count != 2 && take_count != 3)") == 2 and
@@ -310,7 +312,8 @@ def main() -> None:
             if not is_non_invocation(command, match.start()):
                 raw.append(classify(path, line, command, recipe,
                                     match.group("token"), selection(command)))
-    expected_raw = (26 if activation.get("call_two_outer_move_finite_inner_take_return_zero_increment") else
+    expected_raw = (27 if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment") else
+                    26 if activation.get("call_two_outer_move_finite_inner_take_return_zero_increment") else
                     25 if activation.get("call_between_move_finite_inner_take_return_zero_increment") else
                     24 if activation.get("call_innermost_move_finite_take_return_zero_increment") else
                     23 if activation.get("call_innermost_move_three_take_return_zero_increment") else 22)
