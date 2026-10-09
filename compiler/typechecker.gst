@@ -2805,8 +2805,13 @@ func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env:
     unsafe {
         if std.str_eq((*env).zero_local_call_name, "") == 1 { return 0; }
         if (*env).zero_local_call_cast_alias_terminal == 1 {
-            if expr.tag != 0 { return 0; }
-            return std.str_eq(expr.Identifier.name, (*env).zero_local_call_name);
+            mut alias_return := expr;
+            while alias_return.tag == 9 { // Only checked casts may wrap this terminal alias.
+                if alias_return.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+                alias_return = ctx[alias_return.AsCast.left];
+            }
+            if alias_return.tag != 0 { return 0; }
+            return std.str_eq(alias_return.Identifier.name, (*env).zero_local_call_name);
         }
         mut current := expr;
         mut outer_move := 0;
@@ -2839,6 +2844,18 @@ func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env:
 
 func phase26_zero_local_return_cast_is_raw(expr: ast.Expression[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
+        if (*env).zero_local_call_cast_alias_terminal == 1 {
+            mut alias_return := expr;
+            while alias_return.tag == 9 {
+                if alias_return.AsCast.target_type == empty[Index[ast.Type[ctx], ctx]] ||
+                   alias_return.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+                mut target := env_resolve_type(env, ctx[alias_return.AsCast.target_type], ctx);
+                if target.tag != 9 ||
+                   phase26_zero_resolved_expression_tag(alias_return.AsCast.left, env, ctx) != 9 { return 0; }
+                alias_return = ctx[alias_return.AsCast.left];
+            }
+            return alias_return.tag == 0;
+        }
         mut current := expr;
         mut outer_move := 0;
         mut take_count := 0;

@@ -1425,6 +1425,17 @@ intervening statement, overwrite, and broader flow remain outside this new
 candidate. Take, Move, resource, MIR, ABI, runtime, oracle, fallback, caps,
 and all broad D/E/F and Phase 26 status gates remain unchanged.
 
+**26.1E checked return casts after one cast-initialized alias (Cranelift
+ownership assigned 2026-10-09).** The immediate Identifier return above may
+carry a finite chain of individually checked RawPointer-to-RawPointer casts.
+The existing source and alias type match and initializer proof remain required;
+ordinary return typing, safety, escape, and moved-variable errors keep priority
+over the Zero/MayZero safe-return diagnostic. A second alias, intervening or
+overwriting statement, Take or Move inside the new return chain, scalar or
+unproved cast, and wider candidate flow remain excluded. Earlier aliases and
+return wrappers, four-state evidence, bookkeeping, MIR, ABI, runtime, oracle,
+fallback, caps, and all broad D/E/F and Phase 26 status gates remain unchanged.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
