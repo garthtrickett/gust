@@ -1346,6 +1346,23 @@ broader alias/interprocedural/control-flow candidate, or aggregate transport.
 Take/move/resource bookkeeping, MIR, ABI, layout, native runtime, stdlib,
 oracle, fallback, and all broad D/E/F and Phase 26 status gates are unchanged.
 
+**26.1E one outer Take over a Move and finite inner Takes (Cranelift ownership
+assigned 2026-10-09).** The immediate same-block concrete nullary `*T`
+candidate may cross exactly one syntactic outer `Take`, one `Move`, and a finite
+chain of at least two `Take` expressions beneath that Move at a declared-safe
+return. Every optional cast in the chain must have a resolved raw-pointer
+operand and raw-pointer target, with the existing validated-alias prerequisite.
+Ordinary return type, safety, prior escape, and moved-variable diagnostics
+retain priority. The existing four-state finalizer rejects proven Zero and
+MayZero before native driver discovery; Nonzero, genuine Unknown, unsafe,
+invalidated candidates, and excluded wrapper shapes keep their meaning.
+Finite Take-only, outer-Move finite, innermost-Move finite, and the earlier
+two-Take between-Move forms remain supported. Two or more Takes outside the
+Move in a new three-or-more-Take form, a second or later Move, scalar or
+unproved casts, and broader candidate propagation remain excluded. Take,
+Move, and resource bookkeeping, MIR, ABI, layout, runtime, oracle, fallback,
+and all broad D/E/F and Phase 26 status gates are unchanged.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

@@ -228,6 +228,11 @@ def main() -> None:
     live_guard_digest = digest(GUARD_PATH)
     live_positive_digest = digest(POSITIVE)
     live_cr15_digest = digest(CR15_PATH)
+    if activation.get("call_between_move_finite_inner_take_return_zero_increment"):
+        from phase26_call_between_move_finite_inner_take_return_registration import before_new_digest as before_between_digest
+        live_guard_digest = before_between_digest(activation, GUARD_PATH, live_guard_digest)
+        live_positive_digest = before_between_digest(activation, POSITIVE, live_positive_digest)
+        live_cr15_digest = before_between_digest(activation, CR15_PATH, live_cr15_digest)
     if activation.get("call_innermost_move_finite_take_return_zero_increment"):
         finite_inner = activation["call_innermost_move_finite_take_return_zero_increment"]
         require(finite_inner["guard_digest_successor"]["current_digest"] == live_guard_digest and
@@ -305,7 +310,8 @@ def main() -> None:
             if not is_non_invocation(command, match.start()):
                 raw.append(classify(path, line, command, recipe,
                                     match.group("token"), selection(command)))
-    expected_raw = (24 if activation.get("call_innermost_move_finite_take_return_zero_increment") else
+    expected_raw = (25 if activation.get("call_between_move_finite_inner_take_return_zero_increment") else
+                    24 if activation.get("call_innermost_move_finite_take_return_zero_increment") else
                     23 if activation.get("call_innermost_move_three_take_return_zero_increment") else 22)
     require(len(raw) == expected_raw and len(before_new_invocations(activation, raw)) == 21,
             "raw Phase22 invocation identity drifted")

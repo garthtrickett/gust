@@ -5185,7 +5185,19 @@ def main() -> None:
         "filename_site_successor", "phase23_text_surface_successor",
     } and all((ROOT / path).is_file() for path in wrapper_fixtures),
             "one-Take safe-return successor fields or fixtures drifted")
-    current_positive_digest = digest(POSITIVE)
+    current_positive_digest = raw_digest(POSITIVE)
+    between_finite_positive = activation.get(
+        "call_between_move_finite_inner_take_return_zero_increment", {}).get(
+            "positive_fixture_successor")
+    if between_finite_positive is not None:
+        require(between_finite_positive == {
+            "path": POSITIVE,
+            "previous_digest": activation["call_innermost_move_finite_take_return_zero_increment"][
+                "positive_fixture_successor"]["current_digest"],
+            "current_digest": current_positive_digest,
+            "partial_extra_or_substituted_fixture": "rejected",
+        }, "between-Move finite-inner-Take positive evidence successor drifted")
+        current_positive_digest = between_finite_positive["previous_digest"]
     innermost_finite_positive = activation.get(
         "call_innermost_move_finite_take_return_zero_increment", {}).get(
             "positive_fixture_successor")
