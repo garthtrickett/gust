@@ -23,6 +23,7 @@ on:
       - 'flake.nix'
       - 'scripts/phase25_no_c_expected_failures.json'
       - 'scripts/phase25_no_c_falsifier.py'
+      - 'scripts/phase25_ci_musl_image_cache.py'
       - 'src/runtime/**'
       - 'Makefile'
       - '.github/workflows/phase25-no-c-falsifier.yml'
@@ -36,6 +37,7 @@ on:
       - 'flake.nix'
       - 'scripts/phase25_no_c_expected_failures.json'
       - 'scripts/phase25_no_c_falsifier.py'
+      - 'scripts/phase25_ci_musl_image_cache.py'
       - 'src/runtime/**'
       - 'Makefile'
       - '.github/workflows/phase25-no-c-falsifier.yml'
@@ -76,6 +78,10 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+      # Keep rust:alpine and the poisoned-PATH workload unchanged; this only
+      # prepares its exact official image on the ephemeral hosted runner.
+      - name: Cache and verify the official rust:alpine image
+        run: sudo python3 scripts/phase25_ci_musl_image_cache.py
       # Ubuntu runners ship a C compiler, so the falsifier must not see
       # one. An earlier revision uninstalled the toolchain, which trips the CI
       # surface guards -- they police what workflows may do to a runner,
