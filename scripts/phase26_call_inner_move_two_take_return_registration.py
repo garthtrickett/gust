@@ -171,6 +171,10 @@ def main() -> None:
             "source fixture missing")
     live_guard_digest = digest(GUARD_PATH)
     live_positive_digest = digest(POSITIVE)
+    if activation.get("call_between_move_finite_inner_take_return_zero_increment"):
+        from phase26_call_between_move_finite_inner_take_return_registration import before_new_digest as before_between_digest
+        live_guard_digest = before_between_digest(activation, GUARD_PATH, live_guard_digest)
+        live_positive_digest = before_between_digest(activation, POSITIVE, live_positive_digest)
     if activation.get("call_innermost_move_finite_take_return_zero_increment"):
         finite_inner = activation["call_innermost_move_finite_take_return_zero_increment"]
         require(finite_inner["guard_digest_successor"]["current_digest"] == live_guard_digest and
