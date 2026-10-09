@@ -1410,6 +1410,21 @@ four-state evidence, candidate invalidation, Take/Move/resource bookkeeping,
 MIR, ABI, layout, runtime, oracle, fallback, caps, and all broad D/E/F and
 Phase 26 status gates remain unchanged.
 
+**26.1E one checked cast-initialized alias at a safe return (Cranelift
+ownership assigned 2026-10-09).** A concrete nullary `*T` binding may be
+followed immediately in the same block by one by-value alias initialized from
+its Identifier through a finite chain of checked RawPointer-to-RawPointer
+casts, then immediately returned by Identifier at a declared-safe boundary.
+The alias and source raw types must match after ordinary declaration typing,
+and every cast operand and target must resolve to a raw pointer. The existing
+four-state finalizer rejects proven Zero and MayZero after ordinary type,
+safety, escape, and moved-variable diagnostics. Previous plain/Take aliases
+and return wrappers retain their meaning. A second alias, plain prefix or
+suffix, Take or Move in the new initializer or return, scalar or unproved cast,
+intervening statement, overwrite, and broader flow remain outside this new
+candidate. Take, Move, resource, MIR, ABI, runtime, oracle, fallback, caps,
+and all broad D/E/F and Phase 26 status gates remain unchanged.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
