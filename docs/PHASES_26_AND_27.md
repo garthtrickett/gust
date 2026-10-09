@@ -1395,6 +1395,21 @@ aggregate transport remain excluded. Take, Move, and resource bookkeeping,
 MIR, ABI, layout, runtime, oracle, fallback, and all broad D/E/F and Phase 26
 status gates remain unchanged.
 
+**26.1E checked raw cast prefix outside one outer Move (Cranelift ownership
+assigned 2026-10-09).** The immediate same-block concrete nullary `*T`
+candidate may cross a finite checked RawPointer-to-RawPointer cast prefix,
+then exactly one outer `Move` enclosing one or more `Take` expressions at a
+declared-safe return. Every cast is resolved individually after ordinary
+typing, and the existing validated-alias prerequisite applies. Proven Zero
+and MayZero are rejected before driver discovery only after ordinary return
+type, safety, earlier escape, and moved-variable diagnostics. Existing
+Take-only, outer-Move, innermost-Move, and between-Move forms retain their
+meaning. A bare Move, second Move, scalar or unproved cast, missing validated
+alias, broader candidate flow, and aggregate transport stay excluded. The
+four-state evidence, candidate invalidation, Take/Move/resource bookkeeping,
+MIR, ABI, layout, runtime, oracle, fallback, caps, and all broad D/E/F and
+Phase 26 status gates remain unchanged.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

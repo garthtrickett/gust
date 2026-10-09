@@ -391,6 +391,8 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
     mut inner_move_return := parse_statement("return move (take (move (take ptr)));", ctx);
     mut second_move_return := parse_statement("return move (move (take (take ptr)));", ctx);
     mut cast_outside_move_return := parse_statement("return (move (take (take ptr))) as *int;", ctx);
+    mut cast_prefix_depth2 := parse_statement("return ((move (take (take (take ptr)))) as *int) as *int;", ctx);
+    mut cast_prefix_interleaved := parse_statement("return ((move (((take (((take (ptr as *int)) as *int)) as *int))) as *int) as *int);", ctx);
     mut inner_move_under_both_takes := parse_statement("return take (take (move ptr));", ctx);
     mut inner_move_under_both_outer_cast := parse_statement("return (take (take (move ptr))) as *int;", ctx);
     mut inner_move_under_both_between_takes_cast := parse_statement("return take (((take (move ptr)) as *int));", ctx);
@@ -433,12 +435,16 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[fourth_take_second_move], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[fourth_take_outer_and_inner_move], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[outer_move_second_move_after_third_take], &env, ctx) != 0 ||
-       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[outer_cast_after_move_third_take], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[inner_move_return], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[second_move_return], &env, ctx) != 0 ||
-       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_outside_move_return], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[inner_move_one_take], &env, ctx) != 0 {
-        os.LogStr("Error: nested Move, lone Take plus Move or cast outside Move widened the return window"); os.Exit(1);
+        os.LogStr("Error: nested Move or lone Take plus Move widened the return window"); os.Exit(1);
+    }
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_outside_move_return], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[outer_cast_after_move_third_take], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_prefix_depth2], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_prefix_interleaved], &env, ctx) != 1 {
+        os.LogStr("Error: checked cast prefix outside one outer Move lost its return window"); os.Exit(1);
     }
     mut moved_return := parse_statement("return move ptr;", ctx);
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_return], &env, ctx) != 0 {
@@ -460,7 +466,9 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[inner_moved_three_take_outer_cast], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[inner_move_under_both_outer_cast], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[third_take_before_move_outer_cast], &env, ctx) != 0 ||
-       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[fourth_take_before_move_outer_cast], &env, ctx) != 0 {
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[fourth_take_before_move_outer_cast], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_outside_move_return], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[cast_prefix_depth2], &env, ctx) != 0 {
         os.LogStr("Error: checked Move and Take alias prerequisite drifted"); os.Exit(1);
     }
     env.zero_local_call_take_alias_terminal = 0;

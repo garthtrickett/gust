@@ -272,7 +272,7 @@ def main() -> None:
         "outer_move_two_take_third_take", "outer_move_two_take_inner_move",
         "outer_move_two_take_second_move",
         "GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER", "test ! -e \"$marker\"")) and
-        (("if outer_move == 1 || inner_move == 1 || take_count == 0" in compiler)
+        ((((compiler.count("if outer_move == 1 || inner_move == 1 { return 0; }") == 2 and compiler.count("if take_count == 0 { outer_move = 1; }") == 2) if activation.get("call_outer_move_cast_prefix_return_zero_increment") else "if outer_move == 1 || inner_move == 1 || take_count == 0" in compiler))
          if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment") else
          ("take_count > 2" in compiler)) and
         "outer_move == 1 && take_count == 0" in compiler,

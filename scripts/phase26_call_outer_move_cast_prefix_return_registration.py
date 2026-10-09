@@ -8,48 +8,94 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-KEY = "call_finite_outer_move_finite_inner_take_return_zero_increment"
-OLD = "call_two_outer_move_finite_inner_take_return_zero_increment"
+KEY = "call_outer_move_cast_prefix_return_zero_increment"
+OLD = "call_finite_outer_move_finite_inner_take_return_zero_increment"
 GUARD = "guard-cranelift-phase26-call-return-zero-evidence"
 GUARD_PATH = "scripts/phase26_call_return_zero_evidence.sh"
 POSITIVE = "compiler/phase26_call_return_zero_test_entry.gst"
-RECLASSIFIED = "compiler/phase26_call_local_return_innermost_move_three_take_later_take_source.gst"
-ADDITIONAL_RECLASSIFIED = "compiler/phase26_call_local_return_innermost_move_finite_take_later_take_source.gst"
-THIRD_RECLASSIFIED = "compiler/phase26_call_local_return_two_outer_move_finite_inner_take_three_outer_one_inner_source.gst"
-NAMES = (
-    "zero", "mayzero_four", "mayzero_five", "mayzero_seven", "mayzero_eight",
-    "outer_cast_mayzero", "between_outer_takes_cast_mayzero",
-    "before_move_cast_mayzero", "after_move_cast_mayzero",
-    "between_inner_takes_cast_mayzero", "innermost_cast_mayzero",
-    "interleaved_cast_mayzero", "nonzero", "unknown", "unsafe", "gap",
-    "overwrite", "wrong_type", "callee_first", "four_outer_one_inner",
-    "second_move", "outer_and_inner_move", "scalar_cast",
-    "cast_without_alias", "prior_move",
-)
+RECLASSIFIED = "compiler/phase26_call_local_return_outer_move_two_take_cast_outside_move_source.gst"
+ADDITIONAL_RECLASSIFIED = "compiler/phase26_call_local_return_outer_move_finite_take_cast_outside_move_source.gst"
+NAMES = ('zero', 'mayzero_one', 'mayzero_four', 'prefix_depth2', 'interleaved', 'nonzero', 'unknown', 'unsafe', 'gap', 'overwrite', 'wrong_type', 'callee_first', 'second_move', 'move_without_take', 'scalar_cast', 'cast_without_alias', 'prior_move')
 NEW_FIXTURES = [
-    f"compiler/phase26_call_local_return_finite_outer_move_finite_inner_take_{name}_source.gst"
+    f"compiler/phase26_call_local_return_outer_move_cast_prefix_{name}_source.gst"
     for name in NAMES
 ]
-TEXT_PATHS = [
-    "compiler/typechecker.gst",
-    "scripts/phase26_call_return_zero_registration.py",
-    "scripts/phase26_call_innermost_move_finite_take_return_registration.py",
-    "scripts/phase26_call_innermost_move_three_take_return_registration.py",
-    "scripts/phase26_call_outer_move_finite_take_return_registration.py",
-    "scripts/phase26_call_finite_take_return_registration.py",
-    "scripts/phase26_call_between_move_finite_inner_take_return_registration.py",
-    "scripts/phase26_call_two_outer_move_finite_inner_take_return_registration.py",
-    "scripts/phase26_call_innermost_move_two_take_return_registration.py",
-    "scripts/phase26_call_inner_move_two_take_return_registration.py",
-    "scripts/phase26_call_outer_move_two_take_return_registration.py",
-    "scripts/phase26_call_two_take_return_registration.py",
-]
+TEXT_PATHS = ['compiler/typechecker.gst',
+ 'scripts/phase26_call_return_zero_registration.py',
+ 'scripts/phase26_call_finite_outer_move_finite_inner_take_return_registration.py',
+ 'scripts/phase26_call_between_move_finite_inner_take_return_registration.py',
+ 'scripts/phase26_call_finite_take_return_registration.py',
+ 'scripts/phase26_call_inner_move_two_take_return_registration.py',
+ 'scripts/phase26_call_innermost_move_finite_take_return_registration.py',
+ 'scripts/phase26_call_innermost_move_three_take_return_registration.py',
+ 'scripts/phase26_call_innermost_move_two_take_return_registration.py',
+ 'scripts/phase26_call_outer_move_finite_take_return_registration.py',
+ 'scripts/phase26_call_outer_move_two_take_return_registration.py',
+ 'scripts/phase26_call_two_outer_move_finite_inner_take_return_registration.py',
+ 'scripts/phase26_call_two_take_return_registration.py',
+ 'scripts/phase26_call_outer_move_take_return_registration.py']
 CR15_PATH = "scripts/phase24_cr15_stdlib_guard_transition.py"
+FROZEN_TEXT = {'compiler/typechecker.gst': {'digest': 'ff461d37f0547bc2d64835b023b8860f519e14d6bd723c1a924750ad01896bad',
+                              'match_counts': {'explicit_backend_spelling': 0,
+                                               'mir_to_c_name': 0,
+                                               'generated_c_contract': 1}},
+ 'scripts/phase26_call_return_zero_registration.py': {'digest': 'ed163569aad6ab762284954914977fcc50e12ad85a5b392da84db9827e28a245',
+                                                      'match_counts': {'explicit_backend_spelling': 0,
+                                                                       'mir_to_c_name': 1,
+                                                                       'generated_c_contract': 0}},
+ 'scripts/phase26_call_finite_outer_move_finite_inner_take_return_registration.py': {'digest': '8b7790b8ac7687cf5a95fd08d7f92f779b57a1f0a966b9b9fb2776de12e66df7',
+                                                                                     'match_counts': {'explicit_backend_spelling': 0,
+                                                                                                      'mir_to_c_name': 1,
+                                                                                                      'generated_c_contract': 1}},
+ 'scripts/phase26_call_between_move_finite_inner_take_return_registration.py': {'digest': '28b9982e6ada1e03e5c1d50fed737478daeeae40f69f7011a9df4648ee9e0aea',
+                                                                                'match_counts': {'explicit_backend_spelling': 0,
+                                                                                                 'mir_to_c_name': 1,
+                                                                                                 'generated_c_contract': 1}},
+ 'scripts/phase26_call_finite_take_return_registration.py': {'digest': '34009e2020bf11ad98b822ba97c89216f9ac507e08dc8639e25cbf15d2e5a05f',
+                                                             'match_counts': {'explicit_backend_spelling': 0,
+                                                                              'mir_to_c_name': 3,
+                                                                              'generated_c_contract': 1}},
+ 'scripts/phase26_call_inner_move_two_take_return_registration.py': {'digest': '176c27bde835745e79e938639cb51778b817b790a5e2fa4aba9655ba85acc174',
+                                                                     'match_counts': {'explicit_backend_spelling': 0,
+                                                                                      'mir_to_c_name': 2,
+                                                                                      'generated_c_contract': 1}},
+ 'scripts/phase26_call_innermost_move_finite_take_return_registration.py': {'digest': '808876e07c7782c990dde1c3fa9db4274f990254033e5005069764c740586eb8',
+                                                                            'match_counts': {'explicit_backend_spelling': 0,
+                                                                                             'mir_to_c_name': 1,
+                                                                                             'generated_c_contract': 1}},
+ 'scripts/phase26_call_innermost_move_three_take_return_registration.py': {'digest': '3e0a633de52cb4cbc5ea6f01201448a9a504baa2ee2cd91d6ab80bd2367496ce',
+                                                                           'match_counts': {'explicit_backend_spelling': 0,
+                                                                                            'mir_to_c_name': 1,
+                                                                                            'generated_c_contract': 1}},
+ 'scripts/phase26_call_innermost_move_two_take_return_registration.py': {'digest': 'a4e273bfaae08e1dc75843744c0919346819b21569b34dfab9dca85d64138306',
+                                                                         'match_counts': {'explicit_backend_spelling': 0,
+                                                                                          'mir_to_c_name': 2,
+                                                                                          'generated_c_contract': 1}},
+ 'scripts/phase26_call_outer_move_finite_take_return_registration.py': {'digest': '1f819968480de0eb608013d461f7f900de461f2a30e982edf820ef0fa77b67d5',
+                                                                        'match_counts': {'explicit_backend_spelling': 0,
+                                                                                         'mir_to_c_name': 4,
+                                                                                         'generated_c_contract': 1}},
+ 'scripts/phase26_call_outer_move_two_take_return_registration.py': {'digest': '882accf01d4ec816fec00a9fc0a068de29b4122a6797d0f35d6bebaeb1059587',
+                                                                     'match_counts': {'explicit_backend_spelling': 0,
+                                                                                      'mir_to_c_name': 2,
+                                                                                      'generated_c_contract': 1}},
+ 'scripts/phase26_call_two_outer_move_finite_inner_take_return_registration.py': {'digest': '1e41045c5220ce76294dec1c7bf4d757e750a26f7a44d3382e51879e94074ff6',
+                                                                                  'match_counts': {'explicit_backend_spelling': 0,
+                                                                                                   'mir_to_c_name': 1,
+                                                                                                   'generated_c_contract': 1}},
+ 'scripts/phase26_call_two_take_return_registration.py': {'digest': '63430817be61eecb1ab760b16101dd85e099fa37795d71a1e01daac14efe181d',
+                                                          'match_counts': {'explicit_backend_spelling': 0,
+                                                                           'mir_to_c_name': 1,
+                                                                           'generated_c_contract': 1}},
+ 'scripts/phase26_call_outer_move_take_return_registration.py': {'digest': '792206ab73df71daae6199641b3ce8f99c0d56373dcc9372cba259643c9243b2',
+                                                                 'match_counts': {'explicit_backend_spelling': 0,
+                                                                                  'mir_to_c_name': 1,
+                                                                                  'generated_c_contract': 1}}}
 
 
 def require(ok: bool, message: str) -> None:
     if not ok:
-        raise SystemExit(f"{GUARD}: finite-outer-Take finite-inner-Take successor {message}")
+        raise SystemExit(f"{GUARD}: outer-Move cast-prefix successor {message}")
 
 
 def digest(path: str) -> str:
@@ -61,27 +107,13 @@ def record(activation: dict) -> dict:
 
 
 def old_text(activation: dict, path: str) -> tuple[str | None, dict | None]:
-    old_surface = activation[OLD]["phase23_text_surface_successor"]
-    old_rows = {row["path"]: row for row in old_surface["changed_rows"]}
-    old_added = old_surface["added_rows"][0]
-    if path in old_rows:
-        return old_rows[path]["current_digest"], old_rows[path]["current_match_counts"]
-    if path == old_added["path"]:
-        return old_added["digest"], old_added["match_counts"]
-    prior_key = ("call_outer_move_two_take_return_zero_increment"
-                 if path == "scripts/phase26_call_two_take_return_registration.py" else
-                 "call_between_move_finite_inner_take_return_zero_increment")
-    prior_rows = activation[prior_key]["phase23_text_surface_successor"]["changed_rows"]
-    prior_matches = [row for row in prior_rows if row["path"] == path]
-    if len(prior_matches) == 1:
-        return prior_matches[0]["current_digest"], prior_matches[0]["current_match_counts"]
-    return None, None
+    frozen = FROZEN_TEXT.get(path)
+    if frozen is None:
+        return None, None
+    return frozen["digest"], frozen["match_counts"]
 
 
 def before_new_digest(activation: dict, path: str, live_digest: str) -> str:
-    if activation.get("call_outer_move_cast_prefix_return_zero_increment"):
-        from phase26_call_outer_move_cast_prefix_return_registration import before_new_digest as before_prefix
-        live_digest = before_prefix(activation, path, live_digest)
     for field in ("guard_digest_successor", "positive_fixture_successor",
                   "cr15_relay_digest_successor"):
         direct = record(activation).get(field, {})
@@ -103,9 +135,6 @@ def before_new_digest(activation: dict, path: str, live_digest: str) -> str:
 
 
 def before_new_counts(activation: dict, path: str, live_counts: dict[str, int]) -> dict[str, int]:
-    if activation.get("call_outer_move_cast_prefix_return_zero_increment"):
-        from phase26_call_outer_move_cast_prefix_return_registration import before_new_counts as before_prefix
-        live_counts = before_prefix(activation, path, live_counts)
     rows = record(activation).get("phase23_text_surface_successor", {}).get("changed_rows", [])
     matches = [row for row in rows if row.get("path") == path]
     require(len(matches) <= 1, f"duplicate text path: {path}")
@@ -119,13 +148,10 @@ def before_new_counts(activation: dict, path: str, live_counts: dict[str, int]) 
 
 
 def before_new_spelling(activation: dict, live: dict) -> dict:
-    if activation.get("call_outer_move_cast_prefix_return_zero_increment"):
-        from phase26_call_outer_move_cast_prefix_return_registration import before_new_spelling as before_prefix
-        live = before_prefix(activation, live)
     successor = record(activation).get("spelling_inventory_successor", {})
     previous = activation[OLD]["spelling_inventory_successor"]["current_inventory_summary"]
     require(successor == {
-        "contract_version": "phase26_1e_finite_outer_move_finite_inner_take_spelling_successor_v1",
+        "contract_version": "phase26_1e_outer_move_cast_prefix_spelling_successor_v1",
         "previous_inventory_summary": previous,
         "current_inventory_summary": live,
         "changed_source_paths": ["compiler/typechecker.gst", POSITIVE, *NEW_FIXTURES],
@@ -139,13 +165,10 @@ def before_new_spelling(activation: dict, live: dict) -> dict:
 
 
 def before_new_filename(activation: dict, live: list[dict]) -> list[dict]:
-    if activation.get("call_outer_move_cast_prefix_return_zero_increment"):
-        from phase26_call_outer_move_cast_prefix_return_registration import before_new_filename as before_prefix
-        live = before_prefix(activation, live)
     successor = record(activation).get("filename_site_successor", {})
     previous = activation[OLD]["filename_site_successor"]["current_sites"]
     require(successor == {
-        "contract_version": "phase26_1e_finite_outer_move_finite_inner_take_filename_successor_v1",
+        "contract_version": "phase26_1e_outer_move_cast_prefix_filename_successor_v1",
         "previous_sites": previous,
         "current_sites": live,
         "line_deltas": [now["line"] - before["line"] for before, now in zip(previous, live)],
@@ -159,9 +182,6 @@ def before_new_filename(activation: dict, live: list[dict]) -> list[dict]:
 
 def before_new_invocations(activation: dict, live: list[dict], *,
                            projected: bool = False) -> list[dict]:
-    if activation.get("call_outer_move_cast_prefix_return_zero_increment"):
-        from phase26_call_outer_move_cast_prefix_return_registration import before_new_invocations as before_prefix
-        live = before_prefix(activation, live, projected=projected)
     successor = record(activation).get("phase22_invocation_successor", {})
     previous = activation[OLD]["phase22_invocation_successor"]["added_row"]
     frozen = activation["call_outer_move_take_return_zero_increment"][
@@ -169,15 +189,15 @@ def before_new_invocations(activation: dict, live: list[dict], *,
     added = successor.get("added_row", {})
     selected = [row for row in live if row.get("path") == GUARD_PATH]
     require(successor == {
-        "contract_version": "phase26_1e_finite_outer_move_finite_inner_take_phase22_line_successor_v1",
-        "previous_row": previous, "unchanged_total": 26,
-        "added_row": added, "current_total": 27,
+        "contract_version": "phase26_1e_outer_move_cast_prefix_phase22_line_successor_v1",
+        "previous_row": previous, "unchanged_total": 27,
+        "added_row": added, "current_total": 28,
         "partial_extra_or_substituted_invocation": "rejected",
     } and
-            ((len(selected) in (20, 21, 22, 23, 24, 25, 26) and selected[-1] in
+            ((len(selected) in (20, 21, 22, 23, 24, 25, 26, 27) and selected[-1] in
               (previous, activation[OLD]["phase22_invocation_successor"]["previous_row"], frozen))
              if projected else
-             (len(selected) == 27 and selected[-2] == previous and selected[-1] == added)) and
+             (len(selected) == 28 and selected[-2] == previous and selected[-1] == added)) and
             added.get("line", 0) > previous.get("line", 0) and
             {k: v for k, v in added.items() if k != "line"} ==
             {k: v for k, v in previous.items() if k != "line"},
@@ -188,32 +208,24 @@ def before_new_invocations(activation: dict, live: list[dict], *,
 def main() -> None:
     activation = json.loads((ROOT / "scripts/cranelift_feature_registry.json")
                             .read_text())["phase26_activation_audit"]
-    if activation.get("call_outer_move_cast_prefix_return_zero_increment"):
-        from phase26_call_outer_move_cast_prefix_return_registration import main as prefix_main
-        prefix_main()
     row = record(activation)
     expected = {
-        "contract_version": "phase26_1e_finite_outer_move_finite_inner_take_return_zero_v1",
-        "status": "bounded_finite_outer_move_finite_inner_take_safe_return_rejection_qualified",
+        "contract_version": "phase26_1e_outer_move_cast_prefix_return_zero_v1",
+        "status": "bounded_outer_Move_checked_raw_cast_prefix_safe_return_rejection_qualified",
         "owner": "cranelift",
-        "increment": "26.1E_finite_three_or_more_outer_Takes_Move_finite_inner_Takes_safe_return",
+        "increment": "26.1E_checked_raw_cast_prefix_outside_one_outer_Move_finite_Takes_safe_return",
         "operator_ownership_decision": "2026-10-09_coordinator_assigned_under_activated_phase26",
-        "candidate_shape": "immediate_same_block_concrete_nullary_raw_pointer_call_current_local_or_validated_alias_finite_three_or_more_outer_Takes_then_one_Move_then_finite_one_or_more_inner_Takes_optional_checked_raw_casts",
+        "candidate_shape": "immediate_same_block_concrete_nullary_raw_pointer_call_current_local_or_validated_alias_finite_checked_raw_cast_prefix_then_one_outer_Move_then_finite_one_or_more_Takes",
         "safe_boundary": "declared_nonextern_raw_pointer_return",
         "negative_states": ["Zero", "MayZero"],
         "negative_fixtures": [RECLASSIFIED, ADDITIONAL_RECLASSIFIED,
-                              THIRD_RECLASSIFIED, *NEW_FIXTURES[:12],
-                              NEW_FIXTURES[19]],
-        "control_fixtures": [*NEW_FIXTURES[12:19], *NEW_FIXTURES[20:]],
+                              *NEW_FIXTURES[:5]],
+        "control_fixtures": NEW_FIXTURES[5:],
         "reclassified_fixture": {"path": RECLASSIFIED,
                                  "previous": "accepted_then_native_deferral",
                                  "current": "RawNullSafeBoundary_before_driver"},
         "additional_reclassified_fixture": {
             "path": ADDITIONAL_RECLASSIFIED,
-            "previous": "accepted_then_native_deferral",
-            "current": "RawNullSafeBoundary_before_driver"},
-        "third_reclassified_fixture": {
-            "path": THIRD_RECLASSIFIED,
             "previous": "accepted_then_native_deferral",
             "current": "RawNullSafeBoundary_before_driver"},
         "prior_error_precedence": "preserved",
@@ -239,20 +251,16 @@ def main() -> None:
             set(row) == set(expected) | successors, "contract or field set drifted")
     require(all((ROOT / p).is_file() for p in
                 [RECLASSIFIED, ADDITIONAL_RECLASSIFIED,
-                 THIRD_RECLASSIFIED, *NEW_FIXTURES]),
+                 *NEW_FIXTURES]),
             "source fixture missing")
     for field, path, previous in (
         ("guard_digest_successor", GUARD_PATH, activation[OLD]["guard_digest_successor"]["current_digest"]),
         ("positive_fixture_successor", POSITIVE, activation[OLD]["positive_fixture_successor"]["current_digest"]),
         ("cr15_relay_digest_successor", CR15_PATH, activation[OLD]["cr15_relay_digest_successor"]["current_digest"]),
     ):
-        current_digest = digest(path)
-        if activation.get("call_outer_move_cast_prefix_return_zero_increment"):
-            from phase26_call_outer_move_cast_prefix_return_registration import before_new_digest as before_prefix_digest
-            current_digest = before_prefix_digest(activation, path, current_digest)
         require(row[field] == {
             "path": path, "previous_digest": previous,
-            "current_digest": current_digest,
+            "current_digest": digest(path),
             "partial_extra_or_substituted_" +
             ("guard" if field.startswith("guard") else
              "fixture" if field.startswith("positive") else "relay"): "rejected",
@@ -260,15 +268,17 @@ def main() -> None:
     guard = (ROOT / GUARD_PATH).read_text()
     compiler = (ROOT / "compiler/typechecker.gst").read_text()
     require(all(marker in guard for marker in (
-        "interleaved_cast_mayzero|fourth_take|move_between|later_take)",
-        "interleaved_cast_mayzero|move_between|later_take)",
-        "interleaved_cast_mayzero|three_outer_one_inner)",
+        "outer_move_two_take_cast_outside_move outer_move_two_take_cast_outside_inner_move",
+        "interleaved_cast_mayzero|inner_move|cast_outside_move)",
         "for case_name in " + " ".join(NAMES) + "; do",
-        "phase26_call_local_return_finite_outer_move_finite_inner_take_${case_name}_source.gst",
+        "phase26_call_local_return_outer_move_cast_prefix_${case_name}_source.gst",
         "GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER", 'test ! -e "$marker"')) and
-        ((compiler.count("if outer_move == 1 || inner_move == 1 { return 0; }") == 2 and compiler.count("if take_count == 0 { outer_move = 1; }") == 2) if activation.get("call_outer_move_cast_prefix_return_zero_increment") else compiler.count("if outer_move == 1 || inner_move == 1 || take_count == 0") == 2) and
+        compiler.count("if outer_move == 1 || inner_move == 1 { return 0; }") == 2 and
+        compiler.count("if take_count == 0 { outer_move = 1; }") == 2 and
+        compiler.count("else { inner_move = 1; }") == 2 and
         "inner_move == 1 && take_count < 2" in compiler and
-        "inner_move == 0 || take_count >= 2" in compiler,
+        "inner_move == 0 || take_count >= 2" in compiler and
+        "phase26_zero_resolved_expression_tag(next_idx, env, ctx) != 9" in compiler,
         "native or fail-closed evidence weakened")
     from phase24_semantic_spelling_inventory import source_sites, manifest_summary
     before_new_spelling(activation, manifest_summary(source_sites()))
@@ -283,8 +293,7 @@ def main() -> None:
             if not is_non_invocation(command, match.start()):
                 raw.append(classify(path, line, command, recipe,
                                     match.group("token"), selection(command)))
-    require(len(raw) == (28 if activation.get("call_outer_move_cast_prefix_return_zero_increment") else 27) and
-            len(before_new_invocations(activation, raw)) == 26,
+    require(len(raw) == 28 and len(before_new_invocations(activation, raw)) == 27,
             "raw Phase22 invocation identity drifted")
     normalized = [e for e in scan_invocations() if e["path"] == GUARD_PATH]
     require(len(normalized) == 20 and normalized[-1] == activation[
@@ -295,11 +304,11 @@ def main() -> None:
     surface = row["phase23_text_surface_successor"]
     changed, added = surface.get("changed_rows", []), surface.get("added_rows", [])
     require(surface.get("contract_version") ==
-            "phase26_1e_finite_outer_move_finite_inner_take_phase23_text_successor_v1" and
+            "phase26_1e_outer_move_cast_prefix_phase23_text_successor_v1" and
             surface.get("partial_extra_or_substituted_surface") == "rejected" and
             [entry.get("path") for entry in changed] == TEXT_PATHS and
             len(added) == 1 and added[0].get("path") ==
-            "scripts/phase26_call_finite_outer_move_finite_inner_take_return_registration.py" and
+            "scripts/phase26_call_outer_move_cast_prefix_return_registration.py" and
             all(path in tracked_paths() and path not in SELF_EXCLUSIONS
                 for path in TEXT_PATHS), "text surface shape drifted")
     for entry in changed:
@@ -307,34 +316,24 @@ def main() -> None:
         previous_digest, previous_counts = old_text(activation, path)
         counts = {name: len(pattern.findall((ROOT / path).read_text()))
                   for name, pattern in SURFACE_PATTERNS.items()}
-        current_digest = digest(path)
-        if activation.get("call_outer_move_cast_prefix_return_zero_increment"):
-            from phase26_call_outer_move_cast_prefix_return_registration import before_new_digest as before_prefix_digest, before_new_counts as before_prefix_counts
-            current_digest = before_prefix_digest(activation, path, current_digest)
-            counts = before_prefix_counts(activation, path, counts)
         require(previous_digest is not None and previous_counts is not None and
                 entry == {"path": path, "previous_digest": previous_digest,
-                          "current_digest": current_digest,
+                          "current_digest": digest(path),
                           "previous_match_counts": previous_counts,
                           "current_match_counts": counts},
                 f"text surface drifted: {path}")
     path = added[0]["path"]
     counts = {name: len(pattern.findall((ROOT / path).read_text()))
               for name, pattern in SURFACE_PATTERNS.items()}
-    added_digest = digest(path)
-    if activation.get("call_outer_move_cast_prefix_return_zero_increment"):
-        from phase26_call_outer_move_cast_prefix_return_registration import before_new_digest as before_prefix_digest, before_new_counts as before_prefix_counts
-        added_digest = before_prefix_digest(activation, path, added_digest)
-        counts = before_prefix_counts(activation, path, counts)
     require(added[0] == {
-        "path": path, "digest": added_digest, "match_counts": counts,
+        "path": path, "digest": digest(path), "match_counts": counts,
         "classification": "archive_candidate", "owner": "cranelift",
         "current_route": "tracked_MIR_to_C_or_generated_C_surface",
         "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
         "removal_phase": "24",
         "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
     } and any(counts.values()), "added text surface drifted")
-    print(f"{GUARD}: finite-outer-Take finite-inner-Take successor registration ok")
+    print(f"{GUARD}: outer-Move cast-prefix successor registration ok")
 
 
 if __name__ == "__main__":

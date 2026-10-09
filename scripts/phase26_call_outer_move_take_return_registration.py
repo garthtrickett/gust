@@ -212,7 +212,9 @@ def main() -> None:
              activation.get("call_outer_move_two_take_return_zero_increment") and
              "Matcher proved one outer Move and one or two Takes" in compiler or
              activation.get("call_outer_move_finite_take_return_zero_increment") and
-             "Matcher proved one outer Move and a finite Take chain" in compiler),
+             "Matcher proved one outer Move and a finite Take chain" in compiler or
+             activation.get("call_outer_move_cast_prefix_return_zero_increment") and
+             "preceded by checked raw-pointer casts, may enclose a finite Take chain" in compiler),
             "native or fail-closed evidence weakened")
 
     from phase24_semantic_spelling_inventory import source_sites, manifest_summary
