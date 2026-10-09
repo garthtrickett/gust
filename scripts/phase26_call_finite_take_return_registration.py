@@ -188,6 +188,13 @@ def main() -> None:
             "source fixture missing")
     live_guard_digest = digest(GUARD_PATH)
     live_positive_digest = digest(POSITIVE)
+    if activation.get("call_innermost_move_three_take_return_zero_increment"):
+        three = activation["call_innermost_move_three_take_return_zero_increment"]
+        require(three["guard_digest_successor"]["current_digest"] == live_guard_digest and
+                three["positive_fixture_successor"]["current_digest"] == live_positive_digest,
+                "innermost-Move three-Take live evidence drifted")
+        live_guard_digest = three["guard_digest_successor"]["previous_digest"]
+        live_positive_digest = three["positive_fixture_successor"]["previous_digest"]
     if activation.get("call_outer_move_finite_take_return_zero_increment"):
         outer_finite = activation["call_outer_move_finite_take_return_zero_increment"]
         require(outer_finite["guard_digest_successor"]["current_digest"] == live_guard_digest and
@@ -208,6 +215,11 @@ def main() -> None:
         "partial_extra_or_substituted_fixture": "rejected",
     }, "positive matcher evidence drifted")
     live_cr15_digest = digest(CR15_PATH)
+    if activation.get("call_innermost_move_three_take_return_zero_increment"):
+        three = activation["call_innermost_move_three_take_return_zero_increment"]
+        require(three["cr15_relay_digest_successor"]["current_digest"] == live_cr15_digest,
+                "innermost-Move three-Take CR15 relay drifted")
+        live_cr15_digest = three["cr15_relay_digest_successor"]["previous_digest"]
     if activation.get("call_outer_move_finite_take_return_zero_increment"):
         outer_finite = activation["call_outer_move_finite_take_return_zero_increment"]
         require(outer_finite["cr15_relay_digest_successor"]["current_digest"] == live_cr15_digest and
@@ -237,7 +249,13 @@ def main() -> None:
           activation["call_outer_move_finite_take_return_zero_increment"][
               "phase23_text_surface_successor"]["changed_rows"][0]["previous_digest"] ==
           row["phase23_text_surface_successor"]["changed_rows"][0]["current_digest"])) and
-        "(take_count != 1 && take_count != 2)" in compiler and
+        (("(take_count != 1 && take_count != 2)" in compiler)
+         if not activation.get("call_innermost_move_three_take_return_zero_increment") else
+         (compiler.count("(take_count != 1 && take_count != 2 && take_count != 3)") == 2 and
+          activation["call_innermost_move_three_take_return_zero_increment"][
+              "phase23_text_surface_successor"]["changed_rows"][0]["previous_digest"] ==
+          activation["call_outer_move_finite_take_return_zero_increment"][
+              "phase23_text_surface_successor"]["changed_rows"][0]["current_digest"])) and
         "inner_move == 1 && take_count != 2" in compiler,
         "native or fail-closed evidence weakened")
     from phase24_semantic_spelling_inventory import source_sites, manifest_summary
@@ -253,7 +271,8 @@ def main() -> None:
             if not is_non_invocation(command, match.start()):
                 raw.append(classify(path, line, command, recipe,
                                     match.group("token"), selection(command)))
-    expected_raw = 22 if activation.get("call_outer_move_finite_take_return_zero_increment") else 21
+    expected_raw = (23 if activation.get("call_innermost_move_three_take_return_zero_increment") else
+                    22 if activation.get("call_outer_move_finite_take_return_zero_increment") else 21)
     require(len(raw) == expected_raw and len(before_new_invocations(activation, raw)) == 20,
             "raw Phase22 invocation identity drifted")
     normalized = [e for e in scan_invocations() if e["path"] == GUARD_PATH]
