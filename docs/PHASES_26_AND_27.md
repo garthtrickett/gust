@@ -1363,6 +1363,22 @@ unproved casts, and broader candidate propagation remain excluded. Take,
 Move, and resource bookkeeping, MIR, ABI, layout, runtime, oracle, fallback,
 and all broad D/E/F and Phase 26 status gates are unchanged.
 
+**26.1E two outer Takes over a Move and finite inner Takes (Cranelift ownership
+assigned 2026-10-09).** The existing immediate same-block concrete nullary
+`*T` candidate may pass through exactly two syntactic outer `Take` expressions,
+one `Move`, and a finite chain of at least one `Take` beneath that Move at a
+declared-safe return. Each optional cast needs a resolved raw-pointer operand
+and raw-pointer target plus the validated-alias prerequisite. The four-state
+finalizer rejects proven Zero and MayZero only after ordinary return type,
+safety, earlier escape, and moved-variable diagnostics. It retains candidate
+invalidation and the Nonzero, genuine Unknown, and unsafe controls. Finite
+Take-only, outer-Move finite, innermost-Move finite, and one-outer-Take
+between-Move forms retain their existing meaning. Three or more outer Takes
+with inner Takes, second or later Move, scalar or unproved casts, broader
+candidate flow, aggregate transport, and any change to Take, Move, resource,
+MIR, ABI, layout, runtime, oracle, or fallback semantics remain excluded.
+All broad D/E/F and Phase 26 status gates remain open.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
