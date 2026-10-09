@@ -36,6 +36,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      # Acquire the exact official image through Google's public Docker Hub
+      # cache before the unchanged musl-host guard runs. A missing or stale
+      # image fails here; it never counts as C-free proof.
+      - name: Cache and verify the official rust:alpine image
+        run: sudo python3 scripts/phase25_ci_musl_image_cache.py
       - uses: dtolnay/rust-toolchain@stable
       - uses: extractions/setup-just@v2
 
