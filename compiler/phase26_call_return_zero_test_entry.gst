@@ -451,6 +451,29 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
         os.LogStr("Error: Move widened the alias-return candidate window"); os.Exit(1);
     }
     env.zero_local_call_alias_hops = 0;
+    env.zero_local_call_take_alias_terminal = 0;
+    mut checked_alias := parse_statement("mut alias := ((ptr as *int) as *int);", ctx);
+    mut checked_alias_name := typechecker.phase26_zero_local_call_alias_name(ctx[checked_alias], &env, ctx);
+    if std.str_eq(checked_alias_name, "alias") == 0 {
+        os.LogStr("Error: immediate checked raw-cast alias lost its bounded candidate"); os.Exit(1);
+    }
+    mut alias_after_take := parse_statement("mut alias := (take ptr) as *int;", ctx);
+    mut alias_after_move := parse_statement("mut alias := (move ptr) as *int;", ctx);
+    if std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[alias_after_take], &env, ctx), "") == 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[alias_after_move], &env, ctx), "") == 0 {
+        os.LogStr("Error: Take or Move entered the cast-initialized alias candidate"); os.Exit(1);
+    }
+    env.zero_local_call_cast_alias_terminal = 1;
+    mut alias_return := parse_statement("return ptr;", ctx);
+    mut alias_cast_return := parse_statement("return ptr as *int;", ctx);
+    mut alias_second := parse_statement("mut second := ptr;", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_return], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_cast_return], &env, ctx) != 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[alias_second], &env, ctx), "") == 0 {
+        os.LogStr("Error: cast-initialized alias escaped the immediate Identifier return window"); os.Exit(1);
+    }
+    env.zero_local_call_cast_alias_terminal = 0;
+    env.zero_local_call_take_alias_terminal = 1;
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_take_return], &env, ctx) != 1 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_two_take_return], &env, ctx) != 1 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_third_take_return], &env, ctx) != 1 ||

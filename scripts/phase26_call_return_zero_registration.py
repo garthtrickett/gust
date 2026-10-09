@@ -5186,6 +5186,18 @@ def main() -> None:
     } and all((ROOT / path).is_file() for path in wrapper_fixtures),
             "one-Take safe-return successor fields or fixtures drifted")
     current_positive_digest = raw_digest(POSITIVE)
+    cast_alias_positive = activation.get(
+        "call_cast_initialized_alias_return_zero_increment", {}).get(
+            "positive_fixture_successor")
+    if cast_alias_positive is not None:
+        require(cast_alias_positive == {
+            "path": POSITIVE,
+            "previous_digest": activation["call_outer_move_cast_prefix_return_zero_increment"][
+                "positive_fixture_successor"]["current_digest"],
+            "current_digest": current_positive_digest,
+            "partial_extra_or_substituted_fixture": "rejected",
+        }, "cast-initialized alias positive evidence successor drifted")
+        current_positive_digest = cast_alias_positive["previous_digest"]
     prefix_positive = activation.get(
         "call_outer_move_cast_prefix_return_zero_increment", {}).get(
             "positive_fixture_successor")

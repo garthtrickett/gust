@@ -276,7 +276,8 @@ def main() -> None:
             if not is_non_invocation(command, match.start()):
                 raw.append(classify(path, line, command, recipe,
                                     match.group("token"), selection(command)))
-    expected_raw = (28 if activation.get("call_outer_move_cast_prefix_return_zero_increment") else
+    expected_raw = (29 if activation.get("call_cast_initialized_alias_return_zero_increment") else
+                    28 if activation.get("call_outer_move_cast_prefix_return_zero_increment") else
                     27 if activation.get("call_finite_outer_move_finite_inner_take_return_zero_increment") else 26)
     require(len(raw) == expected_raw and len(before_new_invocations(activation, raw)) == 25,
             "raw Phase22 invocation identity drifted")

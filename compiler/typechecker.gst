@@ -1317,6 +1317,7 @@ type TypeEnvironment[ctx] struct {
     zero_local_call_callee: str,
     zero_local_call_alias_hops: int,
     zero_local_call_take_alias_terminal: int,
+    zero_local_call_cast_alias_terminal: int,
     variable_types: std.HashMap[str, ast.Type[ctx], ctx],
     resolved_types_nested: std.Vector[PrefixMapEntry[ctx], ctx],
     enum_registry: std.HashMap[str, std.Vector[str, ctx], ctx],
@@ -2653,6 +2654,7 @@ func phase26_zero_note_direct_call_boundary(env: *TypeEnvironment[ctx], target_t
 func phase26_zero_local_call_argument_matches_candidate(arg: ast.Expression[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         if std.str_eq((*env).zero_local_call_name, "") == 1 { return 0; }
+        if (*env).zero_local_call_cast_alias_terminal == 1 { return 0; }
         if arg.tag == 0 { // Identifier
             return std.str_eq(arg.Identifier.name, (*env).zero_local_call_name);
         }
@@ -2802,6 +2804,10 @@ func phase26_zero_local_call_argument_cast_is_raw(arg: ast.Expression[ctx], env:
 func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         if std.str_eq((*env).zero_local_call_name, "") == 1 { return 0; }
+        if (*env).zero_local_call_cast_alias_terminal == 1 {
+            if expr.tag != 0 { return 0; }
+            return std.str_eq(expr.Identifier.name, (*env).zero_local_call_name);
+        }
         mut current := expr;
         mut outer_move := 0;
         mut take_count := 0;
@@ -2900,13 +2906,26 @@ func phase26_zero_local_call_statement_consumes_candidate(stmt: ast.Statement[ct
 func phase26_zero_local_call_alias_name(stmt: ast.Statement[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) str {
     unsafe {
         if std.str_eq((*env).zero_local_call_name, "") == 1 ||
+           (*env).zero_local_call_cast_alias_terminal == 1 ||
            stmt.tag != 4 {
             return "";
         }
         mut value_idx := stmt.VarDecl.value;
         if value_idx == empty[Index[ast.Expression[ctx], ctx]] { return ""; }
         mut value := ctx[value_idx];
+        mut cast_alias := 0;
+        if value.tag == 9 { // One terminal alias through checked pointer casts.
+            if (*env).zero_local_call_alias_hops != 0 { return ""; }
+            if (*env).zero_local_call_take_alias_terminal != 0 { return ""; }
+            cast_alias = 1;
+            while value.tag == 9 {
+                value_idx = value.AsCast.left;
+                if value_idx == empty[Index[ast.Expression[ctx], ctx]] { return ""; }
+                value = ctx[value_idx];
+            }
+        }
         if value.tag == 5 { // Take
+            if cast_alias == 1 { return ""; }
             value_idx = value.Take.expr;
             if value_idx == empty[Index[ast.Expression[ctx], ctx]] { return ""; }
             value = ctx[value_idx];
@@ -2917,6 +2936,27 @@ func phase26_zero_local_call_alias_name(stmt: ast.Statement[ctx], env: *TypeEnvi
             return "";
         }
         return std.Clone(ctx, stmt.VarDecl.name);
+    }
+}
+
+// The syntax probe above is speculative. Only the checked declaration may
+// promote a cast alias, and each cast must have a resolved raw-pointer target
+// and raw-pointer operand. Take and Move inside the chain are excluded there.
+func phase26_zero_local_call_alias_cast_is_raw(stmt: ast.Statement[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
+    unsafe {
+        if stmt.tag != 4 ||
+           stmt.VarDecl.value == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+        mut value := ctx[stmt.VarDecl.value];
+        if value.tag != 9 { return 0; }
+        while value.tag == 9 {
+            if value.AsCast.target_type == empty[Index[ast.Type[ctx], ctx]] ||
+               value.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+            mut target := env_resolve_type(env, ctx[value.AsCast.target_type], ctx);
+            if target.tag != 9 ||
+               phase26_zero_resolved_expression_tag(value.AsCast.left, env, ctx) != 9 { return 0; }
+            value = ctx[value.AsCast.left];
+        }
+        return value.tag == 0;
     }
 }
 
@@ -9749,6 +9789,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.zero_local_call_callee = "";
         env_ref_new.zero_local_call_alias_hops = 0;
         env_ref_new.zero_local_call_take_alias_terminal = 0;
+        env_ref_new.zero_local_call_cast_alias_terminal = 0;
         env_ref_new.variable_types = std.HashMapNew(ctx);
         env_ref_new.resolved_types_nested = std.VectorNew(ctx);
         env_ref_new.enum_registry = std.HashMapNew(ctx);
@@ -15074,10 +15115,12 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
         mut parent_zero_local_callee := (*env).zero_local_call_callee;
         mut parent_zero_local_alias_hops := (*env).zero_local_call_alias_hops;
         mut parent_zero_local_take_alias_terminal := (*env).zero_local_call_take_alias_terminal;
+        mut parent_zero_local_cast_alias_terminal := (*env).zero_local_call_cast_alias_terminal;
         (*env).zero_local_call_name = "";
         (*env).zero_local_call_callee = "";
         (*env).zero_local_call_alias_hops = 0;
         (*env).zero_local_call_take_alias_terminal = 0;
+        (*env).zero_local_call_cast_alias_terminal = 0;
         mut entering_zero_states := typechecker_clone_int_map((*env).variable_zero_states, ctx);
         mut entering_field_zero_states := typechecker_clone_int_map((*env).field_zero_states, ctx);
         if establish_nested_scope == 1 {
@@ -15125,6 +15168,7 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
                 (*env).zero_local_call_callee = "";
                 (*env).zero_local_call_alias_hops = 0;
                 (*env).zero_local_call_take_alias_terminal = 0;
+                (*env).zero_local_call_cast_alias_terminal = 0;
             }
             mut prior_error_count := len((*env).errors);
             check_statement(statement_idx, env, scope, ctx);
@@ -15151,11 +15195,24 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
                        ctx[alias_value_idx].tag == 5 { // Take
                         (*env).zero_local_call_take_alias_terminal = 1;
                     }
+                    if alias_value_idx != empty[Index[ast.Expression[ctx], ctx]] &&
+                       ctx[alias_value_idx].tag == 9 {
+                        if phase26_zero_local_call_alias_cast_is_raw(statements[i], env, ctx) == 1 {
+                            (*env).zero_local_call_cast_alias_terminal = 1;
+                        } else {
+                            (*env).zero_local_call_name = "";
+                            (*env).zero_local_call_callee = "";
+                            (*env).zero_local_call_alias_hops = 0;
+                            (*env).zero_local_call_take_alias_terminal = 0;
+                            (*env).zero_local_call_cast_alias_terminal = 0;
+                        }
+                    }
                 } else {
                     (*env).zero_local_call_name = "";
                     (*env).zero_local_call_callee = "";
                     (*env).zero_local_call_alias_hops = 0;
                     (*env).zero_local_call_take_alias_terminal = 0;
+                    (*env).zero_local_call_cast_alias_terminal = 0;
                 }
             }
             if statements[i].tag != 4 {
@@ -15163,6 +15220,7 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
                 (*env).zero_local_call_callee = "";
                 (*env).zero_local_call_alias_hops = 0;
                 (*env).zero_local_call_take_alias_terminal = 0;
+                (*env).zero_local_call_cast_alias_terminal = 0;
             }
             i = i + 1;
         }
@@ -15211,6 +15269,7 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
         (*env).zero_local_call_callee = parent_zero_local_callee;
         (*env).zero_local_call_alias_hops = parent_zero_local_alias_hops;
         (*env).zero_local_call_take_alias_terminal = parent_zero_local_take_alias_terminal;
+        (*env).zero_local_call_cast_alias_terminal = parent_zero_local_cast_alias_terminal;
     }
 }
 
