@@ -4117,6 +4117,30 @@ def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    take_return = registry.get("phase26_activation_audit", {}).get(
+        "call_cast_alias_take_return_zero_increment", {}).get(
+            "phase23_text_surface_successor")
+    if take_return is not None:
+        from phase26_call_cast_alias_take_return_registration import TEXT_PATHS as TAKE_RETURN_TEXT_PATHS
+        changed = take_return.get("changed_rows", [])
+        added = take_return.get("added_rows", [])
+        added_path = "scripts/phase26_call_cast_alias_take_return_registration.py"
+        live = {row["path"]: row for row in rows}
+        require(take_return.get("contract_version") ==
+                "phase26_1e_cast_alias_take_return_phase23_text_successor_v1" and
+                take_return.get("partial_extra_or_substituted_surface") == "rejected" and
+                [row.get("path") for row in changed] == TAKE_RETURN_TEXT_PATHS and
+                isinstance(added, list) and len(added) == 1 and
+                added[0].get("path") == added_path and live.get(added_path) == added[0] and
+                all(live.get(row["path"], {}).get("digest") == row["current_digest"] and
+                    live.get(row["path"], {}).get("match_counts") ==
+                    row["current_match_counts"] for row in changed),
+                "Phase 26 cast-alias Take-return text surface shape drifted")
+        by_path = {row["path"]: row for row in changed}
+        rows = [dict(row, digest=by_path[row["path"]]["previous_digest"],
+                     match_counts=by_path[row["path"]]["previous_match_counts"])
+                if row["path"] in by_path else row for row in rows
+                if row["path"] != added_path]
     return_cast = registry.get("phase26_activation_audit", {}).get(
         "call_cast_alias_return_cast_zero_increment", {}).get(
             "phase23_text_surface_successor")

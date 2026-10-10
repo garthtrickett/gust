@@ -258,9 +258,14 @@ def main() -> None:
         }, f"{field} drifted")
     guard = (ROOT / GUARD_PATH).read_text()
     compiler = (ROOT / "compiler/typechecker.gst").read_text()
+    take_names = ""
+    if activation.get("call_cast_alias_take_return_zero_increment"):
+        from phase26_call_cast_alias_take_return_registration import NAMES as TAKE_NAMES
+        take_names = " " + " ".join("take_" + name for name in TAKE_NAMES)
     require(all(marker in guard for marker in (
         "for case_name in " + " ".join(NAMES) +
-        (" return_zero return_depth3 return_nonzero return_unknown return_unsafe return_scalar return_take_cast return_move_cast return_wrong_type return_prior_escape return_prior_move return_second_alias return_gap return_overwrite" if activation.get("call_cast_alias_return_cast_zero_increment") else "") + "; do",
+        (" return_zero return_depth3 return_nonzero return_unknown return_unsafe return_scalar return_take_cast return_move_cast return_wrong_type return_prior_escape return_prior_move return_second_alias return_gap return_overwrite" if activation.get("call_cast_alias_return_cast_zero_increment") else "") +
+        take_names + "; do",
         "phase26_call_local_return_cast_alias_${case_name}_source.gst",
         "GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER", 'test ! -e "$marker"')) and
         "zero_local_call_cast_alias_terminal" in compiler and
