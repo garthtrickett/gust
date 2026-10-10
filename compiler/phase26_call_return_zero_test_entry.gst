@@ -579,7 +579,7 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return take fourth;", ctx)], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return (move fourth) as *int;", ctx)], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return move (move fourth);", ctx)], &env, ctx) != 0 ||
-       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut fifth := fourth;", ctx)], &env, ctx), "") == 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut fifth := fourth;", ctx)], &env, ctx), "fifth") == 0 ||
        std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut fifth := take fourth;", ctx)], &env, ctx), "") == 0 ||
        std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut fifth := move fourth;", ctx)], &env, ctx), "") == 0 ||
        std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut fifth := fourth as *int;", ctx)], &env, ctx), "fifth") == 0 {

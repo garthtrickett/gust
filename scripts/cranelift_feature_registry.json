@@ -79921,7 +79921,7 @@
       "positive_fixture_successor": {
         "path": "compiler/phase26_call_return_zero_test_entry.gst",
         "previous_digest": "52204b7f41aca65e7bd8cc419735d285d3a713532e6adde6f6d844f7db9bd7a0",
-        "current_digest": "9d0b3cb21265c0f10e64c7a7d1d9fa666776a6b9d9246efbf139872aeccc4a62",
+        "current_digest": "739d2e6f8eee1e71d9b3256298275f434026e5a6b7ab7076963eb6f480f6778c",
         "partial_extra_or_substituted_fixture": "rejected"
       },
       "cr15_relay_digest_successor": {
