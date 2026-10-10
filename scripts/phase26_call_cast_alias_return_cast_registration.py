@@ -207,15 +207,23 @@ def main() -> None:
     if activation.get("call_cast_alias_take_return_zero_increment"):
         from phase26_call_cast_alias_take_return_registration import NAMES as TAKE_NAMES
         take_names = " " + " ".join("take_" + name for name in TAKE_NAMES)
+    direct_move_names = ""
+    if activation.get("call_cast_alias_direct_move_return_zero_increment"):
+        from phase26_call_cast_alias_direct_move_return_registration import NAMES as DIRECT_MOVE_NAMES
+        direct_move_names = " " + " ".join("direct_move_" + name for name in DIRECT_MOVE_NAMES)
     require("for case_name in " + " ".join(
         Path(path).stem.removeprefix("phase26_call_local_return_cast_alias_").removesuffix("_source")
         for path in activation[OLD]["negative_fixtures"] + old_names) +
-        " " + " ".join(NAMES) + take_names + "; do" in guard and
+        " " + " ".join(NAMES) + take_names + direct_move_names + "; do" in guard and
         ("zero|mayzero|depth3|return_cast|return_zero|return_depth3|return_take|return_take_cast|take_zero|take_mayzero" if activation.get(
             "call_cast_alias_take_return_zero_increment") else
          "zero|mayzero|depth3|return_cast|return_zero|return_depth3)") in guard and
-        "return_wrong_type)" in guard and
-        ("return_prior_escape|take_prior_escape)" if activation.get(
+        ("return_wrong_type|take_wrong_type|direct_move_wrong_type)" if activation.get(
+            "call_cast_alias_direct_move_return_zero_increment") else
+         "return_wrong_type)") in guard and
+        ("return_prior_escape|take_prior_escape|direct_move_prior_escape)" if activation.get(
+            "call_cast_alias_direct_move_return_zero_increment") else
+         "return_prior_escape|take_prior_escape)" if activation.get(
             "call_cast_alias_take_return_zero_increment") else
          "return_prior_escape)") in guard and
         ("return_prior_move|take_prior_move)" if activation.get(
