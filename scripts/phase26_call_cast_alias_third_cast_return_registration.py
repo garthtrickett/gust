@@ -225,9 +225,17 @@ def main() -> None:
     guard_cases = " ".join("third_cast_" + name for name in NAMES)
     if finite_cast:
         guard_cases += " " + " ".join("finite_cast_" + name for name in FINITE_CAST_NAMES)
+    finite_cast_plain = activation.get("call_cast_alias_finite_cast_plain_return_zero_increment")
+    if finite_cast_plain:
+        from phase26_call_cast_alias_finite_cast_plain_return_registration import NAMES as FINITE_CAST_PLAIN_NAMES
+        guard_cases += " " + " ".join("finite_cast_plain_" + name for name in FINITE_CAST_PLAIN_NAMES)
     third_terminal_marker = "if (*env).zero_local_call_third_cast_terminal == 1 {" if finite_cast else "(*env).zero_local_call_third_cast_terminal == 1 ||"
-    wrong_marker = "third_cast_wrong_type|finite_cast_fourth_wrong_type|finite_plain_third_wrong_type)" if finite_cast else "third_cast_wrong_type|finite_plain_third_wrong_type)"
-    escape_marker = "third_cast_prior_escape|finite_cast_fourth_prior_escape|finite_plain_third_prior_escape)" if finite_cast else "third_cast_prior_escape|finite_plain_third_prior_escape)"
+    wrong_marker = ("third_cast_wrong_type|finite_cast_fourth_wrong_type|finite_cast_plain_fourth_wrong_type|finite_plain_third_wrong_type)" if finite_cast_plain else
+                    "third_cast_wrong_type|finite_cast_fourth_wrong_type|finite_plain_third_wrong_type)" if finite_cast else
+                    "third_cast_wrong_type|finite_plain_third_wrong_type)")
+    escape_marker = ("third_cast_prior_escape|finite_cast_fourth_prior_escape|finite_cast_plain_fourth_prior_escape|finite_plain_third_prior_escape)" if finite_cast_plain else
+                     "third_cast_prior_escape|finite_cast_fourth_prior_escape|finite_plain_third_prior_escape)" if finite_cast else
+                     "third_cast_prior_escape|finite_plain_third_prior_escape)")
     require(guard_cases + " second_cast_zero" in guard and
             "second_cast_interleaved_mayzero_move|second_cast_third_cast|third_cast_zero|" in guard and
             wrong_marker in guard and
