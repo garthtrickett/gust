@@ -274,6 +274,10 @@ def main() -> None:
     if activation.get("call_cast_alias_finite_plain_return_zero_increment"):
         from phase26_call_cast_alias_finite_plain_return_registration import NAMES as FINITE_PLAIN_NAMES
         finite_plain_names = " " + " ".join("finite_plain_" + name for name in FINITE_PLAIN_NAMES)
+    third_cast_names = ""
+    if activation.get("call_cast_alias_third_cast_return_zero_increment"):
+        from phase26_call_cast_alias_third_cast_return_registration import NAMES as THIRD_CAST_NAMES
+        third_cast_names = " " + " ".join("third_cast_" + name for name in THIRD_CAST_NAMES)
     second_cast_names = ""
     if activation.get("call_cast_alias_second_cast_return_zero_increment"):
         from phase26_call_cast_alias_second_cast_return_registration import NAMES as SECOND_CAST_NAMES
@@ -281,7 +285,7 @@ def main() -> None:
     require(all(marker in guard for marker in (
         "for case_name in " + " ".join(NAMES) +
         (" return_zero return_depth3 return_nonzero return_unknown return_unsafe return_scalar return_take_cast return_move_cast return_wrong_type return_prior_escape return_prior_move return_second_alias return_gap return_overwrite" if activation.get("call_cast_alias_return_cast_zero_increment") else "") +
-        take_names + second_plain_names + finite_plain_names + second_cast_names + direct_move_names + "; do",
+        take_names + second_plain_names + finite_plain_names + third_cast_names + second_cast_names + direct_move_names + "; do",
         "phase26_call_local_return_cast_alias_${case_name}_source.gst",
         "GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER", 'test ! -e "$marker"')) and
         "zero_local_call_cast_alias_terminal" in compiler and

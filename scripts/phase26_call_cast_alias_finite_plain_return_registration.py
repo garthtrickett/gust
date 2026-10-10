@@ -222,7 +222,8 @@ def main() -> None:
     guard = (ROOT / GUARD_PATH).read_text()
     compiler = (ROOT / "compiler/typechecker.gst").read_text()
     second_cast = activation.get("call_cast_alias_second_cast_return_zero_increment")
-    next_case = " second_cast_zero" if second_cast else " direct_move_zero"
+    third_cast = activation.get("call_cast_alias_third_cast_return_zero_increment")
+    next_case = " third_cast_double_move" if third_cast else " second_cast_zero" if second_cast else " direct_move_zero"
     positive_marker = ("second_plain_third_alias|second_plain_second_cast|second_cast_zero|"
                        if second_cast else "second_plain_third_alias|finite_plain_third_zero")
     cast_marker = ('if (*env).zero_local_call_cast_alias_terminal == 1 && value.tag != 0 &&'
@@ -232,7 +233,8 @@ def main() -> None:
             positive_marker in guard and
             "finite_plain_third_wrong_type)" in guard and
             "finite_plain_third_prior_escape)" in guard and
-            "finite_plain_third_prior_move|finite_plain_third_prior_move_return_move|finite_plain_third_return_move_cast)" in guard and
+            ("finite_plain_third_prior_move|finite_plain_third_prior_move_return_move|finite_plain_third_return_move_cast|third_cast_prior_move|third_cast_prior_move_return_move|third_cast_return_move_cast)" if third_cast else
+             "finite_plain_third_prior_move|finite_plain_third_prior_move_return_move|finite_plain_third_return_move_cast)") in guard and
             'test ! -e "$marker"' in guard and
             "GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER" in guard and
             "if (*env).zero_local_call_alias_hops >= 2 {" in compiler and
