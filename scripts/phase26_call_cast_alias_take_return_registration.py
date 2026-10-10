@@ -218,6 +218,9 @@ def main() -> None:
     if activation.get("call_cast_alias_direct_move_return_zero_increment"):
         from phase26_call_cast_alias_direct_move_return_registration import NAMES as DIRECT_MOVE_NAMES
         suffix = " " + " ".join("direct_move_" + name for name in DIRECT_MOVE_NAMES)
+    if activation.get("call_cast_alias_second_cast_return_zero_increment"):
+        from phase26_call_cast_alias_second_cast_return_registration import NAMES as SECOND_CAST_NAMES
+        suffix = " " + " ".join("second_cast_" + name for name in SECOND_CAST_NAMES) + suffix
     if activation.get("call_cast_alias_finite_plain_return_zero_increment"):
         from phase26_call_cast_alias_finite_plain_return_registration import NAMES as FINITE_PLAIN_NAMES
         suffix = " " + " ".join("finite_plain_" + name for name in FINITE_PLAIN_NAMES) + suffix

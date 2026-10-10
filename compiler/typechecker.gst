@@ -1318,6 +1318,7 @@ type TypeEnvironment[ctx] struct {
     zero_local_call_alias_hops: int,
     zero_local_call_take_alias_terminal: int,
     zero_local_call_cast_alias_terminal: int,
+    zero_local_call_second_cast_terminal: int,
     variable_types: std.HashMap[str, ast.Type[ctx], ctx],
     resolved_types_nested: std.Vector[PrefixMapEntry[ctx], ctx],
     enum_registry: std.HashMap[str, std.Vector[str, ctx], ctx],
@@ -2947,6 +2948,7 @@ func phase26_zero_local_call_statement_consumes_candidate(stmt: ast.Statement[ct
 func phase26_zero_local_call_alias_name(stmt: ast.Statement[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) str {
     unsafe {
         if std.str_eq((*env).zero_local_call_name, "") == 1 ||
+           (*env).zero_local_call_second_cast_terminal == 1 ||
            ((*env).zero_local_call_cast_alias_terminal == 1 &&
             (*env).zero_local_call_alias_hops < 1) ||
            stmt.tag != 4 {
@@ -2955,10 +2957,13 @@ func phase26_zero_local_call_alias_name(stmt: ast.Statement[ctx], env: *TypeEnvi
         mut value_idx := stmt.VarDecl.value;
         if value_idx == empty[Index[ast.Expression[ctx], ctx]] { return ""; }
         mut value := ctx[value_idx];
-        if (*env).zero_local_call_cast_alias_terminal == 1 && value.tag != 0 { return ""; }
+        if (*env).zero_local_call_cast_alias_terminal == 1 && value.tag != 0 &&
+           (value.tag != 9 || (*env).zero_local_call_alias_hops != 1) { return ""; }
         mut cast_alias := 0;
         if value.tag == 9 { // One terminal alias through checked pointer casts.
-            if (*env).zero_local_call_alias_hops != 0 { return ""; }
+            if (*env).zero_local_call_alias_hops != 0 &&
+               ((*env).zero_local_call_cast_alias_terminal != 1 ||
+                (*env).zero_local_call_alias_hops != 1) { return ""; }
             if (*env).zero_local_call_take_alias_terminal != 0 { return ""; }
             cast_alias = 1;
             while value.tag == 9 {
@@ -9833,6 +9838,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.zero_local_call_alias_hops = 0;
         env_ref_new.zero_local_call_take_alias_terminal = 0;
         env_ref_new.zero_local_call_cast_alias_terminal = 0;
+        env_ref_new.zero_local_call_second_cast_terminal = 0;
         env_ref_new.variable_types = std.HashMapNew(ctx);
         env_ref_new.resolved_types_nested = std.VectorNew(ctx);
         env_ref_new.enum_registry = std.HashMapNew(ctx);
@@ -15159,11 +15165,13 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
         mut parent_zero_local_alias_hops := (*env).zero_local_call_alias_hops;
         mut parent_zero_local_take_alias_terminal := (*env).zero_local_call_take_alias_terminal;
         mut parent_zero_local_cast_alias_terminal := (*env).zero_local_call_cast_alias_terminal;
+        mut parent_zero_local_second_cast_terminal := (*env).zero_local_call_second_cast_terminal;
         (*env).zero_local_call_name = "";
         (*env).zero_local_call_callee = "";
         (*env).zero_local_call_alias_hops = 0;
         (*env).zero_local_call_take_alias_terminal = 0;
         (*env).zero_local_call_cast_alias_terminal = 0;
+        (*env).zero_local_call_second_cast_terminal = 0;
         mut entering_zero_states := typechecker_clone_int_map((*env).variable_zero_states, ctx);
         mut entering_field_zero_states := typechecker_clone_int_map((*env).field_zero_states, ctx);
         if establish_nested_scope == 1 {
@@ -15212,6 +15220,7 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
                 (*env).zero_local_call_alias_hops = 0;
                 (*env).zero_local_call_take_alias_terminal = 0;
                 (*env).zero_local_call_cast_alias_terminal = 0;
+                (*env).zero_local_call_second_cast_terminal = 0;
             }
             mut prior_error_count := len((*env).errors);
             check_statement(statement_idx, env, scope, ctx);
@@ -15241,6 +15250,9 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
                     if alias_value_idx != empty[Index[ast.Expression[ctx], ctx]] &&
                        ctx[alias_value_idx].tag == 9 {
                         if phase26_zero_local_call_alias_cast_is_raw(statements[i], env, ctx) == 1 {
+                            if (*env).zero_local_call_cast_alias_terminal == 1 {
+                                (*env).zero_local_call_second_cast_terminal = 1;
+                            }
                             (*env).zero_local_call_cast_alias_terminal = 1;
                         } else {
                             (*env).zero_local_call_name = "";
@@ -15248,6 +15260,7 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
                             (*env).zero_local_call_alias_hops = 0;
                             (*env).zero_local_call_take_alias_terminal = 0;
                             (*env).zero_local_call_cast_alias_terminal = 0;
+                            (*env).zero_local_call_second_cast_terminal = 0;
                         }
                     }
                 } else {
@@ -15256,6 +15269,7 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
                     (*env).zero_local_call_alias_hops = 0;
                     (*env).zero_local_call_take_alias_terminal = 0;
                     (*env).zero_local_call_cast_alias_terminal = 0;
+                    (*env).zero_local_call_second_cast_terminal = 0;
                 }
             }
             if statements[i].tag != 4 {
@@ -15264,6 +15278,7 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
                 (*env).zero_local_call_alias_hops = 0;
                 (*env).zero_local_call_take_alias_terminal = 0;
                 (*env).zero_local_call_cast_alias_terminal = 0;
+                (*env).zero_local_call_second_cast_terminal = 0;
             }
             i = i + 1;
         }
@@ -15313,6 +15328,7 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
         (*env).zero_local_call_alias_hops = parent_zero_local_alias_hops;
         (*env).zero_local_call_take_alias_terminal = parent_zero_local_take_alias_terminal;
         (*env).zero_local_call_cast_alias_terminal = parent_zero_local_cast_alias_terminal;
+        (*env).zero_local_call_second_cast_terminal = parent_zero_local_second_cast_terminal;
     }
 }
 
