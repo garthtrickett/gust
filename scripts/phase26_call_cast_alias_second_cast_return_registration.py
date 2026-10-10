@@ -61,6 +61,9 @@ def record(activation: dict) -> dict:
 
 
 def before_new_digest(activation: dict, path: str, live_digest: str) -> str:
+    if activation.get("call_cast_alias_third_cast_return_zero_increment"):
+        from phase26_call_cast_alias_third_cast_return_registration import before_new_digest as before_third_cast_digest
+        live_digest = before_third_cast_digest(activation, path, live_digest)
     row = record(activation)
     for field in ("guard_digest_successor", "positive_fixture_successor",
                   "cr15_relay_digest_successor"):
@@ -86,6 +89,9 @@ def before_new_digest(activation: dict, path: str, live_digest: str) -> str:
 
 def before_new_counts(activation: dict, path: str,
                       live_counts: dict[str, int]) -> dict[str, int]:
+    if activation.get("call_cast_alias_third_cast_return_zero_increment"):
+        from phase26_call_cast_alias_third_cast_return_registration import before_new_counts as before_third_cast_counts
+        live_counts = before_third_cast_counts(activation, path, live_counts)
     rows = record(activation).get("phase23_text_surface_successor", {}).get("changed_rows", [])
     matches = [entry for entry in rows if entry.get("path") == path]
     require(len(matches) <= 1, f"duplicate text path: {path}")
@@ -100,6 +106,9 @@ def before_new_counts(activation: dict, path: str,
 
 
 def before_new_spelling(activation: dict, live: dict) -> dict:
+    if activation.get("call_cast_alias_third_cast_return_zero_increment"):
+        from phase26_call_cast_alias_third_cast_return_registration import before_new_spelling as before_third_cast_spelling
+        live = before_third_cast_spelling(activation, live)
     successor = record(activation).get("spelling_inventory_successor", {})
     previous = activation[OLD]["spelling_inventory_successor"]["current_inventory_summary"]
     require(successor == {
@@ -117,6 +126,9 @@ def before_new_spelling(activation: dict, live: dict) -> dict:
 
 
 def before_new_filename(activation: dict, live: list[dict]) -> list[dict]:
+    if activation.get("call_cast_alias_third_cast_return_zero_increment"):
+        from phase26_call_cast_alias_third_cast_return_registration import before_new_filename as before_third_cast_filename
+        live = before_third_cast_filename(activation, live)
     successor = record(activation).get("filename_site_successor", {})
     previous = activation[OLD]["filename_site_successor"]["current_sites"]
     require(successor == {
@@ -181,24 +193,32 @@ def main() -> None:
                         ("positive_fixture_successor", POSITIVE),
                         ("cr15_relay_digest_successor", CR15_PATH)):
         previous = activation[OLD][field]["current_digest"]
+        current_digest = digest(path)
+        if activation.get("call_cast_alias_third_cast_return_zero_increment"):
+            from phase26_call_cast_alias_third_cast_return_registration import before_new_digest as before_third_cast_digest
+            current_digest = before_third_cast_digest(activation, path, current_digest)
         require(row[field] == {
             "path": path, "previous_digest": previous,
-            "current_digest": digest(path),
+            "current_digest": current_digest,
             "partial_extra_or_substituted_" +
             ("guard" if field.startswith("guard") else
              "fixture" if field.startswith("positive") else "relay"): "rejected",
         }, f"{field} drifted")
     guard = (ROOT / GUARD_PATH).read_text()
     compiler = (ROOT / "compiler/typechecker.gst").read_text()
+    third_cast = activation.get("call_cast_alias_third_cast_return_zero_increment")
+    wrong_marker = "second_cast_wrong_type|third_cast_wrong_type|finite_plain_third_wrong_type)" if third_cast else "second_cast_wrong_type|finite_plain_third_wrong_type)"
+    escape_marker = "second_cast_prior_escape|third_cast_prior_escape|finite_plain_third_prior_escape)" if third_cast else "second_cast_prior_escape|finite_plain_third_prior_escape)"
+    second_terminal_marker = "if (*env).zero_local_call_second_cast_terminal == 1 {" if third_cast else "(*env).zero_local_call_second_cast_terminal == 1 ||"
     require(" ".join("second_cast_" + name for name in NAMES) + " direct_move_zero" in guard and
             "second_plain_third_alias|second_plain_second_cast|second_cast_zero|" in guard and
-            "second_cast_wrong_type|finite_plain_third_wrong_type)" in guard and
-            "second_cast_prior_escape|finite_plain_third_prior_escape)" in guard and
+            wrong_marker in guard and
+            escape_marker in guard and
             "second_cast_prior_move|second_cast_prior_move_return_move|second_cast_return_move_cast)" in guard and
             'test ! -e "$marker"' in guard and
             "GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER" in guard and
             "zero_local_call_second_cast_terminal: int" in compiler and
-            "(*env).zero_local_call_second_cast_terminal == 1 ||" in compiler and
+            second_terminal_marker in compiler and
             '(*env).zero_local_call_alias_hops != 1) { return ""; }' in compiler and
             "(*env).zero_local_call_second_cast_terminal = 1;" in compiler and
             "phase26_zero_local_call_alias_cast_is_raw(statements[i], env, ctx) == 1" in compiler and
@@ -245,17 +265,27 @@ def main() -> None:
         path = entry["path"]
         counts = {name: len(pattern.findall((ROOT / path).read_text()))
                   for name, pattern in SURFACE_PATTERNS.items()}
+        current_digest = digest(path)
+        if third_cast:
+            from phase26_call_cast_alias_third_cast_return_registration import before_new_digest as before_third_cast_digest, before_new_counts as before_third_cast_counts
+            current_digest = before_third_cast_digest(activation, path, current_digest)
+            counts = before_third_cast_counts(activation, path, counts)
         require(entry == {"path": path,
                           "previous_digest": FROZEN_TEXT[path]["digest"],
-                          "current_digest": digest(path),
+                          "current_digest": current_digest,
                           "previous_match_counts": FROZEN_TEXT[path]["match_counts"],
                           "current_match_counts": counts},
                 f"text surface drifted: {path}")
     path = added[0]["path"]
     counts = {name: len(pattern.findall((ROOT / path).read_text()))
               for name, pattern in SURFACE_PATTERNS.items()}
+    current_digest = digest(path)
+    if third_cast:
+        from phase26_call_cast_alias_third_cast_return_registration import before_new_digest as before_third_cast_digest, before_new_counts as before_third_cast_counts
+        current_digest = before_third_cast_digest(activation, path, current_digest)
+        counts = before_third_cast_counts(activation, path, counts)
     require(added[0] == {
-        "path": path, "digest": digest(path), "match_counts": counts,
+        "path": path, "digest": current_digest, "match_counts": counts,
         "classification": "archive_candidate", "owner": "cranelift",
         "current_route": "tracked_MIR_to_C_or_generated_C_surface",
         "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",

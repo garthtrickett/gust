@@ -1501,6 +1501,21 @@ flow remain excluded. Every predecessor form and activation row stays frozen;
 transfer/resource bookkeeping, MIR, ABI, runtime, oracle, fallback, caps, broad
 D/E/F gates, and Phase 26 status rows remain unchanged.
 
+**26.1E three consecutive checked cast-initialized aliases (Cranelift ownership
+assigned 2026-10-10).** Exactly one third adjacent, same-block raw pointer
+alias may follow the two validated checked cast aliases. Its initializer is a
+finite chain of individually checked raw-to-raw casts of the second alias;
+ordinary declaration typing must establish matching raw pointer and brand
+types before the candidate is promoted. Only direct Identifier or one direct
+`move` return of the third alias reaches the existing Zero/MayZero safe-return
+diagnostic after ordinary type, safety, escape, and moved-variable checks. The
+third cast closes the chain: a fourth plain or cast alias, plain prefix or
+interleave, Take or Move initializer, terminal cast or Take, wrapped or repeated
+Move, gap, overwrite, scalar or unproved cast, and wider flow remain excluded.
+All predecessor forms and activation rows remain frozen; transfer/resource
+bookkeeping, MIR, ABI, runtime, oracle, fallback, caps, broad D/E/F gates, and
+Phase 26 status rows remain unchanged.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
