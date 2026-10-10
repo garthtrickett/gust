@@ -207,8 +207,13 @@ def main() -> None:
     guard = (ROOT / GUARD_PATH).read_text()
     compiler = (ROOT / "compiler/typechecker.gst").read_text()
     third_cast = activation.get("call_cast_alias_third_cast_return_zero_increment")
-    wrong_marker = "second_cast_wrong_type|third_cast_wrong_type|finite_plain_third_wrong_type)" if third_cast else "second_cast_wrong_type|finite_plain_third_wrong_type)"
-    escape_marker = "second_cast_prior_escape|third_cast_prior_escape|finite_plain_third_prior_escape)" if third_cast else "second_cast_prior_escape|finite_plain_third_prior_escape)"
+    finite_cast = activation.get("call_cast_alias_finite_cast_return_zero_increment")
+    wrong_marker = ("second_cast_wrong_type|third_cast_wrong_type|finite_cast_fourth_wrong_type|finite_plain_third_wrong_type)" if finite_cast else
+                    "second_cast_wrong_type|third_cast_wrong_type|finite_plain_third_wrong_type)" if third_cast else
+                    "second_cast_wrong_type|finite_plain_third_wrong_type)")
+    escape_marker = ("second_cast_prior_escape|third_cast_prior_escape|finite_cast_fourth_prior_escape|finite_plain_third_prior_escape)" if finite_cast else
+                     "second_cast_prior_escape|third_cast_prior_escape|finite_plain_third_prior_escape)" if third_cast else
+                     "second_cast_prior_escape|finite_plain_third_prior_escape)")
     second_terminal_marker = "if (*env).zero_local_call_second_cast_terminal == 1 {" if third_cast else "(*env).zero_local_call_second_cast_terminal == 1 ||"
     require(" ".join("second_cast_" + name for name in NAMES) + " direct_move_zero" in guard and
             "second_plain_third_alias|second_plain_second_cast|second_cast_zero|" in guard and

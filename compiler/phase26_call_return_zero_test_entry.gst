@@ -566,8 +566,31 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return (move third) as *int;", ctx)], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return move (move third);", ctx)], &env, ctx) != 0 ||
        std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut fourth := third;", ctx)], &env, ctx), "") == 0 ||
-       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut fourth := third as *int;", ctx)], &env, ctx), "") == 0 {
-        os.LogStr("Error: third checked raw alias admitted a later alias or return wrapper"); os.Exit(1);
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut fourth := take third;", ctx)], &env, ctx), "") == 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut fourth := move third;", ctx)], &env, ctx), "") == 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut fourth := (third as *int) as *int;", ctx)], &env, ctx), "fourth") == 0 {
+        os.LogStr("Error: third checked raw alias lost finite cast continuation or admitted a wrapper"); os.Exit(1);
+    }
+    env.zero_local_call_name = "fourth";
+    env.zero_local_call_alias_hops = 4;
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return fourth;", ctx)], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return move fourth;", ctx)], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return fourth as *int;", ctx)], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return take fourth;", ctx)], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return (move fourth) as *int;", ctx)], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return move (move fourth);", ctx)], &env, ctx) != 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut fifth := fourth;", ctx)], &env, ctx), "") == 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut fifth := take fourth;", ctx)], &env, ctx), "") == 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut fifth := move fourth;", ctx)], &env, ctx), "") == 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut fifth := fourth as *int;", ctx)], &env, ctx), "fifth") == 0 {
+        os.LogStr("Error: fourth checked raw alias lost finite cast continuation or direct-only return boundary"); os.Exit(1);
+    }
+    env.zero_local_call_name = "fifth";
+    env.zero_local_call_alias_hops = 5;
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return fifth;", ctx)], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return move fifth;", ctx)], &env, ctx) != 1 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut sixth := (fifth as *int) as *int;", ctx)], &env, ctx), "sixth") == 0 {
+        os.LogStr("Error: higher finite checked raw alias chain lost direct return or continuation"); os.Exit(1);
     }
     env.zero_local_call_third_cast_terminal = 0;
     env.zero_local_call_second_cast_terminal = 0;

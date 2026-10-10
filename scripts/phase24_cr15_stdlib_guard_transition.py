@@ -4117,6 +4117,30 @@ def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    finite_cast = registry.get("phase26_activation_audit", {}).get(
+        "call_cast_alias_finite_cast_return_zero_increment", {}).get(
+            "phase23_text_surface_successor")
+    if finite_cast is not None:
+        from phase26_call_cast_alias_finite_cast_return_registration import TEXT_PATHS as FINITE_CAST_TEXT_PATHS
+        changed = finite_cast.get("changed_rows", [])
+        added = finite_cast.get("added_rows", [])
+        added_path = "scripts/phase26_call_cast_alias_finite_cast_return_registration.py"
+        live = {row["path"]: row for row in rows}
+        require(finite_cast.get("contract_version") ==
+                "phase26_1e_cast_alias_finite_cast_return_phase23_text_successor_v1" and
+                finite_cast.get("partial_extra_or_substituted_surface") == "rejected" and
+                [row.get("path") for row in changed] == FINITE_CAST_TEXT_PATHS and
+                isinstance(added, list) and len(added) == 1 and
+                added[0].get("path") == added_path and live.get(added_path) == added[0] and
+                all(live.get(row["path"], {}).get("digest") == row["current_digest"] and
+                    live.get(row["path"], {}).get("match_counts") ==
+                    row["current_match_counts"] for row in changed),
+                "Phase 26 finite checked-cast alias text surface shape drifted")
+        by_path = {row["path"]: row for row in changed}
+        rows = [dict(row, digest=by_path[row["path"]]["previous_digest"],
+                     match_counts=by_path[row["path"]]["previous_match_counts"])
+                if row["path"] in by_path else row for row in rows
+                if row["path"] != added_path]
     third_cast = registry.get("phase26_activation_audit", {}).get(
         "call_cast_alias_third_cast_return_zero_increment", {}).get(
             "phase23_text_surface_successor")
