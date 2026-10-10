@@ -466,11 +466,17 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
     env.zero_local_call_cast_alias_terminal = 1;
     mut alias_return := parse_statement("return ptr;", ctx);
     mut alias_cast_return := parse_statement("return ptr as *int;", ctx);
+    mut alias_cast_return_depth3 := parse_statement("return (((ptr as *int) as *int) as *int);", ctx);
+    mut alias_take_return := parse_statement("return take ptr;", ctx);
+    mut alias_move_return := parse_statement("return move ptr;", ctx);
     mut alias_second := parse_statement("mut second := ptr;", ctx);
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_return], &env, ctx) != 1 ||
-       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_cast_return], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_cast_return], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_cast_return_depth3], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_take_return], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_move_return], &env, ctx) != 0 ||
        std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[alias_second], &env, ctx), "") == 0 {
-        os.LogStr("Error: cast-initialized alias escaped the immediate Identifier return window"); os.Exit(1);
+        os.LogStr("Error: cast-initialized alias lost checked return casts or escaped its terminal window"); os.Exit(1);
     }
     env.zero_local_call_cast_alias_terminal = 0;
     env.zero_local_call_take_alias_terminal = 1;

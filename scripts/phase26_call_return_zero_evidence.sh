@@ -1216,7 +1216,7 @@ for case_name in zero mayzero_one mayzero_four prefix_depth2 interleaved nonzero
   test ! -e "$output"
   test ! -e "$marker"
 done
-for case_name in zero mayzero depth3 nonzero unknown unsafe second_alias plain_prefix plain_suffix take_inner move_inner return_cast return_take return_move gap overwrite wrong_type prior_escape scalar_cast no_alias_cast prior_move; do
+for case_name in zero mayzero depth3 nonzero unknown unsafe second_alias plain_prefix plain_suffix take_inner move_inner return_cast return_take return_move gap overwrite wrong_type prior_escape scalar_cast no_alias_cast prior_move return_zero return_depth3 return_nonzero return_unknown return_unsafe return_scalar return_take_cast return_move_cast return_wrong_type return_prior_escape return_prior_move return_second_alias return_gap return_overwrite; do
   fixture="compiler/phase26_call_local_return_cast_alias_${case_name}_source.gst"
   output="$build_root/cast_initialized_alias_return_${case_name}"
   rm -f "$output" "$marker"
@@ -1230,21 +1230,25 @@ for case_name in zero mayzero depth3 nonzero unknown unsafe second_alias plain_p
   set -e
   test "$status" -ne 0
   case "$case_name" in
-    zero|mayzero|depth3)
+    zero|mayzero|depth3|return_cast|return_zero|return_depth3)
       rg -F "TypeError in $fixture at line 3:" "$output.stdout" >/dev/null
       rg -F '[RawNullSafeBoundary] Known zero-derived raw pointer cannot cross a declared-safe function return' "$output.stdout" >/dev/null
       if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
       ;;
-    wrong_type)
+    wrong_type|return_wrong_type)
       rg -F '[TypeMismatch] Return type mismatch. Expected Int but got RawPointer(Int)' "$output.stdout" >/dev/null
       if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
       ;;
-    prior_escape)
+    prior_escape|return_prior_escape)
       rg -F 'Escape analysis violation. Returning ephemeral view' "$output.stdout" >/dev/null
       if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
       ;;
-    prior_move|move_inner)
+    prior_move|move_inner|return_prior_move)
       rg -F 'Semantic Error: Use of moved variable ptr' "$output.stdout" >/dev/null
+      if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+    return_move_cast)
+      rg -F 'Semantic Error: Use of moved variable alias' "$output.stdout" >/dev/null
       if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
       ;;
     *)
