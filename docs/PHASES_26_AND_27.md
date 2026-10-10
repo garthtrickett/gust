@@ -1448,6 +1448,18 @@ gap, overwrite, and broader candidate flow remain excluded. Earlier forms,
 four-state evidence, Take/resource bookkeeping, MIR, ABI, runtime, oracle,
 fallback, caps, and all broad D/E/F and Phase 26 status gates remain unchanged.
 
+**26.1E one direct terminal Move after a checked cast-initialized alias
+(Cranelift ownership assigned 2026-10-10).** The immediate validated alias may
+be returned through exactly `move alias`. The initializer still requires each
+raw-to-raw cast and matching raw source/alias types after ordinary typing.
+Only Zero and MayZero receive the existing safe-return diagnostic after type,
+safety, escape, and moved-variable checks. A cast around Move, any Take/Move
+mixture, second Move or alias, scalar or unproved cast, gap, overwrite, and
+broader candidate flow remain excluded. The existing cast-wrapped Move retains
+its ordinary moved-variable diagnostic. Earlier forms, four-state evidence,
+Move/resource bookkeeping, MIR, ABI, runtime, oracle, fallback, caps, and all
+broad D/E/F and Phase 26 status gates remain unchanged.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

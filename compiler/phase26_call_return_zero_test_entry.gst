@@ -473,7 +473,9 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
     mut alias_take_cast_inside := parse_statement("return take (ptr as *int);", ctx);
     mut alias_take_cast_interleaved := parse_statement("return (take ((take (ptr as *int)) as *int)) as *int;", ctx);
     mut alias_move_return := parse_statement("return move ptr;", ctx);
+    mut alias_move_cast_return := parse_statement("return (move ptr) as *int;", ctx);
     mut alias_take_move_return := parse_statement("return take (move ptr);", ctx);
+    mut alias_move_take_return := parse_statement("return move (take ptr);", ctx);
     mut alias_second := parse_statement("mut second := ptr;", ctx);
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_return], &env, ctx) != 1 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_cast_return], &env, ctx) != 1 ||
@@ -483,10 +485,12 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_take_cast_outside], &env, ctx) != 1 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_take_cast_inside], &env, ctx) != 1 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_take_cast_interleaved], &env, ctx) != 1 ||
-       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_move_return], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_move_return], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_move_cast_return], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_take_move_return], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[alias_move_take_return], &env, ctx) != 0 ||
        std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[alias_second], &env, ctx), "") == 0 {
-        os.LogStr("Error: cast-initialized alias lost checked Take/cast returns or escaped its terminal window"); os.Exit(1);
+        os.LogStr("Error: cast-initialized alias lost checked Take/cast/direct-Move returns or escaped its terminal window"); os.Exit(1);
     }
     env.zero_local_call_cast_alias_terminal = 0;
     env.zero_local_call_take_alias_terminal = 1;

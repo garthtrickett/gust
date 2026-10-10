@@ -1216,7 +1216,7 @@ for case_name in zero mayzero_one mayzero_four prefix_depth2 interleaved nonzero
   test ! -e "$output"
   test ! -e "$marker"
 done
-for case_name in zero mayzero depth3 nonzero unknown unsafe second_alias plain_prefix plain_suffix take_inner move_inner return_cast return_take return_move gap overwrite wrong_type prior_escape scalar_cast no_alias_cast prior_move return_zero return_depth3 return_nonzero return_unknown return_unsafe return_scalar return_take_cast return_move_cast return_wrong_type return_prior_escape return_prior_move return_second_alias return_gap return_overwrite take_zero take_mayzero take_two_take_mayzero take_four_take_mayzero take_cast_outside_mayzero take_cast_inside_mayzero take_interleaved_mayzero take_nonzero take_unknown take_unsafe take_wrong_type take_prior_escape take_prior_move take_second_alias take_gap take_overwrite take_scalar_inner take_move_mixed take_no_alias_cast take_plain_prefix take_plain_suffix; do
+for case_name in zero mayzero depth3 nonzero unknown unsafe second_alias plain_prefix plain_suffix take_inner move_inner return_cast return_take return_move gap overwrite wrong_type prior_escape scalar_cast no_alias_cast prior_move return_zero return_depth3 return_nonzero return_unknown return_unsafe return_scalar return_take_cast return_move_cast return_wrong_type return_prior_escape return_prior_move return_second_alias return_gap return_overwrite take_zero take_mayzero take_two_take_mayzero take_four_take_mayzero take_cast_outside_mayzero take_cast_inside_mayzero take_interleaved_mayzero take_nonzero take_unknown take_unsafe take_wrong_type take_prior_escape take_prior_move take_second_alias take_gap take_overwrite take_scalar_inner take_move_mixed take_no_alias_cast take_plain_prefix take_plain_suffix direct_move_zero direct_move_mayzero direct_move_depth3 direct_move_nonzero direct_move_unknown direct_move_unsafe direct_move_cast_wrapped direct_move_mixed_take direct_move_move_take direct_move_double_move direct_move_wrong_type direct_move_prior_escape direct_move_prior_move direct_move_second_alias direct_move_gap direct_move_overwrite direct_move_scalar_cast direct_move_no_alias; do
   fixture="compiler/phase26_call_local_return_cast_alias_${case_name}_source.gst"
   output="$build_root/cast_initialized_alias_return_${case_name}"
   rm -f "$output" "$marker"
@@ -1230,16 +1230,16 @@ for case_name in zero mayzero depth3 nonzero unknown unsafe second_alias plain_p
   set -e
   test "$status" -ne 0
   case "$case_name" in
-    zero|mayzero|depth3|return_cast|return_zero|return_depth3|return_take|return_take_cast|take_zero|take_mayzero|take_two_take_mayzero|take_four_take_mayzero|take_cast_outside_mayzero|take_cast_inside_mayzero|take_interleaved_mayzero)
+    zero|mayzero|depth3|return_cast|return_zero|return_depth3|return_take|return_take_cast|take_zero|take_mayzero|take_two_take_mayzero|take_four_take_mayzero|take_cast_outside_mayzero|take_cast_inside_mayzero|take_interleaved_mayzero|return_move|direct_move_zero|direct_move_mayzero|direct_move_depth3)
       rg -F "TypeError in $fixture at line 3:" "$output.stdout" >/dev/null
       rg -F '[RawNullSafeBoundary] Known zero-derived raw pointer cannot cross a declared-safe function return' "$output.stdout" >/dev/null
       if rg -F 'gust_native_capability_decision' "$output.stdout" >/dev/null; then exit 1; fi
       ;;
-    wrong_type|return_wrong_type|take_wrong_type)
+    wrong_type|return_wrong_type|take_wrong_type|direct_move_wrong_type)
       rg -F '[TypeMismatch] Return type mismatch. Expected Int but got RawPointer(Int)' "$output.stdout" >/dev/null
       if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
       ;;
-    prior_escape|return_prior_escape|take_prior_escape)
+    prior_escape|return_prior_escape|take_prior_escape|direct_move_prior_escape)
       rg -F 'Escape analysis violation. Returning ephemeral view' "$output.stdout" >/dev/null
       if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
       ;;
@@ -1247,7 +1247,11 @@ for case_name in zero mayzero depth3 nonzero unknown unsafe second_alias plain_p
       rg -F 'Semantic Error: Use of moved variable ptr' "$output.stdout" >/dev/null
       if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
       ;;
-    return_move_cast)
+    direct_move_prior_move)
+      rg -F 'Semantic Error: Use of moved variable alias' "$output.stdout" >/dev/null
+      if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
+      ;;
+    return_move_cast|direct_move_cast_wrapped)
       rg -F 'Semantic Error: Use of moved variable alias' "$output.stdout" >/dev/null
       if rg -F '[RawNullSafeBoundary]' "$output.stdout" >/dev/null; then exit 1; fi
       ;;

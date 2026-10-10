@@ -2805,6 +2805,12 @@ func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env:
     unsafe {
         if std.str_eq((*env).zero_local_call_name, "") == 1 { return 0; }
         if (*env).zero_local_call_cast_alias_terminal == 1 {
+            if expr.tag == 4 { // One direct terminal Move; no cast or Take may wrap it.
+                if expr.Move.expr == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+                mut moved_alias := ctx[expr.Move.expr];
+                if moved_alias.tag != 0 { return 0; }
+                return std.str_eq(moved_alias.Identifier.name, (*env).zero_local_call_name);
+            }
             mut alias_return := expr;
             while alias_return.tag == 5 || alias_return.tag == 9 {
                 mut next_idx := empty[Index[ast.Expression[ctx], ctx]];
@@ -2848,6 +2854,10 @@ func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env:
 func phase26_zero_local_return_cast_is_raw(expr: ast.Expression[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         if (*env).zero_local_call_cast_alias_terminal == 1 {
+            if expr.tag == 4 { // Ordinary Move typing already checked this exact Identifier.
+                if expr.Move.expr == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+                return ctx[expr.Move.expr].tag == 0;
+            }
             mut alias_return := expr;
             while alias_return.tag == 5 || alias_return.tag == 9 {
                 mut next_idx := empty[Index[ast.Expression[ctx], ctx]];
