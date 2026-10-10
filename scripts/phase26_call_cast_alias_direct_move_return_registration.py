@@ -63,6 +63,9 @@ def record(activation: dict) -> dict:
 
 
 def before_new_digest(activation: dict, path: str, live_digest: str) -> str:
+    if activation.get("call_cast_alias_second_plain_return_zero_increment"):
+        from phase26_call_cast_alias_second_plain_return_registration import before_new_digest as before_second_plain
+        live_digest = before_second_plain(activation, path, live_digest)
     row = record(activation)
     for field in ("guard_digest_successor", "positive_fixture_successor",
                   "cr15_relay_digest_successor"):
@@ -88,6 +91,9 @@ def before_new_digest(activation: dict, path: str, live_digest: str) -> str:
 
 def before_new_counts(activation: dict, path: str,
                       live_counts: dict[str, int]) -> dict[str, int]:
+    if activation.get("call_cast_alias_second_plain_return_zero_increment"):
+        from phase26_call_cast_alias_second_plain_return_registration import before_new_counts as before_second_plain
+        live_counts = before_second_plain(activation, path, live_counts)
     rows = record(activation).get("phase23_text_surface_successor", {}).get("changed_rows", [])
     matches = [entry for entry in rows if entry.get("path") == path]
     require(len(matches) <= 1, f"duplicate text path: {path}")
@@ -102,6 +108,9 @@ def before_new_counts(activation: dict, path: str,
 
 
 def before_new_spelling(activation: dict, live: dict) -> dict:
+    if activation.get("call_cast_alias_second_plain_return_zero_increment"):
+        from phase26_call_cast_alias_second_plain_return_registration import before_new_spelling as before_second_plain
+        live = before_second_plain(activation, live)
     successor = record(activation).get("spelling_inventory_successor", {})
     previous = activation[OLD]["spelling_inventory_successor"]["current_inventory_summary"]
     require(successor == {
@@ -119,6 +128,9 @@ def before_new_spelling(activation: dict, live: dict) -> dict:
 
 
 def before_new_filename(activation: dict, live: list[dict]) -> list[dict]:
+    if activation.get("call_cast_alias_second_plain_return_zero_increment"):
+        from phase26_call_cast_alias_second_plain_return_registration import before_new_filename as before_second_plain
+        live = before_second_plain(activation, live)
     successor = record(activation).get("filename_site_successor", {})
     previous = activation[OLD]["filename_site_successor"]["current_sites"]
     require(successor == {
@@ -137,6 +149,9 @@ def before_new_filename(activation: dict, live: list[dict]) -> list[dict]:
 def main() -> None:
     activation = json.loads((ROOT / "scripts/cranelift_feature_registry.json")
                             .read_text())["phase26_activation_audit"]
+    if activation.get("call_cast_alias_second_plain_return_zero_increment"):
+        from phase26_call_cast_alias_second_plain_return_registration import main as second_plain_main
+        second_plain_main()
     row = record(activation)
     expected = {
         "contract_version": "phase26_1e_cast_alias_direct_move_return_zero_v1",
@@ -184,9 +199,13 @@ def main() -> None:
                         ("positive_fixture_successor", POSITIVE),
                         ("cr15_relay_digest_successor", CR15_PATH)):
         previous = activation[OLD][field]["current_digest"]
+        current_digest = digest(path)
+        if activation.get("call_cast_alias_second_plain_return_zero_increment"):
+            from phase26_call_cast_alias_second_plain_return_registration import before_new_digest as before_second_plain
+            current_digest = before_second_plain(activation, path, current_digest)
         require(row[field] == {
             "path": path, "previous_digest": previous,
-            "current_digest": digest(path),
+            "current_digest": current_digest,
             "partial_extra_or_substituted_" +
             ("guard" if field.startswith("guard") else
              "fixture" if field.startswith("positive") else "relay"): "rejected",
@@ -247,17 +266,27 @@ def main() -> None:
         path = entry["path"]
         counts = {name: len(pattern.findall((ROOT / path).read_text()))
                   for name, pattern in SURFACE_PATTERNS.items()}
+        current_digest = digest(path)
+        if activation.get("call_cast_alias_second_plain_return_zero_increment"):
+            from phase26_call_cast_alias_second_plain_return_registration import before_new_digest as before_second_plain_digest, before_new_counts as before_second_plain_counts
+            current_digest = before_second_plain_digest(activation, path, current_digest)
+            counts = before_second_plain_counts(activation, path, counts)
         require(entry == {"path": path,
                           "previous_digest": FROZEN_TEXT[path]["digest"],
-                          "current_digest": digest(path),
+                          "current_digest": current_digest,
                           "previous_match_counts": FROZEN_TEXT[path]["match_counts"],
                           "current_match_counts": counts},
                 f"text surface drifted: {path}")
     path = added[0]["path"]
     counts = {name: len(pattern.findall((ROOT / path).read_text()))
               for name, pattern in SURFACE_PATTERNS.items()}
+    added_digest = digest(path)
+    if activation.get("call_cast_alias_second_plain_return_zero_increment"):
+        from phase26_call_cast_alias_second_plain_return_registration import before_new_digest as before_second_plain_digest, before_new_counts as before_second_plain_counts
+        added_digest = before_second_plain_digest(activation, path, added_digest)
+        counts = before_second_plain_counts(activation, path, counts)
     require(added[0] == {
-        "path": path, "digest": digest(path), "match_counts": counts,
+        "path": path, "digest": added_digest, "match_counts": counts,
         "classification": "archive_candidate", "owner": "cranelift",
         "current_route": "tracked_MIR_to_C_or_generated_C_surface",
         "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",

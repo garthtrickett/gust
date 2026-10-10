@@ -1460,6 +1460,19 @@ its ordinary moved-variable diagnostic. Earlier forms, four-state evidence,
 Move/resource bookkeeping, MIR, ABI, runtime, oracle, fallback, caps, and all
 broad D/E/F and Phase 26 status gates remain unchanged.
 
+**26.1E one plain alias after one checked cast-initialized alias (Cranelift
+ownership assigned 2026-10-10).** One adjacent, same-block, by-value raw
+pointer alias may follow the validated cast-initialized alias. After ordinary
+declaration typing, the source and new alias must have matching raw pointer
+types. Only a direct Identifier or one direct `move` of that second alias may
+reach the existing Zero/MayZero safe-return diagnostic, after ordinary type,
+safety, escape, and moved-variable checks. A third alias, a cast or Take/Move
+in the second initializer, any cast or Take return wrapper, a second Move,
+plain prefix, gap, overwrite, scalar or unproved cast, and wider flow remain
+excluded. All earlier forms and frozen activation rows remain intact; this
+increment changes no transfer/resource bookkeeping, MIR, ABI, runtime,
+oracle, fallback, caps, broad D/E/F gate, or Phase 26 status row.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

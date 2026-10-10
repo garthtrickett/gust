@@ -5186,6 +5186,9 @@ def main() -> None:
     } and all((ROOT / path).is_file() for path in wrapper_fixtures),
             "one-Take safe-return successor fields or fixtures drifted")
     current_positive_digest = raw_digest(POSITIVE)
+    if activation.get("call_cast_alias_second_plain_return_zero_increment"):
+        from phase26_call_cast_alias_second_plain_return_registration import before_new_digest as before_second_plain
+        current_positive_digest = before_second_plain(activation, POSITIVE, current_positive_digest)
     direct_move_positive = activation.get(
         "call_cast_alias_direct_move_return_zero_increment", {}).get(
             "positive_fixture_successor")

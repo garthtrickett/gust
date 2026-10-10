@@ -266,10 +266,14 @@ def main() -> None:
     if activation.get("call_cast_alias_direct_move_return_zero_increment"):
         from phase26_call_cast_alias_direct_move_return_registration import NAMES as DIRECT_MOVE_NAMES
         direct_move_names = " " + " ".join("direct_move_" + name for name in DIRECT_MOVE_NAMES)
+    second_plain_names = ""
+    if activation.get("call_cast_alias_second_plain_return_zero_increment"):
+        from phase26_call_cast_alias_second_plain_return_registration import NAMES as SECOND_PLAIN_NAMES
+        second_plain_names = " " + " ".join("second_plain_" + name for name in SECOND_PLAIN_NAMES)
     require(all(marker in guard for marker in (
         "for case_name in " + " ".join(NAMES) +
         (" return_zero return_depth3 return_nonzero return_unknown return_unsafe return_scalar return_take_cast return_move_cast return_wrong_type return_prior_escape return_prior_move return_second_alias return_gap return_overwrite" if activation.get("call_cast_alias_return_cast_zero_increment") else "") +
-        take_names + direct_move_names + "; do",
+        take_names + second_plain_names + direct_move_names + "; do",
         "phase26_call_local_return_cast_alias_${case_name}_source.gst",
         "GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER", 'test ! -e "$marker"')) and
         "zero_local_call_cast_alias_terminal" in compiler and

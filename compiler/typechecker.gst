@@ -2811,6 +2811,10 @@ func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env:
                 if moved_alias.tag != 0 { return 0; }
                 return std.str_eq(moved_alias.Identifier.name, (*env).zero_local_call_name);
             }
+            if (*env).zero_local_call_alias_hops == 2 {
+                if expr.tag != 0 { return 0; }
+                return std.str_eq(expr.Identifier.name, (*env).zero_local_call_name);
+            }
             mut alias_return := expr;
             while alias_return.tag == 5 || alias_return.tag == 9 {
                 mut next_idx := empty[Index[ast.Expression[ctx], ctx]];
@@ -2858,6 +2862,7 @@ func phase26_zero_local_return_cast_is_raw(expr: ast.Expression[ctx], env: *Type
                 if expr.Move.expr == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
                 return ctx[expr.Move.expr].tag == 0;
             }
+            if (*env).zero_local_call_alias_hops == 2 { return expr.tag == 0; }
             mut alias_return := expr;
             while alias_return.tag == 5 || alias_return.tag == 9 {
                 mut next_idx := empty[Index[ast.Expression[ctx], ctx]];
@@ -2942,13 +2947,15 @@ func phase26_zero_local_call_statement_consumes_candidate(stmt: ast.Statement[ct
 func phase26_zero_local_call_alias_name(stmt: ast.Statement[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) str {
     unsafe {
         if std.str_eq((*env).zero_local_call_name, "") == 1 ||
-           (*env).zero_local_call_cast_alias_terminal == 1 ||
+           ((*env).zero_local_call_cast_alias_terminal == 1 &&
+            (*env).zero_local_call_alias_hops != 1) ||
            stmt.tag != 4 {
             return "";
         }
         mut value_idx := stmt.VarDecl.value;
         if value_idx == empty[Index[ast.Expression[ctx], ctx]] { return ""; }
         mut value := ctx[value_idx];
+        if (*env).zero_local_call_cast_alias_terminal == 1 && value.tag != 0 { return ""; }
         mut cast_alias := 0;
         if value.tag == 9 { // One terminal alias through checked pointer casts.
             if (*env).zero_local_call_alias_hops != 0 { return ""; }
