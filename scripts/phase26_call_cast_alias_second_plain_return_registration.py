@@ -226,15 +226,18 @@ def main() -> None:
     second_cast = activation.get("call_cast_alias_second_cast_return_zero_increment")
     third_cast = activation.get("call_cast_alias_third_cast_return_zero_increment")
     finite_cast = activation.get("call_cast_alias_finite_cast_return_zero_increment")
+    finite_cast_plain = activation.get("call_cast_alias_finite_cast_plain_return_zero_increment")
     following_name = " finite_plain_third_zero" if finite_plain else " direct_move_zero"
     positive_suffix = ("|second_plain_third_alias|second_plain_second_cast|second_cast_zero|"
                        if second_cast else
                        "|second_plain_third_alias|finite_plain_third_zero" if finite_plain else ")")
-    type_suffix = ("|second_cast_wrong_type|third_cast_wrong_type|finite_cast_fourth_wrong_type|finite_plain_third_wrong_type)" if finite_cast else
+    type_suffix = ("|second_cast_wrong_type|third_cast_wrong_type|finite_cast_fourth_wrong_type|finite_cast_plain_fourth_wrong_type|finite_plain_third_wrong_type)" if finite_cast_plain else
+                   "|second_cast_wrong_type|third_cast_wrong_type|finite_cast_fourth_wrong_type|finite_plain_third_wrong_type)" if finite_cast else
                    "|second_cast_wrong_type|third_cast_wrong_type|finite_plain_third_wrong_type)" if third_cast else
                    "|second_cast_wrong_type|finite_plain_third_wrong_type)" if second_cast else
                    "|finite_plain_third_wrong_type)" if finite_plain else ")")
-    escape_suffix = ("|second_cast_prior_escape|third_cast_prior_escape|finite_cast_fourth_prior_escape|finite_plain_third_prior_escape)" if finite_cast else
+    escape_suffix = ("|second_cast_prior_escape|third_cast_prior_escape|finite_cast_fourth_prior_escape|finite_cast_plain_fourth_prior_escape|finite_plain_third_prior_escape)" if finite_cast_plain else
+                     "|second_cast_prior_escape|third_cast_prior_escape|finite_cast_fourth_prior_escape|finite_plain_third_prior_escape)" if finite_cast else
                      "|second_cast_prior_escape|third_cast_prior_escape|finite_plain_third_prior_escape)" if third_cast else
                      "|second_cast_prior_escape|finite_plain_third_prior_escape)" if second_cast else
                      "|finite_plain_third_prior_escape)" if finite_plain else ")")
