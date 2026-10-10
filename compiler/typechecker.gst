@@ -2806,9 +2806,12 @@ func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env:
         if std.str_eq((*env).zero_local_call_name, "") == 1 { return 0; }
         if (*env).zero_local_call_cast_alias_terminal == 1 {
             mut alias_return := expr;
-            while alias_return.tag == 9 { // Only checked casts may wrap this terminal alias.
-                if alias_return.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
-                alias_return = ctx[alias_return.AsCast.left];
+            while alias_return.tag == 5 || alias_return.tag == 9 {
+                mut next_idx := empty[Index[ast.Expression[ctx], ctx]];
+                if alias_return.tag == 5 { next_idx = alias_return.Take.expr; }
+                if alias_return.tag == 9 { next_idx = alias_return.AsCast.left; }
+                if next_idx == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+                alias_return = ctx[next_idx];
             }
             if alias_return.tag != 0 { return 0; }
             return std.str_eq(alias_return.Identifier.name, (*env).zero_local_call_name);
@@ -2846,13 +2849,19 @@ func phase26_zero_local_return_cast_is_raw(expr: ast.Expression[ctx], env: *Type
     unsafe {
         if (*env).zero_local_call_cast_alias_terminal == 1 {
             mut alias_return := expr;
-            while alias_return.tag == 9 {
-                if alias_return.AsCast.target_type == empty[Index[ast.Type[ctx], ctx]] ||
-                   alias_return.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
-                mut target := env_resolve_type(env, ctx[alias_return.AsCast.target_type], ctx);
-                if target.tag != 9 ||
-                   phase26_zero_resolved_expression_tag(alias_return.AsCast.left, env, ctx) != 9 { return 0; }
-                alias_return = ctx[alias_return.AsCast.left];
+            while alias_return.tag == 5 || alias_return.tag == 9 {
+                mut next_idx := empty[Index[ast.Expression[ctx], ctx]];
+                if alias_return.tag == 5 { next_idx = alias_return.Take.expr; }
+                if alias_return.tag == 9 {
+                    next_idx = alias_return.AsCast.left;
+                    if alias_return.AsCast.target_type == empty[Index[ast.Type[ctx], ctx]] ||
+                       next_idx == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+                    mut target := env_resolve_type(env, ctx[alias_return.AsCast.target_type], ctx);
+                    if target.tag != 9 ||
+                       phase26_zero_resolved_expression_tag(next_idx, env, ctx) != 9 { return 0; }
+                }
+                if next_idx == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+                alias_return = ctx[next_idx];
             }
             return alias_return.tag == 0;
         }

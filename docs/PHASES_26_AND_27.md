@@ -1436,6 +1436,18 @@ unproved cast, and wider candidate flow remain excluded. Earlier aliases and
 return wrappers, four-state evidence, bookkeeping, MIR, ABI, runtime, oracle,
 fallback, caps, and all broad D/E/F and Phase 26 status gates remain unchanged.
 
+**26.1E finite Take-only return after one checked cast-initialized alias
+(Cranelift ownership assigned 2026-10-10).** The same immediate alias may be
+returned through a finite chain of Takes and individually checked
+RawPointer-to-RawPointer casts. Its source and alias raw types must still
+match, and every initializer and return cast must resolve to raw pointers
+after ordinary typing. Proven Zero and MayZero reach the existing safe-return
+diagnostic only after ordinary type, safety, escape, and moved-variable checks.
+Every Move, a second alias, plain prefix or suffix, scalar or unproved cast,
+gap, overwrite, and broader candidate flow remain excluded. Earlier forms,
+four-state evidence, Take/resource bookkeeping, MIR, ABI, runtime, oracle,
+fallback, caps, and all broad D/E/F and Phase 26 status gates remain unchanged.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
