@@ -223,19 +223,29 @@ def main() -> None:
     guard = (ROOT / GUARD_PATH).read_text()
     compiler = (ROOT / "compiler/typechecker.gst").read_text()
     finite_plain = activation.get("call_cast_alias_finite_plain_return_zero_increment")
+    second_cast = activation.get("call_cast_alias_second_cast_return_zero_increment")
     following_name = " finite_plain_third_zero" if finite_plain else " direct_move_zero"
-    positive_suffix = "|second_plain_third_alias|finite_plain_third_zero" if finite_plain else ")"
-    type_suffix = "|finite_plain_third_wrong_type)" if finite_plain else ")"
-    escape_suffix = "|finite_plain_third_prior_escape)" if finite_plain else ")"
+    positive_suffix = ("|second_plain_third_alias|second_plain_second_cast|second_cast_zero|"
+                       if second_cast else
+                       "|second_plain_third_alias|finite_plain_third_zero" if finite_plain else ")")
+    type_suffix = ("|second_cast_wrong_type|finite_plain_third_wrong_type)" if second_cast else
+                   "|finite_plain_third_wrong_type)" if finite_plain else ")")
+    escape_suffix = ("|second_cast_prior_escape|finite_plain_third_prior_escape)" if second_cast else
+                     "|finite_plain_third_prior_escape)" if finite_plain else ")")
     return_marker = ("if (*env).zero_local_call_alias_hops >= 2 { return expr.tag == 0; }"
                      if finite_plain else
                      "if (*env).zero_local_call_alias_hops == 2 { return expr.tag == 0; }")
+    cast_marker = ('if (*env).zero_local_call_cast_alias_terminal == 1 && value.tag != 0 &&'
+                   if second_cast else
+                   'if (*env).zero_local_call_cast_alias_terminal == 1 && value.tag != 0 { return ""; }')
     require(" ".join("second_plain_" + name for name in NAMES) + following_name in guard and
             "phase26_call_local_return_cast_alias_${case_name}_source.gst" in guard and
             "second_plain_wrong_type" + type_suffix in guard and
             "second_plain_prior_escape" + escape_suffix in guard and
             "take_prior_move)" in guard and
-            "second_plain_prior_move|second_plain_prior_move_return_move|second_plain_return_move_cast)" in guard and
+            ("second_plain_prior_move|second_plain_prior_move_return_move|second_plain_return_move_cast|second_cast_prior_move"
+             if second_cast else
+             "second_plain_prior_move|second_plain_prior_move_return_move|second_plain_return_move_cast)") in guard and
             "take_move_mixed" in guard and
             "return_move_cast|direct_move_cast_wrapped)" in guard and
             "zero|mayzero|depth3|second_alias|plain_suffix|direct_move_second_alias|return_cast" in guard and
@@ -246,7 +256,7 @@ def main() -> None:
             "if moved_alias.tag != 0 { return 0; }" in compiler and
             "return ctx[expr.Move.expr].tag == 0;" in compiler and
             return_marker in compiler and
-            "if (*env).zero_local_call_cast_alias_terminal == 1 && value.tag != 0 { return \"\"; }" in compiler and
+            cast_marker in compiler and
             "while alias_return.tag == 5 || alias_return.tag == 9" in compiler and
             "phase26_zero_resolved_expression_tag(next_idx, env, ctx) != 9" in compiler and
             "if alias_return.tag != 0 { return 0; }" in compiler,

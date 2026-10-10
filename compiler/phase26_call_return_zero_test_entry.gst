@@ -532,6 +532,26 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return move (move fourth);", ctx)], &env, ctx) != 0 {
         os.LogStr("Error: deeper plain cast alias direct return or single Move boundary drifted"); os.Exit(1);
     }
+    env.zero_local_call_name = "alias";
+    env.zero_local_call_alias_hops = 1;
+    mut second_checked_cast := parse_statement("mut second := (alias as *int) as *int;", ctx);
+    if std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[second_checked_cast], &env, ctx), "second") == 0 {
+        os.LogStr("Error: immediate second checked raw alias lost its candidate"); os.Exit(1);
+    }
+    env.zero_local_call_name = "second";
+    env.zero_local_call_alias_hops = 2;
+    env.zero_local_call_second_cast_terminal = 1;
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return second;", ctx)], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return move second;", ctx)], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return second as *int;", ctx)], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return take second;", ctx)], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return (move second) as *int;", ctx)], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return move (move second);", ctx)], &env, ctx) != 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut third := second;", ctx)], &env, ctx), "") == 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut third := second as *int;", ctx)], &env, ctx), "") == 0 {
+        os.LogStr("Error: second checked raw alias admitted a later alias or return wrapper"); os.Exit(1);
+    }
+    env.zero_local_call_second_cast_terminal = 0;
     env.zero_local_call_cast_alias_terminal = 0;
     env.zero_local_call_name = "ptr";
     env.zero_local_call_alias_hops = 0;

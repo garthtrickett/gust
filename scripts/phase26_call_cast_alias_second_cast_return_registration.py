@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pin finite adjacent plain aliases after one checked cast-initialized alias before frozen owners."""
+"""Pin two consecutive checked cast aliases before frozen Phase 26 owners."""
 
 from __future__ import annotations
 
@@ -8,63 +8,48 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-KEY = "call_cast_alias_finite_plain_return_zero_increment"
-OLD = "call_cast_alias_second_plain_return_zero_increment"
+KEY = "call_cast_alias_second_cast_return_zero_increment"
+OLD = "call_cast_alias_finite_plain_return_zero_increment"
 GUARD = "guard-cranelift-phase26-call-return-zero-evidence"
 GUARD_PATH = "scripts/phase26_call_return_zero_evidence.sh"
 POSITIVE = "compiler/phase26_call_return_zero_test_entry.gst"
 CR15_PATH = "scripts/phase24_cr15_stdlib_guard_transition.py"
 RECLASSIFIED = (
-    "compiler/phase26_call_local_return_cast_alias_second_plain_third_alias_source.gst",
+    "compiler/phase26_call_local_return_cast_alias_second_plain_second_cast_source.gst",
 )
-NAMES = ("third_zero", "third_mayzero", "third_zero_move", "third_mayzero_move",
-         "fourth_depth3", "fourth_depth3_move", "sixth_mayzero", "sixth_mayzero_move",
-         "fourth_nonzero", "fourth_unknown", "fourth_unsafe", "third_cast_initializer",
-         "third_take_initializer", "third_move_initializer", "third_return_cast",
-         "third_return_take", "third_return_move_cast", "third_return_take_move",
-         "third_return_move_take", "third_double_move", "third_gap", "third_overwrite",
-         "third_scalar_cast", "third_plain_prefix", "third_wrong_type",
-         "third_prior_escape", "third_prior_move", "third_prior_move_return_move")
-NEW_FIXTURES = [f"compiler/phase26_call_local_return_cast_alias_finite_plain_{name}_source.gst"
+NAMES = ('zero', 'zero_move', 'mayzero_move', 'interleaved_mayzero', 'interleaved_mayzero_move', 'nonzero', 'unknown', 'unsafe', 'third_plain', 'third_cast', 'plain_prefix', 'plain_interleave', 'take_initializer', 'move_initializer', 'return_cast', 'return_take', 'return_move_cast', 'double_move', 'gap', 'overwrite', 'scalar_cast', 'wrong_type', 'prior_escape', 'prior_move', 'prior_move_return_move')
+NEW_FIXTURES = [f"compiler/phase26_call_local_return_cast_alias_second_cast_{name}_source.gst"
                 for name in NAMES]
-TEXT_PATHS = ["compiler/typechecker.gst",
-              "scripts/phase26_call_cast_alias_second_plain_return_registration.py",
-              "scripts/phase26_call_cast_alias_take_return_registration.py",
-              "scripts/phase26_call_cast_alias_return_cast_registration.py",
-              "scripts/phase26_call_cast_initialized_alias_return_registration.py"]
-FROZEN_TEXT = {
-    "compiler/typechecker.gst": {
-        "digest": "cb8afe8faac0850985be82d13e3c69aa722461ce5d2e59fad5057bd16f9bac64",
-        "match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 0,
-                         "generated_c_contract": 1},
-    },
-    "scripts/phase26_call_cast_alias_second_plain_return_registration.py": {
-        "digest": "c6f89a069414f449eb9205982d7ea362f117776cfede102274bb432e40732e3a",
-        "match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 7,
-                         "generated_c_contract": 1},
-    },
-    "scripts/phase26_call_cast_alias_take_return_registration.py": {
-        "digest": "a7caeb4c8ad268d385dd78399bc98d70ec38ac4bf95155a3a2ce73847a6d8f76",
-        "match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 5,
-                         "generated_c_contract": 1},
-    },
-    "scripts/phase26_call_cast_alias_return_cast_registration.py": {
-        "digest": "644cb0aebd87c5305d5d7f1b560db75f261b8bd3b0a83a0250feae367ae5f9f8",
-        "match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 4,
-                         "generated_c_contract": 1},
-    },
-    "scripts/phase26_call_cast_initialized_alias_return_registration.py": {
-        "digest": "b5efa0545074dacf003b6f665770240b384491c154e561dd8f86408c90cf8d6b",
-        "match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 11,
-                         "generated_c_contract": 1},
-    },
-}
+TEXT_PATHS = ['compiler/typechecker.gst',
+              'scripts/phase26_call_cast_alias_finite_plain_return_registration.py',
+              'scripts/phase26_call_cast_alias_second_plain_return_registration.py',
+              'scripts/phase26_call_cast_alias_take_return_registration.py',
+              'scripts/phase26_call_cast_alias_return_cast_registration.py',
+              'scripts/phase26_call_cast_initialized_alias_return_registration.py']
+FROZEN_TEXT = {'compiler/typechecker.gst': {'digest': 'daeb791cb94eca1244c6d52dec3fcd49648ec10f5df582ed29daad9686dd0c26',
+                              'match_counts': {'explicit_backend_spelling': 0,
+                                               'mir_to_c_name': 0,
+                                               'generated_c_contract': 1}},
+ 'scripts/phase26_call_cast_alias_finite_plain_return_registration.py': {'digest': '336ee48522e6e4da4fda5f16cbb8077e87fe577c2219b47825a0750ec8a67a7e',
+                                                                         'match_counts': {'explicit_backend_spelling': 0,
+                                                                                          'mir_to_c_name': 6,
+                                                                                          'generated_c_contract': 1}},
+ 'scripts/phase26_call_cast_alias_second_plain_return_registration.py': {'digest': 'afa18153a99d4785a6e55631215089acf799d3880b8aec0d07d67c5e1e3aa7b7',
+                                                                         'match_counts': {'explicit_backend_spelling': 0,
+                                                                                          'mir_to_c_name': 7,
+                                                                                          'generated_c_contract': 1}},
+ 'scripts/phase26_call_cast_alias_take_return_registration.py': {'digest': 'd0ce5bec4d5d515ad955652d3a0953924eb29b17e92ed426a838beb1977918b6',
+                                                                  'match_counts': {'explicit_backend_spelling': 0, 'mir_to_c_name': 5, 'generated_c_contract': 1}},
+ 'scripts/phase26_call_cast_alias_return_cast_registration.py': {'digest': '58e8d183d7375982f3a150099a2e8f1fbbc09901ed30dec3288aaea4648fbfa4',
+                                                                  'match_counts': {'explicit_backend_spelling': 0, 'mir_to_c_name': 4, 'generated_c_contract': 1}},
+ 'scripts/phase26_call_cast_initialized_alias_return_registration.py': {'digest': '60cbf9e3b57a5ab52cfb39449d6472928b7aaad41da576a79870e60e72246b37',
+                                                                  'match_counts': {'explicit_backend_spelling': 0, 'mir_to_c_name': 11, 'generated_c_contract': 1}}}
 
 
 
 def require(ok: bool, message: str) -> None:
     if not ok:
-        raise SystemExit(f"{GUARD}: cast-alias finite-plain successor {message}")
+        raise SystemExit(f"{GUARD}: cast-alias second-cast successor {message}")
 
 
 def digest(path: str) -> str:
@@ -76,9 +61,6 @@ def record(activation: dict) -> dict:
 
 
 def before_new_digest(activation: dict, path: str, live_digest: str) -> str:
-    if activation.get("call_cast_alias_second_cast_return_zero_increment"):
-        from phase26_call_cast_alias_second_cast_return_registration import before_new_digest as before_second_cast
-        live_digest = before_second_cast(activation, path, live_digest)
     row = record(activation)
     for field in ("guard_digest_successor", "positive_fixture_successor",
                   "cr15_relay_digest_successor"):
@@ -104,9 +86,6 @@ def before_new_digest(activation: dict, path: str, live_digest: str) -> str:
 
 def before_new_counts(activation: dict, path: str,
                       live_counts: dict[str, int]) -> dict[str, int]:
-    if activation.get("call_cast_alias_second_cast_return_zero_increment"):
-        from phase26_call_cast_alias_second_cast_return_registration import before_new_counts as before_second_cast_counts
-        live_counts = before_second_cast_counts(activation, path, live_counts)
     rows = record(activation).get("phase23_text_surface_successor", {}).get("changed_rows", [])
     matches = [entry for entry in rows if entry.get("path") == path]
     require(len(matches) <= 1, f"duplicate text path: {path}")
@@ -121,13 +100,10 @@ def before_new_counts(activation: dict, path: str,
 
 
 def before_new_spelling(activation: dict, live: dict) -> dict:
-    if activation.get("call_cast_alias_second_cast_return_zero_increment"):
-        from phase26_call_cast_alias_second_cast_return_registration import before_new_spelling as before_second_cast_spelling
-        live = before_second_cast_spelling(activation, live)
     successor = record(activation).get("spelling_inventory_successor", {})
     previous = activation[OLD]["spelling_inventory_successor"]["current_inventory_summary"]
     require(successor == {
-        "contract_version": "phase26_1e_cast_alias_finite_plain_return_spelling_successor_v1",
+        "contract_version": "phase26_1e_cast_alias_second_cast_return_spelling_successor_v1",
         "previous_inventory_summary": previous,
         "current_inventory_summary": live,
         "changed_source_paths": ["compiler/typechecker.gst", POSITIVE, *NEW_FIXTURES],
@@ -141,13 +117,10 @@ def before_new_spelling(activation: dict, live: dict) -> dict:
 
 
 def before_new_filename(activation: dict, live: list[dict]) -> list[dict]:
-    if activation.get("call_cast_alias_second_cast_return_zero_increment"):
-        from phase26_call_cast_alias_second_cast_return_registration import before_new_filename as before_second_cast_filename
-        live = before_second_cast_filename(activation, live)
     successor = record(activation).get("filename_site_successor", {})
     previous = activation[OLD]["filename_site_successor"]["current_sites"]
     require(successor == {
-        "contract_version": "phase26_1e_cast_alias_finite_plain_return_filename_successor_v1",
+        "contract_version": "phase26_1e_cast_alias_second_cast_return_filename_successor_v1",
         "previous_sites": previous,
         "current_sites": live,
         "line_deltas": [now["line"] - before["line"] for before, now in zip(previous, live)],
@@ -164,20 +137,20 @@ def main() -> None:
                             .read_text())["phase26_activation_audit"]
     row = record(activation)
     expected = {
-        "contract_version": "phase26_1e_cast_alias_finite_plain_return_zero_v1",
-        "status": "bounded_finite_plain_after_checked_cast_alias_safe_return_rejection_qualified",
+        "contract_version": "phase26_1e_cast_alias_second_cast_return_zero_v1",
+        "status": "bounded_second_cast_after_checked_cast_alias_safe_return_rejection_qualified",
         "owner": "cranelift",
-        "increment": "26.1E_finite_plain_aliases_after_one_cast_initialized_alias",
+        "increment": "26.1E_second_cast_aliases_after_one_cast_initialized_alias",
         "operator_ownership_decision": "2026-10-10_coordinator_assigned_under_activated_phase26",
-        "candidate_shape": "immediate_same_block_concrete_nullary_raw_pointer_call_then_one_checked_cast_initialized_alias_then_finite_adjacent_plain_by_value_raw_aliases_then_direct_Identifier_or_one_direct_Move_return",
+        "candidate_shape": "immediate_same_block_concrete_nullary_raw_pointer_call_then_two_consecutive_checked_raw_cast_initialized_aliases_then_direct_Identifier_or_one_direct_Move_return",
         "safe_boundary": "declared_nonextern_raw_pointer_return",
         "negative_states": ["Zero", "MayZero"],
-        "negative_fixtures": [*RECLASSIFIED, *NEW_FIXTURES[:8]],
-        "control_fixtures": NEW_FIXTURES[8:],
+        "negative_fixtures": [*RECLASSIFIED, *NEW_FIXTURES[:5]],
+        "control_fixtures": NEW_FIXTURES[5:],
         "prior_error_precedence": "preserved",
         "unknown_and_nonzero": "preserved",
         "unsafe_functions": "preserved",
-        "later_transfer_alias_return_wrapper_or_unproved_cast": "excluded_from_new_form",
+        "later_plain_or_transfer_alias_return_wrapper_or_unproved_cast": "excluded_from_new_form",
         "take_move_resource_semantics_changed": False,
         "diagnostic": "[RawNullSafeBoundary]",
         "failure_stage": "before_driver_discovery",
@@ -208,39 +181,30 @@ def main() -> None:
                         ("positive_fixture_successor", POSITIVE),
                         ("cr15_relay_digest_successor", CR15_PATH)):
         previous = activation[OLD][field]["current_digest"]
-        current_digest = digest(path)
-        if activation.get("call_cast_alias_second_cast_return_zero_increment"):
-            from phase26_call_cast_alias_second_cast_return_registration import before_new_digest as before_second_cast
-            current_digest = before_second_cast(activation, path, current_digest)
         require(row[field] == {
             "path": path, "previous_digest": previous,
-            "current_digest": current_digest,
+            "current_digest": digest(path),
             "partial_extra_or_substituted_" +
             ("guard" if field.startswith("guard") else
              "fixture" if field.startswith("positive") else "relay"): "rejected",
         }, f"{field} drifted")
     guard = (ROOT / GUARD_PATH).read_text()
     compiler = (ROOT / "compiler/typechecker.gst").read_text()
-    second_cast = activation.get("call_cast_alias_second_cast_return_zero_increment")
-    next_case = " second_cast_zero" if second_cast else " direct_move_zero"
-    positive_marker = ("second_plain_third_alias|second_plain_second_cast|second_cast_zero|"
-                       if second_cast else "second_plain_third_alias|finite_plain_third_zero")
-    cast_marker = ('if (*env).zero_local_call_cast_alias_terminal == 1 && value.tag != 0 &&'
-                   if second_cast else
-                   'if (*env).zero_local_call_cast_alias_terminal == 1 && value.tag != 0 { return ""; }')
-    require(" ".join("finite_plain_" + name for name in NAMES) + next_case in guard and
-            positive_marker in guard and
-            "finite_plain_third_wrong_type)" in guard and
-            "finite_plain_third_prior_escape)" in guard and
-            "finite_plain_third_prior_move|finite_plain_third_prior_move_return_move|finite_plain_third_return_move_cast)" in guard and
+    require(" ".join("second_cast_" + name for name in NAMES) + " direct_move_zero" in guard and
+            "second_plain_third_alias|second_plain_second_cast|second_cast_zero|" in guard and
+            "second_cast_wrong_type|finite_plain_third_wrong_type)" in guard and
+            "second_cast_prior_escape|finite_plain_third_prior_escape)" in guard and
+            "second_cast_prior_move|second_cast_prior_move_return_move|second_cast_return_move_cast)" in guard and
             'test ! -e "$marker"' in guard and
             "GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER" in guard and
-            "if (*env).zero_local_call_alias_hops >= 2 {" in compiler and
-            "if (*env).zero_local_call_alias_hops >= 2 { return expr.tag == 0; }" in compiler and
-            "(*env).zero_local_call_alias_hops < 1)" in compiler and
-            cast_marker in compiler and
+            "zero_local_call_second_cast_terminal: int" in compiler and
+            "(*env).zero_local_call_second_cast_terminal == 1 ||" in compiler and
+            '(*env).zero_local_call_alias_hops != 1) { return ""; }' in compiler and
+            "(*env).zero_local_call_second_cast_terminal = 1;" in compiler and
+            "phase26_zero_local_call_alias_cast_is_raw(statements[i], env, ctx) == 1" in compiler and
             "if expr.tag == 4 { // One direct terminal Move" in compiler and
-            "if moved_alias.tag != 0 { return 0; }" in compiler,
+            "if moved_alias.tag != 0 { return 0; }" in compiler and
+            "if (*env).zero_local_call_alias_hops >= 2 { return expr.tag == 0; }" in compiler,
             "native or fail-closed evidence weakened")
     from phase24_semantic_spelling_inventory import source_sites, manifest_summary
     before_new_spelling(activation, manifest_summary(source_sites()))
@@ -257,18 +221,9 @@ def main() -> None:
     selected = [entry for entry in raw if entry["path"] == GUARD_PATH]
     normalized = [entry for entry in scan_invocations() if entry["path"] == GUARD_PATH]
     prior = activation[OLD]["phase22_invocation_identity"]
-    selected_last, normalized_last = selected[-1], normalized[-1]
-    if second_cast:
-        newest = activation["call_cast_alias_second_cast_return_zero_increment"]["phase22_invocation_identity"]
-        require(len(selected) == newest["raw_total"] and selected_last == newest["raw_last_row"] and
-                len(normalized) == newest["projected_total"] and
-                normalized_last == newest["projected_last_row"],
-                "second cast invocation projection drifted")
-        selected_last = row["phase22_invocation_identity"]["raw_last_row"]
-        normalized_last = row["phase22_invocation_identity"]["projected_last_row"]
     require(row["phase22_invocation_identity"] == {
-        "raw_total": len(selected), "raw_last_row": selected_last,
-        "projected_total": len(normalized), "projected_last_row": normalized_last,
+        "raw_total": len(selected), "raw_last_row": selected[-1],
+        "projected_total": len(normalized), "projected_last_row": normalized[-1],
         "partial_extra_or_substituted_invocation": "rejected",
     } and len(selected) == prior["raw_total"] and
             len(normalized) == prior["projected_total"] and
@@ -279,45 +234,35 @@ def main() -> None:
     surface = row["phase23_text_surface_successor"]
     changed, added = surface.get("changed_rows", []), surface.get("added_rows", [])
     require(surface.get("contract_version") ==
-            "phase26_1e_cast_alias_finite_plain_return_phase23_text_successor_v1" and
+            "phase26_1e_cast_alias_second_cast_return_phase23_text_successor_v1" and
             surface.get("partial_extra_or_substituted_surface") == "rejected" and
             [entry.get("path") for entry in changed] == TEXT_PATHS and
             len(added) == 1 and added[0].get("path") ==
-            "scripts/phase26_call_cast_alias_finite_plain_return_registration.py" and
+            "scripts/phase26_call_cast_alias_second_cast_return_registration.py" and
             all(path in tracked_paths() and path not in SELF_EXCLUSIONS
                 for path in TEXT_PATHS), "text surface shape drifted")
     for entry in changed:
         path = entry["path"]
         counts = {name: len(pattern.findall((ROOT / path).read_text()))
                   for name, pattern in SURFACE_PATTERNS.items()}
-        current_digest = digest(path)
-        if second_cast:
-            from phase26_call_cast_alias_second_cast_return_registration import before_new_digest as before_second_cast_digest, before_new_counts as before_second_cast_counts
-            current_digest = before_second_cast_digest(activation, path, current_digest)
-            counts = before_second_cast_counts(activation, path, counts)
         require(entry == {"path": path,
                           "previous_digest": FROZEN_TEXT[path]["digest"],
-                          "current_digest": current_digest,
+                          "current_digest": digest(path),
                           "previous_match_counts": FROZEN_TEXT[path]["match_counts"],
                           "current_match_counts": counts},
                 f"text surface drifted: {path}")
     path = added[0]["path"]
     counts = {name: len(pattern.findall((ROOT / path).read_text()))
               for name, pattern in SURFACE_PATTERNS.items()}
-    current_digest = digest(path)
-    if second_cast:
-        from phase26_call_cast_alias_second_cast_return_registration import before_new_digest as before_second_cast_digest, before_new_counts as before_second_cast_counts
-        current_digest = before_second_cast_digest(activation, path, current_digest)
-        counts = before_second_cast_counts(activation, path, counts)
     require(added[0] == {
-        "path": path, "digest": current_digest, "match_counts": counts,
+        "path": path, "digest": digest(path), "match_counts": counts,
         "classification": "archive_candidate", "owner": "cranelift",
         "current_route": "tracked_MIR_to_C_or_generated_C_surface",
         "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
         "removal_phase": "24",
         "falsifier": "active_evidence_surface_is_missing_or_changes_identity",
     } and any(counts.values()), "added text surface drifted")
-    print(f"{GUARD}: cast-alias finite-plain successor registration ok")
+    print(f"{GUARD}: cast-alias second-cast successor registration ok")
 
 
 if __name__ == "__main__":
