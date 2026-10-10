@@ -508,8 +508,29 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return second as *int;", ctx)], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return take second;", ctx)], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return move (take second);", ctx)], &env, ctx) != 0 ||
-       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[third_plain], &env, ctx), "") == 0 {
-        os.LogStr("Error: second plain cast alias admitted a wrapper or third alias"); os.Exit(1);
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[third_plain], &env, ctx), "third") == 0 {
+        os.LogStr("Error: second plain cast alias lost its direct return or next plain alias boundary"); os.Exit(1);
+    }
+    env.zero_local_call_name = "third";
+    env.zero_local_call_alias_hops = 3;
+    mut fourth_plain := parse_statement("mut fourth := third;", ctx);
+    if std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[fourth_plain], &env, ctx), "fourth") == 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return third;", ctx)], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return move third;", ctx)], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return third as *int;", ctx)], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return take third;", ctx)], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return move (take third);", ctx)], &env, ctx) != 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut fifth := third as *int;", ctx)], &env, ctx), "") == 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut fifth := take third;", ctx)], &env, ctx), "") == 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut fifth := move third;", ctx)], &env, ctx), "") == 0 {
+        os.LogStr("Error: finite plain cast alias chain lost its direct return or admitted wrappers"); os.Exit(1);
+    }
+    env.zero_local_call_name = "fourth";
+    env.zero_local_call_alias_hops = 4;
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return fourth;", ctx)], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return move fourth;", ctx)], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return move (move fourth);", ctx)], &env, ctx) != 0 {
+        os.LogStr("Error: deeper plain cast alias direct return or single Move boundary drifted"); os.Exit(1);
     }
     env.zero_local_call_cast_alias_terminal = 0;
     env.zero_local_call_name = "ptr";
