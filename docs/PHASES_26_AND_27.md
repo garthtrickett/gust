@@ -1473,6 +1473,20 @@ excluded. All earlier forms and frozen activation rows remain intact; this
 increment changes no transfer/resource bookkeeping, MIR, ABI, runtime,
 oracle, fallback, caps, broad D/E/F gate, or Phase 26 status row.
 
+**26.1E finite plain aliases after one checked cast-initialized alias
+(Cranelift ownership assigned 2026-10-10).** A finite consecutive sequence of
+adjacent same-block by-value raw pointer aliases may follow the validated
+cast-initialized alias. Each declaration must pass ordinary typing with
+matching source and alias raw pointer types. The final alias may reach the
+existing Zero/MayZero safe-return diagnostic only through a direct Identifier
+or one direct `move`, after ordinary type, safety, escape, and moved-variable
+checks. Cast, Take, or Move alias initializers after the checked cast, every
+terminal cast or Take wrapper, second or mixed Move, plain prefix, gap,
+overwrite, scalar or unproved cast, and wider flow remain excluded. All
+earlier forms and frozen activation rows remain intact; transfer/resource
+bookkeeping, MIR, ABI, runtime, oracle, fallback, caps, broad D/E/F gates,
+and Phase 26 status rows remain unchanged.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
