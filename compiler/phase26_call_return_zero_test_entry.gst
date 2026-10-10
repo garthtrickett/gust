@@ -492,7 +492,28 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
        std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[alias_second], &env, ctx), "") == 0 {
         os.LogStr("Error: cast-initialized alias lost checked Take/cast/direct-Move returns or escaped its terminal window"); os.Exit(1);
     }
+    env.zero_local_call_name = "alias";
+    env.zero_local_call_alias_hops = 1;
+    mut second_plain := parse_statement("mut second := alias;", ctx);
+    if std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[second_plain], &env, ctx), "second") == 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[alias_after_take], &env, ctx), "") == 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[alias_after_move], &env, ctx), "") == 0 {
+        os.LogStr("Error: one plain second cast alias was lost or a transfer initializer was admitted"); os.Exit(1);
+    }
+    env.zero_local_call_name = "second";
+    env.zero_local_call_alias_hops = 2;
+    mut third_plain := parse_statement("mut third := second;", ctx);
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return second;", ctx)], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return move second;", ctx)], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return second as *int;", ctx)], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return take second;", ctx)], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return move (take second);", ctx)], &env, ctx) != 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[third_plain], &env, ctx), "") == 0 {
+        os.LogStr("Error: second plain cast alias admitted a wrapper or third alias"); os.Exit(1);
+    }
     env.zero_local_call_cast_alias_terminal = 0;
+    env.zero_local_call_name = "ptr";
+    env.zero_local_call_alias_hops = 0;
     env.zero_local_call_take_alias_terminal = 1;
     if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[direct_take_return], &env, ctx) != 1 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[moved_two_take_return], &env, ctx) != 1 ||
