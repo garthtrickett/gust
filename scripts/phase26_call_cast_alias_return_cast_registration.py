@@ -239,7 +239,11 @@ def main() -> None:
     if activation.get("call_cast_alias_second_cast_return_zero_increment"):
         from phase26_call_cast_alias_second_cast_return_registration import NAMES as SECOND_CAST_NAMES
         second_cast_names = " " + " ".join("second_cast_" + name for name in SECOND_CAST_NAMES)
-    require("for case_name in " + " ".join(
+    terminal_cast_prefix = ""
+    if activation.get("call_cast_alias_finite_cast_plain_terminal_cast_return_zero_increment"):
+        from phase26_call_cast_alias_finite_cast_plain_terminal_cast_return_registration import NAMES as TERMINAL_CAST_NAMES
+        terminal_cast_prefix = " ".join("finite_cast_plain_terminal_cast_" + name for name in TERMINAL_CAST_NAMES) + " "
+    require("for case_name in " + terminal_cast_prefix + " ".join(
         Path(path).stem.removeprefix("phase26_call_local_return_cast_alias_").removesuffix("_source")
         for path in activation[OLD]["negative_fixtures"] + old_names) +
         " " + " ".join(NAMES) + take_names + second_plain_names + finite_plain_names + third_cast_names + finite_cast_names + finite_cast_plain_names + finite_plain_chain_names + second_cast_names + direct_move_names + "; do" in guard and

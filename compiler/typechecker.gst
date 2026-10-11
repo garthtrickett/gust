@@ -1321,6 +1321,7 @@ type TypeEnvironment[ctx] struct {
     zero_local_call_second_cast_terminal: int,
     zero_local_call_third_cast_terminal: int,
     zero_local_call_finite_cast_plain_terminal: int,
+    zero_local_call_finite_cast_plain_count: int,
     variable_types: std.HashMap[str, ast.Type[ctx], ctx],
     resolved_types_nested: std.Vector[PrefixMapEntry[ctx], ctx],
     enum_registry: std.HashMap[str, std.Vector[str, ctx], ctx],
@@ -2808,6 +2809,13 @@ func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env:
     unsafe {
         if std.str_eq((*env).zero_local_call_name, "") == 1 { return 0; }
         if (*env).zero_local_call_cast_alias_terminal == 1 {
+            if (*env).zero_local_call_finite_cast_plain_terminal == 1 &&
+               (*env).zero_local_call_finite_cast_plain_count >= 2 && expr.tag == 9 {
+                if expr.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+                mut cast_source := ctx[expr.AsCast.left];
+                if cast_source.tag != 0 { return 0; }
+                return std.str_eq(cast_source.Identifier.name, (*env).zero_local_call_name);
+            }
             if expr.tag == 4 { // One direct terminal Move; no cast or Take may wrap it.
                 if expr.Move.expr == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
                 mut moved_alias := ctx[expr.Move.expr];
@@ -2861,6 +2869,15 @@ func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env:
 func phase26_zero_local_return_cast_is_raw(expr: ast.Expression[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) int {
     unsafe {
         if (*env).zero_local_call_cast_alias_terminal == 1 {
+            if (*env).zero_local_call_finite_cast_plain_terminal == 1 &&
+               (*env).zero_local_call_finite_cast_plain_count >= 2 && expr.tag == 9 {
+                if expr.AsCast.target_type == empty[Index[ast.Type[ctx], ctx]] ||
+                   expr.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+                mut target := env_resolve_type(env, ctx[expr.AsCast.target_type], ctx);
+                if target.tag != 9 ||
+                   phase26_zero_resolved_expression_tag(expr.AsCast.left, env, ctx) != 9 { return 0; }
+                return ctx[expr.AsCast.left].tag == 0;
+            }
             if expr.tag == 4 { // Ordinary Move typing already checked this exact Identifier.
                 if expr.Move.expr == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
                 return ctx[expr.Move.expr].tag == 0;
@@ -9854,6 +9871,7 @@ func env_new(ctx: &Arena) TypeEnvironment[ctx] {
         env_ref_new.zero_local_call_second_cast_terminal = 0;
         env_ref_new.zero_local_call_third_cast_terminal = 0;
         env_ref_new.zero_local_call_finite_cast_plain_terminal = 0;
+        env_ref_new.zero_local_call_finite_cast_plain_count = 0;
         env_ref_new.variable_types = std.HashMapNew(ctx);
         env_ref_new.resolved_types_nested = std.VectorNew(ctx);
         env_ref_new.enum_registry = std.HashMapNew(ctx);
@@ -15183,6 +15201,7 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
         mut parent_zero_local_second_cast_terminal := (*env).zero_local_call_second_cast_terminal;
         mut parent_zero_local_third_cast_terminal := (*env).zero_local_call_third_cast_terminal;
         mut parent_zero_local_finite_cast_plain_terminal := (*env).zero_local_call_finite_cast_plain_terminal;
+        mut parent_zero_local_finite_cast_plain_count := (*env).zero_local_call_finite_cast_plain_count;
         (*env).zero_local_call_name = "";
         (*env).zero_local_call_callee = "";
         (*env).zero_local_call_alias_hops = 0;
@@ -15191,6 +15210,7 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
         (*env).zero_local_call_second_cast_terminal = 0;
         (*env).zero_local_call_third_cast_terminal = 0;
         (*env).zero_local_call_finite_cast_plain_terminal = 0;
+        (*env).zero_local_call_finite_cast_plain_count = 0;
         mut entering_zero_states := typechecker_clone_int_map((*env).variable_zero_states, ctx);
         mut entering_field_zero_states := typechecker_clone_int_map((*env).field_zero_states, ctx);
         if establish_nested_scope == 1 {
@@ -15242,6 +15262,7 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
                 (*env).zero_local_call_second_cast_terminal = 0;
                 (*env).zero_local_call_third_cast_terminal = 0;
                 (*env).zero_local_call_finite_cast_plain_terminal = 0;
+                (*env).zero_local_call_finite_cast_plain_count = 0;
             }
             mut prior_error_count := len((*env).errors);
             check_statement(statement_idx, env, scope, ctx);
@@ -15268,6 +15289,10 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
                        statements[i].VarDecl.value != empty[Index[ast.Expression[ctx], ctx]] &&
                        ctx[statements[i].VarDecl.value].tag == 0 {
                         (*env).zero_local_call_finite_cast_plain_terminal = 1;
+                        if (*env).zero_local_call_finite_cast_plain_count < 2 {
+                            (*env).zero_local_call_finite_cast_plain_count =
+                                (*env).zero_local_call_finite_cast_plain_count + 1;
+                        }
                     }
                     mut alias_value_idx := statements[i].VarDecl.value;
                     if alias_value_idx != empty[Index[ast.Expression[ctx], ctx]] &&
@@ -15294,6 +15319,7 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
                             (*env).zero_local_call_second_cast_terminal = 0;
                             (*env).zero_local_call_third_cast_terminal = 0;
                             (*env).zero_local_call_finite_cast_plain_terminal = 0;
+                            (*env).zero_local_call_finite_cast_plain_count = 0;
                         }
                     }
                 } else {
@@ -15305,6 +15331,7 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
                     (*env).zero_local_call_second_cast_terminal = 0;
                     (*env).zero_local_call_third_cast_terminal = 0;
                     (*env).zero_local_call_finite_cast_plain_terminal = 0;
+                    (*env).zero_local_call_finite_cast_plain_count = 0;
                 }
             }
             if statements[i].tag != 4 {
@@ -15316,6 +15343,7 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
                 (*env).zero_local_call_second_cast_terminal = 0;
                 (*env).zero_local_call_third_cast_terminal = 0;
                 (*env).zero_local_call_finite_cast_plain_terminal = 0;
+                (*env).zero_local_call_finite_cast_plain_count = 0;
             }
             i = i + 1;
         }
@@ -15368,6 +15396,7 @@ func typechecker_check_resource_scoped_block(block_idx: Index[ast.BlockStatement
         (*env).zero_local_call_second_cast_terminal = parent_zero_local_second_cast_terminal;
         (*env).zero_local_call_third_cast_terminal = parent_zero_local_third_cast_terminal;
         (*env).zero_local_call_finite_cast_plain_terminal = parent_zero_local_finite_cast_plain_terminal;
+        (*env).zero_local_call_finite_cast_plain_count = parent_zero_local_finite_cast_plain_count;
     }
 }
 
