@@ -2950,7 +2950,6 @@ func phase26_zero_local_call_statement_consumes_candidate(stmt: ast.Statement[ct
 func phase26_zero_local_call_alias_name(stmt: ast.Statement[ctx], env: *TypeEnvironment[ctx], ctx: &Arena) str {
     unsafe {
         if std.str_eq((*env).zero_local_call_name, "") == 1 ||
-           (*env).zero_local_call_finite_cast_plain_terminal == 1 ||
            ((*env).zero_local_call_cast_alias_terminal == 1 &&
             (*env).zero_local_call_alias_hops < 1) ||
            stmt.tag != 4 {
@@ -2959,7 +2958,9 @@ func phase26_zero_local_call_alias_name(stmt: ast.Statement[ctx], env: *TypeEnvi
         mut value_idx := stmt.VarDecl.value;
         if value_idx == empty[Index[ast.Expression[ctx], ctx]] { return ""; }
         mut value := ctx[value_idx];
-        if (*env).zero_local_call_third_cast_terminal == 1 {
+        if (*env).zero_local_call_finite_cast_plain_terminal == 1 {
+            if value.tag != 0 { return ""; }
+        } else if (*env).zero_local_call_third_cast_terminal == 1 {
             if (*env).zero_local_call_alias_hops < 4 {
                 if value.tag != 9 || (*env).zero_local_call_alias_hops < 3 { return ""; }
             } else if value.tag != 9 && value.tag != 0 { return ""; }

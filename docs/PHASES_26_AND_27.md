@@ -1546,6 +1546,20 @@ excluded. All predecessor forms and activation rows stay frozen; transfer and
 resource bookkeeping, MIR, ABI, runtime, oracle, fallback, caps, broad D/E/F
 gates, and all six Phase 26 status rows remain unchanged.
 
+**26.1E finite plain suffix after finite checked cast aliases (Cranelift
+ownership assigned 2026-10-11).** After four or more adjacent, same-block
+aliases initialized by individually checked raw-to-raw casts, two or more
+adjacent plain by-value raw aliases may follow. Each declaration must pass
+ordinary typing with matching source and result raw pointer and brand types
+before promotion. Only a direct Identifier or one direct `move` of the final
+alias reaches the existing Zero/MayZero safe-return diagnostic. The plain
+suffix rejects later casts, Take or Move alias initializers, terminal cast or
+Take wrappers, wrapped or repeated Move, plain prefixes or interleaves, gaps,
+overwrite, scalar or unproved casts, and wider flow. The one-plain form and
+all earlier forms remain intact. Transfer and resource bookkeeping, MIR,
+ABI, runtime, oracle, fallback, caps, broad D/E/F gates, and all six Phase 26
+status rows remain unchanged.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs

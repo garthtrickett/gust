@@ -272,14 +272,23 @@ def main() -> None:
     guard = (ROOT / GUARD_PATH).read_text()
     compiler = (ROOT / "compiler/typechecker.gst").read_text()
     finite_cast_plain = activation.get("call_cast_alias_finite_cast_plain_return_zero_increment")
-    wrong_marker = ("finite_cast_fourth_wrong_type|finite_cast_plain_fourth_wrong_type|finite_plain_third_wrong_type)"
+    finite_plain_chain = activation.get("call_cast_alias_finite_cast_plain_chain_return_zero_increment")
+    wrong_marker = ("finite_cast_fourth_wrong_type|finite_cast_plain_fourth_wrong_type|finite_cast_plain_chain_wrong_type|finite_plain_third_wrong_type)"
+                    if finite_plain_chain else
+                    "finite_cast_fourth_wrong_type|finite_cast_plain_fourth_wrong_type|finite_plain_third_wrong_type)"
                     if finite_cast_plain else "finite_cast_fourth_wrong_type|finite_plain_third_wrong_type)")
-    escape_marker = ("finite_cast_fourth_prior_escape|finite_cast_plain_fourth_prior_escape|finite_plain_third_prior_escape)"
+    escape_marker = ("finite_cast_fourth_prior_escape|finite_cast_plain_fourth_prior_escape|finite_cast_plain_chain_prior_escape|finite_plain_third_prior_escape)"
+                     if finite_plain_chain else
+                     "finite_cast_fourth_prior_escape|finite_cast_plain_fourth_prior_escape|finite_plain_third_prior_escape)"
                      if finite_cast_plain else "finite_cast_fourth_prior_escape|finite_plain_third_prior_escape)")
     move_marker = "finite_cast_fourth_prior_move|finite_cast_fourth_prior_move_return_move|finite_cast_fourth_return_move_cast)"
     if finite_cast_plain:
         from phase26_call_cast_alias_finite_cast_plain_return_registration import NAMES as FINITE_CAST_PLAIN_NAMES
-        guard_cases = " ".join("finite_cast_" + name for name in NAMES) + " " + " ".join("finite_cast_plain_" + name for name in FINITE_CAST_PLAIN_NAMES) + " second_cast_zero"
+        guard_cases = " ".join("finite_cast_" + name for name in NAMES) + " " + " ".join("finite_cast_plain_" + name for name in FINITE_CAST_PLAIN_NAMES)
+        if finite_plain_chain:
+            from phase26_call_cast_alias_finite_cast_plain_chain_return_registration import NAMES as FINITE_PLAIN_CHAIN_NAMES
+            guard_cases += " " + " ".join("finite_cast_plain_chain_" + name for name in FINITE_PLAIN_CHAIN_NAMES)
+        guard_cases += " second_cast_zero"
     else:
         guard_cases = " ".join("finite_cast_" + name for name in NAMES) + " second_cast_zero"
     require(guard_cases in guard and

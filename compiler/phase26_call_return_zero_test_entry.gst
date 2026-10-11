@@ -606,9 +606,21 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return take terminal;", ctx)], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return (move terminal) as *int;", ctx)], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return move (move terminal);", ctx)], &env, ctx) != 0 ||
-       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut later := terminal;", ctx)], &env, ctx), "") == 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut later := terminal;", ctx)], &env, ctx), "later") == 0 ||
        std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut later := terminal as *int;", ctx)], &env, ctx), "") == 0 {
-        os.LogStr("Error: finite cast terminal plain alias admitted a wrapper or later alias"); os.Exit(1);
+        os.LogStr("Error: finite checked-cast plain suffix lost direct-only continuation"); os.Exit(1);
+    }
+    env.zero_local_call_name = "later";
+    env.zero_local_call_alias_hops = 6;
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return later;", ctx)], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return move later;", ctx)], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return take later;", ctx)], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return later as *int;", ctx)], &env, ctx) != 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut seventh := later;", ctx)], &env, ctx), "seventh") == 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut seventh := later as *int;", ctx)], &env, ctx), "") == 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut seventh := take later;", ctx)], &env, ctx), "") == 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut seventh := move later;", ctx)], &env, ctx), "") == 0 {
+        os.LogStr("Error: finite checked-cast plain suffix admitted a wrapper or lost continuation"); os.Exit(1);
     }
     env.zero_local_call_finite_cast_plain_terminal = 0;
     env.zero_local_call_third_cast_terminal = 0;
