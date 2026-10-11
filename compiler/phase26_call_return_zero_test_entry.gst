@@ -579,7 +579,7 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return take fourth;", ctx)], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return (move fourth) as *int;", ctx)], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return move (move fourth);", ctx)], &env, ctx) != 0 ||
-       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut fifth := fourth;", ctx)], &env, ctx), "") == 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut fifth := fourth;", ctx)], &env, ctx), "fifth") == 0 ||
        std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut fifth := take fourth;", ctx)], &env, ctx), "") == 0 ||
        std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut fifth := move fourth;", ctx)], &env, ctx), "") == 0 ||
        std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut fifth := fourth as *int;", ctx)], &env, ctx), "fifth") == 0 {
@@ -592,6 +592,25 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
        std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut sixth := (fifth as *int) as *int;", ctx)], &env, ctx), "sixth") == 0 {
         os.LogStr("Error: higher finite checked raw alias chain lost direct return or continuation"); os.Exit(1);
     }
+    env.zero_local_call_name = "fourth";
+    env.zero_local_call_alias_hops = 4;
+    if std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut terminal := fourth;", ctx)], &env, ctx), "terminal") == 0 {
+        os.LogStr("Error: terminal plain alias after four checked raw casts was lost"); os.Exit(1);
+    }
+    env.zero_local_call_name = "terminal";
+    env.zero_local_call_alias_hops = 5;
+    env.zero_local_call_finite_cast_plain_terminal = 1;
+    if typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return terminal;", ctx)], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return move terminal;", ctx)], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return terminal as *int;", ctx)], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return take terminal;", ctx)], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return (move terminal) as *int;", ctx)], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return move (move terminal);", ctx)], &env, ctx) != 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut later := terminal;", ctx)], &env, ctx), "") == 0 ||
+       std.str_eq(typechecker.phase26_zero_local_call_alias_name(ctx[parse_statement("mut later := terminal as *int;", ctx)], &env, ctx), "") == 0 {
+        os.LogStr("Error: finite cast terminal plain alias admitted a wrapper or later alias"); os.Exit(1);
+    }
+    env.zero_local_call_finite_cast_plain_terminal = 0;
     env.zero_local_call_third_cast_terminal = 0;
     env.zero_local_call_second_cast_terminal = 0;
     env.zero_local_call_cast_alias_terminal = 0;

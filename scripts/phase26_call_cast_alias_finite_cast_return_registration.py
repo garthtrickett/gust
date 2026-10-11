@@ -126,6 +126,9 @@ def record(activation: dict) -> dict:
 
 
 def before_new_digest(activation: dict, path: str, live_digest: str) -> str:
+    if activation.get("call_cast_alias_finite_cast_plain_return_zero_increment"):
+        from phase26_call_cast_alias_finite_cast_plain_return_registration import before_new_digest as before_finite_cast_plain_digest
+        live_digest = before_finite_cast_plain_digest(activation, path, live_digest)
     row = record(activation)
     for field in ("guard_digest_successor", "positive_fixture_successor",
                   "cr15_relay_digest_successor"):
@@ -151,6 +154,9 @@ def before_new_digest(activation: dict, path: str, live_digest: str) -> str:
 
 def before_new_counts(activation: dict, path: str,
                       live_counts: dict[str, int]) -> dict[str, int]:
+    if activation.get("call_cast_alias_finite_cast_plain_return_zero_increment"):
+        from phase26_call_cast_alias_finite_cast_plain_return_registration import before_new_counts as before_finite_cast_plain_counts
+        live_counts = before_finite_cast_plain_counts(activation, path, live_counts)
     rows = record(activation).get("phase23_text_surface_successor", {}).get("changed_rows", [])
     matches = [entry for entry in rows if entry.get("path") == path]
     require(len(matches) <= 1, f"duplicate text path: {path}")
@@ -165,6 +171,9 @@ def before_new_counts(activation: dict, path: str,
 
 
 def before_new_spelling(activation: dict, live: dict) -> dict:
+    if activation.get("call_cast_alias_finite_cast_plain_return_zero_increment"):
+        from phase26_call_cast_alias_finite_cast_plain_return_registration import before_new_spelling as before_finite_cast_plain_spelling
+        live = before_finite_cast_plain_spelling(activation, live)
     successor = record(activation).get("spelling_inventory_successor", {})
     previous = activation[OLD]["spelling_inventory_successor"]["current_inventory_summary"]
     require(successor == {
@@ -182,6 +191,9 @@ def before_new_spelling(activation: dict, live: dict) -> dict:
 
 
 def before_new_filename(activation: dict, live: list[dict]) -> list[dict]:
+    if activation.get("call_cast_alias_finite_cast_plain_return_zero_increment"):
+        from phase26_call_cast_alias_finite_cast_plain_return_registration import before_new_filename as before_finite_cast_plain_filename
+        live = before_finite_cast_plain_filename(activation, live)
     successor = record(activation).get("filename_site_successor", {})
     previous = activation[OLD]["filename_site_successor"]["current_sites"]
     require(successor == {
@@ -200,6 +212,11 @@ def before_new_filename(activation: dict, live: list[dict]) -> list[dict]:
 def main() -> None:
     activation = json.loads((ROOT / "scripts/cranelift_feature_registry.json")
                             .read_text())["phase26_activation_audit"]
+    if activation.get("call_cast_alias_finite_cast_plain_return_zero_increment"):
+        from phase26_call_cast_alias_finite_cast_plain_return_registration import before_new_digest as project_new_digest, before_new_counts as project_new_counts
+    else:
+        project_new_digest = lambda _activation, _path, value: value
+        project_new_counts = lambda _activation, _path, value: value
     row = record(activation)
     expected = {
         "contract_version": "phase26_1e_cast_alias_finite_cast_return_zero_v1",
@@ -247,18 +264,29 @@ def main() -> None:
         previous = activation[OLD][field]["current_digest"]
         require(row[field] == {
             "path": path, "previous_digest": previous,
-            "current_digest": digest(path),
+            "current_digest": project_new_digest(activation, path, digest(path)),
             "partial_extra_or_substituted_" +
             ("guard" if field.startswith("guard") else
              "fixture" if field.startswith("positive") else "relay"): "rejected",
         }, f"{field} drifted")
     guard = (ROOT / GUARD_PATH).read_text()
     compiler = (ROOT / "compiler/typechecker.gst").read_text()
-    require(" ".join("finite_cast_" + name for name in NAMES) + " second_cast_zero" in guard and
+    finite_cast_plain = activation.get("call_cast_alias_finite_cast_plain_return_zero_increment")
+    wrong_marker = ("finite_cast_fourth_wrong_type|finite_cast_plain_fourth_wrong_type|finite_plain_third_wrong_type)"
+                    if finite_cast_plain else "finite_cast_fourth_wrong_type|finite_plain_third_wrong_type)")
+    escape_marker = ("finite_cast_fourth_prior_escape|finite_cast_plain_fourth_prior_escape|finite_plain_third_prior_escape)"
+                     if finite_cast_plain else "finite_cast_fourth_prior_escape|finite_plain_third_prior_escape)")
+    move_marker = "finite_cast_fourth_prior_move|finite_cast_fourth_prior_move_return_move|finite_cast_fourth_return_move_cast)"
+    if finite_cast_plain:
+        from phase26_call_cast_alias_finite_cast_plain_return_registration import NAMES as FINITE_CAST_PLAIN_NAMES
+        guard_cases = " ".join("finite_cast_" + name for name in NAMES) + " " + " ".join("finite_cast_plain_" + name for name in FINITE_CAST_PLAIN_NAMES) + " second_cast_zero"
+    else:
+        guard_cases = " ".join("finite_cast_" + name for name in NAMES) + " second_cast_zero"
+    require(guard_cases in guard and
             "third_cast_interleaved_mayzero_move|third_cast_fourth_cast|finite_cast_" in guard and
-            "finite_cast_fourth_wrong_type|finite_plain_third_wrong_type)" in guard and
-            "finite_cast_fourth_prior_escape|finite_plain_third_prior_escape)" in guard and
-            "finite_cast_fourth_prior_move|finite_cast_fourth_prior_move_return_move|finite_cast_fourth_return_move_cast)" in guard and
+            wrong_marker in guard and
+            escape_marker in guard and
+            move_marker in guard and
             'test ! -e "$marker"' in guard and
             "GUST_PHASE26_CALL_RETURN_ZERO_POISON_MARKER" in guard and
             "zero_local_call_third_cast_terminal: int" in compiler and
@@ -311,17 +339,21 @@ def main() -> None:
         path = entry["path"]
         counts = {name: len(pattern.findall((ROOT / path).read_text()))
                   for name, pattern in SURFACE_PATTERNS.items()}
+        current_digest = project_new_digest(activation, path, digest(path))
+        counts = project_new_counts(activation, path, counts)
         require(entry == {"path": path,
                           "previous_digest": FROZEN_TEXT[path]["digest"],
-                          "current_digest": digest(path),
+                          "current_digest": current_digest,
                           "previous_match_counts": FROZEN_TEXT[path]["match_counts"],
                           "current_match_counts": counts},
                 f"text surface drifted: {path}")
     path = added[0]["path"]
     counts = {name: len(pattern.findall((ROOT / path).read_text()))
               for name, pattern in SURFACE_PATTERNS.items()}
+    current_digest = project_new_digest(activation, path, digest(path))
+    counts = project_new_counts(activation, path, counts)
     require(added[0] == {
-        "path": path, "digest": digest(path), "match_counts": counts,
+        "path": path, "digest": current_digest, "match_counts": counts,
         "classification": "archive_candidate", "owner": "cranelift",
         "current_route": "tracked_MIR_to_C_or_generated_C_surface",
         "deprecation_action": "map_to_live_lane_or_archive_in_23_10_and_23_11",
