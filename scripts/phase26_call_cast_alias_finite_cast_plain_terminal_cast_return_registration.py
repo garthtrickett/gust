@@ -50,6 +50,9 @@ def prior_text(activation: dict, path: str) -> tuple[str, dict[str, int]]:
 
 
 def before_new_digest(activation: dict, path: str, live_digest: str) -> str:
+    if activation.get("call_cast_alias_finite_cast_plain_terminal_cast_chain_return_zero_increment"):
+        from phase26_call_cast_alias_finite_cast_plain_terminal_cast_chain_return_registration import before_new_digest as before_terminal_chain_digest
+        live_digest = before_terminal_chain_digest(activation, path, live_digest)
     row = record(activation)
     for field in ("guard_digest_successor", "positive_fixture_successor",
                   "cr15_relay_digest_successor"):
@@ -74,6 +77,9 @@ def before_new_digest(activation: dict, path: str, live_digest: str) -> str:
 
 def before_new_counts(activation: dict, path: str,
                       live_counts: dict[str, int]) -> dict[str, int]:
+    if activation.get("call_cast_alias_finite_cast_plain_terminal_cast_chain_return_zero_increment"):
+        from phase26_call_cast_alias_finite_cast_plain_terminal_cast_chain_return_registration import before_new_counts as before_terminal_chain_counts
+        live_counts = before_terminal_chain_counts(activation, path, live_counts)
     matches = [entry for entry in record(activation)
                .get("phase23_text_surface_successor", {}).get("changed_rows", [])
                if entry.get("path") == path]
@@ -88,6 +94,9 @@ def before_new_counts(activation: dict, path: str,
 
 
 def before_new_spelling(activation: dict, live: dict) -> dict:
+    if activation.get("call_cast_alias_finite_cast_plain_terminal_cast_chain_return_zero_increment"):
+        from phase26_call_cast_alias_finite_cast_plain_terminal_cast_chain_return_registration import before_new_spelling as before_terminal_chain_spelling
+        live = before_terminal_chain_spelling(activation, live)
     previous = activation[OLD]["spelling_inventory_successor"]["current_inventory_summary"]
     require(record(activation).get("spelling_inventory_successor") == {
         "contract_version": "phase26_1e_cast_alias_finite_cast_plain_terminal_cast_return_spelling_successor_v1",
@@ -105,6 +114,9 @@ def before_new_spelling(activation: dict, live: dict) -> dict:
 
 
 def before_new_filename(activation: dict, live: list[dict]) -> list[dict]:
+    if activation.get("call_cast_alias_finite_cast_plain_terminal_cast_chain_return_zero_increment"):
+        from phase26_call_cast_alias_finite_cast_plain_terminal_cast_chain_return_registration import before_new_filename as before_terminal_chain_filename
+        live = before_terminal_chain_filename(activation, live)
     previous = activation[OLD]["filename_site_successor"]["current_sites"]
     require(record(activation).get("filename_site_successor") == {
         "contract_version": "phase26_1e_cast_alias_finite_cast_plain_terminal_cast_return_filename_successor_v1",
@@ -123,6 +135,11 @@ def before_new_filename(activation: dict, live: list[dict]) -> list[dict]:
 
 def main() -> None:
     activation = json.loads((ROOT / 'scripts/cranelift_feature_registry.json').read_text())['phase26_activation_audit']
+    if activation.get("call_cast_alias_finite_cast_plain_terminal_cast_chain_return_zero_increment"):
+        from phase26_call_cast_alias_finite_cast_plain_terminal_cast_chain_return_registration import before_new_digest as project_chain_digest, before_new_counts as project_chain_counts
+    else:
+        project_chain_digest = lambda _activation, _path, value: value
+        project_chain_counts = lambda _activation, _path, value: value
     row = record(activation)
     expected = {
         'contract_version': 'phase26_1e_cast_alias_finite_cast_plain_terminal_cast_return_zero_v1',
@@ -170,13 +187,19 @@ def main() -> None:
         previous = activation[OLD][field]['current_digest']
         require(row[field] == {
             'path': path, 'previous_digest': previous,
-            'current_digest': digest(path),
+            'current_digest': project_chain_digest(activation, path, digest(path)),
             'partial_extra_or_substituted_' +
             ('guard' if field.startswith('guard') else
              'fixture' if field.startswith('positive') else 'relay'): 'rejected',
         }, f'{field} drifted')
     guard = (ROOT / GUARD_PATH).read_text()
     compiler = (ROOT / 'compiler/typechecker.gst').read_text()
+    if activation.get("call_cast_alias_finite_cast_plain_terminal_cast_chain_return_zero_increment"):
+        return_cast_proof = (
+            'while cast_source.tag == 9 {' in compiler and
+            'phase26_zero_resolved_expression_tag(cast_source.AsCast.left, env, ctx) != 9' in compiler)
+    else:
+        return_cast_proof = 'phase26_zero_resolved_expression_tag(expr.AsCast.left, env, ctx) != 9' in compiler
     require(' '.join('finite_cast_plain_terminal_cast_' + name for name in NAMES) in guard and
             'finite_cast_plain_chain_return_cast|finite_plain_third_zero' in guard and
             'finite_cast_plain_terminal_cast_fifth_two_plain|finite_cast_plain_terminal_cast_third_plain|finite_cast_plain_terminal_cast_zero)' in guard and
@@ -191,7 +214,7 @@ def main() -> None:
             '(*env).zero_local_call_finite_cast_plain_count >= 2 && expr.tag == 9' in compiler and
             '(*env).zero_local_call_finite_cast_plain_count < 2' in compiler and
             '(*env).zero_local_call_finite_cast_plain_count + 1;' in compiler and
-            'phase26_zero_resolved_expression_tag(expr.AsCast.left, env, ctx) != 9' in compiler and
+            return_cast_proof and
             'env_types_match_at_brand_boundary(env, source_type.Val, alias_type.Val, ctx) == 1' in compiler and
             'phase26_zero_local_call_alias_cast_is_raw(statements[i], env, ctx) == 1' in compiler and
             'if expr.tag == 4 { // One direct terminal Move' in compiler and
@@ -238,15 +261,15 @@ def main() -> None:
         previous_digest, previous_counts = prior_text(activation, path)
         require(entry == {
             'path': path, 'previous_digest': previous_digest,
-            'current_digest': digest(path),
+            'current_digest': project_chain_digest(activation, path, digest(path)),
             'previous_match_counts': previous_counts,
-            'current_match_counts': counts,
+            'current_match_counts': project_chain_counts(activation, path, counts),
         }, f'text surface drifted: {path}')
     counts = {name: len(pattern.findall((ROOT / NEW_HELPER).read_text()))
               for name, pattern in SURFACE_PATTERNS.items()}
     require(added[0] == {
-        'path': NEW_HELPER, 'digest': digest(NEW_HELPER),
-        'match_counts': counts, 'classification': 'archive_candidate',
+        'path': NEW_HELPER, 'digest': project_chain_digest(activation, NEW_HELPER, digest(NEW_HELPER)),
+        'match_counts': project_chain_counts(activation, NEW_HELPER, counts), 'classification': 'archive_candidate',
         'owner': 'cranelift',
         'current_route': 'tracked_MIR_to_C_or_generated_C_surface',
         'deprecation_action': 'map_to_live_lane_or_archive_in_23_10_and_23_11',

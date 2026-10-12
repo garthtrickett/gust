@@ -298,8 +298,12 @@ def main() -> None:
     if activation.get("call_cast_alias_finite_cast_plain_terminal_cast_return_zero_increment"):
         from phase26_call_cast_alias_finite_cast_plain_terminal_cast_return_registration import NAMES as TERMINAL_CAST_NAMES
         terminal_cast_prefix = " ".join("finite_cast_plain_terminal_cast_" + name for name in TERMINAL_CAST_NAMES) + " "
+    terminal_chain_prefix = ""
+    if activation.get("call_cast_alias_finite_cast_plain_terminal_cast_chain_return_zero_increment"):
+        from phase26_call_cast_alias_finite_cast_plain_terminal_cast_chain_return_registration import NAMES as TERMINAL_CHAIN_NAMES
+        terminal_chain_prefix = " ".join("finite_cast_plain_terminal_chain_" + name for name in TERMINAL_CHAIN_NAMES) + " "
     require(all(marker in guard for marker in (
-        "for case_name in " + terminal_cast_prefix + " ".join(NAMES) +
+        "for case_name in " + terminal_chain_prefix + terminal_cast_prefix + " ".join(NAMES) +
         (" return_zero return_depth3 return_nonzero return_unknown return_unsafe return_scalar return_take_cast return_move_cast return_wrong_type return_prior_escape return_prior_move return_second_alias return_gap return_overwrite" if activation.get("call_cast_alias_return_cast_zero_increment") else "") +
         take_names + second_plain_names + finite_plain_names + third_cast_names + finite_cast_names + finite_cast_plain_names + finite_plain_chain_names + second_cast_names + direct_move_names + "; do",
         "phase26_call_local_return_cast_alias_${case_name}_source.gst",

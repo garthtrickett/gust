@@ -2811,8 +2811,11 @@ func phase26_zero_local_return_matches_candidate(expr: ast.Expression[ctx], env:
         if (*env).zero_local_call_cast_alias_terminal == 1 {
             if (*env).zero_local_call_finite_cast_plain_terminal == 1 &&
                (*env).zero_local_call_finite_cast_plain_count >= 2 && expr.tag == 9 {
-                if expr.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
-                mut cast_source := ctx[expr.AsCast.left];
+                mut cast_source := expr;
+                while cast_source.tag == 9 {
+                    if cast_source.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+                    cast_source = ctx[cast_source.AsCast.left];
+                }
                 if cast_source.tag != 0 { return 0; }
                 return std.str_eq(cast_source.Identifier.name, (*env).zero_local_call_name);
             }
@@ -2871,12 +2874,16 @@ func phase26_zero_local_return_cast_is_raw(expr: ast.Expression[ctx], env: *Type
         if (*env).zero_local_call_cast_alias_terminal == 1 {
             if (*env).zero_local_call_finite_cast_plain_terminal == 1 &&
                (*env).zero_local_call_finite_cast_plain_count >= 2 && expr.tag == 9 {
-                if expr.AsCast.target_type == empty[Index[ast.Type[ctx], ctx]] ||
-                   expr.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
-                mut target := env_resolve_type(env, ctx[expr.AsCast.target_type], ctx);
-                if target.tag != 9 ||
-                   phase26_zero_resolved_expression_tag(expr.AsCast.left, env, ctx) != 9 { return 0; }
-                return ctx[expr.AsCast.left].tag == 0;
+                mut cast_source := expr;
+                while cast_source.tag == 9 {
+                    if cast_source.AsCast.target_type == empty[Index[ast.Type[ctx], ctx]] ||
+                       cast_source.AsCast.left == empty[Index[ast.Expression[ctx], ctx]] { return 0; }
+                    mut target := env_resolve_type(env, ctx[cast_source.AsCast.target_type], ctx);
+                    if target.tag != 9 ||
+                       phase26_zero_resolved_expression_tag(cast_source.AsCast.left, env, ctx) != 9 { return 0; }
+                    cast_source = ctx[cast_source.AsCast.left];
+                }
+                return cast_source.tag == 0;
             }
             if expr.tag == 4 { // Ordinary Move typing already checked this exact Identifier.
                 if expr.Move.expr == empty[Index[ast.Expression[ctx], ctx]] { return 0; }

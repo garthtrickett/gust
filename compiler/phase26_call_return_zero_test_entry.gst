@@ -618,7 +618,8 @@ func check_one_local_direct_call_shape(ctx: &Arena) {
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return move later;", ctx)], &env, ctx) != 1 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return take later;", ctx)], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return later as *int;", ctx)], &env, ctx) != 1 ||
-       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return (later as *int) as *int;", ctx)], &env, ctx) != 0 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return (later as *int) as *int;", ctx)], &env, ctx) != 1 ||
+       typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return ((later as *int) as *int) as *int;", ctx)], &env, ctx) != 1 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return (move later) as *int;", ctx)], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return (take later) as *int;", ctx)], &env, ctx) != 0 ||
        typechecker.phase26_zero_local_call_statement_consumes_candidate(ctx[parse_statement("return move (later as *int);", ctx)], &env, ctx) != 0 ||
