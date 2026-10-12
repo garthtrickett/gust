@@ -52,6 +52,9 @@ def prior_text(activation: dict, path: str) -> tuple[str, dict[str, int]]:
 
 
 def before_new_digest(activation: dict, path: str, live_digest: str) -> str:
+    if activation.get("call_cast_alias_finite_cast_plain_terminal_cast_return_zero_increment"):
+        from phase26_call_cast_alias_finite_cast_plain_terminal_cast_return_registration import before_new_digest as before_terminal_cast_digest
+        live_digest = before_terminal_cast_digest(activation, path, live_digest)
     row = record(activation)
     for field in ("guard_digest_successor", "positive_fixture_successor",
                   "cr15_relay_digest_successor"):
@@ -76,6 +79,9 @@ def before_new_digest(activation: dict, path: str, live_digest: str) -> str:
 
 def before_new_counts(activation: dict, path: str,
                       live_counts: dict[str, int]) -> dict[str, int]:
+    if activation.get("call_cast_alias_finite_cast_plain_terminal_cast_return_zero_increment"):
+        from phase26_call_cast_alias_finite_cast_plain_terminal_cast_return_registration import before_new_counts as before_terminal_cast_counts
+        live_counts = before_terminal_cast_counts(activation, path, live_counts)
     matches = [entry for entry in record(activation)
                .get("phase23_text_surface_successor", {}).get("changed_rows", [])
                if entry.get("path") == path]
@@ -90,6 +96,9 @@ def before_new_counts(activation: dict, path: str,
 
 
 def before_new_spelling(activation: dict, live: dict) -> dict:
+    if activation.get("call_cast_alias_finite_cast_plain_terminal_cast_return_zero_increment"):
+        from phase26_call_cast_alias_finite_cast_plain_terminal_cast_return_registration import before_new_spelling as before_terminal_cast_spelling
+        live = before_terminal_cast_spelling(activation, live)
     previous = activation[OLD]["spelling_inventory_successor"]["current_inventory_summary"]
     require(record(activation).get("spelling_inventory_successor") == {
         "contract_version": "phase26_1e_cast_alias_finite_cast_plain_chain_return_spelling_successor_v1",
@@ -107,6 +116,9 @@ def before_new_spelling(activation: dict, live: dict) -> dict:
 
 
 def before_new_filename(activation: dict, live: list[dict]) -> list[dict]:
+    if activation.get("call_cast_alias_finite_cast_plain_terminal_cast_return_zero_increment"):
+        from phase26_call_cast_alias_finite_cast_plain_terminal_cast_return_registration import before_new_filename as before_terminal_cast_filename
+        live = before_terminal_cast_filename(activation, live)
     previous = activation[OLD]["filename_site_successor"]["current_sites"]
     require(record(activation).get("filename_site_successor") == {
         "contract_version": "phase26_1e_cast_alias_finite_cast_plain_chain_return_filename_successor_v1",
@@ -125,6 +137,11 @@ def before_new_filename(activation: dict, live: list[dict]) -> list[dict]:
 
 def main() -> None:
     activation = json.loads((ROOT / 'scripts/cranelift_feature_registry.json').read_text())['phase26_activation_audit']
+    if activation.get("call_cast_alias_finite_cast_plain_terminal_cast_return_zero_increment"):
+        from phase26_call_cast_alias_finite_cast_plain_terminal_cast_return_registration import before_new_digest as project_new_digest, before_new_counts as project_new_counts
+    else:
+        project_new_digest = lambda _activation, _path, value: value
+        project_new_counts = lambda _activation, _path, value: value
     row = record(activation)
     expected = {
         'contract_version': 'phase26_1e_cast_alias_finite_cast_plain_chain_return_zero_v1',
@@ -172,7 +189,7 @@ def main() -> None:
         previous = activation[OLD][field]['current_digest']
         require(row[field] == {
             'path': path, 'previous_digest': previous,
-            'current_digest': digest(path),
+            'current_digest': project_new_digest(activation, path, digest(path)),
             'partial_extra_or_substituted_' +
             ('guard' if field.startswith('guard') else
              'fixture' if field.startswith('positive') else 'relay'): 'rejected',
@@ -237,17 +254,19 @@ def main() -> None:
         path = entry['path']
         counts = {name: len(pattern.findall((ROOT / path).read_text()))
                   for name, pattern in SURFACE_PATTERNS.items()}
+        counts = project_new_counts(activation, path, counts)
         previous_digest, previous_counts = prior_text(activation, path)
         require(entry == {
             'path': path, 'previous_digest': previous_digest,
-            'current_digest': digest(path),
+            'current_digest': project_new_digest(activation, path, digest(path)),
             'previous_match_counts': previous_counts,
             'current_match_counts': counts,
         }, f'text surface drifted: {path}')
     counts = {name: len(pattern.findall((ROOT / NEW_HELPER).read_text()))
               for name, pattern in SURFACE_PATTERNS.items()}
+    counts = project_new_counts(activation, NEW_HELPER, counts)
     require(added[0] == {
-        'path': NEW_HELPER, 'digest': digest(NEW_HELPER),
+        'path': NEW_HELPER, 'digest': project_new_digest(activation, NEW_HELPER, digest(NEW_HELPER)),
         'match_counts': counts, 'classification': 'archive_candidate',
         'owner': 'cranelift',
         'current_route': 'tracked_MIR_to_C_or_generated_C_surface',
