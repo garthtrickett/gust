@@ -81341,7 +81341,7 @@
         "added_rows": [
           {
             "path": "scripts/phase26_call_cast_alias_finite_cast_plain_terminal_cast_chain_return_registration.py",
-            "digest": "96b47b3c193c4e55e5e4ed1a8e1d95e47335092c1a5d8990cfa42df84e306836",
+            "digest": "211754bf98ef653a7b69f5ba3a09b81b68165d96994ddd51be59dc5692bd7164",
             "match_counts": {
               "explicit_backend_spelling": 0,
               "mir_to_c_name": 2,

@@ -41,8 +41,16 @@ def record(activation: dict) -> dict:
 
 def prior_text(activation: dict, path: str) -> tuple[str, dict[str, int]]:
     from phase23_mir_to_c_deprecation_opening import SURFACE_PATTERNS
+    spec = f"{BASE}:{path}"
+    if subprocess.run(["git", "cat-file", "-e", spec], cwd=ROOT,
+                      stderr=subprocess.DEVNULL).returncode != 0:
+        subprocess.run(["git", "fetch", "--no-tags", "--depth=1", "origin", BASE],
+                       cwd=ROOT, check=True, stdout=subprocess.DEVNULL)
+        fetched = subprocess.check_output(["git", "rev-parse", "FETCH_HEAD"],
+                                          cwd=ROOT, text=True).strip()
+        require(fetched == BASE, "pinned prior commit fetch drifted")
     committed = subprocess.check_output(
-        ["git", "show", f"{BASE}:{path}"], cwd=ROOT)
+        ["git", "show", spec], cwd=ROOT)
     source = committed.decode()
     digest = hashlib.sha256(committed).hexdigest()
     counts = {name: len(pattern.findall(source))
