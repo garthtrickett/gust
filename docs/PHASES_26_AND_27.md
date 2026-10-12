@@ -1574,6 +1574,19 @@ flow remain excluded. All earlier direct and direct-Move cohorts, transfer
 and resource bookkeeping, MIR, ABI, runtime, oracle, fallback, caps, broad
 D/E/F gates, and all six Phase 26 status rows remain unchanged.
 
+**26.1E finite checked terminal raw-cast chain after a finite cast and plain
+chain (Cranelift ownership assigned 2026-10-12).** After four or more
+adjacent, individually checked raw-to-raw cast aliases and two or more
+adjacent plain by-value raw aliases, a safe return may wrap the final
+Identifier in two or more individually checked raw-to-raw casts. Ordinary
+return typing and the raw operand, raw target, and brand proof for every cast
+precede the existing Zero/MayZero diagnostic. Move or Take operands and
+wrappers, scalar or unproved casts, wrong brands, later aliases, gaps,
+overwrite, and wider flow remain excluded. The earlier direct, direct-Move,
+and one-terminal-cast cohorts remain intact. Transfer and resource
+bookkeeping, MIR, ABI, runtime, oracle, fallback, caps, broad D/E/F gates,
+and all six Phase 26 status rows remain unchanged.
+
 ## Phase 26.2 — generalized linear-resource enforcement
 
 **A — metadata opt-in and isolation.** The linear engine runs only on structs
