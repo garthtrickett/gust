@@ -105,9 +105,31 @@ func read_string(l: *Lexer[ctx]) str {
             delimiter = 34; // Fallback to '"'
         }
         
-        mut len_input := len((*l).input);
-        mut max_size := len_input - (*l).position;
-        mut buf := os.ScratchAlloc(max_size);
+        // Count the bytes the decoder will write without moving the real lexer.
+        // Each counted byte consumes at least one source byte after the opener,
+        // including a trailing backslash at EOF. Thus the count is at most
+        // len(input) - opener_position - 1 and cannot overflow an input length.
+        mut count_lexer := *l;
+        mut decoded_size := 0;
+        mut counting := 1;
+        while counting == 1 {
+            read_char(&count_lexer);
+            if count_lexer.ch == 92 {
+                read_char(&count_lexer);
+                decoded_size = decoded_size + 1;
+            } else {
+                if count_lexer.ch == delimiter || count_lexer.ch == 0 {
+                    counting = 0;
+                } else {
+                    decoded_size = decoded_size + 1;
+                }
+            }
+        }
+        mut alloc_size := decoded_size;
+        if alloc_size == 0 {
+            alloc_size = 1;
+        }
+        mut buf := os.ScratchAlloc(alloc_size);
         mut dest := buf as *byte;
         mut write_idx := 0;
         
@@ -144,6 +166,10 @@ func read_string(l: *Lexer[ctx]) str {
             }
         }
         read_char(l); // consume closing delimiter
+        if write_idx != decoded_size {
+            os.LogStr("Lexer string byte count mismatch");
+            os.Exit(1);
+        }
         
         mut header_alloc := os.ScratchAlloc(16);
         mut header_ptr := (header_alloc + 0) as *StringHeader;
