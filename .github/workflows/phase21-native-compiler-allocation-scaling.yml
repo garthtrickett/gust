@@ -68,4 +68,6 @@ jobs:
       - run: bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
       - run: bash scripts/install-just-ci.sh "$HOME/.local/bin" && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: make gust phase10-native-package
+      - name: Lexer scratch sizing and token semantics
+        run: python3 scripts/phase26_lexer_scratch_sizing.py --compiler ./gust
       - run: just guard-cranelift-phase21-native-compiler-allocation-scaling-evidence
