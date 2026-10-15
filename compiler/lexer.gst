@@ -166,6 +166,10 @@ func read_string(l: *Lexer[ctx]) str {
             }
         }
         read_char(l); // consume closing delimiter
+        if write_idx != decoded_size {
+            os.LogStr("Lexer string byte count mismatch");
+            os.Exit(1);
+        }
         
         mut header_alloc := os.ScratchAlloc(16);
         mut header_ptr := (header_alloc + 0) as *StringHeader;

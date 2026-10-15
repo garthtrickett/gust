@@ -11,6 +11,7 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUT = ROOT / "build/guards/phase26_lexer_scratch_sizing"
+RAW_INPUT_DIR = Path("build/guards/phase26_lexer_scratch_sizing_inputs")
 
 
 def source_literal(value: str) -> str:
@@ -71,15 +72,32 @@ def semantic_source() -> str:
         f"    lexer.init_lexer(&l, {source_literal(chr(34) + 'abc')});",
         "    lexer.next_token(&l, &t);",
         "    if t.token_type.tag != 4 || len(t.literal) != 3 ||",
-        "        t.span.start.offset != 0 || t.span.end.offset != 5 {",
+        "        std.str_byte_at(t.literal, 0) != 97 ||",
+        "        std.str_byte_at(t.literal, 1) != 98 ||",
+        "        std.str_byte_at(t.literal, 2) != 99 ||",
+        "        t.span.start.offset != 0 || t.span.start.line != 1 ||",
+        "        t.span.start.column != 1 || t.span.end.offset != 5 ||",
+        "        t.span.end.line != 1 || t.span.end.column != 6 {",
         "        os.Exit(31);",
         "    }",
+        "    lexer.next_token(&l, &t);",
+        "    if t.token_type.tag != 0 || t.span.start.offset != 5 ||",
+        "        t.span.end.offset != 5 || t.span.start.line != 1 ||",
+        "        t.span.end.line != 1 || t.span.start.column != 6 ||",
+        "        t.span.end.column != 6 { os.Exit(34); }",
         f"    lexer.init_lexer(&l, {source_literal(chr(34) + 'a' + chr(92))});",
         "    lexer.next_token(&l, &t);",
         "    if t.token_type.tag != 4 || len(t.literal) != 2 ||",
         "        t.span.start.offset != 0 || t.span.end.offset != 5 ||",
+        "        t.span.start.line != 1 || t.span.end.line != 1 ||",
+        "        t.span.start.column != 1 || t.span.end.column != 6 ||",
         "        std.str_byte_at(t.literal, 0) != 97 ||",
         "        std.str_byte_at(t.literal, 1) != 0 { os.Exit(32); }",
+        "    lexer.next_token(&l, &t);",
+        "    if t.token_type.tag != 0 || t.span.start.offset != 5 ||",
+        "        t.span.end.offset != 5 || t.span.start.line != 1 ||",
+        "        t.span.end.line != 1 || t.span.start.column != 6 ||",
+        "        t.span.end.column != 6 { os.Exit(35); }",
         f"    lexer.init_lexer(&l, {source_literal(chr(34) + 'a' + chr(10) + 'b' + chr(34))});",
         "    lexer.next_token(&l, &t);",
         "    if t.token_type.tag != 4 || len(t.literal) != 3 ||",
@@ -88,6 +106,59 @@ def semantic_source() -> str:
         "        t.span.end.column != 3 ||",
         "        std.str_byte_at(t.literal, 1) != 10 { os.Exit(33); }",
         '    os.LogStr("SUCCESS: lexer literal bytes and spans");',
+        "}",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def raw_byte_source() -> str:
+    raw_path = str(RAW_INPUT_DIR / "unescaped_nul.bin")
+    escaped_path = str(RAW_INPUT_DIR / "escaped_nul.bin")
+    lines = [
+        'import "lexer.gst" as lexer;',
+        'import "token.gst" as token;',
+        "func main() {",
+        "    mut ctx := os.Arena.New();",
+        "    defer ctx.Free();",
+        "    mut l: lexer.Lexer[ctx];",
+        "    mut t: token.Token[ctx];",
+        f"    mut raw := os.ReadFile(ctx, {source_literal(raw_path)});",
+        "    lexer.init_lexer(&l, raw);",
+        "    lexer.next_token(&l, &t);",
+        "    if t.token_type.tag != 4 || len(t.literal) != 1 ||",
+        "        std.str_byte_at(t.literal, 0) != 97 ||",
+        "        t.span.start.offset != 0 || t.span.start.column != 1 ||",
+        "        t.span.end.offset != 3 || t.span.end.column != 4 ||",
+        "        t.span.start.line != 1 || t.span.end.line != 1 {",
+        "        os.Exit(51);",
+        "    }",
+        "    lexer.next_token(&l, &t);",
+        "    if t.token_type.tag != 0 || t.span.start.offset != 3 ||",
+        "        t.span.end.offset != 3 || t.span.start.column != 4 ||",
+        "        t.span.end.column != 4 || t.span.start.line != 1 ||",
+        "        t.span.end.line != 1 {",
+        "        os.Exit(52);",
+        "    }",
+        f"    mut escaped := os.ReadFile(ctx, {source_literal(escaped_path)});",
+        "    lexer.init_lexer(&l, escaped);",
+        "    lexer.next_token(&l, &t);",
+        "    if t.token_type.tag != 4 || len(t.literal) != 3 ||",
+        "        std.str_byte_at(t.literal, 0) != 97 ||",
+        "        std.str_byte_at(t.literal, 1) != 0 ||",
+        "        std.str_byte_at(t.literal, 2) != 98 ||",
+        "        t.span.start.offset != 0 || t.span.start.column != 1 ||",
+        "        t.span.end.offset != 6 || t.span.end.column != 7 ||",
+        "        t.span.start.line != 1 || t.span.end.line != 1 {",
+        "        os.Exit(53);",
+        "    }",
+        "    lexer.next_token(&l, &t);",
+        "    if t.token_type.tag != 0 || t.span.start.offset != 6 ||",
+        "        t.span.end.offset != 6 || t.span.start.column != 7 ||",
+        "        t.span.end.column != 7 || t.span.start.line != 1 ||",
+        "        t.span.end.line != 1 {",
+        "        os.Exit(54);",
+        "    }",
+        '    os.LogStr("SUCCESS: lexer raw NUL and EOF spans");',
         "}",
     ]
     return "\n".join(lines) + "\n"
@@ -182,13 +253,28 @@ def main() -> None:
     src_dir.mkdir(exist_ok=True)
     shutil.copyfile(lexer, src_dir / "lexer.gst")
     shutil.copyfile(ROOT / "compiler/token.gst", src_dir / "token.gst")
+    raw_input_dir = ROOT / RAW_INPUT_DIR
+    raw_input_dir.mkdir(parents=True, exist_ok=True)
+    raw_inputs = {
+        "unescaped_nul.bin": b'"a\x00',
+        "escaped_nul.bin": b'"a\\\x00b"',
+    }
+    for name, payload in raw_inputs.items():
+        (raw_input_dir / name).write_bytes(payload)
     results = {
         "compiler_sha256": hashlib.sha256(compiler.read_bytes()).hexdigest(),
         "lexer_sha256": hashlib.sha256(
             (src_dir / "lexer.gst").read_bytes()).hexdigest(),
+        "raw_input_sha256": {
+            name: hashlib.sha256(payload).hexdigest()
+            for name, payload in raw_inputs.items()
+        },
         "semantic": run_case(
             compiler, out, src_dir, "semantic", semantic_source(),
             "SUCCESS: lexer literal bytes and spans\n"),
+        "raw_bytes": run_case(
+            compiler, out, src_dir, "raw_bytes", raw_byte_source(),
+            "SUCCESS: lexer raw NUL and EOF spans\n"),
         "stress": run_case(
             compiler, out, src_dir, "stress", stress_source(),
             "SUCCESS: short literals before long tail\n",
