@@ -12,8 +12,11 @@ remain open. `TASK.md` now points to this plan as the active Cranelift roadmap.
 - [ ] Patch 26.5 — Stdlib Safety-Surface Audit
 - [ ] Patch 26.6 — Native Release-Bridge Promotion
 
-These rows close only when their full exit gates below pass. Incremental
-implementation inside a row does not mark the row done.
+These rows close only when their applicable full exit gates below pass.
+For 26.1, the operator's 2026-10-19 first-release scope decision and FFI-R1–R6
+below define those gates; the broader original D/E/F obligations remain OPEN
+in the named follow-up register. Incremental implementation or a scope decision
+does not mark any row done.
 
 This is the canonical plan for Phase 26 — gated raw pointers and FFI, generalized
 linear resources, implicit context, and the consolidation work that follows.
@@ -80,7 +83,8 @@ them to the original A-stage identity scopes.
 | 26.4 absence | `get_opt` and `Option[T]` coexist with `LookupResult_T`, `map.Get`, and `empty[T]` in compiler source | Migrate file by file, then remove both legacy spellings as one row |
 | 26.5–26.6 safety audit and release | No completed Phase 26 stdlib audit or final-source native bridge promotion | Audit the three safe collection surfaces, then promote a verified tagged native bridge after final merged Phase 26 sources |
 
-The first implementation increment is **26.1D's FFI/native-call contract**.
+At that activation audit, the first implementation increment was
+**26.1D's FFI/native-call contract**.
 Start by enumerating external parameter and return positions and their existing
 metadata and validation paths; bind an explicit ownership/escape policy to the
 canonical signature before adding layout or isolated-arena behaviour. Keep
@@ -152,6 +156,113 @@ implementation before assigning new patches: Phase 25 already used unsafe-gated
 FFI and layout controls, so the original A→C steps cannot be assumed pending.
 The remaining D→F contracts need a current-state audit rather than a replay of
 the original no-op grammar stage.
+
+### First-release scope and execution
+
+**Operator-directed scope revision, 2026-10-19; all six phase statuses OPEN.**
+The operator requested a concrete first-release FFI contract, refinement against
+useful integrations and precise safety limits, then an update of this roadmap.
+The resulting [first-release contract](FIRST_RELEASE_FFI_CONTRACT.md) is the
+normative release scope for 26.1. Its [refinement record](FIRST_RELEASE_FFI_REFINEMENT.md)
+records the feasibility and adversarial reviews. This changes future scope and
+execution order; it neither upgrades old evidence nor changes accepted programs,
+compiler semantics, frozen registry projections, tests, or VISION policy.
+
+**Release outcome:** actual zlib compression/decompression through a pinned,
+signed compiler-owned adapter on `x86_64-unknown-linux-gnu`, with an audited safe
+byte-copy wrapper, explicit unsafe obligations beneath it, and rejection of
+unsupported package plans. The adapter and zlib are trusted platform code under
+VISION §93. This is not arbitrary C compatibility or native-code containment.
+Application-authored native escape hatches remain subject to VISION §§93–98;
+`unsafe` and transient arenas do not implement that deployment policy.
+
+The implementation baseline is merged `main` `df653a32`, not the old activation
+snapshot. Merged work has qualified narrow policy, layout, ownership, callback,
+status, provenance, and null-rejection cohorts. It has not qualified this real
+library, approved-package link route, or safe byte marshalling. The unmerged
+E/F investigation remains diagnostic evidence, not release support.
+
+#### Required release gates and patch order
+
+Each row below is OPEN. Each compiler patch must be coherent and independently
+validated/published/merged under the existing per-patch policy; the listed gates
+are evidence destinations, not permission to combine several semantic patches.
+The 26.1 Exit Gate explicitly requires this cross-lane split: merge the
+Cranelift package/byte-span/adapter capability patches first; deliver the
+Stdlib-owned wrapper as a separate patch based on that merged support; then
+publish the 26.1 closure patch. No partial capability or wrapper PR closes the
+row. This sequence is the authorized exception to treating the whole roadmap
+row as one initial PR; each individual capability patch remains atomic.
+Use focused local checks before publication, exact-head required CI and review
+before each own merge, and bootstrap validation when the patch requires it.
+
+| Order | Required work and evidence | Owner / exit condition |
+| --- | --- | --- |
+| 1 — FFI-R1 | Define and implement a separately versioned approved-package authority: exact symbols/signatures/target, signed source/object/archive identity, transitive pins, trusted signing identity, replacement/withdrawal policy and deterministic linking. Reject absent, tampered, wrong-target, revoked, unknown-signer and substituted inputs. | Cranelift; approved package verification passes without changing the historical fixed-host policy. No dependency installation or repository configuration change is authorized by this plan. |
+| 2 — FFI-R2 | Admit direct byte spans without changing direct-borrow meaning, then add a separate marshalling region using one-call transient-arena allocation/cleanup: two disjoint call-owned buffers, runtime copy-in, validated signed count/error result, copy-out before cleanup, and exact lifetime/width/overflow rules in the contract. Identify typed source operations and allocation hooks before semantic edits; obtain shared-zone ownership for any unavoidable new MIR/runtime meaning. | Cranelift; generic producer/worker checks, renamed/type-distinct host controls, allocation/failure/zero-length cleanup and malformed-plan negatives pass. No backend Vector/zlib name special case or raw safe-stdlib workaround. |
+| 3 — FFI-R3 | Qualify the actual pinned zlib adapter/header and static archive on the named target, including empty/incompressible round trips, corrupt input, invalid/oversized lengths, short output, alias/overflow rejection and zero-capacity empty output. | Cranelift; clean-machine reproduction uses the approved package. Synthetic native hosts alone cannot pass this row. |
+| 4 — FFI-R4 | Audit reachable origin/nullability paths and retain the existing safety floor. Hand the merged compiler/adapter contract to Stdlib for a separate safe Vector wrapper with explicit output arena and classified errors; test it through its public interface and audit the exact Vector, brand, arena, move and cleanup paths it uses before calling it safe. This targeted audit does not close 26.5. | Cranelift owns compiler checks and handoff; Stdlib owns safe API and its patch after its lane is activated. No cross-lane unmerged semantic stack. The safe wrapper is required; an unsafe-only prototype leaves 26.1 OPEN. |
+| 5 — FFI-R5 | Run full compiler and adjacent native/resource/layout regressions, unchanged predecessor projections, native emitted-object fixed point, exact-head required CI and resolved independent reviews. | Cranelift, with merged wrapper evidence; every release claim names its actual owning jobs and artifacts. These checks also apply at the appropriate earlier patch boundaries. |
+| 6 — FFI-R6 | Merge all required release work and record supported profile, limits, reproducible integration, artifacts and reviews. The authoritative closure guard must assert these properties; a separately owned Historical Full must succeed on exact final merged main. | Cranelift; old closure availability or an earlier green main is insufficient. Planning alone closes no gate. |
+
+The next compiler work is the package/admission prerequisite and the byte-span
+implementation design, not another unconstrained proof-precision increment.
+These are proposed semantic changes to be implemented through their owning
+patches, not semantics added by this documentation change. Preserve 4-GiB
+compiler and 6-GiB owning-guard caps, ordinary shared-compute admission,
+query/certificate budgets and real file/database exclusions. Do not change a
+running frozen job or historical evidence.
+
+#### E/F dependency decision
+
+For this release, inventory each reachable input, copy, call, output validation,
+cleanup, error and return path. Record origin, route, required authority, owning
+positive/negative test and actual rejecting stage. Probe aliases, aggregate or
+container carriage, calls/casts/returns, joins, recursion and invalidation when
+reachable. Unknown facts grant no authority; computed non-nullness never grants
+a brand or safe origin. Preserve every existing owning test and the accepted
+safe constructors. A known safe-code soundness hole blocks release even if it
+was discovered outside the adapter.
+
+The original nine-origin/seven-route general map remains OPEN with its original
+positive, negative, reconciliation, conservative-join, recursion, invalidation
+and budget gates. Unsupported-case rejection cannot close its 63 cells. New
+precision is required only when a named admitted operation needs it to meet the
+release contract; otherwise it belongs to `26.1-GENERAL` below. Reassess that
+choice before Phase 26.2 resources or Phase 26.5 safe APIs expand reachable
+paths. This is not a blanket exemption for existing safe language behavior.
+
+#### Follow-up obligations retained OPEN
+
+The full original D/E/F text and merged increment records below are preserved.
+The table explicitly scopes their remaining generality beyond the first
+release. Nothing here relabels unimplemented semantics as complete.
+
+| Follow-up | Retained obligation | Owner and re-entry gate |
+| --- | --- | --- |
+| `26.1-GENERAL` | Full generic nullability/provenance precision, all original origin-route cells, arbitrary flow and public proof reconstruction. | Cranelift; a named supported operation or later phase requires the facts, then the original full gates apply. Known safe-code soundness defects always block immediately. |
+| `26.1-ABI-EXT` | General packed/nested/enum/by-value and pointer-containing layouts beyond admitted byte-pointer/scalar positions; old qualified cohorts stay tested. | Cranelift; name the integration/layout and canonical target evidence before admission. |
+| `26.1-LIFECYCLE-EXT` | Broader retention, owner transfer, native callbacks, unwinding and cross-thread borrowing. | Cranelift; qualify an explicit lifecycle and hostile/positive tests; preserve existing narrow cohorts. |
+| `26.1-SQLITE` | Persistent database/statement ownership, success/status distinctions, failure cleanup, borrowed column lifetime and binding copy/retention policy. | Cranelift compiler prerequisite, then Stdlib API; the contract's SQLite entry gates must pass before claiming support. |
+| `26.1-DEPLOY` | Application/third-party native provenance, capabilities, human approval, strong isolation, audit and revocation. | Semantic/runtime and product owners under VISION §§93–98; not activated by this compiler release. |
+
+**26.1 exit gate:** FFI-R1–R6 all have merged, reviewed, exact-head and final-main
+evidence; the explicit follow-up register remains visible and OPEN. An
+implementation closure patch must bind the scoped contract to authoritative
+owning tests/registry rows without rewriting frozen predecessor projections or
+weakening an old assertion. The phase row then reports completion of this
+first-release scope, never completion of the deferred general model.
+Phase 26.2–26.6 retain their existing purposes and exit gates, including the
+final-source native bridge, supported hosts, committed digests, offline
+verification and emitted-object fixed point. The separate full no-host-C launch
+gate in `docs/CRANELIFT_LAUNCH.md` is unchanged.
+
+### Original D/E/F specification and merged increment record
+
+The following staging and historical evidence retain their original scope.
+For first-release scheduling and closure, apply the explicit required/deferred
+disposition above; do not read old “remains open” statements as completion of
+either the first-release gates or the broader model.
 
 **A — additive grammar and no-op parsing.** Parse `unsafe`, `unsafe {}` blocks,
 and `unsafe func` signatures. Initially typecheck them as identity scopes with
@@ -1760,7 +1871,8 @@ obligations without anyone deciding to.
 
 | Work | Design recorded in |
 | --- | --- |
-| FFI/native-call metadata and policy | `STEP51_DEFERRED_UNSAFE_SEMANTICS.md` |
+| First-release FFI scope, claims, required gates and follow-ups | `docs/FIRST_RELEASE_FFI_CONTRACT.md` and the first-release section above |
+| FFI/native-call metadata and policy history | `STEP51_DEFERRED_UNSAFE_SEMANTICS.md` |
 | Layout-aware FFI validation | `STEP51_DEFERRED_UNSAFE_SEMANTICS.md` |
 | Isolated FFI arena checkpoint | `STEP51_DEFERRED_UNSAFE_SEMANTICS.md` under its legacy “sandboxed” name |
 | Address-origin metadata and non-laundering | `STEP51_DEFERRED_UNSAFE_SEMANTICS.md` |
