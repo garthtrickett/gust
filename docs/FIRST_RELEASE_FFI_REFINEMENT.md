@@ -51,7 +51,7 @@ Local checks passed:
 
 - `git diff --cached --check`;
 - `python3 scripts/phase21_roadmap.py check-review`;
-- `python3 scripts/phase23_mir_to_c_deprecation_opening.py check-review`;
+- historical text-manifest `check-review` (exact command in the owning PR);
 - local link/anchor and scope comparisons: all six phase statuses OPEN, original
   26.1 staging/evidence and 26.2–26.6 sections byte-identical, docs-only diff.
 
@@ -59,7 +59,12 @@ An initial attempt to append the scope pointer to `TASK.md` failed its frozen
 activation-manifest check. That append was withdrawn; its existing canonical
 roadmap pointer is sufficient. No registry, projection or assertion changed.
 The historical text-manifest check then passed under tracked work
-`1792451437634` (exit 0).
+`1792451437634` (exit 0). A later validation-log addition spelled out the
+historical validator filename and accidentally enrolled this new document as a
+retired-backend text surface. CI caught that bookkeeping change; it reproduced
+locally under work `1792451623093`. The exact command remains in the owning PR,
+while this record names the check without that irrelevant backend reference.
+No compiler scope, historical manifest, projection or assertion was changed.
 
 The owning pull request records authoritative CI results. These documentation
 checks do not demonstrate that zlib or the proposed byte marshalling works.
