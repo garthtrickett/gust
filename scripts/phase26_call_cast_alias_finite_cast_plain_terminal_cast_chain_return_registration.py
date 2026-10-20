@@ -43,6 +43,25 @@ def record(activation: dict) -> dict:
 
 
 def before_approved_digest(activation: dict, path: str, live_digest: str) -> str:
+    reference_relay = activation.get(
+        "reference_index_element_r4_cr15_relay_digest_successor")
+    if reference_relay is not None and path == CR15_PATH:
+        require(reference_relay == {
+            "path": CR15_PATH,
+            "previous_digest": activation[APPROVED_RELAY_KEY]["current_digest"],
+            "current_digest": live_digest,
+            "partial_extra_or_substituted_relay": "rejected",
+        }, "Reference index relay digest drifted")
+        live_digest = reference_relay["previous_digest"]
+    reference_index = activation.get(
+        "reference_index_element_r4_phase23_text_surface_successor", {})
+    matches = [entry for entry in reference_index.get("changed_rows", [])
+               if entry.get("path") == path]
+    require(len(matches) <= 1, f"duplicate Reference index text path: {path}")
+    if matches:
+        require(matches[0].get("current_digest") == live_digest,
+                f"Reference index text digest drifted: {path}")
+        live_digest = matches[0]["previous_digest"]
     relay = activation.get(APPROVED_RELAY_KEY)
     if relay is not None and path == CR15_PATH:
         require(relay == {
@@ -129,6 +148,33 @@ def before_new_counts(activation: dict, path: str,
 
 
 def before_new_spelling(activation: dict, live: dict) -> dict:
+    reference_index = activation.get(
+        "reference_index_element_r4_spelling_inventory_successor")
+    if reference_index is not None:
+        from phase24_semantic_spelling_inventory import source_sites
+        from phase24_semantic_spelling_inventory import manifest_summary
+        previous = activation[APPROVED_SPELLING_KEY]["current_inventory_summary"]
+        source_paths = [
+            "compiler/phase26_reference_index_element_mismatch.gst",
+            "compiler/phase26_reference_index_element_source.gst",
+            "compiler/typechecker.gst",
+        ]
+        require(reference_index == {
+            "contract_version":
+                "phase26_1r4_reference_index_element_spelling_inventory_successor_v1",
+            "previous_inventory_summary": previous,
+            "current_inventory_summary": live,
+            "changed_source_hashes": [
+                {"path": path, "digest": digest(path)} for path in source_paths],
+            "partial_extra_or_substituted_inventory": "rejected",
+        } and live == manifest_summary(source_sites()) and
+                live["source_file_count"] == previous["source_file_count"] + 2 and
+                live["site_count"] == previous["site_count"] and
+                live["semantic_site_count"] == previous["semantic_site_count"] and
+                live["classification_counts"] == previous["classification_counts"] and
+                live["unknown_site_count"] == 0,
+                "Reference index spelling inventory drifted")
+        live = previous
     approved = activation.get(APPROVED_SPELLING_KEY)
     if approved is not None:
         from phase24_semantic_spelling_inventory import source_sites
@@ -175,6 +221,25 @@ def before_new_spelling(activation: dict, live: dict) -> dict:
 
 
 def before_new_filename(activation: dict, live: list[dict]) -> list[dict]:
+    reference_index = activation.get(
+        "reference_index_element_r4_filename_site_successor")
+    if reference_index is not None:
+        from phase24_filename_behavior_characterization import source_sites
+        prior = activation[KEY]["filename_site_successor"]["current_sites"]
+        require(reference_index == {
+            "contract_version":
+                "phase26_1r4_reference_index_element_filename_site_successor_v1",
+            "previous_sites": prior,
+            "current_sites": live,
+            "line_deltas": [now["line"] - before["line"]
+                            for before, now in zip(prior, live)],
+            "partial_extra_or_substituted_site": "rejected",
+        } and live == source_sites() and len(prior) == len(live) == 3 and
+                all({key: value for key, value in now.items() if key != "line"} ==
+                    {key: value for key, value in before.items() if key != "line"}
+                    for before, now in zip(prior, live)),
+                "Reference index filename sites drifted")
+        live = prior
     previous = activation[OLD]["filename_site_successor"]["current_sites"]
     require(record(activation).get("filename_site_successor") == {
         "contract_version": "phase26_1e_cast_alias_finite_cast_plain_terminal_cast_chain_return_filename_successor_v1",
@@ -308,7 +373,7 @@ def main() -> None:
         previous_digest, previous_counts = prior_text(activation, path)
         require(entry == {
             'path': path, 'previous_digest': previous_digest,
-            'current_digest': digest(path),
+            'current_digest': before_approved_digest(activation, path, digest(path)),
             'previous_match_counts': previous_counts,
             'current_match_counts': counts,
         }, f'text surface drifted: {path}')

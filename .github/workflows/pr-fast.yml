@@ -858,6 +858,9 @@ jobs:
       - name: Phase 26 safe-call Reference provenance
         run: just guard-cranelift-phase26-safe-reference-call
 
+      - name: Phase 26 borrowed Reference index element
+        run: just guard-cranelift-phase26-reference-index-element
+
       - name: Phase 26 raw null safe boundary
         run: just guard-cranelift-phase26-raw-null-safe-boundary
 

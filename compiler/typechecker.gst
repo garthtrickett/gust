@@ -3308,17 +3308,10 @@ func env_resolve_selector_storage_target_type(env: *TypeEnvironment[ctx], select
     }
 }
 
-func env_resolve_index_storage_target_type(env: *TypeEnvironment[ctx], index_idx_nlaunder: Index[ast.Expression[ctx], ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) ast.Type[ctx] {
+func env_resolve_index_storage_element_type(env: *TypeEnvironment[ctx], index_alloc_type_nlaunder: ast.Type[ctx], read_requires_pointer_nlaunder: int, ctx: &Arena) ast.Type[ctx] {
     mut index_storage_void_nlaunder: ast.Type[ctx];
     unsafe {
         index_storage_void_nlaunder.tag = 3; // Void
-
-        mut index_expr_nlaunder := ctx[index_idx_nlaunder];
-        if index_expr_nlaunder.tag != 8 {
-            return index_storage_void_nlaunder;
-        }
-
-        mut index_alloc_type_nlaunder := check_expression(index_expr_nlaunder.IndexAccess.allocator, env, scope, ctx);
         index_alloc_type_nlaunder = env_resolve_type(env, index_alloc_type_nlaunder, ctx);
 
         if index_alloc_type_nlaunder.tag == 6 { // Slice
@@ -3357,11 +3350,13 @@ func env_resolve_index_storage_target_type(env: *TypeEnvironment[ctx], index_idx
                         }
                         return index_data_inner_nlaunder;
                     }
-                    index_data_type_nlaunder = env_resolve_type(env, index_data_type_nlaunder, ctx);
-                    if index_alloc_type_nlaunder.Struct.brand != empty[Index[str, ctx]] {
-                        index_data_type_nlaunder = typechecker_substitute_brand(index_data_type_nlaunder, index_alloc_type_nlaunder.Struct.brand, ctx);
+                    if read_requires_pointer_nlaunder == 0 {
+                        index_data_type_nlaunder = env_resolve_type(env, index_data_type_nlaunder, ctx);
+                        if index_alloc_type_nlaunder.Struct.brand != empty[Index[str, ctx]] {
+                            index_data_type_nlaunder = typechecker_substitute_brand(index_data_type_nlaunder, index_alloc_type_nlaunder.Struct.brand, ctx);
+                        }
+                        return index_data_type_nlaunder;
                     }
-                    return index_data_type_nlaunder;
                 }
 
                 mut index_values_lookup_nlaunder := index_layout_nlaunder.fields.Get("values");
@@ -3375,16 +3370,31 @@ func env_resolve_index_storage_target_type(env: *TypeEnvironment[ctx], index_idx
                         }
                         return index_values_inner_nlaunder;
                     }
-                    index_values_type_nlaunder = env_resolve_type(env, index_values_type_nlaunder, ctx);
-                    if index_alloc_type_nlaunder.Struct.brand != empty[Index[str, ctx]] {
-                        index_values_type_nlaunder = typechecker_substitute_brand(index_values_type_nlaunder, index_alloc_type_nlaunder.Struct.brand, ctx);
+                    if read_requires_pointer_nlaunder == 0 {
+                        index_values_type_nlaunder = env_resolve_type(env, index_values_type_nlaunder, ctx);
+                        if index_alloc_type_nlaunder.Struct.brand != empty[Index[str, ctx]] {
+                            index_values_type_nlaunder = typechecker_substitute_brand(index_values_type_nlaunder, index_alloc_type_nlaunder.Struct.brand, ctx);
+                        }
+                        return index_values_type_nlaunder;
                     }
-                    return index_values_type_nlaunder;
                 }
             }
         }
 
         return index_storage_void_nlaunder;
+    }
+}
+
+func env_resolve_index_storage_target_type(env: *TypeEnvironment[ctx], index_idx_nlaunder: Index[ast.Expression[ctx], ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) ast.Type[ctx] {
+    mut index_storage_void_nlaunder: ast.Type[ctx];
+    unsafe {
+        index_storage_void_nlaunder.tag = 3; // Void
+        mut index_expr_nlaunder := ctx[index_idx_nlaunder];
+        if index_expr_nlaunder.tag != 8 {
+            return index_storage_void_nlaunder;
+        }
+        mut index_alloc_type_nlaunder := check_expression(index_expr_nlaunder.IndexAccess.allocator, env, scope, ctx);
+        return env_resolve_index_storage_element_type(env, index_alloc_type_nlaunder, 0, ctx);
     }
 }
 
@@ -4632,6 +4642,12 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                 }
             }
 
+            if alloc_t.tag == 11 { // Borrowed indexed storage
+                mut borrowed_element_nlaunder := env_resolve_index_storage_element_type(env, alloc_t, 1, ctx);
+                if borrowed_element_nlaunder.tag != 3 { // Void: no pointer-backed element
+                    return borrowed_element_nlaunder;
+                }
+            }
             if alloc_t.tag == 6 { // Slice
                 return ctx[alloc_t.Slice.inner];
             }

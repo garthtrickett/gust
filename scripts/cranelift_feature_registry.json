@@ -48056,6 +48056,235 @@
     "why_this_exists": "The Status section of docs/PHASE25_ROADMAP.md is the record the phase-completion loop checks, and it was wrong in both directions. 25.10a (#468) and 25.10 (#470) were unticked though both merged. 25.12 was ticked though its Exit Gate was not met, and 25.12b (#472), which corrected it, had no row at all. The Patch 25.0 heading still read IN PROGRESS. The section's own rule is 'ticked when merged to main', and this repo's convention is that a later patch ticks merged ones -- Patch 25.7 is what ticked 25.12 and 25.11a -- so 25.12b could not tick itself."
   },
   "phase26_activation_audit": {
+    "reference_index_element_r4_phase22_invocation_successor": {
+      "contract_version": "phase26_1r4_reference_index_element_phase22_invocations_v1",
+      "partial_extra_or_substituted_invocation": "rejected",
+      "added_rows": [
+        {
+          "path": "scripts/phase26_reference_index_element.sh",
+          "line": 16,
+          "recipe": "none",
+          "compiler_token": "./gust",
+          "selection": "explicit_cranelift",
+          "consumer_class": "already_explicit_or_parser_probe",
+          "owner": "cranelift",
+          "expected_artifact": "selected_backend_contract",
+          "expected_transition": "preserve_explicit_selection",
+          "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+          "command": "GUST_TEST_MIR_TO_C_UNAVAILABLE=1 GUST_NATIVE_BACKEND_DRIVER=\"$driver\" ./gust --backend cranelift -o \"$case_dir/program\" \"$source\" >\"$case_dir/compile.stdout\" 2>\"$case_dir/compile.stderr\""
+        },
+        {
+          "path": "scripts/phase26_reference_index_element.sh",
+          "line": 40,
+          "recipe": "none",
+          "compiler_token": "./gust",
+          "selection": "explicit_cranelift",
+          "consumer_class": "already_explicit_or_parser_probe",
+          "owner": "cranelift",
+          "expected_artifact": "selected_backend_contract",
+          "expected_transition": "preserve_explicit_selection",
+          "falsifier": "explicit_selection_is_removed_or_routes_to_a_different_backend",
+          "command": "GUST_TEST_MIR_TO_C_UNAVAILABLE=1 GUST_PHASE26_R4_POISON_MARKER=\"$PWD/$marker\" GUST_NATIVE_BACKEND_DRIVER=\"$PWD/$build_root/poison-driver\" ./gust --backend cranelift -o \"$build_root/mismatch\" compiler/phase26_reference_index_element_mismatch.gst >\"$build_root/mismatch.stdout\" 2>\"$build_root/mismatch.stderr\""
+        }
+      ]
+    },
+    "reference_index_element_r4_phase23_text_surface_successor": {
+      "contract_version": "phase26_1r4_reference_index_element_phase23_text_surface_successor_v1",
+      "partial_extra_or_substituted_surface": "rejected",
+      "changed_rows": [
+        {
+          "path": ".github/workflows/pr-fast.yml",
+          "previous_digest": "56236e6b3b82a0fd88cba276755e06a73551745f1d8681d5eeb265cd2c669a1e",
+          "current_digest": "2c7827dd51250a7c8062e1415e497e8f310f314af6d500f1c83a25a2e6601163",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "mir_to_c_name": 8,
+            "generated_c_contract": 1
+          }
+        },
+        {
+          "path": "compiler/typechecker.gst",
+          "previous_digest": "43f85d3401daa49b043cb5b799be63407382ffabb808a415d92cb6c924fc8378",
+          "current_digest": "a5dbe536f48661fe657b5fe33e82394282e233d9b72f410f850fee92ab7eb46c",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "mir_to_c_name": 0,
+            "generated_c_contract": 1
+          }
+        },
+        {
+          "path": "justfile",
+          "previous_digest": "a098b816da1b995af772942442cf463d5f90ad73308aa20f0c6d215444f8a3d6",
+          "current_digest": "2c8d2a5e76a9543214edc9b24a8304deaaec4e166a0acf421b8f4c9cb1484ce8",
+          "match_counts": {
+            "explicit_backend_spelling": 1,
+            "mir_to_c_name": 729,
+            "generated_c_contract": 9
+          }
+        },
+        {
+          "path": "scripts/cranelift_test_levels.json",
+          "previous_digest": "5cbea14231fb4e6e711c564e1ce65092f1dc8d298a2b66b5510f0f597b5785f2",
+          "current_digest": "a56d18f7b890272219f6b2f1c65b640ab43135c07ab0a7483d094fd4b55f53f2",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "mir_to_c_name": 30,
+            "generated_c_contract": 0
+          }
+        },
+        {
+          "path": "scripts/phase26_call_cast_alias_finite_cast_plain_terminal_cast_chain_return_registration.py",
+          "previous_digest": "042e7834eff8857c441226d64f5c36b3366d007fc7fd98b466af9bf3567256c0",
+          "current_digest": "8f0b2bc91d300badefd098b48e8cfeff19d2d237bd0c067be20ffea3cda596f3",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "mir_to_c_name": 2,
+            "generated_c_contract": 1
+          }
+        }
+      ]
+    },
+    "reference_index_element_r4_cr15_relay_digest_successor": {
+      "path": "scripts/phase24_cr15_stdlib_guard_transition.py",
+      "previous_digest": "b74aa4578087644591b0163ea46bba3f0cb6da5b536c9b6c17b0bced1627c087",
+      "current_digest": "388c36c33a225a4c5d692eb71968aadd7ae357b66108accba6606401855d0467",
+      "partial_extra_or_substituted_relay": "rejected"
+    },
+    "reference_index_element_r4_filename_site_successor": {
+      "contract_version": "phase26_1r4_reference_index_element_filename_site_successor_v1",
+      "previous_sites": [
+        {
+          "id": "var_declaration_stack_classification",
+          "path": "compiler/typechecker.gst",
+          "line": 15874,
+          "selector": "test_tcs_",
+          "selector_occurrence": 1,
+          "statement_context": "statement_var_declaration",
+          "window_digest": "6c0f176e1543d9a2ba125569875a69081a81b28bfc4c80eef31c57ec7ccfa05c"
+        },
+        {
+          "id": "assignment_hazard_and_view_invalidation",
+          "path": "compiler/typechecker.gst",
+          "line": 16217,
+          "selector": "test_index_",
+          "selector_occurrence": 1,
+          "statement_context": "statement_assignment",
+          "window_digest": "eea5c7abf9fb4c50d51f644267c5ee59133db8d998a0fe7c25dd0ec1503029c3"
+        },
+        {
+          "id": "guard_payload_stack_classification",
+          "path": "compiler/typechecker.gst",
+          "line": 17276,
+          "selector": "test_tcs_",
+          "selector_occurrence": 2,
+          "statement_context": "statement_guard_payload_binding",
+          "window_digest": "4bf05983015fd1ecc3c3cc4c1399491868107155a5435fed90f8beeeb8f16a6f"
+        }
+      ],
+      "current_sites": [
+        {
+          "id": "var_declaration_stack_classification",
+          "path": "compiler/typechecker.gst",
+          "line": 15890,
+          "selector": "test_tcs_",
+          "selector_occurrence": 1,
+          "statement_context": "statement_var_declaration",
+          "window_digest": "6c0f176e1543d9a2ba125569875a69081a81b28bfc4c80eef31c57ec7ccfa05c"
+        },
+        {
+          "id": "assignment_hazard_and_view_invalidation",
+          "path": "compiler/typechecker.gst",
+          "line": 16233,
+          "selector": "test_index_",
+          "selector_occurrence": 1,
+          "statement_context": "statement_assignment",
+          "window_digest": "eea5c7abf9fb4c50d51f644267c5ee59133db8d998a0fe7c25dd0ec1503029c3"
+        },
+        {
+          "id": "guard_payload_stack_classification",
+          "path": "compiler/typechecker.gst",
+          "line": 17292,
+          "selector": "test_tcs_",
+          "selector_occurrence": 2,
+          "statement_context": "statement_guard_payload_binding",
+          "window_digest": "4bf05983015fd1ecc3c3cc4c1399491868107155a5435fed90f8beeeb8f16a6f"
+        }
+      ],
+      "line_deltas": [
+        16,
+        16,
+        16
+      ],
+      "partial_extra_or_substituted_site": "rejected"
+    },
+    "reference_index_element_r4_spelling_inventory_successor": {
+      "contract_version": "phase26_1r4_reference_index_element_spelling_inventory_successor_v1",
+      "previous_inventory_summary": {
+        "source_file_count": 2368,
+        "site_count": 1429,
+        "semantic_site_count": 720,
+        "semantic_manifest_digest": "7c1542ce2609d93f9fc5f391f985d90459f166bdc4805b02806101d5857bf4a7",
+        "classification_counts": {
+          "semantic_or_intrinsic_recognition": 720,
+          "diagnostic": 10,
+          "serialization": 1,
+          "mangling_or_generated_name": 9,
+          "comment": 2,
+          "fixture_or_evidence": 679,
+          "non_decision_comparison": 8
+        },
+        "partition_manifest_digests": {
+          "diagnostic": "86f34897d46e576e85e88ba114bab01a9159cd7f4da7ecb38b8128fd3c9be9a0",
+          "serialization": "47cf827b52d783e60a08a2856040e7bebdb94590a27b7903d5301eb16fe1d508",
+          "mangling_or_generated_name": "0c2ce373d5b8c44e38b2d5f7b42cfcbf9a151e6a0bb8e7c06519e8e5b99aa706",
+          "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+          "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+          "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
+        },
+        "complete_manifest_digest": "2c58162bb3eb02293be8a6313a57271dce301586c0ba299723612260ce06664f",
+        "unknown_site_count": 0
+      },
+      "current_inventory_summary": {
+        "source_file_count": 2370,
+        "site_count": 1429,
+        "semantic_site_count": 720,
+        "semantic_manifest_digest": "755158a757d246fb0d0880330ce612c8cb251d3b38d2be480a6c116ab9487a08",
+        "classification_counts": {
+          "semantic_or_intrinsic_recognition": 720,
+          "diagnostic": 10,
+          "serialization": 1,
+          "mangling_or_generated_name": 9,
+          "comment": 2,
+          "fixture_or_evidence": 679,
+          "non_decision_comparison": 8
+        },
+        "partition_manifest_digests": {
+          "diagnostic": "3bc9a1357d85e022fc1f9c29445e653aaba7c2f6b0aebd460be1e76bc338a127",
+          "serialization": "47cf827b52d783e60a08a2856040e7bebdb94590a27b7903d5301eb16fe1d508",
+          "mangling_or_generated_name": "e663c0f769aadf6aa8e3a9db72aa37b937e9ce2f5a7d82829a17bf6d713e4cc3",
+          "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+          "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+          "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
+        },
+        "complete_manifest_digest": "778658b83527e870f6f87e2ebf1773c275ce8aabf6ae60f6ee6ad250e0dfbe91",
+        "unknown_site_count": 0
+      },
+      "changed_source_hashes": [
+        {
+          "path": "compiler/phase26_reference_index_element_mismatch.gst",
+          "digest": "8876863de87a914099ee3b59d02cf2c6d2b89353c1364e0e39ecac56869a46db"
+        },
+        {
+          "path": "compiler/phase26_reference_index_element_source.gst",
+          "digest": "18f26e78cd7d069c9f4463e10b30cf090ecc0995c7cbb0430f9b003bb5c79083"
+        },
+        {
+          "path": "compiler/typechecker.gst",
+          "digest": "a5dbe536f48661fe657b5fe33e82394282e233d9b72f410f850fee92ab7eb46c"
+        }
+      ],
+      "partial_extra_or_substituted_inventory": "rejected"
+    },
     "approved_package_r1_phase23_text_surface_successor": {
       "contract_version": "phase26_1r1_approved_package_phase23_text_surface_successor_v1",
       "partial_extra_or_substituted_surface": "rejected",
