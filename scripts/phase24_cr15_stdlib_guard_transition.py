@@ -3858,6 +3858,18 @@ def relay_site_anchor(registry: dict) -> dict:
 def normalize_phase22_invocations(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Project the exact post relay onto the closed Phase 22 site identity."""
+    reference_index = registry.get("phase26_activation_audit", {}).get(
+        "reference_index_element_r4_phase22_invocation_successor")
+    if reference_index is not None:
+        path = "scripts/phase26_reference_index_element.sh"
+        actual = [row for row in rows if row["path"] == path]
+        expected = reference_index.get("added_rows", [])
+        require(reference_index.get("contract_version") ==
+                "phase26_1r4_reference_index_element_phase22_invocations_v1" and
+                reference_index.get("partial_extra_or_substituted_invocation") ==
+                "rejected" and len(expected) == 2 and actual == expected,
+                "Phase 26 Reference index invocation successor drifted")
+        rows = [row for row in rows if row["path"] != path]
     if registry.get("phase26_activation_audit", {}).get(
             "call_outer_move_take_return_zero_increment"):
         from phase26_call_outer_move_take_return_registration import before_outer_move_invocations
@@ -4117,6 +4129,32 @@ def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    reference_index = registry.get("phase26_activation_audit", {}).get(
+        "reference_index_element_r4_phase23_text_surface_successor")
+    if reference_index is not None:
+        changed = reference_index.get("changed_rows", [])
+        paths = [
+            ".github/workflows/pr-fast.yml",
+            "compiler/typechecker.gst",
+            "justfile",
+            "scripts/cranelift_test_levels.json",
+            "scripts/phase26_call_cast_alias_finite_cast_plain_terminal_cast_chain_return_registration.py",
+        ]
+        live = {row["path"]: row for row in rows}
+        require(reference_index.get("contract_version") ==
+                "phase26_1r4_reference_index_element_phase23_text_surface_successor_v1" and
+                reference_index.get("partial_extra_or_substituted_surface") ==
+                "rejected" and [entry.get("path") for entry in changed] == paths and
+                all(live.get(entry["path"], {}).get("digest") ==
+                    entry.get("current_digest") and
+                    live[entry["path"]].get("match_counts") ==
+                    entry.get("match_counts") and
+                    len(entry.get("previous_digest", "")) == 64
+                    for entry in changed),
+                "Phase 26 Reference index text surface drifted")
+        previous = {entry["path"]: entry["previous_digest"] for entry in changed}
+        rows = [dict(row, digest=previous[row["path"]])
+                if row["path"] in previous else row for row in rows]
     approved = registry.get("phase26_activation_audit", {}).get(
         "approved_package_r1_phase23_text_surface_successor")
     if approved is not None:

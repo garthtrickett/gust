@@ -24355,6 +24355,13 @@ guard-cranelift-phase26-safe-reference-call:
     python3 scripts/phase26_safe_reference_call_registration.py
     bash scripts/phase26_safe_reference_call.sh
 
+# Phase 26 R4: borrowed indexed reads preserve the registered element type.
+guard-cranelift-phase26-reference-index-element:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-reference-index-element | grep -F $'guard-cranelift-phase26-reference-index-element\t2\t' >/dev/null
+    bash scripts/phase26_reference_index_element.sh
+
 # Phase 26.1E4: known zero-derived raw pointers cannot cross declared-safe boundaries.
 guard-cranelift-phase26-raw-null-safe-boundary:
     #!/usr/bin/env bash
