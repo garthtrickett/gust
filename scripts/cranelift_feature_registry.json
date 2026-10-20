@@ -48056,6 +48056,48 @@
     "why_this_exists": "The Status section of docs/PHASE25_ROADMAP.md is the record the phase-completion loop checks, and it was wrong in both directions. 25.10a (#468) and 25.10 (#470) were unticked though both merged. 25.12 was ticked though its Exit Gate was not met, and 25.12b (#472), which corrected it, had no row at all. The Patch 25.0 heading still read IN PROGRESS. The section's own rule is 'ticked when merged to main', and this repo's convention is that a later patch ticks merged ones -- Patch 25.7 is what ticked 25.12 and 25.11a -- so 25.12b could not tick itself."
   },
   "phase26_activation_audit": {
+    "approved_package_r1_phase23_text_surface_successor": {
+      "contract_version": "phase26_1r1_approved_package_phase23_text_surface_successor_v1",
+      "partial_extra_or_substituted_surface": "rejected",
+      "changed_rows": [
+        {
+          "path": ".github/workflows/pr-fast.yml",
+          "previous_digest": "51200513ed05a1035caa34b8d85fdb9ec9e9912b387fc20d47f5ee27e9b2158e",
+          "current_digest": "56236e6b3b82a0fd88cba276755e06a73551745f1d8681d5eeb265cd2c669a1e",
+          "match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 8, "generated_c_contract": 1}
+        },
+        {
+          "path": "compiler/experiments/cranelift/src/full_program.rs",
+          "previous_digest": "e8b9432afeeb0bc55784a48053d98114bd058070134832ec7ff78d2f0abad332",
+          "current_digest": "d684dee2b45c3fc19b8f2821f41c9fa2ace9f5c3ce690abc5fddf99d901dbf7f",
+          "match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 1, "generated_c_contract": 0}
+        },
+        {
+          "path": "compiler/experiments/cranelift/src/main.rs",
+          "previous_digest": "e6d93d4ffa7179c5ce5176064e5406cfab271a74002306a41f749e56b94f21d7",
+          "current_digest": "2767682811fef214ded5fa76e1d3babf6393a152c1bf95e1f301a57092741715",
+          "match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 97, "generated_c_contract": 0}
+        },
+        {
+          "path": "justfile",
+          "previous_digest": "ced731a6d3165638a3a62db05b365c45bd98862b184a378747aac5dd53a402bd",
+          "current_digest": "a098b816da1b995af772942442cf463d5f90ad73308aa20f0c6d215444f8a3d6",
+          "match_counts": {"explicit_backend_spelling": 1, "mir_to_c_name": 729, "generated_c_contract": 9}
+        },
+        {
+          "path": "scripts/phase21_full_compiler_native_qualification.py",
+          "previous_digest": "482c06dbc7483a53aea8e76fe770b071d80dfe51aabc3fe8a6e9cee1b78977a6",
+          "current_digest": "035b0b537c12bc74a9e18ff6a3bc6f1d5b4bcef44f7e0fdeb71b05d2d5462acd",
+          "match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 3, "generated_c_contract": 3}
+        },
+        {
+          "path": "scripts/cranelift_test_levels.json",
+          "previous_digest": "1eaef53e181f38a7887fafff26fd4bca70f6709e1b35f1e1c1a0c459a4090c0d",
+          "current_digest": "5cbea14231fb4e6e711c564e1ce65092f1dc8d298a2b66b5510f0f597b5785f2",
+          "match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 30, "generated_c_contract": 0}
+        }
+      ]
+    },
     "call_outer_move_take_return_zero_increment": {
       "contract_version": "phase26_1e_outer_move_take_return_zero_v1",
       "status": "bounded_outer_move_one_take_safe_return_rejection_qualified",

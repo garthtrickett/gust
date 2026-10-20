@@ -4117,6 +4117,35 @@ def phase2510_disenrolled_paths(registry: dict, rows: list) -> set:
 def normalize_phase23_text_surfaces(
         registry: dict, rows: list[dict[str, object]]) -> list[dict[str, object]]:
     """Keep closed Phase 23 projection identity across this exact control-plane relay."""
+    approved = registry.get("phase26_activation_audit", {}).get(
+        "approved_package_r1_phase23_text_surface_successor")
+    if approved is not None:
+        changed = approved.get("changed_rows", [])
+        paths = [
+            ".github/workflows/pr-fast.yml",
+            "compiler/experiments/cranelift/src/full_program.rs",
+            "compiler/experiments/cranelift/src/main.rs",
+            "justfile",
+            "scripts/phase21_full_compiler_native_qualification.py",
+            "scripts/cranelift_test_levels.json",
+        ]
+        require(approved.get("contract_version") ==
+                "phase26_1r1_approved_package_phase23_text_surface_successor_v1" and
+                approved.get("partial_extra_or_substituted_surface") ==
+                "rejected" and
+                [entry.get("path") for entry in changed] == paths,
+                "Phase 26 approved package text surface successor shape drifted")
+        live = {row["path"]: row for row in rows}
+        for entry in changed:
+            row = live.get(entry["path"])
+            require(row is not None and
+                    row["digest"] == entry["current_digest"] and
+                    row["match_counts"] == entry["match_counts"] and
+                    len(entry["previous_digest"]) == 64,
+                    f"Phase 26 approved package text surface drifted: {entry['path']}")
+        by_path = {entry["path"]: entry for entry in changed}
+        rows = [dict(row, digest=by_path[row["path"]]["previous_digest"])
+                if row["path"] in by_path else row for row in rows]
     terminal_chain = registry.get("phase26_activation_audit", {}).get(
         "call_cast_alias_finite_cast_plain_terminal_cast_chain_return_zero_increment", {}).get(
         "phase23_text_surface_successor")
