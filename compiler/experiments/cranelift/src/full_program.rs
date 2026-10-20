@@ -2315,6 +2315,44 @@ fn runtime_symbol(node: &Node) -> String {
     }
 }
 
+/// Exact external call candidates emitted by declare_runtime_calls. Keep this
+/// preflight paired with that method so package admission and object emission
+/// use the same canonical Program and runtime symbol spelling.
+pub fn unbound_runtime_call_symbols(program: &Program) -> Vec<(String, String)> {
+    let declared: HashSet<_> = program
+        .functions
+        .iter()
+        .map(|function| function.qualified_name.as_str())
+        .collect();
+    program
+        .nodes
+        .iter()
+        .filter(|node| {
+            node.kind == "Call"
+                && !is_inline_call(program, node)
+                && !declared.contains(node.second_text.as_str())
+        })
+        // Existing compiler-owned os.Exit lowering maps to the C ABI exit.
+        // It is a fixed intrinsic call shape, not permission for a source
+        // declaration or arbitrary Call node to import libc's exit symbol.
+        .filter(|node| {
+            !(node.second_text == "os_Exit"
+                && node.ty == "Void"
+                && node.children.len() == 2
+                && program.nodes.get(node.children[1]).is_some_and(|argument|
+                    argument.ty == "Int"))
+        })
+        .map(|node| {
+            let source = if node.second_text.is_empty() {
+                node.text.clone()
+            } else {
+                node.second_text.clone()
+            };
+            (source, runtime_symbol(node))
+        })
+        .collect()
+}
+
 fn snprintf_format(value: &str) -> String {
     value.replace("%s", "%.*s")
 }
@@ -5884,7 +5922,11 @@ pub fn selected_repr_int_echo_host(contents: &str) -> Result<bool, Box<dyn Error
 
 pub fn lower_contents(contents: &str, object_path: &Path) -> Result<String, Box<dyn Error>> {
     let program = parse(contents)?;
-    FullProgramCompiler::new(&program)?.finish(object_path)
+    lower_program(&program, object_path)
+}
+
+pub fn lower_program(program: &Program, object_path: &Path) -> Result<String, Box<dyn Error>> {
+    FullProgramCompiler::new(program)?.finish(object_path)
 }
 
 pub fn validate_path(path: &Path) -> Result<String, Box<dyn Error>> {

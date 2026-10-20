@@ -6,6 +6,8 @@ rust-version = "1.94.0"
 publish = false
 
 [dependencies]
+ed25519-dalek = { version = "=2.2.0", default-features = false }
+sha2 = { version = "=0.10.9", default-features = false }
 cranelift-codegen = "=0.131.0"
 cranelift-frontend = "=0.131.0"
 cranelift-module = "=0.131.0"
