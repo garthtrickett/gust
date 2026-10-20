@@ -48064,39 +48064,237 @@
           "path": ".github/workflows/pr-fast.yml",
           "previous_digest": "51200513ed05a1035caa34b8d85fdb9ec9e9912b387fc20d47f5ee27e9b2158e",
           "current_digest": "56236e6b3b82a0fd88cba276755e06a73551745f1d8681d5eeb265cd2c669a1e",
-          "match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 8, "generated_c_contract": 1}
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "mir_to_c_name": 8,
+            "generated_c_contract": 1
+          }
         },
         {
           "path": "compiler/experiments/cranelift/src/full_program.rs",
           "previous_digest": "e8b9432afeeb0bc55784a48053d98114bd058070134832ec7ff78d2f0abad332",
           "current_digest": "d684dee2b45c3fc19b8f2821f41c9fa2ace9f5c3ce690abc5fddf99d901dbf7f",
-          "match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 1, "generated_c_contract": 0}
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "mir_to_c_name": 1,
+            "generated_c_contract": 0
+          }
         },
         {
           "path": "compiler/experiments/cranelift/src/main.rs",
           "previous_digest": "e6d93d4ffa7179c5ce5176064e5406cfab271a74002306a41f749e56b94f21d7",
           "current_digest": "2767682811fef214ded5fa76e1d3babf6393a152c1bf95e1f301a57092741715",
-          "match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 97, "generated_c_contract": 0}
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "mir_to_c_name": 97,
+            "generated_c_contract": 0
+          }
         },
         {
           "path": "justfile",
           "previous_digest": "ced731a6d3165638a3a62db05b365c45bd98862b184a378747aac5dd53a402bd",
           "current_digest": "a098b816da1b995af772942442cf463d5f90ad73308aa20f0c6d215444f8a3d6",
-          "match_counts": {"explicit_backend_spelling": 1, "mir_to_c_name": 729, "generated_c_contract": 9}
+          "match_counts": {
+            "explicit_backend_spelling": 1,
+            "mir_to_c_name": 729,
+            "generated_c_contract": 9
+          }
         },
         {
           "path": "scripts/phase21_full_compiler_native_qualification.py",
           "previous_digest": "482c06dbc7483a53aea8e76fe770b071d80dfe51aabc3fe8a6e9cee1b78977a6",
           "current_digest": "035b0b537c12bc74a9e18ff6a3bc6f1d5b4bcef44f7e0fdeb71b05d2d5462acd",
-          "match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 3, "generated_c_contract": 3}
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "mir_to_c_name": 3,
+            "generated_c_contract": 3
+          }
         },
         {
           "path": "scripts/cranelift_test_levels.json",
           "previous_digest": "1eaef53e181f38a7887fafff26fd4bca70f6709e1b35f1e1c1a0c459a4090c0d",
           "current_digest": "5cbea14231fb4e6e711c564e1ce65092f1dc8d298a2b66b5510f0f597b5785f2",
-          "match_counts": {"explicit_backend_spelling": 0, "mir_to_c_name": 30, "generated_c_contract": 0}
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "mir_to_c_name": 30,
+            "generated_c_contract": 0
+          }
+        },
+        {
+          "path": "scripts/phase26_call_cast_alias_finite_cast_plain_terminal_cast_chain_return_registration.py",
+          "previous_digest": "211754bf98ef653a7b69f5ba3a09b81b68165d96994ddd51be59dc5692bd7164",
+          "current_digest": "042e7834eff8857c441226d64f5c36b3366d007fc7fd98b466af9bf3567256c0",
+          "match_counts": {
+            "explicit_backend_spelling": 0,
+            "mir_to_c_name": 2,
+            "generated_c_contract": 1
+          }
         }
       ]
+    },
+    "approved_package_r1_cr15_relay_digest_successor": {
+      "path": "scripts/phase24_cr15_stdlib_guard_transition.py",
+      "previous_digest": "33f7136f1afd5258848b537b182ddec25769a6f25ca07502c53358dac67becbc",
+      "current_digest": "b74aa4578087644591b0163ea46bba3f0cb6da5b536c9b6c17b0bced1627c087",
+      "partial_extra_or_substituted_relay": "rejected"
+    },
+    "approved_package_r1_spelling_inventory_successor": {
+      "contract_version": "phase26_1r1_approved_package_spelling_successor_v1",
+      "previous_inventory_summary": {
+        "source_file_count": 2367,
+        "site_count": 1418,
+        "semantic_site_count": 709,
+        "semantic_manifest_digest": "4ca04bfa0c1886a1a43172fcbc77b03c0f57e157d575fea2ca35bd94f3335543",
+        "classification_counts": {
+          "semantic_or_intrinsic_recognition": 709,
+          "diagnostic": 10,
+          "serialization": 1,
+          "mangling_or_generated_name": 9,
+          "comment": 2,
+          "fixture_or_evidence": 679,
+          "non_decision_comparison": 8
+        },
+        "partition_manifest_digests": {
+          "diagnostic": "48cce94805ab8e79aee883b979578575b7bf2afe7a2db0d2b3cf1b83ae59a082",
+          "serialization": "47cf827b52d783e60a08a2856040e7bebdb94590a27b7903d5301eb16fe1d508",
+          "mangling_or_generated_name": "0c2ce373d5b8c44e38b2d5f7b42cfcbf9a151e6a0bb8e7c06519e8e5b99aa706",
+          "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+          "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+          "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
+        },
+        "complete_manifest_digest": "0ed657d97b87c9f731c99e79ceef67f473639033654abe97779ace03b8d943f5",
+        "unknown_site_count": 0
+      },
+      "current_inventory_summary": {
+        "source_file_count": 2368,
+        "site_count": 1429,
+        "semantic_site_count": 720,
+        "semantic_manifest_digest": "7c1542ce2609d93f9fc5f391f985d90459f166bdc4805b02806101d5857bf4a7",
+        "classification_counts": {
+          "semantic_or_intrinsic_recognition": 720,
+          "diagnostic": 10,
+          "serialization": 1,
+          "mangling_or_generated_name": 9,
+          "comment": 2,
+          "fixture_or_evidence": 679,
+          "non_decision_comparison": 8
+        },
+        "partition_manifest_digests": {
+          "diagnostic": "86f34897d46e576e85e88ba114bab01a9159cd7f4da7ecb38b8128fd3c9be9a0",
+          "serialization": "47cf827b52d783e60a08a2856040e7bebdb94590a27b7903d5301eb16fe1d508",
+          "mangling_or_generated_name": "0c2ce373d5b8c44e38b2d5f7b42cfcbf9a151e6a0bb8e7c06519e8e5b99aa706",
+          "comment": "6c84ac779c82fc6ae5bfb653f34848965cd2d8445e827340d845cfe95208f1db",
+          "fixture_or_evidence": "3395286d25f0394871f098da9a3d260cb4745ab3c4fa9da7aa6cc68b1b72dbe5",
+          "non_decision_comparison": "87541c86aeaad80e96afc79c7c74d7dad8aa745acfdeb6a78f0bc2c16b65a0b7"
+        },
+        "complete_manifest_digest": "2c58162bb3eb02293be8a6313a57271dce301586c0ba299723612260ce06664f",
+        "unknown_site_count": 0
+      },
+      "changed_source_hashes": [
+        {
+          "path": "compiler/experiments/cranelift/src/approved_package.rs",
+          "digest": "30e79fe47b94a0810621351c86a8a36d2684082f5b7b8d74f4a3b096f8890d79"
+        },
+        {
+          "path": "compiler/experiments/cranelift/src/full_program.rs",
+          "digest": "d684dee2b45c3fc19b8f2821f41c9fa2ace9f5c3ce690abc5fddf99d901dbf7f"
+        },
+        {
+          "path": "compiler/experiments/cranelift/src/main.rs",
+          "digest": "2767682811fef214ded5fa76e1d3babf6393a152c1bf95e1f301a57092741715"
+        }
+      ],
+      "added_sites": [
+        {
+          "path": "compiler/experiments/cranelift/src/approved_package.rs",
+          "line": 1401,
+          "classification": "semantic_or_intrinsic_recognition",
+          "spellings": [
+            "os_LogInt"
+          ]
+        },
+        {
+          "path": "compiler/experiments/cranelift/src/approved_package.rs",
+          "line": 1402,
+          "classification": "semantic_or_intrinsic_recognition",
+          "spellings": [
+            "os_LogInt"
+          ]
+        },
+        {
+          "path": "compiler/experiments/cranelift/src/approved_package.rs",
+          "line": 1452,
+          "classification": "semantic_or_intrinsic_recognition",
+          "spellings": [
+            "os_LogInt"
+          ]
+        },
+        {
+          "path": "compiler/experiments/cranelift/src/approved_package.rs",
+          "line": 1454,
+          "classification": "semantic_or_intrinsic_recognition",
+          "spellings": [
+            "os_LogInt"
+          ]
+        },
+        {
+          "path": "compiler/experiments/cranelift/src/approved_package.rs",
+          "line": 1483,
+          "classification": "semantic_or_intrinsic_recognition",
+          "spellings": [
+            "os_Exit"
+          ]
+        },
+        {
+          "path": "compiler/experiments/cranelift/src/approved_package.rs",
+          "line": 1485,
+          "classification": "semantic_or_intrinsic_recognition",
+          "spellings": [
+            "os_Exit"
+          ]
+        },
+        {
+          "path": "compiler/experiments/cranelift/src/approved_package.rs",
+          "line": 1494,
+          "classification": "semantic_or_intrinsic_recognition",
+          "spellings": [
+            "os_Exit"
+          ]
+        },
+        {
+          "path": "compiler/experiments/cranelift/src/approved_package.rs",
+          "line": 1507,
+          "classification": "semantic_or_intrinsic_recognition",
+          "spellings": [
+            "os_LogInt"
+          ]
+        },
+        {
+          "path": "compiler/experiments/cranelift/src/approved_package.rs",
+          "line": 1513,
+          "classification": "semantic_or_intrinsic_recognition",
+          "spellings": [
+            "os_LogInt"
+          ]
+        },
+        {
+          "path": "compiler/experiments/cranelift/src/approved_package.rs",
+          "line": 1536,
+          "classification": "semantic_or_intrinsic_recognition",
+          "spellings": [
+            "os_LogInt"
+          ]
+        },
+        {
+          "path": "compiler/experiments/cranelift/src/full_program.rs",
+          "line": 2339,
+          "classification": "semantic_or_intrinsic_recognition",
+          "spellings": [
+            "os_Exit"
+          ]
+        }
+      ],
+      "partial_extra_or_substituted_inventory": "rejected"
     },
     "call_outer_move_take_return_zero_increment": {
       "contract_version": "phase26_1e_outer_move_take_return_zero_v1",

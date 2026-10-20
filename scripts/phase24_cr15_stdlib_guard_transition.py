@@ -4128,6 +4128,7 @@ def normalize_phase23_text_surfaces(
             "justfile",
             "scripts/phase21_full_compiler_native_qualification.py",
             "scripts/cranelift_test_levels.json",
+            "scripts/phase26_call_cast_alias_finite_cast_plain_terminal_cast_chain_return_registration.py",
         ]
         require(approved.get("contract_version") ==
                 "phase26_1r1_approved_package_phase23_text_surface_successor_v1" and

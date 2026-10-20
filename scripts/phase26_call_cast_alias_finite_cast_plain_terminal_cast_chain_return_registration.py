@@ -15,6 +15,9 @@ POSITIVE = "compiler/phase26_call_return_zero_test_entry.gst"
 CR15_PATH = "scripts/phase24_cr15_stdlib_guard_transition.py"
 HELPER = "scripts/phase26_call_cast_alias_finite_cast_plain_terminal_cast_return_registration.py"
 NEW_HELPER = "scripts/phase26_call_cast_alias_finite_cast_plain_terminal_cast_chain_return_registration.py"
+APPROVED_TEXT_KEY = "approved_package_r1_phase23_text_surface_successor"
+APPROVED_SPELLING_KEY = "approved_package_r1_spelling_inventory_successor"
+APPROVED_RELAY_KEY = "approved_package_r1_cr15_relay_digest_successor"
 TEXT_PATHS = ["compiler/typechecker.gst",
               "scripts/phase26_call_cast_alias_return_cast_registration.py",
               "scripts/phase26_call_cast_initialized_alias_return_registration.py",
@@ -37,6 +40,26 @@ def digest(path: str) -> str:
 
 def record(activation: dict) -> dict:
     return activation.get(KEY, {})
+
+
+def before_approved_digest(activation: dict, path: str, live_digest: str) -> str:
+    relay = activation.get(APPROVED_RELAY_KEY)
+    if relay is not None and path == CR15_PATH:
+        require(relay == {
+            "path": CR15_PATH,
+            "previous_digest": activation[KEY]["cr15_relay_digest_successor"]["current_digest"],
+            "current_digest": live_digest,
+            "partial_extra_or_substituted_relay": "rejected",
+        }, "approved-package relay digest drifted")
+        return relay["previous_digest"]
+    rows = activation.get(APPROVED_TEXT_KEY, {}).get("changed_rows", [])
+    hits = [entry for entry in rows if entry.get("path") == path]
+    require(len(hits) <= 1, f"duplicate approved-package text path: {path}")
+    if not hits:
+        return live_digest
+    require(hits[0].get("current_digest") == live_digest,
+            f"approved-package text digest drifted: {path}")
+    return hits[0]["previous_digest"]
 
 
 def prior_text(activation: dict, path: str) -> tuple[str, dict[str, int]]:
@@ -67,6 +90,7 @@ def prior_text(activation: dict, path: str) -> tuple[str, dict[str, int]]:
 
 
 def before_new_digest(activation: dict, path: str, live_digest: str) -> str:
+    live_digest = before_approved_digest(activation, path, live_digest)
     row = record(activation)
     for field in ("guard_digest_successor", "positive_fixture_successor",
                   "cr15_relay_digest_successor"):
@@ -105,6 +129,35 @@ def before_new_counts(activation: dict, path: str,
 
 
 def before_new_spelling(activation: dict, live: dict) -> dict:
+    approved = activation.get(APPROVED_SPELLING_KEY)
+    if approved is not None:
+        from phase24_semantic_spelling_inventory import source_sites
+        previous = record(activation)["spelling_inventory_successor"]["current_inventory_summary"]
+        paths = ["compiler/experiments/cranelift/src/approved_package.rs",
+                 "compiler/experiments/cranelift/src/full_program.rs",
+                 "compiler/experiments/cranelift/src/main.rs"]
+        source_hashes = [{"path": path, "digest": digest(path)} for path in paths]
+        sites = [{"path": site["path"], "line": site["line"],
+                  "classification": site["classification"],
+                  "spellings": site["spellings"]}
+                 for site in source_sites()
+                 if site["path"] == paths[0] or
+                 (site["path"] == paths[1] and site["line"] == 2339)]
+        require(approved == {
+            "contract_version": "phase26_1r1_approved_package_spelling_successor_v1",
+            "previous_inventory_summary": previous,
+            "current_inventory_summary": live,
+            "changed_source_hashes": source_hashes,
+            "added_sites": sites,
+            "partial_extra_or_substituted_inventory": "rejected",
+        } and live["source_file_count"] == previous["source_file_count"] + 1 and
+                live["site_count"] == previous["site_count"] + 11 and
+                live["semantic_site_count"] == previous["semantic_site_count"] + 11 and
+                len(sites) == 11 and all(site["classification"] ==
+                    "semantic_or_intrinsic_recognition" for site in sites) and
+                live["unknown_site_count"] == 0,
+                "approved-package spelling inventory drifted")
+        live = previous
     previous = activation[OLD]["spelling_inventory_successor"]["current_inventory_summary"]
     require(record(activation).get("spelling_inventory_successor") == {
         "contract_version": "phase26_1e_cast_alias_finite_cast_plain_terminal_cast_chain_return_spelling_successor_v1",
@@ -187,7 +240,7 @@ def main() -> None:
         previous = activation[OLD][field]['current_digest']
         require(row[field] == {
             'path': path, 'previous_digest': previous,
-            'current_digest': digest(path),
+            'current_digest': before_approved_digest(activation, path, digest(path)),
             'partial_extra_or_substituted_' +
             ('guard' if field.startswith('guard') else
              'fixture' if field.startswith('positive') else 'relay'): 'rejected',
@@ -262,7 +315,8 @@ def main() -> None:
     counts = {name: len(pattern.findall((ROOT / NEW_HELPER).read_text()))
               for name, pattern in SURFACE_PATTERNS.items()}
     require(added[0] == {
-        'path': NEW_HELPER, 'digest': digest(NEW_HELPER),
+        'path': NEW_HELPER, 'digest': before_approved_digest(activation, NEW_HELPER,
+                                                          digest(NEW_HELPER)),
         'match_counts': counts, 'classification': 'archive_candidate',
         'owner': 'cranelift',
         'current_route': 'tracked_MIR_to_C_or_generated_C_surface',
