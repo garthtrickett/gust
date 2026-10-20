@@ -219,10 +219,28 @@ def validate() -> dict:
     for token in (
         "mod full_program;",
         "full_program::validate_contents(canonical_mir)",
-        "full_program::lower_contents(",
         '"phase21-full-program-object"',
     ):
         require(token in rust, f"worker integration lacks {token}")
+    # The approved-package successor verifies and lowers one parsed Program.
+    # Preserve the old full_program::lower_contents entry point for callers
+    # while requiring the source-route preflight to precede lowering.
+    source_route = rust.split(
+        "if module_record.canonical_format == full_program::FORMAT {", 1
+    )[1].split('source_route = "phase21_full_program";', 1)[0]
+    sequence = (
+        "let parsed_program = full_program::parse(&module_record.canonical_mir)",
+        "approved_package::select(\n                &parsed_program",
+        "approved_package::verify_foreign_coverage(\n                    &parsed_program",
+        "approved_package::VerifiedPackage::admit(\n                    &package_dir, selected, &parsed_program,",
+        "full_program::lower_program(&parsed_program, &object_path)",
+    )
+    offsets = [source_route.find(token) for token in sequence]
+    require(all(offset >= 0 for offset in offsets) and offsets == sorted(offsets) and
+            source_route.count(
+                "full_program::parse(&module_record.canonical_mir)") == 1 and
+            "full_program::lower_contents(" not in source_route,
+            "full-program worker preflight and lowering do not share the parsed Program")
     for token in (
         'pub const FORMAT: &str = "gust.compiler_executable_mir.v1";',
         "pub fn validate_contents",

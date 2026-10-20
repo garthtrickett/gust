@@ -801,6 +801,9 @@ jobs:
       - name: Restore executable bit
         run: chmod +x ./gust 2>/dev/null || true
 
+      - name: Phase 26 approved signed package and linker boundary
+        run: just guard-cranelift-phase26-approved-package
+
       - name: Phase 26 FFI position policy
         run: just guard-cranelift-phase26-ffi-position-policy
 

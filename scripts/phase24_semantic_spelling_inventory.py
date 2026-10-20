@@ -262,6 +262,7 @@ def validate() -> tuple[dict, list[dict], dict]:
     rows = source_sites()
     validate_row_shape(rows)
     summary = manifest_summary(rows)
+    current_summary = summary
     require(value.get("contract_version") == "phase24_semantic_spelling_inventory_v1",
             "contract version drifted")
     require(value.get("status") == "patch24_2_complete_report_only",
@@ -2599,7 +2600,12 @@ def validate() -> tuple[dict, list[dict], dict]:
         "edits_stdlib": False,
         "begins_patch24_3": False,
     }, "report-only boundary drifted")
-    return value, rows, live_summary
+    # The R1 successor verifies the new source population before the historical
+    # summary is projected back through the closed registration chain.  Render
+    # the review from the same current rows and current summary.
+    approved_spelling = registry.get("phase26_activation_audit", {}).get(
+        "approved_package_r1_spelling_inventory_successor")
+    return value, rows, current_summary if approved_spelling is not None else live_summary
 
 def run_falsifiers(rows: list[dict], summary: dict) -> None:
     require(len(rows) > 1, "falsifiers require multiple rows")

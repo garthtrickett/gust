@@ -31,6 +31,7 @@ mod target_authority;
 mod scope_exit_cleanup;
 mod specialized_resource;
 mod full_program;
+mod approved_package;
 
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::env;
@@ -16463,6 +16464,7 @@ fn compile_phase10_scalar_metadata_request_path(
     let mut requires_phase26_repr_c_write_host_object = false;
     let mut requires_phase26_raw_untrusted_host_object = false;
     let mut requires_phase26_repr_int_host_object = false;
+    let mut approved_package = None;
 
     for (module_index, module_record) in bundle.modules.iter().enumerate() {
         preserved_metadata_count += module_record.metadata.len();
@@ -16541,6 +16543,33 @@ fn compile_phase10_scalar_metadata_request_path(
                     "full-program canonical MIR requires exactly one bundle module",
                 ));
             }
+            // The verifier and the lowerer consume this same parsed Program.
+            // No path reread or second parse can replace the checked ABI.
+            let parsed_program = full_program::parse(&module_record.canonical_mir)
+                .map_err(|error| phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    format!("approved package canonical parse failed: {error}"),
+                ))?;
+            if parsed_program.target_triple != request.target_triple
+                || parsed_program.object_format != request.object_format
+            {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::CanonicalMirValidation,
+                    Phase10BackendRequestFailureKind::InvalidCanonicalMir,
+                    "full-program target differs from outer backend request",
+                ));
+            }
+            let selected_package = approved_package::select(
+                &parsed_program, approved_package::PRODUCTION_REGISTRY,
+            )?;
+            if selected_package.is_some() && env::var_os("GUST_NATIVE_LINK_FLAVOR").is_some() {
+                return Err(phase10_backend_request_error(
+                    Phase10BackendRequestStage::RequestValidation,
+                    Phase10BackendRequestFailureKind::InvalidRequest,
+                    "approved packages require the fixed GNU link profile",
+                ));
+            }
             if full_program::selected_repr_c_probe_host(&module_record.canonical_mir)? {
                 requires_phase26_repr_c_host_object = true;
             }
@@ -16559,10 +16588,46 @@ fn compile_phase10_scalar_metadata_request_path(
             if full_program::selected_repr_int_echo_host(&module_record.canonical_mir)? {
                 requires_phase26_repr_int_host_object = true;
             }
-            full_program::lower_contents(
-                &module_record.canonical_mir,
-                &object_path,
-            )
+            let mut historical_hosts = Vec::new();
+            if requires_phase26_repr_c_host_object {
+                historical_hosts.push(HOST_REPR_C_PROBE_SYMBOL);
+            }
+            if requires_phase26_packed_host_object {
+                historical_hosts.push(HOST_PACKED_PROBE_SYMBOL);
+            }
+            if requires_phase26_packed_write_host_object {
+                historical_hosts.push(HOST_PACKED_WRITE_SYMBOL);
+            }
+            if requires_phase26_repr_c_write_host_object {
+                historical_hosts.push(HOST_REPR_C_WRITE_SYMBOL);
+            }
+            if requires_phase26_raw_untrusted_host_object {
+                historical_hosts.push(HOST_RAW_UNTRUSTED_INT_SYMBOL);
+            }
+            if requires_phase26_repr_int_host_object {
+                historical_hosts.push(HOST_REPR_INT_ECHO_SYMBOL);
+            }
+            if let Some(selected) = selected_package {
+                // The approved package is a separate release profile. Historical
+                // source routes continue to own their existing test-host inputs.
+                let runtime_archive = env::current_exe()?
+                    .parent()
+                    .ok_or_else(|| IoError::new(ErrorKind::InvalidData, "worker location"))?
+                    .join("gust-runtime-package.a");
+                approved_package::verify_foreign_coverage(
+                    &parsed_program,
+                    approved_package::PRODUCTION_REGISTRY,
+                    request.runtime_package_path.as_deref(),
+                    &runtime_archive,
+                    &historical_hosts,
+                )?;
+                let package_dir = approved_package::installed_directory(selected.id)?;
+                approved_package = Some(approved_package::VerifiedPackage::admit(
+                    &package_dir, selected, &parsed_program,
+                    &approved_package::PRODUCTION_SNAPSHOT, &request.output_path,
+                )?);
+            }
+            full_program::lower_program(&parsed_program, &object_path)
             .map_err(|error| {
                 phase10_backend_request_error(
                     Phase10BackendRequestStage::CanonicalMirValidation,
@@ -16803,12 +16868,18 @@ fn compile_phase10_scalar_metadata_request_path(
     } else {
         linker_driver
     };
+    let linker_driver = if approved_package.is_some() {
+        OsString::from("/usr/bin/cc")
+    } else {
+        linker_driver
+    };
     let link_request = CompilerMirLinkRequest {
         output_path: request.output_path.clone(),
         ordered_object_inputs: object_paths.clone(),
         c_source: None,
         host_object: approved_host_object.clone(),
         runtime_package: request.runtime_package_path.clone(),
+        approved_package,
         additional_libraries: Vec::new(),
         additional_linker_args,
         trailing_linker_args,
@@ -16920,6 +16991,11 @@ fn compile_phase10_scalar_metadata_request_path(
     );
     println!("target_triple: {}", request.target_triple);
     println!("object_format: {}", request.object_format);
+    if let Some(package_id) = report.approved_package_id.as_deref() {
+        println!("approved_package_id: {package_id}");
+        println!("approved_package_release: {}", report.approved_package_release.as_deref().unwrap_or(""));
+        println!("approved_package_manifest_sha256: {}", report.approved_package_manifest_sha256.as_deref().unwrap_or(""));
+    }
     println!("output_path: {}", request.output_path.display());
     Ok(())
 }
@@ -33073,6 +33149,7 @@ struct CompilerMirLinkRequest {
     c_source: Option<PathBuf>,
     host_object: Option<PathBuf>,
     runtime_package: Option<PathBuf>,
+    approved_package: Option<approved_package::VerifiedPackage>,
     additional_libraries: Vec<String>,
     additional_linker_args: Vec<OsString>,
     // Patch 25.12b. Emitted AFTER the inputs, because rustc wants its crate
@@ -33110,6 +33187,9 @@ struct CompilerMirLinkReport {
     c_source: Option<PathBuf>,
     host_object: Option<PathBuf>,
     runtime_package: Option<PathBuf>,
+    approved_package_id: Option<String>,
+    approved_package_release: Option<String>,
+    approved_package_manifest_sha256: Option<String>,
     additional_libraries: Vec<String>,
     additional_linker_args: Vec<OsString>,
     environment_overrides: Vec<(OsString, OsString)>,
@@ -33329,6 +33409,7 @@ fn parse_compiler_mir_link_request(
         c_source,
         host_object,
         runtime_package,
+        approved_package: None,
         additional_libraries,
         additional_linker_args,
         // Patch 25.12b: the parsed-request route keeps the C-driver shape it
@@ -33419,6 +33500,40 @@ fn validate_compiler_mir_link_input(
 fn validate_compiler_mir_link_request(
     request: &CompilerMirLinkRequest,
 ) -> Result<(), Box<dyn Error>> {
+    if let Some(package) = request.approved_package.as_ref() {
+        if request.c_source.is_some() || request.host_object.is_some()
+            || request.link_via_rustc || !request.additional_libraries.is_empty()
+            || !request.additional_linker_args.is_empty()
+            || !request.trailing_linker_args.is_empty()
+            || !request.environment_overrides.is_empty()
+            || request.linker_driver != OsString::from("/usr/bin/cc") {
+            return Err(IoError::new(ErrorKind::InvalidData,
+                "approved native package requires isolated fixed GNU linker profile").into());
+        }
+        package.recheck_staged_bytes()?;
+        let package_definitions = package.definitions();
+        for object_path in &request.ordered_object_inputs {
+            let definitions = approved_package::external_definitions(object_path, false)?;
+            if definitions.iter().any(|name| package_definitions.contains(name)) {
+                return Err(IoError::new(ErrorKind::InvalidData,
+                    "approved native package conflicts with generated object symbol").into());
+            }
+        }
+        if let Some(runtime) = request.runtime_package.as_deref() {
+            let expected = env::current_exe()?.parent()
+                .ok_or_else(|| IoError::new(ErrorKind::InvalidData, "worker location"))?
+                .join("gust-runtime-package.a");
+            if runtime != expected {
+                return Err(IoError::new(ErrorKind::InvalidData,
+                    "approved link runtime package must be worker sibling").into());
+            }
+            let definitions = approved_package::external_definitions(runtime, true)?;
+            if definitions.iter().any(|name| package_definitions.contains(name)) {
+                return Err(IoError::new(ErrorKind::InvalidData,
+                    "approved native package conflicts with runtime symbol").into());
+            }
+        }
+    }
     if request.output_path.file_name().is_none() {
         return Err(IoError::new(
             ErrorKind::InvalidInput,
@@ -33728,6 +33843,11 @@ fn run_compiler_mir_link_request(
     )?;
 
     let mut command = Command::new(&request.linker_driver);
+    if request.approved_package.is_some() {
+        command.env_clear();
+        command.env("PATH", "/usr/bin:/bin");
+        command.env("LC_ALL", "C");
+    }
     for linker_arg in &request.additional_linker_args {
         command.arg(linker_arg);
     }
@@ -33741,6 +33861,10 @@ fn run_compiler_mir_link_request(
     }
     if let Some(host_object) = request.host_object.as_deref() {
         link_inputs.push(host_object.to_path_buf());
+    }
+    if let Some(package) = request.approved_package.as_ref() {
+        package.recheck_staged_bytes()?;
+        link_inputs.extend(package.link_inputs().iter().cloned());
     }
     if let Some(runtime_package) = request.runtime_package.as_deref() {
         link_inputs.push(runtime_package.to_path_buf());
@@ -33901,6 +34025,12 @@ fn run_compiler_mir_link_request(
         ));
     }
 
+    let approved_package_id = request.approved_package.as_ref()
+        .map(|package| package.package_id().to_string());
+    let approved_package_release = request.approved_package.as_ref()
+        .map(|package| package.release().to_string());
+    let approved_package_manifest_sha256 = request.approved_package.as_ref()
+        .map(|package| approved_package::hex_digest(package.manifest_digest()));
     Ok(CompilerMirLinkReport {
         classification,
         failure_stage,
@@ -33919,6 +34049,9 @@ fn run_compiler_mir_link_request(
         c_source: request.c_source,
         host_object: request.host_object,
         runtime_package: request.runtime_package,
+        approved_package_id,
+        approved_package_release,
+        approved_package_manifest_sha256,
         additional_libraries: request.additional_libraries,
         additional_linker_args: request.additional_linker_args,
         environment_overrides: request.environment_overrides,
@@ -33975,6 +34108,11 @@ fn print_compiler_mir_link_report(report: &CompilerMirLinkReport) {
     }
     if let Some(runtime_package) = report.runtime_package.as_deref() {
         println!("runtime_package: {}", runtime_package.display());
+    }
+    if let Some(package_id) = report.approved_package_id.as_deref() {
+        println!("approved_package_id: {package_id}");
+        println!("approved_package_release: {}", report.approved_package_release.as_deref().unwrap_or(""));
+        println!("approved_package_manifest_sha256: {}", report.approved_package_manifest_sha256.as_deref().unwrap_or(""));
     }
     for library in &report.additional_libraries {
         println!("additional_library: {library}");
