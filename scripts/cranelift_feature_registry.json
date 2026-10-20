@@ -48135,7 +48135,7 @@
         {
           "path": "scripts/phase26_call_cast_alias_finite_cast_plain_terminal_cast_chain_return_registration.py",
           "previous_digest": "042e7834eff8857c441226d64f5c36b3366d007fc7fd98b466af9bf3567256c0",
-          "current_digest": "9f9da25aec24264473d4710ad0af3f4cac25e3b4506c1d13279036537ff0214c",
+          "current_digest": "8f0b2bc91d300badefd098b48e8cfeff19d2d237bd0c067be20ffea3cda596f3",
           "match_counts": {
             "explicit_backend_spelling": 0,
             "mir_to_c_name": 2,
@@ -48245,7 +48245,7 @@
         "unknown_site_count": 0
       },
       "current_inventory_summary": {
-        "source_file_count": 2368,
+        "source_file_count": 2370,
         "site_count": 1429,
         "semantic_site_count": 720,
         "semantic_manifest_digest": "755158a757d246fb0d0880330ce612c8cb251d3b38d2be480a6c116ab9487a08",
@@ -48270,6 +48270,14 @@
         "unknown_site_count": 0
       },
       "changed_source_hashes": [
+        {
+          "path": "compiler/phase26_reference_index_element_mismatch.gst",
+          "digest": "8876863de87a914099ee3b59d02cf2c6d2b89353c1364e0e39ecac56869a46db"
+        },
+        {
+          "path": "compiler/phase26_reference_index_element_source.gst",
+          "digest": "18f26e78cd7d069c9f4463e10b30cf090ecc0995c7cbb0430f9b003bb5c79083"
+        },
         {
           "path": "compiler/typechecker.gst",
           "digest": "a5dbe536f48661fe657b5fe33e82394282e233d9b72f410f850fee92ab7eb46c"

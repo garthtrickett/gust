@@ -154,7 +154,11 @@ def before_new_spelling(activation: dict, live: dict) -> dict:
         from phase24_semantic_spelling_inventory import source_sites
         from phase24_semantic_spelling_inventory import manifest_summary
         previous = activation[APPROVED_SPELLING_KEY]["current_inventory_summary"]
-        source_paths = ["compiler/typechecker.gst"]
+        source_paths = [
+            "compiler/phase26_reference_index_element_mismatch.gst",
+            "compiler/phase26_reference_index_element_source.gst",
+            "compiler/typechecker.gst",
+        ]
         require(reference_index == {
             "contract_version":
                 "phase26_1r4_reference_index_element_spelling_inventory_successor_v1",
@@ -164,7 +168,7 @@ def before_new_spelling(activation: dict, live: dict) -> dict:
                 {"path": path, "digest": digest(path)} for path in source_paths],
             "partial_extra_or_substituted_inventory": "rejected",
         } and live == manifest_summary(source_sites()) and
-                live["source_file_count"] == previous["source_file_count"] and
+                live["source_file_count"] == previous["source_file_count"] + 2 and
                 live["site_count"] == previous["site_count"] and
                 live["semantic_site_count"] == previous["semantic_site_count"] and
                 live["classification_counts"] == previous["classification_counts"] and
