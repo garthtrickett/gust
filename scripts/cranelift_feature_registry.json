@@ -48149,7 +48149,7 @@
           {
             "path": ".github/workflows/pr-fast.yml",
             "previous_digest": "2c7827dd51250a7c8062e1415e497e8f310f314af6d500f1c83a25a2e6601163",
-            "current_digest": "563a92abcde9ae85f8d260099c8865f0d2dee317f6c47fa1849f0bf87e8f34bf",
+            "current_digest": "4836d340c789772d057cc7a93785c33eb34a17abe779e01b65b2588ab902ff2b",
             "match_counts": {
               "explicit_backend_spelling": 0,
               "mir_to_c_name": 8,
@@ -48362,7 +48362,7 @@
             "path": "scripts/phase26_r2_scoped_copy_registration.py",
             "current_row": {
               "path": "scripts/phase26_r2_scoped_copy_registration.py",
-              "digest": "96fe244c610583fcee188a0c95beeac628e86aa03bb85c4f09db17982e12c509",
+              "digest": "b91b5e3aa6bdc700a4e2e9a645758a156753de8d4a8a3ed3f4c87a52a08e4241",
               "match_counts": {
                 "explicit_backend_spelling": 0,
                 "mir_to_c_name": 1,

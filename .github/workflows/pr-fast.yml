@@ -807,6 +807,9 @@ jobs:
       - name: Phase 26 approved signed package and linker boundary
         run: just guard-cranelift-phase26-approved-package
 
+      - name: Phase 26 scoped signed byte-copy runtime
+        run: just guard-cranelift-phase26-scoped-byte-copy
+
       - name: Phase 26 FFI position policy
         run: just guard-cranelift-phase26-ffi-position-policy
 
@@ -845,9 +848,6 @@ jobs:
 
       - name: Phase 26 composed borrow positions and native error status
         run: just guard-cranelift-phase26-ffi-policy-vector-status
-
-      - name: Phase 26 scoped signed byte-copy runtime
-        run: just guard-cranelift-phase26-scoped-byte-copy
 
       - name: Phase 26 raw cast provenance
         run: just guard-cranelift-phase26-raw-cast-provenance

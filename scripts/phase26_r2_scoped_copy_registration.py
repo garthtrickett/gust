@@ -46,6 +46,27 @@ def digest(path: str) -> str:
     return hashlib.sha256((ROOT / path).read_bytes()).hexdigest()
 
 
+def validate_ci_tool_order(workflow: str) -> None:
+    """Run R2 against the build artifact before an older guard rebuilds it."""
+    marker = "\n  phase26-ffi-position:\n"
+    require(workflow.count(marker) == 1, "R2 CI Phase26 job is ambiguous")
+    body = workflow.split(marker, 1)[1]
+    next_job = re.search(r"(?m)^  [A-Za-z][\w-]*:\s*$", body)
+    if next_job:
+        body = body[:next_job.start()]
+    names = re.findall(r"(?m)^      - name: (.+)$", body)
+    required = (
+        "Phase 26 approved signed package and linker boundary",
+        "Phase 26 scoped signed byte-copy runtime",
+        "Phase 26 FFI position policy",
+    )
+    require(all(names.count(name) == 1 for name in required),
+            "R2 CI tool-binding step set drifted")
+    start = names.index(required[0])
+    require(tuple(names[start:start + 3]) == required,
+            "R2 CI tool-binding order drifted")
+
+
 @lru_cache(maxsize=1)
 def ensure_base() -> None:
     spec = BASE + "^{commit}"
@@ -296,6 +317,7 @@ def validate() -> None:
     from phase23_production_release_audit import scan as production_audit_scan
     normalize_production_audit(registry, production_audit_scan())
     normalize_relay(registry, digest(CR15_PATH))
+    validate_ci_tool_order((ROOT / ".github/workflows/pr-fast.yml").read_text())
     require("python3 scripts/phase26_r2_scoped_copy_registration.py" in
             (ROOT / "justfile").read_text() and
             "bash scripts/phase26_r2_scoped_copy.sh" in
@@ -458,7 +480,19 @@ def inversions() -> None:
     del missing_record["phase26_activation_audit"][KEY]
     rejected("old authority without R2 record", "R2 authority",
              lambda: identity(missing_record))
-    print(f"{GUARD}: thirty-two additive registration inversions ok")
+    workflow = (ROOT / ".github/workflows/pr-fast.yml").read_text()
+    before = ("      - name: Phase 26 scoped signed byte-copy runtime\n"
+              "        run: just guard-cranelift-phase26-scoped-byte-copy\n\n"
+              "      - name: Phase 26 FFI position policy\n"
+              "        run: just guard-cranelift-phase26-ffi-position-policy")
+    after = ("      - name: Phase 26 FFI position policy\n"
+             "        run: just guard-cranelift-phase26-ffi-position-policy\n\n"
+             "      - name: Phase 26 scoped signed byte-copy runtime\n"
+             "        run: just guard-cranelift-phase26-scoped-byte-copy")
+    require(workflow.count(before) == 1, "R2 CI ordering inversion did not move steps")
+    rejected("R2 guard after runtime archive rebuild", "R2 CI tool-binding order",
+             lambda: validate_ci_tool_order(workflow.replace(before, after)))
+    print(f"{GUARD}: thirty-three additive registration inversions ok")
 
 
 if __name__ == "__main__":
