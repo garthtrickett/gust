@@ -804,6 +804,9 @@ jobs:
       - name: Restore executable bit
         run: chmod +x ./gust 2>/dev/null || true
 
+      - name: Restore Phase 26 R2 native worker executable bit
+        run: chmod +x build/gust-native-backend
+
       - name: Phase 26 approved signed package and linker boundary
         run: just guard-cranelift-phase26-approved-package
 

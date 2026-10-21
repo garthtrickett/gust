@@ -58,8 +58,11 @@ export GUST_R2_RUNTIME_SHA256
 # The Gust producer must emit the same reviewed Program for three distinct
 # source shapes. Its normal CLI remains default-denied without a production
 # signing root. Only the source module path differs across checkouts.
-test -x ./gust
-test -x build/gust-native-backend
+test -x ./gust || { echo 'R2 Gust build artifact is not executable' >&2; exit 1; }
+test -x build/gust-native-backend || {
+    echo 'R2 native worker build artifact is not executable' >&2
+    exit 1
+}
 source_cases=(four_arg local_five_arg caller_five_arg zero_length renamed_types caller_distinct_arenas two_callers distinct_formals_same_arena)
 for case in "${source_cases[@]}"; do
     case_dir="$scratch/producer-$case"

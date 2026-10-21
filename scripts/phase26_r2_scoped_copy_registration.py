@@ -56,6 +56,7 @@ def validate_ci_tool_order(workflow: str) -> None:
         body = body[:next_job.start()]
     names = re.findall(r"(?m)^      - name: (.+)$", body)
     required = (
+        "Restore Phase 26 R2 native worker executable bit",
         "Phase 26 approved signed package and linker boundary",
         "Phase 26 scoped signed byte-copy runtime",
         "Phase 26 FFI position policy",
@@ -63,8 +64,12 @@ def validate_ci_tool_order(workflow: str) -> None:
     require(all(names.count(name) == 1 for name in required),
             "R2 CI tool-binding step set drifted")
     start = names.index(required[0])
-    require(tuple(names[start:start + 3]) == required,
+    require(tuple(names[start:start + len(required)]) == required,
             "R2 CI tool-binding order drifted")
+    restore = ("      - name: Restore Phase 26 R2 native worker executable bit\n"
+               "        run: chmod +x build/gust-native-backend")
+    require(body.count(restore) == 1,
+            "R2 CI native worker executable restoration drifted")
 
 
 @lru_cache(maxsize=1)
@@ -492,7 +497,15 @@ def inversions() -> None:
     require(workflow.count(before) == 1, "R2 CI ordering inversion did not move steps")
     rejected("R2 guard after runtime archive rebuild", "R2 CI tool-binding order",
              lambda: validate_ci_tool_order(workflow.replace(before, after)))
-    print(f"{GUARD}: thirty-three additive registration inversions ok")
+    restore = ("      - name: Restore Phase 26 R2 native worker executable bit\n"
+               "        run: chmod +x build/gust-native-backend")
+    require(workflow.count(restore) == 1,
+            "R2 CI executable-bit inversion did not find the restore command")
+    rejected("missing R2 worker executable restoration",
+             "R2 CI native worker executable restoration",
+             lambda: validate_ci_tool_order(workflow.replace(
+                 restore, restore.replace("chmod +x", "chmod -x"))))
+    print(f"{GUARD}: thirty-four additive registration inversions ok")
 
 
 if __name__ == "__main__":
