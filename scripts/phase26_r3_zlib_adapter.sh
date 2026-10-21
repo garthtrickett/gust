@@ -17,8 +17,8 @@ if [[ $actual != "$expected" ]]; then
     echo "Phase 26 zlib source archive digest mismatch" >&2
     exit 1
 fi
-if [[ $(uname -m) != x86_64 || -e $output ]]; then
-    echo "Phase 26 zlib build requires x86_64 and a new output directory" >&2
+if [[ $(uname -s) != Linux || $(uname -m) != x86_64 || -e $output ]]; then
+    echo "Phase 26 zlib build requires Linux x86_64 and a new output directory" >&2
     exit 1
 fi
 mkdir -m 700 "$output"
@@ -35,6 +35,10 @@ cp "$source/LICENSE" "$package/zlib-LICENSE"
 compiler=/usr/bin/cc
 archiver=/usr/bin/ar
 indexer=/usr/bin/ranlib
+if [[ $($compiler -dumpmachine) != x86_64-linux-gnu ]]; then
+    echo "Phase 26 zlib build requires the x86_64 GNU C target" >&2
+    exit 1
+fi
 # Only the static compression/decompression dependency closure is linked. The
 # gzip file API has no role in this package and would add file I/O symbols.
 objects=(adler32 crc32 deflate infback inffast inflate inftrees trees zutil \
@@ -64,12 +68,13 @@ done
     printf 'zlib_flags: -O2 -std=c11 -fno-common -Werror=implicit-function-declaration -I <pinned-source>\n'
     printf 'adapter_flags: -O2 -std=c11 -Wall -Wextra -Werror -fno-common\n'
     printf 'archive_flags: ar rcD; ranlib -D\n'
+    printf 'test_link_flags: -Wl,--wrap=malloc (allocation-failure oracle only)\n'
     printf 'zlib_objects: %s\n' "${objects[*]}"
 } > "$package/build-options.txt"
 
 "$compiler" -O2 -std=c11 -Wall -Wextra -Werror \
     -I "$package" "$repo/tests/phase26_r3_zlib_adapter.c" \
-    "$package/gust_zlib_adapter.o" "$package/libz.a" \
+    "$package/gust_zlib_adapter.o" "$package/libz.a" -Wl,--wrap=malloc \
     -o "$output/phase26-r3-adapter-test"
 "$output/phase26-r3-adapter-test"
 sha256sum "$package"/*

@@ -94,7 +94,7 @@ def identity(registry: dict) -> dict:
             value.get("owning_level2_guard") == GUARD and
             value.get("target") == "x86_64-unknown-linux-gnu" and
             value.get("zlib_version") == "1.3.2" and
-            value.get("zlib_source_archive_sha256") == ARCHIVE_SHA256 and
+            value.get("zlib_source_archive_digest") == ARCHIVE_SHA256 and
             value.get("production_signing_roots") == [] and
             value.get("public_safe_wrapper_status") == "open" and
             value.get("partial_extra_or_substituted_authority") == "rejected",
@@ -283,7 +283,7 @@ def build_record() -> dict:
         "owning_level2_guard": GUARD,
         "target": "x86_64-unknown-linux-gnu",
         "zlib_version": "1.3.2",
-        "zlib_source_archive_sha256": ARCHIVE_SHA256,
+        "zlib_source_archive_digest": ARCHIVE_SHA256,
         "production_signing_roots": [],
         "public_safe_wrapper_status": "open",
         "partial_extra_or_substituted_authority": "rejected",

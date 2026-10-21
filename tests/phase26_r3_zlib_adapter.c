@@ -1,11 +1,24 @@
 #include "gust_zlib_adapter.h"
 
 #include <limits.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
 static int failures;
+static int force_alloc_failure;
+static int forced_allocations;
+
+extern void *__real_malloc(size_t size);
+
+void *__wrap_malloc(size_t size) {
+    if (force_alloc_failure) {
+        forced_allocations++;
+        return NULL;
+    }
+    return __real_malloc(size);
+}
 
 #define CHECK(condition) do { \
     if (!(condition)) { \
@@ -76,6 +89,16 @@ int main(void) {
                               compressed, 8, 6) == -2);
     CHECK(gust_zlib_decompress(compressed, 8,
                                 (uint8_t *)(UINTPTR_MAX - 1u), 4) == -2);
+
+    /* This affects zlib's own allocator during the actual native calls. */
+    force_alloc_failure = 1;
+    CHECK(gust_zlib_compress(plain, 8, compressed, 64, 6) == -5);
+    CHECK(forced_allocations > 0);
+    forced_allocations = 0;
+    CHECK(gust_zlib_decompress(known_two, (int32_t)sizeof known_two,
+                               restored, 8) == -5);
+    CHECK(forced_allocations > 0);
+    force_alloc_failure = 0;
 
     if (failures != 0) {
         return 1;
