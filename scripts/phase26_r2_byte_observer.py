@@ -15,6 +15,26 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def debugger_identity(gdb_path: Path) -> dict:
+    version = subprocess.run([str(gdb_path), "--version"], capture_output=True,
+                             text=True, timeout=15, check=True)
+    capability = subprocess.run(
+        [str(gdb_path), "-nx", "-nh", "-batch",
+         "-ex", "set auto-load python-scripts off",
+         "-ex", 'python import gdb, sys; print("R2_GDB_CAPABILITY", '
+                'int(hasattr(gdb, "FinishBreakpoint")), '
+                '".".join(map(str, sys.version_info[:3])))'],
+        capture_output=True, text=True, timeout=15, check=True)
+    capability_lines = [line for line in capability.stdout.splitlines()
+                        if line.startswith("R2_GDB_CAPABILITY ")]
+    if (len(capability_lines) != 1 or
+            not capability_lines[0].startswith("R2_GDB_CAPABILITY 1 ")):
+        raise AssertionError("GDB lacks the Python FinishBreakpoint capability")
+    return {"path": str(gdb_path), "sha256": sha256(gdb_path),
+            "version": version.stdout.strip(),
+            "python_capability": capability_lines[0]}
+
+
 def observe(label: str, expected: list[int], wanted_exit: int,
             wanted_verdict: str, executable: Path, directory: Path,
             gdb_path: str, script: Path) -> None:
@@ -56,18 +76,26 @@ def main() -> None:
     executable = Path(sys.argv[1]).resolve(strict=True)
     directory = Path(sys.argv[2]).resolve()
     script = Path(__file__).with_suffix(".gdb.py").resolve(strict=True)
-    gdb_path = shutil.which("gdb")
-    if not gdb_path or not os.access(executable, os.X_OK):
+    selected_gdb = shutil.which("gdb")
+    if not selected_gdb or not os.access(executable, os.X_OK):
         raise AssertionError("GDB or executable signed caller fixture unavailable")
+    gdb_path = Path(selected_gdb).resolve(strict=True)
     directory.mkdir(parents=True, exist_ok=False)
     original_elf = sha256(executable)
     original_script = sha256(script)
+    original_gdb = debugger_identity(gdb_path)
+    with (directory / "debugger-identity.json").open("x") as receipt:
+        json.dump(original_gdb, receipt, indent=2, sort_keys=True)
+        receipt.write("\n")
     observe("actual_bytes", [3, 4], 0, "ACCEPTED", executable,
-            directory, gdb_path, script)
+            directory, str(gdb_path), script)
+    if debugger_identity(gdb_path) != original_gdb:
+        raise AssertionError("debugger identity changed after actual byte observation")
     observe("wrong_byte_oracle", [3, 5], 1,
             "REJECTED (expected assertion)", executable, directory,
-            gdb_path, script)
-    if sha256(executable) != original_elf or sha256(script) != original_script:
+            str(gdb_path), script)
+    if (sha256(executable) != original_elf or sha256(script) != original_script or
+            debugger_identity(gdb_path) != original_gdb):
         raise AssertionError("observer inputs changed while running")
 
 
