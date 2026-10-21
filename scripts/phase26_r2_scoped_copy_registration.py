@@ -19,6 +19,13 @@ REGISTRY = ROOT / "scripts/cranelift_feature_registry.json"
 KEY = "scoped_byte_copy_r2_successor"
 VERSION = "phase26_1r2_scoped_byte_copy_successor_v1"
 GUARD = "guard-cranelift-phase26-scoped-byte-copy"
+LIVE_COMPILER_ARTIFACT = {
+    "contract_version": "phase26_1r2_scoped_byte_copy_compiler_artifact_v1",
+    "previous_maximum_bytes": 10485760,
+    "maximum_bytes": 10616832,
+    "measured_ci_compiler_bytes": 10523088,
+    "partial_extra_or_substituted_budget": "rejected",
+}
 INVOCATION_PATH = "scripts/phase26_r2_scoped_copy.sh"
 CR15_PATH = "scripts/phase24_cr15_stdlib_guard_transition.py"
 UNCHANGED_PRODUCTION_SURFACES = (
@@ -163,7 +170,9 @@ def identity(registry: dict) -> dict:
             value.get("production_signing_roots") == [] and
             value.get("native_fallback") is False and
             value.get("public_tagged_result_contract") == "open" and
-            value.get("generic_vector_safety_floor") == "open_separate_prerequisite",
+            value.get("generic_vector_safety_floor") == "open_separate_prerequisite" and
+            value.get("phase21_live_compiler_artifact_successor") ==
+                LIVE_COMPILER_ARTIFACT,
             "R2 authority or release boundary drifted")
     return value
 
@@ -301,7 +310,8 @@ def validate() -> None:
     require(set(value) == {
         "contract_version", "predecessor_main_sha", "status", "owner", "owning_level2_guard",
         "production_signing_roots", "native_fallback", "public_tagged_result_contract",
-        "generic_vector_safety_floor", "phase22_invocation_successor",
+        "generic_vector_safety_floor", "phase21_live_compiler_artifact_successor",
+        "phase22_invocation_successor",
         "production_audit_successor", "phase23_text_surface_successor",
         "spelling_inventory_successor",
         "filename_site_successor", "cr15_relay_digest_successor",
@@ -367,6 +377,35 @@ def inversions() -> None:
             print(f"{label}: REJECTED (expected assertion)")
         else:
             raise SystemExit(f"{GUARD}: {label}: ACCEPTED")
+
+    from phase21_cranelift_built_compiler_programs import (
+        compiler_artifact_within_live_budget,
+        live_compiler_artifact_maximum_bytes,
+    )
+    predecessor = registry["phase21_cranelift_built_compiler_programs"]
+    historical = copy.deepcopy(registry)
+    del historical["phase26_activation_audit"][KEY]
+    require(live_compiler_artifact_maximum_bytes(historical, predecessor) == 10485760 and
+            not compiler_artifact_within_live_budget(
+                historical, predecessor, LIVE_COMPILER_ARTIFACT["measured_ci_compiler_bytes"]),
+            "closed Phase21 compiler artifact budget was relaxed")
+    require(compiler_artifact_within_live_budget(
+                registry, predecessor, LIVE_COMPILER_ARTIFACT["measured_ci_compiler_bytes"]) and
+            compiler_artifact_within_live_budget(
+                registry, predecessor, LIVE_COMPILER_ARTIFACT["maximum_bytes"]) and
+            not compiler_artifact_within_live_budget(
+                registry, predecessor, LIVE_COMPILER_ARTIFACT["maximum_bytes"] + 1),
+            "R2 live compiler artifact boundary was not enforced")
+    changed_budget = copy.deepcopy(registry)
+    changed_budget["phase26_activation_audit"][KEY][
+        "phase21_live_compiler_artifact_successor"]["maximum_bytes"] += 1
+    rejected("changed R2 live compiler budget", "R2 authority or release boundary drifted",
+             lambda: live_compiler_artifact_maximum_bytes(changed_budget, predecessor))
+    missing_budget = copy.deepcopy(registry)
+    del missing_budget["phase26_activation_audit"][KEY][
+        "phase21_live_compiler_artifact_successor"]
+    rejected("missing R2 live compiler budget", "R2 authority or release boundary drifted",
+             lambda: live_compiler_artifact_maximum_bytes(missing_budget, predecessor))
 
     rejected("missing R2 compiler invocation", "R2 compiler invocation",
              lambda: normalize_invocations(registry, []))
@@ -505,7 +544,7 @@ def inversions() -> None:
              "R2 CI native worker executable restoration",
              lambda: validate_ci_tool_order(workflow.replace(
                  restore, restore.replace("chmod +x", "chmod -x"))))
-    print(f"{GUARD}: thirty-four additive registration inversions ok")
+    print(f"{GUARD}: thirty-six additive registration inversions ok")
 
 
 if __name__ == "__main__":

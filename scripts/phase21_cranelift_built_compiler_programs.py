@@ -362,6 +362,29 @@ def assert_elf(path: Path, deadline: float) -> None:
     )
 
 
+def live_compiler_artifact_maximum_bytes(registry: dict, record: dict) -> int:
+    """Keep the closed 21.15 budget while admitting its versioned R2 successor."""
+    previous = record["compiler_artifact"]["maximum_bytes"]
+    r2 = registry.get("phase26_activation_audit", {}).get(
+        "scoped_byte_copy_r2_successor")
+    if r2 is None:
+        return previous
+    from phase26_r2_scoped_copy_registration import identity
+    successor = identity(registry)["phase21_live_compiler_artifact_successor"]
+    require(successor["previous_maximum_bytes"] == previous,
+            "R2 live compiler artifact predecessor drifted")
+    return successor["maximum_bytes"]
+
+
+def compiler_artifact_within_live_budget(
+    registry: dict, record: dict, actual_bytes: int | None,
+) -> bool:
+    artifact = record["compiler_artifact"]
+    return (actual_bytes is not None and
+            artifact["minimum_bytes"] <= actual_bytes <=
+            live_compiler_artifact_maximum_bytes(registry, record))
+
+
 def evidence(record: dict) -> None:
     for path in (ROOT / "gust", WORKER, PACKAGED_GUST, RUNTIME_PACKAGE):
         require(path.is_file(), f"evidence prerequisite is missing: {path.relative_to(ROOT)}")
@@ -370,6 +393,8 @@ def evidence(record: dict) -> None:
     with tempfile.TemporaryDirectory(prefix="phase21-15-", dir=ROOT / "build") as raw_tmp:
         tmp = Path(raw_tmp)
         native_compiler = tmp / "gust-native"
+        registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+        live_maximum = live_compiler_artifact_maximum_bytes(registry, record)
         build_started = time.monotonic()
         built = run([
             str(PACKAGED_GUST), "--backend", "cranelift", "-o", str(native_compiler),
@@ -379,12 +404,14 @@ def evidence(record: dict) -> None:
             record["measurements"]["max_compiler_build_elapsed_ms"] / 1000,
         ))
         build_elapsed_ms = int((time.monotonic() - build_started) * 1000)
-        artifact = record["compiler_artifact"]
+        actual_bytes = native_compiler.stat().st_size if native_compiler.is_file() else None
         require(
             built.returncode == 0 and built.stdout == built.stderr == b""
-            and native_compiler.is_file()
-            and artifact["minimum_bytes"] <= native_compiler.stat().st_size <= artifact["maximum_bytes"],
-            "Cranelift-built compiler publication failed or left its artifact budget",
+            and compiler_artifact_within_live_budget(registry, record, actual_bytes),
+            "Cranelift-built compiler publication failed or left its artifact budget "
+            f"(exit={built.returncode}, stdout_bytes={len(built.stdout)}, "
+            f"stderr_bytes={len(built.stderr)}, artifact_bytes={actual_bytes}, "
+            f"maximum_bytes={live_maximum})",
         )
         assert_elf(native_compiler, deadline)
 

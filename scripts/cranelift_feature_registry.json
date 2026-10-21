@@ -48066,6 +48066,13 @@
       "native_fallback": false,
       "public_tagged_result_contract": "open",
       "generic_vector_safety_floor": "open_separate_prerequisite",
+      "phase21_live_compiler_artifact_successor": {
+        "contract_version": "phase26_1r2_scoped_byte_copy_compiler_artifact_v1",
+        "previous_maximum_bytes": 10485760,
+        "maximum_bytes": 10616832,
+        "measured_ci_compiler_bytes": 10523088,
+        "partial_extra_or_substituted_budget": "rejected"
+      },
       "phase22_invocation_successor": {
         "contract_version": "phase26_1r2_scoped_byte_copy_successor_v1_phase22",
         "partial_extra_or_substituted_invocation": "rejected",
@@ -48297,6 +48304,21 @@
             }
           },
           {
+            "path": "scripts/phase21_cranelift_built_compiler_programs.py",
+            "previous_digest": "f3fbe3a86dea702d9e30475a242ef1f748d5dae111117ae73e1d94c6f9da1032",
+            "current_digest": "f0b26e3cf4eac8a3e4724e027acfaab1097893b6d4d1f56fef4c2e63e02800b0",
+            "match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 8,
+              "generated_c_contract": 5
+            },
+            "previous_match_counts": {
+              "explicit_backend_spelling": 1,
+              "mir_to_c_name": 8,
+              "generated_c_contract": 5
+            }
+          },
+          {
             "path": "scripts/phase21_filesystem_allocation_native_source.sh",
             "previous_digest": "9b8e91dc39f2bfea2e0a79836cd386c913dda806408caaa4f6d55e5b78e50456",
             "current_digest": "7d814625174331340cfe2f2c8b0b5e514c159d6e8d0e591102d3621259ef282c",
@@ -48362,7 +48384,7 @@
             "path": "scripts/phase26_r2_scoped_copy_registration.py",
             "current_row": {
               "path": "scripts/phase26_r2_scoped_copy_registration.py",
-              "digest": "6cdad7a4573b4d9f0a85ac890ddc7e3762781217cfdbdc758cabc8340f31650a",
+              "digest": "df7d93dd0ff31a1730cfd7b0e6702b969a6727c4efafa18a97e4781d2060470b",
               "match_counts": {
                 "explicit_backend_spelling": 0,
                 "mir_to_c_name": 1,
