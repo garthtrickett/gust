@@ -387,4 +387,19 @@ struct Slice_unsigned_char os_path_join(struct Slice_unsigned_char dir, struct S
 struct Slice_unsigned_char std_Clone_str(os_Arena* arena, struct Slice_unsigned_char s);
 int os_System(struct Slice_unsigned_char cmd);
 
+/* Phase 26 R2 private, versioned call-scoped byte region. Its addresses are
+   operands of one compiler-authenticated direct FFI call, never safe Gust
+   pointer values. The compiler-owned plan supplies ownership and cleanup. */
+struct FfiCallRegionV1;
+int32_t os_FfiCallRegionTryCreate(int32_t input_len, int32_t output_cap,
+                                  struct FfiCallRegionV1 **out);
+int32_t os_FfiCallRegionWriteInput(struct FfiCallRegionV1 *region,
+                                   int32_t index, uint8_t value);
+const uint8_t *os_FfiCallRegionInputAddress(const struct FfiCallRegionV1 *region);
+uint8_t *os_FfiCallRegionOutputAddress(struct FfiCallRegionV1 *region);
+int32_t os_FfiCallRegionAcceptResult(struct FfiCallRegionV1 *region, int32_t count);
+int32_t os_FfiCallRegionReadOutput(const struct FfiCallRegionV1 *region,
+                                   int32_t index, uint8_t *out);
+void os_FfiCallRegionFree(struct FfiCallRegionV1 *region);
+
 #endif /* GUST_CORE_HEADERS_H */

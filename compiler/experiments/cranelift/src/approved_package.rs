@@ -21,7 +21,9 @@ use sha2::{Digest, Sha256};
 use crate::full_program::{self, Program};
 
 const FORMAT: &str = "gust.approved_native_package.v1";
+const BYTE_SPAN_FORMAT: &str = "gust.approved_native_package.v2";
 const SIGNED_DOMAIN: &[u8] = b"gust-approved-native-package-v1\0";
+const BYTE_SPAN_SIGNED_DOMAIN: &[u8] = b"gust-approved-native-package-v2\0";
 const MAX_MANIFEST: usize = 32 * 1024;
 const MAX_ARTIFACT: u64 = 128 * 1024 * 1024;
 const MAX_ARTIFACTS: usize = 16;
@@ -98,17 +100,25 @@ pub const PRODUCTION_REGISTRY: &[RegisteredPackage] = &[];
 /// table, which also contains private Rust/toolchain symbols. The actual
 /// archive must independently define each admitted spelling.
 const PUBLIC_RUNTIME_PROJECTION: &str = include_str!("approved_runtime_exports.txt");
+// R2 adds a separate, compiler-owned call-region ABI. Keep the Phase 17/R1
+// projection immutable and require the owned archive to define each new name.
+const R2_RUNTIME_PROJECTION: &str = include_str!("approved_r2_runtime_exports.txt");
 
 pub fn public_runtime_definitions(path: &Path) -> Result<BTreeSet<String>, PackageError> {
-    let mut lines = PUBLIC_RUNTIME_PROJECTION.lines();
-    if lines.next() != Some("gust.r1.public_runtime_projection.v1") {
-        return Err(reject("runtime projection version"));
-    }
     let defined = external_definitions(path, true)?;
     let mut permitted = BTreeSet::new();
-    for name in lines {
-        if !safe_atom(name) || !permitted.insert(name.to_string()) {
-            return Err(reject("runtime projection spelling or duplicate"));
+    for (projection, version) in [
+        (PUBLIC_RUNTIME_PROJECTION, "gust.r1.public_runtime_projection.v1"),
+        (R2_RUNTIME_PROJECTION, "gust.r2.ffi_call_region_runtime_projection.v1"),
+    ] {
+        let mut lines = projection.lines();
+        if lines.next() != Some(version) {
+            return Err(reject("runtime projection version"));
+        }
+        for name in lines {
+            if !safe_atom(name) || !permitted.insert(name.to_string()) {
+                return Err(reject("runtime projection spelling or duplicate"));
+            }
         }
     }
     permitted.retain(|name| defined.contains(name));
@@ -132,6 +142,15 @@ pub fn verify_foreign_coverage(
         .any(|(_, symbol)| selected.exports.contains(&symbol.as_str()))
     {
         return Err(reject("registered package call lacks an extern declaration"));
+    }
+    for call in program.nodes.iter().filter(|node|
+        node.kind == "Call" && node.second_integer == 10) {
+        let signed_extern = program.functions.iter().find(|function|
+            function.is_extern && function.qualified_name == call.second_text &&
+            selected.exports.contains(&function.extern_symbol.as_str()));
+        if signed_extern.is_none() {
+            return Err(reject("byte-span Call is outside selected package"));
+        }
     }
     let mut other_externs: Vec<_> = program
         .functions
@@ -177,6 +196,15 @@ fn verify_foreign_coverage_with_symbols(
         .any(|(_, symbol)| selected.exports.contains(&symbol.as_str()))
     {
         return Err(reject("registered package call lacks an extern declaration"));
+    }
+    for call in program.nodes.iter().filter(|node|
+        node.kind == "Call" && node.second_integer == 10) {
+        let signed_extern = program.functions.iter().find(|function|
+            function.is_extern && function.qualified_name == call.second_text &&
+            selected.exports.contains(&function.extern_symbol.as_str()));
+        if signed_extern.is_none() {
+            return Err(reject("byte-span Call is outside selected package"));
+        }
     }
     for function in program
         .functions
@@ -278,6 +306,14 @@ struct SymbolContract {
     result_type: String,
     result_policy: String,
     parameters: Vec<(String, String)>,
+    byte_spans: Vec<ByteSpanContract>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct ByteSpanContract {
+    pointer_index: usize,
+    count_index: usize,
+    direction: &'static str,
 }
 
 struct Manifest {
@@ -387,7 +423,9 @@ fn parse_manifest(bytes: &[u8]) -> Result<Manifest, PackageError> {
     }
     let text = std::str::from_utf8(bytes).map_err(|_| reject("manifest is not UTF-8"))?;
     let mut lines = text.trim_end_matches('\n').split('\n');
-    if field(&mut lines, "format")? != FORMAT || field(&mut lines, "repository")? != REPOSITORY {
+    let format = field(&mut lines, "format")?;
+    if !matches!(format, FORMAT | BYTE_SPAN_FORMAT)
+        || field(&mut lines, "repository")? != REPOSITORY {
         return Err(reject("manifest format or repository"));
     }
     let release = field(&mut lines, "release")?.to_string();
@@ -458,7 +496,7 @@ fn parse_manifest(bytes: &[u8]) -> Result<Manifest, PackageError> {
     for _ in 0..symbol_count {
         let line = field(&mut lines, "symbol")?;
         let parts: Vec<_> = line.split('|').collect();
-        if parts.len() != 5 {
+        if parts.len() != if format == BYTE_SPAN_FORMAT { 6 } else { 5 } {
             return Err(reject("symbol field count"));
         }
         let name = parts[0].to_string();
@@ -483,11 +521,51 @@ fn parse_manifest(bytes: &[u8]) -> Result<Manifest, PackageError> {
         } else if parts[4] != "-" {
             return Err(reject("zero-parameter encoding"));
         }
+        let mut byte_spans = Vec::new();
+        if format == BYTE_SPAN_FORMAT && parts[5] != "-" {
+            let mut pointer_indices = BTreeSet::new();
+            let mut count_indices = BTreeSet::new();
+            for span in parts[5].split(',') {
+                let fields: Vec<_> = span.split('@').collect();
+                if fields.len() != 3 || byte_spans.len() >= 2 {
+                    return Err(reject("byte span field count"));
+                }
+                let pointer_index = count(fields[0], 31)?;
+                let count_index = count(fields[1], 31)?;
+                let direction = match fields[2] {
+                    "read" => "read",
+                    "write" => "write",
+                    _ => return Err(reject("byte span direction")),
+                };
+                if pointer_index >= parameter_count || count_index >= parameter_count ||
+                    count_index != pointer_index + 1 ||
+                    !pointer_indices.insert(pointer_index) ||
+                    !count_indices.insert(count_index) ||
+                    parameters[pointer_index].0 != "RawPointer(Byte)" ||
+                    parameters[pointer_index].1 != if direction == "read" {
+                        "borrow_read_call"
+                    } else { "borrow_write_call" } ||
+                    parameters[count_index].0 != "Int" ||
+                    parameters[count_index].1 != "value" {
+                    return Err(reject("byte span indices, type, or policy"));
+                }
+                byte_spans.push(ByteSpanContract { pointer_index, count_index, direction });
+            }
+            if byte_spans.windows(2).any(|pair| pair[0].pointer_index >= pair[1].pointer_index) {
+                return Err(reject("byte span order"));
+            }
+        }
+        if format == BYTE_SPAN_FORMAT && parameters.iter().enumerate().any(|(index, (_, policy))|
+            matches!(policy.as_str(), "borrow_read_call" | "borrow_write_call") &&
+            !byte_spans.iter().any(|span| span.pointer_index == index)) {
+            return Err(reject("byte pointer lacks signed span association"));
+        }
         symbols.push(SymbolContract {
             name,
             result_type: decoded_text(parts[1])?,
             result_policy: parts[2].to_string(),
             parameters,
+            byte_spans,
         });
     }
     if lines.next().is_some() {
@@ -504,8 +582,13 @@ fn parse_manifest(bytes: &[u8]) -> Result<Manifest, PackageError> {
 }
 
 fn signature_message(manifest: &[u8]) -> Vec<u8> {
-    let mut message = Vec::with_capacity(SIGNED_DOMAIN.len() + manifest.len());
-    message.extend_from_slice(SIGNED_DOMAIN);
+    // The format field is itself signed. Distinct domains prevent a v2 span
+    // package from being interpreted under the historical scalar ABI protocol.
+    let domain = if manifest.starts_with(b"format: gust.approved_native_package.v2\n") {
+        BYTE_SPAN_SIGNED_DOMAIN
+    } else { SIGNED_DOMAIN };
+    let mut message = Vec::with_capacity(domain.len() + manifest.len());
+    message.extend_from_slice(domain);
     message.extend_from_slice(manifest);
     message
 }
@@ -600,28 +683,57 @@ fn verify_program(
             .ffi_contract
             .as_ref()
             .ok_or_else(|| reject("extern has no policy"))?;
+        let byte_spans = !contract.byte_spans.is_empty();
         if function.result_type != contract.result_type
             || ffi.result_policy != contract.result_policy
             || function.parameters.len() != contract.parameters.len()
             || ffi.parameter_policies.len() != contract.parameters.len()
             || !ffi.destructor.is_empty()
             || ffi.result_policy != "value"
-            || !matches!(
-                function.result_type.as_str(),
-                "Int" | "Byte" | "Bool" | "Void"
-            )
+            || if byte_spans { function.result_type != "Int" } else {
+                !matches!(function.result_type.as_str(), "Int" | "Byte" | "Bool" | "Void")
+            }
         {
             return Err(reject(
                 "canonical extern ABI or unsupported package profile",
             ));
         }
         for (index, (ty, policy)) in contract.parameters.iter().enumerate() {
+            let signed_pointer = contract.byte_spans.iter().any(|span| span.pointer_index == index);
             if function.parameters[index].1 != *ty
                 || ffi.parameter_policies[index] != *policy
-                || policy != "value"
-                || !matches!(ty.as_str(), "Int" | "Byte" | "Bool")
+                || if signed_pointer {
+                    ty != "RawPointer(Byte)" || !matches!(policy.as_str(),
+                        "borrow_read_call" | "borrow_write_call")
+                } else {
+                    policy != "value" || !matches!(ty.as_str(), "Int" | "Byte" | "Bool")
+                }
             {
                 return Err(reject("canonical extern parameter or policy mismatch"));
+            }
+        }
+        if byte_spans {
+            let calls: Vec<_> = program.nodes.iter().filter(|node|
+                node.kind == "Call" && node.second_text == function.qualified_name).collect();
+            if calls.is_empty() {
+                return Err(reject("signed byte-span export has no canonical call"));
+            }
+            for call in calls {
+                let plan = call.isolated_call_plan.as_ref()
+                    .ok_or_else(|| reject("signed byte-span call lacks plan"))?;
+                if call.second_integer != 10 || plan.positions.len() != contract.byte_spans.len() ||
+                    plan.target_triple != TARGET || plan.cleanup != "synchronous_call" {
+                    return Err(reject("signed byte-span call plan shape"));
+                }
+                for (position, signed) in plan.positions.iter().zip(&contract.byte_spans) {
+                    if position.index != signed.pointer_index ||
+                        position.count_index != Some(signed.count_index) ||
+                        position.direction != signed.direction ||
+                        position.aggregate_type != "Byte" || position.size != 1 ||
+                        position.align != 1 || position.provenance != "direct_raw_byte_span" {
+                        return Err(reject("canonical byte-span pair differs from signed ABI"));
+                    }
+                }
             }
         }
     }
@@ -914,7 +1026,7 @@ impl Drop for VerifiedPackage {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::full_program::{FfiContract, Function, Node};
+    use crate::full_program::{FfiContract, Function, IsolatedCallPlan, IsolatedPosition, Node};
     use ed25519_dalek::{Signer, SigningKey};
     use object::write::{
         Object as WriteObject, Relocation as WriteRelocation, StandardSection,
@@ -931,6 +1043,11 @@ mod tests {
     const TEST_REGISTRY: RegisteredPackage = RegisteredPackage {
         id: "fixture",
         exports: TEST_EXPORTS,
+    };
+    const SCOPED_BYTE_EXPORTS: &[&str] = &["approved_byte_adapter"];
+    const SCOPED_BYTE_REGISTRY: RegisteredPackage = RegisteredPackage {
+        id: "fixture",
+        exports: SCOPED_BYTE_EXPORTS,
     };
 
     fn test_program() -> Program {
@@ -955,6 +1072,7 @@ mod tests {
                     parameter_policies: vec!["value".into()],
                     destructor: String::new(),
                 }),
+                scoped_byte_copy: None,
             }],
             entry_function: 0,
         }
@@ -1199,6 +1317,64 @@ mod tests {
             fs::write(self.package.join("manifest.sig"), signature.to_bytes()).unwrap();
         }
 
+        fn prepare_scoped_byte_adapter(&self) {
+            self.prepare_scoped_byte_adapter_source(
+                b"int approved_byte_adapter(const unsigned char *input, int count, unsigned char *output, int capacity) { if (count < 0 || capacity < 0) return -1; if (count > capacity) return -3; for (int i = 0; i < count; i++) output[i] = input[i]; return count; }\n",
+                false,
+            );
+        }
+
+        fn prepare_scoped_byte_adapter_with_level(&self) {
+            self.prepare_scoped_byte_adapter_source(
+                b"int approved_byte_adapter(const unsigned char *input, int count, unsigned char *output, int capacity, int level) { if (level != 1 || count < 0 || capacity < 0) return -1; if (count > capacity) return -3; for (int i = 0; i < count; i++) output[i] = input[i]; return count; }\n",
+                true,
+            );
+        }
+
+        fn prepare_scoped_byte_adapter_error(&self) {
+            self.prepare_scoped_byte_adapter_source(
+                b"int approved_byte_adapter(const unsigned char *input, int count, unsigned char *output, int capacity) { (void)input; (void)count; (void)output; (void)capacity; return -3; }\n",
+                false,
+            );
+        }
+
+        fn prepare_scoped_byte_adapter_source(&self, adapter: &[u8], with_level: bool) {
+            let options = b"-O0 -fno-builtin\n";
+            fs::write(self.package.join("src.txt"), adapter).unwrap();
+            fs::write(self.package.join("options.txt"), options).unwrap();
+            let compiler = std::process::Command::new("/usr/bin/cc")
+                .env_clear().env("PATH", "/usr/bin:/bin").env("LANG", "C")
+                .arg("-c").arg("-x").arg("c").arg("-O0")
+                .arg("-fno-builtin").arg(self.package.join("src.txt"))
+                .arg("-o").arg(self.package.join("adapter.o"))
+                .output().unwrap();
+            assert!(compiler.status.success(), "test adapter compile: {}",
+                String::from_utf8_lossy(&compiler.stderr));
+            let original = String::from_utf8(
+                fs::read(self.package.join("manifest.txt")).unwrap()).unwrap();
+            let mut signed = original.replace(FORMAT, BYTE_SPAN_FORMAT);
+            let pointer = hex(b"RawPointer(Byte)");
+            let mut parameters = format!(
+                "{pointer}@borrow_read_call,496e74@value,{pointer}@borrow_write_call,496e74@value");
+            if with_level { parameters.push_str(",496e74@value"); }
+            let arity = if with_level { 5 } else { 4 };
+            let old_symbol = "symbol: gust_test|496e74|value|1|496e74@value";
+            assert_eq!(original.matches(old_symbol).count(), 1);
+            signed = signed.replacen(old_symbol,
+                &format!("symbol: approved_byte_adapter|496e74|value|{arity}|{parameters}|0@1@read,2@3@write"), 1);
+            for (kind, name) in [("source", "src.txt"),
+                                 ("build_options", "options.txt"),
+                                 ("object", "adapter.o")] {
+                let old = original.lines().find(|line|
+                    line.starts_with(&format!("artifact: {kind}|{name}|"))).unwrap();
+                let bytes = fs::read(self.package.join(name)).unwrap();
+                let digest: [u8; 32] = Sha256::digest(&bytes).into();
+                signed = signed.replacen(old,
+                    &format!("artifact: {kind}|{name}|{}", hex(&digest)), 1);
+            }
+            self.sign(signed.as_bytes());
+        }
+
         fn admit(&self, snapshot: &TrustSnapshot<'_>) -> Result<VerifiedPackage, PackageError> {
             VerifiedPackage::admit(
                 &self.package,
@@ -1439,6 +1615,7 @@ mod tests {
             integer: 0,
             second_integer: 0,
             isolated_call_plan: None,
+            collection_intrinsic: None,
             source_line: 1,
             source_column: 1,
             source_start: 0,
@@ -1473,6 +1650,7 @@ mod tests {
             integer: 0,
             second_integer: 0,
             isolated_call_plan: None,
+            collection_intrinsic: None,
             source_line: 1,
             source_column: 1,
             source_start: 0,
@@ -1560,6 +1738,249 @@ mod tests {
             .unwrap()
             .parameter_policies[0] = "borrow_read_call".into();
         assert!(verify_program(&manifest, &program, &TEST_REGISTRY).is_err());
+    }
+
+    #[test]
+    fn signed_byte_span_pairs_bind_the_canonical_call() {
+        let fixture = Fixture::new();
+        let original = String::from_utf8(fs::read(fixture.package.join("manifest.txt")).unwrap()).unwrap();
+        let old_symbol = "symbol: gust_test|496e74|value|1|496e74@value";
+        let byte_symbol = format!(
+            "symbol: gust_test|496e74|value|2|{}@borrow_read_call,496e74@value|0@1@read",
+            hex(b"RawPointer(Byte)")
+        );
+        let signed = original.replace(FORMAT, BYTE_SPAN_FORMAT)
+            .replace(old_symbol, &byte_symbol);
+        assert_ne!(signed, original);
+        fixture.sign(signed.as_bytes());
+        let manifest = parse_manifest(signed.as_bytes()).unwrap();
+        assert_eq!(manifest.symbols[0].byte_spans,
+            vec![ByteSpanContract { pointer_index: 0, count_index: 1, direction: "read" }]);
+        let snapshot = fixture.snapshot();
+        let v2_signature = fs::read(fixture.package.join("manifest.sig")).unwrap();
+        assert!(verify_signature_at(signed.as_bytes(), &v2_signature,
+            &manifest, &snapshot, snapshot.issued_unix_seconds).is_ok());
+        let mut old_domain_message = SIGNED_DOMAIN.to_vec();
+        old_domain_message.extend_from_slice(signed.as_bytes());
+        let old_domain_signature = fixture.key.sign(&old_domain_message).to_bytes();
+        assert!(verify_signature_at(signed.as_bytes(), &old_domain_signature,
+            &manifest, &snapshot, snapshot.issued_unix_seconds).is_err());
+
+        let mut program = test_program();
+        program.functions[0].parameters = vec![
+            ("input".into(), "RawPointer(Byte)".into()),
+            ("count".into(), "Int".into()),
+        ];
+        program.functions[0].ffi_contract.as_mut().unwrap().parameter_policies =
+            vec!["borrow_read_call".into(), "value".into()];
+        program.nodes.push(Node {
+            kind: "Call".into(), ty: "Int".into(), text: "test".into(),
+            second_text: "test".into(), integer: 0, second_integer: 10,
+            isolated_call_plan: Some(Box::new(IsolatedCallPlan {
+                target_triple: TARGET.into(), cleanup: "synchronous_call".into(),
+                positions: vec![IsolatedPosition {
+                    index: 0, direction: "read".into(), aggregate_type: "Byte".into(),
+                    size: 1, align: 1, provenance: "direct_raw_byte_span".into(),
+                    count_index: Some(1),
+                }], retained: None,
+            })),
+            source_line: 0, source_column: 0, source_start: 0, source_end: 0,
+            collection_intrinsic: None,
+            children: Vec::new(),
+        });
+        assert!(verify_program(&manifest, &program, &TEST_REGISTRY).is_ok());
+        program.nodes[0].isolated_call_plan.as_mut().unwrap().positions[0].count_index = Some(0);
+        assert!(verify_program(&manifest, &program, &TEST_REGISTRY).is_err());
+        program.nodes[0].isolated_call_plan.as_mut().unwrap().positions[0].count_index = Some(1);
+        assert!(parse_manifest(signed.replace("0@1@read", "0@0@read").as_bytes()).is_err());
+        assert!(parse_manifest(signed.replace("0@1@read", "0@1@write").as_bytes()).is_err());
+        assert!(parse_manifest(signed.replace("0@1@read", "0@1@read,0@1@read").as_bytes()).is_err());
+        let modified = signed.replace("borrow_read_call", "borrow_write_call")
+            .replace("0@1@read", "0@1@write");
+        let forged = parse_manifest(modified.as_bytes()).unwrap();
+        assert!(verify_signature_at(
+            modified.as_bytes(),
+            &fs::read(fixture.package.join("manifest.sig")).unwrap(),
+            &forged, &fixture.snapshot(), fixture.snapshot().issued_unix_seconds,
+        ).is_err());
+    }
+
+    #[test]
+    fn signed_byte_span_pairs_match_the_actual_typed_scoped_call() {
+        // The object in Fixture still exports gust_test. This test binds a
+        // valid v2 signature to the actual source-produced Call10 metadata;
+        // installed artifact admission and link behavior are separate gates.
+        let fixture = Fixture::new();
+        let original = String::from_utf8(
+            fs::read(fixture.package.join("manifest.txt")).unwrap()).unwrap();
+        let scalar = "symbol: gust_test|496e74|value|1|496e74@value";
+        let pointer = hex(b"RawPointer(Byte)");
+        let scoped = format!(
+            "symbol: approved_byte_adapter|496e74|value|4|{pointer}@borrow_read_call,496e74@value,{pointer}@borrow_write_call,496e74@value|0@1@read,2@3@write"
+        );
+        let signed = original.replace(FORMAT, BYTE_SPAN_FORMAT)
+            .replace(scalar, &scoped);
+        assert_ne!(signed, original);
+        fixture.sign(signed.as_bytes());
+        let manifest = parse_manifest(signed.as_bytes()).unwrap();
+        let snapshot = fixture.snapshot();
+        let signature = fs::read(fixture.package.join("manifest.sig")).unwrap();
+        assert!(verify_signature_at(signed.as_bytes(), &signature,
+            &manifest, &snapshot, snapshot.issued_unix_seconds).is_ok());
+
+        let canonical = include_str!("testdata/scoped_byte_copy_intrinsic_four_arg_producer.canonical");
+        let mut program = crate::full_program::parse(canonical).unwrap();
+        assert!(verify_program(&manifest, &program, &SCOPED_BYTE_REGISTRY).is_ok());
+        let call = program.nodes.iter_mut().find(|node|
+            node.kind == "Call" && node.second_integer == 10 &&
+            node.second_text == "approved_byte_adapter").unwrap();
+        call.isolated_call_plan.as_mut().unwrap().positions[1].count_index = Some(1);
+        assert!(verify_program(&manifest, &program, &SCOPED_BYTE_REGISTRY).is_err());
+    }
+
+    #[test]
+    fn actual_typed_scoped_call_admits_only_its_signed_test_object() {
+        // This key and registry are cfg(test)-only. The adapter is a real
+        // relocatable C object with the signed Byte pointer/count ABI; this
+        // checks admission and private staging, not link or execution.
+        let fixture = Fixture::new();
+        fixture.prepare_scoped_byte_adapter();
+        let canonical = include_str!("testdata/scoped_byte_copy_intrinsic_four_arg_producer.canonical");
+        let program = crate::full_program::parse(canonical).unwrap();
+        let output = fixture.root.join("scoped-output");
+        let package = VerifiedPackage::admit(&fixture.package,
+            &SCOPED_BYTE_REGISTRY, &program, &fixture.snapshot(), &output).unwrap();
+        assert!(package.definitions().contains("approved_byte_adapter"));
+        let staged = package.link_inputs().to_vec();
+        assert!(staged.iter().all(|path| path.exists()));
+        drop(package);
+        assert!(staged.iter().all(|path| !path.exists()));
+
+        let mut changed = fs::read(fixture.package.join("adapter.o")).unwrap();
+        changed.push(0);
+        fs::write(fixture.package.join("adapter.o"), changed).unwrap();
+        assert!(VerifiedPackage::admit(&fixture.package,
+            &SCOPED_BYTE_REGISTRY, &program, &fixture.snapshot(), &output).is_err());
+    }
+
+    struct RuntimeSibling(PathBuf);
+
+    impl RuntimeSibling {
+        fn stage() -> Self {
+            let archive = PathBuf::from(std::env::var_os("GUST_R2_RUNTIME_ARCHIVE")
+                .expect("focused runner must bind the compiler-owned runtime archive"));
+            let expected_digest = std::env::var("GUST_R2_RUNTIME_SHA256")
+                .expect("focused runner must pin the compiler-owned runtime archive");
+            assert_eq!(hex(&Sha256::digest(fs::read(&archive).unwrap())), expected_digest);
+            let sibling = std::env::current_exe().unwrap().parent().unwrap()
+                .join("gust-runtime-package.a");
+            assert!(!sibling.exists(), "isolated test target must own runtime sibling");
+            fs::copy(&archive, &sibling).unwrap();
+            assert_eq!(hex(&Sha256::digest(fs::read(&sibling).unwrap())), expected_digest);
+            Self(sibling)
+        }
+    }
+
+    impl Drop for RuntimeSibling {
+        fn drop(&mut self) { let _ = fs::remove_file(&self.0); }
+    }
+
+    fn run_scoped_linked_case(fixture: &Fixture, canonical: &str,
+        object_name: &str, output_name: &str, expected_exit: i32,
+        expectation: &str) {
+        let runtime = RuntimeSibling::stage();
+        let program = crate::full_program::parse(canonical).unwrap();
+        verify_foreign_coverage(&program, &[SCOPED_BYTE_REGISTRY],
+            Some(&runtime.0), &runtime.0, &[]).unwrap();
+        let object = fixture.root.join(object_name);
+        crate::full_program::lower_program(&program, &object).unwrap();
+        let output = fixture.root.join(output_name);
+        let package = VerifiedPackage::admit(&fixture.package, &SCOPED_BYTE_REGISTRY,
+            &program, &fixture.snapshot(), &output).unwrap();
+        let staged = package.link_inputs().to_vec();
+        let manifest_digest = hex(&package.manifest_digest());
+        let mut request = link_request(package, object, output.clone());
+        request.runtime_package = Some(runtime.0.clone());
+        let report = crate::run_compiler_mir_link_request(request).unwrap();
+        assert!(report.published);
+        assert_eq!(report.approved_package_id.as_deref(), Some("fixture"));
+        assert_eq!(report.approved_package_manifest_sha256.as_deref(),
+            Some(manifest_digest.as_str()));
+        assert!(staged.iter().all(|path| !path.exists()));
+        let status = std::process::Command::new(&output)
+            .env_clear().env("PATH", "/usr/bin:/bin").status().unwrap();
+        assert_eq!(status.code(), Some(expected_exit), "{expectation}");
+        let retained = PathBuf::from(std::env::var_os("GUST_R2_LINKED_EXECUTABLE_OUT")
+            .expect("focused runner must own the generated executable path"));
+        assert!(!retained.exists(), "focused runner output is already occupied");
+        fs::copy(&output, &retained).unwrap();
+        assert!(fs::read(&retained).unwrap().starts_with(b"\x7fELF"));
+    }
+
+    #[test]
+    #[ignore = "requires a separately pinned compiler-owned runtime archive"]
+    fn actual_typed_scoped_call_links_and_runs_with_signed_test_adapter() {
+        let fixture = Fixture::new();
+        fixture.prepare_scoped_byte_adapter();
+        run_scoped_linked_case(&fixture,
+            include_str!("testdata/scoped_byte_copy_intrinsic_four_arg_producer.canonical"),
+            "scoped.o", "scoped-linked", 2,
+            "the source main returns copied-byte count 2");
+    }
+
+    #[test]
+    #[ignore = "requires a separately pinned compiler-owned runtime archive"]
+    fn source_produced_renamed_owner_and_result_link_with_signed_test_adapter() {
+        let fixture = Fixture::new();
+        fixture.prepare_scoped_byte_adapter();
+        run_scoped_linked_case(&fixture,
+            include_str!("testdata/scoped_byte_copy_intrinsic_renamed_types_producer.canonical"),
+            "renamed-scoped.o", "renamed-scoped-linked", 2,
+            "renamed opaque owner and result must preserve native count 2");
+    }
+
+    #[test]
+    #[ignore = "requires a separately pinned compiler-owned runtime archive"]
+    fn actual_zero_length_scoped_call_links_and_runs_with_signed_test_adapter() {
+        let fixture = Fixture::new();
+        fixture.prepare_scoped_byte_adapter();
+        run_scoped_linked_case(&fixture,
+            include_str!("testdata/scoped_byte_copy_intrinsic_zero_length_producer.canonical"),
+            "zero-scoped.o", "zero-scoped-linked", 0,
+            "zero input and zero output capacity must return zero");
+    }
+
+    #[test]
+    #[ignore = "requires a separately pinned compiler-owned runtime archive"]
+    fn actual_five_argument_scoped_call_links_and_runs_with_signed_test_adapter() {
+        let fixture = Fixture::new();
+        fixture.prepare_scoped_byte_adapter_with_level();
+        run_scoped_linked_case(&fixture,
+            include_str!("testdata/scoped_byte_copy_intrinsic_local_five_arg_producer.canonical"),
+            "five-arg-scoped.o", "five-arg-scoped-linked", 2,
+            "five-argument adapter with level one must return copied-byte count 2");
+    }
+
+    #[test]
+    #[ignore = "requires a separately pinned compiler-owned runtime archive"]
+    fn actual_caller_borrowed_five_argument_scoped_call_links_and_runs() {
+        let fixture = Fixture::new();
+        fixture.prepare_scoped_byte_adapter_with_level();
+        run_scoped_linked_case(&fixture,
+            include_str!("testdata/scoped_byte_copy_intrinsic_caller_five_arg_producer.canonical"),
+            "caller-borrowed-scoped.o", "caller-borrowed-scoped-linked", 2,
+            "caller-borrowed input and fifth scalar must return copied-byte count 2");
+    }
+
+    #[test]
+    #[ignore = "requires a separately pinned compiler-owned runtime archive"]
+    fn actual_signed_adapter_error_returns_before_output_publication() {
+        let fixture = Fixture::new();
+        fixture.prepare_scoped_byte_adapter_error();
+        run_scoped_linked_case(&fixture,
+            include_str!("testdata/scoped_byte_copy_intrinsic_four_arg_producer.canonical"),
+            "error-scoped.o", "error-scoped-linked", 253,
+            "signed adapter error -3 must exit before output publication");
     }
 
     #[test]

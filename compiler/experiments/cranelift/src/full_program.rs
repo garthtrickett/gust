@@ -5,7 +5,7 @@ use std::io::{Error as IoError, ErrorKind};
 use std::path::{Path, PathBuf};
 
 use cranelift_codegen::ir::{
-    condcodes::IntCC, types, AbiParam, ArgumentPurpose, Block, InstBuilder, MemFlags,
+    condcodes::IntCC, types, AbiParam, ArgumentPurpose, Block, InstBuilder, MemFlags, TrapCode,
     StackSlotData, StackSlotKind, Type, Value,
 };
 use cranelift_codegen::settings::{self, Configurable};
@@ -54,6 +54,38 @@ pub struct Function {
     pub body_node: Option<usize>,
     pub parameters: Vec<(String, String)>,
     pub ffi_contract: Option<FfiContract>,
+    pub scoped_byte_copy: Option<ScopedByteCopyCandidate>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ScopedBinding {
+    Local(usize),
+    Parameter(usize),
+}
+
+#[derive(Debug, Clone)]
+pub struct ScopedAnchor {
+    pub binding: ScopedBinding,
+    pub ty: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct ScopedByteCopyCandidate {
+    pub scope: usize,
+    pub constructor_call: usize,
+    pub result_declaration: usize,
+    pub guard: usize,
+    pub owner_name: String,
+    pub input_backing: ScopedAnchor,
+    pub input_count: ScopedAnchor,
+    pub output_backing: ScopedAnchor,
+    pub output_capacity: ScopedAnchor,
+    pub prefill_loop: usize,
+    pub input_loop: usize,
+    pub native_call: usize,
+    pub native_result_declaration: usize,
+    pub accept_call: usize,
+    pub output_loop: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -72,11 +104,24 @@ pub struct Node {
     pub integer: i32,
     pub second_integer: i32,
     pub isolated_call_plan: Option<Box<IsolatedCallPlan>>,
+    pub collection_intrinsic: Option<CollectionIntrinsicPlan>,
     pub source_line: usize,
     pub source_column: usize,
     pub source_start: usize,
     pub source_end: usize,
     pub children: Vec<usize>,
+}
+
+// This is an executable, versioned MIR operation. The producer's fields are
+// untrusted until the parser, layout check, and closed scoped proof agree on
+// the actual operands and reaching storage state.
+#[derive(Debug, Clone)]
+pub struct CollectionIntrinsicPlan {
+    pub opcode: String,
+    pub receiver_type: String,
+    pub element_type: String,
+    pub layout_id: String,
+    pub brand: String,
 }
 
 #[derive(Debug, Clone)]
@@ -87,6 +132,7 @@ pub struct IsolatedPosition {
     pub size: u32,
     pub align: u32,
     pub provenance: String,
+    pub count_index: Option<usize>,
 }
 
 #[derive(Debug, Clone)]
@@ -152,6 +198,320 @@ fn struct_type_name(value: &str) -> Option<String> {
     quoted_type_name(value, "Struct(\"")
 }
 
+// The ordinary lowerers already remove one Reference before choosing their
+// collection branch. Keep that value-type decision separate from the receiver
+// lookup so nested references do not acquire a new collection route.
+fn native_vector_value_dispatch_name(value_type: &str) -> Option<String> {
+    struct_type_name(value_type).filter(|name| name.starts_with("std_Vector_"))
+}
+
+// Resolve the collection route used by ordinary IndexRead and Vector methods.
+// A borrowed receiver keeps its Reference identity at the call site; only its
+// pointee is used to select the existing native collection dispatcher. Raw
+// pointers never acquire borrowed collection authority through this lookup.
+pub(crate) fn native_vector_dispatch_name(receiver_type: &str) -> Option<String> {
+    let value_type = if receiver_type.starts_with("Reference(") {
+        pointer_inner_type(receiver_type)?
+    } else {
+        receiver_type
+    };
+    native_vector_value_dispatch_name(value_type)
+}
+
+// This is a read-only view of the same layout engine and receiver selection
+// used by ordinary collection lowering. It establishes which collection
+// layout lowering would use; it does not establish safe backing storage,
+// bounds, or a valid owner for a scoped FFI operation.
+pub(crate) struct ResolvedNativeVectorLayout {
+    pub(crate) element_type: String,
+    pub(crate) field_count: usize,
+    pub(crate) packed: bool,
+    pub(crate) repr_c: bool,
+    pub(crate) data_offset: u32,
+    pub(crate) len_offset: u32,
+    pub(crate) capacity_offset: u32,
+    pub(crate) arena_offset: u32,
+}
+
+// A collection intrinsic's row is executable MIR, not a declaration that its
+// storage is sound. Resolve the exact layout and operand types without using
+// the historical collection-name dispatcher. The closed ownership/history
+// proof must authorize every returned operation before emission.
+#[derive(Debug, Clone)]
+pub(crate) struct ResolvedCollectionIntrinsic {
+    opcode: String,
+    value_type: String,
+    element_type: String,
+    data_offset: u32,
+    len_offset: u32,
+    capacity_offset: u32,
+    arena_offset: u32,
+    element_size: u32,
+}
+
+pub(crate) fn resolve_collection_intrinsic(program: &Program, index: usize)
+    -> Result<ResolvedCollectionIntrinsic, Box<dyn Error>> {
+    let node = program.nodes.get(index).ok_or_else(|| invalid(
+        "collection intrinsic index is out of bounds"))?;
+    let plan = node.collection_intrinsic.as_ref().ok_or_else(|| invalid(
+        "collection intrinsic lacks its versioned operation"))?;
+    if node.kind != "CollectionIntrinsic" { return Err(invalid(
+        "collection operation kind and versioned record disagree")); }
+    // R2's executable operation cohort copies Byte spans. Reject an unrelated
+    // element before recursive type-layout resolution; neither candidate
+    // metadata nor a long by-value type chain may spend unbounded work first.
+    if plan.element_type != "Byte" {
+        return Err(invalid("collection intrinsic has unsupported element type"));
+    }
+    let value_type = if plan.receiver_type.starts_with("Reference(") {
+        pointer_inner_type(&plan.receiver_type).ok_or_else(|| invalid(
+            "collection borrowed receiver has no value type"))?
+    } else { plan.receiver_type.as_str() };
+    if plan.receiver_type.starts_with("RawPointer(") ||
+        !value_type.starts_with("Struct(\"") ||
+        value_type.starts_with("Reference(") {
+        return Err(invalid("collection intrinsic has no typed value receiver"));
+    }
+    let erased_name = struct_type_name(value_type).ok_or_else(|| invalid(
+        "collection intrinsic receiver has no struct identity"))?;
+    let layout = program.layouts.iter().find(|layout| layout.name == plan.layout_id)
+        .ok_or_else(|| invalid("collection intrinsic layout identity is absent"))?;
+    if program.layouts.iter().filter(|other|
+        other.erased_name == erased_name && other.brand == plan.brand).count() != 1 {
+        return Err(invalid("collection intrinsic layout and brand are ambiguous"));
+    }
+    if layout.erased_name != erased_name || layout.brand != plan.brand ||
+        layout.repr_c || layout.packed || !layout.abi.is_empty() ||
+        layout.fields.len() != 4 {
+        return Err(invalid("collection intrinsic layout or brand disagrees"));
+    }
+    let field = |name: &str| layout.fields.iter().find(|field| field.name == name)
+        .ok_or_else(|| invalid("collection intrinsic lacks exact storage fields"));
+    if field("data")?.ty != format!("RawPointer({})", plan.element_type) ||
+        field("len")?.ty != "Int" || field("capacity")?.ty != "Int" ||
+        field("arena")?.ty != "RawPointer(Arena)" {
+        return Err(invalid("collection intrinsic storage field types disagree"));
+    }
+    let mut layouts = LayoutEngine::new(program, 8);
+    let actual = layouts.layout(value_type)?;
+    let placement = |name: &str| actual.fields.get(name).map(|field| field.offset)
+        .ok_or_else(|| invalid("collection intrinsic field has no placement"));
+    let data_offset = placement("data")?;
+    let len_offset = placement("len")?;
+    let capacity_offset = placement("capacity")?;
+    let arena_offset = placement("arena")?;
+    if HashSet::from([data_offset, len_offset, capacity_offset, arena_offset]).len() != 4 ||
+        actual.align != 8 {
+        return Err(invalid("collection intrinsic fields overlap or have wrong alignment"));
+    }
+    let element_size = layouts.layout(&plan.element_type)?.size;
+    if element_size == 0 || element_size > i32::MAX as u32 / 8 {
+        return Err(invalid("collection intrinsic element stride cannot be bounded"));
+    }
+    match plan.opcode.as_str() {
+        "Create" if plan.receiver_type == value_type &&
+            node.ty == plan.receiver_type && node.children.len() == 1 &&
+            program.nodes[node.children[0]].ty.starts_with("Reference(Arena,") => {},
+        "Read" if node.ty == plan.element_type && node.children.len() == 2 &&
+            program.nodes[node.children[0]].ty == plan.receiver_type &&
+            program.nodes[node.children[1]].ty == "Int" => {},
+        "Clear" if node.ty == "Void" && node.children.len() == 1 &&
+            program.nodes[node.children[0]].ty == plan.receiver_type => {},
+        "Append" if node.ty == "Void" && node.children.len() == 2 &&
+            program.nodes[node.children[0]].ty == plan.receiver_type &&
+            program.nodes[node.children[1]].ty == plan.element_type => {},
+        _ => return Err(invalid("collection intrinsic opcode or actual operands disagree")),
+    }
+    Ok(ResolvedCollectionIntrinsic {
+        opcode: plan.opcode.clone(), value_type: value_type.to_string(),
+        element_type: plan.element_type.clone(), data_offset, len_offset,
+        capacity_offset, arena_offset, element_size,
+    })
+}
+
+fn validate_collection_intrinsic_shapes(program: &Program)
+    -> Result<HashMap<usize, ResolvedCollectionIntrinsic>, Box<dyn Error>> {
+    // Each resolver constructs the ordinary layout map and checks all matching
+    // branded declarations. Bound that total work before entering the loop;
+    // the caller-history budget runs later and cannot cover this stage.
+    let operation_count = program.nodes.iter()
+        .filter(|node| node.kind == "CollectionIntrinsic").count();
+    let layout_scan = program.layouts.len()
+        .checked_add(program.enumerations.len())
+        .and_then(|count| count.checked_add(1))
+        .ok_or_else(|| invalid("collection layout work budget overflows"))?;
+    if operation_count.checked_mul(layout_scan).is_none_or(|work| work > 1_000_000) {
+        return Err(invalid("collection layout work budget exceeded"));
+    }
+    let mut resolved = HashMap::new();
+    let mut reachable = HashSet::new();
+    // new_call_reachability has already bounded every defined body. This
+    // second walk ensures that a syntactically valid orphan intrinsic cannot
+    // evade the closed schedule merely because no function executes it.
+    for function in program.functions.iter().filter(|function| !function.is_extern) {
+        if let Some(root) = function.body_node {
+            let mut pending = vec![root];
+            while let Some(index) = pending.pop() {
+                if reachable.insert(index) {
+                    pending.extend(program.nodes[index].children.iter().copied());
+                }
+            }
+        }
+    }
+    for (index, node) in program.nodes.iter().enumerate() {
+        if node.kind == "CollectionIntrinsic" {
+            if !reachable.contains(&index) {
+                return Err(invalid("collection intrinsic is outside every defined body"));
+            }
+            resolved.insert(index, resolve_collection_intrinsic(program, index)?);
+        } else if node.collection_intrinsic.is_some() {
+            return Err(invalid("non-intrinsic node has collection operation metadata"));
+        }
+    }
+    Ok(resolved)
+}
+
+#[cfg(test)]
+mod collection_intrinsic_work_budget_tests {
+    #[test]
+    fn layout_resolution_rejects_multiplied_work_before_orphan_walk() {
+        let canonical = include_str!(
+            "testdata/scoped_byte_copy_intrinsic_caller_five_arg_producer.canonical");
+        let mut program = super::parse(canonical)
+            .expect("actual collection operation baseline must parse");
+        super::validate_collection_intrinsic_shapes(&program)
+            .expect("baseline operation/layout work must fit");
+        let operation = program.nodes.iter().find(|node|
+            node.kind == "CollectionIntrinsic").expect("executable operation").clone();
+        let unrelated_layout = program.layouts.iter().find(|layout|
+            layout.erased_name == "APIRequest").expect("unrelated layout").clone();
+        for _ in 0..1_000 {
+            program.nodes.push(operation.clone());
+            program.layouts.push(unrelated_layout.clone());
+        }
+        let error = super::validate_collection_intrinsic_shapes(&program)
+            .unwrap_err().to_string();
+        assert!(error.contains("collection layout work budget exceeded"), "{error}");
+    }
+
+    #[test]
+    fn nonbyte_element_refuses_before_recursive_layout_resolution() {
+        let canonical = include_str!(
+            "testdata/scoped_byte_copy_intrinsic_caller_five_arg_producer.canonical");
+        let mut program = super::parse(canonical)
+            .expect("actual collection operation baseline must parse");
+        let index = program.nodes.iter().position(|node|
+            node.collection_intrinsic.as_ref().is_some_and(|plan|
+                plan.opcode == "Read")).expect("actual executable Read");
+        program.nodes[index].collection_intrinsic.as_mut().unwrap().element_type =
+            "Struct(\"UnknownRecursiveElement\", None)".to_string();
+        let error = super::resolve_collection_intrinsic(&program, index)
+            .unwrap_err().to_string();
+        assert!(error.contains("unsupported element type"), "{error}");
+    }
+}
+
+pub(crate) fn resolve_native_vector_layout(program: &Program, receiver_type: &str)
+    -> Result<Option<ResolvedNativeVectorLayout>, Box<dyn Error>> {
+    let Some(name) = native_vector_dispatch_name(receiver_type) else {
+        return Ok(None);
+    };
+    let value_type = if receiver_type.starts_with("Reference(") {
+        pointer_inner_type(receiver_type)
+            .ok_or_else(|| invalid("collection reference receiver has no value type"))?
+    } else {
+        receiver_type
+    };
+    let source = program.layouts.iter().find(|layout| layout.erased_name == name)
+        .ok_or_else(|| invalid("native collection has no canonical layout"))?;
+    let layout = LayoutEngine::new(program, 8).layout(value_type)?;
+    let field = |key: &str| layout.fields.get(key).ok_or_else(||
+        invalid(format!("native collection has no {key} field")));
+    let data = field("data")?;
+    let len = field("len")?;
+    let capacity = field("capacity")?;
+    let arena = field("arena")?;
+    let element_type = data.ty.strip_prefix("RawPointer(")
+        .and_then(|value| value.strip_suffix(')'))
+        .ok_or_else(|| invalid("native collection data is not raw element storage"))?;
+    if len.ty != "Int" || capacity.ty != "Int" || arena.ty != "RawPointer(Arena)" {
+        return Err(invalid("native collection has incompatible length, capacity, or arena fields"));
+    }
+    Ok(Some(ResolvedNativeVectorLayout {
+        element_type: element_type.to_string(), field_count: source.fields.len(),
+        packed: source.packed, repr_c: source.repr_c,
+        data_offset: data.offset, len_offset: len.offset,
+        capacity_offset: capacity.offset, arena_offset: arena.offset,
+    }))
+}
+
+#[cfg(test)]
+mod native_vector_dispatch_tests {
+    use super::{native_vector_dispatch_name, native_vector_value_dispatch_name};
+
+    #[test]
+    fn ordinary_value_dispatch_does_not_unwrap_another_receiver() {
+        let value = "Struct(\"std_Vector_byte\", None)";
+        let borrowed = "Reference(Struct(\"std_Vector_byte\", None), None)";
+        let nested = "Reference(Reference(Struct(\"std_Vector_byte\", None), None), None)";
+        let raw = "RawPointer(Struct(\"std_Vector_byte\", None))";
+        assert_eq!(native_vector_value_dispatch_name(value).as_deref(), Some("std_Vector_byte"));
+        assert!(native_vector_value_dispatch_name(borrowed).is_none());
+        assert!(native_vector_value_dispatch_name(raw).is_none());
+        assert_eq!(native_vector_dispatch_name(borrowed).as_deref(), Some("std_Vector_byte"));
+        assert!(native_vector_dispatch_name(nested).is_none());
+        assert!(native_vector_dispatch_name(raw).is_none());
+    }
+}
+
+// Release data, not an app-controlled annotation. The source compiler admits
+// only this exact runtime constructor; the worker independently verifies the
+// same symbol, source wrapper layout, and terminal release call.
+const FALLIBLE_OWNED_OUT_CONSTRUCTOR: &str = "os_FfiCallRegionTryCreate";
+const FALLIBLE_OWNED_OUT_RELEASE: &str = "os_FfiCallRegionFree";
+
+fn region_operation_role(function: &Function) -> Option<&'static str> {
+    let contract = function.ffi_contract.as_ref()?;
+    if !function.is_extern || !contract.destructor.is_empty() { return None; }
+    let formals: Vec<_> = function.parameters.iter().map(|(_, ty)| ty.as_str()).collect();
+    let policies: Vec<_> = contract.parameter_policies.iter().map(String::as_str).collect();
+    match function.extern_symbol.as_str() {
+        "os_FfiCallRegionWriteInput" if formals == ["RawPointer(Byte)", "Int", "Byte"] &&
+            policies == ["region_access_call", "value", "value"] &&
+            function.result_type == "Int" && contract.result_policy == "value" => Some("write_input"),
+        "os_FfiCallRegionInputAddress" if formals == ["RawPointer(Byte)"] &&
+            policies == ["region_access_call"] && function.result_type == "RawPointer(Byte)" &&
+            contract.result_policy == "raw_untrusted" => Some("input_address"),
+        "os_FfiCallRegionOutputAddress" if formals == ["RawPointer(Byte)"] &&
+            policies == ["region_access_call"] && function.result_type == "RawPointer(Byte)" &&
+            contract.result_policy == "raw_untrusted" => Some("output_address"),
+        "os_FfiCallRegionAcceptResult" if formals == ["RawPointer(Byte)", "Int"] &&
+            policies == ["region_access_call", "value"] &&
+            function.result_type == "Int" && contract.result_policy == "value" => Some("accept_result"),
+        "os_FfiCallRegionReadOutput" if formals == ["RawPointer(Byte)", "Int", "RawPointer(Byte)"] &&
+            policies == ["region_access_call", "value", "borrow_write_call"] &&
+            function.result_type == "Int" && contract.result_policy == "value" => Some("read_output"),
+        _ => None,
+    }
+}
+
+fn fallible_owned_out_owner(
+    function: &Function,
+    layouts: &HashMap<&str, &Layout>,
+) -> Option<String> {
+    let wrapper_name = struct_type_name(&function.result_type)?;
+    let wrapper = layouts.get(wrapper_name.as_str())?;
+    if !wrapper.repr_c || wrapper.packed || wrapper.abi != "C" ||
+        !wrapper.brand.is_empty() || wrapper.fields.len() != 3 ||
+        wrapper.fields.iter().filter(|field| field.name == "Ok" && field.ty == "Int").count() != 1 ||
+        wrapper.fields.iter().filter(|field| field.name == "Code" && field.ty == "Int").count() != 1 ||
+        wrapper.fields.iter().filter(|field| field.name == "Val").count() != 1 {
+        return None;
+    }
+    wrapper.fields.iter().find(|field| field.name == "Val")
+        .and_then(|field| struct_type_name(&field.ty))
+}
+
 fn validate_ffi_policies(
     functions: &[Function],
     nodes: &[Node],
@@ -172,6 +532,21 @@ fn validate_ffi_policies(
                 return Err(invalid("internal function carries external FFI policy"));
             }
             continue;
+        }
+        if function.extern_symbol == FALLIBLE_OWNED_OUT_CONSTRUCTOR &&
+            !function.ffi_contract.as_ref().is_some_and(|contract|
+                contract.result_policy == "fallible_owned_out") {
+            return Err(invalid("reserved fallible region constructor lacks its exact policy"));
+        }
+        if function.extern_symbol == FALLIBLE_OWNED_OUT_RELEASE &&
+            !function.ffi_contract.as_ref().is_some_and(|contract|
+                contract.result_policy == "value" && contract.destructor.is_empty() &&
+                contract.parameter_policies.as_slice() == ["release_owned"] &&
+                function.parameters.len() == 1 &&
+                function.parameters[0].1 == "RawPointer(Byte)" &&
+                function.result_type == "Void" &&
+                target == "x86_64-unknown-linux-gnu" && object_format == "Elf") {
+            return Err(invalid("reserved fallible region release lacks its exact policy"));
         }
         let Some(contract) = &function.ffi_contract else {
             // The checked-in bootstrap emits this original row. Legacy rows
@@ -207,6 +582,8 @@ fn validate_ffi_policies(
                 "borrow_write_call" => raw,
                 "borrow_read_isolated_call" => reference,
                 "borrow_write_isolated_call" => raw,
+                "region_access_call" => ty == "RawPointer(Byte)" &&
+                    target == "x86_64-unknown-linux-gnu" && object_format == "Elf",
                 "retain" => raw && function.result_type == "Void" &&
                     target == "x86_64-unknown-linux-gnu" && object_format == "Elf",
                 "release_owned" => raw && function.parameters.len() == 1 &&
@@ -232,6 +609,12 @@ fn validate_ffi_policies(
                     .is_some_and(|name| repr_int.contains(name.as_str())),
             "raw_untrusted" => function.result_type.starts_with("RawPointer("),
             "owned_return" => struct_type_name(&function.result_type).is_some(),
+            "fallible_owned_out" => function.extern_symbol == FALLIBLE_OWNED_OUT_CONSTRUCTOR &&
+                function.parameters.len() == 2 &&
+                function.parameters.iter().all(|(_, ty)| ty == "Int") &&
+                contract.parameter_policies.as_slice() == ["value", "value"] &&
+                target == "x86_64-unknown-linux-gnu" && object_format == "Elf" &&
+                fallible_owned_out_owner(function, layouts).is_some(),
             "native_error" => function.result_type == "Int" &&
                 target == "x86_64-unknown-linux-gnu" && object_format == "Elf" &&
                 contract.parameter_policies.iter().zip(&function.parameters)
@@ -244,16 +627,39 @@ fn validate_ffi_policies(
             _ => false,
         };
         if !result_valid ||
-            (contract.result_policy != "owned_return" && !contract.destructor.is_empty()) {
+            (!matches!(contract.result_policy.as_str(), "owned_return" | "fallible_owned_out") &&
+                !contract.destructor.is_empty()) {
             return Err(invalid("FFI result policy and canonical type disagree"));
         }
-        if contract.result_policy != "owned_return" { continue; }
+        if (contract.parameter_policies.iter().any(|policy| policy == "region_access_call") ||
+            matches!(function.extern_symbol.as_str(),
+                "os_FfiCallRegionWriteInput" | "os_FfiCallRegionInputAddress" |
+                "os_FfiCallRegionOutputAddress" | "os_FfiCallRegionAcceptResult" |
+                "os_FfiCallRegionReadOutput")) && region_operation_role(function).is_none() {
+            return Err(invalid("region operation lacks its exact registered runtime ABI"));
+        }
+        if !matches!(contract.result_policy.as_str(), "owned_return" | "fallible_owned_out") {
+            continue;
+        }
         if target != "x86_64-unknown-linux-gnu" || object_format != "Elf" ||
             contract.destructor.is_empty() {
             return Err(invalid("owned FFI result target, position, or destructor is unsupported"));
         }
-        let owner = struct_type_name(&function.result_type)
-            .ok_or_else(|| invalid("owned FFI result has no struct identity"))?;
+        let owner = if contract.result_policy == "fallible_owned_out" {
+            fallible_owned_out_owner(function, layouts)
+        } else {
+            struct_type_name(&function.result_type)
+        }.ok_or_else(|| invalid("owned FFI result has no struct identity"))?;
+        let owner_type = if contract.result_policy == "fallible_owned_out" {
+            let wrapper_name = struct_type_name(&function.result_type)
+                .ok_or_else(|| invalid("fallible owned out wrapper has no struct identity"))?;
+            layouts.get(wrapper_name.as_str())
+                .and_then(|wrapper| wrapper.fields.iter().find(|field| field.name == "Val"))
+                .map(|field| field.ty.clone())
+                .ok_or_else(|| invalid("fallible owned out wrapper lacks Val"))?
+        } else {
+            function.result_type.clone()
+        };
         let layout = layouts.get(owner.as_str())
             .ok_or_else(|| invalid("owned FFI result has no canonical layout"))?;
         if !layout.repr_c || layout.packed || layout.abi != "C" ||
@@ -268,7 +674,7 @@ fn validate_ffi_policies(
             candidate.module_index == function.module_index &&
             candidate.result_type == "Void" &&
             candidate.parameters.len() == 1 &&
-            candidate.parameters[0].1 == function.result_type)
+            candidate.parameters[0].1 == owner_type)
             .ok_or_else(|| invalid("owned FFI result lacks a matching destructor"))?;
         let body = destructor.body_node.and_then(|index| nodes.get(index))
             .ok_or_else(|| invalid("owned FFI destructor body is missing"))?;
@@ -298,6 +704,8 @@ fn validate_ffi_policies(
         }
         let release = functions.iter().find(|candidate|
             candidate.qualified_name == call.second_text &&
+            (contract.result_policy != "fallible_owned_out" ||
+                candidate.extern_symbol == FALLIBLE_OWNED_OUT_RELEASE) &&
             candidate.is_extern && candidate.module_index == function.module_index &&
             candidate.parameters.len() == 1 &&
             candidate.parameters[0].1 == layout.fields[0].ty &&
@@ -306,6 +714,15 @@ fn validate_ffi_policies(
                 policy.result_policy == "value" && policy.destructor.is_empty() &&
                 policy.parameter_policies.as_slice() == ["release_owned"]))
             .ok_or_else(|| invalid("owned FFI destructor lacks its qualified native release"))?;
+        if contract.result_policy == "fallible_owned_out" {
+            let callee = &nodes[call.children[0]];
+            if call.ty != release.result_type || call.text != release.source_name ||
+                callee.kind != "LocalRead" || callee.ty != "Void" ||
+                callee.text != call.text || !callee.children.is_empty() ||
+                matches!(call.text.as_str(), "len" | "os_ArenaAlloc" | "os.ArenaAlloc") {
+                return Err(invalid("fallible owned out release has an inline or forged callee"));
+            }
+        }
         paired_releases.insert(release.qualified_name.as_str());
         owned_authorities.insert((function.module_index, owner));
     }
@@ -748,6 +1165,10 @@ fn validate_direct_call_plans(program: &Program) -> Result<(), Box<dyn Error>> {
                 *policy == "borrow_write_call")
             .collect();
         if direct.is_empty() { continue; }
+        if direct.iter().all(|(index, _)| function.parameters[*index].1 == "RawPointer(Byte)") {
+            // The separately versioned byte-span validator owns this shape.
+            continue;
+        }
         if program.target_triple != "x86_64-unknown-linux-gnu" ||
             program.object_format != "Elf" {
             return Err(invalid("direct FFI target ABI is unsupported"));
@@ -781,6 +1202,10 @@ fn validate_direct_call_plans(program: &Program) -> Result<(), Box<dyn Error>> {
     for node in &program.nodes {
         if node.kind != "Call" { continue; }
         let function = functions.get(node.second_text.as_str()).copied();
+        if node.second_integer == 11 &&
+            function.and_then(|function| region_operation_role(function)).is_some() {
+            continue;
+        }
         let direct: Vec<_> = function.and_then(|function| function.ffi_contract.as_ref())
             .map(|contract| contract.parameter_policies.iter().enumerate()
                 .filter(|(_, policy)| *policy == "borrow_read_call" ||
@@ -788,6 +1213,7 @@ fn validate_direct_call_plans(program: &Program) -> Result<(), Box<dyn Error>> {
                 .collect())
             .unwrap_or_default();
         if node.second_integer != 4 {
+            if node.second_integer == 10 { continue; }
             if node.second_integer == 8 { continue; }
             if !direct.is_empty() && node.second_integer != 0 {
                 return Err(invalid("direct FFI Call has a mismatched legacy policy"));
@@ -846,6 +1272,288 @@ fn validate_direct_call_plans(program: &Program) -> Result<(), Box<dyn Error>> {
         }
     }
     Ok(())
+}
+
+pub(crate) fn byte_span_contract(function: &Function) -> Result<Vec<(usize, usize, &'static str)>, Box<dyn Error>> {
+    if region_operation_role(function).is_some() { return Ok(Vec::new()); }
+    let Some(contract) = function.ffi_contract.as_ref() else { return Ok(Vec::new()); };
+    let selected = contract.parameter_policies.iter().enumerate().any(|(index, policy)|
+        matches!(policy.as_str(), "borrow_read_call" | "borrow_write_call") &&
+        function.parameters.get(index).is_some_and(|(_, ty)| ty == "RawPointer(Byte)"));
+    if !selected { return Ok(Vec::new()); }
+    if !function.is_extern || function.result_type != "Int" ||
+        contract.result_policy != "value" ||
+        contract.parameter_policies.len() != function.parameters.len() {
+        return Err(invalid("byte-span extern result or policy is unsupported"));
+    }
+    let mut spans = Vec::new();
+    let mut index = 0;
+    while index < function.parameters.len() {
+        let policy = contract.parameter_policies[index].as_str();
+        if matches!(policy, "borrow_read_call" | "borrow_write_call") {
+            let count_index = index + 1;
+            if spans.len() >= 2 || function.parameters[index].1 != "RawPointer(Byte)" ||
+                function.parameters.get(count_index).map_or(true, |(_, ty)| ty != "Int") ||
+                contract.parameter_policies.get(count_index).map_or(true, |p| p != "value") {
+                return Err(invalid("byte-span pointer lacks an adjacent Int/value count"));
+            }
+            spans.push((index, count_index, if policy == "borrow_read_call" { "read" } else { "write" }));
+            index += 2;
+        } else {
+            if policy != "value" ||
+                !matches!(function.parameters[index].1.as_str(), "Int" | "Byte" | "Bool") {
+                return Err(invalid("byte-span nonselected formal is not a scalar value"));
+            }
+            index += 1;
+        }
+    }
+    Ok(spans)
+}
+
+fn validate_byte_span_call_plans(program: &Program) -> Result<(), Box<dyn Error>> {
+    let reachability = new_call_reachability(program)?;
+    let functions: HashMap<_, _> = program.functions.iter()
+        .map(|function| (function.qualified_name.as_str(), function)).collect();
+    for function in &program.functions {
+        if !byte_span_contract(function)?.is_empty() &&
+            (program.target_triple != "x86_64-unknown-linux-gnu" || program.object_format != "Elf") {
+            return Err(invalid("byte-span target ABI is unsupported"));
+        }
+    }
+    for (call_index, node) in program.nodes.iter().enumerate() {
+        if node.kind != "Call" { continue; }
+        let function = functions.get(node.second_text.as_str()).copied();
+        let spans = function.map(byte_span_contract).transpose()?.unwrap_or_default();
+        if spans.is_empty() {
+            if node.second_integer == 10 { return Err(invalid("byte-span Call has no extern declaration")); }
+            continue;
+        }
+        let function = function.ok_or_else(|| invalid("byte-span Call has no extern declaration"))?;
+        if node.second_integer != 10 || node.ty != function.result_type ||
+            node.children.len() != function.parameters.len() + 1 ||
+            !checked_new_call_callee(program, node, function) {
+            return Err(invalid("byte-span Call lacks its exact canonical positions"));
+        }
+        if reachability.get(&call_index) != Some(&(1, 1)) {
+            return Err(invalid("byte-span Call is not uniquely owned by an unsafe scope"));
+        }
+        let plan = node.isolated_call_plan.as_ref()
+            .ok_or_else(|| invalid("byte-span Call lacks a versioned plan"))?;
+        if plan.target_triple != program.target_triple || plan.cleanup != "synchronous_call" ||
+            plan.positions.len() != spans.len() || plan.retained.is_some() {
+            return Err(invalid("byte-span Call target, cleanup, or position count disagrees"));
+        }
+        for (position, (pointer_index, count_index, direction)) in plan.positions.iter().zip(spans) {
+            if position.index != pointer_index || position.count_index != Some(count_index) ||
+                position.direction != direction || position.aggregate_type != "Byte" ||
+                position.size != 1 || position.align != 1 ||
+                position.provenance != "direct_raw_byte_span" ||
+                program.nodes[node.children[pointer_index + 1]].ty != "RawPointer(Byte)" ||
+                program.nodes[node.children[count_index + 1]].ty != "Int" {
+                return Err(invalid("byte-span Call type, pair, direction, or provenance disagrees"));
+            }
+        }
+    }
+    Ok(())
+}
+
+// An exact registered runtime signature is necessary but does not make a raw
+// handle live. The separate scoped-copy validator must bind these checked
+// calls to one successful Guard activation before native emission.
+fn validate_region_operation_call_plans(program: &Program) -> Result<(), Box<dyn Error>> {
+    let reachability = new_call_reachability(program)?;
+    let functions: HashMap<_, _> = program.functions.iter()
+        .map(|function| (function.qualified_name.as_str(), function)).collect();
+    for (call_index, call) in program.nodes.iter().enumerate() {
+        if call.kind != "Call" { continue; }
+        let selected = functions.get(call.second_text.as_str()).copied();
+        let symbol = selected.map_or_else(|| runtime_symbol(call),
+            |function| function.extern_symbol.clone());
+        let is_region = matches!(symbol.as_str(),
+            "os_FfiCallRegionWriteInput" | "os_FfiCallRegionInputAddress" |
+            "os_FfiCallRegionOutputAddress" | "os_FfiCallRegionAcceptResult" |
+            "os_FfiCallRegionReadOutput");
+        if !is_region && call.second_integer != 11 { continue; }
+        let function = selected.ok_or_else(|| invalid(
+            "region operation has no checked extern declaration"))?;
+        let role = region_operation_role(function).ok_or_else(|| invalid(
+            "region operation has no exact registered runtime signature"))?;
+        if !is_region || call.second_integer != 11 ||
+            !checked_new_call_callee(program, call, function) ||
+            call.ty != function.result_type ||
+            call.children.len() != function.parameters.len() + 1 ||
+            program.target_triple != "x86_64-unknown-linux-gnu" ||
+            program.object_format != "Elf" {
+            return Err(invalid("region operation lacks its tagged call or target ABI"));
+        }
+        for (position, (_, ty)) in function.parameters.iter().enumerate() {
+            if program.nodes[call.children[position + 1]].ty != *ty {
+                return Err(invalid("region operation argument type disagrees"));
+            }
+        }
+        if reachability.get(&call_index) != Some(&(1, 1)) {
+            return Err(invalid("region operation is not uniquely owned by an unsafe scope"));
+        }
+        let plan = call.isolated_call_plan.as_ref().ok_or_else(|| invalid(
+            "region operation lacks a versioned plan"))?;
+        let expected_count = if role == "read_output" { 2 } else { 1 };
+        if plan.target_triple != program.target_triple ||
+            plan.cleanup != role || plan.retained.is_some() ||
+            plan.positions.len() != expected_count {
+            return Err(invalid("region operation role, target, or positions disagree"));
+        }
+        let owner_position = &plan.positions[0];
+        if owner_position.index != 0 || owner_position.count_index.is_some() ||
+            owner_position.direction != "region" ||
+            owner_position.aggregate_type != "Byte" ||
+            owner_position.size != 8 || owner_position.align != 8 ||
+            owner_position.provenance != "sealed_guard_owner.v1" {
+            return Err(invalid("region operation owner position disagrees"));
+        }
+        if role == "read_output" {
+            let out = &plan.positions[1];
+            if out.index != 2 || out.count_index.is_some() ||
+                out.direction != "byte_out" || out.aggregate_type != "Byte" ||
+                out.size != 1 || out.align != 1 ||
+                out.provenance != "checked_local_byte_out.v1" {
+                return Err(invalid("region operation byte-out position disagrees"));
+            }
+        }
+        let raw = &program.nodes[call.children[1]];
+        let owner_read = (raw.kind == "FieldOrMethodSelect" &&
+            raw.ty == "RawPointer(Byte)" && raw.children.len() == 1)
+            .then(|| program.nodes.get(raw.children[0])).flatten()
+            .ok_or_else(|| invalid("region operation has no direct owner field"))?;
+        let owner_name = struct_type_name(&owner_read.ty)
+            .ok_or_else(|| invalid("region operation has no owner type"))?;
+        let layout = program.layouts.iter().find(|layout|
+            layout.erased_name == owner_name && layout.brand.is_empty() &&
+            layout.repr_c && layout.abi == "C" && !layout.packed &&
+            layout.fields.len() == 1 &&
+            layout.fields[0].ty == "RawPointer(Byte)")
+            .ok_or_else(|| invalid("region operation owner layout disagrees"))?;
+        if owner_read.kind != "LocalRead" || owner_read.text.is_empty() ||
+            raw.text != layout.fields[0].name {
+            return Err(invalid("region operation raw field has no direct local owner"));
+        }
+    }
+    Ok(())
+}
+
+// The native lowerer dispatches inline calls before it inspects tagged FFI
+// policy. A tag and a qualified target field therefore cannot authenticate a
+// Call whose callee child or display spelling would select an inline operation.
+// Bind the child to the exact declared extern and exclude that alternate path.
+fn checked_new_call_callee(program: &Program, call: &Node, function: &Function) -> bool {
+    if !function.is_extern || call.kind != "Call" || call.children.is_empty() ||
+        call.second_text != function.qualified_name || is_inline_call(program, call) {
+        return false;
+    }
+    let callee = &program.nodes[call.children[0]];
+    // Source spelling may be a direct imported alias or module.selector.
+    // The resolved declaration supplies link authority. A selector is allowed
+    // only over a pure module-shaped leaf, never over a value receiver.
+    if callee.kind == "LocalRead" {
+        return callee.ty == "Void" && !callee.text.is_empty() &&
+            callee.text == call.text;
+    }
+    if callee.kind != "FieldOrMethodSelect" || callee.children.len() != 1 ||
+        callee.text.is_empty() { return false; }
+    let receiver = &program.nodes[callee.children[0]];
+    receiver.kind == "LocalRead" && receiver.ty == "Void" &&
+        !receiver.text.is_empty() &&
+        !program.functions.iter().any(|defined| !defined.is_extern &&
+            defined.parameters.iter().any(|(name, _)| name == &receiver.text)) &&
+        !program.nodes.iter().any(|other| other.kind == "LocalDeclare" &&
+            other.text == receiver.text) &&
+        call.text == format!("{}.{}", receiver.text, callee.text)
+}
+
+// The seven exported region functions are in the approved runtime package,
+// but package membership alone does not authorize an unbound or differently
+// tagged call to the constructor/Free ABI. Check the actual resolved Call
+// path before either signed coverage or native lowering can use that symbol.
+fn validate_reserved_fallible_region_calls(program: &Program) -> Result<(), Box<dyn Error>> {
+    for call in program.nodes.iter().filter(|node| node.kind == "Call") {
+        let selected = program.functions.iter().find(|function|
+            function.qualified_name == call.second_text);
+        let symbol = selected.map_or_else(|| runtime_symbol(call),
+            |function| function.extern_symbol.clone());
+        if !matches!(symbol.as_str(),
+            FALLIBLE_OWNED_OUT_CONSTRUCTOR | FALLIBLE_OWNED_OUT_RELEASE) {
+            continue;
+        }
+        let function = selected.ok_or_else(|| invalid(
+            "reserved fallible region runtime Call lacks its declaration"))?;
+        if !checked_new_call_callee(program, call, function) ||
+            call.ty != function.result_type ||
+            call.children.len() != function.parameters.len() + 1 ||
+            (symbol == FALLIBLE_OWNED_OUT_CONSTRUCTOR && call.second_integer != 9) ||
+            (symbol == FALLIBLE_OWNED_OUT_RELEASE && call.second_integer != 0) {
+            return Err(invalid("reserved fallible region runtime Call has an unapproved ABI route"));
+        }
+    }
+    Ok(())
+}
+
+fn validate_scoped_byte_copy_plans(program: &Program)
+    -> Result<HashMap<usize, crate::scoped_byte_copy::ScopedProof>, Box<dyn Error>> {
+    crate::scoped_byte_copy::validate(program)
+}
+
+// A canonical node is a DAG node, even when a source expression looked like a
+// tree. New byte-span/region calls and collection intrinsics require one
+// occurrence. Bound the traversal before any older recursive validator can
+// expand a shared subtree or a path deep enough to exhaust the worker stack.
+// This restriction applies only to the new tagged cohort.
+fn new_call_reachability(program: &Program) -> Result<HashMap<usize, (u8, u8)>, Box<dyn Error>> {
+    const MAX_NODES: usize = 65_536;
+    const MAX_EDGES: usize = 262_144;
+    const MAX_DEPTH: usize = 1_024;
+    if !program.functions.iter().any(|function|
+        function.scoped_byte_copy.is_some()) &&
+        !program.nodes.iter().any(|node|
+            node.kind == "CollectionIntrinsic" || node.kind == "Call" &&
+            matches!(node.second_integer, 9 | 10 | 11)) {
+        return Ok(HashMap::new());
+    }
+    // A constructor validator below also scans other functions in the same
+    // Program using older recursive helpers. Once a new call is present,
+    // bound every defined body before any such scan, including an unrelated
+    // same-module body without tag10/11. Programs without the new cohort keep
+    // their existing admission behavior.
+    let mut seen = HashSet::new();
+    let mut calls = HashMap::new();
+    let mut edges = 0usize;
+    for function in program.functions.iter().filter(|function| !function.is_extern) {
+        let Some(root) = function.body_node else { continue; };
+        if root >= program.nodes.len() {
+            return Err(invalid("byte-span activation has an invalid function body"));
+        }
+        let mut pending = vec![(root, 1usize, false)];
+        while let Some((index, depth, in_unsafe)) = pending.pop() {
+            if depth > MAX_DEPTH || index >= program.nodes.len() || !seen.insert(index) {
+                return Err(invalid("byte-span activation has a deep or shared canonical body"));
+            }
+            if seen.len() > MAX_NODES {
+                return Err(invalid("byte-span activation exceeds its canonical node budget"));
+            }
+            let node = &program.nodes[index];
+            let in_unsafe = in_unsafe || node.kind == "UnsafeScope";
+            if node.kind == "Call" && matches!(node.second_integer, 9 | 10 | 11) {
+                calls.insert(index, (1, u8::from(in_unsafe)));
+            }
+            edges = edges.checked_add(node.children.len())
+                .ok_or_else(|| invalid("byte-span activation edge count overflows"))?;
+            if edges > MAX_EDGES {
+                return Err(invalid("byte-span activation exceeds its canonical edge budget"));
+            }
+            for child in node.children.iter().rev() {
+                pending.push((*child, depth + 1, in_unsafe));
+            }
+        }
+    }
+    Ok(calls)
 }
 
 fn callback_call_in_unsafe(program: &Program, root: usize, target: usize, unsafe_scope: bool) -> usize {
@@ -1166,6 +1874,35 @@ fn retained_cleanup_call(program: &Program, index: usize, owner: &str, destructo
         program.nodes[node.children[1]].text == owner
 }
 
+// The new fallible owner must actually dispatch to its registered internal
+// destructor. A matching second_text and owner spelling alone can describe an
+// inline method that the lowerer would select before ordinary Call dispatch.
+fn fallible_cleanup_callee(program: &Program, index: usize, destructor: &str) -> bool {
+    let call = &program.nodes[index];
+    if call.kind != "Call" || call.children.is_empty() ||
+        call.second_integer != 0 || call.second_text != destructor ||
+        is_inline_call(program, call) {
+        return false;
+    }
+    let Some(function) = program.functions.iter().find(|function|
+        !function.is_extern && function.qualified_name == destructor) else {
+        return false;
+    };
+    let callee = &program.nodes[call.children[0]];
+    call.ty == function.result_type && call.text == function.source_name &&
+        callee.kind == "LocalRead" && callee.ty == "Void" &&
+        callee.text == call.text && callee.children.is_empty()
+}
+
+fn fallible_exact_owner_cleanup(program: &Program, index: usize, owner: &str,
+    owner_type: &str, destructor: &str) -> bool {
+    if !retained_cleanup_call(program, index, owner, destructor) ||
+        !fallible_cleanup_callee(program, index, destructor) { return false; }
+    let storage = &program.nodes[program.nodes[index].children[1]];
+    storage.ty == owner_type && storage.second_text == owner_type &&
+        storage.children.is_empty()
+}
+
 fn retained_owner_mentioned(program: &Program, index: usize, owner: &str) -> bool {
     let node = &program.nodes[index];
     ((node.kind == "LocalRead" || node.kind == "ResourceStorage") &&
@@ -1176,6 +1913,88 @@ fn retained_owner_mentioned(program: &Program, index: usize, owner: &str) -> boo
 fn retained_contains(program: &Program, root: usize, target: usize) -> bool {
     root == target || program.nodes[root].children.iter().any(|child|
         retained_contains(program, *child, target))
+}
+
+fn fallible_payload_or_move_mentioned(program: &Program, index: usize, result: &str) -> bool {
+    let node = &program.nodes[index];
+    let direct = ((node.kind == "FieldOrMethodSelect" && node.text == "Val") ||
+        node.kind == "MoveValue") && node.children.len() == 1 &&
+        program.nodes[node.children[0]].kind == "LocalRead" &&
+        program.nodes[node.children[0]].text == result;
+    direct || node.children.iter().any(|child|
+        fallible_payload_or_move_mentioned(program, *child, result))
+}
+
+fn fallible_unchecked_result_use(program: &Program, index: usize, result: &str) -> bool {
+    let node = &program.nodes[index];
+    if node.kind == "FieldOrMethodSelect" &&
+        matches!(node.text.as_str(), "Ok" | "Code") &&
+        node.children.len() == 1 &&
+        program.nodes[node.children[0]].kind == "LocalRead" &&
+        program.nodes[node.children[0]].text == result {
+        return false;
+    }
+    (node.kind == "LocalRead" && node.text == result) ||
+        node.children.iter().any(|child|
+            fallible_unchecked_result_use(program, *child, result))
+}
+
+fn fallible_only_expected_owner_cleanup(
+    program: &Program, index: usize, owner: &str, cleanup: usize,
+) -> bool {
+    if index == cleanup { return true; }
+    let node = &program.nodes[index];
+    if (node.kind == "LocalRead" || node.kind == "ResourceStorage" ||
+        node.kind == "LocalDeclare") &&
+        (node.text == owner || node.text.starts_with(&format!("{owner}."))) {
+        return false;
+    }
+    node.children.iter().all(|child|
+        fallible_only_expected_owner_cleanup(program, *child, owner, cleanup))
+}
+
+fn fallible_contains_nonlocal_control(program: &Program, index: usize) -> bool {
+    let node = &program.nodes[index];
+    matches!(node.kind.as_str(), "Return" | "Branch" | "Loop" | "GuardUnwrap" |
+        "UnsafeScope" | "EnumMatch" | "ScopeCleanup") ||
+        (node.kind == "Evaluate" && node.children.len() == 1 && {
+            let child = &program.nodes[node.children[0]];
+            child.kind == "LocalRead" && child.ty == "Void" &&
+                matches!(child.text.as_str(), "break" | "continue")
+        }) ||
+        node.children.iter().any(|child|
+            fallible_contains_nonlocal_control(program, *child))
+}
+
+fn fallible_automatic_cleanup(
+    program: &Program, block: &Node, guard_position: usize,
+    owner: &str, owner_type: &str, destructor: &str,
+) -> Option<usize> {
+    let tail = block.children.get(guard_position + 1..)?;
+    let terminal_index = *tail.last()?;
+    let terminal = &program.nodes[terminal_index];
+    if !matches!(terminal.kind.as_str(), "Return" | "ScopeCleanup") {
+        return None;
+    }
+    if tail[..tail.len() - 1].iter().any(|child| {
+        let statement = &program.nodes[*child];
+        !matches!(statement.kind.as_str(), "LocalDeclare" | "Evaluate" | "ScheduleDefer") ||
+            retained_owner_mentioned(program, *child, owner) ||
+            fallible_contains_nonlocal_control(program, *child) ||
+            !fallible_only_expected_owner_cleanup(program, *child, owner, usize::MAX)
+    }) {
+        return None;
+    }
+    let mut cleanups = terminal.children.iter().copied().filter(|child|
+        fallible_exact_owner_cleanup(program, *child, owner, owner_type, destructor));
+    let cleanup = cleanups.next()?;
+    if cleanups.next().is_some() ||
+        terminal.children.iter().any(|child| *child != cleanup &&
+            fallible_contains_nonlocal_control(program, *child)) ||
+        !fallible_only_expected_owner_cleanup(program, terminal_index, owner, cleanup) {
+        return None;
+    }
+    Some(cleanup)
 }
 
 fn validate_retained_after(program: &Program, index: usize, owner: &str,
@@ -1352,6 +2171,198 @@ fn validate_retained_lease_plans(program: &Program) -> Result<(), Box<dyn Error>
     Ok(())
 }
 
+// A tag on a Call is not acquisition authority. Bind the exact registered
+// constructor to one local result, one consuming Guard, and an ordinary-exit
+// cleanup scheduled on the successful Guard binding in the same body block.
+fn validate_fallible_owned_out_plans(program: &Program,
+    scoped_proofs: &HashMap<usize, crate::scoped_byte_copy::ScopedProof>)
+    -> Result<(), Box<dyn Error>> {
+    let reachability = new_call_reachability(program)?;
+    let functions: HashMap<_, _> = program.functions.iter()
+        .map(|function| (function.qualified_name.as_str(), function)).collect();
+    for (call_index, call) in program.nodes.iter().enumerate() {
+        if call.kind != "Call" { continue; }
+        let function = functions.get(call.second_text.as_str()).copied();
+        let authorized = function.and_then(|function| function.ffi_contract.as_ref())
+            .is_some_and(|contract| contract.result_policy == "fallible_owned_out");
+        if !authorized && call.second_integer != 9 { continue; }
+        let function = function.ok_or_else(|| invalid(
+            "fallible owned out Call lacks its registered constructor"))?;
+        let contract = function.ffi_contract.as_ref().ok_or_else(|| invalid(
+            "fallible owned out Call lacks its registered contract"))?;
+        if !authorized || call.second_integer != 9 ||
+            !checked_new_call_callee(program, call, function) ||
+            function.extern_symbol != FALLIBLE_OWNED_OUT_CONSTRUCTOR ||
+            call.ty != function.result_type || call.children.len() != 3 ||
+            call.children[1..].iter().any(|child| program.nodes[*child].ty != "Int") {
+            return Err(invalid("fallible owned out Call lacks exact constructor and arguments"));
+        }
+        if reachability.get(&call_index) != Some(&(1, 1)) {
+            return Err(invalid("fallible owned out Call is not uniquely owned by an unsafe scope"));
+        }
+        let parents: Vec<_> = program.nodes.iter().filter(|node|
+            node.children.contains(&call_index)).collect();
+        if parents.len() != 1 || parents[0].kind != "LocalDeclare" ||
+            parents[0].children.as_slice() != [call_index] {
+            return Err(invalid("fallible owned out Call has nonunique producing storage"));
+        }
+        let owner = fallible_owned_out_owner(function,
+            &program.layouts.iter().map(|layout| (layout.erased_name.as_str(), layout))
+                .collect())
+            .ok_or_else(|| invalid("fallible owned out Call lacks checked owner layout"))?;
+        let plan = call.isolated_call_plan.as_ref().ok_or_else(|| invalid(
+            "fallible owned out Call lacks versioned plan"))?;
+        if plan.target_triple != program.target_triple ||
+            plan.cleanup != contract.destructor || plan.retained.is_some() ||
+            plan.positions.len() != 1 {
+            return Err(invalid("fallible owned out plan target or destructor disagrees"));
+        }
+        let position = &plan.positions[0];
+        if position.index != 2 || position.direction != "out" ||
+            position.aggregate_type != owner || position.size != 8 ||
+            position.align != 8 ||
+            position.provenance != "status0_nonnull_owner_or_negative_null.v1" {
+            return Err(invalid("fallible owned out private slot or result invariant disagrees"));
+        }
+        if let Some(proof) = scoped_proofs.get(&call_index) {
+            let wrapper_name = struct_type_name(&call.ty).ok_or_else(|| invalid(
+                "scoped fallible result has no wrapper layout"))?;
+            let wrapper = program.layouts.iter().find(|layout|
+                layout.erased_name == wrapper_name).ok_or_else(|| invalid(
+                "scoped fallible result wrapper is missing"))?;
+            let owner_type = wrapper.fields.iter().find(|field|
+                field.name == "Val" && struct_type_name(&field.ty).as_deref() ==
+                    Some(owner.as_str())).ok_or_else(|| invalid(
+                "scoped fallible result owner disagrees"))?.ty.as_str();
+            if !proof.authorizes_constructor(call_index, owner_type,
+                &contract.destructor) {
+                return Err(invalid("scoped fallible proof does not bind its constructor"));
+            }
+            continue;
+        }
+        let mut occurrences = 0usize;
+        for candidate in program.functions.iter().filter(|candidate|
+            !candidate.is_extern && candidate.module_index == function.module_index) {
+            let Some(body) = candidate.body_node else { continue; };
+            for (block_index, block) in program.nodes.iter().enumerate() {
+                if block.kind != "Block" || !retained_contains(program, body, block_index) {
+                    continue;
+                }
+                for (index, declaration_index) in block.children.iter().enumerate() {
+                    let declaration = &program.nodes[*declaration_index];
+                    if declaration.kind != "LocalDeclare" ||
+                        declaration.children.as_slice() != [call_index] ||
+                        declaration.ty != call.ty { continue; }
+                    let result_name = &declaration.text;
+                    let guards: Vec<_> = block.children[index + 1..].iter().enumerate()
+                        .filter(|(_, child)| {
+                            let guard = &program.nodes[**child];
+                            if guard.kind != "GuardUnwrap" || guard.children.len() != 2 {
+                                return false;
+                            }
+                            let consumed = &program.nodes[guard.children[0]];
+                            consumed.kind == "MoveValue" && consumed.children.len() == 1 &&
+                                program.nodes[consumed.children[0]].kind == "LocalRead" &&
+                                program.nodes[consumed.children[0]].text == *result_name
+                        }).collect();
+                    if guards.len() != 1 { return Err(invalid(
+                        "fallible owned out result lacks one same-block consuming Guard")); }
+                    let guard_position = index + 1 + guards[0].0;
+                    let guard = &program.nodes[*guards[0].1];
+                    let wrapper_name = struct_type_name(&call.ty).ok_or_else(|| invalid(
+                        "fallible owned out result is not a wrapper struct"))?;
+                    let wrapper = program.layouts.iter().find(|layout|
+                        layout.erased_name == wrapper_name).ok_or_else(|| invalid(
+                            "fallible owned out wrapper layout is missing"))?;
+                    let guard_owner_type = wrapper.fields.iter().find(|field|
+                        field.name == "Val" && struct_type_name(&field.ty).as_deref() ==
+                            Some(owner.as_str()))
+                        .ok_or_else(|| invalid("fallible owned out Guard binding type disagrees"))?
+                        .ty.as_str();
+                    if guard.text.is_empty() { return Err(invalid(
+                        "fallible owned out Guard binding is unnamed")); }
+                    if block.children[index + 1..guard_position].iter().any(|child| {
+                        let statement = &program.nodes[*child];
+                        if statement.kind != "LocalDeclare" || statement.children.len() != 1 {
+                            return true;
+                        }
+                        let selection = &program.nodes[statement.children[0]];
+                        selection.kind != "FieldOrMethodSelect" ||
+                            !matches!(selection.text.as_str(), "Ok" | "Code") ||
+                            selection.children.len() != 1 ||
+                            program.nodes[selection.children[0]].kind != "LocalRead" ||
+                            program.nodes[selection.children[0]].text != *result_name ||
+                            fallible_unchecked_result_use(program, *child, result_name)
+                    }) {
+                        return Err(invalid("fallible owned out result has unqualified pre-Guard control flow or use"));
+                    }
+                    let failure = &program.nodes[guard.children[1]];
+                    if failure.kind != "Block" || !failure.children.last()
+                        .is_some_and(|last| program.nodes[*last].kind == "Return") ||
+                        retained_owner_mentioned(program, guard.children[1], result_name) ||
+                        retained_owner_mentioned(program, guard.children[1], &guard.text) {
+                        return Err(invalid("fallible owned out Guard failure does not return"));
+                    }
+                    let direct_release = block.children.get(guard_position + 1)
+                        .and_then(|child| program.nodes.get(*child))
+                        .filter(|deferred| deferred.kind == "ScheduleDefer" &&
+                            deferred.children.len() == 1 &&
+                            fallible_cleanup_callee(program, deferred.children[0],
+                                &contract.destructor))
+                        .and_then(|deferred| program.nodes.get(deferred.children[0]))
+                        .filter(|release| release.kind == "Call" &&
+                            release.second_text == contract.destructor &&
+                            release.children.len() == 2 &&
+                            program.nodes[release.children[1]].kind == "LocalRead" &&
+                            program.nodes[release.children[1]].text == guard.text)
+                        .is_some();
+                    if direct_release {
+                        let release_count = program.nodes.iter().enumerate()
+                            .filter(|(release_index, candidate_release)|
+                                candidate_release.kind == "Call" &&
+                                candidate_release.second_text == contract.destructor &&
+                                candidate_release.children.len() == 2 &&
+                                program.nodes[candidate_release.children[1]].kind == "LocalRead" &&
+                                program.nodes[candidate_release.children[1]].text == guard.text &&
+                                retained_contains(program, body, *release_index))
+                            .count();
+                        if release_count != 1 {
+                            return Err(invalid("fallible owned out owner has duplicate or missing release"));
+                        }
+                    } else {
+                        let cleanup = fallible_automatic_cleanup(program, block, guard_position,
+                            &guard.text, guard_owner_type, &contract.destructor).ok_or_else(|| invalid(
+                            "fallible owned out success cleanup identity disagrees"))?;
+                        let cleanup_count = program.nodes.iter().enumerate()
+                            .filter(|(index, _)| retained_contains(program, body, *index) &&
+                                fallible_exact_owner_cleanup(program, *index,
+                                    &guard.text, guard_owner_type, &contract.destructor))
+                            .count();
+                        if cleanup_count != 1 ||
+                            !retained_contains(program, body, cleanup) {
+                            return Err(invalid("fallible owned out owner has duplicate or missing automatic cleanup"));
+                        }
+                    }
+                    if block.children[guard_position + 1..].iter().any(|child|
+                        fallible_unchecked_result_use(program, *child, result_name) ||
+                        fallible_payload_or_move_mentioned(program, *child, result_name)) {
+                        return Err(invalid("fallible owned out result is reused after Guard"));
+                    }
+                    if direct_release && block.children[guard_position + 2..].iter().any(|child|
+                        retained_owner_mentioned(program, *child, &guard.text)) {
+                        return Err(invalid("fallible owned out owner escapes its checked release"));
+                    }
+                    occurrences += 1;
+                }
+            }
+        }
+        if occurrences != 1 {
+            return Err(invalid("fallible owned out Call lacks a unique activation and Guard"));
+        }
+    }
+    Ok(())
+}
+
 #[derive(Debug, Clone, Copy)]
 enum AbiShape {
     Void,
@@ -1402,6 +2413,24 @@ fn function_signature(
     layouts: &mut LayoutEngine<'_>,
 ) -> Result<(cranelift_codegen::ir::Signature, FunctionAbi), Box<dyn Error>> {
     let pointer_type = module.target_config().pointer_type();
+    if function.is_extern && function.ffi_contract.as_ref()
+        .is_some_and(|contract| contract.result_policy == "fallible_owned_out") {
+        if function.extern_symbol != FALLIBLE_OWNED_OUT_CONSTRUCTOR ||
+            function.parameters.len() != 2 ||
+            function.parameters.iter().any(|(_, ty)| ty != "Int") ||
+            pointer_type != types::I64 {
+            return Err(invalid("fallible owned out native signature is not registered"));
+        }
+        let mut signature = module.make_signature();
+        signature.params.push(AbiParam::new(types::I32));
+        signature.params.push(AbiParam::new(types::I32));
+        signature.params.push(AbiParam::new(pointer_type));
+        signature.returns.push(AbiParam::new(types::I32));
+        return Ok((signature, FunctionAbi {
+            result: AbiShape::Scalar(types::I32),
+            parameters: vec![AbiShape::Scalar(types::I32), AbiShape::Scalar(types::I32)],
+        }));
+    }
     let result = abi_shape(&function.result_type, false, pointer_type, layouts)?;
     let mut signature = module.make_signature();
     if let AbiShape::AggregateMemory(_) = result {
@@ -1605,6 +2634,21 @@ fn parse_bool(value: &str, field: &str) -> Result<bool, Box<dyn Error>> {
         "1" => Ok(true),
         _ => Err(invalid(format!("{field} is not 0 or 1"))),
     }
+}
+
+fn parse_scoped_binding(kind: &str, index: &str) -> Result<ScopedBinding, Box<dyn Error>> {
+    let index = parse_usize(index, "scoped byte-copy binding index")?;
+    match kind {
+        "local" => Ok(ScopedBinding::Local(index)),
+        "parameter" => Ok(ScopedBinding::Parameter(index)),
+        _ => Err(invalid("scoped byte-copy binding kind is unsupported")),
+    }
+}
+
+fn parse_scoped_anchor(kind: &str, index: &str, ty: &str) -> Result<ScopedAnchor, Box<dyn Error>> {
+    let ty = decode_hex(ty, "scoped byte-copy binding type")?;
+    validate_type(&ty, "scoped byte-copy binding type")?;
+    Ok(ScopedAnchor { binding: parse_scoped_binding(kind, index)?, ty })
 }
 
 fn field<'a>(line: &'a str, prefix: &str) -> Result<&'a str, Box<dyn Error>> {
@@ -1866,8 +2910,32 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             return Err(invalid("duplicate or empty full-program function identity"));
         }
         let is_extern = parse_bool(values[4], "function is_extern")?;
+        let mut scoped_byte_copy = None;
         let ffi_contract = if values.len() == base_fields {
             None // Checked-in bootstrap emits the exact legacy row.
+        } else if !is_extern && values.get(base_fields) == Some(&"scoped_byte_copy.v1") {
+            if values.len() != base_fields + 24 {
+                return Err(invalid("scoped byte-copy function row has wrong arity"));
+            }
+            let value = |position| values[base_fields + position];
+            scoped_byte_copy = Some(ScopedByteCopyCandidate {
+                scope: parse_usize(value(1), "scoped unsafe scope")?,
+                constructor_call: parse_usize(value(2), "scoped constructor")?,
+                result_declaration: parse_usize(value(3), "scoped result declaration")?,
+                guard: parse_usize(value(4), "scoped Guard")?,
+                owner_name: decode_hex(value(5), "scoped owner name")?,
+                input_backing: parse_scoped_anchor(value(6), value(7), value(8))?,
+                input_count: parse_scoped_anchor(value(9), value(10), value(11))?,
+                output_backing: parse_scoped_anchor(value(12), value(13), value(14))?,
+                output_capacity: parse_scoped_anchor(value(15), value(16), value(17))?,
+                prefill_loop: parse_usize(value(18), "scoped prefill loop")?,
+                input_loop: parse_usize(value(19), "scoped input loop")?,
+                native_call: parse_usize(value(20), "scoped native Call")?,
+                native_result_declaration: parse_usize(value(21), "scoped native result")?,
+                accept_call: parse_usize(value(22), "scoped AcceptResult")?,
+                output_loop: parse_usize(value(23), "scoped output loop")?,
+            });
+            None
         } else {
             if !is_extern || values.get(base_fields) != Some(&"ffi_policy.v1") {
                 return Err(invalid("full-program function has an unknown FFI policy extension"));
@@ -1923,6 +2991,7 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             body_node: (body_raw >= 0).then_some(body_raw as usize),
             parameters,
             ffi_contract,
+            scoped_byte_copy,
         });
     }
 
@@ -1940,6 +3009,7 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
         "AddressOf",
         "Dereference",
         "IndexRead",
+        "CollectionIntrinsic",
         "ExplicitCast",
         "BinaryOperation",
         "FieldOrMethodSelect",
@@ -2034,13 +3104,45 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             return Err(invalid("full-program node source range is inverted"));
         }
         let second_integer = parse_i32(values[6], "node second integer")?;
-        let isolated_call_plan = if kind == "Call" && matches!(second_integer, 3 | 4 | 5 | 6 | 7 | 8) {
+        let collection_intrinsic = if kind == "CollectionIntrinsic" {
+            if values.len() != child_end + 6 ||
+                values.get(child_end) != Some(&"collection_intrinsic.v1") ||
+                !values[3].is_empty() || !values[4].is_empty() ||
+                parse_i32(values[5], "collection integer")? != 0 || second_integer != 0 {
+                return Err(invalid("collection intrinsic has an unknown version or payload"));
+            }
+            let opcode = decode_hex(values[child_end + 1], "collection opcode")?;
+            let receiver_type = decode_hex(values[child_end + 2], "collection receiver type")?;
+            let element_type = decode_hex(values[child_end + 3], "collection element type")?;
+            let layout_id = decode_hex(values[child_end + 4], "collection layout identity")?;
+            let brand = decode_hex(values[child_end + 5], "collection brand")?;
+            validate_type(&receiver_type, "collection receiver type")?;
+            validate_type(&element_type, "collection element type")?;
+            let arity = match opcode.as_str() {
+                "Create" | "Clear" => 1,
+                "Read" | "Append" => 2,
+                _ => return Err(invalid("collection intrinsic has an unknown opcode")),
+            };
+            if child_count != arity || layout_id.is_empty() ||
+                (opcode == "Create" && ty != receiver_type) ||
+                (opcode == "Read" && ty != element_type) ||
+                (matches!(opcode.as_str(), "Clear" | "Append") && ty != "Void") {
+                return Err(invalid("collection intrinsic type or operand arity disagrees"));
+            }
+            Some(CollectionIntrinsicPlan {
+                opcode, receiver_type, element_type, layout_id, brand,
+            })
+        } else { None };
+        let isolated_call_plan = if kind == "Call" && matches!(second_integer, 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11) {
             let expected_tag = match second_integer {
                 3 => "isolated_call.v1",
                 4 => "direct_call.v1",
                 5 => "retained_lease.v1",
                 6 => "callback_call.v1",
                 7 => "native_error_status.v1",
+                9 => "fallible_owned_out.v1",
+                10 => "byte_span_call.v1",
+                11 => "region_operation.v1",
                 _ => "ffi_policy_vector_status.v1",
             };
             if values.get(child_end) != Some(&expected_tag) ||
@@ -2050,11 +3152,14 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             let target_triple = decode_hex(values[child_end + 1], "Call isolation target")?;
             let cleanup = decode_hex(values[child_end + 2], "Call isolation cleanup")?;
             let count = parse_usize(values[child_end + 3], "Call isolation position count")?;
-            let position_width = if second_integer == 5 { 9 } else { 6 };
+            let position_width = if second_integer == 5 { 9 } else if second_integer == 10 { 7 } else { 6 };
             if count == 0 || (!matches!(second_integer, 7 | 8) && count > child_count.saturating_sub(1)) ||
                 (second_integer == 5 && count != 1) ||
                 (second_integer == 6 && count != 1) ||
                 (second_integer == 7 && count != 1) ||
+                (second_integer == 9 && count != 1) ||
+                (second_integer == 10 && !(1..=2).contains(&count)) ||
+                (second_integer == 11 && !(1..=2).contains(&count)) ||
                 (second_integer == 8 && count != child_count) ||
                 count > (values.len() - child_end - 4) / position_width ||
                 values.len() != child_end + 4 + count * position_width {
@@ -2070,6 +3175,9 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
                     size: parse_u32(values[base + 3], "Call isolation byte size")?,
                     align: parse_u32(values[base + 4], "Call isolation alignment")?,
                     provenance: decode_hex(values[base + 5], "Call isolation provenance")?,
+                    count_index: if second_integer == 10 {
+                        Some(parse_usize(values[base + 6], "Call byte span count index")?)
+                    } else { None },
                 });
             }
             let retained = if second_integer == 5 {
@@ -2086,7 +3194,8 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             } else { None };
             Some(Box::new(IsolatedCallPlan { target_triple, cleanup, positions, retained }))
         } else {
-            if values.len() != child_end || kind == "Call" && !matches!(second_integer, 0 | 1 | 2) {
+            if (kind != "CollectionIntrinsic" && values.len() != child_end) ||
+                kind == "Call" && !matches!(second_integer, 0 | 1 | 2) {
                 return Err(invalid("full-program Call has an unknown optional policy or node extension"));
             }
             None
@@ -2099,6 +3208,7 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
             integer: parse_i32(values[5], "node integer")?,
             second_integer,
             isolated_call_plan,
+            collection_intrinsic,
             source_line,
             source_column,
             source_start,
@@ -2234,12 +3344,23 @@ pub fn parse(contents: &str) -> Result<Program, Box<dyn Error>> {
         nodes,
         entry_function,
     };
+    // The new tag9/10/11 cohort must reject shared or overdeep canonical bodies
+    // before older validators recursively inspect those same nodes.
+    new_call_reachability(&program)?;
+    let collection_shapes = validate_collection_intrinsic_shapes(&program)?;
+    validate_reserved_fallible_region_calls(&program)?;
     validate_isolated_call_plans(&program)?;
     validate_direct_call_plans(&program)?;
+    validate_byte_span_call_plans(&program)?;
+    validate_region_operation_call_plans(&program)?;
     validate_retained_lease_plans(&program)?;
     validate_callback_call_plans(&program)?;
     validate_native_error_call_plans(&program)?;
     validate_policy_vector_status_plans(&program)?;
+    let scoped_proofs = validate_scoped_byte_copy_plans(&program)?;
+    crate::collection_provenance::validate(&program, &scoped_proofs,
+        &collection_shapes.keys().copied().collect())?;
+    validate_fallible_owned_out_plans(&program, &scoped_proofs)?;
     Ok(program)
 }
 
@@ -2251,7 +3372,7 @@ struct Callable {
     result: String,
 }
 
-fn inline_call_name(program: &Program, node: &Node) -> Option<String> {
+pub(crate) fn inline_call_name(program: &Program, node: &Node) -> Option<String> {
     if node.kind != "Call" || node.children.is_empty() {
         return None;
     }
@@ -2267,7 +3388,7 @@ fn inline_call_name(program: &Program, node: &Node) -> Option<String> {
     }
 }
 
-fn is_inline_call(program: &Program, node: &Node) -> bool {
+pub(crate) fn is_inline_call(program: &Program, node: &Node) -> bool {
     let Some(name) = inline_call_name(program, node) else {
         return false;
     };
@@ -2489,6 +3610,7 @@ impl<'a> FullProgramCompiler<'a> {
                     .map(|(index, ty)| (format!("p{index}"), ty.clone()))
                     .collect(),
                 ffi_contract: None,
+                scoped_byte_copy: None,
             };
             let (signature, abi) = function_signature(&self.module, &synthetic, &mut self.layouts)?;
             let id = self
@@ -2548,6 +3670,7 @@ impl<'a> FullProgramCompiler<'a> {
             body_node: None,
             parameters: Vec::new(),
             ffi_contract: None,
+            scoped_byte_copy: None,
         };
         let (signature, abi) = function_signature(&self.module, &arena_new, &mut self.layouts)?;
         let id = self
@@ -3388,7 +4511,7 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         } else {
             &receiver_node.ty
         };
-        if struct_type_name(vector_type).is_some_and(|name| name.starts_with("std_Vector_")) {
+        if native_vector_value_dispatch_name(vector_type).is_some() {
             let (receiver, receiver_type) =
                 self.lower_receiver_place(builder, node.children[0], false)?;
             let (data_place, _) = self.field_place(builder, receiver, &receiver_type, "data")?;
@@ -3535,6 +4658,7 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
             "ResourceStorage" => self.lower_resource_storage(builder, node),
             "ConditionalCleanup" => self.lower_conditional_cleanup(builder, node),
             "Call" => self.lower_call(builder, node, expected_type),
+            "CollectionIntrinsic" => self.lower_collection_intrinsic(builder, node_index),
             "TypedQueryValue" => Err(invalid(
                 "typed query unexpectedly reached the compiler executable cohort",
             )),
@@ -3819,6 +4943,14 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         node: &Node,
         expected_type: Option<&str>,
     ) -> Result<Evaluated, Box<dyn Error>> {
+        if matches!(node.second_integer, 10 | 11) {
+            let selected = self.program.functions.iter().find(|function|
+                function.qualified_name == node.second_text)
+                .ok_or_else(|| invalid("tagged byte-span Call lost its extern declaration"))?;
+            if !checked_new_call_callee(self.program, node, selected) {
+                return Err(invalid("tagged byte-span Call has an inline or forged callee"));
+            }
+        }
         if is_inline_call(self.program, node) {
             return self.lower_inline_call(builder, node, expected_type);
         }
@@ -3848,7 +4980,10 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         if node.second_integer == 8 {
             return self.lower_policy_vector_status_call(builder, node, &callable, &arguments);
         }
-        if matches!(node.second_integer, 4 | 5 | 6 | 7) {
+        if node.second_integer == 9 {
+            return self.lower_fallible_owned_out_call(builder, node, &callable, &arguments);
+        }
+        if matches!(node.second_integer, 4 | 5 | 6 | 7 | 10 | 11) {
             if node.isolated_call_plan.is_none() ||
                 arguments.len() != callable.parameters.len() ||
                 !matches!(callable.abi.result, AbiShape::Void | AbiShape::Scalar(_)) ||
@@ -3858,6 +4993,73 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
             return self.emit_call(builder, &callable, &arguments);
         }
         self.emit_call(builder, &callable, &arguments)
+    }
+
+    fn lower_fallible_owned_out_call(
+        &mut self,
+        builder: &mut FunctionBuilder<'_>,
+        node: &Node,
+        callable: &Callable,
+        arguments: &[(usize, String)],
+    ) -> Result<Evaluated, Box<dyn Error>> {
+        if node.isolated_call_plan.is_none() || arguments.len() != 2 ||
+            arguments.iter().any(|(_, ty)| ty != "Int") ||
+            callable.parameters.len() != 2 ||
+            callable.parameters.iter().any(|ty| ty != "Int") ||
+            !matches!(callable.abi.result, AbiShape::Scalar(types::I32)) ||
+            callable.abi.parameters.len() != 2 ||
+            callable.abi.parameters.iter().any(|shape|
+                !matches!(shape, AbiShape::Scalar(types::I32))) ||
+            node.ty != callable.result {
+            return Err(invalid("fallible owned out Call lost its checked native ABI"));
+        }
+        let owner_name = struct_type_name(&node.ty)
+            .and_then(|name| self.layouts.layouts.get(name.as_str()).copied())
+            .and_then(|wrapper| wrapper.fields.iter().find(|field| field.name == "Val"))
+            .and_then(|field| struct_type_name(&field.ty))
+            .ok_or_else(|| invalid("fallible owned out Call lost its owner identity"))?;
+        let owner = self.layouts.layouts.get(owner_name.as_str())
+            .ok_or_else(|| invalid("fallible owned out owner layout is missing"))?;
+        if owner.fields.len() != 1 || !owner.fields[0].ty.starts_with("RawPointer(") {
+            return Err(invalid("fallible owned out owner has no raw pointer field"));
+        }
+        let raw_field = owner.fields[0].name.clone();
+        let mut values = Vec::with_capacity(3);
+        for (child, _) in arguments {
+            let evaluated = self.lower_expression(builder, *child, Some("Int"))?;
+            let value = self.scalar(builder, evaluated, "Int")?;
+            values.push(self.coerce_scalar(builder, value, types::I32));
+        }
+        let out = self.place_for_type(builder, "RawPointer(Void)")?;
+        values.push(out.address);
+        let native_ref = self.module.declare_func_in_func(callable.id, builder.func);
+        let native_call = builder.ins().call(native_ref, &values);
+        let status = builder.inst_results(native_call)[0];
+        let pointer = builder.ins().load(self.pointer_type(), MemFlags::trusted(), out.address, 0);
+        let success = builder.ins().icmp_imm(IntCC::Equal, status, 0);
+        let failure_one = builder.ins().icmp_imm(IntCC::Equal, status, -1);
+        let failure_two = builder.ins().icmp_imm(IntCC::Equal, status, -2);
+        let failed_status = builder.ins().bor(failure_one, failure_two);
+        let pointer_present = builder.ins().icmp_imm(IntCC::NotEqual, pointer, 0);
+        let success_pair = builder.ins().band(success, pointer_present);
+        let pointer_absent = builder.ins().icmp_imm(IntCC::Equal, pointer, 0);
+        let failure_pair = builder.ins().band(failed_status, pointer_absent);
+        let valid = builder.ins().bor(success_pair, failure_pair);
+        builder.ins().trapz(valid, TrapCode::unwrap_user(26));
+        let wrapper = self.place_for_type(builder, &node.ty)?;
+        let (ok_place, ok_type) = self.field_place(builder, wrapper, &node.ty, "Ok")?;
+        let (code_place, code_type) = self.field_place(builder, wrapper, &node.ty, "Code")?;
+        let (val_place, val_type) = self.field_place(builder, wrapper, &node.ty, "Val")?;
+        if ok_type != "Int" || code_type != "Int" ||
+            struct_type_name(&val_type).as_deref() != Some(owner_name.as_str()) {
+            return Err(invalid("fallible owned out wrapper field types changed after validation"));
+        }
+        let ok = builder.ins().uextend(types::I32, success);
+        builder.ins().store(MemFlags::trusted(), ok, ok_place.address, 0);
+        builder.ins().store(MemFlags::trusted(), status, code_place.address, 0);
+        let (raw_place, _) = self.field_place(builder, val_place, &val_type, &raw_field)?;
+        builder.ins().store(MemFlags::trusted(), pointer, raw_place.address, 0);
+        Ok(Evaluated::Aggregate(wrapper))
     }
 
     fn lower_generic_isolated_call(
@@ -4587,7 +5789,7 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
             .ok_or_else(|| invalid("vector method lacks receiver"))?;
         let (receiver, receiver_type) =
             self.lower_receiver_place(builder, receiver_index, false)?;
-        if !struct_type_name(&receiver_type).is_some_and(|value| value.starts_with("std_Vector_")) {
+        if native_vector_value_dispatch_name(&receiver_type).is_none() {
             return Err(invalid(format!(
                 "{name} receiver is not a vector: {receiver_type}"
             )));
@@ -4757,6 +5959,147 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         builder
             .ins()
             .store(MemFlags::trusted(), next_len, len_field.address, 0);
+        Ok(Evaluated::Void)
+    }
+
+    fn lower_collection_intrinsic(
+        &mut self,
+        builder: &mut FunctionBuilder<'_>,
+        node_index: usize,
+    ) -> Result<Evaluated, Box<dyn Error>> {
+        // This function is reached only for a Program whose closed scoped
+        // proof covered this exact node. Re-resolve the executable layout
+        // from that same immutable Program before using any byte offset.
+        let operation = resolve_collection_intrinsic(self.program, node_index)?;
+        let node = self.program.nodes[node_index].clone();
+        let trap = TrapCode::unwrap_user(26);
+        if operation.opcode == "Create" {
+            let arena_index = node.children[0];
+            let arena_type = self.program.nodes[arena_index].ty.clone();
+            let arena_value = self.lower_expression(builder, arena_index, None)?;
+            let arena = self.arena_address(builder, arena_value, &arena_type)?;
+            let nonnull = builder.ins().icmp_imm(IntCC::NotEqual, arena, 0);
+            builder.ins().trapz(nonnull, trap);
+            let destination = self.place_for_type(builder, &operation.value_type)?;
+            let arena_field = add_offset(builder, destination.address, operation.arena_offset);
+            builder.ins().store(MemFlags::trusted(), arena, arena_field, 0);
+            return Ok(Evaluated::Aggregate(destination));
+        }
+
+        let (receiver, actual_type) =
+            self.lower_receiver_place(builder, node.children[0], false)?;
+        if actual_type != operation.value_type {
+            return Err(invalid("collection intrinsic lowered a different receiver type"));
+        }
+        let data_field = add_offset(builder, receiver.address, operation.data_offset);
+        let len_field = add_offset(builder, receiver.address, operation.len_offset);
+        let capacity_field = add_offset(builder, receiver.address, operation.capacity_offset);
+        let arena_field = add_offset(builder, receiver.address, operation.arena_offset);
+        let len = builder.ins().load(types::I32, MemFlags::trusted(), len_field, 0);
+        let capacity = builder.ins().load(types::I32, MemFlags::trusted(), capacity_field, 0);
+        let len_nonnegative = builder.ins().icmp_imm(IntCC::SignedGreaterThanOrEqual, len, 0);
+        let cap_ge_len = builder.ins().icmp(IntCC::SignedGreaterThanOrEqual, capacity, len);
+        // A full but unchanged capacity is valid. Doubling is checked only on
+        // the growth edge, in I64, before its value is narrowed back to Int.
+        let maximum = i32::MAX as u32 / operation.element_size;
+        let cap_bounded = builder.ins().icmp_imm(
+            IntCC::SignedLessThanOrEqual, capacity, i64::from(maximum));
+        let valid = builder.ins().band(len_nonnegative, cap_ge_len);
+        let valid = builder.ins().band(valid, cap_bounded);
+        builder.ins().trapz(valid, trap);
+
+        if operation.opcode == "Clear" {
+            let zero = builder.ins().iconst(types::I32, 0);
+            builder.ins().store(MemFlags::trusted(), zero, len_field, 0);
+            return Ok(Evaluated::Void);
+        }
+        if operation.opcode == "Read" {
+            let index_node = &self.program.nodes[node.children[1]];
+            let index_eval = self.lower_expression(builder, node.children[1], None)?;
+            let index = self.scalar(builder, index_eval, &index_node.ty)?;
+            let nonnegative = builder.ins().icmp_imm(IntCC::SignedGreaterThanOrEqual, index, 0);
+            let within = builder.ins().icmp(IntCC::SignedLessThan, index, len);
+            let valid = builder.ins().band(nonnegative, within);
+            builder.ins().trapz(valid, trap);
+            let data = builder.ins().load(self.pointer_type(), MemFlags::trusted(), data_field, 0);
+            let nonnull = builder.ins().icmp_imm(IntCC::NotEqual, data, 0);
+            builder.ins().trapz(nonnull, trap);
+            let index64 = builder.ins().uextend(types::I64, index);
+            let offset = builder.ins().imul_imm(index64, i64::from(operation.element_size));
+            let source = Place { address: builder.ins().iadd(data, offset) };
+            if is_scalar_type(&operation.element_type) {
+                return Ok(Evaluated::Scalar(load_scalar(builder, source.address,
+                    &operation.element_type, self.pointer_type())?));
+            }
+            let result = self.place_for_type(builder, &operation.element_type)?;
+            self.copy_place(builder, result, source, operation.element_size)?;
+            return Ok(Evaluated::Aggregate(result));
+        }
+        if operation.opcode != "Append" {
+            return Err(invalid("collection intrinsic opcode was lost before lowering"));
+        }
+        let grow = builder.create_block();
+        let ready = builder.create_block();
+        let must_grow = builder.ins().icmp(IntCC::SignedGreaterThanOrEqual, len, capacity);
+        builder.ins().brif(must_grow, grow, &[], ready, &[]);
+        builder.switch_to_block(grow);
+        let arena = builder.ins().load(self.pointer_type(), MemFlags::trusted(), arena_field, 0);
+        let arena_nonnull = builder.ins().icmp_imm(IntCC::NotEqual, arena, 0);
+        builder.ins().trapz(arena_nonnull, trap);
+        let capacity_zero = builder.ins().icmp_imm(IntCC::Equal, capacity, 0);
+        let eight = builder.ins().iconst(types::I64, 8);
+        let capacity64 = builder.ins().uextend(types::I64, capacity);
+        let doubled = builder.ins().imul_imm(capacity64, 2);
+        let new_capacity64 = builder.ins().select(capacity_zero, eight, doubled);
+        let growth_bounded = builder.ins().icmp_imm(
+            IntCC::UnsignedLessThanOrEqual, new_capacity64, i64::from(maximum));
+        builder.ins().trapz(growth_bounded, trap);
+        let new_capacity = builder.ins().ireduce(types::I32, new_capacity64);
+        let bytes = builder.ins().imul_imm(new_capacity64,
+            i64::from(operation.element_size));
+        let allocate = self.runtime.get("os_ArenaAlloc")
+            .ok_or_else(|| invalid("collection intrinsic allocator import is absent"))?.clone();
+        let allocation_ref = self.module.declare_func_in_func(allocate.id, builder.func);
+        let allocation = builder.ins().call(allocation_ref, &[arena, bytes]);
+        let allocation_result = builder.inst_results(allocation)[0];
+        // os_ArenaAlloc returns a u32 offset in the i32 ABI bit pattern and
+        // aborts on failure. High-bit offsets are valid within a live 4 GiB
+        // arena; interpret the result unsigned rather than as an error code.
+        let offset = builder.ins().uextend(types::I64, allocation_result);
+        let base = builder.ins().load(self.pointer_type(), MemFlags::trusted(), arena, 0);
+        let new_data = builder.ins().iadd(base, offset);
+        let old_data = builder.ins().load(self.pointer_type(), MemFlags::trusted(), data_field, 0);
+        let has_values = builder.ins().icmp_imm(IntCC::NotEqual, len, 0);
+        let copy = builder.create_block();
+        let grown = builder.create_block();
+        builder.ins().brif(has_values, copy, &[], grown, &[]);
+        builder.switch_to_block(copy);
+        let old_nonnull = builder.ins().icmp_imm(IntCC::NotEqual, old_data, 0);
+        builder.ins().trapz(old_nonnull, trap);
+        let len64 = builder.ins().uextend(types::I64, len);
+        let used64 = builder.ins().imul_imm(len64,
+            i64::from(operation.element_size));
+        let used32 = builder.ins().ireduce(types::I32, used64);
+        self.copy_dynamic(builder, new_data, old_data, used32)?;
+        builder.ins().jump(grown, &[]);
+        builder.switch_to_block(grown);
+        builder.ins().store(MemFlags::trusted(), new_data, data_field, 0);
+        builder.ins().store(MemFlags::trusted(), new_capacity, capacity_field, 0);
+        builder.ins().jump(ready, &[]);
+        builder.switch_to_block(ready);
+        let data = builder.ins().load(self.pointer_type(), MemFlags::trusted(), data_field, 0);
+        let nonnull = builder.ins().icmp_imm(IntCC::NotEqual, data, 0);
+        builder.ins().trapz(nonnull, trap);
+        let index64 = builder.ins().uextend(types::I64, len);
+        let offset = builder.ins().imul_imm(index64, i64::from(operation.element_size));
+        let destination = Place { address: builder.ins().iadd(data, offset) };
+        let value_node = &self.program.nodes[node.children[1]];
+        let value_eval = self.lower_expression(builder, node.children[1],
+            Some(&operation.element_type))?;
+        self.store_evaluated_as(builder, destination, value_eval,
+            &value_node.ty, &operation.element_type)?;
+        let next_len = builder.ins().iadd_imm(len, 1);
+        builder.ins().store(MemFlags::trusted(), next_len, len_field, 0);
         Ok(Evaluated::Void)
     }
 
@@ -5661,10 +7004,16 @@ impl<'a, 'm> FunctionLowerer<'a, 'm> {
         let value_node = &self.program.nodes[node.children[0]];
         let value_eval = self.lower_expression(builder, node.children[0], None)?;
         let wrapper = self.evaluated_place(builder, value_eval, &value_node.ty)?;
-        let (ok_place, _) = self.field_place(builder, wrapper, &value_node.ty, "Ok")?;
-        let ok = builder
-            .ins()
-            .load(types::I8, MemFlags::trusted(), ok_place.address, 0);
+        let (ok_place, ok_type) = self.field_place(builder, wrapper, &value_node.ty, "Ok")?;
+        let ok = match ok_type.as_str() {
+            "Int" => load_packed_int(builder, ok_place.address),
+            "Bool" => builder
+                .ins()
+                .load(types::I8, MemFlags::trusted(), ok_place.address, 0),
+            _ => return Err(invalid(format!(
+                "full-program Guard Ok field has unsupported type {ok_type}"
+            ))),
+        };
         let success = builder.create_block();
         let failure = builder.create_block();
         let join = builder.create_block();
@@ -6145,5 +7494,678 @@ mod owned_ffi_policy_tests {
         for (index, mutant) in mutations.iter().enumerate() {
             assert!(parse(mutant).is_err(), "accepted owned-policy mutation {index}");
         }
+    }
+}
+
+#[cfg(test)]
+mod fallible_automatic_cleanup_tests {
+    use super::{fallible_automatic_cleanup, Function, Node, Program};
+
+    const OWNER_TYPE: &str = "Struct(\"CallRegion\", None)";
+
+    fn node(kind: &str, ty: &str, text: &str, second_text: &str,
+        children: Vec<usize>) -> Node {
+        Node {
+            kind: kind.into(), ty: ty.into(), text: text.into(),
+            second_text: second_text.into(), integer: 0, second_integer: 0,
+            isolated_call_plan: None, collection_intrinsic: None,
+            source_line: 0, source_column: 0,
+            source_start: 0, source_end: 0, children,
+        }
+    }
+
+    fn program() -> Program {
+        Program {
+            target_triple: String::new(), object_format: String::new(),
+            modules: Vec::new(), layouts: Vec::new(), enumerations: Vec::new(),
+            functions: vec![Function {
+                module_index: 0, source_name: "release_region".into(),
+                qualified_name: "release_region".into(), is_extern: false,
+                extern_symbol: String::new(), result_type: "Void".into(),
+                body_node: None, parameters: Vec::new(), ffi_contract: None,
+                scoped_byte_copy: None,
+            }], entry_function: 0,
+            nodes: vec![
+                node("LocalRead", "Void", "release_region", "", vec![]),
+                node("ResourceStorage", OWNER_TYPE, "region", OWNER_TYPE, vec![]),
+                node("Call", "Void", "release_region", "release_region", vec![0, 1]),
+                node("IntegerLiteral", "Int", "", "", vec![]),
+                node("Return", "Void", "", "", vec![3, 2]),
+                node("LocalRead", "Void", "break", "", vec![]),
+                node("Evaluate", "Void", "", "", vec![5]),
+                node("Branch", "Void", "", "", vec![]),
+                node("Evaluate", "Void", "", "", vec![3]),
+            ],
+        }
+    }
+
+    fn accepted(program: &Program, tail: Vec<usize>) -> Option<usize> {
+        let block = node("Block", "Void", "", "", tail);
+        fallible_automatic_cleanup(program, &block, 0, "region", OWNER_TYPE,
+            "release_region")
+    }
+
+    #[test]
+    fn automatic_exit_requires_exact_owner_storage_and_no_bypassing_control() {
+        let mut program = program();
+        assert_eq!(accepted(&program, vec![8, 4]), Some(2));
+        program.nodes[1].ty = "Struct(\"RegionResult\", None)".into();
+        assert_eq!(accepted(&program, vec![8, 4]), None);
+        program.nodes[1].ty = OWNER_TYPE.into();
+        program.nodes[1].second_text = "Struct(\"RegionResult\", None)".into();
+        assert_eq!(accepted(&program, vec![8, 4]), None);
+        program.nodes[1].second_text = OWNER_TYPE.into();
+        program.nodes[1].children.push(3);
+        assert_eq!(accepted(&program, vec![8, 4]), None);
+        program.nodes[1].children.clear();
+        assert_eq!(accepted(&program, vec![8, 6, 4]), None);
+        program.nodes[5].text = "continue".into();
+        assert_eq!(accepted(&program, vec![8, 6, 4]), None);
+        program.nodes[4].children[0] = 7;
+        assert_eq!(accepted(&program, vec![8, 4]), None);
+        program.nodes[4].children[0] = 3;
+        program.nodes[0].text = "Free".into();
+        assert_eq!(accepted(&program, vec![8, 4]), None);
+        program.nodes[0].text = "release_region".into();
+        program.nodes[2].text = "len".into();
+        assert_eq!(accepted(&program, vec![8, 4]), None);
+    }
+
+    fn actual_flat_source() -> &'static str {
+        include_str!("testdata/fallible_owned_out_flat_producer.canonical")
+    }
+
+    fn mutate_function(source: &str, symbol: &str,
+        change: impl FnOnce(&mut Vec<String>)) -> String {
+        let mut rows: Vec<String> = source.lines().map(str::to_owned).collect();
+        let matching: Vec<_> = rows.iter().enumerate().filter_map(|(index, row)| {
+            let fields: Vec<String> = row.strip_prefix("function: ")?
+                .split('|').map(str::to_owned).collect();
+            (super::decode_hex(&fields[5], "function symbol").ok().as_deref() == Some(symbol))
+                .then_some((index, fields))
+        }).collect();
+        assert_eq!(matching.len(), 1, "one declared runtime symbol");
+        let (index, mut fields) = matching.into_iter().next().unwrap();
+        change(&mut fields);
+        rows[index] = format!("function: {}", fields.join("|"));
+        rows.join("\n") + "\n"
+    }
+
+    fn hex(value: &str) -> String {
+        value.as_bytes().iter().map(|byte| format!("{byte:02x}")).collect()
+    }
+
+    #[test]
+    fn reserved_region_symbols_reject_absent_and_other_policies() {
+        let original = actual_flat_source();
+        super::parse(original).expect("actual flat fallible producer must parse");
+        for symbol in ["os_FfiCallRegionTryCreate", "os_FfiCallRegionFree"] {
+            let absent = mutate_function(original, symbol, |fields| {
+                let parameter_count: usize = fields[8].parse().unwrap();
+                fields.truncate(9 + 2 * parameter_count);
+            });
+            let error = super::parse(&absent).expect_err("reserved runtime symbol lost policy");
+            let expected = if symbol == "os_FfiCallRegionTryCreate" {
+                "reserved fallible region constructor lacks its exact policy"
+            } else {
+                // The constructor's existing destructor-authority check runs
+                // before this later declaration is visited.
+                "owned FFI destructor lacks its qualified native release"
+            };
+            assert!(error.to_string().contains(expected),
+                "different rejection authority: {error}");
+        }
+        let standalone_release = Function {
+            module_index: 0, source_name: "free".into(),
+            qualified_name: "free".into(), is_extern: true,
+            extern_symbol: super::FALLIBLE_OWNED_OUT_RELEASE.into(),
+            result_type: "Void".into(), body_node: None,
+            parameters: vec![("raw".into(), "RawPointer(Byte)".into())],
+            ffi_contract: None, scoped_byte_copy: None,
+        };
+        let error = super::validate_ffi_policies(
+            &[standalone_release], &[], &std::collections::HashMap::new(), &[],
+            "x86_64-unknown-linux-gnu", "Elf",
+        ).expect_err("standalone reserved Free has no policy");
+        assert!(error.to_string().contains("reserved fallible region release lacks its exact policy"),
+            "different standalone release authority: {error}");
+        let constructor = mutate_function(original, "os_FfiCallRegionTryCreate",
+            |fields| fields[14] = hex("value"));
+        let error = super::parse(&constructor).expect_err("constructor used value policy");
+        assert!(error.to_string().contains("reserved fallible region constructor"),
+            "different rejection authority: {error}");
+        let release = mutate_function(original, "os_FfiCallRegionFree",
+            |fields| fields[14] = hex("borrow_read_call"));
+        let error = super::parse(&release).expect_err("release used borrowed policy");
+        assert!(error.to_string().contains("owned FFI destructor lacks its qualified native release"),
+            "different rejection authority: {error}");
+    }
+
+    #[test]
+    fn reserved_constructor_rejects_untagged_and_unbound_calls() {
+        let original = actual_flat_source();
+        let baseline = super::parse(original).expect("actual flat fallible producer must parse");
+        let calls: Vec<_> = baseline.nodes.iter().enumerate().filter(|(_, node)|
+            node.kind == "Call" && node.second_integer == 9 &&
+            node.second_text == "os_FfiCallRegionTryCreate").collect();
+        assert_eq!(calls.len(), 2, "source has two independently guarded acquisitions");
+        let call_index = calls[0].0;
+        let mut rows: Vec<String> = original.lines().map(str::to_owned).collect();
+        let prefix = format!("node: {call_index}|");
+        let matching: Vec<_> = rows.iter().enumerate().filter(|(_, row)|
+            row.starts_with(&prefix)).collect();
+        assert_eq!(matching.len(), 1);
+        let row_index = matching[0].0;
+        let mut fields: Vec<String> = rows[row_index]["node: ".len()..]
+            .split('|').map(str::to_owned).collect();
+        let arity: usize = fields[11].parse().unwrap();
+        fields[6] = "0".into();
+        fields.truncate(12 + arity);
+        rows[row_index] = format!("node: {}", fields.join("|"));
+        let error = super::parse(&(rows.join("\n") + "\n"))
+            .expect_err("constructor Call lost its hidden-out plan");
+        assert!(error.to_string().contains("reserved fallible region runtime Call"),
+            "different rejection authority: {error}");
+
+        let unbound = mutate_function(original, "os_FfiCallRegionTryCreate",
+            |fields| fields[3] = hex("other_constructor"));
+        let error = super::parse(&unbound)
+            .expect_err("constructor runtime symbol was called without its declaration");
+        assert!(error.to_string().contains("reserved fallible region runtime Call"),
+            "different rejection authority: {error}");
+    }
+
+    #[test]
+    fn actual_tag9_only_source_requires_unique_unsafe_reachability() {
+        let original = actual_flat_source();
+        let baseline = super::parse(original).expect("actual flat fallible producer must parse");
+        assert!(!baseline.nodes.iter().any(|node|
+            node.kind == "Call" && matches!(node.second_integer, 10 | 11)));
+        let call_index = baseline.nodes.iter().enumerate().find_map(|(index, node)|
+            (node.kind == "Call" && node.second_integer == 9).then_some(index)).unwrap();
+        let (scope_index, block_index) = baseline.nodes.iter().enumerate().find_map(|(index, node)| {
+            if node.kind != "UnsafeScope" || node.children.len() != 1 { return None; }
+            let child = node.children[0];
+            let block = &baseline.nodes[child];
+            (block.kind == "Block" && block.children.iter().any(|statement| {
+                baseline.nodes[*statement].kind == "LocalDeclare" &&
+                    baseline.nodes[*statement].children.as_slice() == [call_index]
+            })).then_some((index, child))
+        }).expect("one acquisition scope in source");
+
+        let mutate_node = |index: usize, change: &dyn Fn(&mut Vec<String>)| {
+            let mut rows: Vec<String> = original.lines().map(str::to_owned).collect();
+            let prefix = format!("node: {index}|");
+            let matching: Vec<_> = rows.iter().enumerate().filter(|(_, row)|
+                row.starts_with(&prefix)).collect();
+            assert_eq!(matching.len(), 1);
+            let row_index = matching[0].0;
+            let mut fields: Vec<String> = rows[row_index]["node: ".len()..]
+                .split('|').map(str::to_owned).collect();
+            change(&mut fields);
+            rows[row_index] = format!("node: {}", fields.join("|"));
+            rows.join("\n") + "\n"
+        };
+        let outside = mutate_node(scope_index, &|fields| fields[1] = hex("Block"));
+        let error = super::parse(&outside).expect_err("tag9 constructor lost unsafe scope");
+        assert!(error.to_string().contains("not uniquely owned by an unsafe scope"),
+            "different rejection authority: {error}");
+        let duplicate = mutate_node(block_index, &|fields| {
+            let count: usize = fields[11].parse().unwrap();
+            fields[11] = (count + 1).to_string();
+            fields.push(call_index.to_string());
+        });
+        let error = super::parse(&duplicate).expect_err("tag9 constructor has two paths");
+        assert!(error.to_string().contains("shared canonical body"),
+            "different rejection authority: {error}");
+    }
+
+    #[test]
+    fn flat_owner_cleanup_rejects_inline_callee_substitution() {
+        let original = actual_flat_source();
+        let baseline = super::parse(original).expect("actual flat fallible producer must parse");
+        let insert_receiver = |callee_index: usize, inline: bool| {
+            let mut rows: Vec<String> = original.lines().map(str::to_owned).collect();
+            let node_count_at = rows.iter().position(|row| row.starts_with("node_count: "))
+                .expect("canonical node census missing");
+            let node_count = baseline.nodes.len();
+            assert_eq!(rows[node_count_at], format!("node_count: {node_count}"));
+            let first_node = rows.iter().position(|row| row.starts_with("node: "))
+                .expect("canonical node rows missing");
+            let old_nodes: Vec<String> = rows[first_node..first_node + node_count].to_vec();
+            let mut new_nodes = Vec::with_capacity(node_count + 1);
+            for (old_index, row) in old_nodes.iter().enumerate() {
+                if old_index == callee_index {
+                    new_nodes.push(format!("node: {}|{}|{}|{}||0|0|0|0|0|0|0",
+                        callee_index, hex("LocalRead"), hex("Void"), hex("os")));
+                }
+                let mut fields: Vec<String> = row["node: ".len()..]
+                    .split('|').map(str::to_owned).collect();
+                assert_eq!(fields[0], old_index.to_string());
+                fields[0] = (old_index + usize::from(old_index >= callee_index)).to_string();
+                let child_count: usize = fields[11].parse().unwrap();
+                for child in &mut fields[12..12 + child_count] {
+                    let index: usize = child.parse().unwrap();
+                    *child = (index + usize::from(index >= callee_index)).to_string();
+                }
+                if old_index == callee_index && inline {
+                    assert_eq!(child_count, 0);
+                    fields[1] = hex("FieldOrMethodSelect");
+                    fields[3] = hex("Free");
+                    fields[11] = "1".into();
+                    fields.push(callee_index.to_string());
+                }
+                new_nodes.push(format!("node: {}", fields.join("|")));
+            }
+            rows.splice(first_node..first_node + node_count, new_nodes);
+            rows[node_count_at] = format!("node_count: {}", node_count + 1);
+            for row in &mut rows {
+                if !row.starts_with("function: ") { continue; }
+                let mut fields: Vec<String> = row["function: ".len()..]
+                    .split('|').map(str::to_owned).collect();
+                let body: isize = fields[7].parse().unwrap();
+                if body >= callee_index as isize {
+                    fields[7] = (body + 1).to_string();
+                    *row = format!("function: {}", fields.join("|"));
+                }
+            }
+            rows.join("\n") + "\n"
+        };
+        for storage_kind in ["ResourceStorage", "LocalRead"] {
+            let calls: Vec<_> = baseline.nodes.iter().enumerate().filter(|(_, call)|
+                call.kind == "Call" && call.second_text == "release_region" &&
+                call.children.len() == 2 &&
+                baseline.nodes[call.children[1]].kind == storage_kind).collect();
+            assert_eq!(calls.len(), 1, "one release form per flat owner");
+            let callee_index = calls[0].1.children[0];
+            super::parse(&insert_receiver(callee_index, false))
+                .expect("renumber-only flat owner remains accepted");
+            let error = super::parse(&insert_receiver(callee_index, true))
+                .expect_err("flat owner cleanup callee dispatched inline");
+            assert!(error.to_string().contains("fallible owned out") ||
+                error.to_string().contains("scoped fallible"),
+                "different rejection authority: {error}");
+        }
+    }
+}
+
+#[cfg(test)]
+mod byte_span_call_tests {
+    use super::{byte_span_contract, new_call_reachability, validate_byte_span_call_plans, FfiContract, Function,
+        IsolatedCallPlan, IsolatedPosition, Node, Program, ScopedAnchor, ScopedBinding,
+        ScopedByteCopyCandidate};
+
+    fn node(kind: &str, ty: &str, second_text: &str, children: Vec<usize>) -> Node {
+        Node {
+            kind: kind.into(), ty: ty.into(), text: String::new(),
+            second_text: second_text.into(), integer: 0, second_integer: 0,
+            isolated_call_plan: None, collection_intrinsic: None,
+            source_line: 0, source_column: 0,
+            source_start: 0, source_end: 0, children,
+        }
+    }
+
+    fn program() -> Program {
+        let function = Function {
+            module_index: 0, source_name: "adapter".into(),
+            qualified_name: "adapter".into(), is_extern: true,
+            extern_symbol: "signed_adapter".into(), result_type: "Int".into(),
+            body_node: None,
+            parameters: vec![("input".into(), "RawPointer(Byte)".into()),
+                ("count".into(), "Int".into()),
+                ("output".into(), "RawPointer(Byte)".into()),
+                ("capacity".into(), "Int".into())],
+            ffi_contract: Some(FfiContract {
+                result_policy: "value".into(),
+                parameter_policies: vec!["borrow_read_call".into(), "value".into(),
+                    "borrow_write_call".into(), "value".into()],
+                destructor: String::new(),
+            }),
+            scoped_byte_copy: None,
+        };
+        let mut call = node("Call", "Int", "adapter", vec![0, 1, 2, 3, 4]);
+        call.text = "adapter".into();
+        call.second_integer = 10;
+        call.isolated_call_plan = Some(Box::new(IsolatedCallPlan {
+            target_triple: "x86_64-unknown-linux-gnu".into(),
+            cleanup: "synchronous_call".into(), retained: None,
+            positions: vec![
+                IsolatedPosition { index: 0, direction: "read".into(),
+                    aggregate_type: "Byte".into(), size: 1, align: 1,
+                    provenance: "direct_raw_byte_span".into(), count_index: Some(1) },
+                IsolatedPosition { index: 2, direction: "write".into(),
+                    aggregate_type: "Byte".into(), size: 1, align: 1,
+                    provenance: "direct_raw_byte_span".into(), count_index: Some(3) },
+            ],
+        }));
+        let caller = Function {
+            module_index: 0, source_name: "main".into(), qualified_name: "main".into(),
+            is_extern: false, extern_symbol: String::new(), result_type: "Void".into(),
+            body_node: Some(7), parameters: Vec::new(), ffi_contract: None,
+            scoped_byte_copy: None,
+        };
+        Program {
+            target_triple: "x86_64-unknown-linux-gnu".into(),
+            object_format: "Elf".into(), modules: Vec::new(), layouts: Vec::new(),
+            enumerations: Vec::new(), functions: vec![function, caller],
+            nodes: vec![{
+                    let mut callee = node("LocalRead", "Void", "", vec![]);
+                    callee.text = "adapter".into();
+                    callee
+                },
+                node("LocalRead", "RawPointer(Byte)", "", vec![]),
+                node("IntegerLiteral", "Int", "", vec![]),
+                node("LocalRead", "RawPointer(Byte)", "", vec![]),
+                node("IntegerLiteral", "Int", "", vec![]), call,
+                node("UnsafeScope", "Void", "", vec![5]),
+                node("Block", "Void", "", vec![6])],
+            entry_function: 1,
+        }
+    }
+
+    #[test]
+    fn direct_byte_spans_require_exact_typed_pairs_and_call_positions() {
+        let mut program = program();
+        assert_eq!(byte_span_contract(&program.functions[0]).unwrap(),
+            vec![(0, 1, "read"), (2, 3, "write")]);
+        assert!(validate_byte_span_call_plans(&program).is_ok());
+        program.nodes[5].isolated_call_plan.as_mut().unwrap().positions[1].count_index = Some(1);
+        assert!(validate_byte_span_call_plans(&program).is_err());
+        program.nodes[5].isolated_call_plan.as_mut().unwrap().positions[1].count_index = Some(3);
+        program.nodes[5].children.swap(3, 4);
+        assert!(validate_byte_span_call_plans(&program).is_err());
+        program.nodes[5].children.swap(3, 4);
+        program.nodes[6].kind = "Block".into();
+        assert!(validate_byte_span_call_plans(&program).is_err());
+        program.nodes[6].kind = "UnsafeScope".into();
+        program.nodes[7].children.push(5);
+        assert!(validate_byte_span_call_plans(&program).is_err());
+        program.nodes[7].children.pop();
+        program.nodes[0].text = "Push".into();
+        program.nodes[0].kind = "FieldOrMethodSelect".into();
+        assert!(validate_byte_span_call_plans(&program).is_err());
+        program.nodes[0].kind = "LocalRead".into();
+        program.nodes[0].text = "adapter".into();
+        program.nodes[5].text = "len".into();
+        assert!(validate_byte_span_call_plans(&program).is_err());
+        program.nodes[5].text = "adapter".into();
+        program.nodes[5].ty = "Bool".into();
+        assert!(validate_byte_span_call_plans(&program).is_err());
+        program.nodes[5].ty = "Int".into();
+        program.functions[0].ffi_contract.as_mut().unwrap().parameter_policies[3] =
+            "borrow_read_call".into();
+        assert!(byte_span_contract(&program.functions[0]).is_err());
+    }
+
+    #[test]
+    fn new_call_reachability_rejects_shared_and_deep_bodies_before_recursion() {
+        let mut shared = program();
+        shared.nodes[7].children.push(6);
+        assert!(new_call_reachability(&shared).unwrap_err().to_string().contains("shared"));
+
+        let mut deep = program();
+        let mut child = 7;
+        for _ in 0..1_025 {
+            let next = deep.nodes.len();
+            deep.nodes.push(node("Block", "Void", "", vec![child]));
+            child = next;
+        }
+        deep.functions[1].body_node = Some(child);
+        assert!(new_call_reachability(&deep).unwrap_err().to_string().contains("deep"));
+
+        let mut mixed = program();
+        let untagged_root = mixed.nodes.len();
+        mixed.nodes.push(node("Block", "Void", "", vec![]));
+        let mut sibling = mixed.functions[1].clone();
+        sibling.source_name = "unrelated".into();
+        sibling.qualified_name = "unrelated".into();
+        sibling.body_node = Some(untagged_root);
+        mixed.functions.push(sibling);
+        assert_eq!(new_call_reachability(&mixed).unwrap().get(&5), Some(&(1, 1)));
+        mixed.nodes[untagged_root].children = vec![2, 2];
+        assert!(new_call_reachability(&mixed).unwrap_err().to_string().contains("shared"));
+        mixed.nodes[untagged_root].children.clear();
+        mixed.functions[2].body_node = Some(mixed.nodes.len() + 1);
+        assert!(new_call_reachability(&mixed).unwrap_err().to_string().contains("invalid"));
+
+        let mut malformed_extension = program();
+        malformed_extension.nodes[5].second_integer = 0;
+        malformed_extension.functions[1].scoped_byte_copy = Some(ScopedByteCopyCandidate {
+            scope: 6, constructor_call: 5, result_declaration: 7, guard: 7,
+            owner_name: "owner".into(),
+            input_backing: ScopedAnchor { binding: ScopedBinding::Local(7),
+                ty: "Struct(\"x\", None)".into() },
+            input_count: ScopedAnchor { binding: ScopedBinding::Local(7), ty: "Int".into() },
+            output_backing: ScopedAnchor { binding: ScopedBinding::Local(7),
+                ty: "Struct(\"x\", None)".into() },
+            output_capacity: ScopedAnchor { binding: ScopedBinding::Local(7), ty: "Int".into() },
+            prefill_loop: 7, input_loop: 7, native_call: 5,
+            native_result_declaration: 7, accept_call: 5, output_loop: 7,
+        });
+        malformed_extension.nodes[7].children.push(6);
+        assert!(new_call_reachability(&malformed_extension).unwrap_err().to_string()
+            .contains("shared"));
+        malformed_extension.functions[1].scoped_byte_copy = None;
+        assert!(new_call_reachability(&malformed_extension).unwrap().is_empty());
+
+        // A fallible constructor alone is a new cohort. It must trigger the
+        // bounded whole-body walk before the older recursive cleanup scans.
+        let mut constructor_only = program();
+        constructor_only.nodes[5].second_integer = 9;
+        assert_eq!(new_call_reachability(&constructor_only).unwrap().get(&5),
+            Some(&(1, 1)));
+        constructor_only.nodes[7].children.push(6);
+        assert!(new_call_reachability(&constructor_only).unwrap_err().to_string()
+            .contains("shared"));
+        constructor_only.nodes[7].children.pop();
+        let mut child = 7;
+        for _ in 0..1_025 {
+            let next = constructor_only.nodes.len();
+            constructor_only.nodes.push(node("Block", "Void", "", vec![child]));
+            child = next;
+        }
+        constructor_only.functions[1].body_node = Some(child);
+        assert!(new_call_reachability(&constructor_only).unwrap_err().to_string()
+            .contains("deep"));
+        let mut outside_unsafe = program();
+        outside_unsafe.nodes[5].second_integer = 9;
+        outside_unsafe.nodes[6].kind = "Block".into();
+        assert_eq!(new_call_reachability(&outside_unsafe).unwrap().get(&5),
+            Some(&(1, 0)));
+    }
+
+    #[test]
+    fn new_call_reachability_enforces_node_and_edge_budgets_only_for_new_cohort() {
+        let mut wide = program();
+        let mut frontier = Vec::new();
+        for _ in 0..32_770 {
+            let index = wide.nodes.len();
+            wide.nodes.push(node("IntegerLiteral", "Int", "0", vec![]));
+            frontier.push(index);
+        }
+        while frontier.len() > 1 {
+            let mut next = Vec::new();
+            for pair in frontier.chunks(2) {
+                let index = wide.nodes.len();
+                wide.nodes.push(node("Block", "Void", "", pair.to_vec()));
+                next.push(index);
+            }
+            frontier = next;
+        }
+        wide.functions[1].body_node = Some(frontier[0]);
+        assert!(new_call_reachability(&wide).unwrap_err().to_string()
+            .contains("canonical node budget"));
+
+        let mut many_edges = program();
+        let root = many_edges.nodes.len();
+        many_edges.nodes.push(node("Block", "Void", "", vec![0; 262_145]));
+        many_edges.functions[1].body_node = Some(root);
+        assert!(new_call_reachability(&many_edges).unwrap_err().to_string()
+            .contains("canonical edge budget"));
+
+        // The new budget is an admission rule for the new call cohort. An
+        // unchanged legacy program is not retroactively put under it.
+        many_edges.nodes[5].second_integer = 0;
+        assert!(new_call_reachability(&many_edges).unwrap().is_empty());
+    }
+
+    #[test]
+    fn actual_scoped_parser_rejects_deep_unrelated_body_before_recursive_validators() {
+        let original = include_str!("testdata/scoped_byte_copy_intrinsic_caller_five_arg_producer.canonical");
+        let baseline = super::parse(original)
+            .expect("actual source-produced scoped baseline must pass");
+        let entry = baseline.entry_function;
+        let unrelated = &baseline.functions[entry];
+        assert!(!unrelated.is_extern && unrelated.scoped_byte_copy.is_none());
+        let original_body = unrelated.body_node.expect("unrelated entry body missing");
+        let mut rows: Vec<String> = original.lines().map(str::to_string).collect();
+        let count_at = rows.iter().position(|row| row.starts_with("node_count: "))
+            .expect("canonical node census missing");
+        let count: usize = rows[count_at]["node_count: ".len()..].parse().unwrap();
+        assert_eq!(rows.iter().filter(|row| row.starts_with("node: ")).count(), count);
+        let function_prefix = format!("function: {entry}|");
+        let function_at = rows.iter().position(|row| row.starts_with(&function_prefix))
+            .expect("captured unrelated entry function missing");
+        assert_eq!(rows.iter().filter(|row| row.starts_with(&function_prefix)).count(), 1);
+        let mut function: Vec<String> = rows[function_at].split('|').map(str::to_string).collect();
+        let mut child: usize = function[7].parse().expect("main body index missing");
+        assert_eq!(child, original_body);
+        let entry_at = rows.iter().position(|row| row.starts_with("entry_function_index: "))
+            .expect("canonical entry row missing");
+        for index in count..count + 1_025 {
+            rows.insert(entry_at + index - count,
+                format!("node: {index}|426c6f636b|566f6964|||0|0|0|0|0|0|1|{child}"));
+            child = index;
+        }
+        function[7] = child.to_string();
+        rows[function_at] = function.join("|");
+        rows[count_at] = format!("node_count: {}", count + 1_025);
+        let mutated = rows.join("\n") + "\n";
+        let error = super::parse(&mutated)
+            .expect_err("deep unrelated body with a scoped sibling was accepted");
+        assert!(error.to_string().contains("deep or shared canonical body"),
+            "different rejection authority: {error}");
+    }
+}
+
+#[cfg(test)]
+mod region_operation_call_tests {
+    use super::{checked_new_call_callee, validate_region_operation_call_plans,
+        validate_scoped_byte_copy_plans,
+        FfiContract, Function, IsolatedCallPlan, IsolatedPosition, Layout, LayoutField,
+        Node, Program};
+
+    fn node(kind: &str, ty: &str, text: &str, second: &str, children: Vec<usize>) -> Node {
+        Node {
+            kind: kind.into(), ty: ty.into(), text: text.into(),
+            second_text: second.into(), integer: 0, second_integer: 0,
+            isolated_call_plan: None, collection_intrinsic: None,
+            source_line: 0, source_column: 0,
+            source_start: 0, source_end: 0, children,
+        }
+    }
+
+    fn program() -> Program {
+        let function = Function {
+            module_index: 0, source_name: "write".into(),
+            qualified_name: "write".into(), is_extern: true,
+            extern_symbol: "os_FfiCallRegionWriteInput".into(), result_type: "Int".into(),
+            body_node: None,
+            parameters: vec![("region".into(), "RawPointer(Byte)".into()),
+                ("index".into(), "Int".into()), ("value".into(), "Byte".into())],
+            ffi_contract: Some(FfiContract {
+                result_policy: "value".into(),
+                parameter_policies: vec!["region_access_call".into(),
+                "value".into(), "value".into()], destructor: String::new(),
+            }),
+            scoped_byte_copy: None,
+        };
+        let caller = Function {
+            module_index: 0, source_name: "main".into(),
+            qualified_name: "main".into(), is_extern: false,
+            extern_symbol: String::new(), result_type: "Void".into(),
+            body_node: Some(7), parameters: Vec::new(), ffi_contract: None,
+            scoped_byte_copy: None,
+        };
+        let mut call = node("Call", "Int", "write", "write", vec![0, 2, 3, 4]);
+        call.second_integer = 11;
+        call.isolated_call_plan = Some(Box::new(IsolatedCallPlan {
+            target_triple: "x86_64-unknown-linux-gnu".into(),
+            cleanup: "write_input".into(), retained: None,
+            positions: vec![IsolatedPosition {
+                index: 0, direction: "region".into(),
+                aggregate_type: "Byte".into(), size: 8, align: 8,
+                provenance: "sealed_guard_owner.v1".into(), count_index: None,
+            }],
+        }));
+        Program {
+            target_triple: "x86_64-unknown-linux-gnu".into(),
+            object_format: "Elf".into(), modules: Vec::new(),
+            layouts: vec![Layout {
+                name: "CallRegion".into(), erased_name: "CallRegion".into(),
+                brand: String::new(), repr_c: true, packed: false, abi: "C".into(),
+                fields: vec![LayoutField {
+                    name: "raw".into(), ty: "RawPointer(Byte)".into(),
+                }],
+            }],
+            enumerations: Vec::new(), functions: vec![function, caller],
+            nodes: vec![node("LocalRead", "Void", "write", "", vec![]),
+                node("LocalRead", "Struct(\"CallRegion\", None)", "region", "", vec![]),
+                node("FieldOrMethodSelect", "RawPointer(Byte)", "raw", "", vec![1]),
+                node("IntegerLiteral", "Int", "", "", vec![]),
+                node("IntegerLiteral", "Byte", "", "", vec![]), call,
+                node("UnsafeScope", "Void", "", "", vec![5]),
+                node("Block", "Void", "", "", vec![6])],
+            entry_function: 1,
+        }
+    }
+
+    #[test]
+    fn region_call_signature_is_checked_but_scoped_activation_remains_closed() {
+        let mut program = program();
+        assert!(validate_region_operation_call_plans(&program).is_ok());
+        assert!(validate_scoped_byte_copy_plans(&program).is_err());
+        program.nodes[5].isolated_call_plan.as_mut().unwrap().cleanup = "read_output".into();
+        assert!(validate_region_operation_call_plans(&program).is_err());
+        program.nodes[5].isolated_call_plan.as_mut().unwrap().cleanup = "write_input".into();
+        program.nodes[6].kind = "Block".into();
+        assert!(validate_region_operation_call_plans(&program).is_err());
+        program.nodes[6].kind = "UnsafeScope".into();
+        program.nodes[7].children.push(5);
+        assert!(validate_region_operation_call_plans(&program).is_err());
+        program.nodes[7].children.pop();
+        program.nodes[0].kind = "FieldOrMethodSelect".into();
+        program.nodes[0].text = "Push".into();
+        assert!(validate_region_operation_call_plans(&program).is_err());
+        program.nodes[0].kind = "LocalRead".into();
+        program.nodes[0].text = "write".into();
+        program.nodes[2].text = "other".into();
+        assert!(validate_region_operation_call_plans(&program).is_err());
+        program.nodes[2].text = "raw".into();
+        program.nodes[5].second_integer = 0;
+        assert!(validate_region_operation_call_plans(&program).is_err());
+        program.nodes[5].second_integer = 11;
+        program.functions.remove(0);
+        program.nodes[5].second_text = "os_FfiCallRegionWriteInput".into();
+        assert!(validate_region_operation_call_plans(&program).is_err());
+    }
+
+    #[test]
+    fn imported_region_alias_binds_pure_module_selector_without_inline_override() {
+        let mut program = program();
+        let receiver_index = program.nodes.len();
+        program.nodes.push(node("LocalRead", "Void", "pkg", "", vec![]));
+        let callee_index = program.nodes.len();
+        program.nodes.push(node("FieldOrMethodSelect", "Void", "write", "",
+            vec![receiver_index]));
+        let mut imported = program.nodes[5].clone();
+        imported.text = "pkg.write".into();
+        imported.children[0] = callee_index;
+        assert!(checked_new_call_callee(&program, &imported, &program.functions[0]));
+        imported.text = "other.write".into();
+        assert!(!checked_new_call_callee(&program, &imported, &program.functions[0]));
+        imported.text = "pkg.write".into();
+        program.nodes[callee_index].text = "Push".into();
+        assert!(!checked_new_call_callee(&program, &imported, &program.functions[0]));
     }
 }

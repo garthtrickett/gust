@@ -212,13 +212,25 @@ def main() -> None:
         },
         "partial_extra_or_substituted_inventory": "rejected",
     }
+    closure_digest = digest("scripts/phase23_closure.py")
+    if activation.get("scoped_byte_copy_r2_successor") is not None:
+        from phase26_r2_scoped_copy_registration import base_bytes, identity
+        changed = identity(registry)["phase23_text_surface_successor"]["changed_rows"]
+        closure_rows = [row for row in changed
+                        if row["path"] == "scripts/phase23_closure.py"]
+        require(len(closure_rows) == 1 and
+                closure_rows[0]["current_digest"] == closure_digest and
+                closure_rows[0]["previous_digest"] ==
+                hashlib.sha256(base_bytes("scripts/phase23_closure.py")).hexdigest(),
+                "R2 closure script successor does not preserve the reference receiver pin")
+        closure_digest = closure_rows[0]["previous_digest"]
     expected_record["phase23_text_surface_successor"] = {
         "contract_version":
             "phase26_reference_receiver_phase23_text_surface_successor_v1",
         "phase23_closure_path": "scripts/phase23_closure.py",
         "previous_phase23_closure_digest":
             "34cbe395e69c7453b837feb9d674fcbed701ba8be21230fea0782a7cb3cb3cb0",
-        "current_phase23_closure_digest": digest("scripts/phase23_closure.py"),
+        "current_phase23_closure_digest": closure_digest,
         "full_program_path":
             "compiler/experiments/cranelift/src/full_program.rs",
         "previous_full_program_digest":

@@ -313,6 +313,19 @@ PHASE25_RUNTIME_RS_EXPORTS = \
 	tiny_host_add_one_i32 \
 	tiny_host_is_positive_i32
 
+# R2 extends the effective narrowed archive without altering the Phase 25
+# root set, which remains a frozen predecessor authority.
+PHASE26_R2_RUNTIME_RS_EXPORTS = \
+	os_FfiCallRegionAcceptResult \
+	os_FfiCallRegionFree \
+	os_FfiCallRegionInputAddress \
+	os_FfiCallRegionOutputAddress \
+	os_FfiCallRegionReadOutput \
+	os_FfiCallRegionTryCreate \
+	os_FfiCallRegionWriteInput
+
+CURRENT_RUNTIME_RS_EXPORTS = $(PHASE25_RUNTIME_RS_EXPORTS) $(PHASE26_R2_RUNTIME_RS_EXPORTS)
+
 # Both archives are narrowed the same way, so the recipe is written once.
 # $(1) staticlib, $(2) output object, $(3) scratch directory.
 # The partial link is PLATFORM-SPECIFIC, and Patch 25.6 commits this
@@ -347,16 +360,16 @@ PHASE25_UNAME_S := $(shell uname -s)
 ifeq ($(PHASE25_UNAME_S),Darwin)
 define narrow_runtime_rs_link
 ld -r -dead_strip -o $(2) \
-	$(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),-u _$(sym)) \
-	$(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),-exported_symbol _$(sym)) \
+	$(foreach sym,$(CURRENT_RUNTIME_RS_EXPORTS),-u _$(sym)) \
+	$(foreach sym,$(CURRENT_RUNTIME_RS_EXPORTS),-exported_symbol _$(sym)) \
 	$(1)
 endef
 else
 define narrow_runtime_rs_link
 ld -r --gc-sections -o $(3)/combined.o \
-	$(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),-u $(sym)) \
+	$(foreach sym,$(CURRENT_RUNTIME_RS_EXPORTS),-u $(sym)) \
 	--start-group $(1) --end-group
-objcopy $(foreach sym,$(PHASE25_RUNTIME_RS_EXPORTS),--keep-global-symbol=$(sym)) \
+objcopy $(foreach sym,$(CURRENT_RUNTIME_RS_EXPORTS),--keep-global-symbol=$(sym)) \
 	$(3)/combined.o $(2)
 @rm -f $(3)/combined.o
 endef
@@ -368,7 +381,7 @@ define narrow_runtime_rs
 $(call narrow_runtime_rs_link,$(1),$(2),$(3))
 @defined=$$(nm -g --defined-only $(2) | awk '$$2 ~ /^[TDBRW]$$/ {print $$3}' \
 	| sed 's/^_//' | sort); \
-expected=$$(printf '%s\n' $(PHASE25_RUNTIME_RS_EXPORTS) | sort); \
+expected=$$(printf '%s\n' $(CURRENT_RUNTIME_RS_EXPORTS) | sort); \
 if [ "$$defined" != "$$expected" ]; then \
 	echo 'src/runtime-rs exports drifted from the registered set: $(2)' >&2; \
 	diff <(echo "$$expected") <(echo "$$defined") >&2; exit 1; \

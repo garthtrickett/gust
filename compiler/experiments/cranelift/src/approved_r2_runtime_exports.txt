@@ -1,0 +1,8 @@
+gust.r2.ffi_call_region_runtime_projection.v1
+os_FfiCallRegionAcceptResult
+os_FfiCallRegionFree
+os_FfiCallRegionInputAddress
+os_FfiCallRegionOutputAddress
+os_FfiCallRegionReadOutput
+os_FfiCallRegionTryCreate
+os_FfiCallRegionWriteInput

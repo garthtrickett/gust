@@ -786,6 +786,35 @@ func env_ffi_owned_result_shape(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ct
     }
 }
 
+// The only first-release fallible out constructor is a release-compiled
+// runtime declaration. A source attribute or an Ok/Val-shaped user function
+// cannot mint an owner. The worker must independently bind this same symbol,
+// its hidden out position, and the producing Call in canonical MIR.
+func env_ffi_fallible_owned_out_shape(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena) int {
+    unsafe {
+        if t.tag != 8 || t.Struct.brand != empty[Index[str, ctx]] ||
+           env_struct_satisfies_c_ffi_layout(env, t.Struct.struct_name, ctx) == 0 ||
+           env_struct_is_packed(env, t.Struct.struct_name, ctx) == 1 { return 0; }
+        guard wrapper := (*env).struct_registry.Get(t.Struct.struct_name) else { return 0; };
+        mut fields := wrapper.fields.Keys(ctx);
+        if len(fields) != 3 { return 0; }
+        guard ok_type := wrapper.fields.Get("Ok") else { return 0; };
+        guard code_type := wrapper.fields.Get("Code") else { return 0; };
+        guard owner_type := wrapper.fields.Get("Val") else { return 0; };
+        if ok_type.tag != 0 || code_type.tag != 0 { return 0; }
+        return env_ffi_owned_result_shape(env, owner_type, ctx);
+    }
+}
+
+func env_ffi_fallible_owned_out_owner(env: *TypeEnvironment[ctx], t: ast.Type[ctx], ctx: &Arena) str {
+    unsafe {
+        if env_ffi_fallible_owned_out_shape(env, t, ctx) == 0 { return ""; }
+        guard wrapper := (*env).struct_registry.Get(t.Struct.struct_name) else { return ""; };
+        guard owner_type := wrapper.fields.Get("Val") else { return ""; };
+        return std.Clone(ctx, owner_type.Struct.struct_name);
+    }
+}
+
 func env_ffi_owner_has_native_acquisition(env: *TypeEnvironment[ctx], owner_name: str, ctx: &Arena) int {
     unsafe {
         mut names := (*env).function_registry.Keys(ctx);
@@ -798,6 +827,11 @@ func env_ffi_owner_has_native_acquisition(env: *TypeEnvironment[ctx], owner_name
                    std.str_eq(sig.ffi_return_policy, "owned_return") == 1 &&
                    sig.return_type.tag == 8 &&
                    std.str_eq(sig.return_type.Struct.struct_name, owner_name) == 1 {
+                    return 1;
+                }
+                if sig.is_extern == 1 && sig.ffi_contract_verified == 1 &&
+                   std.str_eq(sig.ffi_return_policy, "fallible_owned_out") == 1 &&
+                   std.str_eq(env_ffi_fallible_owned_out_owner(env, sig.return_type, ctx), owner_name) == 1 {
                     return 1;
                 }
             }
@@ -970,10 +1004,25 @@ func env_ffi_release_owned_call_allowed(env: *TypeEnvironment[ctx], formal: ast.
     }
 }
 
+func env_ffi_call_region_operation(symbol: str) int {
+    if std.str_eq(symbol, "os_FfiCallRegionWriteInput") == 1 ||
+       std.str_eq(symbol, "os_FfiCallRegionInputAddress") == 1 ||
+       std.str_eq(symbol, "os_FfiCallRegionOutputAddress") == 1 ||
+       std.str_eq(symbol, "os_FfiCallRegionAcceptResult") == 1 ||
+       std.str_eq(symbol, "os_FfiCallRegionReadOutput") == 1 {
+        return 1;
+    }
+    return 0;
+}
+
 func env_validate_extern_ffi_positions(env: *TypeEnvironment[ctx], stmt: ast.Statement[ctx], sig: *FunctionSignature[ctx], ctx: &Arena) int {
     unsafe {
         mut declared_params: std.Vector[ast.Parameter[ctx], ctx] := ctx[stmt.FunctionDecl.params];
         mut policies: std.Vector[str, ctx] := std.VectorNew(ctx);
+        mut declared_symbol := (*sig).extern_symbol_name;
+        if len(declared_symbol) == 0 {
+            declared_symbol = env_resolve_namespaced_ident(env, stmt.FunctionDecl.name, ctx);
+        }
         mut i := 0;
         while i < len(declared_params) {
             mut declared := declared_params[i];
@@ -994,6 +1043,21 @@ func env_validate_extern_ffi_positions(env: *TypeEnvironment[ctx], stmt: ast.Sta
             if std.str_eq(policy, "native_error") == 1 {
                 report_error(2, "Semantic Error: [FFICallbackNativeErrorUnsupported] External callbacks and native error contracts are not qualified", declared.span, env, ctx);
                 return 0;
+            }
+            if std.str_eq(policy, "region_access_call") == 1 {
+                mut raw_byte := 0;
+                if t.tag == 9 {
+                    mut pointee := env_resolve_type(env, ctx[t.RawPointer.inner], ctx);
+                    if pointee.tag == 1 { raw_byte = 1; }
+                }
+                if i != 0 || raw_byte == 0 ||
+                   env_ffi_call_region_operation(declared_symbol) == 0 {
+                    report_error(2, "Semantic Error: [FFIRegionOperationAuthority] Region access requires the exact registered runtime operation and first raw Byte position", declared.span, env, ctx);
+                    return 0;
+                }
+                policies.Push("region_access_call");
+                i = i + 1;
+                continue;
             }
             if std.str_eq(policy, "callback") == 1 {
                 mut callback_form := declared.param_type;
@@ -1142,7 +1206,89 @@ func env_validate_extern_ffi_positions(env: *TypeEnvironment[ctx], stmt: ast.Sta
                 if repr_int_return_lookup.Val == 1 { repr_int_enum_return = 1; }
             }
         }
-        if std.str_eq(stmt.FunctionDecl.ffi_return_policy, "native_error") == 1 {
+        mut runtime_symbol := declared_symbol;
+        if env_ffi_call_region_operation(runtime_symbol) == 1 ||
+           (len(policies) > 0 && std.str_eq(policies[0], "region_access_call") == 1) {
+            mut valid := len(policies) > 0 &&
+                std.str_eq(policies[0], "region_access_call") == 1 &&
+                std.str_eq(stmt.FunctionDecl.extern_abi, "C") == 1 &&
+                stmt.FunctionDecl.requires_sandbox_arena == 0 &&
+                std.str_eq(os.NativeTargetTriple(ctx), "x86_64-unknown-linux-gnu") == 1 &&
+                std.str_eq(os.NativeObjectFormat(ctx), "Elf") == 1;
+            mut raw_byte_result := 0;
+            if ret.tag == 9 {
+                mut pointee := env_resolve_type(env, ctx[ret.RawPointer.inner], ctx);
+                if pointee.tag == 1 { raw_byte_result = 1; }
+            }
+            if std.str_eq(runtime_symbol, "os_FfiCallRegionWriteInput") == 1 {
+                valid = valid && len(policies) == 3 && len((*sig).params) == 3 &&
+                    std.str_eq(policies[1], "value") == 1 &&
+                    std.str_eq(policies[2], "value") == 1 &&
+                    (*sig).params[1].tag == 0 && (*sig).params[2].tag == 1 &&
+                    ret.tag == 0 &&
+                    (std.str_eq(stmt.FunctionDecl.ffi_return_policy, "") == 1 ||
+                     std.str_eq(stmt.FunctionDecl.ffi_return_policy, "value") == 1);
+            } else if std.str_eq(runtime_symbol, "os_FfiCallRegionInputAddress") == 1 ||
+                      std.str_eq(runtime_symbol, "os_FfiCallRegionOutputAddress") == 1 {
+                valid = valid && len(policies) == 1 && len((*sig).params) == 1 &&
+                    raw_byte_result == 1 &&
+                    std.str_eq(stmt.FunctionDecl.ffi_return_policy, "raw_untrusted") == 1;
+            } else if std.str_eq(runtime_symbol, "os_FfiCallRegionAcceptResult") == 1 {
+                valid = valid && len(policies) == 2 && len((*sig).params) == 2 &&
+                    std.str_eq(policies[1], "value") == 1 &&
+                    (*sig).params[1].tag == 0 && ret.tag == 0 &&
+                    (std.str_eq(stmt.FunctionDecl.ffi_return_policy, "") == 1 ||
+                     std.str_eq(stmt.FunctionDecl.ffi_return_policy, "value") == 1);
+            } else if std.str_eq(runtime_symbol, "os_FfiCallRegionReadOutput") == 1 {
+                mut byte_out := 0;
+                if len((*sig).params) == 3 && (*sig).params[2].tag == 9 {
+                    mut pointee := env_resolve_type(env,
+                        ctx[(*sig).params[2].RawPointer.inner], ctx);
+                    if pointee.tag == 1 { byte_out = 1; }
+                }
+                valid = valid && len(policies) == 3 && len((*sig).params) == 3 &&
+                    std.str_eq(policies[1], "value") == 1 &&
+                    std.str_eq(policies[2], "borrow_write_call") == 1 &&
+                    (*sig).params[1].tag == 0 && byte_out == 1 && ret.tag == 0 &&
+                    (std.str_eq(stmt.FunctionDecl.ffi_return_policy, "") == 1 ||
+                     std.str_eq(stmt.FunctionDecl.ffi_return_policy, "value") == 1);
+            } else { valid = false; }
+            if valid == false {
+                report_error(2, "Semantic Error: [FFIRegionOperationAuthority] Region operation lacks its exact registered C signature and policy", stmt.FunctionDecl.span, env, ctx);
+                return 0;
+            }
+            if raw_byte_result == 1 {
+                (*sig).ffi_return_policy = "raw_untrusted";
+            } else {
+                (*sig).ffi_return_policy = "value";
+            }
+            (*sig).extern_symbol_name = std.Clone(ctx, runtime_symbol);
+        } else if std.str_eq(stmt.FunctionDecl.ffi_return_policy, "fallible_owned_out") == 1 ||
+           std.str_eq(runtime_symbol, "os_FfiCallRegionTryCreate") == 1 {
+            mut owner_name := env_ffi_fallible_owned_out_owner(env, ret, ctx);
+            if std.str_eq(stmt.FunctionDecl.ffi_return_policy, "fallible_owned_out") == 0 ||
+               std.str_eq(runtime_symbol, "os_FfiCallRegionTryCreate") == 0 ||
+               len(owner_name) == 0 ||
+               std.str_eq(env_struct_declaration_module_name(
+                   env, ret.Struct.struct_name, ctx
+               ), (*env).current_prefix) == 0 ||
+               std.str_eq(env_struct_declaration_module_name(
+                   env, owner_name, ctx
+               ), (*env).current_prefix) == 0 ||
+               len((*sig).params) != 2 || len(policies) != 2 ||
+               (*sig).params[0].tag != 0 || (*sig).params[1].tag != 0 ||
+               std.str_eq(policies[0], "value") == 0 ||
+               std.str_eq(policies[1], "value") == 0 ||
+               std.str_eq(stmt.FunctionDecl.extern_abi, "C") == 0 ||
+               stmt.FunctionDecl.requires_sandbox_arena == 1 ||
+               std.str_eq(os.NativeTargetTriple(ctx), "x86_64-unknown-linux-gnu") == 0 ||
+               std.str_eq(os.NativeObjectFormat(ctx), "Elf") == 0 {
+                report_error(2, "Semantic Error: [FFIFallibleOwnedOutAuthority] Fallible owned out requires the exact registered runtime constructor, two Int values, and an eligible local owned wrapper", stmt.FunctionDecl.span, env, ctx);
+                return 0;
+            }
+            (*sig).ffi_return_policy = "fallible_owned_out";
+            (*sig).extern_symbol_name = std.Clone(ctx, runtime_symbol);
+        } else if std.str_eq(stmt.FunctionDecl.ffi_return_policy, "native_error") == 1 {
             if ret.tag != 0 ||
                std.str_eq(stmt.FunctionDecl.extern_abi, "C") == 0 ||
                std.str_eq(os.NativeTargetTriple(ctx), "x86_64-unknown-linux-gnu") == 0 ||
@@ -1254,6 +1400,7 @@ type ResourceAcquisitionObligation[ctx] struct {
     field_order: int,
     state: int,
     retained_lease_state: int
+    fallible_owned_out: int
 }
 
 type RetainedLeaseEvidence[ctx] struct {
@@ -3478,6 +3625,13 @@ func typechecker_is_linear(t: ast.Type[ctx], env: *TypeEnvironment[ctx], visited
             if std.str_eq(name, "T") || std.str_eq(name, "K") || std.str_eq(name, "V") {
                 return 1;
             }
+            // A registered Resource is linear even when its physical fields
+            // are all scalar. A move must invalidate the source identifier;
+            // checking only field types previously left an explicitly linear
+            // one-int handle readable through a selector after move.
+            if env_struct_has_resource_tracking_metadata(env, name, ctx) == 1 {
+                return 1;
+            }
             mut lookup := (*visited).Get(name);
             if lookup.Ok {
                 return 0;
@@ -4440,6 +4594,27 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                     msg = std.Concat(msg, "' has already been moved");
                     report_error(2, msg, expr.Move.span, env, ctx);
                 }
+                mut acquisition_identity := env_resource_identity_for_expression(env, inner_idx, ctx);
+                if len(acquisition_identity) > 0 {
+                    mut obligation_lookup := (*env).resource_acquisition_obligations.Get(acquisition_identity);
+                    if obligation_lookup.Ok {
+                        mut moved_resource_type := env_tracking_resource_type_name(env, inner_type, ctx);
+                        if len(moved_resource_type) > 0 &&
+                           std.str_eq(moved_resource_type, obligation_lookup.Val.type_name) == 1 &&
+                           (obligation_lookup.Val.fallible_owned_out == 1 ||
+                            env_open_linear_resource_is_directory_shadow(env, name, ctx) == 0) &&
+                           obligation_lookup.Val.state != 0 {
+                            report_error(2,
+                                "Semantic Error: [ResourceAcquisitionNonLive] Resource-owned value cannot be moved after its acquisition was consumed, transferred, invalidated, or scheduled",
+                                expr.Move.span, env, ctx);
+                            return inner_type;
+                        }
+                    }
+                }
+                if env_open_linear_resource_is_tracked(env, name, ctx) == 1 &&
+                   env_report_linear_resource_move_transition_rejected(env, name, expr.Move.span, ctx) == 1 {
+                    return inner_type;
+                }
                 if env_open_directory_resource_requires_cleanup(env, name, ctx) == 1 {
                     mut msg := std.Concat("Semantic Error: Directory resource variable '", name);
                     msg = std.Concat(msg, "' cannot be moved while open. Close it first.");
@@ -4833,6 +5008,18 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         }
 
                         if std.str_eq(expr.Selector.right, "Val") {
+                            mut fallible_identity := env_resource_identity_for_expression(
+                                env, expr.Selector.left, ctx
+                            );
+                            if len(fallible_identity) > 0 {
+                                mut producing_obligation :=
+                                    (*env).resource_acquisition_obligations.Get(fallible_identity);
+                                if producing_obligation.Ok {
+                                    if producing_obligation.Val.fallible_owned_out == 1 {
+                                        report_error(2, "Semantic Error: [FFIFallibleOwnedOutUnchecked] The owned Val is available only through one Guard of its producing result", expr.Selector.span, env, ctx);
+                                    }
+                                }
+                            }
                             if (len(clean_name) >= 11 && std.str_eq(std.str_slice(clean_name, 0, 11), "CastResult_")) ||
                                (len(clean_name) >= 13 && std.str_eq(std.str_slice(clean_name, 0, 13), "LookupResult_")) {
                                 mut has_checked := 0;
@@ -6549,7 +6736,8 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         (sig.return_type.tag != 9 ||
                          std.str_eq(sig.ffi_return_policy, "raw_untrusted") == 0) &&
                         (sig.return_type.tag != 8 ||
-                         std.str_eq(sig.ffi_return_policy, "owned_return") == 0)) {
+                         (std.str_eq(sig.ffi_return_policy, "owned_return") == 0 &&
+                          std.str_eq(sig.ffi_return_policy, "fallible_owned_out") == 0))) {
                         report_error(2, "Semantic Error: [FFIContractMissing] External call has no validated per-position ownership contract", expr.Call.span, env, ctx);
                         mut missing_contract: ast.Type[ctx]; missing_contract.tag = 3;
                         return missing_contract;
@@ -6582,6 +6770,24 @@ func check_expression_internal(expr_idx: Index[ast.Expression[ctx], ctx], env: *
                         } else if std.str_eq(ffi_policy, "callback") == 1 {
                             if ffi_formal.tag != 9 || ffi_actual.tag != 9 {
                                 report_error(2, "Semantic Error: [FFICallbackSignature] Callback position has no function-address authority", expr.Call.span, env, ctx);
+                                return dummy;
+                            }
+                        } else if std.str_eq(ffi_policy, "region_access_call") == 1 {
+                            mut formal_byte := 0;
+                            mut actual_byte := 0;
+                            if ffi_formal.tag == 9 {
+                                mut pointee := env_resolve_type(env,
+                                    ctx[ffi_formal.RawPointer.inner], ctx);
+                                if pointee.tag == 1 { formal_byte = 1; }
+                            }
+                            if ffi_actual.tag == 9 {
+                                mut pointee := env_resolve_type(env,
+                                    ctx[ffi_actual.RawPointer.inner], ctx);
+                                if pointee.tag == 1 { actual_byte = 1; }
+                            }
+                            if ffi_arg_index != 0 || formal_byte == 0 || actual_byte == 0 ||
+                               env_ffi_call_region_operation(sig.extern_symbol_name) == 0 {
+                                report_error(2, "Semantic Error: [FFIRegionOperationAuthority] Region operation lacks its checked raw owner position", expr.Call.span, env, ctx);
                                 return dummy;
                             }
                         } else if std.str_eq(ffi_policy, "borrow_read_call") == 1 ||
@@ -11568,6 +11774,25 @@ func env_register_resource_acquisition(env: *TypeEnvironment[ctx], expr_idx: Ind
             obligation.field_order = 0 - 1;
             obligation.state = 0; // pending ownership
             obligation.retained_lease_state = 0;
+            obligation.fallible_owned_out = 0;
+            mut acquisition := ctx[expr_idx];
+            if acquisition.tag == 12 {
+                mut callee := env_resolve_namespaced_ident(
+                    env, get_call_func_name(acquisition.Call.function, ctx), ctx
+                );
+                mut producer := (*env).function_registry.Get(callee);
+                if producer.Ok {
+                    mut producer_sig := producer.Val;
+                    if producer_sig.is_extern == 1 &&
+                       producer_sig.ffi_contract_verified == 1 &&
+                       std.str_eq(producer_sig.ffi_return_policy, "fallible_owned_out") == 1 &&
+                       std.str_eq(env_ffi_fallible_owned_out_owner(
+                           env, producer_sig.return_type, ctx
+                       ), type_name) == 1 {
+                        obligation.fallible_owned_out = 1;
+                    }
+                }
+            }
             (*env).resource_acquisition_obligations.Insert(
                 std.Clone(ctx, identity), obligation
             );
@@ -11604,6 +11829,7 @@ func env_register_resource_parameter_obligation(env: *TypeEnvironment[ctx], func
     obligation.field_order = 0 - 1;
     obligation.state = 0;
     obligation.retained_lease_state = 0;
+    obligation.fallible_owned_out = 0;
     unsafe {
         (*env).resource_acquisition_obligations.Insert(
             std.Clone(ctx, identity), obligation
@@ -11685,10 +11911,19 @@ func env_bind_resource_identity(env: *TypeEnvironment[ctx], storage_name: str, i
         guard obligation_lookup := (*env).resource_acquisition_obligations.Get(identity) else {
             return 0;
         };
+        mut obligation := obligation_lookup;
+        if obligation.fallible_owned_out == 1 {
+            guard storage_type := (*env).variable_types.Get(storage_name) else {
+                return 0;
+            };
+            if std.str_eq(env_tracking_resource_type_name(env, storage_type, ctx),
+                          obligation.type_name) == 0 {
+                return 0;
+            }
+        }
         (*env).resource_value_identities.Insert(
             std.Clone(ctx, storage_name), std.Clone(ctx, identity)
         );
-        mut obligation := obligation_lookup;
         mut root := env_resource_storage_root(storage_name, ctx);
         mut scope_lookup := (*env).resource_storage_scope_depths.Get(root);
         if scope_lookup.Ok {
@@ -11914,6 +12149,21 @@ func env_consume_resource_destructor_call(env: *TypeEnvironment[ctx], resolved_f
     if env_resource_destructor_matches_obligation(env, resolved_func, identity, ctx) == 0 {
         return 0;
     }
+    unsafe {
+        mut obligation_lookup := (*env).resource_acquisition_obligations.Get(identity);
+        if obligation_lookup.Ok {
+            if (obligation_lookup.Val.fallible_owned_out == 1 ||
+                env_open_linear_resource_is_directory_shadow(
+                    env, obligation_lookup.Val.storage_name, ctx
+                ) == 0) &&
+               obligation_lookup.Val.state != 0 {
+                report_error(2,
+                    "Semantic Error: [ResourceAcquisitionNonLive] Resource destructor cannot consume an acquisition that is already consumed, transferred, invalidated, or scheduled",
+                    get_expression_span(argument_idx, ctx), env, ctx);
+                return 0;
+            }
+        }
+    }
     return env_resource_obligation_set_state(env, identity, 1, ctx);
 }
 
@@ -12076,6 +12326,25 @@ func env_track_resource_move_assignment_if_applicable(env: *TypeEnvironment[ctx]
     return env_try_move_open_linear_resource(env, source_variable_name, ctx);
 }
 
+func env_resource_destructor_direct_owner_name(argument_idx: Index[ast.Expression[ctx], ctx], ctx: &Arena) str {
+    unsafe {
+        if argument_idx == empty[Index[ast.Expression[ctx], ctx]] {
+            return "";
+        }
+        mut argument := ctx[argument_idx];
+        if argument.tag == 4 { // Exactly one Move around the local owner.
+            if argument.Move.expr == empty[Index[ast.Expression[ctx], ctx]] {
+                return "";
+            }
+            argument = ctx[argument.Move.expr];
+        }
+        if argument.tag != 0 { // Identifier
+            return "";
+        }
+        return std.Clone(ctx, argument.Identifier.name);
+    }
+}
+
 func env_resource_destructor_call_is_applicable(env: *TypeEnvironment[ctx], resolved_func: str, arguments_idx: Index[std.Vector[ast.Expression[ctx], ctx], ctx], scope: Index[Scope[ctx], ctx], ctx: &Arena) int {
     if len(resolved_func) == 0 {
         return 0;
@@ -12091,15 +12360,7 @@ func env_resource_destructor_call_is_applicable(env: *TypeEnvironment[ctx], reso
 
     mut first_arg_idx_step52ak: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
     ctx.Set(first_arg_idx_step52ak, args_vec_step52ak[0]);
-    mut first_arg_expr_step52ak := ctx[first_arg_idx_step52ak];
-    if first_arg_expr_step52ak.tag != 0 { // Identifier
-        return 0;
-    }
-
-    mut resource_name_step52ak := "";
-    unsafe {
-        resource_name_step52ak = first_arg_expr_step52ak.Identifier.name;
-    }
+    mut resource_name_step52ak := env_resource_destructor_direct_owner_name(first_arg_idx_step52ak, ctx);
     if len(resource_name_step52ak) == 0 {
         return 0;
     }
@@ -12154,16 +12415,8 @@ func env_track_resource_destructor_call_if_applicable(env: *TypeEnvironment[ctx]
 
     mut first_arg_idx_step52i: Index[ast.Expression[ctx], ctx] := os.ArenaAlloc(ctx);
     ctx.Set(first_arg_idx_step52i, args_vec_step52i[0]);
-    mut first_arg_expr_step52i := ctx[first_arg_idx_step52i];
     mut first_arg_span_step52h := get_expression_span(first_arg_idx_step52i, ctx);
-    if first_arg_expr_step52i.tag != 0 { // Identifier
-        return 0;
-    }
-
-    mut resource_name_step52i := "";
-    unsafe {
-        resource_name_step52i = first_arg_expr_step52i.Identifier.name;
-    }
+    mut resource_name_step52i := env_resource_destructor_direct_owner_name(first_arg_idx_step52i, ctx);
     if len(resource_name_step52i) == 0 {
         return 0;
     }
@@ -17225,6 +17478,28 @@ func check_statement_impl(stmt_idx: Index[ast.Statement[ctx], ctx], env: *TypeEn
                 env, value, ctx
             );
             if len(guard_value_resource_identity) > 0 {
+                mut trusted_fallible :=
+                    (*env).resource_acquisition_obligations.Get(guard_value_resource_identity);
+                if trusted_fallible.Ok {
+                    if trusted_fallible.Val.fallible_owned_out == 1 {
+                        mut guard_rhs := ctx[value];
+                        mut direct_call := guard_rhs.tag == 12;
+                        mut moved_identifier := 0;
+                        if guard_rhs.tag == 4 {
+                            mut moved_rhs := ctx[guard_rhs.Move.expr];
+                            if moved_rhs.tag == 0 { moved_identifier = 1; }
+                        }
+                        if (direct_call == 0 && moved_identifier == 0) ||
+                           trusted_fallible.Val.state != 0 ||
+                           std.str_eq(env_ffi_fallible_owned_out_owner(
+                               env, resolved_val_type, ctx
+                           ), trusted_fallible.Val.type_name) == 0 {
+                            report_error(2, "Semantic Error: [FFIFallibleOwnedOutGuard] Guard must consume the live result of its exact runtime producing Call", span, env, ctx);
+                        }
+                    }
+                }
+            }
+            if len(guard_value_resource_identity) > 0 {
                 env_resource_obligation_set_state(
                     env, guard_value_resource_identity, 2, ctx
                 );
@@ -17694,6 +17969,7 @@ func resource_acquisition_obligation_clone(record: ResourceAcquisitionObligation
     cloned.field_order = record.field_order;
     cloned.state = record.state;
     cloned.retained_lease_state = record.retained_lease_state;
+    cloned.fallible_owned_out = record.fallible_owned_out;
     return cloned;
 }
 

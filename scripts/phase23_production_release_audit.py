@@ -160,6 +160,13 @@ def project_reference_receiver_production_audit(registry: dict, live: dict) -> d
     return previous
 
 
+def project_current_production_audit(registry: dict, live: dict) -> dict:
+    """Remove the registered R2 surface before historical Phase 26 links."""
+    from phase26_r2_scoped_copy_registration import normalize_production_audit
+    return project_reference_receiver_production_audit(
+        registry, normalize_production_audit(registry, live))
+
+
 def project_phase26_policy_vector_status_production_audit(registry: dict, live: dict) -> dict:
     increment = registry.get("phase26_activation_audit", {}).get(
         "ffi_policy_vector_status_increment", {})
@@ -1895,7 +1902,7 @@ def validate() -> tuple[dict, dict[str, object]]:
     require(registry.get("phase23_mir_to_c_focused_live", {}).get(
             "route_contract", {}).get("non_bootstrap_live_lane_count") == 1,
             "focused live-C predecessor drifted")
-    summary = project_reference_receiver_production_audit(registry, scan())
+    summary = project_current_production_audit(registry, scan())
     summary = phase2510_emitter_audit(registry, summary)
     summary = phase2510a_strings_audit(registry, summary)
     summary = phase25_runtime_port_audit(registry, summary)

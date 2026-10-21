@@ -74,6 +74,9 @@ jobs:
       - name: Build Gust
         run: make gust
 
+      - name: Bind Phase 26 R2 build source and tools
+        run: python3 scripts/phase26_r2_tool_binding.py record
+
       - name: Upload Gust build outputs
         uses: actions/upload-artifact@v4
         with:
@@ -788,7 +791,7 @@ jobs:
 
       - name: Install guard tools
         run: |
-          bash scripts/install-native-deps-ci.sh build-essential curl ripgrep
+          bash scripts/install-native-deps-ci.sh build-essential curl ripgrep gdb
           bash scripts/install-just-ci.sh "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
@@ -801,8 +804,14 @@ jobs:
       - name: Restore executable bit
         run: chmod +x ./gust 2>/dev/null || true
 
+      - name: Restore Phase 26 R2 native worker executable bit
+        run: chmod +x build/gust-native-backend
+
       - name: Phase 26 approved signed package and linker boundary
         run: just guard-cranelift-phase26-approved-package
+
+      - name: Phase 26 scoped signed byte-copy runtime
+        run: just guard-cranelift-phase26-scoped-byte-copy
 
       - name: Phase 26 FFI position policy
         run: just guard-cranelift-phase26-ffi-position-policy
