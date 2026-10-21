@@ -43,6 +43,9 @@ def record(activation: dict) -> dict:
 
 
 def before_approved_digest(activation: dict, path: str, live_digest: str) -> str:
+    if activation.get("zlib_adapter_r3_successor"):
+        from phase26_r3_zlib_adapter_registration import prior_digest
+        live_digest = prior_digest({"phase26_activation_audit": activation}, path, live_digest)
     if activation.get("scoped_byte_copy_r2_successor"):
         from phase26_r2_scoped_copy_registration import normalize_relay, normalize_text
         if path == CR15_PATH:
@@ -160,6 +163,9 @@ def before_new_counts(activation: dict, path: str,
 
 def before_new_spelling(activation: dict, live: dict) -> dict:
     actual_live = live
+    if activation.get("zlib_adapter_r3_successor"):
+        from phase26_r3_zlib_adapter_registration import normalize_spelling
+        live = normalize_spelling({"phase26_activation_audit": activation}, live)
     if activation.get("scoped_byte_copy_r2_successor"):
         from phase26_r2_scoped_copy_registration import normalize_spelling
         live = normalize_spelling({"phase26_activation_audit": activation}, live)

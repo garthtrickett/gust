@@ -24546,3 +24546,12 @@ guard-cranelift-phase26-scoped-byte-copy:
     python3 scripts/phase26_r2_scoped_copy_registration.py
     python3 scripts/phase26_r2_scoped_copy_registration.py inversions
     bash scripts/phase26_r2_scoped_copy.sh
+
+# Phase 26 FFI-R3: pinned zlib source, exact adapter ABI, and signed test-profile link.
+guard-cranelift-phase26-zlib-adapter:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    python3 scripts/cranelift_test_levels.py level guard-cranelift-phase26-zlib-adapter | grep -F $'guard-cranelift-phase26-zlib-adapter\t2\t' >/dev/null
+    python3 scripts/phase26_r3_zlib_adapter_registration.py
+    python3 scripts/phase26_r3_zlib_adapter_registration.py inversions
+    bash scripts/phase26_r3_zlib_adapter_guard.sh

@@ -162,6 +162,9 @@ def project_reference_receiver_production_audit(registry: dict, live: dict) -> d
 
 def project_current_production_audit(registry: dict, live: dict) -> dict:
     """Remove the registered R2 surface before historical Phase 26 links."""
+    if registry.get("phase26_activation_audit", {}).get("zlib_adapter_r3_successor"):
+        from phase26_r3_zlib_adapter_registration import normalize_production_audit as r3_normalize
+        live = r3_normalize(registry, live)
     from phase26_r2_scoped_copy_registration import normalize_production_audit
     return project_reference_receiver_production_audit(
         registry, normalize_production_audit(registry, live))
@@ -1684,6 +1687,15 @@ def phase25_runtime_port_audit(registry: dict, live: dict) -> dict:
 def scan() -> dict[str, object]:
     opening = load_opening()
     invocations = opening.scan_invocations()
+    # The historical opening reader has already projected registered Phase 26
+    # additions. Restore this exact R3 row for the current production census;
+    # the successor verifier checks its complete meaning before projection.
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    if registry.get("phase26_activation_audit", {}).get("zlib_adapter_r3_successor"):
+        from phase26_r3_zlib_adapter_registration import invocation_rows
+        added = invocation_rows()
+        require(len(added) == 1, "R3 production invocation is ambiguous")
+        invocations = invocations + added
     explicit_c = [row for row in invocations if row["selection"] == "explicit_c"]
     bootstrap = [row for row in explicit_c if row["path"] == "Makefile"]
     non_bootstrap = [row for row in explicit_c if row["path"] != "Makefile"]
