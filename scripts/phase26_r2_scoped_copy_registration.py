@@ -367,6 +367,20 @@ def inversions() -> None:
         "phase23_text_surface_successor"]["changed_rows"][0]["previous_digest"] = "0" * 64
     rejected("changed predecessor text projection", "R2 text surface",
              lambda: normalize_text(changed_previous, surfaces))
+    for path in ("scripts/phase21_collection_string_native_source.sh",
+                 "scripts/phase26_reference_receiver_registration.py"):
+        row_index = next(index for index, row in enumerate(changed)
+                         if row["path"] == path)
+        changed_live = copy.deepcopy(surfaces)
+        changed_live[row_index]["digest"] = "0" * 64
+        rejected(f"changed {path} text digest", "R2 text surface",
+                 lambda changed_live=changed_live: normalize_text(registry, changed_live))
+        changed_prior = copy.deepcopy(registry)
+        changed_prior["phase26_activation_audit"][KEY][
+            "phase23_text_surface_successor"]["changed_rows"][row_index][
+                "previous_digest"] = "0" * 64
+        rejected(f"changed {path} predecessor digest", "R2 text surface",
+                 lambda changed_prior=changed_prior: normalize_text(changed_prior, surfaces))
     changed_source = copy.deepcopy(registry)
     changed_source["phase26_activation_audit"][KEY][
         "spelling_inventory_successor"]["changed_source_hashes"][0]["digest"] = "0" * 64
@@ -432,7 +446,7 @@ def inversions() -> None:
     del missing_record["phase26_activation_audit"][KEY]
     rejected("old authority without R2 record", "R2 authority",
              lambda: identity(missing_record))
-    print(f"{GUARD}: twenty-five additive registration inversions ok")
+    print(f"{GUARD}: twenty-nine additive registration inversions ok")
 
 
 if __name__ == "__main__":

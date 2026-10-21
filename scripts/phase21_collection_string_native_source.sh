@@ -44,6 +44,20 @@ print(" ".join(members), end=" ")
     tiny_host_is_positive_i32
   )
 fi
+r2_runtime_symbols=()
+if python3 - <<'PY'
+import json
+record = json.load(open("scripts/cranelift_feature_registry.json"))
+raise SystemExit(0 if record.get("phase26_activation_audit", {}).get(
+    "scoped_byte_copy_r2_successor", {}).get("status") ==
+    "test_profile_scoped_copy_under_qualification" else 1)
+PY
+then
+  python3 scripts/phase26_r2_runtime_projection.py
+  mapfile -t r2_runtime_symbols < <(tail -n +2 \
+    compiler/experiments/cranelift/src/approved_r2_runtime_exports.txt)
+  test "${#r2_runtime_symbols[@]}" -eq 7
+fi
 test "$(ar t "$runtime_package" | tr '\n' ' ')" = "$expected_runtime_members"
 nm -g --defined-only "$runtime_package" >"$build_root/runtime-symbols.txt"
 rg -n ' T os_LogInt$' "$build_root/runtime-symbols.txt" >/dev/null
@@ -66,7 +80,8 @@ expected_runtime_symbols="$(printf '%s\n' \
   os_SetThreadScratch os_System os_WriteFile os_argc os_argv os_path_join \
   std_Channel_Alloc std_Channel_Recv_impl std_Channel_Send_impl \
   std_GenerationalSwap std_Mutex_Alloc std_Mutex_Lock_impl \
-  std_Mutex_Unlock_impl "${successor_runtime_symbols[@]}" | sort)"
+  std_Mutex_Unlock_impl "${successor_runtime_symbols[@]}" \
+  "${r2_runtime_symbols[@]}" | sort)"
 test "$actual_runtime_symbols" = "$expected_runtime_symbols"
 
 capture_driver="$build_root/capture-driver"
