@@ -368,6 +368,7 @@ def inversions() -> None:
     rejected("changed predecessor text projection", "R2 text surface",
              lambda: normalize_text(changed_previous, surfaces))
     for path in ("scripts/phase21_collection_string_native_source.sh",
+                 "scripts/phase21_filesystem_allocation_native_source.sh",
                  "scripts/phase26_reference_receiver_registration.py"):
         row_index = next(index for index, row in enumerate(changed)
                          if row["path"] == path)
@@ -446,7 +447,7 @@ def inversions() -> None:
     del missing_record["phase26_activation_audit"][KEY]
     rejected("old authority without R2 record", "R2 authority",
              lambda: identity(missing_record))
-    print(f"{GUARD}: twenty-nine additive registration inversions ok")
+    print(f"{GUARD}: thirty-one additive registration inversions ok")
 
 
 if __name__ == "__main__":
