@@ -48124,6 +48124,24 @@
           }
         ]
       },
+      "production_audit_successor": {
+        "contract_version": "phase26_1r2_scoped_byte_copy_successor_v1_production_audit",
+        "previous_supported_surface_manifest_digest": "7d774d1da3462984ff5bf8ce87dbd9551d58d689d271cab2fd3e5e9c1528ed20",
+        "current_supported_surface_manifest_digest": "13383d08d5a7b0decbc92eaf0d4c8e62cc73555f45d088976932d2dbdfd66ffe",
+        "previous_makefile_digest": "956f16faaeb425b950024644510ea2644ab387a080ef5c727aaef5d03c313179",
+        "current_makefile_digest": "d0d930c100aa85455e8abebdde19eb606d9fad22aa9b7a26ad9fd8ca5bcac2d2",
+        "previous_justfile_digest": "2c8d2a5e76a9543214edc9b24a8304deaaec4e166a0acf421b8f4c9cb1484ce8",
+        "current_justfile_digest": "dadf41242051554525ad833a3430c8f439be31b5b32dd8a3dccf4fd335a662b8",
+        "current_projection_script_digest": "f4844bdf73a16599588ffaf04a6bc4f6728368af33f63e9a77b092a2769478b0",
+        "unchanged_supported_paths": [
+          "README.md",
+          "flake.nix",
+          "scripts/run-gust-file.sh",
+          "scripts/phase22_default_native_package.sh"
+        ],
+        "unchanged_other_fields": true,
+        "partial_extra_or_substituted_audit": "rejected"
+      },
       "phase23_text_surface_successor": {
         "contract_version": "phase26_1r2_scoped_byte_copy_successor_v1_phase23",
         "partial_extra_or_substituted_surface": "rejected",
@@ -48264,6 +48282,21 @@
             }
           },
           {
+            "path": "scripts/phase23_closure.py",
+            "previous_digest": "ff38f9891cbbdbc764406edcfa5003b4c9bb5cf51cb5da4b2d25cebea1e61ccc",
+            "current_digest": "428cec51a2afb531c4e5643349cb469c4bb2aec3e66e15d8022e42e38c761442",
+            "match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 25,
+              "generated_c_contract": 0
+            },
+            "previous_match_counts": {
+              "explicit_backend_spelling": 0,
+              "mir_to_c_name": 25,
+              "generated_c_contract": 0
+            }
+          },
+          {
             "path": "scripts/phase26_call_cast_alias_finite_cast_plain_terminal_cast_chain_return_registration.py",
             "previous_digest": "8f0b2bc91d300badefd098b48e8cfeff19d2d237bd0c067be20ffea3cda596f3",
             "current_digest": "1fd83c81ffa475ff11e603421391af46497485f2ed2099c1fdc0703f2f67a583",
@@ -48284,7 +48317,7 @@
             "path": "scripts/phase26_r2_scoped_copy_registration.py",
             "current_row": {
               "path": "scripts/phase26_r2_scoped_copy_registration.py",
-              "digest": "95322b7fc91239dac78862bd1322eb8a1ce296ea3d00be9c64c651dce518a00c",
+              "digest": "cb6b25f06693896c6ae41634c34e89d0b3080720bd53fa621d01db525154cf8a",
               "match_counts": {
                 "explicit_backend_spelling": 0,
                 "mir_to_c_name": 1,

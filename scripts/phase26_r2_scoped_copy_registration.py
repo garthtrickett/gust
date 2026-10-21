@@ -21,6 +21,10 @@ VERSION = "phase26_1r2_scoped_byte_copy_successor_v1"
 GUARD = "guard-cranelift-phase26-scoped-byte-copy"
 INVOCATION_PATH = "scripts/phase26_r2_scoped_copy.sh"
 CR15_PATH = "scripts/phase24_cr15_stdlib_guard_transition.py"
+UNCHANGED_PRODUCTION_SURFACES = (
+    "README.md", "flake.nix", "scripts/run-gust-file.sh",
+    "scripts/phase22_default_native_package.sh",
+)
 SOURCE_PATHS = (
     "compiler/experiments/cranelift/src/approved_package.rs",
     "compiler/experiments/cranelift/src/full_program.rs",
@@ -149,6 +153,40 @@ def normalize_invocations(registry: dict, rows: list[dict]) -> list[dict]:
     return [row for row in rows if row["path"] != INVOCATION_PATH]
 
 
+def normalize_production_audit(registry: dict, live: dict) -> dict:
+    """Project only R2's changed Makefile surface off the closed audit."""
+    value = identity(registry).get("production_audit_successor")
+    require(isinstance(value, dict), "R2 production audit successor is absent")
+    predecessor = registry["phase2512b_runtime_c_retirement"][
+        "production_audit_transition"]["current_audit"]
+    require(value == {
+        "contract_version": VERSION + "_production_audit",
+        "previous_supported_surface_manifest_digest":
+            predecessor["supported_surface_manifest_digest"],
+        "current_supported_surface_manifest_digest":
+            "13383d08d5a7b0decbc92eaf0d4c8e62cc73555f45d088976932d2dbdfd66ffe",
+        "previous_makefile_digest": hashlib.sha256(base_bytes("Makefile")).hexdigest(),
+        "current_makefile_digest": digest("Makefile"),
+        "previous_justfile_digest": hashlib.sha256(base_bytes("justfile")).hexdigest(),
+        "current_justfile_digest": digest("justfile"),
+        "current_projection_script_digest": digest(
+            "scripts/phase23_production_release_audit.py"),
+        "unchanged_supported_paths": list(UNCHANGED_PRODUCTION_SURFACES),
+        "unchanged_other_fields": True,
+        "partial_extra_or_substituted_audit": "rejected",
+    } and all(digest(path) == hashlib.sha256(base_bytes(path)).hexdigest()
+              for path in UNCHANGED_PRODUCTION_SURFACES) and
+            live["supported_surface_count"] == 6 and
+            live["repository_invocation_count"] == 256 and
+            live["supported_surface_manifest_digest"] ==
+                value["current_supported_surface_manifest_digest"],
+            "R2 production audit supported surface drifted")
+    previous = dict(live)
+    previous["supported_surface_manifest_digest"] = (
+        value["previous_supported_surface_manifest_digest"])
+    return previous
+
+
 def normalize_text(registry: dict, rows: list[dict]) -> list[dict]:
     value = identity(registry)["phase23_text_surface_successor"]
     changed = value.get("changed_rows", [])
@@ -238,7 +276,8 @@ def validate() -> None:
         "contract_version", "predecessor_main_sha", "status", "owner", "owning_level2_guard",
         "production_signing_roots", "native_fallback", "public_tagged_result_contract",
         "generic_vector_safety_floor", "phase22_invocation_successor",
-        "phase23_text_surface_successor", "spelling_inventory_successor",
+        "production_audit_successor", "phase23_text_surface_successor",
+        "spelling_inventory_successor",
         "filename_site_successor", "cr15_relay_digest_successor",
     }, "R2 authority field set drifted")
     from phase24_semantic_spelling_inventory import source_sites, manifest_summary
@@ -254,6 +293,8 @@ def validate() -> None:
                 found.append(classify(path, line, command, recipe,
                                       match.group("token"), selection(command)))
     normalize_invocations(registry, found)
+    from phase23_production_release_audit import scan as production_audit_scan
+    normalize_production_audit(registry, production_audit_scan())
     normalize_relay(registry, digest(CR15_PATH))
     require("python3 scripts/phase26_r2_scoped_copy_registration.py" in
             (ROOT / "justfile").read_text() and
@@ -281,7 +322,10 @@ def inversions() -> None:
     spelling = value["spelling_inventory_successor"]["current_inventory_summary"]
     filename = value["filename_site_successor"]["current_sites"]
     relay = value["cr15_relay_digest_successor"]["current_digest"]
+    from phase23_production_release_audit import scan as production_audit_scan
+    production = production_audit_scan()
     normalize_invocations(registry, invocation)
+    normalize_production_audit(registry, production)
     normalize_text(registry, surfaces)
     normalize_spelling(registry, spelling)
     normalize_filename(registry, filename)
@@ -338,11 +382,57 @@ def inversions() -> None:
              lambda: normalize_filename(registry, changed_filename))
     rejected("changed relay digest", "R2 relay digest",
              lambda: normalize_relay(registry, "0" * 64))
+    changed_production = copy.deepcopy(production)
+    changed_production["supported_surface_manifest_digest"] = "0" * 64
+    rejected("changed supported production surface", "R2 production audit",
+             lambda: normalize_production_audit(registry, changed_production))
+    old_digest_production = copy.deepcopy(production)
+    old_digest_production["supported_surface_manifest_digest"] = value[
+        "production_audit_successor"]["previous_supported_surface_manifest_digest"]
+    rejected("old digest over R2 Makefile", "R2 production audit",
+             lambda: normalize_production_audit(registry, old_digest_production))
+    changed_anchor = copy.deepcopy(registry)
+    changed_anchor["phase26_activation_audit"][KEY]["production_audit_successor"][
+        "previous_supported_surface_manifest_digest"] = "0" * 64
+    rejected("forged historical production anchor", "R2 production audit",
+             lambda: normalize_production_audit(changed_anchor, production))
+    changed_makefile = copy.deepcopy(registry)
+    changed_makefile["phase26_activation_audit"][KEY]["production_audit_successor"][
+        "current_makefile_digest"] = "0" * 64
+    rejected("changed R2 Makefile pin", "R2 production audit",
+             lambda: normalize_production_audit(changed_makefile, production))
+    changed_projection = copy.deepcopy(registry)
+    changed_projection["phase26_activation_audit"][KEY][
+        "production_audit_successor"]["current_projection_script_digest"] = "0" * 64
+    rejected("changed production projection script pin", "R2 production audit",
+             lambda: normalize_production_audit(changed_projection, production))
+    old_digest = digest
+    try:
+        def altered_digest(path: str) -> str:
+            return "0" * 64 if path == "README.md" else old_digest(path)
+        globals()["digest"] = altered_digest
+        rejected("changed unrelated supported surface", "R2 production audit",
+                 lambda: normalize_production_audit(registry, production))
+    finally:
+        globals()["digest"] = old_digest
+    missing_step = (ROOT / "justfile").read_bytes().replace(
+        b"guard-cranelift-phase26-scoped-byte-copy:", b"removed-r2-owning-step:")
+    require(missing_step != (ROOT / "justfile").read_bytes(),
+            "R2 owning-step inversion did not alter justfile bytes")
+    try:
+        def altered_digest(path: str) -> str:
+            return (hashlib.sha256(missing_step).hexdigest() if path == "justfile"
+                    else old_digest(path))
+        globals()["digest"] = altered_digest
+        rejected("missing R2 owning step", "R2 production audit",
+                 lambda: normalize_production_audit(registry, production))
+    finally:
+        globals()["digest"] = old_digest
     missing_record = copy.deepcopy(registry)
     del missing_record["phase26_activation_audit"][KEY]
     rejected("old authority without R2 record", "R2 authority",
              lambda: identity(missing_record))
-    print(f"{GUARD}: eighteen additive registration inversions ok")
+    print(f"{GUARD}: twenty-five additive registration inversions ok")
 
 
 if __name__ == "__main__":
